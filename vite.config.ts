@@ -37,12 +37,29 @@ export default defineConfig(({ command, mode }) => {
       stringify: false, // Import JSON as parsed objects, not stringified
     },
     server: {
-      // Enable polling so file-system events work inside Docker volume mounts
-      // (native inotify events do not propagate from the host on macOS/Windows).
-      watch: {
-        usePolling: true,
-        interval: 300,
-      },
+      // Polling lets HMR see host edits inside Docker bind mounts (native
+      // inotify events don't cross the mount on macOS/Windows). It's CPU-hungry
+      // — it stat()s the watched tree on every tick — so enable it ONLY when
+      // asked (the docker-compose `ui` service sets CHOKIDAR_USEPOLLING) and at
+      // a relaxed interval. A native `pnpm dev` outside Docker leaves `watch`
+      // undefined and uses event-based watching, so it doesn't spin a core idle.
+      watch:
+        process.env.CHOKIDAR_USEPOLLING === "true"
+          ? {
+              usePolling: true,
+              interval: 1000,
+              // Polling stat()s every watched file each tick, so keep the set
+              // small: skip deps/build/store dirs. (node_modules/.git are also
+              // excluded by Vite's defaults; listed here in case a bind mount
+              // surfaces them — .pnpm-store especially is huge.)
+              ignored: [
+                "**/node_modules/**",
+                "**/.pnpm-store/**",
+                "**/dist/**",
+                "**/.git/**",
+              ],
+            }
+          : undefined,
       // Tell the browser which port to use for the HMR WebSocket. Must match
       // the host-side port exposed in docker-compose.yml.
       port: 9002,
