@@ -1,3 +1,5 @@
+import { apiUrl } from "./base";
+
 /**
  * Thrown when a request never reached the backend — the `fetch` promise itself
  * rejected (server unreachable, connection refused, DNS failure). This is
@@ -23,7 +25,7 @@ export async function fetchOrThrowUnavailable(
   init?: RequestInit
 ): Promise<Response> {
   try {
-    return await fetch(input, init);
+    return await fetch(typeof input === "string" ? apiUrl(input) : input, init);
   } catch {
     throw new ServerUnavailableError();
   }

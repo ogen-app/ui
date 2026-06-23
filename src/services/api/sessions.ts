@@ -8,10 +8,11 @@
  */
 
 import type { LoginPayload, Session } from "@/types/session";
+import { apiUrl } from "./base";
 import { ServerUnavailableError, errorMessage, fetchOrThrowUnavailable } from "./errors";
 
 export async function login(payload: LoginPayload): Promise<Session> {
-  const res = await fetch("/api/sessions", {
+  const res = await fetch(apiUrl("/api/sessions"), {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -24,7 +25,7 @@ export async function login(payload: LoginPayload): Promise<Session> {
 }
 
 export async function logout(): Promise<void> {
-  const res = await fetch("/api/sessions", {
+  const res = await fetch(apiUrl("/api/sessions"), {
     method: "DELETE",
     credentials: "include",
   });

@@ -1,2 +1,22 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+
 # Use pnpm (pnpm-lock.yaml). Block npm lockfile to prevent tooling drift.
 package-lock.json
+
+# Local env overrides (.env.example is tracked)
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Logs
+*.log
