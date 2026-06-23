@@ -5,9 +5,10 @@ import {
   type ZernioErrorCode,
   type ZernioHealth,
 } from "@/types/integrations";
+import { apiUrl } from "./base";
 import { errorMessage } from "./errors";
 
-const BASE = "/api/integrations/zernio";
+const BASE = apiUrl("/api/integrations/zernio");
 
 export async function getZernioHealth(): Promise<ZernioHealth> {
   const res = await fetch(`${BASE}/health`, { method: "GET", credentials: "include" });

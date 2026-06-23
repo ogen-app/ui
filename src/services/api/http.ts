@@ -1,3 +1,4 @@
+import { apiUrl } from "./base";
 import { errorMessage } from "./errors";
 
 type ApiRequestOptions = {
@@ -19,7 +20,7 @@ async function send(
     init.headers = { "Content-Type": "application/json" };
     init.body = JSON.stringify(options.body);
   }
-  const res = await fetch(path, init);
+  const res = await fetch(apiUrl(path), init);
   if (!res.ok) throw new Error(await errorMessage(res, fallbackError));
   return res;
 }

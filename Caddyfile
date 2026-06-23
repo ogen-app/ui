@@ -1,0 +1,29 @@
+{
+	admin off
+	# Railway terminates TLS at the edge; Caddy serves plain HTTP behind it.
+	auto_https off
+}
+
+# Railway provides $PORT; default 8080 for local `docker run`.
+:{$PORT:8080} {
+	encode gzip
+
+	# API: same-origin reverse proxy to the backend, so the browser never
+	# makes a cross-origin request (no CORS; the c3_session cookie flows
+	# normally). Set API_ORIGIN to the backend address — on Railway use the
+	# private service address, e.g. api.railway.internal:8080 (the API service
+	# name + its ADDR port from CON-95). `handle` (not `handle_path`) keeps the
+	# /api prefix the backend expects. flush_interval -1 keeps SSE unbuffered.
+	handle /api/* {
+		reverse_proxy {$API_ORIGIN:api.railway.internal:8080} {
+			flush_interval -1
+		}
+	}
+
+	# SPA: static assets, falling back to index.html for client-side routes.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { apiUrl } from "./base";
 import { ServerUnavailableError, fetchOrThrowUnavailable } from "./errors";
 
 /**
@@ -34,7 +35,7 @@ export function invalidateSetupComplete(): void {
 }
 
 export async function markSetupComplete(): Promise<void> {
-  const res = await fetch("/api/settings/setup_complete", {
+  const res = await fetch(apiUrl("/api/settings/setup_complete"), {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
