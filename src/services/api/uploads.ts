@@ -1,4 +1,5 @@
 import type { Asset } from "@/types/content";
+import { apiUrl } from "./base";
 
 const UPLOAD_URL = "/api/content-bank/assets/upload";
 
@@ -31,7 +32,7 @@ export function uploadAssetFile(
     form.append("files", file);
 
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", UPLOAD_URL, true);
+    xhr.open("POST", apiUrl(UPLOAD_URL), true);
     xhr.withCredentials = true;
     xhr.responseType = "json";
 

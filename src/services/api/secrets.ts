@@ -1,7 +1,8 @@
 import type { SecretMetadata, SecretName } from "@/types/integrations";
+import { apiUrl } from "./base";
 import { errorMessage } from "./errors";
 
-const BASE = "/api/secrets";
+const BASE = apiUrl("/api/secrets");
 
 export async function listSecrets(): Promise<SecretMetadata[]> {
   const res = await fetch(BASE, { method: "GET", credentials: "include" });
