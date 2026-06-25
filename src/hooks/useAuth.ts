@@ -5,9 +5,11 @@ import {
   logout as logoutRequest,
   invalidateSession,
 } from "@/services/api/sessions";
-import { register as registerRequest, getMe } from "@/services/api/users";
+import { getMe } from "@/services/api/users";
+import { signup as signupRequest } from "@/services/api/tenants";
 import type { LoginPayload, Session } from "@/types/session";
-import type { RegisterPayload, User } from "@/types/user";
+import type { SignupPayload } from "@/types/tenant";
+import type { User } from "@/types/user";
 import { useAuthStore } from "@/stores/authStore";
 
 export function useLogin() {
@@ -22,11 +24,18 @@ export function useLogin() {
   });
 }
 
-export function useRegister() {
+/**
+ * Self-service signup (CON-97): creates the organization + first admin and,
+ * because `POST /api/tenants` opens a session, leaves the caller authenticated.
+ * We invalidate the cached session probe so the root guard re-reads it as
+ * authenticated, then seed the auth store from the signup response.
+ */
+export function useSignup() {
   const setUser = useAuthStore((s) => s.setUser);
-  return useMutation<User, Error, RegisterPayload>({
-    mutationFn: registerRequest,
+  return useMutation<User, Error, SignupPayload>({
+    mutationFn: signupRequest,
     onSuccess: (user) => {
+      invalidateSession();
       setUser(user);
     },
   });

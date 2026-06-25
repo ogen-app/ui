@@ -10,14 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as SetupIndexRouteImport } from './routes/setup/index'
 import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unavailable/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedContentBankRouteImport } from './routes/_authenticated/content-bank'
-import { Route as SetupWelcomeIndexRouteImport } from './routes/setup/welcome/index'
-import { Route as SetupSuccessIndexRouteImport } from './routes/setup/success/index'
-import { Route as SetupAdminIndexRouteImport } from './routes/setup/admin/index'
+import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
 import { Route as AuthForgotIndexRouteImport } from './routes/auth/forgot/index'
@@ -41,11 +38,6 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SetupIndexRoute = SetupIndexRouteImport.update({
-  id: '/setup/',
-  path: '/setup/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ServerUnavailableIndexRoute = ServerUnavailableIndexRouteImport.update({
   id: '/server-unavailable/',
   path: '/server-unavailable/',
@@ -67,19 +59,9 @@ const AuthenticatedContentBankRoute =
     path: '/content-bank',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const SetupWelcomeIndexRoute = SetupWelcomeIndexRouteImport.update({
-  id: '/setup/welcome/',
-  path: '/setup/welcome/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SetupSuccessIndexRoute = SetupSuccessIndexRouteImport.update({
-  id: '/setup/success/',
-  path: '/setup/success/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SetupAdminIndexRoute = SetupAdminIndexRouteImport.update({
-  id: '/setup/admin/',
-  path: '/setup/admin/',
+const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
+  id: '/auth/register/',
+  path: '/auth/register/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthLogoutIndexRoute = AuthLogoutIndexRouteImport.update({
@@ -193,7 +175,6 @@ export interface FileRoutesByFullPath {
   '/content-bank': typeof AuthenticatedContentBankRouteWithChildren
   '/auth/': typeof AuthIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
-  '/setup/': typeof SetupIndexRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   '/content-bank/all': typeof AuthenticatedContentBankAllRoute
   '/content-bank/files': typeof AuthenticatedContentBankFilesRoute
@@ -206,9 +187,7 @@ export interface FileRoutesByFullPath {
   '/auth/forgot/': typeof AuthForgotIndexRoute
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
-  '/setup/admin/': typeof SetupAdminIndexRoute
-  '/setup/success/': typeof SetupSuccessIndexRoute
-  '/setup/welcome/': typeof SetupWelcomeIndexRoute
+  '/auth/register/': typeof AuthRegisterIndexRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
@@ -220,7 +199,6 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
   '/server-unavailable': typeof ServerUnavailableIndexRoute
-  '/setup': typeof SetupIndexRoute
   '/content-bank/all': typeof AuthenticatedContentBankAllRoute
   '/content-bank/files': typeof AuthenticatedContentBankFilesRoute
   '/content-bank/imagery': typeof AuthenticatedContentBankImageryRoute
@@ -232,9 +210,7 @@ export interface FileRoutesByTo {
   '/auth/forgot': typeof AuthForgotIndexRoute
   '/auth/login': typeof AuthLoginIndexRoute
   '/auth/logout': typeof AuthLogoutIndexRoute
-  '/setup/admin': typeof SetupAdminIndexRoute
-  '/setup/success': typeof SetupSuccessIndexRoute
-  '/setup/welcome': typeof SetupWelcomeIndexRoute
+  '/auth/register': typeof AuthRegisterIndexRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdIndexRoute
@@ -249,7 +225,6 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
-  '/setup/': typeof SetupIndexRoute
   '/_authenticated/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   '/_authenticated/content-bank/all': typeof AuthenticatedContentBankAllRoute
   '/_authenticated/content-bank/files': typeof AuthenticatedContentBankFilesRoute
@@ -262,9 +237,7 @@ export interface FileRoutesById {
   '/auth/forgot/': typeof AuthForgotIndexRoute
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
-  '/setup/admin/': typeof SetupAdminIndexRoute
-  '/setup/success/': typeof SetupSuccessIndexRoute
-  '/setup/welcome/': typeof SetupWelcomeIndexRoute
+  '/auth/register/': typeof AuthRegisterIndexRoute
   '/_authenticated/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/_authenticated/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/_authenticated/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
@@ -279,7 +252,6 @@ export interface FileRouteTypes {
     | '/content-bank'
     | '/auth/'
     | '/server-unavailable/'
-    | '/setup/'
     | '/campaigns/$campaignId'
     | '/content-bank/all'
     | '/content-bank/files'
@@ -292,9 +264,7 @@ export interface FileRouteTypes {
     | '/auth/forgot/'
     | '/auth/login/'
     | '/auth/logout/'
-    | '/setup/admin/'
-    | '/setup/success/'
-    | '/setup/welcome/'
+    | '/auth/register/'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
     | '/campaigns/$campaignId/'
@@ -306,7 +276,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/server-unavailable'
-    | '/setup'
     | '/content-bank/all'
     | '/content-bank/files'
     | '/content-bank/imagery'
@@ -318,9 +287,7 @@ export interface FileRouteTypes {
     | '/auth/forgot'
     | '/auth/login'
     | '/auth/logout'
-    | '/setup/admin'
-    | '/setup/success'
-    | '/setup/welcome'
+    | '/auth/register'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
     | '/campaigns/$campaignId'
@@ -334,7 +301,6 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/auth/'
     | '/server-unavailable/'
-    | '/setup/'
     | '/_authenticated/campaigns/$campaignId'
     | '/_authenticated/content-bank/all'
     | '/_authenticated/content-bank/files'
@@ -347,9 +313,7 @@ export interface FileRouteTypes {
     | '/auth/forgot/'
     | '/auth/login/'
     | '/auth/logout/'
-    | '/setup/admin/'
-    | '/setup/success/'
-    | '/setup/welcome/'
+    | '/auth/register/'
     | '/_authenticated/campaigns/$campaignId/brief'
     | '/_authenticated/campaigns/$campaignId/list'
     | '/_authenticated/campaigns/$campaignId/'
@@ -362,13 +326,10 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthIndexRoute: typeof AuthIndexRoute
   ServerUnavailableIndexRoute: typeof ServerUnavailableIndexRoute
-  SetupIndexRoute: typeof SetupIndexRoute
   AuthForgotIndexRoute: typeof AuthForgotIndexRoute
   AuthLoginIndexRoute: typeof AuthLoginIndexRoute
   AuthLogoutIndexRoute: typeof AuthLogoutIndexRoute
-  SetupAdminIndexRoute: typeof SetupAdminIndexRoute
-  SetupSuccessIndexRoute: typeof SetupSuccessIndexRoute
-  SetupWelcomeIndexRoute: typeof SetupWelcomeIndexRoute
+  AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -378,13 +339,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/setup/': {
-      id: '/setup/'
-      path: '/setup'
-      fullPath: '/setup/'
-      preLoaderRoute: typeof SetupIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/server-unavailable/': {
@@ -415,25 +369,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContentBankRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/setup/welcome/': {
-      id: '/setup/welcome/'
-      path: '/setup/welcome'
-      fullPath: '/setup/welcome/'
-      preLoaderRoute: typeof SetupWelcomeIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/setup/success/': {
-      id: '/setup/success/'
-      path: '/setup/success'
-      fullPath: '/setup/success/'
-      preLoaderRoute: typeof SetupSuccessIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/setup/admin/': {
-      id: '/setup/admin/'
-      path: '/setup/admin'
-      fullPath: '/setup/admin/'
-      preLoaderRoute: typeof SetupAdminIndexRouteImport
+    '/auth/register/': {
+      id: '/auth/register/'
+      path: '/auth/register'
+      fullPath: '/auth/register/'
+      preLoaderRoute: typeof AuthRegisterIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/logout/': {
@@ -645,13 +585,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
   ServerUnavailableIndexRoute: ServerUnavailableIndexRoute,
-  SetupIndexRoute: SetupIndexRoute,
   AuthForgotIndexRoute: AuthForgotIndexRoute,
   AuthLoginIndexRoute: AuthLoginIndexRoute,
   AuthLogoutIndexRoute: AuthLogoutIndexRoute,
-  SetupAdminIndexRoute: SetupAdminIndexRoute,
-  SetupSuccessIndexRoute: SetupSuccessIndexRoute,
-  SetupWelcomeIndexRoute: SetupWelcomeIndexRoute,
+  AuthRegisterIndexRoute: AuthRegisterIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,10 +1,12 @@
 /**
- * Users API — registration / user creation.
+ * Users API — in-tenant user creation.
  *
- * `POST /api/users` is open during first-run setup (`setup_complete=false`)
- * and protected afterwards. The backend schema is `{name, email, password}`
- * — the frontend register form collects first/last name separately, so we
- * join them into a single `name` field here.
+ * Since CON-97, `POST /api/users` is always authenticated and adds the new
+ * user to the caller's tenant (self-service signup that bootstraps a new
+ * organization goes through `services/api/tenants.ts` instead). The backend
+ * schema is `{name, email, password}` — the form collects first/last name
+ * separately, so we join them into a single `name` field here. `register` is
+ * the building block for a future "invite teammate" UI.
  */
 
 import type { User, RegisterPayload } from "@/types/user";
