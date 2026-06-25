@@ -4,19 +4,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
-import { useRegister } from '@/hooks/useAuth'
+import { useSignup } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { registerSchema, PASSWORD_RULES, cn } from '@/lib'
-import type { LoginPayload } from '@/types/session'
+import { signupSchema, PASSWORD_RULES, cn } from '@/lib'
 
-type AuthRegisterFormProps = {
-  onSuccess?: (credentials: LoginPayload) => void
-}
-
-export function AuthRegisterForm({ onSuccess }: AuthRegisterFormProps) {
+export function AuthRegisterForm() {
   const navigate = useNavigate()
-  const { mutate: register, isPending, error } = useRegister()
-  const { values, setField, fieldErrors, validate } = useFormValidation(registerSchema, {
+  const { mutate: signup, isPending, error } = useSignup()
+  const { values, setField, fieldErrors, validate } = useFormValidation(signupSchema, {
+    organizationName: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -29,13 +25,11 @@ export function AuthRegisterForm({ onSuccess }: AuthRegisterFormProps) {
     const data = validate()
     if (!data) return
 
-    register(data, {
+    // Signup opens a session (the cookie is set on the response), so we land
+    // the user straight in the app — no separate login step.
+    signup(data, {
       onSuccess: () => {
-        if (onSuccess) {
-          onSuccess({ email: data.email, password: data.password })
-        } else {
-          navigate({ to: '/' })
-        }
+        navigate({ to: '/' })
       },
     })
   }
@@ -47,6 +41,23 @@ export function AuthRegisterForm({ onSuccess }: AuthRegisterFormProps) {
         className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500"
         noValidate
       >
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="organizationName">Organization Name</Label>
+          <Input
+            id="organizationName"
+            type="text"
+            autoComplete="organization"
+            variant="default"
+            placeholder="Enter your organization name"
+            value={values.organizationName}
+            onChange={(e) => setField('organizationName', e.target.value)}
+            aria-invalid={!!fieldErrors.organizationName}
+            disabled={isPending}
+          />
+          {fieldErrors.organizationName && (
+            <p className="text-xs text-destructive">{fieldErrors.organizationName}</p>
+          )}
+        </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="firstName">First Name</Label>
           <Input

@@ -3,6 +3,7 @@ export { formatTitle } from "./formatTitle.ts";
 export {
   loginSchema,
   registerSchema,
+  signupSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   PASSWORD_RULES,

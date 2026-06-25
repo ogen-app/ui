@@ -9,7 +9,6 @@ import { PageContainer } from "../components/page-primitives/PageContainer";
 import { PageError } from "../components/page-primitives/PageError";
 import { Button } from "../components/ui/button";
 import { ServerUnavailableError } from "../services/api/errors";
-import { isSetupComplete } from "../services/api/setup";
 import { checkSession } from "../services/api/sessions";
 import { getMe } from "../services/api/users";
 import { useAuthStore } from "../stores/authStore";
@@ -42,16 +41,18 @@ async function probe<T>(
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ location }) => {
-    const isSetupRoute = location.pathname === "/setup" || location.pathname.startsWith("/setup/");
     const isAuthRoute = location.pathname === "/auth" || location.pathname.startsWith("/auth/");
     const isServerDownRoute = location.pathname === SERVER_DOWN_PATH;
 
-    const setup = await probe(isSetupComplete);
+    // CON-97: there is no instance-wide first-run setup anymore — onboarding is
+    // self-service signup (POST /api/tenants) at /auth/register. The session
+    // probe doubles as the reachability probe: a network/5xx failure surfaces
+    // as ServerUnavailableError, distinct from a real "not authenticated" 401.
+    const session = await probe(checkSession);
 
-    // Server unreachable — distinct from a fresh install, which returns a real
-    // response. Show the dedicated outage page instead of misrouting the user
-    // into the first-run setup wizard. (If we're already parked on it, stay.)
-    if (!setup.reachable) {
+    // Server unreachable — show the dedicated outage page (or stay if already
+    // parked on it).
+    if (!session.reachable) {
       if (isServerDownRoute) return { auth: { isAuthenticated: false } };
       throw redirect({ to: SERVER_DOWN_PATH });
     }
@@ -60,18 +61,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     // it to recover, send the user back into the app.
     if (isServerDownRoute) throw redirect({ to: "/" });
 
-    // Setup incomplete: only /setup/* is allowed
-    if (!setup.value) {
-      if (!isSetupRoute) throw redirect({ to: "/setup" });
-      return { auth: { isAuthenticated: false } };
-    }
-
-    // Setup complete: block /setup/*
-    if (isSetupRoute) throw redirect({ to: "/" });
-
-    // Auth routes are public — still probe so login/register can redirect away
-    const session = await probe(checkSession);
-    if (!session.reachable) throw redirect({ to: SERVER_DOWN_PATH });
     const authenticated = session.value;
 
     if (!authenticated && !isAuthRoute) {

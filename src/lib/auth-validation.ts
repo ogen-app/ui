@@ -1,13 +1,13 @@
 import { z } from 'zod'
 
 /**
- * Auth validation schemas mirroring backend FluentValidation rules.
+ * Auth validation schemas for login and self-service signup.
  *
- * Backend rules (RegisterCommandValidator + Identity config):
- * - Email: required, valid format
- * - Password: required, min 8, uppercase, lowercase, digit (no special char required)
- * - FirstName: max 50, no whitespace-only
- * - LastName: max 50, no whitespace-only
+ * Signup posts to `POST /api/tenants`, whose backend validator only requires
+ * a non-empty tenant/user name, a valid email, and a password of at least 8
+ * characters. The extra password-strength rules below are a deliberately
+ * stricter client-side gate (better UX, never rejects a password the backend
+ * would have accepted for the wrong reason).
  */
 
 const nameField = (label: string) =>
@@ -16,6 +16,12 @@ const nameField = (label: string) =>
     .min(1, `${label} is required`)
     .max(50, `${label} must be at most 50 characters`)
     .refine((v) => v.trim().length > 0, `${label} cannot be only whitespace`)
+
+const organizationField = z
+  .string()
+  .min(1, 'Organization name is required')
+  .max(100, 'Organization name must be at most 100 characters')
+  .refine((v) => v.trim().length > 0, 'Organization name cannot be only whitespace')
 
 const emailField = z.email('Invalid email format').min(1, 'Email is required')
 
@@ -32,6 +38,18 @@ export const loginSchema = z.object({
 })
 
 export const registerSchema = z.object({
+  firstName: nameField('First name'),
+  lastName: nameField('Last name'),
+  email: emailField,
+  password: passwordField,
+})
+
+/**
+ * Self-service signup (CON-97): the register fields plus the organization name
+ * that bootstraps the new tenant.
+ */
+export const signupSchema = z.object({
+  organizationName: organizationField,
   firstName: nameField('First name'),
   lastName: nameField('Last name'),
   email: emailField,
