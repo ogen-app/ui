@@ -4,6 +4,16 @@ The React + Vite single-page app for [Ogen](https://github.com/ogen-app/ogen).
 Split out of the `ogen` monorepo (CON-98) and deployed independently; the Go API
 no longer embeds it.
 
+## Documentation
+
+- [`docs/product.md`](docs/product.md) — what Ogen is and its domain concepts
+  (campaigns, posts, content bank, publishing).
+- [`docs/architecture.md`](docs/architecture.md) — front-end architecture
+  (routing, data fetching, state, overlays, forms, tables, styling).
+- [`docs/technical-decisions.md`](docs/technical-decisions.md) — notable choices
+  and their rationale.
+- [`CLAUDE.md`](CLAUDE.md) — working conventions for this repo.
+
 ## Stack
 
 - React 18 + TypeScript, Vite
