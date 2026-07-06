@@ -269,6 +269,29 @@ export const useAssistantStore = create<AssistantState>()(
                     : m
                 )
                 break
+              // `*_started` events duplicate the tool_call chips, so only the
+              // `*_complete` payloads are captured. Capturing them mid-stream
+              // (not just on `complete`) keeps the outcome visible even if the
+              // turn errors after the operation already ran.
+              case 'clone_started':
+              case 'restore_started':
+              case 'schedule_started':
+                break
+              case 'clone_complete':
+                patchMessage(key, modelId, (m) =>
+                  m.role === 'model' ? { ...m, cloneResult: event.result } : m
+                )
+                break
+              case 'restore_complete':
+                patchMessage(key, modelId, (m) =>
+                  m.role === 'model' ? { ...m, restoreResult: event.result } : m
+                )
+                break
+              case 'schedule_complete':
+                patchMessage(key, modelId, (m) =>
+                  m.role === 'model' ? { ...m, scheduleResult: event.result } : m
+                )
+                break
               case 'complete': {
                 patchMessage(key, modelId, (m) =>
                   m.role === 'model'
@@ -277,6 +300,9 @@ export const useAssistantStore = create<AssistantState>()(
                         pending: false,
                         action: event.result.action,
                         explanation: event.result.explanation || m.explanation,
+                        cloneResult: event.result.cloneResult ?? m.cloneResult,
+                        restoreResult: event.result.restoreResult ?? m.restoreResult,
+                        scheduleResult: event.result.scheduleResult ?? m.scheduleResult,
                       }
                     : m
                 )
@@ -286,9 +312,11 @@ export const useAssistantStore = create<AssistantState>()(
                 break
               }
               case 'error':
+                // action stays null — a failed turn is not a decline, and the
+                // per-action footers must not render for it.
                 patchMessage(key, modelId, (m) =>
                   m.role === 'model'
-                    ? { ...m, pending: false, action: 'declined', error: event.message }
+                    ? { ...m, pending: false, error: event.message }
                     : m
                 )
                 patchThread(key, (t) => ({ ...t, error: event.message }))

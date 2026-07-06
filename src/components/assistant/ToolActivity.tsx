@@ -7,6 +7,9 @@ const TOOL_LABELS: Record<string, string> = {
   getAssetChunks: 'Reading asset',
   searchAssetChunks: 'Searching assets',
   getCurrentContent: 'Reading current draft',
+  clonePost: 'Creating clone',
+  restoreVersion: 'Restoring version',
+  schedulePost: 'Scheduling post',
 }
 
 function toolLabel(name: string): string {

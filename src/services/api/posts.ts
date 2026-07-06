@@ -1,4 +1,4 @@
-import type { Post, PostPayload } from '@/types/posts'
+import type { Post, PostPayload, PostVersion } from '@/types/posts'
 import { apiJson, apiVoid } from './http'
 
 const BASE = '/api/posts'
@@ -37,6 +37,44 @@ export function cancelPost(id: string, target: CancelTarget): Promise<void> {
   return apiVoid(`${BASE}/${id}/cancel`, 'Unable to unschedule post', {
     method: 'POST',
     body: { target },
+  })
+}
+
+export function listPostVersions(id: string): Promise<PostVersion[]> {
+  // The backend serializes an empty list as null (Go nil slice).
+  return apiJson<PostVersion[] | null>(
+    `${BASE}/${id}/versions`,
+    'Unable to fetch versions'
+  ).then((versions) => versions ?? [])
+}
+
+export function createPostVersion(id: string, note: string): Promise<PostVersion> {
+  return apiJson<PostVersion>(`${BASE}/${id}/versions`, 'Unable to save version', {
+    method: 'POST',
+    body: { note },
+  })
+}
+
+export type RestoreVersionResult = {
+  post: Post
+  restored_from_version: number
+  new_version_number: number
+  auto_snapshot_created: boolean
+  no_op: boolean
+}
+
+/**
+ * Rolls the post's content back to `versionNumber`. Non-destructive: the
+ * server copies the target content into a new version that becomes HEAD, and
+ * auto-snapshots any unsnapshotted live edits first.
+ */
+export function restorePostVersion(
+  id: string,
+  versionNumber: number
+): Promise<RestoreVersionResult> {
+  return apiJson<RestoreVersionResult>(`${BASE}/${id}/restore`, 'Unable to restore version', {
+    method: 'POST',
+    body: { version_number: versionNumber },
   })
 }
 

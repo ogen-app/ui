@@ -52,6 +52,18 @@ export const DELETABLE_STATUSES: PostStatus[] = [
   'not_published',
 ]
 
+/** Snapshot of a post's content, as returned by GET /api/posts/{id}/versions. */
+export type PostVersion = {
+  id: string
+  post_id: string
+  version_number: number
+  content: string
+  note: string
+  /** Known values: 'user', 'assistant'; treat anything else as system-created. */
+  creator: string
+  created_at: string
+}
+
 export type PostPayload = {
   campaign_id: string
   platform_id?: string

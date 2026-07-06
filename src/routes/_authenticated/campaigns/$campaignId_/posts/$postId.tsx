@@ -10,6 +10,7 @@ import { useRightRailSection } from '@/hooks/useRightRailSection'
 import { useRightRailPage } from '@/hooks/useRightRailPage'
 import { useRightRailStore, type RightRailButton } from '@/stores/rightRailStore'
 import {
+  ClockCounterClockwiseIcon,
   GearSixIcon,
   LayoutIcon,
   ListChecksIcon,
@@ -23,6 +24,7 @@ import { PostContentUsageForm } from '@/components/forms/postContentUsageForm'
 import { PostValidationsPanel } from '@/components/forms/postValidations'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActions'
+import { PostVersionsPanel } from '@/components/posts/PostVersionsPanel'
 import { PostPreviewToggle, type PostView } from '@/components/posts/PostPreviewToggle'
 import { PostPreview } from '@/components/posts/preview'
 import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
@@ -50,6 +52,10 @@ function PostPage() {
   } = usePost(postId)
   const { data: campaign } = useCampaign(campaignId)
   const validation = usePostValidation(doc)
+
+  // Remount signal for restores triggered from the Versions panel — the
+  // assistant path has its own (the thread's contentRevision).
+  const [restoreRevision, setRestoreRevision] = useState(0)
 
   const railButtons = useMemo<RightRailButton[]>(
     () =>
@@ -81,6 +87,18 @@ function PostPage() {
                   : { severity: validation.overall },
               panel: ({ close }) => (
                 <PostValidationsPanel report={validation} onClose={close} />
+              ),
+            },
+            {
+              id: 'versions',
+              icon: ClockCounterClockwiseIcon,
+              ariaLabel: 'Versions',
+              panel: ({ close }) => (
+                <PostVersionsPanel
+                  postId={doc.id}
+                  onRestored={() => setRestoreRevision((r) => r + 1)}
+                  onClose={close}
+                />
               ),
             },
           ]
@@ -115,6 +133,7 @@ function PostPage() {
       cancelling={cancelling}
       campaignId={campaignId}
       campaignName={campaign?.name?.trim() || 'Campaign'}
+      restoreRevision={restoreRevision}
     />
   )
 }
@@ -127,6 +146,7 @@ type PostEditorSurfaceProps = {
   cancelling: boolean
   campaignId: string
   campaignName: string
+  restoreRevision: number
 }
 
 function PostEditorSurface({
@@ -137,6 +157,7 @@ function PostEditorSurface({
   cancelling,
   campaignId,
   campaignName,
+  restoreRevision,
 }: PostEditorSurfaceProps) {
   const [titleDraft, setTitleDraft] = useState(doc.title)
   const [view, setView] = useState<PostView>('edit')
@@ -252,7 +273,7 @@ function PostEditorSurface({
                   className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground mb-4"
                 />
                 <PostContentEditor
-                  key={`${doc.id}:${contentRevision}`}
+                  key={`${doc.id}:${contentRevision}:${restoreRevision}`}
                   initialContent={doc.content}
                   onContentChange={handleContentChange}
                   editable={!assistantStreaming}

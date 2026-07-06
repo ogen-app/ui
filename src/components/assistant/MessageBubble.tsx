@@ -1,7 +1,13 @@
+import type { ReactNode } from 'react'
 import { CheckCircleIcon } from '@phosphor-icons/react'
+import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Spinner } from '@/components/ui/spinner'
 import { ToolActivity } from '@/components/assistant/ToolActivity'
-import type { ChatMessage } from '@/types/assistant'
+import { postKey } from '@/hooks/usePost'
+import { getPost } from '@/services/api/posts'
+import { getPlatformInfo } from '@/lib/platformDictionary'
+import type { AssistantCloneResult, ChatMessage } from '@/types/assistant'
 
 /** A single chat turn: a user instruction or a (possibly streaming) model reply. */
 export function MessageBubble({ message }: { message: ChatMessage }) {
@@ -38,14 +44,96 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
         )
       )}
 
-      {!message.pending && message.action === 'edited' && (
-        <div className="flex items-center gap-1.5 text-xs text-secondary-foreground">
-          <CheckCircleIcon className="size-3.5" weight="fill" />
-          <span>Post updated</span>
-        </div>
-      )}
+      {!message.pending && <ActionFooter message={message} />}
 
       {message.error && <p className="text-xs text-destructive">{message.error}</p>}
     </div>
+  )
+}
+
+const SCHEDULED_AT_FORMAT = new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+})
+
+/**
+ * Outcome line under a completed turn. Messages reloaded from history carry
+ * only the action (result payloads are not persisted), so every branch must
+ * render something sensible without its `*Result`.
+ */
+function ActionFooter({ message }: { message: ChatMessage & { role: 'model' } }) {
+  switch (message.action) {
+    case 'edited':
+      return <FooterLine>Post updated</FooterLine>
+    case 'restored': {
+      const r = message.restoreResult
+      if (r?.noOp) return <FooterLine>Content already matched that version</FooterLine>
+      return (
+        <FooterLine>
+          {r
+            ? `Restored from v${r.restoredFromVersion} as v${r.newVersionNumber}`
+            : 'Version restored'}
+        </FooterLine>
+      )
+    }
+    case 'scheduled': {
+      const r = message.scheduleResult
+      const at = r ? new Date(r.scheduledAt) : null
+      return (
+        <FooterLine>
+          {at && !Number.isNaN(at.getTime())
+            ? `Scheduled for ${SCHEDULED_AT_FORMAT.format(at)}${r?.autoPublish ? '' : ' (manual publish)'}`
+            : 'Post scheduled'}
+        </FooterLine>
+      )
+    }
+    case 'cloned':
+      return <CloneFooter result={message.cloneResult} />
+    default:
+      return null
+  }
+}
+
+function FooterLine({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-secondary-foreground">
+      <CheckCircleIcon className="size-3.5" weight="fill" />
+      <span>{children}</span>
+    </div>
+  )
+}
+
+function CloneFooter({ result }: { result?: AssistantCloneResult }) {
+  const platformName = result?.platformId
+    ? getPlatformInfo(result.platformId)?.name
+    : undefined
+
+  // The clone's campaign id is needed for the link route; fetch the clone
+  // (cached under the regular post key, so opening it is already warm).
+  const { data: clone } = useQuery({
+    queryKey: postKey(result?.newPostId ?? ''),
+    queryFn: () => getPost(result!.newPostId),
+    enabled: Boolean(result?.newPostId),
+    staleTime: 60_000,
+  })
+
+  return (
+    <FooterLine>
+      Clone created{platformName ? ` for ${platformName}` : ''}
+      {clone && (
+        <>
+          {' · '}
+          <Link
+            to="/campaigns/$campaignId/posts/$postId"
+            params={{ campaignId: clone.campaign_id, postId: clone.id }}
+            className="text-foreground underline underline-offset-2 hover:no-underline"
+          >
+            Open
+          </Link>
+        </>
+      )}
+    </FooterLine>
   )
 }

@@ -2,7 +2,47 @@
 // in `services/api/postAssistant.ts`; these are the persisted/contractual shapes
 // shared across the assistant store, hooks, and UI.
 
-export type AssistantAction = 'edited' | 'declined'
+export type AssistantAction =
+  | 'edited'
+  | 'declined'
+  | 'cloned'
+  | 'restored'
+  | 'scheduled'
+
+export const ASSISTANT_ACTIONS: readonly AssistantAction[] = [
+  'edited',
+  'declined',
+  'cloned',
+  'restored',
+  'scheduled',
+]
+
+export function isAssistantAction(v: unknown): v is AssistantAction {
+  return (ASSISTANT_ACTIONS as readonly unknown[]).includes(v)
+}
+
+/** Post created by the `clonePost` tool; populated server-side, not by the model. */
+export type AssistantCloneResult = {
+  newPostId: string
+  platformId?: string
+  postType?: string
+  adapted: boolean
+}
+
+/** Outcome of the `restoreVersion` tool. */
+export type AssistantRestoreResult = {
+  restoredFromVersion: number
+  newVersionNumber: number
+  noOp: boolean
+}
+
+/** Outcome of the `schedulePost` tool. */
+export type AssistantScheduleResult = {
+  scheduledAt: string
+  status: string
+  autoPublish: boolean
+  promoted: boolean
+}
 
 export type AssistantMessageRole = 'user' | 'model'
 
@@ -32,10 +72,14 @@ export type AssistantModelContent = {
 export type PostAssistantComplete = {
   action: AssistantAction
   explanation: string
-  /** Full updated post content as Markdown; empty when `action` is `declined`. */
+  /** Full updated post content as Markdown; empty unless `action` is `edited` or `restored`. */
   updatedContent: string
   saveVersion: boolean
   versionNote?: string
+  /** Populated server-side when the matching tool ran during this turn. */
+  cloneResult?: AssistantCloneResult
+  restoreResult?: AssistantRestoreResult
+  scheduleResult?: AssistantScheduleResult
 }
 
 /**
@@ -68,4 +112,12 @@ export type ChatMessage =
       pending: boolean
       /** Set when the turn failed (transport error or in-band `error` event). */
       error?: string
+      /**
+       * Operation outcomes, set from the mid-stream `*_complete` events and
+       * confirmed by the terminal `complete`. Capturing them mid-stream keeps
+       * the outcome visible even if the turn errors after the operation ran.
+       */
+      cloneResult?: AssistantCloneResult
+      restoreResult?: AssistantRestoreResult
+      scheduleResult?: AssistantScheduleResult
     }

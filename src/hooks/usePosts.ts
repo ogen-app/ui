@@ -4,7 +4,8 @@ import { useCallback } from 'react'
 import { createPost, deletePost, listCampaignPosts, updatePost } from '@/services/api/posts'
 import type { Post, PostPayload } from '@/types/posts'
 
-const campaignPostsKey = (campaignId: string) => ['campaigns', campaignId, 'posts'] as const
+export const campaignPostsKey = (campaignId: string) =>
+  ['campaigns', campaignId, 'posts'] as const
 
 export function useCampaignPosts(campaignId: string) {
   return useQuery({
