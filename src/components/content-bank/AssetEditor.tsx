@@ -2,9 +2,10 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
-import type { Block } from "@blocknote/core";
 import "@blocknote/mantine/style.css";
 import "@/blocknote-theme.css";
+import { editorSchema } from "@/lib/blocknoteSchema";
+import { EditorMenus } from "@/components/editor/EditorMenus";
 import { uploadImage } from "@/services/api/images";
 
 type AssetEditorProps = {
@@ -15,13 +16,7 @@ type AssetEditorProps = {
   onDirty?: () => void;
 };
 
-const DEFAULT_CONTENT: Block[] = [
-  {
-    type: "paragraph",
-    props: {},
-    content: [],
-  } as unknown as Block,
-];
+const DEFAULT_CONTENT = [{ type: "paragraph" as const }];
 
 export function AssetEditor({
   initialTitle,
@@ -37,6 +32,7 @@ export function AssetEditor({
   const readyRef = useRef(false);
 
   const editor = useCreateBlockNote({
+    schema: editorSchema,
     initialContent: DEFAULT_CONTENT,
     uploadFile: uploadImage,
   });
@@ -136,7 +132,16 @@ export function AssetEditor({
         rows={1}
         className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground mb-4"
       />
-      <BlockNoteView editor={editor} onChange={handleContentChange} theme="light" />
+      <BlockNoteView
+        editor={editor}
+        onChange={handleContentChange}
+        theme="light"
+        formattingToolbar={false}
+        slashMenu={false}
+        sideMenu={false}
+      >
+        <EditorMenus />
+      </BlockNoteView>
     </div>
   );
 }

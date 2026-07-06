@@ -7,13 +7,15 @@ import { SecondaryNavbarContainer } from "@/components/layout/SecondaryNavbar";
 import { CampaignsListContent } from "@/components/layout/CampaignsListContent";
 import { OverlayOutlet } from "@/components/layout/OverlayOutlet";
 import { UploadTracker } from "@/components/uploads/UploadTracker";
+import { AssistantRuntime } from "@/components/assistant/AssistantRuntime";
 import { GLOBAL_RAIL_SECTION_ID, RightRail } from "@/components/page-primitives/RightRail";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { ZIndex } from "@/config/zIndex";
 import { useRightRailSection } from "@/hooks/useRightRailSection";
 import type { RightRailButton } from "@/stores/rightRailStore";
-import { AIAssistantPanel, StatsPanel } from "@/components/rail-panels/ComingSoonPanel";
-import { ChartBarIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { StatsPanel } from "@/components/rail-panels/ComingSoonPanel";
+import { AssistantPanel } from "@/components/assistant/AssistantPanel";
+import { SparkleIcon, TrendUpIcon } from "@phosphor-icons/react";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -29,10 +31,10 @@ function AuthenticatedLayout() {
     () => [
       {
         id: "ai",
-        icon: ChartBarIcon,
+        icon: SparkleIcon,
         ariaLabel: "AI assistant",
         persistent: true,
-        panel: ({ close }) => <AIAssistantPanel onClose={close} />,
+        panel: ({ close }) => <AssistantPanel onClose={close} />,
       },
       {
         id: "stats",
@@ -66,6 +68,7 @@ function AuthenticatedLayout() {
       </SecondaryNavbarContainer>
       <OverlayOutlet />
       <UploadTracker />
+      <AssistantRuntime />
     </SidebarProvider>
   );
 }

@@ -3,9 +3,15 @@ import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import type { ReactNode } from 'react'
 import type { Icon } from '@phosphor-icons/react'
+import type { ValidationSeverity } from '@/types/validation'
 
 export type RightRailPanelContext = {
   close: () => void
+}
+
+export type RightRailIndicator = {
+  severity: ValidationSeverity
+  count?: number
 }
 
 export type RightRailButton = {
@@ -14,6 +20,9 @@ export type RightRailButton = {
   ariaLabel: string
   panel: ReactNode | ((ctx: RightRailPanelContext) => ReactNode)
   persistent?: boolean
+  // Optional status badge overlaid on the rail button (e.g. validation
+  // errors/warnings). Omit or null for no indicator.
+  indicator?: RightRailIndicator | null
 }
 
 type Section = {

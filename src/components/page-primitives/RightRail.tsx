@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
+import { Indicator } from '@/components/ui/indicator'
 import { cn } from '@/lib'
 import { useRightRailStore, type RightRailButton } from '@/stores/rightRailStore'
 
@@ -90,6 +91,13 @@ export function RightRail({ panelWidth = 'w-120' }: RightRailProps) {
               >
                 <b.icon className="size-4" />
               </Button>
+              {b.indicator && (
+                <Indicator
+                  severity={b.indicator.severity}
+                  count={b.indicator.count}
+                  className="absolute top-0.5 right-0.5 z-20 pointer-events-none ring-2 ring-white"
+                />
+              )}
               <div
                 onClick={() => toggleActiveId(b.id)}
                 className={cn(

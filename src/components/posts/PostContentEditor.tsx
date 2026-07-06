@@ -1,19 +1,16 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useCreateBlockNote } from '@blocknote/react'
 import { BlockNoteView } from '@blocknote/mantine'
-import { BlockNoteSchema, defaultBlockSpecs } from '@blocknote/core'
 import '@blocknote/mantine/style.css'
 import '@/blocknote-theme.css'
+import { editorSchema } from '@/lib/blocknoteSchema'
+import { EditorMenus } from '@/components/editor/EditorMenus'
 import { uploadImage } from '@/services/api/images'
-
-// Image block is intentionally disabled here — posts are per-platform and
-// the image affordance will be re-enabled conditionally per post type.
-const { image: _image, ...postBlockSpecs } = defaultBlockSpecs
-const postSchema = BlockNoteSchema.create({ blockSpecs: postBlockSpecs })
 
 type PostContentEditorProps = {
   initialContent: string
   onContentChange: (content: string) => void
+  editable?: boolean
 }
 
 const DEFAULT_CONTENT = [{ type: 'paragraph' as const }]
@@ -21,11 +18,12 @@ const DEFAULT_CONTENT = [{ type: 'paragraph' as const }]
 export function PostContentEditor({
   initialContent,
   onContentChange,
+  editable = true,
 }: PostContentEditorProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const readyRef = useRef(false)
   const editor = useCreateBlockNote({
-    schema: postSchema,
+    schema: editorSchema,
     initialContent: DEFAULT_CONTENT,
     uploadFile: uploadImage,
   })
@@ -51,5 +49,17 @@ export function PostContentEditor({
     }
   }, [])
 
-  return <BlockNoteView editor={editor} onChange={handleChange} theme="light" />
+  return (
+    <BlockNoteView
+      editor={editor}
+      editable={editable}
+      onChange={handleChange}
+      theme="light"
+      formattingToolbar={false}
+      slashMenu={false}
+      sideMenu={false}
+    >
+      <EditorMenus />
+    </BlockNoteView>
+  )
 }
