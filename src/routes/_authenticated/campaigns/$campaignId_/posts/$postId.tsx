@@ -18,7 +18,8 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { threadKey } from '@/assistant/agents'
-import { useAssistantStore, useThreadContentRevision } from '@/stores/assistantStore'
+import { useAssistantStore } from '@/stores/assistantStore'
+import { usePostContentRevision } from '@/stores/postContentRevisionStore'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm'
 import { PostContentUsageForm } from '@/components/forms/postContentUsageForm'
 import { PostValidationsPanel } from '@/components/forms/postValidations'
@@ -31,6 +32,7 @@ import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
 import { usePostValidation } from '@/hooks/usePostValidation'
 import type { CancelTarget } from '@/services/api/posts'
 import type { Post, PostStatus } from '@/types/posts'
+import { formatTitle } from '@/lib'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 
 export const Route = createFileRoute(
@@ -52,10 +54,6 @@ function PostPage() {
   } = usePost(postId)
   const { data: campaign } = useCampaign(campaignId)
   const validation = usePostValidation(doc)
-
-  // Remount signal for restores triggered from the Versions panel — the
-  // assistant path has its own (the thread's contentRevision).
-  const [restoreRevision, setRestoreRevision] = useState(0)
 
   const railButtons = useMemo<RightRailButton[]>(
     () =>
@@ -84,7 +82,7 @@ function PostPage() {
               indicator:
                 validation.overall === 'pass'
                   ? null
-                  : { severity: validation.overall },
+                  : { tone: validation.overall === 'error' ? 'destructive' : 'warn' },
               panel: ({ close }) => (
                 <PostValidationsPanel report={validation} onClose={close} />
               ),
@@ -94,11 +92,7 @@ function PostPage() {
               icon: ClockCounterClockwiseIcon,
               ariaLabel: 'Versions',
               panel: ({ close }) => (
-                <PostVersionsPanel
-                  postId={doc.id}
-                  onRestored={() => setRestoreRevision((r) => r + 1)}
-                  onClose={close}
-                />
+                <PostVersionsPanel postId={doc.id} onClose={close} />
               ),
             },
           ]
@@ -133,7 +127,6 @@ function PostPage() {
       cancelling={cancelling}
       campaignId={campaignId}
       campaignName={campaign?.name?.trim() || 'Campaign'}
-      restoreRevision={restoreRevision}
     />
   )
 }
@@ -146,7 +139,6 @@ type PostEditorSurfaceProps = {
   cancelling: boolean
   campaignId: string
   campaignName: string
-  restoreRevision: number
 }
 
 function PostEditorSurface({
@@ -157,18 +149,17 @@ function PostEditorSurface({
   cancelling,
   campaignId,
   campaignName,
-  restoreRevision,
 }: PostEditorSurfaceProps) {
   const [titleDraft, setTitleDraft] = useState(doc.title)
   const [view, setView] = useState<PostView>('edit')
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
 
-  // The assistant thread for this post lives in the global assistant panel.
-  // We watch its content revision to remount the editor after an applied edit
-  // (the editor only reads `initialContent` on mount), and its status to lock
+  // Remount the editor whenever a non-editor source (assistant edit/restore,
+  // versions-panel restore) replaces the post's content — the editor only
+  // reads `initialContent` on mount. The assistant thread's status also locks
   // the editor read-only while a turn is streaming.
   const tkey = threadKey({ kind: 'post', targetId: doc.id, title: doc.title })
-  const contentRevision = useThreadContentRevision(tkey)
+  const contentRevision = usePostContentRevision(doc.id)
   const assistantStreaming = useAssistantStore(
     (s) => s.threads[tkey]?.status === 'streaming',
   )
@@ -176,27 +167,31 @@ function PostEditorSurface({
   const setRailActive = useRightRailStore((s) => s.setActiveId)
   const railActive = useRightRailStore((s) => s.activeId)
 
+  // Create-or-focus this post's assistant thread; a returning post reuses its
+  // existing thread (and history) instead of resetting.
+  const focusPostThread = useCallback(
+    (title: string) => {
+      openThread({
+        kind: 'post',
+        targetId: doc.id,
+        title: formatTitle(title, 'Untitled post'),
+      })
+    },
+    [openThread, doc.id],
+  )
+
   const openAssistant = useCallback(() => {
-    openThread({
-      kind: 'post',
-      targetId: doc.id,
-      title: titleDraft.trim() || 'Untitled post',
-    })
+    focusPostThread(titleDraft)
     setRailActive('ai')
-  }, [openThread, setRailActive, doc.id, titleDraft])
+  }, [focusPostThread, setRailActive, titleDraft])
 
   // While the assistant panel is open on a post, focus that post's thread so the
   // panel is always scoped to what you're viewing — whether it was opened via the
-  // header action or the global rail icon. `openThread` is create-or-focus, so a
-  // returning post reuses its existing thread (and history) instead of resetting.
+  // header action or the global rail icon.
   useEffect(() => {
     if (railActive !== 'ai') return
-    openThread({
-      kind: 'post',
-      targetId: doc.id,
-      title: doc.title.trim() || 'Untitled post',
-    })
-  }, [railActive, doc.id, openThread])
+    focusPostThread(doc.title)
+  }, [railActive, doc.title, focusPostThread])
 
   const autosizeTitle = useCallback(() => {
     const el = titleRef.current
@@ -273,7 +268,7 @@ function PostEditorSurface({
                   className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground mb-4"
                 />
                 <PostContentEditor
-                  key={`${doc.id}:${contentRevision}:${restoreRevision}`}
+                  key={`${doc.id}:${contentRevision}`}
                   initialContent={doc.content}
                   onContentChange={handleContentChange}
                   editable={!assistantStreaming}

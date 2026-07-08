@@ -18,21 +18,17 @@ export type AssistantThread = {
   ref: AgentRef
   status: AssistantThreadStatus
   messages: ChatMessage[]
-  /** Thread-level error (e.g. history failed to load, transport failure). */
-  error: string | null
   /**
-   * Bumped by `markContentApplied` after an edit has been refetched into the
-   * post query cache. The post route watches this to remount its editor so it
-   * re-reads the freshly persisted content. Not bumped on `complete` directly —
-   * the runtime invalidates the query first to avoid a stale-content race.
+   * History failed to load — the only failure with an empty transcript to
+   * surface it in. Turn failures render per-message (`ChatMessage.error`).
    */
-  contentRevision: number
+  error: string | null
 }
 
 /**
- * Invoked when a turn completes. Registered once by the runtime (which holds the
- * query client) so the pure store stays React/query-free. Used to invalidate the
- * post query and then call `markContentApplied` when `action` is `edited`.
+ * Invoked when a turn completes. Registered once by the runtime (which holds
+ * the query client) so the pure store stays React/query-free. Applies the
+ * turn's side effects: query invalidation and the editor remount signal.
  */
 export type AssistantCompletionHandler = (
   ref: AgentRef,
@@ -51,7 +47,6 @@ type AssistantState = {
   closeThread: (key: string) => void
   submitInstruction: (key: string, text: string) => void
   cancelTurn: (key: string) => void
-  markContentApplied: (key: string) => void
   setCompletionHandler: (handler: AssistantCompletionHandler | null) => void
 }
 
@@ -149,7 +144,6 @@ export const useAssistantStore = create<AssistantState>()(
             status: 'loading',
             messages: [],
             error: null,
-            contentRevision: 0,
           }
           set((s) => ({
             threads: { ...s.threads, [key]: thread },
@@ -319,7 +313,6 @@ export const useAssistantStore = create<AssistantState>()(
                     ? { ...m, pending: false, error: event.message }
                     : m
                 )
-                patchThread(key, (t) => ({ ...t, error: event.message }))
                 break
             }
           }
@@ -333,7 +326,6 @@ export const useAssistantStore = create<AssistantState>()(
                   ? { ...m, pending: false, error: message }
                   : m
               )
-              patchThread(key, (t) => ({ ...t, error: message }))
             })
             .finally(() => {
               if (aborters.get(key) === controller) aborters.delete(key)
@@ -350,9 +342,6 @@ export const useAssistantStore = create<AssistantState>()(
           aborters.get(key)?.abort()
           aborters.delete(key)
         },
-
-        markContentApplied: (key) =>
-          patchThread(key, (t) => ({ ...t, contentRevision: t.contentRevision + 1 })),
 
         setCompletionHandler: (handler) => set({ completionHandler: handler }),
       }
@@ -373,9 +362,4 @@ export function useOpenThreads(): AssistantThread[] {
       s.openOrder.map((k) => s.threads[k]).filter((t): t is AssistantThread => Boolean(t))
     )
   )
-}
-
-/** Editor remount signal for a given thread (0 when the thread isn't open). */
-export function useThreadContentRevision(key: string): number {
-  return useAssistantStore((s) => s.threads[key]?.contentRevision ?? 0)
 }

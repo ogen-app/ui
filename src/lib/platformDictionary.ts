@@ -27,9 +27,14 @@ export type PlatformInfo = {
   postTypes: PlatformPostType[];
 };
 
+// Canonical platform Sqids, for code that keys behavior to a specific
+// platform (preview layouts, hardcoded limits) rather than iterating PLATFORMS.
+export const LINKEDIN_PLATFORM_ID = "AXqWG7U2qnpt";
+export const THREADS_PLATFORM_ID = "pQ4yxT3SuE57";
+
 export const PLATFORMS: PlatformInfo[] = [
   {
-    id: "AXqWG7U2qnpt",
+    id: LINKEDIN_PLATFORM_ID,
     name: "LinkedIn",
     icon: LinkedinLogoIcon,
     color: "#0A66C2",
@@ -97,7 +102,7 @@ export const PLATFORMS: PlatformInfo[] = [
     ],
   },
   {
-    id: "pQ4yxT3SuE57",
+    id: THREADS_PLATFORM_ID,
     name: "Threads",
     icon: ThreadsLogoIcon,
     color: "#000000",

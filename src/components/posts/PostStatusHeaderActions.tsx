@@ -15,6 +15,7 @@ import {
   usePostStatusActions,
   type PostStatusAction,
 } from '@/hooks/usePostStatusActions'
+import { SHORT_DATE_TIME_FORMAT } from '@/lib/dateTime'
 import type { PostStatusBlocker } from '@/lib/postStatusMachine'
 import type { TransitionStatusResult } from '@/hooks/usePost'
 import type { CancelTarget } from '@/services/api/posts'
@@ -39,13 +40,6 @@ const INTENT_VARIANT = {
 } as const satisfies Record<PostStatusAction['intent'], string>
 
 type IntentVariant = (typeof INTENT_VARIANT)[PostStatusAction['intent']]
-
-const SCHEDULED_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-})
 
 export function PostStatusHeaderActions({
   post,
@@ -209,5 +203,5 @@ function ScheduleSummary({ post, cancelling }: { post: Post; cancelling: boolean
 function formatScheduledAt(iso: string): string {
   const d = new Date(iso)
   if (isNaN(d.getTime())) return ''
-  return SCHEDULED_DATE_FORMAT.format(d)
+  return SHORT_DATE_TIME_FORMAT.format(d)
 }

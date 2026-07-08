@@ -24,11 +24,13 @@ export type AssistantStreamEvent =
   | { type: 'content_delta'; delta: string }
   | { type: 'tool_call'; name: string; input: unknown; ref: string }
   | { type: 'tool_result'; name: string; ref: string; ok: boolean }
-  | { type: 'clone_started'; targetPlatform?: string }
+  // `*_started` frames carry a payload on the wire, but the UI shows progress
+  // via the tool_call chips, so they are mapped without one.
+  | { type: 'clone_started' }
   | { type: 'clone_complete'; result: AssistantCloneResult }
-  | { type: 'restore_started'; targetVersion: number }
+  | { type: 'restore_started' }
   | { type: 'restore_complete'; result: AssistantRestoreResult }
-  | { type: 'schedule_started'; scheduledAt: string; autoPublish: boolean }
+  | { type: 'schedule_started' }
   | { type: 'schedule_complete'; result: AssistantScheduleResult }
   | { type: 'complete'; result: PostAssistantComplete }
   | { type: 'error'; message: string; code?: number }
@@ -111,19 +113,13 @@ function mapFrame(event: string, data: string): AssistantStreamEvent | null {
         ok: Boolean((json as Record<string, unknown> | null)?.ok),
       }
     case 'clone_started':
-      return { type: 'clone_started', targetPlatform: str(json, 'targetPlatform') || undefined }
+    case 'restore_started':
+    case 'schedule_started':
+      return { type: event }
     case 'clone_complete':
       return { type: 'clone_complete', result: toCloneResult(json) }
-    case 'restore_started':
-      return { type: 'restore_started', targetVersion: num(json, 'targetVersion') ?? 0 }
     case 'restore_complete':
       return { type: 'restore_complete', result: toRestoreResult(json) }
-    case 'schedule_started':
-      return {
-        type: 'schedule_started',
-        scheduledAt: str(json, 'scheduledAt'),
-        autoPublish: bool(json, 'autoPublish'),
-      }
     case 'schedule_complete':
       return { type: 'schedule_complete', result: toScheduleResult(json) }
     case 'complete':

@@ -3,15 +3,14 @@ import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import type { ReactNode } from 'react'
 import type { Icon } from '@phosphor-icons/react'
-import type { ValidationSeverity } from '@/types/validation'
+import type { StatusTone } from '@/components/ui/status-badge'
 
 export type RightRailPanelContext = {
   close: () => void
 }
 
 export type RightRailIndicator = {
-  severity: ValidationSeverity
-  count?: number
+  tone: StatusTone
 }
 
 export type RightRailButton = {

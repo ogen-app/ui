@@ -24,9 +24,9 @@ export type PostTypeRuleView = {
   rule: ResolvedPostTypeRule | null
 }
 
-// Severity used by the rail indicator. A string union so a new level
-// (e.g. 'info') is a one-line addition every severity→token map picks
-// up. 'pending' checks roll up into 'warning' for the indicator.
+// Roll-up severity of a validation report. 'pending' checks roll up
+// into 'warning'. Callers map this onto a UI tone where needed (e.g.
+// the rail indicator).
 export type ValidationSeverity = 'error' | 'warning'
 
 // Outcome of a single check.

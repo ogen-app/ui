@@ -7,8 +7,13 @@ import type { AssistantThread } from '@/stores/assistantStore'
 export function AssistantChat({ thread }: { thread: AssistantThread }) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  // Coalesced to one scroll per frame — during streaming every token replaces
+  // `messages`, and an uncoalesced scrollIntoView forces a reflow per token.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: 'end' })
+    const frame = requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ block: 'end' })
+    })
+    return () => cancelAnimationFrame(frame)
   }, [thread.messages])
 
   if (thread.status === 'loading' && thread.messages.length === 0) {

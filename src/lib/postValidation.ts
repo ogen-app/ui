@@ -32,7 +32,7 @@ export function toPlainText(markdown: string): string {
     .replace(/\r/g, '')
 }
 
-export function plainTextLength(markdown: string): number {
+function plainTextLength(markdown: string): number {
   return toPlainText(markdown).trim().length
 }
 

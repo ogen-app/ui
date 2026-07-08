@@ -1,36 +1,17 @@
 import { cn } from '@/lib'
-import type { ValidationSeverity } from '@/types/validation'
-
-// Severity-driven status dot. Color is driven entirely by the
-// SEVERITY_DOT map, so adding a new severity (e.g. 'info') is a
-// one-line change here plus the union in types/validation.ts.
-const SEVERITY_DOT: Record<ValidationSeverity, string> = {
-  error: 'bg-destructive', // red
-  warning: 'bg-chart-5', // amber/yellow
-}
+import { TONE_DOT, type StatusTone } from '@/components/ui/status-badge'
 
 type IndicatorProps = {
-  severity: ValidationSeverity
-  // Optional badge count; when omitted (or <= 1) a plain dot renders.
-  count?: number
+  tone: StatusTone
   className?: string
 }
 
-export function Indicator({ severity, count, className }: IndicatorProps) {
-  const showCount = typeof count === 'number' && count > 1
+/** Small status dot, e.g. overlaid on a rail button. Colors follow StatusBadge tones. */
+export function Indicator({ tone, className }: IndicatorProps) {
   return (
     <span
       aria-hidden
-      className={cn(
-        'flex items-center justify-center rounded-full text-white',
-        showCount
-          ? 'min-w-3.5 h-3.5 px-1 text-[9px] font-semibold leading-none'
-          : 'size-2',
-        SEVERITY_DOT[severity],
-        className,
-      )}
-    >
-      {showCount ? count : null}
-    </span>
+      className={cn('size-2 rounded-full', TONE_DOT[tone], className)}
+    />
   )
 }

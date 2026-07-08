@@ -10,19 +10,11 @@ import {
   usePostVersions,
   useRestorePostVersion,
 } from '@/hooks/usePostVersions'
+import { SHORT_DATE_TIME_FORMAT } from '@/lib/dateTime'
 import type { PostVersion } from '@/types/posts'
-
-const VERSION_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-})
 
 type Props = {
   postId: string
-  /** Called after a restore has been applied to the post query cache. */
-  onRestored?: () => void
   onClose?: () => void
 }
 
@@ -32,7 +24,7 @@ type Props = {
  * HEAD version, unsaved edits are auto-snapshotted first), so no confirmation
  * step is required.
  */
-export function PostVersionsPanel({ postId, onRestored, onClose }: Props) {
+export function PostVersionsPanel({ postId, onClose }: Props) {
   const { data: versions, isLoading, error } = usePostVersions(postId)
   const createVersion = useCreatePostVersion(postId)
   const restoreVersion = useRestorePostVersion(postId)
@@ -99,11 +91,7 @@ export function PostVersionsPanel({ postId, onRestored, onClose }: Props) {
                 restoreVersion.variables === v.version_number
               }
               disabled={restoreVersion.isPending}
-              onRestore={() =>
-                restoreVersion.mutate(v.version_number, {
-                  onSuccess: () => onRestored?.(),
-                })
-              }
+              onRestore={() => restoreVersion.mutate(v.version_number)}
             />
           ))}
           {restoreVersion.error && (
@@ -148,7 +136,7 @@ function VersionRow({ version, isLatest, restoring, disabled, onRestore }: Versi
         )}
         {!Number.isNaN(created.getTime()) && (
           <span className="text-xs text-tertiary-foreground">
-            {VERSION_DATE_FORMAT.format(created)}
+            {SHORT_DATE_TIME_FORMAT.format(created)}
           </span>
         )}
       </div>

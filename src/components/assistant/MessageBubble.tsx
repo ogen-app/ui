@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { memo, type ReactNode } from 'react'
 import { CheckCircleIcon } from '@phosphor-icons/react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -6,11 +6,21 @@ import { Spinner } from '@/components/ui/spinner'
 import { ToolActivity } from '@/components/assistant/ToolActivity'
 import { postKey } from '@/hooks/usePost'
 import { getPost } from '@/services/api/posts'
+import { SHORT_DATE_TIME_FORMAT } from '@/lib/dateTime'
 import { getPlatformInfo } from '@/lib/platformDictionary'
 import type { AssistantCloneResult, ChatMessage } from '@/types/assistant'
 
-/** A single chat turn: a user instruction or a (possibly streaming) model reply. */
-export function MessageBubble({ message }: { message: ChatMessage }) {
+/**
+ * A single chat turn: a user instruction or a (possibly streaming) model reply.
+ * Memoized because each streamed token replaces the thread's `messages` array —
+ * `patchMessage` keeps untouched siblings referentially stable, so only the
+ * streaming bubble re-renders.
+ */
+export const MessageBubble = memo(function MessageBubble({
+  message,
+}: {
+  message: ChatMessage
+}) {
   if (message.role === 'user') {
     return (
       <div className="self-end max-w-[85%] bg-secondary px-3 py-2">
@@ -49,13 +59,6 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
       {message.error && <p className="text-xs text-destructive">{message.error}</p>}
     </div>
   )
-}
-
-const SCHEDULED_AT_FORMAT = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
 })
 
 /**
@@ -84,7 +87,7 @@ function ActionFooter({ message }: { message: ChatMessage & { role: 'model' } })
       return (
         <FooterLine>
           {at && !Number.isNaN(at.getTime())
-            ? `Scheduled for ${SCHEDULED_AT_FORMAT.format(at)}${r?.autoPublish ? '' : ' (manual publish)'}`
+            ? `Scheduled for ${SHORT_DATE_TIME_FORMAT.format(at)}${r?.autoPublish ? '' : ' (manual publish)'}`
             : 'Post scheduled'}
         </FooterLine>
       )

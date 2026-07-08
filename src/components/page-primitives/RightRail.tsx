@@ -93,8 +93,7 @@ export function RightRail({ panelWidth = 'w-120' }: RightRailProps) {
               </Button>
               {b.indicator && (
                 <Indicator
-                  severity={b.indicator.severity}
-                  count={b.indicator.count}
+                  tone={b.indicator.tone}
                   className="absolute top-0.5 right-0.5 z-20 pointer-events-none ring-2 ring-white"
                 />
               )}

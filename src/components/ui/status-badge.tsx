@@ -8,7 +8,7 @@ export type StatusTone =
   | 'progress'
   | 'warn'
 
-const TONE_DOT: Record<StatusTone, string> = {
+export const TONE_DOT: Record<StatusTone, string> = {
   neutral: 'bg-tertiary-foreground',
   positive: 'bg-positive',
   negative: 'bg-negative',

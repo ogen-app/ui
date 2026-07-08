@@ -3,9 +3,9 @@ import { useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { postKey } from '@/hooks/usePost'
 import { campaignPostsKey } from '@/hooks/usePosts'
 import { postVersionsKey } from '@/hooks/usePostVersions'
-import { threadKey } from '@/assistant/agents'
 import type { Post } from '@/types/posts'
 import { useAssistantStore, type AssistantCompletionHandler } from '@/stores/assistantStore'
+import { markPostContentReplaced } from '@/stores/postContentRevisionStore'
 
 /**
  * Bridges the React/query-free assistant store to TanStack Query. Mount once
@@ -15,16 +15,15 @@ import { useAssistantStore, type AssistantCompletionHandler } from '@/stores/ass
  *
  * For content-changing actions (`edited`, `restored`) the backend has already
  * persisted the new content, so we invalidate the post query (refetch into
- * cache) and only THEN bump the thread's `contentRevision`. The post route
- * watches that revision to remount its editor; ordering the refetch first
- * guarantees the editor re-reads fresh content rather than the stale pre-edit
- * version.
+ * cache) and only THEN mark the content replaced. The post route watches that
+ * revision to remount its editor; ordering the refetch first guarantees the
+ * editor re-reads fresh content rather than the stale pre-edit version.
  */
 export function AssistantRuntime() {
   const qc = useQueryClient()
 
   useEffect(() => {
-    const { setCompletionHandler, markContentApplied } = useAssistantStore.getState()
+    const { setCompletionHandler } = useAssistantStore.getState()
 
     const handler: AssistantCompletionHandler = (ref, result) => {
       if (ref.kind !== 'post' || !ref.targetId) return
@@ -38,7 +37,7 @@ export function AssistantRuntime() {
         case 'edited':
         case 'restored':
           qc.invalidateQueries({ queryKey: postKey(postId) }).finally(() => {
-            markContentApplied(threadKey(ref))
+            markPostContentReplaced(postId)
           })
           break
         case 'scheduled':

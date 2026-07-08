@@ -9,8 +9,7 @@ import { PreviewAuthorHeader } from '../parts/PreviewAuthorHeader'
 import { PreviewBody } from '../parts/PreviewBody'
 import { PreviewEngagementBar } from '../parts/PreviewEngagementBar'
 import { PreviewMedia } from '../parts/PreviewMedia'
-
-const LINKEDIN_BLUE = '#0A66C2'
+import { getPlatformInfo } from '@/lib/platformDictionary'
 
 const ACTIONS = [
   { icon: ThumbsUpIcon, label: 'Like' },
@@ -28,7 +27,7 @@ export function LinkedInPost({ post, media }: PreviewLayoutProps) {
         <PreviewAuthorHeader
           name="Your Company"
           subtitle="12,480 followers · Promoted · Now"
-          accent={LINKEDIN_BLUE}
+          accent={getPlatformInfo(post.platform_id)?.color}
         />
         <PreviewBody content={post.content} />
       </div>

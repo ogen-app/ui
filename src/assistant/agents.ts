@@ -21,8 +21,3 @@ export type AgentRef = {
 export function threadKey(ref: AgentRef): string {
   return `${ref.kind}:${ref.targetId ?? 'root'}`
 }
-
-/** Whether an agent kind currently has a backing implementation. */
-export function isAgentImplemented(ref: AgentRef): boolean {
-  return ref.kind === 'post' && Boolean(ref.targetId)
-}
