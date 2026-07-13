@@ -12,6 +12,11 @@ import type { SignupPayload } from "@/types/tenant";
 import type { User } from "@/types/user";
 import { useAuthStore } from "@/stores/authStore";
 
+/**
+ * Login mutation. On success it invalidates the cached session probe and
+ * re-probes through the same path the root guard uses (`GET
+ * /api/current_user`), hydrating the auth store with the user + tenant.
+ */
 export function useLogin() {
   const setUser = useAuthStore((s) => s.setUser);
   return useMutation<Session, Error, LoginPayload>({
@@ -20,8 +25,14 @@ export function useLogin() {
       // Re-probe through the same cached path the root guard uses: one
       // GET /api/current_user resolves the user + tenant and primes the cache.
       invalidateSession();
-      const user = await checkSession();
-      if (user) setUser(user);
+      try {
+        const user = await checkSession();
+        if (user) setUser(user);
+      } catch {
+        // A hiccup here (e.g. transient ServerUnavailableError) must not
+        // block the caller-level onSuccess: the login itself succeeded, and
+        // the root guard re-probes on the post-login navigation anyway.
+      }
     },
   });
 }

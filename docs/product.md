@@ -142,7 +142,7 @@ campaign, targets a `platform_id` + `platform_post_type`, and carries editable
 schedule, and the assets it drew on. Its lifecycle is a **state machine**
 (`src/lib/postStatusMachine.ts`) mirroring the server's `ValidPostTransitions`:
 
-```
+```text
 draft → ready_for_publish → scheduled                         → published / failed
                           → scheduled_for_manual_publishing    → published / not_published
 ```
@@ -264,7 +264,7 @@ backlog, from Linear (status as of this writing):
 - **Multi-tenancy front-end completion** — ✅ landed 2026-07 (real
   `current_user` identity + tenant in the UI, workspace settings with rename,
   per-instance API-key config removed; in-app account-connect flow landed
-  2026-07-06). Remaining: an invite-teammate UI (CON-26, unspeced) and an
+  2026-07-06). Remaining: an invite-teammate UI (CON-26, unspecified) and an
   account **disconnect** path (needs a new API endpoint).
 
 **Secondary — desirable, not a main goal**

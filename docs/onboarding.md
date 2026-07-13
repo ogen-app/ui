@@ -31,7 +31,7 @@ The only tenant-creation path. `AuthRegisterForm`
 organization name + first/last name + email + password, and `useSignup()`
 (`src/hooks/useAuth.ts`) calls `signup()` (`src/services/api/tenants.ts`):
 
-```
+```text
 POST /api/tenants                     (public, unauthenticated)
 { tenant: { name }, user: { name, email, password } }
 → 201 { tenant, user, session } + Set-Cookie: c3_session
@@ -57,7 +57,7 @@ root guard stashed in `?redirect=` (falling back to `/`).
 Auth is guarded **once**, in the root route's `beforeLoad` (never on
 `_authenticated`):
 
-```
+```text
 probe(checkSession)                    — one GET /api/current_user
 ├─ unreachable (network / 5xx → ServerUnavailableError)
 │    → redirect /server-unavailable  ("Try again" re-runs the guard)

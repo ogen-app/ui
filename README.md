@@ -27,7 +27,7 @@ Requires Node ≥ 24 (see `.nvmrc`) and pnpm (pinned via `packageManager`).
 ```bash
 corepack enable
 pnpm install
-pnpm dev        # http://localhost:5173
+pnpm dev        # http://localhost:9002
 ```
 
 The dev server proxies `/api` to the API (default `http://localhost:9001`; set

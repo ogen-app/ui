@@ -49,7 +49,10 @@ function ConnectPlatformsSectionComponent() {
   const startConnect = (view: PlatformView) => {
     // Pre-open the tab inside the click gesture so blockers allow it; null
     // when blocked anyway — the modal then leans on its fallback link.
+    // `noopener` would return null and break the navigate-later pattern, so
+    // sever the reverse handle manually before the third-party page loads.
     const popup = window.open('', '_blank')
+    if (popup) popup.opener = null
     connectLink.reset()
     connectLink.mutate(view.info.zernioId, {
       onSuccess: (r) => {
@@ -104,6 +107,7 @@ function ConnectPlatformsSectionComponent() {
   )
 }
 
+/** A clickable tile for one not-yet-connected platform. */
 function PlatformTile({
   view,
   disabled,
@@ -133,6 +137,11 @@ function PlatformTile({
   )
 }
 
+/**
+ * Guides the OAuth hand-off: shows the pending/error/link states, keeps
+ * polling the platform list while the tab is open, and flips to a success
+ * view once the account is mirrored back.
+ */
 function ConnectPlatformModal({
   view,
   link,
@@ -236,6 +245,7 @@ function ConnectPlatformModal({
   )
 }
 
+/** Renders the connect link's expiry as a local HH:MM, or "soon" if unparsable. */
 function formatExpiry(iso: string): string {
   const d = new Date(iso)
   return Number.isNaN(d.getTime())
@@ -243,6 +253,7 @@ function formatExpiry(iso: string): string {
     : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+/** Maps typed Zernio errors (rate limit, disabled, degraded) to friendly copy. */
 function connectErrorMessage(err: unknown): string {
   if (err instanceof ZernioError) {
     switch (err.code) {
