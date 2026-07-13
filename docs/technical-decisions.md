@@ -65,6 +65,43 @@ by it.
 **Where.** `lib/postStatusMachine.ts`, `hooks/usePost.ts` (`cancelScheduled`),
 `services/api/posts.ts`.
 
+## Scheduling uses the dedicated endpoint, not the status PUT {#schedule-endpoint}
+
+**Decision.** The `ready_for_publish → scheduled` edge calls
+`POST /api/posts/:id/schedule` (a `schedule` mechanism), not a `PUT` that flips
+the status. The server validates `scheduled_at` there (required, in the
+future) and routes auto- vs manual-publish through the workspace allowlist;
+the response carries the routed status, which the UI adopts as-is.
+
+**Why.** The PUT path also accepts this edge, but its server side
+(`schedule.Service.RouteAndPersist`) deliberately skips the date validation —
+"the PUT path keeps its historical, narrower behaviour". A dateless or past
+`scheduled_at` through PUT enqueues a Zernio submit that publishes almost
+immediately (the submit job falls back to `now + 1min` when the date is nil).
+The dedicated endpoint rejects both with a 400. The FE additionally blocks
+the action client-side (`getTransitionBlockers` requires a future date on
+both schedule edges).
+
+Two deliberate asymmetries:
+
+- **"Schedule for manual publish" stays a plain PUT.** The schedule endpoint
+  always routes by the allowlist, so it would send an allowlisted platform to
+  auto-publish against the user's explicit manual choice. The PUT edge is
+  respected by the server (no routing, no Zernio job); its date is a reminder,
+  validated client-side only.
+- **`scheduled_at` is locked while `scheduled` and once `published`**
+  (`canEditScheduledAt`). The Zernio submission is handed the publish time
+  right after scheduling, so a later PUT would change the displayed date
+  without moving the actual publish — the calendar drag and the settings-form
+  date picker both refuse. Unschedule (cancel), then re-schedule.
+
+**Where.** `services/api/posts.ts` (`schedulePost`), `hooks/usePost.ts`
+(`schedule`), `lib/postStatusMachine.ts` (`mechanism: 'schedule'`,
+`getTransitionBlockers`, `canEditScheduledAt`),
+`components/campaigns/calendar/PostCard.tsx` / `WeeklyCalendar.tsx`,
+`components/forms/postSettingsForm/PostSettingsForm.tsx`. Server:
+`src/handlers/posts.go` (`Schedule`), `src/post_actions/schedule/schedule.go`.
+
 ## The Query cache doubles as the post editor's document store
 
 **Decision.** `usePost.changeDoc()` mutates the cached post in place

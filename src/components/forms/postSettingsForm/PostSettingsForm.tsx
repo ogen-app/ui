@@ -23,6 +23,7 @@ import {
 import { useCampaign } from '@/hooks/useCampaigns'
 import { useDeletePost } from '@/hooks/usePosts'
 import { cn } from '@/lib'
+import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import type { Post } from '@/types/posts'
 import { CampaignPostTypeSelect } from './CampaignPostTypeSelect'
 
@@ -103,6 +104,10 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
   const platformId = form.watch('platform_id')
   const platformPostType = form.watch('platform_post_type')
   const tzLabel = useMemo(() => getLocalTimezoneLabel(), [])
+  // While `scheduled` the Zernio submission owns the publish time — an
+  // edit here would change the displayed date without moving the actual
+  // publish. Once `published` the date is history.
+  const scheduleLocked = !canEditScheduledAt(doc.status)
 
   useEffect(() => {
     const sub = form.watch((values, info) => {
@@ -190,7 +195,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                         <span className="ml-2 text-xs font-normal text-tertiary-foreground">
                           ({tzLabel} time zone)
                         </span>
-                        {field.value && (
+                        {field.value && !scheduleLocked && (
                           <button
                             type="button"
                             onClick={() => field.onChange(null)}
@@ -207,6 +212,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                             onChange={(nextDate) =>
                               field.onChange(fromLocalParts(nextDate ?? '', timeStr))
                             }
+                            disabled={scheduleLocked}
                           />
                         </div>
                         <div className="relative w-24">
@@ -216,7 +222,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                             onChange={(e) =>
                               field.onChange(fromLocalParts(dateStr, e.target.value))
                             }
-                            disabled={!dateStr}
+                            disabled={scheduleLocked || !dateStr}
                             data-empty={!timeStr}
                             className={cn(
                               'w-24 appearance-none',
@@ -231,6 +237,12 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                           )}
                         </div>
                       </div>
+                      {scheduleLocked && doc.status === 'scheduled' && (
+                        <p className="text-xs text-tertiary-foreground">
+                          The date is locked while the post is scheduled —
+                          unschedule it to pick a new one.
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )

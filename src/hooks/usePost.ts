@@ -4,6 +4,7 @@ import {
   cancelPost,
   getPost,
   postToPayload,
+  schedulePost,
   updatePost,
   type CancelTarget,
 } from '@/services/api/posts'
@@ -26,6 +27,11 @@ type UsePostResult = {
   doc: Post | undefined
   changeDoc: (fn: (p: Post) => void) => void
   transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
+  // Schedules a ready_for_publish post via POST /api/posts/:id/schedule
+  // (NOT a status PUT — that path skips the server's date validation).
+  // The returned post carries the allowlist-routed status: `scheduled`
+  // or `scheduled_for_manual_publishing`.
+  schedule: () => Promise<TransitionStatusResult>
   // Requests cancellation of a Scheduled post via the cancel endpoint. The
   // status doesn't change synchronously — the poll above picks up the flip
   // once the worker confirms. Kept separate from transitionStatus so a
@@ -120,6 +126,37 @@ export function usePost(postId: string): UsePostResult {
     [postId, qc],
   )
 
+  // Scheduling goes through the dedicated endpoint so the server validates
+  // the date (required, in the future) and routes auto- vs manual-publish
+  // via the allowlist. No optimistic status flip: the routed status is the
+  // server's decision, so we wait for the response. Pending autosave edits
+  // are persisted first — the schedule must capture what the user sees,
+  // and the schedule endpoint's body carries only the date.
+  const schedule = useCallback(async (): Promise<TransitionStatusResult> => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    const pending = pendingRef.current
+    pendingRef.current = null
+    const base = pending ?? qc.getQueryData<Post>(postKey(postId))
+    if (!base) return { ok: false, error: 'Post not loaded' }
+    if (!base.scheduled_at) return { ok: false, error: 'Set a publish date first' }
+    genRef.current += 1
+    try {
+      if (pending) {
+        await updatePost(postId, postToPayload(pending))
+      }
+      const result = await schedulePost(postId, base.scheduled_at)
+      qc.setQueryData(postKey(postId), result.post)
+      return { ok: true, post: result.post }
+    } catch (err) {
+      qc.invalidateQueries({ queryKey: postKey(postId) })
+      const message = err instanceof Error ? err.message : 'Unable to schedule post'
+      return { ok: false, error: message }
+    }
+  }, [postId, qc])
+
   // Cancellation is asynchronous on the server: it enqueues a Zernio
   // cancel job and the post stays `scheduled` until the worker confirms,
   // then transitions to `target`. We don't optimistically flip the status
@@ -175,6 +212,7 @@ export function usePost(postId: string): UsePostResult {
     doc: query.data,
     changeDoc,
     transitionStatus,
+    schedule,
     cancelScheduled,
     cancelling,
     loading: query.isLoading,

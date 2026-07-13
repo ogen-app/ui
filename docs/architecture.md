@@ -24,7 +24,7 @@ Path alias: `@/` → `src/`. Node ≥ 24.15, pnpm (pinned via `packageManager`).
 
 ## Source layout
 
-```
+```text
 src/
   routes/          File-based routes (see Routing). *.gen.ts is generated.
   components/
@@ -243,8 +243,10 @@ without a round-trip. **These mirror specific Go files and must be kept in sync*
 (the server remains the source of truth and rejects violations):
 
 - `postStatusMachine.ts` — transitions, action metadata (button/menu labels,
-  intent, user-vs-system, transition-vs-cancel), and transition blockers.
-  Mirrors `models/post.go`.
+  intent, user-vs-system, transition/schedule/cancel mechanism), transition
+  blockers, and the `scheduled_at` edit lock (`canEditScheduledAt`). Mirrors
+  `models/post.go` and the schedule-service validation
+  (`post_actions/schedule/schedule.go`).
 - `platformDictionary.ts` — platform display metadata + `buildPlatformViews()`,
   which partitions post types into allowed/available/unavailable using publisher
   connection state.

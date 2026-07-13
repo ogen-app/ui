@@ -1,4 +1,4 @@
-import type { Post, PostPayload } from '@/types/posts'
+import type { Post, PostPayload, PostStatus } from '@/types/posts'
 import { apiJson, apiVoid } from './http'
 
 const BASE = '/api/posts'
@@ -25,6 +25,31 @@ export function updatePost(id: string, payload: PostPayload): Promise<Post> {
 
 export function deletePost(id: string): Promise<void> {
   return apiVoid(`${BASE}/${id}`, 'Unable to delete post', { method: 'DELETE' })
+}
+
+export type ScheduleResult = {
+  post: Post
+  // The routed status: the server consults the workspace auto-publish
+  // allowlist, so a schedule request can land in
+  // `scheduled_for_manual_publishing` even though the user asked to
+  // auto-publish.
+  status: Extract<PostStatus, 'scheduled' | 'scheduled_for_manual_publishing'>
+  auto_publish: boolean
+  promoted: boolean
+}
+
+/**
+ * Schedules a `ready_for_publish` post via the dedicated schedule endpoint
+ * (`schedule.Service` in src/post_actions/schedule/schedule.go). Unlike the
+ * status-PUT path, the server validates `scheduled_at` here (required, in
+ * the future) and routes auto- vs manual-publish via the allowlist — the
+ * returned post carries the routed status.
+ */
+export function schedulePost(id: string, scheduledAt: string): Promise<ScheduleResult> {
+  return apiJson<ScheduleResult>(`${BASE}/${id}/schedule`, 'Unable to schedule post', {
+    method: 'POST',
+    body: { scheduled_at: scheduledAt },
+  })
 }
 
 /**

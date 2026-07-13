@@ -73,6 +73,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **Unscheduling a post is a `cancel`, not a status `PUT`** — see
   `lib/postStatusMachine.ts` and `docs/technical-decisions.md#cancel-vs-transition`.
   Getting this wrong can publish a post the user thought was cancelled.
+- **Scheduling a post is a `schedule`, not a status `PUT`** — it goes through
+  `POST /api/posts/:id/schedule` (server validates the date and routes
+  auto/manual); the PUT path skips date validation. `scheduled_at` is locked
+  while `scheduled`/`published` (`canEditScheduledAt`). See
+  `docs/technical-decisions.md#schedule-endpoint`.
 - **`src/lib/*` mirrors Go server rules** (`postStatusMachine`, `assetStatus`,
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.

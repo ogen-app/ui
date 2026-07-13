@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { CaretDownIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
 import { useUpdatePost } from '@/hooks/usePosts'
 import { postToPayload } from '@/services/api/posts'
+import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { PostCard } from './PostCard'
 import { addDays, isSameDay, startOfWeek } from './date'
 import { cn } from '@/lib'
@@ -96,6 +97,9 @@ function WeeklyCalendarComponent({
 
   const applyDrop = useCallback(
     (post: Post, targetDay: Date | null) => {
+      // PostCard already refuses to start these drags; this guards the
+      // drop side against stale cards and native link drags.
+      if (!canEditScheduledAt(post.status)) return
       if (targetDay === null) {
         if (post.scheduled_at === null) return
         updatePost({

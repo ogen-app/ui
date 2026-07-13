@@ -5,6 +5,7 @@ import type { Post } from '@/types/posts'
 import { POST_STATUS_LABELS } from '@/types/posts'
 import { cn, formatTitle } from '@/lib'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
+import { canEditScheduledAt } from '@/lib/postStatusMachine'
 
 type PostCardProps = {
   post: Post
@@ -45,12 +46,21 @@ function PostCardComponent({ post }: PostCardProps) {
       })
     : null
 
+  // Dragging rewrites scheduled_at, which is locked while `scheduled`
+  // (the Zernio submission owns the publish time) and once `published`.
+  // Anchors are natively draggable, so also block dragstart itself.
+  const draggable = canEditScheduledAt(post.status)
+
   return (
     <Link
       to="/campaigns/$campaignId/posts/$postId"
       params={{ campaignId: post.campaign_id, postId: post.id }}
-      draggable
+      draggable={draggable}
       onDragStart={(e) => {
+        if (!draggable) {
+          e.preventDefault()
+          return
+        }
         e.dataTransfer.setData('text/plain', post.id)
         e.dataTransfer.effectAllowed = 'move'
       }}

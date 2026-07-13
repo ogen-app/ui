@@ -22,6 +22,7 @@ import type { CancelTarget } from '@/services/api/posts'
 type Props = {
   post: Post
   transitionStatus: (next: Post['status']) => Promise<TransitionStatusResult>
+  schedule: () => Promise<TransitionStatusResult>
   cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
   cancelling: boolean
 }
@@ -50,12 +51,14 @@ const SCHEDULED_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
 export function PostStatusHeaderActions({
   post,
   transitionStatus,
+  schedule,
   cancelScheduled,
   cancelling,
 }: Props) {
   const { current, actions, pending } = usePostStatusActions(
     post,
     transitionStatus,
+    schedule,
     cancelScheduled,
     cancelling,
   )
