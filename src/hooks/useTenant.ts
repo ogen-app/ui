@@ -14,6 +14,10 @@ export function useCurrentTenant() {
   });
 }
 
+/**
+ * Renames the tenant; on success it updates the query cache and the auth
+ * store so the sidebar's workspace label refreshes immediately.
+ */
 export function useRenameTenant() {
   const qc = useQueryClient();
   return useMutation({

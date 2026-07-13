@@ -39,6 +39,7 @@ export function rawUserToUser(raw: RawUser): User {
   };
 }
 
+/** `POST /api/users` — adds a user to the caller's tenant (future invite flow). */
 export async function register(payload: RegisterPayload): Promise<User> {
   const raw = await apiJson<RawUser>("/api/users", "Unable to create account", {
     method: "POST",

@@ -14,6 +14,7 @@ import { apiUrl } from "./base";
 import { ServerUnavailableError, errorMessage, fetchOrThrowUnavailable } from "./errors";
 import { rawUserToUser, type RawUser } from "./users";
 
+/** `POST /api/sessions` — opens a session; the cookie is set by the server. */
 export async function login(payload: LoginPayload): Promise<Session> {
   const res = await fetch(apiUrl("/api/sessions"), {
     method: "POST",
@@ -27,6 +28,7 @@ export async function login(payload: LoginPayload): Promise<Session> {
   return (await res.json()) as Session;
 }
 
+/** `DELETE /api/sessions` — ends the current session. */
 export async function logout(): Promise<void> {
   const res = await fetch(apiUrl("/api/sessions"), {
     method: "DELETE",
@@ -56,10 +58,12 @@ export function checkSession(): Promise<User | null> {
   return sessionCached;
 }
 
+/** Drops the cached probe so the next `checkSession()` hits the server. */
 export function invalidateSession(): void {
   sessionCached = null;
 }
 
+/** The uncached probe behind `checkSession()` — see the module docstring. */
 async function fetchSession(): Promise<User | null> {
   // A network rejection surfaces as `ServerUnavailableError` (server down)
   // rather than being flattened into "not authenticated".

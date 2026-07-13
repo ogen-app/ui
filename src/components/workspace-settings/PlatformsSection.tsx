@@ -87,6 +87,7 @@ function connectionStatus(view: PlatformView): ConnectionStatus {
   }
 }
 
+/** One connected platform: status badge, post-type chips, cadence/constraints. */
 function PlatformRow({ view }: { view: PlatformView }) {
   const { platform, info } = view
   const accountPublishers = view.connectedPublishers.filter((p) => p.accounts.length > 0)
@@ -122,6 +123,7 @@ function PlatformRow({ view }: { view: PlatformView }) {
   )
 }
 
+/** Post types the platform allows, grouped per connected publisher. */
 function PostTypeChips({ view }: { view: PlatformView }) {
   const groups = view.connectedPublishers.map((pub) => ({
     key: pub.id,
@@ -138,6 +140,7 @@ function PostTypeChips({ view }: { view: PlatformView }) {
   )
 }
 
+/** A labeled row of chips, or `emptyText` when there are none. */
 function ChipGroup({
   label,
   items,
@@ -188,6 +191,7 @@ function DisconnectButton() {
   )
 }
 
+/** Corner pencil that opens the (read-only) platform details modal. */
 function PlatformEditIconButton({ platform }: { platform: Platform }) {
   const [open, setOpen] = useState(false)
   return (
@@ -211,6 +215,7 @@ function PlatformEditIconButton({ platform }: { platform: Platform }) {
   )
 }
 
+/** Read-only view of the platform's cadence and constraints. */
 function PlatformDetailsModal({
   platform,
   open,
@@ -256,6 +261,7 @@ function PlatformDetailsModal({
   )
 }
 
+/** The publisher's connected accounts, one `AccountRow` each. */
 function PublisherAccounts({ publisher }: { publisher: PlatformPublisher }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -271,6 +277,7 @@ function PublisherAccounts({ publisher }: { publisher: PlatformPublisher }) {
   )
 }
 
+/** Avatar + handle for one connected account; flags inactive ones. */
 function AccountRow({ account }: { account: PublisherAccount }) {
   const initial = (account.display_name || account.username || '?').slice(0, 1).toUpperCase()
   return (

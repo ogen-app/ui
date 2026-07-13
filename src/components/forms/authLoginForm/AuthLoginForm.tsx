@@ -8,6 +8,10 @@ import { useLogin } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
 import { loginSchema, cn } from '@/lib'
 
+/**
+ * Email/password login form. On success it returns the user to the in-app
+ * path the root guard bounced them from (`?redirect=`), defaulting to `/`.
+ */
 export function AuthLoginForm() {
   const router = useRouter()
   const { redirect } = useSearch({ from: '/auth/login/' })

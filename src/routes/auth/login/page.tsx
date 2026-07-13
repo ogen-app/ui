@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { AppAuth } from '@/components/layout/AppAuth'
 import { AuthLoginForm } from '@/components/forms/authLoginForm'
 
+/** The login screen: shared auth layout around `AuthLoginForm`. */
 function LoginPage() {
   return (
     <AppAuth

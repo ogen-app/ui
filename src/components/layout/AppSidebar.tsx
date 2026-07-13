@@ -27,6 +27,7 @@ import {
   AppSidebarButtonMenu,
 } from '@/components/layout/AppSiderButton.tsx'
 
+/** The app's main navigation sidebar, including the user/workspace menu. */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state, isMobile, setOpen, toggleSidebar } = useSidebar()
   const location = useLocation()

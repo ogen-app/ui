@@ -23,6 +23,7 @@ type RawSignupResponse = {
   session: { id: string; user_id: string; expires_at: string };
 };
 
+/** `POST /api/tenants` — creates org + first admin, opens a session. */
 export async function signup(payload: SignupPayload): Promise<User> {
   const body = await apiJson<RawSignupResponse>("/api/tenants", "Unable to create account", {
     method: "POST",

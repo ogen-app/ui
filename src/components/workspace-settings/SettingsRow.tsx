@@ -11,6 +11,10 @@ type SettingsRowProps = {
   children?: ReactNode
 }
 
+/**
+ * The shared card layout for a workspace-settings row: title + badges on the
+ * left, actions on the right, then an optional description and body.
+ */
 export function SettingsRow({
   title,
   badges,

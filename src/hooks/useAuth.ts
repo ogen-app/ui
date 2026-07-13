@@ -55,6 +55,7 @@ export function useSignup() {
   });
 }
 
+/** Logout mutation: ends the session, then clears the probe cache + store. */
 export function useLogout() {
   const clearUser = useAuthStore((s) => s.clearUser);
   return useMutation<void, Error, void>({

@@ -13,6 +13,7 @@ export const Route = createFileRoute('/_authenticated/workspace-settings/')({
   component: WorkspaceSettings,
 })
 
+/** Workspace Settings page: workspace identity, connected platforms, connect grid. */
 function WorkspaceSettings() {
   const { isLoading, isError } = usePlatforms()
   useRightRailPage('workspace-settings', null)

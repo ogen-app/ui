@@ -40,6 +40,7 @@ function WorkspaceSectionComponent() {
   )
 }
 
+/** Corner pencil that opens the rename modal. */
 function WorkspaceEditIconButton({ tenant }: { tenant: Tenant }) {
   const [open, setOpen] = useState(false)
   return (
@@ -68,6 +69,7 @@ function WorkspaceEditIconButton({ tenant }: { tenant: Tenant }) {
   )
 }
 
+/** Rename-the-organization form; the slug is shown read-only alongside. */
 function RenameForm({ tenant, onClose }: { tenant: Tenant; onClose: () => void }) {
   const nameId = useId()
   const slugId = useId()
