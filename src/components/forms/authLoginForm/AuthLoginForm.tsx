@@ -1,5 +1,5 @@
 import { type FormEvent } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useRouter, useSearch } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,8 +8,13 @@ import { useLogin } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
 import { loginSchema, cn } from '@/lib'
 
+/**
+ * Email/password login form. On success it returns the user to the in-app
+ * path the root guard bounced them from (`?redirect=`), defaulting to `/`.
+ */
 export function AuthLoginForm() {
-  const navigate = useNavigate()
+  const router = useRouter()
+  const { redirect } = useSearch({ from: '/auth/login/' })
   const { mutate: login, isPending, error, reset } = useLogin()
   const { values, setField, fieldErrors, validate } = useFormValidation(loginSchema, {
     email: '',
@@ -24,7 +29,10 @@ export function AuthLoginForm() {
 
     login(data, {
       onSuccess: () => {
-        navigate({ to: '/' })
+        // Return to where the root guard bounced us from; only in-app paths
+        // are honored (the guard writes `location.href` into the param).
+        const to = redirect?.startsWith('/') ? redirect : '/'
+        void router.navigate({ href: to })
       },
     })
   }

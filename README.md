@@ -4,6 +4,16 @@ The React + Vite single-page app for [Ogen](https://github.com/ogen-app/ogen).
 Split out of the `ogen` monorepo (CON-98) and deployed independently; the Go API
 no longer embeds it.
 
+## Documentation
+
+- [`docs/product.md`](docs/product.md) — what Ogen is and its domain concepts
+  (campaigns, posts, content bank, publishing).
+- [`docs/architecture.md`](docs/architecture.md) — front-end architecture
+  (routing, data fetching, state, overlays, forms, tables, styling).
+- [`docs/technical-decisions.md`](docs/technical-decisions.md) — notable choices
+  and their rationale.
+- [`CLAUDE.md`](CLAUDE.md) — working conventions for this repo.
+
 ## Stack
 
 - React 18 + TypeScript, Vite
@@ -17,7 +27,7 @@ Requires Node ≥ 24 (see `.nvmrc`) and pnpm (pinned via `packageManager`).
 ```bash
 corepack enable
 pnpm install
-pnpm dev        # http://localhost:5173
+pnpm dev        # http://localhost:9002
 ```
 
 The dev server proxies `/api` to the API (default `http://localhost:9001`; set
@@ -28,6 +38,16 @@ The dev server proxies `/api` to the API (default `http://localhost:9001`; set
 pnpm build      # type-check + production build -> dist/
 pnpm preview    # serve the production build locally
 pnpm lint
+```
+
+### Platform API keys (Zernio / Anthropic / Gemini)
+
+Keys live in the API's encrypted secret store, not in the image. The
+`*_API_KEY` vars in `.env.api` are **first-boot seeds only**; to set or
+rotate a key on a **running** API (hot-reloaded, no restart, no downtime):
+
+```bash
+scripts/set-secret.sh zernio_api_key      # prompts for login + value
 ```
 
 ## How the UI reaches the API

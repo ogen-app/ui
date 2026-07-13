@@ -41,6 +41,7 @@ type UsePostStatusActionsResult = {
 export function usePostStatusActions(
   post: Post,
   transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>,
+  schedule: () => Promise<TransitionStatusResult>,
   cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>,
   // True while a cancellation is in flight (see usePost.cancelling).
   // Disables every action so a second cancel job can't be enqueued.
@@ -73,12 +74,15 @@ export function usePostStatusActions(
             }
             setPending(true)
             setLastError(null)
-            // Route by mechanism so a user-cancel never executes as a
-            // plain status PUT — see PostStatusActionMechanism.
+            // Route by mechanism so a schedule or user-cancel never
+            // executes as a plain status PUT — see
+            // PostStatusActionMechanism.
             const result =
               mechanism === 'cancel'
                 ? await cancelScheduled(next as CancelTarget)
-                : await transitionStatus(next)
+                : mechanism === 'schedule'
+                  ? await schedule()
+                  : await transitionStatus(next)
             setPending(false)
             if (!result.ok) setLastError(result.error)
             return result

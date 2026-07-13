@@ -1,15 +1,3 @@
-export const SECRET_NAMES = ["anthropic_api_key", "zernio_api_key"] as const;
-export type SecretName = (typeof SECRET_NAMES)[number];
-
-export type SecretMetadata = {
-  name: SecretName;
-  created_at: string;
-  updated_at: string;
-  kek_version: number;
-  algorithm: string;
-  decryptable: boolean;
-};
-
 export type ZernioState = "disabled" | "degraded" | "ok";
 
 export type ZernioHealth = {

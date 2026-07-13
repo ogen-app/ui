@@ -47,13 +47,21 @@ export type PostStatusActionKind = 'user' | 'system'
 // ones:
 //   - 'transition' (default): synchronous PUT /api/posts/:id; the status
 //     flips immediately in the response.
+//   - 'schedule': POST /api/posts/:id/schedule. Only for
+//     ready_for_publish → scheduled. The dedicated endpoint validates
+//     scheduled_at (required, in the future) and routes auto- vs
+//     manual-publish via the workspace allowlist — the response carries
+//     the routed status, which may be scheduled_for_manual_publishing.
+//     The PUT path must not be used for this edge: its RouteAndPersist
+//     deliberately skips the date validation, so a dateless/past
+//     schedule would publish almost immediately.
 //   - 'cancel': POST /api/posts/:id/cancel. The post stays in `scheduled`
 //     until the Zernio cancel job confirms, then the backend moves it to
 //     the target status. The UI learns the new status by polling, NOT from
 //     the request response. A plain PUT here would flip the local status
 //     while the auto-publish job keeps running — the publisher would then
 //     publish a post the user thought they had unscheduled.
-export type PostStatusActionMechanism = 'transition' | 'cancel'
+export type PostStatusActionMechanism = 'transition' | 'schedule' | 'cancel'
 
 type ActionMeta = {
   // ALL CAPS form, used as the prominent header button label.
@@ -81,7 +89,12 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       menuLabel: 'Schedule',
       intent: 'primary',
       kind: 'user',
+      mechanism: 'schedule',
     },
+    // Stays a plain PUT: the server respects an explicit manual-publish
+    // choice on this edge (no allowlist routing, no Zernio job), whereas
+    // the schedule endpoint would route an allowlisted platform to
+    // auto-publish against the user's intent.
     scheduled_for_manual_publishing: {
       buttonLabel: 'SCHEDULE',
       menuLabel: 'Schedule for manual publish',
@@ -171,14 +184,23 @@ export function getActionMeta(from: PostStatus, to: PostStatus): ActionMeta | nu
 }
 
 export type PostStatusBlocker = {
-  field: 'platform_id' | 'platform_post_type'
+  field: 'platform_id' | 'platform_post_type' | 'scheduled_at'
   message: string
 }
 
-// Mirrors requirePlatformIfNotDraft in src/handlers/posts.go: any non-draft
-// status requires both platform fields. Returns blockers the UI should
-// show before letting the user attempt the transition; the server will
-// also reject with 400 if these are missing.
+// Mirrors the server's pre-transition rules. Returns blockers the UI
+// should show before letting the user attempt the transition; the server
+// re-validates and rejects violations anyway.
+//
+// - Platform fields: requirePlatformIfNotDraft in src/handlers/posts.go —
+//   any non-draft status requires both.
+// - scheduled_at on the schedule edges: ErrScheduledAtRequired /
+//   ErrScheduledAtInPast in src/post_actions/schedule/schedule.go. The
+//   server only enforces these on POST /api/posts/:id/schedule (the
+//   `scheduled` edge); the manual-publish edge goes through the PUT path,
+//   which doesn't validate the date — there the check is client-only, kept
+//   for the same reason (a reminder date that is missing or already past
+//   is meaningless).
 export function getTransitionBlockers(post: Post, next: PostStatus): PostStatusBlocker[] {
   const blockers: PostStatusBlocker[] = []
   if (next !== 'draft') {
@@ -189,5 +211,25 @@ export function getTransitionBlockers(post: Post, next: PostStatus): PostStatusB
       blockers.push({ field: 'platform_post_type', message: 'Pick a post type first' })
     }
   }
+  if (next === 'scheduled' || next === 'scheduled_for_manual_publishing') {
+    if (!post.scheduled_at) {
+      blockers.push({ field: 'scheduled_at', message: 'Set a publish date first' })
+    } else if (new Date(post.scheduled_at).getTime() <= Date.now()) {
+      blockers.push({
+        field: 'scheduled_at',
+        message: 'Publish date must be in the future',
+      })
+    }
+  }
   return blockers
+}
+
+// Whether scheduled_at may be edited in the current status (settings-form
+// date picker, calendar drag-and-drop). Locked while `scheduled`: the
+// Zernio submission already carries the publish time, so a PUT would only
+// change the displayed date — the post would still publish at the original
+// time. Unschedule first, then re-schedule. Locked once `published`: the
+// date is history.
+export function canEditScheduledAt(status: PostStatus): boolean {
+  return status !== 'scheduled' && status !== 'published'
 }

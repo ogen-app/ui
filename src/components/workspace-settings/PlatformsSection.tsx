@@ -1,33 +1,41 @@
-import { memo, useId, useState, type ReactNode } from 'react'
-import { ArrowUpRightIcon, PencilSimpleIcon } from '@phosphor-icons/react'
+import { memo, useId, useState } from 'react'
+import { PencilSimpleIcon } from '@phosphor-icons/react'
 import type { Platform, PlatformPublisher, PublisherAccount } from '@/types/campaigns'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Chip } from '@/components/ui/chip'
 import { ModalContainer } from '@/components/ui/modal'
+import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   getPlatformInfo,
   type PlatformPostType,
   type PlatformView,
 } from '@/lib/platformDictionary'
 import { usePlatformViews } from '@/hooks/usePlatforms'
-import { cn } from '@/lib'
-import { SettingsRow } from './SettingsRow'
+import { ReadOnlyField, SettingsRow } from './SettingsRow'
 
+/**
+ * Platform Settings — one row per platform the workspace has actually
+ * connected. Platforms without a connected account live in the
+ * "Connect Platforms" grid instead (ConnectPlatformsSection).
+ */
 function PlatformsSectionComponent() {
   const views = usePlatformViews()
+  const connected = views.filter((v) => v.connectedPublishers.length > 0)
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-display font-medium tracking-tight">Platforms</h2>
-      {views.length === 0 ? (
-        <div className="bg-primary px-6 py-5 text-sm text-tertiary-foreground">No platforms.</div>
+      <h2 className="text-xl font-display font-medium tracking-tight">Platform Settings</h2>
+      {connected.length === 0 ? (
+        <div className="bg-primary px-6 py-5 text-sm text-tertiary-foreground">
+          No platforms connected yet — pick one under “Connect Platforms” below.
+        </div>
       ) : (
         <ul className="flex flex-col gap-4">
-          {views.map((v) => (
+          {connected.map((v) => (
             <PlatformRow key={v.platform.id} view={v} />
           ))}
         </ul>
@@ -36,17 +44,66 @@ function PlatformsSectionComponent() {
   )
 }
 
+type ConnectionStatus = {
+  tone: StatusTone
+  label: string
+  message: string
+}
+
+/**
+ * Maps the publisher state (disabled / degraded / ok — mirrored from the Go
+ * server) and account activity onto the row's badge and status message.
+ */
+function connectionStatus(view: PlatformView): ConnectionStatus {
+  const publisher = view.connectedPublishers[0]
+  const accounts = view.connectedPublishers.flatMap((p) => p.accounts)
+  const anyActive = accounts.some((a) => a.is_active)
+
+  if (publisher.state === 'degraded') {
+    return {
+      tone: 'warn',
+      label: 'Sync degraded',
+      message: `Connected, but the ${publisher.name} sync is degraded — we retry automatically.`,
+    }
+  }
+  if (publisher.state === 'disabled') {
+    return {
+      tone: 'warn',
+      label: 'Integration off',
+      message: 'Connected, but the publishing integration is currently disabled on the server.',
+    }
+  }
+  if (accounts.length > 0 && !anyActive) {
+    return {
+      tone: 'warn',
+      label: 'Inactive',
+      message: `The connected account is inactive on ${publisher.name} and can’t receive posts.`,
+    }
+  }
+  return {
+    tone: 'positive',
+    label: 'Connected',
+    message: `Publishing via ${publisher.name}.`,
+  }
+}
+
+/** One connected platform: status badge, post-type chips, cadence/constraints. */
 function PlatformRow({ view }: { view: PlatformView }) {
-  const { platform, info, publishers, connectedPublishers } = view
-  const accountPublishers = publishers.filter((p) => p.accounts.length > 0)
-  const hasPublisher = publishers.length > 0
-  const anyConnected = connectedPublishers.length > 0
+  const { platform, info } = view
+  const accountPublishers = view.connectedPublishers.filter((p) => p.accounts.length > 0)
+  const status = connectionStatus(view)
 
   return (
     <SettingsRow
       title={info.name}
-      badges={<ConnectionPill connected={anyConnected} hasPublisher={hasPublisher} />}
-      actions={hasPublisher ? <PlatformEditIconButton platform={platform} /> : null}
+      badges={<StatusBadge tone={status.tone} label={status.label} />}
+      actions={
+        <>
+          <DisconnectButton />
+          <PlatformEditIconButton platform={platform} />
+        </>
+      }
+      description={<p>{status.message}</p>}
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
         <PostTypeChips view={view} />
@@ -66,61 +123,32 @@ function PlatformRow({ view }: { view: PlatformView }) {
   )
 }
 
+/** Post types the platform allows, grouped per connected publisher. */
 function PostTypeChips({ view }: { view: PlatformView }) {
-  const { allowed, publishers } = view
-  const allowedSlugs = new Set(allowed.map((pt) => pt.slug))
-  const groups = publishers.map((pub) => ({
+  const groups = view.connectedPublishers.map((pub) => ({
     key: pub.id,
     label: `Available via ${pub.name}`,
-    connected: pub.connected,
-    items: allowed.filter(
-      (pt) => allowedSlugs.has(pt.slug) && pub.supported_post_types.includes(pt.slug),
-    ),
-    emptyAction:
-      !pub.connected && pub.id === 'zernio' ? (
-        <a
-          href="https://zernio.com/dashboard/connections"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[13px] leading-4 text-primary-foreground hover:underline inline-flex items-center gap-1"
-        >
-          Connect on Zernio
-          <ArrowUpRightIcon className="size-2.5" />
-        </a>
-      ) : null,
+    items: view.allowed.filter((pt) => pub.supported_post_types.includes(pt.slug)),
   }))
 
   return (
     <div className="flex flex-col gap-4">
-      {groups.length === 0 ? (
-        <ChipGroup label="Available" items={[]} emptyText="No publisher integration configured." />
-      ) : (
-        groups.map((g) => (
-          <ChipGroup
-            key={g.key}
-            label={g.label}
-            items={g.connected ? g.items : []}
-            emptyText={g.connected ? 'None' : 'No Post types available.'}
-            emptyAction={g.emptyAction}
-          />
-        ))
-      )}
+      {groups.map((g) => (
+        <ChipGroup key={g.key} label={g.label} items={g.items} emptyText="None" />
+      ))}
     </div>
   )
 }
 
+/** A labeled row of chips, or `emptyText` when there are none. */
 function ChipGroup({
   label,
   items,
   emptyText,
-  emptyAction,
-  muted = false,
 }: {
   label: string
   items: PlatformPostType[]
   emptyText: string
-  emptyAction?: ReactNode
-  muted?: boolean
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -128,13 +156,12 @@ function ChipGroup({
       {items.length === 0 ? (
         <div className="h-10 py-1 border-b border-transparent flex items-center gap-2 flex-wrap">
           <span className="text-[13px] leading-4 text-primary-foreground">{emptyText}</span>
-          {emptyAction}
         </div>
       ) : (
         <ul className="flex flex-wrap gap-1.5">
           {items.map((pt) => (
             <li key={pt.slug}>
-              <Chip variant={muted ? 'muted' : 'default'}>{pt.label}</Chip>
+              <Chip>{pt.label}</Chip>
             </li>
           ))}
         </ul>
@@ -143,23 +170,28 @@ function ChipGroup({
   )
 }
 
-function ReadOnlyField({
-  label,
-  value,
-}: {
-  label: string
-  value: string | undefined
-}) {
-  const text = value?.trim() ?? ''
-  const id = useId()
+/**
+ * Disconnecting is not possible yet: the API has no disconnect endpoint and
+ * tenants have no access to the platform-owned Zernio dashboard. The button
+ * is rendered disabled so the affordance is discoverable ahead of the
+ * backend work.
+ */
+function DisconnectButton() {
   return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <Input id={id} value={text} readOnly disabled placeholder="—" title={text || undefined} />
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0}>
+          <Button type="button" variant="outline" size="sm" disabled>
+            Disconnect
+          </Button>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>Disconnecting isn’t available yet — coming soon.</TooltipContent>
+    </Tooltip>
   )
 }
 
+/** Corner pencil that opens the (read-only) platform details modal. */
 function PlatformEditIconButton({ platform }: { platform: Platform }) {
   const [open, setOpen] = useState(false)
   return (
@@ -183,6 +215,7 @@ function PlatformEditIconButton({ platform }: { platform: Platform }) {
   )
 }
 
+/** Read-only view of the platform's cadence and constraints. */
 function PlatformDetailsModal({
   platform,
   open,
@@ -228,6 +261,7 @@ function PlatformDetailsModal({
   )
 }
 
+/** The publisher's connected accounts, one `AccountRow` each. */
 function PublisherAccounts({ publisher }: { publisher: PlatformPublisher }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -243,6 +277,7 @@ function PublisherAccounts({ publisher }: { publisher: PlatformPublisher }) {
   )
 }
 
+/** Avatar + handle for one connected account; flags inactive ones. */
 function AccountRow({ account }: { account: PublisherAccount }) {
   const initial = (account.display_name || account.username || '?').slice(0, 1).toUpperCase()
   return (
@@ -259,28 +294,6 @@ function AccountRow({ account }: { account: PublisherAccount }) {
         <span className="text-xs text-tertiary-foreground">(inactive)</span>
       )}
     </li>
-  )
-}
-
-function ConnectionPill({
-  connected,
-  hasPublisher,
-}: {
-  connected: boolean
-  hasPublisher: boolean
-}) {
-  if (!hasPublisher) return null
-  return (
-    <span
-      className={cn(
-        'text-[11px] leading-4 px-1.5 py-[1px] rounded-md border',
-        connected
-          ? 'bg-transparent text-primary-foreground border-primary-foreground'
-          : 'bg-tertiary text-tertiary-foreground border-transparent',
-      )}
-    >
-      {connected ? 'Connected' : 'Not connected'}
-    </span>
   )
 }
 

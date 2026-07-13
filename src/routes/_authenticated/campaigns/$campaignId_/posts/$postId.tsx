@@ -31,6 +31,7 @@ function PostPage() {
     doc,
     changeDoc,
     transitionStatus,
+    schedule,
     cancelScheduled,
     cancelling,
     loading,
@@ -86,6 +87,7 @@ function PostPage() {
       doc={doc}
       changeDoc={changeDoc}
       transitionStatus={transitionStatus}
+      schedule={schedule}
       cancelScheduled={cancelScheduled}
       cancelling={cancelling}
       campaignId={campaignId}
@@ -98,6 +100,7 @@ type PostEditorSurfaceProps = {
   doc: Post
   changeDoc: (fn: (p: Post) => void) => void
   transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
+  schedule: () => Promise<TransitionStatusResult>
   cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
   cancelling: boolean
   campaignId: string
@@ -108,6 +111,7 @@ function PostEditorSurface({
   doc,
   changeDoc,
   transitionStatus,
+  schedule,
   cancelScheduled,
   cancelling,
   campaignId,
@@ -158,6 +162,7 @@ function PostEditorSurface({
             <PostStatusHeaderActions
               post={doc}
               transitionStatus={transitionStatus}
+              schedule={schedule}
               cancelScheduled={cancelScheduled}
               cancelling={cancelling}
             />
