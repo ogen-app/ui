@@ -138,7 +138,7 @@ function PlatformLabel({
           <>
             Not connected.{' '}
             <Link
-              to="/instance-settings"
+              to="/workspace-settings"
               className="text-primary-foreground hover:underline"
             >
               Open settings

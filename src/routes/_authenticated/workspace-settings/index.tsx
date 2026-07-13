@@ -4,17 +4,18 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { usePlatforms } from '@/hooks/usePlatforms'
-import { ApiKeysSection } from '@/components/instance-settings/ApiKeysSection'
-import { PlatformsSection } from '@/components/instance-settings/PlatformsSection'
+import { WorkspaceSection } from '@/components/workspace-settings/WorkspaceSection'
+import { PlatformsSection } from '@/components/workspace-settings/PlatformsSection'
+import { ConnectPlatformsSection } from '@/components/workspace-settings/ConnectPlatformsSection'
 import { useRightRailPage } from '@/hooks/useRightRailPage'
 
-export const Route = createFileRoute('/_authenticated/instance-settings/')({
-  component: InstanceSettings,
+export const Route = createFileRoute('/_authenticated/workspace-settings/')({
+  component: WorkspaceSettings,
 })
 
-function InstanceSettings() {
+function WorkspaceSettings() {
   const { isLoading, isError } = usePlatforms()
-  useRightRailPage('instance-settings', null)
+  useRightRailPage('workspace-settings', null)
 
   if (isLoading) {
     return (
@@ -36,12 +37,13 @@ function InstanceSettings() {
     <PageContainer variant="fullFlex">
       <div className="h-0 grow overflow-y-auto flex flex-col">
         <PageHeader
-          title="Settings"
+          title="Workspace Settings"
           className="sticky top-0 z-10 pt-6 pb-6 pr-1 bg-gradient-to-b from-background from-42% to-transparent"
         />
         <div className="flex flex-col gap-8 px-3 lg:px-6 pb-10">
-          <ApiKeysSection />
+          <WorkspaceSection />
           <PlatformsSection />
+          <ConnectPlatformsSection />
         </div>
       </div>
     </PageContainer>

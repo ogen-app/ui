@@ -10,7 +10,6 @@ import { PageError } from "../components/page-primitives/PageError";
 import { Button } from "../components/ui/button";
 import { ServerUnavailableError } from "../services/api/errors";
 import { checkSession } from "../services/api/sessions";
-import { getMe } from "../services/api/users";
 import { useAuthStore } from "../stores/authStore";
 
 const SERVER_DOWN_PATH = "/server-unavailable";
@@ -45,9 +44,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     const isServerDownRoute = location.pathname === SERVER_DOWN_PATH;
 
     // CON-97: there is no instance-wide first-run setup anymore — onboarding is
-    // self-service signup (POST /api/tenants) at /auth/register. The session
-    // probe doubles as the reachability probe: a network/5xx failure surfaces
-    // as ServerUnavailableError, distinct from a real "not authenticated" 401.
+    // self-service signup (POST /api/tenants) at /auth/register. One probe of
+    // GET /api/current_user does triple duty: reachability check (network/5xx
+    // → ServerUnavailableError, distinct from a real 401), auth check, and
+    // identity hydration (the user arrives with its embedded tenant).
     const session = await probe(checkSession);
 
     // Server unreachable — show the dedicated outage page (or stay if already
@@ -61,22 +61,20 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     // it to recover, send the user back into the app.
     if (isServerDownRoute) throw redirect({ to: "/" });
 
-    const authenticated = session.value;
+    const user = session.value;
 
-    if (!authenticated && !isAuthRoute) {
+    if (!user && !isAuthRoute) {
       throw redirect({
         to: "/auth/login",
-        search: { redirect: location.pathname },
+        search: { redirect: location.href },
       });
     }
 
-    // Hydrate auth store if session is valid but store is empty (e.g. fresh tab)
-    if (authenticated && !useAuthStore.getState().user) {
-      const user = await getMe();
-      useAuthStore.getState().setUser(user);
-    }
+    // Refresh the persisted auth store from the probe on every page load —
+    // this also heals stale localStorage copies (e.g. a renamed workspace).
+    if (user) useAuthStore.getState().setUser(user);
 
-    return { auth: { isAuthenticated: authenticated } };
+    return { auth: { isAuthenticated: user !== null } };
   },
   component: () => <Outlet />,
   notFoundComponent: () => (

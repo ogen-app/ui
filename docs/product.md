@@ -33,17 +33,19 @@ neither see nor configure them (CON-97 §10.3, CON-99). What each tenant still d
 is **connect its own social accounts** (LinkedIn, X, …) through its own Zernio
 profile (CON-102, CON-100).
 
-> **Consequence for this UI:** the current **Instance Settings → API Keys** screen
-> (bring-your-own Anthropic/Zernio keys) is **outdated** — those keys are now
-> platform-managed, not tenant-facing. The account-connection flow stays.
+> **Consequence for this UI:** the old **Instance Settings → API Keys** screen
+> (bring-your-own Anthropic/Zernio keys) was **removed** (2026-07) — those keys
+> are platform-managed, not tenant-facing. The page is now **Workspace
+> Settings** (tenant name/slug + the account-connection flow).
 
 **Near-term priorities (in order):**
 
 1. **Post Assistant + post editing** — surface the AI chat, post versioning, and
    editing flows in the UI (CON-42, CON-61 and siblings).
-2. **Complete the multi-tenancy migration** on the front-end — retire the
-   per-instance key config, keep per-tenant account connection, and align the app
-   with centralized credentials (CON-97/99/100/102).
+2. ~~**Complete the multi-tenancy migration** on the front-end~~ — ✅ landed
+   2026-07 (CON-97/99/100/102): real `current_user` identity, workspace
+   settings, per-instance key config removed. Remainder: invite-teammate UI
+   (CON-26) and in-app account connect (after CON-100).
 3. Everything else is secondary — including **Content-Bank AI image generation and
    storage** (CON-105/88/83): desirable, but explicitly **not a main goal**.
 
@@ -189,26 +191,31 @@ post-type labels are held client-side in `src/lib/platformDictionary.ts`.
   profile (`Ogen #{tenant_id}`, provisioned at signup) over the **shared,
   platform-managed Zernio key**; the user requests per-platform **connect links**,
   and a **per-tenant sync worker** (CON-100) discovers authorized accounts in
-  isolation. The UI shows integration health and connected accounts (`useZernio`,
-  `services/api/zernio.ts`). This is the account-connection flow that **stays**
-  under the SaaS model.
+  isolation. The UI connects accounts **in-app** (Workspace Settings → Connect
+  Platforms tile grid → one-shot connect link in a new tab → the sync mirrors
+  the account back) and shows connected platforms with status (`useZernio`,
+  `services/api/zernio.ts`). Disconnect is not possible yet — no API endpoint.
+  This is the account-connection flow that **stays** under the SaaS model.
 - 🔧 **Auto-publish pipeline** (CON-69) — the UI drives the user-facing parts
   (mark ready, schedule, cancel), but the actual publishing is backend jobs:
   submit-to-Zernio → poll status → reconcile/cancel, each transition recorded in a
   **Post Log** audit trail. Pre-publish per-post-type validation gates
   `draft → ready_for_publish` (CON-74).
 
-### Instance Settings ⚠️ (partly legacy)
+### Workspace Settings ✅
 
-Instance Settings (`src/routes/_authenticated/instance-settings`) has two parts,
-with diverging futures under the SaaS transition:
+Workspace Settings (`src/routes/_authenticated/workspace-settings`) has two
+sections:
 
-- **API Keys** (`ApiKeysSection` — Anthropic + Zernio, CON-64) — ⚠️ **outdated.**
-  With centralized, platform-managed credentials (CON-99), tenants don't configure
-  these keys; secrets are Ogen-wide and exempt from tenant scoping (CON-97 §10.3).
-  This surface is slated for removal as the multi-tenancy migration completes.
-- **Platforms** (`PlatformsSection`) — ✅ **stays**: connecting the tenant's own
-  social accounts via its per-tenant Zernio profile.
+- **Workspace** (`WorkspaceSection`) — the tenant's name (renamable via
+  `PUT /api/tenants/:id`) and stable slug (CON-97).
+- **Platforms** (`PlatformsSection`) — connecting the tenant's own social
+  accounts via its per-tenant Zernio profile.
+
+The former bring-your-own **API Keys** section (CON-64) was **removed**
+(2026-07): credentials are centralized and platform-managed (CON-99/104);
+secrets are Ogen-wide and exempt from tenant scoping (CON-97 §10.3), so
+tenants never see or configure them.
 
 ## The content-generation stack
 
@@ -254,9 +261,11 @@ backlog, from Linear (status as of this writing):
 
 - **Post Assistant, versioning & post-editing UIs** (CON-61 and siblings) —
   surface the 🔧 backend-ready flows in this app.
-- **Multi-tenancy front-end completion** — retire the per-instance API-key config,
-  keep per-tenant account connection, align with centralized credentials; finish
-  the per-tenant Zernio sync (CON-100, _In Progress_).
+- **Multi-tenancy front-end completion** — ✅ landed 2026-07 (real
+  `current_user` identity + tenant in the UI, workspace settings with rename,
+  per-instance API-key config removed; in-app account-connect flow landed
+  2026-07-06). Remaining: an invite-teammate UI (CON-26, unspeced) and an
+  account **disconnect** path (needs a new API endpoint).
 
 **Secondary — desirable, not a main goal**
 

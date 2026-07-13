@@ -153,27 +153,33 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
 
 **Front-end consequences.**
 
-- The **Instance Settings → API Keys** UI (`ApiKeysSection` + `useSecrets`) is
-  **legacy** — it configures per-instance Anthropic/Zernio keys that are now
-  platform-managed. It is slated for removal as the migration completes; don't
-  build new features on it.
+- This client has **no key-management surface**: the former Instance Settings
+  → API Keys UI (`ApiKeysSection` + `useSecrets` + `services/api/secrets`) was
+  **removed** (2026-07) once keys became platform-managed. Don't reintroduce
+  per-tenant key config.
 - **Account connection stays** and is **per-tenant**: each tenant has its own
   Zernio profile (`Ogen #{tenant_id}`) over the shared key (CON-102, CON-100).
-  `PlatformsSection` / `useZernio` remain the surface for it.
+  `ConnectPlatformsSection` runs the in-app connect flow (connect link → new
+  tab → poll until the sync mirrors the account); `PlatformsSection` shows
+  connected platforms with status. Both sit on `useZernio`.
 - **Tenant isolation is server-enforced**, not a front-end concern: the API scopes
-  every read/write, job, and SSE stream by the session's tenant. The UI neither
-  passes nor reasons about `tenant_id`; it simply receives tenant-scoped data.
+  every read/write, job, and SSE stream by the session's tenant. The UI never
+  sends `tenant_id`; the tenant object it holds (from `GET /api/current_user`,
+  shown in the sidebar and Workspace Settings) is display data only.
 
-**Where.** `src/components/instance-settings/{ApiKeysSection,PlatformsSection}.tsx`,
-`hooks/{useSecrets,useZernio}.ts`, `services/api/{secrets,zernio}.ts`. See
-[`product.md`](./product.md#direction--current-priorities).
+**Where.** `src/components/workspace-settings/{WorkspaceSection,PlatformsSection,ConnectPlatformsSection}.tsx`,
+`hooks/{useTenant,useZernio}.ts`, `services/api/{tenants,zernio}.ts`. See
+[`product.md`](./product.md#direction--current-priorities) and
+[`onboarding.md`](./onboarding.md).
 
 ## Known gaps (intentional to flag, not yet resolved)
 
-- The **Instance Settings API-key config** (Anthropic/Zernio) is **legacy** under
-  the SaaS model — keys are centralized; that surface is slated for removal
-  (account connection stays). See the SaaS-transition section above.
-- `users.getMe()` is a **hardcoded placeholder** pending a real `GET /api/me`.
+- **No invite-teammate UI** — `users.register()` (`POST /api/users`) is the
+  ready building block; real invitations (email loop) await backend support
+  (CON-26).
+- **No account disconnect** — the API has no disconnect endpoint and tenants
+  can't reach the platform-owned Zernio dashboard, so the Disconnect button
+  in Platform Settings renders disabled until the backend grows one.
 - **Dark mode** is scaffolded (`.dark` block) but effectively empty.
 - The **Imagery** Content-Bank tab renders nothing yet (`assetCategory.ts`); AI
   image generation + storage there is planned but **secondary** (CON-105/88/83).

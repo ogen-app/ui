@@ -1,4 +1,7 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
+
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 type SettingsRowProps = {
   title: ReactNode
@@ -31,5 +34,23 @@ export function SettingsRow({
       )}
       {children}
     </li>
+  )
+}
+
+/** A labeled, non-editable value rendered as a disabled input. */
+export function ReadOnlyField({
+  label,
+  value,
+}: {
+  label: string
+  value: string | undefined
+}) {
+  const text = value?.trim() ?? ''
+  const id = useId()
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} value={text} readOnly disabled placeholder="—" title={text || undefined} />
+    </div>
   )
 }

@@ -17,8 +17,7 @@ import { Route as AuthenticatedContentBankRouteImport } from './routes/_authenti
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
-import { Route as AuthForgotIndexRouteImport } from './routes/auth/forgot/index'
-import { Route as AuthenticatedInstanceSettingsIndexRouteImport } from './routes/_authenticated/instance-settings/index'
+import { Route as AuthenticatedWorkspaceSettingsIndexRouteImport } from './routes/_authenticated/workspace-settings/index'
 import { Route as AuthenticatedContentBankIndexRouteImport } from './routes/_authenticated/content-bank/index'
 import { Route as AuthenticatedCampaignsIndexRouteImport } from './routes/_authenticated/campaigns/index'
 import { Route as AuthenticatedContentBankAssetIdRouteImport } from './routes/_authenticated/content-bank_/$assetId'
@@ -74,15 +73,10 @@ const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
   path: '/auth/login/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthForgotIndexRoute = AuthForgotIndexRouteImport.update({
-  id: '/auth/forgot/',
-  path: '/auth/forgot/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedInstanceSettingsIndexRoute =
-  AuthenticatedInstanceSettingsIndexRouteImport.update({
-    id: '/instance-settings/',
-    path: '/instance-settings/',
+const AuthenticatedWorkspaceSettingsIndexRoute =
+  AuthenticatedWorkspaceSettingsIndexRouteImport.update({
+    id: '/workspace-settings/',
+    path: '/workspace-settings/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedContentBankIndexRoute =
@@ -183,8 +177,7 @@ export interface FileRoutesByFullPath {
   '/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
   '/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/content-bank/': typeof AuthenticatedContentBankIndexRoute
-  '/instance-settings/': typeof AuthenticatedInstanceSettingsIndexRoute
-  '/auth/forgot/': typeof AuthForgotIndexRoute
+  '/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
@@ -206,8 +199,7 @@ export interface FileRoutesByTo {
   '/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
   '/campaigns': typeof AuthenticatedCampaignsIndexRoute
   '/content-bank': typeof AuthenticatedContentBankIndexRoute
-  '/instance-settings': typeof AuthenticatedInstanceSettingsIndexRoute
-  '/auth/forgot': typeof AuthForgotIndexRoute
+  '/workspace-settings': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/login': typeof AuthLoginIndexRoute
   '/auth/logout': typeof AuthLogoutIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
@@ -233,8 +225,7 @@ export interface FileRoutesById {
   '/_authenticated/content-bank_/$assetId': typeof AuthenticatedContentBankAssetIdRoute
   '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/_authenticated/content-bank/': typeof AuthenticatedContentBankIndexRoute
-  '/_authenticated/instance-settings/': typeof AuthenticatedInstanceSettingsIndexRoute
-  '/auth/forgot/': typeof AuthForgotIndexRoute
+  '/_authenticated/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
@@ -260,8 +251,7 @@ export interface FileRouteTypes {
     | '/content-bank/$assetId'
     | '/campaigns/'
     | '/content-bank/'
-    | '/instance-settings/'
-    | '/auth/forgot/'
+    | '/workspace-settings/'
     | '/auth/login/'
     | '/auth/logout/'
     | '/auth/register/'
@@ -283,8 +273,7 @@ export interface FileRouteTypes {
     | '/content-bank/$assetId'
     | '/campaigns'
     | '/content-bank'
-    | '/instance-settings'
-    | '/auth/forgot'
+    | '/workspace-settings'
     | '/auth/login'
     | '/auth/logout'
     | '/auth/register'
@@ -309,8 +298,7 @@ export interface FileRouteTypes {
     | '/_authenticated/content-bank_/$assetId'
     | '/_authenticated/campaigns/'
     | '/_authenticated/content-bank/'
-    | '/_authenticated/instance-settings/'
-    | '/auth/forgot/'
+    | '/_authenticated/workspace-settings/'
     | '/auth/login/'
     | '/auth/logout/'
     | '/auth/register/'
@@ -326,7 +314,6 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthIndexRoute: typeof AuthIndexRoute
   ServerUnavailableIndexRoute: typeof ServerUnavailableIndexRoute
-  AuthForgotIndexRoute: typeof AuthForgotIndexRoute
   AuthLoginIndexRoute: typeof AuthLoginIndexRoute
   AuthLogoutIndexRoute: typeof AuthLogoutIndexRoute
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
@@ -390,18 +377,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/forgot/': {
-      id: '/auth/forgot/'
-      path: '/auth/forgot'
-      fullPath: '/auth/forgot/'
-      preLoaderRoute: typeof AuthForgotIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/instance-settings/': {
-      id: '/_authenticated/instance-settings/'
-      path: '/instance-settings'
-      fullPath: '/instance-settings/'
-      preLoaderRoute: typeof AuthenticatedInstanceSettingsIndexRouteImport
+    '/_authenticated/workspace-settings/': {
+      id: '/_authenticated/workspace-settings/'
+      path: '/workspace-settings'
+      fullPath: '/workspace-settings/'
+      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/content-bank/': {
@@ -560,7 +540,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCampaignsCampaignIdRoute: typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   AuthenticatedContentBankAssetIdRoute: typeof AuthenticatedContentBankAssetIdRoute
   AuthenticatedCampaignsIndexRoute: typeof AuthenticatedCampaignsIndexRoute
-  AuthenticatedInstanceSettingsIndexRoute: typeof AuthenticatedInstanceSettingsIndexRoute
+  AuthenticatedWorkspaceSettingsIndexRoute: typeof AuthenticatedWorkspaceSettingsIndexRoute
   AuthenticatedCampaignsCampaignIdPostsPostIdRoute: typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
 }
 
@@ -571,8 +551,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedCampaignsCampaignIdRouteWithChildren,
   AuthenticatedContentBankAssetIdRoute: AuthenticatedContentBankAssetIdRoute,
   AuthenticatedCampaignsIndexRoute: AuthenticatedCampaignsIndexRoute,
-  AuthenticatedInstanceSettingsIndexRoute:
-    AuthenticatedInstanceSettingsIndexRoute,
+  AuthenticatedWorkspaceSettingsIndexRoute:
+    AuthenticatedWorkspaceSettingsIndexRoute,
   AuthenticatedCampaignsCampaignIdPostsPostIdRoute:
     AuthenticatedCampaignsCampaignIdPostsPostIdRoute,
 }
@@ -585,7 +565,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
   ServerUnavailableIndexRoute: ServerUnavailableIndexRoute,
-  AuthForgotIndexRoute: AuthForgotIndexRoute,
   AuthLoginIndexRoute: AuthLoginIndexRoute,
   AuthLogoutIndexRoute: AuthLogoutIndexRoute,
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,

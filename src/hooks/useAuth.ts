@@ -1,11 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 
 import {
+  checkSession,
   login as loginRequest,
   logout as logoutRequest,
   invalidateSession,
 } from "@/services/api/sessions";
-import { getMe } from "@/services/api/users";
 import { signup as signupRequest } from "@/services/api/tenants";
 import type { LoginPayload, Session } from "@/types/session";
 import type { SignupPayload } from "@/types/tenant";
@@ -17,9 +17,11 @@ export function useLogin() {
   return useMutation<Session, Error, LoginPayload>({
     mutationFn: loginRequest,
     onSuccess: async () => {
+      // Re-probe through the same cached path the root guard uses: one
+      // GET /api/current_user resolves the user + tenant and primes the cache.
       invalidateSession();
-      const user = await getMe();
-      setUser(user);
+      const user = await checkSession();
+      if (user) setUser(user);
     },
   });
 }
@@ -28,7 +30,8 @@ export function useLogin() {
  * Self-service signup (CON-97): creates the organization + first admin and,
  * because `POST /api/tenants` opens a session, leaves the caller authenticated.
  * We invalidate the cached session probe so the root guard re-reads it as
- * authenticated, then seed the auth store from the signup response.
+ * authenticated, then seed the auth store from the signup response (which
+ * already carries the new tenant).
  */
 export function useSignup() {
   const setUser = useAuthStore((s) => s.setUser);
@@ -48,18 +51,6 @@ export function useLogout() {
     onSuccess: () => {
       invalidateSession();
       clearUser();
-    },
-  });
-}
-
-/**
- * Placeholder — the backend does not yet expose a "resend verification
- * email" endpoint. Wire this to the real call when it lands.
- */
-export function useResendVerificationEmail() {
-  return useMutation<void, Error, string>({
-    mutationFn: async () => {
-      throw new Error("Resend verification email is not yet implemented");
     },
   });
 }

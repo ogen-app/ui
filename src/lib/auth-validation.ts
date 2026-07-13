@@ -56,20 +56,6 @@ export const signupSchema = z.object({
   password: passwordField,
 })
 
-export const forgotPasswordSchema = z.object({
-  email: emailField,
-})
-
-export const resetPasswordSchema = z
-  .object({
-    password: passwordField,
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  })
-
 export const PASSWORD_RULES = [
   { test: (v: string) => v.length >= 8, label: 'Min. 8 chars' },
   { test: (v: string) => /[A-Z]/.test(v), label: 'an uppercase' },

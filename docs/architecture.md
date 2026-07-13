@@ -33,7 +33,7 @@ src/
     layout/        App chrome: AppSidebar, SecondaryNavbar, OverlayOutlet, UploadTracker.
     tables/        VirtualTable engine + postsTable / docsTable + column-width solver.
     forms/         Feature forms (campaign, post, auth) — see Forms.
-    campaigns/ posts/ content-bank/ uploads/ instance-settings/ overlays/ rail-panels/
+    campaigns/ posts/ content-bank/ uploads/ workspace-settings/ overlays/ rail-panels/
   hooks/           TanStack Query hooks + UI hooks (useOverlay, useRightRail*).
   services/api/    The API client: base + http helpers + one module per resource.
   stores/          Zustand stores (auth, overlay, rightRail, settings, upload).
@@ -58,13 +58,14 @@ renders a co-located `page.tsx` that is a pure presentational component. See
 **Auth is enforced once, at the root.** `routes/__root.tsx`'s `beforeLoad` is the
 central gate:
 
-- It probes the session (`checkSession`). A network failure surfaces as a
-  `ServerUnavailableError` and redirects to `/server-unavailable`; an HTTP 401
-  is merely "logged out" and redirects to `/auth/login?redirect=<path>`. This
-  distinction — server down vs. not authenticated — is deliberate (see
-  `services/api/sessions.ts`, `errors.ts`).
-- On a fresh tab where the cookie is valid but the store is empty, it hydrates
-  the user via `getMe()` into `authStore`.
+- It probes the session (`checkSession` → one `GET /api/current_user`). A
+  network failure surfaces as a `ServerUnavailableError` and redirects to
+  `/server-unavailable`; an HTTP 401 is merely "logged out" and redirects to
+  `/auth/login?redirect=<href>`. This distinction — server down vs. not
+  authenticated — is deliberate (see `services/api/sessions.ts`, `errors.ts`).
+- The same probe returns the authenticated user (with its embedded tenant,
+  CON-97), which the guard writes into `authStore` on every page load —
+  hydrating fresh tabs and healing stale persisted copies.
 - It returns `{ auth: { isAuthenticated } }` into the router context.
 
 The `_authenticated.tsx` pathless layout therefore has **no guard of its own** —
@@ -100,7 +101,7 @@ invalidate them:
 | Posts (list) | `["campaigns", campaignId, "posts"]` | `usePosts` |
 | Post (editor) | `["post", id]` | `usePost` |
 | Assets | `["assets"]`, `["assets", id]` | `useContent` |
-| Platforms / Tags / Secrets | `PLATFORMS_KEY` / `TAGS_KEY` / `SECRETS_KEY` | respective hooks |
+| Platforms / Tags / Tenant | `PLATFORMS_KEY` / `TAGS_KEY` / `TENANT_KEY` | respective hooks |
 | Zernio | `ZERNIO_HEALTH_KEY` / `ZERNIO_ACCOUNTS_KEY` | `useZernio` |
 
 Note the post list (`["campaigns", id, "posts"]`) and the post editor
@@ -108,11 +109,11 @@ Note the post list (`["campaigns", id, "posts"]`) and the post editor
 independently.
 
 **Mutations & invalidation.** CRUD hooks pair `useMutation` with `onSuccess`
-invalidation. Cross-domain effects are explicit — saving the `zernio_api_key`
-secret also invalidates Zernio health + platforms (`useSecrets`); a Zernio sync
-invalidates accounts + health + platforms (`useZernio`). `useUpdatePost` is the
-canonical optimistic update (snapshot in `onMutate`, roll back in `onError`,
-invalidate in `onSettled`).
+invalidation. Cross-domain effects are explicit — a Zernio sync invalidates
+accounts + health + platforms (`useZernio`); renaming the tenant also writes
+the fresh tenant into the auth store for the sidebar (`useTenant`).
+`useUpdatePost` is the canonical optimistic update (snapshot in `onMutate`,
+roll back in `onError`, invalidate in `onSettled`).
 
 **Polling for async backend work.** Several flows converge to a status the
 backend controls, so the UI polls only while it matters:
@@ -143,7 +144,7 @@ from a normal HTTP error, and `errorMessage()` surfaces the backend's
 `{ error }` body.
 
 One module per resource (`campaigns`, `posts`, `content`, `platforms`, `tags`,
-`secrets`, `sessions`, `users`, `tenants`, `zernio`, `uploads`, `images`). A few
+`sessions`, `users`, `tenants`, `zernio`, `uploads`, `images`). A few
 diverge from the `http.ts` helpers for good reason:
 
 - **`sessions.ts`** hand-rolls fetch and memoizes the session probe (never
@@ -155,15 +156,14 @@ diverge from the `http.ts` helpers for good reason:
 - **`images.ts`** enforces a client-side MIME allowlist + 10 MB cap for
   BlockNote image uploads.
 
-> **Known stub:** `users.getMe()` currently returns a hardcoded placeholder user
-> pending a real `GET /api/me`. The sidebar user display depends on it.
-
-> **SaaS transition:** the `secrets` module + `useSecrets` back the Instance
-> Settings **API-key** UI, which is **legacy** — the Anthropic/Zernio keys are
-> centralized/platform-managed under the multi-tenancy model (CON-99). Account
-> connection (`zernio` / `useZernio`, per-tenant Zernio profile) stays. Tenant
-> isolation is enforced server-side; the client never handles `tenant_id`. See
-> [`technical-decisions.md`](./technical-decisions.md).
+> **SaaS model:** the Anthropic/Zernio/Gemini keys are centralized and
+> platform-managed (CON-99/104) — this client has **no key-management
+> surface** (the former `secrets` module and API-key UI were removed 2026-07).
+> Account connection (`zernio` / `useZernio`, per-tenant Zernio profile) stays.
+> Tenant isolation is enforced server-side; the client never sends
+> `tenant_id` — the tenant it holds (from `GET /api/current_user`) is display
+> data only. See [`technical-decisions.md`](./technical-decisions.md) and
+> [`onboarding.md`](./onboarding.md).
 
 ## State management — Zustand stores (`src/stores/`)
 

@@ -40,7 +40,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
 
-  const initials = `${user!.firstName[0]}${user!.lastName[0]}`.toUpperCase()
+  const initials =
+    `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`.toUpperCase() || '?'
+  const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
 
   return (
     <>
@@ -106,9 +108,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             />
             <AppSidebarButtonMenu
               icon={GearSixIcon}
-              text="Instance Settings"
-              isActive={location.pathname.startsWith('/instance-settings')}
-              to="/instance-settings"
+              text="Workspace Settings"
+              isActive={location.pathname.startsWith('/workspace-settings')}
+              to="/workspace-settings"
               onClick={closeSecondaryNavbar}
             />
           </nav>
@@ -130,9 +132,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                   </div>
                   <div className="flex flex-col items-start flex-1 min-w-0">
-                    <p className="text-sm font-regular truncate">{`${user!.firstName} ${user!.lastName}`}</p>
+                    <p className="text-sm font-regular truncate">{fullName}</p>
                     <p className="text-xs text-tertiary-foreground truncate">
-                      { user!.email}
+                      {user?.email}
                     </p>
                   </div>
                 </div>
@@ -145,10 +147,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               >
                 <DropdownMenuLabel className="font-normal p-0" asChild>
                   <div className="flex flex-col space-y-1">
-                    <div className="h-8 text-xl font-display font-medium truncate">{`${user!.firstName} ${user!.lastName}`}</div>
+                    <div className="h-8 text-xl font-display font-medium truncate">{fullName}</div>
                     <div className="text-sm leading-none text-tertiary-foreground">
-                      {user!.email}
+                      {user?.email}
                     </div>
+                    {user?.tenant && (
+                      <div className="text-xs leading-none text-tertiary-foreground truncate pt-1">
+                        Workspace: {user.tenant.name}
+                      </div>
+                    )}
                   </div>
                 </DropdownMenuLabel>
 

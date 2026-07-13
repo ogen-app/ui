@@ -13,14 +13,17 @@ app-relative `/api` requests. Split out of the `ogen` monorepo (CON-98).
 **Direction:** Ogen is transitioning to a multi-tenant SaaS where **Claude and
 Zernio run centrally "under the hood"** — their keys are platform-managed, not
 tenant-configured (CON-97 §10.3, CON-99); tenants still connect their own social
-accounts. **Current front-end priorities:** the **Post Assistant + post-editing
-UIs** (CON-42/61) and **completing the multi-tenancy cutover** (retire the
-per-instance API-key config). Content-Bank AI images are secondary. See
+accounts. The front-end multi-tenancy cutover landed 2026-07 (real
+`current_user` identity, workspace settings, per-instance API-key config
+removed — see [`docs/onboarding.md`](./docs/onboarding.md)). **Current
+front-end priority:** the **Post Assistant + post-editing UIs** (CON-42/61).
+Content-Bank AI images are secondary. See
 [`docs/product.md`](./docs/product.md#direction--current-priorities).
 
 - **Product & domain:** [`docs/product.md`](./docs/product.md)
 - **Front-end architecture:** [`docs/architecture.md`](./docs/architecture.md)
 - **Technical decisions & rationale:** [`docs/technical-decisions.md`](./docs/technical-decisions.md)
+- **Onboarding, auth & tenancy flow:** [`docs/onboarding.md`](./docs/onboarding.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
@@ -87,12 +90,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 
 ## Known stubs / gaps
 
-Instance Settings **API-key** config (Anthropic/Zernio) is **legacy** — keys are
-centralized under the SaaS model, so that surface is slated for removal (account
-connection stays) · `users.getMe()` returns a placeholder user (awaiting
-`GET /api/me`) · dark mode is scaffolded but empty · the Content-Bank **Imagery**
-tab is not populated yet · eslint/prettier/stylelint have no committed config in
-this repo.
+No invite-teammate UI yet (`users.register()` is the ready building block) · no
+in-app account **disconnect** (the API has no disconnect endpoint; the button
+in Platform Settings renders disabled) · dark mode is scaffolded but empty · the
+Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
+have no committed config in this repo.
 
 ## Global rule
 

@@ -40,6 +40,16 @@ pnpm preview    # serve the production build locally
 pnpm lint
 ```
 
+### Platform API keys (Zernio / Anthropic / Gemini)
+
+Keys live in the API's encrypted secret store, not in the image. The
+`*_API_KEY` vars in `.env.api` are **first-boot seeds only**; to set or
+rotate a key on a **running** API (hot-reloaded, no restart, no downtime):
+
+```bash
+scripts/set-secret.sh zernio_api_key      # prompts for login + value
+```
+
 ## How the UI reaches the API
 
 All requests use app-relative `/api/...` paths routed through `apiUrl()`

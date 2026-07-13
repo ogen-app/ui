@@ -20,6 +20,10 @@ export type PlatformInfo = {
   // Official brand color, hard-coded so the icon renders in its native hue
   // wherever it appears across the app.
   color: string;
+  // Zernio's wire identifier for this platform (e.g. "twitter" for X) —
+  // the value POST /api/integrations/zernio/connect-links expects. Mirrors
+  // the backend allowlist in publishers/zernio/platforms.go.
+  zernioId: string;
   postTypes: PlatformPostType[];
 };
 
@@ -29,6 +33,7 @@ export const PLATFORMS: PlatformInfo[] = [
     name: "LinkedIn",
     icon: LinkedinLogoIcon,
     color: "#0A66C2",
+    zernioId: "linkedin",
     postTypes: [
       { slug: "text-post", label: "Text post" },
       { slug: "image-post", label: "Image post" },
@@ -46,6 +51,7 @@ export const PLATFORMS: PlatformInfo[] = [
     name: "YouTube",
     icon: YoutubeLogoIcon,
     color: "#FF0000",
+    zernioId: "youtube",
     postTypes: [
       { slug: "video", label: "Video" },
       { slug: "short", label: "Short" },
@@ -60,6 +66,7 @@ export const PLATFORMS: PlatformInfo[] = [
     name: "Facebook",
     icon: FacebookLogoIcon,
     color: "#1877F2",
+    zernioId: "facebook",
     postTypes: [
       { slug: "text-post", label: "Text post" },
       { slug: "image-post", label: "Image post" },
@@ -78,6 +85,7 @@ export const PLATFORMS: PlatformInfo[] = [
     name: "X (Twitter)",
     icon: XLogoIcon,
     color: "#000000",
+    zernioId: "twitter",
     postTypes: [
       { slug: "text-post", label: "Text post" },
       { slug: "image-post", label: "Image post" },
@@ -93,6 +101,7 @@ export const PLATFORMS: PlatformInfo[] = [
     name: "Threads",
     icon: ThreadsLogoIcon,
     color: "#000000",
+    zernioId: "threads",
     postTypes: [
       { slug: "text-post", label: "Text post" },
       { slug: "image-post", label: "Image post" },
@@ -107,6 +116,7 @@ export const PLATFORMS: PlatformInfo[] = [
     name: "Instagram",
     icon: InstagramLogoIcon,
     color: "#E4405F",
+    zernioId: "instagram",
     postTypes: [
       { slug: "image-post", label: "Image post" },
       { slug: "carousel", label: "Carousel" },

@@ -4,8 +4,6 @@ export {
   loginSchema,
   registerSchema,
   signupSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema,
   PASSWORD_RULES,
   validateField,
   type FieldErrors,

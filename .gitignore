@@ -17,10 +17,19 @@ package-lock.json
 # Local-only Docker Compose overrides (machine-specific port/env tweaks)
 docker-compose.override.yml
 
+# TanStack Router plugin scratch space
+.tanstack/
+
 # Editor / OS
 .idea/
 .vscode/
 .DS_Store
+
+# Claude Code local state (worktrees, settings)
+.claude/
+
+# Local admin helper for platform API keys (not for the repo)
+scripts/set-secret.sh
 
 # Logs
 *.log

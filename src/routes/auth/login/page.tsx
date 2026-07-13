@@ -6,7 +6,7 @@ import { AuthLoginForm } from '@/components/forms/authLoginForm'
 function LoginPage() {
   return (
     <AppAuth
-      title="Welcome Back"
+      title="Log in"
       subtitle="Log in to continue managing your content"
       form={<AuthLoginForm />}
       bottomNav={
