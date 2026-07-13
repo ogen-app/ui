@@ -47,7 +47,9 @@ Keys live in the API's encrypted secret store, not in the image. The
 rotate a key on a **running** API (hot-reloaded, no restart, no downtime):
 
 ```bash
-scripts/set-secret.sh zernio_api_key      # prompts for login + value
+# authenticate first (session cookie), then:
+curl -b cookies.txt -X PUT http://localhost:9001/api/secrets/anthropic_api_key \
+  -H 'Content-Type: application/json' -d '{"value":"sk-ant-..."}'
 ```
 
 ## How the UI reaches the API
