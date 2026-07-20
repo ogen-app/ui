@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactElement } from 'react'
+import type { ReactElement } from 'react'
 import type { Post } from '@/types/posts'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { DotsThreeVerticalIcon, XIcon } from '@phosphor-icons/react'
+import { DotsThreeVerticalIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
 import {
   DropdownMenu,
@@ -55,7 +55,7 @@ export function PostStatusHeaderActions({
   cancelScheduled,
   cancelling,
 }: Props) {
-  const { current, actions, pending, lastError, lastNotice } = usePostStatusActions(
+  const { current, actions, pending } = usePostStatusActions(
     post,
     transitionStatus,
     schedule,
@@ -80,7 +80,7 @@ export function PostStatusHeaderActions({
   const showOverflow = userActions.length > 1
 
   return (
-    <div className="relative flex items-center gap-3">
+    <div className="flex items-center gap-3">
       <PostStatusBadge status={current} />
       <ScheduleSummary post={post} cancelling={cancelling} />
       <div className="flex items-center gap-1">
@@ -95,47 +95,6 @@ export function PostStatusHeaderActions({
           <PrimaryActionButton action={primaryAction} pending={busy} />
         )}
       </div>
-      <ActionFeedback error={lastError} notice={lastNotice} />
-    </div>
-  )
-}
-
-// Feedback from the last status action — a rejected transition (e.g. the
-// 422 platform-validation details) or an informational notice (e.g. the
-// schedule endpoint routed the post to manual publishing). Rendered as a
-// floating callout under the actions row: the sticky header has no room
-// for a second line and the app has no toast system. The hook nulls both
-// messages when the next action starts, which also re-arms the dismissal.
-function ActionFeedback({
-  error,
-  notice,
-}: {
-  error: string | null
-  notice: string | null
-}) {
-  const message = error ?? notice
-  const [dismissed, setDismissed] = useState<string | null>(null)
-  useEffect(() => {
-    if (!message) setDismissed(null)
-  }, [message])
-  if (!message || message === dismissed) return null
-  return (
-    <div
-      role={error ? 'alert' : 'status'}
-      className={cn(
-        'absolute right-0 top-full mt-2 w-80 rounded-md border bg-popover p-3 pr-8 text-xs shadow-md',
-        error ? 'border-destructive/50 text-destructive' : 'text-popover-foreground',
-      )}
-    >
-      {message}
-      <button
-        type="button"
-        aria-label="Dismiss"
-        className="absolute right-2 top-2 text-tertiary-foreground hover:text-foreground"
-        onClick={() => setDismissed(message)}
-      >
-        <XIcon className="size-3.5" />
-      </button>
     </div>
   )
 }

@@ -12,6 +12,7 @@ import {
 } from '@/lib/postStatusMachine'
 import type { TransitionStatusResult } from '@/hooks/usePost'
 import type { CancelTarget } from '@/services/api/posts'
+import { toast } from '@/stores/toastStore'
 
 export type PostStatusAction = {
   next: PostStatus
@@ -35,12 +36,6 @@ type UsePostStatusActionsResult = {
   // since the underlying mutation owns the cache and only one PUT
   // should be in flight at a time.
   pending: boolean
-  // Feedback from the most recent run, cleared when the next one starts.
-  // At most one is non-null: `lastError` on failure, `lastNotice` when a
-  // successful action carried an informational notice (e.g. the schedule
-  // endpoint routed the post to manual publishing).
-  lastError: string | null
-  lastNotice: string | null
 }
 
 export function usePostStatusActions(
@@ -53,8 +48,6 @@ export function usePostStatusActions(
   cancelling = false,
 ): UsePostStatusActionsResult {
   const [pending, setPending] = useState(false)
-  const [lastError, setLastError] = useState<string | null>(null)
-  const [lastNotice, setLastNotice] = useState<string | null>(null)
 
   const actions: PostStatusAction[] = getAllowedNextStatuses(post.status).flatMap(
     (next) => {
@@ -75,12 +68,10 @@ export function usePostStatusActions(
           run: async () => {
             if (blockers.length > 0) {
               const message = blockers.map((b) => b.message).join('; ')
-              setLastError(message)
+              toast.error('Not ready yet', { description: message })
               return { ok: false, error: message }
             }
             setPending(true)
-            setLastError(null)
-            setLastNotice(null)
             // Route by mechanism so a schedule or user-cancel never
             // executes as a plain status PUT — see
             // PostStatusActionMechanism.
@@ -91,8 +82,7 @@ export function usePostStatusActions(
                   ? await schedule()
                   : await transitionStatus(next)
             setPending(false)
-            if (!result.ok) setLastError(result.error)
-            else if (result.notice) setLastNotice(result.notice)
+            reportActionResult(mechanism, result)
             return result
           },
         },
@@ -105,7 +95,28 @@ export function usePostStatusActions(
     isTerminal: isTerminalStatus(post.status),
     actions,
     pending,
-    lastError,
-    lastNotice,
+  }
+}
+
+// Surfaces the outcome of a status action as a toast. Errors always
+// notify; on success we only toast for scheduling — it's the one action
+// with a non-obvious outcome (async, and the allowlist may route it to
+// manual publishing). Other transitions flip the badge visibly, so a
+// success toast there would just be noise.
+function reportActionResult(
+  mechanism: PostStatusActionMechanism,
+  result: TransitionStatusResult,
+) {
+  if (!result.ok) {
+    toast.error('Something went wrong', { description: result.error })
+    return
+  }
+  if (mechanism !== 'schedule') return
+  if (result.notice) {
+    toast.message('Scheduled for manual publishing', {
+      description: result.notice,
+    })
+  } else {
+    toast.success('Post scheduled')
   }
 }

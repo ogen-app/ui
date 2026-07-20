@@ -160,9 +160,8 @@ export function usePost(postId: string): UsePostResult {
           ok: true,
           post: result.post,
           notice:
-            "This platform isn't enabled for auto-publishing, so the post " +
-            'was scheduled for manual publishing — publish it yourself when ' +
-            'the reminder comes up.',
+            "This platform isn't set up for auto-publishing, so you'll need " +
+            'to publish it yourself when the reminder comes up.',
         }
       }
       return { ok: true, post: result.post }

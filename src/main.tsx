@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { routeTree } from "./routeTree.gen";
+import { Toaster } from "./components/ui/toaster";
 import { CAMPAIGN_TYPES_KEY } from "./hooks/useCampaigns";
 import { TAGS_KEY } from "./hooks/useTags";
 import { PLATFORMS_KEY } from "./hooks/usePlatforms";
@@ -44,6 +45,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <Toaster />
     </QueryClientProvider>
   </StrictMode>
 );
