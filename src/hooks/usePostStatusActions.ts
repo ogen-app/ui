@@ -35,7 +35,12 @@ type UsePostStatusActionsResult = {
   // since the underlying mutation owns the cache and only one PUT
   // should be in flight at a time.
   pending: boolean
+  // Feedback from the most recent run, cleared when the next one starts.
+  // At most one is non-null: `lastError` on failure, `lastNotice` when a
+  // successful action carried an informational notice (e.g. the schedule
+  // endpoint routed the post to manual publishing).
   lastError: string | null
+  lastNotice: string | null
 }
 
 export function usePostStatusActions(
@@ -49,6 +54,7 @@ export function usePostStatusActions(
 ): UsePostStatusActionsResult {
   const [pending, setPending] = useState(false)
   const [lastError, setLastError] = useState<string | null>(null)
+  const [lastNotice, setLastNotice] = useState<string | null>(null)
 
   const actions: PostStatusAction[] = getAllowedNextStatuses(post.status).flatMap(
     (next) => {
@@ -74,6 +80,7 @@ export function usePostStatusActions(
             }
             setPending(true)
             setLastError(null)
+            setLastNotice(null)
             // Route by mechanism so a schedule or user-cancel never
             // executes as a plain status PUT — see
             // PostStatusActionMechanism.
@@ -85,6 +92,7 @@ export function usePostStatusActions(
                   : await transitionStatus(next)
             setPending(false)
             if (!result.ok) setLastError(result.error)
+            else if (result.notice) setLastNotice(result.notice)
             return result
           },
         },
@@ -98,5 +106,6 @@ export function usePostStatusActions(
     actions,
     pending,
     lastError,
+    lastNotice,
   }
 }
