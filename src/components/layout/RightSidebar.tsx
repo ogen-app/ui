@@ -25,7 +25,7 @@ export function RightSidebar() {
           isOpen ? PANEL_WIDTH : 'w-0',
         )}
       >
-        <div className={cn(PANEL_WIDTH, 'h-full bg-white flex flex-row')}>
+        <div className={cn(PANEL_WIDTH, 'h-full bg-primary flex flex-row')}>
           <div className="w-px self-stretch bg-border shrink-0" aria-hidden />
           <div className="flex-1 min-w-0 min-h-0">
             <AIAssistantPanel onClose={close} />

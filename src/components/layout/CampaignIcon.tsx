@@ -37,7 +37,7 @@ export function CampaignIcon({ abbr, active = false, className }: CampaignIconPr
         dominantBaseline="central"
         fontSize="8"
         fontWeight="700"
-        className={cn('font-grotesk uppercase', active ? 'fill-sidebar' : 'fill-current')}
+        className={cn('font-grotesk uppercase', active ? 'fill-sidebar-primary' : 'fill-current')}
       >
         {abbr}
       </text>
