@@ -54,6 +54,10 @@ const buttonVariants = cva(
           'data-[loading]:text-secondary-foreground/0 [&_[data-spinner]]:bg-secondary-foreground/20 [&_[data-spinner]:before]:bg-secondary-foreground',
         link: 'text-primary-foreground data-[active=true]:underline',
 
+        headerIcon:
+          'bg-transparent p-0 m-0 gap-0 rounded-none justify-center text-header-icon hover:text-primary-foreground ' +
+          'data-[active=true]:text-primary-foreground',
+
         container: '',
         searchBar:
           'bg-tertiary text-sm h-8 px-1.5 w-full truncate gap-3 justify-start text-tertiary-foreground hover:text-primary-foreground overflow-hidden ' +
@@ -87,24 +91,30 @@ const buttonVariants = cva(
   }
 )
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  loading = false,
-  active = false,
-  disabled,
-  children,
-  showEllipse = false,
-  ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-    loading?: boolean
-    active?: boolean
-    showEllipse?: boolean
-  }) {
+const Button = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<'button'> &
+    VariantProps<typeof buttonVariants> & {
+      asChild?: boolean
+      loading?: boolean
+      active?: boolean
+      showEllipse?: boolean
+    }
+>(function Button(
+  {
+    className,
+    variant,
+    size,
+    asChild = false,
+    loading = false,
+    active = false,
+    disabled,
+    children,
+    showEllipse = false,
+    ...props
+  },
+  ref
+) {
   // When using asChild with loading, force it to render as a button
   const Comp = asChild && !loading ? Slot : 'button'
 
@@ -112,6 +122,7 @@ function Button({
   if (asChild && !loading) {
     return (
       <Comp
+        ref={ref}
         data-slot="button"
         data-loading={loading ? 'true' : undefined}
         data-active={active ? 'true' : undefined}
@@ -127,6 +138,7 @@ function Button({
   // For normal button or loading state
   return (
     <Comp
+      ref={ref}
       data-slot="button"
       data-loading={loading ? 'true' : undefined}
       data-active={active ? 'true' : undefined}
@@ -152,7 +164,7 @@ function Button({
       </>
     </Comp>
   )
-}
+})
 
 // eslint-disable-next-line react-refresh/only-export-components
 export { Button, buttonVariants }

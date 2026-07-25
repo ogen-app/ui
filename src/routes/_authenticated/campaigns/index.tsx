@@ -74,8 +74,7 @@ function Campaigns() {
     <PageContainer variant="fullFlex">
       <PageHeader
         title={"Campaigns"}
-        className={'pt-6'}
-        actions={
+                actions={
           <Button onClick={handleCreate} disabled={!canCreate} size="lg">
             <PlusIcon className={'size-4'} />
             <span>ADD CAMPAIGN</span>
