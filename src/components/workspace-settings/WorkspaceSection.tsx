@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { useCurrentTenant, useRenameTenant } from '@/hooks/useTenant'
+import { SettingsCard } from '@/components/settings/SettingsCard'
 import { EditIconButton, ReadOnlyField, SettingsRow } from './SettingsRow'
 
 /**
@@ -17,17 +18,19 @@ function WorkspaceSectionComponent() {
   const { data: tenant, isLoading, isError } = useCurrentTenant()
 
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-display font-medium tracking-tight">Workspace</h2>
+    <SettingsCard>
       {isLoading ? (
-        <div className="bg-primary px-6 py-5 text-sm text-tertiary-foreground">Loading…</div>
+        <p className="text-sm text-tertiary-foreground">Loading…</p>
       ) : isError || !tenant ? (
-        <div className="bg-primary px-6 py-5 text-sm text-destructive">
-          Failed to load the workspace.
-        </div>
+        <p className="text-sm text-destructive">Failed to load the workspace.</p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          <SettingsRow title={tenant.name} actions={<WorkspaceEditIconButton tenant={tenant} />}>
+        <ul className="flex flex-col">
+          {/* No card h2 here — the row title doubles as the section heading,
+              e.g. "BN Digital Workspace". */}
+          <SettingsRow
+            title={`${tenant.name} Workspace`}
+            actions={<WorkspaceEditIconButton tenant={tenant} />}
+          >
             {/* Same two-column body as the platform rows, so the fields line
                 up and stretch across the card. */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
@@ -37,7 +40,7 @@ function WorkspaceSectionComponent() {
           </SettingsRow>
         </ul>
       )}
-    </section>
+    </SettingsCard>
   )
 }
 

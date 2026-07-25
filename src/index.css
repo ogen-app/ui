@@ -58,6 +58,11 @@
     'Roboto', sans-serif;
   --font-grotesk: 'Space Grotesk', var(--font-sans);
 
+  /* Layout: the shared content-column width — the post rich-text editor and
+     the settings cards read at the same measure. Generates `w-content` /
+     `max-w-content`. */
+  --container-content: 740px;
+
   /* Radius */
   --radius-sm: calc(var(--radius) + 0px);
   --radius-md: calc(var(--radius) + 1px);

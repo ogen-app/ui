@@ -157,7 +157,7 @@ function PostEditorSurface({
   return (
     <PageContainer variant="fullFlex">
       <div className="flex flex-1 min-h-0">
-        <ScrollArea className="flex-1 min-h-0 lg:px-6" type="scroll" scrollHideDelay={350}>
+        <ScrollArea className="flex-1 min-h-0" type="scroll" scrollHideDelay={350}>
           <PostDetailsHeader
             campaignId={campaignId}
             saving={saving}
@@ -175,14 +175,14 @@ function PostEditorSurface({
             }
           />
           <div className="flex flex-col items-center gap-3 relative z-0 pb-8">
-            <div className="w-[740px]">
+            <div className="w-content">
               <PostQuickSettingsBar
                 doc={doc}
                 changeDoc={changeDoc}
                 cancelling={cancelling}
               />
             </div>
-            <div className="w-[740px] bg-primary px-16 py-8">
+            <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
                 <textarea
                   ref={titleRef}

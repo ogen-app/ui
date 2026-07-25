@@ -15,6 +15,7 @@ import {
   type PlatformView,
 } from '@/lib/platformDictionary'
 import { usePlatformViews } from '@/hooks/usePlatforms'
+import { SettingsCard } from '@/components/settings/SettingsCard'
 import { EditIconButton, ReadOnlyField, SettingsRow } from './SettingsRow'
 
 /**
@@ -25,22 +26,28 @@ import { EditIconButton, ReadOnlyField, SettingsRow } from './SettingsRow'
 function PlatformsSectionComponent() {
   const views = usePlatformViews()
   const connected = views.filter((v) => v.connectedPublishers.length > 0)
+  // TEMP: render the list twice so multi-platform layout (separators, row
+  // rhythm) can be previewed with a single connected platform. Remove once a
+  // second platform is actually connected.
+  const rows = [...connected, ...connected]
 
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-display font-medium tracking-tight">Platform Settings</h2>
+    <SettingsCard title="Platform Settings">
       {connected.length === 0 ? (
-        <div className="bg-primary px-6 py-5 text-sm text-tertiary-foreground">
+        <p className="text-sm text-tertiary-foreground">
           No platforms connected yet — pick one under “Connect Platforms” below.
-        </div>
+        </p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {connected.map((v) => (
-            <PlatformRow key={v.platform.id} view={v} />
+        // Every row gets a separator above it: the ul's own top border covers
+        // the first row, divide-y the rest; pt-5 restores the first row's gap
+        // (SettingsRow zeroes it via first:pt-0).
+        <ul className="flex flex-col border-t border-border pt-5 divide-y divide-border">
+          {rows.map((v, i) => (
+            <PlatformRow key={`${v.platform.id}-${i}`} view={v} />
           ))}
         </ul>
       )}
-    </section>
+    </SettingsCard>
   )
 }
 
@@ -89,9 +96,8 @@ function connectionStatus(view: PlatformView): ConnectionStatus {
 }
 
 /**
- * One connected platform. The left column leads with the connected accounts,
- * then cadence and constraints; the right column lists the content types the
- * platform can publish.
+ * One connected platform: connected accounts first, then the content types
+ * the platform can publish, then the cadence/constraints settings.
  */
 function PlatformRow({ view }: { view: PlatformView }) {
   const { platform, info } = view
@@ -111,12 +117,10 @@ function PlatformRow({ view }: { view: PlatformView }) {
       description={status.message ? <p>{status.message}</p> : undefined}
     >
       {accounts.length > 0 && <ConnectedAccounts accounts={accounts} />}
+      <PostTypeChips view={view} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-        <div className="flex flex-col gap-4">
-          <ReadOnlyField label="Cadence" value={platform.cadence} />
-          <ReadOnlyField label="Constraints" value={platform.constraints} />
-        </div>
-        <PostTypeChips view={view} />
+        <ReadOnlyField label="Cadence" value={platform.cadence} />
+        <ReadOnlyField label="Constraints" value={platform.constraints} />
       </div>
     </SettingsRow>
   )

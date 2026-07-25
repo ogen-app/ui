@@ -14,8 +14,10 @@ type SettingsRowProps = {
 }
 
 /**
- * The shared card layout for a workspace-settings row: title + badges on the
- * left, actions on the right, then an optional description and body.
+ * One row inside a SettingsCard: title + badges on the left, actions on the
+ * right, then an optional description and body. Rows carry no surface of
+ * their own — the parent card does — and rely on the list's `divide-y` for
+ * separation when stacked.
  */
 export function SettingsRow({
   title,
@@ -25,7 +27,7 @@ export function SettingsRow({
   children,
 }: SettingsRowProps) {
   return (
-    <li className="bg-primary px-6 py-5 flex flex-col gap-3 min-w-0">
+    <li className="py-5 first:pt-0 last:pb-0 flex flex-col gap-3 min-w-0">
       <div className="flex items-center justify-between gap-4 min-w-0">
         <div className="flex items-center gap-3 min-w-0">
           <h3 className="text-base font-medium">{title}</h3>

@@ -60,7 +60,7 @@ export function PostQuickSettingsBar({ doc, changeDoc, cancelling, className }: 
   return (
     <div
       className={cn(
-        'w-full bg-primary h-12 px-6 flex items-center gap-5 text-sm',
+        'w-full bg-primary h-12 px-10 flex items-center gap-5 text-sm',
         className,
       )}
     >

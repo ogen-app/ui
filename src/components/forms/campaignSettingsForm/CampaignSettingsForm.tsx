@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -18,6 +17,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { useDeleteCampaign } from '@/hooks/useCampaigns'
+import { SettingsCard } from '@/components/settings/SettingsCard'
 import type { Campaign } from '@/types/campaigns'
 import { useCampaignAutosave, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
 import { PlatformsControl } from './PlatformsControl'
@@ -58,19 +58,6 @@ function defaultValues(campaign: Campaign): SettingsFormValues {
     tag_ids: campaign.tag_ids ?? [],
     target_platforms: campaign.target_platforms ?? [],
   }
-}
-
-/**
- * The workspace-settings section shell: a heading and a card, so the campaign
- * settings page reads the same as Workspace Settings.
- */
-function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-display font-medium tracking-tight">{title}</h2>
-      <div className="bg-primary px-6 py-5 flex flex-col gap-5 min-w-0">{children}</div>
-    </section>
-  )
 }
 
 type Props = {
@@ -121,7 +108,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
   return (
     <Form {...form}>
       <form noValidate autoComplete="off" className="flex flex-col gap-8 pb-10">
-        <SettingsSection title="Basic">
+        <SettingsCard title="Basic">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
             <FormField
               control={form.control}
@@ -175,9 +162,9 @@ export function CampaignSettingsForm({ campaign }: Props) {
               )}
             />
           </div>
-        </SettingsSection>
+        </SettingsCard>
 
-        <SettingsSection title="Advanced">
+        <SettingsCard title="Advanced">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
             <FormField
               control={form.control}
@@ -232,9 +219,9 @@ export function CampaignSettingsForm({ campaign }: Props) {
               )}
             />
           </div>
-        </SettingsSection>
+        </SettingsCard>
 
-        <SettingsSection title="Platforms & Post Types">
+        <SettingsCard title="Platforms & Post Types">
           <FormField
             control={form.control}
             name="target_platforms"
@@ -245,9 +232,9 @@ export function CampaignSettingsForm({ campaign }: Props) {
               </FormItem>
             )}
           />
-        </SettingsSection>
+        </SettingsCard>
 
-        <SettingsSection title="Danger Zone">
+        <SettingsCard title="Danger Zone">
           <div className="flex flex-col gap-3 items-start">
             <p className="max-w-150 text-sm text-tertiary-foreground">
               Deleting a campaign removes its posts and schedule. This cannot be undone.
@@ -262,7 +249,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
               <span>Delete campaign</span>
             </Button>
           </div>
-        </SettingsSection>
+        </SettingsCard>
 
         {error && <span className="text-xs text-destructive">{error.message}</span>}
       </form>

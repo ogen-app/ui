@@ -13,6 +13,7 @@ import {
 } from '@/hooks/useZernio'
 import { ZernioError, type ConnectLinkResponse } from '@/types/integrations'
 import type { PlatformView } from '@/lib/platformDictionary'
+import { SettingsCard } from '@/components/settings/SettingsCard'
 
 /** How often to re-check /api/platforms while waiting for an authorization
  * to sync back. The server tightens its own Zernio polling for a few minutes
@@ -66,20 +67,19 @@ function ConnectPlatformsSectionComponent() {
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-display font-medium tracking-tight">Connect Platforms</h2>
+    <SettingsCard title="Connect Platforms">
       {integrationOff && (
-        <div className="bg-primary px-6 py-5 text-sm text-tertiary-foreground">
+        <p className="text-sm text-tertiary-foreground">
           The publishing integration isn’t configured on this server, so connecting is
           unavailable for now.
-        </div>
+        </p>
       )}
       {views.length === 0 ? (
-        <div className="bg-primary px-6 py-5 text-sm text-tertiary-foreground">
-          No platforms are available to connect.
-        </div>
+        <p className="text-sm text-tertiary-foreground">No platforms are available to connect.</p>
       ) : (
-        <ul className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+        // auto-fill keeps tiles at a comfortable minimum width instead of
+        // forcing a fixed column count into the 740px card.
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-4">
           {views.map((v) => (
             <PlatformTile
               key={v.platform.id}
@@ -103,7 +103,7 @@ function ConnectPlatformsSectionComponent() {
           }}
         />
       )}
-    </section>
+    </SettingsCard>
   )
 }
 
@@ -130,12 +130,12 @@ function PlatformTile({
         type="button"
         onClick={onConnect}
         disabled={disabled}
-        className="group w-full bg-primary px-4 py-6 flex flex-col items-center gap-2 cursor-pointer
-          hover:bg-secondary transition-colors focus-visible:outline-2 focus-visible:outline-ring
-          disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-primary"
+        className="group w-full h-full bg-secondary px-4 py-6 flex flex-col items-center justify-center gap-2 cursor-pointer
+          hover:bg-quaternary transition-colors focus-visible:outline-2 focus-visible:outline-ring
+          disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-secondary"
       >
         <Icon className="size-8" weight="fill" style={{ color: info.color }} />
-        <span className="text-sm font-medium">{info.name}</span>
+        <span className="text-sm font-medium text-center">{info.name}</span>
         {count === 0 ? (
           <span className="text-xs text-tertiary-foreground">Connect</span>
         ) : (
