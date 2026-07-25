@@ -49,7 +49,10 @@ export function AppSidebarButtonMenu({
     <>
       {icon}
       <div className="transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
-        <span className="block min-w-0 truncate text-left">{text}</span>
+        {/* The container is wider than the button so labels never reflow while
+            the sidebar collapses; the label itself is capped at the visible
+            width so a long name ellipses on-screen instead of past the clip. */}
+        <span className="block w-[212px] truncate text-left lg:w-[180px]">{text}</span>
       </div>
     </>
   )

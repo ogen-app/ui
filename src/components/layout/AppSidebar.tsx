@@ -192,7 +192,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         onClick={closeSecondaryNavbar}
                       />
                       {isActive && (
-                        <div className="flex w-full flex-col gap-0.5 pb-2">
+                        // Sub-items sit flush against each other; the 12px pad
+                        // plus the nav's 4px gap makes 16px before the next
+                        // campaign.
+                        <div className="flex w-full flex-col gap-0 pb-3">
                           {CAMPAIGN_SUB_ITEMS.map((item) => {
                             const subActive = activeSubItem === item.id
                             const link = subItemLink(campaign.id, item.id)
