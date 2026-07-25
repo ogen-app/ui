@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { SparkleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/Logo'
 import { AIAssistantPanel } from '@/components/rail-panels/ComingSoonPanel'
 import { CalendarSettingsPanel } from '@/components/campaigns/calendar/CalendarSettingsPanel'
 import { NotScheduledPanel } from '@/components/campaigns/calendar/NotScheduledPanel'
@@ -52,6 +52,10 @@ export function RightSidebar() {
   const isOpen = activePanel !== null
   const assistantActive = activePanel === 'assistant'
 
+  // Whether the assistant is doing work (streaming a reply, running a task).
+  // Not wired yet — flips the logo into its line-drawing loading animation.
+  const isBusy = false
+
   return (
     <>
       <div
@@ -82,22 +86,23 @@ export function RightSidebar() {
         </div>
       </div>
       <Button
-        variant="default"
-        size="smIcon"
-        active={assistantActive}
+        variant="container"
+        size="excluded"
         onClick={() => toggle('assistant')}
         aria-label="AI assistant"
         aria-expanded={assistantActive}
         style={{ zIndex: ZIndex.navigation }}
         className={cn(
-          'fixed bottom-6 size-12 rounded-full shadow-lg',
-          'transition-[right] duration-300 ease-in-out',
+          'fixed bottom-6 size-12 rounded-none shadow-lg bg-primary justify-center',
+          'transition-[right,color] duration-300 ease-in-out',
+          // The logo mark inherits its fill via currentColor.
           isOpen ? 'right-[calc(30rem+1.5rem)]' : 'right-6',
-          assistantActive &&
-            'text-accent hover:text-accent data-[active=true]:hover:text-accent',
+          assistantActive
+            ? 'text-accent'
+            : 'text-primary-foreground hover:text-accent',
         )}
       >
-        <SparkleIcon weight={assistantActive ? 'fill' : 'regular'} className="size-5" />
+        <Logo variant="mark" className="size-8" loading={isBusy} />
       </Button>
     </>
   )
