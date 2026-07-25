@@ -300,7 +300,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                 onClick={handleDelete}
                 loading={deleting}
               >
-                <TrashIcon className="size-4" />
+                <TrashIcon />
                 <span>DELETE POST</span>
               </Button>
             </div>

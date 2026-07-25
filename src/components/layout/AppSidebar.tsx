@@ -114,7 +114,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 onClick={toggleSidebar}
                 aria-label="Close sidebar"
               >
-                <XIcon weight="regular" className="size-5" />
+                <XIcon className="size-5" />
               </Button>
             ) : (
               <Link
@@ -139,7 +139,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 onClick={() => setOpen(false)}
               >
                 <CaretDoubleLeftIcon
-                  weight="regular"
                   className="size-3 text-quaternary-foreground group-hover/button:text-primary-foreground transition-colors"
                 />
               </Button>
@@ -204,7 +203,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                   // Same 20px icon slot as top-level items so the labels
                                   // line up; only the glyph inside is smaller.
                                   <span className="flex size-5 flex-none items-center justify-center">
-                                    <item.icon weight="regular" className="size-4" />
+                                    <item.icon className="size-4" />
                                   </span>
                                 }
                                 text={item.text}

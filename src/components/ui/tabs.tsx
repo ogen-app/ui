@@ -15,11 +15,16 @@ const tabsListVariants = cva(
         underline: 'bg-transparent gap-0',
         underlineSecondary: 'bg-transparent gap-1',
         switcher: 'bg-primary p-[2px] gap-[2px]',
+        // Segmented control: 40px track, 4px inset, one tone darker than the
+        // canvas so the active 32px segment reads as a raised button.
+        segmented: 'h-10 rounded-md bg-quaternary p-1 gap-1',
       },
       size: {
         default: 'h-9',
         sm: 'h-7',
         lg: 'h-8 lg:h-10',
+        /** Height comes from the variant (see `segmented`). */
+        excluded: '',
       },
     },
     defaultVariants: {
@@ -56,6 +61,11 @@ const tabsTriggerVariants = cva(
           'data-[state=active]:border-primary-foreground data-[state=active]:text-foreground',
         switcher:
           'rounded-none font-mono text-xs px-4 h-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ',
+        // Each segment mirrors the default Button: 32px tall, same radius and
+        // type; the active one takes the button's white-on-black surface.
+        segmented:
+          'h-8 rounded-md px-4 text-[13px]/4 text-secondary-foreground ' +
+          'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground',
       },
       size: {
         default: '',

@@ -258,7 +258,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
               onClick={handleDelete}
               loading={deleting}
             >
-              <TrashIcon className="size-4" />
+              <TrashIcon />
               <span>Delete campaign</span>
             </Button>
           </div>

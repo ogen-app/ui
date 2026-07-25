@@ -154,7 +154,7 @@ export function AuthRegisterForm() {
             disabled={isPending}
           >
             <span>SIGN UP</span>
-            <ArrowUpRightIcon className="size-4" />
+            <ArrowUpRightIcon />
           </Button>
           <div className="h-4 my-4">
             <span
