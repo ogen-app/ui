@@ -24,7 +24,7 @@ export function RailPanel({
   return (
     <div className={cn('h-full flex flex-col', className)}>
       <div className="h-0 grow overflow-y-auto flex flex-col">
-        <div className="sticky top-0 z-10 pt-6 pb-6 px-3 lg:px-6 flex flex-col gap-0 shrink-0 bg-gradient-to-b from-white from-42% to-transparent">
+        <div className="sticky top-0 z-10 pt-6 pb-6 px-3 lg:px-6 flex flex-col gap-0 shrink-0 bg-gradient-to-b from-primary from-42% to-transparent">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-medium font-display tracking-tight text-foreground">
               {title}

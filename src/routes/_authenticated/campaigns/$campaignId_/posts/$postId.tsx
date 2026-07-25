@@ -136,7 +136,7 @@ function PostEditorSurface({
           }
         />
         <div className="flex flex-col items-center gap-0 relative z-0">
-          <div className="w-[740px] bg-white px-16 py-8 mt-2 mb-8">
+          <div className="w-[740px] bg-primary px-16 py-8 mt-2 mb-8">
             <div className="flex flex-col">
               <textarea
                 ref={titleRef}

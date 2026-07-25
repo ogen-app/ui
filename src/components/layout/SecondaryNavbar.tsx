@@ -31,7 +31,7 @@ export function SecondaryNavbarContainer({ children, open }: SecondaryNavbarCont
         } as React.CSSProperties
       }
       className={cn(
-        'fixed inset-y-0 bg-sidebar',
+        'fixed inset-y-0 bg-sidebar-primary',
         'transition-[left,width,opacity] duration-200 ease-linear',
         'overflow-hidden',
         // Use CSS variable for left position with 2px gap from main sidebar

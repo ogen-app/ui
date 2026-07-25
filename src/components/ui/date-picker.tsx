@@ -112,7 +112,7 @@ function DatePicker({
               onChange(null)
               setOpen(false)
             }}
-            className="w-full border-t border-t-border-secondary px-3 py-2 text-xs font-medium text-tertiary-foreground hover:text-foreground cursor-pointer"
+            className="w-full border-t border-t-border px-3 py-2 text-xs font-medium text-tertiary-foreground hover:text-foreground cursor-pointer"
           >
             Clear
           </button>

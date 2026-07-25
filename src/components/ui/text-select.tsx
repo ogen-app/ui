@@ -28,7 +28,7 @@ const selectTriggerVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-input border-b-1 border-border-tertiary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
+          'bg-input border-b-1 border-border focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
         primary:
           'bg-input-secondary border-b-2 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
         ghost: 'border-0 rounded-md bg-transparent px-3 py-1 shadow-none text-sm',
