@@ -42,7 +42,7 @@ function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; is
   return (
     <div
       className={cn(
-        'px-1.5 lg:px-2.5 pt-5 pb-1 text-xs font-mono uppercase text-quaternary-foreground truncate',
+        'px-1.5 lg:px-2.5 pt-5 pb-1 w-[232px] shrink-0 font-grotesk text-xs/4 font-medium uppercase text-sidebar-secondary-foreground transition-opacity duration-200',
         isCollapsed && 'opacity-0'
       )}
     >
@@ -114,7 +114,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 onClick={toggleSidebar}
                 aria-label="Close sidebar"
               >
-                <XIcon weight="bold" className="size-5" />
+                <XIcon weight="regular" className="size-5" />
               </Button>
             ) : (
               <Link
@@ -139,7 +139,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 onClick={() => setOpen(false)}
               >
                 <CaretDoubleLeftIcon
-                  weight="bold"
+                  weight="regular"
                   className="size-3 text-quaternary-foreground group-hover/button:text-primary-foreground transition-colors"
                 />
               </Button>
@@ -153,10 +153,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SectionLabel isCollapsed={isCollapsed}>Modules</SectionLabel>
             <AppSidebarButtonMenu
               icon={
-                <ToolboxIcon
-                  weight={location.pathname === '/campaigns' ? 'fill' : 'regular'}
-                  className="size-5 flex-none"
-                />
+                <ToolboxIcon weight="regular" className="size-5 flex-none" />
               }
               text="Campaigns"
               isActive={location.pathname === '/campaigns'}
@@ -165,10 +162,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             />
             <AppSidebarButtonMenu
               icon={
-                <CardsThreeIcon
-                  weight={location.pathname.startsWith('/content-bank') ? 'fill' : 'regular'}
-                  className="size-5 flex-none"
-                />
+                <CardsThreeIcon weight="regular" className="size-5 flex-none" />
               }
               text="Content Bank"
               isActive={location.pathname.startsWith('/content-bank')}
@@ -207,10 +201,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                               <AppSidebarButtonMenu
                                 key={item.id}
                                 icon={
-                                  <item.icon
-                                    weight={subActive ? 'fill' : 'regular'}
-                                    className="size-4 flex-none"
-                                  />
+                                  <item.icon weight="regular" className="size-4 flex-none" />
                                 }
                                 text={item.text}
                                 isActive={subActive}
@@ -234,10 +225,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarFooter>
           <AppSidebarButtonMenu
             icon={
-              <GearSixIcon
-                weight={location.pathname.startsWith('/workspace-settings') ? 'fill' : 'regular'}
-                className="size-5 flex-none"
-              />
+              <GearSixIcon weight="regular" className="size-5 flex-none" />
             }
             text="Workspace Settings"
             isActive={location.pathname.startsWith('/workspace-settings')}
@@ -258,9 +246,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Avatar>
 
                   </div>
-                  <div className="flex flex-col items-start flex-1 min-w-0">
-                    <p className="text-sm font-regular truncate">{fullName}</p>
-                    <p className="text-xs text-tertiary-foreground truncate">
+                  <div className="flex w-[168px] shrink-0 flex-col items-start transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
+                    <p className="w-full text-sm font-regular truncate text-left">{fullName}</p>
+                    <p className="w-full text-xs text-tertiary-foreground truncate text-left">
                       {user?.email}
                     </p>
                   </div>
