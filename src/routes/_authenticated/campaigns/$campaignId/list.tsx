@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { PlusIcon } from "@phosphor-icons/react";
 import { PageGridEmptyState } from "@/components/page-primitives/PageGridEmptyState.tsx";
 import { PostsTable } from "@/components/tables/postsTable";
+import { PostsToolbar } from "@/components/campaigns/PostsToolbar";
 import { useAddPost, useCampaignPosts, useDeletePost } from "@/hooks/usePosts.ts";
 
 export const Route = createFileRoute(
@@ -17,29 +18,32 @@ function CampaignListView() {
   const deletePost = useDeletePost(campaignId);
   const addPost = useAddPost(campaignId);
 
-  if (!posts || posts.length === 0) {
-    return (
-      <PageGridEmptyState
-        title="No posts yet"
-        subtitle="Add your first post, or generate a draft plan from the campaign brief"
-        actions={
-          <Button variant="defaultInverted" onClick={addPost}>
-            <PlusIcon className="size-4" />
-            <span>ADD POST</span>
-          </Button>
-        }
-      />
-    );
-  }
-
   return (
-    <PostsTable
-      posts={posts}
-      campaignId={campaignId}
-      onDelete={(id) => deletePost.mutate(id)}
-      emptyStateMessage="No posts yet"
-      emptyStateActionLabel="Add Post"
-      onEmptyStateAction={addPost}
-    />
+    <div className="flex flex-col h-full min-h-0 min-w-0">
+      <PostsToolbar campaignId={campaignId} view="list" />
+      {!posts || posts.length === 0 ? (
+        <PageGridEmptyState
+          title="No posts yet"
+          subtitle="Add your first post to start building this campaign"
+          actions={
+            <Button variant="defaultInverted" onClick={addPost}>
+              <PlusIcon className="size-4" />
+              <span>ADD POST</span>
+            </Button>
+          }
+        />
+      ) : (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <PostsTable
+            posts={posts}
+            campaignId={campaignId}
+            onDelete={(id) => deletePost.mutate(id)}
+            emptyStateMessage="No posts yet"
+            emptyStateActionLabel="Add Post"
+            onEmptyStateAction={addPost}
+          />
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,8 +9,6 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { TagsInput } from '@/components/ui/tags-input'
 import { Button } from '@/components/ui/button'
 import { TrashIcon } from '@phosphor-icons/react'
-import { Collapse } from '@/components/ui/collapse'
-import { RailPanel } from '@/components/page-primitives/RailPanel'
 import {
   Form,
   FormControl,
@@ -61,13 +60,29 @@ function defaultValues(campaign: Campaign): SettingsFormValues {
   }
 }
 
-type Props = {
-  campaign: Campaign
-  onFlushRef?: (flush: () => void) => void
-  onClose?: () => void
+/**
+ * The workspace-settings section shell: a heading and a card, so the campaign
+ * settings page reads the same as Workspace Settings.
+ */
+function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-4">
+      <h2 className="text-xl font-display font-medium tracking-tight">{title}</h2>
+      <div className="bg-primary px-6 py-5 flex flex-col gap-5 min-w-0">{children}</div>
+    </section>
+  )
 }
 
-export function CampaignSettingsForm({ campaign, onFlushRef, onClose }: Props) {
+type Props = {
+  campaign: Campaign
+}
+
+/**
+ * Campaign settings, laid out like the Workspace Settings page (titled
+ * sections over full-width cards). Unlike the workspace page it edits inline:
+ * every field autosaves through useCampaignAutosave, same as the brief form.
+ */
+export function CampaignSettingsForm({ campaign }: Props) {
   const form = useForm<SettingsFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(settingsSchema as any),
@@ -76,16 +91,6 @@ export function CampaignSettingsForm({ campaign, onFlushRef, onClose }: Props) {
 
   const { mutate: deleteCampaign, isPending: deleting } = useDeleteCampaign()
   const navigate = useNavigate()
-
-  const targetPlatforms = form.watch('target_platforms')
-  const postTypeCount = targetPlatforms.reduce(
-    (acc, p) => acc + p.post_types.length,
-    0,
-  )
-  const initialPostTypeCount = (campaign.target_platforms ?? []).reduce(
-    (acc, p) => acc + p.post_types.length,
-    0,
-  )
 
   const { error } = useCampaignAutosave({
     campaign,
@@ -101,7 +106,6 @@ export function CampaignSettingsForm({ campaign, onFlushRef, onClose }: Props) {
       tag_ids: v.tag_ids,
       target_platforms: v.target_platforms,
     }),
-    onFlushRef,
   })
 
   const handleDelete = () => {
@@ -116,15 +120,14 @@ export function CampaignSettingsForm({ campaign, onFlushRef, onClose }: Props) {
 
   return (
     <Form {...form}>
-      <form noValidate autoComplete="off" className="h-full">
-        <RailPanel title="General settings" onClose={onClose}>
-        <Collapse title="BASIC" defaultOpen>
-          <div className="flex flex-col gap-4 pt-2 pb-4">
+      <form noValidate autoComplete="off" className="flex flex-col gap-8 pb-10">
+        <SettingsSection title="Basic">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="lg:col-span-2">
                   <FormLabel>Campaign name</FormLabel>
                   <FormControl>
                     <Input
@@ -138,35 +141,33 @@ export function CampaignSettingsForm({ campaign, onFlushRef, onClose }: Props) {
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="start_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start date</FormLabel>
-                    <DatePicker value={field.value} onChange={field.onChange} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="end_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End date</FormLabel>
-                    <DatePicker value={field.value} onChange={field.onChange} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="start_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start date</FormLabel>
+                  <DatePicker value={field.value} onChange={field.onChange} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="end_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>End date</FormLabel>
+                  <DatePicker value={field.value} onChange={field.onChange} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="tag_ids"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="lg:col-span-2">
                   <FormLabel>Tags</FormLabel>
                   <TagsInput value={field.value} onChange={field.onChange} />
                   <FormMessage />
@@ -174,93 +175,83 @@ export function CampaignSettingsForm({ campaign, onFlushRef, onClose }: Props) {
               )}
             />
           </div>
-        </Collapse>
+        </SettingsSection>
 
-        <Collapse title="ADVANCED">
-          <div className="flex flex-col gap-4 pt-2 pb-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="budget"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Budget</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={0} step="0.01" placeholder="e.g. 5000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="currency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Currency</FormLabel>
-                    <FormControl>
-                      <Input placeholder="USD" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="estimated_post_count"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estimated post count</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={0} placeholder="e.g. 12" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="language"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Language</FormLabel>
-                    <FormControl>
-                      <Input placeholder="en" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-        </Collapse>
-
-        <Collapse
-          title="PLATFORMS & POST TYPES"
-          meta={postTypeCount}
-          defaultOpen={initialPostTypeCount === 0}
-        >
-          <div className="flex flex-col pt-2 pb-4">
+        <SettingsSection title="Advanced">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
             <FormField
               control={form.control}
-              name="target_platforms"
+              name="budget"
               render={({ field }) => (
                 <FormItem>
-                  <PlatformsControl
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
+                  <FormLabel>Budget</FormLabel>
+                  <FormControl>
+                    <Input type="number" min={0} step="0.01" placeholder="e.g. 5000" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Currency</FormLabel>
+                  <FormControl>
+                    <Input placeholder="USD" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="estimated_post_count"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Estimated post count</FormLabel>
+                  <FormControl>
+                    <Input type="number" min={0} placeholder="e.g. 12" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="language"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Language</FormLabel>
+                  <FormControl>
+                    <Input placeholder="en" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-        </Collapse>
+        </SettingsSection>
 
-        <Collapse title="DANGER ZONE">
-          <div className="pt-2 pb-4">
+        <SettingsSection title="Platforms & Post Types">
+          <FormField
+            control={form.control}
+            name="target_platforms"
+            render={({ field }) => (
+              <FormItem>
+                <PlatformsControl value={field.value} onChange={field.onChange} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </SettingsSection>
+
+        <SettingsSection title="Danger Zone">
+          <div className="flex flex-col gap-3 items-start">
+            <p className="max-w-150 text-sm text-tertiary-foreground">
+              Deleting a campaign removes its posts and schedule. This cannot be undone.
+            </p>
             <Button
               type="button"
               variant="destructiveInverted"
@@ -268,15 +259,13 @@ export function CampaignSettingsForm({ campaign, onFlushRef, onClose }: Props) {
               loading={deleting}
             >
               <TrashIcon className="size-4" />
-              <span>DELETE CAMPAIGN</span>
+              <span>Delete campaign</span>
             </Button>
           </div>
-        </Collapse>
+        </SettingsSection>
 
         {error && <span className="text-xs text-destructive">{error.message}</span>}
-        </RailPanel>
       </form>
     </Form>
   )
 }
-

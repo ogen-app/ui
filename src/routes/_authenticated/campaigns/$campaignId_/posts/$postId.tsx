@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
@@ -9,12 +10,11 @@ import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActions'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
+import { POST_SETTINGS_PORTAL_ID } from '@/components/layout/RightSidebar'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
 import type { CancelTarget } from '@/services/api/posts'
 import type { Post, PostStatus } from '@/types/posts'
-import { cn } from '@/lib'
-
-const SETTINGS_PANEL_WIDTH = 'w-120'
 
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId_/posts/$postId',
@@ -88,8 +88,29 @@ function PostEditorSurface({
   campaignId,
 }: PostEditorSurfaceProps) {
   const [titleDraft, setTitleDraft] = useState(doc.title)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
+
+  // The settings form renders in the shared right sidebar (one panel at a
+  // time, alongside the AI assistant). The route owns the form because it
+  // owns the post's autosave pipeline; the sidebar only hosts the layer.
+  const settingsOpen = useSettingsStore((s) => s.activeRightPanel === 'postSettings')
+  const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
+  const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
+  const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    setSettingsHost(document.getElementById(POST_SETTINGS_PORTAL_ID))
+  }, [])
+
+  // Leaving the editor closes its panel; an open assistant stays open.
+  useEffect(
+    () => () => {
+      const s = useSettingsStore.getState()
+      if (s.activeRightPanel === 'postSettings') {
+        s.closeRightPanel()
+      }
+    },
+    [],
+  )
 
   const autosizeTitle = useCallback(() => {
     const el = titleRef.current
@@ -141,7 +162,7 @@ function PostEditorSurface({
             campaignId={campaignId}
             saving={saving}
             settingsOpen={settingsOpen}
-            onToggleSettings={() => setSettingsOpen((open) => !open)}
+            onToggleSettings={() => toggleRightPanel('postSettings')}
             onDownloadMarkdown={handleDownloadMarkdown}
             actions={
               <PostStatusHeaderActions
@@ -183,26 +204,18 @@ function PostEditorSurface({
           </div>
         </ScrollArea>
 
-        <div
-          className={cn(
-            'shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out',
-            settingsOpen ? SETTINGS_PANEL_WIDTH : 'w-0',
+        {settingsHost &&
+          createPortal(
+            /* Remounting on platform/type keeps the RHF defaults in sync
+               when those fields change from the quick-settings bar. */
+            <PostSettingsForm
+              key={`${doc.platform_id}:${doc.platform_post_type}`}
+              doc={doc}
+              changeDoc={changeDoc}
+              onClose={closeRightPanel}
+            />,
+            settingsHost,
           )}
-        >
-          <div className={cn(SETTINGS_PANEL_WIDTH, 'h-full bg-primary flex flex-row')}>
-            <div className="w-px self-stretch bg-border shrink-0" aria-hidden />
-            <div className="flex-1 min-w-0 min-h-0">
-              {/* Remounting on platform/type keeps the RHF defaults in sync
-                  when those fields change from the quick-settings bar. */}
-              <PostSettingsForm
-                key={`${doc.platform_id}:${doc.platform_post_type}`}
-                doc={doc}
-                changeDoc={changeDoc}
-                onClose={() => setSettingsOpen(false)}
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </PageContainer>
   )

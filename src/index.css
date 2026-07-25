@@ -103,6 +103,7 @@
   --color-input-secondary: var(--input-secondary);
   /* Table */
   --color-destructive: var(--destructive);
+  --color-accent: var(--accent);
   --color-positive: var(--positive);
   --color-negative: var(--negative);
   --color-chart-1: var(--chart-1);
@@ -171,6 +172,8 @@
 
   --positive: oklch(0.5816 0.1169 164.11);
   --negative: oklch(0.6221 0.1943 29.8);
+  /* Selected/active affordance accent (orange, provisional) */
+  --accent: oklch(0.705 0.213 47.604);
 
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);

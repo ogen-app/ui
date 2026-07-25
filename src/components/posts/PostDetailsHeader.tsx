@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
+import { cn } from '@/lib'
 
 type Props = {
   campaignId: string
@@ -70,12 +71,12 @@ export function PostDetailsHeader({
         <Button
           variant="ghost"
           size="smIcon"
-          active={settingsOpen}
+          className={cn(settingsOpen && 'text-accent hover:text-accent')}
           onClick={onToggleSettings}
           aria-label="Post settings"
           aria-expanded={settingsOpen}
         >
-          <GearSixIcon className="size-5" />
+          <GearSixIcon weight={settingsOpen ? 'fill' : 'regular'} className="size-5" />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
