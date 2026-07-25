@@ -25,7 +25,7 @@ function Calendar({
       footer={
         <Button
           variant="outline"
-          className="border-x-0 border-b-0 w-full border-t-border-secondary"
+          className="border-x-0 border-b-0 w-full border-t-border"
           onClick={(e) => {
             if (props.mode === 'single' && props.onSelect) {
               const today = new Date()

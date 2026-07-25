@@ -31,6 +31,16 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
 4. **Only Layer 1 knows actual color values.** A palette swap (e.g. the
    previously-explored cool hue-200 variant, see git history of `index.css`)
    must be possible by editing Layer 1 alone.
+5. **Naming convention (decided 2026-07): the ordinal scale is the system.**
+   Tokens are named `[scope-]<ordinal>[-foreground]`, where the ordinal is
+   `primary`, `secondary`, `tertiary`, `quaternary`, `quinary`, `senary` — a
+   prominence order, not a lightness order. Scoped component families reuse
+   the same ordinals with a prefix (`--sidebar-primary-foreground`,
+   `--sidebar-secondary`); a scope's ordinals are independent of Layer 2's
+   (sidebar-secondary ≠ secondary). Don't introduce bare scope tokens like
+   `--sidebar` — the main pair of a scope is its `-primary` pair. Part-named
+   tokens (`--table-row`, `--popover-hover`) are fine where the ordinal rank
+   doesn't apply.
 
 ## Layer 2 inventory
 
@@ -43,7 +53,7 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
 | `--quaternary` / `--quaternary-foreground` | beige-200 / beige-500 | Hover surface / faint text |
 | `--quinary` / `--quinary-foreground` | beige-300 / beige-400 | Border-strength surface / faintest text |
 | `--senary` / `--senary-foreground` | beige-400 / beige-300 | Disabled surface / disabled text |
-| `--border`, `--border-secondary/tertiary/destructive` | beige-300 | Default hairlines (three aliases — see open questions) |
+| `--border` | beige-300 | Default hairlines |
 | `--border-primary` | black | Emphasized border |
 | `--ring` | beige-400 | Focus ring |
 | `--destructive`, `--positive`, `--negative`, `--editable` | oklch accents | Status / affordance accents |
@@ -80,20 +90,17 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
   `.dark { --table-footer: white }`, and the commented-out hue-200 palette
   (recoverable from git history).
 
-## Open naming questions (not yet changed)
+## Resolved naming questions (2026-07)
 
-1. **The ordinal scale (`primary…senary`) hides direction and intent.**
-   `--senary-foreground` is *lighter* than `--quinary-foreground`, and nothing
-   says whether a step is a surface or a text color except the `-foreground`
-   suffix. A clearer scheme would name intent, e.g.
-   `--surface` / `--surface-raised` / `--surface-sunken` / `--surface-hover` and
-   `--text` / `--text-muted` / `--text-faint` / `--text-disabled`.
-   Cost: ~large mechanical rename across all components.
-2. **`--background` vs `--tertiary`** are the same value with overlapping
-   meaning ("the canvas"); one should probably alias the other.
-3. **`--border-secondary`, `--border-tertiary`, `--border-destructive`** all
-   equal `--border`. Either give them real values or delete the aliases.
-4. **`--sidebar` vs `--sidebar-primary`** (and their foregrounds) duplicate
-   each other — shadcn inheritance; could be collapsed.
-5. **`--beige-050`** breaks the 3-digit pattern of Tailwind-style scales
-   (`50` elsewhere); harmless but inconsistent.
+1. **Ordinal scale kept** as the naming system — see rule 5 above.
+2. **`--background` vs `--tertiary`** stay separate despite equal values:
+   `--background` is the app canvas, `--tertiary` a muted surface that
+   currently happens to match it. They may diverge.
+3. **`--border-secondary/tertiary/destructive`** deleted — all were aliases of
+   `--border` (and `--border-destructive` was unused: `border-destructive`
+   classes resolve to `--color-destructive`). Usages now say `border-border` /
+   `border-t-border`.
+4. **Bare `--sidebar` / `--sidebar-foreground`** deleted (shadcn inheritance);
+   per rule 5 the scope's main pair is `--sidebar-primary(-foreground)`, and
+   all usages were renamed accordingly.
+5. **`--beige-050`** renamed to `--beige-50` to match the Tailwind-style scale.
