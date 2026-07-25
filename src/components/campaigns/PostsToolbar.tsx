@@ -93,18 +93,18 @@ export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: Posts
         {view === 'week' && anchor && onAnchorChange && (
           <div className="flex items-center gap-1">
             <Button
-              variant="ghost"
+              variant="default"
               size="smIcon"
               onClick={() => onAnchorChange(addDays(anchor, -7))}
               aria-label="Previous week"
             >
               <CaretLeftIcon className="size-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => onAnchorChange(new Date())}>
+            <Button variant="default" size="sm" onClick={() => onAnchorChange(new Date())}>
               TODAY
             </Button>
             <Button
-              variant="ghost"
+              variant="default"
               size="smIcon"
               onClick={() => onAnchorChange(addDays(anchor, 7))}
               aria-label="Next week"

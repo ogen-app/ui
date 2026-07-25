@@ -128,17 +128,16 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
     // scroll inside the wrapper below instead of pushing the whole component
     // past the viewport edge.
     <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-x-auto">
-      <div className="flex h-full">
-        {columns.map((col, i) => (
+      {/* gap-0.5 = the 2px gutters between columns; the page background
+          shows through as the divider. */}
+      <div className="flex h-full gap-0.5">
+        {columns.map((col) => (
           <div
             key={col.key}
-            className={cn(
-              'flex flex-col min-w-[150px] flex-1 min-h-0',
-              i > 0 && 'border-l border-border',
-            )}
+            className="flex flex-col min-w-[150px] flex-1 min-h-0 gap-0.5"
           >
             {/* Column header — weekday over the full date, centered. */}
-            <div className="shrink-0 border-b border-border px-2 pt-2.5 pb-2 flex flex-col items-center gap-0.5">
+            <div className="shrink-0 bg-secondary px-2 pt-2.5 pb-2 flex flex-col items-center gap-0.5">
               <span
                 className={cn(
                   'text-base font-display font-semibold leading-6',
@@ -161,8 +160,8 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
             <div
               {...laneHandlers(col.key, col.day)}
               className={cn(
-                'flex-1 min-h-0 overflow-y-auto px-2 py-2 flex flex-col gap-2 items-stretch transition-colors',
-                dragOverKey === col.key && 'bg-secondary',
+                'flex-1 min-h-0 overflow-y-auto bg-secondary px-2 py-2 flex flex-col gap-2 items-stretch transition-colors',
+                dragOverKey === col.key && 'bg-quaternary',
               )}
             >
               {col.posts.map((post) => (
