@@ -17,7 +17,6 @@ export type RightPanel =
 export type LocalSettings = {
   // UI State
   sidebarCollapsed: boolean
-  isSecondaryNavbarOpen: boolean
   activeRightPanel: RightPanel | null
   /**
    * Campaign context for the notScheduled panel. Kept after the panel
@@ -34,10 +33,6 @@ type SettingsState = LocalSettings & {
   setSidebarCollapsed: (collapsed: boolean) => void
   toggleSidebar: () => void
 
-  openSecondaryNavbar: () => void
-  closeSecondaryNavbar: () => void
-  toggleSecondaryNavbar: () => void
-
   /** Activate the panel, or close the sidebar if it is already active. */
   toggleRightPanel: (panel: RightPanel, campaignId?: string) => void
   closeRightPanel: () => void
@@ -50,7 +45,6 @@ type SettingsState = LocalSettings & {
 
 const DEFAULT_SETTINGS: LocalSettings = {
   sidebarCollapsed: false,
-  isSecondaryNavbarOpen: false,
   activeRightPanel: null,
   rightPanelCampaignId: null,
   lastOpenedModals: {},
@@ -70,19 +64,6 @@ export const useSettingsStore = create<SettingsState>()(
 
         toggleSidebar: () => {
           set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed }))
-        },
-
-        // Secondary navbar actions
-        openSecondaryNavbar: () => {
-          set({ isSecondaryNavbarOpen: true })
-        },
-
-        closeSecondaryNavbar: () => {
-          set({ isSecondaryNavbarOpen: false })
-        },
-
-        toggleSecondaryNavbar: () => {
-          set((state) => ({ isSecondaryNavbarOpen: !state.isSecondaryNavbarOpen }))
         },
 
         // Right sidebar actions (session-only, not persisted)
@@ -119,7 +100,7 @@ export const useSettingsStore = create<SettingsState>()(
           sidebarCollapsed: state.sidebarCollapsed,
           lastOpenedModals: state.lastOpenedModals,
           // Don't persist
-          // isSecondaryNavbarOpen, activeRightPanel, rightPanelCampaignId
+          // activeRightPanel, rightPanelCampaignId
         }),
       }
     ),

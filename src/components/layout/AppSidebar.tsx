@@ -30,7 +30,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/authStore'
-import { useSettingsStore } from '@/stores/settingsStore'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
 import { Logo } from '@/components/Logo'
@@ -67,7 +66,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation()
   const isCollapsed = isMobile ? false : state === 'collapsed'
   const { user } = useAuthStore()
-  const { closeSecondaryNavbar } = useSettingsStore()
   const navigate = useNavigate()
   const { data: campaigns } = useCampaigns()
 
@@ -120,7 +118,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <Link
                 to="/"
                 className={cn('flex items-center gap-2 font-semibold text-lg transition-all')}
-                onClick={closeSecondaryNavbar}
               >
                 <Logo className="size-10 shrink-0" />
               </Link>
@@ -157,7 +154,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               text="Campaigns"
               isActive={location.pathname === '/campaigns'}
               to="/campaigns"
-              onClick={closeSecondaryNavbar}
             />
             <AppSidebarButtonMenu
               icon={
@@ -166,7 +162,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               text="Content Bank"
               isActive={location.pathname.startsWith('/content-bank')}
               to="/content-bank"
-              onClick={closeSecondaryNavbar}
             />
 
             {campaigns && campaigns.length > 0 && (
@@ -189,7 +184,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         isActive={isActive}
                         to="/campaigns/$campaignId"
                         params={{ campaignId: campaign.id }}
-                        onClick={closeSecondaryNavbar}
                       />
                       {isActive && (
                         <div className="flex w-full flex-col gap-0.5 pb-2">
@@ -210,7 +204,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 isActive={subActive}
                                 to={link.to}
                                 params={link.params}
-                                onClick={closeSecondaryNavbar}
                                 className="lg:h-8 text-xs"
                               />
                             )
@@ -233,7 +226,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             text="Workspace Settings"
             isActive={location.pathname.startsWith('/workspace-settings')}
             to="/workspace-settings"
-            onClick={closeSecondaryNavbar}
           />
           <div>
             <DropdownMenu>
