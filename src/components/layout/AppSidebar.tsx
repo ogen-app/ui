@@ -201,14 +201,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                               <AppSidebarButtonMenu
                                 key={item.id}
                                 icon={
-                                  <item.icon weight="regular" className="size-4 flex-none" />
+                                  // Same 20px icon slot as top-level items so the labels
+                                  // line up; only the glyph inside is smaller.
+                                  <span className="flex size-5 flex-none items-center justify-center">
+                                    <item.icon weight="regular" className="size-4" />
+                                  </span>
                                 }
                                 text={item.text}
                                 isActive={subActive}
                                 to={link.to}
                                 params={link.params}
                                 onClick={closeSecondaryNavbar}
-                                className={cn('lg:h-8 text-xs', !isCollapsed && 'pl-4 lg:pl-6')}
+                                className="lg:h-8 text-xs"
                               />
                             )
                           })}
