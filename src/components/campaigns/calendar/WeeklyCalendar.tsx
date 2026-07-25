@@ -236,7 +236,7 @@ function WeeklyCalendarComponent({
       <div
         {...laneHandlers(UNSCHEDULED_KEY, null)}
         className={cn(
-          'absolute inset-x-0 bottom-0 z-10 bg-background shadow-[0_-2px_12px_rgba(0,0,0,0.08)] transition-colors',
+          'absolute inset-x-0 bottom-0 z-10 bg-background shadow-top transition-colors',
           dragOverKey === UNSCHEDULED_KEY && 'bg-secondary',
         )}
       >

@@ -61,7 +61,7 @@ export function EditPageHeader({
             aria-label="Unsaved changes"
             title="Unsaved changes"
             className={cn(
-              'inline-block size-1.5 rounded-full bg-gray-500 shrink-0 transition-opacity duration-200',
+              'inline-block size-1.5 rounded-full bg-secondary-foreground shrink-0 transition-opacity duration-200',
               unsaved ? 'opacity-100 animate-pulse' : 'opacity-0',
             )}
           />
