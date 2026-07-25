@@ -73,7 +73,7 @@ export function PageHeader({
               )}
               onClick={isClickable ? handleTitleClick : undefined}
             >
-              <h1 className="font-display text-2xl font-medium leading-none tracking-[-0.24px] text-primary-foreground truncate">
+              <h1 className="font-display text-2xl font-medium leading-8 tracking-[-0.24px] text-primary-foreground truncate">
                 {title}
               </h1>
               {isClickable && (

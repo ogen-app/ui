@@ -9,7 +9,6 @@ import {
   CaretDownIcon,
   FileTextIcon,
   LinkSimpleIcon,
-  PlusIcon,
   UploadSimpleIcon,
 } from "@phosphor-icons/react";
 import { PageContainer } from "@/components/page-primitives/PageContainer.tsx";
@@ -112,10 +111,13 @@ function ContentBankLayout() {
           actions={
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="lg" loading={createAsset.isPending}>
-                  <PlusIcon className={"size-4"} />
+                <Button
+                  size="lg"
+                  loading={createAsset.isPending}
+                  className="data-[state=open]:bg-primary-foreground data-[state=open]:text-primary"
+                >
                   <span>ADD ASSET</span>
-                  <CaretDownIcon className="size-3" />
+                  <CaretDownIcon weight="bold" className="size-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" sideOffset={4}>
@@ -129,8 +131,10 @@ function ContentBankLayout() {
                 </DropdownMenuItem>
                 <DropdownMenuItem size="lg" disabled>
                   <LinkSimpleIcon />
-                  <span>Extract from link</span>
-                  <span className="text-xs text-tertiary-foreground">coming soon</span>
+                  <div className="flex flex-col gap-1">
+                    <span>Extract from link</span>
+                    <span className="text-xs text-tertiary-foreground">coming soon</span>
+                  </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
