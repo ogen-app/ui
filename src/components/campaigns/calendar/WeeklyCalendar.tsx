@@ -169,13 +169,13 @@ function WeeklyCalendarComponent({
       <div className="flex items-center justify-between shrink-0">
         <span className="text-[16px] font-medium">{formatMonthRange()}</span>
         <div className="flex items-center gap-3 px-0 py-2 shrink-0">
-          <Button variant="ghost" size="sm" onClick={handleToday}>
+          <Button variant="default" size="sm" onClick={handleToday}>
             TODAY
           </Button>
-          <Button variant="ghost" size="smIcon" onClick={handlePrev}>
+          <Button variant="default" size="smIcon" onClick={handlePrev}>
             <CaretLeftIcon className="size-3.5" />
           </Button>
-          <Button variant="ghost" size="smIcon" onClick={handleNext}>
+          <Button variant="default" size="smIcon" onClick={handleNext}>
             <CaretRightIcon className="size-3.5" />
           </Button>
         </div>
@@ -183,18 +183,17 @@ function WeeklyCalendarComponent({
 
       {/* Day columns — horizontally scrollable when cramped */}
       <div className="flex-1 min-h-0 overflow-x-auto">
-        <div className="flex h-full">
-          {columns.map((col, i) => (
+        {/* gap-0.5 = the 2px gutters between columns; the page background
+            (beige-100) shows through them against the beige-50 columns. */}
+        <div className="flex h-full gap-0.5">
+          {columns.map((col) => (
             <div
               key={col.key}
-              className={cn(
-                'flex flex-col min-w-[150px] flex-1 min-h-0',
-                i > 0 && 'border-l border-border',
-              )}
+              className="flex flex-col min-w-[150px] flex-1 min-h-0 gap-0.5"
             >
               {/* Column header — day name and date share one style:
                   semi-expanded (font-display) semi-bold. */}
-              <div className="shrink-0 px-2 pt-2.5 pb-2 flex items-baseline gap-1.5">
+              <div className="shrink-0 bg-secondary px-2 pt-2.5 pb-2 flex items-baseline gap-1.5">
                 <span
                   className={cn(
                     'text-base font-display font-semibold leading-6 tabular-nums',
@@ -217,8 +216,8 @@ function WeeklyCalendarComponent({
               <div
                 {...laneHandlers(col.key, col.day)}
                 className={cn(
-                  'flex-1 min-h-0 overflow-y-auto px-2 pb-2 flex flex-col gap-2 items-stretch transition-colors',
-                  dragOverKey === col.key && 'bg-secondary',
+                  'flex-1 min-h-0 overflow-y-auto bg-secondary px-2 py-2 flex flex-col gap-2 items-stretch transition-colors',
+                  dragOverKey === col.key && 'bg-quaternary',
                 )}
               >
                 {col.posts.map((post) => (
@@ -237,7 +236,7 @@ function WeeklyCalendarComponent({
         {...laneHandlers(UNSCHEDULED_KEY, null)}
         className={cn(
           'absolute inset-x-0 bottom-0 z-10 bg-background shadow-top transition-colors',
-          dragOverKey === UNSCHEDULED_KEY && 'bg-secondary',
+          dragOverKey === UNSCHEDULED_KEY && 'bg-quaternary',
         )}
       >
         <button
