@@ -52,14 +52,13 @@ function CampaignLayout() {
       <div className={"flex-1 min-h-0 flex flex-col"}>
         <PageHeader
           title={title}
-          overlay={"campaign-selector"}
           actions={
             section === "Calendar" ? (
               <CalendarHeaderActions campaignId={campaignId} />
             ) : undefined
           }
         />
-        <div className={"grid overflow-hidden h-full mt-1 px-3 lg:mt-2 lg:px-6"}>
+        <div className={"grid overflow-hidden h-full px-3 lg:px-6"}>
           <Outlet />
         </div>
       </div>
