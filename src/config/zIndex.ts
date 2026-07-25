@@ -192,6 +192,19 @@ export const ZIndex = {
   tooltip: 320,
 
   // ============================================================================
+  // NOTIFICATION LAYER (400-499)
+  // Transient, non-blocking notifications
+  // ============================================================================
+
+  /**
+   * Toast notifications
+   * Used for: ToastViewport - transient toasts. Must sit above popovers,
+   * tooltips, sheets, and modals so feedback is never hidden, but below the
+   * boot AppLoader.
+   */
+  toast: 400,
+
+  // ============================================================================
   // APP LAYER (900+)
   // Critical app-level overlays that must appear above everything
   // ============================================================================
