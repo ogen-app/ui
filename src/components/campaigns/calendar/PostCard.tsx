@@ -71,21 +71,21 @@ function PostCardComponent({ post }: PostCardProps) {
       )}
     >
       {/* Row 1 — status */}
-      <div className="text-xs text-tertiary-foreground truncate">{statusLabel}</div>
+      <div className="text-[10px]/[14px] text-tertiary-foreground truncate">{statusLabel}</div>
 
       {/* Row 2 — title, up to two lines */}
-      <div className="text-base font-medium line-clamp-2">{title}</div>
+      <div className="text-sm/[22px] font-medium line-clamp-2">{title}</div>
 
       {/* Row 3 — time */}
       {time && (
-        <div className="flex items-center gap-1.5 text-xs text-tertiary-foreground">
+        <div className="flex items-center gap-1.5 text-[10px]/[14px] text-tertiary-foreground">
           <ClockIcon className="size-3.5 shrink-0" />
           <span className="truncate">{time}</span>
         </div>
       )}
 
       {/* Row 4 — platform */}
-      <div className="flex items-center gap-1.5 text-xs text-tertiary-foreground min-w-0">
+      <div className="flex items-center gap-1.5 text-[10px]/[14px] text-tertiary-foreground min-w-0">
         <PlatformIcon
           weight="fill"
           color={platformInfo?.color}

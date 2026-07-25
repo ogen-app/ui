@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/page-primitives/PageHeader.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { PlusIcon } from "@phosphor-icons/react";
 import { CampaignHeaderActions } from "@/components/campaigns/CampaignHeaderActions.tsx";
+import { GeneratePlanButton } from "@/components/campaigns/GeneratePlanButton.tsx";
 import { CampaignTabBar } from "@/components/campaigns/CampaignTabBar.tsx";
 import { formatAnchor } from "@/components/campaigns/calendar/date";
 import { useCampaign } from "@/hooks/useCampaigns.ts";
@@ -76,11 +77,14 @@ function CampaignLayout() {
     }
   };
 
-  const addPostButton = (
-    <Button variant="default" size="default" onClick={addPost}>
-      <PlusIcon className="size-4" />
-      <span>ADD POST</span>
-    </Button>
+  const tabBarActions = (
+    <div className="flex items-center gap-3">
+      <GeneratePlanButton campaign={campaign} />
+      <Button variant="default" size="default" onClick={addPost}>
+        <PlusIcon className="size-4" />
+        <span>ADD POST</span>
+      </Button>
+    </div>
   );
 
   return (
@@ -101,7 +105,7 @@ function CampaignLayout() {
           tabs={LEFT_TABS}
           rightTabs={RIGHT_TABS}
           onTabSelect={handleTabSelect}
-          action={addPostButton}
+          action={tabBarActions}
         />
         <div className={"grid overflow-hidden h-full mt-1 px-3 lg:mt-2 lg:px-6"}>
           <Outlet />

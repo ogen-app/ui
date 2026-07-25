@@ -1,6 +1,17 @@
 import * as React from 'react'
-import { Link, useLocation } from '@tanstack/react-router'
-import { CaretDoubleLeftIcon, GearSixIcon, MegaphoneIcon, SignOutIcon, VaultIcon, XIcon } from '@phosphor-icons/react'
+import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import {
+  CalendarDotsIcon,
+  CardsThreeIcon,
+  CaretDoubleLeftIcon,
+  GearSixIcon,
+  NotepadIcon,
+  ScanIcon,
+  SidebarIcon,
+  SignOutIcon,
+  ToolboxIcon,
+  XIcon,
+} from '@phosphor-icons/react'
 import {
   Sidebar,
   SidebarContent,
@@ -20,12 +31,35 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/authStore'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { useNavigate } from '@tanstack/react-router'
+import { useCampaigns } from '@/hooks/useCampaigns'
+import { formatAnchor } from '@/components/campaigns/calendar/date'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib'
-import {
-  AppSidebarButtonMenu,
-} from '@/components/layout/AppSiderButton.tsx'
+import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
+import { CampaignIcon, campaignAbbr } from '@/components/layout/CampaignIcon.tsx'
+
+function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; isCollapsed: boolean }) {
+  return (
+    <div
+      className={cn(
+        'px-1.5 lg:px-2.5 pt-5 pb-1 text-xs font-mono uppercase text-quaternary-foreground truncate',
+        isCollapsed && 'opacity-0'
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+const CAMPAIGN_SUB_ITEMS = [
+  { id: 'overview', text: 'Overview', icon: SidebarIcon },
+  { id: 'posts', text: 'Posts', icon: CalendarDotsIcon },
+  { id: 'brief', text: 'Brief', icon: NotepadIcon },
+  { id: 'assets', text: 'Assets', icon: ScanIcon },
+  { id: 'settings', text: 'Settings', icon: GearSixIcon },
+] as const
+
+type CampaignSubItemId = (typeof CAMPAIGN_SUB_ITEMS)[number]['id']
 
 /** The app's main navigation sidebar, including the user/workspace menu. */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -35,11 +69,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthStore()
   const { closeSecondaryNavbar } = useSettingsStore()
   const navigate = useNavigate()
+  const { data: campaigns } = useCampaigns()
+
+  const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
 
   const handleLogout = () => {
     navigate({ to: '/auth/logout' })
   }
 
+  const activeSubItem: CampaignSubItemId | null = !activeCampaignId
+    ? null
+    : location.pathname.includes('/overview')
+      ? 'overview'
+      : location.pathname.includes('/brief')
+        ? 'brief'
+        : location.pathname.includes('/assets')
+          ? 'assets'
+          : location.pathname.includes('/settings')
+            ? 'settings'
+            : 'posts'
+
+  // Posts lands on the current week of the calendar; the rest are plain pages.
+  const subItemLink = (campaignId: string, id: CampaignSubItemId): { to: string; params: Record<string, string> } =>
+    id === 'posts'
+      ? {
+          to: '/campaigns/$campaignId/calendar/$anchor/$view',
+          params: { campaignId, anchor: formatAnchor(new Date()), view: 'week' },
+        }
+      : { to: `/campaigns/$campaignId/${id}`, params: { campaignId } }
 
   const initials =
     `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`.toUpperCase() || '?'
@@ -91,33 +148,102 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarHeader>
         <SidebarContent>
           <nav
-            className={cn('flex flex-col gap-2 px-3 py-0 lg:p-6', isCollapsed && 'items-center')}
+            className={cn('flex flex-col gap-1 px-3 py-0 lg:px-6', isCollapsed && 'items-center')}
           >
+            <SectionLabel isCollapsed={isCollapsed}>Modules</SectionLabel>
             <AppSidebarButtonMenu
-              icon={MegaphoneIcon}
+              icon={
+                <ToolboxIcon
+                  weight={location.pathname === '/campaigns' ? 'fill' : 'regular'}
+                  className="size-5 flex-none"
+                />
+              }
               text="Campaigns"
-              isActive={location.pathname.startsWith('/campaigns')}
+              isActive={location.pathname === '/campaigns'}
               to="/campaigns"
               onClick={closeSecondaryNavbar}
             />
             <AppSidebarButtonMenu
-              icon={VaultIcon}
+              icon={
+                <CardsThreeIcon
+                  weight={location.pathname.startsWith('/content-bank') ? 'fill' : 'regular'}
+                  className="size-5 flex-none"
+                />
+              }
               text="Content Bank"
               isActive={location.pathname.startsWith('/content-bank')}
               to="/content-bank"
               onClick={closeSecondaryNavbar}
             />
-            <AppSidebarButtonMenu
-              icon={GearSixIcon}
-              text="Workspace Settings"
-              isActive={location.pathname.startsWith('/workspace-settings')}
-              to="/workspace-settings"
-              onClick={closeSecondaryNavbar}
-            />
+
+            {campaigns && campaigns.length > 0 && (
+              <>
+                <SectionLabel isCollapsed={isCollapsed}>Campaigns</SectionLabel>
+                {campaigns.map((campaign) => {
+                  const isActive = campaign.id === activeCampaignId
+                  const name = campaign.name.trim() || 'Untitled campaign'
+                  return (
+                    <React.Fragment key={campaign.id}>
+                      <AppSidebarButtonMenu
+                        icon={
+                          <CampaignIcon
+                            abbr={campaignAbbr(name)}
+                            active={isActive}
+                            className="size-5 flex-none"
+                          />
+                        }
+                        text={name}
+                        isActive={isActive}
+                        to="/campaigns/$campaignId"
+                        params={{ campaignId: campaign.id }}
+                        onClick={closeSecondaryNavbar}
+                      />
+                      {isActive && (
+                        <div className="flex w-full flex-col gap-0.5 pb-2">
+                          {CAMPAIGN_SUB_ITEMS.map((item) => {
+                            const subActive = activeSubItem === item.id
+                            const link = subItemLink(campaign.id, item.id)
+                            return (
+                              <AppSidebarButtonMenu
+                                key={item.id}
+                                icon={
+                                  <item.icon
+                                    weight={subActive ? 'fill' : 'regular'}
+                                    className="size-4 flex-none"
+                                  />
+                                }
+                                text={item.text}
+                                isActive={subActive}
+                                to={link.to}
+                                params={link.params}
+                                onClick={closeSecondaryNavbar}
+                                className={cn('lg:h-8 text-xs', !isCollapsed && 'pl-4 lg:pl-6')}
+                              />
+                            )
+                          })}
+                        </div>
+                      )}
+                    </React.Fragment>
+                  )
+                })}
+              </>
+            )}
           </nav>
         </SidebarContent>
 
         <SidebarFooter>
+          <AppSidebarButtonMenu
+            icon={
+              <GearSixIcon
+                weight={location.pathname.startsWith('/workspace-settings') ? 'fill' : 'regular'}
+                className="size-5 flex-none"
+              />
+            }
+            text="Workspace Settings"
+            isActive={location.pathname.startsWith('/workspace-settings')}
+            to="/workspace-settings"
+            onClick={closeSecondaryNavbar}
+          />
           <div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

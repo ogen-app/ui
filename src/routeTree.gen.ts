@@ -27,8 +27,11 @@ import { Route as AuthenticatedContentBankFilesRouteImport } from './routes/_aut
 import { Route as AuthenticatedContentBankAllRouteImport } from './routes/_authenticated/content-bank/all'
 import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
+import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
+import { Route as AuthenticatedCampaignsCampaignIdOverviewRouteImport } from './routes/_authenticated/campaigns/$campaignId/overview'
 import { Route as AuthenticatedCampaignsCampaignIdListRouteImport } from './routes/_authenticated/campaigns/$campaignId/list'
 import { Route as AuthenticatedCampaignsCampaignIdBriefRouteImport } from './routes/_authenticated/campaigns/$campaignId/brief'
+import { Route as AuthenticatedCampaignsCampaignIdAssetsRouteImport } from './routes/_authenticated/campaigns/$campaignId/assets'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/index'
 import { Route as AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/posts/$postId'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarAnchorViewRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/$anchor/$view'
@@ -133,6 +136,18 @@ const AuthenticatedCampaignsCampaignIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
+const AuthenticatedCampaignsCampaignIdSettingsRoute =
+  AuthenticatedCampaignsCampaignIdSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdOverviewRoute =
+  AuthenticatedCampaignsCampaignIdOverviewRouteImport.update({
+    id: '/overview',
+    path: '/overview',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
 const AuthenticatedCampaignsCampaignIdListRoute =
   AuthenticatedCampaignsCampaignIdListRouteImport.update({
     id: '/list',
@@ -143,6 +158,12 @@ const AuthenticatedCampaignsCampaignIdBriefRoute =
   AuthenticatedCampaignsCampaignIdBriefRouteImport.update({
     id: '/brief',
     path: '/brief',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdAssetsRoute =
+  AuthenticatedCampaignsCampaignIdAssetsRouteImport.update({
+    id: '/assets',
+    path: '/assets',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdCalendarIndexRoute =
@@ -181,8 +202,11 @@ export interface FileRoutesByFullPath {
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
+  '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
+  '/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
+  '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -203,8 +227,11 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginIndexRoute
   '/auth/logout': typeof AuthLogoutIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
+  '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
+  '/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
+  '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdIndexRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -229,8 +256,11 @@ export interface FileRoutesById {
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
+  '/_authenticated/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/_authenticated/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/_authenticated/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
+  '/_authenticated/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
+  '/_authenticated/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/_authenticated/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
   '/_authenticated/campaigns/$campaignId_/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/_authenticated/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -255,8 +285,11 @@ export interface FileRouteTypes {
     | '/auth/login/'
     | '/auth/logout/'
     | '/auth/register/'
+    | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
+    | '/campaigns/$campaignId/overview'
+    | '/campaigns/$campaignId/settings'
     | '/campaigns/$campaignId/'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar/'
@@ -277,8 +310,11 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/logout'
     | '/auth/register'
+    | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
+    | '/campaigns/$campaignId/overview'
+    | '/campaigns/$campaignId/settings'
     | '/campaigns/$campaignId'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar'
@@ -302,8 +338,11 @@ export interface FileRouteTypes {
     | '/auth/login/'
     | '/auth/logout/'
     | '/auth/register/'
+    | '/_authenticated/campaigns/$campaignId/assets'
     | '/_authenticated/campaigns/$campaignId/brief'
     | '/_authenticated/campaigns/$campaignId/list'
+    | '/_authenticated/campaigns/$campaignId/overview'
+    | '/_authenticated/campaigns/$campaignId/settings'
     | '/_authenticated/campaigns/$campaignId/'
     | '/_authenticated/campaigns/$campaignId_/posts/$postId'
     | '/_authenticated/campaigns/$campaignId/calendar/'
@@ -447,6 +486,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdIndexRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
+    '/_authenticated/campaigns/$campaignId/settings': {
+      id: '/_authenticated/campaigns/$campaignId/settings'
+      path: '/settings'
+      fullPath: '/campaigns/$campaignId/settings'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdSettingsRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/overview': {
+      id: '/_authenticated/campaigns/$campaignId/overview'
+      path: '/overview'
+      fullPath: '/campaigns/$campaignId/overview'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdOverviewRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
     '/_authenticated/campaigns/$campaignId/list': {
       id: '/_authenticated/campaigns/$campaignId/list'
       path: '/list'
@@ -459,6 +512,13 @@ declare module '@tanstack/react-router' {
       path: '/brief'
       fullPath: '/campaigns/$campaignId/brief'
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdBriefRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/assets': {
+      id: '/_authenticated/campaigns/$campaignId/assets'
+      path: '/assets'
+      fullPath: '/campaigns/$campaignId/assets'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdAssetsRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
     '/_authenticated/campaigns/$campaignId/calendar/': {
@@ -508,8 +568,11 @@ const AuthenticatedContentBankRouteWithChildren =
   )
 
 interface AuthenticatedCampaignsCampaignIdRouteChildren {
+  AuthenticatedCampaignsCampaignIdAssetsRoute: typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   AuthenticatedCampaignsCampaignIdBriefRoute: typeof AuthenticatedCampaignsCampaignIdBriefRoute
   AuthenticatedCampaignsCampaignIdListRoute: typeof AuthenticatedCampaignsCampaignIdListRoute
+  AuthenticatedCampaignsCampaignIdOverviewRoute: typeof AuthenticatedCampaignsCampaignIdOverviewRoute
+  AuthenticatedCampaignsCampaignIdSettingsRoute: typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   AuthenticatedCampaignsCampaignIdIndexRoute: typeof AuthenticatedCampaignsCampaignIdIndexRoute
   AuthenticatedCampaignsCampaignIdCalendarIndexRoute: typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
   AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute: typeof AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute
@@ -517,10 +580,16 @@ interface AuthenticatedCampaignsCampaignIdRouteChildren {
 
 const AuthenticatedCampaignsCampaignIdRouteChildren: AuthenticatedCampaignsCampaignIdRouteChildren =
   {
+    AuthenticatedCampaignsCampaignIdAssetsRoute:
+      AuthenticatedCampaignsCampaignIdAssetsRoute,
     AuthenticatedCampaignsCampaignIdBriefRoute:
       AuthenticatedCampaignsCampaignIdBriefRoute,
     AuthenticatedCampaignsCampaignIdListRoute:
       AuthenticatedCampaignsCampaignIdListRoute,
+    AuthenticatedCampaignsCampaignIdOverviewRoute:
+      AuthenticatedCampaignsCampaignIdOverviewRoute,
+    AuthenticatedCampaignsCampaignIdSettingsRoute:
+      AuthenticatedCampaignsCampaignIdSettingsRoute,
     AuthenticatedCampaignsCampaignIdIndexRoute:
       AuthenticatedCampaignsCampaignIdIndexRoute,
     AuthenticatedCampaignsCampaignIdCalendarIndexRoute:
