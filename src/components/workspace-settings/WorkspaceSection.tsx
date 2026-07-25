@@ -1,12 +1,11 @@
 import { memo, useId, useState, type FormEvent } from 'react'
-import { PencilSimpleIcon } from '@phosphor-icons/react'
 import type { Tenant } from '@/types/tenant'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { useCurrentTenant, useRenameTenant } from '@/hooks/useTenant'
-import { ReadOnlyField, SettingsRow } from './SettingsRow'
+import { EditIconButton, ReadOnlyField, SettingsRow } from './SettingsRow'
 
 /**
  * The tenant (organization) settings — CON-97. The row shows the workspace
@@ -29,7 +28,9 @@ function WorkspaceSectionComponent() {
       ) : (
         <ul className="flex flex-col gap-4">
           <SettingsRow title={tenant.name} actions={<WorkspaceEditIconButton tenant={tenant} />}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4 max-w-150">
+            {/* Same two-column body as the platform rows, so the fields line
+                up and stretch across the card. */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
               <ReadOnlyField label="Organization name" value={tenant.name} />
               <ReadOnlyField label="Slug" value={tenant.slug} />
             </div>
@@ -45,16 +46,7 @@ function WorkspaceEditIconButton({ tenant }: { tenant: Tenant }) {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="smIcon"
-        onClick={() => setOpen(true)}
-        aria-label="Edit workspace"
-        title="Edit workspace"
-      >
-        <PencilSimpleIcon className="size-3.5" />
-      </Button>
+      <EditIconButton label="Edit workspace" onClick={() => setOpen(true)} />
       <ModalContainer
         isOpen={open}
         onClose={() => setOpen(false)}
