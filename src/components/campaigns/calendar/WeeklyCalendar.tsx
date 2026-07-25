@@ -157,7 +157,10 @@ function WeeklyCalendarComponent({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 relative">
+    // min-w-0 lets the calendar shrink to its grid cell so the day columns
+    // scroll inside the wrapper below instead of pushing the whole component
+    // (navigator included) past the viewport edge.
+    <div className="flex flex-col h-full min-h-0 min-w-0 relative">
       {/* Navigator */}
       <div className="flex items-center justify-between shrink-0">
         <span className="text-[16px] font-medium">{formatMonthRange()}</span>
@@ -181,7 +184,7 @@ function WeeklyCalendarComponent({
             <div
               key={col.key}
               className={cn(
-                'flex flex-col min-w-[200px] flex-1 min-h-0',
+                'flex flex-col min-w-[150px] flex-1 min-h-0',
                 i > 0 && 'border-l border-border',
               )}
             >

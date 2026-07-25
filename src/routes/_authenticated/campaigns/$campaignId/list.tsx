@@ -21,7 +21,7 @@ function CampaignListView() {
     return (
       <PageGridEmptyState
         title="No posts yet"
-        subtitle="Add your first post to start building this campaign"
+        subtitle="Add your first post, or generate a draft plan from the campaign brief"
         actions={
           <Button variant="defaultInverted" onClick={addPost}>
             <PlusIcon className="size-4" />
