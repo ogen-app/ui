@@ -1,5 +1,7 @@
 import { useId, type ReactNode } from 'react'
+import { PencilSimpleIcon } from '@phosphor-icons/react'
 
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
@@ -38,6 +40,22 @@ export function SettingsRow({
       )}
       {children}
     </li>
+  )
+}
+
+/** The corner pencil every settings row uses to open its edit modal. */
+export function EditIconButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="smIcon"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+    >
+      <PencilSimpleIcon className="size-5" weight="regular" />
+    </Button>
   )
 }
 

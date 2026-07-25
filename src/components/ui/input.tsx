@@ -8,7 +8,11 @@ const inputVariants = cva(
     'placeholder:text-tertiary-foreground selection:bg-selection/20 border-input flex w-full min-w-0 bg-transparent ' +
     'transition-[color,border-color,box-shadow] duration-300 outline-none file:inline-flex ' +
     'file:text-foreground file:border-0 file:bg-transparent file:font-medium ' +
-    'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50' +
+    'disabled:pointer-events-none disabled:cursor-not-allowed ' +
+    // Read-only reads as plain text: no field fill, and no dimming — the value
+    // is content, not a disabled control. Keyed off the attribute rather than
+    // :read-only, which CSS also matches on merely disabled inputs.
+    '[&:disabled:not([readonly])]:opacity-50 [&[readonly]]:bg-transparent ' +
     '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
   {
     variants: {
