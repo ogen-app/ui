@@ -37,7 +37,7 @@ function WorkspaceSettings() {
       <div className="h-0 grow overflow-y-auto flex flex-col">
         <PageHeader
           title="Workspace Settings"
-          className="sticky top-0 z-10 pt-6 pb-6 pr-1 bg-gradient-to-b from-background from-42% to-transparent"
+          className="sticky top-0 z-10 pb-6 pr-1 bg-gradient-to-b from-background from-42% to-transparent"
         />
         <div className="flex flex-col gap-8 px-3 lg:px-6 pb-10">
           <WorkspaceSection />

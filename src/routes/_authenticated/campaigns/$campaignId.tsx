@@ -93,7 +93,6 @@ function CampaignLayout() {
         <PageHeader
           title={title}
           overlay={"campaign-selector"}
-          className={"pt-6"}
           actions={
             <div className="flex items-center gap-3">
               <CampaignHeaderActions campaign={campaign} />

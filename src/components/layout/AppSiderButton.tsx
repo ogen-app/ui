@@ -14,10 +14,10 @@ export function AppSidebarButtonSearch({ onClick }: AppSidebarButtonSearchProps)
       <div>
         <MagnifyingGlassIcon className="size-5 flex-none" />
         <div className="flex-none text-left w-[108px]">
-          <span className="font-mono uppercase">Search</span>
+          <span className="font-grotesk font-medium uppercase">Search</span>
         </div>
         <div className="hidden lg:block w-16 flex-none">
-          <span className="text-right font-mono uppercase">CMD + F</span>
+          <span className="text-right font-grotesk font-medium uppercase">CMD + F</span>
         </div>
       </div>
     </Button>
@@ -48,8 +48,8 @@ export function AppSidebarButtonMenu({
   const content = (
     <>
       {icon}
-      <div className="min-w-0">
-        <span className="font-mono uppercase truncate">{text}</span>
+      <div className="transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
+        <span className="block min-w-0 truncate text-left">{text}</span>
       </div>
     </>
   )

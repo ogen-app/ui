@@ -66,6 +66,7 @@
   --font-display:
     'Zalando Sans Semi Expanded', 'Zalando Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     'Roboto', sans-serif;
+  --font-grotesk: 'Space Grotesk', var(--font-sans);
 
   /* Radius */
   --radius-sm: calc(var(--radius) + 0px);
@@ -97,6 +98,7 @@
   --color-senary: var(--senary);
   --color-senary-foreground: var(--senary-foreground);
 
+  --color-header-icon: var(--header-icon);
   --color-popover: var(--popover);
   --color-popover-hover: var(--popover-hover);
   --color-popover-foreground: var(--popover-foreground);
@@ -169,6 +171,7 @@
   --quinary-foreground: var(--beige-400);
   --senary: var(--beige-400);
   --senary-foreground: var(--beige-300);
+  --header-icon: #54504c;
   --popover: white;
   --popover-hover: var(--beige-050);
   --popover-foreground: var(--black);
@@ -199,14 +202,14 @@
   --chart-neutral: var(--beige-050);
   --chart-neutral-secondary: var(--beige-100);
 
-  --sidebar: white;
-  --sidebar-foreground: var(--black);
-  --sidebar-primary: white;
-  --sidebar-primary-foreground: var(--black);
-  --sidebar-secondary: var(--beige-100);
-  --sidebar-secondary-foreground: var(--beige-600);
-  --sidebar-border: var(--beige-300);
-  --sidebar-ring: var(--beige-400);
+  --sidebar: var(--primary);
+  --sidebar-foreground: var(--primary-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-secondary: var(--tertiary);
+  --sidebar-secondary-foreground: var(--tertiary-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 
   --table-row: white;
   --table-header: var(--beige-050);

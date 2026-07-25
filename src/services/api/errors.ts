@@ -32,17 +32,67 @@ export async function fetchOrThrowUnavailable(
 }
 
 /**
+ * One rule failure from the pre-publish validation gate (mirrors
+ * `platforms.ValidationError` in the Go backend, CON-73 §2.4). Only the
+ * fields the UI consumes are declared; `message` is human-readable and
+ * self-contained ("file is N bytes; platform allows up to M").
+ */
+type PlatformValidationError = {
+  message?: string;
+  rule?: string;
+};
+
+type ApiErrorBody = {
+  error?: string;
+  /**
+   * Keyed by platform id. Sent with 422s from the validation gate — post
+   * create, the draft → ready_for_publish PUT, and POST /:id/schedule.
+   */
+  platform_validation?: Record<string, PlatformValidationError[]>;
+};
+
+/**
+ * Caps how many validation details are folded into one message so a post
+ * with many failing attachments doesn't produce a paragraph.
+ */
+const MAX_VALIDATION_DETAILS = 4;
+
+function validationDetails(
+  byPlatform: ApiErrorBody["platform_validation"]
+): string[] {
+  if (!byPlatform || typeof byPlatform !== "object") return [];
+  // Dedupe: several attachments can fail the same rule with the same text.
+  const seen = new Set<string>();
+  for (const errs of Object.values(byPlatform)) {
+    if (!Array.isArray(errs)) continue;
+    for (const e of errs) {
+      const detail = e?.message || e?.rule;
+      if (detail) seen.add(detail);
+    }
+  }
+  return [...seen];
+}
+
+/**
  * Extracts a human-readable error message from a non-OK API response. Prefers
- * the backend's `{ error: string }` JSON body; falls back to `fallback` when the
- * body is absent, malformed, or has no error string.
+ * the backend's `{ error: string }` JSON body, appending any
+ * `platform_validation` rule failures so a 422 tells the user *which* check
+ * failed; falls back to `fallback` when the body is absent, malformed, or has
+ * no error string.
  */
 export async function errorMessage(
   res: Response,
   fallback: string
 ): Promise<string> {
   try {
-    const body = (await res.json()) as { error?: string };
-    if (typeof body.error === "string" && body.error.length > 0) return body.error;
+    const body = (await res.json()) as ApiErrorBody;
+    if (typeof body.error === "string" && body.error.length > 0) {
+      const details = validationDetails(body.platform_validation);
+      if (details.length === 0) return body.error;
+      const shown = details.slice(0, MAX_VALIDATION_DETAILS);
+      const more = details.length - shown.length;
+      return `${body.error}: ${shown.join("; ")}${more > 0 ? ` (+${more} more)` : ""}`;
+    }
   } catch {
     // fall through
   }

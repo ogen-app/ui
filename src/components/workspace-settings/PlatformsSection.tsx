@@ -1,6 +1,6 @@
 import { memo, useId, useState } from 'react'
-import { PencilSimpleIcon } from '@phosphor-icons/react'
-import type { Platform, PlatformPublisher, PublisherAccount } from '@/types/campaigns'
+import { PlugsIcon } from '@phosphor-icons/react'
+import type { Platform, PublisherAccount } from '@/types/campaigns'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
@@ -15,7 +15,7 @@ import {
   type PlatformView,
 } from '@/lib/platformDictionary'
 import { usePlatformViews } from '@/hooks/usePlatforms'
-import { ReadOnlyField, SettingsRow } from './SettingsRow'
+import { EditIconButton, ReadOnlyField, SettingsRow } from './SettingsRow'
 
 /**
  * Platform Settings — one row per platform the workspace has actually
@@ -47,6 +47,7 @@ function PlatformsSectionComponent() {
 type ConnectionStatus = {
   tone: StatusTone
   label: string
+  /** Empty on the healthy path — the "Connected" badge already says it. */
   message: string
 }
 
@@ -83,14 +84,18 @@ function connectionStatus(view: PlatformView): ConnectionStatus {
   return {
     tone: 'positive',
     label: 'Connected',
-    message: `Publishing via ${publisher.name}.`,
+    message: '',
   }
 }
 
-/** One connected platform: status badge, post-type chips, cadence/constraints. */
+/**
+ * One connected platform. The left column leads with the connected accounts,
+ * then cadence and constraints; the right column lists the content types the
+ * platform can publish.
+ */
 function PlatformRow({ view }: { view: PlatformView }) {
   const { platform, info } = view
-  const accountPublishers = view.connectedPublishers.filter((p) => p.accounts.length > 0)
+  const accounts = view.connectedPublishers.flatMap((p) => p.accounts)
   const status = connectionStatus(view)
 
   return (
@@ -103,41 +108,29 @@ function PlatformRow({ view }: { view: PlatformView }) {
           <PlatformEditIconButton platform={platform} />
         </>
       }
-      description={<p>{status.message}</p>}
+      description={status.message ? <p>{status.message}</p> : undefined}
     >
+      {accounts.length > 0 && <ConnectedAccounts accounts={accounts} />}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-        <PostTypeChips view={view} />
         <div className="flex flex-col gap-4">
           <ReadOnlyField label="Cadence" value={platform.cadence} />
           <ReadOnlyField label="Constraints" value={platform.constraints} />
         </div>
+        <PostTypeChips view={view} />
       </div>
-      {accountPublishers.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {accountPublishers.map((p) => (
-            <PublisherAccounts key={p.id} publisher={p} />
-          ))}
-        </div>
-      )}
     </SettingsRow>
   )
 }
 
-/** Post types the platform allows, grouped per connected publisher. */
+/**
+ * Content types the platform can publish — the union across every connected
+ * publisher, since the workspace can post through any of them.
+ */
 function PostTypeChips({ view }: { view: PlatformView }) {
-  const groups = view.connectedPublishers.map((pub) => ({
-    key: pub.id,
-    label: `Available via ${pub.name}`,
-    items: view.allowed.filter((pt) => pub.supported_post_types.includes(pt.slug)),
-  }))
+  const supported = new Set(view.connectedPublishers.flatMap((p) => p.supported_post_types))
+  const items = view.allowed.filter((pt) => supported.has(pt.slug))
 
-  return (
-    <div className="flex flex-col gap-4">
-      {groups.map((g) => (
-        <ChipGroup key={g.key} label={g.label} items={g.items} emptyText="None" />
-      ))}
-    </div>
-  )
+  return <ChipGroup label="Available Content Types" items={items} emptyText="None" />
 }
 
 /** A labeled row of chips, or `emptyText` when there are none. */
@@ -181,8 +174,15 @@ function DisconnectButton() {
     <Tooltip>
       <TooltipTrigger asChild>
         <span tabIndex={0}>
-          <Button type="button" variant="outline" size="sm" disabled>
-            Disconnect
+          <Button
+            type="button"
+            variant="ghost"
+            size="smIcon"
+            className="text-destructive hover:text-destructive disabled:text-destructive/40"
+            disabled
+            aria-label="Disconnect platform"
+          >
+            <PlugsIcon className="size-5" weight="regular" />
           </Button>
         </span>
       </TooltipTrigger>
@@ -196,16 +196,7 @@ function PlatformEditIconButton({ platform }: { platform: Platform }) {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="smIcon"
-        onClick={() => setOpen(true)}
-        aria-label="Edit platform"
-        title="Edit platform"
-      >
-        <PencilSimpleIcon className="size-3.5" />
-      </Button>
+      <EditIconButton label="Edit platform" onClick={() => setOpen(true)} />
       <PlatformDetailsModal
         platform={platform}
         open={open}
@@ -261,38 +252,42 @@ function PlatformDetailsModal({
   )
 }
 
-/** The publisher's connected accounts, one `AccountRow` each. */
-function PublisherAccounts({ publisher }: { publisher: PlatformPublisher }) {
+/**
+ * The accounts connected for this platform, across every publisher — a
+ * full-width block above the two-column body.
+ */
+function ConnectedAccounts({ accounts }: { accounts: PublisherAccount[] }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-[13px] font-normal text-input-label">
-        {publisher.name} accounts
-      </span>
-      <ul className="flex flex-col gap-1.5">
-        {publisher.accounts.map((a) => (
-          <AccountRow key={a.id} account={a} />
-        ))}
-      </ul>
-    </div>
+    <ul className="flex flex-col gap-3 min-w-0">
+      {accounts.map((a) => (
+        <AccountRow key={a.id} account={a} />
+      ))}
+    </ul>
   )
 }
 
-/** Avatar + handle for one connected account; flags inactive ones. */
+/**
+ * Avatar, then display name over handle; flags inactive accounts. Sized to
+ * match the sidebar profile block (AppSidebar) so the two read the same.
+ */
 function AccountRow({ account }: { account: PublisherAccount }) {
-  const initial = (account.display_name || account.username || '?').slice(0, 1).toUpperCase()
+  const name = account.display_name || account.username
+  const initial = (name || '?').slice(0, 1).toUpperCase()
   return (
-    <li className="flex items-center gap-2 text-sm">
-      <Avatar className="size-6">
-        {account.avatar_url && <AvatarImage src={account.avatar_url} alt={account.username} />}
-        <AvatarFallback className="text-[10px]">{initial}</AvatarFallback>
+    <li className="flex items-center gap-3 min-w-0">
+      <Avatar className="size-10 shrink-0">
+        {account.avatar_url && <AvatarImage src={account.avatar_url} alt={name} />}
+        <AvatarFallback>{initial}</AvatarFallback>
       </Avatar>
-      <span className="truncate">@{account.username}</span>
-      {account.display_name && (
-        <span className="text-tertiary-foreground truncate">· {account.display_name}</span>
-      )}
-      {!account.is_active && (
-        <span className="text-xs text-tertiary-foreground">(inactive)</span>
-      )}
+      <div className="flex flex-col items-start min-w-0">
+        <p className="w-full text-sm font-regular truncate text-left">
+          {name}
+          {!account.is_active && <span className="text-tertiary-foreground"> (inactive)</span>}
+        </p>
+        <p className="w-full text-xs text-tertiary-foreground truncate text-left">
+          @{account.username}
+        </p>
+      </div>
     </li>
   )
 }

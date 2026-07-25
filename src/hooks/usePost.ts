@@ -20,7 +20,10 @@ const SCHEDULED_POLL_MS = 5_000
 export const postKey = (id: string) => ['post', id] as const
 
 export type TransitionStatusResult =
-  | { ok: true; post: Post }
+  // `notice` is informational feedback about a successful action the user
+  // should still be told about — e.g. the server routed a schedule request
+  // somewhere other than where the button implied.
+  | { ok: true; post: Post; notice?: string }
   | { ok: false; error: string }
 
 type UsePostResult = {
@@ -149,6 +152,18 @@ export function usePost(postId: string): UsePostResult {
       }
       const result = await schedulePost(postId, base.scheduled_at)
       qc.setQueryData(postKey(postId), result.post)
+      // The user clicked "Schedule" expecting auto-publish, but the
+      // allowlist routed the post to manual publishing. The badge flips
+      // silently, so attach a notice explaining what happened.
+      if (result.post.status === 'scheduled_for_manual_publishing') {
+        return {
+          ok: true,
+          post: result.post,
+          notice:
+            "This platform isn't set up for auto-publishing, so you'll need " +
+            'to publish it yourself when the reminder comes up.',
+        }
+      }
       return { ok: true, post: result.post }
     } catch (err) {
       qc.invalidateQueries({ queryKey: postKey(postId) })
