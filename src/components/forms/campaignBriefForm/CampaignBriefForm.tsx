@@ -205,6 +205,6 @@ export function BriefForm({ campaign, onFlushRef }: BriefFormProps) {
 
 function Card({ children }: { children: ReactNode }) {
   return (
-    <div className="bg-white rounded-md p-6 flex flex-col gap-4">{children}</div>
+    <div className="bg-primary rounded-md p-6 flex flex-col gap-4">{children}</div>
   )
 }

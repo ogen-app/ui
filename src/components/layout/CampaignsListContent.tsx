@@ -63,7 +63,7 @@ export function CampaignsListContent() {
           {/*)}*/}
         </div>
         {!isMobile && (
-          <div className="sticky bottom-0 pt-2 bg-sidebar">
+          <div className="sticky bottom-0 pt-2 bg-sidebar-primary">
             <Button
               size={'lg'}
               variant={'link'}

@@ -1,10 +1,10 @@
 import { cn } from '@/lib'
 
 /**
- * Campaign nav icon: a rounded card matching the front card of Phosphor's
- * CardsThree (regular weight, 16-unit stroke on a 256 viewBox) with the
- * campaign's abbreviation inside. When active it inverts (filled card,
- * sidebar-colored letters), mirroring Phosphor's fill weight.
+ * Campaign nav icon: an 18×14 card (in a 20×20 frame, matching the size-5
+ * icon slot) with the campaign's abbreviation inside. Follows currentColor so
+ * it picks up the menu button's text color; when active it inverts — filled
+ * card with letters in the sidebar background color.
  */
 type CampaignIconProps = {
   abbr: string
@@ -15,30 +15,29 @@ type CampaignIconProps = {
 export function CampaignIcon({ abbr, active = false, className }: CampaignIconProps) {
   return (
     <svg
-      viewBox="0 0 256 256"
+      viewBox="0 0 20 20"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
       className={cn('shrink-0', className)}
     >
       <rect
-        x="40"
-        y="72"
-        width="176"
-        height="112"
-        rx="12"
-        strokeWidth="16"
+        x="1"
+        y="3"
+        width="18"
+        height="14"
+        rx="2"
+        strokeWidth="1.25"
         stroke="currentColor"
         fill={active ? 'currentColor' : 'none'}
       />
       <text
-        x="128"
-        y="134"
+        x="10"
+        y="10"
         textAnchor="middle"
         dominantBaseline="central"
-        fontSize="64"
+        fontSize="8"
         fontWeight="700"
-        letterSpacing="2"
-        className={cn('font-mono', active ? 'fill-sidebar' : 'fill-current')}
+        className={cn('font-grotesk uppercase', active ? 'fill-sidebar-primary' : 'fill-current')}
       >
         {abbr}
       </text>

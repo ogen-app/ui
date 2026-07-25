@@ -65,10 +65,13 @@ const buttonVariants = cva(
           '[&>div]:w-full [&>div]:flex [&>div]:items-center [&>div]:gap-3 ' +
           'lg:h-10 lg:px-2.5 lg:[&>div]:w-[232px]',
         menu:
-          'bg-transparent h-8 px-1.5 w-full truncate gap-3 justify-start hover:bg-sidebar-secondary text-secondary-foreground text-sm hover:text-sidebar-primary-foreground overflow-hidden ' +
+          'bg-transparent h-8 px-1.5 w-full gap-3 justify-start hover:bg-sidebar-secondary text-sidebar-primary-foreground hover:text-sidebar-primary-foreground overflow-hidden ' +
+          'font-grotesk text-sm/6 font-medium uppercase whitespace-nowrap ' +
           'data-[active=true]:bg-sidebar-secondary data-[active=true]:text-sidebar-primary-foreground ' +
-          '[&>div]:w-full [&>div]:flex [&>div]:items-center [&>div]:gap-2.5 [&_svg]:stroke-[1.5]' +
-          'lg:h-10 lg:px-2.5 lg:[&>div]:w-[232px]',
+          // The text container keeps a static width so labels never reflow while
+          // the sidebar collapses — the button just clips them via overflow-hidden.
+          '[&>div]:w-[232px] [&>div]:flex-none [&>div]:flex [&>div]:items-center [&>div]:gap-2.5 ' +
+          'lg:h-10 lg:px-2.5',
       },
 
       size: {

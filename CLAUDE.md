@@ -87,6 +87,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **Styling is CSS-first:** the theme and tokens live in `src/index.css`; there
   is no `tailwind.config.js`. Use `cn()` from `lib/styles.ts`. Apply z-index
   from `config/zIndex.ts` via inline `style={{ zIndex }}`, not `z-[…]` classes.
+  Colors only via semantic tokens (`bg-primary`, `text-tertiary-foreground` —
+  never `bg-white`, palette steps, or raw hex/oklch): see
+  [`docs/colors.md`](./docs/colors.md).
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
 - Import with the `@/` alias (→ `src/`). Imports use explicit `.ts`/`.tsx`

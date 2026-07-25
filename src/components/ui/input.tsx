@@ -18,7 +18,7 @@ const inputVariants = cva(
         default:
           'bg-input rounded-none border-b-1 border-quaternary px-4 py-1 shadow-none focus-visible:border-foreground aria-invalid:border-destructive',
         cellInline:
-          'table-text text-right border-0 bg-transparent p-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:border-0 shadow-none text-[oklch(0.4895_0.2063_260.59)]',
+          'table-text text-right border-0 bg-transparent p-0 outline-none focus:outline-none focus-visible:ring-0 focus-visible:border-0 shadow-none text-editable',
         search:
           'bg-transparent rounded-none border-0 px-4 py-1 leading-3 shadow-none aria-invalid:border-destructive',
       },
