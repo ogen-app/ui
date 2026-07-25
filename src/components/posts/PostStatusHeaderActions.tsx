@@ -32,14 +32,6 @@ const INTENT_RANK: Record<PostStatusAction['intent'], number> = {
   destructive: 2,
 }
 
-const INTENT_VARIANT = {
-  primary: 'default',
-  secondary: 'outline',
-  destructive: 'destructive',
-} as const satisfies Record<PostStatusAction['intent'], string>
-
-type IntentVariant = (typeof INTENT_VARIANT)[PostStatusAction['intent']]
-
 export function PostStatusHeaderActions({
   post,
   transitionStatus,
@@ -74,11 +66,7 @@ export function PostStatusHeaderActions({
   return (
     <div className="flex items-center gap-1">
       {showOverflow && primaryAction && (
-        <OverflowMenu
-          actions={userActions}
-          pending={busy}
-          variant={INTENT_VARIANT[primaryAction.intent]}
-        />
+        <OverflowMenu actions={userActions} pending={busy} />
       )}
       {primaryAction && (
         <PrimaryActionButton action={primaryAction} pending={busy} />
@@ -122,7 +110,7 @@ function PrimaryActionButton({
     <BlockerTooltip blockers={action.blockers}>
       <Button
         type="button"
-        variant={INTENT_VARIANT[action.intent]}
+        variant="ghost"
         size="sm"
         disabled={action.disabled}
         loading={pending}
@@ -139,16 +127,14 @@ function PrimaryActionButton({
 function OverflowMenu({
   actions,
   pending,
-  variant,
 }: {
   actions: PostStatusAction[]
   pending: boolean
-  variant: IntentVariant
 }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={cn(buttonVariants({ variant, size: 'smIcon' }))}
+        className={cn(buttonVariants({ variant: 'ghost', size: 'smIcon' }))}
         aria-label="More status actions"
         disabled={pending}
       >

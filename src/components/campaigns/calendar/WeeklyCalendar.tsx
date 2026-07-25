@@ -140,18 +140,13 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
             <div className="shrink-0 bg-secondary px-2 pt-2.5 pb-2 flex flex-col items-center gap-0.5">
               <span
                 className={cn(
-                  'text-base font-display font-semibold leading-6',
-                  col.isToday && 'text-positive',
+                  'text-base font-medium leading-6',
+                  col.isToday && 'underline decoration-2 underline-offset-2',
                 )}
               >
                 {col.label}
               </span>
-              <span
-                className={cn(
-                  'text-xs leading-4 text-tertiary-foreground tabular-nums',
-                  col.isToday && 'text-positive',
-                )}
-              >
+              <span className="text-xs leading-4 text-tertiary-foreground tabular-nums">
                 {col.dateLabel}
               </span>
             </div>

@@ -56,11 +56,14 @@ export function CalendarHeaderActions({ campaignId }: { campaignId: string }) {
         aria-pressed={unscheduledActive}
       >
         <CalendarBlankIcon
-          weight={unscheduledActive ? 'fill' : 'regular'}
+          weight={unscheduledActive || unscheduledCount > 0 ? 'fill' : 'regular'}
           className="size-5"
         />
         {unscheduledCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center bg-primary-foreground px-0.5 text-[10px]/none font-medium tabular-nums text-primary">
+          // Knocked out of the filled icon in the page background color; the
+          // 2px nudge centers it optically in the calendar body below the
+          // header strip of the glyph.
+          <span className="absolute inset-0 flex translate-y-[2px] items-center justify-center text-[10px]/none font-medium tabular-nums text-background">
             {unscheduledCount}
           </span>
         )}
