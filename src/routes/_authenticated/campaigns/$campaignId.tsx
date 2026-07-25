@@ -10,10 +10,10 @@ import { PageLoader } from "@/components/page-primitives/PageLoader.tsx";
 import { PageError } from "@/components/page-primitives/PageError.tsx";
 import { PageHeader } from "@/components/page-primitives/PageHeader.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { GearSixIcon, LayoutIcon, PlusIcon } from "@phosphor-icons/react";
+import { LayoutIcon, PlusIcon } from "@phosphor-icons/react";
 import { CampaignHeaderActions } from "@/components/campaigns/CampaignHeaderActions.tsx";
+import { GeneratePlanButton } from "@/components/campaigns/GeneratePlanButton.tsx";
 import { CampaignTabBar } from "@/components/campaigns/CampaignTabBar.tsx";
-import { CampaignSettingsForm } from "@/components/forms/campaignSettingsForm";
 import { CampaignContentUsageForm } from "@/components/forms/campaignContentUsageForm";
 import { formatAnchor } from "@/components/campaigns/calendar/date";
 import { useCampaign } from "@/hooks/useCampaigns.ts";
@@ -52,14 +52,6 @@ function CampaignLayout() {
       campaign
         ? [
             {
-              id: "settings",
-              icon: GearSixIcon,
-              ariaLabel: "Campaign settings",
-              panel: ({ close }) => (
-                <CampaignSettingsForm campaign={campaign} onClose={close} />
-              ),
-            },
-            {
               id: "content-usage",
               icon: LayoutIcon,
               ariaLabel: "Content usage",
@@ -72,7 +64,7 @@ function CampaignLayout() {
     [campaign],
   );
   useRightRailSection("campaign-detail", railButtons);
-  useRightRailPage("campaign-detail", "settings");
+  useRightRailPage("campaign-detail", null);
 
   if (isLoading) {
     return (
@@ -109,11 +101,14 @@ function CampaignLayout() {
     }
   };
 
-  const addPostButton = (
-    <Button variant="default" size="default" onClick={addPost}>
-      <PlusIcon className="size-4" />
-      <span>ADD POST</span>
-    </Button>
+  const tabBarActions = (
+    <div className="flex items-center gap-3">
+      <GeneratePlanButton campaign={campaign} />
+      <Button variant="default" size="default" onClick={addPost}>
+        <PlusIcon className="size-4" />
+        <span>ADD POST</span>
+      </Button>
+    </div>
   );
 
   return (
@@ -134,7 +129,7 @@ function CampaignLayout() {
           tabs={LEFT_TABS}
           rightTabs={RIGHT_TABS}
           onTabSelect={handleTabSelect}
-          action={addPostButton}
+          action={tabBarActions}
         />
         <div className={"grid overflow-hidden h-full mt-1 px-3 lg:mt-2 lg:px-6"}>
           <Outlet />

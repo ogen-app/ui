@@ -1,4 +1,5 @@
-import { type Icon as PhosphorIcon, MagnifyingGlassIcon } from '@phosphor-icons/react'
+import { MagnifyingGlassIcon } from '@phosphor-icons/react'
+import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button.tsx'
 import { Link } from '@tanstack/react-router'
 import { cn } from '@/lib'
@@ -23,73 +24,61 @@ export function AppSidebarButtonSearch({ onClick }: AppSidebarButtonSearchProps)
   )
 }
 
-type AppSidebarButtonMenuLinkProps = {
-  icon: PhosphorIcon
+type AppSidebarButtonMenuProps = {
+  /** Fully rendered icon element (Phosphor icon or a custom node). */
+  icon: ReactNode
   text: string
   isActive: boolean
-  to: string
+  /** When provided the button renders as a Link, otherwise as a plain action. */
+  to?: string
+  params?: Record<string, string>
   onClick?: () => void
   className?: string
 }
 
-type AppSidebarButtonMenuActionProps = {
-  icon: PhosphorIcon
-  text: string
-  isActive: boolean
-  onClick?: () => void
-  onMouseEnter?: () => void
-  onMouseLeave?: () => void
-  className?: string
-}
+export function AppSidebarButtonMenu({
+  icon,
+  text,
+  isActive,
+  to,
+  params,
+  onClick,
+  className,
+}: AppSidebarButtonMenuProps) {
+  const content = (
+    <>
+      {icon}
+      <div className="min-w-0">
+        <span className="font-mono uppercase truncate">{text}</span>
+      </div>
+    </>
+  )
 
-type AppSidebarButtonMenuProps = AppSidebarButtonMenuLinkProps | AppSidebarButtonMenuActionProps
-
-function isLinkProps(props: AppSidebarButtonMenuProps): props is AppSidebarButtonMenuLinkProps {
-  return 'to' in props
-}
-
-export function AppSidebarButtonMenu(props: AppSidebarButtonMenuProps) {
-  const { icon: Icon, text, isActive, className } = props
-
-  if (isLinkProps(props)) {
-    // Navigation type - uses Link
+  if (to) {
     return (
       <Button
         variant="menu"
         size={'excluded'}
         asChild
+        active={isActive}
         className={cn(className, isActive && 'text-sidebar-primary-foreground')}
       >
-        <Link to={props.to} onClick={props.onClick}>
-          <Icon
-            weight={isActive ? 'fill' : 'regular'}
-            className="size-5 flex-none"
-          />
-          <div className="flex-none text-left w-[108px]">
-            <span className="font-mono uppercase">{text}</span>
-          </div>
+        <Link to={to} params={params} onClick={onClick}>
+          {content}
         </Link>
       </Button>
     )
   }
 
-  // Action type - uses onHandleSettings/hover handlers
   return (
     <Button
       variant="menu"
       size={'excluded'}
+      active={isActive}
       className={cn(className, isActive && 'text-sidebar-primary-foreground')}
-      onClick={props.onClick}
-      onMouseEnter={props.onMouseEnter}
-      onMouseLeave={props.onMouseLeave}
+      onClick={onClick}
     >
-      <Icon
-        weight={isActive ? 'fill' : 'regular'}
-        className="size-5 flex-none"
-      />
-      <div className="flex-none text-left w-[108px]">
-        <span className="font-mono uppercase">{text}</span>
-      </div>
+      {content}
     </Button>
   )
 }

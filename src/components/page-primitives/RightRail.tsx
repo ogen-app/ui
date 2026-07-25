@@ -47,7 +47,9 @@ export function RightRail({ panelWidth = 'w-120' }: RightRailProps) {
       <div
         className={cn(
           'shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out',
-          activeId ? panelWidth : 'w-0',
+          // A persisted activeId may reference a button that no longer exists
+          // (e.g. a panel promoted to its own page) — keep the rail closed then.
+          active ? panelWidth : 'w-0',
         )}
       >
         <div className={cn(panelWidth, 'h-full bg-white flex flex-row')}>
