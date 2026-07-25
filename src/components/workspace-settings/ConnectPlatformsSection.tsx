@@ -39,11 +39,11 @@ function ConnectPlatformsSectionComponent() {
   const [connecting, setConnecting] = useState<PlatformView | null>(null)
   const connectLink = useCreateConnectLink()
 
-  // Every known platform without a connected account is offered. Publisher
-  // entries (and health) only gate whether the tiles are clickable — the
-  // API omits publishers entirely when the integration isn't configured,
-  // and the platforms should stay visible in that case.
-  const connectable = views.filter((v) => v.connectedPublishers.length === 0)
+  // Every known platform is offered, connected or not: a workspace can hold
+  // several accounts per platform, so a tile never disappears once used.
+  // Publisher entries (and health) only gate whether the tiles are clickable
+  // — the API omits publishers entirely when the integration isn't
+  // configured, and the platforms should stay visible in that case.
   const integrationOff = health?.state === 'disabled'
 
   const startConnect = (view: PlatformView) => {
@@ -74,13 +74,13 @@ function ConnectPlatformsSectionComponent() {
           unavailable for now.
         </div>
       )}
-      {connectable.length === 0 ? (
+      {views.length === 0 ? (
         <div className="bg-primary px-6 py-5 text-sm text-tertiary-foreground">
-          All available platforms are connected.
+          No platforms are available to connect.
         </div>
       ) : (
         <ul className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
-          {connectable.map((v) => (
+          {views.map((v) => (
             <PlatformTile
               key={v.platform.id}
               view={v}
@@ -107,7 +107,11 @@ function ConnectPlatformsSectionComponent() {
   )
 }
 
-/** A clickable tile for one not-yet-connected platform. */
+/**
+ * A clickable tile for one platform — connected or not, since more accounts
+ * can always be added. When accounts exist the caption reads "N connected"
+ * and slides up out of view on hover/focus, revealing "Connect" underneath.
+ */
 function PlatformTile({
   view,
   disabled,
@@ -119,19 +123,38 @@ function PlatformTile({
 }) {
   const { info } = view
   const Icon = info.icon
+  const count = view.connectedPublishers.length
   return (
     <li className="min-w-0">
       <button
         type="button"
         onClick={onConnect}
         disabled={disabled}
-        className="w-full bg-primary px-4 py-6 flex flex-col items-center gap-2 cursor-pointer
+        className="group w-full bg-primary px-4 py-6 flex flex-col items-center gap-2 cursor-pointer
           hover:bg-secondary transition-colors focus-visible:outline-2 focus-visible:outline-ring
           disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-primary"
       >
         <Icon className="size-8" weight="fill" style={{ color: info.color }} />
         <span className="text-sm font-medium">{info.name}</span>
-        <span className="text-xs text-tertiary-foreground">Connect</span>
+        {count === 0 ? (
+          <span className="text-xs text-tertiary-foreground">Connect</span>
+        ) : (
+          <span className="relative block h-4 overflow-hidden text-xs">
+            <span
+              className="block leading-4 text-tertiary-foreground transition-transform duration-200
+                group-hover:-translate-y-full group-focus-visible:-translate-y-full"
+            >
+              {count} connected
+            </span>
+            <span
+              className="absolute inset-x-0 top-full block leading-4 text-tertiary-foreground
+                transition-transform duration-200
+                group-hover:-translate-y-full group-focus-visible:-translate-y-full"
+            >
+              Connect
+            </span>
+          </span>
+        )}
       </button>
     </li>
   )
@@ -162,10 +185,14 @@ function ConnectPlatformModal({
   const { mutate: syncNow, isPending: isSyncing } = useTriggerZernioSync()
 
   // Watch the live platform list: the row flips to connected once the
-  // background sync mirrors the authorized account back.
+  // background sync mirrors the authorized account back. Compare against the
+  // count at open time rather than zero — a platform may already have
+  // accounts, and this connect is about the *new* one.
   const liveViews = usePlatformViews()
+  const baseline = view.connectedPublishers.length
   const connected =
-    (liveViews.find((v) => v.platform.id === view.platform.id)?.connectedPublishers.length ?? 0) > 0
+    (liveViews.find((v) => v.platform.id === view.platform.id)?.connectedPublishers.length ?? 0) >
+    baseline
 
   // While waiting, re-check the platform list so the success state appears
   // without a manual refresh.
