@@ -11,6 +11,7 @@ export type LocalSettings = {
   // UI State
   sidebarCollapsed: boolean
   isSecondaryNavbarOpen: boolean
+  isRightSidebarOpen: boolean
 
   // Modal/Dialog State
   lastOpenedModals: Record<string, string> // modal ID -> last opened timestamp
@@ -25,6 +26,9 @@ type SettingsState = LocalSettings & {
   closeSecondaryNavbar: () => void
   toggleSecondaryNavbar: () => void
 
+  closeRightSidebar: () => void
+  toggleRightSidebar: () => void
+
   recordModalOpened: (modalId: string) => void
 
   // Reset all settings to defaults
@@ -34,6 +38,7 @@ type SettingsState = LocalSettings & {
 const DEFAULT_SETTINGS: LocalSettings = {
   sidebarCollapsed: false,
   isSecondaryNavbarOpen: false,
+  isRightSidebarOpen: false,
   lastOpenedModals: {},
 }
 
@@ -66,6 +71,15 @@ export const useSettingsStore = create<SettingsState>()(
           set((state) => ({ isSecondaryNavbarOpen: !state.isSecondaryNavbarOpen }))
         },
 
+        // Right sidebar actions (session-only, not persisted)
+        closeRightSidebar: () => {
+          set({ isRightSidebarOpen: false })
+        },
+
+        toggleRightSidebar: () => {
+          set((state) => ({ isRightSidebarOpen: !state.isRightSidebarOpen }))
+        },
+
         // Modal tracking actions
         recordModalOpened: (modalId) => {
           set((state) => ({
@@ -88,7 +102,7 @@ export const useSettingsStore = create<SettingsState>()(
           sidebarCollapsed: state.sidebarCollapsed,
           lastOpenedModals: state.lastOpenedModals,
           // Don't persist
-          // isSecondaryNavbarOpen
+          // isSecondaryNavbarOpen, isRightSidebarOpen
         }),
       }
     ),

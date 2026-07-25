@@ -21,7 +21,3 @@ export function ComingSoonPanel({ title, onClose }: Props) {
 export function AIAssistantPanel({ onClose }: { onClose?: () => void }) {
   return <ComingSoonPanel title="AI assistant" onClose={onClose} />
 }
-
-export function StatsPanel({ onClose }: { onClose?: () => void }) {
-  return <ComingSoonPanel title="Stats" onClose={onClose} />
-}

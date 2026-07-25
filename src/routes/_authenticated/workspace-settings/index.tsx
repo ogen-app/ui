@@ -7,7 +7,6 @@ import { usePlatforms } from '@/hooks/usePlatforms'
 import { WorkspaceSection } from '@/components/workspace-settings/WorkspaceSection'
 import { PlatformsSection } from '@/components/workspace-settings/PlatformsSection'
 import { ConnectPlatformsSection } from '@/components/workspace-settings/ConnectPlatformsSection'
-import { useRightRailPage } from '@/hooks/useRightRailPage'
 
 export const Route = createFileRoute('/_authenticated/workspace-settings/')({
   component: WorkspaceSettings,
@@ -16,7 +15,6 @@ export const Route = createFileRoute('/_authenticated/workspace-settings/')({
 /** Workspace Settings page: workspace identity, connected platforms, connect grid. */
 function WorkspaceSettings() {
   const { isLoading, isError } = usePlatforms()
-  useRightRailPage('workspace-settings', null)
 
   if (isLoading) {
     return (

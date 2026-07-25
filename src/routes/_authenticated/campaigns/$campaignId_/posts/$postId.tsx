@@ -1,17 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { EditPageHeader } from '@/components/page-primitives/EditPageHeader'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useCampaign } from '@/hooks/useCampaigns'
-import { useRightRailSection } from '@/hooks/useRightRailSection'
-import { useRightRailPage } from '@/hooks/useRightRailPage'
-import type { RightRailButton } from '@/stores/rightRailStore'
-import { GearSixIcon, LayoutIcon } from '@phosphor-icons/react'
-import { PostSettingsForm } from '@/components/forms/postSettingsForm'
-import { PostContentUsageForm } from '@/components/forms/postContentUsageForm'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActions'
 import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
@@ -38,33 +32,6 @@ function PostPage() {
     error,
   } = usePost(postId)
   const { data: campaign } = useCampaign(campaignId)
-
-  const railButtons = useMemo<RightRailButton[]>(
-    () =>
-      doc
-        ? [
-            {
-              id: 'settings',
-              icon: GearSixIcon,
-              ariaLabel: 'Post settings',
-              panel: ({ close }) => (
-                <PostSettingsForm doc={doc} changeDoc={changeDoc} onClose={close} />
-              ),
-            },
-            {
-              id: 'content-usage',
-              icon: LayoutIcon,
-              ariaLabel: 'Content pieces',
-              panel: ({ close }) => (
-                <PostContentUsageForm doc={doc} changeDoc={changeDoc} onClose={close} />
-              ),
-            },
-          ]
-        : [],
-    [doc, changeDoc],
-  )
-  useRightRailSection('post-detail', railButtons)
-  useRightRailPage('post-detail', 'settings')
 
   if (loading) {
     return (

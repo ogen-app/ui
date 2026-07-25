@@ -11,7 +11,6 @@ import { PageHeader } from "@/components/page-primitives/PageHeader.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { CampaignTabBar } from "@/components/campaigns/CampaignTabBar.tsx";
 import { useCreateAsset } from "@/hooks/useContent.ts";
-import { useRightRailPage } from "@/hooks/useRightRailPage";
 import { UploadModal } from "@/components/uploads/UploadModal";
 import { useUploadStore } from "@/stores/uploadStore";
 import { UPLOAD_LIMITS_LABEL } from "@/lib/assetStatus";
@@ -31,7 +30,6 @@ function activeTabFromPath(pathname: string): ContentBankTab {
 function ContentBankLayout() {
   const navigate = useNavigate();
   const createAsset = useCreateAsset();
-  useRightRailPage("content-bank", null);
 
   // The active tab is derived from the URL rather than local state.
   const pathname = useRouterState({ select: (s) => s.location.pathname });

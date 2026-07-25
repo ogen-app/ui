@@ -3,15 +3,10 @@ import { PageContainer } from "@/components/page-primitives/PageContainer.tsx";
 import { PageLoader } from "@/components/page-primitives/PageLoader.tsx";
 import { PageError } from "@/components/page-primitives/PageError.tsx";
 import { useAsset, useUpdateAsset } from "@/hooks/useContent.ts";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { AssetEditor } from "@/components/content-bank/AssetEditor.tsx";
 import {EditPageHeader} from "@/components/page-primitives/EditPageHeader.tsx";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
-import { useRightRailSection } from "@/hooks/useRightRailSection";
-import { useRightRailPage } from "@/hooks/useRightRailPage";
-import { ComingSoonPanel } from "@/components/rail-panels/ComingSoonPanel";
-import type { RightRailButton } from "@/stores/rightRailStore";
-import { GearSixIcon } from "@phosphor-icons/react";
 
 export const Route = createFileRoute("/_authenticated/content-bank_/$assetId")({
   component: AssetPage,
@@ -72,20 +67,6 @@ function AssetPage() {
     },
     [asset, assetId, title, updateAsset],
   );
-
-  const railButtons = useMemo<RightRailButton[]>(
-    () => [
-      {
-        id: 'settings',
-        icon: GearSixIcon,
-        ariaLabel: 'Settings',
-        panel: ({ close }) => <ComingSoonPanel title="Settings" onClose={close} />,
-      },
-    ],
-    [],
-  );
-  useRightRailSection('asset-detail', railButtons);
-  useRightRailPage('content-bank-asset', 'settings');
 
   if (isLoading) {
     return (

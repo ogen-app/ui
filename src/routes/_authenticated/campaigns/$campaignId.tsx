@@ -4,23 +4,17 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { useMemo } from "react";
 import { PageContainer } from "@/components/page-primitives/PageContainer.tsx";
 import { PageLoader } from "@/components/page-primitives/PageLoader.tsx";
 import { PageError } from "@/components/page-primitives/PageError.tsx";
 import { PageHeader } from "@/components/page-primitives/PageHeader.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { GearSixIcon, LayoutIcon, PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon } from "@phosphor-icons/react";
 import { CampaignHeaderActions } from "@/components/campaigns/CampaignHeaderActions.tsx";
 import { CampaignTabBar } from "@/components/campaigns/CampaignTabBar.tsx";
-import { CampaignSettingsForm } from "@/components/forms/campaignSettingsForm";
-import { CampaignContentUsageForm } from "@/components/forms/campaignContentUsageForm";
 import { formatAnchor } from "@/components/campaigns/calendar/date";
 import { useCampaign } from "@/hooks/useCampaigns.ts";
 import { useAddPost } from "@/hooks/usePosts.ts";
-import { useRightRailSection } from "@/hooks/useRightRailSection";
-import { useRightRailPage } from "@/hooks/useRightRailPage";
-import type { RightRailButton } from "@/stores/rightRailStore";
 
 export const Route = createFileRoute("/_authenticated/campaigns/$campaignId")({
   component: CampaignLayout,
@@ -46,33 +40,6 @@ function CampaignLayout() {
     : pathname.includes("/list")
       ? "list"
       : "calendar";
-
-  const railButtons = useMemo<RightRailButton[]>(
-    () =>
-      campaign
-        ? [
-            {
-              id: "settings",
-              icon: GearSixIcon,
-              ariaLabel: "Campaign settings",
-              panel: ({ close }) => (
-                <CampaignSettingsForm campaign={campaign} onClose={close} />
-              ),
-            },
-            {
-              id: "content-usage",
-              icon: LayoutIcon,
-              ariaLabel: "Content usage",
-              panel: ({ close }) => (
-                <CampaignContentUsageForm campaign={campaign} onClose={close} />
-              ),
-            },
-          ]
-        : [],
-    [campaign],
-  );
-  useRightRailSection("campaign-detail", railButtons);
-  useRightRailPage("campaign-detail", "settings");
 
   if (isLoading) {
     return (
