@@ -5,10 +5,21 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { PlusIcon, UploadSimpleIcon } from "@phosphor-icons/react";
+import {
+  CaretDownIcon,
+  FileTextIcon,
+  LinkSimpleIcon,
+  UploadSimpleIcon,
+} from "@phosphor-icons/react";
 import { PageContainer } from "@/components/page-primitives/PageContainer.tsx";
 import { PageHeader } from "@/components/page-primitives/PageHeader.tsx";
 import { Button } from "@/components/ui/button.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu.tsx";
 import { CampaignTabBar } from "@/components/campaigns/CampaignTabBar.tsx";
 import { useCreateAsset } from "@/hooks/useContent.ts";
 import { UploadModal } from "@/components/uploads/UploadModal";
@@ -97,16 +108,36 @@ function ContentBankLayout() {
       >
         <PageHeader
           title={"Content Bank"}
-          className={"pt-6"}
           actions={
-            <div className="flex items-center gap-2">
-              <Button onClick={() => setUploadModalOpen(true)} variant="outline" size="lg">
-                <UploadSimpleIcon className="size-4" /><span>UPLOAD</span>
-              </Button>
-              <Button onClick={handleCreate} disabled={createAsset.isPending} size="lg">
-                <PlusIcon className={"size-4"} /><span>ADD ASSET</span>
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="lg"
+                  loading={createAsset.isPending}
+                  className="data-[state=open]:bg-primary-foreground data-[state=open]:text-primary"
+                >
+                  <span>ADD ASSET</span>
+                  <CaretDownIcon weight="bold" className="size-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={4}>
+                <DropdownMenuItem size="lg" onClick={handleCreate}>
+                  <FileTextIcon />
+                  <span>Create text file</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem size="lg" onClick={() => setUploadModalOpen(true)}>
+                  <UploadSimpleIcon />
+                  <span>Upload file</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem size="lg" disabled>
+                  <LinkSimpleIcon />
+                  <div className="flex flex-col gap-1">
+                    <span>Extract from link</span>
+                    <span className="text-xs text-tertiary-foreground">coming soon</span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           }
         />
         <CampaignTabBar

@@ -98,6 +98,7 @@
   --color-senary: var(--senary);
   --color-senary-foreground: var(--senary-foreground);
 
+  --color-header-icon: var(--header-icon);
   --color-popover: var(--popover);
   --color-popover-hover: var(--popover-hover);
   --color-popover-foreground: var(--popover-foreground);
@@ -170,6 +171,7 @@
   --quinary-foreground: var(--beige-400);
   --senary: var(--beige-400);
   --senary-foreground: var(--beige-300);
+  --header-icon: #54504c;
   --popover: white;
   --popover-hover: var(--beige-050);
   --popover-foreground: var(--black);
