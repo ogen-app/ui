@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowLeftIcon, CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react'
+import { ArrowLeftIcon } from '@phosphor-icons/react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Logo } from '@/components/Logo'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -31,10 +31,14 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
   // A starter fills the composer rather than sending: every campaign
   // capability except the reviews writes, so the user gets the last word.
   const [prefill, setPrefill] = useState<{ text: string; token: number }>()
+  const [suggesting, setSuggesting] = useState(false)
   const prefillToken = useRef(0)
   const pick = useCallback((text: string) => {
     prefillToken.current += 1
     setPrefill({ text, token: prefillToken.current })
+    // The draft is now the suggestion — leaving the list open would only push
+    // the thread up while the user edits it.
+    setSuggesting(false)
   }, [])
 
   useEffect(() => {
@@ -74,18 +78,23 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
       }
       footer={
         thread && (
-          <div className="flex flex-col gap-2">
-            {isCampaign && thread.turns.length > 0 && <Suggestions onPick={pick} disabled={running} />}
+          // Opaque: the thread scrolls under the footer, and the starters have
+          // to sit on something.
+          <div className="flex flex-col gap-2 bg-primary pt-2">
+            {suggesting && isCampaign && <StarterChips onPick={pick} disabled={running} />}
             <AssistantComposer
               onSend={(text) => void send(thread.id, text)}
               running={running}
               onCancel={() => cancel(thread.id)}
               placeholder={
                 isCampaign
-                  ? 'Ask for a plan, a brief change, or a review...'
+                  ? 'Ask for a plan or a review...'
                   : 'Ask for a change to this post...'
               }
               prefill={prefill}
+              // Post threads have no starters, so the lightbulb stays disabled.
+              onToggleSuggestions={isCampaign ? () => setSuggesting((s) => !s) : undefined}
+              suggestionsOpen={suggesting}
             />
           </div>
         )
@@ -93,30 +102,6 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
     >
       {thread ? <ThreadView thread={thread} onPick={pick} /> : <ThreadList />}
     </RailPanel>
-  )
-}
-
-/** Mid-conversation access to the starters, collapsed by default. */
-function Suggestions({
-  onPick,
-  disabled,
-}: {
-  onPick: (text: string) => void
-  disabled: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 self-start text-xs text-tertiary-foreground hover:text-foreground cursor-pointer"
-      >
-        {open ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-        Suggestions
-      </button>
-      {open && <StarterChips onPick={onPick} disabled={disabled} />}
-    </div>
   )
 }
 

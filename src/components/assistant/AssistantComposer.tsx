@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { PaperPlaneRightIcon, StopIcon } from '@phosphor-icons/react'
+import {
+  CaretRightIcon,
+  LightbulbIcon,
+  PaperclipIcon,
+  PaperPlaneRightIcon,
+  StopIcon,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib'
 
 type AssistantComposerProps = {
   onSend: (text: string) => void
@@ -16,6 +23,11 @@ type AssistantComposerProps = {
    * refills, and re-rendering with an unchanged token doesn't clobber typing.
    */
   prefill?: { text: string; token: number }
+  /** Toggles the starter chips above the composer. Absent → no starters. */
+  onToggleSuggestions?: () => void
+  suggestionsOpen?: boolean
+  /** Not built yet: the paperclip renders disabled without a handler. */
+  onAttach?: () => void
 }
 
 /**
@@ -25,6 +37,12 @@ type AssistantComposerProps = {
  *
  * A turn takes around a minute, so the draft stays editable while one runs;
  * only sending is held back, and the button offers to stop instead.
+ *
+ * Two states. At rest the actions (suggestions, attach) sit to the left of the
+ * field; once the user is writing they fold into a chevron and the field's
+ * fill slides left to take the whole row. The fill is one absolutely
+ * positioned layer *under* the buttons rather than a background on the field
+ * itself — that is what lets it slide past them instead of pushing them.
  */
 export function AssistantComposer({
   onSend,
@@ -33,8 +51,12 @@ export function AssistantComposer({
   disabled = false,
   placeholder = 'Write a message...',
   prefill,
+  onToggleSuggestions,
+  suggestionsOpen = false,
+  onAttach,
 }: AssistantComposerProps) {
   const [draft, setDraft] = useState('')
+  const [active, setActive] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const token = prefill?.token
@@ -59,12 +81,89 @@ export function AssistantComposer({
   }
 
   return (
-    <div className="flex items-end gap-2 border border-border bg-primary px-4 py-3">
-      <div className="max-h-32 flex-1 overflow-y-auto">
+    <div className="relative flex items-end gap-2 bg-primary px-4 py-3">
+      {/* The field's fill. First in the DOM and the only absolute box here, so
+          every (position: relative) button above paints over it. At rest it
+          stops short of the send button; opening it runs the fill the whole
+          width and the buttons keep their own white backgrounds, reading as
+          holes punched in it. */}
+      <div
+        aria-hidden
+        className={cn(
+          'absolute bg-tertiary transition-[top,right,bottom,left] duration-200 ease-out',
+          // At rest the fill is exactly the row — the same band as the
+          // buttons. Open, it bleeds 4px past it on every side.
+          active ? 'inset-y-1 left-2 right-2' : 'inset-y-3 left-22 right-13',
+        )}
+      />
+
+      {/* Actions ⇄ chevron. Both live in a fixed-height box that animates its
+          width, so the field slides rather than jumps. */}
+      <div
+        className={cn(
+          'relative h-8 shrink-0 self-end transition-[width] duration-200 ease-out',
+          active ? 'w-8' : 'w-17',
+        )}
+      >
+        <div
+          className={cn(
+            'absolute inset-y-0 left-0 flex items-center gap-1 transition-opacity duration-150',
+            active ? 'pointer-events-none opacity-0' : 'opacity-100',
+          )}
+        >
+          <Button
+            variant="ghost"
+            size="smIcon"
+            onClick={onToggleSuggestions}
+            disabled={disabled || !onToggleSuggestions}
+            active={suggestionsOpen}
+            aria-label="Suggestions"
+            aria-expanded={suggestionsOpen}
+            className="disabled:text-senary-foreground"
+          >
+            <LightbulbIcon />
+          </Button>
+          <Button
+            variant="ghost"
+            size="smIcon"
+            onClick={onAttach}
+            disabled={disabled || !onAttach}
+            aria-label="Attach"
+            className="disabled:text-senary-foreground"
+          >
+            <PaperclipIcon />
+          </Button>
+        </div>
+        <div
+          className={cn(
+            'absolute inset-y-0 left-0 transition-opacity duration-150',
+            active ? 'opacity-100' : 'pointer-events-none opacity-0',
+          )}
+        >
+          <Button
+            variant="ghost"
+            size="smIcon"
+            onClick={() => setActive(false)}
+            aria-label="Show actions"
+            className="bg-primary text-tertiary-foreground"
+          >
+            <CaretRightIcon />
+          </Button>
+        </div>
+      </div>
+
+      <div
+        className="relative max-h-32 min-w-0 flex-1 overflow-y-auto"
+        onClick={() => !disabled && setActive(true)}
+      >
         <Textarea
           ref={inputRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          onFocus={() => setActive(true)}
+          // A draft left in the box keeps the field open — collapsing under
+          // written text would read as losing it.
+          onBlur={() => setActive(draft.trim() !== '')}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
@@ -74,16 +173,17 @@ export function AssistantComposer({
           disabled={disabled}
           placeholder={placeholder}
           aria-label="Message the assistant"
-          className="min-h-0 border-b-0 bg-transparent px-0 py-0 text-[15px]/[1.5] font-normal placeholder:italic"
+          className="min-h-0 border-b-0 bg-transparent px-2 py-1.5 text-sm/[1.5] font-normal placeholder:italic"
         />
       </div>
+
       {running ? (
         <Button
           variant="ghost"
           size="smIcon"
           onClick={onCancel}
           aria-label="Stop the assistant"
-          className="text-accent hover:text-foreground"
+          className="self-end bg-primary text-accent hover:text-foreground"
         >
           <StopIcon weight="fill" />
         </Button>
@@ -94,7 +194,7 @@ export function AssistantComposer({
           onClick={submit}
           disabled={!canSend}
           aria-label="Send message"
-          className="disabled:text-senary-foreground"
+          className="self-end bg-primary disabled:text-senary-foreground"
         >
           <PaperPlaneRightIcon />
         </Button>

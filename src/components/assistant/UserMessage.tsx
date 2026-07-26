@@ -7,7 +7,7 @@ export function UserMessage({ content }: { content: string }) {
   return (
     <div className="flex justify-end pl-8">
       <div className="relative max-w-[85%]">
-        <div className="bg-assistant-bubble text-assistant-bubble-foreground px-4 py-3 text-[15px]/[1.5] whitespace-pre-wrap break-words">
+        <div className="bg-assistant-bubble text-assistant-bubble-foreground px-4 py-3 text-sm/[1.5] whitespace-pre-wrap break-words">
           {content}
         </div>
         <span

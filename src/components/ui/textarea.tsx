@@ -35,7 +35,10 @@ const textareaVariants = cva(
 
 function resize(el: HTMLTextAreaElement | null) {
   if (!el) return
-  el.style.height = 'auto'
+  // Collapse to nothing before measuring, not to `auto`: `auto` on a textarea
+  // is its `rows` attribute (2 by default), which would floor every empty box
+  // at two lines. `min-h-*` from the `rows` variant still wins over the 0.
+  el.style.height = '0px'
   el.style.height = `${el.scrollHeight}px`
 }
 
@@ -50,6 +53,22 @@ const Textarea = React.forwardRef<
   React.useLayoutEffect(() => {
     resize(innerRef.current)
   }, [value, defaultValue])
+
+  // A narrower box wraps the same text into more lines, so the autosized
+  // height is only right for the width it was measured at. Width-only: the
+  // height changes are ours, and re-measuring on them would loop.
+  React.useEffect(() => {
+    const el = innerRef.current
+    if (!el) return
+    let last = el.clientWidth
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth === last) return
+      last = el.clientWidth
+      resize(el)
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <textarea

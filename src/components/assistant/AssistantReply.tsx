@@ -42,12 +42,12 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
       )}
 
       {turn.failed ? (
-        <p className="flex items-start gap-2 text-[15px]/[1.6] text-destructive">
+        <p className="flex items-start gap-2 text-sm/[1.6] text-destructive">
           <WarningIcon className="mt-1 size-4 shrink-0" />
           <span>{turn.content}</span>
         </p>
       ) : (
-        <div className="flex flex-col gap-4 text-[15px]/[1.6] text-foreground">
+        <div className="flex flex-col gap-4 text-sm/[1.6] text-foreground">
           {blocks.map((block, i) =>
             block.kind === 'paragraph' ? (
               <p key={i}>
