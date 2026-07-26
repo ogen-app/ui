@@ -12,6 +12,7 @@ import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActi
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { POST_SETTINGS_PORTAL_ID } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
 import type { CancelTarget } from '@/services/api/posts'
 import type { Post, PostStatus } from '@/types/posts'
@@ -100,6 +101,27 @@ function PostEditorSurface({
   useEffect(() => {
     setSettingsHost(document.getElementById(POST_SETTINGS_PORTAL_ID))
   }, [])
+
+  // Being on a post page is what makes its assistant thread available: the
+  // thread is registered here and becomes the panel's active one. It outlives
+  // this page — a running turn keeps going after navigation, and the thread
+  // list is how the user gets back to it.
+  const openThread = useAssistantStore((s) => s.openThread)
+  const renameThread = useAssistantStore((s) => s.renameThread)
+  const threadId = threadIdFor({ kind: 'post', postId: doc.id, campaignId })
+  const assistantRunning = useAssistantStore(
+    (s) => s.threads[threadId]?.status === 'running',
+  )
+  useEffect(() => {
+    openThread({ kind: 'post', postId: doc.id, campaignId }, doc.title)
+    // Only on arrival — the title is tracked separately so that retitling the
+    // post doesn't yank the panel away from a thread the user is reading.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openThread, doc.id, campaignId])
+
+  useEffect(() => {
+    renameThread(threadId, doc.title)
+  }, [renameThread, threadId, doc.title])
 
   // Leaving the editor closes its panel; an open assistant stays open.
   useEffect(
@@ -196,8 +218,9 @@ function PostEditorSurface({
                   className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground mb-4"
                 />
                 <PostContentEditor
-                  initialContent={doc.content}
+                  content={doc.content}
                   onContentChange={handleContentChange}
+                  readOnly={assistantRunning}
                 />
               </div>
             </div>

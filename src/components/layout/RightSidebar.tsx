@@ -1,9 +1,14 @@
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
-import { AIAssistantPanel } from '@/components/rail-panels/ComingSoonPanel'
+import { AssistantPanel } from '@/components/assistant/AssistantPanel'
 import { CalendarSettingsPanel } from '@/components/campaigns/calendar/CalendarSettingsPanel'
 import { NotScheduledPanel } from '@/components/campaigns/calendar/NotScheduledPanel'
+import {
+  selectAnyRunning,
+  selectAnyUnread,
+  useAssistantStore,
+} from '@/stores/assistantStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { ZIndex } from '@/config/zIndex'
 import { cn } from '@/lib'
@@ -52,9 +57,11 @@ export function RightSidebar() {
   const isOpen = activePanel !== null
   const assistantActive = activePanel === 'assistant'
 
-  // Whether the assistant is doing work (streaming a reply, running a task).
-  // Not wired yet — flips the logo into its line-drawing loading animation.
-  const isBusy = false
+  // Any thread working flips the trigger's logo into its line-drawing
+  // animation, and a thread that finished while the user was elsewhere leaves
+  // a dot — threads run on across navigation, so the trigger is how you know.
+  const isBusy = useAssistantStore(selectAnyRunning)
+  const hasUnread = useAssistantStore(selectAnyUnread)
 
   return (
     <>
@@ -69,7 +76,7 @@ export function RightSidebar() {
           <div className="flex-1 min-w-0 min-h-0 relative">
             {/* Never unmounts — assistant processes continue while hidden. */}
             <PanelLayer active={assistantActive}>
-              <AIAssistantPanel onClose={close} />
+              <AssistantPanel onClose={close} />
             </PanelLayer>
             <PanelLayer active={activePanel === 'calendarSettings'}>
               <CalendarSettingsPanel onClose={close} />
@@ -103,6 +110,12 @@ export function RightSidebar() {
         )}
       >
         <Logo variant="mark" className="size-8" loading={isBusy} />
+        {hasUnread && !assistantActive && (
+          <span
+            aria-label="The assistant has finished"
+            className="absolute top-2 right-2 size-2 rounded-full bg-accent"
+          />
+        )}
       </Button>
     </>
   )

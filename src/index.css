@@ -96,6 +96,8 @@
   --color-senary-foreground: var(--senary-foreground);
 
   --color-header-icon: var(--header-icon);
+  --color-assistant-bubble: var(--assistant-bubble);
+  --color-assistant-bubble-foreground: var(--assistant-bubble-foreground);
   --color-popover: var(--popover);
   --color-popover-hover: var(--popover-hover);
   --color-popover-foreground: var(--popover-foreground);
@@ -165,6 +167,11 @@
   --senary: var(--beige-400);
   --senary-foreground: var(--beige-300);
   --header-icon: var(--beige-800);
+  /* Assistant chat: the user's own message bubble. An inverted surface — no
+     Layer 2 surface token is dark, so this anchors to Layer 1 (colors.md
+     rule 2), the same exception `--header-icon` takes. */
+  --assistant-bubble: var(--beige-700);
+  --assistant-bubble-foreground: var(--white);
   --popover: var(--primary);
   --popover-hover: var(--secondary);
   --popover-foreground: var(--primary-foreground);

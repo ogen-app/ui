@@ -8,6 +8,7 @@ import {
   updatePost,
   type CancelTarget,
 } from '@/services/api/posts'
+import { registerPendingSave } from '@/lib/pendingSaves'
 import type { Post, PostStatus } from '@/types/posts'
 
 const SAVE_DEBOUNCE_MS = 600
@@ -108,6 +109,19 @@ export function usePost(postId: string): UsePostResult {
     },
     [postId, qc, flush],
   )
+
+  // Cancel the debounce and write immediately. Exposed to the assistant store
+  // (which edits this post server-side) so a queued PUT can't land afterwards
+  // and overwrite the assistant's edit with pre-edit content.
+  const flushNow = useCallback(async () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    await flush()
+  }, [flush])
+
+  useEffect(() => registerPendingSave(postId, flushNow), [postId, flushNow])
 
   // Status transitions skip the autosave debounce: they're committed
   // user actions, the server enforces a transition graph, and we want
