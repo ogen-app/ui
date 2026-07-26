@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/form'
 import { useDeleteCampaign } from '@/hooks/useCampaigns'
 import { SettingsCard } from '@/components/settings/SettingsCard'
+import { cn } from '@/lib'
+import { selectCampaignRunning, useAssistantStore } from '@/stores/assistantStore'
 import type { Campaign } from '@/types/campaigns'
 import { useCampaignAutosave, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
 import { PlatformsControl } from './PlatformsControl'
@@ -95,6 +97,11 @@ export function CampaignSettingsForm({ campaign }: Props) {
     }),
   })
 
+  // `setCampaignDates` / `redistributePosts` rewrite these fields server-side
+  // (CON-115), so the form is held read-only for the length of a turn. Queued
+  // edits are flushed first by the autosave hook's pending-save registration.
+  const assistantRunning = useAssistantStore(selectCampaignRunning(campaign.id))
+
   const handleDelete = () => {
     const displayName = campaign.name.trim() === '' ? 'this campaign' : `"${campaign.name}"`
     if (!window.confirm(`Delete ${displayName}? This cannot be undone.`)) return
@@ -107,7 +114,14 @@ export function CampaignSettingsForm({ campaign }: Props) {
 
   return (
     <Form {...form}>
-      <form noValidate autoComplete="off" className="flex flex-col gap-8 pb-10">
+      <form noValidate autoComplete="off">
+        <fieldset
+          disabled={assistantRunning}
+          className={cn(
+            'flex flex-col gap-8 pb-10 transition-opacity',
+            assistantRunning && 'opacity-60',
+          )}
+        >
         <SettingsCard title="Basic">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
             <FormField
@@ -252,6 +266,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
         </SettingsCard>
 
         {error && <span className="text-xs text-destructive">{error.message}</span>}
+        </fieldset>
       </form>
     </Form>
   )

@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -17,6 +17,8 @@ import {
 import { useCampaignTypes, useUpdateCampaign } from '@/hooks/useCampaigns'
 import type { Campaign } from '@/types/campaigns'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
+import { registerPendingSave } from '@/lib/pendingSaves'
+import { selectCampaignRunning, useAssistantStore } from '@/stores/assistantStore'
 import { campaignToPayload } from './shared'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 
@@ -83,9 +85,37 @@ export function BriefForm({ campaign }: BriefFormProps) {
   }, [campaign, form, updateCampaign])
   useRegisterSettingsSave('campaign-brief', isDirty, save)
 
+  // `enrichBrief` rewrites all four brief fields server-side (CON-112 §6.5).
+  // Land pending edits before the turn starts, hold the form read-only while
+  // it runs, then adopt what the assistant wrote.
+  const assistantRunning = useAssistantStore(selectCampaignRunning(campaign.id))
+  const flushIfDirty = useCallback(async () => {
+    if (form.formState.isDirty) await save()
+  }, [form, save])
+  useEffect(
+    () => registerPendingSave(campaign.id, flushIfDirty),
+    [campaign.id, flushIfDirty],
+  )
+
+  // The turn's write only reaches the form through a refetch, and only when
+  // there is nothing of the user's to lose.
+  const wasRunning = useRef(assistantRunning)
+  useEffect(() => {
+    const settled = wasRunning.current && !assistantRunning
+    wasRunning.current = assistantRunning
+    if (settled && !form.formState.isDirty) form.reset(defaultValues(campaign))
+  }, [assistantRunning, campaign, form])
+
   return (
     <Form {...form}>
-      <form className="flex flex-col gap-8 pb-10" noValidate autoComplete="off">
+      <form noValidate autoComplete="off">
+        <fieldset
+          disabled={assistantRunning}
+          className={cn(
+            'flex flex-col gap-8 pb-10 transition-opacity',
+            assistantRunning && 'opacity-60',
+          )}
+        >
         <SettingsCard title="Campaign type">
           <FormField
             control={form.control}
@@ -204,7 +234,8 @@ export function BriefForm({ campaign }: BriefFormProps) {
               )}
             />
           </div>
-        </SettingsCard>
+          </SettingsCard>
+        </fieldset>
       </form>
     </Form>
   )

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PaperPlaneRightIcon, StopIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -10,6 +10,12 @@ type AssistantComposerProps = {
   onCancel?: () => void
   disabled?: boolean
   placeholder?: string
+  /**
+   * Drops text into the box for the user to edit and send themselves. The
+   * token is what makes it fire — picking the same starter twice still
+   * refills, and re-rendering with an unchanged token doesn't clobber typing.
+   */
+  prefill?: { text: string; token: number }
 }
 
 /**
@@ -26,9 +32,22 @@ export function AssistantComposer({
   onCancel,
   disabled = false,
   placeholder = 'Write a message...',
+  prefill,
 }: AssistantComposerProps) {
   const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const token = prefill?.token
+  const text = prefill?.text
+  useEffect(() => {
+    if (token === undefined || text === undefined) return
+    setDraft(text)
+    const el = inputRef.current
+    if (!el) return
+    el.focus()
+    // Caret at the end, so the user can keep typing where the starter left off.
+    requestAnimationFrame(() => el.setSelectionRange(text.length, text.length))
+  }, [token, text])
 
   const canSend = draft.trim() !== '' && !disabled && !running
 

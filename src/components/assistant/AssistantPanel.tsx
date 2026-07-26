@@ -1,11 +1,12 @@
-import { useEffect, useRef } from 'react'
-import { ArrowLeftIcon } from '@phosphor-icons/react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ArrowLeftIcon, CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Logo } from '@/components/Logo'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { AssistantComposer } from './AssistantComposer'
 import { AssistantReply } from './AssistantReply'
+import { StarterChips } from './StarterChips'
 import { ThreadList } from './ThreadList'
 import { UserMessage } from './UserMessage'
 import type { AssistantThread } from '@/types/assistant'
@@ -27,6 +28,15 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
   const cancel = useAssistantStore((s) => s.cancel)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // A starter fills the composer rather than sending: every campaign
+  // capability except the reviews writes, so the user gets the last word.
+  const [prefill, setPrefill] = useState<{ text: string; token: number }>()
+  const prefillToken = useRef(0)
+  const pick = useCallback((text: string) => {
+    prefillToken.current += 1
+    setPrefill({ text, token: prefillToken.current })
+  }, [])
+
   useEffect(() => {
     if (activeId) void loadHistory(activeId)
   }, [activeId, loadHistory])
@@ -41,6 +51,7 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
   }, [activeId, turns?.length, streamLength])
 
   const running = thread?.status === 'running'
+  const isCampaign = thread?.subject.kind === 'campaign'
 
   return (
     <RailPanel
@@ -57,27 +68,65 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
             className="mt-2 flex w-full items-center gap-2 text-left text-xs text-tertiary-foreground hover:text-foreground cursor-pointer"
           >
             <ArrowLeftIcon className="size-3.5 shrink-0" />
-            <span className="truncate">{thread.title || 'Untitled post'}</span>
+            <span className="truncate">{thread.title || untitled(thread)}</span>
           </button>
         )
       }
       footer={
         thread && (
-          <AssistantComposer
-            onSend={(text) => void send(thread.id, text)}
-            running={running}
-            onCancel={() => cancel(thread.id)}
-            placeholder="Ask for a change to this post..."
-          />
+          <div className="flex flex-col gap-2">
+            {isCampaign && thread.turns.length > 0 && <Suggestions onPick={pick} disabled={running} />}
+            <AssistantComposer
+              onSend={(text) => void send(thread.id, text)}
+              running={running}
+              onCancel={() => cancel(thread.id)}
+              placeholder={
+                isCampaign
+                  ? 'Ask for a plan, a brief change, or a review...'
+                  : 'Ask for a change to this post...'
+              }
+              prefill={prefill}
+            />
+          </div>
         )
       }
     >
-      {thread ? <ThreadView thread={thread} /> : <ThreadList />}
+      {thread ? <ThreadView thread={thread} onPick={pick} /> : <ThreadList />}
     </RailPanel>
   )
 }
 
-function ThreadView({ thread }: { thread: AssistantThread }) {
+/** Mid-conversation access to the starters, collapsed by default. */
+function Suggestions({
+  onPick,
+  disabled,
+}: {
+  onPick: (text: string) => void
+  disabled: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1 self-start text-xs text-tertiary-foreground hover:text-foreground cursor-pointer"
+      >
+        {open ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+        Suggestions
+      </button>
+      {open && <StarterChips onPick={onPick} disabled={disabled} />}
+    </div>
+  )
+}
+
+function ThreadView({
+  thread,
+  onPick,
+}: {
+  thread: AssistantThread
+  onPick: (text: string) => void
+}) {
   if (!thread.loaded) {
     return (
       <div className="flex flex-col gap-3" aria-busy>
@@ -89,6 +138,18 @@ function ThreadView({ thread }: { thread: AssistantThread }) {
   }
 
   if (thread.turns.length === 0) {
+    // The campaign assistant has nine capabilities and no other affordance
+    // announcing them, so its empty state is the menu.
+    if (thread.subject.kind === 'campaign') {
+      return (
+        <div className="flex flex-col gap-5">
+          <p className="text-sm text-tertiary-foreground">
+            Ask about this campaign, or start with:
+          </p>
+          <StarterChips onPick={onPick} />
+        </div>
+      )
+    }
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
         <Logo variant="mark" className="size-8 text-quinary-foreground" />
@@ -113,4 +174,8 @@ function ThreadView({ thread }: { thread: AssistantThread }) {
       )}
     </>
   )
+}
+
+function untitled(thread: AssistantThread): string {
+  return thread.subject.kind === 'campaign' ? 'Untitled campaign' : 'Untitled post'
 }

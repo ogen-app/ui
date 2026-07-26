@@ -2,8 +2,9 @@ import { Fragment } from 'react'
 import { WarningIcon } from '@phosphor-icons/react'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { ThinkingTimeline } from './ThinkingTimeline'
+import { ResultCard } from './ResultCard'
 import { cn } from '@/lib'
-import type { AssistantTurn } from '@/types/assistant'
+import type { AssistantAction, AssistantTurn } from '@/types/assistant'
 
 function Inline({ spans }: { spans: InlineSpan[] }) {
   return (
@@ -25,6 +26,8 @@ function Inline({ spans }: { spans: InlineSpan[] }) {
 export function AssistantReply({ turn }: { turn: AssistantTurn }) {
   const blocks = parseAssistantMarkup(turn.content)
   const steps = turn.steps ?? []
+  const settled = !turn.streaming && !turn.failed
+  const footer = turn.action ? actionLabel(turn.action) : null
 
   return (
     <div className="flex flex-col gap-3">
@@ -56,10 +59,13 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
         </div>
       )}
 
-      {/* What the turn did to the post, once it's settled. */}
-      {!turn.streaming && !turn.failed && turn.action && (
+      {/* The structured result behind the action — campaign turns only. */}
+      {settled && turn.details && <ResultCard details={turn.details} />}
+
+      {/* What the turn did to its subject, once it's settled. */}
+      {settled && (footer || turn.saveVersion) && (
         <p className="text-xs text-tertiary-foreground">
-          {turn.action === 'edited' ? 'Post updated' : 'No changes made'}
+          {footer}
           {turn.saveVersion && (
             <>
               {' · '}
@@ -71,6 +77,25 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
       )}
     </div>
   )
+}
+
+/**
+ * The one-line footer under a reply. Actions whose detail is already spelled
+ * out by a result card get no line at all — the card says it better.
+ */
+function actionLabel(action: AssistantAction): string | null {
+  switch (action) {
+    case 'edited':
+      return 'Post updated'
+    case 'declined':
+      return 'No changes made'
+    case 'answered':
+      return null
+    default:
+      // Every remaining action is a campaign mutation, and each one renders a
+      // result card above.
+      return null
+  }
 }
 
 function ListBlock({ ordered, items }: { ordered: boolean; items: InlineSpan[][] }) {

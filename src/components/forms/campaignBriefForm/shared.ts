@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { UseFormReturn, FieldValues } from 'react-hook-form'
 import { useUpdateCampaign } from '@/hooks/useCampaigns'
+import { registerPendingSave } from '@/lib/pendingSaves'
 import type { Campaign, UpdateCampaignPayload } from '@/types/campaigns'
 
 export function campaignToPayload(
@@ -56,40 +57,52 @@ export function useCampaignAutosave<T extends FieldValues>({
   onValuesChange,
   onFlushRef,
 }: UseCampaignAutosaveArgs<T>) {
-  const { mutate: updateCampaign, error, reset } = useUpdateCampaign()
+  const { mutateAsync: updateCampaign, error, reset } = useUpdateCampaign()
   const editVersionRef = useRef(0)
   const [editVersion, setEditVersion] = useState(0)
   const [savedVersion, setSavedVersion] = useState(0)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isDirty = editVersion !== savedVersion
 
-  const saveNow = useCallback(() => {
+  const saveNow = useCallback(async () => {
     const v = editVersionRef.current
-    void form.handleSubmit((values) => {
+    await form.handleSubmit(async (values) => {
       const payload = campaignToPayload(campaign, buildOverrides(values))
-      updateCampaign(
-        { id: campaign.id, payload },
-        { onSuccess: () => setSavedVersion(v) },
-      )
+      try {
+        await updateCampaign({ id: campaign.id, payload })
+        setSavedVersion(v)
+      } catch {
+        // Surfaced through the mutation's `error`; a rejection here must not
+        // escape, since callers await this to sequence their own work.
+      }
     })()
   }, [campaign, form, updateCampaign, buildOverrides])
 
   const scheduleSave = useCallback(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(saveNow, 500)
+    saveTimerRef.current = setTimeout(() => {
+      void saveNow()
+    }, 500)
   }, [saveNow])
 
-  const flushSave = useCallback(() => {
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current)
-      saveTimerRef.current = null
-      saveNow()
-    }
+  const flushSave = useCallback(async () => {
+    if (!saveTimerRef.current) return
+    clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = null
+    await saveNow()
   }, [saveNow])
 
   useEffect(() => {
     onFlushRef?.(flushSave)
   }, [onFlushRef, flushSave])
+
+  // The campaign assistant writes the campaign server-side. Land any queued
+  // edit before its turn starts, or the debounce would fire afterwards and
+  // overwrite what the assistant just saved.
+  useEffect(
+    () => registerPendingSave(campaign.id, flushSave),
+    [campaign.id, flushSave],
+  )
 
   useEffect(() => {
     const sub = form.watch((values, info) => {

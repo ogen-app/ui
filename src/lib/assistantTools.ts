@@ -25,6 +25,55 @@ const TOOL_LABELS: Record<string, { running: (i: ToolInput) => string; done: (i:
     running: () => 'Re-reading the current post',
     done: () => 'Re-read the current post',
   },
+
+  // Campaign assistant (CON-112 and its sub-issues). The four mutating tools
+  // write as they run, so their done-tense is a statement of fact.
+  runContentPlan: {
+    running: () => 'Generating a content plan',
+    done: () => 'Generated a content plan',
+  },
+  generatePosts: {
+    running: (i) => `Adding posts${platformSuffix(i)}`,
+    done: (i) => `Added posts${platformSuffix(i)}`,
+  },
+  enrichBrief: {
+    running: () => 'Improving the brief',
+    done: () => 'Improved the brief',
+  },
+  setCampaignDates: {
+    running: () => 'Updating the campaign dates',
+    done: () => 'Updated the campaign dates',
+  },
+  redistributePosts: {
+    running: () => 'Redistributing posts across the timeline',
+    done: () => 'Redistributed posts across the timeline',
+  },
+  checkBrief: {
+    running: () => 'Reviewing the brief',
+    done: () => 'Reviewed the brief',
+  },
+  checkPostsConsistency: {
+    running: () => 'Checking posts against the brief',
+    done: () => 'Checked posts against the brief',
+  },
+  getCampaignOverview: {
+    running: () => 'Building the campaign overview',
+    done: () => 'Built the campaign overview',
+  },
+  listCampaignPosts: {
+    running: () => 'Reading the campaign posts',
+    done: () => 'Read the campaign posts',
+  },
+  getCampaignBrief: {
+    running: () => 'Reading the campaign brief',
+    done: () => 'Read the campaign brief',
+  },
+}
+
+/** ` for Threads` when the model targeted one platform, else nothing. */
+function platformSuffix(input: ToolInput): string {
+  const platform = input?.platformId ?? input?.platform
+  return typeof platform === 'string' && platform ? ` for ${platform}` : ''
 }
 
 export function describeTool(name: string, input: ToolInput, status: 'running' | 'done'): string {

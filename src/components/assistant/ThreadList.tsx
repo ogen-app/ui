@@ -1,5 +1,10 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowSquareOutIcon, XIcon } from '@phosphor-icons/react'
+import {
+  ArrowSquareOutIcon,
+  MegaphoneIcon,
+  NoteIcon,
+  XIcon,
+} from '@phosphor-icons/react'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useTick } from '@/hooks/useTick'
@@ -7,7 +12,7 @@ import { formatDuration } from '@/lib/assistantTools'
 import type { AssistantThread } from '@/types/assistant'
 
 /**
- * Every open thread, so a run started on one post stays visible — and
+ * Every open thread, so a run started on one campaign stays visible — and
  * resumable — from anywhere in the app. Threads are only *started* from their
  * subject's page; this is how the user gets back to them.
  */
@@ -24,7 +29,7 @@ export function ThreadList() {
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
         <p className="text-sm text-tertiary-foreground">No conversations yet.</p>
         <p className="max-w-64 text-sm text-quaternary-foreground">
-          Open a post to start one — the assistant works on the post you're in.
+          Open a campaign or a post to start one — the assistant works on whatever you're in.
         </p>
       </div>
     )
@@ -32,54 +37,71 @@ export function ThreadList() {
 
   return (
     <ul className="flex flex-col">
-      {list.map((thread) => (
-        <li key={thread.id} className="border-b border-border first:border-t">
-          <div className="group flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => select(thread.id)}
-              // Not `items-start`: the rows must stretch so `truncate` has a
-              // width to work against.
-              className="flex min-w-0 flex-1 flex-col gap-0.5 py-3 text-left cursor-pointer"
-            >
-              <span className="flex w-full items-center gap-2">
-                {thread.unread && (
-                  <span className="size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />
-                )}
-                <span className="truncate text-sm font-medium text-foreground">
-                  {thread.title || 'Untitled post'}
+      {list.map((thread) => {
+        const Icon = thread.subject.kind === 'campaign' ? MegaphoneIcon : NoteIcon
+        return (
+          <li key={thread.id} className="border-b border-border first:border-t">
+            <div className="group flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => select(thread.id)}
+                // Not `items-start`: the rows must stretch so `truncate` has a
+                // width to work against.
+                className="flex min-w-0 flex-1 flex-col gap-0.5 py-3 text-left cursor-pointer"
+              >
+                <span className="flex w-full items-center gap-2">
+                  {thread.unread && (
+                    <span className="size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />
+                  )}
+                  <Icon className="size-3.5 shrink-0 text-quaternary-foreground" aria-hidden />
+                  <span className="truncate text-sm font-medium text-foreground">
+                    {thread.title.trim() || untitled(thread)}
+                  </span>
                 </span>
-              </span>
-              <ThreadStatusLine thread={thread} />
-            </button>
+                <ThreadStatusLine thread={thread} />
+              </button>
 
-            {thread.subject.kind === 'post' && (
               <Link
-                to="/campaigns/$campaignId/posts/$postId"
-                params={{
-                  campaignId: thread.subject.campaignId,
-                  postId: thread.subject.postId,
-                }}
+                {...openLink(thread)}
                 onClick={() => useSettingsStore.getState().closeRightPanel()}
-                aria-label="Open the post"
+                aria-label={
+                  thread.subject.kind === 'campaign' ? 'Open the campaign' : 'Open the post'
+                }
                 className="flex size-6 shrink-0 items-center justify-center text-quaternary-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
               >
                 <ArrowSquareOutIcon className="size-4" />
               </Link>
-            )}
-            <button
-              type="button"
-              onClick={() => close(thread.id)}
-              aria-label="Close this conversation"
-              className="flex size-6 shrink-0 items-center justify-center text-quaternary-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 cursor-pointer"
-            >
-              <XIcon className="size-4" />
-            </button>
-          </div>
-        </li>
-      ))}
+              <button
+                type="button"
+                onClick={() => close(thread.id)}
+                aria-label="Close this conversation"
+                className="flex size-6 shrink-0 items-center justify-center text-quaternary-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 cursor-pointer"
+              >
+                <XIcon className="size-4" />
+              </button>
+            </div>
+          </li>
+        )
+      })}
     </ul>
   )
+}
+
+/** Where the jump-to arrow goes, per subject kind. */
+function openLink(thread: AssistantThread) {
+  if (thread.subject.kind === 'campaign') {
+    return {
+      to: '/campaigns/$campaignId',
+      params: { campaignId: thread.subject.campaignId },
+    } as const
+  }
+  return {
+    to: '/campaigns/$campaignId/posts/$postId',
+    params: {
+      campaignId: thread.subject.campaignId,
+      postId: thread.subject.postId,
+    },
+  } as const
 }
 
 function ThreadStatusLine({ thread }: { thread: AssistantThread }) {
@@ -101,4 +123,8 @@ function ThreadStatusLine({ thread }: { thread: AssistantThread }) {
       {last?.content || 'No messages yet'}
     </span>
   )
+}
+
+function untitled(thread: AssistantThread): string {
+  return thread.subject.kind === 'campaign' ? 'Untitled campaign' : 'Untitled post'
 }
