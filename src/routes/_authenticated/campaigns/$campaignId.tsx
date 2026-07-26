@@ -51,10 +51,10 @@ function CampaignLayout() {
   const displayName = campaign.name.trim();
   const title = `${displayName === "" ? "Untitled campaign" : displayName} ${section}`;
 
-  // The Brief section edits inline and saves through the header button, so it
-  // gets the settings-page shell: one scroll container owning the sticky
+  // Brief and Settings edit inline and save through the header button, so they
+  // get the settings-page shell: one scroll container owning the sticky
   // header, whose title fades out on scroll.
-  if (section === "Brief") {
+  if (section === "Brief" || section === "Settings") {
     return (
       <PageContainer variant={"fullFlex"}>
         <SettingsSaveProvider>

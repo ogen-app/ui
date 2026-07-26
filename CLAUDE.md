@@ -92,6 +92,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   [`docs/colors.md`](./docs/colors.md).
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
+- **Destructive-action labels are written in literal capitals** — `DELETE
+  CAMPAIGN`, not `Delete campaign` with a `uppercase` class. The caps are part
+  of the copy (they survive copy/paste, screen readers, and any restyle), so
+  never swap them for CSS casing and never "sentence-case" them back. Applies
+  to every Danger Zone / irreversible action across the app. Leave the button
+  styling alone — this is a copy rule, not a style rule.
 - Import with the `@/` alias (→ `src/`). Imports use explicit `.ts`/`.tsx`
   extensions (`allowImportingTsExtensions`). TS is strict — no unused
   locals/params.
