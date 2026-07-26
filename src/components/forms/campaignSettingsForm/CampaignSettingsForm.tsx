@@ -20,7 +20,8 @@ import {
 import { useDeleteCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
-import type { Campaign } from '@/types/campaigns'
+import { toast } from '@/stores/toastStore'
+import type { Campaign, CampaignPlatform } from '@/types/campaigns'
 import { campaignToPayload, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
 import { PlatformsControl } from './PlatformsControl'
 
@@ -104,6 +105,34 @@ export function CampaignSettingsForm({ campaign }: Props) {
     form.reset(v)
   }, [campaign, form, updateCampaign])
   useRegisterSettingsSave('campaign-settings', isDirty, save)
+
+  /**
+   * Adding or removing a platform persists on the spot. It builds on the
+   * server's campaign rather than the form's values, so pending edits to the
+   * other fields stay pending — this toggle must not smuggle them out. Only
+   * target_platforms is re-baselined, leaving the rest dirty.
+   */
+  const { mutate: updateCampaignNow } = useUpdateCampaign()
+  const commitPlatforms = useCallback(
+    (next: CampaignPlatform[]) => {
+      form.setValue('target_platforms', next)
+      updateCampaignNow(
+        {
+          id: campaign.id,
+          payload: campaignToPayload(campaign, { target_platforms: next }),
+        },
+        {
+          onSuccess: () =>
+            form.resetField('target_platforms', { defaultValue: next }),
+          onError: (e) =>
+            toast.error('Unable to update platforms', {
+              description: e instanceof Error ? e.message : undefined,
+            }),
+        },
+      )
+    },
+    [campaign, form, updateCampaignNow],
+  )
 
   const handleDelete = () => {
     const displayName = campaign.name.trim() === '' ? 'this campaign' : `"${campaign.name}"`
@@ -237,7 +266,11 @@ export function CampaignSettingsForm({ campaign }: Props) {
             name="target_platforms"
             render={({ field }) => (
               <FormItem>
-                <PlatformsControl value={field.value} onChange={field.onChange} />
+                <PlatformsControl
+                  value={field.value}
+                  onChange={field.onChange}
+                  onCommitPlatforms={commitPlatforms}
+                />
                 <FormMessage />
               </FormItem>
             )}
