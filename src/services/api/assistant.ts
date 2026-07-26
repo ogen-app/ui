@@ -2,6 +2,7 @@ import { apiUrl } from './base'
 import { apiJson } from './http'
 import { errorMessage } from './errors'
 import { readSSEStream } from '@/lib/sse'
+import { humanizeStep } from '@/lib/assistantTools'
 import type {
   AssistantResultDetails,
   CampaignAssistantAction,
@@ -364,11 +365,21 @@ function findings(value: unknown): ReviewFinding[] {
   if (!Array.isArray(value)) return []
   return value.filter(isRecord).map((f) => ({
     severity: severity(f.severity),
-    // Brief findings name their subject `aspect`, post findings `title`.
-    label: typeof f.aspect === 'string' ? f.aspect : typeof f.title === 'string' ? f.title : undefined,
+    // Brief findings name their subject `aspect` — a snake_case key like
+    // `goal_alignment` — while post findings carry the post's own title.
+    label:
+      typeof f.aspect === 'string'
+        ? sentenceCase(humanizeStep(f.aspect))
+        : typeof f.title === 'string'
+          ? f.title
+          : undefined,
     issue: str(f.issue),
     suggestion: typeof f.suggestion === 'string' ? f.suggestion : undefined,
   }))
+}
+
+function sentenceCase(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 function severity(value: unknown): ReviewSeverity | undefined {

@@ -20,6 +20,15 @@ import type {
  * Every card describes work the server has already done; none of them offer an
  * apply/undo, because there is nothing left to apply.
  */
+/**
+ * Whether there is anything to draw. History persists only `{action,
+ * explanation}` — the result payload is dropped — so a reloaded turn arrives
+ * with empty details and falls back to the one-line footer.
+ */
+export function hasResultCard(details: AssistantResultDetails | undefined): boolean {
+  return !!details && Object.keys(details).length > 0
+}
+
 export function ResultCard({ details }: { details: AssistantResultDetails }) {
   if (details.briefReview) {
     const { consistent, findings } = details.briefReview

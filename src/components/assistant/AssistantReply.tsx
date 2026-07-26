@@ -2,7 +2,7 @@ import { Fragment } from 'react'
 import { WarningIcon } from '@phosphor-icons/react'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { ThinkingTimeline } from './ThinkingTimeline'
-import { ResultCard } from './ResultCard'
+import { hasResultCard, ResultCard } from './ResultCard'
 import { cn } from '@/lib'
 import type { AssistantAction, AssistantTurn } from '@/types/assistant'
 
@@ -27,7 +27,8 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
   const blocks = parseAssistantMarkup(turn.content)
   const steps = turn.steps ?? []
   const settled = !turn.streaming && !turn.failed
-  const footer = turn.action ? actionLabel(turn.action) : null
+  const showCard = settled && hasResultCard(turn.details)
+  const footer = !showCard && turn.action ? actionLabel(turn.action) : null
 
   return (
     <div className="flex flex-col gap-3">
@@ -60,7 +61,7 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
       )}
 
       {/* The structured result behind the action — campaign turns only. */}
-      {settled && turn.details && <ResultCard details={turn.details} />}
+      {showCard && turn.details && <ResultCard details={turn.details} />}
 
       {/* What the turn did to its subject, once it's settled. */}
       {settled && (footer || turn.saveVersion) && (
@@ -80,22 +81,25 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
 }
 
 /**
- * The one-line footer under a reply. Actions whose detail is already spelled
- * out by a result card get no line at all — the card says it better.
+ * The one-line footer under a reply. It only appears when no result card
+ * did — the card always says it better — which in practice means turns
+ * restored from history, whose result payload the server doesn't persist.
  */
+const ACTION_LABELS: Record<AssistantAction, string | null> = {
+  edited: 'Post updated',
+  declined: 'No changes made',
+  answered: null,
+  content_plan_generated: 'Content plan generated',
+  posts_generated: 'Posts added',
+  brief_enriched: 'Brief updated',
+  dates_updated: 'Campaign dates updated',
+  posts_redistributed: 'Posts redistributed',
+  brief_reviewed: 'Brief reviewed',
+  posts_reviewed: 'Posts reviewed',
+}
+
 function actionLabel(action: AssistantAction): string | null {
-  switch (action) {
-    case 'edited':
-      return 'Post updated'
-    case 'declined':
-      return 'No changes made'
-    case 'answered':
-      return null
-    default:
-      // Every remaining action is a campaign mutation, and each one renders a
-      // result card above.
-      return null
-  }
+  return ACTION_LABELS[action] ?? null
 }
 
 function ListBlock({ ordered, items }: { ordered: boolean; items: InlineSpan[][] }) {
