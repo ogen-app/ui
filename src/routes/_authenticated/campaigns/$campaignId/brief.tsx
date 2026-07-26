@@ -13,7 +13,7 @@ function CampaignBriefView() {
   const { data: campaign } = useCampaign(campaignId);
   if (!campaign) return null;
   return (
-    <div className="overflow-y-auto pb-6">
+    <div className="min-h-0 overflow-y-auto">
       <CampaignBriefForm campaign={campaign} />
     </div>
   );
