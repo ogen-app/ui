@@ -96,7 +96,8 @@ function UnselectedPlatformRow({ view, onAdd }: { view: PlatformView; onAdd: () 
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-2.5 bg-secondary">
       <PlatformLabel view={view} />
-      {isConnected(view) ? (
+      <div className="flex shrink-0 items-center gap-1">
+        {!isConnected(view) && <ConnectLink platformName={view.info.name} />}
         <Button
           type="button"
           variant="ghost"
@@ -107,9 +108,7 @@ function UnselectedPlatformRow({ view, onAdd }: { view: PlatformView; onAdd: () 
         >
           <PlusIcon className="size-4" />
         </Button>
-      ) : (
-        <ConnectLink platformName={view.info.name} />
-      )}
+      </div>
     </div>
   )
 }
@@ -129,35 +128,26 @@ function ConnectLink({ platformName }: { platformName: string }) {
   )
 }
 
-function PlatformLabel({
-  view,
-  selectedCount,
-}: {
-  view: PlatformView
-  selectedCount?: number
-}) {
+function PlatformLabel({ view }: { view: PlatformView }) {
   const { info, available } = view
   const Icon = info.icon
+  const connected = isConnected(view)
   return (
     <div className="min-w-0 flex items-center gap-2.5">
+      {/* The brand colour is earned: unconnected platforms desaturate. */}
       <Icon
-        className="size-6 shrink-0"
+        className={cn('size-8 shrink-0', !connected && 'grayscale opacity-50')}
         weight="fill"
         style={{ color: info.color }}
       />
       <div className="min-w-0 flex flex-col">
         <span className="text-base font-semibold text-foreground">
           {info.name}
-          {selectedCount !== undefined && selectedCount > 0 && (
-            <span className="ml-1.5 text-tertiary-foreground font-normal">
-              {selectedCount}
-            </span>
-          )}
         </span>
         <span className="text-xs text-tertiary-foreground truncate">
-          {isConnected(view)
+          {connected
             ? `${available.length} post types available`
-            : 'Not connected.'}
+            : 'Not connected to the current workspace.'}
         </span>
       </div>
     </div>
@@ -177,7 +167,7 @@ function SelectedPlatformBlock({
   onTogglePostType,
   onUnselect,
 }: SelectedBlockProps) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const { info, available, unavailable } = view
 
   const toggleOpen = () => setOpen((o) => !o)
@@ -191,7 +181,7 @@ function SelectedPlatformBlock({
           aria-expanded={open}
           className="flex-1 min-w-0 flex items-center text-left cursor-pointer"
         >
-          <PlatformLabel view={view} selectedCount={selectedPostTypes.length} />
+          <PlatformLabel view={view} />
         </button>
         {!isConnected(view) && <ConnectLink platformName={info.name} />}
         <Button
