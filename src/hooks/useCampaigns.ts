@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listCampaigns,
   getCampaign,
+  getCampaignOverview,
   createCampaign,
   updateCampaign,
   deleteCampaign,
@@ -25,6 +26,18 @@ export function useCampaign(id: string) {
     queryKey: campaignKey(id),
     queryFn: () => getCampaign(id),
     enabled: !!id,
+  });
+}
+
+export function useCampaignOverview(id: string) {
+  return useQuery({
+    queryKey: [...campaignKey(id), "overview"] as const,
+    queryFn: () => getCampaignOverview(id),
+    enabled: !!id,
+    // The overview screen degrades inline when this fails (e.g. a backend
+    // without CON-113 yet); fail fast instead of blanking the section
+    // through the default three retries.
+    retry: 1,
   });
 }
 
