@@ -128,8 +128,32 @@ function ConnectLink({ platformName }: { platformName: string }) {
   )
 }
 
-function PlatformLabel({ view }: { view: PlatformView }) {
-  const { info, available } = view
+/**
+ * Caption under the platform name. A selected platform reports how many of
+ * its post types are on; an unselected one reports what it offers. Either
+ * way an unconnected platform says so, since nothing here can publish yet.
+ */
+function platformCaption(view: PlatformView, selectedCount?: number): string {
+  const parts: string[] = []
+  if (selectedCount !== undefined) {
+    // Denominator is `allowed`, not `available` — those are the rows the
+    // expanded block actually renders, connected or not.
+    parts.push(`${selectedCount} of ${view.allowed.length} post types`)
+  } else if (isConnected(view)) {
+    parts.push(`${view.available.length} post types available`)
+  }
+  if (!isConnected(view)) parts.push('Not connected to the current workspace.')
+  return parts.join(' · ')
+}
+
+function PlatformLabel({
+  view,
+  selectedCount,
+}: {
+  view: PlatformView
+  selectedCount?: number
+}) {
+  const { info } = view
   const Icon = info.icon
   const connected = isConnected(view)
   return (
@@ -145,9 +169,7 @@ function PlatformLabel({ view }: { view: PlatformView }) {
           {info.name}
         </span>
         <span className="text-xs text-tertiary-foreground truncate">
-          {connected
-            ? `${available.length} post types available`
-            : 'Not connected to the current workspace.'}
+          {platformCaption(view, selectedCount)}
         </span>
       </div>
     </div>
@@ -181,7 +203,7 @@ function SelectedPlatformBlock({
           aria-expanded={open}
           className="flex-1 min-w-0 flex items-center text-left cursor-pointer"
         >
-          <PlatformLabel view={view} />
+          <PlatformLabel view={view} selectedCount={selectedPostTypes.length} />
         </button>
         {!isConnected(view) && <ConnectLink platformName={info.name} />}
         <Button
