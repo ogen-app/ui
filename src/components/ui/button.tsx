@@ -1,15 +1,25 @@
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { IconContext } from '@phosphor-icons/react'
 
 import { cn } from '@/lib'
 import { Spinner } from '@/components/ui/spinner'
+
+/**
+ * Phosphor draws its outline weights as real strokes, so "thicker" is a
+ * `weight`, not a CSS stroke-width. Buttons default their icons to `bold`;
+ * an explicit `weight` prop on the icon still wins over this context.
+ */
+const buttonIconContext = { weight: 'bold' as const }
 
 const buttonVariants = cva(
   'relative inline-flex items-center cursor-pointer whitespace-nowrap shrink-0 outline-none ' +
     'gap-2 rounded-md text-[13px]/4 font-medium select-none transition-all ' +
     'disabled:pointer-events-none ' +
-    "[&_svg:not([class*='stroke-'])]:stroke-[2] [&_svg:not([class*='size-'])]:size-3 [&_svg]:shrink-0 " +
+    // Icon sizing is owned by the `size` variant below (16px everywhere except
+    // the 16px-tall xsIcon); an explicit `size-*` on the icon still wins.
+    "[&_svg:not([class*='stroke-'])]:stroke-[2] [&_svg]:shrink-0 " +
     'focus-visible:inset-ring-[2px] focus-visible:inset-ring-ring aria-invalid:ring-destructive/20 aria-invalid:border-destructive ' +
     '[&_[data-spinner-container]]:rounded-md',
   {
@@ -75,15 +85,15 @@ const buttonVariants = cva(
       },
 
       size: {
-        default: 'h-10 pt-[11px] pb-2 px-4',
-        defaultIcon: 'h-10 p-0 w-10 justify-center',
-        xsIcon: 'h-4 p-0 justify-center',
-        sm: 'h-8 pt-[11px] pb-2 px-3',
-        smIcon: 'h-8 p-0 w-8 justify-center',
-        lg: 'h-10 pt-[13px] pb-3 px-4',
-        lgIcon: 'h-10 p-0 w-10 justify-center',
-        xl: 'h-11 pt-[17px] pb-4 px-6',
-        xlIcon: 'h-11 p-0 w-11 justify-center',
+        default: "h-10 pt-[11px] pb-2 px-4 [&_svg:not([class*='size-'])]:size-4",
+        defaultIcon: "h-10 p-0 w-10 justify-center [&_svg:not([class*='size-'])]:size-4",
+        xsIcon: "h-4 p-0 justify-center [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-8 pt-[11px] pb-2 px-3 [&_svg:not([class*='size-'])]:size-4",
+        smIcon: "h-8 p-0 w-8 justify-center [&_svg:not([class*='size-'])]:size-4",
+        lg: "h-10 pt-[13px] pb-3 px-4 [&_svg:not([class*='size-'])]:size-4",
+        lgIcon: "h-10 p-0 w-10 justify-center [&_svg:not([class*='size-'])]:size-4",
+        xl: "h-11 pt-[17px] pb-4 px-6 [&_svg:not([class*='size-'])]:size-4",
+        xlIcon: "h-11 p-0 w-11 justify-center [&_svg:not([class*='size-'])]:size-4",
         excluded: '',
       },
     },
@@ -124,32 +134,34 @@ const Button = React.forwardRef<
   // For asChild without loading, render as normal (single child for Slot)
   if (asChild && !loading) {
     return (
+      <IconContext.Provider value={buttonIconContext}>
+        <Comp
+          ref={ref}
+          data-slot="button"
+          data-loading={loading ? 'true' : undefined}
+          data-active={active ? 'true' : undefined}
+          className={cn(buttonVariants({ variant, size, className }))}
+          disabled={disabled}
+          {...props}
+        >
+          {children}
+        </Comp>
+      </IconContext.Provider>
+    )
+  }
+
+  // For normal button or loading state
+  return (
+    <IconContext.Provider value={buttonIconContext}>
       <Comp
         ref={ref}
         data-slot="button"
         data-loading={loading ? 'true' : undefined}
         data-active={active ? 'true' : undefined}
         className={cn(buttonVariants({ variant, size, className }))}
-        disabled={disabled}
+        disabled={disabled || loading}
         {...props}
       >
-        {children}
-      </Comp>
-    )
-  }
-
-  // For normal button or loading state
-  return (
-    <Comp
-      ref={ref}
-      data-slot="button"
-      data-loading={loading ? 'true' : undefined}
-      data-active={active ? 'true' : undefined}
-      className={cn(buttonVariants({ variant, size, className }))}
-      disabled={disabled || loading}
-      {...props}
-    >
-      <>
         {children}
         {showEllipse && (
           <div className="absolute top-3 right-3 pointer-events-none">
@@ -164,8 +176,8 @@ const Button = React.forwardRef<
             <Spinner />
           </span>
         )}
-      </>
-    </Comp>
+      </Comp>
+    </IconContext.Provider>
   )
 })
 

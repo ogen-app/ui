@@ -53,7 +53,7 @@ export function ContentBankList({ category }: { category: ContentBankTab }) {
             disabled={createAsset.isPending}
             variant="defaultInverted"
           >
-            <PlusIcon className="size-4" />
+            <PlusIcon />
             <span>ADD ASSET</span>
           </Button>
         }

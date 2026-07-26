@@ -8,6 +8,7 @@ import {
   updatePost,
   type CancelTarget,
 } from '@/services/api/posts'
+import { registerPendingSave } from '@/lib/pendingSaves'
 import type { Post, PostStatus } from '@/types/posts'
 
 const SAVE_DEBOUNCE_MS = 600
@@ -46,6 +47,9 @@ type UsePostResult = {
   // race). Drives the "Unscheduling…" indicator and disables actions so a
   // second cancel job isn't enqueued while the first is in flight.
   cancelling: boolean
+  // True while an autosave is pending (debounce running or PUT in flight).
+  // Drives the sync-status indicator in the post header.
+  saving: boolean
   loading: boolean
   error: Error | undefined
 }
@@ -61,6 +65,7 @@ export function usePost(postId: string): UsePostResult {
   })
 
   const [cancelling, setCancelling] = useState(false)
+  const [saving, setSaving] = useState(false)
   const pendingRef = useRef<Post | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const genRef = useRef(0)
@@ -78,6 +83,12 @@ export function usePost(postId: string): UsePostResult {
       }
     } catch {
       qc.invalidateQueries({ queryKey: postKey(postId) })
+    } finally {
+      // A new edit may have queued another debounce while the PUT was in
+      // flight — only report "saved" when nothing is left to persist.
+      if (pendingRef.current === null && timerRef.current === null) {
+        setSaving(false)
+      }
     }
   }, [postId, qc])
 
@@ -89,6 +100,7 @@ export function usePost(postId: string): UsePostResult {
       fn(next)
       pendingRef.current = next
       genRef.current += 1
+      setSaving(true)
       qc.setQueryData(postKey(postId), next)
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {
@@ -97,6 +109,19 @@ export function usePost(postId: string): UsePostResult {
     },
     [postId, qc, flush],
   )
+
+  // Cancel the debounce and write immediately. Exposed to the assistant store
+  // (which edits this post server-side) so a queued PUT can't land afterwards
+  // and overwrite the assistant's edit with pre-edit content.
+  const flushNow = useCallback(async () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    await flush()
+  }, [flush])
+
+  useEffect(() => registerPendingSave(postId, flushNow), [postId, flushNow])
 
   // Status transitions skip the autosave debounce: they're committed
   // user actions, the server enforces a transition graph, and we want
@@ -112,6 +137,7 @@ export function usePost(postId: string): UsePostResult {
       const base = pendingRef.current ?? qc.getQueryData<Post>(postKey(postId))
       if (!base) return { ok: false, error: 'Post not loaded' }
       pendingRef.current = null
+      setSaving(false)
       const optimistic = structuredClone(base)
       optimistic.status = next
       genRef.current += 1
@@ -142,6 +168,7 @@ export function usePost(postId: string): UsePostResult {
     }
     const pending = pendingRef.current
     pendingRef.current = null
+    setSaving(false)
     const base = pending ?? qc.getQueryData<Post>(postKey(postId))
     if (!base) return { ok: false, error: 'Post not loaded' }
     if (!base.scheduled_at) return { ok: false, error: 'Set a publish date first' }
@@ -184,6 +211,7 @@ export function usePost(postId: string): UsePostResult {
         timerRef.current = null
       }
       pendingRef.current = null
+      setSaving(false)
       genRef.current += 1
       setCancelling(true)
       try {
@@ -230,6 +258,7 @@ export function usePost(postId: string): UsePostResult {
     schedule,
     cancelScheduled,
     cancelling,
+    saving,
     loading: query.isLoading,
     error: query.error ?? undefined,
   }

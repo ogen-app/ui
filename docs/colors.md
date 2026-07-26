@@ -27,7 +27,7 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
    matches (e.g. don't use `--quaternary-foreground` as a surface).
 3. **Layer 2 references Layer 1.** Raw oklch values are allowed only in
    Layer 1 and for standalone accents that have no palette scale yet
-   (`--destructive`, `--positive`, `--negative`, `--editable`, `--chart-1…5`).
+   (`--destructive`, `--positive`, `--negative`, `--accent`, `--editable`, `--chart-1…5`).
 4. **Only Layer 1 knows actual color values.** A palette swap (e.g. the
    previously-explored cool hue-200 variant, see git history of `index.css`)
    must be possible by editing Layer 1 alone.
@@ -56,7 +56,7 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
 | `--border` | beige-300 | Default hairlines |
 | `--border-primary` | black | Emphasized border |
 | `--ring` | beige-400 | Focus ring |
-| `--destructive`, `--positive`, `--negative`, `--editable` | oklch accents | Status / affordance accents |
+| `--destructive`, `--positive`, `--negative`, `--warning`, `--accent`, `--editable` | oklch accents | Status / affordance accents (`--warning` = validation warnings, orange; `--accent` = active/selected control, orange, provisional) |
 
 ## Known deliberate exceptions
 

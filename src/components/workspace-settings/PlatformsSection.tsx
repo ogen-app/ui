@@ -1,21 +1,15 @@
-import { memo, useId, useState } from 'react'
+import { memo } from 'react'
 import { PlugsIcon } from '@phosphor-icons/react'
-import type { Platform, PublisherAccount } from '@/types/campaigns'
+import type { PublisherAccount } from '@/types/campaigns'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
 import { Chip } from '@/components/ui/chip'
-import { ModalContainer } from '@/components/ui/modal'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import {
-  getPlatformInfo,
-  type PlatformPostType,
-  type PlatformView,
-} from '@/lib/platformDictionary'
+import type { PlatformPostType, PlatformView } from '@/lib/platformDictionary'
 import { usePlatformViews } from '@/hooks/usePlatforms'
-import { EditIconButton, ReadOnlyField, SettingsRow } from './SettingsRow'
+import { SettingsCard } from '@/components/settings/SettingsCard'
+import { ReadOnlyField, SettingsRow } from './SettingsRow'
 
 /**
  * Platform Settings — one row per platform the workspace has actually
@@ -25,22 +19,28 @@ import { EditIconButton, ReadOnlyField, SettingsRow } from './SettingsRow'
 function PlatformsSectionComponent() {
   const views = usePlatformViews()
   const connected = views.filter((v) => v.connectedPublishers.length > 0)
+  // TEMP: render the list twice so multi-platform layout (separators, row
+  // rhythm) can be previewed with a single connected platform. Remove once a
+  // second platform is actually connected.
+  const rows = [...connected, ...connected]
 
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-display font-medium tracking-tight">Platform Settings</h2>
+    <SettingsCard title="Platform Settings">
       {connected.length === 0 ? (
-        <div className="bg-primary px-6 py-5 text-sm text-tertiary-foreground">
+        <p className="text-sm text-tertiary-foreground">
           No platforms connected yet — pick one under “Connect Platforms” below.
-        </div>
+        </p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {connected.map((v) => (
-            <PlatformRow key={v.platform.id} view={v} />
+        // Every row gets a separator above it: the ul's own top border covers
+        // the first row, divide-y the rest; pt-6 restores the first row's gap
+        // (SettingsRow zeroes it via first:pt-0).
+        <ul className="flex flex-col border-t border-border pt-6 divide-y divide-border">
+          {rows.map((v, i) => (
+            <PlatformRow key={`${v.platform.id}-${i}`} view={v} />
           ))}
         </ul>
       )}
-    </section>
+    </SettingsCard>
   )
 }
 
@@ -89,9 +89,8 @@ function connectionStatus(view: PlatformView): ConnectionStatus {
 }
 
 /**
- * One connected platform. The left column leads with the connected accounts,
- * then cadence and constraints; the right column lists the content types the
- * platform can publish.
+ * One connected platform: the connected accounts, then cadence, constraints,
+ * and the content types the platform can publish — stacked full-width.
  */
 function PlatformRow({ view }: { view: PlatformView }) {
   const { platform, info } = view
@@ -102,22 +101,13 @@ function PlatformRow({ view }: { view: PlatformView }) {
     <SettingsRow
       title={info.name}
       badges={<StatusBadge tone={status.tone} label={status.label} />}
-      actions={
-        <>
-          <DisconnectButton />
-          <PlatformEditIconButton platform={platform} />
-        </>
-      }
+      actions={<DisconnectButton />}
       description={status.message ? <p>{status.message}</p> : undefined}
     >
       {accounts.length > 0 && <ConnectedAccounts accounts={accounts} />}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-        <div className="flex flex-col gap-4">
-          <ReadOnlyField label="Cadence" value={platform.cadence} />
-          <ReadOnlyField label="Constraints" value={platform.constraints} />
-        </div>
-        <PostTypeChips view={view} />
-      </div>
+      <ReadOnlyField label="Cadence" value={platform.cadence} />
+      <ReadOnlyField label="Constraints" value={platform.constraints} />
+      <PostTypeChips view={view} />
     </SettingsRow>
   )
 }
@@ -188,67 +178,6 @@ function DisconnectButton() {
       </TooltipTrigger>
       <TooltipContent>Disconnecting isn’t available yet — coming soon.</TooltipContent>
     </Tooltip>
-  )
-}
-
-/** Corner pencil that opens the (read-only) platform details modal. */
-function PlatformEditIconButton({ platform }: { platform: Platform }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <>
-      <EditIconButton label="Edit platform" onClick={() => setOpen(true)} />
-      <PlatformDetailsModal
-        platform={platform}
-        open={open}
-        onClose={() => setOpen(false)}
-      />
-    </>
-  )
-}
-
-/** Read-only view of the platform's cadence and constraints. */
-function PlatformDetailsModal({
-  platform,
-  open,
-  onClose,
-}: {
-  platform: Platform
-  open: boolean
-  onClose: () => void
-}) {
-  const info = getPlatformInfo(platform.id)
-  const cadenceId = useId()
-  const constraintsId = useId()
-  return (
-    <ModalContainer
-      isOpen={open}
-      onClose={onClose}
-      title={`${info?.name ?? platform.name} settings`}
-      size="default"
-    >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={cadenceId}>Cadence</Label>
-          <Textarea
-            id={cadenceId}
-            value={platform.cadence ?? ''}
-            readOnly
-            disabled
-            placeholder="—"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={constraintsId}>Constraints</Label>
-          <Textarea
-            id={constraintsId}
-            value={platform.constraints ?? ''}
-            readOnly
-            disabled
-            placeholder="—"
-          />
-        </div>
-      </div>
-    </ModalContainer>
   )
 }
 

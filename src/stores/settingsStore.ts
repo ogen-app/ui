@@ -3,6 +3,13 @@ import { persist, devtools } from 'zustand/middleware'
 import { SETTINGS_STORE_PERSIST_KEY } from '@/stores/constants'
 
 
+/** Content shown in the right sidebar. Only one panel is active at a time. */
+export type RightPanel =
+  | 'assistant'
+  | 'calendarSettings'
+  | 'notScheduled'
+  | 'postSettings'
+
 /**
  * Local-only settings stored in localStorage
  * These settings are device/browser specific and do NOT sync across devices
@@ -10,8 +17,12 @@ import { SETTINGS_STORE_PERSIST_KEY } from '@/stores/constants'
 export type LocalSettings = {
   // UI State
   sidebarCollapsed: boolean
-  isSecondaryNavbarOpen: boolean
-  isRightSidebarOpen: boolean
+  activeRightPanel: RightPanel | null
+  /**
+   * Campaign context for the notScheduled panel. Kept after the panel
+   * deactivates so its content can fade out instead of vanishing.
+   */
+  rightPanelCampaignId: string | null
 
   // Modal/Dialog State
   lastOpenedModals: Record<string, string> // modal ID -> last opened timestamp
@@ -22,12 +33,9 @@ type SettingsState = LocalSettings & {
   setSidebarCollapsed: (collapsed: boolean) => void
   toggleSidebar: () => void
 
-  openSecondaryNavbar: () => void
-  closeSecondaryNavbar: () => void
-  toggleSecondaryNavbar: () => void
-
-  closeRightSidebar: () => void
-  toggleRightSidebar: () => void
+  /** Activate the panel, or close the sidebar if it is already active. */
+  toggleRightPanel: (panel: RightPanel, campaignId?: string) => void
+  closeRightPanel: () => void
 
   recordModalOpened: (modalId: string) => void
 
@@ -37,8 +45,8 @@ type SettingsState = LocalSettings & {
 
 const DEFAULT_SETTINGS: LocalSettings = {
   sidebarCollapsed: false,
-  isSecondaryNavbarOpen: false,
-  isRightSidebarOpen: false,
+  activeRightPanel: null,
+  rightPanelCampaignId: null,
   lastOpenedModals: {},
 }
 
@@ -58,26 +66,16 @@ export const useSettingsStore = create<SettingsState>()(
           set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed }))
         },
 
-        // Secondary navbar actions
-        openSecondaryNavbar: () => {
-          set({ isSecondaryNavbarOpen: true })
-        },
-
-        closeSecondaryNavbar: () => {
-          set({ isSecondaryNavbarOpen: false })
-        },
-
-        toggleSecondaryNavbar: () => {
-          set((state) => ({ isSecondaryNavbarOpen: !state.isSecondaryNavbarOpen }))
-        },
-
         // Right sidebar actions (session-only, not persisted)
-        closeRightSidebar: () => {
-          set({ isRightSidebarOpen: false })
+        toggleRightPanel: (panel, campaignId) => {
+          set((state) => ({
+            activeRightPanel: state.activeRightPanel === panel ? null : panel,
+            ...(campaignId !== undefined && { rightPanelCampaignId: campaignId }),
+          }))
         },
 
-        toggleRightSidebar: () => {
-          set((state) => ({ isRightSidebarOpen: !state.isRightSidebarOpen }))
+        closeRightPanel: () => {
+          set({ activeRightPanel: null })
         },
 
         // Modal tracking actions
@@ -102,7 +100,7 @@ export const useSettingsStore = create<SettingsState>()(
           sidebarCollapsed: state.sidebarCollapsed,
           lastOpenedModals: state.lastOpenedModals,
           // Don't persist
-          // isSecondaryNavbarOpen, isRightSidebarOpen
+          // activeRightPanel, rightPanelCampaignId
         }),
       }
     ),

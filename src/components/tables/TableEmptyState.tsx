@@ -30,7 +30,7 @@ export function TableEmptyState({ onAction, className }: TableEmptyStateProps) {
         </div>
         {onAction ? (
           <Button variant={'defaultInverted'} onClick={onAction}>
-            <FunnelSimpleIcon className={'size-4'} />
+            <FunnelSimpleIcon />
             <span>RESET FILTERS</span>
           </Button>
         ) : (

@@ -11,6 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, __dirname, "");
+  const uiPort = Number(env.PORT ?? 9002);
 
   return {
     plugins: [
@@ -60,10 +61,14 @@ export default defineConfig(({ command, mode }) => {
             }
           : undefined,
       // Tell the browser which port to use for the HMR WebSocket. Must match
-      // the host-side port exposed in docker-compose.yml.
-      port: 9002,
+      // the host-side port exposed in docker-compose.yml. `PORT` (from
+      // `.env.local`) lets a git worktree run its own dev server alongside the
+      // main checkout; `strictPort` makes a collision fail loudly instead of
+      // silently moving to a port the HMR client isn't pointed at.
+      port: uiPort,
+      strictPort: true,
       hmr: {
-        clientPort: 9002,
+        clientPort: uiPort,
       },
       proxy: {
         // Forward API calls to the Go server during development.

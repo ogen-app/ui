@@ -1,7 +1,6 @@
 import { useId, type ReactNode } from 'react'
-import { PencilSimpleIcon } from '@phosphor-icons/react'
+import { LockSimpleIcon } from '@phosphor-icons/react'
 
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
@@ -14,8 +13,10 @@ type SettingsRowProps = {
 }
 
 /**
- * The shared card layout for a workspace-settings row: title + badges on the
- * left, actions on the right, then an optional description and body.
+ * One row inside a SettingsCard: title + badges on the left, actions on the
+ * right, then an optional description and body. Rows carry no surface of
+ * their own — the parent card does — and rely on the list's `divide-y` for
+ * separation when stacked.
  */
 export function SettingsRow({
   title,
@@ -25,7 +26,7 @@ export function SettingsRow({
   children,
 }: SettingsRowProps) {
   return (
-    <li className="bg-primary px-6 py-5 flex flex-col gap-3 min-w-0">
+    <li className="pt-6 pb-10 first:pt-0 last:pb-0 flex flex-col gap-5 min-w-0">
       <div className="flex items-center justify-between gap-4 min-w-0">
         <div className="flex items-center gap-3 min-w-0">
           <h3 className="text-base font-medium">{title}</h3>
@@ -43,22 +44,6 @@ export function SettingsRow({
   )
 }
 
-/** The corner pencil every settings row uses to open its edit modal. */
-export function EditIconButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="smIcon"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-    >
-      <PencilSimpleIcon className="size-5" weight="regular" />
-    </Button>
-  )
-}
-
 /** A labeled, non-editable value rendered as a disabled input. */
 export function ReadOnlyField({
   label,
@@ -72,7 +57,22 @@ export function ReadOnlyField({
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} value={text} readOnly disabled placeholder="—" title={text || undefined} />
+      <div className="relative">
+        <Input
+          id={id}
+          value={text}
+          readOnly
+          disabled
+          placeholder="—"
+          title={text || undefined}
+          className="pr-10"
+        />
+        <LockSimpleIcon
+          weight="regular"
+          aria-hidden
+          className="size-4 text-tertiary-foreground absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
+        />
+      </div>
     </div>
   )
 }

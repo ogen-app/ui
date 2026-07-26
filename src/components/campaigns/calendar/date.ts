@@ -6,10 +6,10 @@
 // free day (it is NOT normalized to Monday), so switching granularity later
 // only means swapping the slug while keeping the same anchor date.
 
-export function startOfWeek(date: Date): Date {
+// `firstDay` follows Date#getDay() numbering (0 = Sunday … 6 = Saturday).
+export function startOfWeek(date: Date, firstDay = 1): Date {
   const d = new Date(date)
-  const day = d.getDay()
-  const diff = day === 0 ? 6 : day - 1 // Monday = start of week
+  const diff = (d.getDay() - firstDay + 7) % 7
   d.setDate(d.getDate() - diff)
   d.setHours(0, 0, 0, 0)
   return d

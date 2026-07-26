@@ -58,6 +58,11 @@
     'Roboto', sans-serif;
   --font-grotesk: 'Space Grotesk', var(--font-sans);
 
+  /* Layout: the shared content-column width — the post rich-text editor and
+     the settings cards read at the same measure. Generates `w-content` /
+     `max-w-content`. */
+  --container-content: 740px;
+
   /* Radius */
   --radius-sm: calc(var(--radius) + 0px);
   --radius-md: calc(var(--radius) + 1px);
@@ -91,6 +96,8 @@
   --color-senary-foreground: var(--senary-foreground);
 
   --color-header-icon: var(--header-icon);
+  --color-assistant-bubble: var(--assistant-bubble);
+  --color-assistant-bubble-foreground: var(--assistant-bubble-foreground);
   --color-popover: var(--popover);
   --color-popover-hover: var(--popover-hover);
   --color-popover-foreground: var(--popover-foreground);
@@ -103,6 +110,8 @@
   --color-input-secondary: var(--input-secondary);
   /* Table */
   --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
+  --color-accent: var(--accent);
   --color-positive: var(--positive);
   --color-negative: var(--negative);
   --color-chart-1: var(--chart-1);
@@ -159,6 +168,11 @@
   --senary: var(--beige-400);
   --senary-foreground: var(--beige-300);
   --header-icon: var(--beige-800);
+  /* Assistant chat: the user's own message bubble. An inverted surface — no
+     Layer 2 surface token is dark, so this anchors to Layer 1 (colors.md
+     rule 2), the same exception `--header-icon` takes. */
+  --assistant-bubble: var(--beige-700);
+  --assistant-bubble-foreground: var(--white);
   --popover: var(--primary);
   --popover-hover: var(--secondary);
   --popover-foreground: var(--primary-foreground);
@@ -171,6 +185,10 @@
 
   --positive: oklch(0.5816 0.1169 164.11);
   --negative: oklch(0.6221 0.1943 29.8);
+  /* Non-blocking validation warnings (orange) */
+  --warning: oklch(0.6659 0.157 58.32);
+  /* Selected/active affordance accent (orange, provisional) */
+  --accent: oklch(0.705 0.213 47.604);
 
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);

@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -14,9 +14,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { useCampaignTypes } from '@/hooks/useCampaigns'
+import { useCampaignTypes, useUpdateCampaign } from '@/hooks/useCampaigns'
 import type { Campaign } from '@/types/campaigns'
-import { useCampaignAutosave } from './shared'
+import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
+import { campaignToPayload } from './shared'
+import { SettingsCard } from '@/components/settings/SettingsCard'
 
 const TYPE_ICON: Record<string, PhosphorIcon> = {
   awareness: EyeIcon,
@@ -51,10 +53,9 @@ function defaultValues(campaign: Campaign): BriefFormValues {
 
 type BriefFormProps = {
   campaign: Campaign
-  onFlushRef?: (flush: () => void) => void
 }
 
-export function BriefForm({ campaign, onFlushRef }: BriefFormProps) {
+export function BriefForm({ campaign }: BriefFormProps) {
   const form = useForm<BriefFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(briefSchema as any),
@@ -63,29 +64,34 @@ export function BriefForm({ campaign, onFlushRef }: BriefFormProps) {
 
   const { data: types, isLoading: typesLoading } = useCampaignTypes()
 
-  const { error, resetError } = useCampaignAutosave({
-    campaign,
-    form,
-    buildOverrides: (v) => ({
+  // No autosave here: edits mark the page dirty and are applied by the
+  // header's Save button (settingsSave context), like the settings pages.
+  const { isDirty } = form.formState
+  const { mutateAsync: updateCampaign } = useUpdateCampaign()
+  const save = useCallback(async () => {
+    const v = form.getValues()
+    const payload = campaignToPayload(campaign, {
       campaign_type_id: v.campaign_type_id,
       description: v.description,
       target_persona: v.target_persona,
       key_messages: v.key_messages,
       tone_guidelines: v.tone_guidelines,
-    }),
-    onFlushRef,
-  })
+    })
+    await updateCampaign({ id: campaign.id, payload })
+    // Re-baseline so the form is pristine against what was just saved.
+    form.reset(v)
+  }, [campaign, form, updateCampaign])
+  useRegisterSettingsSave('campaign-brief', isDirty, save)
 
   return (
     <Form {...form}>
-      <form className="flex flex-col gap-6" noValidate autoComplete="off">
-        <Card>
+      <form className="flex flex-col gap-8 pb-10" noValidate autoComplete="off">
+        <SettingsCard title="Campaign type">
           <FormField
             control={form.control}
             name="campaign_type_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Campaign type</FormLabel>
                 <div className="grid grid-flow-col auto-cols-fr gap-2">
                   {(types ?? []).map((t) => {
                     const selected = field.value === t.id
@@ -93,10 +99,7 @@ export function BriefForm({ campaign, onFlushRef }: BriefFormProps) {
                       <button
                         key={t.id}
                         type="button"
-                        onClick={() => {
-                          field.onChange(t.id)
-                          if (error) resetError()
-                        }}
+                        onClick={() => field.onChange(t.id)}
                         disabled={typesLoading}
                         aria-pressed={selected}
                         className={cn(
@@ -131,80 +134,78 @@ export function BriefForm({ campaign, onFlushRef }: BriefFormProps) {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="What is this campaign about and why does it matter?"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="target_persona"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Target persona</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="Who are we talking to? Role, goals, pain points."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="key_messages"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Key messages</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="The core points every piece of content should land."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="tone_guidelines"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tone guidelines</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="Voice, style, words to use and avoid."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </Card>
+        </SettingsCard>
 
-        {error && <span className="text-xs text-destructive">{error.message}</span>}
+        <SettingsCard title="Messaging">
+          {/* Single column, but the same row rhythm as the settings grids. */}
+          <div className="grid grid-cols-1 gap-y-5">
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="What is this campaign about and why does it matter?"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="target_persona"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target persona</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Who are we talking to? Role, goals, pain points."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="key_messages"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Key messages</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="The core points every piece of content should land."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="tone_guidelines"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tone guidelines</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Voice, style, words to use and avoid."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </SettingsCard>
       </form>
     </Form>
-  )
-}
-
-function Card({ children }: { children: ReactNode }) {
-  return (
-    <div className="bg-primary rounded-md p-6 flex flex-col gap-4">{children}</div>
   )
 }

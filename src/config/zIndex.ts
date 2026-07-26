@@ -76,6 +76,14 @@ export const ZIndex = {
    */
   scrollBar: 40,
 
+  /**
+   * Sticky page header
+   * Used for: PageHeader (and the headers composed from it) — the in-page
+   * sticky top bar with the fade-out gradient that content scrolls under.
+   * Above sticky table chrome, below app navigation.
+   */
+  pageHeader: 50,
+
   // ============================================================================
   // CHROME LAYER (100-199)
   // Persistent UI elements: headers, navigation, sidebars
@@ -96,24 +104,11 @@ export const ZIndex = {
   sidebarOverlay: 140,
 
   /**
-   * Secondary navbar overlay (backdrop)
-   * Used for: SecondaryNavbar backdrop - below main sidebar to avoid blocking it
-   */
-  secondaryNavbarOverlay: 145,
-
-  /**
    * Sidebar navigation
    * Used for: AppSidebar - main application sidebar
    * Same level as top navigation
    */
   sidebar: 150,
-
-  /**
-   * Secondary navbar content
-   * Used for: SecondaryNavbar - contextual secondary sidebar
-   * Appears above main sidebar but below modals
-   */
-  secondaryNavbar: 150,
 
   /**
    * Upload tracker panel
@@ -221,15 +216,6 @@ export const ZIndex = {
  * Type helper for z-index values
  */
 export type ZIndexValue = (typeof ZIndex)[keyof typeof ZIndex]
-
-/**
- * Returns a z-index value for stacked overlays.
- * Each overlay in the stack gets a higher z-index.
- * Base starts at modalOverlay (200), incrementing by 20.
- */
-export function getOverlayZIndex(stackIndex: number) {
-  return ZIndex.modalOverlay + stackIndex * 20
-}
 
 /**
  * IMPORTANT: How to Apply Z-Index Values

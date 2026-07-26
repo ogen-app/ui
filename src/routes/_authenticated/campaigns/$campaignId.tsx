@@ -1,46 +1,36 @@
-import {
-  createFileRoute,
-  Outlet,
-  useNavigate,
-  useRouterState,
-} from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { PageContainer } from "@/components/page-primitives/PageContainer.tsx";
 import { PageLoader } from "@/components/page-primitives/PageLoader.tsx";
 import { PageError } from "@/components/page-primitives/PageError.tsx";
 import { PageHeader } from "@/components/page-primitives/PageHeader.tsx";
-import { Button } from "@/components/ui/button.tsx";
-import { PlusIcon } from "@phosphor-icons/react";
-import { CampaignHeaderActions } from "@/components/campaigns/CampaignHeaderActions.tsx";
-import { GeneratePlanButton } from "@/components/campaigns/GeneratePlanButton.tsx";
-import { CampaignTabBar } from "@/components/campaigns/CampaignTabBar.tsx";
-import { formatAnchor } from "@/components/campaigns/calendar/date";
+import { CalendarHeaderActions } from "@/components/campaigns/calendar/CalendarHeaderActions.tsx";
+import {
+  SettingsSaveButton,
+  SettingsSaveProvider,
+} from "@/components/settings/settingsSave.tsx";
 import { useCampaign } from "@/hooks/useCampaigns.ts";
-import { useAddPost } from "@/hooks/usePosts.ts";
 
 export const Route = createFileRoute("/_authenticated/campaigns/$campaignId")({
   component: CampaignLayout,
 });
 
-const LEFT_TABS = [
-  { id: "calendar", label: "CALENDAR" },
-  { id: "list", label: "LIST" },
-];
-
-const RIGHT_TABS = [{ id: "brief", label: "BRIEF" }];
+// Section slug (from the URL) → title suffix. The header title and its icon
+// set depend on the selected secondary-nav element.
+const SECTIONS = [
+  { slug: "/list", label: "List" },
+  { slug: "/brief", label: "Brief" },
+  { slug: "/assets", label: "Assets" },
+  { slug: "/settings", label: "Settings" },
+  { slug: "/overview", label: "Overview" },
+] as const;
 
 function CampaignLayout() {
   const { campaignId } = Route.useParams();
   const { data: campaign, isLoading, isError } = useCampaign(campaignId);
-  const navigate = useNavigate();
-  const addPost = useAddPost(campaignId);
 
-  // The active tab is derived from the URL rather than local state.
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const activeTab = pathname.includes("/brief")
-    ? "brief"
-    : pathname.includes("/list")
-      ? "list"
-      : "calendar";
+  const section =
+    SECTIONS.find((s) => pathname.includes(s.slug))?.label ?? "Calendar";
 
   if (isLoading) {
     return (
@@ -59,54 +49,42 @@ function CampaignLayout() {
   }
 
   const displayName = campaign.name.trim();
-  const title = displayName === "" ? "Untitled campaign" : displayName;
+  const title = `${displayName === "" ? "Untitled campaign" : displayName} ${section}`;
 
-  const handleTabSelect = (id: string) => {
-    if (id === activeTab) return;
-    if (id === "calendar") {
-      // Always land on the current week when entering the calendar tab.
-      navigate({
-        to: "/campaigns/$campaignId/calendar/$anchor/$view",
-        params: { campaignId, anchor: formatAnchor(new Date()), view: "week" },
-      });
-    } else {
-      navigate({
-        to: `/campaigns/$campaignId/${id}`,
-        params: { campaignId },
-      });
-    }
-  };
-
-  const tabBarActions = (
-    <div className="flex items-center gap-3">
-      <GeneratePlanButton campaign={campaign} />
-      <Button variant="default" size="default" onClick={addPost}>
-        <PlusIcon className="size-4" />
-        <span>ADD POST</span>
-      </Button>
-    </div>
-  );
+  // The Brief section edits inline and saves through the header button, so it
+  // gets the settings-page shell: one scroll container owning the sticky
+  // header, whose title fades out on scroll.
+  if (section === "Brief") {
+    return (
+      <PageContainer variant={"fullFlex"}>
+        <SettingsSaveProvider>
+          <div className={"h-0 grow overflow-y-auto flex flex-col"}>
+            <PageHeader
+              title={title}
+              fadeOnScroll
+              actions={<SettingsSaveButton />}
+            />
+            <div className={"px-3 lg:px-6"}>
+              <Outlet />
+            </div>
+          </div>
+        </SettingsSaveProvider>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer variant={"fullFlex"}>
       <div className={"flex-1 min-h-0 flex flex-col"}>
         <PageHeader
           title={title}
-          overlay={"campaign-selector"}
           actions={
-            <div className="flex items-center gap-3">
-              <CampaignHeaderActions campaign={campaign} />
-            </div>
+            section === "Calendar" ? (
+              <CalendarHeaderActions campaignId={campaignId} />
+            ) : undefined
           }
         />
-        <CampaignTabBar
-          activeTab={activeTab}
-          tabs={LEFT_TABS}
-          rightTabs={RIGHT_TABS}
-          onTabSelect={handleTabSelect}
-          action={tabBarActions}
-        />
-        <div className={"grid overflow-hidden h-full mt-1 px-3 lg:mt-2 lg:px-6"}>
+        <div className={"grid overflow-hidden h-full px-3 lg:px-6"}>
           <Outlet />
         </div>
       </div>

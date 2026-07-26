@@ -30,7 +30,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/authStore'
-import { useSettingsStore } from '@/stores/settingsStore'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
 import { Logo } from '@/components/Logo'
@@ -67,7 +66,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation()
   const isCollapsed = isMobile ? false : state === 'collapsed'
   const { user } = useAuthStore()
-  const { closeSecondaryNavbar } = useSettingsStore()
   const navigate = useNavigate()
   const { data: campaigns } = useCampaigns()
 
@@ -114,13 +112,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 onClick={toggleSidebar}
                 aria-label="Close sidebar"
               >
-                <XIcon weight="regular" className="size-5" />
+                <XIcon className="size-5" />
               </Button>
             ) : (
               <Link
                 to="/"
                 className={cn('flex items-center gap-2 font-semibold text-lg transition-all')}
-                onClick={closeSecondaryNavbar}
               >
                 <Logo className="size-10 shrink-0" />
               </Link>
@@ -139,7 +136,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 onClick={() => setOpen(false)}
               >
                 <CaretDoubleLeftIcon
-                  weight="regular"
                   className="size-3 text-quaternary-foreground group-hover/button:text-primary-foreground transition-colors"
                 />
               </Button>
@@ -158,7 +154,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               text="Campaigns"
               isActive={location.pathname === '/campaigns'}
               to="/campaigns"
-              onClick={closeSecondaryNavbar}
             />
             <AppSidebarButtonMenu
               icon={
@@ -167,7 +162,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               text="Content Bank"
               isActive={location.pathname.startsWith('/content-bank')}
               to="/content-bank"
-              onClick={closeSecondaryNavbar}
             />
 
             {campaigns && campaigns.length > 0 && (
@@ -190,10 +184,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         isActive={isActive}
                         to="/campaigns/$campaignId"
                         params={{ campaignId: campaign.id }}
-                        onClick={closeSecondaryNavbar}
                       />
                       {isActive && (
-                        <div className="flex w-full flex-col gap-0.5 pb-2">
+                        // Sub-items sit flush against each other; the 12px pad
+                        // plus the nav's 4px gap makes 16px before the next
+                        // campaign.
+                        <div className="flex w-full flex-col gap-0 pb-3">
                           {CAMPAIGN_SUB_ITEMS.map((item) => {
                             const subActive = activeSubItem === item.id
                             const link = subItemLink(campaign.id, item.id)
@@ -201,14 +197,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                               <AppSidebarButtonMenu
                                 key={item.id}
                                 icon={
-                                  <item.icon weight="regular" className="size-4 flex-none" />
+                                  // Same 20px icon slot as top-level items so the labels
+                                  // line up; only the glyph inside is smaller.
+                                  <span className="flex size-5 flex-none items-center justify-center">
+                                    <item.icon className="size-4" />
+                                  </span>
                                 }
                                 text={item.text}
                                 isActive={subActive}
                                 to={link.to}
                                 params={link.params}
-                                onClick={closeSecondaryNavbar}
-                                className={cn('lg:h-8 text-xs', !isCollapsed && 'pl-4 lg:pl-6')}
+                                className="lg:h-8 text-xs"
                               />
                             )
                           })}
@@ -230,7 +229,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             text="Workspace Settings"
             isActive={location.pathname.startsWith('/workspace-settings')}
             to="/workspace-settings"
-            onClick={closeSecondaryNavbar}
           />
           <div>
             <DropdownMenu>

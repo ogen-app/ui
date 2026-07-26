@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { PostStatusBadge } from '@/components/posts/PostStatusBadge'
 import {
   usePostStatusActions,
   type PostStatusAction,
@@ -33,21 +32,6 @@ const INTENT_RANK: Record<PostStatusAction['intent'], number> = {
   destructive: 2,
 }
 
-const INTENT_VARIANT = {
-  primary: 'default',
-  secondary: 'outline',
-  destructive: 'destructive',
-} as const satisfies Record<PostStatusAction['intent'], string>
-
-type IntentVariant = (typeof INTENT_VARIANT)[PostStatusAction['intent']]
-
-const SCHEDULED_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-})
-
 export function PostStatusHeaderActions({
   post,
   transitionStatus,
@@ -55,7 +39,7 @@ export function PostStatusHeaderActions({
   cancelScheduled,
   cancelling,
 }: Props) {
-  const { current, actions, pending } = usePostStatusActions(
+  const { actions, pending } = usePostStatusActions(
     post,
     transitionStatus,
     schedule,
@@ -80,21 +64,13 @@ export function PostStatusHeaderActions({
   const showOverflow = userActions.length > 1
 
   return (
-    <div className="flex items-center gap-3">
-      <PostStatusBadge status={current} />
-      <ScheduleSummary post={post} cancelling={cancelling} />
-      <div className="flex items-center gap-1">
-        {showOverflow && primaryAction && (
-          <OverflowMenu
-            actions={userActions}
-            pending={busy}
-            variant={INTENT_VARIANT[primaryAction.intent]}
-          />
-        )}
-        {primaryAction && (
-          <PrimaryActionButton action={primaryAction} pending={busy} />
-        )}
-      </div>
+    <div className="flex items-center gap-1">
+      {showOverflow && primaryAction && (
+        <OverflowMenu actions={userActions} pending={busy} />
+      )}
+      {primaryAction && (
+        <PrimaryActionButton action={primaryAction} pending={busy} />
+      )}
     </div>
   )
 }
@@ -134,7 +110,7 @@ function PrimaryActionButton({
     <BlockerTooltip blockers={action.blockers}>
       <Button
         type="button"
-        variant={INTENT_VARIANT[action.intent]}
+        variant="ghost"
         size="sm"
         disabled={action.disabled}
         loading={pending}
@@ -151,16 +127,14 @@ function PrimaryActionButton({
 function OverflowMenu({
   actions,
   pending,
-  variant,
 }: {
   actions: PostStatusAction[]
   pending: boolean
-  variant: IntentVariant
 }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={cn(buttonVariants({ variant, size: 'smIcon' }))}
+        className={cn(buttonVariants({ variant: 'ghost', size: 'smIcon' }))}
         aria-label="More status actions"
         disabled={pending}
       >
@@ -189,28 +163,3 @@ function OverflowMenu({
   )
 }
 
-function ScheduleSummary({ post, cancelling }: { post: Post; cancelling: boolean }) {
-  if (post.status !== 'scheduled' && post.status !== 'scheduled_for_manual_publishing') {
-    return null
-  }
-  // The badge still reads `scheduled` until the worker confirms, so this
-  // is the textual signal that an unschedule is in progress.
-  if (cancelling) {
-    return <span className="text-xs text-tertiary-foreground">Unscheduling…</span>
-  }
-  if (!post.scheduled_at) {
-    return <span className="text-xs text-tertiary-foreground">No date set</span>
-  }
-  const verb = post.status === 'scheduled' ? 'Auto-publishes' : 'Reminder'
-  return (
-    <span className="text-xs text-tertiary-foreground">
-      {verb} {formatScheduledAt(post.scheduled_at)}
-    </span>
-  )
-}
-
-function formatScheduledAt(iso: string): string {
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return ''
-  return SCHEDULED_DATE_FORMAT.format(d)
-}

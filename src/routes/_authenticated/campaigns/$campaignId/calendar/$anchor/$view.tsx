@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/button.tsx";
 import { PlusIcon } from "@phosphor-icons/react";
 import { PageGridEmptyState } from "@/components/page-primitives/PageGridEmptyState.tsx";
+import { PostsToolbar } from "@/components/campaigns/PostsToolbar";
 import { WeeklyCalendar } from "@/components/campaigns/calendar/WeeklyCalendar";
 import { formatAnchor, parseAnchor } from "@/components/campaigns/calendar/date";
 import { useAddPost, useCampaignPosts } from "@/hooks/usePosts.ts";
@@ -37,32 +38,38 @@ function CalendarView() {
   const addPost = useAddPost(campaignId);
   const anchorDate = parseAnchor(anchor) ?? new Date();
 
-  if (!posts || posts.length === 0) {
-    return (
-      <PageGridEmptyState
-        title="No posts yet"
-        subtitle="Add your first post to start building this campaign"
-        actions={
-          <Button variant="defaultInverted" onClick={addPost}>
-            <PlusIcon className="size-4" />
-            <span>ADD POST</span>
-          </Button>
-        }
-      />
-    );
-  }
+  const handleAnchorChange = (d: Date) =>
+    navigate({
+      to: "/campaigns/$campaignId/calendar/$anchor/$view",
+      params: { campaignId, anchor: formatAnchor(d), view: "week" },
+    });
 
   return (
-    <WeeklyCalendar
-      campaignId={campaignId}
-      posts={posts}
-      anchor={anchorDate}
-      onAnchorChange={(d) =>
-        navigate({
-          to: "/campaigns/$campaignId/calendar/$anchor/$view",
-          params: { campaignId, anchor: formatAnchor(d), view: "week" },
-        })
-      }
-    />
+    <div className="flex flex-col h-full min-h-0 min-w-0">
+      <PostsToolbar
+        campaignId={campaignId}
+        view="week"
+        anchor={anchorDate}
+        onAnchorChange={handleAnchorChange}
+      />
+      {!posts || posts.length === 0 ? (
+        <PageGridEmptyState
+          title="No posts yet"
+          subtitle="Add your first post to start building this campaign"
+          actions={
+            <Button variant="defaultInverted" onClick={addPost}>
+              <PlusIcon className="size-4" />
+              <span>ADD POST</span>
+            </Button>
+          }
+        />
+      ) : (
+        <WeeklyCalendar
+          campaignId={campaignId}
+          posts={posts}
+          anchor={anchorDate}
+        />
+      )}
+    </div>
   );
 }
