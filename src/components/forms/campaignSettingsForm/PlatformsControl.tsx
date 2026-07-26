@@ -128,24 +128,6 @@ function ConnectLink({ platformName }: { platformName: string }) {
   )
 }
 
-/**
- * Caption under the platform name. A selected platform reports how many of
- * its post types are on; an unselected one reports what it offers. Either
- * way an unconnected platform says so, since nothing here can publish yet.
- */
-function platformCaption(view: PlatformView, selectedCount?: number): string {
-  const parts: string[] = []
-  if (selectedCount !== undefined) {
-    // Denominator is `allowed`, not `available` — those are the rows the
-    // expanded block actually renders, connected or not.
-    parts.push(`${selectedCount} of ${view.allowed.length} post types`)
-  } else if (isConnected(view)) {
-    parts.push(`${view.available.length} post types available`)
-  }
-  if (!isConnected(view)) parts.push('Not connected to the current workspace.')
-  return parts.join(' · ')
-}
-
 function PlatformLabel({
   view,
   selectedCount,
@@ -155,12 +137,24 @@ function PlatformLabel({
 }) {
   const { info } = view
   const Icon = info.icon
+  // Only the selected block passes a count, so this doubles as "is targeted".
+  const selected = selectedCount !== undefined
   const connected = isConnected(view)
+
+  // Denominator is `allowed`, not `available` — those are the rows the
+  // expanded block actually renders, connected or not.
+  const counts = selected
+    ? `${selectedCount} of ${view.allowed.length} post types`
+    : connected
+      ? `${view.available.length} post types available`
+      : null
+
   return (
     <div className="min-w-0 flex items-center gap-2.5">
-      {/* The brand colour is earned: unconnected platforms desaturate. */}
+      {/* Brand colour marks what the campaign targets: a platform stays
+          desaturated until it is added, and lights up on "+". */}
       <Icon
-        className={cn('size-8 shrink-0', !connected && 'grayscale opacity-50')}
+        className={cn('size-8 shrink-0', !selected && 'grayscale opacity-50')}
         weight="fill"
         style={{ color: info.color }}
       />
@@ -169,7 +163,17 @@ function PlatformLabel({
           {info.name}
         </span>
         <span className="text-xs text-tertiary-foreground truncate">
-          {platformCaption(view, selectedCount)}
+          {counts}
+          {!connected && (
+            <>
+              {counts && ' · '}
+              {/* Targeting a platform the workspace can't publish to is a
+                  real problem, so it escalates from grey to a warning. */}
+              <span className={cn(selected && 'text-warning')}>
+                Not connected to the current workspace.
+              </span>
+            </>
+          )}
         </span>
       </div>
     </div>
