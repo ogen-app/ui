@@ -320,8 +320,14 @@ function resultDetails(parsed: Record<string, unknown>): AssistantResultDetails 
     details.generatedPosts = { postCount: num(generated.postCount), warnings: strings(generated.warnings) }
   }
 
+  // The stream sends `brief: {applied}`; the persisted history row flattens it
+  // to `briefApplied`. Read both so a reloaded turn still shows the write.
   const brief = record(parsed.brief)
-  if (brief) details.brief = { applied: brief.applied === true }
+  if (brief) {
+    details.brief = { applied: brief.applied === true }
+  } else if (typeof parsed.briefApplied === 'boolean') {
+    details.brief = { applied: parsed.briefApplied }
+  }
 
   const dates = record(parsed.dates)
   if (dates) {
