@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -97,14 +97,14 @@ export function BriefForm({ campaign }: BriefFormProps) {
     [campaign.id, flushIfDirty],
   )
 
-  // The turn's write only reaches the form through a refetch, and only when
-  // there is nothing of the user's to lose.
-  const wasRunning = useRef(assistantRunning)
+  // Adopt whatever the server holds whenever it changes and there is nothing
+  // of the user's to lose. Deliberately not gated on the turn *finishing*: the
+  // status flip and the refetch are separate renders in either order, so a
+  // one-shot transition can fire before the new brief has arrived and reset
+  // the form to the values the assistant just replaced.
   useEffect(() => {
-    const settled = wasRunning.current && !assistantRunning
-    wasRunning.current = assistantRunning
-    if (settled && !form.formState.isDirty) form.reset(defaultValues(campaign))
-  }, [assistantRunning, campaign, form])
+    if (!form.formState.isDirty) form.reset(defaultValues(campaign))
+  }, [campaign, form])
 
   return (
     <Form {...form}>

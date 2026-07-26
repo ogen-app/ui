@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import {
   ArrowsOutLineHorizontalIcon,
   CalendarBlankIcon,
@@ -29,7 +30,33 @@ export function hasResultCard(details: AssistantResultDetails | undefined): bool
   return !!details && Object.keys(details).length > 0
 }
 
+/**
+ * One turn can run several tools — "improve the brief" routinely reviews it
+ * first — so more than one result key comes back populated. Render every one:
+ * showing only the first would hide the write behind the review, which is
+ * precisely the half the user needs to know about.
+ */
 export function ResultCard({ details }: { details: AssistantResultDetails }) {
+  const cards = [
+    briefReviewCard(details),
+    postsReviewCard(details),
+    datesCard(details),
+    redistributeCard(details),
+    generatedCard(details),
+    briefCard(details),
+  ].filter(Boolean)
+
+  if (cards.length === 0) return null
+  return (
+    <div className="flex flex-col gap-3">
+      {cards.map((card, i) => (
+        <Fragment key={i}>{card}</Fragment>
+      ))}
+    </div>
+  )
+}
+
+function briefReviewCard(details: AssistantResultDetails) {
   if (details.briefReview) {
     const { consistent, findings } = details.briefReview
     return (
@@ -44,7 +71,10 @@ export function ResultCard({ details }: { details: AssistantResultDetails }) {
       </Card>
     )
   }
+  return null
+}
 
+function postsReviewCard(details: AssistantResultDetails) {
   if (details.postsReview) {
     const { checked, total, capped, findings } = details.postsReview
     return (
@@ -59,7 +89,10 @@ export function ResultCard({ details }: { details: AssistantResultDetails }) {
       </Card>
     )
   }
+  return null
+}
 
+function datesCard(details: AssistantResultDetails) {
   if (details.dates) {
     const { startDate, endDate, postsOutsideRange } = details.dates
     return (
@@ -79,7 +112,10 @@ export function ResultCard({ details }: { details: AssistantResultDetails }) {
       </Card>
     )
   }
+  return null
+}
 
+function redistributeCard(details: AssistantResultDetails) {
   if (details.redistribute) {
     const { postsUpdated, phaseCount } = details.redistribute
     return (
@@ -92,7 +128,10 @@ export function ResultCard({ details }: { details: AssistantResultDetails }) {
       </Card>
     )
   }
+  return null
+}
 
+function generatedCard(details: AssistantResultDetails) {
   const generated = details.contentPlan ?? details.generatedPosts
   if (generated) {
     return (
@@ -116,7 +155,10 @@ export function ResultCard({ details }: { details: AssistantResultDetails }) {
       </Card>
     )
   }
+  return null
+}
 
+function briefCard(details: AssistantResultDetails) {
   if (details.brief) {
     return (
       <Card>
