@@ -56,7 +56,7 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
 | `--border` | beige-300 | Default hairlines |
 | `--border-primary` | black | Emphasized border |
 | `--ring` | beige-400 | Focus ring |
-| `--destructive`, `--positive`, `--negative`, `--accent`, `--editable` | oklch accents | Status / affordance accents (`--accent` = active/selected control, orange, provisional) |
+| `--destructive`, `--positive`, `--negative`, `--warning`, `--accent`, `--editable` | oklch accents | Status / affordance accents (`--warning` = validation warnings, orange; `--accent` = active/selected control, orange, provisional) |
 
 ## Known deliberate exceptions
 

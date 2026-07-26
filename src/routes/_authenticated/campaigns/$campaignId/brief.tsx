@@ -12,9 +12,7 @@ function CampaignBriefView() {
   const { campaignId } = Route.useParams();
   const { data: campaign } = useCampaign(campaignId);
   if (!campaign) return null;
-  return (
-    <div className="min-h-0 overflow-y-auto">
-      <CampaignBriefForm campaign={campaign} />
-    </div>
-  );
+  // The campaign layout owns the scrolling and the fading header for this
+  // section, so the form renders bare.
+  return <CampaignBriefForm campaign={campaign} />;
 }

@@ -1,22 +1,15 @@
-import { memo, useId, useState } from 'react'
+import { memo } from 'react'
 import { PlugsIcon } from '@phosphor-icons/react'
-import type { Platform, PublisherAccount } from '@/types/campaigns'
+import type { PublisherAccount } from '@/types/campaigns'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
 import { Chip } from '@/components/ui/chip'
-import { ModalContainer } from '@/components/ui/modal'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import {
-  getPlatformInfo,
-  type PlatformPostType,
-  type PlatformView,
-} from '@/lib/platformDictionary'
+import type { PlatformPostType, PlatformView } from '@/lib/platformDictionary'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { SettingsCard } from '@/components/settings/SettingsCard'
-import { EditIconButton, ReadOnlyField, SettingsRow } from './SettingsRow'
+import { ReadOnlyField, SettingsRow } from './SettingsRow'
 
 /**
  * Platform Settings — one row per platform the workspace has actually
@@ -39,9 +32,9 @@ function PlatformsSectionComponent() {
         </p>
       ) : (
         // Every row gets a separator above it: the ul's own top border covers
-        // the first row, divide-y the rest; pt-5 restores the first row's gap
+        // the first row, divide-y the rest; pt-6 restores the first row's gap
         // (SettingsRow zeroes it via first:pt-0).
-        <ul className="flex flex-col border-t border-border pt-5 divide-y divide-border">
+        <ul className="flex flex-col border-t border-border pt-6 divide-y divide-border">
           {rows.map((v, i) => (
             <PlatformRow key={`${v.platform.id}-${i}`} view={v} />
           ))}
@@ -96,8 +89,8 @@ function connectionStatus(view: PlatformView): ConnectionStatus {
 }
 
 /**
- * One connected platform: connected accounts first, then the content types
- * the platform can publish, then the cadence/constraints settings.
+ * One connected platform: the connected accounts, then cadence, constraints,
+ * and the content types the platform can publish — stacked full-width.
  */
 function PlatformRow({ view }: { view: PlatformView }) {
   const { platform, info } = view
@@ -108,20 +101,13 @@ function PlatformRow({ view }: { view: PlatformView }) {
     <SettingsRow
       title={info.name}
       badges={<StatusBadge tone={status.tone} label={status.label} />}
-      actions={
-        <>
-          <DisconnectButton />
-          <PlatformEditIconButton platform={platform} />
-        </>
-      }
+      actions={<DisconnectButton />}
       description={status.message ? <p>{status.message}</p> : undefined}
     >
       {accounts.length > 0 && <ConnectedAccounts accounts={accounts} />}
+      <ReadOnlyField label="Cadence" value={platform.cadence} />
+      <ReadOnlyField label="Constraints" value={platform.constraints} />
       <PostTypeChips view={view} />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-        <ReadOnlyField label="Cadence" value={platform.cadence} />
-        <ReadOnlyField label="Constraints" value={platform.constraints} />
-      </div>
     </SettingsRow>
   )
 }
@@ -192,67 +178,6 @@ function DisconnectButton() {
       </TooltipTrigger>
       <TooltipContent>Disconnecting isn’t available yet — coming soon.</TooltipContent>
     </Tooltip>
-  )
-}
-
-/** Corner pencil that opens the (read-only) platform details modal. */
-function PlatformEditIconButton({ platform }: { platform: Platform }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <>
-      <EditIconButton label="Edit platform" onClick={() => setOpen(true)} />
-      <PlatformDetailsModal
-        platform={platform}
-        open={open}
-        onClose={() => setOpen(false)}
-      />
-    </>
-  )
-}
-
-/** Read-only view of the platform's cadence and constraints. */
-function PlatformDetailsModal({
-  platform,
-  open,
-  onClose,
-}: {
-  platform: Platform
-  open: boolean
-  onClose: () => void
-}) {
-  const info = getPlatformInfo(platform.id)
-  const cadenceId = useId()
-  const constraintsId = useId()
-  return (
-    <ModalContainer
-      isOpen={open}
-      onClose={onClose}
-      title={`${info?.name ?? platform.name} settings`}
-      size="default"
-    >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={cadenceId}>Cadence</Label>
-          <Textarea
-            id={cadenceId}
-            value={platform.cadence ?? ''}
-            readOnly
-            disabled
-            placeholder="—"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={constraintsId}>Constraints</Label>
-          <Textarea
-            id={constraintsId}
-            value={platform.constraints ?? ''}
-            readOnly
-            disabled
-            placeholder="—"
-          />
-        </div>
-      </div>
-    </ModalContainer>
   )
 }
 

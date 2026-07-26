@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -13,9 +14,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { useCampaignTypes } from '@/hooks/useCampaigns'
+import { useCampaignTypes, useUpdateCampaign } from '@/hooks/useCampaigns'
 import type { Campaign } from '@/types/campaigns'
-import { useCampaignAutosave } from './shared'
+import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
+import { campaignToPayload } from './shared'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 
 const TYPE_ICON: Record<string, PhosphorIcon> = {
@@ -51,10 +53,9 @@ function defaultValues(campaign: Campaign): BriefFormValues {
 
 type BriefFormProps = {
   campaign: Campaign
-  onFlushRef?: (flush: () => void) => void
 }
 
-export function BriefForm({ campaign, onFlushRef }: BriefFormProps) {
+export function BriefForm({ campaign }: BriefFormProps) {
   const form = useForm<BriefFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(briefSchema as any),
@@ -63,18 +64,24 @@ export function BriefForm({ campaign, onFlushRef }: BriefFormProps) {
 
   const { data: types, isLoading: typesLoading } = useCampaignTypes()
 
-  const { error, resetError } = useCampaignAutosave({
-    campaign,
-    form,
-    buildOverrides: (v) => ({
+  // No autosave here: edits mark the page dirty and are applied by the
+  // header's Save button (settingsSave context), like the settings pages.
+  const { isDirty } = form.formState
+  const { mutateAsync: updateCampaign } = useUpdateCampaign()
+  const save = useCallback(async () => {
+    const v = form.getValues()
+    const payload = campaignToPayload(campaign, {
       campaign_type_id: v.campaign_type_id,
       description: v.description,
       target_persona: v.target_persona,
       key_messages: v.key_messages,
       tone_guidelines: v.tone_guidelines,
-    }),
-    onFlushRef,
-  })
+    })
+    await updateCampaign({ id: campaign.id, payload })
+    // Re-baseline so the form is pristine against what was just saved.
+    form.reset(v)
+  }, [campaign, form, updateCampaign])
+  useRegisterSettingsSave('campaign-brief', isDirty, save)
 
   return (
     <Form {...form}>
@@ -92,10 +99,7 @@ export function BriefForm({ campaign, onFlushRef }: BriefFormProps) {
                       <button
                         key={t.id}
                         type="button"
-                        onClick={() => {
-                          field.onChange(t.id)
-                          if (error) resetError()
-                        }}
+                        onClick={() => field.onChange(t.id)}
                         disabled={typesLoading}
                         aria-pressed={selected}
                         className={cn(
@@ -201,8 +205,6 @@ export function BriefForm({ campaign, onFlushRef }: BriefFormProps) {
             />
           </div>
         </SettingsCard>
-
-        {error && <span className="text-xs text-destructive">{error.message}</span>}
       </form>
     </Form>
   )
