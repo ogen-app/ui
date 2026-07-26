@@ -9,7 +9,7 @@ import type { ReactNode } from 'react'
  */
 export function SettingsCard({ title, children }: { title?: string; children: ReactNode }) {
   return (
-    <section className="w-full max-w-content mx-auto bg-primary px-6 py-5 flex flex-col gap-4 min-w-0">
+    <section className="w-full max-w-content mx-auto bg-primary px-6 py-6 flex flex-col gap-5 min-w-0">
       {title && <h2 className="text-xl font-display font-medium tracking-tight">{title}</h2>}
       {children}
     </section>

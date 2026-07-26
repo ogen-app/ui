@@ -4,6 +4,10 @@ import { PageLoader } from "@/components/page-primitives/PageLoader.tsx";
 import { PageError } from "@/components/page-primitives/PageError.tsx";
 import { PageHeader } from "@/components/page-primitives/PageHeader.tsx";
 import { CalendarHeaderActions } from "@/components/campaigns/calendar/CalendarHeaderActions.tsx";
+import {
+  SettingsSaveButton,
+  SettingsSaveProvider,
+} from "@/components/settings/settingsSave.tsx";
 import { useCampaign } from "@/hooks/useCampaigns.ts";
 
 export const Route = createFileRoute("/_authenticated/campaigns/$campaignId")({
@@ -46,6 +50,28 @@ function CampaignLayout() {
 
   const displayName = campaign.name.trim();
   const title = `${displayName === "" ? "Untitled campaign" : displayName} ${section}`;
+
+  // The Brief section edits inline and saves through the header button, so it
+  // gets the settings-page shell: one scroll container owning the sticky
+  // header, whose title fades out on scroll.
+  if (section === "Brief") {
+    return (
+      <PageContainer variant={"fullFlex"}>
+        <SettingsSaveProvider>
+          <div className={"h-0 grow overflow-y-auto flex flex-col"}>
+            <PageHeader
+              title={title}
+              fadeOnScroll
+              actions={<SettingsSaveButton />}
+            />
+            <div className={"px-3 lg:px-6"}>
+              <Outlet />
+            </div>
+          </div>
+        </SettingsSaveProvider>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer variant={"fullFlex"}>

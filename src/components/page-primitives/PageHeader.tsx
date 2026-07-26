@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ListIcon } from '@phosphor-icons/react'
 import { useSidebar } from '@/components/ui/sidebar'
 import { ZIndex } from '@/config/zIndex'
@@ -14,6 +14,21 @@ type PageHeaderProps = {
   children?: ReactNode
   className?: string
   actions?: ReactNode
+  /**
+   * Fades the title and the fader gradient out once the page scrolls; the
+   * buttons on both sides stay visible and clickable. Requires a scrollable
+   * ancestor (the header must sit inside the page's scroll container).
+   */
+  fadeOnScroll?: boolean
+}
+
+/** The nearest ancestor that actually scrolls vertically. */
+function findScrollParent(el: HTMLElement | null): HTMLElement | null {
+  for (let node = el?.parentElement ?? null; node; node = node.parentElement) {
+    const { overflowY } = getComputedStyle(node)
+    if (overflowY === 'auto' || overflowY === 'scroll') return node
+  }
+  return null
 }
 
 /**
@@ -28,20 +43,51 @@ export function PageHeader({
   children,
   className,
   actions,
+  fadeOnScroll,
 }: PageHeaderProps) {
   const { toggleSidebar } = useSidebar()
   const isMobile = useIsMobile()
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    if (!fadeOnScroll) return
+    const scroller = findScrollParent(rootRef.current)
+    if (!scroller) return
+    const onScroll = () => setScrolled(scroller.scrollTop > 8)
+    onScroll()
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    return () => scroller.removeEventListener('scroll', onScroll)
+  }, [fadeOnScroll])
+
+  const faded = fadeOnScroll && scrolled
 
   return (
     <div
+      ref={rootRef}
       className={cn(
-        'sticky top-0 px-3 lg:px-6 pt-6 pb-4 shrink-0 bg-gradient-to-b from-background from-42% to-transparent',
+        'sticky top-0 px-3 lg:px-6 pt-6 pb-4 shrink-0',
+        // The fading variant moves the gradient to its own layer (so it can
+        // dissolve independently) and must not eat clicks once that layer is
+        // gone — pointer events are re-enabled per button group below.
+        fadeOnScroll
+          ? 'pointer-events-none'
+          : 'bg-gradient-to-b from-background from-42% to-transparent',
         className,
       )}
       style={{ zIndex: ZIndex.pageHeader }}
     >
-      <div className="flex h-10 items-center gap-3">
-        <div className="md:hidden shrink-0">
+      {fadeOnScroll && (
+        <div
+          aria-hidden
+          className={cn(
+            'absolute inset-0 bg-gradient-to-b from-background from-42% to-transparent transition-opacity duration-300',
+            faded && 'opacity-0',
+          )}
+        />
+      )}
+      <div className="relative flex h-10 items-center gap-3">
+        <div className={cn('md:hidden shrink-0', fadeOnScroll && 'pointer-events-auto')}>
           <Button
             variant={'default'}
             size={isMobile ? 'smIcon' : 'defaultIcon'}
@@ -54,16 +100,34 @@ export function PageHeader({
           </Button>
         </div>
         <div className="flex flex-1 min-w-0 items-center gap-2">
-          {back}
+          {back &&
+            (fadeOnScroll ? (
+              <span className="flex shrink-0 pointer-events-auto">{back}</span>
+            ) : (
+              back
+            ))}
           {title !== undefined && (
-            <h1 className="font-display text-2xl font-medium leading-8 tracking-[-0.24px] text-primary-foreground truncate">
+            <h1
+              className={cn(
+                'font-display text-2xl font-medium leading-8 tracking-[-0.24px] text-primary-foreground truncate',
+                fadeOnScroll && 'transition-opacity duration-300',
+                faded && 'opacity-0',
+              )}
+            >
               {title}
             </h1>
           )}
           {children}
         </div>
         {actions && (
-          <div className="flex shrink-0 items-center gap-2">{actions}</div>
+          <div
+            className={cn(
+              'flex shrink-0 items-center gap-2',
+              fadeOnScroll && 'pointer-events-auto',
+            )}
+          >
+            {actions}
+          </div>
         )}
       </div>
     </div>

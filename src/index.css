@@ -110,6 +110,7 @@
   --color-input-secondary: var(--input-secondary);
   /* Table */
   --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
   --color-accent: var(--accent);
   --color-positive: var(--positive);
   --color-negative: var(--negative);
@@ -184,6 +185,8 @@
 
   --positive: oklch(0.5816 0.1169 164.11);
   --negative: oklch(0.6221 0.1943 29.8);
+  /* Non-blocking validation warnings (orange) */
+  --warning: oklch(0.6659 0.157 58.32);
   /* Selected/active affordance accent (orange, provisional) */
   --accent: oklch(0.705 0.213 47.604);
 
