@@ -24,6 +24,7 @@ Content-Bank AI images are secondary. See
 - **Front-end architecture:** [`docs/architecture.md`](./docs/architecture.md)
 - **Technical decisions & rationale:** [`docs/technical-decisions.md`](./docs/technical-decisions.md)
 - **Onboarding, auth & tenancy flow:** [`docs/onboarding.md`](./docs/onboarding.md)
+- **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal

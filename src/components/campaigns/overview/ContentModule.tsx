@@ -18,11 +18,14 @@ import { CardHeaderLink, OverviewCard } from "./OverviewCard.tsx";
 export function ContentModule({
   campaignId,
   posts,
+  plannedTotal,
   overview,
   overviewError,
 }: {
   campaignId: string;
   posts: Post[];
+  /** `estimated_post_count`: shown against the total instead of as a rail row. */
+  plannedTotal: number | null;
   overview: CampaignOverview | undefined;
   overviewError: boolean;
 }) {
@@ -63,7 +66,10 @@ export function ContentModule({
       }
     >
       <div className="flex flex-wrap gap-x-8 gap-y-3">
-        <StatTile value={snapshot.total} label="Total posts" />
+        <StatTile
+          value={snapshot.total}
+          label={plannedTotal ? `of ${plannedTotal} planned` : "Total posts"}
+        />
         <StatTile value={snapshot.byStatus.published} label="Published" />
         <StatTile value={upcoming} label="Scheduled" />
         <StatTile value={snapshot.byStatus.draft} label="Drafts" />

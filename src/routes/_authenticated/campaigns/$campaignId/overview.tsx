@@ -48,7 +48,10 @@ function CampaignOverviewScreen() {
     );
   }
 
-  const items = attentionItems(campaign, posts, platformViews);
+  // Several attention rules are time-based (overdue slots, the next 24h, pace),
+  // so they are recomputed on every render against the current clock rather
+  // than memoized against a frozen `now`.
+  const items = attentionItems(campaign, posts, platformViews, new Date());
 
   return (
     <div className="min-h-0 overflow-y-auto">
@@ -58,6 +61,7 @@ function CampaignOverviewScreen() {
         <ContentModule
           campaignId={campaignId}
           posts={posts}
+          plannedTotal={campaign.estimated_post_count}
           overview={overviewQuery.data}
           overviewError={overviewQuery.isError}
         />
