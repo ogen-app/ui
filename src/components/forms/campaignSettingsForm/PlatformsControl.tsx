@@ -120,6 +120,7 @@ function UnselectedPlatformRow({ view, onAdd }: { view: PlatformView; onAdd: () 
           onClick={onAdd}
           aria-label={`Add ${view.info.name}`}
           title={`Add ${view.info.name}`}
+          className="group-hover:bg-primary group-hover:text-primary-foreground"
         >
           <PlusIcon className="size-4" />
         </Button>
@@ -132,6 +133,9 @@ function UnselectedPlatformRow({ view, onAdd }: { view: PlatformView; onAdd: () 
  * The clickable platform row. The whole area toggles the platform in and out
  * of the campaign; anything that means something else (Connect, Customise,
  * the explicit +/× buttons) stops the click from reaching here.
+ *
+ * Hover leaves the row's fill alone — too loud at this size — and instead
+ * warms the logo and lifts the + button. Both hang off `group`.
  */
 function RowShell({
   onToggle,
@@ -153,8 +157,8 @@ function RowShell({
         e.preventDefault()
         onToggle()
       }}
-      className="flex items-center justify-between gap-3 px-3 py-2.5 bg-secondary cursor-pointer
-        transition-colors hover:bg-quaternary focus-visible:outline-2 focus-visible:outline-ring"
+      className="group flex items-center justify-between gap-3 px-3 py-3 bg-secondary cursor-pointer
+        focus-visible:outline-2 focus-visible:outline-ring"
     >
       {children}
     </div>
@@ -203,11 +207,22 @@ function PlatformLabel({
       : null
 
   return (
-    <div className="min-w-0 flex items-center gap-2.5">
+    // Logo and text recede together while the platform is untargeted, and
+    // come forward together on hover — one surface to aim at, not a toggle
+    // to hunt for.
+    <div
+      className={cn(
+        'min-w-0 flex items-center gap-3 transition-opacity',
+        !selected && 'opacity-50 group-hover:opacity-75',
+      )}
+    >
       {/* Brand colour marks what the campaign targets: a platform stays
           desaturated until it is added, and lights up on "+". */}
       <Icon
-        className={cn('size-10 shrink-0', !selected && 'grayscale opacity-50')}
+        className={cn(
+          'size-10 shrink-0 transition-[filter]',
+          !selected && 'grayscale group-hover:grayscale-0',
+        )}
         weight="fill"
         style={{ color: info.color }}
       />
@@ -349,7 +364,10 @@ function PostTypeSwitchRow({
   return (
     <label
       className={cn(
-        'flex items-center justify-between gap-3 px-3 py-2 cursor-pointer select-none hover:bg-secondary/60',
+        // Left edge lines up with the platform name: row padding (12) +
+        // logo (40) + gap (12).
+        'flex items-center justify-between gap-3 pl-16 pr-[18px] py-2',
+        'cursor-pointer select-none hover:bg-secondary/60',
         muted && 'opacity-60',
       )}
     >
