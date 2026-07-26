@@ -96,17 +96,36 @@ function UnselectedPlatformRow({ view, onAdd }: { view: PlatformView; onAdd: () 
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-2.5 bg-secondary">
       <PlatformLabel view={view} />
-      <Button
-        type="button"
-        variant="ghost"
-        size="smIcon"
-        onClick={onAdd}
-        aria-label={`Add ${view.info.name}`}
-        title={`Add ${view.info.name}`}
-      >
-        <PlusIcon className="size-4" />
-      </Button>
+      {isConnected(view) ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="smIcon"
+          onClick={onAdd}
+          aria-label={`Add ${view.info.name}`}
+          title={`Add ${view.info.name}`}
+        >
+          <PlusIcon className="size-4" />
+        </Button>
+      ) : (
+        <ConnectLink platformName={view.info.name} />
+      )}
     </div>
+  )
+}
+
+function isConnected(view: PlatformView): boolean {
+  return view.connectedPublisherName !== null
+}
+
+/** Sends the user to Workspace Settings, where accounts are actually linked. */
+function ConnectLink({ platformName }: { platformName: string }) {
+  return (
+    <Button asChild variant="ghost" size="sm" className="uppercase">
+      <Link to="/workspace-settings" aria-label={`Connect ${platformName}`}>
+        Connect
+      </Link>
+    </Button>
   )
 }
 
@@ -117,35 +136,30 @@ function PlatformLabel({
   view: PlatformView
   selectedCount?: number
 }) {
-  const { info, available, connectedPublisherName } = view
-  const isConnected = connectedPublisherName !== null
+  const { info, available } = view
+  const Icon = info.icon
   return (
-    <div className="min-w-0 flex flex-col">
-      <span className="text-sm font-medium text-foreground">
-        {info.name}
-        {selectedCount !== undefined && selectedCount > 0  && (
-          <span className="ml-1.5 text-tertiary-foreground font-normal">
-            {selectedCount}
-          </span>
-        )}
-      </span>
-      <span className="text-xs text-tertiary-foreground truncate">
-        {isConnected ? (
-          <>
-            {available.length} post types available via {connectedPublisherName}
-          </>
-        ) : (
-          <>
-            Not connected.{' '}
-            <Link
-              to="/workspace-settings"
-              className="text-primary-foreground hover:underline"
-            >
-              Open settings
-            </Link>
-          </>
-        )}
-      </span>
+    <div className="min-w-0 flex items-center gap-2.5">
+      <Icon
+        className="size-6 shrink-0"
+        weight="fill"
+        style={{ color: info.color }}
+      />
+      <div className="min-w-0 flex flex-col">
+        <span className="text-base font-semibold text-foreground">
+          {info.name}
+          {selectedCount !== undefined && selectedCount > 0 && (
+            <span className="ml-1.5 text-tertiary-foreground font-normal">
+              {selectedCount}
+            </span>
+          )}
+        </span>
+        <span className="text-xs text-tertiary-foreground truncate">
+          {isConnected(view)
+            ? `${available.length} post types available`
+            : 'Not connected.'}
+        </span>
+      </div>
     </div>
   )
 }
@@ -179,6 +193,7 @@ function SelectedPlatformBlock({
         >
           <PlatformLabel view={view} selectedCount={selectedPostTypes.length} />
         </button>
+        {!isConnected(view) && <ConnectLink platformName={info.name} />}
         <Button
           type="button"
           variant="ghost"
