@@ -1,5 +1,4 @@
-import { useEffect, useMemo } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -21,15 +20,18 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { useCampaign } from '@/hooks/useCampaigns'
-import { useDeletePost } from '@/hooks/usePosts'
+import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { cn } from '@/lib'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
+import {
+  fromLocalParts,
+  getLocalTimezoneLabel,
+  toLocalParts,
+} from '@/lib/postSchedule'
 import type { Post } from '@/types/posts'
 import { CampaignPostTypeSelect } from './CampaignPostTypeSelect'
 
 const NO_PHASE = '__none__'
-const DEFAULT_HOUR = 9
-const DEFAULT_MINUTE = 0
 
 const schema = z.object({
   platform_id: z.string(),
@@ -51,39 +53,6 @@ function docToFormValues(doc: Post): FormValues {
   }
 }
 
-function toLocalParts(iso: string | null): { dateStr: string; timeStr: string } {
-  if (!iso) return { dateStr: '', timeStr: '' }
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return { dateStr: '', timeStr: '' }
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const hh = String(d.getHours()).padStart(2, '0')
-  const mm = String(d.getMinutes()).padStart(2, '0')
-  return { dateStr: `${y}-${m}-${day}`, timeStr: `${hh}:${mm}` }
-}
-
-function fromLocalParts(dateStr: string, timeStr: string): string | null {
-  if (!dateStr) return null
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const [hh, mm] = timeStr
-    ? timeStr.split(':').map(Number)
-    : [DEFAULT_HOUR, DEFAULT_MINUTE]
-  const local = new Date(y, m - 1, d, hh ?? 0, mm ?? 0, 0, 0)
-  return local.toISOString()
-}
-
-function getLocalTimezoneLabel(): string {
-  try {
-    const parts = new Intl.DateTimeFormat(undefined, {
-      timeZoneName: 'short',
-    }).formatToParts(new Date())
-    return parts.find((p) => p.type === 'timeZoneName')?.value ?? 'local time'
-  } catch {
-    return 'local time'
-  }
-}
-
 type Props = {
   doc: Post
   changeDoc: (fn: (p: Post) => void) => void
@@ -98,8 +67,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
   })
 
   const { data: campaign } = useCampaign(doc.campaign_id)
-  const { mutate: deletePost, isPending: deleting } = useDeletePost(doc.campaign_id)
-  const navigate = useNavigate()
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const platformId = form.watch('platform_id')
   const platformPostType = form.watch('platform_post_type')
@@ -146,19 +114,6 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
       ...phases.map((ph) => ({ id: ph.id, displayValue: ph.name })),
     ]
   }, [campaign])
-
-  const handleDelete = () => {
-    const label = doc.title.trim() === '' ? 'this post' : `"${doc.title}"`
-    if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return
-    deletePost(doc.id, {
-      onSuccess: () => {
-        navigate({
-          to: '/campaigns/$campaignId',
-          params: { campaignId: doc.campaign_id },
-        })
-      },
-    })
-  }
 
   return (
     <Form {...form}>
@@ -297,8 +252,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
               <Button
                 type="button"
                 variant="destructiveInverted"
-                onClick={handleDelete}
-                loading={deleting}
+                onClick={() => setDeleteOpen(true)}
               >
                 <TrashIcon />
                 <span>DELETE POST</span>
@@ -307,6 +261,11 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
           </Collapse>
         </RailPanel>
       </form>
+      <DeletePostDialog
+        post={doc}
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+      />
     </Form>
   )
 }

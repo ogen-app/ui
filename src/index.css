@@ -363,6 +363,68 @@
     animation: pulse-opacity 0.5s ease-in-out infinite;
   }
 
+  /* Draws the eye to a block the user just tried to act on before it was
+     ready: a quick shake, then the warning ring fades out on its own. The
+     ring sits 2px off the element (outline-offset) so it reads as a halo
+     rather than as a border the card suddenly grew. */
+  @keyframes attention-flash {
+    0% {
+      outline-color: var(--warning);
+      transform: translateX(0);
+    }
+
+    6% {
+      transform: translateX(-6px);
+    }
+
+    12% {
+      transform: translateX(6px);
+    }
+
+    18% {
+      transform: translateX(-4px);
+    }
+
+    24% {
+      transform: translateX(4px);
+    }
+
+    30% {
+      outline-color: var(--warning);
+      transform: translateX(0);
+      animation-timing-function: ease-out;
+    }
+
+    100% {
+      outline-color: transparent;
+      transform: translateX(0);
+    }
+  }
+
+  /* Motion dropped, but the ring still appears and fades. */
+  @keyframes attention-fade {
+    0%,
+    30% {
+      outline-color: var(--warning);
+    }
+
+    100% {
+      outline-color: transparent;
+    }
+  }
+
+  .animate-attention {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    animation: attention-flash 1.5s linear both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-attention {
+      animation: attention-fade 1.5s ease-out both;
+    }
+  }
+
   /* Intro screen animations */
   .intro-spacer {
     flex: 1 0 40%;

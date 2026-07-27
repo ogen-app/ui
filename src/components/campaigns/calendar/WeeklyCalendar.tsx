@@ -1,8 +1,9 @@
 import { memo, useCallback, useMemo, useState } from 'react'
 import type { Post } from '@/types/posts'
-import { useUpdatePost } from '@/hooks/usePosts'
+import { useAddPost, useUpdatePost } from '@/hooks/usePosts'
 import { postToPayload } from '@/services/api/posts'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
+import { DEFAULT_HOUR } from '@/lib/postSchedule'
 import { useCalendarSettingsStore } from '@/stores/calendarSettingsStore'
 import { PostCard } from './PostCard'
 import { addDays, isSameDay, startOfWeek } from './date'
@@ -14,8 +15,6 @@ type WeeklyCalendarProps = {
   /** The anchor day from the route; the visible week is derived from it. */
   anchor: Date
 }
-
-const DEFAULT_HOUR = 9
 
 type Column = {
   key: string
@@ -32,6 +31,7 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
   const today = useMemo(() => new Date(), [])
   const { mutate: updatePost } = useUpdatePost(campaignId)
+  const addPost = useAddPost(campaignId)
   const firstDayOfWeek = useCalendarSettingsStore((s) => s.firstDayOfWeek)
   const hiddenDays = useCalendarSettingsStore((s) => s.hiddenDays)
 
@@ -151,11 +151,19 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
               </span>
             </div>
 
-            {/* Posts lane — drop target */}
+            {/* Posts lane — drop target, and a click target that starts a new
+                post on this day. The click only counts on the lane's own empty
+                space (target === currentTarget), so clicking a card still opens
+                that card rather than creating a second post. */}
             <div
               {...laneHandlers(col.key, col.day)}
+              onClick={(e) => {
+                if (e.target !== e.currentTarget) return
+                addPost(col.day)
+              }}
+              title={`Add a post on ${col.dateLabel}`}
               className={cn(
-                'flex-1 min-h-0 overflow-y-auto bg-secondary px-2 py-2 flex flex-col gap-2 items-stretch transition-colors',
+                'flex-1 min-h-0 overflow-y-auto bg-secondary px-2 py-2 flex flex-col gap-2 items-stretch transition-colors cursor-pointer',
                 dragOverKey === col.key && 'bg-quaternary',
               )}
             >

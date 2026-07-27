@@ -13,9 +13,12 @@ function Calendar({
   buttonVariant = 'ghost',
   formatters,
   components,
+  onClear,
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
   buttonVariant?: React.ComponentProps<typeof Button>['variant']
+  /** Renders a CLEAR action alongside TODAY in the footer when provided. */
+  onClear?: () => void
 }) {
   const defaultClassNames = getDefaultClassNames()
 
@@ -23,18 +26,29 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       footer={
-        <Button
-          variant="outline"
-          className="border-x-0 border-b-0 w-full border-t-border"
-          onClick={(e) => {
-            if (props.mode === 'single' && props.onSelect) {
-              const today = new Date()
-              props.onSelect(today, today, {}, e)
-            }
-          }}
-        >
-          TODAY
-        </Button>
+        <div className="flex w-full items-center border-t border-t-border">
+          <Button
+            variant="outline"
+            className="flex-1 justify-start rounded-none border-0"
+            onClick={(e) => {
+              if (props.mode === 'single' && props.onSelect) {
+                const today = new Date()
+                props.onSelect(today, today, {}, e)
+              }
+            }}
+          >
+            TODAY
+          </Button>
+          {onClear && (
+            <Button
+              variant="outline"
+              className="flex-1 justify-end rounded-none border-0"
+              onClick={onClear}
+            >
+              CLEAR
+            </Button>
+          )}
+        </div>
       }
       className={cn(
         'bg-popover border-0 group/calendar [--cell-size:--spacing(8)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent',
@@ -52,17 +66,23 @@ function Calendar({
         months: cn('flex gap-4 flex-col md:flex-row relative px-3 pb-3', defaultClassNames.months),
         month: cn('flex flex-col w-full gap-4', defaultClassNames.month),
         nav: cn(
-          'flex items-center gap-1 w-full absolute top-0 inset-x-0 justify-between h-10 border-b-quaternary border-b-1 pointer-events-none',
+          // px-3 matches the `months` padding so the chevrons sit over the first
+          // and last day columns; the bottom border stays full-bleed.
+          'flex items-center gap-1 w-full absolute top-0 inset-x-0 px-3 justify-between h-10 border-b-quaternary border-b-1 pointer-events-none',
           defaultClassNames.nav
         ),
         button_previous: cn(
           buttonVariants({ variant: buttonVariant }),
-          'size-(--cell-size) aria-disabled:opacity-50 p-0 select-none pointer-events-auto',
+          // buttonVariants() defaults to `size: default`, which never sets
+          // justify-center (only the *Icon sizes do) — the caret would sit left.
+          'size-(--cell-size) justify-center aria-disabled:opacity-50 p-0 select-none pointer-events-auto',
           defaultClassNames.button_previous
         ),
         button_next: cn(
           buttonVariants({ variant: buttonVariant }),
-          'size-(--cell-size) aria-disabled:opacity-50 p-0 select-none pointer-events-auto',
+          // buttonVariants() defaults to `size: default`, which never sets
+          // justify-center (only the *Icon sizes do) — the caret would sit left.
+          'size-(--cell-size) justify-center aria-disabled:opacity-50 p-0 select-none pointer-events-auto',
           defaultClassNames.button_next
         ),
         month_caption: cn(
@@ -124,7 +144,9 @@ function Calendar({
               : orientation === 'right'
                 ? CaretRightIcon
                 : CaretDownIcon
-          return <ChevronIcon className={cn('size-4', className)} />
+          // The nav buttons are styled with `buttonVariants` classes rather than
+          // the Button component, so they miss its bold IconContext — set it here.
+          return <ChevronIcon weight="bold" className={cn('size-4', className)} />
         },
         DayButton: CalendarDayButton,
         WeekNumber: ({ children, ...props }) => {
@@ -176,7 +198,9 @@ function CalendarDayButton({
       data-today={modifiers.today}
       className={cn(
         'flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1',
-        'leading-none font-normal font-mono border-0',
+        // Grotesk for the day numbers only — the caption and footer stay on the
+        // inherited sans. Tabular figures keep the columns from shifting.
+        'leading-none font-normal font-grotesk tabular-nums border-0',
         'focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:border-0',
         'dark:hover:text-primary-foreground',
         'data-[selected-single=true]:bg-foreground data-[selected-single=true]:text-background data-[selected-single=true]:rounded-none',

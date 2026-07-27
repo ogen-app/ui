@@ -17,7 +17,10 @@ export function PageGridEmptyState({
   actions,
 }: PageGridEmptyStateProps) {
   return (
-    <div className={'relative'}>
+    // flex-1/min-h-0 so the state still fills a flex-column page; grid and
+    // block parents stretch it on their own. Without it the `relative` box
+    // collapses to 0px and the absolute layer below escapes over the header.
+    <div className={'relative flex-1 min-h-0'}>
       <div
         className={
           'absolute inset-0 bg-linear-to-b from-table-header to-background flex flex-col justify-center items-center'

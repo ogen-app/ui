@@ -40,11 +40,14 @@ export function ContentModule({
           headline="This is where the campaign comes to life — everything else on this screen is about what gets published here."
           support="Add posts one by one, or ask the assistant to generate a content plan from the brief."
         >
+          {/* Wrapped, not passed bare: useAddPost takes an optional Date for
+              the calendar's click-to-create, so onClick={addPost} would hand
+              it a MouseEvent. */}
           <Button
             variant="default"
             size="xl"
             className={CTA_PRIMARY}
-            onClick={addPost}
+            onClick={() => addPost()}
           >
             <PlusIcon />
             <span>ADD POST</span>
