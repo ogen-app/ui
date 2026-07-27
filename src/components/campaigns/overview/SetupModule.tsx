@@ -1,8 +1,8 @@
-import { CheckCircleIcon, CircleIcon } from "@phosphor-icons/react";
 import { StatusBadge } from "@/components/ui/status-badge.tsx";
 import { setupChecks } from "@/lib/campaignReadiness.ts";
 import type { PlatformView } from "@/lib/platformDictionary";
 import type { Campaign } from "@/types/campaigns";
+import { LineItem } from "./LineItem.tsx";
 import {
   CardHeaderLink,
   CollapsedCard,
@@ -53,30 +53,17 @@ export function SetupModule({
         />
       }
     >
-      <ul className="flex flex-col gap-2.5">
+      <ul className="flex flex-col">
         {checks.map((check) => (
-          <li key={check.id} className="flex items-start gap-2.5">
-            {check.ok ? (
-              <CheckCircleIcon
-                weight="fill"
-                className="size-4 mt-0.5 shrink-0 text-positive"
-              />
-            ) : (
-              <CircleIcon className="size-4 mt-0.5 shrink-0 text-senary-foreground" />
-            )}
-            <div className="flex-1 min-w-0 text-sm">
-              <span>{check.label}</span>
-              <span className="text-tertiary-foreground"> · {check.detail}</span>
-            </div>
-            {!check.ok && (
-              <SectionLink
-                target={check.fix}
-                campaignId={campaign.id}
-                className="text-xs text-tertiary-foreground hover:text-primary-foreground shrink-0 mt-0.5"
-              >
-                Fix
-              </SectionLink>
-            )}
+          <li key={check.id}>
+            <LineItem
+              asChild
+              indicator={{ kind: "task", done: check.ok }}
+              label={check.label}
+              details={check.detail}
+            >
+              <SectionLink target={check.fix} campaignId={campaign.id} />
+            </LineItem>
           </li>
         ))}
       </ul>

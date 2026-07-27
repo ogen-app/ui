@@ -13,6 +13,7 @@ import { getPlatformInfo } from "@/lib/platformDictionary.ts";
 import { relativeTime } from "@/lib/relativeTime.ts";
 import type { CampaignOverview } from "@/types/campaigns";
 import type { Post } from "@/types/posts";
+import { LineItem } from "./LineItem.tsx";
 import { CardHeaderLink, OverviewCard } from "./OverviewCard.tsx";
 
 export function ContentModule({
@@ -148,30 +149,41 @@ function PostList({
           const time = timeOf(post);
           return (
             <li key={post.id}>
-              <Link
-                to="/campaigns/$campaignId/posts/$postId"
-                params={{ campaignId, postId: post.id }}
-                className="flex items-center gap-3 py-2 -mx-2 px-2 rounded-md hover:bg-secondary"
+              <LineItem
+                asChild
+                indicator={
+                  info
+                    ? {
+                        kind: "custom",
+                        node: (
+                          <info.icon
+                            className="size-4"
+                            style={{ color: info.color }}
+                          />
+                        ),
+                      }
+                    : undefined
+                }
+                label={formatTitle(post.title, "Untitled post")}
+                trailing={
+                  <>
+                    <PostStatusBadge status={post.status} />
+                    {time && (
+                      <span
+                        className="w-24 text-right"
+                        title={new Date(time).toLocaleString()}
+                      >
+                        {relativeTime(time)}
+                      </span>
+                    )}
+                  </>
+                }
               >
-                {info && (
-                  <info.icon
-                    className="size-4 shrink-0"
-                    style={{ color: info.color }}
-                  />
-                )}
-                <span className="flex-1 min-w-0 truncate text-sm">
-                  {formatTitle(post.title, "Untitled post")}
-                </span>
-                <PostStatusBadge status={post.status} className="shrink-0" />
-                {time && (
-                  <span
-                    className="w-24 text-right text-xs text-tertiary-foreground shrink-0"
-                    title={new Date(time).toLocaleString()}
-                  >
-                    {relativeTime(time)}
-                  </span>
-                )}
-              </Link>
+                <Link
+                  to="/campaigns/$campaignId/posts/$postId"
+                  params={{ campaignId, postId: post.id }}
+                />
+              </LineItem>
             </li>
           );
         })}

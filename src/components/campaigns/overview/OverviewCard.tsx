@@ -51,7 +51,8 @@ export function SectionLink({
   target: FixTarget;
   campaignId: string;
   className?: string;
-  children: ReactNode;
+  /** Optional: `LineItem asChild` injects the row's markup as children. */
+  children?: ReactNode;
 }) {
   const params = { campaignId };
   switch (target) {
