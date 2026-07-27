@@ -17,9 +17,7 @@ function CampaignSettings() {
     return <PageLoader />;
   }
 
-  return (
-    <div className="min-h-0 overflow-y-auto">
-      <CampaignSettingsForm campaign={campaign} />
-    </div>
-  );
+  // The campaign layout owns the scrolling and the fading header for this
+  // section, so the form renders bare.
+  return <CampaignSettingsForm campaign={campaign} />;
 }

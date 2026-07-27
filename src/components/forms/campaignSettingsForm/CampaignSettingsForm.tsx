@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,12 +17,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { useDeleteCampaign } from '@/hooks/useCampaigns'
+import { useDeleteCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
 import { SettingsCard } from '@/components/settings/SettingsCard'
+import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { cn } from '@/lib'
 import { selectCampaignRunning, useAssistantStore } from '@/stores/assistantStore'
-import type { Campaign } from '@/types/campaigns'
-import { useCampaignAutosave, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
+import { toast } from '@/stores/toastStore'
+import type { Campaign, CampaignPlatform } from '@/types/campaigns'
+import { campaignToPayload, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
 import { PlatformsControl } from './PlatformsControl'
 
 const numericString = z
@@ -68,8 +71,9 @@ type Props = {
 
 /**
  * Campaign settings, laid out like the Workspace Settings page (titled
- * sections over full-width cards). Unlike the workspace page it edits inline:
- * every field autosaves through useCampaignAutosave, same as the brief form.
+ * sections over full-width cards). Fields are edited inline and applied
+ * together by the header's Save button (settingsSave context), same as the
+ * brief form.
  */
 export function CampaignSettingsForm({ campaign }: Props) {
   const form = useForm<SettingsFormValues>({
@@ -81,10 +85,13 @@ export function CampaignSettingsForm({ campaign }: Props) {
   const { mutate: deleteCampaign, isPending: deleting } = useDeleteCampaign()
   const navigate = useNavigate()
 
-  const { error } = useCampaignAutosave({
-    campaign,
-    form,
-    buildOverrides: (v) => ({
+  // No autosave here: edits mark the page dirty and are applied by the
+  // header's Save button (settingsSave context), like the brief form.
+  const { isDirty } = form.formState
+  const { mutateAsync: updateCampaign } = useUpdateCampaign()
+  const save = useCallback(async () => {
+    const v = form.getValues()
+    const payload = campaignToPayload(campaign, {
       name: v.name.trim() === '' ? ' ' : v.name,
       start_date: toISODateTime(v.start_date),
       end_date: toISODateTime(v.end_date),
@@ -94,12 +101,44 @@ export function CampaignSettingsForm({ campaign }: Props) {
       language: v.language,
       tag_ids: v.tag_ids,
       target_platforms: v.target_platforms,
-    }),
-  })
+    })
+    await updateCampaign({ id: campaign.id, payload })
+    // Re-baseline so the form is pristine against what was just saved.
+    form.reset(v)
+  }, [campaign, form, updateCampaign])
+  useRegisterSettingsSave('campaign-settings', isDirty, save)
+
+  /**
+   * Adding or removing a platform persists on the spot. It builds on the
+   * server's campaign rather than the form's values, so pending edits to the
+   * other fields stay pending — this toggle must not smuggle them out. Only
+   * target_platforms is re-baselined, leaving the rest dirty.
+   */
+  const { mutate: updateCampaignNow } = useUpdateCampaign()
+  const commitPlatforms = useCallback(
+    (next: CampaignPlatform[]) => {
+      form.setValue('target_platforms', next)
+      updateCampaignNow(
+        {
+          id: campaign.id,
+          payload: campaignToPayload(campaign, { target_platforms: next }),
+        },
+        {
+          onSuccess: () =>
+            form.resetField('target_platforms', { defaultValue: next }),
+          onError: (e) =>
+            toast.error('Unable to update platforms', {
+              description: e instanceof Error ? e.message : undefined,
+            }),
+        },
+      )
+    },
+    [campaign, form, updateCampaignNow],
+  )
 
   // `setCampaignDates` / `redistributePosts` rewrite these fields server-side
-  // (CON-115), so the form is held read-only for the length of a turn. Queued
-  // edits are flushed first by the autosave hook's pending-save registration.
+  // (CON-115), so the form is held read-only for the length of a turn. Unsaved
+  // edits stay in the form (header save) and are not flushed by the turn.
   const assistantRunning = useAssistantStore(selectCampaignRunning(campaign.id))
 
   const handleDelete = () => {
@@ -241,7 +280,11 @@ export function CampaignSettingsForm({ campaign }: Props) {
             name="target_platforms"
             render={({ field }) => (
               <FormItem>
-                <PlatformsControl value={field.value} onChange={field.onChange} />
+                <PlatformsControl
+                  value={field.value}
+                  onChange={field.onChange}
+                  onCommitPlatforms={commitPlatforms}
+                />
                 <FormMessage />
               </FormItem>
             )}
@@ -260,12 +303,11 @@ export function CampaignSettingsForm({ campaign }: Props) {
               loading={deleting}
             >
               <TrashIcon />
-              <span>Delete campaign</span>
+              {/* Literal caps, not `uppercase` — see CLAUDE.md on destructive labels. */}
+              <span>DELETE CAMPAIGN</span>
             </Button>
           </div>
         </SettingsCard>
-
-        {error && <span className="text-xs text-destructive">{error.message}</span>}
         </fieldset>
       </form>
     </Form>
