@@ -124,6 +124,12 @@ export type AssistantThread = {
   subject: ThreadSubject
   /** Post/campaign title, for the thread selector. */
   title: string
+  /**
+   * The name of the campaign this thread belongs to — its own name for a
+   * campaign thread, its parent's for a post thread. The thread list groups by
+   * campaign, so every row needs it, including the post rows.
+   */
+  campaignTitle: string
   turns: AssistantTurn[]
   status: ThreadStatus
   /** Wall-clock ms at which the running turn started, for the elapsed label. */

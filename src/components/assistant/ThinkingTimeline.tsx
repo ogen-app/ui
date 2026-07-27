@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react'
+import { CaretDownIcon, CaretRightIcon, CheckIcon } from '@phosphor-icons/react'
 import { formatDuration } from '@/lib/assistantTools'
 import { useTick } from '@/hooks/useTick'
 import { cn } from '@/lib'
@@ -37,41 +37,50 @@ export function ThinkingTimeline({
   const total = (endedAt ?? now) - startedAt
 
   return (
-    <div className="border border-border bg-secondary">
+    <div>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-tertiary-foreground hover:text-foreground cursor-pointer"
+        className="flex w-full items-center gap-2 py-1 text-left text-xs text-tertiary-foreground hover:text-foreground cursor-pointer"
       >
-        {streaming ? (
-          <span className="size-1.5 shrink-0 rounded-full bg-accent animate-pulse" aria-hidden />
-        ) : open ? (
-          <CaretDownIcon className="size-3 shrink-0" />
-        ) : (
-          <CaretRightIcon className="size-3 shrink-0" />
-        )}
-        <span className="flex-1">
-          {streaming ? 'Thinking…' : `Thought for ${formatDuration(total)}`}
+        {/* Both states share one 12px slot, so the label doesn't shift when the
+            run ends. The caret fills the slot exactly — drawn any larger it
+            outweighed the label it belongs to. */}
+        <span className="flex size-3 shrink-0 items-center justify-center" aria-hidden>
+          {streaming ? (
+            <span className="size-1.5 rounded-full bg-accent animate-pulse" />
+          ) : open ? (
+            <CaretDownIcon className="size-3 shrink-0" weight="bold" />
+          ) : (
+            <CaretRightIcon className="size-3 shrink-0" weight="bold" />
+          )}
         </span>
-        <span className="font-mono text-[11px] text-quaternary-foreground">
-          {formatDuration(total)}
+        <span className="flex-1">
+          {/* The elapsed time is the label while running and part of the label
+              once done, so there is never a second copy of it on the right. */}
+          {streaming ? `Thinking… ${formatDuration(total)}` : `Thought for ${formatDuration(total)}`}
         </span>
       </button>
 
       {open && (
-        <ol className="flex flex-col gap-1.5 border-t border-border px-3 py-2">
+        <ol className="flex flex-col gap-1.5 py-2">
           {steps.map((step) => {
             const running = step.endedAt === null
             const end = step.endedAt ?? (streaming ? now : step.startedAt)
             return (
               <li key={step.id} className="flex items-start gap-2 text-xs leading-tight">
+                {/* The same 12px slot the caret sits in, so a step's mark lands
+                    directly under it and its label under "Thinking…". */}
                 <span
                   aria-hidden
-                  className={cn(
-                    'mt-1 size-1.5 shrink-0 rounded-full',
-                    running ? 'bg-accent animate-pulse' : 'bg-quinary-foreground',
+                  className="mt-[1.5px] flex size-3 shrink-0 items-center justify-center"
+                >
+                  {running ? (
+                    <span className="size-1.5 rounded-full bg-accent animate-pulse" />
+                  ) : (
+                    <CheckIcon className="size-3 text-quinary-foreground" weight="bold" />
                   )}
-                />
+                </span>
                 <span
                   className={cn('flex-1', running ? 'text-foreground' : 'text-tertiary-foreground')}
                 >

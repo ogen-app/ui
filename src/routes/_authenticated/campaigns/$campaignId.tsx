@@ -44,14 +44,16 @@ function CampaignLayout() {
   const campaignName = campaign?.name;
 
   useEffect(() => {
-    openThread({ kind: "campaign", campaignId }, "");
+    openThread({ kind: "campaign", campaignId }, "", "");
     // Only on arrival — the name is tracked separately so that renaming the
     // campaign doesn't yank the panel away from a thread the user is reading.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openThread, campaignId]);
 
   useEffect(() => {
-    if (campaignName !== undefined) renameThread(threadId, campaignName.trim());
+    // A campaign thread's own title and its campaign name are the same string.
+    if (campaignName !== undefined)
+      renameThread(threadId, campaignName.trim(), campaignName.trim());
   }, [renameThread, threadId, campaignName]);
 
   if (isLoading) {
