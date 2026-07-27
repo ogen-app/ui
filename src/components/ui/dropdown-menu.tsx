@@ -38,7 +38,10 @@ function DropdownMenuContent({
         alignOffset={alignOffset}
         style={{ zIndex: ZIndex.popover }}
         className={cn(
-          'bg-popover text-popover-foreground rounded-sm border-0 p-0 py-1 shadow-md',
+          // Matches the settings-panel selects (ui/text-select.tsx): same
+          // shadow, and p-1 rather than py-1 so a highlighted row's rounded
+          // corners sit inside the popover instead of bleeding to its edge.
+          'bg-popover text-popover-foreground rounded-sm border-0 p-1 shadow-lg',
           'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
           'max-h-(--radix-dropdown-menu-content-available-height) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin)' +
             'overflow-x-hidden overflow-y-auto',
@@ -59,12 +62,15 @@ const dropdownMenuItemVariants = cva(
     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0',
   {
     variants: {
+      // data-[highlighted] as well as hover: Radix sets it for keyboard
+      // navigation too, which the hover-only rule left unhighlighted.
       variant: {
-        default: 'hover:bg-secondary',
-        destructive: 'text-destructive hover:bg-secondary',
+        default: 'hover:bg-popover-hover data-[highlighted]:bg-popover-hover',
+        destructive:
+          'text-destructive hover:bg-popover-hover data-[highlighted]:bg-popover-hover',
       },
       size: {
-        default: "px-2 py-1.5 text-sm leading-4 [&_svg:not([class*='size-'])]:size-4",
+        default: "px-2 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-4",
         lg: "px-4 py-3 text-sm leading-none [&_svg:not([class*='size-'])]:size-4",
       },
     },
@@ -176,7 +182,9 @@ function DropdownMenuSeparator({
   return (
     <DropdownMenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn('bg-background h-0.5', className)}
+      // Matches the settings-panel selects: a hairline rule inset by the
+      // content's own p-1, not a 2px band butting against the edges.
+      className={cn('bg-border my-1 h-px', className)}
       {...props}
     />
   )

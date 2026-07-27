@@ -72,6 +72,11 @@ type ActionMeta = {
   kind: PostStatusActionKind
   // Omitted means 'transition'. Only set on user-cancel edges.
   mechanism?: PostStatusActionMechanism
+  // The one step back from this status, shown as the header's back button.
+  // At most one edge per status carries it: multi-step retreats (scheduled
+  // straight to draft) are reached by pressing back twice, so the button
+  // always means "undo the last move" rather than "pick a destination".
+  reverse?: true
 }
 
 const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> = {
@@ -110,6 +115,7 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       menuLabel: 'Back to draft',
       intent: 'secondary',
       kind: 'user',
+      reverse: true,
     },
   },
   scheduled: {
@@ -135,7 +141,12 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       intent: 'secondary',
       kind: 'user',
       mechanism: 'cancel',
+      reverse: true,
     },
+    // Deliberately not `reverse`: unscheduling straight to draft is two
+    // steps back, and the same place is reached by unscheduling and then
+    // pressing back again. Kept here so the machine still mirrors the
+    // server's edge list.
     draft: {
       buttonLabel: 'UNSCHEDULE TO DRAFT',
       menuLabel: 'Unschedule & move to draft',
@@ -179,6 +190,7 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       menuLabel: 'Move to ready for publish',
       intent: 'secondary',
       kind: 'user',
+      reverse: true,
     },
   },
 }

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   CaretDownIcon,
-  CheckIcon,
   ClockIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
@@ -28,10 +27,8 @@ import {
   PUBLISH_METHOD_HINTS,
   PUBLISH_METHOD_LABELS,
   type PublishMethod,
-  type PostStatusBlocker,
 } from '@/lib/postStatusMachine'
 import { fromLocalParts, toLocalParts } from '@/lib/postSchedule'
-import type { PostStatusAction } from '@/hooks/usePostStatusActions'
 import { cn } from '@/lib'
 import type { Post } from '@/types/posts'
 
@@ -45,11 +42,6 @@ type Props = {
    * that block the transition all live in here.
    */
   attention?: number
-  /** Every move available from the current status; hangs off the badge. */
-  statusActions: PostStatusAction[]
-  /** A transition or cancellation is in flight — freezes the badge menu. */
-  statusPending: boolean
-  onBlocked?: (blockers: PostStatusBlocker[]) => void
   publishMethod: PublishMethod
   onPublishMethodChange: (method: PublishMethod) => void
   className?: string
@@ -68,18 +60,16 @@ const ATTENTION_MS = 1500
  * and a platform without a connected account warns in the account slot.
  * The pickers only offer what the campaign allows, plus a deselect option.
  *
- * Everything here is editable in place: the date and time open pickers, the
- * badge is the status control, so a post can be scheduled without opening
- * the settings rail.
+ * Everything here is editable in place — the date, the time and the publish
+ * method all open pickers — so a post can be scheduled without opening the
+ * settings rail. The status badge is read-only: moving between statuses is
+ * the header's job.
  */
 export function PostQuickSettingsBar({
   doc,
   changeDoc,
   cancelling,
   attention = 0,
-  statusActions,
-  statusPending,
-  onBlocked,
   publishMethod,
   onPublishMethodChange,
   className,
@@ -169,7 +159,7 @@ export function PostQuickSettingsBar({
         {/* text-sm, like the row below: the bare Dot inherits the card's
             24px line-height otherwise and makes this row 4px taller than
             its 20px siblings. */}
-        <span className="flex min-w-0 items-center gap-1.5 text-sm">
+        <span className="flex min-w-0 items-center gap-2.5 text-sm">
           <SchedulingDetails
             post={doc}
             cancelling={cancelling}
@@ -190,15 +180,18 @@ export function PostQuickSettingsBar({
             </>
           )}
         </span>
-        <StatusControl
-          status={doc.status}
-          actions={statusActions}
-          pending={statusPending}
-          onBlocked={onBlocked}
-        />
+        {/* flex, not a plain block: the badge is inline-flex, so a block
+            parent gives it a line box at the bar's 24px line-height and the
+            row renders 24.5px against its 20px siblings. */}
+        <div className="shrink-0 flex items-center">
+          <PostStatusBadge
+            status={doc.status}
+            className="text-sm text-primary-foreground"
+          />
+        </div>
       </div>
 
-      <div className="flex items-center gap-1.5 text-sm">
+      <div className="flex items-center gap-2.5 text-sm">
         <DropdownMenu>
           <QuickBarTrigger label="Change platform">
             {platform ? (
@@ -218,14 +211,13 @@ export function PostQuickSettingsBar({
             {campaignPlatforms.map((p) => (
               <DropdownMenuItem key={p.id} onSelect={() => selectPlatform(p.id)}>
                 <p.icon size={16} weight="fill" color={p.color} />
-                <span>{p.name}</span>
-                {p.id === doc.platform_id && <CheckIcon className="ml-auto size-3.5" />}
+                <span className={cn(p.id === doc.platform_id && 'font-medium')}>
+                  {p.name}
+                </span>
               </DropdownMenuItem>
             ))}
             {campaignPlatforms.length === 0 && (
-              <DropdownMenuItem disabled>
-                <span>No platforms on this campaign</span>
-              </DropdownMenuItem>
+              <InfoRow>No platforms on this campaign</InfoRow>
             )}
             {platform && (
               <>
@@ -262,21 +254,23 @@ export function PostQuickSettingsBar({
                   connectedPostTypes.get(doc.platform_id)?.has(t.slug) ?? false
                 return (
                   <DropdownMenuItem key={t.slug} onSelect={() => selectPostType(t.slug)}>
-                    <span>{t.label}</span>
-                    {t.slug === doc.platform_post_type ? (
-                      <CheckIcon className="ml-auto size-3.5" />
-                    ) : !connected ? (
-                      <span className="ml-auto pl-3 text-xs text-tertiary-foreground">
+                    <span
+                      className={cn(
+                        t.slug === doc.platform_post_type && 'font-medium',
+                      )}
+                    >
+                      {t.label}
+                    </span>
+                    {!connected && (
+                      <span className="ml-auto pl-4 text-xs text-tertiary-foreground">
                         Not connected
                       </span>
-                    ) : null}
+                    )}
                   </DropdownMenuItem>
                 )
               })}
               {campaignTypes.length === 0 && (
-                <DropdownMenuItem disabled>
-                  <span>No post types on this campaign</span>
-                </DropdownMenuItem>
+                <InfoRow>No post types on this campaign</InfoRow>
               )}
               {doc.platform_post_type && (
                 <>
@@ -341,85 +335,6 @@ function useAttentionFlash(attention: number): boolean {
   return flashing
 }
 
-/**
- * The badge doubles as the status control: every move available from the
- * current status hangs off it — forwards, backwards, and alternate outcomes
- * alike. That is what keeps the header down to one primary button and its
- * own single ⋮, and it puts "Back to draft" next to the thing it changes
- * instead of below "Download as Markdown".
- *
- * Blocked moves stay selectable, exactly like the header button: choosing
- * one flashes this bar, where the missing fields are.
- */
-function StatusControl({
-  status,
-  actions,
-  pending,
-  onBlocked,
-}: {
-  status: Post['status']
-  actions: PostStatusAction[]
-  pending: boolean
-  onBlocked?: (blockers: PostStatusBlocker[]) => void
-}) {
-  const badge = (
-    <PostStatusBadge status={status} className="text-sm text-primary-foreground" />
-  )
-
-  // Terminal statuses have nowhere to go, so the badge stays plain text.
-  // flex, not a plain block: the badge is inline-flex, so a block parent
-  // gives it a line box at the bar's 24px line-height and the row renders
-  // 24.5px against its 20px siblings.
-  if (actions.length === 0) {
-    return <div className="shrink-0 flex items-center">{badge}</div>
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="excluded"
-          disabled={pending}
-          aria-label="Change status"
-          className="gap-1.5 shrink-0 font-normal"
-        >
-          {badge}
-          <CaretDownIcon className="size-3 text-tertiary-foreground" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {actions.map((action) => {
-          // One blocker is enough to explain the hold-up; showing all of
-          // them turns a menu row into a paragraph.
-          const blocker = action.blockers[0]
-          return (
-            <DropdownMenuItem
-              key={action.next}
-              variant={action.intent === 'destructive' ? 'destructive' : 'default'}
-              onSelect={() => {
-                if (blocker) {
-                  onBlocked?.(action.blockers)
-                  return
-                }
-                void action.run()
-              }}
-            >
-              <span>{action.menuLabel}</span>
-              {blocker && (
-                <span className="ml-auto flex items-center gap-1 pl-4 text-xs text-tertiary-foreground">
-                  <WarningCircleIcon weight="fill" className="size-3.5 text-warning" />
-                  <span>{blocker.message}</span>
-                </span>
-              )}
-            </DropdownMenuItem>
-          )
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
 const PUBLISH_METHODS: PublishMethod[] = ['auto', 'manual']
 
 /**
@@ -452,9 +367,8 @@ function PublishMethodPicker({
             className="flex-col items-start gap-0.5"
             onSelect={() => onChange(m)}
           >
-            <span className="flex w-full items-center gap-2">
-              <span>{PUBLISH_METHOD_LABELS[m]}</span>
-              {m === method && <CheckIcon className="ml-auto size-3.5" />}
+            <span className={cn(m === method && 'font-medium')}>
+              {PUBLISH_METHOD_LABELS[m]}
             </span>
             <span className="text-xs text-tertiary-foreground">
               {PUBLISH_METHOD_HINTS[m]}
@@ -472,6 +386,15 @@ function PublishMethodPicker({
       </DropdownMenuContent>
     </DropdownMenu>
   )
+}
+
+/**
+ * A "nothing to choose here" note inside a menu. Styled like the settings
+ * panel's own selects: quieter than a disabled row, and not selectable, so
+ * it can't be mistaken for an option.
+ */
+function InfoRow({ children }: { children: React.ReactNode }) {
+  return <div className="px-2 py-1.5 text-xs text-tertiary-foreground">{children}</div>
 }
 
 /**
@@ -575,7 +498,7 @@ function SchedulingDetails({
     return (
       <span
         className={cn(
-          'flex min-w-0 items-center gap-1.5 text-sm',
+          'flex min-w-0 items-center gap-2.5 text-sm',
           warn ? 'text-primary-foreground' : 'text-secondary-foreground',
         )}
       >
@@ -611,7 +534,7 @@ function ScheduleEditor({
   const inPast = valid ? selected.getTime() <= Date.now() : false
 
   return (
-    <span className="flex min-w-0 items-center gap-1.5 text-sm">
+    <span className="flex min-w-0 items-center gap-2.5 text-sm">
       {!valid ? (
         <WarningHint
           focusable

@@ -24,6 +24,8 @@ export type PostStatusAction = {
   intent: PostStatusActionIntent
   kind: PostStatusActionKind
   mechanism: PostStatusActionMechanism
+  /** The single step back from the current status; see ActionMeta.reverse. */
+  reverse: boolean
   disabled: boolean
   blockers: PostStatusBlocker[]
   run: () => Promise<TransitionStatusResult>
@@ -49,11 +51,15 @@ type UsePostStatusActionsResult = {
   // including system-driven ones and both sides of the publish-method fork.
   actions: PostStatusAction[]
   // What the user may actually do right now: system edges dropped, the
-  // publish-method fork resolved, most-prominent first. The header shows
-  // the first of these; the status badge menu shows all of them.
+  // publish-method fork resolved, most-prominent first.
   userActions: PostStatusAction[]
-  // Shorthand for userActions[0].
-  primary: PostStatusAction | null
+  // The labelled header buttons, primary last (it sits nearest the back
+  // button and the icon cluster).
+  buttons: PostStatusAction[]
+  // The step back, rendered as an icon button. Null when the post can only
+  // go backwards — then the retreat is a labelled button in `buttons`
+  // instead, because a lone icon is too quiet to be the only action.
+  back: PostStatusAction | null
   // True while any transition is in flight; gates concurrent clicks
   // since the underlying mutation owns the cache and only one PUT
   // should be in flight at a time.
@@ -90,6 +96,7 @@ export function usePostStatusActions({
           intent: meta.intent,
           kind: meta.kind,
           mechanism,
+          reverse: meta.reverse ?? false,
           disabled: blockers.length > 0 || pending || cancelling,
           blockers,
           run: async () => {
@@ -129,12 +136,20 @@ export function usePostStatusActions({
     )
     .sort((a, b) => INTENT_RANK[a.intent] - INTENT_RANK[b.intent])
 
+  const reverse = userActions.find((a) => a.reverse) ?? null
+  const forward = userActions.filter((a) => !a.reverse)
+
   return {
     current: post.status,
     isTerminal: isTerminalStatus(post.status),
     actions,
     userActions,
-    primary: userActions[0] ?? null,
+    // `scheduled` can only be retreated from, so UNSCHEDULE becomes the
+    // labelled button there rather than a bare icon.
+    // reverse() puts the primary last: the header lays buttons out left to
+    // right and the most prominent one belongs nearest the icon cluster.
+    buttons: (forward.length > 0 ? forward : reverse ? [reverse] : []).reverse(),
+    back: forward.length > 0 ? reverse : null,
     pending,
   }
 }

@@ -106,7 +106,7 @@ function PostEditorSurface({
   // Called once, here, and shared: the header button and the badge menu must
   // see the same in-flight guard, or one could fire a second transition
   // while the other's request is still open.
-  const { userActions, primary, pending } = usePostStatusActions({
+  const { buttons, back, pending } = usePostStatusActions({
     post: doc,
     transitionStatus,
     schedule,
@@ -215,7 +215,8 @@ function PostEditorSurface({
             onDeletePost={() => setDeleteOpen(true)}
             actions={
               <PostStatusHeaderActions
-                action={primary}
+                buttons={buttons}
+                back={back}
                 pending={statusBusy}
                 onBlocked={flashBlockers}
               />
@@ -228,9 +229,6 @@ function PostEditorSurface({
                 changeDoc={changeDoc}
                 cancelling={cancelling}
                 attention={attention}
-                statusActions={userActions}
-                statusPending={statusBusy}
-                onBlocked={flashBlockers}
                 publishMethod={publishMethod}
                 onPublishMethodChange={setPublishMethod}
               />
