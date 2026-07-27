@@ -1,5 +1,6 @@
 import type {
   Campaign,
+  CampaignOverview,
   CampaignType,
   CreateCampaignPayload,
   UpdateCampaignPayload,
@@ -27,6 +28,13 @@ export function updateCampaign(id: string, payload: UpdateCampaignPayload): Prom
 
 export function deleteCampaign(id: string): Promise<void> {
   return apiVoid(`${BASE}/${id}`, "Unable to delete campaign", { method: "DELETE" });
+}
+
+export function getCampaignOverview(id: string): Promise<CampaignOverview> {
+  return apiJson<CampaignOverview>(
+    `${BASE}/${id}/overview`,
+    "Unable to fetch campaign overview",
+  );
 }
 
 export function listCampaignTypes(): Promise<CampaignType[]> {
