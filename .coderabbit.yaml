@@ -6,9 +6,19 @@ reviews:
   request_changes_workflow: false
   high_level_summary: true
   auto_review:
-    enabled: true
-    base_branches:
-      - main
+    # Reviews are for release PRs (develop -> main) only, so auto-review is off
+    # here on develop. This repo is public, so CodeRabbit applies the config
+    # from a PR's *base* branch: PRs into develop read this file and stay
+    # quiet, while PRs into main read main's own .coderabbit.yaml (which keeps
+    # `enabled: true` + `base_branches: [main]`) and are reviewed. Don't
+    # "unify" the two files — the difference between them is the mechanism.
+    #
+    # To review a feature PR anyway: add the `coderabbit` label, or comment
+    # `@coderabbitai review`.
+    enabled: false
+    labels:
+      - coderabbit
+    drafts: false
   path_filters:
     - "!dist/**"
     - "!pnpm-lock.yaml"
