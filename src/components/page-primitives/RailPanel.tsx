@@ -14,6 +14,17 @@ type RailPanelProps = {
   scrollRef?: Ref<HTMLDivElement>
   /** A second row inside the sticky header (context bar, breadcrumb). */
   subheader?: ReactNode
+  /** Sits on the title's baseline, after it — a count, a badge, a switcher. */
+  titleAdornment?: ReactNode
+  /** Makes the whole title row a button. Give it an `aria-label` via `titleLabel`. */
+  onTitleClick?: () => void
+  /** Accessible name for the title button, when `onTitleClick` is set. */
+  titleLabel?: string
+  /**
+   * Height in px of the fade above the footer. Taller when the footer carries
+   * more than the one row it usually does.
+   */
+  footerFade?: number
 }
 
 export function RailPanel({
@@ -26,6 +37,10 @@ export function RailPanel({
   bodyClassName,
   scrollRef,
   subheader,
+  titleAdornment,
+  onTitleClick,
+  titleLabel,
+  footerFade = 24,
 }: RailPanelProps) {
   return (
     <div className={cn('h-full flex flex-col', className)}>
@@ -35,9 +50,15 @@ export function RailPanel({
         <div className="sticky top-0 z-10 shrink-0 flex flex-col">
           <div className="bg-primary pt-6 px-3 lg:px-6 flex flex-col gap-0">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-medium font-display tracking-tight text-foreground">
-                {title}
-              </h2>
+              {/* The whole title row is the affordance when it has somewhere
+                  to go — the adornment is part of the target, not a control
+                  sitting next to one. */}
+              <TitleRow onClick={onTitleClick} label={titleLabel}>
+                <h2 className="shrink-0 text-lg font-medium font-display tracking-tight text-foreground">
+                  {title}
+                </h2>
+                {titleAdornment}
+              </TitleRow>
               <div className="flex items-center gap-2">
                 {actions}
                 {onClose && (
@@ -63,7 +84,38 @@ export function RailPanel({
           {children}
         </div>
       </div>
-      {footer && <div className="shrink-0 px-3 lg:px-6 pb-6">{footer}</div>}
+      {footer && (
+        <div className="relative shrink-0 bg-primary px-3 lg:px-6 pb-6">
+          {/* The header's fade, mirrored. The scroll area stops at the footer's
+              top edge, so without this the thread is cut off mid-line by
+              whatever the footer holds — chips one moment, the composer the
+              next. Sits above the footer and over the last of the scroll. */}
+          <div
+            aria-hidden
+            style={{ height: footerFade }}
+            className="pointer-events-none absolute inset-x-0 bottom-full bg-gradient-to-t from-primary to-transparent"
+          />
+          {footer}
+        </div>
+      )}
     </div>
+  )
+}
+
+function TitleRow({
+  onClick,
+  label,
+  children,
+}: {
+  onClick?: () => void
+  label?: string
+  children: ReactNode
+}) {
+  const className = 'flex min-w-0 items-baseline gap-2 text-left'
+  if (!onClick) return <div className={className}>{children}</div>
+  return (
+    <button type="button" onClick={onClick} aria-label={label} className={cn(className, 'cursor-pointer')}>
+      {children}
+    </button>
   )
 }

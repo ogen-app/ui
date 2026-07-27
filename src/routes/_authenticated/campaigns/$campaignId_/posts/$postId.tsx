@@ -13,6 +13,7 @@ import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettin
 import { POST_SETTINGS_PORTAL_ID } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
+import { useCampaign } from '@/hooks/useCampaigns'
 import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
 import type { CancelTarget } from '@/services/api/posts'
 import type { Post, PostStatus } from '@/types/posts'
@@ -112,16 +113,19 @@ function PostEditorSurface({
   const assistantRunning = useAssistantStore(
     (s) => s.threads[threadId]?.status === 'running',
   )
+  // The thread list leads every row with its campaign, so a post thread has to
+  // carry its parent's name too. Cached from the campaign page in practice.
+  const campaignName = useCampaign(campaignId).data?.name
   useEffect(() => {
-    openThread({ kind: 'post', postId: doc.id, campaignId }, doc.title)
+    openThread({ kind: 'post', postId: doc.id, campaignId }, doc.title, '')
     // Only on arrival — the title is tracked separately so that retitling the
     // post doesn't yank the panel away from a thread the user is reading.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openThread, doc.id, campaignId])
 
   useEffect(() => {
-    renameThread(threadId, doc.title)
-  }, [renameThread, threadId, doc.title])
+    renameThread(threadId, doc.title, campaignName?.trim())
+  }, [renameThread, threadId, doc.title, campaignName])
 
   // Leaving the editor closes its panel; an open assistant stays open.
   useEffect(

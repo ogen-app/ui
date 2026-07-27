@@ -96,7 +96,7 @@ export function RightSidebar() {
         variant="container"
         size="excluded"
         onClick={() => toggle('assistant')}
-        aria-label="AI assistant"
+        aria-label="Content Strategist"
         aria-expanded={assistantActive}
         style={{ zIndex: ZIndex.navigation }}
         className={cn(

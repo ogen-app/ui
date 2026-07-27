@@ -6,6 +6,7 @@ import {
   NotePencilIcon,
   WarningIcon,
 } from '@phosphor-icons/react'
+import type { Icon as PhosphorIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
 import type {
   AssistantResultDetails,
@@ -98,16 +99,20 @@ function datesCard(details: AssistantResultDetails) {
     return (
       <Card>
         <CardHeader icon={CalendarBlankIcon} title="Campaign dates updated" />
-        <p className="px-3 pb-3 text-sm text-secondary-foreground">
-          <span className="text-foreground">{startDate}</span>
-          {' → '}
-          <span className="text-foreground">{endDate}</span>
-        </p>
-        {postsOutsideRange > 0 && (
-          <p className="border-t border-border px-3 py-2 text-xs text-warning">
-            {countLabel(postsOutsideRange, 'post')} now fall outside the range — ask to
-            redistribute them.
+        <CardRow className="pt-0">
+          <p className="text-sm text-secondary-foreground">
+            <span className="text-foreground">{startDate}</span>
+            {' → '}
+            <span className="text-foreground">{endDate}</span>
           </p>
+        </CardRow>
+        {postsOutsideRange > 0 && (
+          <CardRow icon={WarningIcon} tone="warning" className="border-t border-border">
+            <p className="text-sm text-warning">
+              {countLabel(postsOutsideRange, 'post')} now fall outside the range — ask to
+              redistribute them.
+            </p>
+          </CardRow>
         )}
       </Card>
     )
@@ -121,10 +126,12 @@ function redistributeCard(details: AssistantResultDetails) {
     return (
       <Card>
         <CardHeader icon={ArrowsOutLineHorizontalIcon} title="Posts redistributed" />
-        <p className="px-3 pb-3 text-sm text-secondary-foreground">
-          Re-dated <span className="text-foreground">{countLabel(postsUpdated, 'post')}</span>{' '}
-          across {countLabel(phaseCount, 'phase')}.
-        </p>
+        <CardRow className="pt-0">
+          <p className="text-sm text-secondary-foreground">
+            Re-dated <span className="text-foreground">{countLabel(postsUpdated, 'post')}</span>{' '}
+            across {countLabel(phaseCount, 'phase')}.
+          </p>
+        </CardRow>
       </Card>
     )
   }
@@ -143,11 +150,12 @@ function generatedCard(details: AssistantResultDetails) {
           } added`}
         />
         {generated.warnings.length > 0 && (
-          <ul className="flex flex-col gap-1 border-t border-border px-3 py-2">
+          <ul className="flex flex-col border-t border-border">
             {generated.warnings.map((warning, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs text-warning">
-                <WarningIcon className="mt-0.5 size-3.5 shrink-0" />
-                <span>{warning}</span>
+              <li key={i}>
+                <CardRow icon={WarningIcon} tone="warning">
+                  <p className="text-sm text-warning">{warning}</p>
+                </CardRow>
               </li>
             ))}
           </ul>
@@ -179,7 +187,9 @@ function briefCard(details: AssistantResultDetails) {
 }
 
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-col border border-border bg-secondary">{children}</div>
+  // Border only. A filled panel competed with the user's bubble for weight,
+  // and these cards sit inside the reply rather than beside it.
+  return <div className="flex flex-col border border-border">{children}</div>
 }
 
 const TONE_CLASS = {
@@ -188,30 +198,64 @@ const TONE_CLASS = {
   neutral: 'text-tertiary-foreground',
 } as const
 
-function CardHeader({
+/**
+ * Every row in every card, icon or not. The 16px slot is kept even when it is
+ * empty, so a card's body sits on the same column as its title instead of
+ * sliding back under the icon.
+ */
+function CardRow({
   icon: Icon,
+  tone = 'neutral',
+  className,
+  children,
+}: {
+  icon?: PhosphorIcon
+  tone?: keyof typeof TONE_CLASS
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className={cn('flex items-start gap-2 px-3 py-2.5', className)}>
+      {/* `mt-0.5` centres a 16px glyph on a 20px first line and leaves the
+          rest of a multi-line row alone. */}
+      <span aria-hidden className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+        {Icon && <Icon className={cn('size-4', TONE_CLASS[tone])} weight="regular" />}
+      </span>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  )
+}
+
+function CardHeader({
+  icon,
   title,
   detail,
   tone = 'neutral',
 }: {
-  icon: React.ComponentType<{ className?: string }>
+  icon: PhosphorIcon
   title: string
   detail?: string
   tone?: keyof typeof TONE_CLASS
 }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2.5">
-      <Icon className={cn('size-4 shrink-0', TONE_CLASS[tone])} />
-      <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{title}</span>
-      {detail && <span className="shrink-0 text-xs text-tertiary-foreground">{detail}</span>}
-    </div>
+    <CardRow icon={icon} tone={tone}>
+      <div className="flex items-baseline gap-2">
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{title}</span>
+        {detail && <span className="shrink-0 text-sm text-tertiary-foreground">{detail}</span>}
+      </div>
+    </CardRow>
   )
 }
 
+/**
+ * Severity reads as a tag: the severity colour for the type, over a
+ * tenth-opacity wash of the same colour. Small caps at 10px need the contrast
+ * a tint alone doesn't give them.
+ */
 const SEVERITY_CLASS: Record<ReviewSeverity, string> = {
-  high: 'text-destructive',
-  medium: 'text-warning',
-  low: 'text-tertiary-foreground',
+  high: 'bg-destructive/10 text-destructive',
+  medium: 'bg-warning/10 text-warning',
+  low: 'bg-tertiary-foreground/10 text-tertiary-foreground',
 }
 
 function Findings({
@@ -223,36 +267,42 @@ function Findings({
 }) {
   if (findings.length === 0) {
     return (
-      <p className="border-t border-border px-3 py-2 text-xs text-tertiary-foreground">
-        {emptyLabel}
-      </p>
+      <CardRow className="border-t border-border">
+        <p className="text-sm text-tertiary-foreground">{emptyLabel}</p>
+      </CardRow>
     )
   }
   return (
     <ul className="flex flex-col">
       {findings.map((finding, i) => (
-        <li key={i} className="flex flex-col gap-1 border-t border-border px-3 py-2.5">
-          <div className="flex items-baseline gap-2">
-            {finding.severity && (
-              <span
-                className={cn(
-                  'shrink-0 text-[10px] font-semibold uppercase tracking-[0.08em]',
-                  SEVERITY_CLASS[finding.severity],
-                )}
-              >
-                {finding.severity}
-              </span>
-            )}
-            {finding.label && (
-              <span className="min-w-0 flex-1 text-sm font-medium text-foreground">
-                {finding.label}
-              </span>
-            )}
-          </div>
-          <p className="text-sm/[1.5] text-secondary-foreground">{finding.issue}</p>
-          {finding.suggestion && (
-            <p className="text-sm/[1.5] text-tertiary-foreground">→ {finding.suggestion}</p>
-          )}
+        <li key={i}>
+          {/* No icon of its own, but the empty slot keeps every line of a
+              finding on the card title's column. */}
+          <CardRow className="border-t border-border">
+            <div className="flex flex-col gap-0.5">
+              {(finding.label || finding.severity) && (
+                <div className="flex items-baseline gap-2">
+                  <span className="min-w-0 flex-1 text-sm font-medium text-foreground">
+                    {finding.label}
+                  </span>
+                  {finding.severity && (
+                    <span
+                      className={cn(
+                        'shrink-0 px-[3px] py-[2px] text-[10px] font-semibold uppercase tracking-[0.08em]',
+                        SEVERITY_CLASS[finding.severity],
+                      )}
+                    >
+                      {finding.severity}
+                    </span>
+                  )}
+                </div>
+              )}
+              <p className="text-sm/[1.5] text-foreground">{finding.issue}</p>
+              {finding.suggestion && (
+                <p className="text-sm/[1.5] text-tertiary-foreground">→ {finding.suggestion}</p>
+              )}
+            </div>
+          </CardRow>
         </li>
       ))}
     </ul>

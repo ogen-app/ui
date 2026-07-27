@@ -4,7 +4,9 @@ import { AssistantPanel } from '@/components/assistant/AssistantPanel'
 import { AssistantReply } from '@/components/assistant/AssistantReply'
 import { ResultCard } from '@/components/assistant/ResultCard'
 import { StarterChips } from '@/components/assistant/StarterChips'
+import { ThreadEmptyState } from '@/components/assistant/ThreadEmptyState'
 import { ThinkingTimeline } from '@/components/assistant/ThinkingTimeline'
+import { ThreadCount } from '@/components/assistant/ThreadCount'
 import { ThreadList } from '@/components/assistant/ThreadList'
 import { UserMessage } from '@/components/assistant/UserMessage'
 import { Logo } from '@/components/Logo'
@@ -44,10 +46,10 @@ export function AssistantDesignHarness() {
   const fx = useMemo(() => fixtures(base), [base])
 
   useEffect(() => {
-    const { threads, activeThreadId } = useAssistantStore.getState()
+    const { threads, activeThreadId, currentThreadId } = useAssistantStore.getState()
     seed(base)
     // Put the real threads back so browsing here doesn't leak into the app.
-    return () => useAssistantStore.setState({ threads, activeThreadId })
+    return () => useAssistantStore.setState({ threads, activeThreadId, currentThreadId })
   }, [base])
 
   return (
@@ -63,55 +65,65 @@ export function AssistantDesignHarness() {
 
         <Specimen label="Panel — thread list" note="store-driven, 6 threads">
           <Frame tall>
-            <RailPanel title="AI Assistant" onClose={() => undefined} className="h-full" bodyClassName="flex-1 gap-6">
+            <RailPanel
+              title="Content Strategist"
+              onClose={() => undefined}
+              className="h-full"
+              bodyClassName="flex-1 gap-6"
+              titleAdornment={<ThreadCount />}
+            >
               <ThreadList />
             </RailPanel>
           </Frame>
         </Specimen>
 
-        <Specimen label="Panel — campaign empty state" note="copy of the inline state">
+        <Specimen label="Panel — campaign empty state" note="the shared empty state">
           <Frame tall>
             <RailPanel
-              title="AI Assistant"
+              title="Content Strategist"
               onClose={() => undefined}
               className="h-full"
               bodyClassName="flex-1 gap-6"
-              subheader={<Subheader title="Q3 Practitioner Series" />}
+              titleAdornment={<ThreadCount />}
               footer={
-                <AssistantComposer onSend={() => undefined} placeholder="Ask for a plan or a review..." />
+                <AssistantComposer
+                  onSend={() => undefined}
+                  placeholder="Ask for a plan or a review..."
+                  onToggleSuggestions={() => undefined}
+                  suggestionsOpen
+                />
               }
             >
-              <div className="flex flex-col gap-5">
-                <p className="text-sm text-tertiary-foreground">Ask about this campaign, or start with:</p>
-                <StarterChips onPick={() => undefined} />
-              </div>
+              <ThreadEmptyState kind="campaign" onPick={() => undefined} />
             </RailPanel>
           </Frame>
         </Specimen>
 
-        <Specimen label="Panel — post empty state" note="copy of the inline state">
+        <Specimen label="Panel — post empty state" note="the shared empty state">
           <Frame tall>
             <RailPanel
-              title="AI Assistant"
+              title="Content Strategist"
               onClose={() => undefined}
               className="h-full"
               bodyClassName="flex-1 gap-6"
-              subheader={<Subheader title="Why most AI pilots stall at month four" />}
-              footer={<AssistantComposer onSend={() => undefined} placeholder="Ask for a change to this post..." />}
+              titleAdornment={<ThreadCount />}
+              footer={
+                <AssistantComposer
+                  onSend={() => undefined}
+                  placeholder="Ask for a change to this post..."
+                  onToggleSuggestions={() => undefined}
+                  suggestionsOpen
+                />
+              }
             >
-              <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-                <Logo variant="mark" className="size-8 text-quinary-foreground" />
-                <p className="max-w-64 text-sm text-tertiary-foreground">
-                  Ask for a rewrite, a different tone, or to work something in from an attached asset.
-                </p>
-              </div>
+              <ThreadEmptyState kind="post" onPick={() => undefined} />
             </RailPanel>
           </Frame>
         </Specimen>
 
         <Specimen label="Panel — history loading" note="copy of the inline skeleton">
           <Frame>
-            <RailPanel title="AI Assistant" onClose={() => undefined} className="h-full" bodyClassName="flex-1 gap-6">
+            <RailPanel title="Content Strategist" onClose={() => undefined} className="h-full" bodyClassName="flex-1 gap-6">
               <div className="flex flex-col gap-3" aria-busy>
                 <Skeleton className="h-4 w-2/3" />
                 <Skeleton className="h-4 w-full" />
@@ -123,7 +135,7 @@ export function AssistantDesignHarness() {
 
         <Specimen label="Thread list — empty state" note="copy of the inline state">
           <Frame>
-            <RailPanel title="AI Assistant" onClose={() => undefined} className="h-full" bodyClassName="flex-1 gap-6">
+            <RailPanel title="Content Strategist" onClose={() => undefined} className="h-full" bodyClassName="flex-1 gap-6">
               <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
                 <p className="text-sm text-tertiary-foreground">No conversations yet.</p>
                 <p className="max-w-64 text-sm text-quaternary-foreground">
@@ -134,11 +146,15 @@ export function AssistantDesignHarness() {
           </Frame>
         </Specimen>
 
-        <Specimen label="User messages" note="short · long · multiline">
+        <Specimen label="User messages" note="short · long · multiline · folded past 5 lines">
           <Body>
             <UserMessage content="Is the brief consistent?" />
             <UserMessage content="Improve the campaign brief — make the tone more technical and benchmark-driven, and keep the British English and the no-second-person rule from the current tone guidelines." />
             <UserMessage content={'Two things:\n\n1. move the end date\n2. then redistribute the drafts'} />
+            <UserMessage content={PASTED_BRIEF} />
+            <p className="text-xs text-tertiary-foreground">
+              Anything past five lines folds under a fade; hover the bubble for “Show all”.
+            </p>
           </Body>
         </Specimen>
 
@@ -233,8 +249,8 @@ export function AssistantDesignHarness() {
           <Body>
             <ComposerDemo />
             <p className="text-xs text-tertiary-foreground">
-              At rest: suggestions + attach on the left, fill under the field. Focused: the actions fold into
-              the chevron and the fill slides out to 8px of the container edge.
+              At rest: suggestions on the left, fill under the field. Focused: the button folds into the
+              chevron and the fill slides out to 8px of the container edge.
             </p>
             <PrefillDemo />
             <AssistantComposer onSend={() => undefined} running onCancel={() => undefined} />
@@ -242,17 +258,30 @@ export function AssistantDesignHarness() {
           </Body>
         </Specimen>
 
-        <Specimen label="Starter chips" note="enabled · disabled while running">
+        <Specimen label="Starter chips" note="campaign · post · disabled while running">
           <Body>
-            <StarterChips onPick={() => undefined} />
+            <StarterChips kind="campaign" onPick={() => undefined} />
             <div className="h-px bg-border" />
-            <StarterChips onPick={() => undefined} disabled />
+            <StarterChips kind="post" onPick={() => undefined} />
+            <div className="h-px bg-border" />
+            <StarterChips kind="campaign" onPick={() => undefined} disabled />
           </Body>
         </Specimen>
       </div>
     </div>
   )
 }
+
+/** The case the bubble folds for: a brief pasted in wholesale. */
+const PASTED_BRIEF = [
+  'Here is the brief we agreed with the client, use it as the source of truth:',
+  '',
+  'Audience: founders and COOs at 10–100-employee businesses that have already run at least one AI pilot and watched it stall. They are not shopping for a platform; they are trying to work out whether the failure was theirs or the tool\'s.',
+  'Tone: technical, benchmark-driven, British English, no second-person address. Never open with a question.',
+  'Proof: every claim needs a number or a named example. The month-four benchmark from the Q2 study is the spine of the series.',
+  'Cadence: two posts a week, Threads and LinkedIn, alternating between a short observation and a longer teardown.',
+  'What to avoid: the words "unlock", "leverage" and "journey"; any promise about time saved that we cannot source.',
+].join('\n')
 
 function Header({ base }: { base: number }) {
   return (
@@ -290,7 +319,7 @@ function ComposerDemo() {
   const [open, setOpen] = useState(false)
   return (
     <div className="flex flex-col gap-2">
-      {open && <StarterChips onPick={() => setOpen(false)} />}
+      {open && <StarterChips kind="campaign" onPick={() => setOpen(false)} />}
       <AssistantComposer
         onSend={() => undefined}
         placeholder="Ask for a plan or a review..."
@@ -355,14 +384,6 @@ function Frame({ children, tall = false }: { children: React.ReactNode; tall?: b
 function Body({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-6 border border-border bg-primary px-6 py-6">{children}</div>
-  )
-}
-
-function Subheader({ title }: { title: string }) {
-  return (
-    <span className="mt-2 flex w-full items-center gap-2 text-xs text-tertiary-foreground">
-      <span className="truncate">← {title}</span>
-    </span>
   )
 }
 
@@ -604,6 +625,7 @@ function thread(
   id: string,
   subject: AssistantThread['subject'],
   title: string,
+  campaignTitle: string,
   turns: AssistantTurn[],
   overrides: Partial<AssistantThread> = {},
 ): AssistantThread {
@@ -611,6 +633,7 @@ function thread(
     id,
     subject,
     title,
+    campaignTitle,
     turns,
     status: 'idle',
     runStartedAt: null,
@@ -631,6 +654,7 @@ function seed(base: number) {
       'campaign:demo',
       { kind: 'campaign', campaignId: 'demo' },
       'Q3 Practitioner Series',
+      'Q3 Practitioner Series',
       [
         user('u1', 'Give me a quick overview of this campaign and how the content is distributed.'),
         fx.overview,
@@ -644,6 +668,7 @@ function seed(base: number) {
       'campaign:running',
       { kind: 'campaign', campaignId: 'running' },
       'Autumn Product Launch',
+      'Autumn Product Launch',
       [user('u4', 'Generate a content plan for this campaign.'), fx.streaming],
       { status: 'running', runStartedAt: Date.now() - 42_000 },
     ),
@@ -651,6 +676,7 @@ function seed(base: number) {
       'post:demo',
       { kind: 'post', postId: 'demo', campaignId: 'demo' },
       'Why most AI pilots stall at month four',
+      'Q3 Practitioner Series',
       [user('u5', 'Tighten the opening and drop the second-person address.'), fx.postEdited],
       { unread: true },
     ),
@@ -658,12 +684,31 @@ function seed(base: number) {
       'campaign:failed',
       { kind: 'campaign', campaignId: 'failed' },
       'Winter Retention Push',
+      'Winter Retention Push',
       [user('u6', 'Generate a content plan for this campaign.'), fx.failed],
       { status: 'error' },
     ),
-    'campaign:empty': thread('campaign:empty', { kind: 'campaign', campaignId: 'empty' }, 'Untitled campaign', []),
-    'post:empty': thread('post:empty', { kind: 'post', postId: 'empty', campaignId: 'demo' }, '', []),
+    'campaign:empty': thread(
+      'campaign:empty',
+      { kind: 'campaign', campaignId: 'empty' },
+      'Untitled campaign',
+      '',
+      [],
+    ),
+    'post:empty': thread(
+      'post:empty',
+      { kind: 'post', postId: 'empty', campaignId: 'demo' },
+      '',
+      'Q3 Practitioner Series',
+      [],
+    ),
   }
 
-  useAssistantStore.setState({ threads, activeThreadId: 'campaign:demo' })
+  // The post is "current" so the list demonstrates both rules at once: the
+  // CURRENT row on top, then its two same-campaign siblings, then the rest.
+  useAssistantStore.setState({
+    threads,
+    activeThreadId: 'campaign:demo',
+    currentThreadId: 'post:demo',
+  })
 }

@@ -54,11 +54,18 @@ type AssistantState = {
   threads: Record<string, AssistantThread>
   /** The thread the panel is showing, or null for the thread list. */
   activeThreadId: string | null
+  /**
+   * The thread for whatever the user is *looking at* — set on arrival at a
+   * subject's page and left alone by panel navigation, so it survives
+   * `selectThread(null)`. The list uses it to sort and to mark the current row;
+   * `activeThreadId` can't, because browsing the list clears it.
+   */
+  currentThreadId: string | null
 
   /** Register a thread for a subject and make it the active one. */
-  openThread: (subject: ThreadSubject, title: string) => string
-  /** Keep a thread's label in sync with its subject, without selecting it. */
-  renameThread: (threadId: string, title: string) => void
+  openThread: (subject: ThreadSubject, title: string, campaignTitle: string) => string
+  /** Keep a thread's labels in sync with its subject, without selecting it. */
+  renameThread: (threadId: string, title: string, campaignTitle?: string) => void
   /** Show a thread that is already open. */
   selectThread: (threadId: string | null) => void
   /** Load persisted history once per thread. */
@@ -96,17 +103,19 @@ export const useAssistantStore = create<AssistantState>()(
       return {
         threads: {},
         activeThreadId: null,
+        currentThreadId: null,
 
-        openThread: (subject, title) => {
+        openThread: (subject, title, campaignTitle) => {
           const id = threadIdFor(subject)
           set((s) => {
             const existing = s.threads[id]
             const thread: AssistantThread = existing
-              ? { ...existing, title, unread: false }
+              ? { ...existing, title, campaignTitle, unread: false }
               : {
                   id,
                   subject,
                   title,
+                  campaignTitle,
                   turns: [],
                   status: 'idle',
                   runStartedAt: null,
@@ -114,15 +123,25 @@ export const useAssistantStore = create<AssistantState>()(
                   loaded: false,
                   streamedPosts: [],
                 }
-            return { threads: { ...s.threads, [id]: thread }, activeThreadId: id }
+            return {
+              threads: { ...s.threads, [id]: thread },
+              activeThreadId: id,
+              currentThreadId: id,
+            }
           })
           return id
         },
 
-        renameThread: (threadId, title) => {
+        renameThread: (threadId, title, campaignTitle) => {
           const current = get().threads[threadId]
-          if (!current || current.title === title) return
-          patchThread(threadId, { title })
+          if (!current) return
+          const sameTitle = current.title === title
+          const sameCampaign = campaignTitle === undefined || current.campaignTitle === campaignTitle
+          if (sameTitle && sameCampaign) return
+          patchThread(threadId, {
+            title,
+            ...(campaignTitle === undefined ? {} : { campaignTitle }),
+          })
         },
 
         selectThread: (threadId) => {
@@ -140,6 +159,7 @@ export const useAssistantStore = create<AssistantState>()(
             return {
               threads,
               activeThreadId: s.activeThreadId === threadId ? null : s.activeThreadId,
+              currentThreadId: s.currentThreadId === threadId ? null : s.currentThreadId,
             }
           })
         },

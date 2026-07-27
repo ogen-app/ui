@@ -110,12 +110,18 @@ export function humanizeStep(step: string): string {
     .trim()
 }
 
-/** Compact elapsed time: sub-second in ms, then seconds, then m:ss. */
+/**
+ * Elapsed time at the precision the reader can act on. The audience is
+ * marketers waiting for a turn to finish, not anyone profiling it: milliseconds
+ * and tenths implied a meaning they never had, so a second is the floor and
+ * everything rounds to whole units.
+ */
 export function formatDuration(ms: number): string {
   if (!Number.isFinite(ms) || ms < 0) return ''
-  if (ms < 950) return `${Math.round(ms)}ms`
-  const seconds = ms / 1000
-  if (seconds < 60) return `${seconds.toFixed(1)}s`
+  if (ms < 1000) return '<1s'
+  const seconds = Math.round(ms / 1000)
+  if (seconds < 60) return `${seconds}s`
   const mins = Math.floor(seconds / 60)
-  return `${mins}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
+  const rest = seconds % 60
+  return rest === 0 ? `${mins}m` : `${mins}m ${rest}s`
 }
