@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { cn } from '@/lib'
 import { PageHeader } from './PageHeader.tsx'
@@ -11,9 +10,6 @@ type Breadcrumb = {
 type EditPageHeaderProps = {
   title: string
   breadcrumbs?: Breadcrumb[]
-  className?: string
-  actions?: ReactNode
-  breadcrumbTrailing?: ReactNode
   unsaved?: boolean
 }
 
@@ -21,16 +17,9 @@ type EditPageHeaderProps = {
  * Header for edit pages: a breadcrumb trail ending in the current title plus
  * an unsaved-changes dot, composed on the PageHeader chrome.
  */
-export function EditPageHeader({
-  title,
-  breadcrumbs = [],
-  className,
-  actions,
-  breadcrumbTrailing,
-  unsaved = false,
-}: EditPageHeaderProps) {
+export function EditPageHeader({ title, breadcrumbs = [], unsaved = false }: EditPageHeaderProps) {
   return (
-    <PageHeader className={className} actions={actions}>
+    <PageHeader>
       <nav className="flex items-center gap-1.5 text-[13px] leading-4 font-medium font-sans tracking-tight truncate">
         {breadcrumbs.map((crumb) => (
           <span key={crumb.to} className="flex items-center gap-1.5">
@@ -51,9 +40,6 @@ export function EditPageHeader({
           unsaved ? 'opacity-100 animate-pulse' : 'opacity-0',
         )}
       />
-      {breadcrumbTrailing && (
-        <div className="flex items-center shrink-0">{breadcrumbTrailing}</div>
-      )}
     </PageHeader>
   )
 }

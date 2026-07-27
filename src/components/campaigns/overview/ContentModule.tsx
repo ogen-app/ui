@@ -42,7 +42,7 @@ export function ContentModule({
           one by one, or ask the assistant to generate a content plan.
         </p>
         <div>
-          <Button variant="defaultInverted" onClick={addPost}>
+          <Button variant="defaultInverted" onClick={() => addPost()}>
             <PlusIcon />
             <span>ADD POST</span>
           </Button>

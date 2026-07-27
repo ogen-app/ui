@@ -1,11 +1,12 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  CalendarBlankIcon,
   CaretDownIcon,
   CheckIcon,
+  ClockIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { usePlatformViews } from '@/hooks/usePlatforms'
@@ -21,6 +23,15 @@ import {
   getPlatformInfo,
   getPostTypeLabel,
 } from '@/lib/platformDictionary'
+import {
+  canEditScheduledAt,
+  PUBLISH_METHOD_HINTS,
+  PUBLISH_METHOD_LABELS,
+  type PublishMethod,
+  type PostStatusBlocker,
+} from '@/lib/postStatusMachine'
+import { fromLocalParts, toLocalParts } from '@/lib/postSchedule'
+import type { PostStatusAction } from '@/hooks/usePostStatusActions'
 import { cn } from '@/lib'
 import type { Post } from '@/types/posts'
 
@@ -28,24 +39,55 @@ type Props = {
   doc: Post
   changeDoc: (fn: (p: Post) => void) => void
   cancelling: boolean
+  /**
+   * Bumped by the header when a blocked status action is clicked. Each new
+   * value flashes the bar — see the outline/shake below — because the fields
+   * that block the transition all live in here.
+   */
+  attention?: number
+  /** Every move available from the current status; hangs off the badge. */
+  statusActions: PostStatusAction[]
+  /** A transition or cancellation is in flight — freezes the badge menu. */
+  statusPending: boolean
+  onBlocked?: (blockers: PostStatusBlocker[]) => void
+  publishMethod: PublishMethod
+  onPublishMethodChange: (method: PublishMethod) => void
   className?: string
 }
 
+/** How long the attention flash runs. Matches the `attention-flash` keyframes. */
+const ATTENTION_MS = 1500
+
 /**
- * The card above the post editor. Line 1: scheduling details next to the
- * status badge. Line 2: the platform / post type pickers (autosaving
+ * The card above the post editor. Line 1: when and how it publishes, next to
+ * the status badge. Line 2: the platform / post type pickers (autosaving
  * through `changeDoc`) and the connected publishing account.
  *
  * Validation is inline — no separate checklist: a missing/past publish
- * date warns on line 1, a deselected platform or post type warns on its
- * own trigger, and a platform without a connected account warns in the
- * account slot. The pickers only offer what the campaign allows, plus a
- * deselect option.
+ * date warns on line 1, a deselected platform warns on its own trigger,
+ * and a platform without a connected account warns in the account slot.
+ * The pickers only offer what the campaign allows, plus a deselect option.
+ *
+ * Everything here is editable in place: the date and time open pickers, the
+ * badge is the status control, so a post can be scheduled without opening
+ * the settings rail.
  */
-export function PostQuickSettingsBar({ doc, changeDoc, cancelling, className }: Props) {
+export function PostQuickSettingsBar({
+  doc,
+  changeDoc,
+  cancelling,
+  attention = 0,
+  statusActions,
+  statusPending,
+  onBlocked,
+  publishMethod,
+  onPublishMethodChange,
+  className,
+}: Props) {
   const platform = getPlatformInfo(doc.platform_id)
   const { data: campaign } = useCampaign(doc.campaign_id)
   const views = usePlatformViews()
+  const flashing = useAttentionFlash(attention)
 
   // platform id → post-type slugs enabled on this campaign.
   const campaignPostTypes = useMemo(
@@ -106,16 +148,57 @@ export function PostQuickSettingsBar({ doc, changeDoc, cancelling, className }: 
     })
   }
 
+  const setScheduledAt = (iso: string | null) => {
+    changeDoc((d) => {
+      d.scheduled_at = iso
+    })
+  }
+
   return (
-    <div className={cn('w-full bg-primary px-10 py-4 flex flex-col gap-3', className)}>
+    <div
+      className={cn(
+        'w-full bg-primary px-10 py-4 flex flex-col gap-3',
+        // Blocked-action feedback: shake, then the ring fades out. Defined
+        // in index.css because the ring's colour is animated, and it uses
+        // `outline` rather than `border` so the bar never reflows.
+        flashing && 'animate-attention',
+        className,
+      )}
+    >
       <div className="flex items-center justify-between gap-3">
-        <SchedulingDetails post={doc} cancelling={cancelling} />
-        <div className="shrink-0">
-          <PostStatusBadge status={doc.status} />
-        </div>
+        {/* text-sm, like the row below: the bare Dot inherits the card's
+            24px line-height otherwise and makes this row 4px taller than
+            its 20px siblings. */}
+        <span className="flex min-w-0 items-center gap-1.5 text-sm">
+          <SchedulingDetails
+            post={doc}
+            cancelling={cancelling}
+            onChange={setScheduledAt}
+          />
+          {/* Only where the fork is still ahead of the post. Once it's
+              scheduled the status itself records which way it went, and
+              SchedulingDetails spells it out ("Auto-publishes …"). */}
+          {(doc.status === 'draft' || doc.status === 'ready_for_publish') && (
+            <>
+              <Dot />
+              <PublishMethodPicker
+                method={publishMethod}
+                onChange={onPublishMethodChange}
+                platformName={platform?.name ?? null}
+                hasAccount={!!accountName}
+              />
+            </>
+          )}
+        </span>
+        <StatusControl
+          status={doc.status}
+          actions={statusActions}
+          pending={statusPending}
+          onBlocked={onBlocked}
+        />
       </div>
 
-      <div className="flex items-center gap-5 text-sm">
+      <div className="flex items-center gap-1.5 text-sm">
         <DropdownMenu>
           <QuickBarTrigger label="Change platform">
             {platform ? (
@@ -125,8 +208,8 @@ export function PostQuickSettingsBar({ doc, changeDoc, cancelling, className }: 
               </>
             ) : (
               <>
-                <WarningCircleIcon weight="fill" className="size-4 text-warning" />
-                <span>Platform</span>
+                <WarningHint text="Pick the platform this post publishes to — it decides the available post types and the publishing account." />
+                <span>Select platform</span>
               </>
             )}
             <CaretDownIcon className="size-3 text-tertiary-foreground" />
@@ -155,50 +238,59 @@ export function PostQuickSettingsBar({ doc, changeDoc, cancelling, className }: 
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <DropdownMenu>
-          <QuickBarTrigger label="Change post type" disabled={!platform}>
-            {doc.platform_post_type ? (
-              <span>{getPostTypeLabel(doc.platform_id, doc.platform_post_type)}</span>
-            ) : (
-              <>
-                <WarningCircleIcon weight="fill" className="size-4 text-warning" />
-                <span>Post type</span>
-              </>
-            )}
-            <CaretDownIcon className="size-3 text-tertiary-foreground" />
-          </QuickBarTrigger>
-          <DropdownMenuContent align="start">
-            {campaignTypes.map((t) => {
-              const connected =
-                connectedPostTypes.get(doc.platform_id)?.has(t.slug) ?? false
-              return (
-                <DropdownMenuItem key={t.slug} onSelect={() => selectPostType(t.slug)}>
-                  <span>{t.label}</span>
-                  {t.slug === doc.platform_post_type ? (
-                    <CheckIcon className="ml-auto size-3.5" />
-                  ) : !connected ? (
-                    <span className="ml-auto pl-3 text-xs text-tertiary-foreground">
-                      Not connected
-                    </span>
-                  ) : null}
+        {/* Post types are a property of the platform, so there is nothing to
+            choose from until one is picked — the slot is hidden rather than
+            shown disabled next to its own warning. */}
+        {platform && <Dot />}
+
+        {platform && (
+          <DropdownMenu>
+            <QuickBarTrigger label="Change post type">
+              {doc.platform_post_type ? (
+                <span>{getPostTypeLabel(doc.platform_id, doc.platform_post_type)}</span>
+              ) : (
+                <>
+                  <WarningHint text={`Pick the ${platform.name} post type — it sets the format this post publishes as.`} />
+                  <span>Select post type</span>
+                </>
+              )}
+              <CaretDownIcon className="size-3 text-tertiary-foreground" />
+            </QuickBarTrigger>
+            <DropdownMenuContent align="start">
+              {campaignTypes.map((t) => {
+                const connected =
+                  connectedPostTypes.get(doc.platform_id)?.has(t.slug) ?? false
+                return (
+                  <DropdownMenuItem key={t.slug} onSelect={() => selectPostType(t.slug)}>
+                    <span>{t.label}</span>
+                    {t.slug === doc.platform_post_type ? (
+                      <CheckIcon className="ml-auto size-3.5" />
+                    ) : !connected ? (
+                      <span className="ml-auto pl-3 text-xs text-tertiary-foreground">
+                        Not connected
+                      </span>
+                    ) : null}
+                  </DropdownMenuItem>
+                )
+              })}
+              {campaignTypes.length === 0 && (
+                <DropdownMenuItem disabled>
+                  <span>No post types on this campaign</span>
                 </DropdownMenuItem>
-              )
-            })}
-            {campaignTypes.length === 0 && (
-              <DropdownMenuItem disabled>
-                <span>No post types on this campaign</span>
-              </DropdownMenuItem>
-            )}
-            {doc.platform_post_type && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => selectPostType('')}>
-                  <span>Deselect post type</span>
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              )}
+              {doc.platform_post_type && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => selectPostType('')}>
+                    <span>Deselect post type</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        {platform && <Dot />}
 
         {platform &&
           (accountName ? (
@@ -209,12 +301,217 @@ export function PostQuickSettingsBar({ doc, changeDoc, cancelling, className }: 
             </span>
           ) : (
             <span className="flex min-w-0 items-center gap-1.5 text-tertiary-foreground">
-              <WarningCircleIcon weight="fill" className="size-4 shrink-0 text-warning" />
+              <WarningHint
+                focusable
+                text={`No ${platform.name} account is connected, so nothing can publish this post. Connect one in Platform settings.`}
+              />
               <span className="truncate">No account connected</span>
             </span>
           ))}
       </div>
     </div>
+  )
+}
+
+/**
+ * Holds a flash on for ATTENTION_MS each time `attention` changes. The
+ * counter (not a boolean) is what lets a second blocked click re-trigger
+ * the animation while the first is still running.
+ */
+function useAttentionFlash(attention: number): boolean {
+  const [flashing, setFlashing] = useState(false)
+  const seen = useRef(attention)
+
+  useEffect(() => {
+    if (attention === seen.current) return
+    seen.current = attention
+    setFlashing(false)
+    // Two frames: drop the class, let the browser paint, then re-add it so
+    // the animation restarts from the top on a repeat click.
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setFlashing(true))
+    })
+    const timer = setTimeout(() => setFlashing(false), ATTENTION_MS + 50)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(timer)
+    }
+  }, [attention])
+
+  return flashing
+}
+
+/**
+ * The badge doubles as the status control: every move available from the
+ * current status hangs off it — forwards, backwards, and alternate outcomes
+ * alike. That is what keeps the header down to one primary button and its
+ * own single ⋮, and it puts "Back to draft" next to the thing it changes
+ * instead of below "Download as Markdown".
+ *
+ * Blocked moves stay selectable, exactly like the header button: choosing
+ * one flashes this bar, where the missing fields are.
+ */
+function StatusControl({
+  status,
+  actions,
+  pending,
+  onBlocked,
+}: {
+  status: Post['status']
+  actions: PostStatusAction[]
+  pending: boolean
+  onBlocked?: (blockers: PostStatusBlocker[]) => void
+}) {
+  const badge = (
+    <PostStatusBadge status={status} className="text-sm text-primary-foreground" />
+  )
+
+  // Terminal statuses have nowhere to go, so the badge stays plain text.
+  // flex, not a plain block: the badge is inline-flex, so a block parent
+  // gives it a line box at the bar's 24px line-height and the row renders
+  // 24.5px against its 20px siblings.
+  if (actions.length === 0) {
+    return <div className="shrink-0 flex items-center">{badge}</div>
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="excluded"
+          disabled={pending}
+          aria-label="Change status"
+          className="gap-1.5 shrink-0 font-normal"
+        >
+          {badge}
+          <CaretDownIcon className="size-3 text-tertiary-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {actions.map((action) => {
+          // One blocker is enough to explain the hold-up; showing all of
+          // them turns a menu row into a paragraph.
+          const blocker = action.blockers[0]
+          return (
+            <DropdownMenuItem
+              key={action.next}
+              variant={action.intent === 'destructive' ? 'destructive' : 'default'}
+              onSelect={() => {
+                if (blocker) {
+                  onBlocked?.(action.blockers)
+                  return
+                }
+                void action.run()
+              }}
+            >
+              <span>{action.menuLabel}</span>
+              {blocker && (
+                <span className="ml-auto flex items-center gap-1 pl-4 text-xs text-tertiary-foreground">
+                  <WarningCircleIcon weight="fill" className="size-3.5 text-warning" />
+                  <span>{blocker.message}</span>
+                </span>
+              )}
+            </DropdownMenuItem>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+const PUBLISH_METHODS: PublishMethod[] = ['auto', 'manual']
+
+/**
+ * Auto-publish vs manual. This is the one scheduling decision the status
+ * machine can't hold — there is no field for it, the choice *is* which
+ * status SCHEDULE moves the post into — so it's made here, in the open,
+ * rather than by picking between two identically-named menu entries.
+ */
+function PublishMethodPicker({
+  method,
+  onChange,
+  platformName,
+  hasAccount,
+}: {
+  method: PublishMethod
+  onChange: (method: PublishMethod) => void
+  platformName: string | null
+  hasAccount: boolean
+}) {
+  return (
+    <DropdownMenu>
+      <QuickBarTrigger label="Change how this post publishes">
+        <span>{PUBLISH_METHOD_LABELS[method]}</span>
+        <CaretDownIcon className="size-3 text-tertiary-foreground" />
+      </QuickBarTrigger>
+      <DropdownMenuContent align="start" className="max-w-[300px]">
+        {PUBLISH_METHODS.map((m) => (
+          <DropdownMenuItem
+            key={m}
+            className="flex-col items-start gap-0.5"
+            onSelect={() => onChange(m)}
+          >
+            <span className="flex w-full items-center gap-2">
+              <span>{PUBLISH_METHOD_LABELS[m]}</span>
+              {m === method && <CheckIcon className="ml-auto size-3.5" />}
+            </span>
+            <span className="text-xs text-tertiary-foreground">
+              {PUBLISH_METHOD_HINTS[m]}
+            </span>
+            {/* Auto needs a connected publisher; without one the server
+                routes it to manual anyway, so say that up front. */}
+            {m === 'auto' && !hasAccount && (
+              <span className="text-xs text-warning">
+                No {platformName ?? 'publishing'} account is connected — this
+                will fall back to a reminder.
+              </span>
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/**
+ * Separator between the bar's inline controls. Without it neighbouring
+ * triggers read as one run-on phrase ("Select publish date Add time",
+ * "LinkedIn Text post by Ogen").
+ */
+function Dot() {
+  return (
+    <span aria-hidden className="text-tertiary-foreground select-none">
+      ·
+    </span>
+  )
+}
+
+/**
+ * The orange marker on an incomplete field, carrying the reason on hover.
+ * The icon alone says "something is wrong here" but not what or why — the
+ * tooltip is where that gets answered.
+ *
+ * `focusable` is opt-in: these sit inside dropdown triggers in most places,
+ * and a focusable span nested in a button is a keyboard trap.
+ */
+function WarningHint({ text, focusable }: { text: string; focusable?: boolean }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className="flex shrink-0 items-center"
+          tabIndex={focusable ? 0 : undefined}
+          role="img"
+          aria-label={text}
+        >
+          <WarningCircleIcon weight="fill" className="size-4 text-warning" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-[280px]">
+        {text}
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -234,7 +531,7 @@ function QuickBarTrigger({
         size="excluded"
         disabled={disabled}
         aria-label={label}
-        className="gap-1.5 text-sm font-medium text-primary-foreground shrink-0"
+        className="gap-1.5 text-sm font-normal text-primary-foreground shrink-0"
       >
         {children}
       </Button>
@@ -250,27 +547,173 @@ const SCHEDULED_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
   minute: '2-digit',
 })
 
+const DAY_FORMAT = new Intl.DateTimeFormat(undefined, {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
+})
+
 function formatDate(iso: string): string | null {
   const d = new Date(iso)
   return isNaN(d.getTime()) ? null : SCHEDULED_DATE_FORMAT.format(d)
 }
 
-function SchedulingDetails({ post, cancelling }: { post: Post; cancelling: boolean }) {
-  const { text, warn } = schedulingDetails(post, cancelling)
+function SchedulingDetails({
+  post,
+  cancelling,
+  onChange,
+}: {
+  post: Post
+  cancelling: boolean
+  onChange: (iso: string | null) => void
+}) {
+  // While `scheduled`/`published` the date is owned elsewhere (the Zernio
+  // submission, or history) — show it as text, same as the settings rail.
+  const editable = canEditScheduledAt(post.status) && !cancelling
+  if (!editable) {
+    const { text, warn } = schedulingDetails(post, cancelling)
+    return (
+      <span
+        className={cn(
+          'flex min-w-0 items-center gap-1.5 text-sm',
+          warn ? 'text-primary-foreground' : 'text-secondary-foreground',
+        )}
+      >
+        {warn ? (
+          <WarningCircleIcon weight="fill" className="size-4 shrink-0 text-warning" />
+        ) : (
+          <ClockIcon className="size-4 shrink-0" />
+        )}
+        <span className="truncate">{text}</span>
+      </span>
+    )
+  }
+  return <ScheduleEditor post={post} onChange={onChange} />
+}
+
+/**
+ * The date and the time as two separate inline pickers. Splitting them is
+ * what makes the empty state actionable: "Select publish date" opens a
+ * calendar and reads as its own control. The time only appears once a date
+ * is set — before that there is nothing for it to qualify.
+ */
+function ScheduleEditor({
+  post,
+  onChange,
+}: {
+  post: Post
+  onChange: (iso: string | null) => void
+}) {
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const { dateStr, timeStr } = toLocalParts(post.scheduled_at)
+  const selected = post.scheduled_at ? new Date(post.scheduled_at) : null
+  const valid = selected && !isNaN(selected.getTime())
+  const inPast = valid ? selected.getTime() <= Date.now() : false
+
   return (
-    <span
-      className={cn(
-        'flex min-w-0 items-center gap-1.5 text-sm',
-        warn ? 'text-primary-foreground' : 'text-secondary-foreground',
-      )}
-    >
-      {warn ? (
-        <WarningCircleIcon weight="fill" className="size-4 shrink-0 text-warning" />
+    <span className="flex min-w-0 items-center gap-1.5 text-sm">
+      {!valid ? (
+        <WarningHint
+          focusable
+          text="This post has no publish date, so it can't be scheduled. Pick a date and time to publish it."
+        />
+      ) : inPast ? (
+        <WarningHint
+          focusable
+          text="The publish date is in the past. Scheduling needs a date in the future — pick a new one."
+        />
       ) : (
-        <CalendarBlankIcon className="size-4 shrink-0" />
+        <ClockIcon className="size-4 shrink-0 text-secondary-foreground" />
       )}
-      <span className="truncate">{text}</span>
+
+      <DropdownMenu open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="excluded"
+            aria-label="Set publish date"
+            className="gap-1.5 text-sm font-normal text-primary-foreground shrink-0"
+          >
+            {valid ? DAY_FORMAT.format(selected) : 'Select publish date'}
+            <CaretDownIcon className="size-3 text-tertiary-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="p-0">
+          <Calendar
+            mode="single"
+            selected={valid ? selected : undefined}
+            onSelect={(d) => {
+              if (d) {
+                // Keep the time already chosen; fromLocalParts falls back to
+                // the default hour when there isn't one yet.
+                const [y, m, day] = [d.getFullYear(), d.getMonth() + 1, d.getDate()]
+                const next = `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                onChange(fromLocalParts(next, timeStr))
+              }
+              setCalendarOpen(false)
+            }}
+            onClear={
+              valid
+                ? () => {
+                    onChange(null)
+                    setCalendarOpen(false)
+                  }
+                : undefined
+            }
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {valid && (
+        <>
+          <Dot />
+          <TimeField dateStr={dateStr} timeStr={timeStr} onChange={onChange} />
+        </>
+      )}
     </span>
+  )
+}
+
+/**
+ * The time half of the schedule line. Only rendered once a date exists: a
+ * time with no day to hang it on means nothing, and the calendar already
+ * supplies DEFAULT_HOUR, so there is never a dated post without a time.
+ */
+function TimeField({
+  dateStr,
+  timeStr,
+  onChange,
+}: {
+  dateStr: string
+  timeStr: string
+  onChange: (iso: string | null) => void
+}) {
+  // A half-typed time ("1" of "11:45") is an empty value on the element. A
+  // plain controlled input would snap it back to the saved time on every
+  // keystroke, so the draft is local and only re-syncs when the post's own
+  // time changes underneath us — e.g. an edit in the settings rail.
+  const [draft, setDraft] = useState(timeStr)
+  useEffect(() => setDraft(timeStr), [timeStr])
+
+  return (
+    <input
+      type="time"
+      value={draft}
+      onChange={(e) => {
+        setDraft(e.target.value)
+        if (e.target.value) onChange(fromLocalParts(dateStr, e.target.value))
+      }}
+      aria-label="Publish time"
+      // Bare input: the bar's own text styling, no chrome. The webkit
+      // indicator is hidden because the field itself is the affordance.
+      className={cn(
+        // font-sans: inputs don't inherit the family, so without it the time
+        // renders in the browser default and breaks the line's text style.
+        'bg-transparent border-0 outline-none p-0 font-sans text-sm text-primary-foreground shrink-0 cursor-pointer',
+        'focus-visible:underline underline-offset-4',
+        '[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none',
+      )}
+    />
   )
 }
 
@@ -304,14 +747,7 @@ function schedulingDetails(
         text: when ? `Not published — was planned for ${when}` : 'Not published',
         warn: false,
       }
-    default: {
-      // draft / ready_for_publish: the date still gates scheduling, so a
-      // missing or past date is a warning.
-      if (!when) return { text: 'Not scheduled yet', warn: true }
-      const inPast = new Date(post.scheduled_at as string).getTime() <= Date.now()
-      return inPast
-        ? { text: `Planned for the past: ${when}`, warn: true }
-        : { text: `Planned for ${when}`, warn: false }
-    }
+    default:
+      return { text: when ? `Planned for ${when}` : 'Not scheduled yet', warn: !when }
   }
 }

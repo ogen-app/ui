@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
-import { useCampaignPosts, useUpdatePost } from '@/hooks/usePosts'
+import { useAddPost, useCampaignPosts, useUpdatePost } from '@/hooks/usePosts'
+import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
 import { postToPayload } from '@/services/api/posts'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { PostCard } from './PostCard'
@@ -20,6 +21,7 @@ export function NotScheduledPanel({ campaignId, onClose }: NotScheduledPanelProp
   const [dragOver, setDragOver] = useState(false)
   const { data: posts } = useCampaignPosts(campaignId)
   const { mutate: updatePost } = useUpdatePost(campaignId)
+  const addPost = useAddPost(campaignId)
 
   const unscheduled = useMemo(
     () => (posts ?? []).filter((p) => !p.scheduled_at),
@@ -65,9 +67,7 @@ export function NotScheduledPanel({ campaignId, onClose }: NotScheduledPanelProp
         )}
       >
         {unscheduled.length === 0 ? (
-          <span className="text-sm text-tertiary-foreground">
-            No unscheduled posts
-          </span>
+          <PostsEmptyState variant="panel" onAddPost={addPost} />
         ) : (
           unscheduled.map((post) => (
             <div key={post.id} className="border border-border shrink-0">

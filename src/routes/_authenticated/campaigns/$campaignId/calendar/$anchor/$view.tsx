@@ -3,9 +3,7 @@ import {
   redirect,
   useNavigate,
 } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button.tsx";
-import { PlusIcon } from "@phosphor-icons/react";
-import { PageGridEmptyState } from "@/components/page-primitives/PageGridEmptyState.tsx";
+import { PostsEmptyState } from "@/components/campaigns/PostsEmptyState";
 import { PostsToolbar } from "@/components/campaigns/PostsToolbar";
 import { WeeklyCalendar } from "@/components/campaigns/calendar/WeeklyCalendar";
 import { formatAnchor, parseAnchor } from "@/components/campaigns/calendar/date";
@@ -53,16 +51,7 @@ function CalendarView() {
         onAnchorChange={handleAnchorChange}
       />
       {!posts || posts.length === 0 ? (
-        <PageGridEmptyState
-          title="No posts yet"
-          subtitle="Add your first post to start building this campaign"
-          actions={
-            <Button variant="defaultInverted" onClick={addPost}>
-              <PlusIcon className="size-4" />
-              <span>ADD POST</span>
-            </Button>
-          }
-        />
+        <PostsEmptyState variant="week" anchor={anchorDate} onAddPost={addPost} />
       ) : (
         <WeeklyCalendar
           campaignId={campaignId}

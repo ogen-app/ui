@@ -1,165 +1,51 @@
-import type { ReactElement } from 'react'
-import type { Post } from '@/types/posts'
-import { Button, buttonVariants } from '@/components/ui/button'
-import { DotsThreeVerticalIcon } from '@phosphor-icons/react'
-import { cn } from '@/lib'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import {
-  usePostStatusActions,
-  type PostStatusAction,
-} from '@/hooks/usePostStatusActions'
+import { Button } from '@/components/ui/button'
+import type { PostStatusAction } from '@/hooks/usePostStatusActions'
 import type { PostStatusBlocker } from '@/lib/postStatusMachine'
-import type { TransitionStatusResult } from '@/hooks/usePost'
-import type { CancelTarget } from '@/services/api/posts'
 
 type Props = {
-  post: Post
-  transitionStatus: (next: Post['status']) => Promise<TransitionStatusResult>
-  schedule: () => Promise<TransitionStatusResult>
-  cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
-  cancelling: boolean
-}
-
-const INTENT_RANK: Record<PostStatusAction['intent'], number> = {
-  primary: 0,
-  secondary: 1,
-  destructive: 2,
-}
-
-export function PostStatusHeaderActions({
-  post,
-  transitionStatus,
-  schedule,
-  cancelScheduled,
-  cancelling,
-}: Props) {
-  const { actions, pending } = usePostStatusActions(
-    post,
-    transitionStatus,
-    schedule,
-    cancelScheduled,
-    cancelling,
-  )
-
-  // Either a synchronous action is in flight, or a cancellation is pending
-  // server-side. Both should show a spinner and block further clicks.
-  const busy = pending || cancelling
-
-  // Hide system-driven transitions (e.g. publisher worker marking
-  // `scheduled` → `published`); the user shouldn't trigger those.
-  const userActions = actions
-    .filter((a) => a.kind === 'user')
-    .sort((a, b) => INTENT_RANK[a.intent] - INTENT_RANK[b.intent])
-
-  const [primaryAction] = userActions
-  // The dropdown lists every user action, including the one already
-  // shown as the primary button — duplication is intentional so the
-  // menu is a complete view of available transitions.
-  const showOverflow = userActions.length > 1
-
-  return (
-    <div className="flex items-center gap-1">
-      {showOverflow && primaryAction && (
-        <OverflowMenu actions={userActions} pending={busy} />
-      )}
-      {primaryAction && (
-        <PrimaryActionButton action={primaryAction} pending={busy} />
-      )}
-    </div>
-  )
-}
-
-// Wraps a disabled trigger in a span so a tooltip still fires on hover —
-// disabled buttons don't emit pointer events themselves.
-function BlockerTooltip({
-  blockers,
-  side,
-  children,
-}: {
-  blockers: PostStatusBlocker[]
-  side?: 'top' | 'right' | 'bottom' | 'left'
-  children: ReactElement
-}) {
-  if (blockers.length === 0) return children
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span tabIndex={0}>{children}</span>
-      </TooltipTrigger>
-      <TooltipContent side={side}>
-        {blockers.map((b) => b.message).join(' · ')}
-      </TooltipContent>
-    </Tooltip>
-  )
-}
-
-function PrimaryActionButton({
-  action,
-  pending,
-}: {
-  action: PostStatusAction
+  /** The one forward move for the current status; null in terminal states. */
+  action: PostStatusAction | null
+  /** A transition or a cancellation is in flight. */
   pending: boolean
-}) {
-  return (
-    <BlockerTooltip blockers={action.blockers}>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        disabled={action.disabled}
-        loading={pending}
-        onClick={() => {
-          void action.run()
-        }}
-      >
-        {action.buttonLabel}
-      </Button>
-    </BlockerTooltip>
-  )
+  /**
+   * Called instead of running the action when blockers stand in the way.
+   * The button stays clickable on purpose: pointing at the fields that need
+   * filling in beats a tooltip explaining a dead control.
+   */
+  onBlocked?: (blockers: PostStatusBlocker[]) => void
 }
 
-function OverflowMenu({
-  actions,
-  pending,
-}: {
-  actions: PostStatusAction[]
-  pending: boolean
-}) {
+/**
+ * The header's single status button. Everything else — moving backwards,
+ * alternate outcomes — lives on the status badge in the quick-settings bar,
+ * so the header never grows a second ⋮ next to its own overflow menu.
+ *
+ * No tooltip here by design. When the post isn't ready the button stays live
+ * and a click hands the blockers to `onBlocked`, which flashes the bar
+ * holding the offending fields — the answer to "why can't I click this?" is
+ * shown where the fix is, not in a hover bubble.
+ */
+export function PostStatusHeaderActions({ action, pending, onBlocked }: Props) {
+  if (!action) return null
+  const blocked = action.blockers.length > 0
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className={cn(buttonVariants({ variant: 'ghost', size: 'smIcon' }))}
-        aria-label="More status actions"
-        disabled={pending}
-      >
-        <DotsThreeVerticalIcon className="size-4" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {actions.map((action) => (
-          <BlockerTooltip key={action.next} blockers={action.blockers} side="left">
-            <DropdownMenuItem
-              variant={action.intent === 'destructive' ? 'destructive' : 'default'}
-              disabled={action.disabled}
-              onSelect={(e) => {
-                if (action.disabled) {
-                  e.preventDefault()
-                  return
-                }
-                void action.run()
-              }}
-            >
-              {action.menuLabel}
-            </DropdownMenuItem>
-          </BlockerTooltip>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      // Only in-flight work disables the button; blockers are handled on click.
+      disabled={pending}
+      loading={pending}
+      aria-disabled={blocked || undefined}
+      onClick={() => {
+        if (blocked) {
+          onBlocked?.(action.blockers)
+          return
+        }
+        void action.run()
+      }}
+    >
+      {action.buttonLabel}
+    </Button>
   )
 }
-

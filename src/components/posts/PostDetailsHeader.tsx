@@ -8,12 +8,14 @@ import {
   DotsThreeVerticalIcon,
   DownloadSimpleIcon,
   GearSixIcon,
+  TrashIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -28,6 +30,8 @@ type Props = {
   settingsOpen: boolean
   onToggleSettings: () => void
   onDownloadMarkdown: () => void
+  /** Opens the status-aware delete confirmation. */
+  onDeletePost: () => void
   /** Status transition buttons (primary action + overflow). */
   actions?: ReactNode
 }
@@ -44,6 +48,7 @@ export function PostDetailsHeader({
   settingsOpen,
   onToggleSettings,
   onDownloadMarkdown,
+  onDeletePost,
   actions,
 }: Props) {
   return (
@@ -71,7 +76,10 @@ export function PostDetailsHeader({
             <TooltipTrigger asChild>
               <span tabIndex={0}>
                 <Button variant="ghost" size="smIcon" disabled aria-label="Preview">
-                  <DevicesIcon className="size-5" />
+                  {/* Explicit regular weight: Button puts icons in a bold
+                      IconContext, which made this read heavier than the
+                      cloud/gear/dots beside it. */}
+                  <DevicesIcon weight="regular" className="size-5" />
                 </Button>
               </span>
             </TooltipTrigger>
@@ -90,13 +98,18 @@ export function PostDetailsHeader({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="smIcon" aria-label="More options">
-                <DotsThreeVerticalIcon className="size-5" />
+                <DotsThreeVerticalIcon weight="regular" className="size-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={onDownloadMarkdown}>
                 <DownloadSimpleIcon />
                 <span>Download as Markdown</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onSelect={onDeletePost}>
+                <TrashIcon />
+                <span>Delete post</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

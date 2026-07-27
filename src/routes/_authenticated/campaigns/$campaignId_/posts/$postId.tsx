@@ -9,11 +9,14 @@ import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActions'
+import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { POST_SETTINGS_PORTAL_ID } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
+import { usePostStatusActions } from '@/hooks/usePostStatusActions'
+import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
 import type { Post, PostStatus } from '@/types/posts'
 
@@ -90,6 +93,29 @@ function PostEditorSurface({
 }: PostEditorSurfaceProps) {
   const [titleDraft, setTitleDraft] = useState(doc.title)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  // Bumped when a status action is clicked while blocked; the quick-settings
+  // bar flashes the fields that are missing.
+  const [attention, setAttention] = useState(0)
+
+  // Auto vs manual publishing. Page-local on purpose: the server has no
+  // field for it — it's expressed by which status SCHEDULE lands on — so it
+  // only has to survive until the button is pressed.
+  const [publishMethod, setPublishMethod] = useState<PublishMethod>('auto')
+
+  // Called once, here, and shared: the header button and the badge menu must
+  // see the same in-flight guard, or one could fire a second transition
+  // while the other's request is still open.
+  const { userActions, primary, pending } = usePostStatusActions({
+    post: doc,
+    transitionStatus,
+    schedule,
+    cancelScheduled,
+    cancelling,
+    publishMethod,
+  })
+  const statusBusy = pending || cancelling
+  const flashBlockers = useCallback(() => setAttention((n) => n + 1), [])
 
   // The settings form renders in the shared right sidebar (one panel at a
   // time, alongside the AI assistant). The route owns the form because it
@@ -186,13 +212,12 @@ function PostEditorSurface({
             settingsOpen={settingsOpen}
             onToggleSettings={() => toggleRightPanel('postSettings')}
             onDownloadMarkdown={handleDownloadMarkdown}
+            onDeletePost={() => setDeleteOpen(true)}
             actions={
               <PostStatusHeaderActions
-                post={doc}
-                transitionStatus={transitionStatus}
-                schedule={schedule}
-                cancelScheduled={cancelScheduled}
-                cancelling={cancelling}
+                action={primary}
+                pending={statusBusy}
+                onBlocked={flashBlockers}
               />
             }
           />
@@ -202,6 +227,12 @@ function PostEditorSurface({
                 doc={doc}
                 changeDoc={changeDoc}
                 cancelling={cancelling}
+                attention={attention}
+                statusActions={userActions}
+                statusPending={statusBusy}
+                onBlocked={flashBlockers}
+                publishMethod={publishMethod}
+                onPublishMethodChange={setPublishMethod}
               />
             </div>
             <div className="w-content bg-primary px-10 py-8">
@@ -240,6 +271,11 @@ function PostEditorSurface({
             settingsHost,
           )}
       </div>
+      <DeletePostDialog
+        post={doc}
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+      />
     </PageContainer>
   )
 }

@@ -109,7 +109,7 @@ export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: Posts
             </div>
           )}
 
-          <Button variant="default" onClick={addPost}>
+          <Button variant="default" onClick={() => addPost()}>
             <PlusIcon />
             <span>ADD POST</span>
           </Button>

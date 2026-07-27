@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useMemo } from 'react'
 import { createPost, deletePost, listCampaignPosts, updatePost } from '@/services/api/posts'
+import { atDefaultTime } from '@/lib/postSchedule'
 import { selectStreamedPosts, useAssistantStore } from '@/stores/assistantStore'
 import type { StreamedPost } from '@/types/assistant'
 import type { Post, PostPayload } from '@/types/posts'
@@ -70,24 +71,33 @@ export function useCreatePost(campaignId: string) {
 
 /**
  * Returns a handler that creates a blank post in the campaign and navigates to
- * its editor. Shared by the campaign header action and the empty-state buttons.
+ * its editor. Shared by the campaign header action, the empty-state buttons and
+ * the calendar (which passes the clicked day so the post lands on that date).
+ *
+ * Note the explicit `Date` parameter: wiring this straight to `onClick` would
+ * pass a MouseEvent, so button call sites must use `onClick={() => addPost()}`.
+ * TypeScript rejects the bare form.
  */
 export function useAddPost(campaignId: string) {
   const createPost = useCreatePost(campaignId)
   const navigate = useNavigate()
-  return useCallback(() => {
-    createPost.mutate(
-      { campaign_id: campaignId },
-      {
-        onSuccess: (post) => {
-          navigate({
-            to: '/campaigns/$campaignId/posts/$postId',
-            params: { campaignId, postId: post.id },
-          })
+  return useCallback(
+    (day?: Date) => {
+      const scheduled_at = day ? atDefaultTime(day) : undefined
+      createPost.mutate(
+        { campaign_id: campaignId, scheduled_at },
+        {
+          onSuccess: (post) => {
+            navigate({
+              to: '/campaigns/$campaignId/posts/$postId',
+              params: { campaignId, postId: post.id },
+            })
+          },
         },
-      },
-    )
-  }, [createPost, navigate, campaignId])
+      )
+    },
+    [createPost, navigate, campaignId],
+  )
 }
 
 export function useUpdatePost(campaignId: string) {
