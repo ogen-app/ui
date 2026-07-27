@@ -5,10 +5,10 @@ import { AttentionRail } from "@/components/campaigns/overview/AttentionRail.tsx
 import { BriefModule } from "@/components/campaigns/overview/BriefModule.tsx";
 import { ContentModule } from "@/components/campaigns/overview/ContentModule.tsx";
 import { SetupModule } from "@/components/campaigns/overview/SetupModule.tsx";
-import { useCampaign, useCampaignOverview } from "@/hooks/useCampaigns.ts";
+import { useCampaign } from "@/hooks/useCampaigns.ts";
 import { useCampaignPosts } from "@/hooks/usePosts.ts";
 import { usePlatformViews } from "@/hooks/usePlatforms.ts";
-import { attentionItems } from "@/lib/campaignReadiness.ts";
+import { attentionItems, briefPosture } from "@/lib/campaignReadiness.ts";
 
 export const Route = createFileRoute(
   "/_authenticated/campaigns/$campaignId/overview",
@@ -26,7 +26,6 @@ function CampaignOverviewScreen() {
   const { campaignId } = Route.useParams();
   const { data: campaign } = useCampaign(campaignId);
   const postsQuery = useCampaignPosts(campaignId);
-  const overviewQuery = useCampaignOverview(campaignId);
   const platformViews = usePlatformViews();
 
   // The backend sends `null` for a campaign with no posts (Go nil slice), so
@@ -37,13 +36,11 @@ function CampaignOverviewScreen() {
   // gate — every module needs them to pick a posture.
   if (!campaign || postsQuery.isPending) {
     return (
-      <div className="min-h-0 overflow-y-auto">
-        <div className="flex flex-col gap-3 pb-10">
-          <Skeleton className="h-40" />
-          <Skeleton className="h-64" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-14" />
-        </div>
+      <div className="flex flex-col gap-3 pb-10">
+        <Skeleton className="h-40 w-full max-w-content mx-auto" />
+        <Skeleton className="h-64 w-full max-w-content mx-auto" />
+        <Skeleton className="h-32 w-full max-w-content mx-auto" />
+        <Skeleton className="h-14 w-full max-w-content mx-auto" />
       </div>
     );
   }
@@ -53,21 +50,19 @@ function CampaignOverviewScreen() {
   // than memoized against a frozen `now`.
   const items = attentionItems(campaign, posts, platformViews, new Date());
 
+  // A brief that still needs writing is the first thing to do; a finished one
+  // is reference material, so it drops below the content it produced.
+  const brief = <BriefModule key="brief" campaign={campaign} />;
+  const briefDone = briefPosture(campaign).state === "complete";
+
   return (
-    <div className="min-h-0 overflow-y-auto">
-      <div className="flex flex-col gap-3 pb-10">
-        <AttentionRail items={items} campaignId={campaignId} />
-        <BriefModule campaign={campaign} />
-        <ContentModule
-          campaignId={campaignId}
-          posts={posts}
-          plannedTotal={campaign.estimated_post_count}
-          overview={overviewQuery.data}
-          overviewError={overviewQuery.isError}
-        />
-        <SetupModule campaign={campaign} platformViews={platformViews} />
-        <AssetsModule campaign={campaign} />
-      </div>
+    <div className="flex flex-col gap-3 pb-10">
+      <AttentionRail items={items} campaignId={campaignId} />
+      {!briefDone && brief}
+      <ContentModule campaign={campaign} posts={posts} />
+      {briefDone && brief}
+      <SetupModule campaign={campaign} platformViews={platformViews} />
+      <AssetsModule campaign={campaign} />
     </div>
   );
 }

@@ -4,33 +4,81 @@ import { CaretRightIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib";
 import type { FixTarget } from "@/lib/campaignReadiness.ts";
 
-/** One module card on the Campaign Overview screen. */
+/** Where a card's header sends the user when it is clicked. */
+export type CardLink = {
+  target: FixTarget;
+  campaignId: string;
+  /** Accessible name for the header link, e.g. "Edit brief". */
+  label: string;
+};
+
+/**
+ * One module card on the Campaign Overview screen. Capped at the shared
+ * content-column width and centred, so the screen reads as one column like
+ * the Brief and Settings pages rather than stretching to the viewport.
+ *
+ * With a `link`, the whole header row is the hit target — title included, not
+ * just the chevron.
+ */
 export function OverviewCard({
   title,
+  status,
+  link,
   action,
   children,
   className,
 }: {
   title?: string;
-  /** Right side of the header row — usually a `SectionLink`. */
+  /**
+   * Sits in the header beside the title — normally a `StatusBadge`. A module's
+   * verdict belongs here whether it's good news or not, so the body is free to
+   * be about what to do next.
+   */
+  status?: ReactNode;
+  /** Makes the header row a link to the section this card summarizes. */
+  link?: CardLink;
+  /** Right side of the header row, for cards that act instead of navigate. */
   action?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
 }) {
+  const heading = (
+    <>
+      {title && (
+        <h2 className="font-display text-base font-medium shrink-0">{title}</h2>
+      )}
+      {status}
+    </>
+  );
+
   return (
     <section
       className={cn(
-        "rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0",
+        "w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0",
         className,
       )}
     >
-      {(title || action) && (
-        <div className="flex items-center justify-between gap-3">
-          {title && (
-            <h2 className="font-display text-base font-medium">{title}</h2>
-          )}
-          {action}
-        </div>
+      {link ? (
+        <SectionLink
+          target={link.target}
+          campaignId={link.campaignId}
+          className="group -mx-2 -my-1 flex items-center gap-3 rounded-md px-2 py-1 hover:bg-secondary min-w-0"
+        >
+          {heading}
+          <span className="sr-only">{link.label}</span>
+          <CaretRightIcon
+            className="ml-auto size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
+            weight="bold"
+            aria-hidden
+          />
+        </SectionLink>
+      ) : (
+        (title || status || action) && (
+          <div className="flex items-center gap-3 min-w-0">
+            {heading}
+            {action && <span className="ml-auto">{action}</span>}
+          </div>
+        )
       )}
       {children}
     </section>
@@ -89,52 +137,45 @@ export function SectionLink({
   }
 }
 
-/** The standard drill-down affordance: a bare 16px chevron. */
-export function CardHeaderLink({
-  target,
-  campaignId,
-  label,
-}: {
-  target: FixTarget;
-  campaignId: string;
-  /** Accessible name for the chevron, e.g. "Edit brief". */
-  label: string;
-}) {
-  return (
-    <SectionLink
-      target={target}
-      campaignId={campaignId}
-      className="text-tertiary-foreground hover:text-primary-foreground shrink-0"
-    >
-      <span className="sr-only">{label}</span>
-      <CaretRightIcon className="size-4" />
-    </SectionLink>
-  );
-}
-
 /**
- * The one-line form of a module that's in good shape: title, inline status,
- * and the chevron to drill into its section.
+ * The short form of a module that's in good shape. It keeps the card's header
+ * — title, status, chevron — and puts the summary on its own line underneath,
+ * rather than squeezing both into one row. The whole card is the link; there
+ * is nothing else on it to click.
  */
 export function CollapsedCard({
   title,
   target,
   campaignId,
   label,
+  status,
   children,
-}: {
+}: CardLink & {
   title: string;
-  target: FixTarget;
-  campaignId: string;
-  /** Accessible name for the chevron, e.g. "Edit brief". */
-  label: string;
+  /** Sits in the header beside the title — normally a `StatusBadge`. */
+  status?: ReactNode;
+  /** The summary line: what this module currently holds. */
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-md bg-primary px-5 py-4 flex items-center gap-4 min-w-0">
-      <h2 className="font-display text-base font-medium shrink-0">{title}</h2>
-      <div className="flex flex-1 items-center gap-3 min-w-0">{children}</div>
-      <CardHeaderLink target={target} campaignId={campaignId} label={label} />
-    </section>
+    <SectionLink
+      target={target}
+      campaignId={campaignId}
+      className="group w-full max-w-content mx-auto rounded-md bg-primary hover:bg-secondary px-5 py-4 flex flex-col gap-2 min-w-0"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <h2 className="font-display text-base font-medium shrink-0">{title}</h2>
+        {status}
+        <span className="sr-only">{label}</span>
+        <CaretRightIcon
+          className="ml-auto size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
+          weight="bold"
+          aria-hidden
+        />
+      </div>
+      <div className="flex items-center gap-3 min-w-0 text-sm text-secondary-foreground">
+        {children}
+      </div>
+    </SectionLink>
   );
 }

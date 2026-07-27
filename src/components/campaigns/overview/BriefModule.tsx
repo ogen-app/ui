@@ -4,13 +4,15 @@ import { NotePencilIcon, SparkleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button.tsx";
 import { ModalContainer } from "@/components/ui/modal.tsx";
 import { StatusBadge } from "@/components/ui/status-badge.tsx";
+import { formatTitle } from "@/lib";
 import {
   BRIEF_FIELD_LABELS,
   briefPosture,
 } from "@/lib/campaignReadiness.ts";
 import { relativeTime } from "@/lib/relativeTime.ts";
 import type { Campaign } from "@/types/campaigns";
-import { CardHeaderLink, CollapsedCard, OverviewCard } from "./OverviewCard.tsx";
+import { CallToAction, CTA_PRIMARY, CTA_SECONDARY } from "./CallToAction.tsx";
+import { CollapsedCard, OverviewCard } from "./OverviewCard.tsx";
 
 export function BriefModule({ campaign }: { campaign: Campaign }) {
   const posture = briefPosture(campaign);
@@ -31,13 +33,14 @@ export function BriefModule({ campaign }: { campaign: Campaign }) {
         target="brief"
         campaignId={campaign.id}
         label="Edit the brief"
+        status={<StatusBadge tone="positive" label="Brief is in good shape" />}
       >
-        <StatusBadge tone="positive" label="Brief is in good shape" />
         <span
-          className="ml-auto text-xs text-tertiary-foreground shrink-0"
+          className="min-w-0 flex-1 truncate"
           title={new Date(campaign.updated_at).toLocaleString()}
         >
-          Updated {relativeTime(campaign.updated_at)}
+          {formatTitle(campaign.name, "Untitled campaign")}, updated{" "}
+          {relativeTime(campaign.updated_at)}
         </span>
       </CollapsedCard>
     );
@@ -47,60 +50,90 @@ export function BriefModule({ campaign }: { campaign: Campaign }) {
     return (
       <OverviewCard
         title="Brief"
-        action={
-          <CardHeaderLink
-            target="brief"
-            campaignId={campaign.id}
-            label="Edit the brief"
-          />
-        }
+        status={<StatusBadge tone="warn" label="Brief is incomplete" />}
+        link={{
+          target: "brief",
+          campaignId: campaign.id,
+          label: "Edit the brief",
+        }}
       >
-        <StatusBadge tone="warn" label="Brief is incomplete" />
-        <p className="text-sm text-secondary-foreground">
-          Still missing:{" "}
-          {posture.missing
-            .map((f) => BRIEF_FIELD_LABELS[f].toLowerCase())
-            .join(", ")}
-          .
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="defaultInverted" size="sm" asChild>
-            <Link to="/campaigns/$campaignId/brief" params={{ campaignId: campaign.id }}>
-              <NotePencilIcon />
-              <span>COMPLETE THE BRIEF</span>
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setAiModalOpen(true)}>
-            <SparkleIcon />
-            <span>GENERATE WITH AI</span>
-          </Button>
-        </div>
+        <CallToAction
+          headline={WHY_THE_BRIEF_MATTERS}
+          support={
+            <>
+              Still missing:{" "}
+              {posture.missing
+                .map((f) => BRIEF_FIELD_LABELS[f].toLowerCase())
+                .join(", ")}
+              .
+            </>
+          }
+        >
+          <BriefActions
+            campaignId={campaign.id}
+            writeLabel="COMPLETE THE BRIEF"
+            onGenerate={() => setAiModalOpen(true)}
+          />
+        </CallToAction>
         {aiModal}
       </OverviewCard>
     );
   }
 
   return (
-    <OverviewCard title="Start with the brief">
-      <p className="text-sm text-secondary-foreground">
-        The brief is not filled in yet. It tells Ogen what this campaign is
-        about — who it targets, what it says, how it sounds — and grounds
-        everything the AI generates for it.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="defaultInverted" asChild>
-          <Link to="/campaigns/$campaignId/brief" params={{ campaignId: campaign.id }}>
-            <NotePencilIcon />
-            <span>WRITE IT YOURSELF</span>
-          </Link>
-        </Button>
-        <Button variant="outline" onClick={() => setAiModalOpen(true)}>
-          <SparkleIcon />
-          <span>GENERATE WITH AI</span>
-        </Button>
-      </div>
+    <OverviewCard
+      title="Brief"
+      status={<StatusBadge tone="warn" label="Brief is empty" />}
+    >
+      <CallToAction
+        headline={WHY_THE_BRIEF_MATTERS}
+        support="Nothing is filled in yet — this is the place to start."
+      >
+        <BriefActions
+          campaignId={campaign.id}
+          writeLabel="WRITE IT YOURSELF"
+          onGenerate={() => setAiModalOpen(true)}
+        />
+      </CallToAction>
       {aiModal}
     </OverviewCard>
+  );
+}
+
+/**
+ * Said the same way in both states: the brief is not paperwork, it is the
+ * input every generated post is written from.
+ */
+const WHY_THE_BRIEF_MATTERS =
+  "The brief is what the AI writes from — who this campaign talks to, what it claims, and how it sounds. Everything generated for it is only as good as this.";
+
+function BriefActions({
+  campaignId,
+  writeLabel,
+  onGenerate,
+}: {
+  campaignId: string;
+  writeLabel: string;
+  onGenerate: () => void;
+}) {
+  return (
+    <>
+      <Button variant="default" size="xl" className={CTA_PRIMARY} asChild>
+        <Link to="/campaigns/$campaignId/brief" params={{ campaignId }}>
+          <NotePencilIcon />
+          <span>{writeLabel}</span>
+        </Link>
+      </Button>
+      <Button
+        variant="outline"
+        size="xl"
+        className={CTA_SECONDARY}
+        onClick={onGenerate}
+      >
+        <SparkleIcon />
+        <span>GENERATE WITH AI</span>
+      </Button>
+    </>
   );
 }
 

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
+import { StatusBadge } from "@/components/ui/status-badge.tsx";
 import type { Campaign } from "@/types/campaigns";
-import { CardHeaderLink, CollapsedCard, OverviewCard } from "./OverviewCard.tsx";
+import { CollapsedCard, OverviewCard } from "./OverviewCard.tsx";
 
 export function AssetsModule({ campaign }: { campaign: Campaign }) {
   if (!campaign.use_assets) {
@@ -11,7 +12,7 @@ export function AssetsModule({ campaign }: { campaign: Campaign }) {
         campaignId={campaign.id}
         label="Open campaign assets"
       >
-        <span className="text-sm text-tertiary-foreground truncate">
+        <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
           Content Bank assets aren't used in this campaign.
         </span>
       </CollapsedCard>
@@ -24,17 +25,17 @@ export function AssetsModule({ campaign }: { campaign: Campaign }) {
     return (
       <OverviewCard
         title="Assets"
-        action={
-          <CardHeaderLink
-            target="assets"
-            campaignId={campaign.id}
-            label="Open campaign assets"
-          />
-        }
+        status={<StatusBadge tone="warn" label="None attached" />}
+        link={{
+          target: "assets",
+          campaignId: campaign.id,
+          label: "Open campaign assets",
+        }}
       >
         <p className="text-sm text-secondary-foreground">
-          No assets attached yet. Attach reference material from the Content
-          Bank so generated posts can draw on it.
+          Assets are switched on for this campaign but none are attached yet.
+          Attach reference material from the Content Bank so generated posts
+          can draw on it.
         </p>
         <Link
           to="/content-bank"
@@ -52,9 +53,15 @@ export function AssetsModule({ campaign }: { campaign: Campaign }) {
       target="assets"
       campaignId={campaign.id}
       label="Open campaign assets"
+      status={
+        <StatusBadge
+          tone="positive"
+          label={`${count} ${count === 1 ? "asset" : "assets"} attached`}
+        />
+      }
     >
-      <span className="text-sm text-secondary-foreground truncate">
-        {count} {count === 1 ? "asset" : "assets"} attached.
+      <span className="min-w-0 flex-1 truncate">
+        Generated posts can draw on this campaign's Content Bank material.
       </span>
     </CollapsedCard>
   );

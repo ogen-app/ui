@@ -17,8 +17,9 @@ const TONE: Record<AttentionSeverity, LineItemTone> = {
 
 /**
  * The overview's to-do list: what needs the user's attention right now,
- * already prioritized by `attentionItems`. Renders nothing when the campaign
- * is healthy — absence is the reward.
+ * already prioritized by `attentionItems`. It keeps its place when the list is
+ * empty and says so — a card that vanishes reads as "not loaded yet", and the
+ * all-clear is the one thing the user came to this screen to find out.
  */
 export function AttentionRail({
   items,
@@ -29,7 +30,18 @@ export function AttentionRail({
 }) {
   const [expanded, setExpanded] = useState(false);
 
-  if (items.length === 0) return null;
+  // The empty state is the good news, so it reads as good news — the card is
+  // titled for the verdict, not for the section.
+  if (items.length === 0) {
+    return (
+      <OverviewCard title="You're all set" className="gap-2">
+        <p className="text-sm text-secondary-foreground">
+          Nothing is failing, overdue, or waiting on you right now. If
+          something comes up, it'll show up here.
+        </p>
+      </OverviewCard>
+    );
+  }
 
   // Items arrive sorted by severity, so capping keeps the most urgent rows and
   // drops hygiene nudges first.

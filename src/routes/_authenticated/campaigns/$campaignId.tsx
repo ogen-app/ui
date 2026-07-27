@@ -95,6 +95,21 @@ function CampaignLayout() {
     );
   }
 
+  // Overview reads as a document too — same scrolling shell and fading header,
+  // minus the save button, since nothing on it is edited in place.
+  if (section === "Overview") {
+    return (
+      <PageContainer variant={"fullFlex"}>
+        <div className={"h-0 grow overflow-y-auto flex flex-col"}>
+          <PageHeader title={title} fadeOnScroll />
+          <div className={"px-3 lg:px-6"}>
+            <Outlet />
+          </div>
+        </div>
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer variant={"fullFlex"}>
       <div className={"flex-1 min-h-0 flex flex-col"}>

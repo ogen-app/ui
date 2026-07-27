@@ -5,10 +5,9 @@ import type { PlatformInfo, PlatformView } from "@/lib/platformDictionary";
 import {
   attentionItems,
   briefPosture,
-  channelProgress,
+  channelReadiness,
   contentSnapshot,
   setupChecks,
-  unconnectedChannelNames,
 } from "./campaignReadiness.ts";
 
 function makeCampaign(overrides: Partial<Campaign> = {}): Campaign {
@@ -136,10 +135,22 @@ describe("briefPosture", () => {
 });
 
 describe("setupChecks", () => {
-  it("fails dates/channels/post target on a fresh campaign, and skips the accounts check", () => {
+  /** The channels row, which carries the composite channel logic. */
+  function channelsCheck(campaign: Campaign, views: PlatformView[]) {
+    return setupChecks(campaign, views).find((c) => c.id === "channels")!;
+  }
+
+  it("fails dates/channels/post target on a fresh campaign", () => {
     const checks = setupChecks(makeCampaign(), []);
     expect(checks.map((c) => c.id)).toEqual(["dates", "channels", "post_target"]);
     expect(checks.every((c) => !c.ok)).toBe(true);
+    // A gap names itself in the label; the detail says what the setting is for.
+    expect(checks.map((c) => c.label)).toEqual([
+      "Campaign dates not set",
+      "No channels selected",
+      "Post target not set",
+    ]);
+    expect(checks.every((c) => c.detail.length > 0)).toBe(true);
   });
 
   it("flags only one date being set", () => {
@@ -148,38 +159,83 @@ describe("setupChecks", () => {
       [],
     );
     expect(checks[0].ok).toBe(false);
-    expect(checks[0].detail).toBe("Only one of start/end is set");
+    expect(checks[0].label).toBe("Campaign dates are incomplete");
   });
 
   it("passes everything on a configured campaign with connected channels", () => {
     const campaign = makeCampaign({
       start_date: "2026-06-01T00:00:00Z",
       end_date: "2026-08-31T00:00:00Z",
-      target_platforms: [{ id: "p1", post_types: [] }],
+      target_platforms: [{ id: "p1", post_types: ["text-post"] }],
       estimated_post_count: 24,
     });
     const checks = setupChecks(campaign, [makeView("p1", "LinkedIn", true)]);
-    expect(checks.map((c) => c.id)).toEqual([
-      "dates",
-      "channels",
-      "accounts",
-      "post_target",
-    ]);
+    expect(checks.map((c) => c.id)).toEqual(["dates", "channels", "post_target"]);
     expect(checks.every((c) => c.ok)).toBe(true);
+    expect(checks[1].detail).toBe("Publishing to LinkedIn");
   });
 
-  it("names the unconnected channels", () => {
+  it("passes with an unconnected channel as long as one channel can publish", () => {
     const campaign = makeCampaign({
       target_platforms: [
-        { id: "p1", post_types: [] },
-        { id: "p2", post_types: [] },
+        { id: "p1", post_types: ["text-post"] },
+        { id: "p2", post_types: ["text-post"] },
       ],
     });
     const views = [makeView("p1", "LinkedIn", true), makeView("p2", "Threads", false)];
-    expect(unconnectedChannelNames(campaign, views)).toEqual(["Threads"]);
-    const accounts = setupChecks(campaign, views).find((c) => c.id === "accounts")!;
-    expect(accounts.ok).toBe(false);
-    expect(accounts.detail).toContain("Threads");
+    expect(channelReadiness(campaign, views)).toMatchObject({
+      connected: ["LinkedIn"],
+      ready: ["LinkedIn"],
+    });
+    const check = channelsCheck(campaign, views);
+    // Connecting Threads is the user's call, not a gap the campaign has.
+    expect(check.ok).toBe(true);
+    expect(check.detail).toBe("Publishing to LinkedIn (1 of 2 not ready)");
+  });
+
+  it("fails when no selected channel has a connected account", () => {
+    const campaign = makeCampaign({
+      target_platforms: [
+        { id: "p1", post_types: ["text-post"] },
+        { id: "p2", post_types: ["text-post"] },
+      ],
+    });
+    const views = [makeView("p1", "LinkedIn", false), makeView("p2", "Threads", false)];
+    const check = channelsCheck(campaign, views);
+    expect(check.ok).toBe(false);
+    expect(check.label).toBe("No connected account for LinkedIn, Threads");
+    // Connecting an account happens outside the campaign.
+    expect(check.fix).toBe("workspace-settings");
+  });
+
+  it("fails when the connected channels have no post type selected", () => {
+    const campaign = makeCampaign({
+      target_platforms: [
+        { id: "p1", post_types: [] },
+        { id: "p2", post_types: [] }, // not connected — post types are moot
+      ],
+    });
+    const views = [makeView("p1", "LinkedIn", true), makeView("p2", "Threads", false)];
+    expect(channelReadiness(campaign, views).missingPostTypes).toEqual(["LinkedIn"]);
+    const check = channelsCheck(campaign, views);
+    expect(check.ok).toBe(false);
+    expect(check.label).toBe("No post type selected for LinkedIn");
+    expect(check.fix).toBe("settings");
+  });
+
+  it("does not review connected channels the campaign did not select", () => {
+    const campaign = makeCampaign({
+      target_platforms: [{ id: "p1", post_types: ["text-post"] }],
+    });
+    // Four channels connected, one in use — a normal setup, not a gap.
+    const views = [
+      makeView("p1", "LinkedIn", true),
+      makeView("p2", "Threads", true),
+      makeView("p3", "Facebook", true),
+      makeView("p4", "Instagram", true),
+    ];
+    expect(channelsCheck(campaign, views).ok).toBe(true);
+    expect(channelsCheck(campaign, views).detail).toBe("Publishing to LinkedIn");
   });
 });
 
@@ -202,22 +258,6 @@ describe("contentSnapshot", () => {
   });
 });
 
-describe("channelProgress", () => {
-  it("aggregates per platform, largest first, skipping platform-less posts", () => {
-    const posts = [
-      makePost({ platform_id: "p1", status: "published" }),
-      makePost({ platform_id: "p1", status: "draft" }),
-      makePost({ platform_id: "p1", status: "draft" }),
-      makePost({ platform_id: "p2", status: "published" }),
-      makePost({ platform_id: "" }),
-    ];
-    expect(channelProgress(posts)).toEqual([
-      { platformId: "p1", total: 3, published: 1 },
-      { platformId: "p2", total: 1, published: 1 },
-    ]);
-  });
-});
-
 // --- Attention rules (docs/attention-rules.md) -------------------------------
 
 const NOW = new Date("2026-07-15T12:00:00Z");
@@ -237,7 +277,7 @@ function liveCampaign(overrides: Partial<Campaign> = {}): Campaign {
     start_date: "2026-06-01T00:00:00Z",
     end_date: "2026-08-31T00:00:00Z",
     estimated_post_count: 10,
-    target_platforms: [{ id: "p1", post_types: [] }],
+    target_platforms: [{ id: "p1", post_types: ["text-post"] }],
     ...overrides,
   });
 }
@@ -383,22 +423,37 @@ describe("attentionItems", () => {
     expect(blocking.find((i) => i.id === "accounts-missing-blocking")).toMatchObject({
       severity: "alert",
     });
-    expect(blocking.map((i) => i.id)).not.toContain("accounts-missing");
   });
 
-  it("keeps a missing account a todo when nothing is scheduled against it", () => {
+  it("says nothing about an unconnected channel while another one can publish", () => {
     const campaign = liveCampaign({
       target_platforms: [
-        { id: "p1", post_types: [] },
-        { id: "p2", post_types: [] },
+        { id: "p1", post_types: ["text-post"] },
+        { id: "p2", post_types: ["text-post"] },
       ],
     });
     const views = [makeView("p1", "LinkedIn", true), makeView("p2", "Threads", false)];
-    const items = attentionItems(campaign, healthyPosts(), views, NOW);
-    expect(items.find((i) => i.id === "accounts-missing")).toMatchObject({
-      severity: "todo",
+    // Whether to connect Threads is the user's business.
+    expect(ids(campaign, healthyPosts(), views)).not.toContain("no-connected-channel");
+  });
+
+  it("flags that nothing at all is connected", () => {
+    const views = [makeView("p1", "LinkedIn", false)];
+    const item = attentionItems(liveCampaign(), [], views, NOW).find(
+      (i) => i.id === "no-connected-channel",
+    );
+    expect(item).toMatchObject({ severity: "todo", fix: "workspace-settings" });
+  });
+
+  it("flags a connected channel with no post type selected", () => {
+    const campaign = liveCampaign({
+      target_platforms: [{ id: "p1", post_types: [] }],
     });
-    expect(items.map((i) => i.id)).not.toContain("accounts-missing-blocking");
+    const item = attentionItems(campaign, healthyPosts(), connected, NOW).find(
+      (i) => i.id === "no-post-types",
+    );
+    expect(item).toMatchObject({ severity: "todo", fix: "settings" });
+    expect(item!.label).toBe("No post type selected for LinkedIn");
   });
 
   it("flags a connected channel whose accounts are all inactive, and stays quiet when the payload is silent", () => {
@@ -416,7 +471,7 @@ describe("attentionItems", () => {
   ];
   /** LinkedIn (p1) content, but only Threads (p2) is still selected. */
   function droppedLinkedIn(): Campaign {
-    return liveCampaign({ target_platforms: [{ id: "p2", post_types: [] }] });
+    return liveCampaign({ target_platforms: [{ id: "p2", post_types: ["text-post"] }] });
   }
 
   it("escalates a de-selected channel to an alert while posts are still queued on it", () => {
@@ -497,9 +552,24 @@ describe("attentionItems", () => {
     const items = attentionItems(campaign, posts, connected, NOW);
     expect(items.find((i) => i.id === "phase-orphaned")).toMatchObject({
       severity: "todo",
-      label: "1 post is assigned to a phase that is no longer in the plan",
+      label: "1 post sits in a phase the Launch plan doesn't have",
     });
     expect(ids(campaign, healthyPosts())).not.toContain("phase-orphaned");
+  });
+
+  it("says nothing about phases for a campaign type that has none", () => {
+    const campaign = liveCampaign({
+      campaign_type: {
+        id: "ct2",
+        name: "evergreen",
+        label: "Evergreen",
+        description: "",
+        is_system: true,
+        phases: [],
+      },
+    });
+    const posts = healthyPosts().map((p) => ({ ...p, campaign_type_phase_id: "gone" }));
+    expect(ids(campaign, posts)).not.toContain("phase-orphaned");
   });
 
   // --- Setup ----------------------------------------------------------------
@@ -541,30 +611,11 @@ describe("attentionItems", () => {
     expect(items).not.toContain("nothing-scheduled");
   });
 
-  it("reports phases with no content once posts exist", () => {
-    const campaign = liveCampaign({
-      campaign_type: {
-        id: "ct1",
-        name: "launch",
-        label: "Launch",
-        description: "",
-        is_system: true,
-        phases: [makePhase("ph1", "Warm-up", 1), makePhase("ph2", "Push", 2)],
-      },
-    });
-    const posts = healthyPosts().map((p) => ({ ...p, campaign_type_phase_id: "ph1" }));
-    const item = attentionItems(campaign, posts, connected, NOW).find(
-      (i) => i.id === "empty-phases",
-    );
-    expect(item!.label).toContain("Push");
-    expect(item!.label).not.toContain("Warm-up");
-  });
-
-  it("flags a selected channel with no posts", () => {
+  it("flags a connected channel with no posts, and stays quiet about an unconnected one", () => {
     const campaign = liveCampaign({
       target_platforms: [
-        { id: "p1", post_types: [] },
-        { id: "p2", post_types: [] },
+        { id: "p1", post_types: ["text-post"] },
+        { id: "p2", post_types: ["text-post"] },
       ],
     });
     const views = [makeView("p1", "LinkedIn", true), makeView("p2", "Threads", true)];
@@ -572,6 +623,10 @@ describe("attentionItems", () => {
       (i) => i.id === "channel-uncovered",
     );
     expect(item!.label).toBe("No posts for Threads yet");
+
+    // Nowhere to publish it — asking for content there is premature.
+    const offline = [makeView("p1", "LinkedIn", true), makeView("p2", "Threads", false)];
+    expect(ids(campaign, healthyPosts(), offline)).not.toContain("channel-uncovered");
   });
 
   it("flags a campaign that is publishing behind its own pace", () => {

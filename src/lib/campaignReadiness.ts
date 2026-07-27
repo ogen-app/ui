@@ -56,10 +56,14 @@ export type FixTarget =
   | "assets";
 
 export type SetupCheck = {
-  id: "dates" | "channels" | "accounts" | "post_target";
+  id: "dates" | "channels" | "post_target";
   ok: boolean;
+  /**
+   * State-aware: the setting's name once it's set, the gap itself when it
+   * isn't — "Campaign dates" vs "Campaign dates not set".
+   */
   label: string;
-  /** Shown for both states: what is configured, or what exactly is missing. */
+  /** What is configured, or — when nothing is — what the setting is for. */
   detail: string;
   fix: FixTarget;
 };
@@ -74,19 +78,108 @@ function formatDateRange(start: string, end: string): string {
   return `${dateFormat.format(new Date(start))} – ${dateFormat.format(new Date(end))}`;
 }
 
-/** Names of selected channels whose platform has no connected publisher. */
-export function unconnectedChannelNames(
+export type ChannelReadiness = {
+  /** Every channel the campaign selected, by display name. */
+  selected: string[];
+  /** Selected and backed by a connected account. */
+  connected: string[];
+  /** Selected, connected, and carrying at least one post type — can publish. */
+  ready: string[];
+  /** Connected but with no post type chosen, so nothing can go out on them. */
+  missingPostTypes: string[];
+};
+
+/**
+ * How much of the campaign's channel selection can actually publish.
+ *
+ * Read one way only: a channel the campaign didn't select is never reviewed,
+ * and a selected channel with no connected account is a fact, not a fault —
+ * whether to connect it is the user's call. Only "nothing can publish at all"
+ * is a gap.
+ */
+export function channelReadiness(
   campaign: Campaign,
   platformViews: PlatformView[],
-): string[] {
+): ChannelReadiness {
   const viewById = new Map(platformViews.map((v) => [v.platform.id, v]));
-  return campaign.target_platforms.flatMap((tp) => {
-    const view = viewById.get(tp.id);
+  const out: ChannelReadiness = {
+    selected: [],
+    connected: [],
+    ready: [],
+    missingPostTypes: [],
+  };
+  for (const tp of campaign.target_platforms) {
     // Unknown platform id (dictionary/API mismatch) counts as unconnected —
     // it certainly can't publish.
-    if (!view) return ["Unknown channel"];
-    return view.connectedPublishers.length > 0 ? [] : [view.info.name];
-  });
+    const view = viewById.get(tp.id);
+    const name = view?.info.name ?? "Unknown channel";
+    out.selected.push(name);
+    if (!view || view.connectedPublishers.length === 0) continue;
+    out.connected.push(name);
+    if (tp.post_types.length > 0) out.ready.push(name);
+    else out.missingPostTypes.push(name);
+  }
+  return out;
+}
+
+/**
+ * The channels row, which carries the composite channel logic. One checkbox
+ * answers "can this campaign publish anywhere at all" — leaving a selected
+ * channel unconnected is not a fault, so the row names the gap only when
+ * nothing at all can go out.
+ */
+function channelsCheck(channels: ChannelReadiness): SetupCheck {
+  const { selected, connected, ready, missingPostTypes } = channels;
+
+  if (selected.length === 0) {
+    return {
+      id: "channels",
+      ok: false,
+      label: "No channels selected",
+      detail:
+        "Channels decide where this campaign publishes and which post formats it can use.",
+      fix: "settings",
+    };
+  }
+
+  // Nothing connected is fixed in workspace settings; everything else — the
+  // selection itself, the post types — on the campaign.
+  if (connected.length === 0) {
+    return {
+      id: "channels",
+      ok: false,
+      label: `No connected account for ${selected.join(", ")}`,
+      detail:
+        "A channel needs a connected account before anything can be published to it.",
+      fix: "workspace-settings",
+    };
+  }
+
+  if (ready.length === 0) {
+    return {
+      id: "channels",
+      ok: false,
+      label: `No post type selected for ${missingPostTypes.join(", ")}`,
+      detail:
+        "Post types tell Ogen what to write — a text post, a video, a carousel.",
+      fix: "settings",
+    };
+  }
+
+  const publishing = `Publishing to ${ready.join(", ")}`;
+  return {
+    id: "channels",
+    ok: true,
+    label: "Channels",
+    // The rest of the selection isn't a problem, but the count is worth
+    // seeing — it's the difference between "as planned" and "one channel is
+    // doing all the work".
+    detail:
+      ready.length === selected.length
+        ? publishing
+        : `${publishing} (${selected.length - ready.length} of ${selected.length} not ready)`,
+    fix: "settings",
+  };
 }
 
 export function setupChecks(
@@ -94,59 +187,37 @@ export function setupChecks(
   platformViews: PlatformView[],
 ): SetupCheck[] {
   const hasDates = !!campaign.start_date && !!campaign.end_date;
-  const channelCount = campaign.target_platforms.length;
-  const unconnected = unconnectedChannelNames(campaign, platformViews);
+  const halfDates = !hasDates && !!(campaign.start_date || campaign.end_date);
   const target = campaign.estimated_post_count;
+  const hasTarget = target != null && target > 0;
 
-  const checks: SetupCheck[] = [
+  return [
     {
       id: "dates",
       ok: hasDates,
-      label: "Campaign dates",
+      label: hasDates
+        ? "Campaign dates"
+        : halfDates
+          ? "Campaign dates are incomplete"
+          : "Campaign dates not set",
       detail: hasDates
         ? formatDateRange(campaign.start_date!, campaign.end_date!)
-        : campaign.start_date || campaign.end_date
-          ? "Only one of start/end is set"
-          : "Not set",
+        : halfDates
+          ? "Only one of start and end is set; both bound the schedule."
+          : "Dates bound the campaign — scheduling and pace are measured against them.",
       fix: "settings",
     },
+    channelsCheck(channelReadiness(campaign, platformViews)),
     {
-      id: "channels",
-      ok: channelCount > 0,
-      label: "Channels",
-      detail:
-        channelCount > 0
-          ? `${channelCount} selected`
-          : "No channels selected",
+      id: "post_target",
+      ok: hasTarget,
+      label: hasTarget ? "Post target" : "Post target not set",
+      detail: hasTarget
+        ? `${target} posts planned`
+        : "The target is what progress is measured against — how much of the plan is done.",
       fix: "settings",
     },
   ];
-
-  // Account connectivity is only meaningful once channels are chosen; before
-  // that the channels check already covers the gap.
-  if (channelCount > 0) {
-    checks.push({
-      id: "accounts",
-      ok: unconnected.length === 0,
-      label: "Connected accounts",
-      detail:
-        unconnected.length === 0
-          ? "All channels connected"
-          : `Not connected: ${unconnected.join(", ")}`,
-      fix: "workspace-settings",
-    });
-  }
-
-  checks.push({
-    id: "post_target",
-    ok: target != null && target > 0,
-    label: "Post target",
-    detail:
-      target != null && target > 0 ? `${target} posts planned` : "Not set",
-    fix: "settings",
-  });
-
-  return checks;
 }
 
 // --- Content ----------------------------------------------------------------
@@ -159,6 +230,13 @@ export const SCHEDULED_STATUSES: PostStatus[] = [
 export type ContentSnapshot = {
   total: number;
   byStatus: Record<PostStatus, number>;
+  /**
+   * Written and cleared to publish: scheduled either way, or approved and
+   * waiting for a slot. Nothing more has to happen to them by hand.
+   */
+  readyToGo: number;
+  /** Still being written — the work left to do. */
+  notReady: number;
   /** Last published first, capped at `limit`. */
   recentlyPublished: Post[];
   /** Soonest scheduled_at first, capped at `limit`. */
@@ -187,29 +265,17 @@ export function contentSnapshot(posts: Post[], limit = 5): ContentSnapshot {
     .sort((a, b) => a.scheduled_at!.localeCompare(b.scheduled_at!))
     .slice(0, limit);
 
-  return { total: posts.length, byStatus, recentlyPublished, upNext };
-}
-
-export type ChannelProgress = {
-  platformId: string;
-  total: number;
-  published: number;
-};
-
-/** Per-channel published/total, largest channels first. */
-export function channelProgress(posts: Post[]): ChannelProgress[] {
-  const byPlatform = new Map<string, ChannelProgress>();
-  for (const p of posts) {
-    if (!p.platform_id) continue;
-    let entry = byPlatform.get(p.platform_id);
-    if (!entry) {
-      entry = { platformId: p.platform_id, total: 0, published: 0 };
-      byPlatform.set(p.platform_id, entry);
-    }
-    entry.total += 1;
-    if (p.status === "published") entry.published += 1;
-  }
-  return [...byPlatform.values()].sort((a, b) => b.total - a.total);
+  return {
+    total: posts.length,
+    byStatus,
+    readyToGo:
+      byStatus.ready_for_publish +
+      byStatus.scheduled +
+      byStatus.scheduled_for_manual_publishing,
+    notReady: byStatus.draft,
+    recentlyPublished,
+    upNext,
+  };
 }
 
 // --- Attention list ---------------------------------------------------------
@@ -415,13 +481,13 @@ export function attentionItems(
   }
 
   // --- Connectivity ---------------------------------------------------------
-  // A channel with no connected account is setup work on its own, but a queue
-  // of guaranteed failures once posts are scheduled against it. Same gap, two
-  // temperatures — only one fires per channel.
+  // Leaving a selected channel unconnected is the user's business — they may
+  // have picked it for later. It only becomes a problem once posts are queued
+  // against it, or once it turns out nothing is connected at all.
 
   const blocked: { name: string; scheduled: number }[] = [];
-  const missing: string[] = [];
   const inactive: string[] = [];
+  const channels = channelReadiness(campaign, platformViews);
 
   for (const tp of campaign.target_platforms) {
     const view = viewById.get(tp.id);
@@ -434,7 +500,6 @@ export function attentionItems(
         (p) => p.platform_id === tp.id && SCHEDULED_STATUSES.includes(p.status),
       ).length;
       if (scheduled > 0) blocked.push({ name, scheduled });
-      else missing.push(name);
       continue;
     }
     // An empty `accounts` array means the payload didn't say — only an
@@ -472,13 +537,22 @@ export function attentionItems(
     });
   }
 
-  if (missing.length > 0) {
+  // Not "which channels are unconnected" — only "can anything publish".
+  if (channels.selected.length > 0 && channels.connected.length === 0) {
     items.push({
-      id: "accounts-missing",
+      id: "no-connected-channel",
       severity: "todo",
-      label: `No connected account for ${missing.join(", ")}`,
-      actionLabel: "Connect accounts",
+      label: "No channel has a connected account",
+      actionLabel: "Connect an account",
       fix: "workspace-settings",
+    });
+  } else if (channels.connected.length > 0 && channels.ready.length === 0) {
+    items.push({
+      id: "no-post-types",
+      severity: "todo",
+      label: `No post type selected for ${channels.missingPostTypes.join(", ")}`,
+      actionLabel: "Choose post types",
+      fix: "settings",
     });
   }
 
@@ -582,8 +656,10 @@ export function attentionItems(
     }
   }
 
-  // Switching the campaign type leaves posts pointing at phases that no longer
-  // exist — they silently fall out of the plan (and out of the phase chart).
+  // Phases belong to the campaign type, which is chosen in the brief — a type
+  // with no phases (evergreen) is a normal setup, not a gap, so nothing here
+  // fires for it. Switching type is what leaves posts pointing at phases the
+  // plan no longer contains.
   const phases = campaign.campaign_type?.phases ?? [];
   if (phases.length > 0) {
     const phaseIds = new Set(phases.map((ph) => ph.id));
@@ -597,7 +673,7 @@ export function attentionItems(
       items.push({
         id: "phase-orphaned",
         severity: "todo",
-        label: `${plural(orphaned, "post", "posts")} ${orphaned === 1 ? "is" : "are"} assigned to a phase that is no longer in the plan`,
+        label: `${plural(orphaned, "post", "posts")} ${orphaned === 1 ? "sits" : "sit"} in a phase the ${campaign.campaign_type?.label ?? "campaign"} plan doesn't have`,
         actionLabel: "Reassign posts",
         fix: "posts",
       });
@@ -705,19 +781,14 @@ export function attentionItems(
       });
     }
 
-    const emptyPhases = emptyPhaseNames(campaign, posts);
-    if (emptyPhases.length > 0) {
-      items.push({
-        id: "empty-phases",
-        severity: "todo",
-        label: `No content in ${emptyPhases.length === 1 ? "phase" : "phases"}: ${emptyPhases.join(", ")}`,
-        actionLabel: "Add posts",
-        fix: "posts",
-      });
-    }
-
+    // Only channels that could publish today: nagging about an empty channel
+    // the user hasn't connected yet is asking for content with nowhere to go.
     const uncovered = campaign.target_platforms
-      .filter((tp) => !posts.some((p) => p.platform_id === tp.id))
+      .filter(
+        (tp) =>
+          (viewById.get(tp.id)?.connectedPublishers.length ?? 0) > 0 &&
+          !posts.some((p) => p.platform_id === tp.id),
+      )
       .map((tp) => channelName(tp.id));
     if (uncovered.length > 0) {
       items.push({
@@ -779,16 +850,6 @@ export function attentionItems(
 
   // Stable sort: severity decides, catalogue order breaks ties.
   return items.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
-}
-
-/** Names of campaign-type phases that no post is assigned to. */
-function emptyPhaseNames(campaign: Campaign, posts: Post[]): string[] {
-  const phases = campaign.campaign_type?.phases ?? [];
-  if (phases.length === 0) return [];
-  const used = new Set(
-    posts.map((p) => p.campaign_type_phase_id).filter(Boolean),
-  );
-  return phases.filter((ph) => !used.has(ph.id)).map((ph) => ph.name);
 }
 
 /**

@@ -1,14 +1,9 @@
 import { StatusBadge } from "@/components/ui/status-badge.tsx";
-import { setupChecks } from "@/lib/campaignReadiness.ts";
+import { channelReadiness, setupChecks } from "@/lib/campaignReadiness.ts";
 import type { PlatformView } from "@/lib/platformDictionary";
 import type { Campaign } from "@/types/campaigns";
 import { LineItem } from "./LineItem.tsx";
-import {
-  CardHeaderLink,
-  CollapsedCard,
-  OverviewCard,
-  SectionLink,
-} from "./OverviewCard.tsx";
+import { CollapsedCard, OverviewCard, SectionLink } from "./OverviewCard.tsx";
 
 export function SetupModule({
   campaign,
@@ -21,37 +16,40 @@ export function SetupModule({
   const allOk = checks.every((c) => c.ok);
 
   if (allOk) {
-    const channels = campaign.target_platforms.length;
-    const dates = checks.find((c) => c.id === "dates")!.detail;
+    // The channels row already words the selection the way this screen means
+    // it — which channels can publish, not how many are ticked.
+    // Dates first, then the channels themselves — the checks above already
+    // passed, so this line is a description of the campaign, not a verdict.
+    const summary = [
+      checks.find((c) => c.id === "dates")!.detail,
+      ...channelReadiness(campaign, platformViews).selected,
+    ].join(", ");
     return (
       <CollapsedCard
         title="Setup"
         target="settings"
         campaignId={campaign.id}
         label="Open campaign settings"
+        status={<StatusBadge tone="positive" label="Settings are good" />}
       >
-        <StatusBadge tone="positive" label="Settings are good" />
-        <span className="text-sm text-secondary-foreground truncate">
-          Running on {channels} {channels === 1 ? "channel" : "channels"}
-          {campaign.estimated_post_count
-            ? `, ${campaign.estimated_post_count} posts planned`
-            : ""}
-          . {dates}.
-        </span>
+        <span className="min-w-0 flex-1 truncate">{summary}</span>
       </CollapsedCard>
     );
   }
 
+  const done = checks.filter((c) => c.ok).length;
+
   return (
     <OverviewCard
       title="Setup"
-      action={
-        <CardHeaderLink
-          target="settings"
-          campaignId={campaign.id}
-          label="Open campaign settings"
-        />
+      status={
+        <StatusBadge tone="warn" label={`${done} of ${checks.length} done`} />
       }
+      link={{
+        target: "settings",
+        campaignId: campaign.id,
+        label: "Open campaign settings",
+      }}
     >
       <ul className="flex flex-col">
         {checks.map((check) => (

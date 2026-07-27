@@ -15,7 +15,7 @@ import { cn } from "@/lib";
  * Anatomy — a fixed 40px band, whatever the row says:
  *
  *   [16px indicator] · label ······································ [16px chevron]
- *                      details (optional; the row grows, the band doesn't)
+ *                      details (optional; wraps, the row grows, the band doesn't)
  *
  * Both 16px slots are always reserved even when empty, so labels line up
  * down a list of mixed rows. Everything else is optional: a row can be a
@@ -83,7 +83,7 @@ export function LineItem({
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 py-2.5">
         <span className="truncate text-sm leading-5">{label}</span>
         {details && (
-          <span className="truncate text-xs leading-4 text-tertiary-foreground">
+          <span className="text-xs leading-4 text-tertiary-foreground">
             {details}
           </span>
         )}
@@ -107,7 +107,9 @@ export function LineItem({
           interactive && "text-tertiary-foreground group-hover:text-primary-foreground",
         )}
       >
-        {showChevron && <CaretRightIcon className="size-4" aria-hidden />}
+        {showChevron && (
+          <CaretRightIcon className="size-4" weight="bold" aria-hidden />
+        )}
       </span>
     </>
   );

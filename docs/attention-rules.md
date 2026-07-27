@@ -11,8 +11,13 @@ One glance, one question: *what does this campaign need from me right now?*
 
 - It is a **to-do list, not a report.** Every item names something the user can
   act on, and links to the one place where they can act.
-- **Absence is the reward.** No items → the card does not render at all. Never
-  fill it with "all good" rows.
+- **Absence is the reward.** No items → the card keeps its place, but it is
+  retitled for the verdict rather than the section: *"You're all set"* and one
+  line of body copy — no badge, the title is the status. Reaching zero is an
+  achievement and
+  should read like one, not like an empty table. Never fill it with per-area
+  "all good" rows — the empty state is one card, not a checklist of things that
+  are fine.
 - It **aggregates**: `"3 posts failed to publish"`, never three rows of one post
   each. The rail says how much and where; the section says which.
 - It **does not duplicate a module.** If the whole story is already legible in
@@ -86,18 +91,26 @@ the worker's poll interval when the backend confirms it.
 | --- | --- | --- | --- | --- | --- | --- |
 | `accounts-missing-blocking` | `alert` | a selected channel has **no connected publisher** *and* has posts scheduled | *`<channel>` has N scheduled posts but no connected account* | workspace settings | `client` | – |
 | `account-inactive` | `alert` | a **connected** publisher for a selected channel has accounts and every one is `is_active = false` | *`<channel>`'s account is inactive* | workspace settings | `client` | – |
-| `accounts-missing` | `todo` | a selected channel has no connected publisher and **no** scheduled posts | *No connected account for `<channel>`* | workspace settings | `client` | – |
+| `no-connected-channel` | `todo` | channels are selected and **not one** of them has a connected publisher | *No channel has a connected account* | workspace settings | `client` | – |
+| `no-post-types` | `todo` | at least one channel is connected and **not one** connected channel has a `post_types` selection | *No post type selected for `<channels>`* | settings | `client` | – |
 | `account-expiring` | `risk` | a connected account's credentials expire within 7 days | *`<channel>`'s connection expires in N days* | workspace settings | `server` | ✓ |
 
-`accounts-missing-blocking` and `accounts-missing` are the same gap at two
-temperatures: without scheduled posts it is setup work, with them it is a queue
-of guaranteed failures. Only one may fire per channel.
+**Not a rule: an individual unconnected channel.** Selecting LinkedIn and
+connecting it next week is a plan, not a defect; a campaign may deliberately run
+on one of the five channels it has selected. The rule set only asks whether
+*anything* can publish — `no-connected-channel` — and escalates a specific
+channel to `accounts-missing-blocking` once posts are actually queued on it. The
+review runs one way only: a connected channel the campaign did not select is
+never mentioned.
+
+`no-connected-channel` and `no-post-types` are a sequence, not an escalation
+pair: nothing connected is the earlier gap and suppresses the later one.
 
 `/platforms` cannot tell "never connected" from "was connected, now dropped" —
-both arrive as `connected = false`, which is `accounts-missing`. So
-`account-inactive` covers only the case we can actually name: a publisher that
-*is* connected whose accounts are all explicitly inactive. An empty `accounts`
-array means the payload didn't say, and must not fire the rule.
+both arrive as `connected = false`. So `account-inactive` covers only the case we
+can actually name: a publisher that *is* connected whose accounts are all
+explicitly inactive. An empty `accounts` array means the payload didn't say, and
+must not fire the rule.
 
 ### Drift — do the settings and the content still agree
 
@@ -114,7 +127,7 @@ De-selecting a channel changes the plan, not the queue.
 | `channel-dropped` | `todo` | unscheduled open posts on a channel no longer in `target_platforms` | *N posts target `<channel>`, which is no longer a campaign channel* | posts | `client` | – |
 | `scheduled-outside-window` | `todo` | `scheduled_at` outside the campaign's start/end | *N posts are scheduled outside the campaign dates* | posts | `client` | – |
 | `post-type-dropped` | `todo` | a post's `platform_post_type` is not in its channel's selected `post_types` | *N posts use a post type the campaign no longer includes* | posts | `client` | – |
-| `phase-orphaned` | `todo` | a post's `campaign_type_phase_id` is not a phase of the current campaign type | *N posts are assigned to a phase that is no longer in the plan* | posts | `client` | – |
+| `phase-orphaned` | `todo` | a post's `campaign_type_phase_id` is not a phase of the current campaign type | *N posts sit in a phase the `<type>` plan doesn't have* | posts | `client` | – |
 
 Only **open** posts count. A published post on a de-selected channel is
 history, not a problem — there is nothing to fix and no way to unfix it. Same
@@ -156,8 +169,7 @@ channels are unconnected.
 | `no-posts` | `todo` | zero posts | *No posts yet* | posts | `client` | – |
 | `ready-not-scheduled` | `todo` | any post `status = ready_for_publish` | *N posts are ready but not scheduled* | posts | `client` | – |
 | `nothing-scheduled` | `todo` | drafts exist, nothing is scheduled or published, and `pipeline-gap` did not fire | *N drafts, nothing scheduled yet* | posts | `client` | ✓ |
-| `empty-phases` | `todo` | a phase of the campaign type has no posts | *No content in phase(s): `<names>`* | posts | `client` | – |
-| `channel-uncovered` | `todo` | a selected channel has no posts | *No posts for `<channel>` yet* | posts | `client` | – |
+| `channel-uncovered` | `todo` | a selected **and connected** channel has no posts | *No posts for `<channel>` yet* | posts | `client` | – |
 | `behind-pace` | `risk` | share of the campaign elapsed exceeds share of planned posts published by more than 25 points | *Campaign is N% through, M% published* | posts | `client` | ✓ |
 
 `no-posts` suppresses every other content rule, and `pipeline-gap` too — an
@@ -169,6 +181,16 @@ empty campaign gets one row, not six.
 `behind-pace` measures against `estimated_post_count` when there is one and
 against the posts that exist otherwise, so it still means something before a
 target is set. It only runs while the campaign is live.
+
+`channel-uncovered` only counts channels that could publish today. Asking for
+content on a channel with no connected account is asking for posts with nowhere
+to go — `no-connected-channel` is the row that applies there.
+
+**Not a rule: a phase with no content.** Phases come from the campaign type,
+which is chosen in the brief; how the user distributes content across them is
+editorial, and a type with no phases at all (evergreen) is a normal setup rather
+than an empty plan. Only `phase-orphaned` survives, because a post pointing at a
+phase the current type doesn't have is broken data, not a choice.
 
 **Not a rule: progress against the target.** *"12 of 20 planned posts"* is a
 number, not a task — there is nothing to fix, and it would fire on nearly every
@@ -189,11 +211,14 @@ in a module, not the rail.
 1. **One row per rule per campaign.** A rule that would fire per channel or per
    phase aggregates its subjects into one row (`<channel>` placeholders are
    joined: *"No posts for Instagram, LinkedIn yet"*).
-2. **Mutual exclusion is explicit.** Escalation pairs (`accounts-missing*`) and
+2. **Mutual exclusion is explicit.** Escalation pairs (`channel-dropped*`) and
    suppression parents (`no-posts`, `channels`) are named in the catalogue. A
    new rule must state which existing rule it defers to, if any.
 3. **Cap the list.** Show at most 6 rows; if more fire, keep the highest
    severities and add a trailing *"+N more"* row. `info` rows are cut first.
+   With **no rows at all the card stays and says so** — see *Absence is the
+   reward* above. A card that disappears reads as "not loaded yet", and the
+   all-clear is the one answer the user came to this screen for.
 4. **Labels are statements, actions are imperatives.** The label says what is
    true (*"3 posts failed to publish"*), the action says what to do
    (*"Review posts"*). Neither ends with a period. Counts are always written
@@ -227,7 +252,8 @@ Rules marked `server` are blocked on these. Roughly in value order:
    also the only way to warn before a channel silently starts failing.
 5. **Phase date windows.** `CampaignTypePhase` has `sequence` but no dates, so
    "phase 2 starts next week and has no content" is not expressible. With
-   windows, `empty-phases` becomes time-aware instead of a flat gap.
+   windows, an empty phase becomes a deadline worth a row instead of the flat
+   gap this catalogue deliberately dropped.
 6. **Optional: server-computed attention items** in
    `GET /campaigns/:id/overview`, with ids and severities mirroring this
    catalogue. Worth it once these rules are also needed outside this screen
