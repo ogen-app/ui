@@ -357,11 +357,6 @@ describe("attentionItems", () => {
     expect(ids(liveCampaign(), [])).not.toContain("pipeline-gap");
   });
 
-  it("flags posts scheduled outside the campaign dates", () => {
-    const posts = [...healthyPosts(), makePost({ status: "scheduled", scheduled_at: "2026-09-20T10:00:00Z" })];
-    expect(ids(liveCampaign(), posts)).toContain("scheduled-outside-window");
-  });
-
   it("flags two posts crowding the same slot on one channel", () => {
     const posts = [
       ...healthyPosts(),
@@ -411,6 +406,100 @@ describe("attentionItems", () => {
     expect(ids(liveCampaign(), healthyPosts(), inactive)).toContain("account-inactive");
     // Empty `accounts` means "not stated", not "inactive".
     expect(ids(liveCampaign(), healthyPosts())).not.toContain("account-inactive");
+  });
+
+  // --- Drift ----------------------------------------------------------------
+
+  const twoChannels = [
+    makeView("p1", "LinkedIn", true),
+    makeView("p2", "Threads", true),
+  ];
+  /** LinkedIn (p1) content, but only Threads (p2) is still selected. */
+  function droppedLinkedIn(): Campaign {
+    return liveCampaign({ target_platforms: [{ id: "p2", post_types: [] }] });
+  }
+
+  it("escalates a de-selected channel to an alert while posts are still queued on it", () => {
+    const item = attentionItems(
+      droppedLinkedIn(),
+      healthyPosts(),
+      twoChannels,
+      NOW,
+    ).find((i) => i.id === "channel-dropped-scheduled");
+    expect(item).toMatchObject({ severity: "alert" });
+    expect(item!.label).toBe(
+      "1 post is scheduled on LinkedIn, which is no longer a campaign channel",
+    );
+  });
+
+  it("keeps a de-selected channel a todo when nothing is queued on it", () => {
+    const posts = [
+      ...healthyPosts().filter((p) => p.status === "published"),
+      makePost({ status: "draft", updated_at: iso(-1 * DAY) }),
+    ];
+    const items = attentionItems(droppedLinkedIn(), posts, twoChannels, NOW);
+    expect(items.find((i) => i.id === "channel-dropped")).toMatchObject({
+      severity: "todo",
+      label: "1 post targets LinkedIn, which is no longer a campaign channel",
+    });
+    expect(items.map((i) => i.id)).not.toContain("channel-dropped-scheduled");
+  });
+
+  it("ignores posts already published on a de-selected channel", () => {
+    const published = healthyPosts().filter((p) => p.status === "published");
+    const items = ids(droppedLinkedIn(), published, twoChannels);
+    expect(items).not.toContain("channel-dropped");
+    expect(items).not.toContain("channel-dropped-scheduled");
+  });
+
+  it("says nothing about drift while no channels are selected", () => {
+    const campaign = liveCampaign({ target_platforms: [] });
+    const items = ids(campaign, healthyPosts(), twoChannels);
+    expect(items).toContain("channels");
+    expect(items).not.toContain("channel-dropped-scheduled");
+    expect(items).not.toContain("channel-dropped");
+  });
+
+  it("flags posts scheduled outside the campaign dates", () => {
+    const posts = [...healthyPosts(), makePost({ status: "scheduled", scheduled_at: "2026-09-20T10:00:00Z" })];
+    expect(ids(liveCampaign(), posts)).toContain("scheduled-outside-window");
+  });
+
+  it("flags a post type the campaign no longer includes, and treats an empty selection as no restriction", () => {
+    const restricted = liveCampaign({
+      target_platforms: [{ id: "p1", post_types: ["image-post"] }],
+    });
+    const item = attentionItems(restricted, healthyPosts(), connected, NOW).find(
+      (i) => i.id === "post-type-dropped",
+    );
+    expect(item).toMatchObject({ severity: "todo" });
+    expect(item!.label).toBe(
+      "1 post uses a post type the campaign no longer includes",
+    );
+    expect(ids(liveCampaign(), healthyPosts())).not.toContain("post-type-dropped");
+  });
+
+  it("flags posts left on a phase the campaign type no longer has", () => {
+    const campaign = liveCampaign({
+      campaign_type: {
+        id: "ct1",
+        name: "launch",
+        label: "Launch",
+        description: "",
+        is_system: true,
+        phases: [makePhase("ph1", "Warm-up", 1)],
+      },
+    });
+    const posts = [
+      ...healthyPosts(),
+      makePost({ status: "draft", campaign_type_phase_id: "gone", updated_at: iso(-1 * DAY) }),
+    ];
+    const items = attentionItems(campaign, posts, connected, NOW);
+    expect(items.find((i) => i.id === "phase-orphaned")).toMatchObject({
+      severity: "todo",
+      label: "1 post is assigned to a phase that is no longer in the plan",
+    });
+    expect(ids(campaign, healthyPosts())).not.toContain("phase-orphaned");
   });
 
   // --- Setup ----------------------------------------------------------------

@@ -403,24 +403,6 @@ export function attentionItems(
     }
   }
 
-  if (startMs != null && endMs != null) {
-    const outside = posts.filter((p) => {
-      const slot = slotOf(p);
-      return (
-        isOpen(p.status) && slot != null && (slot < startMs || slot > endMs)
-      );
-    }).length;
-    if (outside > 0) {
-      items.push({
-        id: "scheduled-outside-window",
-        severity: "todo",
-        label: `${plural(outside, "post", "posts")} ${outside === 1 ? "is" : "are"} scheduled outside the campaign dates`,
-        actionLabel: "Review posts",
-        fix: "posts",
-      });
-    }
-  }
-
   const collisions = slotCollisions(posts);
   if (collisions.count > 0) {
     items.push({
@@ -498,6 +480,128 @@ export function attentionItems(
       actionLabel: "Connect accounts",
       fix: "workspace-settings",
     });
+  }
+
+  // --- Drift ----------------------------------------------------------------
+  // The campaign was edited after its posts were made. Nothing reconciles the
+  // two, and the publisher never consults `target_platforms` — it publishes the
+  // post's own `platform_id`. So de-selecting a channel changes the plan, not
+  // the queue, and the queue is the part that can still surprise the user.
+  // Only open posts count: a published post under old settings is history.
+  //
+  // Suppressed with no channels selected — then everything is adrift and
+  // `channels` is the row that says so.
+
+  if (campaign.target_platforms.length > 0) {
+    const selected = new Map(
+      campaign.target_platforms.map((tp) => [tp.id, tp.post_types]),
+    );
+
+    // Same gap at two temperatures, one row per channel: a queue behind it
+    // makes it an alert, no queue makes it cleanup.
+    const droppedQueued = new Map<string, number>();
+    const droppedOpen = new Map<string, number>();
+    for (const p of posts) {
+      if (!p.platform_id || selected.has(p.platform_id) || !isOpen(p.status)) {
+        continue;
+      }
+      const bucket = SCHEDULED_STATUSES.includes(p.status)
+        ? droppedQueued
+        : droppedOpen;
+      bucket.set(p.platform_id, (bucket.get(p.platform_id) ?? 0) + 1);
+    }
+    for (const id of droppedQueued.keys()) droppedOpen.delete(id);
+
+    if (droppedQueued.size > 0) {
+      const names = [...droppedQueued.keys()].map(channelName);
+      const total = [...droppedQueued.values()].reduce((a, b) => a + b, 0);
+      items.push({
+        id: "channel-dropped-scheduled",
+        severity: "alert",
+        label:
+          names.length === 1
+            ? `${plural(total, "post", "posts")} ${total === 1 ? "is" : "are"} scheduled on ${names[0]}, which is no longer a campaign channel`
+            : `${plural(total, "scheduled post", "scheduled posts")} target channels the campaign no longer includes: ${names.join(", ")}`,
+        actionLabel: "Review posts",
+        fix: "posts",
+      });
+    }
+
+    if (droppedOpen.size > 0) {
+      const names = [...droppedOpen.keys()].map(channelName);
+      const total = [...droppedOpen.values()].reduce((a, b) => a + b, 0);
+      items.push({
+        id: "channel-dropped",
+        severity: "todo",
+        label:
+          names.length === 1
+            ? `${plural(total, "post", "posts")} ${total === 1 ? "targets" : "target"} ${names[0]}, which is no longer a campaign channel`
+            : `${plural(total, "post", "posts")} target channels the campaign no longer includes: ${names.join(", ")}`,
+        actionLabel: "Review posts",
+        fix: "posts",
+      });
+    }
+
+    if (startMs != null && endMs != null) {
+      const outside = posts.filter((p) => {
+        const slot = slotOf(p);
+        return (
+          isOpen(p.status) && slot != null && (slot < startMs || slot > endMs)
+        );
+      }).length;
+      if (outside > 0) {
+        items.push({
+          id: "scheduled-outside-window",
+          severity: "todo",
+          label: `${plural(outside, "post", "posts")} ${outside === 1 ? "is" : "are"} scheduled outside the campaign dates`,
+          actionLabel: "Review posts",
+          fix: "posts",
+        });
+      }
+    }
+
+    // An empty `post_types` selection means "no restriction", not "none".
+    const wrongType = posts.filter((p) => {
+      const allowed = selected.get(p.platform_id);
+      return (
+        isOpen(p.status) &&
+        allowed != null &&
+        allowed.length > 0 &&
+        !!p.platform_post_type &&
+        !allowed.includes(p.platform_post_type)
+      );
+    }).length;
+    if (wrongType > 0) {
+      items.push({
+        id: "post-type-dropped",
+        severity: "todo",
+        label: `${plural(wrongType, "post", "posts")} ${wrongType === 1 ? "uses" : "use"} a post type the campaign no longer includes`,
+        actionLabel: "Review posts",
+        fix: "posts",
+      });
+    }
+  }
+
+  // Switching the campaign type leaves posts pointing at phases that no longer
+  // exist — they silently fall out of the plan (and out of the phase chart).
+  const phases = campaign.campaign_type?.phases ?? [];
+  if (phases.length > 0) {
+    const phaseIds = new Set(phases.map((ph) => ph.id));
+    const orphaned = posts.filter(
+      (p) =>
+        isOpen(p.status) &&
+        p.campaign_type_phase_id &&
+        !phaseIds.has(p.campaign_type_phase_id),
+    ).length;
+    if (orphaned > 0) {
+      items.push({
+        id: "phase-orphaned",
+        severity: "todo",
+        label: `${plural(orphaned, "post", "posts")} ${orphaned === 1 ? "is" : "are"} assigned to a phase that is no longer in the plan`,
+        actionLabel: "Reassign posts",
+        fix: "posts",
+      });
+    }
   }
 
   // --- Setup ----------------------------------------------------------------

@@ -40,8 +40,8 @@ keep new rules in a deliberate position rather than appending.
 
 ### Family — the area of the product it belongs to
 
-`delivery` (D) · `connectivity` (C) · `setup` (S) · `content` (K) ·
-`hygiene` (H).
+`delivery` (D) · `connectivity` (C) · `drift` (X) · `setup` (S) ·
+`content` (K) · `hygiene` (H).
 
 ### Source — where the truth comes from
 
@@ -70,7 +70,6 @@ them on focus/refetch rather than trusting a long-lived memo.
 | `publish-blocked-soon` | `risk` | post publishing within 24h whose content fails its channel's publish validation | *N posts due today aren't valid for their channel* | posts | `server` | ✓ |
 | `planned-today-unscheduled` | `risk` | `status ∈ {draft, ready_for_publish}` with `scheduled_at` within the next 24h | *N posts planned for today aren't scheduled yet* | posts | `client` | ✓ |
 | `pipeline-gap` | `risk` | campaign live (`now` inside start/end) and nothing scheduled or published in the next 7 days | *Nothing scheduled for the next 7 days* | posts | `client` | ✓ |
-| `scheduled-outside-window` | `todo` | `scheduled_at` outside the campaign's start/end | *N posts are scheduled outside the campaign dates* | posts | `client` | – |
 | `slot-collision` | `info` | two or more posts on the same channel within 15 minutes of each other | *N posts share a slot on `<channel>`* | posts | `client` | – |
 
 **Why the overdue cases split in two.** `manual-publish-due` is a task — the
@@ -99,6 +98,41 @@ both arrive as `connected = false`, which is `accounts-missing`. So
 `account-inactive` covers only the case we can actually name: a publisher that
 *is* connected whose accounts are all explicitly inactive. An empty `accounts`
 array means the payload didn't say, and must not fire the rule.
+
+### Drift — do the settings and the content still agree
+
+A campaign is edited long after its posts are made: a channel is de-selected, a
+post type is dropped, the dates move, the campaign type is switched. The posts
+do not follow. Nothing in the product reconciles the two, so the mismatch is
+invisible until something publishes where it shouldn't — **the publisher never
+consults `target_platforms`**; it publishes the post's own `platform_id`.
+De-selecting a channel changes the plan, not the queue.
+
+| ID | Severity | Trigger | Label | Action → | Source | Clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| `channel-dropped-scheduled` | `alert` | posts scheduled on a channel no longer in `target_platforms` | *N posts are scheduled on `<channel>`, which is no longer a campaign channel* | posts | `client` | – |
+| `channel-dropped` | `todo` | unscheduled open posts on a channel no longer in `target_platforms` | *N posts target `<channel>`, which is no longer a campaign channel* | posts | `client` | – |
+| `scheduled-outside-window` | `todo` | `scheduled_at` outside the campaign's start/end | *N posts are scheduled outside the campaign dates* | posts | `client` | – |
+| `post-type-dropped` | `todo` | a post's `platform_post_type` is not in its channel's selected `post_types` | *N posts use a post type the campaign no longer includes* | posts | `client` | – |
+| `phase-orphaned` | `todo` | a post's `campaign_type_phase_id` is not a phase of the current campaign type | *N posts are assigned to a phase that is no longer in the plan* | posts | `client` | – |
+
+Only **open** posts count. A published post on a de-selected channel is
+history, not a problem — there is nothing to fix and no way to unfix it. Same
+for the phase and post-type rules: they ask "what will go out wrong", not "what
+went out under old settings".
+
+`channel-dropped-scheduled` and `channel-dropped` are one escalation pair, per
+channel: with a queue behind it the drift is an alert, without one it is
+cleanup. A channel never produces both rows.
+
+The whole family is suppressed while `target_platforms` is empty — a campaign
+with no channels selected has *every* post adrift, and `channels` is the row
+that says so.
+
+**Not a rule: assets.** `use_assets` going false, or an asset leaving
+`asset_ids`, does not invalidate a post that already used it — `used_asset_ids`
+records what the post was built from, and that stays true. Drift needs a
+*future* consequence to be worth a row.
 
 ### Setup — is the campaign configured
 
