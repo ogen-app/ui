@@ -24,9 +24,12 @@ const SEVERITY_CLASS: Record<QualitySeverity, string> = {
 export function QualityDimensionCard({
   meta,
   dimension,
+  suggestionsOpen = false,
 }: {
   meta: QualityDimensionMeta
   dimension: QualityDimension | undefined
+  /** Starts the suggestion list expanded. For the design harness. */
+  suggestionsOpen?: boolean
 }) {
   // A dimension missing from the payload means a shape we don't understand;
   // drawing a zero would assert a score the model never gave.
@@ -96,6 +99,7 @@ export function QualityDimensionCard({
           // Collapsed by default: four cards' worth of open suggestions is a
           // wall, and the score plus the weakness is what most reads need.
           title={`${suggestions.length} suggestion${suggestions.length === 1 ? '' : 's'}`}
+          defaultOpen={suggestionsOpen}
           className="border-t border-border px-3"
         >
           <ul className="flex flex-col gap-2.5 pb-3">
