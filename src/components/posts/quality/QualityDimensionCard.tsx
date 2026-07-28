@@ -99,15 +99,10 @@ export function QualityDimensionCard({
 
       {suggestions.length > 0 && (
         <Collapse
-          // A child span, not the title string: `Collapse` styles its own
-          // title (13px, tracked, foreground) for use as a form section
-          // heading, which read as a third weight competing with the two
-          // above it. Classes set inside win over the inherited ones.
-          title={
-            <SubHeader>
-              {suggestions.length} SUGGESTION{suggestions.length === 1 ? '' : 'S'}
-            </SubHeader>
-          }
+          // A plain string, so `Collapse` styles it as its own section
+          // heading — this is a control the reader is meant to reach for,
+          // not a label like the one above it.
+          title={`${suggestions.length} suggestion${suggestions.length === 1 ? '' : 's'}`}
           // Collapsed: four cards' worth of open suggestions is a wall, and
           // the score plus the weakness is what most reads need.
           defaultOpen={suggestionsOpen}
@@ -151,13 +146,15 @@ export function QualityDimensionCard({
 }
 
 /**
- * The card's section labels. Matches the "NOTES" heading in the post preview
+ * The card's section label. Matches the "NOTES" heading in the post preview
  * panel — the app's existing idiom for naming a block without competing with
- * what is in it. Written in capitals in the copy, so they survive a restyle.
+ * what is in it. Written in capitals in the copy, so they survive a restyle;
+ * small and heavy, with letterspacing to keep the caps legible at 11px, is
+ * how a label reads as a label rather than as a quiet first line of the text.
  */
 function SubHeader({ children }: { children: ReactNode }) {
   return (
-    <span className="text-xs font-normal tracking-normal text-tertiary-foreground">
+    <span className="text-[11px] font-semibold tracking-[0.05em] text-tertiary-foreground">
       {children}
     </span>
   )
