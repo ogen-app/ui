@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/ui/status-badge.tsx";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { PostStatusBadge } from "@/components/posts/PostStatusBadge.tsx";
 import { useAddPost } from "@/hooks/usePosts.ts";
-import { cn, formatTitle } from "@/lib";
+import { formatTitle } from "@/lib";
 import { contentSnapshot } from "@/lib/campaignReadiness.ts";
 import { getPlatformInfo } from "@/lib/platformDictionary.ts";
 import { relativeTime } from "@/lib/relativeTime.ts";
@@ -15,6 +15,7 @@ import type { Post } from "@/types/posts";
 import { CallToAction, CTA_PRIMARY } from "./CallToAction.tsx";
 import { LineItem } from "./LineItem.tsx";
 import { OverviewCard } from "./OverviewCard.tsx";
+import { StatTile } from "./StatTile.tsx";
 
 /** The tab value that means "don't filter" — no platform id can collide. */
 const ALL = "all";
@@ -153,35 +154,6 @@ export function ContentModule({
         </p>
       )}
     </OverviewCard>
-  );
-}
-
-/**
- * One count in the widget row. All four share the row equally so the shape of
- * the campaign is readable as a bar chart of numbers, not just as text.
- */
-function StatTile({
-  value,
-  label,
-  tone = "default",
-}: {
-  value: number;
-  label: string;
-  tone?: "default" | "alert";
-}) {
-  return (
-    <div className="flex flex-col gap-0.5 rounded-md bg-secondary px-3 py-2.5 min-w-0">
-      <span
-        className={cn(
-          "font-display text-2xl font-medium leading-7",
-          tone === "alert" && "text-destructive",
-          value === 0 && tone === "default" && "text-tertiary-foreground",
-        )}
-      >
-        {value}
-      </span>
-      <span className="text-xs text-tertiary-foreground truncate">{label}</span>
-    </div>
   );
 }
 
