@@ -89,7 +89,9 @@ export function LineItem({
         )}
       </span>
 
-      {trailing && (
+      {/* Not `trailing &&`: a trailing `0` is falsy, and React would print the
+          bare number outside the styled span instead of skipping it. */}
+      {trailing != null && trailing !== false && (
         <span
           className={cn(
             "flex shrink-0 items-center gap-2 text-xs text-tertiary-foreground",
