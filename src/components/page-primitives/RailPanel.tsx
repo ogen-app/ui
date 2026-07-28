@@ -1,5 +1,6 @@
 import type { ReactNode, Ref } from 'react'
 import { XIcon } from '@phosphor-icons/react'
+import { ZIndex } from '@/config/zIndex.ts'
 import { cn } from '@/lib'
 
 type RailPanelProps = {
@@ -14,7 +15,12 @@ type RailPanelProps = {
   scrollRef?: Ref<HTMLDivElement>
   /** A second row inside the sticky header (context bar, breadcrumb). */
   subheader?: ReactNode
-  /** Sits on the title's baseline, after it — a count, a badge, a switcher. */
+  /**
+   * Sits on the title's baseline, after it — a count or a badge. Must stay
+   * non-interactive: with `onTitleClick` set, the whole title row (adornment
+   * included) renders inside one button, and a control in here would nest
+   * interactive content and lose its clicks to the title action.
+   */
   titleAdornment?: ReactNode
   /** Makes the whole title row a button. Give it an `aria-label` via `titleLabel`. */
   onTitleClick?: () => void
@@ -47,7 +53,10 @@ export function RailPanel({
       <div ref={scrollRef} className="h-0 grow overflow-y-auto flex flex-col">
         {/* Opaque behind the title and subheader, fading only below them —
             a long thread would otherwise scroll visibly through the header. */}
-        <div className="sticky top-0 z-10 shrink-0 flex flex-col">
+        <div
+          className="sticky top-0 shrink-0 flex flex-col"
+          style={{ zIndex: ZIndex.pageHeader }}
+        >
           <div className="bg-primary pt-6 px-3 lg:px-6 flex flex-col gap-0">
             <div className="flex items-center justify-between gap-3">
               {/* The whole title row is the affordance when it has somewhere

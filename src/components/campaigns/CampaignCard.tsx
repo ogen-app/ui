@@ -1,22 +1,22 @@
 import { Link } from '@tanstack/react-router'
 import { CaretRightIcon } from '@phosphor-icons/react'
-import { Skeleton } from '@/components/ui/skeleton'
-import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
-import { CampaignIcon, campaignAbbr } from '@/components/layout/CampaignIcon'
-import { StatTile } from '@/components/campaigns/overview/StatTile'
-import { useCampaignPosts } from '@/hooks/usePosts'
-import { usePlatformViews } from '@/hooks/usePlatforms'
-import { campaignColorVar } from '@/lib/campaignColor'
+import { Skeleton } from '@/components/ui/skeleton.tsx'
+import { StatusBadge, type StatusTone } from '@/components/ui/status-badge.tsx'
+import { CampaignIcon, campaignAbbr } from '@/components/layout/CampaignIcon.tsx'
+import { StatTile } from '@/components/campaigns/overview/StatTile.tsx'
+import { useCampaignPosts } from '@/hooks/usePosts.ts'
+import { usePlatformViews } from '@/hooks/usePlatforms.ts'
+import { campaignColorVar } from '@/lib/campaignColor.ts'
 import {
   attentionItems,
   contentSnapshot,
   setupChecks,
   SCHEDULED_STATUSES,
   type AttentionSeverity,
-} from '@/lib/campaignReadiness'
-import { getPlatformInfo } from '@/lib/platformDictionary'
-import type { Campaign } from '@/types/campaigns'
-import type { Post } from '@/types/posts'
+} from '@/lib/campaignReadiness.ts'
+import { getPlatformInfo } from '@/lib/platformDictionary.ts'
+import type { Campaign } from '@/types/campaigns.ts'
+import type { Post } from '@/types/posts.ts'
 
 /**
  * One campaign on the Campaigns list: who it is, how it is doing, how it is
@@ -58,8 +58,11 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
 
   // The counts are claims about the posts, so they wait for them — scoring a
   // campaign against an empty list would flash a row of zeroes at a campaign
-  // that has failures.
-  const settled = !postsQuery.isPending
+  // that has failures. A *failed* query is not an empty campaign either:
+  // rendering "All clear" off an error would be a lie, so the verdict and the
+  // tiles only draw from a successful fetch.
+  const settled = postsQuery.isSuccess
+  const failed = postsQuery.isError
   const posts = postsQuery.data ?? []
   // Time-based rules are recomputed per render against the current clock,
   // exactly as the Overview screen does it.
@@ -119,7 +122,12 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
         />
       </Link>
 
-      {settled ? (
+      {failed ? (
+        <p className="text-sm text-tertiary-foreground">
+          Couldn’t load this campaign’s posts — the counts will appear once
+          they’re reachable again.
+        </p>
+      ) : settled ? (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           <StatTile value={plannedToday(posts, new Date())} label="Planned for today" />
           <StatTile value={snapshot.readyToGo} label="Ready to go" />

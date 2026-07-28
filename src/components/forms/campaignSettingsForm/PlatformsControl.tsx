@@ -153,6 +153,9 @@ function RowShell({
       aria-label={label}
       onClick={onToggle}
       onKeyDown={(e) => {
+        // Only the row's own keys: Enter/Space on a nested control (×, +,
+        // CONNECT, Customise) bubbles here too, and must not also toggle.
+        if (e.target !== e.currentTarget) return
         if (e.key !== 'Enter' && e.key !== ' ') return
         e.preventDefault()
         onToggle()

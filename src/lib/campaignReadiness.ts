@@ -360,7 +360,14 @@ export function attentionItems(
     viewById.get(id)?.info.name ?? "Unknown channel";
 
   const startMs = campaign.start_date ? Date.parse(campaign.start_date) : null;
-  const endMs = campaign.end_date ? Date.parse(campaign.end_date) : null;
+  // `end_date` is stored as the *day* (serialized T00:00:00 — see
+  // `toISODateTime`), so its raw timestamp is the day's first instant. The
+  // bound is inclusive: extend it to the day's last millisecond, or the whole
+  // final day would count as off-campaign and its scheduled posts as outside
+  // the window.
+  const endMs = campaign.end_date
+    ? Date.parse(campaign.end_date) + DAY - 1
+    : null;
   const isLive =
     startMs != null && endMs != null && nowMs >= startMs && nowMs <= endMs;
 

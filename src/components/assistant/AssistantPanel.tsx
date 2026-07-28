@@ -95,8 +95,10 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
       footer={
         thread && (
           // Opaque: the thread scrolls under the footer, and the starters have
-          // to sit on something.
-          <div className={cn('flex flex-col gap-2 bg-primary', chipsInFooter && 'pt-3')}>
+          // to sit on something. Keyed by thread: openThread can swap the
+          // active thread without unmounting the panel, and the composer's
+          // local draft must not follow into the next conversation.
+          <div key={thread.id} className={cn('flex flex-col gap-2 bg-primary', chipsInFooter && 'pt-3')}>
             {/* In an empty thread the chips are the body's, not the footer's. */}
             {chipsInFooter && (
               <StarterChips

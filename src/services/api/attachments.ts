@@ -35,6 +35,11 @@ export function uploadAttachment(
     xhr.open('POST', apiUrl(base(postId)), true)
     xhr.withCredentials = true
     xhr.responseType = 'json'
+    // A stalled connection fires none of onload/onerror/onabort, and an
+    // unsettled promise leaves the pending tile stuck forever. Generous on
+    // purpose: this bounds the whole request, and a legitimate large upload
+    // on a slow link is slow, not stuck.
+    xhr.timeout = 5 * 60_000
 
     if (opts.onProgress) {
       xhr.upload.onprogress = (e) => {
@@ -61,6 +66,7 @@ export function uploadAttachment(
 
     xhr.onerror = () => reject(new Error('Network error during upload'))
     xhr.onabort = () => reject(new DOMException('Upload aborted', 'AbortError'))
+    xhr.ontimeout = () => reject(new Error(`Upload of ${file.name} timed out`))
 
     if (opts.signal) {
       if (opts.signal.aborted) {

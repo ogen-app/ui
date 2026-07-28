@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { UseFormReturn, FieldValues } from 'react-hook-form'
 import { useUpdateCampaign } from '@/hooks/useCampaigns'
-import { registerPendingSave } from '@/lib/pendingSaves'
+import { registerPendingSave } from '@/lib/pendingSaves.ts'
 import type { Campaign, UpdateCampaignPayload } from '@/types/campaigns'
 
 export function campaignToPayload(
@@ -64,9 +64,11 @@ export function useCampaignAutosave<T extends FieldValues>({
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isDirty = editVersion !== savedVersion
 
+  const inFlightRef = useRef<Promise<void> | null>(null)
+
   const saveNow = useCallback(async () => {
     const v = editVersionRef.current
-    await form.handleSubmit(async (values) => {
+    const run = form.handleSubmit(async (values) => {
       const payload = campaignToPayload(campaign, buildOverrides(values))
       try {
         await updateCampaign({ id: campaign.id, payload })
@@ -76,6 +78,12 @@ export function useCampaignAutosave<T extends FieldValues>({
         // escape, since callers await this to sequence their own work.
       }
     })()
+    inFlightRef.current = run
+    try {
+      await run
+    } finally {
+      if (inFlightRef.current === run) inFlightRef.current = null
+    }
   }, [campaign, form, updateCampaign, buildOverrides])
 
   const scheduleSave = useCallback(() => {
@@ -86,10 +94,16 @@ export function useCampaignAutosave<T extends FieldValues>({
   }, [saveNow])
 
   const flushSave = useCallback(async () => {
-    if (!saveTimerRef.current) return
-    clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = null
-    await saveNow()
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+      await saveNow()
+      return
+    }
+    // No queued timer doesn't mean nothing pending: the debounce may have
+    // fired and the PUT may still be open. Callers await this to know the
+    // edit *landed*, so wait for that request too.
+    await inFlightRef.current
   }, [saveNow])
 
   useEffect(() => {

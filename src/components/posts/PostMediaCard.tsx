@@ -7,14 +7,14 @@ import {
   TrashIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { toast } from '@/stores/toastStore'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx'
+import { toast } from '@/stores/toastStore.ts'
 import { cn } from '@/lib'
-import { acceptFor, describeImageConstraints, formatBytes } from '@/lib/platformMedia'
-import { checkFile, type MediaPolicy } from '@/lib/postMedia'
-import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments'
-import type { PendingUpload } from '@/hooks/usePostAttachments'
-import type { Post } from '@/types/posts'
+import { acceptFor, describeImageConstraints, formatBytes } from '@/lib/platformMedia.ts'
+import { checkFile, type MediaPolicy } from '@/lib/postMedia.ts'
+import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments.ts'
+import type { PendingUpload } from '@/hooks/usePostAttachments.ts'
+import type { Post } from '@/types/posts.ts'
 
 type Props = {
   post: Post

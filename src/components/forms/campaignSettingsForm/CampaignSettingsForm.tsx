@@ -126,6 +126,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
   const { mutate: updateCampaignNow } = useUpdateCampaign()
   const commitPlatforms = useCallback(
     (next: CampaignPlatform[]) => {
+      const previous = form.getValues('target_platforms')
       form.setValue('target_platforms', next)
       updateCampaignNow(
         {
@@ -135,10 +136,15 @@ export function CampaignSettingsForm({ campaign }: Props) {
         {
           onSuccess: () =>
             form.resetField('target_platforms', { defaultValue: next }),
-          onError: (e) =>
+          onError: (e) => {
+            // The optimistic setValue above must not outlive a rejected
+            // request: left in place (and dirty), the header's Save would
+            // quietly push the very change the server just refused.
+            form.resetField('target_platforms', { defaultValue: previous })
             toast.error('Unable to update platforms', {
               description: e instanceof Error ? e.message : undefined,
-            }),
+            })
+          },
         },
       )
     },

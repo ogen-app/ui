@@ -13,13 +13,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { useUpdateCampaign } from '@/hooks/useCampaigns'
-import type { Campaign } from '@/types/campaigns'
-import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
-import { registerPendingSave } from '@/lib/pendingSaves'
-import { selectCampaignRunning, useAssistantStore } from '@/stores/assistantStore'
-import { campaignToPayload } from './shared'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { useUpdateCampaign } from '@/hooks/useCampaigns.ts'
+import type { Campaign } from '@/types/campaigns.ts'
+import { useRegisterSettingsSave } from '@/components/settings/settingsSave.tsx'
+import { registerPendingSave } from '@/lib/pendingSaves.ts'
+import { selectCampaignRunning, useAssistantStore } from '@/stores/assistantStore.ts'
+import { campaignToPayload } from './shared.ts'
+import { SettingsCard } from '@/components/settings/SettingsCard.tsx'
 
 const briefSchema = z.object({
   description: z.string(),
@@ -73,7 +73,13 @@ export function BriefForm({ campaign }: BriefFormProps) {
   // it runs, then adopt what the assistant wrote.
   const assistantRunning = useAssistantStore(selectCampaignRunning(campaign.id))
   const flushIfDirty = useCallback(async () => {
-    if (form.formState.isDirty) await save()
+    if (!form.formState.isDirty) return
+    try {
+      await save()
+    } catch {
+      // Surfaced through the mutation's error state; a rejection here must
+      // not escape into the assistant turn awaiting this flush.
+    }
   }, [form, save])
   useEffect(
     () => registerPendingSave(campaign.id, flushIfDirty),

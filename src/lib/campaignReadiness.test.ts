@@ -520,6 +520,13 @@ describe("attentionItems", () => {
     expect(ids(liveCampaign(), posts)).toContain("scheduled-outside-window");
   });
 
+  it("treats the end date as inclusive — the final day is still in-window", () => {
+    // end_date is stored as the day's first instant (T00:00:00), but a post
+    // scheduled later that same day is inside the campaign, not after it.
+    const posts = [...healthyPosts(), makePost({ status: "scheduled", scheduled_at: "2026-08-31T18:00:00Z" })];
+    expect(ids(liveCampaign(), posts)).not.toContain("scheduled-outside-window");
+  });
+
   it("flags a post type the campaign no longer includes, and treats an empty selection as no restriction", () => {
     const restricted = liveCampaign({
       target_platforms: [{ id: "p1", post_types: ["image-post"] }],
@@ -638,7 +645,9 @@ describe("attentionItems", () => {
       (i) => i.id === "behind-pace",
     );
     expect(item).toMatchObject({ severity: "risk" });
-    expect(item!.label).toBe("Campaign is 49% through, 0% published");
+    // 48, not 49: the end day itself counts, so the window is a day longer
+    // than the raw timestamp difference.
+    expect(item!.label).toBe("Campaign is 48% through, 0% published");
     expect(ids(liveCampaign(), healthyPosts())).not.toContain("behind-pace");
   });
 
