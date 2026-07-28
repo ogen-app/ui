@@ -14,8 +14,10 @@ import { PostValidationsSection } from '@/components/posts/PostValidationsSectio
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
+import { PostQualityPanel } from '@/components/posts/quality/PostQualityPanel'
 import {
   POST_PREVIEW_PORTAL_ID,
+  POST_QUALITY_PORTAL_ID,
   POST_SETTINGS_PORTAL_ID,
 } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -135,13 +137,16 @@ function PostEditorSurface({
   // owns the post's autosave pipeline; the sidebar only hosts the layer.
   const settingsOpen = useSettingsStore((s) => s.activeRightPanel === 'postSettings')
   const previewOpen = useSettingsStore((s) => s.activeRightPanel === 'postPreview')
+  const qualityOpen = useSettingsStore((s) => s.activeRightPanel === 'postQuality')
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
   const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
   const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
   const [previewHost, setPreviewHost] = useState<HTMLElement | null>(null)
+  const [qualityHost, setQualityHost] = useState<HTMLElement | null>(null)
   useEffect(() => {
     setSettingsHost(document.getElementById(POST_SETTINGS_PORTAL_ID))
     setPreviewHost(document.getElementById(POST_PREVIEW_PORTAL_ID))
+    setQualityHost(document.getElementById(POST_QUALITY_PORTAL_ID))
   }, [])
 
   // Being on a post page is what makes its assistant thread available: the
@@ -172,7 +177,11 @@ function PostEditorSurface({
   useEffect(
     () => () => {
       const s = useSettingsStore.getState()
-      if (s.activeRightPanel === 'postSettings' || s.activeRightPanel === 'postPreview') {
+      if (
+        s.activeRightPanel === 'postSettings' ||
+        s.activeRightPanel === 'postPreview' ||
+        s.activeRightPanel === 'postQuality'
+      ) {
         s.closeRightPanel()
       }
     },
@@ -232,6 +241,8 @@ function PostEditorSurface({
             onToggleSettings={() => toggleRightPanel('postSettings')}
             previewOpen={previewOpen}
             onTogglePreview={() => toggleRightPanel('postPreview')}
+            qualityOpen={qualityOpen}
+            onToggleQuality={() => toggleRightPanel('postQuality')}
             onDownloadMarkdown={handleDownloadMarkdown}
             onDeletePost={() => setDeleteOpen(true)}
             actions={
@@ -315,6 +326,14 @@ function PostEditorSurface({
               onClose={closeRightPanel}
             />,
             previewHost,
+          )}
+
+        {qualityHost &&
+          createPortal(
+            /* The live document, so the panel can tell a score that still
+               describes this post from one taken before the last edit. */
+            <PostQualityPanel doc={doc} onClose={closeRightPanel} />,
+            qualityHost,
           )}
       </div>
       <DeletePostDialog

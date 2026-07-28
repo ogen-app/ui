@@ -30,6 +30,14 @@ export const POST_SETTINGS_PORTAL_ID = 'right-sidebar-post-settings'
 export const POST_PREVIEW_PORTAL_ID = 'right-sidebar-post-preview'
 
 /**
+ * Portal target for the post editor's quality assessment. Hosted here like
+ * the two above, but for a different reason: the panel compares the stored
+ * score against the live document's `updated_at` to say whether it has gone
+ * stale, so it has to read the route's `usePost` rather than fetch its own.
+ */
+export const POST_QUALITY_PORTAL_ID = 'right-sidebar-post-quality'
+
+/**
  * One stacked content layer inside the sidebar. Inactive layers stay mounted
  * and fade out (opacity only), so switching panels cross-fades and the AI
  * assistant keeps running invisibly.
@@ -98,6 +106,9 @@ export function RightSidebar() {
             </PanelLayer>
             <PanelLayer active={activePanel === 'postPreview'}>
               <div id={POST_PREVIEW_PORTAL_ID} className="h-full" />
+            </PanelLayer>
+            <PanelLayer active={activePanel === 'postQuality'}>
+              <div id={POST_QUALITY_PORTAL_ID} className="h-full" />
             </PanelLayer>
           </div>
         </div>
