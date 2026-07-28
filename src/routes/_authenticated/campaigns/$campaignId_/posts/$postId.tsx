@@ -305,7 +305,17 @@ function PostEditorSurface({
           )}
 
         {previewHost &&
-          createPortal(<PostPreviewPanel doc={doc} onClose={closeRightPanel} />, previewHost)}
+          createPortal(
+            /* Attachments come from the same `usePostMedia` the media card
+               uses — their presigned URLs expire, and one owner keeps one
+               refresh timer. */
+            <PostPreviewPanel
+              doc={doc}
+              attachments={media.attachments}
+              onClose={closeRightPanel}
+            />,
+            previewHost,
+          )}
       </div>
       <DeletePostDialog
         post={doc}

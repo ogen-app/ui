@@ -4,6 +4,7 @@ import { usePublishingAccount } from '@/hooks/usePublishingAccount.ts'
 import { getPlatformInfo } from '@/lib/platformDictionary.ts'
 import { relativeTime } from '@/lib/relativeTime.ts'
 import { markdownToSocialText, PLATFORM_TEXT_LIMITS } from '@/lib/socialText.ts'
+import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments'
 import type { Post } from '@/types/posts'
 import { FacebookPreview } from './FacebookPreview.tsx'
 import { InstagramPreview } from './InstagramPreview.tsx'
@@ -36,11 +37,40 @@ const MEDIA_SHOWN: Record<string, number> = {
  * answer the questions the editor cannot: where the text folds, which image
  * leads, and what happens to formatting the platform does not support.
  */
-export function PostPreviewPanel({ doc, onClose }: { doc: Post; onClose?: () => void }) {
+export function PostPreviewPanel({
+  doc,
+  attachments,
+  onClose,
+}: {
+  doc: Post
+  /**
+   * Passed in rather than fetched: the route already holds the one
+   * `usePostMedia` instance, and these carry presigned URLs that the query
+   * refreshes on a timer — reading them from anywhere else risks a second,
+   * separately-expiring copy.
+   */
+  attachments: PostAttachmentWithValidation[]
+  onClose?: () => void
+}) {
   const platform = getPlatformInfo(doc.platform_id)
   const author = usePublishingAccount(doc.platform_id)
 
   const text = useMemo(() => markdownToSocialText(doc.content), [doc.content])
+
+  // Only images reach a feed card. PDFs are attachments the networks treat as
+  // documents (LinkedIn turns one into a slide carousel), so they are counted
+  // for the notes but never rendered as pictures.
+  const { imageUrls, pdfCount, missingUrls } = useMemo(() => {
+    const ordered = [...attachments].sort((a, b) => a.position - b.position)
+    const images = ordered.filter((a) => attachmentKind(a.mime_type) === 'image')
+    return {
+      // `presigned_url` is absent when object storage is unconfigured — there
+      // is nothing to show for those, so they are reported, not rendered.
+      imageUrls: images.flatMap((a) => (a.presigned_url ? [a.presigned_url] : [])),
+      pdfCount: ordered.filter((a) => attachmentKind(a.mime_type) === 'pdf').length,
+      missingUrls: images.filter((a) => !a.presigned_url).length,
+    }
+  }, [attachments])
 
   // The feed timestamp reads from the schedule when there is one — seeing
   // "in 3 days" on the card is a cheap confirmation that the date is right.
@@ -51,7 +81,7 @@ export function PostPreviewPanel({ doc, onClose }: { doc: Post; onClose?: () => 
   const Renderer = platform ? RENDERERS[platform.zernioId] : undefined
   const limits = platform ? PLATFORM_TEXT_LIMITS[platform.zernioId] : undefined
   const shownMedia = Math.min(
-    doc.media_urls.length,
+    imageUrls.length,
     (platform && MEDIA_SHOWN[platform.zernioId]) ?? 0,
   )
 
@@ -80,7 +110,7 @@ export function PostPreviewPanel({ doc, onClose }: { doc: Post; onClose?: () => 
         <>
           <Renderer
             text={text}
-            mediaUrls={doc.media_urls}
+            mediaUrls={imageUrls}
             /* No subtitle: LinkedIn's second line is the page's own headline,
                which we do not have. The campaign name went there first and
                read as if it were public — it never is. */
@@ -96,7 +126,9 @@ export function PostPreviewPanel({ doc, onClose }: { doc: Post; onClose?: () => 
             platformName={platform.name}
             title={doc.title}
             markdown={doc.content}
-            mediaCount={doc.media_urls.length}
+            mediaCount={imageUrls.length}
+            pdfCount={pdfCount}
+            missingUrls={missingUrls}
             shownMedia={shownMedia}
             overLimit={limits ? text.length > limits.max : false}
             max={limits?.max}
@@ -119,6 +151,8 @@ function Notes({
   title,
   markdown,
   mediaCount,
+  pdfCount,
+  missingUrls,
   shownMedia,
   overLimit,
   max,
@@ -127,7 +161,12 @@ function Notes({
   platformName: string
   title: string
   markdown: string
+  /** Attached images that have a URL to render. */
   mediaCount: number
+  /** Attached PDFs, which are documents rather than feed pictures. */
+  pdfCount: number
+  /** Images with no presigned URL — object storage is unconfigured. */
+  missingUrls: number
   /** How many of the images the card actually renders. */
   shownMedia: number
   overLimit: boolean
@@ -161,6 +200,26 @@ function Notes({
           ? `Only the first of ${mediaCount} images is shown`
           : `Only ${shownMedia} of ${mediaCount} images are shown`}
         , which is what {platformName} puts in the feed.
+      </>,
+    )
+  }
+
+  if (pdfCount > 0) {
+    notes.push(
+      <>
+        {pdfCount === 1 ? 'A PDF is attached' : `${pdfCount} PDFs are attached`} and not
+        drawn above — {platformName} treats documents as their own kind of post, which this
+        preview does not cover.
+      </>,
+    )
+  }
+
+  if (missingUrls > 0) {
+    notes.push(
+      <>
+        {missingUrls === 1 ? 'One image has' : `${missingUrls} images have`} no download link
+        yet, so {missingUrls === 1 ? 'it is' : 'they are'} missing from the card — object
+        storage may not be configured.
       </>,
     )
   }
