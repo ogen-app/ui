@@ -1,4 +1,5 @@
 import { CheckIcon, CircleIcon } from '@phosphor-icons/react'
+import { Logo } from '@/components/Logo'
 import { ASSESS_STEPS, stepLabel } from '@/lib/postQuality.ts'
 import { cn } from '@/lib'
 
@@ -22,7 +23,15 @@ export function AssessProgress({ steps }: { steps: string[] }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-secondary-foreground">Assessing this post…</p>
+      {/* The heading is the first row of the same list, on the same icon
+          column: the mark sits in the slot the ticks below it occupy, so all
+          the labels line up on one edge. */}
+      <p className="flex items-center gap-2 text-sm text-foreground">
+        <Glyph>
+          <Logo variant="mark" loading className="size-4 text-accent" />
+        </Glyph>
+        <span className="animate-pulse-opacity">Assessing this post…</span>
+      </p>
       <ol className="flex flex-col gap-1.5">
         {rows.map((row) => (
           <li
@@ -32,11 +41,13 @@ export function AssessProgress({ steps }: { steps: string[] }) {
               row.done ? 'text-secondary-foreground' : 'text-tertiary-foreground',
             )}
           >
-            {row.done ? (
-              <CheckIcon aria-hidden weight="bold" className="size-4 shrink-0 text-positive" />
-            ) : (
-              <CircleIcon aria-hidden weight="regular" className="size-4 shrink-0" />
-            )}
+            <Glyph>
+              {row.done ? (
+                <CheckIcon aria-hidden weight="bold" className="size-4 text-positive" />
+              ) : (
+                <CircleIcon aria-hidden weight="regular" className="size-4" />
+              )}
+            </Glyph>
             <span>{row.label}</span>
           </li>
         ))}
@@ -46,5 +57,14 @@ export function AssessProgress({ steps }: { steps: string[] }) {
         the run reads the post as it was when you started it.
       </p>
     </div>
+  )
+}
+
+/** The shared 16px icon column. Every label starts after it, tick or mark. */
+function Glyph({ children }: { children: React.ReactNode }) {
+  return (
+    <span aria-hidden className="flex size-4 shrink-0 items-center justify-center">
+      {children}
+    </span>
   )
 }

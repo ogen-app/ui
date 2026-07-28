@@ -67,7 +67,7 @@ export function PostQualityDesignHarness() {
           </Frame>
         </Specimen>
 
-        <Specimen label="Never assessed, run failed" note="error above the CTA, not instead of it">
+        <Specimen label="Run failed" note="the reason went to a toast; this offers the retry">
           <Frame>
             <PostQualityPanelView
               {...IDLE}
@@ -82,13 +82,13 @@ export function PostQualityDesignHarness() {
           </Frame>
         </Specimen>
 
-        <Specimen label="Load failed" note="retryable — the endpoint answered badly">
+        <Specimen label="Load failed" note="a fetch problem, not a scoring one — reload, don't re-run">
           <Frame>
             <PostQualityPanelView {...IDLE} loadError="HTTP 500: internal server error" />
           </Frame>
         </Specimen>
 
-        <Specimen label="Unavailable" note="503 — no retry offered, nothing to retry">
+        <Specimen label="Unavailable" note="503 — the fix is in settings, not a retry">
           <Frame>
             <PostQualityPanelView {...IDLE} unavailable />
           </Frame>
@@ -112,9 +112,15 @@ export function PostQualityDesignHarness() {
           </Frame>
         </Specimen>
 
+        {/* Nothing the model reads has changed since the last run, so the
+            server returns the stored result instead of paying for a new one
+            (CON-92). It stops after buildContext — the four stages below stay
+            grey and the run ends anyway. Worth looking at because it is the
+            only case where the list finishes unfinished, and it must not read
+            as a stall. */}
         <Specimen
           label="Cached run"
-          note="CON-92 short-circuits after buildContext — the last four never arrive"
+          note="nothing changed, so the server skips the model — ends after 2 of 6"
         >
           <Frame>
             <PostQualityPanelView
@@ -125,7 +131,15 @@ export function PostQualityDesignHarness() {
           </Frame>
         </Specimen>
 
-        <Specimen label="Re-run over an existing score" note="the result is replaced, not stacked">
+        {/* Pressing Re-assess on a post that already has a score. The old
+            score is not shown while the new one is computed — progress
+            replaces it. This is the case that decides whether re-assessing
+            feels safe: if the panel blanked and the run then failed, the user
+            would think they had lost the score they had. */}
+        <Specimen
+          label="Re-run over an existing score"
+          note="progress replaces the old score rather than sitting under it"
+        >
           <Frame>
             <PostQualityPanelView
               {...IDLE}
@@ -188,7 +202,11 @@ export function PostQualityDesignHarness() {
           </Frame>
         </Specimen>
 
-        <Specimen label="Re-run failed" note="the old score survives — losing it would be worse">
+        {/* A failed re-run leaves the panel exactly as it was: the stored
+            score is still the truth about the post, and the toast has already
+            said what went wrong. Identical to "Workable" by design — if these
+            two differ, something is leaking the failure into the body. */}
+        <Specimen label="Re-run failed" note="unchanged — the toast carried the reason">
           <Frame tall>
             <PostQualityPanelView
               {...IDLE}

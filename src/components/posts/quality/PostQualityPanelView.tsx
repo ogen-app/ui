@@ -1,8 +1,15 @@
 import type { ReactNode } from 'react'
-import { ArrowClockwiseIcon, SparkleIcon, WarningIcon } from '@phosphor-icons/react'
+import { Link } from '@tanstack/react-router'
+import {
+  ArrowClockwiseIcon,
+  GearSixIcon,
+  SparkleIcon,
+  WarningIcon,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
+import { QualityEmptyState } from './QualityEmptyState.tsx'
 import {
   QUALITY_DIMENSIONS,
   isAssessmentStale,
@@ -70,6 +77,9 @@ export function PostQualityPanelView({
       title="Quality"
       onClose={onClose}
       className="h-full"
+      // The empty states centre themselves in whatever height is left, so the
+      // body has to claim it rather than hug its content.
+      bodyClassName="flex-1"
       titleAdornment={
         assessment && suggestions > 0 ? (
           <span className="text-sm text-tertiary-foreground">
@@ -77,29 +87,43 @@ export function PostQualityPanelView({
           </span>
         ) : undefined
       }
-      actions={
-        // Only once there is a result: before that the call to action belongs
-        // in the body, where it can explain itself.
+      // Pinned to the foot of the rail like the assistant's composer: the
+      // action that runs the panel belongs at the bottom, in one place,
+      // rather than moving as the body scrolls. Only once there is a result
+      // — before that the call to action is the body, where it explains
+      // itself.
+      footer={
         assessment && !unavailable ? (
           <Button
             type="button"
-            variant="ghost"
-            size="smIcon"
+            variant="outline"
+            className="w-full"
             onClick={onAssess}
             loading={assessing}
             disabled={assessing}
-            aria-label="Re-assess this post"
           >
-            <ArrowClockwiseIcon className="size-5" />
+            <ArrowClockwiseIcon />
+            <span>{assessing ? 'Assessing…' : 'Re-assess'}</span>
           </Button>
         ) : undefined
       }
+      footerFade={12}
     >
       {unavailable ? (
-        <Note>
-          Quality assessment isn't switched on for this workspace, so there's nothing to
-          score against yet.
-        </Note>
+        <QualityEmptyState
+          lines={[
+            'Scoring is switched off for this workspace.',
+            'Someone with admin rights can turn it on in settings.',
+          ]}
+          action={
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/workspace-settings">
+                <GearSixIcon />
+                <span>Go to workspace settings</span>
+              </Link>
+            </Button>
+          }
+        />
       ) : assessing ? (
         <AssessProgress steps={steps} />
       ) : loading ? (
@@ -109,18 +133,39 @@ export function PostQualityPanelView({
           <Skeleton className="h-28 w-full" />
         </div>
       ) : loadError ? (
-        <div className="flex flex-col items-start gap-3">
-          <Note>Couldn't load this post's assessment.</Note>
-          <p className="text-xs text-tertiary-foreground">{loadError}</p>
-          <Button type="button" variant="outline" size="sm" onClick={onReload}>
-            Try again
-          </Button>
-        </div>
+        <QualityEmptyState
+          lines={[
+            'Oops, something broke.',
+            "We couldn't fetch this post's score just now.",
+          ]}
+          action={
+            <Button variant="outline" size="sm" onClick={onReload}>
+              <ArrowClockwiseIcon />
+              {/* Reload, not re-assess: the score may well be sitting there
+                  intact, and a failed fetch is no reason to pay for a run. */}
+              <span>Try again</span>
+            </Button>
+          }
+        />
+      ) : assessError && !assessment ? (
+        <QualityEmptyState
+          lines={[
+            'Oops, something broke.',
+            'The assessment stopped before it finished. Nothing was saved, so running it again is safe.',
+          ]}
+          action={<AssessButton onAssess={onAssess} label="Re-assess" />}
+        />
       ) : !assessment ? (
-        <FirstRun onAssess={onAssess} assessError={assessError} />
+        <QualityEmptyState
+          lines={[
+            "This post hasn't been scored yet.",
+            "Ogen reads it against the campaign brief and the channel's conventions,",
+            'then scores correctness, clarity, engagement and delivery.',
+          ]}
+          action={<AssessButton onAssess={onAssess} label="Assess this post" />}
+        />
       ) : (
         <>
-          {assessError && <RunError message={assessError} />}
           <Overall evaluation={assessment} postUpdatedAt={postUpdatedAt} cached={cached} />
           <div className="flex flex-col gap-3">
             {QUALITY_DIMENSIONS.map((meta) => (
@@ -137,27 +182,12 @@ export function PostQualityPanelView({
   )
 }
 
-function FirstRun({
-  onAssess,
-  assessError,
-}: {
-  onAssess: () => void
-  assessError: string | null
-}) {
+function AssessButton({ onAssess, label }: { onAssess: () => void; label: string }) {
   return (
-    <div className="flex flex-col items-start gap-3">
-      {assessError && <RunError message={assessError} />}
-      <Note>This post hasn't been scored yet.</Note>
-      <p className="text-sm text-secondary-foreground">
-        An assessment reads the post against its campaign brief and its channel's conventions,
-        then scores it on correctness, clarity, engagement and delivery — with a concrete note
-        on each.
-      </p>
-      <Button type="button" variant="default" size="sm" onClick={onAssess}>
-        <SparkleIcon />
-        <span>Assess this post</span>
-      </Button>
-    </div>
+    <Button type="button" variant="default" size="sm" onClick={onAssess}>
+      <SparkleIcon />
+      <span>{label}</span>
+    </Button>
   )
 }
 
@@ -281,24 +311,3 @@ function Flag({ children }: { children: ReactNode }) {
   )
 }
 
-/**
- * A failed run, shown above whatever is already on screen. Deliberately not a
- * replacement for it: the previous assessment is still the truth about the
- * post, and losing it because a re-run failed would be the worse outcome.
- */
-function RunError({ message }: { message: string }) {
-  return (
-    <p className="flex items-start gap-1.5 border border-border px-3 py-2 text-xs/[1.5] text-secondary-foreground">
-      <WarningIcon
-        aria-hidden
-        weight="regular"
-        className="mt-[1px] size-4 shrink-0 text-destructive"
-      />
-      <span>The assessment didn't finish: {message}</span>
-    </p>
-  )
-}
-
-function Note({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-tertiary-foreground">{children}</p>
-}

@@ -5,7 +5,19 @@ import {
   getPostAssessment,
   streamPostAssessment,
 } from '@/services/api/quality'
+import { toast } from '@/stores/toastStore'
 import type { PostEvaluation } from '@/types/quality'
+
+/**
+ * Why a run failed goes to a toast rather than into the panel: the reason is
+ * a server message ("usage limit reached", "the model returned an unparseable
+ * response") that the panel has nothing useful to do with, and printing it
+ * mid-rail buries the one thing the user can act on — the button. The panel
+ * says something broke and offers the retry; this says what broke, once.
+ */
+function reportFailure(message: string): void {
+  toast.error("The assessment didn't finish", { description: message })
+}
 
 /**
  * Its own namespace rather than `['post', id, 'assessment']` on purpose: the
@@ -73,6 +85,19 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
     }
   }, [postId])
 
+  // The panel says a load failed; this says why, once. Keyed on the message
+  // so TanStack's retries and every re-render after them stay silent — only a
+  // genuinely new failure raises a second toast.
+  const loadFailure =
+    query.error && !(query.error instanceof QualityUnavailableError)
+      ? query.error.message || 'Unable to load the assessment'
+      : null
+  useEffect(() => {
+    if (loadFailure) {
+      toast.error("Couldn't load the assessment", { description: loadFailure })
+    }
+  }, [loadFailure])
+
   const assess = useCallback(() => {
     if (abortRef.current) return
     const controller = new AbortController()
@@ -101,6 +126,7 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
         } else {
           terminal = true
           setAssessError(event.message)
+          reportFailure(event.message)
         }
       },
       controller.signal,
@@ -116,7 +142,9 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
           setUnavailableFromRun(true)
           return
         }
-        setAssessError(error instanceof Error ? error.message : 'The assessment failed')
+        const message = error instanceof Error ? error.message : 'The assessment failed'
+        setAssessError(message)
+        reportFailure(message)
       })
       .finally(() => {
         if (abortRef.current === controller) abortRef.current = null
@@ -133,16 +161,11 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
     void refetch()
   }, [refetch])
 
-  const loadUnavailable = query.error instanceof QualityUnavailableError
-
   return {
     assessment: query.data,
     loading: query.isPending,
-    unavailable: loadUnavailable || unavailableFromRun,
-    loadError:
-      query.error && !loadUnavailable
-        ? query.error.message || 'Unable to load the assessment'
-        : null,
+    unavailable: query.error instanceof QualityUnavailableError || unavailableFromRun,
+    loadError: loadFailure,
     reload,
     assess,
     assessing,
