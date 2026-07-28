@@ -66,6 +66,14 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
   follow the theme.
 - **Charts** (`--chart-*`) are data-viz colors; they anchor to Layer 1 or raw
   oklch by design, not to surface semantics.
+- **Campaign identity** (`--campaign-1…7`) is a categorical scale on the same
+  footing as the charts: seven dark, low-chroma hues that tell campaigns apart
+  in the sidebar. A campaign's hue is picked by hashing its id
+  (`src/lib/campaignColor.ts`), so it is per-campaign and cannot be a static
+  utility class — `campaignColorVar(id)` returns `var(--campaign-N)` for the
+  SVG `fill`/`stroke` that needs it. Held to one lightness with the chroma
+  pushed as far as each hue carries it — seven marks have to be told apart at
+  20px, and the first, muted cut of this palette could not be.
 - **Shadows** carry their color inside the shadow tokens
   (`--shadow-md`, `--shadow-lg`, `--shadow-top`).
 
