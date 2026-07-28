@@ -1,4 +1,4 @@
-import { WarningIcon } from '@phosphor-icons/react'
+import type { ReactNode } from 'react'
 import { Collapse } from '@/components/ui/collapse'
 import { BAND_TEXT, BAND_FILL, DIMENSION_ICON } from './tokens.ts'
 import { cn } from '@/lib'
@@ -49,9 +49,12 @@ export function QualityDimensionCard({
               badge floating in it. */}
           <span
             aria-hidden
-            className="flex size-10 shrink-0 items-center justify-center bg-secondary"
+            className="flex size-10 shrink-0 items-center justify-center bg-tertiary"
           >
-            <Icon className="size-5 text-secondary-foreground" weight="regular" />
+            {/* Filled, but a step further back in the ramp: a solid glyph at
+                20px carries enough weight on its own that the darker ink made
+                it compete with the score for the eye. */}
+            <Icon className="size-5 text-quaternary-foreground" weight="fill" />
           </span>
           <div className="min-w-0">
             {/* The name is the quieter line. What the reader needs is what the
@@ -82,27 +85,37 @@ export function QualityDimensionCard({
           <p className="text-sm/[1.5] text-secondary-foreground">{dimension.rationale}</p>
         )}
 
+        {/* CON-85 makes the model name a weakness for every dimension, even
+            on a 10 — it is the counterweight to sycophantic scoring, not a
+            finding. A warning triangle said "defect" about a line that is
+            mandatory by design; a section label says what it actually is. */}
         {dimension.weakness && (
-          <p className="flex items-start gap-1.5 text-sm/[1.5] text-secondary-foreground">
-            <WarningIcon
-              aria-hidden
-              weight="regular"
-              className="mt-[3px] size-4 shrink-0 text-warning"
-            />
-            <span>{dimension.weakness}</span>
-          </p>
+          <section className="flex flex-col gap-0.5">
+            <SubHeader>WORTH TIGHTENING</SubHeader>
+            <p className="text-sm/[1.5] text-secondary-foreground">{dimension.weakness}</p>
+          </section>
         )}
       </div>
 
       {suggestions.length > 0 && (
         <Collapse
-          // Collapsed by default: four cards' worth of open suggestions is a
-          // wall, and the score plus the weakness is what most reads need.
-          title={`${suggestions.length} suggestion${suggestions.length === 1 ? '' : 's'}`}
+          // A child span, not the title string: `Collapse` styles its own
+          // title (13px, tracked, foreground) for use as a form section
+          // heading, which read as a third weight competing with the two
+          // above it. Classes set inside win over the inherited ones.
+          title={
+            <SubHeader>
+              {suggestions.length} SUGGESTION{suggestions.length === 1 ? '' : 'S'}
+            </SubHeader>
+          }
+          // Collapsed: four cards' worth of open suggestions is a wall, and
+          // the score plus the weakness is what most reads need.
           defaultOpen={suggestionsOpen}
           className="border-t border-border px-3"
         >
-          <ul className="flex flex-col gap-2.5 pb-3">
+          {/* `Collapse`'s trigger only carries 8px of its own padding below
+              the label, which left the first suggestion sitting on it. */}
+          <ul className="flex flex-col gap-2.5 pt-1 pb-3">
             {suggestions.map((suggestion, i) => (
               <li key={i} className="flex flex-col gap-1">
                 <div className="flex items-baseline gap-2">
@@ -134,5 +147,18 @@ export function QualityDimensionCard({
         </Collapse>
       )}
     </section>
+  )
+}
+
+/**
+ * The card's section labels. Matches the "NOTES" heading in the post preview
+ * panel — the app's existing idiom for naming a block without competing with
+ * what is in it. Written in capitals in the copy, so they survive a restyle.
+ */
+function SubHeader({ children }: { children: ReactNode }) {
+  return (
+    <span className="text-xs font-normal tracking-normal text-tertiary-foreground">
+      {children}
+    </span>
   )
 }
