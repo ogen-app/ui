@@ -145,6 +145,9 @@ export function FoldedText({
   )
 }
 
+/** The hairline the feeds leave between tiles in a multi-image post. */
+const TILE_GAP = 2
+
 /**
  * The image block. Layouts follow what the feeds actually do with 1–4+ images:
  * one fills the width, two split it, three give the first the left half, and
@@ -154,15 +157,11 @@ export function FoldedText({
 export function PreviewMedia({
   urls,
   aspect,
-  gap = 2,
-  radius = 0,
   background,
 }: {
   urls: string[]
   /** CSS aspect-ratio for the block as a whole. */
   aspect?: number
-  gap?: number
-  radius?: number
   background: string
 }) {
   if (urls.length === 0) return null
@@ -172,7 +171,7 @@ export function PreviewMedia({
 
   if (shown.length === 1) {
     return (
-      <div style={{ background, borderRadius: radius, overflow: 'hidden' }}>
+      <div style={{ background, overflow: 'hidden' }}>
         <Frame url={shown[0]} aspect={aspect} />
       </div>
     )
@@ -186,9 +185,8 @@ export function PreviewMedia({
     <div
       className="grid"
       style={{
-        gap,
+        gap: TILE_GAP,
         background,
-        borderRadius: radius,
         overflow: 'hidden',
         gridTemplateColumns: '1fr 1fr',
         aspectRatio: aspect ?? (shown.length === 2 ? 2 : 1.2),
@@ -202,7 +200,7 @@ export function PreviewMedia({
               the lower one comes out shorter than the upper. */}
           <div
             className="grid h-full min-h-0"
-            style={{ gap, gridTemplateRows: '1fr 1fr' }}
+            style={{ gap: TILE_GAP, gridTemplateRows: '1fr 1fr' }}
           >
             <Frame url={shown[1]} fill />
             <Frame url={shown[2]} fill />

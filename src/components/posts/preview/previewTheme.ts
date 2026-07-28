@@ -29,12 +29,13 @@ export const PREVIEW_FONT =
 export const PREVIEW_BORDER = '#dbdbdb'
 export const PREVIEW_SHADOW = '0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06)'
 
+// The card surface itself is PreviewSurface's job, so these carry only what
+// differs per network.
 export const LINKEDIN = {
   link: '#0a66c2',
   text: 'rgba(0,0,0,0.9)',
   muted: 'rgba(0,0,0,0.6)',
   action: 'rgba(0,0,0,0.6)',
-  surface: '#ffffff',
 } as const
 
 export const FACEBOOK = {
@@ -42,13 +43,10 @@ export const FACEBOOK = {
   text: '#080809',
   muted: '#65676b',
   action: '#65676b',
-  surface: '#ffffff',
   cardFill: '#f0f2f5',
 } as const
 
 export const INSTAGRAM = {
   text: '#000000',
   muted: '#737373',
-  surface: '#ffffff',
-  accent: '#0095f6',
 } as const
