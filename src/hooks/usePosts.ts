@@ -1,13 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useMemo } from 'react'
 import { createPost, deletePost, listCampaignPosts, updatePost } from '@/services/api/posts'
+import { campaignOverviewKey } from '@/hooks/useCampaigns'
 import { atDefaultTime } from '@/lib/postSchedule'
 import { selectStreamedPosts, useAssistantStore } from '@/stores/assistantStore'
 import type { StreamedPost } from '@/types/assistant'
 import type { Post, PostPayload } from '@/types/posts'
 
 export const campaignPostsKey = (campaignId: string) => ['campaigns', campaignId, 'posts'] as const
+
+/**
+ * The server's overview is a roll-up of these posts, so it goes stale with
+ * them. It sits beside this key rather than under it, so invalidating the
+ * post list alone leaves the Overview's distribution showing the old totals.
+ */
+function invalidateCampaignPosts(qc: QueryClient, campaignId: string): void {
+  qc.invalidateQueries({ queryKey: campaignPostsKey(campaignId) })
+  qc.invalidateQueries({ queryKey: campaignOverviewKey(campaignId) })
+}
 
 /**
  * The campaign's posts, with any the assistant is generating right now folded
@@ -64,7 +76,7 @@ export function useCreatePost(campaignId: string) {
   return useMutation({
     mutationFn: (payload: PostPayload) => createPost(payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: campaignPostsKey(campaignId) })
+      invalidateCampaignPosts(qc, campaignId)
     },
   })
 }
@@ -120,7 +132,7 @@ export function useUpdatePost(campaignId: string) {
       if (ctx?.prev) qc.setQueryData(campaignPostsKey(campaignId), ctx.prev)
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: campaignPostsKey(campaignId) })
+      invalidateCampaignPosts(qc, campaignId)
     },
   })
 }
@@ -130,7 +142,7 @@ export function useDeletePost(campaignId: string) {
   return useMutation({
     mutationFn: (id: string) => deletePost(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: campaignPostsKey(campaignId) })
+      invalidateCampaignPosts(qc, campaignId)
     },
   })
 }
