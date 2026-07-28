@@ -7,14 +7,17 @@ import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
+import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActions'
+import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { POST_SETTINGS_PORTAL_ID } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
+import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
@@ -102,6 +105,11 @@ function PostEditorSurface({
   // field for it — it's expressed by which status SCHEDULE lands on — so it
   // only has to survive until the button is pressed.
   const [publishMethod, setPublishMethod] = useState<PublishMethod>('auto')
+
+  // Attachments, the platform's post-type rules and the checks derived from
+  // both. Called once here because the media card and the validations
+  // section are two views of the same state (and share upload progress).
+  const media = usePostMedia(doc)
 
   // Called once, here, and shared: the header button and the badge menu must
   // see the same in-flight guard, or one could fire a second transition
@@ -235,6 +243,9 @@ function PostEditorSurface({
                 onPublishMethodChange={setPublishMethod}
               />
             </div>
+            <div className="w-content">
+              <PostValidationsSection checks={media.checks} />
+            </div>
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
                 <textarea
@@ -254,6 +265,17 @@ function PostEditorSurface({
                   readOnly={assistantRunning}
                 />
               </div>
+            </div>
+            <div className="w-content empty:hidden">
+              <PostMediaCard
+                post={doc}
+                attachments={media.attachments}
+                pending={media.pending}
+                policy={media.policy}
+                upload={media.upload}
+                remove={media.remove}
+                reorder={media.reorder}
+              />
             </div>
           </div>
         </ScrollArea>
