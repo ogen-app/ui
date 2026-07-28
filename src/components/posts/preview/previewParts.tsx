@@ -1,7 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import { cn } from '@/lib'
 import { foldText } from '@/lib/socialText.ts'
-import { PREVIEW_FONT } from './previewTheme.ts'
+import { PREVIEW_BORDER, PREVIEW_FONT, PREVIEW_SHADOW } from './previewTheme.ts'
 
 /**
  * Pieces shared by the platform previews. Everything here is styled with
@@ -9,7 +9,11 @@ import { PREVIEW_FONT } from './previewTheme.ts'
  * these components sit outside the token system.
  */
 
-/** The card the whole preview sits in. Fixes the font so our UI font never leaks in. */
+/**
+ * The card the whole preview sits in. Fixes the font so our UI font never
+ * leaks in, and carries the shared border and shadow — `style` can override
+ * anything platform-specific (the corner radius does).
+ */
 export function PreviewSurface({
   children,
   style,
@@ -22,7 +26,13 @@ export function PreviewSurface({
   return (
     <div
       className={cn('overflow-hidden text-left', className)}
-      style={{ fontFamily: PREVIEW_FONT, ...style }}
+      style={{
+        fontFamily: PREVIEW_FONT,
+        background: '#ffffff',
+        border: `1px solid ${PREVIEW_BORDER}`,
+        boxShadow: PREVIEW_SHADOW,
+        ...style,
+      }}
     >
       {children}
     </div>
@@ -263,19 +273,11 @@ function Frame({
 }
 
 /** One of the Like / Comment / Share style buttons along the card's foot. */
-export function ActionRow({
-  children,
-  color,
-  borderColor,
-}: {
-  children: ReactNode
-  color: string
-  borderColor: string
-}) {
+export function ActionRow({ children, color }: { children: ReactNode; color: string }) {
   return (
     <div
       className="flex items-center justify-around"
-      style={{ borderTop: `1px solid ${borderColor}`, color, padding: '4px 8px' }}
+      style={{ borderTop: `1px solid ${PREVIEW_BORDER}`, color, padding: '4px 8px' }}
     >
       {children}
     </div>

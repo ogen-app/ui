@@ -86,12 +86,11 @@ export function PostDetailsHeader({
                 aria-label="Preview"
                 aria-expanded={previewOpen}
               >
-                {/* Explicit regular weight, active or not: Button puts icons in
+                {/* Explicit weight rather than inherited: Button puts icons in
                     a bold IconContext, which made this read heavier than the
-                    cloud/gear/dots beside it — and DevicesIcon's fill weight
-                    is a solid block, unreadable as a screen. Colour alone
-                    carries the open state here. */}
-                <DevicesIcon weight="regular" className="size-5" />
+                    cloud/gear/dots beside it. Fills when open, matching the
+                    gear next to it. */}
+                <DevicesIcon weight={previewOpen ? 'fill' : 'regular'} className="size-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Preview</TooltipContent>

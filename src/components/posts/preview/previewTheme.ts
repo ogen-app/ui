@@ -17,12 +17,23 @@
 export const PREVIEW_FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 
+/**
+ * One border and one shadow across all three cards.
+ *
+ * The networks each use a slightly different hairline — Facebook's #ced0d4 is
+ * noticeably darker than LinkedIn's 8% black — and reproducing that difference
+ * made the cards look inconsistent rather than authentic when switching
+ * platforms in the same panel. The shadow lifts the card off the panel, which
+ * is what makes it read as a preview *of* something.
+ */
+export const PREVIEW_BORDER = '#dbdbdb'
+export const PREVIEW_SHADOW = '0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06)'
+
 export const LINKEDIN = {
   link: '#0a66c2',
   text: 'rgba(0,0,0,0.9)',
   muted: 'rgba(0,0,0,0.6)',
   action: 'rgba(0,0,0,0.6)',
-  border: 'rgba(0,0,0,0.08)',
   surface: '#ffffff',
 } as const
 
@@ -31,7 +42,6 @@ export const FACEBOOK = {
   text: '#080809',
   muted: '#65676b',
   action: '#65676b',
-  border: '#ced0d4',
   surface: '#ffffff',
   cardFill: '#f0f2f5',
 } as const
@@ -39,7 +49,6 @@ export const FACEBOOK = {
 export const INSTAGRAM = {
   text: '#000000',
   muted: '#737373',
-  border: '#dbdbdb',
   surface: '#ffffff',
   accent: '#0095f6',
 } as const

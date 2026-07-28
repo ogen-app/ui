@@ -1,5 +1,4 @@
 import { useMemo, type JSX, type ReactNode } from 'react'
-import { WarningCircleIcon } from '@phosphor-icons/react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount.ts'
 import { getPlatformInfo } from '@/lib/platformDictionary.ts'
@@ -16,6 +15,17 @@ const RENDERERS: Record<string, (props: PreviewProps) => JSX.Element> = {
   linkedin: LinkedInPreview,
   facebook: FacebookPreview,
   instagram: InstagramPreview,
+}
+
+/**
+ * How many images each card renders, so the notes can say what was left out.
+ * Must match what the components actually do: the feeds collapse the rest
+ * behind a "+N" tile, and Instagram shows only the first frame of a carousel.
+ */
+const MEDIA_SHOWN: Record<string, number> = {
+  linkedin: 4,
+  facebook: 4,
+  instagram: 1,
 }
 
 /**
@@ -40,21 +50,26 @@ export function PostPreviewPanel({ doc, onClose }: { doc: Post; onClose?: () => 
 
   const Renderer = platform ? RENDERERS[platform.zernioId] : undefined
   const limits = platform ? PLATFORM_TEXT_LIMITS[platform.zernioId] : undefined
+  const shownMedia = Math.min(
+    doc.media_urls.length,
+    (platform && MEDIA_SHOWN[platform.zernioId]) ?? 0,
+  )
 
   return (
     <RailPanel
       title="Preview"
       onClose={onClose}
       className="h-full"
-      titleAdornment={
-        platform && (
-          <span className="flex items-center gap-1.5 text-sm text-tertiary-foreground">
-            <platform.icon className="size-4" style={{ color: platform.color }} aria-hidden />
-            {platform.name}
-          </span>
-        )
-      }
     >
+      {/* The platform gets its own line rather than riding the title: it is
+          what the card below *is*, not a qualifier on the panel's name. */}
+      {platform && (
+        <div className="flex items-center gap-2">
+          <platform.icon size={20} weight="fill" color={platform.color} aria-hidden />
+          <span className="text-sm text-secondary-foreground">{platform.name}</span>
+        </div>
+      )}
+
       {!platform ? (
         <Note>Pick a platform for this post and its preview appears here.</Note>
       ) : !Renderer ? (
@@ -77,48 +92,115 @@ export function PostPreviewPanel({ doc, onClose }: { doc: Post; onClose?: () => 
             timeLabel={timeLabel}
           />
 
-          <div className="flex flex-col gap-2 text-xs text-tertiary-foreground">
-            {limits && <CharacterCount length={text.length} max={limits.max} />}
-            {!author.connected && (
-              <Warning>
-                No {platform.name} account is connected, so the name and picture above are
-                placeholders.
-              </Warning>
-            )}
-            {looksLikeMarkdown(doc.content) && (
-              <Warning>
-                {platform.name} publishes plain text — the formatting in the editor is shown
-                here as it will actually appear.
-              </Warning>
-            )}
-            <p>
-              An approximation, not a guarantee: the real post depends on the viewer's device
-              and whatever {platform.name} changed this week.
-            </p>
-          </div>
+          <Notes
+            platformName={platform.name}
+            title={doc.title}
+            markdown={doc.content}
+            mediaCount={doc.media_urls.length}
+            shownMedia={shownMedia}
+            overLimit={limits ? text.length > limits.max : false}
+            max={limits?.max}
+            accountConnected={author.connected}
+          />
         </>
       )}
     </RailPanel>
   )
 }
 
-function CharacterCount({ length, max }: { length: number; max: number }) {
-  const over = length > max
+/**
+ * What the preview did to the post to produce the card above.
+ *
+ * Every line here is a difference between what the user typed and what
+ * publishes — the things a faithful-looking card would otherwise hide.
+ */
+function Notes({
+  platformName,
+  title,
+  markdown,
+  mediaCount,
+  shownMedia,
+  overLimit,
+  max,
+  accountConnected,
+}: {
+  platformName: string
+  title: string
+  markdown: string
+  mediaCount: number
+  /** How many of the images the card actually renders. */
+  shownMedia: number
+  overLimit: boolean
+  max?: number
+  accountConnected: boolean
+}) {
+  const notes: ReactNode[] = []
 
-  return (
-    <p className={over ? 'text-destructive' : undefined}>
-      {length.toLocaleString()} / {max.toLocaleString()} characters
-      {over && ' — too long to publish'}
-    </p>
+  if (title.trim()) {
+    notes.push(
+      <>
+        The title is not published. {platformName} posts have no title field, so it stays in
+        Ogen as the post's name.
+      </>,
+    )
+  }
+
+  if (looksLikeMarkdown(markdown)) {
+    notes.push(
+      <>
+        Formatting is flattened. {platformName} publishes plain text, so bold, headings and
+        links are shown here as they will actually read.
+      </>,
+    )
+  }
+
+  if (mediaCount > shownMedia) {
+    notes.push(
+      <>
+        {shownMedia === 1
+          ? `Only the first of ${mediaCount} images is shown`
+          : `Only ${shownMedia} of ${mediaCount} images are shown`}
+        , which is what {platformName} puts in the feed.
+      </>,
+    )
+  }
+
+  if (!accountConnected) {
+    notes.push(
+      <>
+        No {platformName} account is connected, so the name and picture above are
+        placeholders.
+      </>,
+    )
+  }
+
+  if (overLimit && max) {
+    notes.push(
+      <span className="text-destructive">
+        The text is past {platformName}'s limit of {max.toLocaleString()} characters and will
+        be rejected.
+      </span>,
+    )
+  }
+
+  notes.push(
+    <>
+      Everything else is an approximation — the real post depends on the reader's device and
+      on whatever {platformName} changed this week.
+    </>,
   )
-}
 
-function Warning({ children }: { children: ReactNode }) {
   return (
-    <p className="flex gap-1.5">
-      <WarningCircleIcon className="size-4 shrink-0 translate-y-px" aria-hidden />
-      <span>{children}</span>
-    </p>
+    <section className="flex flex-col gap-1.5">
+      <h3 className="text-xs text-tertiary-foreground">NOTES</h3>
+      <ul className="flex flex-col gap-1.5">
+        {notes.map((note, i) => (
+          <li key={i} className="text-xs text-secondary-foreground">
+            {note}
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 

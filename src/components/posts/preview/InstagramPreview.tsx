@@ -23,9 +23,7 @@ export function InstagramPreview({ text, mediaUrls, author, timeLabel }: Preview
   const handle = author.username ?? author.name ?? 'your.account'
 
   return (
-    <PreviewSurface
-      style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4 }}
-    >
+    <PreviewSurface style={{ borderRadius: 4 }}>
       <div className="flex items-center gap-2 px-3 py-2">
         <PreviewAvatar src={author.avatarUrl} name={handle} size={32} background={C.muted} />
         <div

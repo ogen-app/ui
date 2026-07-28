@@ -29,9 +29,7 @@ export function LinkedInPreview({ text, mediaUrls, author, timeLabel }: PreviewP
   const name = author.name ?? 'Your page'
 
   return (
-    <PreviewSurface
-      style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8 }}
-    >
+    <PreviewSurface style={{ borderRadius: 8 }}>
       <div className="flex items-start gap-2 px-3 pt-3 pb-1">
         <PreviewAvatar src={author.avatarUrl} name={name} size={48} background={C.link} />
         <div className="min-w-0 flex-1">
@@ -70,7 +68,7 @@ export function LinkedInPreview({ text, mediaUrls, author, timeLabel }: PreviewP
 
       <PreviewMedia urls={mediaUrls} aspect={1.91} background="#f3f2ef" />
 
-      <ActionRow color={C.action} borderColor={C.border}>
+      <ActionRow color={C.action}>
         <Action icon={<ThumbsUpIcon className="size-5" aria-hidden />} label="Like" />
         <Action icon={<ChatCircleIcon className="size-5" aria-hidden />} label="Comment" />
         <Action icon={<RepeatIcon className="size-5" aria-hidden />} label="Repost" />
