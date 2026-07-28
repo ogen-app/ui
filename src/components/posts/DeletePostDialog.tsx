@@ -37,7 +37,7 @@ function warningFor(status: PostStatus, when: string | null) {
   switch (status) {
     case 'published':
       return {
-        confirmLabel: 'Delete anyway',
+        confirmLabel: 'DELETE ANYWAY',
         body: (
           <>
             <p>
@@ -55,7 +55,7 @@ function warningFor(status: PostStatus, when: string | null) {
     case 'scheduled':
     case 'scheduled_for_manual_publishing':
       return {
-        confirmLabel: 'Cancel schedule and delete',
+        confirmLabel: 'CANCEL SCHEDULE AND DELETE',
         body: (
           <>
             <p>
@@ -69,7 +69,7 @@ function warningFor(status: PostStatus, when: string | null) {
       }
     default:
       return {
-        confirmLabel: 'Delete post',
+        confirmLabel: 'DELETE POST',
         body: <p>This post will be permanently deleted. This cannot be undone.</p>,
       }
   }
@@ -131,7 +131,7 @@ export function DeletePostDialog({ post, isOpen, onClose, onDeleted }: Props) {
         </div>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose} disabled={deleting}>
-            Keep post
+            KEEP POST
           </Button>
           <Button
             type="button"

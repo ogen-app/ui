@@ -3,8 +3,8 @@ import { Link } from '@tanstack/react-router'
 import {
   CircleDashedIcon,
   ClockIcon,
-  ExclamationMarkIcon,
   LockIcon,
+  WarningIcon,
 } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
 import { POST_STATUS_LABELS } from '@/types/posts'
@@ -17,21 +17,22 @@ type PostCardProps = {
   post: Post
 }
 
-// Status is conveyed by a 2px accent on the card's left edge. Draft is
-// intentionally transparent (the border still reserves its 2px so every
-// card stays aligned).
+// Status is conveyed by a 2px accent on the card's left edge. Draft takes
+// the same neutral line every other border in the app uses — it is a real
+// status, not the absence of one, and a transparent edge read as a card
+// that had failed to load its colour.
 const STATUS_BORDER_COLOR: Record<string, string> = {
-  draft: 'border-l-transparent',
-  ready_for_publish: 'border-l-chart-4',
+  draft: 'border-l-border',
+  ready_for_publish: 'border-l-info',
   scheduled: 'border-l-positive',
-  scheduled_for_manual_publishing: 'border-l-chart-5',
+  scheduled_for_manual_publishing: 'border-l-attention',
   failed: 'border-l-destructive',
   published: 'border-l-positive',
   not_published: 'border-l-negative',
 }
 
 /**
- * The title's type scale, between 10 and 14px, from the two things that
+ * The title's type scale, between 12 and 14px, from the two things that
  * decide whether two lines are enough: how wide the card is (`cqw`, off the
  * card's own container) and how much there is to fit. Width alone doesn't do
  * it — at one fixed ratio a 30-character title wastes the space a 60-character
@@ -39,13 +40,16 @@ const STATUS_BORDER_COLOR: Record<string, string> = {
  * floor sooner. Static class strings, not a computed style, so Tailwind can
  * see them.
  *
- * The floor is a floor: past roughly 60 characters on a 150px column nothing
- * inside the range fits two lines, and `line-clamp-2` takes over.
+ * 12px is a hard floor, held above what would fit rather than below it:
+ * two lines at 12px on a 150px column run out somewhere around 40 characters,
+ * so most real titles clamp. That is the trade — a title you can read and a
+ * tail you can't see, over a whole title in type too small to scan a week of.
+ * `line-clamp-2` takes it from there.
  */
 function titleSize(title: string): string {
-  if (title.length <= 30) return 'text-[clamp(10px,9cqw,14px)]'
-  if (title.length <= 48) return 'text-[clamp(10px,8cqw,13px)]'
-  return 'text-[clamp(10px,6cqw,12px)]'
+  if (title.length <= 30) return 'text-[clamp(12px,9cqw,14px)]'
+  if (title.length <= 48) return 'text-[clamp(12px,8cqw,13px)]'
+  return 'text-[12px]'
 }
 
 function PostCardComponent({ post }: PostCardProps) {
@@ -58,7 +62,7 @@ function PostCardComponent({ post }: PostCardProps) {
     ? getPostTypeLabel(post.platform_id, post.platform_post_type)
     : 'No platform'
   const statusLabel = POST_STATUS_LABELS[post.status] ?? post.status
-  const borderColor = STATUS_BORDER_COLOR[post.status] ?? 'border-l-transparent'
+  const borderColor = STATUS_BORDER_COLOR[post.status] ?? 'border-l-border'
   // The calendar lays posts out by scheduled_at; show that time (or the
   // publish time once published). Unscheduled posts have neither — omit it.
   const timeSource = post.scheduled_at ?? post.published_at
@@ -96,11 +100,11 @@ function PostCardComponent({ post }: PostCardProps) {
         e.dataTransfer.effectAllowed = 'move'
       }}
       className={cn(
-        // 4px of padding: the columns go down to 150px, so every pixel not
-        // spent on inset buys title characters. The shadow does the work the
-        // padding used to — it separates the card from the lane behind it
+        // 8px of padding, against the lane's 4px: the card should read as
+        // the object and the lane as the gap between objects, so the inset
+        // belongs to the card. The shadow separates it from the lane behind
         // without a border eating another 2px on each side.
-        'bg-primary p-1 w-full border-l-2',
+        'bg-primary p-2 w-full border-l-2',
         borderColor,
         // `@container` so the title can size itself off the card's own width
         // — the columns are flex-1 from a 150px floor, so the same card is
@@ -125,26 +129,31 @@ function PostCardComponent({ post }: PostCardProps) {
         </div>
       )}
 
-      {/* Row 1 — a 12px flag, then the status. The two flags share one slot
-          and never both show: a broken post is the more urgent fact, and a
-          locked date is small print next to it. */}
-      <div className="flex items-center gap-1 text-[10px]/[14px] text-tertiary-foreground">
+      {/* Row 1 — status on the left, a 12px flag pinned to the right edge.
+          The flag sits opposite the status rather than beside it so it lands
+          in the same spot on every card in the column, scannable as a margin
+          of exceptions instead of something to find inside each line. The two
+          flags share that one slot and never both show: a broken post is the
+          more urgent fact, and a locked date is small print next to it. */}
+      <div className="flex items-center gap-1 text-[12px]/[16px] text-tertiary-foreground">
+        <span className="truncate">{statusLabel}</span>
         {problem ? (
-          <ExclamationMarkIcon
-            weight="bold"
-            className="size-3 shrink-0 text-destructive"
+          // Filled rather than outlined: at 10px an outline triangle's stroke
+          // and its counter are each under a pixel and silt up into a blob.
+          <WarningIcon
+            weight="fill"
+            className="size-2.5 shrink-0 ml-auto text-warning"
             aria-label="This post has a problem"
           />
         ) : (
           !draggable && (
             <LockIcon
               weight="bold"
-              className="size-3 shrink-0"
+              className="size-3 shrink-0 ml-auto"
               aria-label="This post's date is locked"
             />
           )
         )}
-        <span className="truncate">{statusLabel}</span>
       </div>
 
       {/* Row 2 — title. The type scales with the card so two lines of it fit
@@ -157,14 +166,14 @@ function PostCardComponent({ post }: PostCardProps) {
 
       {/* Row 3 — time */}
       {time && (
-        <div className="flex items-center gap-1.5 text-[10px]/[14px] text-tertiary-foreground">
+        <div className="flex items-center gap-1.5 text-[12px]/[16px] text-tertiary-foreground">
           <ClockIcon className="size-3.5 shrink-0" />
           <span className="truncate">{time}</span>
         </div>
       )}
 
       {/* Row 4 — platform */}
-      <div className="flex items-center gap-1.5 text-[10px]/[14px] text-tertiary-foreground min-w-0">
+      <div className="flex items-center gap-1.5 text-[12px]/[16px] text-tertiary-foreground min-w-0">
         <PlatformIcon
           weight="fill"
           color={platformInfo?.color}

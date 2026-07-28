@@ -43,7 +43,7 @@ export function SetupModule({
     <OverviewCard
       title="Setup"
       status={
-        <StatusBadge tone="warn" label={`${done} of ${checks.length} done`} />
+        <StatusBadge tone="progress" label={`${done} of ${checks.length} done`} />
       }
       link={{
         target: "settings",
