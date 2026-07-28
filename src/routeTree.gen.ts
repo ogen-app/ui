@@ -14,7 +14,6 @@ import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unav
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedContentBankRouteImport } from './routes/_authenticated/content-bank'
-import { Route as DesignPostQualityIndexRouteImport } from './routes/design/post-quality/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
@@ -62,11 +61,6 @@ const AuthenticatedContentBankRoute =
     path: '/content-bank',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const DesignPostQualityIndexRoute = DesignPostQualityIndexRouteImport.update({
-  id: '/design/post-quality/',
-  path: '/design/post-quality/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
   id: '/auth/register/',
   path: '/auth/register/',
@@ -208,7 +202,6 @@ export interface FileRoutesByFullPath {
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
-  '/design/post-quality/': typeof DesignPostQualityIndexRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -234,7 +227,6 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginIndexRoute
   '/auth/logout': typeof AuthLogoutIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
-  '/design/post-quality': typeof DesignPostQualityIndexRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -264,7 +256,6 @@ export interface FileRoutesById {
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
-  '/design/post-quality/': typeof DesignPostQualityIndexRoute
   '/_authenticated/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/_authenticated/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/_authenticated/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -294,7 +285,6 @@ export interface FileRouteTypes {
     | '/auth/login/'
     | '/auth/logout/'
     | '/auth/register/'
-    | '/design/post-quality/'
     | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
@@ -320,7 +310,6 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/logout'
     | '/auth/register'
-    | '/design/post-quality'
     | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
@@ -349,7 +338,6 @@ export interface FileRouteTypes {
     | '/auth/login/'
     | '/auth/logout/'
     | '/auth/register/'
-    | '/design/post-quality/'
     | '/_authenticated/campaigns/$campaignId/assets'
     | '/_authenticated/campaigns/$campaignId/brief'
     | '/_authenticated/campaigns/$campaignId/list'
@@ -368,7 +356,6 @@ export interface RootRouteChildren {
   AuthLoginIndexRoute: typeof AuthLoginIndexRoute
   AuthLogoutIndexRoute: typeof AuthLogoutIndexRoute
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
-  DesignPostQualityIndexRoute: typeof DesignPostQualityIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -407,13 +394,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/content-bank'
       preLoaderRoute: typeof AuthenticatedContentBankRouteImport
       parentRoute: typeof AuthenticatedRoute
-    }
-    '/design/post-quality/': {
-      id: '/design/post-quality/'
-      path: '/design/post-quality'
-      fullPath: '/design/post-quality/'
-      preLoaderRoute: typeof DesignPostQualityIndexRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/auth/register/': {
       id: '/auth/register/'
@@ -657,7 +637,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLoginIndexRoute: AuthLoginIndexRoute,
   AuthLogoutIndexRoute: AuthLogoutIndexRoute,
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,
-  DesignPostQualityIndexRoute: DesignPostQualityIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -52,9 +52,8 @@ export type PostQualityPanelViewProps = {
  * post in the editor, which is the failure mode of a cached assessment.
  *
  * Presentational, and stays that way: every state it can be in is reachable
- * from props alone, which is what lets the design harness at
- * `/design/post-quality` show all of them side by side. `PostQualityPanel`
- * is the container that feeds it from the API.
+ * from props alone. `PostQualityPanel` is the container that feeds it from
+ * the API.
  */
 export function PostQualityPanelView({
   assessment,
