@@ -6,6 +6,7 @@ import type {
 import { getCharLimit } from '@/lib/platformLimits'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import { strandedAttachments, type MediaPolicy } from '@/lib/postMedia'
+import { markdownToSocialText } from '@/lib/socialText'
 
 /**
  * `fail` blocks publishing (the server would reject it), `warn` is
@@ -59,7 +60,13 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
         : typeLabel,
   })
 
-  const content = (post.content ?? '').trim()
+  // Measured on the flattened text, not the Markdown the editor stores: the
+  // syntax characters (`**`, `## `, the brackets around a link) are not part
+  // of what a platform receives, so counting them reports a length the
+  // network never sees. Copy that is only formatting — a lone `---` — also
+  // flattens to nothing, which is the honest answer for "is there copy".
+  const published = markdownToSocialText(post.content ?? '')
+  const content = published.trim()
   checks.push({
     id: 'content',
     label: 'Copy',
@@ -73,7 +80,7 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
 
   const limit = getCharLimit(post.platform_id)
   if (limit !== undefined) {
-    const length = (post.content ?? '').length
+    const length = published.length
     checks.push({
       id: 'char-limit',
       label: 'Length',
