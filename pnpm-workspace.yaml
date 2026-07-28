@@ -5,3 +5,7 @@
 # (which is what broke the Docker build).
 allowBuilds:
   esbuild: true
+  # msw's postinstall only copies its service worker into a public directory,
+  # which we do explicitly (public/mockServiceWorker.js is committed). Nothing
+  # to run at install time.
+  msw: false

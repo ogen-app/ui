@@ -13,10 +13,6 @@ import { listTags } from "./services/api/tags";
 import { listPlatforms } from "./services/api/platforms";
 import "./index.css";
 
-queryClient.prefetchQuery({ queryKey: CAMPAIGN_TYPES_KEY, queryFn: listCampaignTypes, staleTime: Infinity });
-queryClient.prefetchQuery({ queryKey: TAGS_KEY, queryFn: listTags, staleTime: QUERY_FIVE_MINUTES });
-queryClient.prefetchQuery({ queryKey: PLATFORMS_KEY, queryFn: listPlatforms, staleTime: Infinity });
-
 const router = createRouter({
   routeTree,
   context: {
@@ -31,11 +27,30 @@ declare module "@tanstack/react-router" {
 }
 
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster />
-    </QueryClientProvider>
-  </StrictMode>
-);
+/**
+ * The workspace endpoints are stubbed in development (`src/mocks/`) until the
+ * Go API grows them. The worker has to be listening before the first request
+ * leaves — including the prefetches below and the root guard's session probe —
+ * so boot is async. The import is inside the branch: a production build drops
+ * both it and MSW entirely.
+ */
+async function startStubs(): Promise<void> {
+  if (!import.meta.env.DEV || import.meta.env.VITE_STUB_WORKSPACES === "false") return;
+  const { startWorkspaceStubs } = await import("./mocks/browser");
+  await startWorkspaceStubs();
+}
+
+startStubs().then(() => {
+  queryClient.prefetchQuery({ queryKey: CAMPAIGN_TYPES_KEY, queryFn: listCampaignTypes, staleTime: Infinity });
+  queryClient.prefetchQuery({ queryKey: TAGS_KEY, queryFn: listTags, staleTime: QUERY_FIVE_MINUTES });
+  queryClient.prefetchQuery({ queryKey: PLATFORMS_KEY, queryFn: listPlatforms, staleTime: Infinity });
+
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <Toaster />
+      </QueryClientProvider>
+    </StrictMode>
+  );
+});

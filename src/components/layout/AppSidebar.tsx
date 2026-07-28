@@ -4,8 +4,10 @@ import {
   CalendarDotsIcon,
   CardsThreeIcon,
   CaretDoubleLeftIcon,
+  CheckIcon,
   GearSixIcon,
   NotepadIcon,
+  PlusIcon,
   ScanIcon,
   SidebarIcon,
   SignOutIcon,
@@ -27,10 +29,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/authStore'
 import { useCampaigns } from '@/hooks/useCampaigns'
+import { useSwitchWorkspace, useWorkspaces } from '@/hooks/useWorkspaces'
+import { CreateWorkspaceDialog } from '@/components/workspace-settings/CreateWorkspaceDialog'
+import { toast } from '@/stores/toastStore'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib'
@@ -69,6 +75,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const { data: campaigns } = useCampaigns()
+  const [createWorkspaceOpen, setCreateWorkspaceOpen] = React.useState(false)
 
   const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
 
@@ -268,14 +275,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <div className="text-sm leading-none text-tertiary-foreground">
                       {user?.email}
                     </div>
-                    {user?.tenant && (
-                      <div className="text-xs leading-none text-tertiary-foreground truncate pt-1">
-                        Workspace: {user.tenant.name}
-                      </div>
-                    )}
                   </div>
                 </DropdownMenuLabel>
 
+                  <WorkspaceSwitcher onCreate={() => setCreateWorkspaceOpen(true)} />
 
                   <DropdownMenuItem onClick={handleLogout} size="lg">
                     <SignOutIcon />
@@ -288,6 +291,67 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarRail />
       </Sidebar>
 
+      <CreateWorkspaceDialog
+        isOpen={createWorkspaceOpen}
+        onClose={() => setCreateWorkspaceOpen(false)}
+      />
+    </>
+  )
+}
+
+/**
+ * Workspace list inside the account menu — the fast path between a user's
+ * workspaces.
+ *
+ * It sits here rather than in the sidebar header because switching is rare
+ * and destructive-ish (it reloads the app), and because this is where people
+ * have learned to look for it. The full picture — roles, members, time zones —
+ * lives in Workspace Settings.
+ */
+function WorkspaceSwitcher({ onCreate }: { onCreate: () => void }) {
+  const { data: workspaces, isLoading } = useWorkspaces()
+  const { mutate: switchTo, isPending } = useSwitchWorkspace()
+
+  const handleSwitch = (id: string, isActive: boolean) => {
+    if (isActive || isPending) return
+    switchTo(id, {
+      onError: (err) =>
+        toast.error('Unable to switch workspace', {
+          description: err instanceof Error ? err.message : undefined,
+        }),
+    })
+  }
+
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuLabel className="px-0 text-xs font-medium uppercase text-sidebar-secondary-foreground">
+        Workspaces
+      </DropdownMenuLabel>
+      {isLoading || !workspaces ? (
+        <div className="px-0 py-2 text-sm text-tertiary-foreground">Loading…</div>
+      ) : (
+        workspaces.map((w) => (
+          <DropdownMenuItem
+            key={w.id}
+            size="lg"
+            onSelect={() => handleSwitch(w.id, w.is_active)}
+            disabled={isPending}
+          >
+            {/* The check occupies its slot on every row, so the names stay on
+                one left edge instead of shifting with the active workspace. */}
+            <span className="flex size-4 shrink-0 items-center justify-center">
+              {w.is_active && <CheckIcon className="size-4" />}
+            </span>
+            <span className="truncate">{w.name}</span>
+          </DropdownMenuItem>
+        ))
+      )}
+      <DropdownMenuItem size="lg" onSelect={onCreate}>
+        <PlusIcon />
+        <span>New workspace</span>
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
     </>
   )
 }

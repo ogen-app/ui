@@ -85,6 +85,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
+- **`src/mocks/` stubs the workspace endpoints in development only** (MSW,
+  started from `main.tsx` behind `import.meta.env.DEV`; opt out with
+  `VITE_STUB_WORKSPACES=false`). The handlers are deliberately written as real
+  request/response pairs so they double as the spec for the Go side — see
+  [`docs/workspace-api.md`](./docs/workspace-api.md). Everything outside the
+  workspace routes passes through to the real API. Delete the directory when
+  the endpoints land; don't grow it into a general-purpose mock layer.
 - **Styling is CSS-first:** the theme and tokens live in `src/index.css`; there
   is no `tailwind.config.js`. Use `cn()` from `lib/styles.ts`. Apply z-index
   from `config/zIndex.ts` via inline `style={{ zIndex }}`, not `z-[…]` classes.

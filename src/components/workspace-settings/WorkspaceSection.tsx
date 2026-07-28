@@ -1,76 +1,124 @@
 import { memo, useCallback, useId, useState } from 'react'
-import type { Tenant } from '@/types/tenant'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useCurrentTenant, useRenameTenant } from '@/hooks/useTenant'
+import { TextSelect } from '@/components/ui/text-select'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
+import { useActiveWorkspace, useUpdateWorkspace } from '@/hooks/useWorkspaces'
+import { currentTimeIn, timezoneLabel, timezoneList } from '@/lib/timezones'
+import { ROLE_LABELS, type Workspace } from '@/types/workspace'
 import { ReadOnlyField, SettingsRow } from './SettingsRow'
 
 /**
- * The tenant (organization) settings — CON-97. The name is edited inline;
- * the change is applied by the page header's Save button once dirty. The
- * slug is assigned at signup and stable across renames, so it is never
- * editable.
+ * The current workspace's own settings: name, time zone, slug.
+ *
+ * Both editable fields register with the page-level save context rather than
+ * submitting themselves, so one Save button covers the card — the same
+ * arrangement the campaign settings use.
  */
 function WorkspaceSectionComponent() {
-  const { data: tenant, isLoading, isError } = useCurrentTenant()
+  const workspace = useActiveWorkspace()
 
   return (
-    <SettingsCard>
-      {isLoading ? (
-        <p className="text-sm text-tertiary-foreground">Loading…</p>
-      ) : isError || !tenant ? (
-        <p className="text-sm text-destructive">Failed to load the workspace.</p>
-      ) : (
-        <ul className="flex flex-col">
-          {/* No card h2 here — the row title doubles as the section heading,
-              e.g. "BN Digital Workspace". */}
-          <SettingsRow title={`${tenant.name} Workspace`}>
-            {/* Same two-column body as the platform rows, so the fields line
-                up and stretch across the card. */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-              <NameField tenant={tenant} />
-              <ReadOnlyField label="Slug" value={tenant.slug} />
-            </div>
-          </SettingsRow>
-        </ul>
-      )}
-    </SettingsCard>
+      <SettingsCard>
+        {!workspace ? (
+          <p className="text-sm text-tertiary-foreground">Loading…</p>
+        ) : (
+          <ul className="flex flex-col">
+            {/* No card h2 — the row title doubles as the section heading. */}
+            <SettingsRow
+              title={`${workspace.name} Workspace`}
+              badges={
+                <span className="text-xs text-tertiary-foreground">
+                  You are {ROLE_LABELS[workspace.role].toLowerCase()}
+                </span>
+              }
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+                <NameField workspace={workspace} />
+                <TimezoneField workspace={workspace} />
+                <ReadOnlyField label="Slug" value={workspace.slug} />
+              </div>
+            </SettingsRow>
+          </ul>
+        )}
+      </SettingsCard>
   )
 }
 
-/**
- * Inline-editable organization name. No per-field submit — edits register as
- * dirty with the page-level save context and are persisted by the header's
- * Save button.
- */
-function NameField({ tenant }: { tenant: Tenant }) {
+/** Inline-editable name. Edits mark the page dirty; the header's Save persists them. */
+function NameField({ workspace }: { workspace: Workspace }) {
   const id = useId()
-  // null = pristine; reseeds from the freshest tenant after every save.
+  // null = pristine; reseeds from the freshest workspace after every save.
   const [draft, setDraft] = useState<string | null>(null)
-  const value = draft ?? tenant.name
+  const value = draft ?? workspace.name
   const trimmed = value.trim()
   const invalid = trimmed.length === 0
-  const dirty = !invalid && trimmed !== tenant.name
+  const dirty = !invalid && trimmed !== workspace.name
+  const readOnly = workspace.role === 'member'
 
-  const { mutateAsync: rename } = useRenameTenant()
+  const { mutateAsync: update } = useUpdateWorkspace(workspace.id)
   const save = useCallback(
-    () => rename({ id: tenant.id, name: trimmed }).then(() => setDraft(null)),
-    [rename, tenant.id, trimmed]
+    () => update({ name: trimmed }).then(() => setDraft(null)),
+    [update, trimmed],
   )
   useRegisterSettingsSave('workspace-name', dirty, save)
 
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>Organization name</Label>
+      <Label htmlFor={id}>Workspace name</Label>
       <Input
         id={id}
         value={value}
         onChange={(e) => setDraft(e.target.value)}
         aria-invalid={invalid}
+        disabled={readOnly}
       />
       {invalid && <p className="text-xs text-destructive">Name can’t be empty</p>}
+    </div>
+  )
+}
+
+/**
+ * The workspace time zone (CON-94).
+ *
+ * Instants are stored in UTC; this is the wall-clock everything in the
+ * workspace is written and read against — the calendar's day boundaries, the
+ * scheduler's picker, and the assistant resolving "tomorrow at 9am". Two
+ * workspaces on different continents is the whole reason it is per-workspace
+ * and not per-user.
+ */
+function TimezoneField({ workspace }: { workspace: Workspace }) {
+  const id = useId()
+  const [draft, setDraft] = useState<string | null>(null)
+  const value = draft ?? workspace.timezone
+  const dirty = value !== workspace.timezone
+  const readOnly = workspace.role === 'member'
+
+  const { mutateAsync: update } = useUpdateWorkspace(workspace.id)
+  const save = useCallback(
+    () => update({ timezone: value }).then(() => setDraft(null)),
+    [update, value],
+  )
+  useRegisterSettingsSave('workspace-timezone', dirty, save)
+
+  const now = currentTimeIn(value)
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={id}>Time zone</Label>
+      <TextSelect
+        id={id}
+        value={value}
+        onValueChange={setDraft}
+        disabled={readOnly}
+        elements={timezoneList().map((z) => ({ id: z, displayValue: timezoneLabel(z) }))}
+        className="w-full"
+      />
+      <p className="text-xs text-tertiary-foreground">
+        {now ? `It is ${now} there now. ` : ''}
+        Schedules are shown and entered in this zone.
+      </p>
     </div>
   )
 }
