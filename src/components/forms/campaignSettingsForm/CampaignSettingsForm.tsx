@@ -151,6 +151,10 @@ export function CampaignSettingsForm({ campaign }: Props) {
     [campaign, form, updateCampaignNow],
   )
 
+  // Watched rather than read from the campaign: adding a platform persists
+  // immediately, so the heading's warning has to clear on the click.
+  const noPlatforms = form.watch('target_platforms').length === 0
+
   const isActive = campaign.status === 'active'
   const { mutate: updateStatus, isPending: statusSaving } = useUpdateCampaign()
   const setStatus = (status: CampaignStatus) => {
@@ -386,7 +390,23 @@ export function CampaignSettingsForm({ campaign }: Props) {
           </div>
         </SettingsCard>
 
-        <SettingsCard title="Platforms & Post Types">
+        <SettingsCard
+          title={
+            <>
+              <span className="truncate">Platforms &amp; Post Types</span>
+              {/* After the heading, not before it: the dot comes and goes, and
+                  leading it would shift the title sideways as platforms are
+                  added. Same warning tone as the summary line inside. */}
+              {noPlatforms && (
+                <span
+                  className="size-2 shrink-0 rounded-full bg-warning"
+                  role="img"
+                  aria-label="No platforms selected"
+                />
+              )}
+            </>
+          }
+        >
           <FormField
             control={form.control}
             name="target_platforms"
