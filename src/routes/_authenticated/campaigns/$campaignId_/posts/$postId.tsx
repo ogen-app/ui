@@ -13,7 +13,11 @@ import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActi
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
-import { POST_SETTINGS_PORTAL_ID } from '@/components/layout/RightSidebar'
+import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
+import {
+  POST_PREVIEW_PORTAL_ID,
+  POST_SETTINGS_PORTAL_ID,
+} from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { useCampaign } from '@/hooks/useCampaigns'
@@ -130,11 +134,14 @@ function PostEditorSurface({
   // time, alongside the AI assistant). The route owns the form because it
   // owns the post's autosave pipeline; the sidebar only hosts the layer.
   const settingsOpen = useSettingsStore((s) => s.activeRightPanel === 'postSettings')
+  const previewOpen = useSettingsStore((s) => s.activeRightPanel === 'postPreview')
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
   const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
   const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
+  const [previewHost, setPreviewHost] = useState<HTMLElement | null>(null)
   useEffect(() => {
     setSettingsHost(document.getElementById(POST_SETTINGS_PORTAL_ID))
+    setPreviewHost(document.getElementById(POST_PREVIEW_PORTAL_ID))
   }, [])
 
   // Being on a post page is what makes its assistant thread available: the
@@ -161,11 +168,11 @@ function PostEditorSurface({
     renameThread(threadId, doc.title, campaignName?.trim())
   }, [renameThread, threadId, doc.title, campaignName])
 
-  // Leaving the editor closes its panel; an open assistant stays open.
+  // Leaving the editor closes its panels; an open assistant stays open.
   useEffect(
     () => () => {
       const s = useSettingsStore.getState()
-      if (s.activeRightPanel === 'postSettings') {
+      if (s.activeRightPanel === 'postSettings' || s.activeRightPanel === 'postPreview') {
         s.closeRightPanel()
       }
     },
@@ -223,6 +230,8 @@ function PostEditorSurface({
             saving={saving}
             settingsOpen={settingsOpen}
             onToggleSettings={() => toggleRightPanel('postSettings')}
+            previewOpen={previewOpen}
+            onTogglePreview={() => toggleRightPanel('postPreview')}
             onDownloadMarkdown={handleDownloadMarkdown}
             onDeletePost={() => setDeleteOpen(true)}
             actions={
@@ -293,6 +302,19 @@ function PostEditorSurface({
               onClose={closeRightPanel}
             />,
             settingsHost,
+          )}
+
+        {previewHost &&
+          createPortal(
+            /* Attachments come from the same `usePostMedia` the media card
+               uses — their presigned URLs expire, and one owner keeps one
+               refresh timer. */
+            <PostPreviewPanel
+              doc={doc}
+              attachments={media.attachments}
+              onClose={closeRightPanel}
+            />,
+            previewHost,
           )}
       </div>
       <DeletePostDialog

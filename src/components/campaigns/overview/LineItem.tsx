@@ -27,7 +27,7 @@ export type LineItemTone = "alert" | "warning" | "neutral";
 
 const DOT: Record<LineItemTone, string> = {
   alert: "bg-destructive",
-  warning: "bg-chart-5",
+  warning: "bg-warning",
   neutral: "bg-senary-foreground",
 };
 

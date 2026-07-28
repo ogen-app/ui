@@ -88,7 +88,10 @@ function CampaignLayout() {
               fadeOnScroll
               actions={<SettingsSaveButton />}
             />
-            <div className={"px-3 lg:px-6"}>
+            {/* pt-4 is the shared 16px breath between a page header and its
+                first card — see the same value on Overview and Workspace
+                Settings. */}
+            <div className={"px-3 lg:px-6 pt-4"}>
               <Outlet />
             </div>
           </div>
@@ -104,7 +107,7 @@ function CampaignLayout() {
       <PageContainer variant={"fullFlex"}>
         <div className={"h-0 grow overflow-y-auto flex flex-col"}>
           <PageHeader title={title} fadeOnScroll />
-          <div className={"px-3 lg:px-6"}>
+          <div className={"px-3 lg:px-6 pt-4"}>
             <Outlet />
           </div>
         </div>

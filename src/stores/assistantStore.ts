@@ -450,9 +450,12 @@ export const useAssistantStore = create<AssistantState>()(
               endedAt: performance.now(),
               streaming: false,
             }))
-            // A stopped campaign turn may still have written posts or a brief
-            // before the abort landed, so refresh either way.
-            if (aborted) await refreshSubject(subject, get().threads[threadId], streamedContent)
+            // A stopped or failed campaign turn may still have written posts
+            // or a brief before it ended — the flow persists as it goes — and
+            // the finally below clears streamedPosts, so without a refresh
+            // here those already-saved posts vanish from the calendar until
+            // an unrelated refetch.
+            await refreshSubject(subject, get().threads[threadId], streamedContent)
             finish(aborted ? 'idle' : 'error')
           } finally {
             runners.delete(threadId)

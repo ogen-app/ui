@@ -100,7 +100,7 @@ export function ThreadList() {
             {/* Floated over the row's right end on hover. The gradient lets a
                 long line run under the icons and fade out rather than being
                 truncated short for a column that is usually empty. */}
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100">
               {/* Fades into the row's hover fill — the overlay only ever shows
                   while the row is hovered, so that is the colour to match. */}
               <span

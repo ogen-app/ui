@@ -178,6 +178,31 @@ describe('evaluatePost', () => {
     expect(checks.find((c) => c.id === 'char-limit')?.status).toBe('fail')
   })
 
+  it('counts the flattened text, not the Markdown syntax around it', () => {
+    // 2200 is Instagram's cap. The bold markers push the raw string over it
+    // while the words the platform receives stay under.
+    const words = 'x'.repeat(2190)
+    const checks = evaluatePost({
+      ...base,
+      post: makePost({ content: `**${words}**` }),
+      policy: mediaPolicy(INSTAGRAM, rule({ min_attachments: 0 })),
+      attachments: [],
+    })
+    const limit = checks.find((c) => c.id === 'char-limit')
+    expect(limit?.status).toBe('pass')
+    expect(limit?.detail).toContain('2,190')
+  })
+
+  it('treats copy that is only formatting as no copy at all', () => {
+    const checks = evaluatePost({
+      ...base,
+      post: makePost({ content: '---' }),
+      policy: mediaPolicy(INSTAGRAM, rule({ min_attachments: 0 })),
+      attachments: [],
+    })
+    expect(checks.find((c) => c.id === 'content')?.detail).toBe('No copy yet')
+  })
+
   it('surfaces the server soft warnings for a file', () => {
     const checks = evaluatePost({
       ...base,

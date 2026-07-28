@@ -29,7 +29,15 @@ export function registerPendingSave(key: string, flush: () => Promise<void>): ()
 export async function flushPendingSave(key: string): Promise<void> {
   const set = flushers.get(key)
   if (!set) return
-  // A failed flush must not block the turn — the assistant's write is the more
-  // recent intent either way.
-  await Promise.allSettled([...set].map((flush) => flush()))
+  // Sequential on purpose: a campaign's flushers each PUT the *whole*
+  // campaign, so two in parallel race and the later response silently wins
+  // with the other one's fields missing. A failed flush still must not block
+  // the turn — the assistant's write is the more recent intent either way.
+  for (const flush of [...set]) {
+    try {
+      await flush()
+    } catch {
+      // Tolerated; the form surfaces its own save error.
+    }
+  }
 }

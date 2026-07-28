@@ -45,7 +45,7 @@ function WorkspaceSettings() {
             fadeOnScroll
             actions={<SettingsSaveButton />}
           />
-          <div className="flex flex-col gap-8 px-3 lg:px-6 pb-10">
+          <div className="flex flex-col gap-8 px-3 lg:px-6 pt-4 pb-10">
             <WorkspaceSection />
             <PlatformsSection />
             <ConnectPlatformsSection />
