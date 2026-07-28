@@ -44,11 +44,14 @@ export function QualityDimensionCard({
     <section className="flex flex-col border border-border">
       <header className="flex items-start justify-between gap-3 px-3 pt-3 pb-2">
         <div className="flex min-w-0 items-center gap-2.5">
+          {/* 40px, which is the height of the two-line label stack beside it,
+              so the tile reads as the row's leading edge rather than as a
+              badge floating in it. */}
           <span
             aria-hidden
-            className="flex size-8 shrink-0 items-center justify-center bg-secondary"
+            className="flex size-10 shrink-0 items-center justify-center bg-secondary"
           >
-            <Icon className="size-4 text-secondary-foreground" weight="regular" />
+            <Icon className="size-5 text-secondary-foreground" weight="regular" />
           </span>
           <div className="min-w-0">
             {/* The name is the quieter line. What the reader needs is what the
