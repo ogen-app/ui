@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { usePlatformViews } from '@/hooks/usePlatforms'
+import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import {
   PLATFORMS,
   getPlatformInfo,
@@ -103,12 +104,9 @@ export function PostQuickSettingsBar({
   )
 
   // The publishing account comes from the backend: the connected
-  // publisher's account for the attached platform, not the app user.
-  const view = views.find((v) => v.platform.id === doc.platform_id)
-  const accounts = view?.connectedPublishers[0]?.accounts ?? []
-  const account = accounts.find((a) => a.is_active) ?? accounts[0]
-  const accountName =
-    account?.display_name || account?.username || view?.connectedPublisherName || null
+  // publisher's account for the attached platform, not the app user. Shared
+  // with the preview panel, which has to render as that same account.
+  const { name: accountName } = usePublishingAccount(doc.platform_id)
 
   const selectPlatform = (platformId: string) => {
     if (platformId === doc.platform_id) return
