@@ -185,18 +185,15 @@ function Notes({
   }
 
   if (looksLikeMarkdown(markdown)) {
-    // Deliberately blunt: the card above shows the *flattened* text, but the
-    // publisher currently sends the Markdown source through untouched
-    // (`submit_post_to_zernio.go` → `Content: post.Content`). So this is the
-    // one place the preview is kinder than reality, and it has to say so
-    // rather than imply the formatting is handled.
+    // The editor stores Markdown and the API flattens it on the way to the
+    // network, so the card above is the published text rather than the source.
+    // Worth saying once: the user typed bold and it is not going to be bold.
     notes.push(
-      <span className="text-destructive">
-        The editor's formatting is shown here stripped, but it is published as written —
-        {' '}
-        {platformName} has no formatting, so `**bold**` and `[links](url)` go out with their
-        Markdown characters visible. Write the copy plain to be safe.
-      </span>,
+      <>
+        The formatting is not published — {platformName} captions are plain text, so bold,
+        headings and lists are flattened before the post goes out. Links keep their address
+        in the text, which counts toward the limit.
+      </>,
     )
   }
 

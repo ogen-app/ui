@@ -4,9 +4,14 @@
  *
  * The post editor stores Markdown (`blocksToMarkdownLossy`), but none of the
  * networks we publish to render it — LinkedIn, Facebook and Instagram captions
- * are all plain text with newlines. So `**bold**` either publishes as literal
- * asterisks or gets stripped, depending on the publisher. Flattening here is
- * what lets the preview tell the user which of their formatting survives.
+ * are all plain text with newlines. `content` stays Markdown all the way to the
+ * API, which flattens it at the publish boundary (`submit_post_to_zernio.go`,
+ * CON-126); the author's source is never rewritten.
+ *
+ * This is the front-end half of that: it produces the same text for the preview
+ * card and for the character count, so the user is shown and measured against
+ * what actually publishes. Per the `src/lib/*` rule, the Go implementation is
+ * the source of truth — if its rules move, these follow.
  */
 
 /** Where each network folds a caption behind "see more", and its hard cap. */
