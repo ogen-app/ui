@@ -29,6 +29,8 @@ type Props = {
   saving: boolean
   settingsOpen: boolean
   onToggleSettings: () => void
+  previewOpen: boolean
+  onTogglePreview: () => void
   onDownloadMarkdown: () => void
   /** Opens the status-aware delete confirmation. */
   onDeletePost: () => void
@@ -47,6 +49,8 @@ export function PostDetailsHeader({
   saving,
   settingsOpen,
   onToggleSettings,
+  previewOpen,
+  onTogglePreview,
   onDownloadMarkdown,
   onDeletePost,
   actions,
@@ -74,16 +78,22 @@ export function PostDetailsHeader({
           <SyncStatus saving={saving} />
           <Tooltip>
             <TooltipTrigger asChild>
-              <span tabIndex={0}>
-                <Button variant="ghost" size="smIcon" disabled aria-label="Preview">
-                  {/* Explicit regular weight: Button puts icons in a bold
-                      IconContext, which made this read heavier than the
-                      cloud/gear/dots beside it. */}
-                  <DevicesIcon weight="regular" className="size-5" />
-                </Button>
-              </span>
+              <Button
+                variant="ghost"
+                size="smIcon"
+                className={cn(previewOpen && 'text-accent hover:text-accent')}
+                onClick={onTogglePreview}
+                aria-label="Preview"
+                aria-expanded={previewOpen}
+              >
+                {/* Explicit weight rather than inherited: Button puts icons in
+                    a bold IconContext, which made this read heavier than the
+                    cloud/gear/dots beside it. Fills when open, matching the
+                    gear next to it. */}
+                <DevicesIcon weight={previewOpen ? 'fill' : 'regular'} className="size-5" />
+              </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Preview — coming soon</TooltipContent>
+            <TooltipContent side="bottom">Preview</TooltipContent>
           </Tooltip>
           <Button
             variant="ghost"

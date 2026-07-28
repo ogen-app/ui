@@ -23,6 +23,13 @@ const PANEL_WIDTH = 'w-120'
 export const POST_SETTINGS_PORTAL_ID = 'right-sidebar-post-settings'
 
 /**
+ * Portal target for the post editor's preview. Same reason as the settings
+ * form: it renders the live `usePost` document, so the post route owns it and
+ * this layer only hosts it.
+ */
+export const POST_PREVIEW_PORTAL_ID = 'right-sidebar-post-preview'
+
+/**
  * One stacked content layer inside the sidebar. Inactive layers stay mounted
  * and fade out (opacity only), so switching panels cross-fades and the AI
  * assistant keeps running invisibly.
@@ -88,6 +95,9 @@ export function RightSidebar() {
             )}
             <PanelLayer active={activePanel === 'postSettings'}>
               <div id={POST_SETTINGS_PORTAL_ID} className="h-full" />
+            </PanelLayer>
+            <PanelLayer active={activePanel === 'postPreview'}>
+              <div id={POST_PREVIEW_PORTAL_ID} className="h-full" />
             </PanelLayer>
           </div>
         </div>

@@ -9,6 +9,7 @@ export type RightPanel =
   | 'calendarSettings'
   | 'notScheduled'
   | 'postSettings'
+  | 'postPreview'
 
 /**
  * Local-only settings stored in localStorage
