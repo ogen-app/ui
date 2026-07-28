@@ -12,5 +12,13 @@ reviews:
   path_filters:
     - "!dist/**"
     - "!pnpm-lock.yaml"
+    # The free plan skips any review past 100 files, and release PRs
+    # (develop -> main) accumulate whole cycles — the first one to hit the cap
+    # was 107 files. Docs, tests, env examples and this file are dropped from
+    # review scope to keep the source files reviewable.
+    - "!**/*.md"
+    - "!**/*.test.ts"
+    - "!.env.example"
+    - "!.coderabbit.yaml"
 chat:
   auto_reply: true
