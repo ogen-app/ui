@@ -215,7 +215,11 @@ in a module, not the rail.
    suppression parents (`no-posts`, `channels`) are named in the catalogue. A
    new rule must state which existing rule it defers to, if any.
 3. **Cap the list.** Show at most 6 rows; if more fire, keep the highest
-   severities and add a trailing *"+N more"* row. `info` rows are cut first.
+   severities and add a trailing *"SHOW N MORE"* row that expands the rest.
+   `info` rows are cut first. **Collapsing must save at least two rows** — the
+   button occupies a row itself, so a seventh item is simply rendered rather
+   than hidden behind a "show 1 more". The button is the last row of the list,
+   on the same 40px band, so it costs exactly what it replaces.
    With **no rows at all the card stays and says so** — see *Absence is the
    reward* above. A card that disappears reads as "not loaded yet", and the
    all-clear is the one answer the user came to this screen for.

@@ -47,6 +47,16 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
     if (activeId) void loadHistory(activeId)
   }, [activeId, loadHistory])
 
+  // A draft asked for from elsewhere in the app (an overview CTA) lands in the
+  // composer exactly like a starter chip — filled in, never sent.
+  const prefillRequest = useAssistantStore((s) => s.prefillRequest)
+  const clearPrefillRequest = useAssistantStore((s) => s.clearPrefillRequest)
+  useEffect(() => {
+    if (!prefillRequest || prefillRequest.threadId !== activeId) return
+    pick(prefillRequest.text)
+    clearPrefillRequest()
+  }, [prefillRequest, activeId, pick, clearPrefillRequest])
+
   // Pin to the newest turn. Streaming grows the last turn rather than adding
   // one, so this tracks its length too.
   const turns = thread?.turns

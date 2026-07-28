@@ -19,10 +19,6 @@ import { ReadOnlyField, SettingsRow } from './SettingsRow'
 function PlatformsSectionComponent() {
   const views = usePlatformViews()
   const connected = views.filter((v) => v.connectedPublishers.length > 0)
-  // TEMP: render the list twice so multi-platform layout (separators, row
-  // rhythm) can be previewed with a single connected platform. Remove once a
-  // second platform is actually connected.
-  const rows = [...connected, ...connected]
 
   return (
     <SettingsCard title="Platform Settings">
@@ -35,8 +31,8 @@ function PlatformsSectionComponent() {
         // the first row, divide-y the rest; pt-6 restores the first row's gap
         // (SettingsRow zeroes it via first:pt-0).
         <ul className="flex flex-col border-t border-border pt-6 divide-y divide-border">
-          {rows.map((v, i) => (
-            <PlatformRow key={`${v.platform.id}-${i}`} view={v} />
+          {connected.map((v) => (
+            <PlatformRow key={v.platform.id} view={v} />
           ))}
         </ul>
       )}

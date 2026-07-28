@@ -43,13 +43,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     const isAuthRoute = location.pathname === "/auth" || location.pathname.startsWith("/auth/");
     const isServerDownRoute = location.pathname === SERVER_DOWN_PATH;
 
-    // TEMPORARY (design harness): /design/* renders component fixtures only —
-    // no user, no API. Skipping the probe lets it open with the backend down.
-    // Remove with `routes/design/`.
-    if (location.pathname.startsWith("/design")) {
-      return { auth: { isAuthenticated: false } };
-    }
-
     // CON-97: there is no instance-wide first-run setup anymore — onboarding is
     // self-service signup (POST /api/tenants) at /auth/register. One probe of
     // GET /api/current_user does triple duty: reachability check (network/5xx
