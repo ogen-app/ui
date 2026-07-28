@@ -35,6 +35,8 @@ type SettingsState = LocalSettings & {
 
   /** Activate the panel, or close the sidebar if it is already active. */
   toggleRightPanel: (panel: RightPanel, campaignId?: string) => void
+  /** Activate the panel, never closing it — for buttons that mean "open". */
+  openRightPanel: (panel: RightPanel, campaignId?: string) => void
   closeRightPanel: () => void
 
   recordModalOpened: (modalId: string) => void
@@ -72,6 +74,13 @@ export const useSettingsStore = create<SettingsState>()(
             activeRightPanel: state.activeRightPanel === panel ? null : panel,
             ...(campaignId !== undefined && { rightPanelCampaignId: campaignId }),
           }))
+        },
+
+        openRightPanel: (panel, campaignId) => {
+          set({
+            activeRightPanel: panel,
+            ...(campaignId !== undefined && { rightPanelCampaignId: campaignId }),
+          })
         },
 
         closeRightPanel: () => {

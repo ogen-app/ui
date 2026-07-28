@@ -11,7 +11,7 @@ import {
 } from "@/lib/campaignReadiness.ts";
 import { relativeTime } from "@/lib/relativeTime.ts";
 import type { Campaign } from "@/types/campaigns";
-import { CallToAction, CTA_PRIMARY, CTA_SECONDARY } from "./CallToAction.tsx";
+import { CallToAction } from "./CallToAction.tsx";
 import { CollapsedCard, OverviewCard } from "./OverviewCard.tsx";
 
 export function BriefModule({ campaign }: { campaign: Campaign }) {
@@ -105,7 +105,7 @@ export function BriefModule({ campaign }: { campaign: Campaign }) {
  * input every generated post is written from.
  */
 const WHY_THE_BRIEF_MATTERS =
-  "The brief is what the AI writes from — who this campaign talks to, what it claims, and how it sounds. Everything generated for it is only as good as this.";
+  "The brief is what Ogen writes from — who this campaign talks to, what it claims, and how it sounds. Everything generated for it is only as good as this.";
 
 function BriefActions({
   campaignId,
@@ -118,27 +118,22 @@ function BriefActions({
 }) {
   return (
     <>
-      <Button variant="default" size="xl" className={CTA_PRIMARY} asChild>
+      <Button variant="defaultInverted" size="xl" asChild>
         <Link to="/campaigns/$campaignId/brief" params={{ campaignId }}>
           <NotePencilIcon />
           <span>{writeLabel}</span>
         </Link>
       </Button>
-      <Button
-        variant="outline"
-        size="xl"
-        className={CTA_SECONDARY}
-        onClick={onGenerate}
-      >
+      <Button variant="outline" size="xl" onClick={onGenerate}>
         <SparkleIcon />
-        <span>GENERATE WITH AI</span>
+        <span>GENERATE WITH OGEN</span>
       </Button>
     </>
   );
 }
 
 /**
- * Entry point for AI brief generation (CON-120 §7): the guided Q&A itself is
+ * Entry point for Ogen brief generation (CON-120 §7): the guided Q&A itself is
  * deferred to a follow-up ticket, so this teaches the intended workflow and
  * routes to the manual path meanwhile.
  */
@@ -152,7 +147,7 @@ function AiBriefModal({
   onClose: () => void;
 }) {
   return (
-    <ModalContainer isOpen={isOpen} onClose={onClose} title="Generate the brief with AI">
+    <ModalContainer isOpen={isOpen} onClose={onClose} title="Generate the brief with Ogen">
       <div className="flex flex-col gap-4">
         <p className="text-sm text-secondary-foreground">
           Soon, Ogen will interview you — a short Q&A about your product, your
@@ -161,7 +156,7 @@ function AiBriefModal({
         </p>
         <p className="text-sm text-secondary-foreground">
           This guided session isn't available yet. In the meantime you can
-          write the brief yourself; even a rough draft helps the AI generate
+          write the brief yourself; even a rough draft helps Ogen generate
           better content.
         </p>
         <div className="flex justify-end gap-2">

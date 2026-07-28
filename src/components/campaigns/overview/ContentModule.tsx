@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon, SparkleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button.tsx";
 import { StatusBadge } from "@/components/ui/status-badge.tsx";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
@@ -10,9 +10,11 @@ import { cn, formatTitle } from "@/lib";
 import { contentSnapshot } from "@/lib/campaignReadiness.ts";
 import { getPlatformInfo } from "@/lib/platformDictionary.ts";
 import { relativeTime } from "@/lib/relativeTime.ts";
+import { threadIdFor, useAssistantStore } from "@/stores/assistantStore.ts";
+import { useSettingsStore } from "@/stores/settingsStore.ts";
 import type { Campaign } from "@/types/campaigns";
 import type { Post } from "@/types/posts";
-import { CallToAction, CTA_PRIMARY } from "./CallToAction.tsx";
+import { CallToAction } from "./CallToAction.tsx";
 import { LineItem } from "./LineItem.tsx";
 import { OverviewCard } from "./OverviewCard.tsx";
 
@@ -30,6 +32,20 @@ export function ContentModule({
   const addPost = useAddPost(campaignId);
   const [platformId, setPlatformId] = useState<string>(ALL);
 
+  const askFor = useAssistantStore((s) => s.askFor);
+  const openRightPanel = useSettingsStore((s) => s.openRightPanel);
+
+  // The campaign's thread is already open — the layout starts it on arrival —
+  // so this only has to point the panel at it with the ask written out. It
+  // stops there: generating writes posts, so the send is the user's.
+  const generatePlan = () => {
+    openRightPanel("assistant");
+    askFor(
+      threadIdFor({ kind: "campaign", campaignId }),
+      "Generate a content plan for this campaign.",
+    );
+  };
+
   if (posts.length === 0) {
     return (
       <OverviewCard
@@ -38,29 +54,36 @@ export function ContentModule({
       >
         <CallToAction
           headline="This is where the campaign comes to life — everything else on this screen is about what gets published here."
-          support="Add posts one by one, or ask the assistant to generate a content plan from the brief."
+          support="Write a post yourself, or have Ogen draft a whole plan from the brief."
         >
-          {/* Wrapped, not passed bare: useAddPost takes an optional Date for
+          {/* Same order as the brief: the user's own hand first, Ogen second.
+              Wrapped, not passed bare: useAddPost takes an optional Date for
               the calendar's click-to-create, so onClick={addPost} would hand
               it a MouseEvent. */}
           <Button
-            variant="default"
+            variant="defaultInverted"
             size="xl"
-            className={CTA_PRIMARY}
             onClick={() => addPost()}
           >
             <PlusIcon />
             <span>ADD POST</span>
+          </Button>
+          <Button variant="outline" size="xl" onClick={generatePlan}>
+            <SparkleIcon />
+            <span>GENERATE WITH OGEN</span>
           </Button>
         </CallToAction>
       </OverviewCard>
     );
   }
 
-  // One tab per channel the campaign settings select, whether or not it has
-  // posts yet — the strip is the campaign's channel list, so a channel with
-  // nothing on it is worth seeing, and one the campaign dropped is not.
+  // One tab per channel that is actually set up on this campaign — selected
+  // *and* carrying a post type. A channel with nothing chosen for it can't
+  // receive content, so it isn't a place to look at content; whatever it has
+  // still counts under "All platforms". Whether an account is connected is a
+  // workspace matter and doesn't belong in this decision.
   const channels = campaign.target_platforms.flatMap((tp) => {
+    if (tp.post_types.length === 0) return [];
     const info = getPlatformInfo(tp.id);
     return info ? [info] : [];
   });

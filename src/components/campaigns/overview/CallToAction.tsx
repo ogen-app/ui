@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 
 /**
- * The one call-to-action shape on the Campaign Overview: a filled block that
- * says why the step matters, then what is missing, then the actions.
+ * The one call-to-action shape on the Campaign Overview: why the step matters,
+ * then what is missing, then the actions.
  *
- * Inverted on purpose. A module the user still has to act on has to read
- * differently from one that is only reporting, and the modules all share the
- * same white card — so the emphasis has to come from inside the card.
+ * Deliberately unstyled — same surface, same type as every other card body.
+ * A module the user still has to act on says so in its header status; the body
+ * doesn't have to shout it as well.
  */
 export function CallToAction({
   headline,
@@ -17,25 +17,18 @@ export function CallToAction({
   headline: ReactNode;
   /** Line two: what is missing right now. */
   support?: ReactNode;
-  /** The buttons — style them with `CTA_PRIMARY` / `CTA_SECONDARY`. */
+  /** The buttons. */
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-md bg-primary-foreground px-5 py-5 text-primary">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <p className="text-sm leading-5">{headline}</p>
-        {support && <p className="text-sm leading-5 text-primary/60">{support}</p>}
+        <p className="text-sm text-secondary-foreground">{headline}</p>
+        {support && (
+          <p className="text-sm text-tertiary-foreground">{support}</p>
+        )}
       </div>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
 }
-
-/**
- * Button overrides for the inverted block: the shared variants assume a light
- * surface, so both of them need their hover state re-pointed.
- */
-export const CTA_PRIMARY =
-  "hover:bg-secondary hover:text-primary-foreground";
-export const CTA_SECONDARY =
-  "border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/30 hover:text-primary";

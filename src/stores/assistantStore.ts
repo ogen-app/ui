@@ -61,6 +61,12 @@ type AssistantState = {
    * `activeThreadId` can't, because browsing the list clears it.
    */
   currentThreadId: string | null
+  /**
+   * A draft asked for from outside the panel — an overview CTA, a starter
+   * chip's equivalent elsewhere. The panel puts it in the composer and clears
+   * it; `token` makes the same text asked for twice count twice.
+   */
+  prefillRequest: { threadId: string; text: string; token: number } | null
 
   /** Register a thread for a subject and make it the active one. */
   openThread: (subject: ThreadSubject, title: string, campaignTitle: string) => string
@@ -68,6 +74,14 @@ type AssistantState = {
   renameThread: (threadId: string, title: string, campaignTitle?: string) => void
   /** Show a thread that is already open. */
   selectThread: (threadId: string | null) => void
+  /**
+   * Show a thread with `text` waiting in its composer. Never sends it — same
+   * rule as the starter chips: the campaign tools write, so the user gets the
+   * last word.
+   */
+  askFor: (threadId: string, text: string) => void
+  /** Called by the panel once the draft has landed in the composer. */
+  clearPrefillRequest: () => void
   /** Load persisted history once per thread. */
   loadHistory: (threadId: string) => Promise<void>
   /** Run one turn. No-op if the thread is already running. */
@@ -104,6 +118,7 @@ export const useAssistantStore = create<AssistantState>()(
         threads: {},
         activeThreadId: null,
         currentThreadId: null,
+        prefillRequest: null,
 
         openThread: (subject, title, campaignTitle) => {
           const id = threadIdFor(subject)
@@ -148,6 +163,20 @@ export const useAssistantStore = create<AssistantState>()(
           set({ activeThreadId: threadId })
           if (threadId) patchThread(threadId, { unread: false })
         },
+
+        askFor: (threadId, text) => {
+          set((s) => ({
+            activeThreadId: threadId,
+            prefillRequest: {
+              threadId,
+              text,
+              token: (s.prefillRequest?.token ?? 0) + 1,
+            },
+          }))
+          patchThread(threadId, { unread: false })
+        },
+
+        clearPrefillRequest: () => set({ prefillRequest: null }),
 
         markRead: (threadId) => patchThread(threadId, { unread: false }),
 
