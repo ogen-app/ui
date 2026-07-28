@@ -72,10 +72,15 @@ type ActionMeta = {
   kind: PostStatusActionKind
   // Omitted means 'transition'. Only set on user-cancel edges.
   mechanism?: PostStatusActionMechanism
-  // The one step back from this status, shown as the header's back button.
-  // At most one edge per status carries it: multi-step retreats (scheduled
-  // straight to draft) are reached by pressing back twice, so the button
-  // always means "undo the last move" rather than "pick a destination".
+  // The one way *back* out of this status, shown as the header's icon-only
+  // back button instead of a labelled one. At most one edge per status
+  // carries it, so the control never means "pick a destination": multi-step
+  // retreats (scheduled straight to draft) are reached by pressing it twice.
+  //
+  // "Back" is the retreat from the status, not strictly its inverse — a post
+  // scheduled for manual publishing goes back by admitting it never went
+  // out. What the flag really marks is the move that isn't the one the
+  // header should be urging.
   reverse?: true
 }
 
@@ -162,11 +167,15 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       intent: 'primary',
       kind: 'user',
     },
+    // The back button, not a second labelled one: publishing is the move the
+    // header should be urging, and admitting it never went out is the way
+    // back out of the status.
     not_published: {
       buttonLabel: 'MARK AS NOT PUBLISHED',
       menuLabel: 'Mark as not published',
       intent: 'destructive',
       kind: 'user',
+      reverse: true,
     },
   },
   failed: {
