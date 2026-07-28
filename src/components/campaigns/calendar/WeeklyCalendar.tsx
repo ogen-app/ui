@@ -1,10 +1,11 @@
 import { memo, useCallback, useMemo, useState } from 'react'
+import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
 import { useAddPost, useUpdatePost } from '@/hooks/usePosts'
 import { postToPayload } from '@/services/api/posts'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { DEFAULT_HOUR } from '@/lib/postSchedule'
-import { useCalendarSettingsStore } from '@/stores/calendarSettingsStore'
+import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { PostCard } from './PostCard'
 import { addDays, isSameDay, startOfWeek } from './date'
 import { cn } from '@/lib'
@@ -29,11 +30,12 @@ type Column = {
 
 function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarProps) {
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
+  /** Column whose empty space the pointer is on — see the column's onMouseOver. */
+  const [hoverKey, setHoverKey] = useState<string | null>(null)
   const today = useMemo(() => new Date(), [])
   const { mutate: updatePost } = useUpdatePost(campaignId)
   const addPost = useAddPost(campaignId)
-  const firstDayOfWeek = useCalendarSettingsStore((s) => s.firstDayOfWeek)
-  const hiddenDays = useCalendarSettingsStore((s) => s.hiddenDays)
+  const { firstDayOfWeek, hiddenDays } = useCalendarSettings(campaignId)
 
   const weekStart = useMemo(
     () => startOfWeek(anchor, firstDayOfWeek),
@@ -134,6 +136,20 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
         {columns.map((col) => (
           <div
             key={col.key}
+            // Hover is tracked here rather than through `group-hover`, because
+            // the affordance has to be off while the pointer is on a card —
+            // and "hovered, but not over a card" is a condition CSS can only
+            // express with `:has()`, which loses the cascade against the
+            // resting `opacity-0`. `onMouseOver` bubbles from whatever is
+            // under the pointer, so the card test is just its ancestry.
+            onMouseOver={(e) =>
+              setHoverKey(
+                (e.target as HTMLElement).closest('a') ? null : col.key,
+              )
+            }
+            onMouseLeave={() =>
+              setHoverKey((k) => (k === col.key ? null : k))
+            }
             className="flex flex-col min-w-[150px] flex-1 min-h-0 gap-0.5"
           >
             {/* Column header — weekday over the full date, centered. */}
@@ -170,6 +186,30 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
               {col.posts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}
+
+              {/* The lane has always been click-to-create; this is the visible
+                  half of that. Kept at a whisper — a day's content is its
+                  posts, and an empty day should still read as empty rather
+                  than as a row of buttons — so it only shows while the pointer
+                  is on this column's empty space, or while it has keyboard
+                  focus. A card under the cursor means the user is reading or
+                  about to drag that post, not adding another, so it goes back
+                  off; that also keeps it from appearing mid-drag. */}
+              <button
+                type="button"
+                onClick={() => addPost(col.day)}
+                className={cn(
+                  'shrink-0 flex h-9 items-center justify-center gap-1.5',
+                  'border border-dashed border-border text-xs text-tertiary-foreground',
+                  'transition-[opacity,background-color,color]',
+                  hoverKey === col.key ? 'opacity-100' : 'opacity-0',
+                  'focus-visible:opacity-100',
+                  'hover:bg-primary hover:text-secondary-foreground',
+                )}
+              >
+                <PlusIcon className="size-3.5 shrink-0" />
+                <span>Add post</span>
+              </button>
             </div>
           </div>
         ))}

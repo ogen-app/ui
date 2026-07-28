@@ -3,7 +3,7 @@ import { CaretLeftIcon, CaretRightIcon, PlusIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { addDays, formatAnchor, startOfWeek } from '@/components/campaigns/calendar/date'
-import { useCalendarSettingsStore } from '@/stores/calendarSettingsStore'
+import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useAddPost } from '@/hooks/usePosts'
 
 type PostsToolbarProps = {
@@ -35,7 +35,7 @@ function formatWeekRange(weekStart: Date): string {
 export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: PostsToolbarProps) {
   const navigate = useNavigate()
   const addPost = useAddPost(campaignId)
-  const firstDayOfWeek = useCalendarSettingsStore((s) => s.firstDayOfWeek)
+  const { firstDayOfWeek } = useCalendarSettings(campaignId)
 
   const handleViewSelect = (next: string) => {
     if (next === view) return
