@@ -2,8 +2,9 @@ import { Fragment } from 'react'
 import { WarningIcon } from '@phosphor-icons/react'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { ThinkingTimeline } from './ThinkingTimeline'
+import { hasResultCard, ResultCard } from './ResultCard'
 import { cn } from '@/lib'
-import type { AssistantTurn } from '@/types/assistant'
+import type { AssistantAction, AssistantTurn } from '@/types/assistant'
 
 function Inline({ spans }: { spans: InlineSpan[] }) {
   return (
@@ -25,6 +26,9 @@ function Inline({ spans }: { spans: InlineSpan[] }) {
 export function AssistantReply({ turn }: { turn: AssistantTurn }) {
   const blocks = parseAssistantMarkup(turn.content)
   const steps = turn.steps ?? []
+  const settled = !turn.streaming && !turn.failed
+  const showCard = settled && hasResultCard(turn.details)
+  const footer = !showCard && turn.action ? actionLabel(turn.action) : null
 
   return (
     <div className="flex flex-col gap-3">
@@ -38,12 +42,12 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
       )}
 
       {turn.failed ? (
-        <p className="flex items-start gap-2 text-[15px]/[1.6] text-destructive">
+        <p className="flex items-start gap-2 text-sm/[1.6] text-destructive">
           <WarningIcon className="mt-1 size-4 shrink-0" />
           <span>{turn.content}</span>
         </p>
       ) : (
-        <div className="flex flex-col gap-4 text-[15px]/[1.6] text-foreground">
+        <div className="flex flex-col gap-4 text-sm/[1.6] text-foreground">
           {blocks.map((block, i) =>
             block.kind === 'paragraph' ? (
               <p key={i}>
@@ -56,10 +60,13 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
         </div>
       )}
 
-      {/* What the turn did to the post, once it's settled. */}
-      {!turn.streaming && !turn.failed && turn.action && (
+      {/* The structured result behind the action — campaign turns only. */}
+      {showCard && turn.details && <ResultCard details={turn.details} />}
+
+      {/* What the turn did to its subject, once it's settled. */}
+      {settled && (footer || turn.saveVersion) && (
         <p className="text-xs text-tertiary-foreground">
-          {turn.action === 'edited' ? 'Post updated' : 'No changes made'}
+          {footer}
           {turn.saveVersion && (
             <>
               {' · '}
@@ -71,6 +78,28 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
       )}
     </div>
   )
+}
+
+/**
+ * The one-line footer under a reply. It only appears when no result card
+ * did — the card always says it better — which in practice means turns
+ * restored from history, whose result payload the server doesn't persist.
+ */
+const ACTION_LABELS: Record<AssistantAction, string | null> = {
+  edited: 'Post updated',
+  declined: 'No changes made',
+  answered: null,
+  content_plan_generated: 'Content plan generated',
+  posts_generated: 'Posts added',
+  brief_enriched: 'Brief updated',
+  dates_updated: 'Campaign dates updated',
+  posts_redistributed: 'Posts redistributed',
+  brief_reviewed: 'Brief reviewed',
+  posts_reviewed: 'Posts reviewed',
+}
+
+function actionLabel(action: AssistantAction): string | null {
+  return ACTION_LABELS[action] ?? null
 }
 
 function ListBlock({ ordered, items }: { ordered: boolean; items: InlineSpan[][] }) {

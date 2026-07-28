@@ -1,0 +1,295 @@
+import { useState, type CSSProperties, type ReactNode } from 'react'
+import { cn } from '@/lib'
+import { foldText } from '@/lib/socialText.ts'
+import { PREVIEW_BORDER, PREVIEW_FONT, PREVIEW_SHADOW } from './previewTheme.ts'
+
+/**
+ * Pieces shared by the platform previews. Everything here is styled with
+ * inline `style` and raw colours on purpose — see `previewTheme.ts` for why
+ * these components sit outside the token system.
+ */
+
+/**
+ * The card the whole preview sits in. Fixes the font so our UI font never
+ * leaks in, and carries the shared border and shadow — `style` can override
+ * anything platform-specific (the corner radius does).
+ */
+export function PreviewSurface({
+  children,
+  style,
+  className,
+}: {
+  children: ReactNode
+  style?: CSSProperties
+  className?: string
+}) {
+  return (
+    <div
+      className={cn('overflow-hidden text-left', className)}
+      style={{
+        fontFamily: PREVIEW_FONT,
+        background: '#ffffff',
+        border: `1px solid ${PREVIEW_BORDER}`,
+        boxShadow: PREVIEW_SHADOW,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+/**
+ * Round profile picture, falling back to the account's initial. Social feeds
+ * always show *something* here, so an empty circle would misrepresent the post
+ * more than a placeholder does.
+ */
+export function PreviewAvatar({
+  src,
+  name,
+  size,
+  rounded = true,
+  background,
+}: {
+  src?: string | null
+  name: string
+  size: number
+  rounded?: boolean
+  background: string
+}) {
+  const [failed, setFailed] = useState(false)
+  const initial = name.trim().charAt(0).toUpperCase() || '?'
+
+  if (!src || failed) {
+    return (
+      <div
+        aria-hidden
+        className="flex shrink-0 items-center justify-center font-semibold text-white"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: rounded ? '50%' : 4,
+          background,
+          fontSize: size * 0.45,
+        }}
+      >
+        {initial}
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      onError={() => setFailed(true)}
+      className="shrink-0 object-cover"
+      style={{ width: size, height: size, borderRadius: rounded ? '50%' : 4 }}
+    />
+  )
+}
+
+/**
+ * Post copy with the platform's own truncation. The fold is the single most
+ * useful thing a preview can show — it is where the reader decides whether to
+ * keep reading, and it is invisible in the editor.
+ *
+ * Expanding is local and one-way: the point is to see where the cut lands, and
+ * a collapse control would just add a second thing to click.
+ */
+export function FoldedText({
+  text,
+  fold,
+  moreLabel,
+  color,
+  moreColor,
+  style,
+  prefix,
+}: {
+  text: string
+  fold: number
+  moreLabel: string
+  color: string
+  moreColor: string
+  style?: CSSProperties
+  /**
+   * Rendered inline immediately before the text — Instagram's handle, which
+   * runs into the caption as one paragraph rather than sitting above it.
+   */
+  prefix?: ReactNode
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const { head, rest } = foldText(text, fold)
+
+  return (
+    <div
+      className="whitespace-pre-wrap break-words"
+      style={{ color, fontSize: 14, lineHeight: 1.4286, ...style }}
+    >
+      {prefix}
+      {expanded ? text : head}
+      {rest && !expanded && (
+        <>
+          {'… '}
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="cursor-pointer hover:underline"
+            style={{ color: moreColor }}
+          >
+            {moreLabel}
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** The hairline the feeds leave between tiles in a multi-image post. */
+const TILE_GAP = 2
+
+/**
+ * The image block. Layouts follow what the feeds actually do with 1–4+ images:
+ * one fills the width, two split it, three give the first the left half, and
+ * past four the rest collapse into a "+N" tile. Getting this roughly right
+ * matters because it decides which image the reader sees first.
+ */
+export function PreviewMedia({
+  urls,
+  aspect,
+  background,
+}: {
+  urls: string[]
+  /** CSS aspect-ratio for the block as a whole. */
+  aspect?: number
+  background: string
+}) {
+  if (urls.length === 0) return null
+
+  const shown = urls.slice(0, 4)
+  const overflow = urls.length - shown.length
+
+  if (shown.length === 1) {
+    return (
+      <div style={{ background, overflow: 'hidden' }}>
+        <Frame url={shown[0]} aspect={aspect} />
+      </div>
+    )
+  }
+
+  // Three images read best as one large plus a stacked pair; two and four are
+  // even splits.
+  const featured = shown.length === 3
+
+  return (
+    <div
+      className="grid"
+      style={{
+        gap: TILE_GAP,
+        background,
+        overflow: 'hidden',
+        gridTemplateColumns: '1fr 1fr',
+        aspectRatio: aspect ?? (shown.length === 2 ? 2 : 1.2),
+      }}
+    >
+      {featured ? (
+        <>
+          <Frame url={shown[0]} fill />
+          {/* h-full + min-h-0: without them the nested rows size to the
+              images' intrinsic height instead of splitting the column, and
+              the lower one comes out shorter than the upper. */}
+          <div
+            className="grid h-full min-h-0"
+            style={{ gap: TILE_GAP, gridTemplateRows: '1fr 1fr' }}
+          >
+            <Frame url={shown[1]} fill />
+            <Frame url={shown[2]} fill />
+          </div>
+        </>
+      ) : (
+        shown.map((url, i) => (
+          <Frame
+            key={`${url}-${i}`}
+            url={url}
+            fill
+            overlay={overflow > 0 && i === shown.length - 1 ? `+${overflow}` : undefined}
+          />
+        ))
+      )}
+    </div>
+  )
+}
+
+function Frame({
+  url,
+  aspect,
+  fill,
+  overlay,
+}: {
+  url: string
+  aspect?: number
+  fill?: boolean
+  overlay?: string
+}) {
+  const [failed, setFailed] = useState(false)
+
+  return (
+    <div
+      className="relative min-h-0 overflow-hidden"
+      style={{ aspectRatio: fill ? undefined : aspect }}
+    >
+      {failed ? (
+        <div
+          className="flex h-full w-full items-center justify-center text-xs"
+          style={{ background: '#e4e6eb', color: '#65676b', minHeight: 80 }}
+        >
+          Image unavailable
+        </div>
+      ) : (
+        <img
+          src={url}
+          alt=""
+          onError={() => setFailed(true)}
+          /* Cropped to fill only when something gives this frame a height — a
+             grid cell or an aspect ratio. Facebook shows a lone image at its
+             natural shape, and `h-full` against an auto-height parent would
+             collapse it. */
+          className={cn('w-full', fill || aspect ? 'h-full object-cover' : 'h-auto')}
+          style={{ display: 'block' }}
+        />
+      )}
+      {overlay && (
+        <div
+          className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-white"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+        >
+          {overlay}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** One of the Like / Comment / Share style buttons along the card's foot. */
+export function ActionRow({ children, color }: { children: ReactNode; color: string }) {
+  return (
+    <div
+      className="flex items-center justify-around"
+      style={{ borderTop: `1px solid ${PREVIEW_BORDER}`, color, padding: '4px 8px' }}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function Action({ icon, label }: { icon: ReactNode; label?: string }) {
+  return (
+    <span
+      className="flex items-center justify-center gap-1.5 rounded px-3 py-2 text-[13px] font-semibold"
+      aria-hidden
+    >
+      {icon}
+      {label}
+    </span>
+  )
+}

@@ -2,17 +2,31 @@ import { cn } from '@/lib'
 
 /**
  * Campaign nav icon: an 18×14 card (in a 20×20 frame, matching the size-5
- * icon slot) with the campaign's abbreviation inside. Follows currentColor so
- * it picks up the menu button's text color; when active it inverts — filled
- * card with letters in the sidebar background color.
+ * icon slot) with the campaign's abbreviation inside.
+ *
+ * With a `color` (the campaign's identity hue — see `lib/campaignColor.ts`)
+ * the card is drawn in that colour and stays in it whether the campaign is
+ * the active one or not; the icon is how you recognise a campaign in the
+ * list, so it must not change hue when selected. Without one it falls back to
+ * `currentColor` and follows the menu button's text colour.
+ *
+ * Active inverts fill and letters either way — filled card, letters knocked
+ * out in the sidebar background.
  */
 type CampaignIconProps = {
   abbr: string
   active?: boolean
+  /** CSS colour for the card, e.g. `var(--campaign-3)`. */
+  color?: string
   className?: string
 }
 
-export function CampaignIcon({ abbr, active = false, className }: CampaignIconProps) {
+export function CampaignIcon({
+  abbr,
+  active = false,
+  color = 'currentColor',
+  className,
+}: CampaignIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"
@@ -27,8 +41,8 @@ export function CampaignIcon({ abbr, active = false, className }: CampaignIconPr
         height="14"
         rx="2"
         strokeWidth="1.25"
-        stroke="currentColor"
-        fill={active ? 'currentColor' : 'none'}
+        stroke={color}
+        fill={active ? color : 'none'}
       />
       <text
         x="10"
@@ -37,7 +51,8 @@ export function CampaignIcon({ abbr, active = false, className }: CampaignIconPr
         dominantBaseline="central"
         fontSize="8"
         fontWeight="700"
-        className={cn('font-grotesk uppercase', active ? 'fill-sidebar-primary' : 'fill-current')}
+        fill={active ? 'var(--sidebar-primary)' : color}
+        className="font-grotesk uppercase"
       >
         {abbr}
       </text>

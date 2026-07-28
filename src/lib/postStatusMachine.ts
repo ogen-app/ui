@@ -72,6 +72,16 @@ type ActionMeta = {
   kind: PostStatusActionKind
   // Omitted means 'transition'. Only set on user-cancel edges.
   mechanism?: PostStatusActionMechanism
+  // The one way *back* out of this status, shown as the header's icon-only
+  // back button instead of a labelled one. At most one edge per status
+  // carries it, so the control never means "pick a destination": multi-step
+  // retreats (scheduled straight to draft) are reached by pressing it twice.
+  //
+  // "Back" is the retreat from the status, not strictly its inverse — a post
+  // scheduled for manual publishing goes back by admitting it never went
+  // out. What the flag really marks is the move that isn't the one the
+  // header should be urging.
+  reverse?: true
 }
 
 const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> = {
@@ -95,9 +105,13 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
     // choice on this edge (no allowlist routing, no Zernio job), whereas
     // the schedule endpoint would route an allowlisted platform to
     // auto-publish against the user's intent.
+    //
+    // Labelled plainly "Schedule", same as the edge above: which of the two
+    // fires is decided by the publish-method picker, not by picking a
+    // differently-named action. See PublishMethod.
     scheduled_for_manual_publishing: {
       buttonLabel: 'SCHEDULE',
-      menuLabel: 'Schedule for manual publish',
+      menuLabel: 'Schedule',
       intent: 'primary',
       kind: 'user',
     },
@@ -106,6 +120,7 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       menuLabel: 'Back to draft',
       intent: 'secondary',
       kind: 'user',
+      reverse: true,
     },
   },
   scheduled: {
@@ -131,7 +146,12 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       intent: 'secondary',
       kind: 'user',
       mechanism: 'cancel',
+      reverse: true,
     },
+    // Deliberately not `reverse`: unscheduling straight to draft is two
+    // steps back, and the same place is reached by unscheduling and then
+    // pressing back again. Kept here so the machine still mirrors the
+    // server's edge list.
     draft: {
       buttonLabel: 'UNSCHEDULE TO DRAFT',
       menuLabel: 'Unschedule & move to draft',
@@ -147,11 +167,15 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       intent: 'primary',
       kind: 'user',
     },
+    // The back button, not a second labelled one: publishing is the move the
+    // header should be urging, and admitting it never went out is the way
+    // back out of the status.
     not_published: {
       buttonLabel: 'MARK AS NOT PUBLISHED',
       menuLabel: 'Mark as not published',
       intent: 'destructive',
       kind: 'user',
+      reverse: true,
     },
   },
   failed: {
@@ -175,12 +199,52 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       menuLabel: 'Move to ready for publish',
       intent: 'secondary',
       kind: 'user',
+      reverse: true,
     },
   },
 }
 
 export function getActionMeta(from: PostStatus, to: PostStatus): ActionMeta | null {
   return ACTION_META[from]?.[to] ?? null
+}
+
+/**
+ * How a ready post leaves the gate. The server has no field for this — the
+ * choice IS the status you land in, which is why `ready_for_publish` has two
+ * outgoing schedule edges carrying the same label. The UI picks one up front
+ * (see the quick-settings bar) so only a single SCHEDULE button is ever
+ * offered, instead of two identically-named actions in a menu.
+ *
+ * `auto` is a request, not a guarantee: POST /api/posts/:id/schedule routes
+ * to manual publishing anyway when the workspace isn't allowlisted for the
+ * platform, and the response's notice says so.
+ */
+export type PublishMethod = 'auto' | 'manual'
+
+export const PUBLISH_METHOD_TARGET: Record<PublishMethod, PostStatus> = {
+  auto: 'scheduled',
+  manual: 'scheduled_for_manual_publishing',
+}
+
+export const PUBLISH_METHOD_LABELS: Record<PublishMethod, string> = {
+  auto: 'Auto-publish',
+  manual: 'Manual publish',
+}
+
+export const PUBLISH_METHOD_HINTS: Record<PublishMethod, string> = {
+  auto: 'Ogen posts it for you at the scheduled time.',
+  manual: 'Ogen reminds you at the scheduled time — you post it yourself.',
+}
+
+/**
+ * True for the two `ready_for_publish` edges that differ only by publish
+ * method. Exactly one of them is offered at a time.
+ */
+export function isPublishMethodEdge(from: PostStatus, to: PostStatus): boolean {
+  return (
+    from === 'ready_for_publish' &&
+    (to === 'scheduled' || to === 'scheduled_for_manual_publishing')
+  )
 }
 
 export type PostStatusBlocker = {

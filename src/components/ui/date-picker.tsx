@@ -104,19 +104,15 @@ function DatePicker({
             onChange(d ? toISODate(d) : null)
             setOpen(false)
           }}
+          onClear={
+            selected
+              ? () => {
+                  onChange(null)
+                  setOpen(false)
+                }
+              : undefined
+          }
         />
-        {selected && (
-          <button
-            type="button"
-            onClick={() => {
-              onChange(null)
-              setOpen(false)
-            }}
-            className="w-full border-t border-t-border px-3 py-2 text-xs font-medium text-tertiary-foreground hover:text-foreground cursor-pointer"
-          >
-            Clear
-          </button>
-        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )

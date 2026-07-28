@@ -1,165 +1,115 @@
-import type { ReactElement } from 'react'
-import type { Post } from '@/types/posts'
-import { Button, buttonVariants } from '@/components/ui/button'
-import { DotsThreeVerticalIcon } from '@phosphor-icons/react'
-import { cn } from '@/lib'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { ArrowUUpLeftIcon } from '@phosphor-icons/react'
+import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import {
-  usePostStatusActions,
-  type PostStatusAction,
-} from '@/hooks/usePostStatusActions'
+import type { PostStatusAction } from '@/hooks/usePostStatusActions'
 import type { PostStatusBlocker } from '@/lib/postStatusMachine'
-import type { TransitionStatusResult } from '@/hooks/usePost'
-import type { CancelTarget } from '@/services/api/posts'
 
 type Props = {
-  post: Post
-  transitionStatus: (next: Post['status']) => Promise<TransitionStatusResult>
-  schedule: () => Promise<TransitionStatusResult>
-  cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
-  cancelling: boolean
+  /** Labelled moves, primary last. Empty in terminal states. */
+  buttons: PostStatusAction[]
+  /** The one step back, if the post can also still move forward. */
+  back: PostStatusAction | null
+  /** A transition or a cancellation is in flight. */
+  pending: boolean
+  /**
+   * Called instead of running an action when blockers stand in the way.
+   * Buttons stay clickable on purpose: pointing at the fields that need
+   * filling in beats a tooltip explaining a dead control.
+   */
+  onBlocked?: (blockers: PostStatusBlocker[]) => void
 }
 
-const INTENT_RANK: Record<PostStatusAction['intent'], number> = {
-  primary: 0,
-  secondary: 1,
-  destructive: 2,
-}
-
-export function PostStatusHeaderActions({
-  post,
-  transitionStatus,
-  schedule,
-  cancelScheduled,
-  cancelling,
-}: Props) {
-  const { actions, pending } = usePostStatusActions(
-    post,
-    transitionStatus,
-    schedule,
-    cancelScheduled,
-    cancelling,
-  )
-
-  // Either a synchronous action is in flight, or a cancellation is pending
-  // server-side. Both should show a spinner and block further clicks.
-  const busy = pending || cancelling
-
-  // Hide system-driven transitions (e.g. publisher worker marking
-  // `scheduled` → `published`); the user shouldn't trigger those.
-  const userActions = actions
-    .filter((a) => a.kind === 'user')
-    .sort((a, b) => INTENT_RANK[a.intent] - INTENT_RANK[b.intent])
-
-  const [primaryAction] = userActions
-  // The dropdown lists every user action, including the one already
-  // shown as the primary button — duplication is intentional so the
-  // menu is a complete view of available transitions.
-  const showOverflow = userActions.length > 1
-
+/**
+ * The header's status controls: the labelled moves, then an undo-style icon
+ * for the step back. Reversing sits after the main button and is deliberately
+ * quieter than advancing — it undoes rather than decides — and keeping it out
+ * of a menu means the header never grows a second ⋮ beside its own overflow.
+ */
+export function PostStatusHeaderActions({ buttons, back, pending, onBlocked }: Props) {
+  if (!back && buttons.length === 0) return null
   return (
-    <div className="flex items-center gap-1">
-      {showOverflow && primaryAction && (
-        <OverflowMenu actions={userActions} pending={busy} />
-      )}
-      {primaryAction && (
-        <PrimaryActionButton action={primaryAction} pending={busy} />
-      )}
-    </div>
+    <>
+      {buttons.map((action) => (
+        <ActionButton
+          key={action.next}
+          action={action}
+          pending={pending}
+          onBlocked={onBlocked}
+        />
+      ))}
+      {back && <BackButton action={back} pending={pending} onBlocked={onBlocked} />}
+    </>
   )
 }
 
-// Wraps a disabled trigger in a span so a tooltip still fires on hover —
-// disabled buttons don't emit pointer events themselves.
-function BlockerTooltip({
-  blockers,
-  side,
-  children,
+/**
+ * No tooltip on the labelled buttons by design. When the post isn't ready
+ * the button stays live and a click hands the blockers to `onBlocked`,
+ * which flashes the quick-settings bar holding the offending fields — the
+ * answer to "why can't I click this?" is shown where the fix is.
+ */
+function ActionButton({
+  action,
+  pending,
+  onBlocked,
 }: {
-  blockers: PostStatusBlocker[]
-  side?: 'top' | 'right' | 'bottom' | 'left'
-  children: ReactElement
+  action: PostStatusAction
+  pending: boolean
+  onBlocked?: (blockers: PostStatusBlocker[]) => void
 }) {
-  if (blockers.length === 0) return children
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className={action.intent === 'destructive' ? 'text-destructive' : undefined}
+      // Only in-flight work disables the button; blockers are handled on click.
+      disabled={pending}
+      loading={pending}
+      aria-disabled={action.blockers.length > 0 || undefined}
+      onClick={() => runOrReport(action, onBlocked)}
+    >
+      {action.buttonLabel}
+    </Button>
+  )
+}
+
+/** Icon-only, so the tooltip carries the label — there's no visible text. */
+function BackButton({
+  action,
+  pending,
+  onBlocked,
+}: {
+  action: PostStatusAction
+  pending: boolean
+  onBlocked?: (blockers: PostStatusBlocker[]) => void
+}) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span tabIndex={0}>{children}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="smIcon"
+          disabled={pending}
+          aria-label={action.menuLabel}
+          onClick={() => runOrReport(action, onBlocked)}
+        >
+          <ArrowUUpLeftIcon weight="regular" className="size-5" />
+        </Button>
       </TooltipTrigger>
-      <TooltipContent side={side}>
-        {blockers.map((b) => b.message).join(' · ')}
-      </TooltipContent>
+      <TooltipContent side="bottom">{action.menuLabel}</TooltipContent>
     </Tooltip>
   )
 }
 
-function PrimaryActionButton({
-  action,
-  pending,
-}: {
-  action: PostStatusAction
-  pending: boolean
-}) {
-  return (
-    <BlockerTooltip blockers={action.blockers}>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        disabled={action.disabled}
-        loading={pending}
-        onClick={() => {
-          void action.run()
-        }}
-      >
-        {action.buttonLabel}
-      </Button>
-    </BlockerTooltip>
-  )
+function runOrReport(
+  action: PostStatusAction,
+  onBlocked?: (blockers: PostStatusBlocker[]) => void,
+) {
+  if (action.blockers.length > 0) {
+    onBlocked?.(action.blockers)
+    return
+  }
+  void action.run()
 }
-
-function OverflowMenu({
-  actions,
-  pending,
-}: {
-  actions: PostStatusAction[]
-  pending: boolean
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className={cn(buttonVariants({ variant: 'ghost', size: 'smIcon' }))}
-        aria-label="More status actions"
-        disabled={pending}
-      >
-        <DotsThreeVerticalIcon className="size-4" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {actions.map((action) => (
-          <BlockerTooltip key={action.next} blockers={action.blockers} side="left">
-            <DropdownMenuItem
-              variant={action.intent === 'destructive' ? 'destructive' : 'default'}
-              disabled={action.disabled}
-              onSelect={(e) => {
-                if (action.disabled) {
-                  e.preventDefault()
-                  return
-                }
-                void action.run()
-              }}
-            >
-              {action.menuLabel}
-            </DropdownMenuItem>
-          </BlockerTooltip>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-

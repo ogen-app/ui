@@ -1,4 +1,6 @@
+/// <reference types="vitest/config" />
 import { defineConfig, loadEnv } from "vite";
+import { configDefaults } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -35,6 +37,12 @@ export default defineConfig(({ command, mode }) => {
     },
     json: {
       stringify: false, // Import JSON as parsed objects, not stringified
+    },
+    test: {
+      // Git worktrees under .claude/worktrees hold whole checkouts of this
+      // repo; without this, vitest runs their stale test copies too and the
+      // suite reports phantom counts (and phantom failures).
+      exclude: [...configDefaults.exclude, "**/.claude/**"],
     },
     server: {
       // Polling lets HMR see host edits inside Docker bind mounts (native

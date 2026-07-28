@@ -36,6 +36,7 @@ import { Logo } from '@/components/Logo'
 import { cn } from '@/lib'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
 import { CampaignIcon, campaignAbbr } from '@/components/layout/CampaignIcon.tsx'
+import { campaignColorVar } from '@/lib/campaignColor.ts'
 
 function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; isCollapsed: boolean }) {
   return (
@@ -177,6 +178,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           <CampaignIcon
                             abbr={campaignAbbr(name)}
                             active={isActive}
+                            color={campaignColorVar(campaign.id)}
                             className="size-5 flex-none"
                           />
                         }
@@ -188,8 +190,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       {isActive && (
                         // Sub-items sit flush against each other; the 12px pad
                         // plus the nav's 4px gap makes 16px before the next
-                        // campaign.
-                        <div className="flex w-full flex-col gap-0 pb-3">
+                        // campaign. The 2px rule closes the sub-menu, so the
+                        // campaign that follows doesn't read as one more of
+                        // its sections.
+                        <div className="flex w-full flex-col gap-0 pb-3 border-b-2 border-quaternary">
                           {CAMPAIGN_SUB_ITEMS.map((item) => {
                             const subActive = activeSubItem === item.id
                             const link = subItemLink(campaign.id, item.id)

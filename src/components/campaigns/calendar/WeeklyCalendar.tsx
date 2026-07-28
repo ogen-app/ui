@@ -1,8 +1,9 @@
 import { memo, useCallback, useMemo, useState } from 'react'
 import type { Post } from '@/types/posts'
-import { useUpdatePost } from '@/hooks/usePosts'
+import { useAddPost, useUpdatePost } from '@/hooks/usePosts'
 import { postToPayload } from '@/services/api/posts'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
+import { DEFAULT_HOUR } from '@/lib/postSchedule'
 import { useCalendarSettingsStore } from '@/stores/calendarSettingsStore'
 import { PostCard } from './PostCard'
 import { addDays, isSameDay, startOfWeek } from './date'
@@ -15,8 +16,6 @@ type WeeklyCalendarProps = {
   anchor: Date
 }
 
-const DEFAULT_HOUR = 9
-
 type Column = {
   key: string
   /** Full weekday name, e.g. "Monday". */
@@ -28,10 +27,18 @@ type Column = {
   posts: Post[]
 }
 
+/** Whole days strictly before today — today itself still accepts posts. */
+function isPastDay(day: Date): boolean {
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+  return day.getTime() < startOfToday.getTime()
+}
+
 function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarProps) {
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
   const today = useMemo(() => new Date(), [])
   const { mutate: updatePost } = useUpdatePost(campaignId)
+  const addPost = useAddPost(campaignId)
   const firstDayOfWeek = useCalendarSettingsStore((s) => s.firstDayOfWeek)
   const hiddenDays = useCalendarSettingsStore((s) => s.hiddenDays)
 
@@ -151,14 +158,40 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
               </span>
             </div>
 
-            {/* Posts lane — drop target */}
+            {/* Posts lane — drop target, and a click target that starts a new
+                post on this day. The click only counts on the lane's own empty
+                space (target === currentTarget), so clicking a card still opens
+                that card rather than creating a second post. Past lanes don't
+                create: the click path goes through the plain create endpoint,
+                which — unlike `schedule` — never validates the date, so a
+                guard here is the only thing keeping a post from being born
+                already in the past. */}
             <div
               {...laneHandlers(col.key, col.day)}
+              onClick={(e) => {
+                if (e.target !== e.currentTarget) return
+                if (isPastDay(col.day)) return
+                addPost(col.day)
+              }}
+              title={isPastDay(col.day) ? undefined : `Add a post on ${col.dateLabel}`}
               className={cn(
                 'flex-1 min-h-0 overflow-y-auto bg-secondary px-2 py-2 flex flex-col gap-2 items-stretch transition-colors',
+                !isPastDay(col.day) && 'cursor-pointer',
                 dragOverKey === col.key && 'bg-quaternary',
               )}
             >
+              {/* The lane itself is mouse-only (it can't be a button without
+                  swallowing the cards inside it), so keyboard users get their
+                  own control: invisible until focused via Tab. */}
+              {!isPastDay(col.day) && (
+                <button
+                  type="button"
+                  onClick={() => addPost(col.day)}
+                  className="sr-only focus-visible:not-sr-only focus-visible:rounded-md focus-visible:border focus-visible:border-dashed focus-visible:border-quaternary focus-visible:px-2 focus-visible:py-1.5 focus-visible:text-xs focus-visible:text-secondary-foreground"
+                >
+                  Add a post on {col.dateLabel}
+                </button>
+              )}
               {col.posts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}

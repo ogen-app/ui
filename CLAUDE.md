@@ -24,6 +24,7 @@ Content-Bank AI images are secondary. See
 - **Front-end architecture:** [`docs/architecture.md`](./docs/architecture.md)
 - **Technical decisions & rationale:** [`docs/technical-decisions.md`](./docs/technical-decisions.md)
 - **Onboarding, auth & tenancy flow:** [`docs/onboarding.md`](./docs/onboarding.md)
+- **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
@@ -92,6 +93,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   [`docs/colors.md`](./docs/colors.md).
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
+- **Destructive-action labels are written in literal capitals** — `DELETE
+  CAMPAIGN`, not `Delete campaign` with a `uppercase` class. The caps are part
+  of the copy (they survive copy/paste, screen readers, and any restyle), so
+  never swap them for CSS casing and never "sentence-case" them back. Applies
+  to every Danger Zone / irreversible action across the app. Leave the button
+  styling alone — this is a copy rule, not a style rule.
 - Import with the `@/` alias (→ `src/`). Imports use explicit `.ts`/`.tsx`
   extensions (`allowImportingTsExtensions`). TS is strict — no unused
   locals/params.

@@ -92,7 +92,7 @@ export function PageHeader({
             variant={'default'}
             size={isMobile ? 'smIcon' : 'defaultIcon'}
             onClick={toggleSidebar}
-            className="md:hidden relative"
+            className="relative"
             style={{ zIndex: ZIndex.sidebarOverlay + 1 }}
             aria-label="Toggle sidebar"
           >

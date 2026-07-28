@@ -1,11 +1,14 @@
-import { useEffect, useRef } from 'react'
-import { ArrowLeftIcon } from '@phosphor-icons/react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Logo } from '@/components/Logo'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/styles'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { AssistantComposer } from './AssistantComposer'
 import { AssistantReply } from './AssistantReply'
+import { StarterChips } from './StarterChips'
+import { ThreadCount } from './ThreadCount'
+import { ThreadEmptyState } from './ThreadEmptyState'
 import { ThreadList } from './ThreadList'
 import { UserMessage } from './UserMessage'
 import type { AssistantThread } from '@/types/assistant'
@@ -27,9 +30,32 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
   const cancel = useAssistantStore((s) => s.cancel)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // A starter fills the composer rather than sending: every campaign
+  // capability except the reviews writes, so the user gets the last word.
+  const [prefill, setPrefill] = useState<{ text: string; token: number }>()
+  const [suggesting, setSuggesting] = useState(false)
+  const prefillToken = useRef(0)
+  const pick = useCallback((text: string) => {
+    prefillToken.current += 1
+    setPrefill({ text, token: prefillToken.current })
+    // The draft is now the suggestion — leaving the list open would only push
+    // the thread up while the user edits it.
+    setSuggesting(false)
+  }, [])
+
   useEffect(() => {
     if (activeId) void loadHistory(activeId)
   }, [activeId, loadHistory])
+
+  // A draft asked for from elsewhere in the app (an overview CTA) lands in the
+  // composer exactly like a starter chip — filled in, never sent.
+  const prefillRequest = useAssistantStore((s) => s.prefillRequest)
+  const clearPrefillRequest = useAssistantStore((s) => s.clearPrefillRequest)
+  useEffect(() => {
+    if (!prefillRequest || prefillRequest.threadId !== activeId) return
+    pick(prefillRequest.text)
+    clearPrefillRequest()
+  }, [prefillRequest, activeId, pick, clearPrefillRequest])
 
   // Pin to the newest turn. Streaming grows the last turn rather than adding
   // one, so this tracks its length too.
@@ -41,43 +67,81 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
   }, [activeId, turns?.length, streamLength])
 
   const running = thread?.status === 'running'
+  const isCampaign = thread?.subject.kind === 'campaign'
+  // An unused thread *is* the starter menu, so the lightbulb starts lit and
+  // keeps owning the chips — it just toggles them where they already are.
+  const isEmpty = Boolean(thread?.loaded && thread.turns.length === 0)
+  const chipsInFooter = suggesting && !isEmpty
+  useEffect(() => {
+    setSuggesting(isEmpty)
+  }, [activeId, isEmpty])
 
   return (
     <RailPanel
-      title="AI Assistant"
+      title="Content Strategist"
       onClose={onClose}
       className="h-full"
       bodyClassName="flex-1 gap-6"
       scrollRef={scrollRef}
-      subheader={
-        thread && (
-          <button
-            type="button"
-            onClick={() => selectThread(null)}
-            className="mt-2 flex w-full items-center gap-2 text-left text-xs text-tertiary-foreground hover:text-foreground cursor-pointer"
-          >
-            <ArrowLeftIcon className="size-3.5 shrink-0" />
-            <span className="truncate">{thread.title || 'Untitled post'}</span>
-          </button>
-        )
-      }
+      titleAdornment={<ThreadCount />}
+      // Only inside a thread does the header have somewhere to go; on the list
+      // itself it is just a heading.
+      onTitleClick={thread ? () => selectThread(null) : undefined}
+      titleLabel={thread ? 'Back to all conversations' : undefined}
+      // The chips are a block of their own: they want a little opaque margin
+      // above them and a longer run-out, where the bare composer reads better
+      // tight to the thread with just a short fade.
+      footerFade={chipsInFooter ? 32 : 12}
       footer={
         thread && (
-          <AssistantComposer
-            onSend={(text) => void send(thread.id, text)}
-            running={running}
-            onCancel={() => cancel(thread.id)}
-            placeholder="Ask for a change to this post..."
-          />
+          // Opaque: the thread scrolls under the footer, and the starters have
+          // to sit on something. Keyed by thread: openThread can swap the
+          // active thread without unmounting the panel, and the composer's
+          // local draft must not follow into the next conversation.
+          <div key={thread.id} className={cn('flex flex-col gap-2 bg-primary', chipsInFooter && 'pt-3')}>
+            {/* In an empty thread the chips are the body's, not the footer's. */}
+            {chipsInFooter && (
+              <StarterChips
+                kind={thread.subject.kind}
+                onPick={pick}
+                disabled={running}
+              />
+            )}
+            <AssistantComposer
+              onSend={(text) => void send(thread.id, text)}
+              running={running}
+              onCancel={() => cancel(thread.id)}
+              placeholder={
+                isCampaign
+                  ? 'Ask for a plan or a review...'
+                  : 'Ask for a change to this post...'
+              }
+              prefill={prefill}
+              onToggleSuggestions={() => setSuggesting((s) => !s)}
+              suggestionsOpen={suggesting}
+            />
+          </div>
         )
       }
     >
-      {thread ? <ThreadView thread={thread} /> : <ThreadList />}
+      {thread ? (
+        <ThreadView thread={thread} onPick={pick} showStarters={suggesting} />
+      ) : (
+        <ThreadList />
+      )}
     </RailPanel>
   )
 }
 
-function ThreadView({ thread }: { thread: AssistantThread }) {
+function ThreadView({
+  thread,
+  onPick,
+  showStarters,
+}: {
+  thread: AssistantThread
+  onPick: (text: string) => void
+  showStarters: boolean
+}) {
   if (!thread.loaded) {
     return (
       <div className="flex flex-col gap-3" aria-busy>
@@ -90,12 +154,11 @@ function ThreadView({ thread }: { thread: AssistantThread }) {
 
   if (thread.turns.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-        <Logo variant="mark" className="size-8 text-quinary-foreground" />
-        <p className="max-w-64 text-sm text-tertiary-foreground">
-          Ask for a rewrite, a different tone, or to work something in from an attached asset.
-        </p>
-      </div>
+      <ThreadEmptyState
+        kind={thread.subject.kind}
+        onPick={onPick}
+        showStarters={showStarters}
+      />
     )
   }
 

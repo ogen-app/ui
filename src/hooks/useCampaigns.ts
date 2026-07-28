@@ -10,7 +10,9 @@ import {
 import type { CreateCampaignPayload, UpdateCampaignPayload } from "@/types/campaigns";
 
 const CAMPAIGNS_KEY = ["campaigns"] as const;
-const campaignKey = (id: string) => ["campaigns", id] as const;
+// Exported so the assistant store can invalidate it from outside React. The
+// campaign's post list nests under this key, so invalidating it covers both.
+export const campaignKey = (id: string) => ["campaigns", id] as const;
 export const CAMPAIGN_TYPES_KEY = ["campaign-types"] as const;
 
 export function useCampaigns() {

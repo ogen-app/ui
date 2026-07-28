@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button.tsx";
-import { PlusIcon } from "@phosphor-icons/react";
-import { PageGridEmptyState } from "@/components/page-primitives/PageGridEmptyState.tsx";
+import { PostsEmptyState } from "@/components/campaigns/PostsEmptyState";
 import { PostsTable } from "@/components/tables/postsTable";
 import { PostsToolbar } from "@/components/campaigns/PostsToolbar";
 import { useAddPost, useCampaignPosts, useDeletePost } from "@/hooks/usePosts.ts";
@@ -22,16 +20,7 @@ function CampaignListView() {
     <div className="flex flex-col h-full min-h-0 min-w-0">
       <PostsToolbar campaignId={campaignId} view="list" />
       {!posts || posts.length === 0 ? (
-        <PageGridEmptyState
-          title="No posts yet"
-          subtitle="Add your first post to start building this campaign"
-          actions={
-            <Button variant="defaultInverted" onClick={addPost}>
-              <PlusIcon className="size-4" />
-              <span>ADD POST</span>
-            </Button>
-          }
-        />
+        <PostsEmptyState variant="list" onAddPost={addPost} />
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto">
           <PostsTable

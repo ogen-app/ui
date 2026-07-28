@@ -80,6 +80,45 @@ export type Campaign = {
   updated_at: string;
 };
 
+// Payload of GET /api/campaigns/:id/overview (CON-113). Unlike the CRUD
+// resources this endpoint speaks camelCase — mirror it verbatim.
+export type CampaignOverviewBucket = {
+  key: string;
+  label: string;
+  count: number;
+};
+
+export type CampaignOverviewPhase = {
+  id: string;
+  sequence: number;
+  name: string;
+  purpose: string;
+  postCount: number;
+};
+
+export type CampaignOverview = {
+  campaignId: string;
+  name: string;
+  status: string;
+  type: string;
+  language: string;
+  brief: {
+    description: string;
+    targetPersona: string;
+    keyMessages: string;
+    toneGuidelines: string;
+  };
+  phases: CampaignOverviewPhase[];
+  totalPosts: number;
+  distribution: {
+    unassignedPhasePostCount: number;
+    byStatus: CampaignOverviewBucket[];
+    byPlatform: CampaignOverviewBucket[];
+    byContentType: CampaignOverviewBucket[];
+  };
+  generatedAt: string;
+};
+
 export type CreateCampaignPayload = {
   name: string;
   campaign_type_id: string;

@@ -24,18 +24,23 @@ export function Switch({
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        'relative inline-flex h-3 w-7 shrink-0 cursor-pointer items-center transition-colors',
+        // 22×10 pill with a 1px inset border; the 4×4 pin travels the 20px
+        // of track left inside that border.
+        'relative inline-flex h-[10px] w-[22px] shrink-0 cursor-pointer items-center',
+        'rounded-full border border-foreground transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
         'disabled:cursor-not-allowed disabled:opacity-50',
-        checked ? 'bg-primary-foreground' : 'bg-tertiary-foreground',
+        checked ? 'bg-primary-foreground' : 'bg-transparent',
         className,
       )}
     >
       <span
         aria-hidden
         className={cn(
-          'inline-block size-2 bg-primary shadow transition-transform',
-          checked ? 'translate-x-[18px]' : 'translate-x-0.5',
+          'inline-block size-1 rounded-full transition-transform',
+          checked
+            ? 'bg-primary translate-x-[14px]'
+            : 'bg-foreground translate-x-[2px]',
         )}
       />
     </button>

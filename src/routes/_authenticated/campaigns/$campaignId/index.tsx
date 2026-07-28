@@ -1,16 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { formatAnchor } from "@/components/campaigns/calendar/date";
 
-// /campaigns/:id → current week of the calendar.
+// /campaigns/:id → the Overview control panel (CON-120). The calendar stays
+// one click away via the sidebar's Posts item.
 export const Route = createFileRoute("/_authenticated/campaigns/$campaignId/")({
   beforeLoad: ({ params }) => {
     throw redirect({
-      to: "/campaigns/$campaignId/calendar/$anchor/$view",
-      params: {
-        campaignId: params.campaignId,
-        anchor: formatAnchor(new Date()),
-        view: "week",
-      },
+      to: "/campaigns/$campaignId/overview",
+      params: { campaignId: params.campaignId },
     });
   },
 });

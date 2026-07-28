@@ -25,6 +25,55 @@ const TOOL_LABELS: Record<string, { running: (i: ToolInput) => string; done: (i:
     running: () => 'Re-reading the current post',
     done: () => 'Re-read the current post',
   },
+
+  // Campaign assistant (CON-112 and its sub-issues). The four mutating tools
+  // write as they run, so their done-tense is a statement of fact.
+  runContentPlan: {
+    running: () => 'Generating a content plan',
+    done: () => 'Generated a content plan',
+  },
+  generatePosts: {
+    running: (i) => `Adding posts${platformSuffix(i)}`,
+    done: (i) => `Added posts${platformSuffix(i)}`,
+  },
+  enrichBrief: {
+    running: () => 'Improving the brief',
+    done: () => 'Improved the brief',
+  },
+  setCampaignDates: {
+    running: () => 'Updating the campaign dates',
+    done: () => 'Updated the campaign dates',
+  },
+  redistributePosts: {
+    running: () => 'Redistributing posts across the timeline',
+    done: () => 'Redistributed posts across the timeline',
+  },
+  checkBrief: {
+    running: () => 'Reviewing the brief',
+    done: () => 'Reviewed the brief',
+  },
+  checkPostsConsistency: {
+    running: () => 'Checking posts against the brief',
+    done: () => 'Checked posts against the brief',
+  },
+  getCampaignOverview: {
+    running: () => 'Building the campaign overview',
+    done: () => 'Built the campaign overview',
+  },
+  listCampaignPosts: {
+    running: () => 'Reading the campaign posts',
+    done: () => 'Read the campaign posts',
+  },
+  getCampaignBrief: {
+    running: () => 'Reading the campaign brief',
+    done: () => 'Read the campaign brief',
+  },
+}
+
+/** ` for Threads` when the model targeted one platform, else nothing. */
+function platformSuffix(input: ToolInput): string {
+  const platform = input?.platformId ?? input?.platform
+  return typeof platform === 'string' && platform ? ` for ${platform}` : ''
 }
 
 export function describeTool(name: string, input: ToolInput, status: 'running' | 'done'): string {
@@ -61,12 +110,18 @@ export function humanizeStep(step: string): string {
     .trim()
 }
 
-/** Compact elapsed time: sub-second in ms, then seconds, then m:ss. */
+/**
+ * Elapsed time at the precision the reader can act on. The audience is
+ * marketers waiting for a turn to finish, not anyone profiling it: milliseconds
+ * and tenths implied a meaning they never had, so a second is the floor and
+ * everything rounds to whole units.
+ */
 export function formatDuration(ms: number): string {
   if (!Number.isFinite(ms) || ms < 0) return ''
-  if (ms < 950) return `${Math.round(ms)}ms`
-  const seconds = ms / 1000
-  if (seconds < 60) return `${seconds.toFixed(1)}s`
+  if (ms < 1000) return '<1s'
+  const seconds = Math.round(ms / 1000)
+  if (seconds < 60) return `${seconds}s`
   const mins = Math.floor(seconds / 60)
-  return `${mins}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
+  const rest = seconds % 60
+  return rest === 0 ? `${mins}m` : `${mins}m ${rest}s`
 }
