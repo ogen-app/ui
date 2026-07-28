@@ -1,4 +1,7 @@
-import type { CampaignOverview } from "@/types/campaigns";
+import type {
+  CampaignOverview,
+  CampaignOverviewBucket,
+} from "@/types/campaigns";
 
 /**
  * Shapes the server's campaign overview (CON-113) into rows the Content
@@ -10,12 +13,12 @@ import type { CampaignOverview } from "@/types/campaigns";
  * labels, and drops what would render as an empty row.
  */
 
-export type DistributionRow = {
-  /** Stable React key: a phase id, a bucket key, or `unassigned`. */
-  key: string;
-  label: string;
-  count: number;
-};
+/**
+ * Same shape as the server's buckets — a row is a bucket with its label and
+ * key resolved for display. `key` doubles as the stable React key: a phase
+ * id, a platform id, or `unassigned`.
+ */
+export type DistributionRow = CampaignOverviewBucket;
 
 /** The row for posts the server couldn't place in any phase. */
 export const UNASSIGNED_PHASE_KEY = "unassigned";
@@ -49,9 +52,6 @@ export function phaseRows(overview: CampaignOverview): DistributionRow[] {
   return rows;
 }
 
-/** The bucket the server files posts under when they have no platform yet. */
-export const NO_CHANNEL_KEY = "";
-
 /**
  * One row per channel the campaign has posts on, in the server's order.
  *
@@ -68,16 +68,7 @@ export function channelRows(overview: CampaignOverview): DistributionRow[] {
     .filter((bucket) => bucket.count > 0)
     .map((bucket) => ({
       key: bucket.key,
-      label: bucket.key === NO_CHANNEL_KEY ? "No channel yet" : bucket.label,
+      label: bucket.key === "" ? "No channel yet" : bucket.label,
       count: bucket.count,
     }));
-}
-
-/**
- * What the phase rows add up to. The server's `totalPosts` is the authority;
- * this exists so a caller can tell whether the plan accounts for every post
- * (see the campaignDistribution tests, which hold the payload to it).
- */
-export function rowTotal(rows: DistributionRow[]): number {
-  return rows.reduce((sum, row) => sum + row.count, 0);
 }

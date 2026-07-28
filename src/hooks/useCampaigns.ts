@@ -47,6 +47,10 @@ export function useCampaignOverview(id: string) {
     queryKey: campaignOverviewKey(id),
     queryFn: () => getCampaignOverview(id),
     enabled: !!id,
+    // Staleness is push-driven — every post mutation and assistant turn
+    // invalidates this key — so remounting the consumer (the Overview's tab
+    // switches unmount it) shouldn't refire the request on its own.
+    staleTime: 60_000,
   });
 }
 
