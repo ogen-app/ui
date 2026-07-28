@@ -1,9 +1,17 @@
+import {
+  EyeIcon,
+  HeartIcon,
+  PaperPlaneTiltIcon,
+  SealCheckIcon,
+  type Icon as PhosphorIcon,
+} from '@phosphor-icons/react'
 import type { QualityBand } from '@/lib/postQuality.ts'
 import type { QualityDimensionKey } from '@/types/quality'
 
 /**
- * The two colour scales the quality panel uses, kept in one place so the
- * composition bar and the dimension cards can't drift apart.
+ * The panel's shared vocabulary: how a score is coloured, and what each
+ * dimension looks like. In one place so the ring, the overall bar and the
+ * dimension cards can't drift apart.
  */
 
 /** How a score reads: strong is good news, weak is a problem to fix. */
@@ -20,14 +28,14 @@ export const BAND_FILL: Record<QualityBand, string> = {
 }
 
 /**
- * One hue per dimension, for the composition bar and the dot on each card
- * that ties a slice back to its card. Categorical, not judgemental — these
- * say *which* dimension, never how well it did, so they come from the chart
- * ramp rather than from the status accents above.
+ * One glyph per dimension, standing in for the name so the card can lead with
+ * what the dimension *means* instead of what it is called. Categorical only —
+ * an icon says which dimension, never how it scored; that is the bar's job,
+ * and giving both a colour made the card argue with itself.
  */
-export const DIMENSION_FILL: Record<QualityDimensionKey, string> = {
-  correctness: 'bg-chart-3',
-  clarity: 'bg-chart-2',
-  engagement: 'bg-chart-1',
-  delivery: 'bg-chart-4',
+export const DIMENSION_ICON: Record<QualityDimensionKey, PhosphorIcon> = {
+  correctness: SealCheckIcon,
+  clarity: EyeIcon,
+  engagement: HeartIcon,
+  delivery: PaperPlaneTiltIcon,
 }

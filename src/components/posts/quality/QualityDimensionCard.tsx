@@ -1,6 +1,6 @@
 import { WarningIcon } from '@phosphor-icons/react'
 import { Collapse } from '@/components/ui/collapse'
-import { BAND_TEXT, BAND_FILL, DIMENSION_FILL } from './tokens.ts'
+import { BAND_TEXT, BAND_FILL, DIMENSION_ICON } from './tokens.ts'
 import { cn } from '@/lib'
 import { scoreBand, suggestionsOf, type QualityDimensionMeta } from '@/lib/postQuality.ts'
 import type { QualityDimension, QualitySeverity } from '@/types/quality'
@@ -38,23 +38,28 @@ export function QualityDimensionCard({
   const score = dimension.score ?? 0
   const band = scoreBand(score)
   const suggestions = suggestionsOf(dimension)
+  const Icon = DIMENSION_ICON[meta.key]
 
   return (
     <section className="flex flex-col border border-border">
-      <header className="flex items-start justify-between gap-3 px-3 pt-2.5 pb-2">
-        <div className="min-w-0">
-          <h3 className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-            {/* Ties this card to its slice of the composition bar above. */}
-            <span
-              aria-hidden
-              className={cn('size-1.5 shrink-0 rounded-full', DIMENSION_FILL[meta.key])}
-            />
-            <span className="truncate">{meta.label}</span>
-          </h3>
-          <p className="text-xs text-tertiary-foreground">
-            {meta.blurb}
-            {meta.platformAware && ' · judged against this channel'}
-          </p>
+      <header className="flex items-start justify-between gap-3 px-3 pt-3 pb-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            aria-hidden
+            className="flex size-8 shrink-0 items-center justify-center bg-secondary"
+          >
+            <Icon className="size-4 text-secondary-foreground" weight="regular" />
+          </span>
+          <div className="min-w-0">
+            {/* The name is the quieter line. What the reader needs is what the
+                number is a verdict *on* — "true and well-formed" — and the
+                dimension's name is only the filing label for it. */}
+            <p className="text-xs text-tertiary-foreground">
+              {meta.label}
+              {meta.platformAware && ' · this channel'}
+            </p>
+            <h3 className="text-sm font-medium text-foreground">{meta.blurb}</h3>
+          </div>
         </div>
         <p className="shrink-0 tabular-nums">
           <span className={cn('text-lg font-display font-medium', BAND_TEXT[band])}>{score}</span>
@@ -62,20 +67,12 @@ export function QualityDimensionCard({
         </p>
       </header>
 
-      <div className="px-3 pb-2.5 flex flex-col gap-2">
-        <div>
-          <div className="h-1 w-full bg-quinary">
-            <div
-              className={cn('h-full', BAND_FILL[band])}
-              style={{ width: `${(Math.min(10, Math.max(0, score)) / 10) * 100}%` }}
-            />
-          </div>
-          <p className="mt-1 flex justify-between text-xs text-tertiary-foreground tabular-nums">
-            {/* The weight is why two posts with the same four scores can land
-                on different overalls — it comes from the post's type. */}
-            <span>{Math.round((dimension.weight ?? 0) * 100)}% of the overall</span>
-            <span>+{(dimension.contribution ?? 0).toFixed(1)} pts</span>
-          </p>
+      <div className="px-3 pb-3 flex flex-col gap-2">
+        <div className="h-1 w-full bg-quinary">
+          <div
+            className={cn('h-full', BAND_FILL[band])}
+            style={{ width: `${(Math.min(10, Math.max(0, score)) / 10) * 100}%` }}
+          />
         </div>
 
         {dimension.rationale && (

@@ -23,7 +23,7 @@ import { cn } from '@/lib'
 import type { PostEvaluation } from '@/types/quality'
 import { AssessProgress } from './AssessProgress.tsx'
 import { QualityDimensionCard } from './QualityDimensionCard.tsx'
-import { BAND_TEXT, DIMENSION_FILL } from './tokens.ts'
+import { BAND_FILL, BAND_TEXT } from './tokens.ts'
 
 export type PostQualityPanelViewProps = {
   /** `null` means never assessed; `undefined` means not loaded yet. */
@@ -97,13 +97,16 @@ export function PostQualityPanelView({
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            // `justify-center`: the button base is `inline-flex` with no
+            // justification, so at full width the label would sit against the
+            // left edge with the rest of the row empty.
+            className="w-full justify-center uppercase"
             onClick={onAssess}
             loading={assessing}
             disabled={assessing}
           >
             <ArrowClockwiseIcon />
-            <span>{assessing ? 'Assessing…' : 'Re-assess'}</span>
+            <span>{assessing ? 'Assessing this post…' : 'Re-assess this post'}</span>
           </Button>
         ) : undefined
       }
@@ -116,7 +119,7 @@ export function PostQualityPanelView({
             'Someone with admin rights can turn it on in settings.',
           ]}
           action={
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" className="uppercase" asChild>
               <Link to="/workspace-settings">
                 <GearSixIcon />
                 <span>Go to workspace settings</span>
@@ -139,7 +142,7 @@ export function PostQualityPanelView({
             "We couldn't fetch this post's score just now.",
           ]}
           action={
-            <Button variant="outline" size="sm" onClick={onReload}>
+            <Button variant="outline" className="uppercase" onClick={onReload}>
               <ArrowClockwiseIcon />
               {/* Reload, not re-assess: the score may well be sitting there
                   intact, and a failed fetch is no reason to pay for a run. */}
@@ -153,7 +156,7 @@ export function PostQualityPanelView({
             'Oops, something broke.',
             'The assessment stopped before it finished. Nothing was saved, so running it again is safe.',
           ]}
-          action={<AssessButton onAssess={onAssess} label="Re-assess" />}
+          action={<AssessButton onAssess={onAssess} label="Re-assess this post" />}
         />
       ) : !assessment ? (
         <QualityEmptyState
@@ -184,7 +187,7 @@ export function PostQualityPanelView({
 
 function AssessButton({ onAssess, label }: { onAssess: () => void; label: string }) {
   return (
-    <Button type="button" variant="default" size="sm" onClick={onAssess}>
+    <Button type="button" variant="outline" className="uppercase" onClick={onAssess}>
       <SparkleIcon />
       <span>{label}</span>
     </Button>
@@ -278,25 +281,18 @@ export function ScoreRing({ pct, band }: { pct: number; band: QualityBand }) {
 }
 
 /**
- * The overall split into what each dimension actually put into it. Two posts
- * can reach the same number from very different places, and the weights
- * differ by post type — a bar makes that visible where four scores don't.
+ * The overall as a bar, in the same band colour as the ring above it.
  *
- * No legend: each dimension card below carries the matching dot.
+ * It was four coloured slices — one per dimension's weighted contribution —
+ * which read as a chart the four cards below already draw better, and put a
+ * second colour scheme next to the one that means "good or bad". One solid
+ * fill says the one thing the bar is for: how full the score is.
  */
 export function CompositionBar({ evaluation }: { evaluation: PostEvaluation }) {
+  const pct = overallPct(evaluation)
   return (
-    <div className="flex h-2 w-full bg-quinary" aria-hidden>
-      {QUALITY_DIMENSIONS.map((meta) => {
-        const contribution = Math.max(0, evaluation.result?.[meta.key]?.contribution ?? 0)
-        return (
-          <div
-            key={meta.key}
-            className={DIMENSION_FILL[meta.key]}
-            style={{ width: `${contribution}%` }}
-          />
-        )
-      })}
+    <div className="h-2 w-full bg-quinary" aria-hidden>
+      <div className={cn('h-full', BAND_FILL[overallBand(pct)])} style={{ width: `${pct}%` }} />
     </div>
   )
 }

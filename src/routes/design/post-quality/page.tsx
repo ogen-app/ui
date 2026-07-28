@@ -233,15 +233,13 @@ export function PostQualityDesignHarness() {
           </Body>
         </Specimen>
 
-        <Specimen
-          label="Composition bar, three weight profiles"
-          note="same scores; the profile is what moves the slices"
-        >
+        <Specimen label="Overall bar, all three bands" note="one solid fill, matching the ring">
           <Body>
             <div className="flex flex-col gap-4">
-              <BarRow label="text — 30/30/20/20" evaluation={WORKABLE} />
-              <BarRow label="image — 20/15/35/30" evaluation={CAPTION_SCOPED} />
-              <BarRow label="weak post — the bar is mostly empty" evaluation={WEAK} />
+              <BarRow label="88% — strong" evaluation={STRONG} />
+              <BarRow label="68% — workable" evaluation={CAPTION_SCOPED} />
+              <BarRow label="65% — workable" evaluation={WORKABLE} />
+              <BarRow label="31% — weak" evaluation={WEAK} />
             </div>
           </Body>
         </Specimen>
@@ -304,8 +302,8 @@ export function PostQualityDesignHarness() {
         </Specimen>
 
         <Specimen
-          label="Platform-aware vs not"
-          note="only Engagement and Delivery carry the channel note"
+          label="All four, one post"
+          note="the icon carries the dimension; only Engagement and Delivery say 'this channel'"
         >
           <Body>
             <div className="flex flex-col gap-3">
