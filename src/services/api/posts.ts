@@ -11,6 +11,16 @@ export function listCampaignPosts(campaignId: string): Promise<Post[]> {
   return apiJson<Post[]>(`/api/campaigns/${campaignId}/posts`, 'Unable to fetch posts')
 }
 
+/**
+ * Every post in the workspace, hydrated. Unfiltered — the endpoint takes no
+ * query parameters, so callers narrow client-side. Used where a question spans
+ * campaigns (the auto-publish allowlist is workspace-wide, so switching it off
+ * has to look at every campaign's scheduled posts, not just the open one).
+ */
+export function listPosts(): Promise<Post[]> {
+  return apiJson<Post[]>(BASE, 'Unable to fetch posts')
+}
+
 export function getPost(id: string): Promise<Post> {
   return apiJson<Post>(`${BASE}/${id}`, 'Unable to fetch post')
 }
