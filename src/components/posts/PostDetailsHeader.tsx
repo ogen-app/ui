@@ -7,6 +7,7 @@ import {
   DevicesIcon,
   DotsThreeVerticalIcon,
   DownloadSimpleIcon,
+  GaugeIcon,
   GearSixIcon,
   TrashIcon,
 } from '@phosphor-icons/react'
@@ -31,6 +32,8 @@ type Props = {
   onToggleSettings: () => void
   previewOpen: boolean
   onTogglePreview: () => void
+  qualityOpen: boolean
+  onToggleQuality: () => void
   onDownloadMarkdown: () => void
   /** Opens the status-aware delete confirmation. */
   onDeletePost: () => void
@@ -51,6 +54,8 @@ export function PostDetailsHeader({
   onToggleSettings,
   previewOpen,
   onTogglePreview,
+  qualityOpen,
+  onToggleQuality,
   onDownloadMarkdown,
   onDeletePost,
   actions,
@@ -94,6 +99,21 @@ export function PostDetailsHeader({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Preview</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="smIcon"
+                className={cn(qualityOpen && 'text-accent hover:text-accent')}
+                onClick={onToggleQuality}
+                aria-label="Quality"
+                aria-expanded={qualityOpen}
+              >
+                <GaugeIcon weight={qualityOpen ? 'fill' : 'regular'} className="size-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Quality</TooltipContent>
           </Tooltip>
           <Button
             variant="ghost"
