@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { AssessProgress } from '@/components/posts/quality/AssessProgress'
 import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
 import {
@@ -256,6 +256,20 @@ export function PostQualityDesignHarness() {
       </Section>
 
       <Section title="Fragments — progress">
+        <Specimen
+          label="A run, replayed"
+          note="the only specimen that moves — the rest are frozen at a point in the run"
+        >
+          <Body>
+            <div className="flex flex-col gap-8">
+              <AssessProgressReplay stageMs={1400} />
+              {/* Two stages landing together, then a long wait on the model —
+                  the burst that used to make the list look like it redrew. */}
+              <AssessProgressReplay stageMs={1400} burst={2} />
+            </div>
+          </Body>
+        </Specimen>
+
         <Specimen label="Every step state" note="none · partial · all · an unknown stage">
           <Body>
             <div className="flex flex-col gap-8">
@@ -366,6 +380,43 @@ export function PostQualityDesignHarness() {
       </Section>
     </div>
   )
+}
+
+const REPLAY_STEPS = [
+  'validateInput',
+  'buildContext',
+  'evaluate',
+  'validateOutput',
+  'composeScore',
+  'persist',
+]
+
+/**
+ * A fake run on a loop, so the animation can be judged without a backend.
+ *
+ * Every other specimen on this page is a still, which is what makes them
+ * useful — but a still cannot show whether the list feels like it is moving,
+ * which is the only question this component exists to answer.
+ *
+ * `burst` releases that many stages at once before pausing, standing in for a
+ * server that finishes two cheap stages in the same breath.
+ */
+function AssessProgressReplay({ stageMs, burst = 1 }: { stageMs: number; burst?: number }) {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    const timer = setTimeout(
+      () => {
+        // A beat on the full list before starting over, or the loop point
+        // reads as a glitch rather than as a new run.
+        setCount((c) => (c >= REPLAY_STEPS.length ? 0 : Math.min(REPLAY_STEPS.length, c + burst)))
+      },
+      count >= REPLAY_STEPS.length ? stageMs * 2 : stageMs,
+    )
+    return () => clearTimeout(timer)
+  }, [count, stageMs, burst])
+
+  return <AssessProgress steps={REPLAY_STEPS.slice(0, count)} />
 }
 
 /** Mirrors `overallBand` without importing it, so the ring row is explicit. */
