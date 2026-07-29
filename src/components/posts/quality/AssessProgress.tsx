@@ -74,7 +74,11 @@ export function AssessProgress({ steps }: { steps: string[] }) {
           the labels line up on one edge. */}
       <p className="flex items-center gap-2 text-sm text-foreground">
         <Glyph>
-          <Logo variant="mark" loading className="size-4 text-accent" />
+          {/* Larger than the 16px column it sits in, and allowed to overhang
+              it: the mark is the one thing on this screen saying work is
+              happening, and sizing it to the ticks made it read as a seventh
+              tick. The column keeps its width, so the labels stay aligned. */}
+          <Logo variant="mark" loading className="size-5 shrink-0 text-accent" />
         </Glyph>
         <span className="animate-pulse-opacity">Assessing this post…</span>
       </p>
@@ -104,9 +108,9 @@ export function AssessProgress({ steps }: { steps: string[] }) {
                         positioned out of flow or it would push the label. */}
                     <span
                       aria-hidden
-                      className="absolute size-2 rounded-full bg-warning animate-step-ping"
+                      className="absolute size-1 rounded-full bg-warning animate-step-ping"
                     />
-                    <span aria-hidden className="relative size-2 rounded-full bg-warning" />
+                    <span aria-hidden className="relative size-1 rounded-full bg-warning" />
                   </span>
                 ) : (
                   <CircleIcon aria-hidden weight="regular" className="size-4" />
