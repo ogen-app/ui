@@ -99,6 +99,16 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   never swap them for CSS casing and never "sentence-case" them back. Applies
   to every Danger Zone / irreversible action across the app. Leave the button
   styling alone — this is a copy rule, not a style rule.
+- **Design harnesses live on `design/*` branches, never on `develop`.** A
+  harness is a `/design/<feature>` route rendering every state of a component
+  from fixtures, and it needs an exemption in `__root.tsx` `beforeLoad` to open
+  without a session — which is why it must not sit in `develop`. Each harness is
+  one commit on top of `develop` on its own long-lived branch (e.g.
+  `design/post-quality`), rebased forward when `develop` moves. To use one,
+  check its files into your working tree and **don't commit them**:
+  `git checkout design/<name> -- src/routes/design src/routes/__root.tsx`.
+  Expect `routeTree.gen.ts` to regenerate with the extra route — that edit is
+  part of the same don't-commit set.
 - Import with the `@/` alias (→ `src/`). Imports use explicit `.ts`/`.tsx`
   extensions (`allowImportingTsExtensions`). TS is strict — no unused
   locals/params.

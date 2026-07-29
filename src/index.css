@@ -477,6 +477,87 @@
     animation: text-shimmer 2.2s linear infinite;
   }
 
+  /* Body-text tint for the shimmer, for a line that is working rather than
+     one that is an accent in its own right. */
+  .animate-text-shimmer-muted {
+    --shimmer-color: var(--secondary-foreground);
+    --shimmer-highlight: var(--foreground);
+  }
+
+  /* A step-by-step checklist that is actually stepping. The row being worked
+     on gets a halo pushing out of its dot; a row that has just been ticked
+     pops its check in. Without them, a checklist whose stages land in bursts
+     reads as a list that redraws rather than as work moving through it. */
+  /* The scale is tuned against a 6px dot — it puts the halo's last visible
+     frame at roughly the 16px icon column it grows inside. Resize the dot and
+     this wants revisiting. */
+  @keyframes step-ping {
+    0% {
+      transform: scale(1);
+      opacity: 0.45;
+    }
+
+    70%,
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+
+  .animate-step-ping {
+    animation: step-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  @keyframes step-tick-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+
+    60% {
+      transform: scale(1.15);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-step-tick {
+    animation: step-tick-in 0.3s ease-out both;
+  }
+
+  @keyframes step-tick-fade {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* The halo and the overshoot are the parts that move; the tick still fades
+     in, so a row arriving is never silent. The shimmer has to give back the
+     glyph clipping as well as the animation — without the travelling
+     highlight, `color: transparent` would leave the label invisible. */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-step-ping {
+      animation: none;
+    }
+
+    .animate-step-tick {
+      animation: step-tick-fade 0.3s ease-out both;
+    }
+
+    .animate-text-shimmer {
+      background-image: none;
+      color: var(--shimmer-color, var(--accent));
+      animation: pulse-opacity 2.4s ease-in-out infinite;
+    }
+  }
+
   /* Intro screen animations */
   .intro-spacer {
     flex: 1 0 40%;
