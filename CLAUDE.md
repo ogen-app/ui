@@ -30,12 +30,6 @@ Content-Bank AI images are secondary. See
 Requirements live in Linear under the **`CON-`** project (the app's internal
 name is "Content Control Center"). There is no PRD checked into this repo.
 
-## Stack
-
-React 18 + TypeScript · Vite 7 · TanStack Router / Query / Table / Virtual ·
-Zustand 5 · react-hook-form + Zod 4 · Tailwind CSS v4 (CSS-first) · Radix +
-CVA (shadcn "new-york") · BlockNote · Phosphor icons. Node ≥ 24.15, pnpm.
-
 ## Commands
 
 ```bash
@@ -109,9 +103,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `git checkout design/<name> -- src/routes/design src/routes/__root.tsx`.
   Expect `routeTree.gen.ts` to regenerate with the extra route — that edit is
   part of the same don't-commit set.
-- Import with the `@/` alias (→ `src/`). Imports use explicit `.ts`/`.tsx`
-  extensions (`allowImportingTsExtensions`). TS is strict — no unused
-  locals/params.
+- Import with the `@/` alias (→ `src/`). **Extension-less specifiers are the
+  convention** (`@/stores/toastStore`, `./base`) — barrels like `@/lib` can't
+  take an extension at all. `allowImportingTsExtensions` means the explicit
+  `.ts`/`.tsx` form found in some files also resolves; leave existing imports
+  as they are and don't flag the difference in review. TS is strict — no
+  unused locals/params.
 
 ## Known stubs / gaps
 
