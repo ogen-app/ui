@@ -79,6 +79,13 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
   // events must not write another post's cache entry.
   const abortRef = useRef<AbortController | null>(null)
   useEffect(() => {
+    // Run-local state belongs to one post's run: the sidebar keeps this hook
+    // mounted across post switches, so post A's steps, error and cached badge
+    // must not show under post B. `unavailableFromRun` deliberately survives —
+    // a 503 is a fact about the deployment, not about the post.
+    setSteps([])
+    setCached(false)
+    setAssessError(null)
     return () => {
       abortRef.current?.abort()
       abortRef.current = null
@@ -122,6 +129,11 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
           setCached(event.cached)
           if (event.evaluation) {
             qc.setQueryData(postAssessmentKey(postId), event.evaluation)
+          } else {
+            // `complete` without a readable evaluation is a malformed payload,
+            // not "nothing stored" — the flow persists before it emits
+            // `complete`. Don't write null over a real score; go look instead.
+            void qc.invalidateQueries({ queryKey: postAssessmentKey(postId) })
           }
         } else {
           terminal = true
