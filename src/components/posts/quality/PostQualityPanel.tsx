@@ -6,7 +6,8 @@ import { PostQualityPanelView } from './PostQualityPanelView.tsx'
  * The "Quality" sidebar panel, wired to the API.
  *
  * Nothing but wiring lives here — every decision about what to draw is in
- * `PostQualityPanelView`, which takes its whole state as props.
+ * `PostQualityPanelView`, which takes its whole state as props so the design
+ * harness at `/design/post-quality` can render each one.
  */
 export function PostQualityPanel({ doc, onClose }: { doc: Post; onClose?: () => void }) {
   const {
