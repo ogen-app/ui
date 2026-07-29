@@ -270,6 +270,15 @@ export function PostQualityDesignHarness() {
           </Body>
         </Specimen>
 
+        <Specimen
+          label="The whole run in one frame"
+          note="every stage arrives at once — the worst case for the pacing"
+        >
+          <Body>
+            <AssessProgressInstant />
+          </Body>
+        </Specimen>
+
         <Specimen label="Every step state" note="none · partial · all · an unknown stage">
           <Body>
             <div className="flex flex-col gap-8">
@@ -417,6 +426,58 @@ function AssessProgressReplay({ stageMs, burst = 1 }: { stageMs: number; burst?:
   }, [count, stageMs, burst])
 
   return <AssessProgress steps={REPLAY_STEPS.slice(0, count)} />
+}
+
+/**
+ * A run that finishes the instant it starts: all six stages in a single state
+ * update, nothing in between.
+ *
+ * This is the real case behind the pacing, not a contrived one — a cached run
+ * (CON-92) short-circuits after `buildContext` and can return before the panel
+ * has painted a second frame. Left unpaced the list would go from six empty
+ * circles to six ticks in one render, which is not a progress list, it is a
+ * flicker. Paced, the ticks still land one at a time.
+ *
+ * Runs once on mount, then on the button — an animation you cannot replay is
+ * an animation you cannot judge.
+ */
+function AssessProgressInstant() {
+  // `run` and `steps` move together: bumping the key while the old `steps`
+  // were still in state would remount showing six ticks for a frame, which is
+  // precisely the flicker this specimen exists to rule out.
+  const [{ run, steps }, setState] = useState<{ run: number; steps: string[] }>({
+    run: 0,
+    steps: [],
+  })
+
+  useEffect(() => {
+    // One frame's grace so the empty list is actually painted first; without
+    // it there is nothing to animate away from.
+    const timer = setTimeout(() => setState((s) => ({ ...s, steps: REPLAY_STEPS })), 30)
+    return () => clearTimeout(timer)
+  }, [run])
+
+  return (
+    <div className="flex flex-col gap-4">
+      <AssessProgress key={run} steps={steps} />
+      <HarnessButton onClick={() => setState((s) => ({ run: s.run + 1, steps: [] }))}>
+        Replay
+      </HarnessButton>
+    </div>
+  )
+}
+
+/** Harness chrome, deliberately unlike the product's own buttons. */
+function HarnessButton({ children, onClick }: { children: ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="self-start border border-dashed border-quinary px-2 py-1 text-[11px] text-quaternary-foreground hover:text-foreground"
+    >
+      {children}
+    </button>
+  )
 }
 
 /** Mirrors `overallBand` without importing it, so the ring row is explicit. */
