@@ -488,7 +488,7 @@
      on gets a halo pushing out of its dot; a row that has just been ticked
      pops its check in. Without them, a checklist whose stages land in bursts
      reads as a list that redraws rather than as work moving through it. */
-  /* The scale is tuned against a 4px dot — it puts the halo's last visible
+  /* The scale is tuned against a 6px dot — it puts the halo's last visible
      frame at roughly the 16px icon column it grows inside. Resize the dot and
      this wants revisiting. */
   @keyframes step-ping {
@@ -499,7 +499,7 @@
 
     70%,
     100% {
-      transform: scale(3.5);
+      transform: scale(2.6);
       opacity: 0;
     }
   }
