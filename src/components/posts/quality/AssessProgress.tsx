@@ -104,9 +104,9 @@ export function AssessProgress({ steps }: { steps: string[] }) {
                         positioned out of flow or it would push the label. */}
                     <span
                       aria-hidden
-                      className="absolute size-2.5 rounded-full bg-warning animate-step-ping"
+                      className="absolute size-2 rounded-full bg-warning animate-step-ping"
                     />
-                    <span aria-hidden className="relative size-2.5 rounded-full bg-warning" />
+                    <span aria-hidden className="relative size-2 rounded-full bg-warning" />
                   </span>
                 ) : (
                   <CircleIcon aria-hidden weight="regular" className="size-4" />
