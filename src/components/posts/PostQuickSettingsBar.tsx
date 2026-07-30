@@ -46,6 +46,12 @@ type Props = {
   attention?: number
   publishMethod: PublishMethod
   onPublishMethodChange: (method: PublishMethod) => void
+  /**
+   * Whether the workspace allowlists this post's platform for auto-publishing.
+   * Passed in rather than read here: the route already resolves the method
+   * against it, and both must agree on the same answer.
+   */
+  autoPublishAllowed: boolean
   className?: string
 }
 
@@ -74,6 +80,7 @@ export function PostQuickSettingsBar({
   attention = 0,
   publishMethod,
   onPublishMethodChange,
+  autoPublishAllowed,
   className,
 }: Props) {
   const platform = getPlatformInfo(doc.platform_id)
@@ -177,6 +184,7 @@ export function PostQuickSettingsBar({
                 onChange={onPublishMethodChange}
                 platformName={platform?.name ?? null}
                 hasAccount={!!accountName}
+                autoAllowed={autoPublishAllowed}
               />
             </>
           )}
@@ -349,11 +357,14 @@ function PublishMethodPicker({
   onChange,
   platformName,
   hasAccount,
+  autoAllowed,
 }: {
   method: PublishMethod
   onChange: (method: PublishMethod) => void
   platformName: string | null
   hasAccount: boolean
+  /** The workspace allowlists this platform for auto-publishing. */
+  autoAllowed: boolean
 }) {
   return (
     <DropdownMenu>
@@ -362,28 +373,44 @@ function PublishMethodPicker({
         <CaretDownIcon className="size-3 text-tertiary-foreground" />
       </QuickBarTrigger>
       <DropdownMenuContent align="start" className="max-w-[300px]">
-        {PUBLISH_METHODS.map((m) => (
-          <DropdownMenuItem
-            key={m}
-            className="flex-col items-start gap-0.5"
-            onSelect={() => onChange(m)}
-          >
-            <span className={cn(m === method && 'font-medium')}>
-              {PUBLISH_METHOD_LABELS[m]}
-            </span>
-            <span className="text-xs text-tertiary-foreground">
-              {PUBLISH_METHOD_HINTS[m]}
-            </span>
-            {/* Auto needs a connected publisher; without one the server
-                routes it to manual anyway, so say that up front. */}
-            {m === 'auto' && !hasAccount && (
-              <span className="text-xs text-warning">
-                No {platformName ?? 'publishing'} account is connected — this
-                will fall back to a reminder.
+        {PUBLISH_METHODS.map((m) => {
+          // Auto is not offered where the workspace hasn't allowed it: the
+          // schedule endpoint would route the post to manual regardless, so
+          // presenting it as a choice would be a promise the server breaks.
+          const blocked = m === 'auto' && !autoAllowed
+          return (
+            <DropdownMenuItem
+              key={m}
+              disabled={blocked}
+              className="flex-col items-start gap-0.5"
+              onSelect={() => {
+                if (blocked) return
+                onChange(m)
+              }}
+            >
+              <span className={cn(m === method && 'font-medium')}>
+                {PUBLISH_METHOD_LABELS[m]}
               </span>
-            )}
-          </DropdownMenuItem>
-        ))}
+              <span className="text-xs text-tertiary-foreground">
+                {PUBLISH_METHOD_HINTS[m]}
+              </span>
+              {blocked && (
+                <span className="text-xs text-tertiary-foreground">
+                  Not allowed for {platformName ?? 'this platform'} in this
+                  workspace — change it in Workspace Settings.
+                </span>
+              )}
+              {/* Auto needs a connected publisher; without one the server
+                  routes it to manual anyway, so say that up front. */}
+              {m === 'auto' && !blocked && !hasAccount && (
+                <span className="text-xs text-warning">
+                  No {platformName ?? 'publishing'} account is connected — this
+                  will fall back to a reminder.
+                </span>
+              )}
+            </DropdownMenuItem>
+          )
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   )
