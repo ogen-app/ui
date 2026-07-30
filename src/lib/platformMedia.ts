@@ -12,9 +12,11 @@
 // FOLLOW-UP: verify each row against the live platform APIs and move the
 // authoritative copy back to the platform rows, then delete this file.
 //
-// Video is deliberately absent — Ogen does not handle video yet, so the
-// video-only platform (YouTube) has no entry and its post types never
-// reach the attachment UI.
+// Video is deliberately absent — Ogen does not handle video yet. YouTube is
+// hidden outright and every other platform's video post types are withheld
+// from the pickers (`platformDictionary.ts`), so a video format should never
+// reach the attachment UI in the first place. CON-145 moves that gate to the
+// server.
 //
 // Keyed by platform Sqid — see `platformDictionary.ts`.
 

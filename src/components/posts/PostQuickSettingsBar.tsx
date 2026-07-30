@@ -22,6 +22,7 @@ import {
   PLATFORMS,
   getPlatformInfo,
   getPostTypeLabel,
+  selectablePostTypes,
 } from '@/lib/platformDictionary'
 import {
   canEditScheduledAt,
@@ -99,7 +100,7 @@ export function PostQuickSettingsBar({
   const campaignPlatforms = campaign
     ? PLATFORMS.filter((p) => (campaignPostTypes.get(p.id)?.size ?? 0) > 0)
     : PLATFORMS
-  const campaignTypes = (platform?.postTypes ?? []).filter(
+  const campaignTypes = (platform ? selectablePostTypes(platform) : []).filter(
     (t) => !campaign || (campaignPostTypes.get(doc.platform_id)?.has(t.slug) ?? false),
   )
 
@@ -118,12 +119,14 @@ export function PostQuickSettingsBar({
         return
       }
       // Keep the post type when the new platform supports the same slug,
-      // otherwise prefer the campaign's first enabled type for it.
+      // otherwise prefer the campaign's first enabled type for it. Both
+      // sides read the selectable list, so switching platforms can never
+      // land the post on a video type the picker would not have offered.
       const next = getPlatformInfo(platformId)
-      if (next && !next.postTypes.some((t) => t.slug === d.platform_post_type)) {
+      const types = next ? selectablePostTypes(next) : []
+      if (next && !types.some((t) => t.slug === d.platform_post_type)) {
         const camp = campaignPostTypes.get(platformId)
-        const preferred =
-          next.postTypes.find((t) => camp?.has(t.slug)) ?? next.postTypes[0]
+        const preferred = types.find((t) => camp?.has(t.slug)) ?? types[0]
         d.platform_post_type = preferred?.slug ?? ''
       }
     })
