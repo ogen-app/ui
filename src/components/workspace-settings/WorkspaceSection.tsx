@@ -1,12 +1,15 @@
 import { memo, useCallback, useId, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { ArrowsLeftRightIcon } from '@phosphor-icons/react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TextSelect } from '@/components/ui/text-select'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { useActiveWorkspace, useUpdateWorkspace } from '@/hooks/useWorkspaces'
-import { currentTimeIn, timezoneLabel, timezoneList } from '@/lib/timezones'
-import { ROLE_LABELS, type Workspace } from '@/types/workspace'
+import { timezoneLabel, timezoneList } from '@/lib/timezones'
+import type { Workspace } from '@/types/workspace'
 import { ReadOnlyField, SettingsRow } from './SettingsRow'
 
 /**
@@ -18,6 +21,7 @@ import { ReadOnlyField, SettingsRow } from './SettingsRow'
  */
 function WorkspaceSectionComponent() {
   const workspace = useActiveWorkspace()
+  const navigate = useNavigate()
 
   return (
       <SettingsCard>
@@ -28,16 +32,32 @@ function WorkspaceSectionComponent() {
             {/* No card h2 — the row title doubles as the section heading. */}
             <SettingsRow
               title={`${workspace.name} Workspace`}
-              badges={
-                <span className="text-xs text-tertiary-foreground">
-                  You are {ROLE_LABELS[workspace.role].toLowerCase()}
-                </span>
+              actions={
+                // The way out of this card: everything in it describes one
+                // workspace, so the other ones belong behind a single move.
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate({ to: '/workspaces' })}
+                >
+                  <ArrowsLeftRightIcon />
+                  <span>Switch</span>
+                </Button>
               }
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-                <NameField workspace={workspace} />
-                <TimezoneField workspace={workspace} />
-                <ReadOnlyField label="Slug" value={workspace.slug} />
+              <div className="flex flex-col gap-5">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
+                  <NameField workspace={workspace} />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+                  <ReadOnlyField
+                    label="Slug"
+                    value={workspace.slug}
+                    description="Set from the name at creation; renaming the workspace won't change it."
+                  />
+                  <TimezoneField workspace={workspace} />
+                </div>
               </div>
             </SettingsRow>
           </ul>
@@ -102,13 +122,16 @@ function TimezoneField({ workspace }: { workspace: Workspace }) {
   )
   useRegisterSettingsSave('workspace-timezone', dirty, save)
 
-  const now = currentTimeIn(value)
-
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>Time zone</Label>
+      {/* `default`/`default` rather than the component's own defaults, which
+          are a heavier border at h-12 — next to an Input they read as two
+          different controls. */}
       <TextSelect
         id={id}
+        variant="default"
+        size="default"
         value={value}
         onValueChange={setDraft}
         disabled={readOnly}
@@ -116,7 +139,6 @@ function TimezoneField({ workspace }: { workspace: Workspace }) {
         className="w-full"
       />
       <p className="text-xs text-tertiary-foreground">
-        {now ? `It is ${now} there now. ` : ''}
         Schedules are shown and entered in this zone.
       </p>
     </div>

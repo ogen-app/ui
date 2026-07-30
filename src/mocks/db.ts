@@ -17,7 +17,9 @@ import type {
   WorkspaceRole,
 } from '@/types/workspace'
 
-const STORAGE_KEY = 'ogen.stub.workspaces.v1'
+// Bump when the seed or the shapes change: a stored state from an older
+// version is thrown away and reseeded rather than half-migrated.
+const STORAGE_KEY = 'ogen.stub.workspaces.v3'
 
 /** The signed-in user, as far as the stubs are concerned. Patched from the real `current_user` on boot. */
 export type StubSelf = {
@@ -71,7 +73,7 @@ function seed(self: StubSelf): StubState {
     slug: 'my-workspace',
     timezone: 'Europe/Berlin',
     role: 'owner',
-    member_count: 1,
+    member_count: 3,
     is_active: true,
     created_at: daysFromNow(-120),
     updated_at: daysFromNow(-3),
@@ -82,7 +84,7 @@ function seed(self: StubSelf): StubState {
     slug: 'northwind-client',
     timezone: 'America/New_York',
     role: 'admin',
-    member_count: 3,
+    member_count: 5,
     is_active: false,
     created_at: daysFromNow(-40),
     updated_at: daysFromNow(-1),
@@ -98,36 +100,74 @@ function seed(self: StubSelf): StubState {
     is_self: true,
   })
 
+  const member = (
+    userId: string,
+    name: string,
+    email: string,
+    role: WorkspaceRole,
+    joinedDaysAgo: number,
+  ): WorkspaceMember => ({
+    id: newId('mem'),
+    user_id: userId,
+    name,
+    email,
+    role,
+    joined_at: daysFromNow(-joinedDaysAgo),
+    is_self: false,
+  })
+
   return {
     self,
     workspaces: [own, client],
     activeId: own.id,
+    // Every role appears at least once, and in both a workspace the caller
+    // owns and one they only administer — the two rows whose controls differ.
     members: {
-      [own.id]: [selfMember('owner', 120)],
+      [own.id]: [
+        selfMember('owner', 120),
+        member('usrOw01', 'Sofia Lindqvist', 'sofia@example.com', 'admin', 64),
+        member('usrOw02', 'Sam Whitfield', 'sam@example.com', 'viewer', 9),
+      ],
       [client.id]: [
         selfMember('admin', 40),
-        {
-          id: newId('mem'),
-          user_id: 'usrNw01',
-          name: 'Dana Okafor',
-          email: 'dana@northwind.example',
-          role: 'owner',
-          joined_at: daysFromNow(-40),
-          is_self: false,
-        },
-        {
-          id: newId('mem'),
-          user_id: 'usrNw02',
-          name: 'Ravi Patel',
-          email: 'ravi@northwind.example',
-          role: 'member',
-          joined_at: daysFromNow(-12),
-          is_self: false,
-        },
+        member('usrNw01', 'Dana Okafor', 'dana@northwind.example', 'owner', 40),
+        member('usrNw02', 'Ravi Patel', 'ravi@northwind.example', 'member', 12),
+        member('usrNw03', 'Lena Fischer', 'lena@northwind.example', 'admin', 21),
+        member('usrNw04', 'Tomás Ortiz', 'tomas@northwind.example', 'viewer', 3),
       ],
     },
+    // Fresh, about-to-lapse, expired, and two that should never reach the
+    // list — accepted and revoked.
     invitations: {
-      [own.id]: [],
+      [own.id]: [
+        {
+          id: newId('inv'),
+          email: 'alexis.n@example.com',
+          role: 'member',
+          invited_by: self.name,
+          status: 'pending',
+          created_at: daysFromNow(-1),
+          expires_at: daysFromNow(6),
+        },
+        {
+          id: newId('inv'),
+          email: 'j.morrow@example.com',
+          role: 'viewer',
+          invited_by: self.name,
+          status: 'pending',
+          created_at: daysFromNow(-7),
+          expires_at: daysFromNow(0),
+        },
+        {
+          id: newId('inv'),
+          email: 'sofia@example.com',
+          role: 'admin',
+          invited_by: self.name,
+          status: 'accepted',
+          created_at: daysFromNow(-65),
+          expires_at: daysFromNow(-58),
+        },
+      ],
       [client.id]: [
         {
           id: newId('inv'),
@@ -147,6 +187,15 @@ function seed(self: StubSelf): StubState {
           created_at: daysFromNow(-30),
           expires_at: daysFromNow(-23),
         },
+        {
+          id: newId('inv'),
+          email: 'wrong.address@northwind.example',
+          role: 'viewer',
+          invited_by: 'Dana Okafor',
+          status: 'revoked',
+          created_at: daysFromNow(-9),
+          expires_at: daysFromNow(-2),
+        },
       ],
     },
   }
@@ -160,7 +209,18 @@ function load(self: StubSelf): StubState {
     try {
       const parsed = JSON.parse(raw) as StubState
       // The signed-in user can change between sessions; the rest is kept.
+      // The "you" rows are restamped along with it — they are the caller's
+      // own membership, so a stored state from another account would
+      // otherwise show that account's name and email as you.
       parsed.self = self
+      for (const members of Object.values(parsed.members)) {
+        for (const m of members) {
+          if (!m.is_self) continue
+          m.user_id = self.id
+          m.name = self.name
+          m.email = self.email
+        }
+      }
       return parsed
     } catch {
       // Corrupt or from an older shape — start over rather than half-restore.

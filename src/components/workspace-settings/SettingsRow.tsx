@@ -48,9 +48,12 @@ export function SettingsRow({
 export function ReadOnlyField({
   label,
   value,
+  description,
 }: {
   label: string
   value: string | undefined
+  /** One line under the field — why it can't be edited, usually. */
+  description?: string
 }) {
   const text = value?.trim() ?? ''
   const id = useId()
@@ -73,6 +76,7 @@ export function ReadOnlyField({
           className="size-4 text-tertiary-foreground absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
         />
       </div>
+      {description && <p className="text-xs text-tertiary-foreground">{description}</p>}
     </div>
   )
 }

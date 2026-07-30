@@ -9,7 +9,6 @@ import {
   SettingsSaveProvider,
 } from '@/components/settings/settingsSave'
 import { WorkspaceSection } from '@/components/workspace-settings/WorkspaceSection'
-import { WorkspacesSection } from '@/components/workspace-settings/WorkspacesSection'
 import { PeopleSection } from '@/components/workspace-settings/PeopleSection'
 import { PlatformsSection } from '@/components/workspace-settings/PlatformsSection'
 import { ConnectPlatformsSection } from '@/components/workspace-settings/ConnectPlatformsSection'
@@ -49,10 +48,9 @@ function WorkspaceSettings() {
             actions={<SettingsSaveButton />}
           />
           <div className="flex flex-col gap-8 px-3 lg:px-6 pt-4 pb-10">
-            {/* Which workspaces exist comes before the settings of the one
-                you're in — it's the question a person with several clients
-                arrives on this page asking. */}
-            <WorkspacesSection />
+            {/* This page is about the workspace you're in; the list of all of
+                them lives at /workspaces, one click from the Switch button in
+                the card below. */}
             <WorkspaceSection />
             <PeopleSection />
             <PlatformsSection />

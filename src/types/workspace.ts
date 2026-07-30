@@ -14,26 +14,33 @@
  */
 
 /** A member's authority inside one workspace. Not global — a user can own one workspace and be a plain member of another. */
-export type WorkspaceRole = 'owner' | 'admin' | 'member'
+export type WorkspaceRole = 'owner' | 'admin' | 'member' | 'viewer'
 
 /** Ordered weakest→strongest, so `ROLE_RANK[a] >= ROLE_RANK[b]` answers "can a do what b can". */
 export const ROLE_RANK: Record<WorkspaceRole, number> = {
-  member: 0,
-  admin: 1,
-  owner: 2,
+  viewer: 0,
+  member: 1,
+  admin: 2,
+  owner: 3,
 }
 
 export const ROLE_LABELS: Record<WorkspaceRole, string> = {
   owner: 'Owner',
   admin: 'Admin',
   member: 'Member',
+  viewer: 'Viewer',
 }
 
-export const ROLE_DESCRIPTIONS: Record<WorkspaceRole, string> = {
+/**
+ * What each role can do, phrased to complete "…will be able to ___" so the UI
+ * can name the person and the permission in one sentence.
+ */
+export const ROLE_ABILITIES: Record<WorkspaceRole, string> = {
   owner:
-    'Full control, including billing, deleting the workspace and transferring ownership.',
-  admin: 'Can invite people, connect accounts and change workspace settings.',
-  member: 'Can plan, write and publish content. Cannot change workspace settings.',
+    'do everything here, including billing, deleting the workspace and transferring ownership.',
+  admin: 'invite people, connect social accounts and change workspace settings.',
+  member: 'plan, write and publish content, but not change workspace settings.',
+  viewer: 'read campaigns, posts and assets, but not change or publish anything.',
 }
 
 /**

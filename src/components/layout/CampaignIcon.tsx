@@ -4,7 +4,7 @@ import { cn } from '@/lib'
  * Campaign nav icon: an 18×14 card (in a 20×20 frame, matching the size-5
  * icon slot) with the campaign's abbreviation inside.
  *
- * With a `color` (the campaign's identity hue — see `lib/campaignColor.ts`)
+ * With a `color` (the campaign's identity hue — see `lib/identity.ts`)
  * the card is drawn in that colour and stays in it whether the campaign is
  * the active one or not; the icon is how you recognise a campaign in the
  * list, so it must not change hue when selected. Without one it falls back to
@@ -16,7 +16,7 @@ import { cn } from '@/lib'
 type CampaignIconProps = {
   abbr: string
   active?: boolean
-  /** CSS colour for the card, e.g. `var(--campaign-3)`. */
+  /** CSS colour for the card, e.g. `var(--identity-3)`. */
   color?: string
   className?: string
 }
@@ -58,11 +58,4 @@ export function CampaignIcon({
       </text>
     </svg>
   )
-}
-
-export function campaignAbbr(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean)
-  if (words.length === 0) return '·'
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
-  return `${words[0][0]}${words[1][0]}`.toUpperCase()
 }

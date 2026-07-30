@@ -16,11 +16,12 @@
  */
 
 import { HttpResponse, bypass, http, passthrough } from 'msw'
-import type {
-  CreateWorkspacePayload,
-  InvitePayload,
-  UpdateWorkspacePayload,
-  WorkspaceRole,
+import {
+  ROLE_RANK,
+  type CreateWorkspacePayload,
+  type InvitePayload,
+  type UpdateWorkspacePayload,
+  type WorkspaceRole,
 } from '@/types/workspace'
 import * as db from './db'
 
@@ -29,7 +30,7 @@ function fail(status: number, error: string) {
   return HttpResponse.json({ error }, { status })
 }
 
-const ROLES: WorkspaceRole[] = ['owner', 'admin', 'member']
+const ROLES: WorkspaceRole[] = ['owner', 'admin', 'member', 'viewer']
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /**
@@ -43,7 +44,9 @@ const delay = () => new Promise((r) => setTimeout(r, 180))
 function requireAdmin(workspaceId: string) {
   const ws = db.getWorkspace(workspaceId)
   if (!ws) return fail(404, 'Workspace not found')
-  if (ws.role === 'member') return fail(403, 'Only admins and owners can do that')
+  if (ROLE_RANK[ws.role] < ROLE_RANK.admin) {
+    return fail(403, 'Only admins and owners can do that')
+  }
   return null
 }
 

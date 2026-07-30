@@ -154,7 +154,10 @@ the networks — the UI says so.
 
 Rules the server owns:
 
-- Roles are `owner | admin | member`. `owner` is per workspace, not global.
+- Roles are `owner | admin | member | viewer`, weakest last. `owner` is per
+  workspace, not global. `viewer` is read-only: it can open campaigns, posts
+  and assets and change none of them — the role for a client who wants to see
+  what is planned without being able to touch it.
 - **Exactly one owner.** Promoting someone to `owner` is a *transfer*: demote
   the sitting owner to `admin` in the same transaction. Only the owner may do it.
 - The owner cannot be removed — transfer first. This is also what stops the

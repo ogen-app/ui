@@ -1,10 +1,5 @@
-import { memo, useState } from 'react'
-import {
-  ArrowClockwiseIcon,
-  EnvelopeSimpleIcon,
-  PaperPlaneTiltIcon,
-  XIcon,
-} from '@phosphor-icons/react'
+import { memo, useState, type ReactNode } from 'react'
+import { EnvelopeSimpleIcon } from '@phosphor-icons/react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,7 +19,7 @@ import {
 import { toast } from '@/stores/toastStore'
 import { cn } from '@/lib'
 import {
-  ROLE_DESCRIPTIONS,
+  ROLE_ABILITIES,
   ROLE_LABELS,
   type WorkspaceInvitation,
   type WorkspaceMember,
@@ -32,8 +27,25 @@ import {
 } from '@/types/workspace'
 
 /** Owner is reachable only by transfer, so it is never offered when inviting. */
-const INVITABLE_ROLES: WorkspaceRole[] = ['admin', 'member']
-const ASSIGNABLE_ROLES: WorkspaceRole[] = ['owner', 'admin', 'member']
+const INVITABLE_ROLES: WorkspaceRole[] = ['admin', 'member', 'viewer']
+const ASSIGNABLE_ROLES: WorkspaceRole[] = ['owner', 'admin', 'member', 'viewer']
+
+/**
+ * Members and invitations are different rows saying the same thing, so their
+ * columns are fixed rather than content-sized: the roles line up on one edge
+ * whether the row carries a select, a locked label, or a pending invite.
+ */
+const ROLE_COL = 'w-24 shrink-0 flex items-center'
+const ACTION_COL = 'w-44 shrink-0 flex items-center justify-end gap-2'
+
+/** Section heading inside a card — quieter than the card's own title. */
+function SubHeader({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="text-xs font-medium uppercase tracking-[0.01em] text-tertiary-foreground">
+      {children}
+    </h3>
+  )
+}
 
 function initialsOf(name: string, email: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -68,7 +80,11 @@ function PeopleSectionComponent() {
   const { data: members, isLoading: membersLoading } = useWorkspaceMembers(workspaceId)
   const { data: invitations } = useWorkspaceInvitations(workspaceId)
 
-  const pending = (invitations ?? []).filter((i) => i.status !== 'accepted')
+  // Accepted ones became memberships; revoked ones are dead. Expired stay —
+  // they're the rows that need resending.
+  const pending = (invitations ?? []).filter(
+    (i) => i.status === 'pending' || i.status === 'expired',
+  )
 
   return (
     <SettingsCard title="People">
@@ -76,7 +92,8 @@ function PeopleSectionComponent() {
         <p className="text-sm text-tertiary-foreground">Loading…</p>
       ) : (
         <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-3">
+            <SubHeader>Workspace members</SubHeader>
             <ul className="flex flex-col divide-y divide-quaternary">
               {(members ?? []).map((m) => (
                 <MemberRow
@@ -92,9 +109,7 @@ function PeopleSectionComponent() {
 
           {pending.length > 0 && (
             <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-medium text-tertiary-foreground">
-                Pending invitations
-              </h3>
+              <SubHeader>Pending invitations</SubHeader>
               <ul className="flex flex-col divide-y divide-quaternary">
                 {pending.map((inv) => (
                   <InvitationRow
@@ -139,6 +154,9 @@ function MemberRow({
   // can't be edited into something else — there would be no owner left.
   const roleLocked = member.role === 'owner' || (!canManage && !member.is_self)
   const roles = callerIsOwner ? ASSIGNABLE_ROLES : INVITABLE_ROLES
+  // The owner can't be removed at all; everyone else needs rights, except for
+  // leaving, which is always your own to do.
+  const canRemove = member.role !== 'owner' && (canManage || member.is_self)
 
   const handleRole = (role: string) => {
     const next = role as WorkspaceRole
@@ -179,8 +197,8 @@ function MemberRow({
   }
 
   return (
-    <li className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4 min-w-0">
-      <div className="flex items-center gap-3 min-w-0">
+    <li className="py-4 first:pt-0 last:pb-0 flex items-center gap-2 min-w-0">
+      <div className="flex flex-1 items-center gap-3 min-w-0">
         <Avatar className="size-9 shrink-0">
           <AvatarFallback>{initialsOf(member.name, member.email)}</AvatarFallback>
         </Avatar>
@@ -188,7 +206,7 @@ function MemberRow({
           <span className="text-sm truncate text-primary-foreground">
             {member.name}
             {member.is_self && (
-              <span className="text-tertiary-foreground"> · you</span>
+              <span className="text-tertiary-foreground"> (that’s you)</span>
             )}
           </span>
           <span className="text-xs text-tertiary-foreground truncate">
@@ -197,31 +215,39 @@ function MemberRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className={ROLE_COL}>
+        {/* The owner's role isn't a choice anyone can make here — ownership
+            moves by promoting someone else, which demotes this row. */}
         {roleLocked ? (
-          <span className="text-sm text-tertiary-foreground px-2">
-            {ROLE_LABELS[member.role]}
-          </span>
+          <span className="text-sm text-tertiary-foreground">{ROLE_LABELS[member.role]}</span>
         ) : (
           <TextSelect
             value={member.role}
             onValueChange={handleRole}
             disabled={savingRole}
+            variant="inline"
             size="sm"
             elements={roles.map((r) => ({ id: r, displayValue: ROLE_LABELS[r] }))}
           />
         )}
-        {(canManage || member.is_self) && member.role !== 'owner' && (
+      </div>
+
+      <div className={ACTION_COL}>
+        {/* The owner has no remove at all — there is no state in which it
+            could fire. Everyone else keeps the button and it goes dead when
+            the caller lacks the rights, so "why can't I" has an answer on
+            hover rather than a missing control. */}
+        {member.role !== 'owner' && (
           <Button
             type="button"
-            variant="ghost"
-            size="smIcon"
+            variant="outline"
+            size="sm"
             onClick={handleRemove}
-            disabled={removing}
-            aria-label={member.is_self ? 'Leave workspace' : `Remove ${member.name}`}
-            title={member.is_self ? 'Leave workspace' : `Remove ${member.name}`}
+            disabled={!canRemove || removing}
+            loading={removing}
+            title={member.is_self ? 'Leave this workspace' : `Remove ${member.name}`}
           >
-            <XIcon />
+            {member.is_self ? 'LEAVE' : 'REMOVE'}
           </Button>
         )}
       </div>
@@ -243,8 +269,8 @@ function InvitationRow({
   const expired = invitation.status === 'expired'
 
   return (
-    <li className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-4 min-w-0">
-      <div className="flex items-center gap-3 min-w-0">
+    <li className="py-3 first:pt-0 last:pb-0 flex items-center gap-2 min-w-0">
+      <div className="flex flex-1 items-center gap-3 min-w-0">
         <span className="flex size-9 shrink-0 items-center justify-center bg-secondary">
           <EnvelopeSimpleIcon className="size-4 text-tertiary-foreground" />
         </span>
@@ -258,56 +284,67 @@ function InvitationRow({
               expired ? 'text-warning' : 'text-tertiary-foreground',
             )}
           >
-            {ROLE_LABELS[invitation.role]} ·{' '}
+            invited by {invitation.invited_by} ·{' '}
             {expired
               ? `expired ${relativeDays(invitation.expires_at)}`
-              : `expires ${relativeDays(invitation.expires_at)}`}{' '}
-            · invited by {invitation.invited_by}
+              : `expires ${relativeDays(invitation.expires_at)}`}
           </span>
         </div>
       </div>
 
-      {canManage && (
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              resend(invitation.id, {
-                onSuccess: () => toast.success(`Invitation resent to ${invitation.email}`),
-                onError: (err) =>
-                  toast.error('Unable to resend', {
-                    description: err instanceof Error ? err.message : undefined,
-                  }),
-              })
-            }
-            disabled={resending}
-          >
-            <ArrowClockwiseIcon />
-            <span>Resend</span>
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="smIcon"
-            onClick={() =>
-              revoke(invitation.id, {
-                onSuccess: () => toast.success('Invitation revoked'),
-                onError: (err) =>
-                  toast.error('Unable to revoke', {
-                    description: err instanceof Error ? err.message : undefined,
-                  }),
-              })
-            }
-            disabled={revoking}
-            aria-label={`Revoke the invitation to ${invitation.email}`}
-            title="Revoke"
-          >
-            <XIcon />
-          </Button>
-        </div>
-      )}
+      {/* Same column as a member's role: a pending invitation is a membership
+          that hasn't been accepted, and the role is already decided. */}
+      <div className={ROLE_COL}>
+        <span className="text-sm text-tertiary-foreground">
+          {ROLE_LABELS[invitation.role]}
+        </span>
+      </div>
+
+      <div className={ACTION_COL}>
+        {canManage && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                resend(invitation.id, {
+                  onSuccess: () =>
+                    toast.success(`Invitation resent to ${invitation.email}`),
+                  onError: (err) =>
+                    toast.error('Unable to resend', {
+                      description: err instanceof Error ? err.message : undefined,
+                    }),
+                })
+              }
+              disabled={resending}
+              loading={resending}
+            >
+              RESEND
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                revoke(invitation.id, {
+                  onSuccess: () => toast.success('Invitation revoked'),
+                  onError: (err) =>
+                    toast.error('Unable to revoke', {
+                      description: err instanceof Error ? err.message : undefined,
+                    }),
+                })
+              }
+              disabled={revoking}
+              loading={revoking}
+              aria-label={`Cancel the invitation to ${invitation.email}`}
+              title={`Cancel the invitation to ${invitation.email}`}
+            >
+              CANCEL
+            </Button>
+          </>
+        )}
+      </div>
     </li>
   )
 }
@@ -345,32 +382,60 @@ function InviteForm({ workspaceId }: { workspaceId: string }) {
         if (trimmed) submit()
       }}
     >
-      <Label htmlFor="invite-email">Invite someone</Label>
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Input
-          id="invite-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="name@company.com"
-          disabled={isPending}
-          className="flex-1"
-        />
-        <TextSelect
-          value={role}
-          onValueChange={(r) => setRole(r as WorkspaceRole)}
-          disabled={isPending}
-          elements={INVITABLE_ROLES.map((r) => ({
-            id: r,
-            displayValue: ROLE_LABELS[r],
-          }))}
-        />
-        <Button type="submit" disabled={!trimmed || isPending} loading={isPending}>
-          <PaperPlaneTiltIcon />
-          <span>Invite</span>
+      <SubHeader>Invite someone</SubHeader>
+
+      {/* One line: the two fields and the action that consumes them. The
+          button aligns to the bottom of the fields, not to their labels. */}
+      <div className="flex flex-col lg:flex-row lg:items-end gap-x-8 gap-y-5">
+        <div className="flex flex-1 flex-col gap-1.5 min-w-0">
+          <Label htmlFor="invite-email">Email</Label>
+          <Input
+            id="invite-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@company.com"
+            disabled={isPending}
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5 min-w-0">
+          <Label htmlFor="invite-role">Role</Label>
+          <TextSelect
+            id="invite-role"
+            variant="default"
+            size="default"
+            value={role}
+            onValueChange={(r) => setRole(r as WorkspaceRole)}
+            disabled={isPending}
+            elements={INVITABLE_ROLES.map((r) => ({
+              id: r,
+              displayValue: ROLE_LABELS[r],
+            }))}
+            className="w-full"
+          />
+        </div>
+        {/* `default` is the 40px size — the same height as the two inputs it
+            sits beside, so the row has one baseline. */}
+        <Button
+          type="submit"
+          variant="outline"
+          size="default"
+          disabled={!trimmed || isPending}
+          loading={isPending}
+          className="self-end"
+        >
+          INVITE
         </Button>
       </div>
-      <p className="text-xs text-tertiary-foreground">{ROLE_DESCRIPTIONS[role]}</p>
+
+      {/* Names the person and the permission in one sentence — the role's
+          consequence is easier to judge against an address than against a
+          label. */}
+      <p className="text-xs text-tertiary-foreground">
+        A member with{' '}
+        <span className="text-secondary-foreground">{trimmed || 'this address'}</span> will
+        be able to {ROLE_ABILITIES[role]}
+      </p>
     </form>
   )
 }

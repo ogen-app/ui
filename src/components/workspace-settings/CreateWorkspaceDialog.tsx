@@ -94,6 +94,8 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
           <Label htmlFor="workspace-timezone">Time zone</Label>
           <TextSelect
             id="workspace-timezone"
+            variant="default"
+            size="default"
             value={timezone}
             onValueChange={setTimezone}
             elements={zones}
