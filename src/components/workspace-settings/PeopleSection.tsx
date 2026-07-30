@@ -10,7 +10,6 @@ import {
   useActiveWorkspace,
   useInviteMember,
   useRemoveMember,
-  useResendInvitation,
   useRevokeInvitation,
   useUpdateMemberRole,
   useWorkspaceInvitations,
@@ -21,14 +20,13 @@ import { cn } from '@/lib'
 import {
   ROLE_ABILITIES,
   ROLE_LABELS,
+  canActOnMember,
+  canManageWorkspace,
+  grantableRoles,
   type WorkspaceInvitation,
   type WorkspaceMember,
   type WorkspaceRole,
 } from '@/types/workspace'
-
-/** Owner is reachable only by transfer, so it is never offered when inviting. */
-const INVITABLE_ROLES: WorkspaceRole[] = ['admin', 'member', 'viewer']
-const ASSIGNABLE_ROLES: WorkspaceRole[] = ['owner', 'admin', 'member', 'viewer']
 
 /**
  * Members and invitations are different rows saying the same thing, so their
@@ -75,7 +73,8 @@ function relativeDays(iso: string): string {
 function PeopleSectionComponent() {
   const workspace = useActiveWorkspace()
   const workspaceId = workspace?.id
-  const canManage = workspace ? workspace.role !== 'member' : false
+  const callerRole = workspace?.role
+  const canManage = callerRole ? canManageWorkspace(callerRole) : false
 
   const { data: members, isLoading: membersLoading } = useWorkspaceMembers(workspaceId)
   const { data: invitations } = useWorkspaceInvitations(workspaceId)
@@ -86,9 +85,14 @@ function PeopleSectionComponent() {
     (i) => i.status === 'pending' || i.status === 'expired',
   )
 
+  // Several owners are allowed, so an owner row is editable — right up until
+  // it's the only one left. Counted here rather than per row: the invariant is
+  // about the list, not about any single member.
+  const owners = (members ?? []).filter((m) => m.role === 'owner').length
+
   return (
     <SettingsCard title="People">
-      {!workspace || membersLoading ? (
+      {!workspace || !callerRole || membersLoading ? (
         <p className="text-sm text-tertiary-foreground">Loading…</p>
       ) : (
         <div className="flex flex-col gap-8">
@@ -100,8 +104,8 @@ function PeopleSectionComponent() {
                   key={m.id}
                   member={m}
                   workspaceId={workspace.id}
-                  canManage={canManage}
-                  callerIsOwner={workspace.role === 'owner'}
+                  callerRole={callerRole}
+                  isLastOwner={m.role === 'owner' && owners <= 1}
                 />
               ))}
             </ul>
@@ -124,7 +128,7 @@ function PeopleSectionComponent() {
           )}
 
           {canManage ? (
-            <InviteForm workspaceId={workspace.id} />
+            <InviteForm workspaceId={workspace.id} callerRole={callerRole} />
           ) : (
             <p className="text-sm text-tertiary-foreground">
               Only admins and owners can invite people to this workspace.
@@ -139,24 +143,25 @@ function PeopleSectionComponent() {
 function MemberRow({
   member,
   workspaceId,
-  canManage,
-  callerIsOwner,
+  callerRole,
+  isLastOwner,
 }: {
   member: WorkspaceMember
   workspaceId: string
-  canManage: boolean
-  callerIsOwner: boolean
+  callerRole: WorkspaceRole
+  isLastOwner: boolean
 }) {
   const { mutate: setRole, isPending: savingRole } = useUpdateMemberRole(workspaceId)
   const { mutate: remove, isPending: removing } = useRemoveMember(workspaceId)
 
-  // Ownership can only be handed over by the owner, and the owner's own row
-  // can't be edited into something else — there would be no owner left.
-  const roleLocked = member.role === 'owner' || (!canManage && !member.is_self)
-  const roles = callerIsOwner ? ASSIGNABLE_ROLES : INVITABLE_ROLES
-  // The owner can't be removed at all; everyone else needs rights, except for
-  // leaving, which is always your own to do.
-  const canRemove = member.role !== 'owner' && (canManage || member.is_self)
+  // Rank decides who may touch whom; the last owner is the one row nobody can
+  // change, including themselves, because the workspace would be left without
+  // one. Your own role isn't yours to edit either — leaving is the way out.
+  const roleLocked = !canActOnMember(callerRole, member.role) || isLastOwner
+  const roles = grantableRoles(callerRole)
+  // Leaving is always your own to do, whatever your rank.
+  const canRemove =
+    !isLastOwner && (member.is_self || canActOnMember(callerRole, member.role))
 
   const handleRole = (role: string) => {
     const next = role as WorkspaceRole
@@ -165,11 +170,7 @@ function MemberRow({
       { userId: member.user_id, role: next },
       {
         onSuccess: () =>
-          toast.success(
-            next === 'owner'
-              ? `${member.name} is now the owner`
-              : `${member.name} is now ${ROLE_LABELS[next].toLowerCase()}`,
-          ),
+          toast.success(`${member.name} is now ${ROLE_LABELS[next].toLowerCase()}`),
         onError: (err) =>
           toast.error('Unable to change the role', {
             description: err instanceof Error ? err.message : undefined,
@@ -216,8 +217,8 @@ function MemberRow({
       </div>
 
       <div className={ROLE_COL}>
-        {/* The owner's role isn't a choice anyone can make here — ownership
-            moves by promoting someone else, which demotes this row. */}
+        {/* Locked rows read as plain text rather than a dead control: there is
+            nothing to choose, and a disabled select invites the click anyway. */}
         {roleLocked ? (
           <span className="text-sm text-tertiary-foreground">{ROLE_LABELS[member.role]}</span>
         ) : (
@@ -233,11 +234,11 @@ function MemberRow({
       </div>
 
       <div className={ACTION_COL}>
-        {/* The owner has no remove at all — there is no state in which it
-            could fire. Everyone else keeps the button and it goes dead when
-            the caller lacks the rights, so "why can't I" has an answer on
-            hover rather than a missing control. */}
-        {member.role !== 'owner' && (
+        {/* Only the last owner loses the button outright — for them no state
+            exists in which it could fire. Everyone else keeps it and it goes
+            dead when the caller lacks the rank, so "why can't I" has an answer
+            on hover rather than a missing control. */}
+        {!isLastOwner && (
           <Button
             type="button"
             variant="outline"
@@ -265,7 +266,9 @@ function InvitationRow({
   canManage: boolean
 }) {
   const { mutate: revoke, isPending: revoking } = useRevokeInvitation(workspaceId)
-  const { mutate: resend, isPending: resending } = useResendInvitation(workspaceId)
+  // Resending *is* inviting: the endpoint is idempotent per email, so this is
+  // the same call the form below makes, with the row's own address and role.
+  const { mutate: resend, isPending: resending } = useInviteMember(workspaceId)
   const expired = invitation.status === 'expired'
 
   return (
@@ -308,14 +311,17 @@ function InvitationRow({
               variant="outline"
               size="sm"
               onClick={() =>
-                resend(invitation.id, {
-                  onSuccess: () =>
-                    toast.success(`Invitation resent to ${invitation.email}`),
-                  onError: (err) =>
-                    toast.error('Unable to resend', {
-                      description: err instanceof Error ? err.message : undefined,
-                    }),
-                })
+                resend(
+                  { email: invitation.email, role: invitation.role },
+                  {
+                    onSuccess: () =>
+                      toast.success(`Invitation resent to ${invitation.email}`),
+                    onError: (err) =>
+                      toast.error('Unable to resend', {
+                        description: err instanceof Error ? err.message : undefined,
+                      }),
+                  },
+                )
               }
               disabled={resending}
               loading={resending}
@@ -349,11 +355,19 @@ function InvitationRow({
   )
 }
 
-function InviteForm({ workspaceId }: { workspaceId: string }) {
+function InviteForm({
+  workspaceId,
+  callerRole,
+}: {
+  workspaceId: string
+  callerRole: WorkspaceRole
+}) {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<WorkspaceRole>('member')
   const { mutate: invite, isPending } = useInviteMember(workspaceId)
 
+  // An owner can invite a co-owner; an admin can't invite above themselves.
+  const roles = grantableRoles(callerRole)
   const trimmed = email.trim()
 
   const submit = () => {
@@ -407,7 +421,7 @@ function InviteForm({ workspaceId }: { workspaceId: string }) {
             value={role}
             onValueChange={(r) => setRole(r as WorkspaceRole)}
             disabled={isPending}
-            elements={INVITABLE_ROLES.map((r) => ({
+            elements={roles.map((r) => ({
               id: r,
               displayValue: ROLE_LABELS[r],
             }))}

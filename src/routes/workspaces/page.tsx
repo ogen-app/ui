@@ -19,7 +19,7 @@ import { cn } from '@/lib'
  * Switching workspaces is not a menu action dressed up as one: it clears the
  * cache and reloads the app (see `useSwitchWorkspace`). Giving it a page says
  * that plainly, and gives the decision room for the things it actually turns
- * on — which client, who else is in there, what time that workspace keeps.
+ * on — which client, and who else is in there.
  *
  * A 480px column of identical cards, one per workspace. The logo, the title
  * and the account line stay off the cards: they address the page, and the

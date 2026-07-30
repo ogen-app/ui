@@ -3,9 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
-import { TextSelect } from '@/components/ui/text-select'
 import { useCreateWorkspace, useSwitchWorkspace } from '@/hooks/useWorkspaces'
-import { browserTimezone, timezoneLabel, timezoneList } from '@/lib/timezones'
 import { toast } from '@/stores/toastStore'
 
 type Props = {
@@ -22,18 +20,15 @@ type Props = {
  */
 export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
   const [name, setName] = useState('')
-  const [timezone, setTimezone] = useState(browserTimezone)
   const { mutate: create, isPending } = useCreateWorkspace()
   const { mutate: switchTo, isPending: switching } = useSwitchWorkspace()
 
   const trimmed = name.trim()
   const busy = isPending || switching
 
-  const zones = timezoneList().map((z) => ({ id: z, displayValue: timezoneLabel(z) }))
-
   const submit = (thenSwitch: boolean) => {
     create(
-      { name: trimmed, timezone },
+      { name: trimmed },
       {
         onSuccess: (workspace) => {
           if (thenSwitch) {
@@ -88,23 +83,6 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
             autoFocus
             disabled={busy}
           />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="workspace-timezone">Time zone</Label>
-          <TextSelect
-            id="workspace-timezone"
-            variant="default"
-            size="default"
-            value={timezone}
-            onValueChange={setTimezone}
-            elements={zones}
-            disabled={busy}
-            className="w-full"
-          />
-          <p className="text-xs text-tertiary-foreground">
-            Scheduling in this workspace is shown and entered in this zone.
-          </p>
         </div>
 
         <div className="flex justify-end gap-2">

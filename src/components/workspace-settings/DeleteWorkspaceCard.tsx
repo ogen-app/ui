@@ -17,6 +17,11 @@ import { toast } from '@/stores/toastStore'
  * action in the app: campaigns, posts, assets and the workspace's connected
  * social accounts all go with it.
  *
+ * The server soft-deletes, but the copy does not offer that as comfort. A
+ * retained row is an operational safety net for support, not an undo — there is
+ * no self-serve restore, so telling the user it's recoverable would invite the
+ * click that the confirmation exists to slow down.
+ *
  * Confirmation is by typing the name, not by clicking twice. The user may be
  * holding several similar client workspaces, and "are you sure?" does nothing
  * to catch the case that actually hurts — being sure, about the wrong one.
@@ -64,7 +69,8 @@ export function DeleteWorkspaceCard() {
           <p className="max-w-150 text-sm text-tertiary-foreground">
             Deleting this workspace removes its campaigns, posts, assets and connected
             social accounts, and every member loses access. Already-published posts stay
-            live on the social networks. This cannot be undone.
+            live on the social networks. You can’t undo this yourself — recovering a
+            deleted workspace is a manual support request.
           </p>
           {isLast && (
             <p className="max-w-150 text-sm text-warning">
@@ -101,7 +107,8 @@ export function DeleteWorkspaceCard() {
           }}
         >
           <p className="text-sm text-secondary-foreground">
-            Everything in this workspace is deleted, for every member. Type{' '}
+            Everything in this workspace is deleted, for every member, and you can’t
+            restore it yourself. Type{' '}
             <strong className="text-primary-foreground">{workspace.name}</strong> to
             confirm.
           </p>

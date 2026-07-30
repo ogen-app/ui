@@ -24,6 +24,49 @@ export const ROLE_RANK: Record<WorkspaceRole, number> = {
   owner: 3,
 }
 
+/** Strongest first — the order the UI offers them in. */
+export const WORKSPACE_ROLES: WorkspaceRole[] = ['owner', 'admin', 'member', 'viewer']
+
+/**
+ * Two rank rules cover the whole permission matrix, so no screen has to
+ * enumerate roles:
+ *
+ * - you may act on someone **below** your rank,
+ * - you may grant a role **at or below** your own.
+ *
+ * Together they reproduce CON-147 §8: an admin manages members and viewers and
+ * can promote to admin, but cannot touch another admin or an owner.
+ *
+ * Owners are the exception, and they have to be. Nobody outranks an owner, so
+ * under the strict rule an owner row could never be edited by anyone — and
+ * since a workspace may have several, an owner appointed by mistake would be
+ * permanent. Owners therefore act on each other as peers, which also lets one
+ * step down.
+ *
+ * What ranks *can't* express is the last-owner invariant — a workspace always
+ * keeps at least one owner — because that depends on the whole member list, not
+ * on two roles. The server owns it and answers 409; the UI counts owners to
+ * grey the control out first.
+ */
+export function canActOnMember(actor: WorkspaceRole, target: WorkspaceRole): boolean {
+  if (ROLE_RANK[actor] > ROLE_RANK[target]) return true
+  return actor === 'owner' && target === 'owner'
+}
+
+export function canGrantRole(actor: WorkspaceRole, role: WorkspaceRole): boolean {
+  return ROLE_RANK[actor] >= ROLE_RANK[role]
+}
+
+/** The roles `actor` is allowed to hand out, strongest first. */
+export function grantableRoles(actor: WorkspaceRole): WorkspaceRole[] {
+  return WORKSPACE_ROLES.filter((role) => canGrantRole(actor, role))
+}
+
+/** Invites, member management and workspace settings all sit behind this one line. */
+export function canManageWorkspace(actor: WorkspaceRole): boolean {
+  return ROLE_RANK[actor] >= ROLE_RANK.admin
+}
+
 export const ROLE_LABELS: Record<WorkspaceRole, string> = {
   owner: 'Owner',
   admin: 'Admin',
@@ -37,7 +80,7 @@ export const ROLE_LABELS: Record<WorkspaceRole, string> = {
  */
 export const ROLE_ABILITIES: Record<WorkspaceRole, string> = {
   owner:
-    'do everything here, including billing, deleting the workspace and transferring ownership.',
+    'do everything here, including billing, deleting the workspace and appointing other owners.',
   admin: 'invite people, connect social accounts and change workspace settings.',
   member: 'plan, write and publish content, but not change workspace settings.',
   viewer: 'read campaigns, posts and assets, but not change or publish anything.',
@@ -53,8 +96,6 @@ export type Workspace = {
   name: string
   /** Assigned at creation from the name, stable across renames (CON-97). */
   slug: string
-  /** IANA zone, e.g. "Europe/Berlin". Drives every scheduling display (CON-94). */
-  timezone: string
   /** The caller's role in this workspace. */
   role: WorkspaceRole
   member_count: number
@@ -95,14 +136,17 @@ export type WorkspaceInvitation = {
   expires_at: string
 }
 
+/**
+ * No `timezone`: everything is UTC until CON-94 lands, and a field the UI can't
+ * set is a field the API shouldn't have to accept. The zone arrives with the
+ * scheduling surfaces that read it, as one piece of work.
+ */
 export type CreateWorkspacePayload = {
   name: string
-  timezone: string
 }
 
 export type UpdateWorkspacePayload = {
   name?: string
-  timezone?: string
 }
 
 export type InvitePayload = {

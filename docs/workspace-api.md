@@ -4,6 +4,12 @@
 development by `src/mocks/handlers.ts` and consumed by real UI. Nothing here
 exists on the Go API yet — this document and those handlers are the proposal.
 
+**Aligned to [CON-147](https://linear.app/ogen/issue/CON-147/workspaces)**,
+which carries the backend spec (identity split, `accounts` table, migration,
+RBAC middleware). Where this document and CON-147 §10 differ, the differences
+are listed in §7 below and each one is a decision, not an oversight. Verbs and
+paths otherwise follow CON-147.
+
 Related: CON-97 (multi-tenancy), CON-26 (user invitation), CON-94 (workspace
 timezone), CON-102 (per-tenant Zernio profiles).
 
@@ -66,7 +72,7 @@ workspaces first, an account picker later within a workspace.
 
 ## 3. Where the active workspace lives
 
-**Proposal: in the session.** `POST /api/workspaces/:id/activate` rebinds the
+**Proposal: in the session.** `POST /api/workspaces/:id/switch` rebinds the
 session's `active_workspace_id`; every other endpoint is untouched.
 
 The alternative is a per-request `X-Workspace-Id` header. It was rejected for
@@ -83,7 +89,7 @@ all day, that will chafe. The escape hatch, when it's needed: accept
 otherwise. That is additive — no migration, no behaviour change for clients
 that don't send it — so it can wait until the pain is real.
 
-Client-side consequence, already implemented: on a successful `activate` the UI
+Client-side consequence, already implemented: on a successful `switch` the UI
 clears the entire Query cache and does a full page load. Everything cached
 belongs to the workspace just left, and one missed key is another client's
 content on screen.
@@ -99,10 +105,10 @@ returned instead of `403` for workspaces they can't see at all, matching CON-97
 | Method | Path | Body | Returns |
 |---|---|---|---|
 | GET | `/api/workspaces` | — | `Workspace[]` — the caller's memberships |
-| POST | `/api/workspaces` | `{name, timezone}` | `201 Workspace` |
-| PUT | `/api/workspaces/:id` | `{name?, timezone?}` | `Workspace` (admin+) |
+| POST | `/api/workspaces` | `{name}` | `201 Workspace` |
+| PATCH | `/api/workspaces/:id` | `{name?}` | `Workspace` (admin+) |
 | DELETE | `/api/workspaces/:id` | — | `204` (owner only) |
-| POST | `/api/workspaces/:id/activate` | — | `204` |
+| POST | `/api/workspaces/:id/switch` | — | `204` |
 
 ```jsonc
 // Workspace
@@ -110,7 +116,6 @@ returned instead of `403` for workspaces they can't see at all, matching CON-97
   "id": "wsOwn001",
   "name": "Northwind Client",
   "slug": "northwind-client",   // from the name at creation, stable across renames
-  "timezone": "America/New_York", // IANA
   "role": "admin",               // caller's role — from the membership
   "member_count": 3,
   "is_active": true,             // caller's session is bound to this one
@@ -122,21 +127,37 @@ returned instead of `403` for workspaces they can't see at all, matching CON-97
 `role`, `is_active` and `member_count` are caller-relative or derived, so the
 list is not a plain select — it is a join over memberships.
 
+**`member_count` and `is_active` are a request, not a nicety.** The switcher
+page renders "Admin · 5 members" per row and has to mark the one you're in.
+Without them it is an N+1 over `/members` to draw a list of three cards, or a
+second call to learn which workspace the session already holds.
+
+**No `timezone`.** The zone is CON-94's, and until the scheduling surfaces read
+it there is nothing for the field to do but be wrong in a second place —
+everything is UTC. Workspace settings shows `UTC` as read-only text so the
+question has an answer, and the create form doesn't ask.
+
 **Creation side effects.** A new workspace provisions its own Zernio profile
 (`Ogen #{WORKSPACE_ID}`, CON-102) — that is what makes its social accounts
 separate. Reuse the existing bootstrap job; creation must not block on Zernio
 being reachable, exactly as signup doesn't.
 
-**Deletion** cascades campaigns, posts, assets, social accounts and the
-allowlist, and should detach the Zernio profile. Published posts stay live on
-the networks — the UI says so.
+**Deletion is a soft delete** (CON-147 open decision 2): the row survives,
+writes are blocked, and the workspace leaves every member's list. That is an
+operational safety net, not an undo — **there is no self-serve restore**, and
+recovery is a manual, support-side operation. The UI is written to match: "You
+can't undo this yourself — recovering a deleted workspace is a manual support
+request." Cascade-detaching the Zernio profile and hard-deleting content can
+follow later without touching the client.
+
+Published posts stay live on the networks — the UI says so.
 
 ### Members
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
 | GET | `/api/workspaces/:id/members` | — | `WorkspaceMember[]` |
-| PUT | `/api/workspaces/:id/members/:userId` | `{role}` | `WorkspaceMember` (admin+) |
+| PATCH | `/api/workspaces/:id/members/:userId` | `{role}` | `WorkspaceMember` (admin+) |
 | DELETE | `/api/workspaces/:id/members/:userId` | — | `204` |
 
 ```jsonc
@@ -158,20 +179,31 @@ Rules the server owns:
   workspace, not global. `viewer` is read-only: it can open campaigns, posts
   and assets and change none of them — the role for a client who wants to see
   what is planned without being able to touch it.
-- **Exactly one owner.** Promoting someone to `owner` is a *transfer*: demote
-  the sitting owner to `admin` in the same transaction. Only the owner may do it.
-- The owner cannot be removed — transfer first. This is also what stops the
-  last member of a workspace from deleting themselves out of it.
-- Removing yourself is "leave" and needs no admin rights.
+- **Several owners are allowed**, with the invariant that a workspace always
+  keeps **at least one**. Promoting to `owner` grants the role; nobody is
+  demoted. Demoting or removing the last owner is `409`.
+- Two rank rules cover the rest, and reproduce CON-147 §8 without enumerating
+  the matrix: **you may act on someone below your rank**, and **you may grant a
+  role at or below your own**. So an admin manages members and viewers and can
+  promote to admin, but cannot touch another admin or an owner.
+- **Owners act on each other as peers** — the one exception, and a necessary
+  one. Nobody outranks an owner, so under the strict rule an owner row could
+  never be edited by anyone, and with several owners allowed a mistaken
+  appointment would be permanent. This is also what lets an owner step down.
+- Removing yourself is "leave" and needs no rank at all — except for the last
+  owner, who has to appoint another first.
+
+`src/types/workspace.ts` has these as `canActOnMember` / `canGrantRole` /
+`grantableRoles`, and `src/mocks/handlers.ts` calls the same functions, so the
+stub enforces exactly what the UI greys out.
 
 ### Invitations
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
 | GET | `/api/workspaces/:id/invitations` | — | `WorkspaceInvitation[]` |
-| POST | `/api/workspaces/:id/invitations` | `{email, role}` | `201 WorkspaceInvitation` |
+| POST | `/api/workspaces/:id/invitations` | `{email, role}` | `201` new / `200` re-issued |
 | DELETE | `/api/workspaces/:id/invitations/:invId` | — | `204` |
-| POST | `/api/workspaces/:id/invitations/:invId/resend` | — | `WorkspaceInvitation` |
 
 ```jsonc
 // WorkspaceInvitation
@@ -188,10 +220,24 @@ Rules the server owns:
 
 Invitations address an **email**, not a user id — the invitee may have no Ogen
 account yet, and accepting is what creates the membership (and, for an unknown
-email, the user). `409` when the email is already a member or already has a
-pending invitation; the UI shows the server's message rather than pre-checking
-against a list that can be stale. `owner` is rejected at invite time (`422`) —
-ownership is only reachable by transfer.
+email, the user).
+
+**`POST` is idempotent per email, and there is no resend endpoint.** Posting an
+address that already has a pending or expired invitation re-issues it: new
+token, new expiry, mail sent again, `200` instead of `201`. The reasoning is
+that "resend" and "send" are the same act — a separate route would differ only
+in whether the client happened to know the invitation's id, and it would need
+its own auth check, its own 404 and its own tests to do nothing new. Making
+`POST` idempotent also removes a dead end: an invite that `409`s because a
+pending one exists forces the user to hunt down and cancel it before they can do
+the obvious thing.
+
+`409` is therefore reserved for an email that is already a **member** — a
+different situation with a different fix. The UI shows the server's message
+rather than pre-checking against a list that can be stale.
+
+Since several owners are allowed, `owner` is a legal invite role — for an owner
+to send. An admin inviting an owner is `403` under the grant rule, not `422`.
 
 **Not yet designed — the accept flow.** It is the half that touches
 unauthenticated routes and mail, and the prototype stops at the boundary:
@@ -206,21 +252,30 @@ unauthenticated routes and mail, and the prototype stops at the boundary:
 
 ## 5. Data model sketch
 
-```sql
--- workspaces: the existing tenants table, plus a zone.
-ALTER TABLE tenants ADD COLUMN timezone TEXT NOT NULL DEFAULT 'UTC';
+CON-147 §7 is the authoritative version of this (it splits identity into
+`accounts` and repurposes `users` as the membership row, which is the better
+shape). The only parts that differ are the role set and the owner constraint:
 
+```sql
+role TEXT NOT NULL CHECK (role IN ('owner','admin','member','viewer'))
+```
+
+and **no** `memberships_one_owner` unique index — several owners are allowed, so
+the invariant is "at least one", which is not expressible as a unique index.
+Enforce it in the transaction that demotes or removes a member (`SELECT count(*)
+… WHERE role='owner'` under the same lock), and answer `409`.
+
+An earlier, simpler sketch, kept because it reads in one screen:
+
+```sql
 CREATE TABLE memberships (
     id           TEXT PRIMARY KEY,
     user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     workspace_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    role         TEXT NOT NULL,        -- owner | admin | member
+    role         TEXT NOT NULL,        -- owner | admin | member | viewer
     joined_at    TIMESTAMP NOT NULL,
     UNIQUE (user_id, workspace_id)
 );
--- one owner per workspace
-CREATE UNIQUE INDEX memberships_one_owner
-    ON memberships (workspace_id) WHERE role = 'owner';
 
 CREATE TABLE invitations (
     id           TEXT PRIMARY KEY,
@@ -234,6 +289,8 @@ CREATE TABLE invitations (
     expires_at   TIMESTAMP NOT NULL,
     accepted_at  TIMESTAMP
 );
+-- The index the idempotent POST relies on: one live invitation per address,
+-- so re-inviting updates a row instead of racing a second one into existence.
 CREATE UNIQUE INDEX invitations_one_pending
     ON invitations (workspace_id, lower(email)) WHERE status = 'pending';
 
@@ -266,11 +323,29 @@ and they are allowed to differ. Worth an explicit decision either way.
    workspaces (assumed here), or per-workspace user records? The first is
    simpler and makes invitations resolve cleanly; it also means one password
    across workspaces.
-6. **Timezone rollout** (CON-94) — the field is proposed here, but the change
-   that matters is every scheduling surface reading it instead of the browser's
-   zone. Separate piece of work; this only gives it somewhere to live.
+6. **Timezone rollout** (CON-94) — deliberately not in this shape. The change
+   that matters is every scheduling surface reading a workspace zone instead of
+   the browser's, which is its own piece of work; adding the column now only
+   creates a second place to be wrong. Everything is UTC until then.
 
-## 7. Running the prototype
+## 7. Divergences from CON-147 §10, and why
+
+Each of these is a decision taken while building the UI against the stubs. They
+are small, and they are all in this direction: fewer routes, fewer special cases,
+fewer states the UI has to explain.
+
+| | CON-147 §10 | Here | Why |
+|---|---|---|---|
+| Roles | `owner \| admin \| member` | **+ `viewer`** | Read-only is the agency case in CON-147 §1 — a client who watches the plan without being able to touch it. One check constraint and one RBAC row. |
+| Owners | ≥1, multiple allowed (rec 3) | same | Adopted. The UI counts owners and locks the last one; the server answers `409`. |
+| Switch | `POST …/:id/switch` | same | Adopted (was `activate`). |
+| Verbs | `PATCH` | same | Adopted (was `PUT`). Bodies are partial, so `PATCH` is the honest verb. |
+| Resend | not specified | **no endpoint** — `POST /invitations` is idempotent per email | "Resend" and "send" are the same act; see §4. Removes a route, an auth check and the `409`-on-pending dead end. |
+| `timezone` | absent | absent | Adopted. UTC everywhere; the settings page shows it as read-only text. |
+| List shape | `{id,name,slug,role,last_active_at}` | **+ `member_count`, `is_active`** | The switcher renders "Admin · 5 members" and marks the current row. Otherwise it's an N+1 over `/members`. |
+| Delete | soft-archive in v1 (rec 2) | **soft-delete, no self-serve restore** | Adopted, with the copy saying so plainly: recovery is a manual support request, not an undo button. |
+
+## 8. Running the prototype
 
 Stubs are on by default in dev. `VITE_STUB_WORKSPACES=false` in `.env.local`
 turns them off (workspace calls then 404 against the real API). Everything

@@ -17,7 +17,10 @@
 
 import { HttpResponse, bypass, http, passthrough } from 'msw'
 import {
-  ROLE_RANK,
+  WORKSPACE_ROLES,
+  canActOnMember,
+  canGrantRole,
+  canManageWorkspace,
   type CreateWorkspacePayload,
   type InvitePayload,
   type UpdateWorkspacePayload,
@@ -30,7 +33,6 @@ function fail(status: number, error: string) {
   return HttpResponse.json({ error }, { status })
 }
 
-const ROLES: WorkspaceRole[] = ['owner', 'admin', 'member', 'viewer']
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /**
@@ -44,7 +46,7 @@ const delay = () => new Promise((r) => setTimeout(r, 180))
 function requireAdmin(workspaceId: string) {
   const ws = db.getWorkspace(workspaceId)
   if (!ws) return fail(404, 'Workspace not found')
-  if (ROLE_RANK[ws.role] < ROLE_RANK.admin) {
+  if (!canManageWorkspace(ws.role)) {
     return fail(403, 'Only admins and owners can do that')
   }
   return null
@@ -99,11 +101,10 @@ export const handlers = [
     const body = (await request.json()) as CreateWorkspacePayload
     const name = body.name?.trim() ?? ''
     if (!name) return fail(422, 'Name is required')
-    if (!body.timezone) return fail(422, 'Timezone is required')
-    return HttpResponse.json(db.createWorkspace(name, body.timezone), { status: 201 })
+    return HttpResponse.json(db.createWorkspace(name), { status: 201 })
   }),
 
-  http.put('*/api/workspaces/:id', async ({ params, request }) => {
+  http.patch('*/api/workspaces/:id', async ({ params, request }) => {
     await delay()
     const id = params.id as string
     const denied = requireAdmin(id)
@@ -113,19 +114,17 @@ export const handlers = [
     if (body.name !== undefined && !body.name.trim()) {
       return fail(422, 'Name is required')
     }
-    const updated = db.updateWorkspace(id, {
-      name: body.name?.trim(),
-      timezone: body.timezone,
-    })
+    const updated = db.updateWorkspace(id, { name: body.name?.trim() })
     return updated ? HttpResponse.json(updated) : fail(404, 'Workspace not found')
   }),
 
+  /** Soft-delete server-side; from here the workspace simply stops existing. */
   http.delete('*/api/workspaces/:id', async ({ params }) => {
     await delay()
     const id = params.id as string
     const ws = db.getWorkspace(id)
     if (!ws) return fail(404, 'Workspace not found')
-    if (ws.role !== 'owner') return fail(403, 'Only the owner can delete a workspace')
+    if (ws.role !== 'owner') return fail(403, 'Only an owner can delete a workspace')
     db.deleteWorkspace(id)
     return new HttpResponse(null, { status: 204 })
   }),
@@ -134,9 +133,9 @@ export const handlers = [
    * Rebinds the session. Returns 204 rather than the workspace: the client has
    * to drop its cache regardless, so there is nothing useful to hand back.
    */
-  http.post('*/api/workspaces/:id/activate', async ({ params }) => {
+  http.post('*/api/workspaces/:id/switch', async ({ params }) => {
     await delay()
-    const ok = db.activateWorkspace(params.id as string)
+    const ok = db.switchWorkspace(params.id as string)
     return ok ? new HttpResponse(null, { status: 204 }) : fail(404, 'Workspace not found')
   }),
 
@@ -147,19 +146,36 @@ export const handlers = [
     return HttpResponse.json(db.listMembers(id))
   }),
 
-  http.put('*/api/workspaces/:id/members/:userId', async ({ params, request }) => {
+  /**
+   * Role changes, under the two rank rules plus the last-owner invariant.
+   *
+   * Ranks answer "may this caller touch this row" and "may they hand out this
+   * role"; the invariant is the one thing ranks can't see, because it depends
+   * on the rest of the member list.
+   */
+  http.patch('*/api/workspaces/:id/members/:userId', async ({ params, request }) => {
     await delay()
     const workspaceId = params.id as string
     const denied = requireAdmin(workspaceId)
     if (denied) return denied
 
     const { role } = (await request.json()) as { role: WorkspaceRole }
-    if (!ROLES.includes(role)) return fail(422, 'Unknown role')
+    if (!WORKSPACE_ROLES.includes(role)) return fail(422, 'Unknown role')
 
     const ws = db.getWorkspace(workspaceId)
-    if (role === 'owner' && ws?.role !== 'owner') {
-      return fail(403, 'Only the current owner can transfer ownership')
+    const target = db.getMember(workspaceId, params.userId as string)
+    if (!ws || !target) return fail(404, 'Member not found')
+
+    if (!canActOnMember(ws.role, target.role)) {
+      return fail(403, `Only an owner can change an ${target.role}’s role`)
     }
+    if (!canGrantRole(ws.role, role)) {
+      return fail(403, `You can’t grant a role above your own`)
+    }
+    if (target.role === 'owner' && role !== 'owner' && db.ownerCount(workspaceId) <= 1) {
+      return fail(409, 'A workspace needs at least one owner — appoint another first')
+    }
+
     const updated = db.updateMemberRole(workspaceId, params.userId as string, role)
     return updated ? HttpResponse.json(updated) : fail(404, 'Member not found')
   }),
@@ -168,18 +184,19 @@ export const handlers = [
     await delay()
     const workspaceId = params.id as string
     const userId = params.userId as string
-    const members = db.listMembers(workspaceId)
-    const target = members.find((m) => m.user_id === userId)
-    if (!target) return fail(404, 'Member not found')
+    const ws = db.getWorkspace(workspaceId)
+    const target = db.getMember(workspaceId, userId)
+    if (!ws || !target) return fail(404, 'Member not found')
 
-    // Leaving is always allowed; removing someone else needs authority.
-    if (!target.is_self) {
-      const denied = requireAdmin(workspaceId)
-      if (denied) return denied
+    // Leaving is always your own to do; removing someone else needs rank over
+    // them. Either way the owner seat can't be left empty.
+    if (!target.is_self && !canActOnMember(ws.role, target.role)) {
+      return fail(403, 'You can’t remove someone at or above your own role')
     }
-    if (target.role === 'owner') {
-      return fail(409, 'Transfer ownership before removing the owner')
+    if (target.role === 'owner' && db.ownerCount(workspaceId) <= 1) {
+      return fail(409, 'A workspace needs at least one owner — appoint another first')
     }
+
     db.removeMember(workspaceId, userId)
     return new HttpResponse(null, { status: 204 })
   }),
@@ -191,6 +208,14 @@ export const handlers = [
     return HttpResponse.json(db.listInvitations(id))
   }),
 
+  /**
+   * Idempotent per email: an address that already has a live invitation gets a
+   * new token, a new expiry and another mail, answered `200` instead of `201`.
+   * "Resend" is the same request, so there is no resend route.
+   *
+   * 409 is reserved for an address that is already a member — the one case
+   * where re-inviting isn't what the caller wants.
+   */
   http.post('*/api/workspaces/:id/invitations', async ({ params, request }) => {
     await delay()
     const workspaceId = params.id as string
@@ -200,18 +225,19 @@ export const handlers = [
     const body = (await request.json()) as InvitePayload
     const email = body.email?.trim().toLowerCase() ?? ''
     if (!EMAIL.test(email)) return fail(422, 'Enter a valid email address')
-    if (!ROLES.includes(body.role)) return fail(422, 'Unknown role')
-    if (body.role === 'owner') return fail(422, 'Invite as admin, then transfer ownership')
+    if (!WORKSPACE_ROLES.includes(body.role)) return fail(422, 'Unknown role')
 
+    const ws = db.getWorkspace(workspaceId)
+    if (!ws) return fail(404, 'Workspace not found')
+    if (!canGrantRole(ws.role, body.role)) {
+      return fail(403, 'You can’t invite someone at a role above your own')
+    }
     if (db.findMemberByEmail(workspaceId, email)) {
       return fail(409, 'That person is already a member')
     }
-    if (db.findInvitationByEmail(workspaceId, email)) {
-      return fail(409, 'They already have a pending invitation')
-    }
-    return HttpResponse.json(db.createInvitation(workspaceId, email, body.role), {
-      status: 201,
-    })
+
+    const { invitation, created } = db.upsertInvitation(workspaceId, email, body.role)
+    return HttpResponse.json(invitation, { status: created ? 201 : 200 })
   }),
 
   http.delete('*/api/workspaces/:id/invitations/:invitationId', async ({ params }) => {
@@ -222,18 +248,6 @@ export const handlers = [
     const ok = db.revokeInvitation(workspaceId, params.invitationId as string)
     return ok ? new HttpResponse(null, { status: 204 }) : fail(404, 'Invitation not found')
   }),
-
-  http.post(
-    '*/api/workspaces/:id/invitations/:invitationId/resend',
-    async ({ params }) => {
-      await delay()
-      const workspaceId = params.id as string
-      const denied = requireAdmin(workspaceId)
-      if (denied) return denied
-      const updated = db.resendInvitation(workspaceId, params.invitationId as string)
-      return updated ? HttpResponse.json(updated) : fail(404, 'Invitation not found')
-    },
-  ),
 
   /**
    * Anything else under `/api` is the real backend's. Declared explicitly

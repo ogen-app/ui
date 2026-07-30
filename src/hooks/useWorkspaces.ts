@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  activateWorkspace,
   createWorkspace,
   deleteWorkspace,
   inviteMember,
@@ -8,8 +7,8 @@ import {
   listMembers,
   listWorkspaces,
   removeMember,
-  resendInvitation,
   revokeInvitation,
+  switchWorkspace,
   updateMemberRole,
   updateWorkspace,
 } from '@/services/api/workspaces'
@@ -63,7 +62,7 @@ export function useActiveWorkspace(): Workspace | undefined {
  */
 export function useSwitchWorkspace() {
   return useMutation({
-    mutationFn: activateWorkspace,
+    mutationFn: switchWorkspace,
     onSuccess: () => {
       queryClient.clear()
       invalidateSession()
@@ -121,9 +120,8 @@ export function useWorkspaceInvitations(workspaceId: string | undefined) {
 }
 
 /**
- * Role changes refresh the workspace list too: promoting someone to owner
- * demotes the caller, and the caller's own role is what gates every control on
- * the page.
+ * Role changes refresh the workspace list too, because the caller's own role is
+ * what gates every control on the page and it can be the row that changed.
  */
 export function useUpdateMemberRole(workspaceId: string) {
   const qc = useQueryClient()
@@ -148,6 +146,11 @@ export function useRemoveMember(workspaceId: string) {
   })
 }
 
+/**
+ * Sends an invitation — and re-sends one, since the endpoint is idempotent per
+ * email. A "resend" is this same mutation with the row's own email and role,
+ * which is why there is no separate hook for it.
+ */
 export function useInviteMember(workspaceId: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -161,15 +164,6 @@ export function useRevokeInvitation(workspaceId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (invitationId: string) => revokeInvitation(workspaceId, invitationId),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: workspaceInvitationsKey(workspaceId) }),
-  })
-}
-
-export function useResendInvitation(workspaceId: string) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (invitationId: string) => resendInvitation(workspaceId, invitationId),
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: workspaceInvitationsKey(workspaceId) }),
   })

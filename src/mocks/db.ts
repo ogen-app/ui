@@ -19,7 +19,7 @@ import type {
 
 // Bump when the seed or the shapes change: a stored state from an older
 // version is thrown away and reseeded rather than half-migrated.
-const STORAGE_KEY = 'ogen.stub.workspaces.v3'
+const STORAGE_KEY = 'ogen.stub.workspaces.v4'
 
 /** The signed-in user, as far as the stubs are concerned. Patched from the real `current_user` on boot. */
 export type StubSelf = {
@@ -71,7 +71,6 @@ function seed(self: StubSelf): StubState {
     id: 'wsOwn001',
     name: 'My Workspace',
     slug: 'my-workspace',
-    timezone: 'Europe/Berlin',
     role: 'owner',
     member_count: 3,
     is_active: true,
@@ -82,7 +81,6 @@ function seed(self: StubSelf): StubState {
     id: 'wsClient02',
     name: 'Northwind Client',
     slug: 'northwind-client',
-    timezone: 'America/New_York',
     role: 'admin',
     member_count: 5,
     is_active: false,
@@ -122,10 +120,15 @@ function seed(self: StubSelf): StubState {
     activeId: own.id,
     // Every role appears at least once, and in both a workspace the caller
     // owns and one they only administer — the two rows whose controls differ.
+    //
+    // My Workspace deliberately has **two** owners: that is the state where an
+    // owner row is removable. Remove or demote Sofia and the caller's own row
+    // locks, which is the last-owner invariant demonstrating itself rather than
+    // being described.
     members: {
       [own.id]: [
         selfMember('owner', 120),
-        member('usrOw01', 'Sofia Lindqvist', 'sofia@example.com', 'admin', 64),
+        member('usrOw01', 'Sofia Lindqvist', 'sofia@example.com', 'owner', 64),
         member('usrOw02', 'Sam Whitfield', 'sam@example.com', 'viewer', 9),
       ],
       [client.id]: [
@@ -266,13 +269,12 @@ export function getActiveWorkspace(): Workspace {
   return getWorkspace(s.activeId) ?? listWorkspaces()[0]
 }
 
-export function createWorkspace(name: string, timezone: string): Workspace {
+export function createWorkspace(name: string): Workspace {
   const s = db()
   const ws: Workspace = {
     id: newId('ws'),
     name,
     slug: slugify(name),
-    timezone,
     role: 'owner',
     member_count: 1,
     is_active: false,
@@ -296,22 +298,26 @@ export function createWorkspace(name: string, timezone: string): Workspace {
   return ws
 }
 
-export function updateWorkspace(
-  id: string,
-  patch: { name?: string; timezone?: string },
-): Workspace | undefined {
+export function updateWorkspace(id: string, patch: { name?: string }): Workspace | undefined {
   const s = db()
   const ws = s.workspaces.find((w) => w.id === id)
   if (!ws) return undefined
   // The slug is assigned once and survives renames (CON-97) — deliberately
   // not recomputed here, so the stub can't teach the UI otherwise.
   if (patch.name !== undefined) ws.name = patch.name
-  if (patch.timezone !== undefined) ws.timezone = patch.timezone
   ws.updated_at = now()
   persist()
   return getWorkspace(id)
 }
 
+/**
+ * The server soft-deletes; the stub drops the row outright.
+ *
+ * Both look identical from here, which is the point — a soft-deleted workspace
+ * leaves every member's list and rejects writes, and nothing in the client can
+ * bring it back. Restoring one is a manual, support-side operation, so there is
+ * nothing for this function to model.
+ */
 export function deleteWorkspace(id: string): boolean {
   const s = db()
   const i = s.workspaces.findIndex((w) => w.id === id)
@@ -324,7 +330,7 @@ export function deleteWorkspace(id: string): boolean {
   return true
 }
 
-export function activateWorkspace(id: string): boolean {
+export function switchWorkspace(id: string): boolean {
   const s = db()
   if (!s.workspaces.some((w) => w.id === id)) return false
   s.activeId = id
@@ -336,6 +342,18 @@ export function listMembers(workspaceId: string): WorkspaceMember[] {
   return db().members[workspaceId] ?? []
 }
 
+export function getMember(
+  workspaceId: string,
+  userId: string,
+): WorkspaceMember | undefined {
+  return listMembers(workspaceId).find((m) => m.user_id === userId)
+}
+
+/** How many owners a workspace has — the number the last-owner invariant is about. */
+export function ownerCount(workspaceId: string): number {
+  return listMembers(workspaceId).filter((m) => m.role === 'owner').length
+}
+
 export function updateMemberRole(
   workspaceId: string,
   userId: string,
@@ -345,18 +363,13 @@ export function updateMemberRole(
   const members = s.members[workspaceId]
   const member = members?.find((m) => m.user_id === userId)
   if (!member) return undefined
-  // One owner per workspace: promoting someone is a transfer, so the sitting
-  // owner steps down in the same operation.
-  if (role === 'owner') {
-    for (const m of members) if (m.role === 'owner') m.role = 'admin'
-    // The caller's own row may have just been demoted — mirror it onto the
-    // workspace's cached role so the UI's permission checks follow.
-    const ws = s.workspaces.find((w) => w.id === workspaceId)
-    const self = members.find((m) => m.is_self)
-    if (ws && self) ws.role = self.role
-  }
+  // Several owners are allowed, so promoting to owner grants the role rather
+  // than transferring it: nobody is demoted, and the guard against emptying
+  // the owner seat lives in the handler, where the 409 belongs.
   member.role = role
   if (member.is_self) {
+    // The caller's own role gates every control on the page, so the
+    // workspace's cached copy has to follow it.
     const ws = s.workspaces.find((w) => w.id === workspaceId)
     if (ws) ws.role = role
   }
@@ -381,15 +394,6 @@ export function listInvitations(workspaceId: string): WorkspaceInvitation[] {
   return db().invitations[workspaceId] ?? []
 }
 
-export function findInvitationByEmail(
-  workspaceId: string,
-  email: string,
-): WorkspaceInvitation | undefined {
-  return listInvitations(workspaceId).find(
-    (i) => i.email.toLowerCase() === email.toLowerCase() && i.status === 'pending',
-  )
-}
-
 export function findMemberByEmail(
   workspaceId: string,
   email: string,
@@ -399,12 +403,39 @@ export function findMemberByEmail(
   )
 }
 
-export function createInvitation(
+/**
+ * Invites an email, or re-issues the invitation it already has.
+ *
+ * One operation covers both because they are the same act: a fresh token, a
+ * fresh expiry, another mail. `created` tells the handler whether to answer 201
+ * or 200 — the only thing the two cases differ in.
+ *
+ * Re-issuing also revives an expired invitation and can change its role, which
+ * is what makes the pending row's RESEND button work with no endpoint of its
+ * own.
+ */
+export function upsertInvitation(
   workspaceId: string,
   email: string,
   role: WorkspaceRole,
-): WorkspaceInvitation {
+): { invitation: WorkspaceInvitation; created: boolean } {
   const s = db()
+  const existing = listInvitations(workspaceId).find(
+    (i) =>
+      i.email.toLowerCase() === email.toLowerCase() &&
+      (i.status === 'pending' || i.status === 'expired'),
+  )
+
+  if (existing) {
+    existing.role = role
+    existing.invited_by = s.self.name
+    existing.status = 'pending'
+    existing.created_at = now()
+    existing.expires_at = daysFromNow(7)
+    persist()
+    return { invitation: existing, created: false }
+  }
+
   const invitation: WorkspaceInvitation = {
     id: newId('inv'),
     email,
@@ -416,7 +447,7 @@ export function createInvitation(
   }
   s.invitations[workspaceId] = [invitation, ...(s.invitations[workspaceId] ?? [])]
   persist()
-  return invitation
+  return { invitation, created: true }
 }
 
 export function revokeInvitation(workspaceId: string, invitationId: string): boolean {
@@ -426,19 +457,6 @@ export function revokeInvitation(workspaceId: string, invitationId: string): boo
   invitations.splice(i, 1)
   persist()
   return true
-}
-
-export function resendInvitation(
-  workspaceId: string,
-  invitationId: string,
-): WorkspaceInvitation | undefined {
-  const invitation = db().invitations[workspaceId]?.find((i) => i.id === invitationId)
-  if (!invitation) return undefined
-  invitation.status = 'pending'
-  invitation.created_at = now()
-  invitation.expires_at = daysFromNow(7)
-  persist()
-  return invitation
 }
 
 /** Wipes the stub state; the next `initDb` reseeds. Exposed on `window` for manual resets. */
