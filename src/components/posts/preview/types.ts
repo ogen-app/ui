@@ -14,4 +14,12 @@ export type PreviewProps = {
   author: PreviewAuthor
   /** "Just now", "in 3 days" — whatever the post's schedule makes true. */
   timeLabel: string
+  /**
+   * The post-type slug (`text-post`, `thread`, `story`, …).
+   *
+   * Most types are the same feed card and ignore this. The ones that are not
+   * a feed card at all — a story is fullscreen and captionless, a thread is
+   * several posts — are what it exists for.
+   */
+  postType?: string
 }
