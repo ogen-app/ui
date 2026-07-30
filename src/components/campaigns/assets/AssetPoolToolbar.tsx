@@ -44,8 +44,8 @@ type Props = {
  *
  * Sorting is deliberately thin — recency and title only. Ranking the bank by
  * relevance to the campaign brief is the thing that would make hundreds of
- * assets tractable, and it needs a backend that can embed the brief; it's
- * tracked separately rather than faked here.
+ * assets tractable, and it needs a backend that can embed the brief: CON-151,
+ * rather than faked here.
  */
 export function AssetPoolToolbar({
   filters,
