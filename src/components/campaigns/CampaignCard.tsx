@@ -112,7 +112,7 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
           ) : (
             <StatusBadge
               tone={HEADLINE_TONE[items[0].severity]}
-              label={`${items.length} need${items.length === 1 ? 's' : ''} attention`}
+              label={`${items.length} item${items.length === 1 ? '' : 's'} to review`}
               className="shrink-0"
             />
           ))}

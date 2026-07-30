@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { PlusIcon, XIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
+import { isAutoPublishAllowed } from '@/lib/autoPublish'
 import { usePlatformViews } from '@/hooks/usePlatforms'
+import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import type { PlatformView } from '@/lib/platformDictionary'
 import type { CampaignPlatform } from '@/types/campaigns'
 
@@ -70,6 +72,7 @@ export function PlatformsControl({ value, onChange, onCommitPlatforms }: Props) 
 
   return (
     <div className="flex flex-col gap-1">
+      <PlatformsSummary value={value} />
       {views.map((view) => {
         const selected = selectedById.get(view.platform.id)
         return selected ? (
@@ -93,7 +96,11 @@ export function PlatformsControl({ value, onChange, onCommitPlatforms }: Props) 
                 addPlatform(
                   value,
                   view.platform.id,
-                  view.available.map((pt) => pt.slug),
+                  // Everything the expanded block will render starts switched
+                  // on — `allowed`, not `available`, so a platform that is not
+                  // connected yet still arrives fully targeted rather than as
+                  // a row of dormant switches.
+                  view.allowed.map((pt) => pt.slug),
                 ),
               )
             }
@@ -101,6 +108,33 @@ export function PlatformsControl({ value, onChange, onCommitPlatforms }: Props) 
         )
       })}
     </div>
+  )
+}
+
+/**
+ * What the campaign currently targets, in one line above the list.
+ *
+ * The list itself only says this by omission — every row looks similar and the
+ * reader has to scan for coloured logos to work out whether anything is
+ * selected at all. Targeting nothing is a dead campaign, so it reads as a
+ * warning rather than as a neutral count, matching the dot on the card heading.
+ */
+function PlatformsSummary({ value }: { value: CampaignPlatform[] }) {
+  const postTypes = value.reduce((n, p) => n + p.post_types.length, 0)
+
+  if (value.length === 0) {
+    return (
+      <p className="text-sm text-warning">
+        No platforms selected — this campaign has nowhere to publish.
+      </p>
+    )
+  }
+
+  return (
+    <p className="text-sm text-tertiary-foreground">
+      {value.length} platform{value.length === 1 ? '' : 's'} added with {postTypes} post
+      type{postTypes === 1 ? '' : 's'}.
+    </p>
   )
 }
 
@@ -129,10 +163,18 @@ function UnselectedPlatformRow({ view, onAdd }: { view: PlatformView; onAdd: () 
   )
 }
 
+const ROW = 'group flex items-center justify-between gap-3 px-3 py-3 bg-secondary'
+
 /**
- * The clickable platform row. The whole area toggles the platform in and out
- * of the campaign; anything that means something else (Connect, Customise,
- * the explicit +/× buttons) stops the click from reaching here.
+ * The platform row. Adding and removing are deliberately asymmetric: the whole
+ * row adds a platform, but only the × removes one.
+ *
+ * They are not equally recoverable. A stray click that adds a platform costs
+ * one click to undo; a stray click that removes one throws away its post-type
+ * selection, and both halves persist immediately (`onCommitPlatforms`). So the
+ * big target is the safe direction, and the destructive one asks for the small
+ * button. A selected row is therefore inert — `onToggle` is omitted and it
+ * renders as a plain container.
  *
  * Hover leaves the row's fill alone — too loud at this size — and instead
  * warms the logo and lifts the + button. Both hang off `group`.
@@ -142,10 +184,12 @@ function RowShell({
   label,
   children,
 }: {
-  onToggle: () => void
-  label: string
+  onToggle?: () => void
+  label?: string
   children: ReactNode
 }) {
+  if (!onToggle) return <div className={ROW}>{children}</div>
+
   return (
     <div
       role="button"
@@ -160,8 +204,7 @@ function RowShell({
         e.preventDefault()
         onToggle()
       }}
-      className="group flex items-center justify-between gap-3 px-3 py-3 bg-secondary cursor-pointer
-        focus-visible:outline-2 focus-visible:outline-ring"
+      className={cn(ROW, 'cursor-pointer focus-visible:outline-2 focus-visible:outline-ring')}
     >
       {children}
     </div>
@@ -209,16 +252,18 @@ function PlatformLabel({
       ? `${view.available.length} post types available`
       : null
 
+  // Set in Workspace Settings, not here: this is the workspace's decision
+  // showing through, so the campaign can see how its posts will go out
+  // without having to leave the page to find out.
+  const { data: allowlist } = useAutoPublishAllowlist()
+  const autoPublish = isAutoPublishAllowed(allowlist, view.platform.id)
+
   return (
-    // Logo and text recede together while the platform is untargeted, and
-    // come forward together on hover — one surface to aim at, not a toggle
-    // to hunt for.
-    <div
-      className={cn(
-        'min-w-0 flex items-center gap-3 transition-opacity',
-        !selected && 'opacity-50 group-hover:opacity-75',
-      )}
-    >
+    // The logo alone carries "not targeted yet". The text used to fade with
+    // it, which read as disabled — an unselected platform is the one thing on
+    // this row the user is most likely to want to click, so its name stays at
+    // full strength.
+    <div className="min-w-0 flex items-center gap-3">
       {/* Brand colour marks what the campaign targets: a platform stays
           desaturated until it is added, and lights up on "+". */}
       <Icon
@@ -230,10 +275,18 @@ function PlatformLabel({
         style={{ color: info.color }}
       />
       <div className="min-w-0 flex flex-col">
-        <span className="text-base font-semibold text-foreground">
+        <span className="text-base font-semibold text-primary-foreground">
           {info.name}
         </span>
         <span className="text-xs text-tertiary-foreground truncate">
+          {/* Ahead of the post-type count: whether Ogen posts on the user's
+              behalf outranks how many kinds of post it may send. */}
+          {selected && (
+            <>
+              {autoPublish ? 'Auto-publishing allowed' : 'Manual publishing only'}
+              {counts && ' · '}
+            </>
+          )}
           {counts}
           {onCustomise && (
             <>
@@ -289,10 +342,8 @@ function SelectedPlatformBlock({
 
   return (
     <div className="flex flex-col bg-secondary">
-      <RowShell
-        onToggle={onUnselect}
-        label={`Remove ${info.name} from the campaign`}
-      >
+      {/* No row-level toggle: removing is the × alone. */}
+      <RowShell>
         <div className="flex-1 min-w-0">
           <PlatformLabel
             view={view}
@@ -374,7 +425,16 @@ function PostTypeSwitchRow({
         muted && 'opacity-60',
       )}
     >
-      <span className="text-sm text-foreground">{label}</span>
+      {/* On/off is legible from the label as well as the switch, so a glance
+          down the column reads as a list of what publishes. */}
+      <span
+        className={cn(
+          'text-sm',
+          checked ? 'text-primary-foreground' : 'text-tertiary-foreground',
+        )}
+      >
+        {label}
+      </span>
       <Switch
         checked={checked}
         onCheckedChange={onToggle}

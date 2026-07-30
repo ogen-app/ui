@@ -2,7 +2,7 @@ import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Collapse } from '@/components/ui/collapse'
 import { Switch } from '@/components/ui/switch'
 import { TextSelect } from '@/components/ui/text-select'
-import { useCalendarSettingsStore } from '@/stores/calendarSettingsStore'
+import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 
 // Displayed Monday-first regardless of the chosen first day of week.
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0] as const
@@ -25,12 +25,20 @@ const FIRST_DAY_OPTIONS = WEEK_DAYS.map((day) => ({
 /**
  * "Calendar Settings" content for the right sidebar. The sidebar is
  * non-blocking, so the calendar behind it reflects preference changes live.
+ *
+ * The preferences are per campaign as well as per user — a launch campaign a
+ * user works weekends on and an evergreen one they don't shouldn't share a
+ * week shape — so the panel needs the campaign it was opened from.
  */
-export function CalendarSettingsPanel({ onClose }: { onClose?: () => void }) {
-  const firstDayOfWeek = useCalendarSettingsStore((s) => s.firstDayOfWeek)
-  const hiddenDays = useCalendarSettingsStore((s) => s.hiddenDays)
-  const setFirstDayOfWeek = useCalendarSettingsStore((s) => s.setFirstDayOfWeek)
-  const setDayVisible = useCalendarSettingsStore((s) => s.setDayVisible)
+export function CalendarSettingsPanel({
+  campaignId,
+  onClose,
+}: {
+  campaignId: string
+  onClose?: () => void
+}) {
+  const { firstDayOfWeek, hiddenDays, setFirstDayOfWeek, setDayVisible } =
+    useCalendarSettings(campaignId)
 
   return (
     <RailPanel title="Calendar Settings" onClose={onClose} className="h-full">

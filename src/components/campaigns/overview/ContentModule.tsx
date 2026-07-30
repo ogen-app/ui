@@ -22,7 +22,7 @@ import { useSettingsStore } from "@/stores/settingsStore.ts";
 import type { Campaign } from "@/types/campaigns";
 import type { Post } from "@/types/posts";
 import { CallToAction } from "./CallToAction.tsx";
-import { LineItem } from "./LineItem.tsx";
+import { LineItem, type LineItemIndicator } from "./LineItem.tsx";
 import { OverviewCard } from "./OverviewCard.tsx";
 import { StatTile } from "./StatTile.tsx";
 
@@ -232,6 +232,16 @@ function Distribution({ campaignId }: { campaignId: string }) {
   );
 }
 
+/** The platform's mark in a LineItem's 16px slot — shared by every list here. */
+function platformIndicator(platformId: string): LineItemIndicator | undefined {
+  const info = getPlatformInfo(platformId);
+  if (!info) return undefined;
+  return {
+    kind: "custom",
+    node: <info.icon className="size-4" style={{ color: info.color }} />,
+  };
+}
+
 function CountList({
   heading,
   rows,
@@ -246,30 +256,15 @@ function CountList({
     <div className="flex flex-col gap-1">
       <h3 className="text-xs text-tertiary-foreground">{heading}</h3>
       <ul className="flex flex-col">
-        {rows.map((row) => {
-          const info = withIcons ? getPlatformInfo(row.key) : undefined;
-          return (
-            <li key={row.key}>
-              <LineItem
-                indicator={
-                  info
-                    ? {
-                        kind: "custom",
-                        node: (
-                          <info.icon
-                            className="size-4"
-                            style={{ color: info.color }}
-                          />
-                        ),
-                      }
-                    : undefined
-                }
-                label={row.label}
-                trailing={row.count.toLocaleString()}
-              />
-            </li>
-          );
-        })}
+        {rows.map((row) => (
+          <li key={row.key}>
+            <LineItem
+              indicator={withIcons ? platformIndicator(row.key) : undefined}
+              label={row.label}
+              trailing={row.count.toLocaleString()}
+            />
+          </li>
+        ))}
       </ul>
     </div>
   );
@@ -291,25 +286,12 @@ function PostList({
       <h3 className="text-xs text-tertiary-foreground">{heading}</h3>
       <ul className="flex flex-col">
         {posts.map((post) => {
-          const info = getPlatformInfo(post.platform_id);
           const time = timeOf(post);
           return (
             <li key={post.id}>
               <LineItem
                 asChild
-                indicator={
-                  info
-                    ? {
-                        kind: "custom",
-                        node: (
-                          <info.icon
-                            className="size-4"
-                            style={{ color: info.color }}
-                          />
-                        ),
-                      }
-                    : undefined
-                }
+                indicator={platformIndicator(post.platform_id)}
                 label={formatTitle(post.title, "Untitled post")}
                 trailing={
                   <>

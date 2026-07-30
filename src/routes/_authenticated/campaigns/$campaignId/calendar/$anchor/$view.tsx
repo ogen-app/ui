@@ -51,7 +51,12 @@ function CalendarView() {
         onAnchorChange={handleAnchorChange}
       />
       {!posts || posts.length === 0 ? (
-        <PostsEmptyState variant="week" anchor={anchorDate} onAddPost={addPost} />
+        <PostsEmptyState
+          variant="week"
+          campaignId={campaignId}
+          anchor={anchorDate}
+          onAddPost={addPost}
+        />
       ) : (
         <WeeklyCalendar
           campaignId={campaignId}

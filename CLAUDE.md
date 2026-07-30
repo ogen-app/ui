@@ -25,16 +25,11 @@ Content-Bank AI images are secondary. See
 - **Technical decisions & rationale:** [`docs/technical-decisions.md`](./docs/technical-decisions.md)
 - **Onboarding, auth & tenancy flow:** [`docs/onboarding.md`](./docs/onboarding.md)
 - **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
+- **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
 name is "Content Control Center"). There is no PRD checked into this repo.
-
-## Stack
-
-React 18 + TypeScript · Vite 7 · TanStack Router / Query / Table / Virtual ·
-Zustand 5 · react-hook-form + Zod 4 · Tailwind CSS v4 (CSS-first) · Radix +
-CVA (shadcn "new-york") · BlockNote · Phosphor icons. Node ≥ 24.15, pnpm.
 
 ## Commands
 
@@ -82,6 +77,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **`src/lib/*` mirrors Go server rules** (`postStatusMachine`, `assetStatus`,
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.
+- **`/api/settings` is tenant-scoped, not user-scoped.** Every key is visible
+  to the whole workspace via `GET /api/settings`. Personal preferences get
+  their identity from the key (`userScopedKey` →
+  `calendar.<userId>.<campaignId>`); never put anything sensitive there. See
+  `docs/technical-decisions.md#user-scoped-settings`.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
@@ -99,9 +99,22 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   never swap them for CSS casing and never "sentence-case" them back. Applies
   to every Danger Zone / irreversible action across the app. Leave the button
   styling alone — this is a copy rule, not a style rule.
-- Import with the `@/` alias (→ `src/`). Imports use explicit `.ts`/`.tsx`
-  extensions (`allowImportingTsExtensions`). TS is strict — no unused
-  locals/params.
+- **Design harnesses live on `design/*` branches, never on `develop`.** A
+  harness is a `/design/<feature>` route rendering every state of a component
+  from fixtures, and it needs an exemption in `__root.tsx` `beforeLoad` to open
+  without a session — which is why it must not sit in `develop`. Each harness is
+  one commit on top of `develop` on its own long-lived branch (e.g.
+  `design/post-quality`), rebased forward when `develop` moves. To use one,
+  check its files into your working tree and **don't commit them**:
+  `git checkout design/<name> -- src/routes/design src/routes/__root.tsx`.
+  Expect `routeTree.gen.ts` to regenerate with the extra route — that edit is
+  part of the same don't-commit set.
+- Import with the `@/` alias (→ `src/`). **Extension-less specifiers are the
+  convention** (`@/stores/toastStore`, `./base`) — barrels like `@/lib` can't
+  take an extension at all. `allowImportingTsExtensions` means the explicit
+  `.ts`/`.tsx` form found in some files also resolves; leave existing imports
+  as they are and don't flag the difference in review. TS is strict — no
+  unused locals/params.
 
 ## Known stubs / gaps
 

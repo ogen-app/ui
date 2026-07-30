@@ -4,7 +4,6 @@ import {
   UNASSIGNED_PHASE_KEY,
   channelRows,
   phaseRows,
-  rowTotal,
 } from './campaignDistribution.ts'
 
 /**
@@ -60,7 +59,8 @@ describe('phaseRows', () => {
 
   it('accounts for every post the server counted', () => {
     const payload = overview()
-    expect(rowTotal(phaseRows(payload))).toBe(payload.totalPosts)
+    const total = phaseRows(payload).reduce((sum, row) => sum + row.count, 0)
+    expect(total).toBe(payload.totalPosts)
   })
 
   it('adds the unassigned row only when something is unassigned', () => {

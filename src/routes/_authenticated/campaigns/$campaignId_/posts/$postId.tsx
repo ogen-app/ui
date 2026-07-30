@@ -14,8 +14,10 @@ import { PostValidationsSection } from '@/components/posts/PostValidationsSectio
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
+import { PostQualityPanel } from '@/components/posts/quality/PostQualityPanel'
 import {
   POST_PREVIEW_PORTAL_ID,
+  POST_QUALITY_PORTAL_ID,
   POST_SETTINGS_PORTAL_ID,
 } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -24,6 +26,8 @@ import { useCampaign } from '@/hooks/useCampaigns'
 import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
 import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
+import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
+import { isAutoPublishAllowed, resolvePublishMethod } from '@/lib/autoPublish'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
 import type { Post, PostStatus } from '@/types/posts'
@@ -111,6 +115,17 @@ function PostEditorSurface({
   // only has to survive until the button is pressed.
   const [publishMethod, setPublishMethod] = useState<PublishMethod>('auto')
 
+  // Resolved against the post's *current* platform rather than stored, so
+  // switching to a channel the workspace hasn't allowlisted drops the post to
+  // manual on the spot. Derived instead of an effect: there is no moment where
+  // the state says "auto" and the platform says otherwise.
+  const { data: autoPublishAllowlist } = useAutoPublishAllowlist()
+  const effectivePublishMethod = resolvePublishMethod(
+    publishMethod,
+    autoPublishAllowlist,
+    doc.platform_id,
+  )
+
   // Attachments, the platform's post-type rules and the checks derived from
   // both. Called once here because the media card and the validations
   // section are two views of the same state (and share upload progress).
@@ -125,7 +140,7 @@ function PostEditorSurface({
     schedule,
     cancelScheduled,
     cancelling,
-    publishMethod,
+    publishMethod: effectivePublishMethod,
   })
   const statusBusy = pending || cancelling
   const flashBlockers = useCallback(() => setAttention((n) => n + 1), [])
@@ -135,13 +150,16 @@ function PostEditorSurface({
   // owns the post's autosave pipeline; the sidebar only hosts the layer.
   const settingsOpen = useSettingsStore((s) => s.activeRightPanel === 'postSettings')
   const previewOpen = useSettingsStore((s) => s.activeRightPanel === 'postPreview')
+  const qualityOpen = useSettingsStore((s) => s.activeRightPanel === 'postQuality')
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
   const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
   const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
   const [previewHost, setPreviewHost] = useState<HTMLElement | null>(null)
+  const [qualityHost, setQualityHost] = useState<HTMLElement | null>(null)
   useEffect(() => {
     setSettingsHost(document.getElementById(POST_SETTINGS_PORTAL_ID))
     setPreviewHost(document.getElementById(POST_PREVIEW_PORTAL_ID))
+    setQualityHost(document.getElementById(POST_QUALITY_PORTAL_ID))
   }, [])
 
   // Being on a post page is what makes its assistant thread available: the
@@ -172,7 +190,11 @@ function PostEditorSurface({
   useEffect(
     () => () => {
       const s = useSettingsStore.getState()
-      if (s.activeRightPanel === 'postSettings' || s.activeRightPanel === 'postPreview') {
+      if (
+        s.activeRightPanel === 'postSettings' ||
+        s.activeRightPanel === 'postPreview' ||
+        s.activeRightPanel === 'postQuality'
+      ) {
         s.closeRightPanel()
       }
     },
@@ -232,6 +254,8 @@ function PostEditorSurface({
             onToggleSettings={() => toggleRightPanel('postSettings')}
             previewOpen={previewOpen}
             onTogglePreview={() => toggleRightPanel('postPreview')}
+            qualityOpen={qualityOpen}
+            onToggleQuality={() => toggleRightPanel('postQuality')}
             onDownloadMarkdown={handleDownloadMarkdown}
             onDeletePost={() => setDeleteOpen(true)}
             actions={
@@ -250,8 +274,12 @@ function PostEditorSurface({
                 changeDoc={changeDoc}
                 cancelling={cancelling}
                 attention={attention}
-                publishMethod={publishMethod}
+                publishMethod={effectivePublishMethod}
                 onPublishMethodChange={setPublishMethod}
+                autoPublishAllowed={isAutoPublishAllowed(
+                  autoPublishAllowlist,
+                  doc.platform_id,
+                )}
               />
             </div>
             <div className="w-content">
@@ -315,6 +343,14 @@ function PostEditorSurface({
               onClose={closeRightPanel}
             />,
             previewHost,
+          )}
+
+        {qualityHost &&
+          createPortal(
+            /* The live document, so the panel can tell a score that still
+               describes this post from one taken before the last edit. */
+            <PostQualityPanel doc={doc} onClose={closeRightPanel} />,
+            qualityHost,
           )}
       </div>
       <DeletePostDialog

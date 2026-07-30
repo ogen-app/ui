@@ -41,7 +41,7 @@ export function CalendarHeaderActions({ campaignId }: { campaignId: string }) {
         variant="headerIcon"
         size="excluded"
         className={cn(settingsActive && 'text-accent hover:text-accent')}
-        onClick={() => toggle('calendarSettings')}
+        onClick={() => toggle('calendarSettings', campaignId)}
         aria-label="Calendar settings"
         aria-pressed={settingsActive}
       >
