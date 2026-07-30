@@ -34,6 +34,11 @@ type Props = {
  * The campaign Assets page, presentational: what a campaign's content is built
  * from. Grounding mode on top, the bank below it.
  *
+ * Expects a shell that does **not** scroll — the calendar/list branch of the
+ * campaign layout, not the Brief/Settings one. The pool owns its own scrolling
+ * because it is hundreds of rows deep; putting it inside a scrolling page would
+ * mean two nested scrollbars racing each other for the same wheel gesture.
+ *
  * All state is the caller's, so the route can own fetching and saving and the
  * design harness can pin any combination of mode, selection, and bank.
  */
@@ -86,7 +91,7 @@ export function CampaignAssetsView({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 pb-10">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 pb-4">
       <GroundingCard
         mode={mode}
         onModeChange={onModeChange}
