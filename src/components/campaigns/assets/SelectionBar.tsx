@@ -34,7 +34,7 @@ export function SelectionBar({
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t-2 border-background px-3 py-3">
-      <span className="text-sm text-secondary-foreground">
+      <span className="text-base text-primary-foreground">
         {selectedCount === 0
           ? "Nothing attached yet"
           : `${selectedCount} attached`}

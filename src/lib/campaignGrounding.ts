@@ -16,10 +16,23 @@ import type { Asset, AssetStatus } from "@/types/content";
  */
 export type GroundingMode = "off" | "all" | "selected";
 
-export function groundingModeOf(
+/**
+ * `null` is "the user hasn't decided yet" — the state a campaign is in before
+ * anyone has opened this page. It is a real state in the interface (no main
+ * action in the header, no consequence sentence) but **not one the server can
+ * store**: a fresh campaign and a campaign deliberately set to Brief only are
+ * both `use_assets: false, asset_ids: []`. Telling them apart needs one more
+ * backend field; until then `groundingChoiceOf` reads the collision as
+ * undecided and an explicit Brief only doesn't survive a reload.
+ */
+export type GroundingChoice = GroundingMode | null;
+
+export function groundingChoiceOf(
   campaign: Pick<Campaign, "use_assets" | "asset_ids">,
-): GroundingMode {
-  if (!campaign.use_assets) return "off";
+): GroundingChoice {
+  if (!campaign.use_assets) {
+    return campaign.asset_ids.length > 0 ? "off" : null;
+  }
   return campaign.asset_ids.length > 0 ? "selected" : "all";
 }
 
@@ -115,6 +128,15 @@ export function selectionStats(
 }
 
 /**
+ * Whether a choice has anything left to set up — what puts the main action in
+ * the page header. Brief only takes nothing from the bank, so there is nothing
+ * to open; an undecided campaign has no action at all.
+ */
+export function isConfigurable(choice: GroundingChoice): boolean {
+  return choice === "all" || choice === "selected";
+}
+
+/**
  * Why this configuration can't be saved, in the interface's voice, or null.
  *
  * `selected` with nothing selected is the only unsaveable state: the server
@@ -123,10 +145,10 @@ export function selectionStats(
  * fourth backend field.
  */
 export function groundingError(
-  mode: GroundingMode,
+  choice: GroundingChoice,
   selectedIds: string[],
 ): string | null {
-  if (mode === "selected" && selectedIds.length === 0) {
+  if (choice === "selected" && selectedIds.length === 0) {
     return "Pick at least one asset, or switch to Brief only.";
   }
   return null;

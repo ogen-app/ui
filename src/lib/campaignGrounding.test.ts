@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  groundingChoiceOf,
   groundingError,
-  groundingModeOf,
   groundingPayload,
+  isConfigurable,
   poolStats,
   retrievability,
   selectionStats,
@@ -11,20 +12,37 @@ import type { AssetStatus } from "@/types/content";
 
 const asset = (id: string, status: AssetStatus) => ({ id, status });
 
-describe("groundingModeOf", () => {
-  it("reads a cleared flag as off, whatever the id list holds", () => {
-    expect(groundingModeOf({ use_assets: false, asset_ids: [] })).toBe("off");
-    expect(groundingModeOf({ use_assets: false, asset_ids: ["a"] })).toBe("off");
+describe("groundingChoiceOf", () => {
+  it("reads an untouched campaign as undecided", () => {
+    expect(groundingChoiceOf({ use_assets: false, asset_ids: [] })).toBeNull();
+  });
+
+  it("reads a cleared flag over a kept shortlist as off", () => {
+    expect(groundingChoiceOf({ use_assets: false, asset_ids: ["a"] })).toBe(
+      "off",
+    );
   });
 
   it("reads an empty id list as the whole bank, not as nothing", () => {
-    expect(groundingModeOf({ use_assets: true, asset_ids: [] })).toBe("all");
+    expect(groundingChoiceOf({ use_assets: true, asset_ids: [] })).toBe("all");
   });
 
   it("reads a non-empty id list as an explicit set", () => {
-    expect(groundingModeOf({ use_assets: true, asset_ids: ["a"] })).toBe(
+    expect(groundingChoiceOf({ use_assets: true, asset_ids: ["a"] })).toBe(
       "selected",
     );
+  });
+});
+
+describe("isConfigurable", () => {
+  it("is true only for the modes that draw on the bank", () => {
+    expect(isConfigurable("all")).toBe(true);
+    expect(isConfigurable("selected")).toBe(true);
+  });
+
+  it("is false when there is nothing to open", () => {
+    expect(isConfigurable("off")).toBe(false);
+    expect(isConfigurable(null)).toBe(false);
   });
 });
 
@@ -50,11 +68,16 @@ describe("groundingPayload", () => {
     });
   });
 
-  it("round-trips every mode back through groundingModeOf", () => {
+  it("round-trips every mode back through groundingChoiceOf", () => {
     for (const mode of ["off", "all", "selected"] as const) {
-      const ids = mode === "off" ? [] : ["a"];
-      expect(groundingModeOf(groundingPayload(mode, ids))).toBe(mode);
+      expect(groundingChoiceOf(groundingPayload(mode, ["a"]))).toBe(mode);
     }
+  });
+
+  it("cannot round-trip Brief only over an empty shortlist", () => {
+    // The gap the interface has to live with: this is byte-identical to a
+    // campaign nobody has configured, so it comes back as undecided.
+    expect(groundingChoiceOf(groundingPayload("off", []))).toBeNull();
   });
 });
 
@@ -126,5 +149,9 @@ describe("groundingError", () => {
     expect(groundingError("selected", ["a"])).toBeNull();
     expect(groundingError("all", [])).toBeNull();
     expect(groundingError("off", [])).toBeNull();
+  });
+
+  it("has nothing to say about an undecided campaign — it just has no action", () => {
+    expect(groundingError(null, [])).toBeNull();
   });
 });

@@ -2,55 +2,38 @@ import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import {
-  filterAssetPool,
-  isFiltered,
-  type AssetPoolFilters,
-} from "@/lib/assetPool";
-import {
   poolStats,
   selectionStats,
+  type GroundingChoice,
   type GroundingMode,
 } from "@/lib/campaignGrounding";
-import type { Asset, Tag } from "@/types/content";
-import { AssetPoolTable } from "./AssetPoolTable";
-import { AssetPoolToolbar } from "./AssetPoolToolbar";
+import type { Asset } from "@/types/content";
 import { GroundingCard } from "./GroundingCard";
-import { SelectionBar } from "./SelectionBar";
 
 type Props = {
-  mode: GroundingMode;
-  onModeChange: (mode: GroundingMode) => void;
-  /** The whole Content Bank. */
+  choice: GroundingChoice;
+  onChoiceChange: (mode: GroundingMode) => void;
+  /** The whole Content Bank, for the counts and the empty-bank case. */
   assets: Asset[];
-  tags: Tag[];
-  /** The working shortlist — unsaved until the page's Save. */
+  /** The saved shortlist, for the "12 chosen" count. */
   selectedIds: string[];
-  onSelectedIdsChange: (ids: string[]) => void;
-  filters: AssetPoolFilters;
-  onFiltersChange: (filters: AssetPoolFilters) => void;
 };
 
 /**
- * The campaign Assets page, presentational: what a campaign's content is built
- * from. Grounding mode on top, the bank below it.
+ * The campaign Assets page: one decision, stated in full.
  *
- * Expects a shell that does **not** scroll — the calendar/list branch of the
- * campaign layout, not the Brief/Settings one. The pool owns its own scrolling
- * because it is hundreds of rows deep; putting it inside a scrolling page would
- * mean two nested scrollbars racing each other for the same wheel gesture.
+ * The list of assets is not here. Picking a shortlist out of a few hundred
+ * documents is its own piece of work with its own screen, reached by the
+ * header's Configure — putting a table under the choice would make the page
+ * look like a table with a widget on top, and the choice is the point.
  *
- * All state is the caller's, so the route can own fetching and saving and the
- * design harness can pin any combination of mode, selection, and bank.
+ * This scrolls like Brief and Settings do; the selection screen doesn't.
  */
 export function CampaignAssetsView({
-  mode,
-  onModeChange,
+  choice,
+  onChoiceChange,
   assets,
-  tags,
   selectedIds,
-  onSelectedIdsChange,
-  filters,
-  onFiltersChange,
 }: Props) {
   const bank = useMemo(() => poolStats(assets), [assets]);
   const selection = useMemo(
@@ -58,90 +41,17 @@ export function CampaignAssetsView({
     [assets, selectedIds],
   );
 
-  // In `all` mode the list is context, not a control: it answers "what does
-  // *everything* mean" without pretending the rows are individually chosen.
-  const selectable = mode === "selected";
-
-  const visible = useMemo(
-    () => filterAssetPool(assets, filters, selectedIds),
-    [assets, filters, selectedIds],
-  );
-
-  const matchingSelectedCount = useMemo(() => {
-    const selected = new Set(selectedIds);
-    return visible.reduce((n, a) => (selected.has(a.id) ? n + 1 : n), 0);
-  }, [visible, selectedIds]);
-
-  const toggle = (id: string) =>
-    onSelectedIdsChange(
-      selectedIds.includes(id)
-        ? selectedIds.filter((x) => x !== id)
-        : [...selectedIds, id],
-    );
-
-  const selectMatching = () => {
-    const next = new Set(selectedIds);
-    for (const asset of visible) next.add(asset.id);
-    onSelectedIdsChange([...next]);
-  };
-
-  const deselectMatching = () => {
-    const drop = new Set(visible.map((a) => a.id));
-    onSelectedIdsChange(selectedIds.filter((id) => !drop.has(id)));
-  };
-
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 pb-4">
+    <div className="flex flex-col gap-8 pb-10">
       <GroundingCard
-        mode={mode}
-        onModeChange={onModeChange}
+        choice={choice}
+        onChoiceChange={onChoiceChange}
         bank={bank}
         selection={selection}
       />
-
-      {mode !== "off" &&
-        (assets.length === 0 ? (
-          <EmptyBank />
-        ) : (
-          <SettingsCard
-            title={selectable ? "Attach assets" : "What's in play"}
-            className="max-w-none min-h-0 flex-1"
-          >
-            <AssetPoolToolbar
-              filters={filters}
-              onChange={onFiltersChange}
-              tags={tags}
-              bankSize={assets.length}
-              selectedCount={selectedIds.length}
-              selectable={selectable}
-            />
-
-            <div className="flex min-h-0 flex-1 flex-col">
-              <AssetPoolTable
-                assets={visible}
-                selectedIds={selectedIds}
-                onToggle={toggle}
-                selectable={selectable}
-                emptyStateMessage={
-                  isFiltered(filters)
-                    ? "No assets match these filters"
-                    : "No assets in the Content Bank"
-                }
-              />
-              {selectable && (
-                <SelectionBar
-                  selectedCount={selectedIds.length}
-                  matchingCount={visible.length}
-                  matchingSelectedCount={matchingSelectedCount}
-                  filtered={isFiltered(filters)}
-                  onSelectMatching={selectMatching}
-                  onDeselectMatching={deselectMatching}
-                  onClear={() => onSelectedIdsChange([])}
-                />
-              )}
-            </div>
-          </SettingsCard>
-        ))}
+      {choice !== null && choice !== "off" && assets.length === 0 && (
+        <EmptyBank />
+      )}
     </div>
   );
 }
@@ -149,17 +59,18 @@ export function CampaignAssetsView({
 /** Nothing to ground against yet — the only useful action is elsewhere. */
 function EmptyBank() {
   return (
-    <SettingsCard className="max-w-none">
-      <div className="flex flex-col items-start gap-2 py-4">
-        <p className="text-sm text-secondary-foreground">
-          The Content Bank is empty. Add the articles, briefs, and PDFs this
-          campaign should speak from, and they'll show up here.
-        </p>
+    <SettingsCard title="The Content Bank is empty" className="max-w-none">
+      <p className="max-w-150 text-base text-primary-foreground">
+        Add the articles, briefs, and PDFs this campaign should speak from, and
+        they'll show up here. Until then posts are written from the campaign
+        alone, whichever mode is set.
+      </p>
+      <div>
         <Link
           to="/content-bank"
           target="_blank"
           rel="noreferrer"
-          className="text-xs text-tertiary-foreground hover:text-primary-foreground"
+          className="text-base text-secondary-foreground underline hover:text-primary-foreground"
         >
           Open the Content Bank
         </Link>

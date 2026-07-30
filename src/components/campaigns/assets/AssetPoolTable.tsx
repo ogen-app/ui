@@ -18,47 +18,34 @@ type Props = {
   assets: Asset[];
   selectedIds: string[];
   onToggle: (id: string) => void;
-  /** Off in the two non-shortlist modes: the pool is read-only context then. */
+  /** Off when the pool is read-only context rather than a shortlist. */
   selectable?: boolean;
   emptyStateMessage?: string;
 };
 
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
 }
 
-/** Cell shell matching the table's row metrics (see `docsTable`). */
-function Cell({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "h-[34px] border-b-2 border-background px-3 leading-8",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
-}
+/** The Content Bank's cell shell: same height, same hairline, same padding. */
+const CELL = "h-[34px] border-b-2 border-background px-3 leading-8";
 
 /**
- * The campaign's asset pool: one virtualized row per asset in the bank, with a
- * checkbox for attaching it.
+ * The Content Bank table, with attachment.
  *
- * Clicking the title toggles attachment rather than opening the asset — this
- * page exists to pick, and its edits are unsaved until the header's Save. The
- * arrow at the end of the row opens the asset in a new tab for that reason: a
- * same-tab navigation would throw away an in-progress selection.
+ * Deliberately the same table: same columns, metrics, and colours as
+ * `tables/docsTable`, so an asset looks the same wherever you meet it. Two
+ * things are added and one is swapped — a checkbox column in front, a title
+ * that toggles instead of navigating, and an open-in-a-new-tab control where
+ * the Content Bank puts delete.
+ *
+ * Both of those are for the same reason: the selection is unsaved while you
+ * build it, so a same-tab navigation would throw it away.
  */
 function AssetPoolTableComponent({
   assets,
@@ -79,14 +66,14 @@ function AssetPoolTableComponent({
         minSize: 44,
         sortable: false,
         cell: (_value, row) => (
-          <Cell className="flex items-center justify-center">
+          <div className={cn(CELL, "flex items-center justify-center")}>
             <Checkbox
               checked={selected.has(row.id)}
               disabled={!selectable}
               onCheckedChange={() => onToggle(row.id)}
               aria-label={`Attach ${formatTitle(row.title)}`}
             />
-          </Cell>
+          </div>
         ),
       },
       {
@@ -94,107 +81,97 @@ function AssetPoolTableComponent({
         accessorKey: "title",
         header: "Title",
         isAutoSize: true,
-        sortable: false,
         cell: (_value, row) => {
           // An asset retrieval will never reach reads as inactive, whether or
           // not it happens to be attached.
           const inert = retrievability(row.status) === "never";
           return (
-            <Cell className="p-0">
-              <button
-                type="button"
-                onClick={() => onToggle(row.id)}
-                disabled={!selectable}
-                className={cn(
-                  "block h-[34px] w-full px-3 text-left leading-8",
-                  selectable ? "cursor-pointer" : "cursor-default",
-                  inert && "text-tertiary-foreground",
-                )}
-              >
-                <TextCell value={formatTitle(row.title)} />
-              </button>
-            </Cell>
+            <button
+              type="button"
+              onClick={() => onToggle(row.id)}
+              disabled={!selectable}
+              className={cn(
+                CELL,
+                "block w-full text-left",
+                selectable ? "cursor-pointer hover:underline" : "cursor-default",
+                inert && "text-tertiary-foreground",
+              )}
+            >
+              <TextCell value={formatTitle(row.title)} />
+            </button>
           );
         },
-      },
-      {
-        id: "tags",
-        header: "Tags",
-        size: 180,
-        minSize: 120,
-        sortable: false,
-        cell: (_value, row) => (
-          <Cell>
-            <TextCell
-              value={
-                row.tags.length === 0
-                  ? "—"
-                  : row.tags.map((tag) => tag.name).join(", ")
-              }
-            />
-          </Cell>
-        ),
-      },
-      {
-        id: "type",
-        header: "Type",
-        size: 90,
-        minSize: 80,
-        sortable: false,
-        cell: (_value, row) => (
-          <Cell>
-            <TextCell value={categoryLabel(assetCategory(row))} />
-          </Cell>
-        ),
       },
       {
         id: "status",
         accessorKey: "status",
         header: "Status",
-        size: 120,
-        minSize: 100,
-        sortable: false,
+        size: 130,
+        minSize: 110,
         cell: (_value, row) => {
           const badge = statusToBadge(row.status);
           return (
-            <Cell>
+            <div className={CELL}>
               <StatusBadge tone={badge.tone} label={badge.label} />
-            </Cell>
+            </div>
           );
         },
       },
       {
-        id: "updated_at",
-        accessorKey: "updated_at",
-        header: "Last modified",
-        size: 130,
-        minSize: 120,
-        sortable: false,
+        id: "type",
+        accessorKey: "type",
+        header: "Type",
+        size: 120,
+        minSize: 100,
         cell: (_value, row) => (
-          <Cell>
-            <TextCell value={formatDate(row.updated_at)} />
-          </Cell>
+          <div className={CELL}>
+            <TextCell value={categoryLabel(assetCategory(row))} />
+          </div>
         ),
       },
       {
-        id: "open",
+        id: "created_at",
+        accessorKey: "created_at",
+        header: "Created",
+        size: 140,
+        minSize: 120,
+        cell: (_value, row) => (
+          <div className={CELL}>
+            <TextCell value={formatDate(row.created_at)} />
+          </div>
+        ),
+      },
+      {
+        id: "updated_at",
+        accessorKey: "updated_at",
+        header: "Last Modified",
+        size: 140,
+        minSize: 120,
+        cell: (_value, row) => (
+          <div className={CELL}>
+            <TextCell value={formatDate(row.updated_at)} />
+          </div>
+        ),
+      },
+      {
+        id: "actions",
         header: "",
-        size: 48,
-        minSize: 48,
+        size: 60,
+        minSize: 60,
         sortable: false,
         cell: (_value, row) => (
-          <Cell className="flex items-center justify-center">
+          <div className={cn(CELL, "flex items-center justify-center px-3")}>
             <Link
               to="/content-bank/$assetId"
               params={{ assetId: row.id }}
               target="_blank"
               rel="noreferrer"
               aria-label={`Open ${formatTitle(row.title)} in a new tab`}
-              className="flex size-6 items-center justify-center text-tertiary-foreground hover:text-primary-foreground"
+              className="flex size-6 items-center justify-center"
             >
-              <ArrowSquareOutIcon className="size-4" />
+              <ArrowSquareOutIcon className="size-4 text-tertiary-foreground hover:text-primary-foreground" />
             </Link>
-          </Cell>
+          </div>
         ),
       },
     ],
@@ -202,7 +179,15 @@ function AssetPoolTableComponent({
   );
 
   const activeColumns = useMemo(
-    () => ["select", "title", "tags", "type", "status", "updated_at", "open"],
+    () => [
+      "select",
+      "title",
+      "status",
+      "type",
+      "created_at",
+      "updated_at",
+      "actions",
+    ],
     [],
   );
 
@@ -211,10 +196,11 @@ function AssetPoolTableComponent({
       data={data}
       columnConfigs={columnConfigs}
       activeColumns={activeColumns}
+      initialSorting={[{ id: "title", desc: false }]}
       estimatedRowHeight={34}
       overscan={8}
       showFooter={false}
-      fillHeight
+      fillHeight={false}
       emptyStateMessage={emptyStateMessage}
     />
   );

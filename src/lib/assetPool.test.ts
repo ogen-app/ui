@@ -52,41 +52,24 @@ const BANK: Asset[] = [
 const ids = (assets: Asset[]) => assets.map((a) => a.id);
 
 describe("filterAssetPool", () => {
-  it("sorts by recency by default", () => {
+  it("keeps the bank's own order — the table owns sorting", () => {
     expect(ids(filterAssetPool(BANK, filters(), []))).toEqual([
-      "research",
       "pricing",
-      "voice",
-    ]);
-  });
-
-  it("sorts by title case-insensitively", () => {
-    expect(ids(filterAssetPool(BANK, filters({ sort: "title" }), []))).toEqual([
-      "voice",
       "research",
-      "pricing",
+      "voice",
     ]);
   });
 
   it("matches the query against the title, case-insensitively", () => {
-    expect(ids(filterAssetPool(BANK, filters({ query: "PRICING" }), []))).toEqual(
-      ["pricing"],
-    );
+    expect(
+      ids(filterAssetPool(BANK, filters({ query: "PRICING" }), [])),
+    ).toEqual(["pricing"]);
   });
 
   it("ignores surrounding whitespace in the query", () => {
-    expect(ids(filterAssetPool(BANK, filters({ query: "   " }), []))).toHaveLength(
-      3,
-    );
-  });
-
-  it("filters by category, mapping PDF to files", () => {
-    expect(ids(filterAssetPool(BANK, filters({ category: "files" }), []))).toEqual(
-      ["research"],
-    );
     expect(
-      ids(filterAssetPool(BANK, filters({ category: "text" }), [])).sort(),
-    ).toEqual(["pricing", "voice"]);
+      ids(filterAssetPool(BANK, filters({ query: "   " }), [])),
+    ).toHaveLength(3);
   });
 
   it("takes any of the chosen tags, not all of them", () => {
@@ -107,7 +90,7 @@ describe("filterAssetPool", () => {
   it("combines filters", () => {
     const result = filterAssetPool(
       BANK,
-      filters({ selectedOnly: true, category: "text", query: "guide" }),
+      filters({ selectedOnly: true, query: "guide" }),
       ["voice", "pricing"],
     );
     expect(ids(result)).toEqual(["voice"]);
@@ -115,7 +98,7 @@ describe("filterAssetPool", () => {
 
   it("leaves the input array untouched", () => {
     const original = [...BANK];
-    filterAssetPool(BANK, filters({ sort: "title" }), []);
+    filterAssetPool(BANK, filters({ query: "pricing" }), []);
     expect(BANK).toEqual(original);
   });
 });
@@ -125,14 +108,9 @@ describe("isFiltered", () => {
     expect(isFiltered(EMPTY_FILTERS)).toBe(false);
   });
 
-  it("ignores sort — reordering isn't narrowing", () => {
-    expect(isFiltered(filters({ sort: "title" }))).toBe(false);
-  });
-
   it("is true for anything that narrows the list", () => {
     expect(isFiltered(filters({ query: "a" }))).toBe(true);
     expect(isFiltered(filters({ tagIds: ["t"] }))).toBe(true);
-    expect(isFiltered(filters({ category: "files" }))).toBe(true);
     expect(isFiltered(filters({ selectedOnly: true }))).toBe(true);
   });
 });

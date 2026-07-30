@@ -1,30 +1,18 @@
-import { CaretDownIcon, MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
+import {
+  CaretDownIcon,
+  MagnifyingGlassIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type {
-  AssetPoolCategory,
-  AssetPoolFilters,
-  AssetPoolSort,
-} from "@/lib/assetPool";
+import type { AssetPoolFilters } from "@/lib/assetPool";
 import type { Tag } from "@/types/content";
-
-const CATEGORIES: { id: AssetPoolCategory; label: string }[] = [
-  { id: "all", label: "ALL" },
-  { id: "text", label: "TEXT" },
-  { id: "files", label: "FILES" },
-];
-
-const SORTS: { id: AssetPoolSort; label: string }[] = [
-  { id: "recent", label: "Recently updated" },
-  { id: "title", label: "Title" },
-];
 
 type Props = {
   filters: AssetPoolFilters;
@@ -40,12 +28,12 @@ type Props = {
 };
 
 /**
- * Search, tag, and type filters over the bank, plus the review toggle.
+ * Search and tag filters over the bank, plus the review toggle.
  *
- * Sorting is deliberately thin — recency and title only. Ranking the bank by
- * relevance to the campaign brief is the thing that would make hundreds of
- * assets tractable, and it needs a backend that can embed the brief: CON-151,
- * rather than faked here.
+ * Sorting isn't here: the table sorts its own columns, same as the Content
+ * Bank's. Ranking the bank by relevance to the campaign brief is the thing
+ * that would make hundreds of assets tractable, and it needs a backend that can
+ * embed the brief — CON-151, rather than faked here.
  */
 export function AssetPoolToolbar({
   filters,
@@ -66,13 +54,11 @@ export function AssetPoolToolbar({
         : [...filters.tagIds, id],
     });
 
-  const activeSort = SORTS.find((s) => s.id === filters.sort) ?? SORTS[0];
-
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <div className="flex h-10 min-w-0 flex-1 items-center gap-2 border-b-2 border-quaternary bg-input-secondary px-3 sm:max-w-80">
-          <MagnifyingGlassIcon className="size-4 shrink-0 text-tertiary-foreground" />
+          <MagnifyingGlassIcon className="size-4 shrink-0 text-secondary-foreground" />
           <Input
             variant="search"
             inputSize="default"
@@ -106,7 +92,10 @@ export function AssetPoolToolbar({
               <CaretDownIcon />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
+          <DropdownMenuContent
+            align="start"
+            className="max-h-80 overflow-y-auto"
+          >
             {tags.map((tag) => (
               <DropdownMenuCheckboxItem
                 key={tag.id}
@@ -121,54 +110,16 @@ export function AssetPoolToolbar({
         </DropdownMenu>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Tabs value={filters.category}>
-          <TabsList variant="segmented" size="excluded">
-            {CATEGORIES.map((category) => (
-              <TabsTrigger
-                key={category.id}
-                variant="segmented"
-                value={category.id}
-                disabled={disabled}
-                onClick={() => set({ category: category.id })}
-              >
-                {category.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" disabled={disabled}>
-              <span>{activeSort.label}</span>
-              <CaretDownIcon />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {SORTS.map((sort) => (
-              <DropdownMenuCheckboxItem
-                key={sort.id}
-                checked={filters.sort === sort.id}
-                onCheckedChange={() => set({ sort: sort.id })}
-              >
-                {sort.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {selectable && (
-          <Button
-            variant="default"
-            active={filters.selectedOnly}
-            disabled={disabled}
-            onClick={() => set({ selectedOnly: !filters.selectedOnly })}
-          >
-            ATTACHED · {selectedCount}
-          </Button>
-        )}
-      </div>
+      {selectable && (
+        <Button
+          variant="default"
+          active={filters.selectedOnly}
+          disabled={disabled}
+          onClick={() => set({ selectedOnly: !filters.selectedOnly })}
+        >
+          ATTACHED · {selectedCount}
+        </Button>
+      )}
     </div>
   );
 }
