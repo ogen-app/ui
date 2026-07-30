@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { PlusIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { useCalendarSettingsStore } from '@/stores/calendarSettingsStore'
+import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import folderEmptyImage from '@/assets/illustrations/folder-empty.webp'
 import { addDays, isSameDay, startOfWeek } from './calendar/date'
 import { cn } from '@/lib'
@@ -9,6 +9,8 @@ import { cn } from '@/lib'
 type Props = {
   /** Which surface is empty — decides the backdrop sketch, copy and scale. */
   variant: 'week' | 'list' | 'panel'
+  /** Whose calendar preferences shape the week sketch. */
+  campaignId: string
   /** Week to sketch behind the prompt. Defaults to the current week. */
   anchor?: Date
   onAddPost: () => void
@@ -41,9 +43,14 @@ const GHOSTS_PER_DAY = [1, 0, 2, 1, 0, 1, 0]
  * "waiting to be filled" rather than as a blank slate, then centers the
  * invitation to add the first post on top of it.
  */
-export function PostsEmptyState({ variant, anchor, onAddPost, pending }: Props) {
-  const firstDayOfWeek = useCalendarSettingsStore((s) => s.firstDayOfWeek)
-  const hiddenDays = useCalendarSettingsStore((s) => s.hiddenDays)
+export function PostsEmptyState({
+  variant,
+  campaignId,
+  anchor,
+  onAddPost,
+  pending,
+}: Props) {
+  const { firstDayOfWeek, hiddenDays } = useCalendarSettings(campaignId)
   const compact = variant === 'panel'
 
   const columns = useMemo(() => {
@@ -147,7 +154,11 @@ export function PostsEmptyState({ variant, anchor, onAddPost, pending }: Props) 
           <Button
             variant="defaultInverted"
             size={compact ? 'sm' : 'default'}
-            onClick={onAddPost}
+            // Wrapped, not passed bare: callers hand us `useAddPost`, whose
+            // optional `day` parameter would swallow the MouseEvent and blow
+            // up in `atDefaultTime`. The `() => void` prop type hides that
+            // from the compiler, so the wrapper has to live here.
+            onClick={() => onAddPost()}
             loading={pending}
           >
             <PlusIcon className="size-4" />

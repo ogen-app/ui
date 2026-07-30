@@ -89,7 +89,7 @@ export function UploadRow({ item }: { item: UploadItem }) {
       {item.phase === "uploading" && (
         <div className="h-0.5 w-full bg-quaternary">
           <div
-            className="h-full bg-chart-4 transition-all"
+            className="h-full bg-info transition-all"
             style={{ width: `${item.progress}%` }}
           />
         </div>

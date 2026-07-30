@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
+import { formatAnchor } from '@/components/campaigns/calendar/date'
 import { useDeletePost } from '@/hooks/usePosts'
 import { toast } from '@/stores/toastStore'
 import type { Post, PostStatus } from '@/types/posts'
@@ -10,7 +11,7 @@ type Props = {
   isOpen: boolean
   onClose: () => void
   /**
-   * Where to go once the post is gone. Defaults to the campaign page —
+   * Where to go once the post is gone. Defaults to the campaign calendar —
    * the post details route would 404 on the deleted id.
    */
   onDeleted?: () => void
@@ -36,7 +37,7 @@ function warningFor(status: PostStatus, when: string | null) {
   switch (status) {
     case 'published':
       return {
-        confirmLabel: 'Delete anyway',
+        confirmLabel: 'DELETE ANYWAY',
         body: (
           <>
             <p>
@@ -54,7 +55,7 @@ function warningFor(status: PostStatus, when: string | null) {
     case 'scheduled':
     case 'scheduled_for_manual_publishing':
       return {
-        confirmLabel: 'Cancel schedule and delete',
+        confirmLabel: 'CANCEL SCHEDULE AND DELETE',
         body: (
           <>
             <p>
@@ -68,7 +69,7 @@ function warningFor(status: PostStatus, when: string | null) {
       }
     default:
       return {
-        confirmLabel: 'Delete post',
+        confirmLabel: 'DELETE POST',
         body: <p>This post will be permanently deleted. This cannot be undone.</p>,
       }
   }
@@ -90,9 +91,21 @@ export function DeletePostDialog({ post, isOpen, onClose, onDeleted }: Props) {
           onDeleted()
           return
         }
+        // Back to the calendar, on the week the post was going out — the
+        // gap it left is the thing the user wants to see, and landing on
+        // the current week instead makes a deletion weeks out look like it
+        // did nothing. An unscheduled post has no week of its own, so it
+        // falls back to today's.
+        const scheduled = post.scheduled_at ? new Date(post.scheduled_at) : null
+        const anchor =
+          scheduled && !isNaN(scheduled.getTime()) ? scheduled : new Date()
         void navigate({
-          to: '/campaigns/$campaignId',
-          params: { campaignId: post.campaign_id },
+          to: '/campaigns/$campaignId/calendar/$anchor/$view',
+          params: {
+            campaignId: post.campaign_id,
+            anchor: formatAnchor(anchor),
+            view: 'week',
+          },
         })
       },
       onError: (err) => {
@@ -118,7 +131,7 @@ export function DeletePostDialog({ post, isOpen, onClose, onDeleted }: Props) {
         </div>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose} disabled={deleting}>
-            Keep post
+            KEEP POST
           </Button>
           <Button
             type="button"

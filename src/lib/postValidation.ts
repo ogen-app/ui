@@ -165,6 +165,27 @@ function mediaChecks({
   return checks
 }
 
+/**
+ * The part of `evaluatePost` that needs nothing but the post row — no
+ * attachment fetch, no server-side post-type rules.
+ *
+ * The calendar draws a card per post straight from the list payload, so this
+ * is as much as "something is wrong here" can mean there. Everything it
+ * returns true for is also a `fail` in the full check set; the reverse does
+ * not hold (a missing caption or an over-limit body needs the editor's
+ * fetches). The card therefore understates rather than cries wolf — a clean
+ * card is not a promise that the post will publish, but a flagged one is
+ * always really broken.
+ */
+export function hasVisibleProblem(post: Post): boolean {
+  // The publish already went wrong, or the window passed without it going out.
+  if (post.status === 'failed' || post.status === 'not_published') return true
+  // Nothing can publish without a channel and a shape to publish in.
+  if (!getPlatformInfo(post.platform_id)) return true
+  if (!post.platform_post_type) return true
+  return false
+}
+
 export function worstStatus(checks: PostCheck[]): CheckStatus {
   if (checks.some((c) => c.status === 'fail')) return 'fail'
   if (checks.some((c) => c.status === 'warn')) return 'warn'

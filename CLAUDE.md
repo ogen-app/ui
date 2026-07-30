@@ -25,6 +25,7 @@ Content-Bank AI images are secondary. See
 - **Technical decisions & rationale:** [`docs/technical-decisions.md`](./docs/technical-decisions.md)
 - **Onboarding, auth & tenancy flow:** [`docs/onboarding.md`](./docs/onboarding.md)
 - **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
+- **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
@@ -76,6 +77,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **`src/lib/*` mirrors Go server rules** (`postStatusMachine`, `assetStatus`,
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.
+- **`/api/settings` is tenant-scoped, not user-scoped.** Every key is visible
+  to the whole workspace via `GET /api/settings`. Personal preferences get
+  their identity from the key (`userScopedKey` →
+  `calendar.<userId>.<campaignId>`); never put anything sensitive there. See
+  `docs/technical-decisions.md#user-scoped-settings`.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).

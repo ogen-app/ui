@@ -1,10 +1,11 @@
 import { memo, useCallback, useMemo, useState } from 'react'
+import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
 import { useAddPost, useUpdatePost } from '@/hooks/usePosts'
 import { postToPayload } from '@/services/api/posts'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { DEFAULT_HOUR } from '@/lib/postSchedule'
-import { useCalendarSettingsStore } from '@/stores/calendarSettingsStore'
+import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { PostCard } from './PostCard'
 import { addDays, isSameDay, startOfWeek } from './date'
 import { cn } from '@/lib'
@@ -36,11 +37,12 @@ function isPastDay(day: Date): boolean {
 
 function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarProps) {
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
+  /** Column whose empty space the pointer is on — see the column's onMouseOver. */
+  const [hoverKey, setHoverKey] = useState<string | null>(null)
   const today = useMemo(() => new Date(), [])
   const { mutate: updatePost } = useUpdatePost(campaignId)
   const addPost = useAddPost(campaignId)
-  const firstDayOfWeek = useCalendarSettingsStore((s) => s.firstDayOfWeek)
-  const hiddenDays = useCalendarSettingsStore((s) => s.hiddenDays)
+  const { firstDayOfWeek, hiddenDays } = useCalendarSettings(campaignId)
 
   const weekStart = useMemo(
     () => startOfWeek(anchor, firstDayOfWeek),
@@ -141,6 +143,20 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
         {columns.map((col) => (
           <div
             key={col.key}
+            // Hover is tracked here rather than through `group-hover`, because
+            // the affordance has to be off while the pointer is on a card —
+            // and "hovered, but not over a card" is a condition CSS can only
+            // express with `:has()`, which loses the cascade against the
+            // resting `opacity-0`. `onMouseOver` bubbles from whatever is
+            // under the pointer, so the card test is just its ancestry.
+            onMouseOver={(e) =>
+              setHoverKey(
+                (e.target as HTMLElement).closest('a') ? null : col.key,
+              )
+            }
+            onMouseLeave={() =>
+              setHoverKey((k) => (k === col.key ? null : k))
+            }
             className="flex flex-col min-w-[150px] flex-1 min-h-0 gap-0.5"
           >
             {/* Column header — weekday over the full date, centered. */}
@@ -158,43 +174,58 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
               </span>
             </div>
 
-            {/* Posts lane — drop target, and a click target that starts a new
-                post on this day. The click only counts on the lane's own empty
-                space (target === currentTarget), so clicking a card still opens
-                that card rather than creating a second post. Past lanes don't
-                create: the click path goes through the plain create endpoint,
-                which — unlike `schedule` — never validates the date, so a
-                guard here is the only thing keeping a post from being born
-                already in the past. */}
+            {/* Posts lane — a drop target, and nothing else clickable. It
+                used to create a post wherever you clicked its empty space,
+                which fired on every misjudged drag and every click meant for
+                the whitespace beside a card. Creating is the button's job
+                now; the lane just holds posts. */}
             <div
               {...laneHandlers(col.key, col.day)}
-              onClick={(e) => {
-                if (e.target !== e.currentTarget) return
-                if (isPastDay(col.day)) return
-                addPost(col.day)
-              }}
-              title={isPastDay(col.day) ? undefined : `Add a post on ${col.dateLabel}`}
               className={cn(
-                'flex-1 min-h-0 overflow-y-auto bg-secondary px-2 py-2 flex flex-col gap-2 items-stretch transition-colors',
-                !isPastDay(col.day) && 'cursor-pointer',
+                'flex-1 min-h-0 overflow-y-auto bg-secondary p-1 flex flex-col gap-2 items-stretch transition-colors',
                 dragOverKey === col.key && 'bg-quaternary',
               )}
             >
-              {/* The lane itself is mouse-only (it can't be a button without
-                  swallowing the cards inside it), so keyboard users get their
-                  own control: invisible until focused via Tab. */}
+              {col.posts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+
+              {/* The only way to create a post on this day. Kept at a whisper
+                  — a day's content is its posts, and an empty day should read
+                  as empty rather than as a row of buttons — so it fades in
+                  while the pointer is on this column, or while it has keyboard
+                  focus. A card under the cursor means the user is reading or
+                  about to drag that post, not adding another, so it goes back
+                  off; that also keeps it from surfacing mid-drag.
+
+                  Past days don't render it: the click path goes through the
+                  plain create endpoint, which — unlike `schedule` — never
+                  validates the date, so this is the only thing keeping a post
+                  from being born already in the past. */}
               {!isPastDay(col.day) && (
                 <button
                   type="button"
                   onClick={() => addPost(col.day)}
-                  className="sr-only focus-visible:not-sr-only focus-visible:rounded-md focus-visible:border focus-visible:border-dashed focus-visible:border-quaternary focus-visible:px-2 focus-visible:py-1.5 focus-visible:text-xs focus-visible:text-secondary-foreground"
+                  title={`Add a post on ${col.dateLabel}`}
+                  className={cn(
+                    'shrink-0 flex h-9 items-center justify-center gap-2 cursor-pointer',
+                    // Typography lifted from the toolbar's ADD POST (the
+                    // `default` button variant): same 13px/16 medium, same
+                    // 2-unit gap, same 16px bold icon. The two buttons do the
+                    // same thing, so only their weight in the page should
+                    // differ — this one says it in a dashed outline that
+                    // isn't there until you look for it.
+                    'border border-dashed border-border text-[13px]/4 font-medium text-tertiary-foreground',
+                    'transition-[opacity,background-color,color]',
+                    hoverKey === col.key ? 'opacity-100' : 'opacity-0',
+                    'focus-visible:opacity-100',
+                    'hover:bg-primary hover:text-secondary-foreground',
+                  )}
                 >
-                  Add a post on {col.dateLabel}
+                  <PlusIcon weight="bold" className="size-4 shrink-0" />
+                  <span>ADD POST</span>
                 </button>
               )}
-              {col.posts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
             </div>
           </div>
         ))}
