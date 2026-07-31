@@ -12,7 +12,7 @@ import {
   ZERNIO_ACCOUNTS_KEY,
 } from '@/hooks/useZernio'
 import { ZernioError, type ConnectLinkResponse } from '@/types/integrations'
-import type { PlatformView } from '@/lib/platformDictionary'
+import { connectedAccounts, type PlatformView } from '@/lib/platformDictionary'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 
 /** How often to re-check /api/platforms while waiting for an authorization
@@ -123,7 +123,7 @@ function PlatformTile({
 }) {
   const { info } = view
   const Icon = info.icon
-  const count = view.connectedPublishers.length
+  const count = connectedAccounts(view).length
   return (
     <li className="min-w-0">
       <button
@@ -188,11 +188,15 @@ function ConnectPlatformModal({
   // background sync mirrors the authorized account back. Compare against the
   // count at open time rather than zero — a platform may already have
   // accounts, and this connect is about the *new* one.
+  //
+  // Counts accounts, not publishers. Publishers were the wrong unit: Zernio
+  // is the only one and it reads `connected` once it holds any account, so
+  // connecting a *second* account left this at 1 > 1 and the modal never
+  // reached its success state (CON-150).
   const liveViews = usePlatformViews()
-  const baseline = view.connectedPublishers.length
-  const connected =
-    (liveViews.find((v) => v.platform.id === view.platform.id)?.connectedPublishers.length ?? 0) >
-    baseline
+  const baseline = connectedAccounts(view).length
+  const live = liveViews.find((v) => v.platform.id === view.platform.id)
+  const connected = (live ? connectedAccounts(live).length : 0) > baseline
 
   // While waiting, re-check the platform list so the success state appears
   // without a manual refresh.

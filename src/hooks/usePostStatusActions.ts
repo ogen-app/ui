@@ -12,6 +12,7 @@ import {
   type PostStatusActionMechanism,
   type PostStatusBlocker,
   type PublishMethod,
+  type TransitionContext,
 } from '@/lib/postStatusMachine'
 import type { TransitionStatusResult } from '@/hooks/usePost'
 import type { CancelTarget } from '@/services/api/posts'
@@ -42,6 +43,9 @@ type UsePostStatusActionsOptions = {
   // Resolves the `ready_for_publish` fork: only the matching edge is
   // offered, so SCHEDULE is a single action rather than two same-named ones.
   publishMethod: PublishMethod
+  // Server state the blockers need but the post doesn't carry — currently
+  // just which account it publishes as (CON-150).
+  context: TransitionContext
 }
 
 type UsePostStatusActionsResult = {
@@ -79,6 +83,7 @@ export function usePostStatusActions({
   cancelScheduled,
   cancelling = false,
   publishMethod,
+  context,
 }: UsePostStatusActionsOptions): UsePostStatusActionsResult {
   const [pending, setPending] = useState(false)
 
@@ -87,7 +92,7 @@ export function usePostStatusActions({
       const meta = getActionMeta(post.status, next)
       if (!meta) return []
       const mechanism: PostStatusActionMechanism = meta.mechanism ?? 'transition'
-      const blockers = getTransitionBlockers(post, next)
+      const blockers = getTransitionBlockers(post, next, context)
       return [
         {
           next,
