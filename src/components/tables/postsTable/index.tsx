@@ -18,6 +18,7 @@ type PostsTableProps = {
   emptyStateMessage?: string
   emptyStateActionLabel?: string
   onEmptyStateAction?: () => void
+  loading?: boolean
 }
 
 function formatDate(dateStr: string | null): string {
@@ -52,6 +53,7 @@ function PostsTableComponent({
   emptyStateMessage = 'No posts',
   emptyStateActionLabel,
   onEmptyStateAction,
+  loading = false,
 }: PostsTableProps) {
   const data = posts as PostRow[]
 
@@ -134,6 +136,7 @@ function PostsTableComponent({
         size: 60,
         minSize: 60,
         sortable: false,
+        isControl: true,
         cell: (_value, row) => {
           const canDelete = DELETABLE_STATUSES.includes(row.status)
           if (!canDelete) return <div className="h-[34px] border-b-2 border-background" />
@@ -175,6 +178,7 @@ function PostsTableComponent({
       emptyStateMessage={emptyStateMessage}
       emptyStateActionLabel={emptyStateActionLabel}
       onEmptyStateAction={onEmptyStateAction}
+      loading={loading}
     />
   )
 }

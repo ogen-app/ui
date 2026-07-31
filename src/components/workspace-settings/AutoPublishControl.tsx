@@ -3,7 +3,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { LightningIcon, ProhibitIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
-import { useToggleAutoPublish } from '@/hooks/useAutoPublishAllowlist'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  useAutoPublishState,
+  useToggleAutoPublish,
+} from '@/hooks/useAutoPublishAllowlist'
 import { useConvertToManualPublish } from '@/hooks/useConvertToManualPublish'
 import type { PlatformView } from '@/lib/platformDictionary'
 import { listPosts } from '@/services/api/posts'
@@ -34,16 +38,16 @@ function pendingAutoPosts(posts: Post[], platformId: string, now: number): Post[
     )
 }
 
-export function AutoPublishControl({
-  view,
-  allowed,
-}: {
-  view: PlatformView
-  allowed: boolean
-}) {
+export function AutoPublishControl({ view }: { view: PlatformView }) {
   const { platform, info } = view
   const queryClient = useQueryClient()
   const { toggle, isPending } = useToggleAutoPublish()
+  // Read here rather than passed in: the sentence and the button are two
+  // halves of one state, and `unknown` has to reach both. Worse than looking
+  // wrong, a click on ALLOW before the list lands would write this platform
+  // over the stored one, since the toggle replaces the whole thing.
+  const state = useAutoPublishState(platform.id)
+  const allowed = state === 'allowed'
 
   const [checking, setChecking] = useState(false)
   const [affected, setAffected] = useState<Post[] | null>(null)
@@ -94,22 +98,31 @@ export function AutoPublishControl({
         is supposed to show. The sentence states the state; the button
         changes it. */}
     <div className="flex flex-col items-start gap-3">
-      <p className="text-sm text-primary-foreground">
-        {allowed
-          ? 'Auto-publishing allowed — scheduled posts go out on their own, across every campaign.'
-          : 'Auto-publishing not allowed — scheduled posts wait for you to publish them by hand.'}
-      </p>
-      <Button
-        type="button"
-        variant="outline"
-        size="xl"
-        disabled={isPending || checking}
-        loading={checking}
-        onClick={() => handleChange(!allowed)}
-      >
-        {allowed ? <ProhibitIcon /> : <LightningIcon />}
-        <span>{allowed ? 'DISALLOW' : 'ALLOW'}</span>
-      </Button>
+      {state === 'unknown' ? (
+        <>
+          <Skeleton className="h-5 w-full max-w-lg" />
+          <Skeleton className="h-12 w-36" />
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-primary-foreground">
+            {allowed
+              ? 'Auto-publishing allowed — scheduled posts go out on their own, across every campaign.'
+              : 'Auto-publishing not allowed — scheduled posts wait for you to publish them by hand.'}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="xl"
+            disabled={isPending || checking}
+            loading={checking}
+            onClick={() => handleChange(!allowed)}
+          >
+            {allowed ? <ProhibitIcon /> : <LightningIcon />}
+            <span>{allowed ? 'DISALLOW' : 'ALLOW'}</span>
+          </Button>
+        </>
+      )}
     </div>
 
       {affected && (

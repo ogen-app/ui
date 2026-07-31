@@ -37,7 +37,7 @@ export function CampaignContentUsageForm({ campaign, onFlushRef, onClose }: Prop
   })
 
   const assetIds = form.watch('asset_ids')
-  const { data: assets } = useAssets()
+  const { data: assets, isPending: assetsPending } = useAssets()
 
   useCampaignAutosave({
     campaign,
@@ -81,6 +81,7 @@ export function CampaignContentUsageForm({ campaign, onFlushRef, onClose }: Prop
         actionAriaLabel={(a) => `Remove ${a.title || 'Untitled'}`}
         onAction={(a) => removeAsset(a.id)}
         defaultOpen
+        loading={assetsPending}
       />
       <AssetSection
         title="AVAILABLE"
@@ -89,6 +90,7 @@ export function CampaignContentUsageForm({ campaign, onFlushRef, onClose }: Prop
         actionIcon={PlusIcon}
         actionAriaLabel={(a) => `Add ${a.title || 'Untitled'}`}
         onAction={(a) => addAsset(a.id)}
+        loading={assetsPending}
       />
     </RailPanel>
   )

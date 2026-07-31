@@ -17,8 +17,11 @@ type Props = {
 
 export function PostContentUsageForm({ doc, changeDoc, onClose }: Props) {
   const assetIds = doc.used_asset_ids
-  const { data: assets } = useAssets()
-  const { data: campaign } = useCampaign(doc.campaign_id)
+  const { data: assets, isPending: assetsPending } = useAssets()
+  const { data: campaign, isLoading: campaignPending } = useCampaign(doc.campaign_id)
+  // The campaign decides which of the bank's assets are the shortlist, so a
+  // list split before it lands would move rows between the two sections.
+  const loading = assetsPending || campaignPending
   const { mutate: updateCampaign } = useUpdateCampaign()
 
   const { selected, availableInCampaign, available } = useMemo(() => {
@@ -77,6 +80,7 @@ export function PostContentUsageForm({ doc, changeDoc, onClose }: Props) {
         actionAriaLabel={(a) => `Remove ${a.title || 'Untitled'}`}
         onAction={(a) => removeAsset(a.id)}
         defaultOpen
+        loading={loading}
       />
       <AssetSection
         title="AVAILABLE IN CAMPAIGN"
@@ -85,6 +89,7 @@ export function PostContentUsageForm({ doc, changeDoc, onClose }: Props) {
         actionIcon={PlusIcon}
         actionAriaLabel={(a) => `Add ${a.title || 'Untitled'}`}
         onAction={(a) => addAsset(a.id)}
+        loading={loading}
       />
       <AssetSection
         title="AVAILABLE"
@@ -93,6 +98,7 @@ export function PostContentUsageForm({ doc, changeDoc, onClose }: Props) {
         actionIcon={PlusIcon}
         actionAriaLabel={(a) => `Add ${a.title || 'Untitled'}`}
         onAction={(a) => addAsset(a.id)}
+        loading={loading}
       />
     </RailPanel>
   )

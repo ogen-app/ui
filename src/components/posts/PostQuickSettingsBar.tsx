@@ -13,9 +13,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge'
+import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import {
@@ -51,12 +53,6 @@ type Props = {
   attention?: number
   publishMethod: PublishMethod
   onPublishMethodChange: (method: PublishMethod) => void
-  /**
-   * Whether the workspace allowlists this post's platform for auto-publishing.
-   * Passed in rather than read here: the route already resolves the method
-   * against it, and both must agree on the same answer.
-   */
-  autoPublishAllowed: boolean
   className?: string
 }
 
@@ -85,11 +81,14 @@ export function PostQuickSettingsBar({
   attention = 0,
   publishMethod,
   onPublishMethodChange,
-  autoPublishAllowed,
   className,
 }: Props) {
   const platform = getPlatformInfo(doc.platform_id)
-  const { data: campaign } = useCampaign(doc.campaign_id)
+  const { data: campaign, isLoading: campaignPending } = useCampaign(doc.campaign_id)
+  // The same source the route resolves the method against, so the two can't
+  // disagree. `unknown` holds the picker: "manual publish" is a promise about
+  // what happens to this post, and it waits until we can keep it.
+  const autoPublish = useAutoPublishState(doc.platform_id)
   const views = usePlatformViews()
   const flashing = useAttentionFlash(attention)
 
@@ -108,7 +107,9 @@ export function PostQuickSettingsBar({
     [views],
   )
 
-  // Until the campaign loads, offer everything — avoids a flash of empty menus.
+  // While it is loading the triggers are disabled (`campaignPending` below),
+  // so the unfiltered fallback is what an *errored* campaign leaves behind —
+  // an over-wide menu beats no menu once there is nothing left to wait for.
   const campaignPlatforms = campaign
     ? PLATFORMS.filter((p) => (campaignPostTypes.get(p.id)?.size ?? 0) > 0)
     : PLATFORMS
@@ -197,13 +198,17 @@ export function PostQuickSettingsBar({
           {(doc.status === 'draft' || doc.status === 'ready_for_publish') && (
             <>
               <Dot />
-              <PublishMethodPicker
-                method={publishMethod}
-                onChange={onPublishMethodChange}
-                platformName={platform?.name ?? null}
-                hasAccount={account.connected}
-                autoAllowed={autoPublishAllowed}
-              />
+              {autoPublish === 'unknown' ? (
+                <Skeleton className="h-4 w-28" />
+              ) : (
+                <PublishMethodPicker
+                  method={publishMethod}
+                  onChange={onPublishMethodChange}
+                  platformName={platform?.name ?? null}
+                  hasAccount={account.connected}
+                  autoAllowed={autoPublish === 'allowed'}
+                />
+              )}
             </>
           )}
         </span>
@@ -220,7 +225,7 @@ export function PostQuickSettingsBar({
 
       <div className="flex items-center gap-2.5 text-sm">
         <DropdownMenu>
-          <QuickBarTrigger label="Change platform">
+          <QuickBarTrigger label="Change platform" disabled={campaignPending}>
             {platform ? (
               <>
                 <platform.icon size={16} weight="fill" color={platform.color} />
@@ -264,7 +269,7 @@ export function PostQuickSettingsBar({
 
         {platform && (
           <DropdownMenu>
-            <QuickBarTrigger label="Change post type">
+            <QuickBarTrigger label="Change post type" disabled={campaignPending}>
               {doc.platform_post_type ? (
                 <span>{getPostTypeLabel(doc.platform_id, doc.platform_post_type)}</span>
               ) : (

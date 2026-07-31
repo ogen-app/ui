@@ -68,7 +68,10 @@ export function useCalendarSettings(campaignId: string) {
   const queryKey = calendarSettingsKey(userId, campaignId)
   const storageKey = userScopedKey(NAMESPACE, userId, campaignId)
 
-  const { data } = useQuery({
+  // `isLoading`, not `isPending`: the latter stays true forever on a disabled
+  // query, and without a user there is nothing to fetch — the defaults are
+  // the answer, not a placeholder for one.
+  const { data, isLoading } = useQuery({
     queryKey,
     queryFn: async () => parse(await getSetting(storageKey)),
     enabled: !!userId && !!campaignId,
@@ -134,6 +137,13 @@ export function useCalendarSettings(campaignId: string) {
   return {
     firstDayOfWeek: settings.firstDayOfWeek,
     hiddenDays: settings.hiddenDays,
+    /**
+     * True until the stored preference has been read. The values above are
+     * the defaults meanwhile, and a caller that would lay out differently
+     * for a different answer — the week's first column, which days show —
+     * has to wait rather than draw one and take it back.
+     */
+    isPending: isLoading,
     setFirstDayOfWeek,
     setDayVisible,
   }

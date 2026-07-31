@@ -26,6 +26,12 @@ export type ColumnConfig<T> = {
   sortUndefined?: 'first' | 'last' | false
   isSticky?: boolean
   stickyPosition?: 'left' | 'right' // NEW: specify which side for sticky
+  /**
+   * The column holds row controls rather than data — a delete button, a
+   * checkbox. Skeleton rows leave it blank, since there is no content coming
+   * that a placeholder bar would be standing in for.
+   */
+  isControl?: boolean
   totals?: TotalsConfig<T>
   cellClassName?: string
 }
@@ -46,4 +52,10 @@ export type VirtualTableProps<TData extends Record<string, unknown>> = {
   emptyStateMessage?: string
   emptyStateActionLabel?: string
   onEmptyStateAction?: () => void
+  /**
+   * Rows haven't arrived yet. The header and its column widths are the real
+   * ones, so the table doesn't move when they do — and the empty state is
+   * held back, since "no rows yet" and "no rows" are different answers.
+   */
+  loading?: boolean
 }

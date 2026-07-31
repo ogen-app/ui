@@ -7,7 +7,7 @@ import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { DEFAULT_HOUR } from '@/lib/postSchedule'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { PostCard } from './PostCard'
-import { addDays, isSameDay, startOfWeek } from './date'
+import { dayLabel, isSameDay, visibleWeekDays, weekdayLabel } from './date'
 import { cn } from '@/lib'
 
 type WeeklyCalendarProps = {
@@ -44,16 +44,9 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
   const addPost = useAddPost(campaignId)
   const { firstDayOfWeek, hiddenDays } = useCalendarSettings(campaignId)
 
-  const weekStart = useMemo(
-    () => startOfWeek(anchor, firstDayOfWeek),
-    [anchor, firstDayOfWeek],
-  )
   const days = useMemo(
-    () =>
-      Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).filter(
-        (day) => !hiddenDays.includes(day.getDay()),
-      ),
-    [weekStart, hiddenDays],
+    () => visibleWeekDays(anchor, firstDayOfWeek, hiddenDays),
+    [anchor, firstDayOfWeek, hiddenDays],
   )
 
   const postsByDay = useMemo(() => {
@@ -78,8 +71,8 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
     () =>
       days.map((day) => ({
         key: day.toDateString(),
-        label: day.toLocaleDateString(undefined, { weekday: 'long' }),
-        dateLabel: `${day.getDate()} ${day.toLocaleDateString(undefined, { month: 'long' })} ${day.getFullYear()}`,
+        label: weekdayLabel(day),
+        dateLabel: dayLabel(day),
         day,
         isToday: isSameDay(day, today),
         posts: postsByDay.get(day.toDateString()) ?? [],
