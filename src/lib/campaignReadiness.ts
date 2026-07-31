@@ -729,15 +729,10 @@ export function attentionItems(
     });
   }
 
-  if (campaign.use_assets && campaign.asset_ids.length === 0) {
-    items.push({
-      id: "assets-expected",
-      severity: "todo",
-      label: "Assets are enabled but none are attached",
-      actionLabel: "Attach assets",
-      fix: "assets",
-    });
-  }
+  // There is deliberately no rule about `use_assets` with an empty `asset_ids`.
+  // That pair is not a half-finished setup — it is the "All assets" mode, where
+  // an empty list means *every* ready asset (CON-118, `lib/campaignSources.ts`).
+  // Flagging it would nag every campaign that picked the broadest option.
 
   if (snapshot.total > 0 && !campaign.estimated_post_count) {
     items.push({

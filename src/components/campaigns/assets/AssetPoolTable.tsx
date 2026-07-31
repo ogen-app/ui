@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { assetCategory, categoryLabel } from "@/lib/assetCategory";
 import { statusToBadge } from "@/lib/assetStatus";
-import { retrievability } from "@/lib/campaignGrounding";
+import { retrievability } from "@/lib/campaignSources";
 import { cn, formatTitle } from "@/lib";
 import type { Asset } from "@/types/content";
 
@@ -36,7 +36,7 @@ function formatDate(dateStr: string): string {
 const CELL = "h-[34px] border-b-2 border-background px-3 leading-8";
 
 /**
- * The Content Bank table, with attachment.
+ * The Content Bank table, with assignment.
  *
  * Deliberately the same table: same columns, metrics, and colours as
  * `tables/docsTable`, so an asset looks the same wherever you meet it. Two
@@ -44,8 +44,11 @@ const CELL = "h-[34px] border-b-2 border-background px-3 leading-8";
  * that toggles instead of navigating, and an open-in-a-new-tab control where
  * the Content Bank puts delete.
  *
- * Both of those are for the same reason: the selection is unsaved while you
- * build it, so a same-tab navigation would throw it away.
+ * Both of those are for the same reason: leaving the page mid-edit would strand
+ * a queued save, so nothing here navigates in this tab.
+ *
+ * `selectable` off is whole-bank mode, where every row comes in checked and
+ * frozen — the table is showing what "all assets" resolves to, not asking.
  */
 function AssetPoolTableComponent({
   assets,
@@ -71,7 +74,7 @@ function AssetPoolTableComponent({
               checked={selected.has(row.id)}
               disabled={!selectable}
               onCheckedChange={() => onToggle(row.id)}
-              aria-label={`Attach ${formatTitle(row.title)}`}
+              aria-label={`Assign ${formatTitle(row.title)}`}
             />
           </div>
         ),

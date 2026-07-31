@@ -1,80 +1,90 @@
-import { useMemo } from "react";
-import { Link } from "@tanstack/react-router";
-import { SettingsCard } from "@/components/settings/SettingsCard";
+import { useMemo, useState } from "react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { EMPTY_FILTERS, type AssetPoolFilters } from "@/lib/assetPool";
 import {
   poolStats,
   selectionStats,
-  type GroundingChoice,
-  type GroundingMode,
-} from "@/lib/campaignGrounding";
-import type { Asset } from "@/types/content";
-import { GroundingCard } from "./GroundingCard";
+  sourcesError,
+  type SourceMode,
+} from "@/lib/campaignSources";
+import type { Asset, Tag } from "@/types/content";
+import { AssetPoolSection } from "./AssetPoolSection";
+import { ContentSourcesCard } from "./ContentSourcesCard";
 
 type Props = {
-  choice: GroundingChoice;
-  onChoiceChange: (mode: GroundingMode) => void;
-  /** The whole Content Bank, for the counts and the empty-bank case. */
+  mode: SourceMode;
+  onModeChange: (mode: SourceMode) => void;
+  /** The whole Content Bank. */
   assets: Asset[];
-  /** The saved shortlist, for the "12 chosen" count. */
+  tags: Tag[];
+  /** The campaign's assigned set. */
   selectedIds: string[];
+  onSelectedIdsChange: (ids: string[]) => void;
 };
 
 /**
- * The campaign Assets page: one decision, stated in full.
+ * The campaign Assets page: the mode tiles, and — unless the campaign is on
+ * its own — the Content Bank list underneath them.
  *
- * The list of assets is not here. Picking a shortlist out of a few hundred
- * documents is its own piece of work with its own screen, reached by the
- * header's Configure — putting a table under the choice would make the page
- * look like a table with a widget on top, and the choice is the point.
+ * Campaign only has no list because there is nothing to show: no asset can
+ * reach a post, so a table of them would be decoration. The other two modes
+ * both show it, which is what makes them comparable — one frozen with
+ * everything ticked, one you tick yourself.
  *
- * This scrolls like Brief and Settings do; the selection screen doesn't.
+ * Expects the campaign layout's non-scrolling shell (`grid overflow-hidden
+ * h-full`): the table scrolls, the page doesn't.
  */
 export function CampaignAssetsView({
-  choice,
-  onChoiceChange,
+  mode,
+  onModeChange,
   assets,
+  tags,
   selectedIds,
+  onSelectedIdsChange,
 }: Props) {
+  const [filters, setFilters] = useState<AssetPoolFilters>(EMPTY_FILTERS);
+
   const bank = useMemo(() => poolStats(assets), [assets]);
   const selection = useMemo(
     () => selectionStats(assets, selectedIds),
     [assets, selectedIds],
   );
 
+  const blocked = sourcesError(mode, selectedIds);
+
   return (
-    <div className="flex flex-col gap-8 pb-10">
-      <GroundingCard
-        choice={choice}
-        onChoiceChange={onChoiceChange}
-        bank={bank}
-        selection={selection}
-      />
-      {choice !== null && choice !== "off" && assets.length === 0 && (
-        <EmptyBank />
+    <div className="flex min-h-0 flex-col gap-4 py-4">
+      <div className="shrink-0">
+        <ContentSourcesCard
+          mode={mode}
+          onModeChange={onModeChange}
+          bank={bank}
+          selection={selection}
+        />
+      </div>
+
+      {/* Only ever shown after the set has been emptied out: an empty explicit
+          set is the one thing the server can't be told, so the save is held
+          back and the user has to hear why. */}
+      {blocked !== null && (
+        <StatusBadge
+          tone="warn"
+          label={blocked}
+          className="shrink-0 text-sm text-primary-foreground"
+        />
+      )}
+
+      {mode !== "campaign" && (
+        <AssetPoolSection
+          assets={assets}
+          tags={tags}
+          mode={mode}
+          selectedIds={selectedIds}
+          onSelectedIdsChange={onSelectedIdsChange}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
       )}
     </div>
-  );
-}
-
-/** Nothing to ground against yet — the only useful action is elsewhere. */
-function EmptyBank() {
-  return (
-    <SettingsCard title="The Content Bank is empty" className="max-w-none">
-      <p className="max-w-150 text-base text-primary-foreground">
-        Add the articles, briefs, and PDFs this campaign should speak from, and
-        they'll show up here. Until then posts are written from the campaign
-        alone, whichever mode is set.
-      </p>
-      <div>
-        <Link
-          to="/content-bank"
-          target="_blank"
-          rel="noreferrer"
-          className="text-base text-secondary-foreground underline hover:text-primary-foreground"
-        >
-          Open the Content Bank
-        </Link>
-      </div>
-    </SettingsCard>
   );
 }

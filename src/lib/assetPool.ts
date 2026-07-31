@@ -1,19 +1,19 @@
 import type { Asset } from "@/types/content";
 
 /**
- * Filtering for the campaign asset pool — the browse-and-pick surface behind
- * the Assets page's Configure action.
+ * Filtering for the campaign asset pool — the list on the lower half of the
+ * Assets page.
  *
  * There is no category filter and no sort here. The table is the Content
  * Bank's, and it sorts its own columns; splitting text from files was a tab
  * bar, and tabs are deferred. What is left is what the Content Bank has no
  * answer for at all: finding a document among hundreds, and reviewing what you
- * already attached.
+ * already assigned.
  */
 export type AssetPoolFilters = {
   query: string;
   tagIds: string[];
-  /** Narrows the list to what's already attached — the review view. */
+  /** Narrows the list to what's already assigned — the review view. */
   selectedOnly: boolean;
 };
 

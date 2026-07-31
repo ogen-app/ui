@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
 
 type Props = {
-  /** Attached across the whole bank, not just the rows in view. */
+  /** Assigned across the whole bank, not just the rows in view. */
   selectedCount: number;
   /** Rows the current filters match. */
   matchingCount: number;
-  /** How many of those are already attached — decides add vs remove. */
+  /** How many of those are already assigned — decides add vs remove. */
   matchingSelectedCount: number;
   /** True when filters are narrowing the list, for honest button copy. */
   filtered: boolean;
@@ -36,25 +36,25 @@ export function SelectionBar({
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t-2 border-background px-3 py-3">
       <span className="text-base text-primary-foreground">
         {selectedCount === 0
-          ? "Nothing attached yet"
-          : `${selectedCount} attached`}
+          ? "Nothing assigned yet"
+          : `${selectedCount} assigned`}
       </span>
 
       <div className="flex flex-wrap items-center gap-2">
         {matchingCount > 0 &&
           (allMatchingSelected ? (
             <Button variant="ghost" size="sm" onClick={onDeselectMatching}>
-              DETACH ALL {matchingCount} {scope.toUpperCase()}
+              UNASSIGN ALL {matchingCount} {scope.toUpperCase()}
             </Button>
           ) : (
             <Button variant="ghost" size="sm" onClick={onSelectMatching}>
-              ATTACH ALL {matchingCount} {scope.toUpperCase()}
+              ASSIGN ALL {matchingCount} {scope.toUpperCase()}
             </Button>
           ))}
 
         {selectedCount > 0 && (
           <Button variant="ghost" size="sm" onClick={onClear}>
-            DETACH EVERYTHING
+            UNASSIGN EVERYTHING
           </Button>
         )}
       </div>

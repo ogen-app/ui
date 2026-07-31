@@ -20,9 +20,10 @@ type Props = {
   tags: Tag[];
   /** Total assets in the bank — the search field says what it searches. */
   bankSize: number;
-  /** Attached count, for the review toggle. */
-  selectedCount: number;
-  /** False when the pool is read-only context — no shortlist to review. */
+  /**
+   * False in whole-bank mode, where every asset is assigned and there is
+   * nothing for the review toggle to narrow to.
+   */
   selectable?: boolean;
   disabled?: boolean;
 };
@@ -40,7 +41,6 @@ export function AssetPoolToolbar({
   onChange,
   tags,
   bankSize,
-  selectedCount,
   selectable = true,
   disabled = false,
 }: Props) {
@@ -117,7 +117,7 @@ export function AssetPoolToolbar({
           disabled={disabled}
           onClick={() => set({ selectedOnly: !filters.selectedOnly })}
         >
-          ATTACHED · {selectedCount}
+          ASSIGNED ONLY
         </Button>
       )}
     </div>

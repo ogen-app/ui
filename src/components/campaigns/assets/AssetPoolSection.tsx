@@ -4,6 +4,7 @@ import {
   isFiltered,
   type AssetPoolFilters,
 } from "@/lib/assetPool";
+import type { SourceMode } from "@/lib/campaignSources";
 import type { Asset, Tag } from "@/types/content";
 import { AssetPoolTable } from "./AssetPoolTable";
 import { AssetPoolToolbar } from "./AssetPoolToolbar";
@@ -13,39 +14,47 @@ type Props = {
   /** The whole Content Bank. */
   assets: Asset[];
   tags: Tag[];
-  /** The working shortlist — unsaved until the header's Save. */
+  /**
+   * Which of `all` / `selected` the campaign is in. In `all` every row is
+   * checked and frozen: the list is answering "what does *everything* mean"
+   * rather than asking anything.
+   */
+  mode: Exclude<SourceMode, "campaign">;
   selectedIds: string[];
   onSelectedIdsChange: (ids: string[]) => void;
   filters: AssetPoolFilters;
   onFiltersChange: (filters: AssetPoolFilters) => void;
-  /**
-   * False in whole-bank mode, where the screen answers "what does *everything*
-   * mean" and the rows are not choices.
-   */
-  selectable?: boolean;
 };
 
 /**
- * Picking the campaign's shortlist out of the Content Bank — the screen behind
- * Configure.
+ * The Content Bank list, under the mode tiles — the bottom half of the Assets
+ * page and the only thing on it that scrolls.
  *
- * Expects a shell that does **not** scroll, the same one the Content Bank's own
- * list gets (`grid overflow-hidden h-full`). The table owns its scrolling
- * because it is hundreds of rows deep; inside a scrolling page it would be two
- * scrollbars racing for one wheel gesture.
+ * It expects a parent that has already given it a bounded height (`min-h-0` on
+ * a flex column), because the table virtualises against its own box. Inside a
+ * page that scrolls, this would be two scrollbars racing for one wheel gesture.
  */
-export function AssetSelectionView({
+export function AssetPoolSection({
   assets,
   tags,
+  mode,
   selectedIds,
   onSelectedIdsChange,
   filters,
   onFiltersChange,
-  selectable = true,
 }: Props) {
+  const selectable = mode === "selected";
+
   const visible = useMemo(
     () => filterAssetPool(assets, filters, selectedIds),
     [assets, filters, selectedIds],
+  );
+
+  // Whole-bank mode checks every row rather than showing an empty column that
+  // contradicts the tile above it.
+  const checkedIds = useMemo(
+    () => (selectable ? selectedIds : assets.map((a) => a.id)),
+    [selectable, selectedIds, assets],
   );
 
   const matchingSelectedCount = useMemo(() => {
@@ -72,20 +81,19 @@ export function AssetSelectionView({
   };
 
   return (
-    <div className="flex min-h-0 flex-col gap-3 pb-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       <AssetPoolToolbar
         filters={filters}
         onChange={onFiltersChange}
         tags={tags}
         bankSize={assets.length}
-        selectedCount={selectedIds.length}
         selectable={selectable}
       />
 
       <div className="grid min-h-0 flex-1 overflow-hidden">
         <AssetPoolTable
           assets={visible}
-          selectedIds={selectedIds}
+          selectedIds={checkedIds}
           onToggle={toggle}
           selectable={selectable}
           emptyStateMessage={
