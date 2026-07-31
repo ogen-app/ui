@@ -6,9 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Chip } from '@/components/ui/chip'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import type { PlatformPostType, PlatformView } from '@/lib/platformDictionary'
+import {
+  connectedAccounts,
+  type PlatformPostType,
+  type PlatformView,
+} from '@/lib/platformDictionary'
 import { usePlatformViews } from '@/hooks/usePlatforms'
-import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { AutoPublishControl } from './AutoPublishControl'
 import { ReadOnlyField, SettingsRow } from './SettingsRow'
@@ -55,7 +58,7 @@ type ConnectionStatus = {
  */
 function connectionStatus(view: PlatformView): ConnectionStatus {
   const publisher = view.connectedPublishers[0]
-  const accounts = view.connectedPublishers.flatMap((p) => p.accounts)
+  const accounts = connectedAccounts(view)
   const anyActive = accounts.some((a) => a.is_active)
 
   if (publisher.state === 'degraded') {
@@ -92,11 +95,8 @@ function connectionStatus(view: PlatformView): ConnectionStatus {
  */
 function PlatformRow({ view }: { view: PlatformView }) {
   const { platform, info } = view
-  const accounts = view.connectedPublishers.flatMap((p) => p.accounts)
+  const accounts = connectedAccounts(view)
   const status = connectionStatus(view)
-
-  const { data: allowlist } = useAutoPublishAllowlist()
-  const autoPublish = (allowlist ?? []).includes(info.zernioId)
 
   return (
     <SettingsRow
@@ -106,7 +106,7 @@ function PlatformRow({ view }: { view: PlatformView }) {
       description={status.message ? <p>{status.message}</p> : undefined}
     >
       {accounts.length > 0 && <ConnectedAccounts accounts={accounts} />}
-      <AutoPublishControl view={view} allowed={autoPublish} />
+      <AutoPublishControl view={view} />
       <ReadOnlyField label="Cadence" value={platform.cadence} />
       <ReadOnlyField label="Constraints" value={platform.constraints} />
       <PostTypeChips view={view} />

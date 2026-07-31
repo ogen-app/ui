@@ -6,7 +6,7 @@
 import type { Icon } from "@phosphor-icons/react";
 import { FacebookLogoIcon, InstagramLogoIcon, LinkedinLogoIcon, ThreadsLogoIcon, XLogoIcon, YoutubeLogoIcon } from "@phosphor-icons/react";
 
-import type { Platform, PlatformPublisher } from "@/types/campaigns";
+import type { Platform, PlatformPublisher, PublisherAccount } from "@/types/campaigns";
 
 export type PlatformPostType = {
   slug: string;
@@ -194,6 +194,20 @@ export function buildPlatformView(
     connectedPublishers,
     connectedPublisherName: connectedPublishers[0]?.name ?? null,
   };
+}
+
+/**
+ * Every account connected for a platform, across every publisher.
+ *
+ * Not interchangeable with `connectedPublishers.length`, which is what this
+ * replaced in several places: the server sets a publisher's `connected` from
+ * `len(accounts) > 0`, so with Zernio as the only publisher that count is
+ * 0 or 1 no matter how many accounts a platform holds. Anything asking "how
+ * many accounts" — a caption, a did-the-new-one-land check, whether a choice
+ * is required — has to count these instead (CON-150).
+ */
+export function connectedAccounts(view: PlatformView): PublisherAccount[] {
+  return view.connectedPublishers.flatMap((p) => p.accounts);
 }
 
 export function buildPlatformViews(platforms: Platform[]): PlatformView[] {

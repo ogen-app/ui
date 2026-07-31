@@ -116,6 +116,51 @@ unmount** so navigation never drops an edit.
 **Where.** `hooks/usePost.ts`. Campaign forms use the analogous autosave in
 `components/forms/campaignBriefForm/shared.ts` (500ms, version-tracked).
 
+## The calendar card reads the post row and nothing else {#calendar-card-media}
+
+**Decision.** `PostCard` draws its leading image from `post.media_urls[0]` and
+its problem flag from `hasVisibleProblem(post)` — status, platform, post type.
+Neither fetches anything.
+
+**Why.** A week view renders a card per post from the list payload. Anything
+needing a per-post request (`GET /api/posts/:id/attachments`, the server's
+post-type rules) would cost one round-trip per card, so the card shows the
+subset of `evaluatePost` that the list already answers. Everything it flags is
+also a `fail` in the full check set; the reverse does not hold, so a clean card
+is not a promise the post will publish — it understates rather than cries wolf.
+
+**Known gap.** The editor's uploads go to the `post_attachments` table, whose
+presigned/thumbnail URLs are hydrated per post at response time. Nothing writes
+`media_urls`, so **the leading image never renders in practice today.** The
+card is built and correct; lighting it up needs the backend to put a thumbnail
+URL on the post list payload. Backend ticket, not a front-end change.
+
+**Where.** `components/campaigns/calendar/PostCard.tsx`,
+`lib/postValidation.ts` (`hasVisibleProblem`).
+
+## Personal preferences namespace themselves into the tenant settings table {#user-scoped-settings}
+
+**Decision.** Calendar preferences (first day of week, hidden days) are stored
+per user *and* per campaign, under the key
+`calendar.<userId>.<campaignId>` in the backend's `/api/settings` key/value
+store. They used to be a `persist`ed Zustand store; they are server state now,
+so they live in the Query cache like everything else fetched.
+
+**Why.** The API has no user-scoped store — `settings` is **tenant-scoped**
+(`tenant_id` + `key` as the primary key) and `users` has no preferences
+column — so the only identity available is the one we put in the key. This
+buys preferences that follow the user to another browser without a backend
+change. The cost is real and bounded: `GET /api/settings` lists every key in
+the tenant, so anything written this way is readable by every teammate. **Do
+not** store anything sensitive behind `userScopedKey`. A proper
+`user_settings` table is the eventual fix.
+
+**Where.** `services/api/settings.ts` (`userScopedKey`, `getSetting`,
+`putSetting`), `hooks/useCalendarSettings.ts`. Writes paint from the cache
+first and the PUT is debounced 500ms behind them — flipping six day switches
+costs one request — with a flush on unmount, the same shape as the post
+editor's autosave.
+
 ## Poll narrowly, only while a backend job is in flight
 
 **Decision.** Polling is enabled conditionally, not globally: post refetch runs

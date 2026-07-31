@@ -14,8 +14,10 @@ import { PostValidationsSection } from '@/components/posts/PostValidationsSectio
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
+import { PostQualityPanel } from '@/components/posts/quality/PostQualityPanel'
 import {
   POST_PREVIEW_PORTAL_ID,
+  POST_QUALITY_PORTAL_ID,
   POST_SETTINGS_PORTAL_ID,
 } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -25,7 +27,8 @@ import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
 import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
-import { isAutoPublishAllowed, resolvePublishMethod } from '@/lib/autoPublish'
+import { usePublishingAccount } from '@/hooks/usePublishingAccount'
+import { resolvePublishMethod } from '@/lib/autoPublish'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
 import type { Post, PostStatus } from '@/types/posts'
@@ -117,7 +120,8 @@ function PostEditorSurface({
   // switching to a channel the workspace hasn't allowlisted drops the post to
   // manual on the spot. Derived instead of an effect: there is no moment where
   // the state says "auto" and the platform says otherwise.
-  const { data: autoPublishAllowlist } = useAutoPublishAllowlist()
+  const { data: autoPublishAllowlist, isPending: allowlistPending } =
+    useAutoPublishAllowlist()
   const effectivePublishMethod = resolvePublishMethod(
     publishMethod,
     autoPublishAllowlist,
@@ -129,6 +133,16 @@ function PostEditorSurface({
   // section are two views of the same state (and share upload progress).
   const media = usePostMedia(doc)
 
+  // Which of the platform's connected accounts this post publishes as
+  // (CON-150). Resolved here because two consumers must agree: the
+  // quick-settings bar offers the choice, and SCHEDULE is blocked without
+  // one when the platform has more than a single account.
+  const account = usePublishingAccount(
+    doc.platform_id,
+    doc.social_account_id,
+    doc.social_account,
+  )
+
   // Called once, here, and shared: the header button and the badge menu must
   // see the same in-flight guard, or one could fire a second transition
   // while the other's request is still open.
@@ -139,8 +153,12 @@ function PostEditorSurface({
     cancelScheduled,
     cancelling,
     publishMethod: effectivePublishMethod,
+    context: { account },
   })
-  const statusBusy = pending || cancelling
+  // The allowlist decides whether SCHEDULE lands on auto or manual, so the
+  // status actions wait for it too — scheduling a post the wrong way is not
+  // something the user can see happening, let alone undo.
+  const statusBusy = pending || cancelling || allowlistPending
   const flashBlockers = useCallback(() => setAttention((n) => n + 1), [])
 
   // The settings form renders in the shared right sidebar (one panel at a
@@ -148,13 +166,16 @@ function PostEditorSurface({
   // owns the post's autosave pipeline; the sidebar only hosts the layer.
   const settingsOpen = useSettingsStore((s) => s.activeRightPanel === 'postSettings')
   const previewOpen = useSettingsStore((s) => s.activeRightPanel === 'postPreview')
+  const qualityOpen = useSettingsStore((s) => s.activeRightPanel === 'postQuality')
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
   const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
   const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
   const [previewHost, setPreviewHost] = useState<HTMLElement | null>(null)
+  const [qualityHost, setQualityHost] = useState<HTMLElement | null>(null)
   useEffect(() => {
     setSettingsHost(document.getElementById(POST_SETTINGS_PORTAL_ID))
     setPreviewHost(document.getElementById(POST_PREVIEW_PORTAL_ID))
+    setQualityHost(document.getElementById(POST_QUALITY_PORTAL_ID))
   }, [])
 
   // Being on a post page is what makes its assistant thread available: the
@@ -185,7 +206,11 @@ function PostEditorSurface({
   useEffect(
     () => () => {
       const s = useSettingsStore.getState()
-      if (s.activeRightPanel === 'postSettings' || s.activeRightPanel === 'postPreview') {
+      if (
+        s.activeRightPanel === 'postSettings' ||
+        s.activeRightPanel === 'postPreview' ||
+        s.activeRightPanel === 'postQuality'
+      ) {
         s.closeRightPanel()
       }
     },
@@ -245,6 +270,8 @@ function PostEditorSurface({
             onToggleSettings={() => toggleRightPanel('postSettings')}
             previewOpen={previewOpen}
             onTogglePreview={() => toggleRightPanel('postPreview')}
+            qualityOpen={qualityOpen}
+            onToggleQuality={() => toggleRightPanel('postQuality')}
             onDownloadMarkdown={handleDownloadMarkdown}
             onDeletePost={() => setDeleteOpen(true)}
             actions={
@@ -265,10 +292,6 @@ function PostEditorSurface({
                 attention={attention}
                 publishMethod={effectivePublishMethod}
                 onPublishMethodChange={setPublishMethod}
-                autoPublishAllowed={isAutoPublishAllowed(
-                  autoPublishAllowlist,
-                  doc.platform_id,
-                )}
               />
             </div>
             <div className="w-content">
@@ -332,6 +355,14 @@ function PostEditorSurface({
               onClose={closeRightPanel}
             />,
             previewHost,
+          )}
+
+        {qualityHost &&
+          createPortal(
+            /* The live document, so the panel can tell a score that still
+               describes this post from one taken before the last edit. */
+            <PostQualityPanel doc={doc} onClose={closeRightPanel} />,
+            qualityHost,
           )}
       </div>
       <DeletePostDialog

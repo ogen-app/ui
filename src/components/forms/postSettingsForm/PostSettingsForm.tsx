@@ -9,6 +9,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Button } from '@/components/ui/button'
 import { TrashIcon } from '@phosphor-icons/react'
 import { TextSelect } from '@/components/ui/text-select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Collapse } from '@/components/ui/collapse'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import {
@@ -66,7 +67,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
     defaultValues: docToFormValues(doc),
   })
 
-  const { data: campaign } = useCampaign(doc.campaign_id)
+  const { data: campaign, isLoading: campaignPending } = useCampaign(doc.campaign_id)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const platformId = form.watch('platform_id')
@@ -124,17 +125,24 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
               <FormItem>
                 <FormLabel>Post type</FormLabel>
                 <FormControl>
-                  <CampaignPostTypeSelect
-                    campaign={campaign}
-                    platformId={platformId}
-                    postType={platformPostType}
-                    onChange={(pid, slug) => {
-                      form.setValue('platform_id', pid, { shouldDirty: true })
-                      form.setValue('platform_post_type', slug, {
-                        shouldDirty: true,
-                      })
-                    }}
-                  />
+                  {/* Both of this panel's campaign-shaped controls wait for
+                      the campaign: their options are its post types and its
+                      phases, and an empty menu reads as "none exist". */}
+                  {campaignPending ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <CampaignPostTypeSelect
+                      campaign={campaign}
+                      platformId={platformId}
+                      postType={platformPostType}
+                      onChange={(pid, slug) => {
+                        form.setValue('platform_id', pid, { shouldDirty: true })
+                        form.setValue('platform_post_type', slug, {
+                          shouldDirty: true,
+                        })
+                      }}
+                    />
+                  )}
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -215,14 +223,18 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                   <FormItem>
                     <FormLabel>Campaign phase</FormLabel>
                     <FormControl>
-                      <TextSelect
-                        variant="default"
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        elements={phaseOptions}
-                        placeholder="No phase"
-                        disabled={phaseOptions.length <= 1}
-                      />
+                      {campaignPending ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : (
+                        <TextSelect
+                          variant="default"
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          elements={phaseOptions}
+                          placeholder="No phase"
+                          disabled={phaseOptions.length <= 1}
+                        />
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>

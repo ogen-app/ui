@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAddPost, useCampaignPosts, useUpdatePost } from '@/hooks/usePosts'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
 import { postToPayload } from '@/services/api/posts'
@@ -19,7 +20,7 @@ type NotScheduledPanelProps = {
  */
 export function NotScheduledPanel({ campaignId, onClose }: NotScheduledPanelProps) {
   const [dragOver, setDragOver] = useState(false)
-  const { data: posts } = useCampaignPosts(campaignId)
+  const { data: posts, isLoading } = useCampaignPosts(campaignId)
   const { mutate: updatePost } = useUpdatePost(campaignId)
   const addPost = useAddPost(campaignId)
 
@@ -66,8 +67,15 @@ export function NotScheduledPanel({ campaignId, onClose }: NotScheduledPanelProp
           dragOver && 'bg-secondary',
         )}
       >
-        {unscheduled.length === 0 ? (
-          <PostsEmptyState variant="panel" onAddPost={addPost} />
+        {isLoading ? (
+          // Two cards' worth of panel, so it doesn't announce "nothing
+          // unscheduled" before it has looked.
+          <div className="flex flex-col gap-3">
+            <Skeleton className="h-20 w-full shrink-0" />
+            <Skeleton className="h-20 w-full shrink-0" />
+          </div>
+        ) : unscheduled.length === 0 ? (
+          <PostsEmptyState variant="panel" campaignId={campaignId} onAddPost={addPost} />
         ) : (
           unscheduled.map((post) => (
             <div key={post.id} className="border border-border shrink-0">

@@ -56,7 +56,29 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
 | `--border` | beige-300 | Default hairlines |
 | `--border-primary` | black | Emphasized border |
 | `--ring` | beige-400 | Focus ring |
-| `--destructive`, `--positive`, `--negative`, `--warning`, `--accent`, `--editable` | oklch accents | Status / affordance accents (`--warning` = validation warnings, orange; `--accent` = active/selected control, orange, provisional) |
+| `--destructive`, `--positive`, `--negative`, `--warning`, `--info`, `--attention`, `--accent`, `--editable` | oklch accents | Status / affordance accents (`--warning` = validation warnings, orange; `--accent` = active/selected control, orange, provisional) |
+
+### The status hues
+
+`StatusTone` in `src/components/ui/status-badge.tsx` is the one place that
+maps a state onto a colour; everything with a state goes through it.
+
+| Tone | Token | Means |
+| --- | --- | --- |
+| `neutral` | `--tertiary-foreground` | No state worth colouring — a draft |
+| `progress` | `--info` (blue) | Work in flight and on track — ready to publish, uploading |
+| `positive` | `--positive` (green) | Done, or safely handed off — scheduled, published |
+| `attention` | `--attention` (violet) | Waiting on a person, nothing wrong — publish-by-hand |
+| `warn` | `--warning` (orange) | Off but not broken — degraded, disabled, inactive |
+| `negative` / `destructive` | `--negative` / `--destructive` (red) | Failed, or the window passed |
+
+`--info` and `--attention` exist because the two states that need them used to
+borrow `--chart-4` and `--chart-5`. Both are orange, so an in-progress badge
+and a publish-by-hand badge were the same colour as a validation warning, and
+the calendar's warning triangle was indistinguishable from a healthy card's
+status edge. **Orange now means exactly one thing.** Don't reach into
+`--chart-*` for a state — charts are a categorical scale and carry no meaning
+(see the exceptions below); add a semantic token instead.
 
 ## Known deliberate exceptions
 

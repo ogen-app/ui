@@ -21,6 +21,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenuSkeleton,
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar.tsx'
@@ -79,10 +80,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const isCollapsed = isMobile ? false : state === 'collapsed'
   const { user } = useAuthStore()
   const navigate = useNavigate()
-  const { data: campaigns } = useCampaigns()
+  const { data: campaigns, isPending: campaignsPending } = useCampaigns()
   const workspace = useActiveWorkspace()
 
   const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
+
+  // The heading belongs to whichever of the two bodies below is rendering —
+  // skeleton rows or real ones — so it is written once for both.
+  const showCampaignsGroup = campaignsPending
+    ? !isCollapsed
+    : !!campaigns && campaigns.length > 0
 
   const handleLogout = () => {
     navigate({ to: '/auth/logout' })
@@ -176,63 +183,72 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             to="/content-bank"
           />
 
-          {campaigns && campaigns.length > 0 && (
+          {/* The nav is the same on every page, so an empty group here is
+              the first thing you see on a cold load. Three rows hold the
+              space the campaigns will take. */}
+          {showCampaignsGroup && (
+            <SectionLabel isCollapsed={isCollapsed}>Campaigns</SectionLabel>
+          )}
+          {campaignsPending && !isCollapsed && (
             <>
-              <SectionLabel isCollapsed={isCollapsed}>Campaigns</SectionLabel>
-              {campaigns.map((campaign) => {
-                const isActive = campaign.id === activeCampaignId
-                const name = campaign.name.trim() || 'Untitled campaign'
-                return (
-                  <React.Fragment key={campaign.id}>
-                    <AppSidebarButtonMenu
-                      icon={
-                        <CampaignIcon
-                          abbr={identityAbbr(name)}
-                          active={isActive}
-                          color={identityColorVar(campaign.id)}
-                          className="size-5 flex-none"
-                        />
-                      }
-                      text={name}
-                      isActive={isActive}
-                      to="/campaigns/$campaignId"
-                      params={{ campaignId: campaign.id }}
-                    />
-                    {isActive && (
-                      // Sub-items sit flush against each other; the 12px pad
-                      // plus the nav's 4px gap makes 16px before the next
-                      // campaign. The 2px rule closes the sub-menu, so the
-                      // campaign that follows doesn't read as one more of
-                      // its sections.
-                      <div className="flex w-full flex-col gap-0 pb-3 border-b-2 border-quaternary">
-                        {CAMPAIGN_SUB_ITEMS.map((item) => {
-                          const subActive = activeSubItem === item.id
-                          const link = subItemLink(campaign.id, item.id)
-                          return (
-                            <AppSidebarButtonMenu
-                              key={item.id}
-                              icon={
-                                // Same 20px icon slot as top-level items so the labels
-                                // line up; only the glyph inside is smaller.
-                                <span className="flex size-5 flex-none items-center justify-center">
-                                  <item.icon className="size-4" />
-                                </span>
-                              }
-                              text={item.text}
-                              isActive={subActive}
-                              to={link.to}
-                              params={link.params}
-                              className="lg:h-8 text-xs"
-                            />
-                          )
-                        })}
-                      </div>
-                    )}
-                  </React.Fragment>
-                )
-              })}
+              <SidebarMenuSkeleton showIcon />
+              <SidebarMenuSkeleton showIcon />
+              <SidebarMenuSkeleton showIcon />
             </>
           )}
+
+          {campaigns?.map((campaign) => {
+            const isActive = campaign.id === activeCampaignId
+            const name = campaign.name.trim() || 'Untitled campaign'
+            return (
+              <React.Fragment key={campaign.id}>
+                <AppSidebarButtonMenu
+                  icon={
+                    <CampaignIcon
+                      abbr={identityAbbr(name)}
+                      active={isActive}
+                      color={identityColorVar(campaign.id)}
+                      className="size-5 flex-none"
+                    />
+                  }
+                  text={name}
+                  isActive={isActive}
+                  to="/campaigns/$campaignId"
+                  params={{ campaignId: campaign.id }}
+                />
+                {isActive && (
+                  // Sub-items sit flush against each other; the 12px pad
+                  // plus the nav's 4px gap makes 16px before the next
+                  // campaign. The 2px rule closes the sub-menu, so the
+                  // campaign that follows doesn't read as one more of
+                  // its sections.
+                  <div className="flex w-full flex-col gap-0 pb-3 border-b-2 border-quaternary">
+                    {CAMPAIGN_SUB_ITEMS.map((item) => {
+                      const subActive = activeSubItem === item.id
+                      const link = subItemLink(campaign.id, item.id)
+                      return (
+                        <AppSidebarButtonMenu
+                          key={item.id}
+                          icon={
+                            // Same 20px icon slot as top-level items so the labels
+                            // line up; only the glyph inside is smaller.
+                            <span className="flex size-5 flex-none items-center justify-center">
+                              <item.icon className="size-4" />
+                            </span>
+                          }
+                          text={item.text}
+                          isActive={subActive}
+                          to={link.to}
+                          params={link.params}
+                          className="lg:h-8 text-xs"
+                        />
+                      )
+                    })}
+                  </div>
+                )}
+              </React.Fragment>
+            )
+          })}
         </nav>
       </SidebarContent>
 

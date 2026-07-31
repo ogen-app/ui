@@ -46,6 +46,7 @@ function makePost(overrides: Partial<Post> = {}): Post {
     campaign_id: "c1",
     platform_id: "p1",
     platform_post_type: "text-post",
+    social_account_id: "",
     title: "",
     content: "",
     media_urls: [],

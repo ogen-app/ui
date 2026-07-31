@@ -3,7 +3,7 @@ import type { Post } from '@/types/posts'
 import type { PostAttachmentWithValidation } from '@/types/attachments'
 import type { ResolvedPostTypeRule } from '@/types/validation'
 import { mediaPolicy, strandedAttachments } from './postMedia.ts'
-import { evaluatePost, worstStatus } from './postValidation.ts'
+import { evaluatePost, hasVisibleProblem, worstStatus } from './postValidation.ts'
 
 // Platform Sqids from platformDictionary.ts.
 const INSTAGRAM = 'rzgpTkARLH0L'
@@ -47,6 +47,7 @@ function makePost(overrides: Partial<Post> = {}): Post {
     campaign_id: 'c1',
     platform_id: INSTAGRAM,
     platform_post_type: 'carousel',
+    social_account_id: '',
     title: '',
     content: 'Hello',
     media_urls: [],
@@ -237,5 +238,30 @@ describe('evaluatePost', () => {
       attachments: [],
     })
     expect(checks.find((c) => c.id === 'media-count')?.status).toBe('pending')
+  })
+})
+
+describe('hasVisibleProblem', () => {
+  it('stays quiet on a post that is merely unfinished', () => {
+    expect(hasVisibleProblem(makePost({ status: 'draft' }))).toBe(false)
+    expect(hasVisibleProblem(makePost({ status: 'scheduled' }))).toBe(false)
+    expect(hasVisibleProblem(makePost({ status: 'published' }))).toBe(false)
+  })
+
+  it('flags a publish that went wrong or never went out', () => {
+    expect(hasVisibleProblem(makePost({ status: 'failed' }))).toBe(true)
+    expect(hasVisibleProblem(makePost({ status: 'not_published' }))).toBe(true)
+  })
+
+  it('flags a post that has nowhere to go', () => {
+    expect(hasVisibleProblem(makePost({ platform_id: '' }))).toBe(true)
+    expect(hasVisibleProblem(makePost({ platform_id: 'not-a-platform' }))).toBe(true)
+    expect(hasVisibleProblem(makePost({ platform_post_type: '' }))).toBe(true)
+  })
+
+  it('reads only the post row — no attachments, no server rules', () => {
+    // The guarantee the calendar leans on: hundreds of cards, zero extra
+    // requests. A post whose *only* fault needs those fetches stays clean.
+    expect(hasVisibleProblem(makePost({ content: '', media_urls: [] }))).toBe(false)
   })
 })

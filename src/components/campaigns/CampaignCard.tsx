@@ -14,7 +14,6 @@ import {
   SCHEDULED_STATUSES,
   type AttentionSeverity,
 } from '@/lib/campaignReadiness.ts'
-import { getPlatformInfo } from '@/lib/platformDictionary.ts'
 import type { Campaign } from '@/types/campaigns.ts'
 import type { Post } from '@/types/posts.ts'
 
@@ -72,13 +71,16 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
   const snapshot = contentSnapshot(posts)
   const planned = campaign.estimated_post_count
 
-  const platforms = campaign.target_platforms.flatMap((tp) => {
-    const info = getPlatformInfo(tp.id)
-    return info ? [info] : []
-  })
+  // A count, not a roster. Which channels a campaign runs on is settings'
+  // business; here it only has to say whether it can publish at all, and six
+  // channel names would crowd the stage off the line they share.
+  const platformCount = campaign.target_platforms.length
+  const platformSummary =
+    platformCount === 0
+      ? 'No platforms connected'
+      : `${platformCount} platform${platformCount === 1 ? '' : 's'}`
   const stage = currentStage(campaign, posts)
   const advanced = advancedSummary(campaign)
-  const hasSetupLine = platforms.length > 0 || stage !== null
 
   return (
     <section className="w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0">
@@ -148,27 +150,25 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
         <Skeleton className="h-16 w-full" />
       )}
 
-      {(hasSetupLine || advanced) && (
-        <div className="flex flex-col gap-1.5 min-w-0">
-          {hasSetupLine && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-secondary-foreground">
-              {platforms.map((platform) => (
-                <span key={platform.id} className="flex items-center gap-1.5">
-                  <platform.icon className="size-4 shrink-0" aria-hidden />
-                  {platform.name}
-                </span>
-              ))}
-              {stage && <span className="text-tertiary-foreground">{stage}</span>}
-            </div>
-          )}
-          {/* Advanced settings take their own line: they are the exception, so
-              they must not push the channels — which every campaign has — off
-              the end of theirs. */}
-          {advanced && (
-            <div className="text-xs text-tertiary-foreground">{advanced}</div>
+      <div className="flex flex-col gap-1.5 min-w-0">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-secondary-foreground">
+          <span>{platformSummary}</span>
+          {stage && (
+            <>
+              <span className="text-tertiary-foreground" aria-hidden>
+                ·
+              </span>
+              <span className="text-tertiary-foreground">{stage}</span>
+            </>
           )}
         </div>
-      )}
+        {/* Advanced settings take their own line: they are the exception, so
+            they must not push the channels — which every campaign has — off
+            the end of theirs. */}
+        {advanced && (
+          <div className="text-xs text-tertiary-foreground">{advanced}</div>
+        )}
+      </div>
     </section>
   )
 }

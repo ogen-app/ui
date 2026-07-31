@@ -72,6 +72,10 @@ export function LineItem({
   const interactive = asChild && isValidElement(children);
   const showChevron = chevron ?? interactive;
 
+  // Not a bare `&&` guard on the prop: a `0` is falsy, and React would print
+  // the bare number outside the styled span instead of skipping it.
+  const has = (node: ReactNode) => node != null && node !== false;
+
   const content = (
     <>
       <span
@@ -82,14 +86,14 @@ export function LineItem({
 
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 py-2.5">
         <span className="truncate text-sm leading-5">{label}</span>
-        {details && (
+        {has(details) && (
           <span className="text-xs leading-4 text-tertiary-foreground">
             {details}
           </span>
         )}
       </span>
 
-      {trailing && (
+      {has(trailing) && (
         <span
           className={cn(
             "flex shrink-0 items-center gap-2 text-xs text-tertiary-foreground",

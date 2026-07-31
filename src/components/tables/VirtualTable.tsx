@@ -23,6 +23,13 @@ import { ZIndex } from '@/config/zIndex.ts'
 import { CaretDownIcon, CaretUpIcon } from '@phosphor-icons/react'
 import { FooterCell } from '@/components/tables/TableCells.tsx'
 import { TableEmptyState } from './TableEmptyState'
+import { Skeleton } from '@/components/ui/skeleton'
+
+/** Enough rows to read as a table rather than as a stray bar. */
+const SKELETON_ROWS = 8
+
+/** Cycled per row and column so a block of them doesn't read as a barcode. */
+const SKELETON_WIDTHS = ['70%', '45%', '60%', '35%', '55%']
 
 function VirtualTableComponent<TData extends Record<string, unknown>>({
   data,
@@ -39,6 +46,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   emptyStateMessage,
   emptyStateActionLabel,
   onEmptyStateAction,
+  loading = false,
 }: VirtualTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -219,6 +227,46 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
     [stickyRightPositions]
   )
 
+  // The column shell for a body-level row that carries no cell content: the
+  // spacer and the skeleton rows. Sticky offsets and column borders belong to
+  // the column, not to what is in it, so they can't be left out of either.
+  const rowCellShell = useCallback(
+    (columnId: string) => {
+      const columnConfig = getColumnConfig(columnId)
+      const isLeftSticky =
+        columnConfig?.isSticky && columnConfig?.stickyPosition === 'left'
+      const isRightSticky =
+        columnConfig?.isSticky && columnConfig?.stickyPosition === 'right'
+
+      return {
+        className: cn(
+          'shrink-0 border-background',
+          isLeftSticky && 'sticky bg-table-row',
+          isRightSticky && 'sticky bg-table-row',
+          columnConfig?.borderSide === 'left' && 'border-l-2',
+          columnConfig?.borderSide === 'right' && 'border-r-2',
+          columnConfig?.borderSide === 'both' && 'border-x-2'
+        ),
+        style: {
+          width: `var(--col-${columnId}-width)`,
+          ...(isLeftSticky && {
+            left: getStickyLeftPosition(columnId),
+            zIndex: ZIndex.stickyTableColumnLeft,
+          }),
+          ...(isRightSticky && {
+            right: getStickyRightPosition(columnId),
+            zIndex: ZIndex.stickyTableColumnRight,
+          }),
+        },
+      }
+    },
+    [getColumnConfig, getStickyLeftPosition, getStickyRightPosition]
+  )
+
+  // One header group carries the leaf columns; both content-less rows below
+  // walk it rather than re-deriving it per cell.
+  const leafHeaders = table.getHeaderGroups()[0]?.headers ?? []
+
   const hasData = rows.length > 0
   const hasFooter =
     showFooter &&
@@ -344,8 +392,50 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             ))}
           </div>
 
+          {/* Skeleton rows — the shape of the body, in the real columns, so
+              nothing shifts sideways when the data lands. */}
+          {loading && (
+            <div style={{ width: hasOverflow ? `${totalWidth}px` : '100%' }}>
+              {Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
+                <div
+                  key={rowIndex}
+                  className="flex bg-table-row"
+                  style={{ height: `${estimatedRowHeight}px` }}
+                >
+                  {leafHeaders.map((header, colIndex) => {
+                    const shell = rowCellShell(header.column.id)
+                    return (
+                      <div
+                        key={header.id}
+                        className={cn(
+                          shell.className,
+                          'flex items-center border-b-2 px-3'
+                        )}
+                        style={shell.style}
+                      >
+                        {/* A control column holds buttons, not data — a bar
+                            there would read as content that never arrives. */}
+                        {!getColumnConfig(header.column.id)?.isControl && (
+                          <Skeleton
+                            className="h-3"
+                            style={{
+                              width:
+                                SKELETON_WIDTHS[
+                                  (rowIndex + colIndex) % SKELETON_WIDTHS.length
+                                ],
+                            }}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Empty state */}
-          {!hasData && (
+          {!hasData && !loading && (
             <div className="flex flex-1 items-center justify-center w-full">
               <TableEmptyState
                 message={emptyStateMessage}
@@ -433,44 +523,9 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                 width: hasOverflow ? `${totalWidth}px` : '100%',
               }}
             >
-              {table.getHeaderGroups()[0]?.headers.map((header) => {
-                const columnConfig = getColumnConfig(header.column.id)
-                const isLeftSticky =
-                  columnConfig?.isSticky && columnConfig?.stickyPosition === 'left'
-                const isRightSticky =
-                  columnConfig?.isSticky && columnConfig?.stickyPosition === 'right'
-                const stickyLeftPosition = isLeftSticky
-                  ? getStickyLeftPosition(header.column.id)
-                  : 0
-                const stickyRightPosition = isRightSticky
-                  ? getStickyRightPosition(header.column.id)
-                  : 0
-
-                return (
-                  <div
-                    key={header.id}
-                    className={cn(
-                      'shrink-0 border-background',
-                      isLeftSticky && 'sticky bg-table-row',
-                      isRightSticky && 'sticky bg-table-row',
-                      columnConfig?.borderSide === 'left' && 'border-l-2',
-                      columnConfig?.borderSide === 'right' && 'border-r-2',
-                      columnConfig?.borderSide === 'both' && 'border-x-2'
-                    )}
-                    style={{
-                      width: `var(--col-${header.column.id}-width)`,
-                      ...(isLeftSticky && {
-                        left: stickyLeftPosition,
-                        zIndex: ZIndex.stickyTableColumnLeft,
-                      }),
-                      ...(isRightSticky && {
-                        right: stickyRightPosition,
-                        zIndex: ZIndex.stickyTableColumnRight,
-                      }),
-                    }}
-                  />
-                )
-              })}
+              {leafHeaders.map((header) => (
+                <div key={header.id} {...rowCellShell(header.column.id)} />
+              ))}
             </div>
           )}
 

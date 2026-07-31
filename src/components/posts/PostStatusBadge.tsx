@@ -6,7 +6,9 @@ const POST_STATUS_TONE: Record<PostStatus, StatusTone> = {
   draft: 'neutral',
   ready_for_publish: 'progress',
   scheduled: 'positive',
-  scheduled_for_manual_publishing: 'warn',
+  // Scheduled and healthy — it just publishes by hand. That is a note to
+  // the user, not a warning about the post.
+  scheduled_for_manual_publishing: 'attention',
   failed: 'destructive',
   published: 'positive',
   not_published: 'negative',
