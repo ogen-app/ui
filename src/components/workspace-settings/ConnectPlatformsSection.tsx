@@ -36,7 +36,7 @@ const POLL_INTERVAL_MS = 5_000
  */
 function ConnectPlatformsSectionComponent() {
   const views = usePlatformViews()
-  const { data: health } = useZernioHealth()
+  const { data: health, isPending: healthPending } = useZernioHealth()
   const [connecting, setConnecting] = useState<PlatformView | null>(null)
   const connectLink = useCreateConnectLink()
 
@@ -84,7 +84,10 @@ function ConnectPlatformsSectionComponent() {
             <PlatformTile
               key={v.platform.id}
               view={v}
-              disabled={integrationOff}
+              // An unread health check reads as a healthy one, so a tile would
+              // take a click that opens a popup and then fails. They stay
+              // visible and inert until the answer is in.
+              disabled={integrationOff || healthPending}
               onConnect={() => startConnect(v)}
             />
           ))}

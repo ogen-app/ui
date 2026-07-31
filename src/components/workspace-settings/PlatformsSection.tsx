@@ -8,7 +8,6 @@ import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { PlatformPostType, PlatformView } from '@/lib/platformDictionary'
 import { usePlatformViews } from '@/hooks/usePlatforms'
-import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { AutoPublishControl } from './AutoPublishControl'
 import { ReadOnlyField, SettingsRow } from './SettingsRow'
@@ -95,9 +94,6 @@ function PlatformRow({ view }: { view: PlatformView }) {
   const accounts = view.connectedPublishers.flatMap((p) => p.accounts)
   const status = connectionStatus(view)
 
-  const { data: allowlist } = useAutoPublishAllowlist()
-  const autoPublish = (allowlist ?? []).includes(info.zernioId)
-
   return (
     <SettingsRow
       title={info.name}
@@ -106,7 +102,7 @@ function PlatformRow({ view }: { view: PlatformView }) {
       description={status.message ? <p>{status.message}</p> : undefined}
     >
       {accounts.length > 0 && <ConnectedAccounts accounts={accounts} />}
-      <AutoPublishControl view={view} allowed={autoPublish} />
+      <AutoPublishControl view={view} />
       <ReadOnlyField label="Cadence" value={platform.cadence} />
       <ReadOnlyField label="Constraints" value={platform.constraints} />
       <PostTypeChips view={view} />

@@ -27,7 +27,7 @@ import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
 import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
-import { isAutoPublishAllowed, resolvePublishMethod } from '@/lib/autoPublish'
+import { resolvePublishMethod } from '@/lib/autoPublish'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
 import type { Post, PostStatus } from '@/types/posts'
@@ -119,7 +119,8 @@ function PostEditorSurface({
   // switching to a channel the workspace hasn't allowlisted drops the post to
   // manual on the spot. Derived instead of an effect: there is no moment where
   // the state says "auto" and the platform says otherwise.
-  const { data: autoPublishAllowlist } = useAutoPublishAllowlist()
+  const { data: autoPublishAllowlist, isPending: allowlistPending } =
+    useAutoPublishAllowlist()
   const effectivePublishMethod = resolvePublishMethod(
     publishMethod,
     autoPublishAllowlist,
@@ -142,7 +143,10 @@ function PostEditorSurface({
     cancelling,
     publishMethod: effectivePublishMethod,
   })
-  const statusBusy = pending || cancelling
+  // The allowlist decides whether SCHEDULE lands on auto or manual, so the
+  // status actions wait for it too — scheduling a post the wrong way is not
+  // something the user can see happening, let alone undo.
+  const statusBusy = pending || cancelling || allowlistPending
   const flashBlockers = useCallback(() => setAttention((n) => n + 1), [])
 
   // The settings form renders in the shared right sidebar (one panel at a
@@ -276,10 +280,6 @@ function PostEditorSurface({
                 attention={attention}
                 publishMethod={effectivePublishMethod}
                 onPublishMethodChange={setPublishMethod}
-                autoPublishAllowed={isAutoPublishAllowed(
-                  autoPublishAllowlist,
-                  doc.platform_id,
-                )}
               />
             </div>
             <div className="w-content">

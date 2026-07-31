@@ -4,6 +4,7 @@ import {
   getAutoPublishAllowlist,
   setAutoPublishAllowlist,
 } from '@/services/api/autoPublish'
+import { isAutoPublishAllowed } from '@/lib/autoPublish'
 
 export const AUTO_PUBLISH_ALLOWLIST_KEY = ['auto-publish-allowlist'] as const
 
@@ -13,6 +14,25 @@ export function useAutoPublishAllowlist() {
     queryFn: getAutoPublishAllowlist,
     staleTime: Infinity,
   })
+}
+
+/** `unknown` until the list has been read — see `useAutoPublishState`. */
+export type AutoPublishState = 'allowed' | 'manual' | 'unknown'
+
+/**
+ * Whether this platform may publish on its own, as one value.
+ *
+ * An unread allowlist is an empty one, and an empty one means "manual" — so a
+ * bare boolean says "manual publishing only" before anyone has asked. The
+ * third case is the point: it is what tells a caller to hold its UI, and it
+ * can't be dropped the way a companion `isPending` flag can.
+ */
+export function useAutoPublishState(
+  platformId: string | null | undefined,
+): AutoPublishState {
+  const { data, isPending } = useAutoPublishAllowlist()
+  if (isPending) return 'unknown'
+  return isAutoPublishAllowed(data, platformId) ? 'allowed' : 'manual'
 }
 
 /**

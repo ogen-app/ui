@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { PlusIcon, XIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
-import { isAutoPublishAllowed } from '@/lib/autoPublish'
 import { usePlatformViews } from '@/hooks/usePlatforms'
-import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
+import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
 import type { PlatformView } from '@/lib/platformDictionary'
 import type { CampaignPlatform } from '@/types/campaigns'
 
@@ -255,8 +254,7 @@ function PlatformLabel({
   // Set in Workspace Settings, not here: this is the workspace's decision
   // showing through, so the campaign can see how its posts will go out
   // without having to leave the page to find out.
-  const { data: allowlist } = useAutoPublishAllowlist()
-  const autoPublish = isAutoPublishAllowed(allowlist, view.platform.id)
+  const autoPublish = useAutoPublishState(view.platform.id)
 
   return (
     // The logo alone carries "not targeted yet". The text used to fade with
@@ -280,10 +278,14 @@ function PlatformLabel({
         </span>
         <span className="text-xs text-tertiary-foreground truncate">
           {/* Ahead of the post-type count: whether Ogen posts on the user's
-              behalf outranks how many kinds of post it may send. */}
-          {selected && (
+              behalf outranks how many kinds of post it may send. Held while
+              `unknown` — "Manual publishing only" is not a sentence to write
+              before asking. */}
+          {selected && autoPublish !== 'unknown' && (
             <>
-              {autoPublish ? 'Auto-publishing allowed' : 'Manual publishing only'}
+              {autoPublish === 'allowed'
+                ? 'Auto-publishing allowed'
+                : 'Manual publishing only'}
               {counts && ' · '}
             </>
           )}

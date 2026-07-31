@@ -1,10 +1,15 @@
 import * as React from 'react'
 
 import { cn } from '@/lib'
+import { Skeleton } from '@/components/ui/skeleton'
 import { XIcon } from '@phosphor-icons/react'
 import { ZIndex } from '@/config/zIndex'
 import type { Tag } from '@/types/content'
 import { useCreateTag, useTags } from '@/hooks/useTags'
+
+/** The field box itself — worn by the real input and by its loading state. */
+const FIELD_CLASS =
+  'flex flex-wrap items-center gap-1.5 min-h-10 bg-input rounded-none border-b-1 border-quaternary px-3 py-1.5'
 
 type TagsInputProps = {
   value: string[]
@@ -23,7 +28,7 @@ export function TagsInput({
   id,
   className,
 }: TagsInputProps) {
-  const { data: tags } = useTags()
+  const { data: tags, isPending: tagsPending } = useTags()
   const { mutateAsync: createTag, isPending: isCreating } = useCreateTag()
 
   const [query, setQuery] = React.useState('')
@@ -135,11 +140,26 @@ export function TagsInput({
     }
   }
 
+  // Until the tags are in, `value` can't be resolved to names — the field
+  // would show an empty box for a post that has tags, and offer to create one
+  // that already exists. It stays inert and says so instead.
+  if (tagsPending) {
+    return (
+      <div className={cn('relative', className)}>
+        <div className={FIELD_CLASS}>
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-5 w-14 rounded-full" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={cn('relative', className)}>
       <div
         className={cn(
-          'flex flex-wrap items-center gap-1.5 min-h-10 bg-input rounded-none border-b-1 border-quaternary px-3 py-1.5 cursor-text',
+          FIELD_CLASS,
+          'cursor-text',
           'focus-within:border-foreground transition-[border-color] duration-300',
           disabled && 'opacity-50 pointer-events-none'
         )}

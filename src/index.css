@@ -50,9 +50,12 @@
   --font-sans:
     'Zalando Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  --font-mono:
-    'Fira Code', 'Fira Mono', Monaco, 'Inconsolata', 'Roboto Mono', 'Source Code Pro', Menlo,
-    monospace;
+  /* "Mono" names a voice, not a fixed-width face: Space Grotesk with tabular
+     lining figures (see the `.font-mono` rule below), which is what the table
+     columns and timestamps wearing it actually need. It used to be the stock
+     Fira Code stack — none of which is shipped here, so it rendered as
+     whatever face each machine happened to have installed. */
+  --font-mono: 'Space Grotesk', var(--font-sans);
   --font-display:
     'Zalando Sans Semi Expanded', 'Zalando Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     'Roboto', sans-serif;
@@ -270,6 +273,9 @@
     @apply bg-background min-h-screen;
   }
 
+  /* What `font-mono` is actually for: figures that line up column to column.
+     Space Grotesk carries `tnum`, `lnum` and `zero`, so all three still
+     apply — this is the whole difference between it and `font-grotesk`. */
   .font-mono {
     font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: 'zero' 0; /* Disable slashed zero */
@@ -569,23 +575,6 @@
   }
 
   /* Intro screen animations */
-  .intro-spacer {
-    flex: 1 0 40%;
-  }
-
-  .intro-spinner-bar {
-    overflow: hidden;
-  }
-
-  .intro-spinner-bar::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: var(--color-foreground);
-    animation: spinner-line 0.7s cubic-bezier(0, 0, 0.03, 0.9) infinite;
-  }
-
   @keyframes logo-line-dash {
     0% {
       stroke-dashoffset: 0;
