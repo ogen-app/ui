@@ -161,6 +161,33 @@ first and the PUT is debounced 500ms behind them — flipping six day switches
 costs one request — with a flush on unmount, the same shape as the post
 editor's autosave.
 
+## Explanatory copy is dismissible, and dismissal is permanent {#explainers}
+
+**Decision.** Copy that teaches how a screen works goes in an `<Explainer>`,
+not in a bare `<p>`. It carries a close button; closing it is stored per user
+and the note never comes back. All of a user's dismissals share one key,
+`dismissed.<userId>`, holding a JSON array of note ids.
+
+**Why.** Text that is exactly right on a user's first visit is furniture by
+their tenth, and no single wording is both. Rather than pick one and lose the
+other, the copy is written for the first read and the user is given the way to
+end it. Storing that server-side rather than in `localStorage` is the point of
+the feature — a note the user already dismissed reappearing on their laptop is
+the same annoyance again.
+
+**Consequence — the constraint to hold.** An Explainer may only ever contain
+*teaching*. Anything a user needs while working — a count, a warning, a
+validation message, a link they'd look for twice — must live outside it, or it
+vanishes for everyone who closed the note. When adding one, check the screen
+still reads correctly with it deleted.
+
+**Where.** `components/page-primitives/Explainer.tsx`,
+`hooks/useDismissedNote.ts`. It renders nothing until the stored set has
+loaded, so a closed note never flashes; a failed write rolls the note back
+rather than pretending it was remembered. First use is the campaign Assets
+page (`campaign-content-sources`). Ids are stable identifiers — renaming one
+un-dismisses it for every user who already closed it.
+
 ## Poll narrowly, only while a backend job is in flight
 
 **Decision.** Polling is enabled conditionally, not globally: post refetch runs

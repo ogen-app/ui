@@ -4,6 +4,7 @@ import {
   NotepadIcon,
   type Icon as PhosphorIcon,
 } from "@phosphor-icons/react";
+import { Explainer } from "@/components/page-primitives/Explainer";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { cn } from "@/lib";
 import type { PoolStats, SourceMode } from "@/lib/campaignSources";
@@ -56,11 +57,13 @@ export function ContentSourcesCard({
 }: Props) {
   return (
     <SettingsCard title="Content sources" className="max-w-none gap-4">
-      <p className="max-w-150 text-base text-primary-foreground">
+      {/* Teaching only, and it says nothing the tiles don't — closing it must
+          not cost the user anything they need. */}
+      <Explainer id="campaign-content-sources" className="max-w-150">
         Posts are always written from the campaign — its brief, type, and
         settings — plus the model's general knowledge. Choose what else they may
         draw on.
-      </p>
+      </Explainer>
 
       <div
         role="radiogroup"
