@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
+import { connectedAccounts } from '@/lib/platformDictionary'
 import {
   accountLabel,
   resolvePublishingAccount,
@@ -42,15 +43,12 @@ export function usePublishingAccount(
 
   return useMemo(() => {
     const view = views.find((v) => v.platform.id === platformId)
-    // Zernio is the only publisher, but the shape allows several: take
-    // every connected publisher's accounts rather than just the first's.
-    //
     // Deliberately NOT filtered by `is_active`. These rows come from
     // `ListActive` (`deleted_at IS NULL`) — the same set the server counts
     // when it decides whether a choice is required. `is_active` is a
     // separate flag mirrored from Zernio, and narrowing by it here would
     // let the UI see one account where the schedule endpoint sees two.
-    const accounts = view?.connectedPublishers.flatMap((p) => p.accounts) ?? []
+    const accounts = view ? connectedAccounts(view) : []
     const resolved = resolvePublishingAccount(accounts, selectedAccountId, hydrated)
 
     return {
