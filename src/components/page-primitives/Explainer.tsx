@@ -44,8 +44,14 @@ export function Explainer({ id, children, className }: Props) {
         className,
       )}
     >
-      <div className="min-w-0 flex-1 text-base text-primary-foreground">
-        {children}
+      {/* The panel fills its column so it reads as part of the page, but the
+          line length inside it doesn't — past ~75 characters the eye loses the
+          start of the next line, and this is the one block on a page that is
+          actually meant to be read. */}
+      <div className="min-w-0 flex-1">
+        <div className="max-w-150 text-base text-primary-foreground">
+          {children}
+        </div>
       </div>
       <Button
         variant="ghost"

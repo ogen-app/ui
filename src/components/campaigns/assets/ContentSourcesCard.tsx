@@ -59,7 +59,7 @@ export function ContentSourcesCard({
     <SettingsCard title="Content sources" className="max-w-none gap-4">
       {/* Teaching only, and it says nothing the tiles don't — closing it must
           not cost the user anything they need. */}
-      <Explainer id="campaign-content-sources" className="max-w-150">
+      <Explainer id="campaign-content-sources">
         Posts are always written from the campaign — its brief, type, and
         settings — plus the model's general knowledge. Choose what else they may
         draw on.
