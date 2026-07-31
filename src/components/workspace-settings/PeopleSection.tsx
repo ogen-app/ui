@@ -112,7 +112,7 @@ function PeopleSectionComponent() {
           </div>
 
           {pending.length > 0 && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 border-t border-quaternary pt-6">
               <SubHeader>Pending invitations</SubHeader>
               <ul className="flex flex-col divide-y divide-quaternary">
                 {pending.map((inv) => (
@@ -272,13 +272,16 @@ function InvitationRow({
   const expired = invitation.status === 'expired'
 
   return (
-    <li className="py-3 first:pt-0 last:pb-0 flex items-center gap-2 min-w-0">
+    <li className="py-4 first:pt-0 last:pb-0 flex items-center gap-2 min-w-0">
       <div className="flex flex-1 items-center gap-3 min-w-0">
+        {/* The square, unrounded mark against a member's round avatar is what
+            says "not here yet" — so the type below it stays identical to a
+            member's rather than dimming to repeat the point. */}
         <span className="flex size-9 shrink-0 items-center justify-center bg-secondary">
           <EnvelopeSimpleIcon className="size-4 text-tertiary-foreground" />
         </span>
         <div className="flex flex-col min-w-0">
-          <span className="text-sm truncate text-secondary-foreground">
+          <span className="text-sm truncate text-primary-foreground">
             {invitation.email}
           </span>
           <span
@@ -308,7 +311,7 @@ function InvitationRow({
           <>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() =>
                 resend(
@@ -442,14 +445,9 @@ function InviteForm({
         </Button>
       </div>
 
-      {/* Names the person and the permission in one sentence — the role's
-          consequence is easier to judge against an address than against a
-          label. */}
-      <p className="text-xs text-tertiary-foreground">
-        A member with{' '}
-        <span className="text-secondary-foreground">{trimmed || 'this address'}</span> will
-        be able to {ROLE_ABILITIES[role]}
-      </p>
+      {/* What the chosen role actually grants. It reads as a caption to the
+          Role select, so it says only what changes with the select. */}
+      <p className="text-xs text-tertiary-foreground">{ROLE_ABILITIES[role]}</p>
     </form>
   )
 }

@@ -75,15 +75,19 @@ export const ROLE_LABELS: Record<WorkspaceRole, string> = {
 }
 
 /**
- * What each role can do, phrased to complete "…will be able to ___" so the UI
- * can name the person and the permission in one sentence.
+ * What each role can do — whole sentences that stand on their own beside the
+ * role picker, with no carrier phrase naming the invitee: the address is in
+ * the field alongside, and repeating it said nothing the form didn't already.
+ *
+ * Kept to within a few characters of each other on purpose. They swap in place
+ * as the role changes, so a line that wraps for one role and not the next
+ * shifts everything under it.
  */
 export const ROLE_ABILITIES: Record<WorkspaceRole, string> = {
-  owner:
-    'do everything here, including billing, deleting the workspace and appointing other owners.',
-  admin: 'invite people, connect social accounts and change workspace settings.',
-  member: 'plan, write and publish content, but not change workspace settings.',
-  viewer: 'read campaigns, posts and assets, but not change or publish anything.',
+  owner: 'Can do anything here — billing, deleting the workspace, appointing owners.',
+  admin: 'Can invite people, connect social accounts and change workspace settings.',
+  member: 'Can plan, write and publish content, but not change workspace settings.',
+  viewer: 'Can read campaigns, posts and assets, but not change or publish anything.',
 }
 
 /**

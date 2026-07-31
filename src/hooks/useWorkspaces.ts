@@ -62,14 +62,40 @@ export function useActiveWorkspace(): Workspace | undefined {
  */
 export function useSwitchWorkspace() {
   return useMutation({
-    mutationFn: switchWorkspace,
-    onSuccess: () => {
+    mutationFn: async (id: string) => {
+      const started = Date.now()
+      await switchWorkspace(id)
+
+      // A switch that resolves in 40ms and then blanks the screen for a reload
+      // reads as a glitch. Held to a floor so the cover, the word "Switching"
+      // and the reload are one deliberate movement instead of three flickers —
+      // see `WorkspaceSwitchOverlay`, whose fade this floor is measured
+      // against.
+      const elapsed = Date.now() - started
+      if (elapsed < MIN_SWITCH_MS) {
+        await new Promise((resolve) => setTimeout(resolve, MIN_SWITCH_MS - elapsed))
+      }
+
       queryClient.clear()
       invalidateSession()
       window.location.assign('/')
+
+      // Deliberately never resolves. `assign` only *schedules* the navigation,
+      // so a resolved mutation would drop `isPending` — and with it the
+      // overlay — for the few frames before the document is replaced, showing
+      // the old workspace on the way out. A rejection still settles normally,
+      // which is what lets a failed switch put the page back.
+      return new Promise<void>(() => {})
     },
   })
 }
+
+/**
+ * The floor on a switch, from request to reload: 500ms of it is the overlay's
+ * fade (300ms, after a 200ms delay on the spinner), leaving a full second of
+ * "Switching" on screen.
+ */
+const MIN_SWITCH_MS = 1500
 
 export function useCreateWorkspace() {
   const qc = useQueryClient()

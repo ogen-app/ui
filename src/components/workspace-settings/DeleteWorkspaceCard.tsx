@@ -95,7 +95,7 @@ export function DeleteWorkspaceCard() {
         isOpen={open}
         onClose={close}
         title={`Delete ${workspace.name}?`}
-        size="small"
+        size="default"
         closeOnBackdropClick={!isPending}
         closeOnEscape={!isPending}
       >
@@ -125,7 +125,7 @@ export function DeleteWorkspaceCard() {
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={close} disabled={isPending}>
-              Keep workspace
+              KEEP WORKSPACE
             </Button>
             <Button
               type="submit"

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
 import { WorkspaceMark } from '@/components/layout/WorkspaceMark.tsx'
 import { CreateWorkspaceDialog } from '@/components/workspace-settings/CreateWorkspaceDialog'
+import { WorkspaceSwitchOverlay } from '@/components/workspace-settings/WorkspaceSwitchOverlay'
 import { useSwitchWorkspace, useWorkspaces } from '@/hooks/useWorkspaces'
 import { useAuthStore } from '@/stores/authStore'
 import { ROLE_LABELS, type Workspace } from '@/types/workspace'
@@ -29,7 +30,7 @@ export default function WorkspacesPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { data: workspaces, isLoading, isError } = useWorkspaces()
-  const { mutate: switchTo, isPending, variables: switchingId } = useSwitchWorkspace()
+  const { mutate: switchTo, isPending } = useSwitchWorkspace()
   const [createOpen, setCreateOpen] = useState(false)
 
   const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
@@ -76,7 +77,6 @@ export default function WorkspacesPage() {
                   <WorkspaceChoice
                     workspace={w}
                     busy={isPending}
-                    switching={isPending && switchingId === w.id}
                     onSelect={() => handleOpen(w)}
                   />
                 </li>
@@ -121,6 +121,7 @@ export default function WorkspacesPage() {
       </div>
 
       <CreateWorkspaceDialog isOpen={createOpen} onClose={() => setCreateOpen(false)} />
+      <WorkspaceSwitchOverlay active={isPending} />
     </PageContainer>
   )
 }
@@ -132,12 +133,10 @@ function Card({ className, children }: { className?: string; children: React.Rea
 function WorkspaceChoice({
   workspace,
   busy,
-  switching,
   onSelect,
 }: {
   workspace: Workspace
   busy: boolean
-  switching: boolean
   onSelect: () => void
 }) {
   const { is_active: active } = workspace
@@ -166,10 +165,9 @@ function WorkspaceChoice({
         </span>
       </span>
       {/* The current workspace is marked, not styled differently: the row it
-          sits in stays identical to every other one. */}
-      {switching ? (
-        <span className="shrink-0 text-xs text-tertiary-foreground">Switching…</span>
-      ) : active ? (
+          sits in stays identical to every other one. Nothing marks the row
+          being switched to — the overlay has the whole screen by then. */}
+      {active ? (
         <span className="flex shrink-0 items-center gap-1 text-xs text-primary-foreground">
           <CheckCircleIcon weight="fill" className="size-3.5 text-positive" />
           Current

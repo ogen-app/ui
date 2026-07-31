@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { useCreateWorkspace, useSwitchWorkspace } from '@/hooks/useWorkspaces'
+import { WorkspaceSwitchOverlay } from './WorkspaceSwitchOverlay'
 import { toast } from '@/stores/toastStore'
 
 type Props = {
@@ -52,56 +53,62 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
   }
 
   return (
-    <ModalContainer
-      isOpen={isOpen}
-      onClose={busy ? () => {} : onClose}
-      title="New workspace"
-      size="small"
-      closeOnBackdropClick={!busy}
-      closeOnEscape={!busy}
-    >
-      <form
-        className="flex flex-col gap-5"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (trimmed) submit(true)
-        }}
+    <>
+      {/* Create-and-switch ends in the same reload as any other switch, so it
+          gets the same cover — over the dialog, which is why the overlay
+          portals to the body. */}
+      <WorkspaceSwitchOverlay active={switching} />
+      <ModalContainer
+        isOpen={isOpen}
+        onClose={busy ? () => {} : onClose}
+        title="New workspace"
+        size="default"
+        closeOnBackdropClick={!busy}
+        closeOnEscape={!busy}
       >
-        <p className="text-sm text-tertiary-foreground">
-          A workspace has its own campaigns, content and connected accounts — and its
-          own set of social accounts, so a second workspace is how you run a second
-          LinkedIn or Facebook page alongside this one.
-        </p>
+        <form
+          className="flex flex-col gap-5"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (trimmed) submit(true)
+          }}
+        >
+          <p className="text-sm text-tertiary-foreground">
+            A workspace has its own campaigns, content and connected accounts — and
+            its own set of social accounts, so a second workspace is how you run a
+            second LinkedIn or Facebook page alongside this one.
+          </p>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="workspace-name">Name</Label>
-          <Input
-            id="workspace-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Northwind Client"
-            autoFocus
-            disabled={busy}
-          />
-        </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="workspace-name">Name</Label>
+            <Input
+              id="workspace-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Northwind Client"
+              autoFocus
+              disabled={busy}
+            />
+          </div>
 
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => submit(false)}
-            disabled={!trimmed || busy}
-          >
-            Create only
-          </Button>
-          <Button type="submit" disabled={!trimmed || busy} loading={busy}>
-            Create and switch
-          </Button>
-        </div>
-      </form>
-    </ModalContainer>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => submit(false)}
+              disabled={!trimmed || busy}
+            >
+              Create only
+            </Button>
+            <Button type="submit" disabled={!trimmed || busy} loading={busy}>
+              Create and switch
+            </Button>
+          </div>
+        </form>
+      </ModalContainer>
+    </>
   )
 }

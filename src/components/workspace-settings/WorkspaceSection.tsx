@@ -40,7 +40,7 @@ function WorkspaceSectionComponent() {
                   onClick={() => navigate({ to: '/workspaces' })}
                 >
                   <ArrowsLeftRightIcon />
-                  <span>Switch</span>
+                  <span>SWITCH</span>
                 </Button>
               }
             >
