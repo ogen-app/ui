@@ -57,6 +57,24 @@ type ApiErrorBody = {
  */
 const MAX_VALIDATION_DETAILS = 4;
 
+/**
+ * The account-selection 422s (CON-150) send a bare machine code as `error`
+ * — `AccountSelectionError.Reason` in
+ * `src/post_actions/schedule/schedule.go`. Every other endpoint sends prose,
+ * so without this the user would read "account_selection_required" in a
+ * toast. The UI blocks these cases up front (see `getTransitionBlockers`);
+ * what lands here is the race the client can't see — a second account
+ * connected, or the chosen one disconnected, since the page loaded.
+ */
+const ACCOUNT_SELECTION_MESSAGES: Record<string, string> = {
+  account_selection_required:
+    "This platform has more than one connected account, so the post has to say which one it publishes as. Pick an account and try again.",
+  account_unavailable:
+    "The account this post publishes as is no longer connected. Pick another one and try again.",
+  account_platform_mismatch:
+    "The account this post publishes as belongs to a different platform. Pick one that matches and try again.",
+};
+
 function validationDetails(
   byPlatform: ApiErrorBody["platform_validation"]
 ): string[] {
@@ -87,6 +105,8 @@ export async function errorMessage(
   try {
     const body = (await res.json()) as ApiErrorBody;
     if (typeof body.error === "string" && body.error.length > 0) {
+      const accountMessage = ACCOUNT_SELECTION_MESSAGES[body.error];
+      if (accountMessage) return accountMessage;
       const details = validationDetails(body.platform_validation);
       if (details.length === 0) return body.error;
       const shown = details.slice(0, MAX_VALIDATION_DETAILS);

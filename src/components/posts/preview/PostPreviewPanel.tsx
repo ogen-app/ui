@@ -53,7 +53,14 @@ export function PostPreviewPanel({
   onClose?: () => void
 }) {
   const platform = getPlatformInfo(doc.platform_id)
-  const author = usePublishingAccount(doc.platform_id)
+  // Renders as the account the post actually publishes as — including a
+  // disconnected one on a post that already went out, which is the only
+  // honest byline for it.
+  const author = usePublishingAccount(
+    doc.platform_id,
+    doc.social_account_id,
+    doc.social_account,
+  )
 
   const text = useMemo(() => markdownToSocialText(doc.content), [doc.content])
 

@@ -27,6 +27,7 @@ import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
 import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
+import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import { isAutoPublishAllowed, resolvePublishMethod } from '@/lib/autoPublish'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
@@ -131,6 +132,16 @@ function PostEditorSurface({
   // section are two views of the same state (and share upload progress).
   const media = usePostMedia(doc)
 
+  // Which of the platform's connected accounts this post publishes as
+  // (CON-150). Resolved here because two consumers must agree: the
+  // quick-settings bar offers the choice, and SCHEDULE is blocked without
+  // one when the platform has more than a single account.
+  const account = usePublishingAccount(
+    doc.platform_id,
+    doc.social_account_id,
+    doc.social_account,
+  )
+
   // Called once, here, and shared: the header button and the badge menu must
   // see the same in-flight guard, or one could fire a second transition
   // while the other's request is still open.
@@ -141,6 +152,7 @@ function PostEditorSurface({
     cancelScheduled,
     cancelling,
     publishMethod: effectivePublishMethod,
+    context: { account },
   })
   const statusBusy = pending || cancelling
   const flashBlockers = useCallback(() => setAttention((n) => n + 1), [])

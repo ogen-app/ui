@@ -80,6 +80,7 @@ export function postToPayload(post: Post): PostPayload {
     campaign_id: post.campaign_id,
     platform_id: post.platform_id,
     platform_post_type: post.platform_post_type,
+    social_account_id: post.social_account_id,
     title: post.title,
     content: post.content,
     media_urls: post.media_urls,

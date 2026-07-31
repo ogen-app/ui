@@ -1,4 +1,4 @@
-import type { Campaign } from '@/types/campaigns'
+import type { Campaign, PublisherAccount } from '@/types/campaigns'
 
 export type PostStatus =
   | 'draft'
@@ -16,6 +16,12 @@ export type Post = {
   campaign_id: string
   platform_id: string
   platform_post_type: string
+  /**
+   * Which of the platform's connected accounts this post publishes as
+   * (CON-150). Empty when unspecified: the submit worker then auto-selects
+   * the platform's single account, or refuses when there is more than one.
+   */
+  social_account_id: string
   title: string
   content: string
   media_urls: string[]
@@ -32,6 +38,13 @@ export type Post = {
   updated_at: string
   campaign: Campaign | null
   platform: { id: string; name: string; post_types: Record<string, string>; cadence: string; constraints: string; created_at: string; updated_at: string } | null
+  /**
+   * The chosen account, hydrated. Optional on the wire (`omitempty`), and
+   * the server hydrates disconnected accounts too — so a post that already
+   * went out can still name the account it went out as, long after that
+   * account left the platform's connected list.
+   */
+  social_account?: PublisherAccount | null
   used_assets: unknown[]
   campaign_type_phase: unknown | null
 }
@@ -56,6 +69,7 @@ export type PostPayload = {
   campaign_id: string
   platform_id?: string
   platform_post_type?: string
+  social_account_id?: string
   title?: string
   content?: string
   media_urls?: string[]
