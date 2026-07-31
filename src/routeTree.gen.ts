@@ -14,6 +14,7 @@ import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unav
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedContentBankRouteImport } from './routes/_authenticated/content-bank'
+import { Route as DesignLoadingStatesIndexRouteImport } from './routes/design/loading-states/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
@@ -60,6 +61,12 @@ const AuthenticatedContentBankRoute =
     id: '/content-bank',
     path: '/content-bank',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const DesignLoadingStatesIndexRoute =
+  DesignLoadingStatesIndexRouteImport.update({
+    id: '/design/loading-states/',
+    path: '/design/loading-states/',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
   id: '/auth/register/',
@@ -202,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
+  '/design/loading-states/': typeof DesignLoadingStatesIndexRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -227,6 +235,7 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginIndexRoute
   '/auth/logout': typeof AuthLogoutIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
+  '/design/loading-states': typeof DesignLoadingStatesIndexRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -256,6 +265,7 @@ export interface FileRoutesById {
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
+  '/design/loading-states/': typeof DesignLoadingStatesIndexRoute
   '/_authenticated/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/_authenticated/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/_authenticated/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/auth/login/'
     | '/auth/logout/'
     | '/auth/register/'
+    | '/design/loading-states/'
     | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
@@ -310,6 +321,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/logout'
     | '/auth/register'
+    | '/design/loading-states'
     | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
@@ -338,6 +350,7 @@ export interface FileRouteTypes {
     | '/auth/login/'
     | '/auth/logout/'
     | '/auth/register/'
+    | '/design/loading-states/'
     | '/_authenticated/campaigns/$campaignId/assets'
     | '/_authenticated/campaigns/$campaignId/brief'
     | '/_authenticated/campaigns/$campaignId/list'
@@ -356,6 +369,7 @@ export interface RootRouteChildren {
   AuthLoginIndexRoute: typeof AuthLoginIndexRoute
   AuthLogoutIndexRoute: typeof AuthLogoutIndexRoute
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
+  DesignLoadingStatesIndexRoute: typeof DesignLoadingStatesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -394,6 +408,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/content-bank'
       preLoaderRoute: typeof AuthenticatedContentBankRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/design/loading-states/': {
+      id: '/design/loading-states/'
+      path: '/design/loading-states'
+      fullPath: '/design/loading-states/'
+      preLoaderRoute: typeof DesignLoadingStatesIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/register/': {
       id: '/auth/register/'
@@ -637,6 +658,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLoginIndexRoute: AuthLoginIndexRoute,
   AuthLogoutIndexRoute: AuthLogoutIndexRoute,
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,
+  DesignLoadingStatesIndexRoute: DesignLoadingStatesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

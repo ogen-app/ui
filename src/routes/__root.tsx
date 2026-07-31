@@ -43,6 +43,14 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     const isAuthRoute = location.pathname === "/auth" || location.pathname.startsWith("/auth/");
     const isServerDownRoute = location.pathname === SERVER_DOWN_PATH;
 
+    // DESIGN BRANCH ONLY — never merge this hunk into develop. /design/*
+    // renders component fixtures: no user, no API, so skipping the probe lets
+    // it open with the backend down. It is also an unauthenticated path, which
+    // is exactly why it lives on `design/*` and not on the trunk.
+    if (location.pathname.startsWith("/design")) {
+      return { auth: { isAuthenticated: false } };
+    }
+
     // CON-97: there is no instance-wide first-run setup anymore — onboarding is
     // self-service signup (POST /api/tenants) at /auth/register. One probe of
     // GET /api/current_user does triple duty: reachability check (network/5xx
