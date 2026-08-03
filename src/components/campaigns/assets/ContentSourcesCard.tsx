@@ -116,7 +116,7 @@ function ModeTile({
       <span
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-md transition-colors",
-          selected ? "bg-foreground text-background" : "bg-transparent",
+          selected ? "bg-foreground text-background" : "bg-secondary",
         )}
       >
         <Icon className="size-6" />

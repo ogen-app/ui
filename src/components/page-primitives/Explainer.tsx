@@ -53,10 +53,12 @@ export function Explainer({ id, children, className }: Props) {
           {children}
         </div>
       </div>
+      {/* 24px rather than the 32 `smIcon` gives it: this button dismisses the
+          note, it isn't the point of it. */}
       <Button
         variant="ghost"
         size="smIcon"
-        className="-mr-1 shrink-0"
+        className="-mr-1 size-6 shrink-0"
         aria-label="Hide this explanation"
         onClick={() => dismissNote(id)}
       >

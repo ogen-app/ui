@@ -5,6 +5,7 @@ import {
   type AssetPoolFilters,
 } from "@/lib/assetPool";
 import type { SourceMode } from "@/lib/campaignSources";
+import { cn } from "@/lib";
 import type { Asset } from "@/types/content";
 import { AssetPoolTable } from "./AssetPoolTable";
 import { AssetPoolToolbar } from "./AssetPoolToolbar";
@@ -77,9 +78,10 @@ export function AssetPoolSection({
     );
 
   return (
-    // px-6 matches the card's own padding above, so the heading, the search
-    // field and the table all start on the same line as "Content sources".
-    <div className="flex min-h-0 flex-1 flex-col gap-4 px-6">
+    // Full width: the table is the page's own content, not something inset
+    // inside it. pt-4 puts air between the tiles and this heading, on top of
+    // the gap the page already leaves.
+    <div className="flex min-h-0 flex-1 flex-col gap-4 pt-4">
       <h2 className="font-display text-xl font-medium tracking-tight">
         {inUseLabel(inUse)}
       </h2>
@@ -91,7 +93,16 @@ export function AssetPoolSection({
         selectable={selectable}
       />
 
-      <div className="grid min-h-0 flex-1 overflow-hidden">
+      {/* The table normally takes whatever height is left, which on a short
+          screen is almost none — fine for rows, since they scroll, but it
+          flattens the empty state into a sliver. Floor it when there is
+          nothing to scroll. */}
+      <div
+        className={cn(
+          "grid min-h-0 flex-1 overflow-hidden",
+          visible.length === 0 && "min-h-50",
+        )}
+      >
         <AssetPoolTable
           assets={visible}
           selectedIds={checkedIds}

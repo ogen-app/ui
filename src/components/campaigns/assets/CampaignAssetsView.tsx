@@ -47,7 +47,11 @@ export function CampaignAssetsView({
   );
 
   return (
-    <div className="flex min-h-0 flex-col gap-4 py-4">
+    // `overflow-y-auto` only ever fires when the list is empty and its floor
+    // out-grows a short window. With rows the table shrinks to fit and
+    // scrolls itself, so the page scrollbar never appears and the two never
+    // compete for a wheel gesture.
+    <div className="flex min-h-0 flex-col gap-4 overflow-y-auto py-4">
       <div className="shrink-0">
         <ContentSourcesCard
           mode={mode}

@@ -31,11 +31,15 @@ const Checkbox = React.forwardRef<React.ComponentRef<typeof CheckboxPrimitive.Ro
       <CheckboxPrimitive.Indicator
         className={cn('flex items-center justify-center w-full h-full text-primary')}
       >
-        {/* Phosphor's heaviest tick, sized to the 9px left inside the border:
-            at 12px anything lighter reads as a smudge. */}
+        {/* `bold`, never `fill`: Phosphor draws Check's fill variant as a solid
+            square with the tick knocked out of it, which inside an already
+            filled box reads as a white chip rather than a checkmark. Bold is
+            the heaviest stroke it has. 10px overspills the 9px the border
+            leaves, which is what we want — checked, box and border are one
+            colour, so the tick gets the whole 12px square. */}
         <CheckIcon
-          weight="fill"
-          className={cn('size-[10px] text-current', iconClassName)}
+          weight="bold"
+          className={cn('size-2.5 text-current', iconClassName)}
         />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
