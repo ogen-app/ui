@@ -129,11 +129,17 @@ instance-operator surface with no UI here — see backend gaps below.)
   that renames via `PUT /api/tenants/:id`.
 - **`PlatformsSection`** — one row per platform with a **connected** account:
   status badge + message (derived from the publisher's disabled/degraded/ok
-  state and account activity), posting rules, mirrored accounts, and a
-  disabled Disconnect button (no backend endpoint yet — see gaps).
-- **`ConnectPlatformsSection`** — a tile grid of every platform without a
-  connected account; when the integration reports `disabled` the tiles grey
-  out (they don't hide). Clicking a tile runs the in-app
+  state and account activity), posting rules, and the mirrored accounts. Each
+  account carries its own **Disconnect** control (`DELETE
+  /api/integrations/zernio/accounts/:id`, CON-133) behind a confirm dialog
+  that escalates to `?force=true` only when the server reports scheduled posts
+  on that account — see
+  [`technical-decisions.md#disconnect`](./technical-decisions.md#disconnect).
+- **`ConnectPlatformsSection`** — a tile grid of **every** platform, connected
+  or not: a workspace can hold several accounts per platform, so a tile never
+  disappears once used (a connected one captions "N connected"). When the
+  integration reports `disabled` the tiles grey out (they don't hide).
+  Clicking a tile runs the in-app
   connect flow: `POST /api/integrations/zernio/connect-links` → open the
   one-shot `connectUrl` in a new tab → poll the platform list until the
   per-tenant sync (CON-100) mirrors the authorized account back, then the
@@ -150,11 +156,7 @@ UI-side (this repo):
 
 1. **No invite-teammate UI** — `users.register()` is ready but unwired
    (CON-26 is the placeholder ticket for real invitations).
-2. **No account disconnect** — the API exposes no disconnect endpoint and
-   tenants can't reach the platform-owned Zernio dashboard, so the
-   Disconnect button in Platform Settings renders disabled until the
-   backend grows one.
-3. **No password reset / email verification** — blocked on the backend
+2. **No password reset / email verification** — blocked on the backend
    growing email infrastructure; the UI deliberately has no stub for either.
 
 Backend-side (tracked against the API repo, listed here for context):
