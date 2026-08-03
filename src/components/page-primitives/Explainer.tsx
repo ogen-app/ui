@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 import { XIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { useDismissedNote } from "@/hooks/useDismissedNote";
 import { cn } from "@/lib";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 type Props = {
   /**
-   * Stable id this note is remembered under, account-wide. Name it for the
-   * thing being explained (`campaign-content-sources`), not for the page —
-   * renaming it un-dismisses the note for everyone who already closed it.
+   * Stable id this note is remembered under. Name it for the thing being
+   * explained (`campaign-content-sources`), not for the page — renaming it
+   * un-dismisses the note for everyone who already closed it.
    */
   id: string;
   children: ReactNode;
@@ -21,21 +21,21 @@ type Props = {
  *
  * The problem this solves: copy that is exactly right the first time a user
  * meets a screen is furniture by the tenth, and there is no wording that is
- * both. So the text is written for the first read and the user gets to end it
- * — the dismissal is stored per user (`useDismissedNote`) and the note never
- * comes back, on any machine.
+ * both. So the text is written for the first read and the user gets to end it.
  *
  * Because of that, an Explainer may only ever hold *teaching*. Anything the
  * user needs to see while working — a count, a warning, a validation message —
  * must live outside it, or it disappears with the note.
  *
- * Renders nothing at all until the stored set has loaded, so a closed note
- * doesn't flash on every page load.
+ * Dismissals live in the persisted settings store, so they are per browser and
+ * cost nothing to read — the note is gone on the first frame, with no request
+ * to wait for and no row in the workspace-wide settings table.
  */
 export function Explainer({ id, children, className }: Props) {
-  const { dismissed, ready, dismiss } = useDismissedNote(id);
+  const dismissed = useSettingsStore((s) => s.dismissedNotes.includes(id));
+  const dismissNote = useSettingsStore((s) => s.dismissNote);
 
-  if (!ready || dismissed) return null;
+  if (dismissed) return null;
 
   return (
     <aside
@@ -58,7 +58,7 @@ export function Explainer({ id, children, className }: Props) {
         size="smIcon"
         className="-mr-1 shrink-0"
         aria-label="Hide this explanation"
-        onClick={dismiss}
+        onClick={() => dismissNote(id)}
       >
         <XIcon />
       </Button>

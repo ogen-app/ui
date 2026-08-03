@@ -164,16 +164,24 @@ editor's autosave.
 ## Explanatory copy is dismissible, and dismissal is permanent {#explainers}
 
 **Decision.** Copy that teaches how a screen works goes in an `<Explainer>`,
-not in a bare `<p>`. It carries a close button; closing it is stored per user
-and the note never comes back. All of a user's dismissals share one key,
-`dismissed.<userId>`, holding a JSON array of note ids.
+not in a bare `<p>`. It carries a close button; closing it is remembered and
+the note never comes back. Dismissals are a `dismissedNotes: string[]` field on
+the persisted `settingsStore` — device-local, in `localStorage`.
 
 **Why.** Text that is exactly right on a user's first visit is furniture by
 their tenth, and no single wording is both. Rather than pick one and lose the
 other, the copy is written for the first read and the user is given the way to
-end it. Storing that server-side rather than in `localStorage` is the point of
-the feature — a note the user already dismissed reappearing on their laptop is
-the same annoyance again.
+end it.
+
+**Why local rather than `userScopedKey`.** The first version put dismissals in
+`/api/settings`, so a closed note stayed closed on the user's other machine.
+That is the wrong trade for this: the table is
+[tenant-scoped](#user-scoped-settings), so every teammate would read a row
+recording which tips you closed, and the note could not render until a request
+resolved — a fetch, a loading gate, and a rollback path, all to remember that
+someone clicked an ✕. Seeing a tip once more on a new laptop is a smaller cost
+than any of that. Preferences that carry real content (calendar layout) still
+belong in `userScopedKey`; display noise does not.
 
 **Consequence — the constraint to hold.** An Explainer may only ever contain
 *teaching*. Anything a user needs while working — a count, a warning, a
@@ -182,11 +190,11 @@ vanishes for everyone who closed the note. When adding one, check the screen
 still reads correctly with it deleted.
 
 **Where.** `components/page-primitives/Explainer.tsx`,
-`hooks/useDismissedNote.ts`. It renders nothing until the stored set has
-loaded, so a closed note never flashes; a failed write rolls the note back
-rather than pretending it was remembered. First use is the campaign Assets
-page (`campaign-content-sources`). Ids are stable identifiers — renaming one
-un-dismisses it for every user who already closed it.
+`stores/settingsStore.ts` (`dismissedNotes`, `dismissNote`). First use is the
+campaign Assets page (`campaign-content-sources`). Ids are stable identifiers —
+renaming one un-dismisses it for everyone who already closed it. There is no
+"show help again" control; `resetAllSettings()` clears the set, and for
+testing, `localStorage.removeItem('settings-store')` does it from the console.
 
 ## Poll narrowly, only while a backend job is in flight
 

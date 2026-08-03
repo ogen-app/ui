@@ -28,6 +28,13 @@ export type LocalSettings = {
 
   // Modal/Dialog State
   lastOpenedModals: Record<string, string> // modal ID -> last opened timestamp
+
+  /**
+   * Ids of `<Explainer>` notes the user has closed for good. Device-local on
+   * purpose: it is display noise, not data, and the shared `/api/settings`
+   * table is the wrong home for it.
+   */
+  dismissedNotes: string[]
 }
 
 type SettingsState = LocalSettings & {
@@ -43,6 +50,9 @@ type SettingsState = LocalSettings & {
 
   recordModalOpened: (modalId: string) => void
 
+  /** Close an explainer permanently. Idempotent. */
+  dismissNote: (id: string) => void
+
   // Reset all settings to defaults
   resetAllSettings: () => void
 }
@@ -52,6 +62,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   activeRightPanel: null,
   rightPanelCampaignId: null,
   lastOpenedModals: {},
+  dismissedNotes: [],
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -99,7 +110,16 @@ export const useSettingsStore = create<SettingsState>()(
           }))
         },
 
-        // Reset all settings
+        dismissNote: (id) => {
+          set((state) =>
+            state.dismissedNotes.includes(id)
+              ? state
+              : { dismissedNotes: [...state.dismissedNotes, id] }
+          )
+        },
+
+        // Reset all settings — this brings closed explainers back, which is
+        // the only way to see one again.
         resetAllSettings: () => {
           set(DEFAULT_SETTINGS)
         },
@@ -110,6 +130,7 @@ export const useSettingsStore = create<SettingsState>()(
         partialize: (state) => ({
           sidebarCollapsed: state.sidebarCollapsed,
           lastOpenedModals: state.lastOpenedModals,
+          dismissedNotes: state.dismissedNotes,
           // Don't persist
           // activeRightPanel, rightPanelCampaignId
         }),

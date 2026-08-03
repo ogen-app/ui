@@ -83,7 +83,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `calendar.<userId>.<campaignId>`); never put anything sensitive there. See
   `docs/technical-decisions.md#user-scoped-settings`.
 - **Explanatory copy goes in `<Explainer>`**, which the user can close for
-  good (stored per user, `dismissed.<userId>`). The rule that makes it safe:
+  good (`settingsStore.dismissedNotes`, device-local — display noise doesn't
+  belong in the workspace-wide `/api/settings`). The rule that makes it safe:
   an Explainer holds **teaching only** — never a count, warning, validation
   message, or link the user needs while working, because all of it disappears
   for anyone who closes the note. Check the screen still reads correctly with
