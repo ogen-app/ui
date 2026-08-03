@@ -5,6 +5,7 @@ import { postKey } from '@/hooks/usePost'
 import { campaignKey } from '@/hooks/useCampaigns'
 import { describeTool, humanizeStep } from '@/lib/assistantTools'
 import { flushPendingSave } from '@/lib/pendingSaves'
+import { beginLocalRun } from '@/lib/localRuns'
 import {
   listCampaignMessages,
   listPostMessages,
@@ -296,6 +297,10 @@ export const useAssistantStore = create<AssistantState>()(
 
           const controller = new AbortController()
           runners.set(threadId, controller)
+          // The hub reports this turn's outcome too. This tab is streaming it
+          // already and refreshes the subject itself below, so the broadcast
+          // copy is muted for as long as the run is ours (CON-134).
+          const endLocalRun = beginLocalRun('assistant', saveKeyFor(subject))
 
           // A turn that lands while the user is elsewhere is "unread" — the
           // sidebar trigger carries the dot until they come back to it.
@@ -459,6 +464,7 @@ export const useAssistantStore = create<AssistantState>()(
             finish(aborted ? 'idle' : 'error')
           } finally {
             runners.delete(threadId)
+            endLocalRun()
             patchThread(threadId, { streamedPosts: [] })
           }
         },

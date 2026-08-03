@@ -25,6 +25,19 @@ export function registerPendingSave(key: string, flush: () => Promise<void>): ()
   }
 }
 
+/**
+ * Flushes every registered editor, whatever it is editing.
+ *
+ * For the event stream's reconnect reconcile (CON-134): that refetches broadly,
+ * and a refetch landing on top of a debounced edit replaces what the user is
+ * looking at with pre-edit server state for as long as the debounce has left to
+ * run. Writing first means the server state it fetches already contains the
+ * edit.
+ */
+export async function flushAllPendingSaves(): Promise<void> {
+  await Promise.all([...flushers.keys()].map((key) => flushPendingSave(key)))
+}
+
 /** Resolves once every pending save for `key` has been written (or if none). */
 export async function flushPendingSave(key: string): Promise<void> {
   const set = flushers.get(key)

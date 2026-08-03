@@ -1,34 +1,18 @@
 import type { DraftPlanStreamHandlers } from "@/types/contentPlan";
+import { readSSEStream } from "@/lib/sse";
+import { beginLocalRun } from "@/lib/localRuns";
 import { errorMessage } from "./errors";
 import { apiUrl } from "./base";
 
 const FALLBACK_ERROR = "Unable to generate a content plan";
 
-type SSEMessage = { event: string; data: string };
-
 /**
- * Incremental parser for a `text/event-stream` body. Feed it decoded chunks;
- * it yields complete messages as they close (blank line). Only the `event:`
- * and `data:` fields are used — that is all the backend emits.
+ * Thrown from the frame handler to stop reading once the terminal `complete`
+ * has landed, and caught immediately below. The server closes the stream
+ * itself, but a plan can take minutes and there is no reason to keep the read
+ * pending on a connection with nothing left to say.
  */
-function createSSEParser(onMessage: (msg: SSEMessage) => void) {
-  let buffer = "";
-  return (chunk: string) => {
-    buffer += chunk;
-    let boundary: number;
-    while ((boundary = buffer.indexOf("\n\n")) !== -1) {
-      const raw = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 2);
-      let event = "message";
-      const data: string[] = [];
-      for (const line of raw.split("\n")) {
-        if (line.startsWith("event:")) event = line.slice(6).trim();
-        else if (line.startsWith("data:")) data.push(line.slice(5).trim());
-      }
-      if (data.length > 0) onMessage({ event, data: data.join("\n") });
-    }
-  };
-}
+const COMPLETE = Symbol("draft-plan-complete");
 
 /**
  * Runs AI draft-plan generation for a campaign and streams progress.
@@ -54,44 +38,38 @@ export async function streamDraftPlan(
     throw new Error(await errorMessage(res, FALLBACK_ERROR));
   }
 
-  let streamError: string | null = null;
-  let completed = false;
-  const parse = createSSEParser(({ event, data }) => {
-    switch (event) {
-      case "step":
-        handlers.onStep?.(JSON.parse(data));
-        break;
-      case "post":
-        handlers.onPost?.(JSON.parse(data));
-        break;
-      case "warning":
-        handlers.onWarning?.(JSON.parse(data));
-        break;
-      case "complete":
-        completed = true;
-        handlers.onComplete?.(JSON.parse(data));
-        break;
-      case "error": {
-        const payload = JSON.parse(data) as { message?: string };
-        streamError = payload.message || FALLBACK_ERROR;
-        break;
-      }
-    }
-  });
+  // The hub announces `content_plan_completed` for this run too. The caller is
+  // watching the stream below and reacting to each `post` as it lands, so the
+  // broadcast copy is muted while the run is ours (CON-134).
+  const endLocalRun = beginLocalRun("contentPlan", campaignId);
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
+  let completed = false;
   try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      parse(decoder.decode(value, { stream: true }));
-      if (streamError) throw new Error(streamError);
-      if (completed) return;
-    }
+    await readSSEStream(res.body, ({ event, data }) => {
+      switch (event) {
+        case "step":
+          handlers.onStep?.(JSON.parse(data));
+          break;
+        case "post":
+          handlers.onPost?.(JSON.parse(data));
+          break;
+        case "warning":
+          handlers.onWarning?.(JSON.parse(data));
+          break;
+        case "complete":
+          completed = true;
+          handlers.onComplete?.(JSON.parse(data));
+          throw COMPLETE;
+        case "error": {
+          const payload = JSON.parse(data) as { message?: string };
+          throw new Error(payload.message || FALLBACK_ERROR);
+        }
+      }
+    });
+  } catch (err) {
+    if (err !== COMPLETE) throw err;
   } finally {
-    reader.cancel().catch(() => {});
+    endLocalRun();
   }
-  if (streamError) throw new Error(streamError);
   if (!completed) throw new Error("Generation was interrupted before completing");
 }
