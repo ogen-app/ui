@@ -3,4 +3,3 @@ export { AssetPoolSection } from "./AssetPoolSection";
 export { ContentSourcesCard } from "./ContentSourcesCard";
 export { AssetPoolTable } from "./AssetPoolTable";
 export { AssetPoolToolbar } from "./AssetPoolToolbar";
-export { SelectionBar } from "./SelectionBar";

@@ -72,15 +72,6 @@ describe("filterAssetPool", () => {
     ).toHaveLength(3);
   });
 
-  it("takes any of the chosen tags, not all of them", () => {
-    const result = filterAssetPool(
-      BANK,
-      filters({ tagIds: ["t-pricing", "t-research"] }),
-      [],
-    );
-    expect(ids(result).sort()).toEqual(["pricing", "research", "voice"]);
-  });
-
   it("narrows to the shortlist in review mode", () => {
     expect(
       ids(filterAssetPool(BANK, filters({ selectedOnly: true }), ["voice"])),
@@ -110,7 +101,6 @@ describe("isFiltered", () => {
 
   it("is true for anything that narrows the list", () => {
     expect(isFiltered(filters({ query: "a" }))).toBe(true);
-    expect(isFiltered(filters({ tagIds: ["t"] }))).toBe(true);
     expect(isFiltered(filters({ selectedOnly: true }))).toBe(true);
   });
 });

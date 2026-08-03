@@ -4,7 +4,6 @@ import {
   retrievability,
   selectionStats,
   sourceModeOf,
-  sourcesError,
   sourcesPayload,
 } from "./campaignSources";
 import type { AssetStatus } from "@/types/content";
@@ -64,6 +63,15 @@ describe("sourcesPayload", () => {
   it("round-trips campaign-only over an empty set too", () => {
     // The state every new campaign starts in, and the one the page defaults to.
     expect(sourceModeOf(sourcesPayload("campaign", []))).toBe("campaign");
+  });
+
+  it("falls back to campaign-only when nothing is ticked", () => {
+    // The one thing that must never happen: an empty explicit set saved as
+    // `use_assets: true`, which the server reads as the entire bank.
+    expect(sourcesPayload("selected", [])).toEqual({
+      use_assets: false,
+      asset_ids: [],
+    });
   });
 });
 
@@ -126,14 +134,3 @@ describe("selectionStats", () => {
   });
 });
 
-describe("sourcesError", () => {
-  it("blocks an explicit set with nothing in it — the server would read it as everything", () => {
-    expect(sourcesError("selected", [])).not.toBeNull();
-  });
-
-  it("allows every other combination", () => {
-    expect(sourcesError("selected", ["a"])).toBeNull();
-    expect(sourcesError("all", [])).toBeNull();
-    expect(sourcesError("campaign", [])).toBeNull();
-  });
-});

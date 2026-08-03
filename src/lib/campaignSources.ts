@@ -40,8 +40,13 @@ export type SourceFields = Required<
  * The two campaign fields for a mode plus a working selection.
  *
  * `campaign` keeps the id list so switching the bank off and back on doesn't
- * throw the user's set away. `all` must clear it — a non-empty list is what
+ * throw the user's set away. `all` must clear it: a non-empty list is what
  * makes the server treat the pool as explicit.
+ *
+ * `selected` with nothing ticked saves as campaign-only. It cannot save as
+ * itself, because an empty list is how the server spells *everything*, so
+ * writing it would hand the campaign the opposite of what the user did. Nothing
+ * chosen and nothing used are close enough to be the same thing.
  */
 export function sourcesPayload(
   mode: SourceMode,
@@ -53,7 +58,9 @@ export function sourcesPayload(
     case "all":
       return { use_assets: true, asset_ids: [] };
     case "selected":
-      return { use_assets: true, asset_ids: assetIds };
+      return assetIds.length > 0
+        ? { use_assets: true, asset_ids: assetIds }
+        : { use_assets: false, asset_ids: [] };
   }
 }
 
@@ -116,22 +123,4 @@ export function selectionStats(
 ): PoolStats {
   const selected = new Set(selectedIds);
   return poolStats(assets.filter((a) => selected.has(a.id)));
-}
-
-/**
- * Why this configuration can't be saved, in the interface's voice, or null.
- *
- * `selected` with nothing assigned is the only unsaveable state: the server
- * would read the empty list as "every ready asset" — the opposite of what an
- * empty set looks like it means. Holding the save back here is what lets us
- * skip a third backend field.
- */
-export function sourcesError(
-  mode: SourceMode,
-  selectedIds: string[],
-): string | null {
-  if (mode === "selected" && selectedIds.length === 0) {
-    return "Assign at least one asset, or switch to Campaign only.";
-  }
-  return null;
 }

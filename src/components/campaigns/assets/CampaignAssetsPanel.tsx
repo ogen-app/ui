@@ -4,11 +4,9 @@ import { PageError } from "@/components/page-primitives/PageError";
 import { PageLoader } from "@/components/page-primitives/PageLoader";
 import { useAssets } from "@/hooks/useContent";
 import { useUpdateCampaign } from "@/hooks/useCampaigns";
-import { useTags } from "@/hooks/useTags";
 import { registerPendingSave } from "@/lib/pendingSaves";
 import {
   sourceModeOf,
-  sourcesError,
   sourcesPayload,
   type SourceMode,
 } from "@/lib/campaignSources";
@@ -24,18 +22,16 @@ const SAVE_DELAY = 500;
  *
  * Autosaves like the rest of the campaign rather than adding a Save button:
  * ticking forty checkboxes and then losing them to a stray back-navigation is
- * the failure this page most has to avoid. The mode lands immediately — it's
- * one deliberate click — while checkbox runs are debounced, because that is
- * what a bulk "assign all 40 matching" is.
+ * the failure this page most has to avoid. The mode lands immediately, being
+ * one deliberate click, while checkbox runs are debounced.
  *
- * The one edit that doesn't save is an explicit set emptied to nothing: the
- * server reads an empty list as *every* asset, so writing it would quietly
- * invert what the user just did. It's held until they assign something or
- * switch modes, and `CampaignAssetsView` says so.
+ * Selecting nothing saves as campaign-only (`sourcesPayload`), so the mode the
+ * page is showing and the mode the server has stored can differ for as long as
+ * the selection is empty. Reloading then lands back on Campaign only, which is
+ * what was saved.
  */
 export function CampaignAssetsPanel({ campaign }: { campaign: Campaign }) {
   const { data: assets, isLoading, isError } = useAssets();
-  const { data: tags } = useTags();
   const { mutateAsync: updateCampaign } = useUpdateCampaign();
 
   const [mode, setMode] = useState<SourceMode>(() => sourceModeOf(campaign));
@@ -53,7 +49,6 @@ export function CampaignAssetsPanel({ campaign }: { campaign: Campaign }) {
 
   const saveNow = useCallback(async () => {
     const { mode: m, selectedIds: ids } = stateRef.current;
-    if (sourcesError(m, ids) !== null) return;
     const run = updateCampaign({
       id: campaign.id,
       payload: campaignToPayload(campaign, sourcesPayload(m, ids)),
@@ -124,7 +119,6 @@ export function CampaignAssetsPanel({ campaign }: { campaign: Campaign }) {
       mode={mode}
       onModeChange={changeMode}
       assets={assets ?? []}
-      tags={tags ?? []}
       selectedIds={selectedIds}
       onSelectedIdsChange={changeSelectedIds}
     />

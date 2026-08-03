@@ -172,7 +172,10 @@ function AssetPoolTableComponent({
               aria-label={`Open ${formatTitle(row.title)} in a new tab`}
               className="flex size-6 items-center justify-center"
             >
-              <ArrowSquareOutIcon className="size-4 text-tertiary-foreground hover:text-primary-foreground" />
+              <ArrowSquareOutIcon
+                weight="bold"
+                className="size-4 text-tertiary-foreground hover:text-primary-foreground"
+              />
             </Link>
           </div>
         ),

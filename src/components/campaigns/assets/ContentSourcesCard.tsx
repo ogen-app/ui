@@ -16,7 +16,7 @@ type ModeOption = {
 };
 
 /**
- * The icons are the app's own nav glyphs — Brief, Content Bank — so each tile
+ * The icons are the app's own nav glyphs (Brief, Content Bank), so each tile
  * points at where the campaign's knowledge would come from rather than
  * decorating the choice.
  *
@@ -60,9 +60,8 @@ export function ContentSourcesCard({
       {/* Teaching only, and it says nothing the tiles don't — closing it must
           not cost the user anything they need. */}
       <Explainer id="campaign-content-sources">
-        Posts are always written from the campaign — its brief, type, and
-        settings — plus the model's general knowledge. Choose what else they may
-        draw on.
+        Every post is written from this campaign's brief and settings. Choose
+        whether it can also read your content bank.
       </Explainer>
 
       <div
@@ -132,7 +131,7 @@ function ModeTile({
   );
 }
 
-/** The line under each tile — what picking it resolves to today. */
+/** The line under each tile: what picking it resolves to today. */
 function tileDetail(
   mode: SourceMode,
   bank: PoolStats,
@@ -140,12 +139,12 @@ function tileDetail(
 ): string {
   switch (mode) {
     case "campaign":
-      return "Nothing from the Content Bank";
+      return "General knowledge only";
     case "all":
-      return `Everything in the Content Bank · ${bank.ready} ready`;
+      return `All ${bank.total} assets in content bank`;
     case "selected":
       return selection.total === 0
-        ? "Assigned one by one below"
-        : `${selection.total} assigned`;
+        ? "Nothing selected"
+        : `${selection.total} selected`;
   }
 }

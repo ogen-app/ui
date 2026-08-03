@@ -5,15 +5,13 @@ import {
   type AssetPoolFilters,
 } from "@/lib/assetPool";
 import type { SourceMode } from "@/lib/campaignSources";
-import type { Asset, Tag } from "@/types/content";
+import type { Asset } from "@/types/content";
 import { AssetPoolTable } from "./AssetPoolTable";
 import { AssetPoolToolbar } from "./AssetPoolToolbar";
-import { SelectionBar } from "./SelectionBar";
 
 type Props = {
   /** The whole Content Bank. */
   assets: Asset[];
-  tags: Tag[];
   /**
    * Which of `all` / `selected` the campaign is in. In `all` every row is
    * checked and frozen: the list is answering "what does *everything* mean"
@@ -26,9 +24,20 @@ type Props = {
   onFiltersChange: (filters: AssetPoolFilters) => void;
 };
 
+/** The heading over the list: how many assets this campaign can actually draw on. */
+function inUseLabel(count: number): string {
+  if (count === 0) return "No assets in use";
+  if (count === 1) return "1 asset in use";
+  return `${count} assets in use`;
+}
+
 /**
- * The Content Bank list, under the mode tiles — the bottom half of the Assets
+ * The Content Bank list, under the mode tiles: the bottom half of the Assets
  * page and the only thing on it that scrolls.
+ *
+ * Sits on the page background rather than in a card. The tiles are a control
+ * that needed a surface to sit on; a table is not, and boxing it would only
+ * add an edge between the rows and the page.
  *
  * It expects a parent that has already given it a bounded height (`min-h-0` on
  * a flex column), because the table virtualises against its own box. Inside a
@@ -36,7 +45,6 @@ type Props = {
  */
 export function AssetPoolSection({
   assets,
-  tags,
   mode,
   selectedIds,
   onSelectedIdsChange,
@@ -57,10 +65,9 @@ export function AssetPoolSection({
     [selectable, selectedIds, assets],
   );
 
-  const matchingSelectedCount = useMemo(() => {
-    const selected = new Set(selectedIds);
-    return visible.reduce((n, a) => (selected.has(a.id) ? n + 1 : n), 0);
-  }, [visible, selectedIds]);
+  // What this campaign will actually draw on, which is the whole bank unless
+  // the user is picking.
+  const inUse = selectable ? selectedIds.length : assets.length;
 
   const toggle = (id: string) =>
     onSelectedIdsChange(
@@ -69,23 +76,17 @@ export function AssetPoolSection({
         : [...selectedIds, id],
     );
 
-  const selectMatching = () => {
-    const next = new Set(selectedIds);
-    for (const asset of visible) next.add(asset.id);
-    onSelectedIdsChange([...next]);
-  };
-
-  const deselectMatching = () => {
-    const drop = new Set(visible.map((a) => a.id));
-    onSelectedIdsChange(selectedIds.filter((id) => !drop.has(id)));
-  };
-
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    // px-6 matches the card's own padding above, so the heading, the search
+    // field and the table all start on the same line as "Content sources".
+    <div className="flex min-h-0 flex-1 flex-col gap-4 px-6">
+      <h2 className="font-display text-xl font-medium tracking-tight">
+        {inUseLabel(inUse)}
+      </h2>
+
       <AssetPoolToolbar
         filters={filters}
         onChange={onFiltersChange}
-        tags={tags}
         bankSize={assets.length}
         selectable={selectable}
       />
@@ -103,18 +104,6 @@ export function AssetPoolSection({
           }
         />
       </div>
-
-      {selectable && (
-        <SelectionBar
-          selectedCount={selectedIds.length}
-          matchingCount={visible.length}
-          matchingSelectedCount={matchingSelectedCount}
-          filtered={isFiltered(filters)}
-          onSelectMatching={selectMatching}
-          onDeselectMatching={deselectMatching}
-          onClear={() => onSelectedIdsChange([])}
-        />
-      )}
     </div>
   );
 }
