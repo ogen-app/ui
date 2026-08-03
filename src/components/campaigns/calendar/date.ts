@@ -21,6 +21,31 @@ export function addDays(date: Date, days: number): Date {
   return d
 }
 
+// The days a week view shows: the seven days of the anchor's week, minus the
+// ones this user hides. Shared by the calendar and its loading skeleton — the
+// skeleton's whole job is to hold the shape the real week will take, which it
+// can only do if the two derive that shape the same way.
+export function visibleWeekDays(
+  anchor: Date,
+  firstDay: number,
+  hiddenDays: number[] = [],
+): Date[] {
+  const weekStart = startOfWeek(anchor, firstDay)
+  return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).filter(
+    (day) => !hiddenDays.includes(day.getDay()),
+  )
+}
+
+/** Column header, line 1 — e.g. "Monday". */
+export function weekdayLabel(day: Date): string {
+  return day.toLocaleDateString(undefined, { weekday: 'long' })
+}
+
+/** Column header, line 2 — e.g. "20 July 2026". */
+export function dayLabel(day: Date): string {
+  return `${day.getDate()} ${day.toLocaleDateString(undefined, { month: 'long' })} ${day.getFullYear()}`
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&

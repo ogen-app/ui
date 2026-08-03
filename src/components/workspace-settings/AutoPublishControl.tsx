@@ -3,8 +3,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import { LightningIcon, ProhibitIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
-import { useToggleAutoPublish } from '@/hooks/useAutoPublishAllowlist'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  useAutoPublishState,
+  useToggleAutoPublish,
+} from '@/hooks/useAutoPublishAllowlist'
 import { useConvertToManualPublish } from '@/hooks/useConvertToManualPublish'
+import { cn } from '@/lib'
 import type { PlatformView } from '@/lib/platformDictionary'
 import { listPosts } from '@/services/api/posts'
 import { toast } from '@/stores/toastStore'
@@ -34,16 +39,16 @@ function pendingAutoPosts(posts: Post[], platformId: string, now: number): Post[
     )
 }
 
-export function AutoPublishControl({
-  view,
-  allowed,
-}: {
-  view: PlatformView
-  allowed: boolean
-}) {
+export function AutoPublishControl({ view }: { view: PlatformView }) {
   const { platform, info } = view
   const queryClient = useQueryClient()
   const { toggle, isPending } = useToggleAutoPublish()
+  // Read here rather than passed in: the sentence and the button are two
+  // halves of one state, and `unknown` has to reach both. Worse than looking
+  // wrong, a click on ALLOW before the list lands would write this platform
+  // over the stored one, since the toggle replaces the whole thing.
+  const state = useAutoPublishState(platform.id)
+  const allowed = state === 'allowed'
 
   const [checking, setChecking] = useState(false)
   const [affected, setAffected] = useState<Post[] | null>(null)
@@ -87,29 +92,65 @@ export function AutoPublishControl({
 
   return (
     <>
-    {/* A button rather than a switch: the two directions are not equivalent.
+    {/* Framed rather than stacked in with the row's other fields: this is the
+        one setting here that decides whether posts leave the workspace without
+        a person present, and it used to read as another line of prose between
+        the account list and the cadence. The border carries it — green only
+        while the posts publish themselves — over a transparent fill, so the
+        frame marks the setting out without turning it into a second card.
+
+        A button rather than a switch: the two directions are not equivalent.
         Switching off has to reckon with posts already queued with the
         publisher, so it can open a dialog and take time — a toggle that
         sometimes flips back after a round trip would misreport the state it
         is supposed to show. The sentence states the state; the button
         changes it. */}
-    <div className="flex flex-col items-start gap-3">
-      <p className="text-sm text-primary-foreground">
-        {allowed
-          ? 'Auto-publishing allowed — scheduled posts go out on their own, across every campaign.'
-          : 'Auto-publishing not allowed — scheduled posts wait for you to publish them by hand.'}
-      </p>
-      <Button
-        type="button"
-        variant="outline"
-        size="xl"
-        disabled={isPending || checking}
-        loading={checking}
-        onClick={() => handleChange(!allowed)}
-      >
-        {allowed ? <ProhibitIcon /> : <LightningIcon />}
-        <span>{allowed ? 'DISALLOW' : 'ALLOW'}</span>
-      </Button>
+    <div
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-4 border-1 px-4 py-4',
+        allowed ? 'border-positive' : 'border-border',
+      )}
+    >
+      {state === 'unknown' ? (
+        <>
+          <Skeleton className="h-5 w-full max-w-lg" />
+          <Skeleton className="h-12 w-36" />
+        </>
+      ) : (
+        <>
+          <div className="flex min-w-0 items-center gap-3">
+            {allowed ? (
+              <LightningIcon className="size-5 shrink-0 text-positive" />
+            ) : (
+              <ProhibitIcon className="size-5 shrink-0 text-tertiary-foreground" />
+            )}
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <p className="text-sm font-medium text-primary-foreground">
+                {allowed ? 'Auto-publishing allowed' : 'Auto-publishing not allowed'}
+              </p>
+              <p className="text-sm text-tertiary-foreground">
+                {allowed
+                  ? 'Scheduled posts go out on their own, across every campaign.'
+                  : 'Scheduled posts wait for you to publish them by hand.'}
+              </p>
+            </div>
+          </div>
+          {/* Only the switching-on direction carries an icon. DISALLOW is the
+              one that can queue work and open a dialog, so it stays the
+              plainer of the two rather than being dressed up to match. */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="xl"
+            disabled={isPending || checking}
+            loading={checking}
+            onClick={() => handleChange(!allowed)}
+          >
+            {!allowed && <LightningIcon />}
+            <span>{allowed ? 'DISALLOW' : 'ALLOW'}</span>
+          </Button>
+        </>
+      )}
     </div>
 
       {affected && (

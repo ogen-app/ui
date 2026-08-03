@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { CaretLeftIcon, CaretRightIcon, PlusIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { addDays, formatAnchor, startOfWeek } from '@/components/campaigns/calendar/date'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
@@ -35,7 +36,7 @@ function formatWeekRange(weekStart: Date): string {
 export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: PostsToolbarProps) {
   const navigate = useNavigate()
   const addPost = useAddPost(campaignId)
-  const { firstDayOfWeek } = useCalendarSettings(campaignId)
+  const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings(campaignId)
 
   const handleViewSelect = (next: string) => {
     if (next === view) return
@@ -55,8 +56,16 @@ export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: Posts
 
   return (
     <div className="flex items-center justify-between gap-4 py-2 shrink-0 flex-wrap">
-      <span className="text-[18px] font-medium">
-        {anchor ? formatWeekRange(startOfWeek(anchor, firstDayOfWeek)) : ''}
+      {/* The range starts on the user's first day of the week, so it can't be
+          written until that setting is known — a Monday–Sunday label that
+          turns into Sunday–Saturday is worse than a beat of nothing. */}
+      <span className="flex h-6 items-center text-[18px] font-medium">
+        {anchor &&
+          (settingsPending ? (
+            <Skeleton className="h-4 w-56" />
+          ) : (
+            formatWeekRange(startOfWeek(anchor, firstDayOfWeek))
+          ))}
       </span>
 
       <div className="flex items-center gap-3">

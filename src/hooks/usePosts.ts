@@ -54,6 +54,7 @@ function draftPost(streamed: StreamedPost, campaignId: string): Post {
   return {
     ...streamed,
     campaign_id: campaignId,
+    social_account_id: '',
     media_urls: [],
     published_at: null,
     status: 'draft',

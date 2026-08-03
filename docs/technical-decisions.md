@@ -161,6 +161,41 @@ first and the PUT is debounced 500ms behind them — flipping six day switches
 costs one request — with a flush on unmount, the same shape as the post
 editor's autosave.
 
+## Explanatory copy is dismissible, and dismissal is permanent {#explainers}
+
+**Decision.** Copy that teaches how a screen works goes in an `<Explainer>`,
+not in a bare `<p>`. It carries a close button; closing it is remembered and
+the note never comes back. Dismissals are a `dismissedNotes: string[]` field on
+the persisted `settingsStore` — device-local, in `localStorage`.
+
+**Why.** Text that is exactly right on a user's first visit is furniture by
+their tenth, and no single wording is both. Rather than pick one and lose the
+other, the copy is written for the first read and the user is given the way to
+end it.
+
+**Why local rather than `userScopedKey`.** The first version put dismissals in
+`/api/settings`, so a closed note stayed closed on the user's other machine.
+That is the wrong trade for this: the table is
+[tenant-scoped](#user-scoped-settings), so every teammate would read a row
+recording which tips you closed, and the note could not render until a request
+resolved — a fetch, a loading gate, and a rollback path, all to remember that
+someone clicked an ✕. Seeing a tip once more on a new laptop is a smaller cost
+than any of that. Preferences that carry real content (calendar layout) still
+belong in `userScopedKey`; display noise does not.
+
+**Consequence — the constraint to hold.** An Explainer may only ever contain
+*teaching*. Anything a user needs while working — a count, a warning, a
+validation message, a link they'd look for twice — must live outside it, or it
+vanishes for everyone who closed the note. When adding one, check the screen
+still reads correctly with it deleted.
+
+**Where.** `components/page-primitives/Explainer.tsx`,
+`stores/settingsStore.ts` (`dismissedNotes`, `dismissNote`). First use is the
+campaign Assets page (`campaign-content-sources`). Ids are stable identifiers —
+renaming one un-dismisses it for everyone who already closed it. There is no
+"show help again" control; `resetAllSettings()` clears the set, and for
+testing, `localStorage.removeItem('settings-store')` does it from the console.
+
 ## Poll narrowly, only while a backend job is in flight
 
 **Decision.** Polling is enabled conditionally, not globally: post refetch runs
@@ -185,6 +220,31 @@ dictionary are dropped from the UI.
 **Why.** Full control over wording and branding without a backend round-trip or
 deploy, and a stable icon/color mapping. The trade-off: adding a platform
 requires a UI change, not just a backend one.
+
+## Disconnect is per account, and the scary confirm is earned {#disconnect}
+
+**Decision.** The Disconnect control hangs off each **account row** in Platform
+Settings, not off the platform row, and its dialog is two-step: the first
+confirm attempts a plain `DELETE
+/api/integrations/zernio/accounts/:id`; only if the server answers `409
+account_has_scheduled_posts` does the dialog show the count and offer
+`?force=true` (CON-133).
+
+**Why.** The endpoint takes an account id, and since CON-150 a platform can hold
+several accounts — a per-platform button would have had nothing unambiguous to
+delete. The two-step exists because the count lives *only* in that 409: there is
+no "posts by account" query to ask beforehand. Attempting first means the
+alarming screen is shown exactly when it's warranted, instead of warning about
+scheduled posts on every disconnect.
+
+**Consequences.** A forced disconnect strands those posts: a soft-delete does
+not clear their `social_account_id`, so they keep naming an account that is no
+longer in the platform's active set — which is precisely the `mismatched` state
+`resolvePublishingAccount` already reports. Recovering means unscheduling the
+post (the account is locked while `scheduled`, see
+[`#status-machine`](#status-machine)). Disconnect invalidates the **platform**
+list, not post queries, because that list is what both the settings rows and the
+composer's picker read.
 
 ## Two form systems, on purpose
 
@@ -259,9 +319,6 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
 - **No invite-teammate UI** — `users.register()` (`POST /api/users`) is the
   ready building block; real invitations (email loop) await backend support
   (CON-26).
-- **No account disconnect** — the API has no disconnect endpoint and tenants
-  can't reach the platform-owned Zernio dashboard, so the Disconnect button
-  in Platform Settings renders disabled until the backend grows one.
 - **Dark mode** is scaffolded (`.dark` block) but effectively empty.
 - The **Imagery** Content-Bank tab renders nothing yet (`assetCategory.ts`); AI
   image generation + storage there is planned but **secondary** (CON-105/88/83).

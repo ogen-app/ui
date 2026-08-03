@@ -47,6 +47,7 @@ function makePost(overrides: Partial<Post> = {}): Post {
     campaign_id: 'c1',
     platform_id: INSTAGRAM,
     platform_post_type: 'carousel',
+    social_account_id: '',
     title: '',
     content: 'Hello',
     media_urls: [],

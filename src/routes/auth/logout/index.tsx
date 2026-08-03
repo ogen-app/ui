@@ -58,9 +58,7 @@ function LogoutPage() {
                 <ArrowUpRightIcon className={'size-4'} />
               </Button>
             ) : (
-              <Spinner
-                className={'w-80 h-[2px] bg-primary-foreground/20 before:bg-primary-foreground'}
-              />
+              <Spinner tone="onSurface" className={'w-80 h-[2px]'} />
             )}
           </div>
         </div>

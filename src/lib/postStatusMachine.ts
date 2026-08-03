@@ -1,3 +1,4 @@
+import type { PublishingAccountResolution } from '@/lib/publishingAccount'
 import type { Post, PostStatus } from '@/types/posts'
 
 // Mirrors src/models/post.go ValidPostTransitions. Keep in sync with the
@@ -248,8 +249,25 @@ export function isPublishMethodEdge(from: PostStatus, to: PostStatus): boolean {
 }
 
 export type PostStatusBlocker = {
-  field: 'platform_id' | 'platform_post_type' | 'scheduled_at'
+  field:
+    | 'platform_id'
+    | 'platform_post_type'
+    | 'scheduled_at'
+    | 'social_account_id'
   message: string
+}
+
+/**
+ * What `getTransitionBlockers` needs that the post itself doesn't carry.
+ * Account selection depends on how many accounts the platform has connected
+ * — server state — so it has to be handed in.
+ */
+export type TransitionContext = {
+  /**
+   * The post's publishing account, resolved against the platform's
+   * connected accounts (`usePublishingAccount`).
+   */
+  account: Pick<PublishingAccountResolution, 'ambiguous' | 'mismatched'>
 }
 
 // Mirrors the server's pre-transition rules. Returns blockers the UI
@@ -265,7 +283,17 @@ export type PostStatusBlocker = {
 //   which doesn't validate the date — there the check is client-only, kept
 //   for the same reason (a reminder date that is missing or already past
 //   is meaningless).
-export function getTransitionBlockers(post: Post, next: PostStatus): PostStatusBlocker[] {
+// - Account selection on the auto-publish edge: checkAccountSelection in
+//   src/post_actions/schedule/schedule.go (CON-150). Scoped to `scheduled`
+//   exactly as the server scopes it — a manual-publish post never reaches
+//   the submit worker, so which account it "would" go out as is moot and
+//   demanding a choice there would invent a requirement the API doesn't
+//   have.
+export function getTransitionBlockers(
+  post: Post,
+  next: PostStatus,
+  context: TransitionContext,
+): PostStatusBlocker[] {
   const blockers: PostStatusBlocker[] = []
   if (next !== 'draft') {
     if (!post.platform_id) {
@@ -285,6 +313,19 @@ export function getTransitionBlockers(post: Post, next: PostStatus): PostStatusB
       })
     }
   }
+  if (next === 'scheduled') {
+    if (context.account.mismatched) {
+      blockers.push({
+        field: 'social_account_id',
+        message: 'Pick a connected account to publish as',
+      })
+    } else if (context.account.ambiguous) {
+      blockers.push({
+        field: 'social_account_id',
+        message: 'Choose which account to publish as',
+      })
+    }
+  }
   return blockers
 }
 
@@ -296,4 +337,13 @@ export function getTransitionBlockers(post: Post, next: PostStatus): PostStatusB
 // date is history.
 export function canEditScheduledAt(status: PostStatus): boolean {
   return status !== 'scheduled' && status !== 'published'
+}
+
+// Whether the publishing account may still be changed (CON-150). Locked for
+// the same reason as scheduled_at, and in the same two statuses: the Zernio
+// submission already names the account, so a PUT while `scheduled` would
+// change the displayed account and nothing else — the post would still go
+// out as the original one. Unschedule first. Once `published` it is history.
+export function canEditPublishingAccount(status: PostStatus): boolean {
+  return canEditScheduledAt(status)
 }
