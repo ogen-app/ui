@@ -125,9 +125,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 
 ## Known stubs / gaps
 
-No invite-teammate UI yet (`users.register()` is the ready building block) · no
-in-app account **disconnect** (the API has no disconnect endpoint; the button
-in Platform Settings renders disabled) · dark mode is scaffolded but empty · the
+No invite-teammate UI yet (`users.register()` is the ready building block) ·
+dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
 have no committed config in this repo.
 

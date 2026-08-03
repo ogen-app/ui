@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { PlugsIcon } from '@phosphor-icons/react'
 import type { PublisherAccount } from '@/types/campaigns'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import {
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { AutoPublishControl } from './AutoPublishControl'
+import { DisconnectAccountDialog } from './DisconnectAccountDialog'
 import { ReadOnlyField, SettingsRow } from './SettingsRow'
 
 /**
@@ -102,10 +103,11 @@ function PlatformRow({ view }: { view: PlatformView }) {
     <SettingsRow
       title={info.name}
       badges={<StatusBadge tone={status.tone} label={status.label} />}
-      actions={<DisconnectButton />}
       description={status.message ? <p>{status.message}</p> : undefined}
     >
-      {accounts.length > 0 && <ConnectedAccounts accounts={accounts} />}
+      {accounts.length > 0 && (
+        <ConnectedAccounts accounts={accounts} platformName={info.name} />
+      )}
       <AutoPublishControl view={view} />
       <ReadOnlyField label="Cadence" value={platform.cadence} />
       <ReadOnlyField label="Constraints" value={platform.constraints} />
@@ -156,42 +158,20 @@ function ChipGroup({
 }
 
 /**
- * Disconnecting is not possible yet: the API has no disconnect endpoint and
- * tenants have no access to the platform-owned Zernio dashboard. The button
- * is rendered disabled so the affordance is discoverable ahead of the
- * backend work.
- */
-function DisconnectButton() {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span tabIndex={0}>
-          <Button
-            type="button"
-            variant="ghost"
-            size="smIcon"
-            className="text-destructive hover:text-destructive disabled:text-destructive/40"
-            disabled
-            aria-label="Disconnect platform"
-          >
-            <PlugsIcon className="size-5" weight="regular" />
-          </Button>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>Disconnecting isn’t available yet — coming soon.</TooltipContent>
-    </Tooltip>
-  )
-}
-
-/**
  * The accounts connected for this platform, across every publisher — a
  * full-width block above the two-column body.
  */
-function ConnectedAccounts({ accounts }: { accounts: PublisherAccount[] }) {
+function ConnectedAccounts({
+  accounts,
+  platformName,
+}: {
+  accounts: PublisherAccount[]
+  platformName: string
+}) {
   return (
     <ul className="flex flex-col gap-3 min-w-0">
       {accounts.map((a) => (
-        <AccountRow key={a.id} account={a} />
+        <AccountRow key={a.id} account={a} platformName={platformName} />
       ))}
     </ul>
   )
@@ -200,8 +180,19 @@ function ConnectedAccounts({ accounts }: { accounts: PublisherAccount[] }) {
 /**
  * Avatar, then display name over handle; flags inactive accounts. Sized to
  * match the sidebar profile block (AppSidebar) so the two read the same.
+ *
+ * Disconnect hangs off the account, not the platform row: the endpoint takes
+ * an account id, and a platform can hold several accounts (CON-150), so a
+ * per-platform control would have had nothing unambiguous to delete.
  */
-function AccountRow({ account }: { account: PublisherAccount }) {
+function AccountRow({
+  account,
+  platformName,
+}: {
+  account: PublisherAccount
+  platformName: string
+}) {
+  const [confirming, setConfirming] = useState(false)
   const name = account.display_name || account.username
   const initial = (name || '?').slice(0, 1).toUpperCase()
   return (
@@ -210,7 +201,7 @@ function AccountRow({ account }: { account: PublisherAccount }) {
         {account.avatar_url && <AvatarImage src={account.avatar_url} alt={name} />}
         <AvatarFallback>{initial}</AvatarFallback>
       </Avatar>
-      <div className="flex flex-col items-start min-w-0">
+      <div className="flex flex-col items-start min-w-0 flex-1">
         <p className="w-full text-sm font-regular truncate text-left">
           {name}
           {!account.is_active && <span className="text-tertiary-foreground"> (inactive)</span>}
@@ -219,6 +210,27 @@ function AccountRow({ account }: { account: PublisherAccount }) {
           @{account.username}
         </p>
       </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="smIcon"
+            className="shrink-0 text-destructive hover:text-destructive"
+            onClick={() => setConfirming(true)}
+            aria-label={`Disconnect ${name}`}
+          >
+            <PlugsIcon className="size-5" weight="regular" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Disconnect this account</TooltipContent>
+      </Tooltip>
+      <DisconnectAccountDialog
+        account={account}
+        platformName={platformName}
+        isOpen={confirming}
+        onClose={() => setConfirming(false)}
+      />
     </li>
   )
 }

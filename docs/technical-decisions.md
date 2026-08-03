@@ -221,6 +221,31 @@ dictionary are dropped from the UI.
 deploy, and a stable icon/color mapping. The trade-off: adding a platform
 requires a UI change, not just a backend one.
 
+## Disconnect is per account, and the scary confirm is earned {#disconnect}
+
+**Decision.** The Disconnect control hangs off each **account row** in Platform
+Settings, not off the platform row, and its dialog is two-step: the first
+confirm attempts a plain `DELETE
+/api/integrations/zernio/accounts/:id`; only if the server answers `409
+account_has_scheduled_posts` does the dialog show the count and offer
+`?force=true` (CON-133).
+
+**Why.** The endpoint takes an account id, and since CON-150 a platform can hold
+several accounts — a per-platform button would have had nothing unambiguous to
+delete. The two-step exists because the count lives *only* in that 409: there is
+no "posts by account" query to ask beforehand. Attempting first means the
+alarming screen is shown exactly when it's warranted, instead of warning about
+scheduled posts on every disconnect.
+
+**Consequences.** A forced disconnect strands those posts: a soft-delete does
+not clear their `social_account_id`, so they keep naming an account that is no
+longer in the platform's active set — which is precisely the `mismatched` state
+`resolvePublishingAccount` already reports. Recovering means unscheduling the
+post (the account is locked while `scheduled`, see
+[`#status-machine`](#status-machine)). Disconnect invalidates the **platform**
+list, not post queries, because that list is what both the settings rows and the
+composer's picker read.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain
@@ -294,9 +319,6 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
 - **No invite-teammate UI** — `users.register()` (`POST /api/users`) is the
   ready building block; real invitations (email loop) await backend support
   (CON-26).
-- **No account disconnect** — the API has no disconnect endpoint and tenants
-  can't reach the platform-owned Zernio dashboard, so the Disconnect button
-  in Platform Settings renders disabled until the backend grows one.
 - **Dark mode** is scaffolded (`.dark` block) but effectively empty.
 - The **Imagery** Content-Bank tab renders nothing yet (`assetCategory.ts`); AI
   image generation + storage there is planned but **secondary** (CON-105/88/83).
