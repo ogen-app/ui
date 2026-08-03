@@ -155,12 +155,17 @@ records what the post was built from, and that stays true. Drift needs a
 | `brief-partial` | `todo` | some brief fields blank | *Brief is missing: `<fields>`* | brief | `client` | – |
 | `dates` | `todo` | `start_date` or `end_date` missing | *Campaign dates are not set* | settings | `client` | – |
 | `channels` | `todo` | no `target_platforms` | *No channels selected* | settings | `client` | – |
-| `assets-expected` | `todo` | `use_assets = true` and no `asset_ids` | *Assets are enabled but none are attached* | assets | `client` | – |
 | `post-target` | `info` | `estimated_post_count` unset while the campaign has content | *No post target set* | settings | `client` | – |
 
 `brief-empty` and `brief-partial` are mutually exclusive, as are `channels` and
 the connectivity rules — a campaign with no channels does not also get told its
 channels are unconnected.
+
+There is deliberately **no rule about content sources**. `use_assets = true`
+with an empty `asset_ids` looks like an unfinished setup but is the *All assets*
+mode, where an empty list means every ready asset (CON-118; see
+`src/lib/campaignSources.ts`). A rule there would nag every campaign that chose
+the broadest option.
 
 ### Content — is there enough of it, in the right places
 

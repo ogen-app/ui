@@ -82,6 +82,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   their identity from the key (`userScopedKey` →
   `calendar.<userId>.<campaignId>`); never put anything sensitive there. See
   `docs/technical-decisions.md#user-scoped-settings`.
+- **Explanatory copy goes in `<Explainer>`**, which the user can close for
+  good (`settingsStore.dismissedNotes`, device-local — display noise doesn't
+  belong in the workspace-wide `/api/settings`). The rule that makes it safe:
+  an Explainer holds **teaching only** — never a count, warning, validation
+  message, or link the user needs while working, because all of it disappears
+  for anyone who closes the note. Check the screen still reads correctly with
+  the Explainer deleted. See `docs/technical-decisions.md#explainers`.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).

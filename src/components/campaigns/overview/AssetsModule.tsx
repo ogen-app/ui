@@ -1,10 +1,17 @@
-import { Link } from "@tanstack/react-router";
 import { StatusBadge } from "@/components/ui/status-badge.tsx";
+import { sourceModeOf } from "@/lib/campaignSources.ts";
 import type { Campaign } from "@/types/campaigns";
-import { CollapsedCard, OverviewCard } from "./OverviewCard.tsx";
+import { CollapsedCard } from "./OverviewCard.tsx";
 
+/**
+ * The Assets row on the campaign Overview. Reads the same three modes the
+ * Assets page writes (`lib/campaignSources.ts`) — in particular, `use_assets`
+ * with an empty `asset_ids` is the whole bank, not an unfinished setup.
+ */
 export function AssetsModule({ campaign }: { campaign: Campaign }) {
-  if (!campaign.use_assets) {
+  const mode = sourceModeOf(campaign);
+
+  if (mode === "campaign") {
     return (
       <CollapsedCard
         title="Assets"
@@ -19,33 +26,24 @@ export function AssetsModule({ campaign }: { campaign: Campaign }) {
     );
   }
 
-  const count = campaign.asset_ids.length;
-
-  if (count === 0) {
+  if (mode === "all") {
     return (
-      <OverviewCard
+      <CollapsedCard
         title="Assets"
-        status={<StatusBadge tone="warn" label="None attached" />}
-        link={{
-          target: "assets",
-          campaignId: campaign.id,
-          label: "Open campaign assets",
-        }}
+        target="assets"
+        campaignId={campaign.id}
+        label="Open campaign assets"
+        status={<StatusBadge tone="positive" label="All assets" />}
       >
-        <p className="text-sm text-secondary-foreground">
-          Assets are switched on for this campaign but none are attached yet.
-          Attach reference material from the Content Bank so generated posts
-          can draw on it.
-        </p>
-        <Link
-          to="/content-bank"
-          className="text-xs text-tertiary-foreground hover:text-primary-foreground"
-        >
-          Browse the Content Bank
-        </Link>
-      </OverviewCard>
+        <span className="min-w-0 flex-1 truncate">
+          Generated posts can draw on the whole Content Bank, including anything
+          added later.
+        </span>
+      </CollapsedCard>
     );
   }
+
+  const count = campaign.asset_ids.length;
 
   return (
     <CollapsedCard
@@ -56,12 +54,12 @@ export function AssetsModule({ campaign }: { campaign: Campaign }) {
       status={
         <StatusBadge
           tone="positive"
-          label={`${count} ${count === 1 ? "asset" : "assets"} attached`}
+          label={`${count} ${count === 1 ? "asset" : "assets"} assigned`}
         />
       }
     >
       <span className="min-w-0 flex-1 truncate">
-        Generated posts can draw on this campaign's Content Bank material.
+        Generated posts can draw on this campaign's assigned material.
       </span>
     </CollapsedCard>
   );

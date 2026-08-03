@@ -582,9 +582,9 @@ describe("attentionItems", () => {
 
   // --- Setup ----------------------------------------------------------------
 
-  it("flags assets enabled with none attached", () => {
+  it("says nothing about an empty asset list — that is the All assets mode", () => {
     const campaign = liveCampaign({ use_assets: true });
-    expect(ids(campaign, healthyPosts())).toContain("assets-expected");
+    expect(ids(campaign, healthyPosts())).not.toContain("assets-expected");
   });
 
   it("mentions a missing post target only as info, once content exists", () => {
