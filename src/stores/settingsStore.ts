@@ -35,6 +35,17 @@ export type LocalSettings = {
    * table is the wrong home for it.
    */
   dismissedNotes: string[]
+
+  /**
+   * Campaign id -> the asset ids that campaign last had explicitly picked.
+   *
+   * A stash, not the record: the campaign itself is the record. It exists
+   * because switching a campaign to "all assets" has to clear `asset_ids`
+   * server-side (an empty list is how the API spells *everything*), which
+   * would otherwise throw away a hand-picked set the moment someone looked at
+   * the other option. Keeping a copy here makes that switch reversible.
+   */
+  assetSelections: Record<string, string[]>
 }
 
 type SettingsState = LocalSettings & {
@@ -53,6 +64,9 @@ type SettingsState = LocalSettings & {
   /** Close an explainer permanently. Idempotent. */
   dismissNote: (id: string) => void
 
+  /** Stash what this campaign has picked, so "all assets" can't lose it. */
+  rememberAssetSelection: (campaignId: string, assetIds: string[]) => void
+
   // Reset all settings to defaults
   resetAllSettings: () => void
 }
@@ -63,6 +77,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   rightPanelCampaignId: null,
   lastOpenedModals: {},
   dismissedNotes: [],
+  assetSelections: {},
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -118,6 +133,15 @@ export const useSettingsStore = create<SettingsState>()(
           )
         },
 
+        rememberAssetSelection: (campaignId, assetIds) => {
+          set((state) => ({
+            assetSelections: {
+              ...state.assetSelections,
+              [campaignId]: assetIds,
+            },
+          }))
+        },
+
         // Reset all settings — this brings closed explainers back, which is
         // the only way to see one again.
         resetAllSettings: () => {
@@ -131,6 +155,7 @@ export const useSettingsStore = create<SettingsState>()(
           sidebarCollapsed: state.sidebarCollapsed,
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
+          assetSelections: state.assetSelections,
           // Don't persist
           // activeRightPanel, rightPanelCampaignId
         }),
