@@ -9,6 +9,7 @@ import {
   useToggleAutoPublish,
 } from '@/hooks/useAutoPublishAllowlist'
 import { useConvertToManualPublish } from '@/hooks/useConvertToManualPublish'
+import { cn } from '@/lib'
 import type { PlatformView } from '@/lib/platformDictionary'
 import { listPosts } from '@/services/api/posts'
 import { toast } from '@/stores/toastStore'
@@ -91,13 +92,25 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
 
   return (
     <>
-    {/* A button rather than a switch: the two directions are not equivalent.
+    {/* Framed rather than stacked in with the row's other fields: this is the
+        one setting here that decides whether posts leave the workspace without
+        a person present, and it used to read as another line of prose between
+        the account list and the cadence. The border carries it — green only
+        while the posts publish themselves — over a transparent fill, so the
+        frame marks the setting out without turning it into a second card.
+
+        A button rather than a switch: the two directions are not equivalent.
         Switching off has to reckon with posts already queued with the
         publisher, so it can open a dialog and take time — a toggle that
         sometimes flips back after a round trip would misreport the state it
         is supposed to show. The sentence states the state; the button
         changes it. */}
-    <div className="flex flex-col items-start gap-3">
+    <div
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-4 border-1 px-4 py-4',
+        allowed ? 'border-positive' : 'border-border',
+      )}
+    >
       {state === 'unknown' ? (
         <>
           <Skeleton className="h-5 w-full max-w-lg" />
@@ -105,20 +118,35 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
         </>
       ) : (
         <>
-          <p className="text-sm text-primary-foreground">
-            {allowed
-              ? 'Auto-publishing allowed — scheduled posts go out on their own, across every campaign.'
-              : 'Auto-publishing not allowed — scheduled posts wait for you to publish them by hand.'}
-          </p>
+          <div className="flex min-w-0 items-center gap-3">
+            {allowed ? (
+              <LightningIcon className="size-5 shrink-0 text-positive" />
+            ) : (
+              <ProhibitIcon className="size-5 shrink-0 text-tertiary-foreground" />
+            )}
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <p className="text-sm font-medium text-primary-foreground">
+                {allowed ? 'Auto-publishing allowed' : 'Auto-publishing not allowed'}
+              </p>
+              <p className="text-sm text-tertiary-foreground">
+                {allowed
+                  ? 'Scheduled posts go out on their own, across every campaign.'
+                  : 'Scheduled posts wait for you to publish them by hand.'}
+              </p>
+            </div>
+          </div>
+          {/* Only the switching-on direction carries an icon. DISALLOW is the
+              one that can queue work and open a dialog, so it stays the
+              plainer of the two rather than being dressed up to match. */}
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="xl"
             disabled={isPending || checking}
             loading={checking}
             onClick={() => handleChange(!allowed)}
           >
-            {allowed ? <ProhibitIcon /> : <LightningIcon />}
+            {!allowed && <LightningIcon />}
             <span>{allowed ? 'DISALLOW' : 'ALLOW'}</span>
           </Button>
         </>
