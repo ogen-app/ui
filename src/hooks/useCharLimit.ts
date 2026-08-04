@@ -1,6 +1,6 @@
 import { usePlatforms } from '@/hooks/usePlatforms'
 import { findRule, usePostTypeRules } from '@/hooks/usePostTypeRules'
-import { resolveCharLimit } from '@/lib/platformLimits'
+import { resolveCharLimit, titleLimitFor } from '@/lib/platformLimits'
 
 /**
  * The character ceiling for one post, as the server resolves it.
@@ -15,7 +15,7 @@ import { resolveCharLimit } from '@/lib/platformLimits'
 export function useCharLimit(
   platformId: string,
   postType: string,
-): { limit: number | null; ready: boolean } {
+): { limit: number | null; titleLimit: number | null; ready: boolean } {
   const { data: platforms, isLoading: platformsLoading } = usePlatforms()
   const { data: rules, isLoading: rulesLoading } = usePostTypeRules(platformId)
 
@@ -24,6 +24,9 @@ export function useCharLimit(
 
   return {
     limit: resolveCharLimit(platform, rule, postType),
+    // Only the platform row carries this — the post-type rules don't resolve
+    // a per-type title cap the way they do for body text.
+    titleLimit: titleLimitFor(platform?.text_constraints),
     ready: !platformsLoading && !rulesLoading,
   }
 }

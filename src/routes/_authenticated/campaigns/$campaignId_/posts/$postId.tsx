@@ -28,6 +28,7 @@ import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
+import { cn } from '@/lib'
 import { resolvePublishMethod } from '@/lib/autoPublish'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
@@ -299,17 +300,28 @@ function PostEditorSurface({
             </div>
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
-                <textarea
-                  ref={titleRef}
-                  value={titleDraft}
-                  onChange={(e) => {
-                    const next = e.target.value.replace(/\n/g, '')
-                    handleTitleChange(next)
-                  }}
-                  placeholder="Title"
-                  rows={1}
-                  className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground mb-4"
-                />
+                <div className="mb-4 flex flex-col">
+                  <textarea
+                    ref={titleRef}
+                    value={titleDraft}
+                    onChange={(e) => {
+                      const next = e.target.value.replace(/\n/g, '')
+                      handleTitleChange(next)
+                    }}
+                    placeholder="Title"
+                    rows={1}
+                    className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground"
+                  />
+                  {/* Only where the platform publishes a title and caps it —
+                      YouTube today. Elsewhere the title is Ogen's own label
+                      and a counter on it would be noise. Deliberately not a
+                      `maxLength`: silently swallowing keystrokes mid-word is
+                      worse than showing how far over the title is. */}
+                  <TitleCounter
+                    length={[...titleDraft.trim()].length}
+                    limit={media.maxTitleChars}
+                  />
+                </div>
                 <PostContentEditor
                   content={doc.content}
                   onContentChange={handleContentChange}
@@ -371,6 +383,34 @@ function PostEditorSurface({
         onClose={() => setDeleteOpen(false)}
       />
     </PageContainer>
+  )
+}
+
+/**
+ * The title's character count against the platform's cap (CON-160).
+ *
+ * Renders nothing when the platform sets no title limit — five of the six do
+ * — and nothing while the platform row is still loading, so it never flashes
+ * a cap it is about to correct.
+ */
+function TitleCounter({
+  length,
+  limit,
+}: {
+  length: number
+  limit: number | null | undefined
+}) {
+  if (!limit) return null
+  const over = length > limit
+  return (
+    <span
+      className={cn(
+        'self-end text-xs tabular-nums',
+        over ? 'text-destructive' : 'text-tertiary-foreground',
+      )}
+    >
+      {length} / {limit}
+    </span>
   )
 }
 

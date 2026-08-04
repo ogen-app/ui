@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Platform, TextConstraints } from '@/types/campaigns'
 import type { ResolvedPostTypeRule } from '@/types/validation'
-import { contentLimitFor, resolveCharLimit } from './platformLimits.ts'
+import { contentLimitFor, resolveCharLimit, titleLimitFor } from './platformLimits.ts'
 
 function platform(text_constraints: TextConstraints): Platform {
   return {
@@ -11,8 +11,24 @@ function platform(text_constraints: TextConstraints): Platform {
     cadence: '',
     constraints: '',
     text_constraints,
+    video_constraints: noVideo(),
     created_at: '',
     updated_at: '',
+  }
+}
+
+/** The all-zero rule set: "this platform does not take video". */
+function noVideo() {
+  return {
+    max_file_size_bytes: 0,
+    allowed_formats: [],
+    max_duration_seconds: 0,
+    min_duration_seconds: 0,
+    max_width: 0,
+    max_height: 0,
+    allowed_aspect_ratios: [],
+    max_attachments_per_post: 0,
+    requires_video_title: false,
   }
 }
 
@@ -81,5 +97,18 @@ describe('resolveCharLimit', () => {
 
   it('honours an explicitly unbounded rule over the platform default', () => {
     expect(resolveCharLimit(p, rule(null), 'live-video')).toBeNull()
+  })
+})
+
+describe('titleLimitFor', () => {
+  it('reads YouTube’s seeded title cap', () => {
+    expect(titleLimitFor({ max_content_chars: 5000, max_title_chars: 100 })).toBe(100)
+  })
+
+  // Five of the six platforms publish no title, and seed 0. That is "no cap",
+  // not "no characters" — a counter reading 0/0 would fail every post.
+  it('reads an unseeded cap as unbounded, not as zero', () => {
+    expect(titleLimitFor({ max_content_chars: 3000, max_title_chars: 0 })).toBeNull()
+    expect(titleLimitFor(undefined)).toBeNull()
   })
 })

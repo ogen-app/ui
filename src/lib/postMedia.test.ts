@@ -1,13 +1,56 @@
 import { describe, expect, it } from 'vitest'
 import type { Post } from '@/types/posts'
+import type { Platform, VideoConstraints } from '@/types/campaigns'
 import type { PostAttachmentWithValidation } from '@/types/attachments'
 import type { ResolvedPostTypeRule } from '@/types/validation'
+import { MAX_VIDEO_UPLOAD_BYTES } from './platformVideo.ts'
 import { checkFile, mediaPolicy, strandedAttachments } from './postMedia.ts'
 import { evaluatePost, hasVisibleProblem, worstStatus } from './postValidation.ts'
 
 // Platform Sqids from platformDictionary.ts.
 const INSTAGRAM = 'rzgpTkARLH0L'
 const LINKEDIN = 'AXqWG7U2qnpt'
+const YOUTUBE = '8S8bWQTG6qD'
+
+/** The seeded LinkedIn video rules, verbatim from the CON-148 migration. */
+const linkedInVideo: VideoConstraints = {
+  max_file_size_bytes: 5368709120,
+  allowed_formats: ['mp4'],
+  max_duration_seconds: 900,
+  min_duration_seconds: 3,
+  max_width: 4096,
+  max_height: 2304,
+  allowed_aspect_ratios: ['16:9', '1:1', '9:16'],
+  max_attachments_per_post: 1,
+  requires_video_title: false,
+}
+
+/** All-zero video rules — how "this platform takes no video" reaches us. */
+const noVideo: VideoConstraints = {
+  max_file_size_bytes: 0,
+  allowed_formats: [],
+  max_duration_seconds: 0,
+  min_duration_seconds: 0,
+  max_width: 0,
+  max_height: 0,
+  allowed_aspect_ratios: [],
+  max_attachments_per_post: 0,
+  requires_video_title: false,
+}
+
+function platform(video_constraints: VideoConstraints = noVideo): Platform {
+  return {
+    id: LINKEDIN,
+    name: 'LinkedIn',
+    post_types: {},
+    cadence: '',
+    constraints: '',
+    text_constraints: { max_content_chars: 3000, max_title_chars: 0 },
+    video_constraints,
+    created_at: '',
+    updated_at: '',
+  }
+}
 
 function rule(overrides: Partial<ResolvedPostTypeRule> = {}): ResolvedPostTypeRule {
   return {
@@ -33,6 +76,8 @@ function makeAttachment(
     height: 1080,
     is_animated: false,
     page_count: 0,
+    duration_ms: 0,
+    codec: '',
     checksum_sha256: 'abc',
     s3_key: 'k',
     created_by: 'u1',
@@ -93,11 +138,42 @@ describe('mediaPolicy', () => {
     expect(policy.required).toBe(false)
   })
 
-  it('flags video-only post types as unsupported rather than empty', () => {
+  it('accepts a video post type once the platform carries video rules', () => {
+    const policy = mediaPolicy(
+      LINKEDIN,
+      rule({ allowed_kinds: ['video'] }),
+      platform(linkedInVideo),
+    )
+    expect(policy.accepts).toBe(true)
+    expect(policy.kinds).toEqual(['video'])
+    expect(policy.videoUnsupported).toBe(false)
+    expect(policy.video?.allowedMimes).toEqual(['video/mp4'])
+    // The platform's cap, not the rule's — the video rule set says one.
+    expect(policy.max).toBe(1)
+  })
+
+  it('flags a video post type against a platform with no video rules', () => {
+    const policy = mediaPolicy(LINKEDIN, rule({ allowed_kinds: ['video'] }), platform())
+    expect(policy.videoUnsupported).toBe(true)
+    expect(policy.video).toBeUndefined()
+  })
+
+  it('does not call video unsupported while the platform is still loading', () => {
+    // `undefined` is "not fetched yet". Treating it as a verdict would flash a
+    // "this platform doesn't publish video" warning on every editor open.
     const policy = mediaPolicy(LINKEDIN, rule({ allowed_kinds: ['video'] }))
-    expect(policy.videoOnly).toBe(true)
-    expect(policy.accepts).toBe(false)
-    expect(policy.kinds).toEqual([])
+    expect(policy.videoUnsupported).toBe(false)
+  })
+
+  it('caps video at Ogen’s own budget, not the platform’s ceiling', () => {
+    // LinkedIn is seeded at 5 GB; we upload at most MAX_VIDEO_UPLOAD_BYTES.
+    const policy = mediaPolicy(
+      LINKEDIN,
+      rule({ allowed_kinds: ['video'] }),
+      platform(linkedInVideo),
+    )
+    expect(policy.video?.maxFileSizeBytes).toBe(MAX_VIDEO_UPLOAD_BYTES)
+    expect(policy.video?.cappedByOgen).toBe(true)
   })
 
   it('falls back to the platform cap while the rule is unknown', () => {
@@ -164,6 +240,36 @@ describe('checkFile', () => {
     expect(checkFile(file('photo.jpg', 'image/jpeg', 3 * 1024 * 1024), policy).ok).toBe(true)
     expect(checkFile(file('photo.jpg', 'image/jpeg', 9 * 1024 * 1024), policy).ok).toBe(false)
   })
+
+  const videoPolicy = () =>
+    mediaPolicy(LINKEDIN, rule({ allowed_kinds: ['video'] }), platform(linkedInVideo))
+
+  it('rejects video over Ogen’s budget before the upload starts', () => {
+    // The platform would take 5 GB; refusing here saves the user a 600 MB
+    // upload that finalize would answer 400 to.
+    const tooBig = file('clip.mp4', 'video/mp4', 0)
+    Object.defineProperty(tooBig, 'size', { value: MAX_VIDEO_UPLOAD_BYTES + 1 })
+    const result = checkFile(tooBig, videoPolicy())
+    expect(result.ok).toBe(false)
+    expect(result.ok === false && result.reason).toContain('500 MB')
+  })
+
+  it('accepts video inside the budget', () => {
+    expect(checkFile(file('clip.mp4', 'video/mp4', 1024), videoPolicy()).ok).toBe(true)
+  })
+
+  it('rejects a container the platform does not list', () => {
+    // LinkedIn is seeded mp4-only.
+    const result = checkFile(file('clip.mov', 'video/quicktime', 1024), videoPolicy())
+    expect(result.ok).toBe(false)
+    expect(result.ok === false && result.reason).toContain('MOV')
+  })
+
+  it('rejects video on a post type that takes none', () => {
+    const result = checkFile(file('clip.mp4', 'video/mp4', 1024), mediaPolicy(X, imageRule))
+    expect(result.ok).toBe(false)
+    expect(result.ok === false && result.reason).toContain("doesn't take video")
+  })
 })
 
 describe('evaluatePost', () => {
@@ -175,6 +281,8 @@ describe('evaluatePost', () => {
     // the server's now (CON-91), so the check is tested against a number the
     // caller supplies.
     maxContentChars: 2200 as number | null | undefined,
+    // Instagram publishes no title, which is the common case.
+    maxTitleChars: null as number | null | undefined,
   }
 
   it('fails the media check below the minimum', () => {
@@ -211,6 +319,95 @@ describe('evaluatePost', () => {
     })
     expect(checks.find((c) => c.id === 'media-count')?.status).toBe('warn')
     expect(checks.some((c) => c.status === 'fail')).toBe(false)
+  })
+
+  // Mirrors `platforms.ValidatePostType`'s requires_video_title branch. Ogen
+  // has no separate video-metadata form — the post's own title is the field,
+  // because `SubmitRequest` carries nothing else today.
+  const youTubeVideo = {
+    ...linkedInVideo,
+    allowed_formats: ['mp4', 'mov', 'webm'],
+    requires_video_title: true,
+  }
+  const youTubePolicy = () =>
+    mediaPolicy(YOUTUBE, rule({ allowed_kinds: ['video'] }), {
+      ...platform(youTubeVideo),
+      id: YOUTUBE,
+      name: 'YouTube',
+    })
+
+  it('fails a video post with no title where the platform demands one', () => {
+    const checks = evaluatePost({
+      ...base,
+      post: makePost({ platform_id: YOUTUBE, platform_post_type: 'video', title: '  ' }),
+      policy: youTubePolicy(),
+      attachments: [makeAttachment({ mime_type: 'video/mp4' })],
+    })
+    expect(checks.find((c) => c.id === 'video-title')?.status).toBe('fail')
+  })
+
+  it('passes once the video post has a title', () => {
+    const checks = evaluatePost({
+      ...base,
+      post: makePost({
+        platform_id: YOUTUBE,
+        platform_post_type: 'video',
+        title: 'How we ship',
+      }),
+      policy: youTubePolicy(),
+      attachments: [makeAttachment({ mime_type: 'video/mp4' })],
+    })
+    expect(checks.find((c) => c.id === 'video-title')?.status).toBe('pass')
+  })
+
+  it('raises no title check on a platform that derives one from the caption', () => {
+    const checks = evaluatePost({
+      ...base,
+      post: makePost({ platform_id: LINKEDIN, platform_post_type: 'video', title: '' }),
+      policy: mediaPolicy(
+        LINKEDIN,
+        rule({ allowed_kinds: ['video'] }),
+        platform(linkedInVideo),
+      ),
+      attachments: [makeAttachment({ mime_type: 'video/mp4' })],
+    })
+    expect(checks.some((c) => c.id === 'video-title')).toBe(false)
+  })
+
+  it('fails a title over the platform’s cap', () => {
+    const checks = evaluatePost({
+      ...base,
+      post: makePost({ platform_id: YOUTUBE, title: 'x'.repeat(101) }),
+      policy: youTubePolicy(),
+      attachments: [makeAttachment({ mime_type: 'video/mp4' })],
+      maxTitleChars: 100,
+    })
+    const check = checks.find((c) => c.id === 'title-limit')
+    expect(check?.status).toBe('fail')
+    expect(check?.detail).toContain('1 over')
+  })
+
+  it('counts a title in code points, not UTF-16 units', () => {
+    // Two-unit emoji: 50 of them are 50 characters to YouTube's counter, not
+    // 100 — measuring in `.length` would fail a title that fits.
+    const checks = evaluatePost({
+      ...base,
+      post: makePost({ platform_id: YOUTUBE, title: '🎬'.repeat(50) }),
+      policy: youTubePolicy(),
+      attachments: [makeAttachment({ mime_type: 'video/mp4' })],
+      maxTitleChars: 100,
+    })
+    expect(checks.find((c) => c.id === 'title-limit')?.status).toBe('pass')
+  })
+
+  it('raises no title-length check where the platform publishes no title', () => {
+    const checks = evaluatePost({
+      ...base,
+      post: makePost({ title: 'x'.repeat(500) }),
+      policy: mediaPolicy(INSTAGRAM, rule({ min_attachments: 0 })),
+      attachments: [],
+    })
+    expect(checks.some((c) => c.id === 'title-limit')).toBe(false)
   })
 
   it('fails over the platform character limit', () => {

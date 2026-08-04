@@ -24,6 +24,17 @@ function view(accounts: PublisherAccount[]) {
     cadence: '',
     constraints: '',
     text_constraints: { max_content_chars: 3000, max_title_chars: 0 },
+    video_constraints: {
+      max_file_size_bytes: 0,
+      allowed_formats: [],
+      max_duration_seconds: 0,
+      min_duration_seconds: 0,
+      max_width: 0,
+      max_height: 0,
+      allowed_aspect_ratios: [],
+      max_attachments_per_post: 0,
+      requires_video_title: false,
+    },
     created_at: '',
     updated_at: '',
     publishers: [

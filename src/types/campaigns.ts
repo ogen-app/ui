@@ -40,6 +40,38 @@ export type TextConstraints = {
   per_post_type?: Record<string, number>;
 };
 
+/**
+ * The platform's video rule set, seeded server-side (CON-148). Mirrors
+ * `models.VideoConstraints`.
+ *
+ * Unlike the image and PDF rules — which the front end deliberately overrides
+ * in `lib/platformMedia.ts` because their seeds disagree with what the
+ * platforms accept — these are read straight off the wire. They were seeded by
+ * CON-148 from Zernio's per-platform docs, not by the disputed CON-73 batch,
+ * so there is nothing to correct here yet.
+ *
+ * An all-zero object is how "this platform does not take video" reaches us;
+ * the individual duration/resolution fields are only enforced when non-zero,
+ * so a platform can opt into just the checks it cares about. Read these
+ * through `lib/platformVideo.ts`, never directly — the server's file-size
+ * ceiling is not the one we upload against.
+ */
+export type VideoConstraints = {
+  max_file_size_bytes: number;
+  /** Container names, not MIME types — `["mp4", "mov"]`. */
+  allowed_formats: string[];
+  max_duration_seconds: number;
+  /** Reels and Shorts have a floor as well as a ceiling. */
+  min_duration_seconds: number;
+  /** `0` is unbounded, not "no pixels allowed". */
+  max_width: number;
+  max_height: number;
+  allowed_aspect_ratios: string[];
+  max_attachments_per_post: number;
+  /** YouTube rejects an untitled upload; feed platforms derive one. */
+  requires_video_title: boolean;
+};
+
 export type Platform = {
   id: string;
   name: string;
@@ -48,6 +80,7 @@ export type Platform = {
   /** Prose, shown as-is in workspace settings. Not machine-readable. */
   constraints: string;
   text_constraints: TextConstraints;
+  video_constraints: VideoConstraints;
   created_at: string;
   updated_at: string;
   publishers?: PlatformPublisher[];
