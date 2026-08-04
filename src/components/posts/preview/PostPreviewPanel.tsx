@@ -14,13 +14,13 @@ import { LinkedInPreview } from './LinkedInPreview.tsx'
 import { StoryPreview } from './StoryPreview.tsx'
 import { ThreadsPreview } from './ThreadsPreview.tsx'
 import { TwitterPreview } from './TwitterPreview.tsx'
-import type { PreviewProps } from './types.ts'
+import { YouTubePreview } from './YouTubePreview.tsx'
+import type { PreviewMediaItem, PreviewProps } from './types.ts'
 
 /**
- * A card per platform Ogen publishes to — all five of them, now that YouTube
- * is hidden (CON-145). Anything without an entry falls through to a stub,
- * which is now only reachable by a post pointing at a platform we no longer
- * offer.
+ * A card per platform Ogen publishes to. Anything without an entry falls
+ * through to a stub, which is now only reachable by a post pointing at a
+ * platform we no longer offer.
  */
 const RENDERERS: Record<string, (props: PreviewProps) => JSX.Element> = {
   linkedin: LinkedInPreview,
@@ -28,12 +28,18 @@ const RENDERERS: Record<string, (props: PreviewProps) => JSX.Element> = {
   instagram: InstagramPreview,
   twitter: TwitterPreview,
   threads: ThreadsPreview,
+  youtube: YouTubePreview,
 }
 
 /**
- * How many images the card puts in the feed before collapsing the rest behind
- * a "+N" tile. Only the grid networks are listed: Instagram and Threads draw
- * every slide, because a carousel is not a truncation.
+ * How many *images* the card puts in the feed before collapsing the rest
+ * behind a "+N" tile. Only the grid networks are listed: Instagram and
+ * Threads draw every slide, because a carousel is not a truncation, and on
+ * YouTube the video is the page rather than a gallery.
+ *
+ * Images only, on purpose. A video is one video — "1 of 4 shown" is a
+ * statement about a gallery, and applying it to a video post would invent a
+ * truncation that never happened.
  */
 const FEED_TILES: Record<string, number> = {
   linkedin: 4,
@@ -43,6 +49,9 @@ const FEED_TILES: Record<string, number> = {
 
 /** Networks whose `story` post type is the fullscreen kind we can draw. */
 const STORY_NETWORKS = new Set(['instagram', 'facebook'])
+
+/** Networks whose multi-image card is a swipeable carousel, not a grid. */
+const CAROUSEL_NETWORKS = new Set(['instagram', 'threads'])
 
 /**
  * "Preview" for the right sidebar: the post as its platform will render it.
@@ -83,7 +92,7 @@ export function PostPreviewPanel({
   // what the networks show before playback anyway. PDFs are attachments the
   // networks treat as documents (LinkedIn turns one into a slide carousel),
   // so they are counted for the notes but never rendered as pictures.
-  const { imageUrls, pdfCount, missingUrls } = useMemo(() => {
+  const { media, pdfCount, missingImages, missingPosters } = useMemo(() => {
     const ordered = [...attachments].sort((a, b) => a.position - b.position)
     // `presigned_url` is absent when object storage is unconfigured, and a
     // video's poster is absent when the render failed — there is nothing to
@@ -95,12 +104,23 @@ export function PostPreviewPanel({
       return kind === 'image' || kind === 'video'
     })
     return {
-      imageUrls: pictures.flatMap((a) => {
+      media: pictures.flatMap<PreviewMediaItem>((a) => {
         const url = shownUrl(a)
-        return url ? [url] : []
+        if (!url) return []
+        const kind = attachmentKind(a.mime_type) === 'video' ? 'video' : 'image'
+        return [{ url, kind, durationMs: a.duration_ms }]
       }),
       pdfCount: ordered.filter((a) => attachmentKind(a.mime_type) === 'pdf').length,
-      missingUrls: pictures.filter((a) => !shownUrl(a)).length,
+      // Counted apart because they mean different things: an image with no
+      // link is storage misconfigured, a video with no poster is the render
+      // that never ran. Telling the user to check object storage when the
+      // video service is what is down sends them to the wrong place.
+      missingImages: pictures.filter(
+        (a) => attachmentKind(a.mime_type) !== 'video' && !shownUrl(a),
+      ).length,
+      missingPosters: pictures.filter(
+        (a) => attachmentKind(a.mime_type) === 'video' && !shownUrl(a),
+      ).length,
     }
   }, [attachments])
 
@@ -123,7 +143,10 @@ export function PostPreviewPanel({
   // The same server-resolved ceiling the Validations panel measures against,
   // so the two never disagree about whether the copy fits (CON-91). It
   // replaced a hard-coded per-network max that lived beside the folds.
-  const { limit } = useCharLimit(doc.platform_id, doc.platform_post_type)
+  const { limit, titleLimit, ready: limitsReady } = useCharLimit(
+    doc.platform_id,
+    doc.platform_post_type,
+  )
 
   // Two post types are not a feed card at all, and previewing them as one
   // said something untrue: a story publishes no caption, and a thread's
@@ -142,11 +165,23 @@ export function PostPreviewPanel({
 
   // The platform's own ceiling on images in one post. Anything past it cannot
   // publish, so the card is drawn from the images that can — otherwise the
-  // preview would promise a slide the network will drop.
-  const mediaCap = getPlatformMedia(doc.platform_id).image?.maxPerPost ?? null
-  const publishable =
-    mediaCap === null ? imageUrls : imageUrls.slice(0, mediaCap)
+  // preview would promise a slide the network will drop. Videos ride along:
+  // the image cap is about images, and the video rules live server-side
+  // (`video_constraints`), enforced by the Validations panel.
+  const imageCap = getPlatformMedia(doc.platform_id).image?.maxPerPost ?? null
+  const publishable = useMemo(() => {
+    if (imageCap === null) return media
+    let images = 0
+    return media.filter((m) => m.kind !== 'image' || ++images <= imageCap)
+  }, [media, imageCap])
+  const imageCount = media.filter((m) => m.kind === 'image').length
+  const videoCount = media.filter((m) => m.kind === 'video').length
   const feedTiles = platform ? FEED_TILES[platform.zernioId] : undefined
+  const carousel =
+    !isStory &&
+    !!platform &&
+    CAROUSEL_NETWORKS.has(platform.zernioId) &&
+    publishable.length > 1
 
   return (
     <RailPanel
@@ -165,13 +200,6 @@ export function PostPreviewPanel({
 
       {!platform ? (
         <Note>Pick a platform for this post and its preview appears here.</Note>
-      ) : platform.hidden ? (
-        // Reachable only by a post made before the platform was withdrawn.
-        // Saying why beats a card that pretends the post has a future.
-        <Note>
-          Ogen doesn't publish to {platform.name} — it has no video pipeline yet. Move this
-          post to another platform and its preview appears here.
-        </Note>
       ) : !Renderer ? (
         <Note>No {platform.name} preview yet.</Note>
       ) : (
@@ -179,7 +207,8 @@ export function PostPreviewPanel({
           {isStory ? (
             <StoryPreview
               text={text}
-              mediaUrls={publishable}
+              title={doc.title}
+              media={publishable}
               author={previewAuthor}
               timeLabel={timeLabel}
               postType={postType}
@@ -188,7 +217,8 @@ export function PostPreviewPanel({
           ) : (
             <Renderer
               text={text}
-              mediaUrls={publishable}
+              title={doc.title}
+              media={publishable}
               author={previewAuthor}
               timeLabel={timeLabel}
               postType={postType}
@@ -199,14 +229,17 @@ export function PostPreviewPanel({
           <Notes
             platformName={platform.name}
             title={doc.title}
+            publishesTitle={limitsReady && titleLimit !== null}
             markdown={doc.content}
             text={text}
-            mediaCount={imageUrls.length}
+            imageCount={imageCount}
+            videoCount={videoCount}
             pdfCount={pdfCount}
-            missingUrls={missingUrls}
-            mediaCap={mediaCap}
+            missingImages={missingImages}
+            missingPosters={missingPosters}
+            imageCap={imageCap}
             feedTiles={feedTiles}
-            carousel={!isStory && publishable.length > 1 && feedTiles === undefined}
+            carousel={carousel}
             story={isStory}
             thread={isThread}
             longSegments={longSegments}
@@ -229,12 +262,15 @@ export function PostPreviewPanel({
 function Notes({
   platformName,
   title,
+  publishesTitle,
   markdown,
   text,
-  mediaCount,
+  imageCount,
+  videoCount,
   pdfCount,
-  missingUrls,
-  mediaCap,
+  missingImages,
+  missingPosters,
+  imageCap,
   feedTiles,
   carousel,
   story,
@@ -246,17 +282,23 @@ function Notes({
 }: {
   platformName: string
   title: string
+  /** The platform has a title field of its own (YouTube) — CON-160. */
+  publishesTitle: boolean
   markdown: string
   /** The flattened copy, as the network would receive it. */
   text: string
   /** Attached images that have a URL to render. */
-  mediaCount: number
+  imageCount: number
+  /** Attached videos with a poster to render. */
+  videoCount: number
   /** Attached PDFs, which are documents rather than feed pictures. */
   pdfCount: number
   /** Images with no presigned URL — object storage is unconfigured. */
-  missingUrls: number
+  missingImages: number
+  /** Videos with no poster frame — the probe never produced one. */
+  missingPosters: number
   /** The platform's ceiling on images in one post, if it has one. */
-  mediaCap: number | null
+  imageCap: number | null
   /** Images the feed shows before a "+N" tile — grid networks only. */
   feedTiles?: number
   /** The card is drawn as a swipeable carousel rather than a grid. */
@@ -288,27 +330,39 @@ function Notes({
   }
 
   if (story) {
-    if (mediaCount === 0) {
+    if (imageCount === 0) {
       notes.push(
         <span className="text-destructive">
           A story is one image, full screen. This post has none, so it cannot be scheduled.
         </span>,
       )
-    } else if (mediaCount > 1) {
+    } else if (imageCount > 1) {
       notes.push(
         <span className="text-destructive">
-          A story takes exactly one image and this post has {mediaCount} — {platformName} will
+          A story takes exactly one image and this post has {imageCount} — {platformName} will
           not accept it. Remove the rest, or split them across posts.
         </span>,
       )
     }
   }
 
-  if (title.trim()) {
+  if (title.trim() && !publishesTitle) {
     notes.push(
       <>
         The title is not published. {platformName} posts have no title field, so it stays in
         Ogen as the post's name.
+      </>,
+    )
+  }
+
+  // The inverse, and the more surprising one: on YouTube the title *is* the
+  // video's name, and leaving it empty does not block the publish — it just
+  // names the video something nobody chose.
+  if (!title.trim() && publishesTitle) {
+    notes.push(
+      <>
+        There is no title, so {platformName} falls back to the first line of the description
+        — or to "Untitled Video" when there is none.
       </>,
     )
   }
@@ -356,16 +410,16 @@ function Notes({
   // Past the platform's cap the extra images do not publish at all — a
   // different and worse fact than a feed that collapses them, so it is said
   // first and in the destructive colour.
-  if (!story && mediaCap !== null && mediaCount > mediaCap) {
+  if (!story && imageCap !== null && imageCount > imageCap) {
     notes.push(
       <span className="text-destructive">
-        Only the first {mediaCap} of {mediaCount} images will publish — {platformName} takes{' '}
-        {mediaCap} in one post. Remove the rest, or split them across posts.
+        Only the first {imageCap} of {imageCount} images will publish — {platformName} takes{' '}
+        {imageCap} in one post. Remove the rest, or split them across posts.
       </span>,
     )
   }
 
-  const publishing = mediaCap === null ? mediaCount : Math.min(mediaCount, mediaCap)
+  const publishing = imageCap === null ? imageCount : Math.min(imageCount, imageCap)
 
   if (!story && feedTiles !== undefined && publishing > feedTiles) {
     notes.push(
@@ -379,8 +433,19 @@ function Notes({
   if (carousel) {
     notes.push(
       <>
-        A carousel: the reader swipes through {publishing} slides and only the first is in the
-        feed, so it carries the post. Every slide is cropped to the first one's shape.
+        A carousel: the reader swipes through the slides and only the first is in the feed,
+        so it carries the post. Every slide is cropped to the first one's shape.
+      </>,
+    )
+  }
+
+  if (videoCount > 0 && !story) {
+    notes.push(
+      <>
+        {videoCount === 1 ? 'The video is' : `The ${videoCount} videos are`} drawn as{' '}
+        {videoCount === 1 ? 'its poster frame' : 'their poster frames'} — the same still{' '}
+        {platformName} shows before playback. Nothing here plays, and the poster is generated
+        rather than chosen.
       </>,
     )
   }
@@ -395,12 +460,22 @@ function Notes({
     )
   }
 
-  if (missingUrls > 0) {
+  if (missingImages > 0) {
     notes.push(
       <>
-        {missingUrls === 1 ? 'One image has' : `${missingUrls} images have`} no download link
-        yet, so {missingUrls === 1 ? 'it is' : 'they are'} missing from the card — object
-        storage may not be configured.
+        {missingImages === 1 ? 'One image has' : `${missingImages} images have`} no download
+        link yet, so {missingImages === 1 ? 'it is' : 'they are'} missing from the card —
+        object storage may not be configured.
+      </>,
+    )
+  }
+
+  if (missingPosters > 0) {
+    notes.push(
+      <>
+        {missingPosters === 1 ? 'One video has' : `${missingPosters} videos have`} no poster
+        frame, so {missingPosters === 1 ? 'it is' : 'they are'} missing from the card. The
+        upload is fine — the frame is taken after it lands, and that step did not run.
       </>,
     )
   }

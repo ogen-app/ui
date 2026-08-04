@@ -20,14 +20,14 @@ import type { PreviewProps } from './types.ts'
  * it whole.
  */
 export function StoryPreview({
-  mediaUrls,
+  media,
   author,
   timeLabel,
   network,
 }: PreviewProps & { network: 'instagram' | 'facebook' }) {
   const [failed, setFailed] = useState(false)
   const handle = author.username ?? author.name ?? 'your.account'
-  const url = mediaUrls[0]
+  const url = media[0]?.url
 
   return (
     <PreviewSurface

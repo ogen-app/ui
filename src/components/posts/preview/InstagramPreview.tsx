@@ -7,6 +7,7 @@ import {
   PaperPlaneTiltIcon,
 } from '@phosphor-icons/react'
 import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
+import { frameAspect } from './frames.ts'
 import {
   CarouselDots,
   FoldedText,
@@ -34,9 +35,12 @@ import type { PreviewProps } from './types.ts'
  * slide's ratio, so a portrait shot in position four loses its top and
  * bottom, and there is nowhere else in the app to see that happen.
  */
-export function InstagramPreview({ text, mediaUrls, author, timeLabel }: PreviewProps) {
+export function InstagramPreview({ text, media, postType, author, timeLabel }: PreviewProps) {
   const handle = author.username ?? author.name ?? 'your.account'
-  const carousel = useCarousel(mediaUrls.length)
+  const carousel = useCarousel(media.length)
+  // Square is the feed's shape; a Reel is 9:16 and previewing one in a square
+  // shows a crop that will never exist.
+  const aspect = frameAspect(postType, 1) ?? 1
 
   return (
     <PreviewSurface style={{ borderRadius: 4 }}>
@@ -51,23 +55,23 @@ export function InstagramPreview({ text, mediaUrls, author, timeLabel }: Preview
         <DotsThreeIcon className="size-5 shrink-0" style={{ color: C.text }} aria-hidden />
       </div>
 
-      {mediaUrls.length === 0 ? (
+      {media.length === 0 ? (
         <div
           className="flex flex-col items-center justify-center gap-2 px-6 text-center"
-          style={{ aspectRatio: 1, background: C.surface, color: C.muted }}
+          style={{ aspectRatio: aspect, background: C.surface, color: C.muted }}
         >
           <ImageIcon className="size-8" aria-hidden />
           <span style={{ fontSize: 13 }}>
-            Instagram posts need an image — this one has none.
+            Instagram posts need an image or video — this one has none.
           </span>
         </div>
-      ) : mediaUrls.length === 1 ? (
-        <PreviewMedia urls={mediaUrls} aspect={1} background={C.surface} />
+      ) : media.length === 1 ? (
+        <PreviewMedia items={media} aspect={aspect} background={C.surface} />
       ) : (
         <PreviewCarousel
           carousel={carousel}
-          urls={mediaUrls}
-          aspect={1}
+          items={media}
+          aspect={aspect}
           background={C.surface}
           arrowColor={C.text}
         />

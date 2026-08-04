@@ -9,7 +9,7 @@ import {
 import { PLATFORM_FOLDS, splitThread } from '@/lib/socialText.ts'
 import { FoldedText, PreviewAvatar, PreviewMedia, PreviewSurface } from './previewParts.tsx'
 import { TWITTER as C } from './previewTheme.ts'
-import type { PreviewAuthor, PreviewProps } from './types.ts'
+import type { PreviewAuthor, PreviewMediaItem, PreviewProps } from './types.ts'
 
 /**
  * An X (Twitter) post, or a thread of them.
@@ -32,7 +32,7 @@ import type { PreviewAuthor, PreviewProps } from './types.ts'
  */
 export function TwitterPreview({
   text,
-  mediaUrls,
+  media,
   author,
   timeLabel,
   postType,
@@ -51,7 +51,7 @@ export function TwitterPreview({
              the post as a whole and the publisher places them, but a thread's
              images conventionally ride the first one — and that is the one
              decision the preview cannot leave blank. */
-          mediaUrls={i === 0 ? mediaUrls : []}
+          media={i === 0 ? media : []}
           author={author}
           timeLabel={timeLabel}
           thread={thread}
@@ -65,7 +65,7 @@ export function TwitterPreview({
 
 function Tweet({
   text,
-  mediaUrls,
+  media,
   author,
   timeLabel,
   thread,
@@ -73,7 +73,7 @@ function Tweet({
   connector,
 }: {
   text: string
-  mediaUrls: string[]
+  media: PreviewMediaItem[]
   author: PreviewAuthor
   timeLabel: string
   /** Part of a thread: text is shown whole, and over-length is called out. */
@@ -156,7 +156,7 @@ function Tweet({
           </div>
         )}
 
-        {mediaUrls.length > 0 && (
+        {media.length > 0 && (
           // X rounds and outlines the media block rather than letting it
           // bleed to the card edge, so it is wrapped rather than handed a
           // radius — `PreviewMedia` owns its own layout inside.
@@ -164,7 +164,7 @@ function Tweet({
             className="mt-3"
             style={{ borderRadius: 16, overflow: 'hidden', border: `1px solid ${C.border}` }}
           >
-            <PreviewMedia urls={mediaUrls} background={C.surface} />
+            <PreviewMedia items={media} background={C.surface} />
           </div>
         )}
 

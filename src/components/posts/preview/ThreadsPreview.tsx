@@ -27,9 +27,9 @@ import type { PreviewProps } from './types.ts'
  * the Instagram card shows — worth seeing side by side, because that is the
  * account the post actually goes out as.
  */
-export function ThreadsPreview({ text, mediaUrls, author, timeLabel }: PreviewProps) {
+export function ThreadsPreview({ text, media, author, timeLabel }: PreviewProps) {
   const handle = author.username ?? author.name ?? 'your.account'
-  const carousel = useCarousel(mediaUrls.length)
+  const carousel = useCarousel(media.length)
 
   return (
     <PreviewSurface style={{ borderRadius: 8 }}>
@@ -58,14 +58,14 @@ export function ThreadsPreview({ text, mediaUrls, author, timeLabel }: PreviewPr
             />
           </div>
 
-          {mediaUrls.length > 0 && (
+          {media.length > 0 && (
             <div className="mt-2" style={{ borderRadius: 8, overflow: 'hidden' }}>
-              {mediaUrls.length === 1 ? (
-                <PreviewMedia urls={mediaUrls} background={C.surface} />
+              {media.length === 1 ? (
+                <PreviewMedia items={media} background={C.surface} />
               ) : (
                 <PreviewCarousel
                   carousel={carousel}
-                  urls={mediaUrls}
+                  items={media}
                   // Threads shows the strip at the first image's shape and
                   // scrolls sideways; square is the closest single ratio and
                   // matches what Instagram will do with the same files.
@@ -88,7 +88,7 @@ export function ThreadsPreview({ text, mediaUrls, author, timeLabel }: PreviewPr
               sit under the strip, and an overlay would fight the photo. The
               wrapper is conditional too — `CarouselDots` renders nothing for a
               single image, but its padding would still push the card. */}
-          {mediaUrls.length > 1 && (
+          {media.length > 1 && (
             <div className="pt-2">
               <CarouselDots carousel={carousel} activeColor={C.dot} mutedColor={C.dotMuted} />
             </div>

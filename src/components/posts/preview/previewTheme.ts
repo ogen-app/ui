@@ -74,3 +74,14 @@ export const THREADS = {
   dot: '#000000',
   dotMuted: '#d1d1d1',
 } as const
+
+// YouTube is a watch page rather than a feed card, so it needs two more
+// values than the others: the chip fill behind its pill buttons and the
+// description panel, and the near-black its Subscribe button uses.
+export const YOUTUBE = {
+  text: '#0f0f0f',
+  muted: '#606060',
+  chip: '#f2f2f2',
+  subscribe: '#0f0f0f',
+  brand: '#ff0000',
+} as const
