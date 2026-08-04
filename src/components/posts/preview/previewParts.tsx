@@ -425,10 +425,16 @@ function Frame({
 export function VideoChrome({
   durationMs,
   size = 48,
+  badgeBottom = 8,
 }: {
   durationMs: number
   /** Diameter of the play mark; the watch page wants a bigger one. */
   size?: number
+  /**
+   * How far the running time sits off the bottom of the frame. A story keeps
+   * its own chrome down there — the reply bar — and the badge has to clear it.
+   */
+  badgeBottom?: number
 }) {
   return (
     <>
@@ -453,7 +459,7 @@ export function VideoChrome({
           className="absolute font-semibold text-white"
           style={{
             right: 8,
-            bottom: 8,
+            bottom: badgeBottom,
             background: 'rgba(0,0,0,0.8)',
             borderRadius: 4,
             padding: '1px 4px',
