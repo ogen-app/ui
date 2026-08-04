@@ -8,11 +8,10 @@ import type { Post, PostStatus, PostSummary } from "@/types/posts";
 import { getPlatformInfo, type PlatformView } from "@/lib/platformDictionary";
 
 /**
- * A targeted channel's name. The views only carry platforms the app offers, so
- * a campaign still targeting a withdrawn one (YouTube — CON-145) has no view
- * and would otherwise read as "Unknown channel". The dictionary still knows
- * the name, and naming it is what makes the row actionable: the user can see
- * what to remove.
+ * A targeted channel's name. A campaign can target a platform the API no
+ * longer returns, which has no view and would otherwise read as "Unknown
+ * channel". The dictionary still knows the name, and naming it is what makes
+ * the row actionable: the user can see what to remove.
  */
 function channelNameOf(view: PlatformView | undefined, id: string): string {
   return view?.info.name ?? getPlatformInfo(id)?.name ?? "Unknown channel";

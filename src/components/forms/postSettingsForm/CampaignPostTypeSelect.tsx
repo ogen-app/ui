@@ -6,7 +6,6 @@ import { cn } from '@/lib'
 import { ZIndex } from '@/config/zIndex'
 import { selectTriggerVariants } from '@/components/ui/text-select'
 import { usePlatformViews } from '@/hooks/usePlatforms'
-import { selectablePostTypes } from '@/lib/platformDictionary'
 import type { Campaign } from '@/types/campaigns'
 
 type Item = {
@@ -65,7 +64,7 @@ export function CampaignPostTypeSelect({
 
         // Not `info.postTypes`: the video formats are never offered, and
         // counting them into "N other post types" would advertise them.
-        for (const pt of selectablePostTypes(view.info)) {
+        for (const pt of view.info.postTypes) {
           const id = joinId(view.platform.id, pt.slug)
           const item: Item = {
             id,

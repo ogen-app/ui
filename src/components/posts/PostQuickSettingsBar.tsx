@@ -29,7 +29,6 @@ import {
   PLATFORMS,
   getPlatformInfo,
   getPostTypeLabel,
-  selectablePostTypes,
 } from '@/lib/platformDictionary'
 import {
   canEditPublishingAccount,
@@ -114,7 +113,7 @@ export function PostQuickSettingsBar({
   const campaignPlatforms = campaign
     ? PLATFORMS.filter((p) => (campaignPostTypes.get(p.id)?.size ?? 0) > 0)
     : PLATFORMS
-  const campaignTypes = (platform ? selectablePostTypes(platform) : []).filter(
+  const campaignTypes = (platform?.postTypes ?? []).filter(
     (t) => !campaign || (campaignPostTypes.get(doc.platform_id)?.has(t.slug) ?? false),
   )
 
@@ -152,7 +151,7 @@ export function PostQuickSettingsBar({
       // sides read the selectable list, so switching platforms can never
       // land the post on a video type the picker would not have offered.
       const next = getPlatformInfo(platformId)
-      const types = next ? selectablePostTypes(next) : []
+      const types = next?.postTypes ?? []
       if (next && !types.some((t) => t.slug === d.platform_post_type)) {
         const camp = campaignPostTypes.get(platformId)
         const preferred = types.find((t) => camp?.has(t.slug)) ?? types[0]

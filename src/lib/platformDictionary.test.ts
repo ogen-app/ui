@@ -7,8 +7,6 @@ import {
   connectedAccounts,
   getPlatformInfo,
   getPostTypeLabel,
-  isHiddenPlatform,
-  selectablePostTypes,
 } from "./platformDictionary.ts";
 
 // Sqids from the dictionary itself.
@@ -50,53 +48,33 @@ function makePlatform(id: string, supported: string[]): Platform {
   };
 }
 
-// Both gates are front-end-only and land in one file, so this is where they
-// are pinned. CON-145 moves them server-side; when it does, these go.
-describe("the YouTube gate", () => {
-  it("keeps YouTube out of the offered platforms", () => {
-    expect(PLATFORMS.some((p) => p.zernioId === "youtube")).toBe(false);
-    expect(isHiddenPlatform(YOUTUBE)).toBe(true);
-  });
-
-  it("still resolves it for display, so an existing post is not blank", () => {
+// The CON-145 gates (YouTube hidden, video post types withheld) came out
+// when the video pipeline landed — CON-148 made video publishable and
+// CON-163 gave YouTube its preview, so the dictionary offers both.
+describe("video ungating (CON-148/163)", () => {
+  it("offers YouTube alongside the other platforms", () => {
+    expect(PLATFORMS.some((p) => p.zernioId === "youtube")).toBe(true);
     expect(getPlatformInfo(YOUTUBE)?.name).toBe("YouTube");
     expect(getPostTypeLabel(YOUTUBE, "short")).toBe("Short");
   });
 
-  it("drops it from the views even though the API returns it", () => {
+  it("builds a view for it when the API returns it", () => {
     const views = buildPlatformViews([
       makePlatform(YOUTUBE, ["video"]),
       makePlatform(INSTAGRAM, ["image-post"]),
     ]);
-    expect(views.map((v) => v.info.zernioId)).toEqual(["instagram"]);
-  });
-});
-
-describe("the video gate", () => {
-  it("withholds video formats from every platform's selectable types", () => {
-    for (const info of PLATFORMS) {
-      expect(selectablePostTypes(info).some((pt) => pt.video)).toBe(false);
-    }
+    expect(views.map((v) => v.info.zernioId)).toEqual(["youtube", "instagram"]);
   });
 
-  it("keeps the formats that merely carry media", () => {
-    const instagram = getPlatformInfo(INSTAGRAM)!;
-    const slugs = selectablePostTypes(instagram).map((pt) => pt.slug);
-    expect(slugs).toContain("carousel");
-    expect(slugs).toContain("story");
-    expect(slugs).not.toContain("reel");
-  });
-
-  it("filters them out of a view even when a publisher supports them", () => {
+  it("keeps video formats in a view when a publisher supports them", () => {
     const [view] = buildPlatformViews([
       makePlatform(INSTAGRAM, ["image-post", "reel", "carousel"]),
     ]);
-    expect(view.allowed.map((pt) => pt.slug)).toEqual(["image-post", "carousel"]);
-    expect(view.available.map((pt) => pt.slug)).toEqual(["image-post", "carousel"]);
-  });
-
-  it("still labels one on a post that already has it", () => {
-    expect(getPostTypeLabel(INSTAGRAM, "reel")).toBe("Reel");
+    expect(view.allowed.map((pt) => pt.slug)).toEqual([
+      "image-post",
+      "carousel",
+      "reel",
+    ]);
   });
 });
 

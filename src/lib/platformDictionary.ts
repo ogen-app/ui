@@ -2,12 +2,6 @@
 // display info. The API is queried for IDs, publishers, cadence, and
 // constraints, but display names and post-type labels live here so we
 // fully control the wording the user sees.
-//
-// It is also, for now, where two product gates are enforced: YouTube is
-// hidden and video post types are withheld, because Ogen has no video
-// pipeline. Both are front-end-only — the API still offers them to anyone
-// who asks — so they are a display gate, not a rule. CON-145 moves them
-// server-side, after which the `hidden` and `video` flags can go.
 
 import type { Icon } from "@phosphor-icons/react";
 import { FacebookLogoIcon, InstagramLogoIcon, LinkedinLogoIcon, ThreadsLogoIcon, XLogoIcon, YoutubeLogoIcon } from "@phosphor-icons/react";
@@ -17,12 +11,6 @@ import type { Platform, PlatformPublisher, PublisherAccount } from "@/types/camp
 export type PlatformPostType = {
   slug: string;
   label: string;
-  // A video-first format. Ogen has no video pipeline — nothing uploads,
-  // stores or publishes one — so picking these produced a post that could
-  // never leave Draft. Hidden from every picker rather than offered and then
-  // explained. See the note on `hidden` below; CON-145 moves both gates to
-  // the server, where they actually bind.
-  video?: true;
 };
 
 export type PlatformInfo = {
@@ -36,16 +24,10 @@ export type PlatformInfo = {
   // the value POST /api/integrations/zernio/connect-links expects. Mirrors
   // the backend allowlist in publishers/zernio/platforms.go.
   zernioId: string;
-  // Kept out of every platform picker. YouTube is video end to end, so with
-  // no video pipeline there is nothing it could publish — offering it is an
-  // invitation to build a campaign that dead-ends. The entry stays in the
-  // table so posts and campaigns that already point at it still render a
-  // name and a logo instead of a blank.
-  hidden?: true;
   postTypes: PlatformPostType[];
 };
 
-const ALL_PLATFORMS: PlatformInfo[] = [
+export const PLATFORMS: PlatformInfo[] = [
   {
     id: "AXqWG7U2qnpt",
     name: "LinkedIn",
@@ -56,12 +38,12 @@ const ALL_PLATFORMS: PlatformInfo[] = [
       { slug: "text-post", label: "Text post" },
       { slug: "image-post", label: "Image post" },
       { slug: "carousel", label: "Carousel" },
-      { slug: "video", label: "Video", video: true },
+      { slug: "video", label: "Video" },
       { slug: "article", label: "Article" },
       { slug: "poll", label: "Poll" },
       { slug: "newsletter", label: "Newsletter" },
       { slug: "event", label: "Event" },
-      { slug: "live-video", label: "Live video", video: true },
+      { slug: "live-video", label: "Live video" },
     ],
   },
   {
@@ -70,14 +52,13 @@ const ALL_PLATFORMS: PlatformInfo[] = [
     icon: YoutubeLogoIcon,
     color: "#FF0000",
     zernioId: "youtube",
-    hidden: true,
     postTypes: [
-      { slug: "video", label: "Video", video: true },
-      { slug: "short", label: "Short", video: true },
-      { slug: "live-stream", label: "Live stream", video: true },
-      { slug: "premiere", label: "Premiere", video: true },
+      { slug: "video", label: "Video" },
+      { slug: "short", label: "Short" },
+      { slug: "live-stream", label: "Live stream" },
+      { slug: "premiere", label: "Premiere" },
       { slug: "community-post", label: "Community post" },
-      { slug: "podcast", label: "Podcast", video: true },
+      { slug: "podcast", label: "Podcast" },
     ],
   },
   {
@@ -89,10 +70,10 @@ const ALL_PLATFORMS: PlatformInfo[] = [
     postTypes: [
       { slug: "text-post", label: "Text post" },
       { slug: "image-post", label: "Image post" },
-      { slug: "video", label: "Video", video: true },
-      { slug: "reel", label: "Reel", video: true },
+      { slug: "video", label: "Video" },
+      { slug: "reel", label: "Reel" },
       { slug: "story", label: "Story" },
-      { slug: "live-video", label: "Live video", video: true },
+      { slug: "live-video", label: "Live video" },
       { slug: "carousel", label: "Carousel" },
       { slug: "poll", label: "Poll" },
       { slug: "event", label: "Event" },
@@ -108,7 +89,7 @@ const ALL_PLATFORMS: PlatformInfo[] = [
     postTypes: [
       { slug: "text-post", label: "Text post" },
       { slug: "image-post", label: "Image post" },
-      { slug: "video", label: "Video", video: true },
+      { slug: "video", label: "Video" },
       { slug: "long-form-post", label: "Long-form post" },
       { slug: "poll", label: "Poll" },
       { slug: "space", label: "Space" },
@@ -125,7 +106,7 @@ const ALL_PLATFORMS: PlatformInfo[] = [
       { slug: "text-post", label: "Text post" },
       { slug: "image-post", label: "Image post" },
       { slug: "carousel", label: "Carousel" },
-      { slug: "video", label: "Video", video: true },
+      { slug: "video", label: "Video" },
       { slug: "poll", label: "Poll" },
       { slug: "gif-post", label: "GIF post" },
     ],
@@ -139,9 +120,9 @@ const ALL_PLATFORMS: PlatformInfo[] = [
     postTypes: [
       { slug: "image-post", label: "Image post" },
       { slug: "carousel", label: "Carousel" },
-      { slug: "reel", label: "Reel", video: true },
+      { slug: "reel", label: "Reel" },
       { slug: "story", label: "Story" },
-      { slug: "live-video", label: "Live video", video: true },
+      { slug: "live-video", label: "Live video" },
       { slug: "broadcast-channel", label: "Broadcast channel" },
       { slug: "collaborative-post", label: "Collaborative post" },
       { slug: "guide", label: "Guide" },
@@ -149,31 +130,10 @@ const ALL_PLATFORMS: PlatformInfo[] = [
   },
 ];
 
-// What the app offers. Every picker reads this; `ALL_PLATFORMS` stays private
-// so a hidden platform cannot be selected back into existence by accident.
-export const PLATFORMS: PlatformInfo[] = ALL_PLATFORMS.filter((p) => !p.hidden);
-
-// Resolution is deliberately wider than selection: a post created before
-// YouTube was hidden still has to render as "YouTube", not as a blank row.
-const BY_ID: Map<string, PlatformInfo> = new Map(ALL_PLATFORMS.map((p) => [p.id, p]));
+const BY_ID: Map<string, PlatformInfo> = new Map(PLATFORMS.map((p) => [p.id, p]));
 
 export function getPlatformInfo(id: string): PlatformInfo | undefined {
   return BY_ID.get(id);
-}
-
-/** True for a platform we resolve for display but never offer. */
-export function isHiddenPlatform(id: string): boolean {
-  return BY_ID.get(id)?.hidden === true;
-}
-
-/**
- * The post types a user may pick. The one place the video gate is applied —
- * everything downstream (campaign settings, the quick bar, the post-type
- * select, the readiness rules) reads its universe from here or from
- * `PlatformView`, which is built on it.
- */
-export function selectablePostTypes(info: PlatformInfo): PlatformPostType[] {
-  return info.postTypes.filter((pt) => !pt.video);
 }
 
 export function unionSupportedSlugs(
@@ -221,9 +181,7 @@ export function buildPlatformView(
   const connectedPublishers = publishers.filter((p) => p.connected);
   const allowedSlugs = unionSupportedSlugs(publishers);
   const availableSlugs = unionSupportedSlugs(connectedPublishers);
-  // Zernio supports video on most of these platforms; Ogen does not, so the
-  // publisher's list is intersected with what we can actually produce.
-  const allowed = selectablePostTypes(info).filter((pt) => allowedSlugs.has(pt.slug));
+  const allowed = info.postTypes.filter((pt) => allowedSlugs.has(pt.slug));
   const available = allowed.filter((pt) => availableSlugs.has(pt.slug));
   const unavailable = allowed.filter((pt) => !availableSlugs.has(pt.slug));
   return {
@@ -255,10 +213,7 @@ export function connectedAccounts(view: PlatformView): PublisherAccount[] {
 export function buildPlatformViews(platforms: Platform[]): PlatformView[] {
   return platforms.flatMap((platform) => {
     const info = getPlatformInfo(platform.id);
-    // `GET /api/platforms` still returns YouTube (CON-145) — dropping it here
-    // is what keeps it out of campaign settings and workspace settings, both
-    // of which render whatever views they are handed.
-    return info && !info.hidden ? [buildPlatformView(platform, info)] : [];
+    return info ? [buildPlatformView(platform, info)] : [];
   });
 }
 
