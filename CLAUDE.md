@@ -63,6 +63,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   fetched data in a store. Query keys are co-located per hook and exported when
   another hook must invalidate them. Note the post editor (`["post", id]`) and
   post list (`["campaigns", id, "posts"]`) are separate namespaces.
+- **The Campaigns list reads one batched query, never one per card.**
+  `useCampaignSummaries` (`["campaigns","summaries"]`) returns a slim
+  `PostSummary` per post for the whole workspace; `CampaignCard` runs the same
+  `lib/campaignReadiness` rules over it. Never reintroduce a per-card fetch —
+  that was the N+1 CON-152 removed. See
+  `docs/technical-decisions.md#batched-summaries`.
 - **The post editor autosaves through the Query cache** (`usePost.changeDoc`,
   600ms debounce, generation-counter guarded, flush-on-unmount). Campaign forms
   autosave similarly. Prefer these patterns over new local edit stores.

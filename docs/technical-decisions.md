@@ -116,6 +116,36 @@ unmount** so navigation never drops an edit.
 **Where.** `hooks/usePost.ts`. Campaign forms use the analogous autosave in
 `components/forms/campaignBriefForm/shared.ts` (500ms, version-tracked).
 
+## The Campaigns list batches posts instead of moving the rules {#batched-summaries}
+
+**Decision.** The list gets its post data from one shared query —
+`GET /api/campaigns/summaries` via `useCampaignSummaries` — returning a slim
+projection (`PostSummary`) of every post in the tenant, grouped by campaign.
+Each `CampaignCard` reads `data?.[campaign.id] ?? []` and runs the unchanged
+`lib/campaignReadiness` rules over it (CON-152, fixing the N+1 in CON-127).
+
+**Why not compute the verdict server-side.** That is the endgame
+([attention-rules.md](./attention-rules.md#asks-for-the-backend) §6), not this
+change. Aggregate counts cannot reproduce the badge — `manual-publish-due`,
+`slot-collision`, `pipeline-gap`, `behind-pace` and the drift family all need
+per-post `scheduled_at` / `platform_id` / `platform_post_type` and the *local*
+clock. A reduced server-side set would make the list disagree with the Overview
+behind it, and would hand the server a timezone problem the client doesn't have.
+
+**Why a sibling endpoint, not fields on `GET /api/campaigns`.** Campaign
+metadata and post state go stale on different events; the query keys are
+already split for that reason (`campaignPostsKey` vs `campaignOverviewKey`).
+`CAMPAIGN_SUMMARIES_KEY` is workspace-wide, so `invalidateCampaignPosts` fires
+it once for every card rather than per campaign.
+
+**Consequences.** `contentSnapshot` is generic in its post type rather than
+merely widened: its counts work off a projection, but `upNext` /
+`recentlyPublished` hand posts back out and the Overview renders their titles,
+so it returns `T[]`. Campaign detail views (list, calendar, overview) keep
+`useCampaignPosts` — they genuinely need full posts. The list does not fold in
+assistant-streamed drafts the way `useCampaignPosts` does; new posts appear on
+the next invalidation. Accepted: streaming is a detail-view concern.
+
 ## The calendar card reads the post row and nothing else {#calendar-card-media}
 
 **Decision.** `PostCard` draws its leading image from `post.media_urls[0]` and

@@ -268,3 +268,14 @@ Rules marked `server` are blocked on these. Roughly in value order:
    catalogue. Worth it once these rules are also needed outside this screen
    (campaign list badges, digest emails, the assistant). Until then, keeping
    them in `src/lib` is the cheaper place to iterate.
+
+   The Campaigns list already needs them (CON-152), and was answered by
+   batching the *data* rather than the verdict: `GET /api/campaigns/summaries`
+   returns a slim per-post projection for every campaign in one request, and
+   the list runs this same catalogue over it. That keeps one rule set — a list
+   scored by a reduced server-side set would quietly disagree with the Overview
+   — and keeps the clock-dependent rules on the client's local `now`, with no
+   timezone to hand the server. A server-owned verdict stays the endgame: it
+   would make the payload constant per campaign instead of per post, and let
+   digests and the assistant reuse it. It must then take a client tz offset.
+   See [`technical-decisions.md#batched-summaries`](./technical-decisions.md#batched-summaries).

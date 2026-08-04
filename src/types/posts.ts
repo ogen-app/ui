@@ -49,6 +49,48 @@ export type Post = {
   campaign_type_phase: unknown | null
 }
 
+/**
+ * The slim per-post projection behind the Campaigns list (CON-152) — exactly
+ * the fields `lib/campaignReadiness` reads, and nothing else. No title, no
+ * content, no hydrated relations: those are the payload, and the list only
+ * ever renders counts derived from them.
+ *
+ * A full `Post` structurally satisfies this, which is the point. The readiness
+ * rules are typed against `PostSummary`, so the Campaigns list can feed them
+ * projections while the Overview screen keeps feeding them real posts — one
+ * rule set, no divergence (docs/attention-rules.md).
+ */
+export type PostSummary = Pick<
+  Post,
+  | 'id'
+  | 'campaign_id'
+  | 'status'
+  | 'scheduled_at'
+  | 'published_at'
+  | 'platform_id'
+  | 'platform_post_type'
+  | 'campaign_type_phase_id'
+  | 'media_urls'
+  | 'created_at'
+  | 'updated_at'
+>
+
+/** One campaign's projected posts, as the server groups them. */
+export type CampaignPostSummary = {
+  campaign_id: string
+  posts: PostSummary[]
+}
+
+/**
+ * `GET /api/campaigns/summaries`. Campaigns with no posts are simply absent —
+ * the client defaults them to an empty list rather than the server sending a
+ * row per empty campaign.
+ */
+export type CampaignSummariesResponse = {
+  summaries: CampaignPostSummary[]
+  generated_at: string
+}
+
 export const POST_STATUS_LABELS: Record<PostStatus, string> = {
   draft: 'Draft',
   ready_for_publish: 'Ready for Publish',
