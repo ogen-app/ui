@@ -23,6 +23,7 @@ function view(accounts: PublisherAccount[]) {
     post_types: {},
     cadence: '',
     constraints: '',
+    text_constraints: { max_content_chars: 3000, max_title_chars: 0 },
     created_at: '',
     updated_at: '',
     publishers: [

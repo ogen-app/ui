@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Post } from '@/types/posts'
 import type { PostAttachmentWithValidation } from '@/types/attachments'
 import type { ResolvedPostTypeRule } from '@/types/validation'
-import { mediaPolicy, strandedAttachments } from './postMedia.ts'
+import { checkFile, mediaPolicy, strandedAttachments } from './postMedia.ts'
 import { evaluatePost, hasVisibleProblem, worstStatus } from './postValidation.ts'
 
 // Platform Sqids from platformDictionary.ts.
@@ -15,6 +15,7 @@ function rule(overrides: Partial<ResolvedPostTypeRule> = {}): ResolvedPostTypeRu
     allowed_kinds: ['image'],
     min_attachments: 1,
     max_attachments: null,
+    max_content_chars: null,
     ...overrides,
   }
 }
@@ -126,11 +127,54 @@ describe('strandedAttachments', () => {
   })
 })
 
+describe('checkFile', () => {
+  const X = '81mUCmc2xsKd'
+  const imageRule = rule({ min_attachments: 0, allowed_kinds: ['image'] })
+
+  function file(name: string, type: string, bytes: number): File {
+    return new File([new Uint8Array(bytes)], name, { type })
+  }
+
+  // X caps still images at 1 MB and Zernio enforces it strictly. This used to
+  // read 5 MB, matching the (equally wrong) seeded platform row, so an
+  // oversized image passed the client check and the server's and only failed
+  // at publish. CON-123.
+  it('rejects a still image over 1 MB on X', () => {
+    const result = checkFile(file('photo.jpg', 'image/jpeg', 3 * 1024 * 1024), mediaPolicy(X, imageRule))
+    expect(result.ok).toBe(false)
+  })
+
+  it('accepts a still image under 1 MB on X', () => {
+    expect(checkFile(file('photo.jpg', 'image/jpeg', 900 * 1024), mediaPolicy(X, imageRule)).ok).toBe(
+      true,
+    )
+  })
+
+  // GIFs are a separate upload path on X and go to 15 MB, so the 1 MB still
+  // limit must not be applied to them.
+  it('lets a GIF past the still-image limit, up to its own', () => {
+    const policy = mediaPolicy(X, imageRule)
+    expect(checkFile(file('loop.gif', 'image/gif', 5 * 1024 * 1024), policy).ok).toBe(true)
+    expect(checkFile(file('loop.gif', 'image/gif', 20 * 1024 * 1024), policy).ok).toBe(false)
+  })
+
+  it('leaves platforms without a separate GIF ceiling alone', () => {
+    // Instagram is 8 MB for everything it takes.
+    const policy = mediaPolicy(INSTAGRAM, imageRule)
+    expect(checkFile(file('photo.jpg', 'image/jpeg', 3 * 1024 * 1024), policy).ok).toBe(true)
+    expect(checkFile(file('photo.jpg', 'image/jpeg', 9 * 1024 * 1024), policy).ok).toBe(false)
+  })
+})
+
 describe('evaluatePost', () => {
   const base = {
     ready: true,
     postValidation: [],
     requiresContent: false,
+    // Instagram's caption cap. Injected rather than looked up: the limit is
+    // the server's now (CON-91), so the check is tested against a number the
+    // caller supplies.
+    maxContentChars: 2200 as number | null | undefined,
   }
 
   it('fails the media check below the minimum', () => {
@@ -192,6 +236,41 @@ describe('evaluatePost', () => {
     const limit = checks.find((c) => c.id === 'char-limit')
     expect(limit?.status).toBe('pass')
     expect(limit?.detail).toContain('2,190')
+  })
+
+  it('counts code points, so an emoji is one character', () => {
+    const checks = evaluatePost({
+      ...base,
+      post: makePost({ content: '👍'.repeat(10) }),
+      policy: mediaPolicy(INSTAGRAM, rule({ min_attachments: 0 })),
+      attachments: [],
+    })
+    // Ten surrogate pairs are 20 UTF-16 units and 10 characters to the network.
+    expect(checks.find((c) => c.id === 'char-limit')?.detail).toContain('10 / 2,200')
+  })
+
+  it('holds the length check pending until the limit has loaded', () => {
+    const checks = evaluatePost({
+      ...base,
+      maxContentChars: undefined,
+      post: makePost({ content: 'x'.repeat(5000) }),
+      policy: mediaPolicy(INSTAGRAM, rule({ min_attachments: 0 })),
+      attachments: [],
+    })
+    expect(checks.find((c) => c.id === 'char-limit')?.status).toBe('pending')
+  })
+
+  it('still counts, without failing, on a platform with no limit', () => {
+    const checks = evaluatePost({
+      ...base,
+      maxContentChars: null,
+      post: makePost({ content: 'x'.repeat(100000) }),
+      policy: mediaPolicy(INSTAGRAM, rule({ min_attachments: 0 })),
+      attachments: [],
+    })
+    const limit = checks.find((c) => c.id === 'char-limit')
+    expect(limit?.status).toBe('pass')
+    expect(limit?.detail).toContain('no limit')
   })
 
   it('treats copy that is only formatting as no copy at all', () => {
