@@ -52,6 +52,39 @@ SameSite=Lax, 7-day TTL). On success the hook re-probes `checkSession()` to
 hydrate the auth store, and the form returns the user to the in-app path the
 root guard stashed in `?redirect=` (falling back to `/`).
 
+### 3. Password reset — `/auth/forgot` → email → `/auth/reset?token=…`
+
+Not an entry point on its own: it hands the user back to login. Two screens,
+both public, both using the lightweight `useFormValidation` pattern.
+
+```text
+/auth/forgot   AuthForgotPasswordForm → useRequestPasswordReset()
+               POST /api/password-reset          { email }         → 202 always
+               └─ success panel replaces the form ("if that address has an
+                  account…"), with a resend button
+
+emailed link   {APP_BASE_URL}/auth/reset?token=<one-time token>
+
+/auth/reset    no ?token= → "This link doesn't work" + link to /auth/forgot
+               AuthResetPasswordForm → useResetPassword()
+               POST /api/password-reset/confirm  { token, password }  → 204
+               └─ on success: /auth/login?reset=true (no session is opened)
+```
+
+Two properties are load-bearing and easy to undo by accident:
+
+- **The request endpoint answers 202 for an unknown address too.** Anything
+  else turns a public endpoint into an account-enumeration oracle, so the UI
+  can never say "no account with that email" — the success copy is phrased as
+  a conditional on purpose.
+- **A completed reset does not log the user in.** Spending the token proves
+  control of the mailbox, not of the password, and a reset is exactly when
+  someone else may have had the account. Login stays the only place a session
+  is opened.
+
+**The backend half does not exist yet** — both calls 404 until CON-108's
+server issue lands. The contract above is what that issue is written against.
+
 ## The root guard — `src/routes/__root.tsx`
 
 Auth is guarded **once**, in the root route's `beforeLoad` (never on
@@ -80,9 +113,21 @@ Details that matter:
   in a module-level promise; failures are never cached; `invalidateSession()`
   clears it after login/logout/signup.
 - **Auth routes redirect away when already authenticated** (`/auth`,
-  `/auth/login`, `/auth/register` each `beforeLoad`-redirect to `/`).
+  `/auth/login`, `/auth/register`, `/auth/forgot`, `/auth/reset` each
+  `beforeLoad`-redirect to `/`).
 - **First-run instance setup no longer exists.** CON-97 removed the
   `setup_complete` bootstrap; onboarding is only the signup above.
+- **The guard only runs on a page load, so it can't catch a session that dies
+  mid-visit.** That case belongs to `src/lib/sessionExpiry.ts`: any 401 from
+  `services/api/http.ts` drops the persisted user and reloads onto
+  `/auth/login?redirect=<here>&expired=1`, which is why the login screen can
+  explain itself instead of appearing out of nowhere. It fires once per page
+  (a screen with four queries produces four 401s in one tick) and never on
+  `/auth/*`, where a 401 is simply the answer.
+- **`?redirect=` is filtered through `safeRedirect()`** (`src/lib/redirects.ts`)
+  before it is followed. The guard writes `location.href` into it, so the value
+  is attacker-supplied; `startsWith("/")` alone would accept `//evil.example`,
+  which browsers resolve to another origin.
 
 ## Identity & state plumbing
 
@@ -113,6 +158,8 @@ Details that matter:
 | `GET /api/tenants/current` | session | caller's tenant | ✅ workspace settings |
 | `PUT /api/tenants/:id` | session, own tenant | rename tenant | ✅ workspace settings |
 | `POST /api/users` | session | add teammate to caller's tenant | ❌ no invite UI |
+| `POST /api/password-reset` | public | email a one-time reset link | ⏳ UI built, **endpoint missing** |
+| `POST /api/password-reset/confirm` | public (token) | spend the token, set the password | ⏳ UI built, **endpoint missing** |
 
 Not offered by the backend at all: invitations with an email loop, email
 verification, password reset, roles/RBAC, tenant deletion, tenant switching,
@@ -150,22 +197,34 @@ The former bring-your-own **API-keys section was removed** (2026-07-05) —
 credentials are platform-managed (CON-99/104), so the whole `/api/secrets`
 client (`secrets.ts`, `useSecrets.ts`, `ApiKeysSection`) is gone.
 
-## Known gaps (as of 2026-07-06)
+## Known gaps (as of 2026-08-04)
 
 UI-side (this repo):
 
 1. **No invite-teammate UI** — `users.register()` is ready but unwired
    (CON-26 is the placeholder ticket for real invitations).
-2. **No password reset / email verification** — blocked on the backend
-   growing email infrastructure; the UI deliberately has no stub for either.
+2. **No email verification** — an address is never confirmed, at signup or
+   after. No UI stub for it.
+3. **Nothing changes a password from inside the app.** `/profile` says so
+   plainly. The reset flow above is the only path, and it goes through the
+   mailbox.
 
 Backend-side (tracked against the API repo, listed here for context):
 
+- **No password-reset endpoints** (CON-108). Note the old framing of this gap
+  — "blocked on the backend growing email infrastructure" — is **out of date**:
+  CON-154 shipped the whole email service, and
+  `src/email/templates/templates.go` reserves the `password_reset` and
+  `verify_email` template keys for exactly this. What is missing is the two
+  auth endpoints and the token, not the ability to send mail.
+- **`POST /api/sessions` has no rate limiting or lockout.** The only limiter
+  in the API is Zernio's connect-link one, so login is unlimited-attempt
+  against a public endpoint. Signup is open and unthrottled too (no rate
+  limit / CAPTCHA / email loop).
 - **`/api/secrets` is reachable by any authenticated tenant user** (plain
   session auth), letting any tenant read metadata for / rotate / delete the
   **platform-wide** keys — contradicts CON-97 §10.3 ("no tenant-facing
   endpoint can read, set, or rotate them"). The UI no longer exposes it, but
   the endpoint itself must be locked down or removed.
-- Signup is open and unthrottled (no rate limit / CAPTCHA / email loop).
-- No invitations, email verification, or password reset exist server-side;
-  teammates are added by direct `POST /api/users` with a chosen password.
+- No invitations or email verification exist server-side; teammates are added
+  by direct `POST /api/users` with a chosen password.

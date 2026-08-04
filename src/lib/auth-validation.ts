@@ -56,6 +56,30 @@ export const signupSchema = z.object({
   password: passwordField,
 })
 
+/** Step one of the reset: the address the one-time link is sent to. */
+export const forgotPasswordSchema = z.object({
+  email: emailField,
+})
+
+/**
+ * Step two: the new password, typed twice.
+ *
+ * The confirmation field is not ceremony here. Every other password entry in
+ * the app is either a login (wrong password just fails) or a signup the user
+ * can repeat; this one silently sets a credential the user cannot see and will
+ * not use again until their next login, possibly on another device. Typing it
+ * twice is the only check there is.
+ */
+export const resetPasswordSchema = z
+  .object({
+    password: passwordField,
+    confirmPassword: z.string().min(1, 'Confirm your password'),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  })
+
 export const PASSWORD_RULES = [
   { test: (v: string) => v.length >= 8, label: 'Min. 8 chars' },
   { test: (v: string) => /[A-Z]/.test(v), label: 'an uppercase' },

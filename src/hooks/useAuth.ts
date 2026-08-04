@@ -1,11 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 
+import { checkSession, login as loginRequest, invalidateSession } from "@/services/api/sessions";
 import {
-  checkSession,
-  login as loginRequest,
-  logout as logoutRequest,
-  invalidateSession,
-} from "@/services/api/sessions";
+  requestPasswordReset,
+  resetPassword as resetPasswordRequest,
+} from "@/services/api/passwordReset";
 import { signup as signupRequest } from "@/services/api/tenants";
 import type { LoginPayload, Session } from "@/types/session";
 import type { SignupPayload } from "@/types/tenant";
@@ -55,14 +54,23 @@ export function useSignup() {
   });
 }
 
-/** Logout mutation: ends the session, then clears the probe cache + store. */
-export function useLogout() {
-  const clearUser = useAuthStore((s) => s.clearUser);
-  return useMutation<void, Error, void>({
-    mutationFn: logoutRequest,
-    onSuccess: () => {
-      invalidateSession();
-      clearUser();
-    },
+/**
+ * Step one of a password reset: ask for the one-time link (CON-108).
+ *
+ * Succeeds for an unknown address too — the endpoint answers 202 either way so
+ * it can't be used to test whether an email has an account. The success state
+ * is therefore "we've sent it if that address exists", never "check your
+ * inbox" stated as fact.
+ */
+export function useRequestPasswordReset() {
+  return useMutation<void, Error, string>({
+    mutationFn: requestPasswordReset,
+  });
+}
+
+/** Step two: spend the token and set the new password (CON-108). */
+export function useResetPassword() {
+  return useMutation<void, Error, { token: string; password: string }>({
+    mutationFn: ({ token, password }) => resetPasswordRequest(token, password),
   });
 }
