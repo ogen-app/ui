@@ -115,6 +115,27 @@ function inlineToText(input: string): string {
   return s.replace(MASKED, (_m, code: string) => String.fromCharCode(Number(code)))
 }
 
+/**
+ * An X thread, cut into its individual posts.
+ *
+ * Blank lines are the only division the document actually carries — the editor
+ * has no "next post" control and the API stores one `content` string — so that
+ * is the rule, and it matches how people write threads in practice. Ogen sends
+ * the copy as one block and the publisher does the real splitting, which is why
+ * the preview says so rather than presenting this as the final shape.
+ *
+ * Always returns at least one segment, so an empty thread previews as an empty
+ * post rather than as nothing at all.
+ */
+export function splitThread(text: string): string[] {
+  const parts = text
+    .split(/\n[ \t]*\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  return parts.length > 0 ? parts : ['']
+}
+
 /** Splits text at the fold so a preview can render its own "see more". */
 export function foldText(
   text: string,

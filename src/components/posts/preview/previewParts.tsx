@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
+import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
 import { foldText } from '@/lib/socialText.ts'
 import { PREVIEW_BORDER, PREVIEW_FONT, PREVIEW_SHADOW } from './previewTheme.ts'
@@ -216,6 +217,142 @@ export function PreviewMedia({
           />
         ))
       )}
+    </div>
+  )
+}
+
+/**
+ * A carousel's position, held by the platform card rather than by the media
+ * block. Instagram puts its dots in the action row, two elements below the
+ * image, so the index has to be reachable from both.
+ */
+export type Carousel = {
+  index: number
+  count: number
+  go: (index: number) => void
+  next: () => void
+  prev: () => void
+}
+
+export function useCarousel(count: number): Carousel {
+  const [raw, setRaw] = useState(0)
+  // Clamped on read: deleting an attachment can shrink the list under a
+  // stored index, and a blank frame would look like a broken image.
+  const index = count === 0 ? 0 : Math.min(raw, count - 1)
+  return {
+    index,
+    count,
+    go: setRaw,
+    next: () => setRaw(Math.min(index + 1, Math.max(0, count - 1))),
+    prev: () => setRaw(Math.max(index - 1, 0)),
+  }
+}
+
+/**
+ * A swipeable multi-image post — Instagram's carousel and Threads' image
+ * strip.
+ *
+ * The grid in `PreviewMedia` is the wrong shape for these networks: they show
+ * one slide at a time and the reader moves through them, so what the preview
+ * has to answer is "which image leads, and what does slide 3 look like in
+ * this crop" — not "how do four tiles pack". Every slide is drawn at the same
+ * aspect ratio, which is also what Instagram does to them.
+ */
+export function PreviewCarousel({
+  carousel,
+  urls,
+  aspect,
+  background,
+  arrowColor = '#262626',
+}: {
+  carousel: Carousel
+  urls: string[]
+  aspect: number
+  background: string
+  /** Arrow glyph colour; the chip behind it is always white. */
+  arrowColor?: string
+}) {
+  const { index, count } = carousel
+  if (urls.length === 0) return null
+
+  return (
+    <div className="relative" style={{ background, overflow: 'hidden' }}>
+      <Frame url={urls[index]} aspect={aspect} />
+
+      {count > 1 && (
+        <>
+          {/* Position, in the platform's own words. The dots below say the
+              same thing, but stop being countable past five or six slides —
+              which is exactly when a carousel needs a counter. */}
+          <div
+            className="absolute right-2 top-2 rounded-full px-2 py-0.5 font-semibold text-white"
+            style={{ background: 'rgba(0,0,0,0.6)', fontSize: 12 }}
+          >
+            {index + 1}/{count}
+          </div>
+          {index > 0 && (
+            <CarouselArrow side="left" color={arrowColor} onClick={carousel.prev} />
+          )}
+          {index < count - 1 && (
+            <CarouselArrow side="right" color={arrowColor} onClick={carousel.next} />
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+function CarouselArrow({
+  side,
+  color,
+  onClick,
+}: {
+  side: 'left' | 'right'
+  color: string
+  onClick: () => void
+}) {
+  const Icon = side === 'left' ? CaretLeftIcon : CaretRightIcon
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={side === 'left' ? 'Previous image' : 'Next image'}
+      className={cn(
+        'absolute top-1/2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full',
+        'opacity-80 transition-opacity hover:opacity-100',
+        side === 'left' ? 'left-2' : 'right-2',
+      )}
+      style={{ background: 'rgba(255,255,255,0.9)', color }}
+    >
+      <Icon className="size-4" weight="bold" aria-hidden />
+    </button>
+  )
+}
+
+/** The slide indicator. Rendered by the card, wherever that network puts it. */
+export function CarouselDots({
+  carousel,
+  activeColor,
+  mutedColor,
+}: {
+  carousel: Carousel
+  activeColor: string
+  mutedColor: string
+}) {
+  if (carousel.count < 2) return null
+
+  return (
+    <div className="flex items-center justify-center gap-1">
+      {Array.from({ length: carousel.count }, (_, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => carousel.go(i)}
+          aria-label={`Image ${i + 1}`}
+          className="size-1.5 shrink-0 cursor-pointer rounded-full"
+          style={{ background: i === carousel.index ? activeColor : mutedColor }}
+        />
+      ))}
     </div>
   )
 }

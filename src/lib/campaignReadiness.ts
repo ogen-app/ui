@@ -5,7 +5,18 @@
 
 import type { Campaign } from "@/types/campaigns";
 import type { Post, PostStatus, PostSummary } from "@/types/posts";
-import type { PlatformView } from "@/lib/platformDictionary";
+import { getPlatformInfo, type PlatformView } from "@/lib/platformDictionary";
+
+/**
+ * A targeted channel's name. The views only carry platforms the app offers, so
+ * a campaign still targeting a withdrawn one (YouTube — CON-145) has no view
+ * and would otherwise read as "Unknown channel". The dictionary still knows
+ * the name, and naming it is what makes the row actionable: the user can see
+ * what to remove.
+ */
+function channelNameOf(view: PlatformView | undefined, id: string): string {
+  return view?.info.name ?? getPlatformInfo(id)?.name ?? "Unknown channel";
+}
 
 // --- Brief ------------------------------------------------------------------
 
@@ -110,9 +121,9 @@ export function channelReadiness(
   };
   for (const tp of campaign.target_platforms) {
     // Unknown platform id (dictionary/API mismatch) counts as unconnected —
-    // it certainly can't publish.
+    // it certainly can't publish. So does a hidden one, which has no view.
     const view = viewById.get(tp.id);
-    const name = view?.info.name ?? "Unknown channel";
+    const name = channelNameOf(view, tp.id);
     out.selected.push(name);
     if (!view || view.connectedPublishers.length === 0) continue;
     out.connected.push(name);
@@ -161,7 +172,7 @@ function channelsCheck(channels: ChannelReadiness): SetupCheck {
       ok: false,
       label: `No post type selected for ${missingPostTypes.join(", ")}`,
       detail:
-        "Post types tell Ogen what to write — a text post, a video, a carousel.",
+        "Post types tell Ogen what to write — a text post, an image post, a carousel.",
       fix: "settings",
     };
   }
@@ -366,8 +377,7 @@ export function attentionItems(
   const brief = briefPosture(campaign);
   const snapshot = contentSnapshot(posts);
   const viewById = new Map(platformViews.map((v) => [v.platform.id, v]));
-  const channelName = (id: string) =>
-    viewById.get(id)?.info.name ?? "Unknown channel";
+  const channelName = (id: string) => channelNameOf(viewById.get(id), id);
 
   const startMs = campaign.start_date ? Date.parse(campaign.start_date) : null;
   // `end_date` is stored as the *day* (serialized T00:00:00 — see
@@ -508,7 +518,7 @@ export function attentionItems(
 
   for (const tp of campaign.target_platforms) {
     const view = viewById.get(tp.id);
-    const name = view?.info.name ?? "Unknown channel";
+    const name = channelNameOf(view, tp.id);
     // Unknown platform id (dictionary/API mismatch) counts as unconnected —
     // it certainly can't publish.
     const connected = (view?.connectedPublishers.length ?? 0) > 0;

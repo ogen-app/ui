@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { foldText, markdownToSocialText } from './socialText.ts'
+import { foldText, markdownToSocialText, splitThread } from './socialText.ts'
 
 describe('markdownToSocialText', () => {
   it('strips emphasis but keeps the words', () => {
@@ -79,5 +79,24 @@ describe('foldText', () => {
     const text = 'the quick brown fox jumps over the lazy dog'
     const { head, rest } = foldText(text, 20)
     expect((head + ' ' + rest).length).toBe(text.length)
+  })
+})
+
+describe('splitThread', () => {
+  it('splits at blank lines', () => {
+    expect(splitThread('one\n\ntwo\n\nthree')).toEqual(['one', 'two', 'three'])
+  })
+
+  it('keeps a single newline inside a post', () => {
+    expect(splitThread('one\ntwo')).toEqual(['one\ntwo'])
+  })
+
+  it('treats a run of blank lines as one break', () => {
+    expect(splitThread('one\n\n\n  \n\ntwo')).toEqual(['one', 'two'])
+  })
+
+  it('always yields at least one post', () => {
+    expect(splitThread('')).toEqual([''])
+    expect(splitThread('\n\n  \n')).toEqual([''])
   })
 })
