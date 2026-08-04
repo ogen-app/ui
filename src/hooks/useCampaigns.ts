@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listCampaigns,
+  listCampaignSummaries,
   getCampaign,
   getCampaignOverview,
   createCampaign,
@@ -19,6 +20,13 @@ export const campaignKey = (id: string) => ["campaigns", id] as const;
 // mutations, which invalidate the *sibling* posts key and so don't.
 export const campaignOverviewKey = (id: string) =>
   ["campaigns", id, "overview"] as const;
+/**
+ * The batched Campaigns-list payload (CON-152). Nests under `CAMPAIGNS_KEY`,
+ * so anything invalidating the campaigns list refreshes it too; post mutations
+ * invalidate it explicitly (`invalidateCampaignPosts`) because they touch a
+ * sibling key.
+ */
+export const CAMPAIGN_SUMMARIES_KEY = ["campaigns", "summaries"] as const;
 export const CAMPAIGN_TYPES_KEY = ["campaign-types"] as const;
 
 export function useCampaigns() {
@@ -51,6 +59,23 @@ export function useCampaignOverview(id: string) {
     // invalidates this key — so remounting the consumer (the Overview's tab
     // switches unmount it) shouldn't refire the request on its own.
     staleTime: 60_000,
+  });
+}
+
+/**
+ * Every campaign's posts, slim, in one request (CON-152) — keyed by campaign
+ * id. The Campaigns list renders one card per campaign and each used to fetch
+ * its own hydrated post list; this is that N+1 collapsed into a single query
+ * the whole list shares.
+ *
+ * Cards read `data?.[campaign.id] ?? []` and take their load state from this
+ * one query, so a campaign that is merely absent (no posts) is not mistaken
+ * for one that hasn't loaded.
+ */
+export function useCampaignSummaries() {
+  return useQuery({
+    queryKey: CAMPAIGN_SUMMARIES_KEY,
+    queryFn: listCampaignSummaries,
   });
 }
 

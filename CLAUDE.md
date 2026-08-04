@@ -25,6 +25,7 @@ Content-Bank AI images are secondary. See
 - **Technical decisions & rationale:** [`docs/technical-decisions.md`](./docs/technical-decisions.md)
 - **Onboarding, auth & tenancy flow:** [`docs/onboarding.md`](./docs/onboarding.md)
 - **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
+- **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
@@ -62,6 +63,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   fetched data in a store. Query keys are co-located per hook and exported when
   another hook must invalidate them. Note the post editor (`["post", id]`) and
   post list (`["campaigns", id, "posts"]`) are separate namespaces.
+- **The Campaigns list reads one batched query, never one per card.**
+  `useCampaignSummaries` (`["campaigns","summaries"]`) returns a slim
+  `PostSummary` per post for the whole workspace; `CampaignCard` runs the same
+  `lib/campaignReadiness` rules over it. Never reintroduce a per-card fetch —
+  that was the N+1 CON-152 removed. See
+  `docs/technical-decisions.md#batched-summaries`.
 - **The post editor autosaves through the Query cache** (`usePost.changeDoc`,
   600ms debounce, generation-counter guarded, flush-on-unmount). Campaign forms
   autosave similarly. Prefer these patterns over new local edit stores.
@@ -76,6 +83,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **`src/lib/*` mirrors Go server rules** (`postStatusMachine`, `assetStatus`,
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.
+- **`/api/settings` is tenant-scoped, not user-scoped.** Every key is visible
+  to the whole workspace via `GET /api/settings`. Personal preferences get
+  their identity from the key (`userScopedKey` →
+  `calendar.<userId>.<campaignId>`); never put anything sensitive there. See
+  `docs/technical-decisions.md#user-scoped-settings`.
+- **Explanatory copy goes in `<Explainer>`**, which the user can close for
+  good (`settingsStore.dismissedNotes`, device-local — display noise doesn't
+  belong in the workspace-wide `/api/settings`). The rule that makes it safe:
+  an Explainer holds **teaching only** — never a count, warning, validation
+  message, or link the user needs while working, because all of it disappears
+  for anyone who closes the note. Check the screen still reads correctly with
+  the Explainer deleted. See `docs/technical-decisions.md#explainers`.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
@@ -112,9 +131,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 
 ## Known stubs / gaps
 
-No invite-teammate UI yet (`users.register()` is the ready building block) · no
-in-app account **disconnect** (the API has no disconnect endpoint; the button
-in Platform Settings renders disabled) · dark mode is scaffolded but empty · the
+No invite-teammate UI yet (`users.register()` is the ready building block) ·
+dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
 have no committed config in this repo.
 

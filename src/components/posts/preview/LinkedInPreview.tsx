@@ -6,7 +6,7 @@ import {
   RepeatIcon,
   ThumbsUpIcon,
 } from '@phosphor-icons/react'
-import { PLATFORM_TEXT_LIMITS } from '@/lib/socialText.ts'
+import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
 import {
   Action,
   ActionRow,
@@ -59,7 +59,7 @@ export function LinkedInPreview({ text, mediaUrls, author, timeLabel }: PreviewP
       <div className="px-3 pb-2 pt-1">
         <FoldedText
           text={text}
-          fold={PLATFORM_TEXT_LIMITS.linkedin.fold}
+          fold={PLATFORM_FOLDS.linkedin}
           moreLabel="see more"
           color={C.text}
           moreColor={C.muted}

@@ -22,4 +22,14 @@ export type PreviewProps = {
    * several posts — are what it exists for.
    */
   postType?: string
+  /**
+   * The platform's character ceiling, resolved from the API (CON-91), or
+   * `null` while it is still loading or where the network has none.
+   *
+   * Passed down rather than looked up per network: it used to be a constant
+   * beside the folds, and a card carrying its own copy of the number is how
+   * the preview and the Validations panel come to disagree about whether the
+   * same post fits.
+   */
+  charLimit?: number | null
 }

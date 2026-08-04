@@ -6,12 +6,10 @@ import {
   HeartIcon,
   RepeatIcon,
 } from '@phosphor-icons/react'
-import { PLATFORM_TEXT_LIMITS, splitThread } from '@/lib/socialText.ts'
+import { PLATFORM_FOLDS, splitThread } from '@/lib/socialText.ts'
 import { FoldedText, PreviewAvatar, PreviewMedia, PreviewSurface } from './previewParts.tsx'
 import { TWITTER as C } from './previewTheme.ts'
 import type { PreviewAuthor, PreviewProps } from './types.ts'
-
-const LIMIT = PLATFORM_TEXT_LIMITS.twitter.max
 
 /**
  * An X (Twitter) post, or a thread of them.
@@ -32,7 +30,14 @@ const LIMIT = PLATFORM_TEXT_LIMITS.twitter.max
  * which is X's layout and the reason its text measure is narrower than the
  * other networks' at the same card width.
  */
-export function TwitterPreview({ text, mediaUrls, author, timeLabel, postType }: PreviewProps) {
+export function TwitterPreview({
+  text,
+  mediaUrls,
+  author,
+  timeLabel,
+  postType,
+  charLimit,
+}: PreviewProps) {
   const thread = postType === 'thread'
   const segments = thread ? splitThread(text) : [text]
 
@@ -50,6 +55,7 @@ export function TwitterPreview({ text, mediaUrls, author, timeLabel, postType }:
           author={author}
           timeLabel={timeLabel}
           thread={thread}
+          charLimit={charLimit}
           connector={i < segments.length - 1}
         />
       ))}
@@ -63,6 +69,7 @@ function Tweet({
   author,
   timeLabel,
   thread,
+  charLimit,
   connector,
 }: {
   text: string
@@ -71,6 +78,8 @@ function Tweet({
   timeLabel: string
   /** Part of a thread: text is shown whole, and over-length is called out. */
   thread: boolean
+  /** The network's ceiling, from the API. Null while it loads. */
+  charLimit?: number | null
   /** Draw the line down to the next post. */
   connector: boolean
 }) {
@@ -128,7 +137,7 @@ function Tweet({
           ) : (
             <FoldedText
               text={text}
-              fold={PLATFORM_TEXT_LIMITS.twitter.fold}
+              fold={PLATFORM_FOLDS.twitter}
               moreLabel="Show more"
               color={C.text}
               moreColor={C.link}
@@ -141,9 +150,9 @@ function Tweet({
             281 characters, so there is nothing authentic to reproduce, and
             "which post in the thread is too long" is unanswerable from the
             notes alone once a thread runs past a few segments. */}
-        {thread && text.length > LIMIT && (
+        {thread && charLimit != null && [...text].length > charLimit && (
           <div className="pt-1 font-semibold" style={{ color: C.danger, fontSize: 12 }}>
-            {text.length}/{LIMIT} characters — this post is too long
+            {[...text].length}/{charLimit} characters — this post is too long
           </div>
         )}
 

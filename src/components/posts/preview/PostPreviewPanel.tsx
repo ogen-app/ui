@@ -4,7 +4,8 @@ import { usePublishingAccount } from '@/hooks/usePublishingAccount.ts'
 import { getPlatformInfo } from '@/lib/platformDictionary.ts'
 import { getPlatformMedia } from '@/lib/platformMedia.ts'
 import { relativeTime } from '@/lib/relativeTime.ts'
-import { markdownToSocialText, PLATFORM_TEXT_LIMITS, splitThread } from '@/lib/socialText.ts'
+import { useCharLimit } from '@/hooks/useCharLimit'
+import { markdownToSocialText, splitThread } from '@/lib/socialText.ts'
 import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments'
 import type { Post } from '@/types/posts'
 import { FacebookPreview } from './FacebookPreview.tsx'
@@ -67,7 +68,14 @@ export function PostPreviewPanel({
   onClose?: () => void
 }) {
   const platform = getPlatformInfo(doc.platform_id)
-  const author = usePublishingAccount(doc.platform_id)
+  // Renders as the account the post actually publishes as — including a
+  // disconnected one on a post that already went out, which is the only
+  // honest byline for it.
+  const author = usePublishingAccount(
+    doc.platform_id,
+    doc.social_account_id,
+    doc.social_account,
+  )
 
   const text = useMemo(() => markdownToSocialText(doc.content), [doc.content])
 
@@ -102,7 +110,10 @@ export function PostPreviewPanel({
   }
 
   const Renderer = platform ? RENDERERS[platform.zernioId] : undefined
-  const limits = platform ? PLATFORM_TEXT_LIMITS[platform.zernioId] : undefined
+  // The same server-resolved ceiling the Validations panel measures against,
+  // so the two never disagree about whether the copy fits (CON-91). It
+  // replaced a hard-coded per-network max that lived beside the folds.
+  const { limit } = useCharLimit(doc.platform_id, doc.platform_post_type)
 
   // Two post types are not a feed card at all, and previewing them as one
   // said something untrue: a story publishes no caption, and a thread's
@@ -110,9 +121,13 @@ export function PostPreviewPanel({
   const postType = doc.platform_post_type
   const isStory = postType === 'story' && !!platform && STORY_NETWORKS.has(platform.zernioId)
   const isThread = postType === 'thread' && platform?.zernioId === 'twitter'
-  // 1-based, because the note counts posts the way the reader will.
+  // 1-based, because the note counts posts the way the reader will. Counted in
+  // code points, like the whole-text check below — an emoji is one character
+  // to the network and two to `String.length`.
   const longSegments = isThread
-    ? splitThread(text).flatMap((s, i) => (limits && s.length > limits.max ? [i + 1] : []))
+    ? splitThread(text).flatMap((s, i) =>
+        limit !== null && [...s].length > limit ? [i + 1] : [],
+      )
     : []
 
   // The platform's own ceiling on images in one post. Anything past it cannot
@@ -167,6 +182,7 @@ export function PostPreviewPanel({
               author={previewAuthor}
               timeLabel={timeLabel}
               postType={postType}
+              charLimit={limit}
             />
           )}
 
@@ -184,8 +200,8 @@ export function PostPreviewPanel({
             story={isStory}
             thread={isThread}
             longSegments={longSegments}
-            overLimit={!isThread && limits ? text.length > limits.max : false}
-            max={limits?.max}
+            textLength={[...text].length}
+            max={limit}
             accountConnected={author.connected}
           />
         </>
@@ -214,7 +230,7 @@ function Notes({
   story,
   thread,
   longSegments,
-  overLimit,
+  textLength,
   max,
   accountConnected,
 }: {
@@ -241,8 +257,10 @@ function Notes({
   thread: boolean
   /** 1-based positions of the thread posts that are over that limit. */
   longSegments: number[]
-  overLimit: boolean
-  max?: number
+  /** Length of the published text, in code points. */
+  textLength: number
+  /** The platform's ceiling; `null` while unresolved or where there is none. */
+  max: number | null
   accountConnected: boolean
 }) {
   const notes: ReactNode[] = []
@@ -386,7 +404,11 @@ function Notes({
     )
   }
 
-  if (overLimit && max) {
+  // `!thread` matters: on a thread the limit is per post, so measuring the
+  // whole text against it is wrong in both directions — it fires on threads
+  // that are fine, and stays silent about which post is actually too long.
+  // The per-post version of this note is above.
+  if (!thread && max !== null && textLength > max) {
     notes.push(
       <span className="text-destructive">
         The text is past {platformName}'s limit of {max.toLocaleString()} characters and will

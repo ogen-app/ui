@@ -93,13 +93,17 @@ export function RightSidebar() {
             <PanelLayer active={assistantActive}>
               <AssistantPanel onClose={close} />
             </PanelLayer>
-            <PanelLayer active={activePanel === 'calendarSettings'}>
-              <CalendarSettingsPanel onClose={close} />
-            </PanelLayer>
+            {/* Both are campaign-scoped — calendar preferences are stored per
+                campaign, and the not-scheduled list is that campaign's. */}
             {campaignId && (
-              <PanelLayer active={activePanel === 'notScheduled'}>
-                <NotScheduledPanel campaignId={campaignId} onClose={close} />
-              </PanelLayer>
+              <>
+                <PanelLayer active={activePanel === 'calendarSettings'}>
+                  <CalendarSettingsPanel campaignId={campaignId} onClose={close} />
+                </PanelLayer>
+                <PanelLayer active={activePanel === 'notScheduled'}>
+                  <NotScheduledPanel campaignId={campaignId} onClose={close} />
+                </PanelLayer>
+              </>
             )}
             <PanelLayer active={activePanel === 'postSettings'}>
               <div id={POST_SETTINGS_PORTAL_ID} className="h-full" />

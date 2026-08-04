@@ -1,5 +1,6 @@
 import { type Icon as PhosphorIcon } from '@phosphor-icons/react'
 import { Collapse } from '@/components/ui/collapse'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { Asset } from '@/types/content'
 import { formatTitle } from '@/lib'
 
@@ -11,6 +12,12 @@ type AssetSectionProps = {
   actionAriaLabel: (a: Asset) => string
   onAction: (a: Asset) => void
   defaultOpen?: boolean
+  /**
+   * The bank hasn't been read yet, so `assets` is empty for want of an
+   * answer rather than because there is none. The count and the empty label
+   * are both claims, and neither is available yet.
+   */
+  loading?: boolean
 }
 
 /**
@@ -25,10 +32,16 @@ export function AssetSection({
   actionAriaLabel,
   onAction,
   defaultOpen = false,
+  loading = false,
 }: AssetSectionProps) {
   return (
-    <Collapse title={title} meta={assets.length} defaultOpen={defaultOpen}>
-      {assets.length === 0 ? (
+    <Collapse title={title} meta={loading ? undefined : assets.length} defaultOpen={defaultOpen}>
+      {loading ? (
+        <div className="flex flex-col gap-2 py-2">
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+        </div>
+      ) : assets.length === 0 ? (
         <div className="flex items-center min-h-[52px] py-2">
           <span className="text-[14px] leading-4 text-tertiary-foreground">{emptyLabel}</span>
         </div>

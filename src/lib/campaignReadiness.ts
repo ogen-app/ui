@@ -4,7 +4,7 @@
 // no fetching, no stores — so the rules stay unit-testable and easy to evolve.
 
 import type { Campaign } from "@/types/campaigns";
-import type { Post, PostStatus } from "@/types/posts";
+import type { Post, PostStatus, PostSummary } from "@/types/posts";
 import { getPlatformInfo, type PlatformView } from "@/lib/platformDictionary";
 
 /**
@@ -238,7 +238,7 @@ export const SCHEDULED_STATUSES: PostStatus[] = [
   "scheduled_for_manual_publishing",
 ];
 
-export type ContentSnapshot = {
+export type ContentSnapshot<T extends PostSummary = Post> = {
   total: number;
   byStatus: Record<PostStatus, number>;
   /**
@@ -249,12 +249,22 @@ export type ContentSnapshot = {
   /** Still being written — the work left to do. */
   notReady: number;
   /** Last published first, capped at `limit`. */
-  recentlyPublished: Post[];
+  recentlyPublished: T[];
   /** Soonest scheduled_at first, capped at `limit`. */
-  upNext: Post[];
+  upNext: T[];
 };
 
-export function contentSnapshot(posts: Post[], limit = 5): ContentSnapshot {
+/**
+ * Generic in the post type, not merely widened to `PostSummary`: the counts
+ * work off a projection, but `recentlyPublished` / `upNext` hand posts back
+ * out, and the Overview renders their titles. Returning `T[]` lets the
+ * Campaigns list pass slim rows for the counts while the Overview keeps the
+ * full posts it puts on screen (CON-152).
+ */
+export function contentSnapshot<T extends PostSummary>(
+  posts: T[],
+  limit = 5,
+): ContentSnapshot<T> {
   const byStatus: Record<PostStatus, number> = {
     draft: 0,
     ready_for_publish: 0,
@@ -341,7 +351,7 @@ function plural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-function slotOf(post: Post): number | null {
+function slotOf(post: PostSummary): number | null {
   return post.scheduled_at ? Date.parse(post.scheduled_at) : null;
 }
 
@@ -358,7 +368,7 @@ function isOpen(status: PostStatus): boolean {
  */
 export function attentionItems(
   campaign: Campaign,
-  posts: Post[],
+  posts: PostSummary[],
   platformViews: PlatformView[],
   now: Date,
 ): AttentionItem[] {
@@ -739,15 +749,10 @@ export function attentionItems(
     });
   }
 
-  if (campaign.use_assets && campaign.asset_ids.length === 0) {
-    items.push({
-      id: "assets-expected",
-      severity: "todo",
-      label: "Assets are enabled but none are attached",
-      actionLabel: "Attach assets",
-      fix: "assets",
-    });
-  }
+  // There is deliberately no rule about `use_assets` with an empty `asset_ids`.
+  // That pair is not a half-finished setup — it is the "All assets" mode, where
+  // an empty list means *every* ready asset (CON-118, `lib/campaignSources.ts`).
+  // Flagging it would nag every campaign that picked the broadest option.
 
   if (snapshot.total > 0 && !campaign.estimated_post_count) {
     items.push({
@@ -874,7 +879,7 @@ export function attentionItems(
  * `SLOT_COLLISION_WINDOW` of each other. Returns how many posts are involved
  * and on which channels.
  */
-function slotCollisions(posts: Post[]): {
+function slotCollisions(posts: PostSummary[]): {
   count: number;
   platformIds: string[];
 } {

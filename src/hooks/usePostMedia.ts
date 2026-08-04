@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useCharLimit } from '@/hooks/useCharLimit'
 import { usePostAttachments } from '@/hooks/usePostAttachments'
 import { findRule, usePostTypeRules } from '@/hooks/usePostTypeRules'
 import { mediaPolicy, type MediaPolicy } from '@/lib/postMedia'
@@ -25,6 +26,9 @@ export function usePostMedia(post: Post) {
 
   const ready = !media.loading && !rulesLoading
 
+  const charLimit = useCharLimit(post.platform_id, post.platform_post_type)
+  const maxContentChars = charLimit.ready ? charLimit.limit : undefined
+
   const checks: PostCheck[] = useMemo(
     () =>
       evaluatePost({
@@ -34,8 +38,9 @@ export function usePostMedia(post: Post) {
         ready,
         postValidation: media.postValidation,
         requiresContent: rule?.requires_content ?? false,
+        maxContentChars,
       }),
-    [post, policy, media.attachments, media.postValidation, ready, rule],
+    [post, policy, media.attachments, media.postValidation, ready, rule, maxContentChars],
   )
 
   return { ...media, policy, checks, ready }

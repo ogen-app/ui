@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Campaign, CampaignTypePhase, Platform } from "@/types/campaigns";
-import type { Post } from "@/types/posts";
+import type { Post, PostSummary } from "@/types/posts";
 import type { PlatformInfo, PlatformView } from "@/lib/platformDictionary";
 import {
   attentionItems,
@@ -46,6 +46,7 @@ function makePost(overrides: Partial<Post> = {}): Post {
     campaign_id: "c1",
     platform_id: "p1",
     platform_post_type: "text-post",
+    social_account_id: "",
     title: "",
     content: "",
     media_urls: [],
@@ -581,9 +582,9 @@ describe("attentionItems", () => {
 
   // --- Setup ----------------------------------------------------------------
 
-  it("flags assets enabled with none attached", () => {
+  it("says nothing about an empty asset list — that is the All assets mode", () => {
     const campaign = liveCampaign({ use_assets: true });
-    expect(ids(campaign, healthyPosts())).toContain("assets-expected");
+    expect(ids(campaign, healthyPosts())).not.toContain("assets-expected");
   });
 
   it("mentions a missing post target only as info, once content exists", () => {
@@ -673,5 +674,90 @@ describe("attentionItems", () => {
     );
     expect(item).toMatchObject({ severity: "info" });
     expect(ids(liveCampaign(), [...healthyPosts(), makePost({ status: "draft", updated_at: iso(-1 * DAY) })])).not.toContain("stale-drafts");
+  });
+});
+
+/**
+ * The Campaigns list feeds these rules the server's slim projection while the
+ * Overview feeds them full posts (CON-152). AC-2 is that both read the same —
+ * "a list that scored campaigns its own way would quietly disagree with the
+ * screen behind it" — so the projection is the thing under test here.
+ */
+describe("PostSummary parity", () => {
+  /** Mirrors the server's `projectPost` (campaign_actions/summaries). */
+  function toSummary(p: Post): PostSummary {
+    return {
+      id: p.id,
+      campaign_id: p.campaign_id,
+      status: p.status,
+      scheduled_at: p.scheduled_at,
+      published_at: p.published_at,
+      platform_id: p.platform_id,
+      platform_post_type: p.platform_post_type,
+      campaign_type_phase_id: p.campaign_type_phase_id,
+      media_urls: p.media_urls,
+      created_at: p.created_at,
+      updated_at: p.updated_at,
+    };
+  }
+
+  /** A campaign with something wrong in several rule families at once. */
+  const messy = () => [
+    ...healthyPosts(),
+    makePost({ status: "failed" }),
+    makePost({ status: "draft", scheduled_at: iso(3 * HOUR) }),
+    makePost({ status: "draft", updated_at: iso(-30 * DAY) }),
+    makePost({ status: "scheduled", scheduled_at: iso(2 * DAY + MINUTE) }),
+  ];
+
+  it("scores a projection exactly as it scores full posts", () => {
+    const campaign = liveCampaign();
+    const posts = messy();
+
+    const fromFull = attentionItems(campaign, posts, connected, NOW);
+    const fromSlim = attentionItems(campaign, posts.map(toSummary), connected, NOW);
+
+    expect(fromSlim).toEqual(fromFull);
+    // Guard against the test passing because both sides found nothing.
+    expect(fromFull.length).toBeGreaterThan(0);
+  });
+
+  it("counts a projection exactly as it counts full posts", () => {
+    const posts = messy();
+    const full = contentSnapshot(posts);
+    const slim = contentSnapshot(posts.map(toSummary));
+
+    expect(slim.total).toBe(full.total);
+    expect(slim.readyToGo).toBe(full.readyToGo);
+    expect(slim.notReady).toBe(full.notReady);
+    expect(slim.byStatus).toEqual(full.byStatus);
+    expect(slim.upNext.map((p) => p.id)).toEqual(full.upNext.map((p) => p.id));
+    expect(slim.recentlyPublished.map((p) => p.id)).toEqual(
+      full.recentlyPublished.map((p) => p.id),
+    );
+  });
+
+  it("runs on rows that carry nothing but the projected fields", () => {
+    // Not a full Post with extras stripped by the type — an object that
+    // genuinely has no title, content or relations at runtime. If a rule ever
+    // reaches for one, this throws rather than reading undefined.
+    const bare: PostSummary = {
+      id: "po1",
+      campaign_id: "c1",
+      status: "failed",
+      scheduled_at: null,
+      published_at: null,
+      platform_id: "p1",
+      platform_post_type: "text-post",
+      campaign_type_phase_id: null,
+      media_urls: [],
+      created_at: "2026-07-01T00:00:00Z",
+      updated_at: "2026-07-01T00:00:00Z",
+    };
+    expect(Object.keys(bare)).toHaveLength(11);
+
+    const items = attentionItems(liveCampaign(), [bare], connected, NOW);
+    expect(items.map((i) => i.id)).toContain("failed-posts");
+    expect(contentSnapshot([bare]).byStatus.failed).toBe(1);
   });
 });

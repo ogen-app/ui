@@ -5,7 +5,7 @@ import {
   PaperPlaneTiltIcon,
   RepeatIcon,
 } from '@phosphor-icons/react'
-import { PLATFORM_TEXT_LIMITS } from '@/lib/socialText.ts'
+import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
 import {
   CarouselDots,
   FoldedText,
@@ -50,7 +50,7 @@ export function ThreadsPreview({ text, mediaUrls, author, timeLabel }: PreviewPr
           <div className="pt-0.5">
             <FoldedText
               text={text}
-              fold={PLATFORM_TEXT_LIMITS.threads.fold}
+              fold={PLATFORM_FOLDS.threads}
               moreLabel="more"
               color={C.text}
               moreColor={C.muted}

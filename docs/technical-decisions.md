@@ -116,6 +116,116 @@ unmount** so navigation never drops an edit.
 **Where.** `hooks/usePost.ts`. Campaign forms use the analogous autosave in
 `components/forms/campaignBriefForm/shared.ts` (500ms, version-tracked).
 
+## The Campaigns list batches posts instead of moving the rules {#batched-summaries}
+
+**Decision.** The list gets its post data from one shared query —
+`GET /api/campaigns/summaries` via `useCampaignSummaries` — returning a slim
+projection (`PostSummary`) of every post in the tenant, grouped by campaign.
+Each `CampaignCard` reads `data?.[campaign.id] ?? []` and runs the unchanged
+`lib/campaignReadiness` rules over it (CON-152, fixing the N+1 in CON-127).
+
+**Why not compute the verdict server-side.** That is the endgame
+([attention-rules.md](./attention-rules.md#asks-for-the-backend) §6), not this
+change. Aggregate counts cannot reproduce the badge — `manual-publish-due`,
+`slot-collision`, `pipeline-gap`, `behind-pace` and the drift family all need
+per-post `scheduled_at` / `platform_id` / `platform_post_type` and the *local*
+clock. A reduced server-side set would make the list disagree with the Overview
+behind it, and would hand the server a timezone problem the client doesn't have.
+
+**Why a sibling endpoint, not fields on `GET /api/campaigns`.** Campaign
+metadata and post state go stale on different events; the query keys are
+already split for that reason (`campaignPostsKey` vs `campaignOverviewKey`).
+`CAMPAIGN_SUMMARIES_KEY` is workspace-wide, so `invalidateCampaignPosts` fires
+it once for every card rather than per campaign.
+
+**Consequences.** `contentSnapshot` is generic in its post type rather than
+merely widened: its counts work off a projection, but `upNext` /
+`recentlyPublished` hand posts back out and the Overview renders their titles,
+so it returns `T[]`. Campaign detail views (list, calendar, overview) keep
+`useCampaignPosts` — they genuinely need full posts. The list does not fold in
+assistant-streamed drafts the way `useCampaignPosts` does; new posts appear on
+the next invalidation. Accepted: streaming is a detail-view concern.
+
+## The calendar card reads the post row and nothing else {#calendar-card-media}
+
+**Decision.** `PostCard` draws its leading image from `post.media_urls[0]` and
+its problem flag from `hasVisibleProblem(post)` — status, platform, post type.
+Neither fetches anything.
+
+**Why.** A week view renders a card per post from the list payload. Anything
+needing a per-post request (`GET /api/posts/:id/attachments`, the server's
+post-type rules) would cost one round-trip per card, so the card shows the
+subset of `evaluatePost` that the list already answers. Everything it flags is
+also a `fail` in the full check set; the reverse does not hold, so a clean card
+is not a promise the post will publish — it understates rather than cries wolf.
+
+**Known gap.** The editor's uploads go to the `post_attachments` table, whose
+presigned/thumbnail URLs are hydrated per post at response time. Nothing writes
+`media_urls`, so **the leading image never renders in practice today.** The
+card is built and correct; lighting it up needs the backend to put a thumbnail
+URL on the post list payload. Backend ticket, not a front-end change.
+
+**Where.** `components/campaigns/calendar/PostCard.tsx`,
+`lib/postValidation.ts` (`hasVisibleProblem`).
+
+## Personal preferences namespace themselves into the tenant settings table {#user-scoped-settings}
+
+**Decision.** Calendar preferences (first day of week, hidden days) are stored
+per user *and* per campaign, under the key
+`calendar.<userId>.<campaignId>` in the backend's `/api/settings` key/value
+store. They used to be a `persist`ed Zustand store; they are server state now,
+so they live in the Query cache like everything else fetched.
+
+**Why.** The API has no user-scoped store — `settings` is **tenant-scoped**
+(`tenant_id` + `key` as the primary key) and `users` has no preferences
+column — so the only identity available is the one we put in the key. This
+buys preferences that follow the user to another browser without a backend
+change. The cost is real and bounded: `GET /api/settings` lists every key in
+the tenant, so anything written this way is readable by every teammate. **Do
+not** store anything sensitive behind `userScopedKey`. A proper
+`user_settings` table is the eventual fix.
+
+**Where.** `services/api/settings.ts` (`userScopedKey`, `getSetting`,
+`putSetting`), `hooks/useCalendarSettings.ts`. Writes paint from the cache
+first and the PUT is debounced 500ms behind them — flipping six day switches
+costs one request — with a flush on unmount, the same shape as the post
+editor's autosave.
+
+## Explanatory copy is dismissible, and dismissal is permanent {#explainers}
+
+**Decision.** Copy that teaches how a screen works goes in an `<Explainer>`,
+not in a bare `<p>`. It carries a close button; closing it is remembered and
+the note never comes back. Dismissals are a `dismissedNotes: string[]` field on
+the persisted `settingsStore` — device-local, in `localStorage`.
+
+**Why.** Text that is exactly right on a user's first visit is furniture by
+their tenth, and no single wording is both. Rather than pick one and lose the
+other, the copy is written for the first read and the user is given the way to
+end it.
+
+**Why local rather than `userScopedKey`.** The first version put dismissals in
+`/api/settings`, so a closed note stayed closed on the user's other machine.
+That is the wrong trade for this: the table is
+[tenant-scoped](#user-scoped-settings), so every teammate would read a row
+recording which tips you closed, and the note could not render until a request
+resolved — a fetch, a loading gate, and a rollback path, all to remember that
+someone clicked an ✕. Seeing a tip once more on a new laptop is a smaller cost
+than any of that. Preferences that carry real content (calendar layout) still
+belong in `userScopedKey`; display noise does not.
+
+**Consequence — the constraint to hold.** An Explainer may only ever contain
+*teaching*. Anything a user needs while working — a count, a warning, a
+validation message, a link they'd look for twice — must live outside it, or it
+vanishes for everyone who closed the note. When adding one, check the screen
+still reads correctly with it deleted.
+
+**Where.** `components/page-primitives/Explainer.tsx`,
+`stores/settingsStore.ts` (`dismissedNotes`, `dismissNote`). First use is the
+campaign Assets page (`campaign-content-sources`). Ids are stable identifiers —
+renaming one un-dismisses it for everyone who already closed it. There is no
+"show help again" control; `resetAllSettings()` clears the set, and for
+testing, `localStorage.removeItem('settings-store')` does it from the console.
+
 ## Poll narrowly, only while a backend job is in flight
 
 **Decision.** Polling is enabled conditionally, not globally: post refetch runs
@@ -140,6 +250,31 @@ dictionary are dropped from the UI.
 **Why.** Full control over wording and branding without a backend round-trip or
 deploy, and a stable icon/color mapping. The trade-off: adding a platform
 requires a UI change, not just a backend one.
+
+## Disconnect is per account, and the scary confirm is earned {#disconnect}
+
+**Decision.** The Disconnect control hangs off each **account row** in Platform
+Settings, not off the platform row, and its dialog is two-step: the first
+confirm attempts a plain `DELETE
+/api/integrations/zernio/accounts/:id`; only if the server answers `409
+account_has_scheduled_posts` does the dialog show the count and offer
+`?force=true` (CON-133).
+
+**Why.** The endpoint takes an account id, and since CON-150 a platform can hold
+several accounts — a per-platform button would have had nothing unambiguous to
+delete. The two-step exists because the count lives *only* in that 409: there is
+no "posts by account" query to ask beforehand. Attempting first means the
+alarming screen is shown exactly when it's warranted, instead of warning about
+scheduled posts on every disconnect.
+
+**Consequences.** A forced disconnect strands those posts: a soft-delete does
+not clear their `social_account_id`, so they keep naming an account that is no
+longer in the platform's active set — which is precisely the `mismatched` state
+`resolvePublishingAccount` already reports. Recovering means unscheduling the
+post (the account is locked while `scheduled`, see
+[`#status-machine`](#status-machine)). Disconnect invalidates the **platform**
+list, not post queries, because that list is what both the settings rows and the
+composer's picker read.
 
 ## Two form systems, on purpose
 
@@ -214,9 +349,6 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
 - **No invite-teammate UI** — `users.register()` (`POST /api/users`) is the
   ready building block; real invitations (email loop) await backend support
   (CON-26).
-- **No account disconnect** — the API has no disconnect endpoint and tenants
-  can't reach the platform-owned Zernio dashboard, so the Disconnect button
-  in Platform Settings renders disabled until the backend grows one.
 - **Dark mode** is scaffolded (`.dark` block) but effectively empty.
 - The **Imagery** Content-Bank tab renders nothing yet (`assetCategory.ts`); AI
   image generation + storage there is planned but **secondary** (CON-105/88/83).

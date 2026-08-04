@@ -1,15 +1,18 @@
 import * as React from 'react'
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import {
+  ArrowSquareOutIcon,
   CalendarDotsIcon,
   CardsThreeIcon,
   CaretDoubleLeftIcon,
   GearSixIcon,
+  LifebuoyIcon,
   NotepadIcon,
   ScanIcon,
   SidebarIcon,
   SignOutIcon,
   ToolboxIcon,
+  UserIcon,
   XIcon,
 } from '@phosphor-icons/react'
 import {
@@ -17,6 +20,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenuSkeleton,
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar.tsx'
@@ -27,6 +31,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/authStore'
@@ -37,6 +42,9 @@ import { cn } from '@/lib'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
 import { CampaignIcon, campaignAbbr } from '@/components/layout/CampaignIcon.tsx'
 import { campaignColorVar } from '@/lib/campaignColor.ts'
+
+/** TODO: placeholder — no help site exists yet. Point at the real one when it does. */
+const HELP_URL = 'https://getogen.com/help'
 
 function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; isCollapsed: boolean }) {
   return (
@@ -68,9 +76,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const isCollapsed = isMobile ? false : state === 'collapsed'
   const { user } = useAuthStore()
   const navigate = useNavigate()
-  const { data: campaigns } = useCampaigns()
+  const { data: campaigns, isPending: campaignsPending } = useCampaigns()
 
   const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
+
+  // The heading belongs to whichever of the two bodies below is rendering —
+  // skeleton rows or real ones — so it is written once for both.
+  const showCampaignsGroup = campaignsPending
+    ? !isCollapsed
+    : !!campaigns && campaigns.length > 0
 
   const handleLogout = () => {
     navigate({ to: '/auth/logout' })
@@ -165,63 +179,72 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               to="/content-bank"
             />
 
-            {campaigns && campaigns.length > 0 && (
+            {/* The nav is the same on every page, so an empty group here is
+                the first thing you see on a cold load. Three rows hold the
+                space the campaigns will take. */}
+            {showCampaignsGroup && (
+              <SectionLabel isCollapsed={isCollapsed}>Campaigns</SectionLabel>
+            )}
+            {campaignsPending && !isCollapsed && (
               <>
-                <SectionLabel isCollapsed={isCollapsed}>Campaigns</SectionLabel>
-                {campaigns.map((campaign) => {
-                  const isActive = campaign.id === activeCampaignId
-                  const name = campaign.name.trim() || 'Untitled campaign'
-                  return (
-                    <React.Fragment key={campaign.id}>
-                      <AppSidebarButtonMenu
-                        icon={
-                          <CampaignIcon
-                            abbr={campaignAbbr(name)}
-                            active={isActive}
-                            color={campaignColorVar(campaign.id)}
-                            className="size-5 flex-none"
-                          />
-                        }
-                        text={name}
-                        isActive={isActive}
-                        to="/campaigns/$campaignId"
-                        params={{ campaignId: campaign.id }}
-                      />
-                      {isActive && (
-                        // Sub-items sit flush against each other; the 12px pad
-                        // plus the nav's 4px gap makes 16px before the next
-                        // campaign. The 2px rule closes the sub-menu, so the
-                        // campaign that follows doesn't read as one more of
-                        // its sections.
-                        <div className="flex w-full flex-col gap-0 pb-3 border-b-2 border-quaternary">
-                          {CAMPAIGN_SUB_ITEMS.map((item) => {
-                            const subActive = activeSubItem === item.id
-                            const link = subItemLink(campaign.id, item.id)
-                            return (
-                              <AppSidebarButtonMenu
-                                key={item.id}
-                                icon={
-                                  // Same 20px icon slot as top-level items so the labels
-                                  // line up; only the glyph inside is smaller.
-                                  <span className="flex size-5 flex-none items-center justify-center">
-                                    <item.icon className="size-4" />
-                                  </span>
-                                }
-                                text={item.text}
-                                isActive={subActive}
-                                to={link.to}
-                                params={link.params}
-                                className="lg:h-8 text-xs"
-                              />
-                            )
-                          })}
-                        </div>
-                      )}
-                    </React.Fragment>
-                  )
-                })}
+                <SidebarMenuSkeleton showIcon />
+                <SidebarMenuSkeleton showIcon />
+                <SidebarMenuSkeleton showIcon />
               </>
             )}
+
+            {campaigns?.map((campaign) => {
+              const isActive = campaign.id === activeCampaignId
+              const name = campaign.name.trim() || 'Untitled campaign'
+              return (
+                <React.Fragment key={campaign.id}>
+                  <AppSidebarButtonMenu
+                    icon={
+                      <CampaignIcon
+                        abbr={campaignAbbr(name)}
+                        active={isActive}
+                        color={campaignColorVar(campaign.id)}
+                        className="size-5 flex-none"
+                      />
+                    }
+                    text={name}
+                    isActive={isActive}
+                    to="/campaigns/$campaignId"
+                    params={{ campaignId: campaign.id }}
+                  />
+                  {isActive && (
+                    // Sub-items sit flush against each other; the 12px pad
+                    // plus the nav's 4px gap makes 16px before the next
+                    // campaign. The 2px rule closes the sub-menu, so the
+                    // campaign that follows doesn't read as one more of
+                    // its sections.
+                    <div className="flex w-full flex-col gap-0 pb-3 border-b-2 border-quaternary">
+                      {CAMPAIGN_SUB_ITEMS.map((item) => {
+                        const subActive = activeSubItem === item.id
+                        const link = subItemLink(campaign.id, item.id)
+                        return (
+                          <AppSidebarButtonMenu
+                            key={item.id}
+                            icon={
+                              // Same 20px icon slot as top-level items so the labels
+                              // line up; only the glyph inside is smaller.
+                              <span className="flex size-5 flex-none items-center justify-center">
+                                <item.icon className="size-4" />
+                              </span>
+                            }
+                            text={item.text}
+                            isActive={subActive}
+                            to={link.to}
+                            params={link.params}
+                            className="lg:h-8 text-xs"
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+                </React.Fragment>
+              )
+            })}
           </nav>
         </SidebarContent>
 
@@ -257,30 +280,65 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-68 px-6 pt-6 pb-4 shadow-md"
+                className="w-72 p-2 shadow-md"
                 side="right"
                 align="end"
                 sideOffset={8}
               >
-                <DropdownMenuLabel className="font-normal p-0" asChild>
-                  <div className="flex flex-col space-y-1">
-                    <div className="h-8 text-xl font-display font-medium truncate">{fullName}</div>
-                    <div className="text-sm leading-none text-tertiary-foreground">
-                      {user?.email}
+                {/* The same block the sidebar shows, in the same type — avatar,
+                    name, email — so opening the menu reads as the trigger
+                    unfolding rather than as a different screen. */}
+                <DropdownMenuLabel
+                  className="flex items-center gap-3 p-2 font-normal tracking-normal"
+                  asChild
+                >
+                  <div>
+                    <Avatar className="size-10 shrink-0">
+                      <AvatarFallback>{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex min-w-0 flex-col">
+                      <p className="truncate text-sm text-primary-foreground">{fullName}</p>
+                      <p className="truncate text-xs text-tertiary-foreground">{user?.email}</p>
+                      {user?.tenant && (
+                        <p className="truncate text-xs text-tertiary-foreground">
+                          {user.tenant.name}
+                        </p>
+                      )}
                     </div>
-                    {user?.tenant && (
-                      <div className="text-xs leading-none text-tertiary-foreground truncate pt-1">
-                        Workspace: {user.tenant.name}
-                      </div>
-                    )}
                   </div>
                 </DropdownMenuLabel>
 
+                <DropdownMenuSeparator className="my-2" />
 
-                  <DropdownMenuItem onClick={handleLogout} size="lg">
-                    <SignOutIcon />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
+                <DropdownMenuItem
+                  size="lg"
+                  className="px-2"
+                  onSelect={() => navigate({ to: '/profile' })}
+                >
+                  <UserIcon weight="bold" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem size="lg" className="px-2" asChild>
+                  {/* A real link, not an onSelect: middle-click and "copy link"
+                      should work on the one row that leaves the app. */}
+                  <a href={HELP_URL} target="_blank" rel="noreferrer noopener">
+                    <LifebuoyIcon weight="bold" />
+                    <span className="flex-1">Help and support</span>
+                    <ArrowSquareOutIcon
+                      weight="bold"
+                      className="text-tertiary-foreground"
+                      aria-label="Opens in a new tab"
+                    />
+                  </a>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-2" />
+
+                <DropdownMenuItem onClick={handleLogout} size="lg" className="px-2">
+                  <SignOutIcon weight="bold" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

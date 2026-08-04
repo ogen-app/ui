@@ -1,4 +1,4 @@
-import type { Campaign } from '@/types/campaigns'
+import type { Campaign, PublisherAccount } from '@/types/campaigns'
 
 export type PostStatus =
   | 'draft'
@@ -16,6 +16,12 @@ export type Post = {
   campaign_id: string
   platform_id: string
   platform_post_type: string
+  /**
+   * Which of the platform's connected accounts this post publishes as
+   * (CON-150). Empty when unspecified: the submit worker then auto-selects
+   * the platform's single account, or refuses when there is more than one.
+   */
+  social_account_id: string
   title: string
   content: string
   media_urls: string[]
@@ -32,8 +38,57 @@ export type Post = {
   updated_at: string
   campaign: Campaign | null
   platform: { id: string; name: string; post_types: Record<string, string>; cadence: string; constraints: string; created_at: string; updated_at: string } | null
+  /**
+   * The chosen account, hydrated. Optional on the wire (`omitempty`), and
+   * the server hydrates disconnected accounts too — so a post that already
+   * went out can still name the account it went out as, long after that
+   * account left the platform's connected list.
+   */
+  social_account?: PublisherAccount | null
   used_assets: unknown[]
   campaign_type_phase: unknown | null
+}
+
+/**
+ * The slim per-post projection behind the Campaigns list (CON-152) — exactly
+ * the fields `lib/campaignReadiness` reads, and nothing else. No title, no
+ * content, no hydrated relations: those are the payload, and the list only
+ * ever renders counts derived from them.
+ *
+ * A full `Post` structurally satisfies this, which is the point. The readiness
+ * rules are typed against `PostSummary`, so the Campaigns list can feed them
+ * projections while the Overview screen keeps feeding them real posts — one
+ * rule set, no divergence (docs/attention-rules.md).
+ */
+export type PostSummary = Pick<
+  Post,
+  | 'id'
+  | 'campaign_id'
+  | 'status'
+  | 'scheduled_at'
+  | 'published_at'
+  | 'platform_id'
+  | 'platform_post_type'
+  | 'campaign_type_phase_id'
+  | 'media_urls'
+  | 'created_at'
+  | 'updated_at'
+>
+
+/** One campaign's projected posts, as the server groups them. */
+export type CampaignPostSummary = {
+  campaign_id: string
+  posts: PostSummary[]
+}
+
+/**
+ * `GET /api/campaigns/summaries`. Campaigns with no posts are simply absent —
+ * the client defaults them to an empty list rather than the server sending a
+ * row per empty campaign.
+ */
+export type CampaignSummariesResponse = {
+  summaries: CampaignPostSummary[]
+  generated_at: string
 }
 
 export const POST_STATUS_LABELS: Record<PostStatus, string> = {
@@ -56,6 +111,7 @@ export type PostPayload = {
   campaign_id: string
   platform_id?: string
   platform_post_type?: string
+  social_account_id?: string
   title?: string
   content?: string
   media_urls?: string[]

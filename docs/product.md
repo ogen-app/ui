@@ -264,8 +264,8 @@ backlog, from Linear (status as of this writing):
 - **Multi-tenancy front-end completion** — ✅ landed 2026-07 (real
   `current_user` identity + tenant in the UI, workspace settings with rename,
   per-instance API-key config removed; in-app account-connect flow landed
-  2026-07-06). Remaining: an invite-teammate UI (CON-26, unspecified) and an
-  account **disconnect** path (needs a new API endpoint).
+  2026-07-06; per-account **disconnect** landed 2026-08, CON-133). Remaining:
+  an invite-teammate UI (CON-26, unspecified).
 
 **Secondary — desirable, not a main goal**
 
