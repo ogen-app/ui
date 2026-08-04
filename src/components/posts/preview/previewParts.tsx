@@ -1,7 +1,10 @@
+import { PlayIcon } from '@phosphor-icons/react'
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import { cn } from '@/lib'
+import { formatDuration } from '@/lib/platformVideo.ts'
 import { foldText } from '@/lib/socialText.ts'
 import { PREVIEW_BORDER, PREVIEW_FONT, PREVIEW_SHADOW } from './previewTheme.ts'
+import type { PreviewMediaItem } from './types.ts'
 
 /**
  * Pieces shared by the platform previews. Everything here is styled with
@@ -155,24 +158,24 @@ const TILE_GAP = 2
  * matters because it decides which image the reader sees first.
  */
 export function PreviewMedia({
-  urls,
+  items,
   aspect,
   background,
 }: {
-  urls: string[]
+  items: PreviewMediaItem[]
   /** CSS aspect-ratio for the block as a whole. */
   aspect?: number
   background: string
 }) {
-  if (urls.length === 0) return null
+  if (items.length === 0) return null
 
-  const shown = urls.slice(0, 4)
-  const overflow = urls.length - shown.length
+  const shown = items.slice(0, 4)
+  const overflow = items.length - shown.length
 
   if (shown.length === 1) {
     return (
       <div style={{ background, overflow: 'hidden' }}>
-        <Frame url={shown[0]} aspect={aspect} />
+        <Frame item={shown[0]} aspect={aspect} />
       </div>
     )
   }
@@ -194,7 +197,7 @@ export function PreviewMedia({
     >
       {featured ? (
         <>
-          <Frame url={shown[0]} fill />
+          <Frame item={shown[0]} fill />
           {/* h-full + min-h-0: without them the nested rows size to the
               images' intrinsic height instead of splitting the column, and
               the lower one comes out shorter than the upper. */}
@@ -202,15 +205,15 @@ export function PreviewMedia({
             className="grid h-full min-h-0"
             style={{ gap: TILE_GAP, gridTemplateRows: '1fr 1fr' }}
           >
-            <Frame url={shown[1]} fill />
-            <Frame url={shown[2]} fill />
+            <Frame item={shown[1]} fill />
+            <Frame item={shown[2]} fill />
           </div>
         </>
       ) : (
-        shown.map((url, i) => (
+        shown.map((item, i) => (
           <Frame
-            key={`${url}-${i}`}
-            url={url}
+            key={`${item.url}-${i}`}
+            item={item}
             fill
             overlay={overflow > 0 && i === shown.length - 1 ? `+${overflow}` : undefined}
           />
@@ -221,17 +224,18 @@ export function PreviewMedia({
 }
 
 function Frame({
-  url,
+  item,
   aspect,
   fill,
   overlay,
 }: {
-  url: string
+  item: PreviewMediaItem
   aspect?: number
   fill?: boolean
   overlay?: string
 }) {
   const [failed, setFailed] = useState(false)
+  const isVideo = item.kind === 'video'
 
   return (
     <div
@@ -243,11 +247,11 @@ function Frame({
           className="flex h-full w-full items-center justify-center text-xs"
           style={{ background: '#e4e6eb', color: '#65676b', minHeight: 80 }}
         >
-          Image unavailable
+          {isVideo ? 'No poster frame' : 'Image unavailable'}
         </div>
       ) : (
         <img
-          src={url}
+          src={item.url}
           alt=""
           onError={() => setFailed(true)}
           /* Cropped to fill only when something gives this frame a height — a
@@ -258,6 +262,9 @@ function Frame({
           style={{ display: 'block' }}
         />
       )}
+      {/* Outside the failed branch on purpose: a video with no poster is still
+          a video, and the play mark is what says so. */}
+      {isVideo && !overlay && <VideoChrome durationMs={item.durationMs} />}
       {overlay && (
         <div
           className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-white"
@@ -267,6 +274,60 @@ function Frame({
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * What turns a poster frame back into a video: the play mark every feed puts
+ * over one, and the running time in the corner.
+ *
+ * The duration is omitted at `0` rather than drawn as "0:00" — zero means the
+ * probe never ran, and a card claiming a zero-second video would be a lie
+ * about the file rather than about the platform.
+ */
+export function VideoChrome({
+  durationMs,
+  size = 48,
+}: {
+  durationMs: number
+  /** Diameter of the play mark; the watch page wants a bigger one. */
+  size?: number
+}) {
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div
+          className="flex items-center justify-center rounded-full"
+          style={{ width: size, height: size, background: 'rgba(0,0,0,0.55)' }}
+        >
+          <PlayIcon
+            weight="fill"
+            color="#ffffff"
+            size={size * 0.42}
+            /* The glyph's bounding box is wider than the triangle, so it reads
+               left-of-centre in a circle unless it is nudged back. */
+            style={{ marginLeft: size * 0.04 }}
+            aria-hidden
+          />
+        </div>
+      </div>
+      {durationMs > 0 && (
+        <span
+          className="absolute font-semibold text-white"
+          style={{
+            right: 8,
+            bottom: 8,
+            background: 'rgba(0,0,0,0.8)',
+            borderRadius: 4,
+            padding: '1px 4px',
+            fontSize: 12,
+            lineHeight: 1.3333,
+          }}
+        >
+          {formatDuration(durationMs)}
+        </span>
+      )}
+    </>
   )
 }
 

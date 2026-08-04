@@ -7,6 +7,7 @@ import {
   PaperPlaneTiltIcon,
 } from '@phosphor-icons/react'
 import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
+import { frameAspect } from './frames.ts'
 import { FoldedText, PreviewAvatar, PreviewMedia, PreviewSurface } from './previewParts.tsx'
 import { INSTAGRAM as C } from './previewTheme.ts'
 import type { PreviewProps } from './types.ts'
@@ -19,8 +20,11 @@ import type { PreviewProps } from './types.ts'
  * media at all, so the media slot shows that as a blocker rather than
  * quietly rendering a text-only card that could never exist.
  */
-export function InstagramPreview({ text, mediaUrls, author, timeLabel }: PreviewProps) {
+export function InstagramPreview({ text, media, postType, author, timeLabel }: PreviewProps) {
   const handle = author.username ?? author.name ?? 'your.account'
+  // Square is the feed's shape; a Reel is 9:16 and previewing one in a square
+  // shows a crop that will never exist.
+  const aspect = frameAspect(postType, 1) ?? 1
 
   return (
     <PreviewSurface style={{ borderRadius: 4 }}>
@@ -35,12 +39,12 @@ export function InstagramPreview({ text, mediaUrls, author, timeLabel }: Preview
         <DotsThreeIcon className="size-5 shrink-0" style={{ color: C.text }} aria-hidden />
       </div>
 
-      {mediaUrls.length > 0 ? (
-        <PreviewMedia urls={mediaUrls.slice(0, 1)} aspect={1} background="#fafafa" />
+      {media.length > 0 ? (
+        <PreviewMedia items={media.slice(0, 1)} aspect={aspect} background="#fafafa" />
       ) : (
         <div
           className="flex flex-col items-center justify-center gap-2 px-6 text-center"
-          style={{ aspectRatio: 1, background: '#fafafa', color: C.muted }}
+          style={{ aspectRatio: aspect, background: '#fafafa', color: C.muted }}
         >
           <ImageIcon className="size-8" aria-hidden />
           <span style={{ fontSize: 13 }}>
