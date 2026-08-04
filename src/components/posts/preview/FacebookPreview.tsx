@@ -5,7 +5,7 @@ import {
   GlobeIcon,
   ThumbsUpIcon,
 } from '@phosphor-icons/react'
-import { PLATFORM_TEXT_LIMITS } from '@/lib/socialText.ts'
+import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
 import {
   Action,
   ActionRow,
@@ -53,7 +53,7 @@ export function FacebookPreview({ text, mediaUrls, author, timeLabel }: PreviewP
       <div className="px-3 pb-3">
         <FoldedText
           text={text}
-          fold={PLATFORM_TEXT_LIMITS.facebook.fold}
+          fold={PLATFORM_FOLDS.facebook}
           moreLabel="See more"
           color={C.text}
           moreColor={C.muted}

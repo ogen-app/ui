@@ -25,12 +25,29 @@ export type PlatformPublisher = {
   accounts: PublisherAccount[];
 };
 
+/**
+ * The platform's text ceilings, seeded server-side (CON-91). Sibling of the
+ * `image_constraints` / `pdf_constraints` / `video_constraints` objects on the
+ * same row; `constraints` below stays the human-readable prose.
+ *
+ * `0` means unbounded, which is how the Go zero value reaches us — read these
+ * through `contentLimitFor()` rather than directly.
+ */
+export type TextConstraints = {
+  max_content_chars: number;
+  max_title_chars: number;
+  /** Per-post-type overrides of `max_content_chars`, keyed by slug. */
+  per_post_type?: Record<string, number>;
+};
+
 export type Platform = {
   id: string;
   name: string;
   post_types: Record<string, string>;
   cadence: string;
+  /** Prose, shown as-is in workspace settings. Not machine-readable. */
   constraints: string;
+  text_constraints: TextConstraints;
   created_at: string;
   updated_at: string;
   publishers?: PlatformPublisher[];

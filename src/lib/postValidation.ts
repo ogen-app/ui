@@ -3,7 +3,6 @@ import type {
   PlatformValidationError,
   PostAttachmentWithValidation,
 } from '@/types/attachments'
-import { getCharLimit } from '@/lib/platformLimits'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import { strandedAttachments, type MediaPolicy } from '@/lib/postMedia'
 import { markdownToSocialText } from '@/lib/socialText'
@@ -32,10 +31,16 @@ export type EvaluateInput = {
   postValidation: PlatformValidationError[]
   /** The post type requires copy (from the server's rule). */
   requiresContent: boolean
+  /**
+   * The platform's character ceiling (from the server, CON-91). `null` is a
+   * platform with no limit; `undefined` is one whose limit hasn't loaded yet,
+   * which shows as pending rather than flashing a pass.
+   */
+  maxContentChars: number | null | undefined
 }
 
 export function evaluatePost(input: EvaluateInput): PostCheck[] {
-  const { post, policy, requiresContent } = input
+  const { post, policy, requiresContent, maxContentChars } = input
   const checks: PostCheck[] = []
 
   const platform = getPlatformInfo(post.platform_id)
@@ -78,17 +83,29 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
         : 'No copy yet',
   })
 
-  const limit = getCharLimit(post.platform_id)
-  if (limit !== undefined) {
-    const length = published.length
+  // Code points, not UTF-16 units: an emoji is one character to the network's
+  // counter and to the server's, so `[...s].length` rather than `s.length`.
+  const length = [...published].length
+  if (maxContentChars === undefined) {
+    checks.push({ id: 'char-limit', label: 'Length', status: 'pending', detail: 'Checking…' })
+  } else if (maxContentChars === null) {
+    // No ceiling on this platform — still worth showing the count, since the
+    // check disappearing entirely reads as "not checked".
     checks.push({
       id: 'char-limit',
       label: 'Length',
-      status: length > limit ? 'fail' : 'pass',
-      detail:
-        length > limit
-          ? `${length.toLocaleString()} / ${limit.toLocaleString()} characters — ${(length - limit).toLocaleString()} over`
-          : `${length.toLocaleString()} / ${limit.toLocaleString()} characters`,
+      status: 'pass',
+      detail: `${length.toLocaleString()} characters — no limit on this platform`,
+    })
+  } else {
+    const over = length > maxContentChars
+    checks.push({
+      id: 'char-limit',
+      label: 'Length',
+      status: over ? 'fail' : 'pass',
+      detail: over
+        ? `${length.toLocaleString()} / ${maxContentChars.toLocaleString()} characters — ${(length - maxContentChars).toLocaleString()} over`
+        : `${length.toLocaleString()} / ${maxContentChars.toLocaleString()} characters`,
     })
   }
 

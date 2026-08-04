@@ -3,7 +3,8 @@ import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount.ts'
 import { getPlatformInfo } from '@/lib/platformDictionary.ts'
 import { relativeTime } from '@/lib/relativeTime.ts'
-import { markdownToSocialText, PLATFORM_TEXT_LIMITS } from '@/lib/socialText.ts'
+import { useCharLimit } from '@/hooks/useCharLimit'
+import { markdownToSocialText } from '@/lib/socialText.ts'
 import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments'
 import type { Post } from '@/types/posts'
 import { FacebookPreview } from './FacebookPreview.tsx'
@@ -86,7 +87,9 @@ export function PostPreviewPanel({
   const timeLabel = relativeTime(doc.published_at ?? doc.scheduled_at) ?? 'Just now'
 
   const Renderer = platform ? RENDERERS[platform.zernioId] : undefined
-  const limits = platform ? PLATFORM_TEXT_LIMITS[platform.zernioId] : undefined
+  // The same server-resolved ceiling the Validations panel measures against,
+  // so the two never disagree about whether the copy fits.
+  const { limit } = useCharLimit(doc.platform_id, doc.platform_post_type)
   const shownMedia = Math.min(
     imageUrls.length,
     (platform && MEDIA_SHOWN[platform.zernioId]) ?? 0,
@@ -137,8 +140,8 @@ export function PostPreviewPanel({
             pdfCount={pdfCount}
             missingUrls={missingUrls}
             shownMedia={shownMedia}
-            overLimit={limits ? text.length > limits.max : false}
-            max={limits?.max}
+            textLength={[...text].length}
+            max={limit}
             accountConnected={author.connected}
           />
         </>
@@ -161,7 +164,7 @@ function Notes({
   pdfCount,
   missingUrls,
   shownMedia,
-  overLimit,
+  textLength,
   max,
   accountConnected,
 }: {
@@ -176,8 +179,10 @@ function Notes({
   missingUrls: number
   /** How many of the images the card actually renders. */
   shownMedia: number
-  overLimit: boolean
-  max?: number
+  /** Length of the published text, in code points. */
+  textLength: number
+  /** The platform's ceiling; `null` while unresolved or where there is none. */
+  max: number | null
   accountConnected: boolean
 }) {
   const notes: ReactNode[] = []
@@ -244,7 +249,7 @@ function Notes({
     )
   }
 
-  if (overLimit && max) {
+  if (max !== null && textLength > max) {
     notes.push(
       <span className="text-destructive">
         The text is past {platformName}'s limit of {max.toLocaleString()} characters and will

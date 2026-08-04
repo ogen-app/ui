@@ -14,24 +14,24 @@
  * the source of truth — if its rules move, these follow.
  */
 
-/** Where each network folds a caption behind "see more", and its hard cap. */
-export type PlatformTextLimits = {
-  /** Characters shown before the fold. Approximate — the real fold is also
-   *  line-based and differs between mobile and desktop. */
-  fold: number
-  /** Hard limit the network rejects past. */
-  max: number
-}
-
-// Observed platform behaviour, not API-documented values. Worth re-checking
-// when a network redesigns its feed.
-export const PLATFORM_TEXT_LIMITS: Record<string, PlatformTextLimits> = {
-  linkedin: { fold: 210, max: 3000 },
-  facebook: { fold: 477, max: 63206 },
-  instagram: { fold: 125, max: 2200 },
-  threads: { fold: 500, max: 500 },
-  twitter: { fold: 280, max: 280 },
-  youtube: { fold: 157, max: 5000 },
+/**
+ * Where each network folds a caption behind "see more", keyed by zernioId.
+ *
+ * Approximate — the real fold is also line-based and differs between mobile
+ * and desktop — and observed rather than API-documented, so worth re-checking
+ * when a network redesigns its feed. This stays local on purpose: the fold is
+ * a rendering detail of the preview, and the backend has no notion of it.
+ *
+ * The hard caps that used to sit beside these now come from the platform's
+ * `text_constraints` (CON-91) — see `useCharLimit`.
+ */
+export const PLATFORM_FOLDS: Record<string, number> = {
+  linkedin: 210,
+  facebook: 477,
+  instagram: 125,
+  threads: 500,
+  twitter: 280,
+  youtube: 157,
 }
 
 /**

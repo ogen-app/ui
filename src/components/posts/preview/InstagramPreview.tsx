@@ -6,7 +6,7 @@ import {
   ImageIcon,
   PaperPlaneTiltIcon,
 } from '@phosphor-icons/react'
-import { PLATFORM_TEXT_LIMITS } from '@/lib/socialText.ts'
+import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
 import { FoldedText, PreviewAvatar, PreviewMedia, PreviewSurface } from './previewParts.tsx'
 import { INSTAGRAM as C } from './previewTheme.ts'
 import type { PreviewProps } from './types.ts'
@@ -62,7 +62,7 @@ export function InstagramPreview({ text, mediaUrls, author, timeLabel }: Preview
             that have to survive the fold. */}
         <FoldedText
           text={text}
-          fold={PLATFORM_TEXT_LIMITS.instagram.fold}
+          fold={PLATFORM_FOLDS.instagram}
           moreLabel="more"
           color={C.text}
           moreColor={C.muted}

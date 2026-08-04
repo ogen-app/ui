@@ -15,6 +15,7 @@ function rule(overrides: Partial<ResolvedPostTypeRule> = {}): ResolvedPostTypeRu
     allowed_kinds: ['image'],
     min_attachments: 1,
     max_attachments: null,
+    max_content_chars: null,
     ...overrides,
   }
 }
@@ -131,6 +132,10 @@ describe('evaluatePost', () => {
     ready: true,
     postValidation: [],
     requiresContent: false,
+    // Instagram's caption cap. Injected rather than looked up: the limit is
+    // the server's now (CON-91), so the check is tested against a number the
+    // caller supplies.
+    maxContentChars: 2200 as number | null | undefined,
   }
 
   it('fails the media check below the minimum', () => {
@@ -192,6 +197,41 @@ describe('evaluatePost', () => {
     const limit = checks.find((c) => c.id === 'char-limit')
     expect(limit?.status).toBe('pass')
     expect(limit?.detail).toContain('2,190')
+  })
+
+  it('counts code points, so an emoji is one character', () => {
+    const checks = evaluatePost({
+      ...base,
+      post: makePost({ content: '👍'.repeat(10) }),
+      policy: mediaPolicy(INSTAGRAM, rule({ min_attachments: 0 })),
+      attachments: [],
+    })
+    // Ten surrogate pairs are 20 UTF-16 units and 10 characters to the network.
+    expect(checks.find((c) => c.id === 'char-limit')?.detail).toContain('10 / 2,200')
+  })
+
+  it('holds the length check pending until the limit has loaded', () => {
+    const checks = evaluatePost({
+      ...base,
+      maxContentChars: undefined,
+      post: makePost({ content: 'x'.repeat(5000) }),
+      policy: mediaPolicy(INSTAGRAM, rule({ min_attachments: 0 })),
+      attachments: [],
+    })
+    expect(checks.find((c) => c.id === 'char-limit')?.status).toBe('pending')
+  })
+
+  it('still counts, without failing, on a platform with no limit', () => {
+    const checks = evaluatePost({
+      ...base,
+      maxContentChars: null,
+      post: makePost({ content: 'x'.repeat(100000) }),
+      policy: mediaPolicy(INSTAGRAM, rule({ min_attachments: 0 })),
+      attachments: [],
+    })
+    const limit = checks.find((c) => c.id === 'char-limit')
+    expect(limit?.status).toBe('pass')
+    expect(limit?.detail).toContain('no limit')
   })
 
   it('treats copy that is only formatting as no copy at all', () => {
