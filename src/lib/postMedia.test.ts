@@ -3,6 +3,7 @@ import type { Post } from '@/types/posts'
 import type { Platform, VideoConstraints } from '@/types/campaigns'
 import type { PostAttachmentWithValidation } from '@/types/attachments'
 import type { ResolvedPostTypeRule } from '@/types/validation'
+import { makePlatform, videoConstraints } from './platformFixtures.ts'
 import { MAX_VIDEO_UPLOAD_BYTES } from './platformVideo.ts'
 import { checkFile, mediaPolicy, strandedAttachments } from './postMedia.ts'
 import { evaluatePost, hasVisibleProblem, worstStatus } from './postValidation.ts'
@@ -25,31 +26,12 @@ const linkedInVideo: VideoConstraints = {
   requires_video_title: false,
 }
 
-/** All-zero video rules — how "this platform takes no video" reaches us. */
-const noVideo: VideoConstraints = {
-  max_file_size_bytes: 0,
-  allowed_formats: [],
-  max_duration_seconds: 0,
-  min_duration_seconds: 0,
-  max_width: 0,
-  max_height: 0,
-  allowed_aspect_ratios: [],
-  max_attachments_per_post: 0,
-  requires_video_title: false,
-}
-
-function platform(video_constraints: VideoConstraints = noVideo): Platform {
-  return {
+function platform(video_constraints: VideoConstraints = videoConstraints()): Platform {
+  return makePlatform({
     id: LINKEDIN,
-    name: 'LinkedIn',
-    post_types: {},
-    cadence: '',
-    constraints: '',
     text_constraints: { max_content_chars: 3000, max_title_chars: 0 },
     video_constraints,
-    created_at: '',
-    updated_at: '',
-  }
+  })
 }
 
 function rule(overrides: Partial<ResolvedPostTypeRule> = {}): ResolvedPostTypeRule {

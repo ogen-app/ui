@@ -22,6 +22,7 @@ import {
 } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
+import { charCount } from '@/lib/socialText'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
 import { usePostMedia } from '@/hooks/usePostMedia'
@@ -317,10 +318,7 @@ function PostEditorSurface({
                       and a counter on it would be noise. Deliberately not a
                       `maxLength`: silently swallowing keystrokes mid-word is
                       worse than showing how far over the title is. */}
-                  <TitleCounter
-                    length={[...titleDraft.trim()].length}
-                    limit={media.maxTitleChars}
-                  />
+                  <TitleCounter title={titleDraft} limit={media.maxTitleChars} />
                 </div>
                 <PostContentEditor
                   content={doc.content}
@@ -394,13 +392,16 @@ function PostEditorSurface({
  * a cap it is about to correct.
  */
 function TitleCounter({
-  length,
+  title,
   limit,
 }: {
-  length: number
+  title: string
   limit: number | null | undefined
 }) {
+  // Counted after this exit: five of the six platforms have no title cap, and
+  // a counter that renders nothing should cost nothing per keystroke.
   if (!limit) return null
+  const length = charCount(title.trim())
   const over = length > limit
   return (
     <span

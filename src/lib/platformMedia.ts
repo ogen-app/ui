@@ -119,20 +119,6 @@ export function getPlatformMedia(platformId: string): PlatformMediaConstraints {
 }
 
 /**
- * `accept` attribute for the file picker: every MIME the platform takes,
- * or all supported kinds when no platform is selected yet (the server
- * accepts images and PDFs regardless; per-platform rules are a warning,
- * not an upload block).
- */
-export function acceptFor(platformId: string): string {
-  const media = getPlatformMedia(platformId)
-  const mimes = [...(media.image?.allowedMimes ?? []), ...(media.document?.allowedMimes ?? [])]
-  return mimes.length > 0
-    ? mimes.join(',')
-    : 'image/jpeg,image/png,image/webp,image/gif,application/pdf'
-}
-
-/**
  * The size ceiling for one file, which is not always the platform's headline
  * number — see `maxGifFileSizeBytes`.
  */

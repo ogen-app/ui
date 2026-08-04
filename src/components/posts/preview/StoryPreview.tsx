@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { HeartIcon, PaperPlaneTiltIcon } from '@phosphor-icons/react'
 import { PreviewAvatar, PreviewSurface } from './previewParts.tsx'
-import type { PreviewProps } from './types.ts'
+import type { PreviewProps, StoryNetwork } from './types.ts'
 
 /**
  * An Instagram or Facebook story.
@@ -24,7 +24,7 @@ export function StoryPreview({
   author,
   timeLabel,
   network,
-}: PreviewProps & { network: 'instagram' | 'facebook' }) {
+}: PreviewProps & { network: StoryNetwork }) {
   const [failed, setFailed] = useState(false)
   const handle = author.username ?? author.name ?? 'your.account'
   const url = media[0]?.url

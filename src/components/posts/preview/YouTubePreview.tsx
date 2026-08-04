@@ -5,9 +5,10 @@ import {
   VideoCameraIcon,
 } from '@phosphor-icons/react'
 import type { ReactNode } from 'react'
+import { effectiveVideoTitle } from '@/lib/platformLimits.ts'
 import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
 import { frameAspect } from './frames.ts'
-import { FoldedText, PreviewAvatar, PreviewSurface, VideoChrome } from './previewParts.tsx'
+import { FoldedText, Frame, PreviewAvatar, PreviewSurface } from './previewParts.tsx'
 import { YOUTUBE as C } from './previewTheme.ts'
 import type { PreviewProps } from './types.ts'
 
@@ -33,27 +34,20 @@ export function YouTubePreview({
   // a picture, and stamping a play mark on one would claim something the
   // published post does not do.
   const lead = media[0]
-  // What YouTube will actually title the video. Zernio falls back to the first
-  // line of the description, then to a literal "Untitled Video" — a post with
-  // no title still publishes, just not under a name anyone chose.
-  const heading = title.trim() || firstLine(text) || 'Untitled Video'
+  // What YouTube will actually title the video — a post with no title still
+  // publishes, just not under a name anyone chose.
+  const heading = effectiveVideoTitle(title, text)
   // A Short is the same page in a vertical frame. The rest of the layout
   // survives the difference well enough to be worth keeping.
-  const aspect = frameAspect(postType, 16 / 9) ?? 16 / 9
+  const aspect = frameAspect(postType, 16 / 9)
 
   return (
     <PreviewSurface style={{ borderRadius: 12 }}>
       <div className="relative" style={{ aspectRatio: aspect, background: '#000000' }}>
         {lead ? (
-          <>
-            <img
-              src={lead.url}
-              alt=""
-              className="h-full w-full object-cover"
-              style={{ display: 'block' }}
-            />
-            {lead.kind === 'video' && <VideoChrome durationMs={lead.durationMs} size={64} />}
-          </>
+          /* `fill`: the player div above already fixes the aspect, and Frame
+             brings the broken-URL fallback the raw <img> here used to lack. */
+          <Frame item={lead} fill chromeSize={64} />
         ) : (
           <div
             className="flex h-full w-full flex-col items-center justify-center gap-2 px-6 text-center"
@@ -147,8 +141,4 @@ function Chip({ children }: { children: ReactNode }) {
       {children}
     </span>
   )
-}
-
-function firstLine(text: string): string {
-  return text.split('\n', 1)[0].trim()
 }

@@ -5,7 +5,7 @@ import { getPlatformInfo } from '@/lib/platformDictionary.ts'
 import { getPlatformMedia } from '@/lib/platformMedia.ts'
 import { relativeTime } from '@/lib/relativeTime.ts'
 import { useCharLimit } from '@/hooks/useCharLimit'
-import { markdownToSocialText, splitThread } from '@/lib/socialText.ts'
+import { charCount, markdownToSocialText, threadSegments } from '@/lib/socialText.ts'
 import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments'
 import type { Post } from '@/types/posts'
 import { FacebookPreview } from './FacebookPreview.tsx'
@@ -15,7 +15,12 @@ import { StoryPreview } from './StoryPreview.tsx'
 import { ThreadsPreview } from './ThreadsPreview.tsx'
 import { TwitterPreview } from './TwitterPreview.tsx'
 import { YouTubePreview } from './YouTubePreview.tsx'
-import type { PreviewMediaItem, PreviewProps } from './types.ts'
+import {
+  STORY_NETWORKS,
+  type PreviewMediaItem,
+  type PreviewProps,
+  type StoryNetwork,
+} from './types.ts'
 
 /**
  * A card per platform Ogen publishes to. Anything without an entry falls
@@ -47,11 +52,11 @@ const FEED_TILES: Record<string, number> = {
   twitter: 4,
 }
 
-/** Networks whose `story` post type is the fullscreen kind we can draw. */
-const STORY_NETWORKS = new Set(['instagram', 'facebook'])
-
 /** Networks whose multi-image card is a swipeable carousel, not a grid. */
 const CAROUSEL_NETWORKS = new Set(['instagram', 'threads'])
+
+/** Networks whose `thread` post type chains several per-limit posts. */
+const THREAD_NETWORKS = new Set(['twitter'])
 
 /**
  * "Preview" for the right sidebar: the post as its platform will render it.
@@ -152,16 +157,21 @@ export function PostPreviewPanel({
   // said something untrue: a story publishes no caption, and a thread's
   // character limit is per post rather than for the whole text.
   const postType = doc.platform_post_type
-  const isStory = postType === 'story' && !!platform && STORY_NETWORKS.has(platform.zernioId)
-  const isThread = postType === 'thread' && platform?.zernioId === 'twitter'
-  // 1-based, because the note counts posts the way the reader will. Counted in
-  // code points, like the whole-text check below — an emoji is one character
-  // to the network and two to `String.length`.
-  const longSegments = isThread
-    ? splitThread(text).flatMap((s, i) =>
-        limit !== null && [...s].length > limit ? [i + 1] : [],
-      )
-    : []
+  const isStory =
+    postType === 'story' &&
+    !!platform &&
+    (STORY_NETWORKS as readonly string[]).includes(platform.zernioId)
+  const isThread = postType === 'thread' && !!platform && THREAD_NETWORKS.has(platform.zernioId)
+  // 1-based, because the note counts posts the way the reader will. The same
+  // `threadSegments` verdicts the Twitter card badges, so the note and the
+  // badge cannot disagree about which post is too long.
+  const longSegments = useMemo(
+    () =>
+      isThread
+        ? threadSegments(text, limit).flatMap((s, i) => (s.over ? [i + 1] : []))
+        : [],
+    [isThread, text, limit],
+  )
 
   // The platform's own ceiling on images in one post. Anything past it cannot
   // publish, so the card is drawn from the images that can — otherwise the
@@ -212,7 +222,7 @@ export function PostPreviewPanel({
               author={previewAuthor}
               timeLabel={timeLabel}
               postType={postType}
-              network={platform.zernioId as 'instagram' | 'facebook'}
+              network={platform.zernioId as StoryNetwork}
             />
           ) : (
             <Renderer
@@ -243,7 +253,6 @@ export function PostPreviewPanel({
             story={isStory}
             thread={isThread}
             longSegments={longSegments}
-            textLength={[...text].length}
             max={limit}
             accountConnected={author.connected}
           />
@@ -276,7 +285,6 @@ function Notes({
   story,
   thread,
   longSegments,
-  textLength,
   max,
   accountConnected,
 }: {
@@ -309,8 +317,6 @@ function Notes({
   thread: boolean
   /** 1-based positions of the thread posts that are over that limit. */
   longSegments: number[]
-  /** Length of the published text, in code points. */
-  textLength: number
   /** The platform's ceiling; `null` while unresolved or where there is none. */
   max: number | null
   accountConnected: boolean
@@ -493,7 +499,7 @@ function Notes({
   // whole text against it is wrong in both directions — it fires on threads
   // that are fine, and stays silent about which post is actually too long.
   // The per-post version of this note is above.
-  if (!thread && max !== null && textLength > max) {
+  if (!thread && max !== null && charCount(text) > max) {
     notes.push(
       <span className="text-destructive">
         The text is past {platformName}'s limit of {max.toLocaleString()} characters and will

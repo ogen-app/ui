@@ -1,40 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import type { Platform, VideoConstraints } from '@/types/campaigns'
+import { makePlatform, videoConstraints as constraints } from './platformFixtures.ts'
 import {
   MAX_VIDEO_UPLOAD_BYTES,
   describeVideoConstraints,
-  formatDuration,
+  formatTimecode,
   resolveVideoConstraints,
   videoFormatOf,
 } from './platformVideo.ts'
 
-function constraints(overrides: Partial<VideoConstraints> = {}): VideoConstraints {
-  return {
-    max_file_size_bytes: 0,
-    allowed_formats: [],
-    max_duration_seconds: 0,
-    min_duration_seconds: 0,
-    max_width: 0,
-    max_height: 0,
-    allowed_aspect_ratios: [],
-    max_attachments_per_post: 0,
-    requires_video_title: false,
-    ...overrides,
-  }
-}
-
 function platform(video_constraints: VideoConstraints): Platform {
-  return {
-    id: 'AXqWG7U2qnpt',
-    name: 'LinkedIn',
-    post_types: {},
-    cadence: '',
-    constraints: '',
-    text_constraints: { max_content_chars: 0, max_title_chars: 0 },
-    video_constraints,
-    created_at: '',
-    updated_at: '',
-  }
+  return makePlatform({ video_constraints })
 }
 
 describe('resolveVideoConstraints', () => {
@@ -113,12 +89,12 @@ describe('videoFormatOf', () => {
   })
 })
 
-describe('formatDuration', () => {
+describe('formatTimecode', () => {
   it('reads as a clock, never as a count of seconds', () => {
-    expect(formatDuration(38_000)).toBe('0:38')
-    expect(formatDuration(64_000)).toBe('1:04')
-    expect(formatDuration(3_600_000)).toBe('1:00:00')
-    expect(formatDuration(3_723_000)).toBe('1:02:03')
+    expect(formatTimecode(38_000)).toBe('0:38')
+    expect(formatTimecode(64_000)).toBe('1:04')
+    expect(formatTimecode(3_600_000)).toBe('1:00:00')
+    expect(formatTimecode(3_723_000)).toBe('1:02:03')
   })
 })
 

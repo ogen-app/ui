@@ -16,11 +16,12 @@ const VERTICAL_TYPES = new Set(['reel', 'short', 'story'])
 
 /**
  * 9:16 for the vertical formats, otherwise the caller's feed default — which
- * may be `undefined`, meaning "let the media keep its own shape".
+ * may be `undefined`, meaning "let the media keep its own shape". The
+ * overloads say what the implementation guarantees: give it a default and a
+ * number always comes back.
  */
-export function frameAspect(
-  postType: string,
-  feedAspect?: number,
-): number | undefined {
+export function frameAspect(postType: string, feedAspect: number): number
+export function frameAspect(postType: string, feedAspect?: number): number | undefined
+export function frameAspect(postType: string, feedAspect?: number): number | undefined {
   return VERTICAL_TYPES.has(postType) ? 9 / 16 : feedAspect
 }

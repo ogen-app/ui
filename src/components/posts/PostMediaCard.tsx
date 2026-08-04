@@ -11,9 +11,15 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx'
 import { toast } from '@/stores/toastStore.ts'
 import { cn } from '@/lib'
-import { describeImageConstraints, formatBytes } from '@/lib/platformMedia.ts'
-import { describeVideoConstraints, formatDuration } from '@/lib/platformVideo.ts'
-import { acceptAttribute, checkFile, mediaNoun, type MediaPolicy } from '@/lib/postMedia.ts'
+import { formatBytes } from '@/lib/platformMedia.ts'
+import { formatTimecode } from '@/lib/platformVideo.ts'
+import {
+  acceptAttribute,
+  checkFile,
+  describeConstraints,
+  mediaNoun,
+  type MediaPolicy,
+} from '@/lib/postMedia.ts'
 import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments.ts'
 import type { PendingUpload } from '@/hooks/usePostAttachments.ts'
 import type { Post } from '@/types/posts.ts'
@@ -113,12 +119,7 @@ export function PostMediaCard({
         </h2>
         {policy.accepts && (
           <span className="text-xs text-tertiary-foreground">
-            {/* One hint, for the kind the post type actually takes — a video
-                post type showing image rules would describe an upload it
-                won't accept. */}
-            {policy.kinds.includes('video') && !policy.kinds.includes('image')
-              ? policy.video && describeVideoConstraints(policy.video)
-              : policy.image && describeImageConstraints(policy.image)}
+            {describeConstraints(policy)}
           </span>
         )}
       </div>
@@ -405,7 +406,7 @@ function MediaTile({
  */
 function videoTileLabel(attachment: PostAttachmentWithValidation): string {
   const parts: string[] = []
-  if (attachment.duration_ms > 0) parts.push(formatDuration(attachment.duration_ms))
+  if (attachment.duration_ms > 0) parts.push(formatTimecode(attachment.duration_ms))
   if (attachment.width > 0 && attachment.height > 0) {
     parts.push(`${attachment.width}×${attachment.height}`)
   }

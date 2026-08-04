@@ -6,7 +6,7 @@ import {
   HeartIcon,
   RepeatIcon,
 } from '@phosphor-icons/react'
-import { PLATFORM_FOLDS, splitThread } from '@/lib/socialText.ts'
+import { PLATFORM_FOLDS, threadSegments, type ThreadSegment } from '@/lib/socialText.ts'
 import { FoldedText, PreviewAvatar, PreviewMedia, PreviewSurface } from './previewParts.tsx'
 import { TWITTER as C } from './previewTheme.ts'
 import type { PreviewAuthor, PreviewMediaItem, PreviewProps } from './types.ts'
@@ -39,14 +39,18 @@ export function TwitterPreview({
   charLimit,
 }: PreviewProps) {
   const thread = postType === 'thread'
-  const segments = thread ? splitThread(text) : [text]
+  // The panel's notes read the same `threadSegments` verdicts, so the badge
+  // on a post and the note naming it can never disagree.
+  const segments: ThreadSegment[] = thread
+    ? threadSegments(text, charLimit ?? null)
+    : [{ text, count: 0, over: false }]
 
   return (
     <PreviewSurface style={{ borderRadius: 16 }}>
       {segments.map((segment, i) => (
         <Tweet
           key={i}
-          text={segment}
+          segment={segment}
           /* The lead post carries the media. Ogen sends the attachments with
              the post as a whole and the publisher places them, but a thread's
              images conventionally ride the first one — and that is the one
@@ -64,7 +68,7 @@ export function TwitterPreview({
 }
 
 function Tweet({
-  text,
+  segment,
   media,
   author,
   timeLabel,
@@ -72,7 +76,8 @@ function Tweet({
   charLimit,
   connector,
 }: {
-  text: string
+  /** The post's text with its length verdict — see `threadSegments`. */
+  segment: ThreadSegment
   media: PreviewMediaItem[]
   author: PreviewAuthor
   timeLabel: string
@@ -83,6 +88,7 @@ function Tweet({
   /** Draw the line down to the next post. */
   connector: boolean
 }) {
+  const text = segment.text
   const name = author.name ?? 'Your account'
   const handle = author.username ? `@${author.username}` : null
 
@@ -150,9 +156,9 @@ function Tweet({
             281 characters, so there is nothing authentic to reproduce, and
             "which post in the thread is too long" is unanswerable from the
             notes alone once a thread runs past a few segments. */}
-        {thread && charLimit != null && [...text].length > charLimit && (
+        {thread && segment.over && (
           <div className="pt-1 font-semibold" style={{ color: C.danger, fontSize: 12 }}>
-            {[...text].length}/{charLimit} characters — this post is too long
+            {segment.count}/{charLimit} characters — this post is too long
           </div>
         )}
 

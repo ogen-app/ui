@@ -6,12 +6,15 @@ import {
 import type { Platform } from '@/types/campaigns'
 import type { ResolvedPostTypeRule } from '@/types/validation'
 import {
+  describeImageConstraints,
+  formatBytes,
   getPlatformMedia,
   imageSizeLimit,
   type DocumentMediaConstraints,
   type ImageMediaConstraints,
 } from '@/lib/platformMedia'
 import {
+  describeVideoConstraints,
   resolveVideoConstraints,
   videoFormatOf,
   type VideoMediaConstraints,
@@ -144,6 +147,20 @@ export function mediaNoun(policy: MediaPolicy, plural = false): string {
   return plural ? 'files' : 'a file'
 }
 
+/**
+ * The one-line hint under the dropzone. One hint, for the kind the post type
+ * actually takes — a video post type showing image rules would describe an
+ * upload it won't accept. Mixed-kind types keep the image hint, the common
+ * case for them.
+ */
+export function describeConstraints(policy: MediaPolicy): string | undefined {
+  const onlyVideo = policy.kinds.includes('video') && !policy.kinds.includes('image')
+  const hint = onlyVideo
+    ? policy.video && describeVideoConstraints(policy.video)
+    : policy.image && describeImageConstraints(policy.image)
+  return hint || undefined
+}
+
 /** The `accept` attribute for the picker, across every kind this type takes. */
 export function acceptAttribute(policy: MediaPolicy): string {
   const mimes: string[] = []
@@ -197,12 +214,12 @@ export function checkFile(
       return { ok: false, reason: `${file.name}: this platform doesn't publish video` }
     }
     if (file.size > policy.video.maxFileSizeBytes) {
-      const mb = Math.round(policy.video.maxFileSizeBytes / (1024 * 1024))
+      const cap = formatBytes(policy.video.maxFileSizeBytes)
       return {
         ok: false,
         reason: policy.video.cappedByOgen
-          ? `${file.name} is over the ${mb} MB video limit`
-          : `${file.name} is larger than this platform allows (${mb} MB)`,
+          ? `${file.name} is over the ${cap} video limit`
+          : `${file.name} is larger than this platform allows (${cap})`,
       }
     }
     const format = videoFormatOf(file.type)

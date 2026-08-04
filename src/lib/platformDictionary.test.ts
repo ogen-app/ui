@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Platform, PublisherAccount } from "@/types/campaigns";
+import { makePlatform } from "./platformFixtures.ts";
 import {
   PLATFORMS,
   buildPlatformView,
@@ -14,27 +15,10 @@ const YOUTUBE = "8S8bWQTG6qD";
 const INSTAGRAM = "rzgpTkARLH0L";
 const LINKEDIN = "AXqWG7U2qnpt";
 
-function makePlatform(id: string, supported: string[]): Platform {
-  return {
+function apiPlatform(id: string, supported: string[]): Platform {
+  return makePlatform({
     id,
     name: "whatever the API calls it",
-    post_types: {},
-    cadence: "",
-    constraints: "",
-    text_constraints: { max_content_chars: 0, max_title_chars: 0 },
-    video_constraints: {
-      max_file_size_bytes: 0,
-      allowed_formats: [],
-      max_duration_seconds: 0,
-      min_duration_seconds: 0,
-      max_width: 0,
-      max_height: 0,
-      allowed_aspect_ratios: [],
-      max_attachments_per_post: 0,
-      requires_video_title: false,
-    },
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
     publishers: [
       {
         id: "pub1",
@@ -45,7 +29,7 @@ function makePlatform(id: string, supported: string[]): Platform {
         accounts: [],
       },
     ],
-  };
+  });
 }
 
 // The CON-145 gates (YouTube hidden, video post types withheld) came out
@@ -60,15 +44,15 @@ describe("video ungating (CON-148/163)", () => {
 
   it("builds a view for it when the API returns it", () => {
     const views = buildPlatformViews([
-      makePlatform(YOUTUBE, ["video"]),
-      makePlatform(INSTAGRAM, ["image-post"]),
+      apiPlatform(YOUTUBE, ["video"]),
+      apiPlatform(INSTAGRAM, ["image-post"]),
     ]);
     expect(views.map((v) => v.info.zernioId)).toEqual(["youtube", "instagram"]);
   });
 
   it("keeps video formats in a view when a publisher supports them", () => {
     const [view] = buildPlatformViews([
-      makePlatform(INSTAGRAM, ["image-post", "reel", "carousel"]),
+      apiPlatform(INSTAGRAM, ["image-post", "reel", "carousel"]),
     ]);
     expect(view.allowed.map((pt) => pt.slug)).toEqual([
       "image-post",
@@ -90,26 +74,8 @@ function account(id: string): PublisherAccount {
 }
 
 function linkedInView(accounts: PublisherAccount[]) {
-  const platform: Platform = {
-    id: LINKEDIN,
-    name: "LinkedIn",
-    post_types: {},
-    cadence: "",
-    constraints: "",
+  const platform: Platform = makePlatform({
     text_constraints: { max_content_chars: 3000, max_title_chars: 0 },
-    video_constraints: {
-      max_file_size_bytes: 0,
-      allowed_formats: [],
-      max_duration_seconds: 0,
-      min_duration_seconds: 0,
-      max_width: 0,
-      max_height: 0,
-      allowed_aspect_ratios: [],
-      max_attachments_per_post: 0,
-      requires_video_title: false,
-    },
-    created_at: "",
-    updated_at: "",
     publishers: [
       {
         id: "zernio",
@@ -122,7 +88,7 @@ function linkedInView(accounts: PublisherAccount[]) {
         accounts,
       },
     ],
-  };
+  });
   const info = getPlatformInfo(LINKEDIN);
   if (!info) throw new Error("LinkedIn missing from the dictionary");
   return buildPlatformView(platform, info);

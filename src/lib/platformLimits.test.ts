@@ -1,35 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { Platform, TextConstraints } from '@/types/campaigns'
 import type { ResolvedPostTypeRule } from '@/types/validation'
+import { makePlatform } from './platformFixtures.ts'
 import { contentLimitFor, resolveCharLimit, titleLimitFor } from './platformLimits.ts'
 
 function platform(text_constraints: TextConstraints): Platform {
-  return {
-    id: 'AXqWG7U2qnpt',
-    name: 'LinkedIn',
-    post_types: {},
-    cadence: '',
-    constraints: '',
-    text_constraints,
-    video_constraints: noVideo(),
-    created_at: '',
-    updated_at: '',
-  }
-}
-
-/** The all-zero rule set: "this platform does not take video". */
-function noVideo() {
-  return {
-    max_file_size_bytes: 0,
-    allowed_formats: [],
-    max_duration_seconds: 0,
-    min_duration_seconds: 0,
-    max_width: 0,
-    max_height: 0,
-    allowed_aspect_ratios: [],
-    max_attachments_per_post: 0,
-    requires_video_title: false,
-  }
+  return makePlatform({ text_constraints })
 }
 
 function rule(max_content_chars: number | null): ResolvedPostTypeRule {

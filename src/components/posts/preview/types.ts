@@ -26,6 +26,15 @@ export type PreviewMediaItem = {
   durationMs: number
 }
 
+/**
+ * Networks whose `story` post type is the fullscreen kind `StoryPreview` can
+ * draw. One list feeds both the panel's membership check and the prop union,
+ * so a new story network is one edit here rather than a set, a type and a
+ * cast to keep in step.
+ */
+export const STORY_NETWORKS = ['instagram', 'facebook'] as const
+export type StoryNetwork = (typeof STORY_NETWORKS)[number]
+
 /** What every platform preview needs. Platform-specific extras go on top. */
 export type PreviewProps = {
   /** Already flattened out of Markdown — see `lib/socialText.ts`. */

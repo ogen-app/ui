@@ -2,7 +2,7 @@ import { PlayIcon } from '@phosphor-icons/react'
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
-import { formatDuration } from '@/lib/platformVideo.ts'
+import { formatTimecode } from '@/lib/platformVideo.ts'
 import { foldText } from '@/lib/socialText.ts'
 import { PREVIEW_BORDER, PREVIEW_FONT, PREVIEW_SHADOW } from './previewTheme.ts'
 import type { PreviewMediaItem } from './types.ts'
@@ -276,7 +276,6 @@ export function PreviewCarousel({
   arrowColor?: string
 }) {
   const { index, count } = carousel
-  if (items.length === 0) return null
 
   return (
     <div className="relative" style={{ background, overflow: 'hidden' }}>
@@ -360,23 +359,33 @@ export function CarouselDots({
   )
 }
 
-function Frame({
+/**
+ * One media tile: the image (or a video's poster) with the failure fallback
+ * and the video chrome. Every card that shows media renders it through this,
+ * so a broken URL degrades the same way everywhere.
+ */
+export function Frame({
   item,
   aspect,
   fill,
   overlay,
+  chromeSize,
 }: {
   item: PreviewMediaItem
   aspect?: number
   fill?: boolean
   overlay?: string
+  /** Play-mark diameter override — the watch page wants a bigger one. */
+  chromeSize?: number
 }) {
   const [failed, setFailed] = useState(false)
   const isVideo = item.kind === 'video'
 
   return (
     <div
-      className="relative min-h-0 overflow-hidden"
+      /* `h-full` with `fill`: a grid cell stretches the tile anyway, but a
+         block parent (the watch page's player) needs it said explicitly. */
+      className={cn('relative min-h-0 overflow-hidden', fill && 'h-full')}
       style={{ aspectRatio: fill ? undefined : aspect }}
     >
       {failed ? (
@@ -401,7 +410,7 @@ function Frame({
       )}
       {/* Outside the failed branch on purpose: a video with no poster is still
           a video, and the play mark is what says so. */}
-      {isVideo && !overlay && <VideoChrome durationMs={item.durationMs} />}
+      {isVideo && !overlay && <VideoChrome durationMs={item.durationMs} size={chromeSize} />}
       {overlay && (
         <div
           className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-white"
@@ -461,7 +470,7 @@ export function VideoChrome({
             lineHeight: 1.3333,
           }}
         >
-          {formatDuration(durationMs)}
+          {formatTimecode(durationMs)}
         </span>
       )}
     </>

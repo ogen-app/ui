@@ -30,7 +30,9 @@ export type SSEFrame = {
   retry: number | null
 }
 
-const FRAME_BOUNDARY = /\r?\n\r?\n/
+// `g` so `lastIndex` can resume the scan mid-buffer; it is set before every
+// `exec`, so nothing leaks between calls or parser instances.
+const FRAME_BOUNDARY = /\r?\n\r?\n/g
 
 /**
  * Incremental parser. Feed it decoded chunks in order; it calls `onFrame` for
@@ -41,12 +43,19 @@ export function createSSEParser(onFrame: (frame: SSEFrame) => void): (chunk: str
   let buffer = ''
 
   return (chunk: string) => {
+    // Everything before the seam was already scanned boundary-free, so resume
+    // there instead of rescanning the buffer per chunk — an unclosed frame
+    // would otherwise cost O(frame × chunks). Backed up 3 chars because a
+    // boundary can straddle the seam (`\r\n\r` buffered, `\n` arriving).
+    let from = Math.max(0, buffer.length - 3)
     buffer += chunk
     for (;;) {
+      FRAME_BOUNDARY.lastIndex = from
       const match = FRAME_BOUNDARY.exec(buffer)
       if (!match) return
       const raw = buffer.slice(0, match.index)
       buffer = buffer.slice(match.index + match[0].length)
+      from = 0
 
       let event: string | null = null
       let id: string | null = null

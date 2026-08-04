@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import { useCharLimit } from '@/hooks/useCharLimit'
 import { usePlatforms } from '@/hooks/usePlatforms'
 import { usePostAttachments } from '@/hooks/usePostAttachments'
 import { findRule, usePostTypeRules } from '@/hooks/usePostTypeRules'
+import { resolveCharLimit, titleLimitFor } from '@/lib/platformLimits'
 import { mediaPolicy, type MediaPolicy } from '@/lib/postMedia'
 import { evaluatePost, type PostCheck } from '@/lib/postValidation'
 import type { Post } from '@/types/posts'
@@ -16,8 +16,8 @@ import type { Post } from '@/types/posts'
 export function usePostMedia(post: Post) {
   const media = usePostAttachments(post.id)
   const { data: rules, isLoading: rulesLoading } = usePostTypeRules(post.platform_id)
-  // Reference data behind `staleTime: Infinity`, and `useCharLimit` below
-  // reads the same query — so this costs no extra fetch.
+  // Reference data behind `staleTime: Infinity` — shared with every other
+  // reader of the platforms query, so this costs no extra fetch.
   const { data: platforms, isLoading: platformsLoading } = usePlatforms()
 
   const ruleView = findRule(rules, post.platform_post_type)
@@ -31,9 +31,13 @@ export function usePostMedia(post: Post) {
 
   const ready = !media.loading && !rulesLoading && !platformsLoading
 
-  const charLimit = useCharLimit(post.platform_id, post.platform_post_type)
-  const maxContentChars = charLimit.ready ? charLimit.limit : undefined
-  const maxTitleChars = charLimit.ready ? charLimit.titleLimit : undefined
+  // The pure core of `useCharLimit`, fed the (platform, rule) pair resolved
+  // above rather than re-running the hook's own copies of the same lookups.
+  const limitsReady = !platformsLoading && !rulesLoading
+  const maxContentChars = limitsReady
+    ? resolveCharLimit(platform, rule, post.platform_post_type)
+    : undefined
+  const maxTitleChars = limitsReady ? titleLimitFor(platform?.text_constraints) : undefined
 
   const checks: PostCheck[] = useMemo(
     () =>

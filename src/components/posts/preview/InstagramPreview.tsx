@@ -13,7 +13,6 @@ import {
   FoldedText,
   PreviewAvatar,
   PreviewCarousel,
-  PreviewMedia,
   PreviewSurface,
   useCarousel,
 } from './previewParts.tsx'
@@ -40,7 +39,7 @@ export function InstagramPreview({ text, media, postType, author, timeLabel }: P
   const carousel = useCarousel(media.length)
   // Square is the feed's shape; a Reel is 9:16 and previewing one in a square
   // shows a crop that will never exist.
-  const aspect = frameAspect(postType, 1) ?? 1
+  const aspect = frameAspect(postType, 1)
 
   return (
     <PreviewSurface style={{ borderRadius: 4 }}>
@@ -65,9 +64,9 @@ export function InstagramPreview({ text, media, postType, author, timeLabel }: P
             Instagram posts need an image or video — this one has none.
           </span>
         </div>
-      ) : media.length === 1 ? (
-        <PreviewMedia items={media} aspect={aspect} background={C.surface} />
       ) : (
+        /* One slide included: the carousel draws a lone item as the same
+           plain frame, and all its chrome is gated on `count > 1`. */
         <PreviewCarousel
           carousel={carousel}
           items={media}

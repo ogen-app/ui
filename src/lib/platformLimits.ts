@@ -48,6 +48,17 @@ export function titleLimitFor(
 }
 
 /**
+ * The name a video actually publishes under. Mirrors Zernio's fallback chain
+ * for platforms with a real title field (YouTube): the post's title, else the
+ * first line of the description, else a literal "Untitled Video". The preview
+ * card renders this and the panel's notes describe it — one definition keeps
+ * them telling the same story.
+ */
+export function effectiveVideoTitle(title: string, text: string): string {
+  return title.trim() || text.split('\n', 1)[0].trim() || 'Untitled Video'
+}
+
+/**
  * The limit to measure a post against, preferring the server's own resolution.
  *
  * The post-type rule is authoritative — it is what the publish-time check uses

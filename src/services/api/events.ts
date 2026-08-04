@@ -1,15 +1,8 @@
 import { readSSEStream } from '@/lib/sse'
 import { apiUrl } from './base'
 import { errorMessage } from './errors'
+import { isRecord } from './json'
 import type { AppEvent } from '@/types/events'
-
-/**
- * Everything the session is allowed to hear. The endpoint requires `topics`
- * and answers 400 without it; the server already scopes what it sends to the
- * caller's tenant, so narrowing further here would only mean re-subscribing on
- * every navigation for no privacy gain.
- */
-export const ALL_TOPICS = 'all'
 
 export type AppEventHandlers = {
   /** Fires once the response headers land — the stream is live from here. */
@@ -28,11 +21,14 @@ export type AppEventHandlers = {
  * opened at all.
  */
 export async function streamAppEvents(
-  topics: string,
   handlers: AppEventHandlers,
   signal: AbortSignal,
 ): Promise<void> {
-  const res = await fetch(apiUrl(`/api/events?topics=${encodeURIComponent(topics)}`), {
+  // `topics=all` is everything the session is allowed to hear. The endpoint
+  // requires the parameter and answers 400 without it; the server already
+  // scopes what it sends to the caller's tenant, so narrowing here would only
+  // mean re-subscribing on every navigation for no privacy gain.
+  const res = await fetch(apiUrl('/api/events?topics=all'), {
     credentials: 'include',
     headers: { Accept: 'text/event-stream' },
     signal,
@@ -78,6 +74,3 @@ function parseEnvelope(data: string): AppEvent | null {
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}

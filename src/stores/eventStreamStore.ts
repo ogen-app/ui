@@ -4,7 +4,7 @@ import { queryClient } from '@/lib/queryClient'
 import { flushAllPendingSaves } from '@/lib/pendingSaves'
 import { isLocalRun } from '@/lib/localRuns'
 import { RECONCILE_FILTERS, invalidationsFor, localRunKeyFor } from '@/lib/eventRouting'
-import { ALL_TOPICS, streamAppEvents } from '@/services/api/events'
+import { streamAppEvents } from '@/services/api/events'
 import { toast } from '@/stores/toastStore'
 import type { AppEvent, EventStreamStatus } from '@/types/events'
 
@@ -123,7 +123,6 @@ async function connect(): Promise<void> {
 
   try {
     await streamAppEvents(
-      ALL_TOPICS,
       {
         onOpen: () => {
           if (own.signal.aborted) return
@@ -145,9 +144,11 @@ async function connect(): Promise<void> {
     // says so, and there is nothing the user can act on — no message to show.
   }
 
-  // Reaching here without an abort means the stream ended: the server closed
-  // it, or the watchdog gave up on it. Both are drops, so both retry.
-  if (own.signal.aborted || controller !== own) return
+  // Reaching here with `controller` still ours means the stream ended: the
+  // server closed it, or the silence watchdog aborted it. Both are drops, so
+  // both retry through this one tail. A deliberate `stop()` nulls
+  // `controller` before its abort lands, so it returns here instead.
+  if (controller !== own) return
   controller = null
   scheduleRetry()
 }
@@ -169,12 +170,9 @@ function armSilenceWatchdog(own: AbortController): void {
   if (silenceTimer) clearTimeout(silenceTimer)
   silenceTimer = setTimeout(() => {
     silenceTimer = null
-    // Aborting unblocks the pending read, which lands in `connect`'s retry.
+    // Aborting unblocks the pending read; `connect`'s tail then sees the
+    // stream end and schedules the retry — the same path a server close takes.
     own.abort()
-    if (controller === own) {
-      controller = null
-      scheduleRetry()
-    }
   }, SILENCE_TIMEOUT_MS)
 }
 

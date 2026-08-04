@@ -5,7 +5,7 @@ import type {
 } from '@/types/attachments'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import { mediaNoun, strandedAttachments, type MediaPolicy } from '@/lib/postMedia'
-import { markdownToSocialText } from '@/lib/socialText'
+import { charCount, markdownToSocialText } from '@/lib/socialText'
 
 /**
  * `fail` blocks publishing (the server would reject it), `warn` is
@@ -90,8 +90,7 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
   // Silent on the five that don't: there the title is Ogen's own label, and a
   // check on it would be a check on nothing.
   if (maxTitleChars) {
-    // Code points, for the same reason the body counter uses them.
-    const titleLength = [...(post.title ?? '').trim()].length
+    const titleLength = charCount((post.title ?? '').trim())
     const over = titleLength > maxTitleChars
     checks.push({
       id: 'title-limit',
@@ -121,9 +120,7 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
         : 'No copy yet',
   })
 
-  // Code points, not UTF-16 units: an emoji is one character to the network's
-  // counter and to the server's, so `[...s].length` rather than `s.length`.
-  const length = [...published].length
+  const length = charCount(published)
   if (maxContentChars === undefined) {
     checks.push({ id: 'char-limit', label: 'Length', status: 'pending', detail: 'Checking…' })
   } else if (maxContentChars === null) {

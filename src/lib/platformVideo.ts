@@ -11,6 +11,7 @@
 // Zernio. `MAX_VIDEO_UPLOAD_BYTES` is our own, much lower ingest budget, and
 // the effective limit is always the stricter of the two.
 
+import { formatBytes } from '@/lib/platformMedia'
 import type { Platform, VideoConstraints } from '@/types/campaigns'
 
 const MB = 1024 * 1024
@@ -122,8 +123,12 @@ export function videoFormatOf(mimeType: string): string {
   return mimeType.startsWith('video/') ? mimeType.slice('video/'.length) : mimeType
 }
 
-/** "12:04", or "0:38" — never a bare number of seconds. */
-export function formatDuration(ms: number): string {
+/**
+ * "12:04", or "0:38" — never a bare number of seconds. Named apart from
+ * `assistantTools.formatDuration`, which renders the same input as "12m 4s":
+ * an auto-import picking the wrong one compiles clean and reads wrong.
+ */
+export function formatTimecode(ms: number): string {
   const total = Math.round(ms / 1000)
   const hours = Math.floor(total / 3600)
   const minutes = Math.floor((total % 3600) / 60)
@@ -138,15 +143,14 @@ function describeSeconds(seconds: number): string {
     const hours = seconds / 3600
     return `${hours % 1 === 0 ? hours : hours.toFixed(1)} h`
   }
-  if (seconds >= 60) return formatDuration(seconds * 1000)
+  if (seconds >= 60) return formatTimecode(seconds * 1000)
   return `${seconds}s`
 }
 
 /** "MP4, MOV · up to 500 MB · up to 2:20" — the hint under the dropzone. */
 export function describeVideoConstraints(c: VideoMediaConstraints): string {
   const parts = [c.allowedFormats.map((f) => f.toUpperCase()).join(', ')]
-  const mb = Math.round(c.maxFileSizeBytes / MB)
-  parts.push(`up to ${mb} MB`)
+  parts.push(`up to ${formatBytes(c.maxFileSizeBytes)}`)
   if (c.maxDurationSeconds !== null) {
     parts.push(`up to ${describeSeconds(c.maxDurationSeconds)}`)
   }
