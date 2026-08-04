@@ -79,18 +79,28 @@ export function PostPreviewPanel({
 
   const text = useMemo(() => markdownToSocialText(doc.content), [doc.content])
 
-  // Only images reach a feed card. PDFs are attachments the networks treat as
-  // documents (LinkedIn turns one into a slide carousel), so they are counted
-  // for the notes but never rendered as pictures.
+  // Images and video reach a feed card; video as its poster frame, which is
+  // what the networks show before playback anyway. PDFs are attachments the
+  // networks treat as documents (LinkedIn turns one into a slide carousel),
+  // so they are counted for the notes but never rendered as pictures.
   const { imageUrls, pdfCount, missingUrls } = useMemo(() => {
     const ordered = [...attachments].sort((a, b) => a.position - b.position)
-    const images = ordered.filter((a) => attachmentKind(a.mime_type) === 'image')
+    // `presigned_url` is absent when object storage is unconfigured, and a
+    // video's poster is absent when the render failed — there is nothing to
+    // show for those, so they are reported, not rendered.
+    const shownUrl = (a: PostAttachmentWithValidation) =>
+      attachmentKind(a.mime_type) === 'video' ? a.thumbnail_url : a.presigned_url
+    const pictures = ordered.filter((a) => {
+      const kind = attachmentKind(a.mime_type)
+      return kind === 'image' || kind === 'video'
+    })
     return {
-      // `presigned_url` is absent when object storage is unconfigured — there
-      // is nothing to show for those, so they are reported, not rendered.
-      imageUrls: images.flatMap((a) => (a.presigned_url ? [a.presigned_url] : [])),
+      imageUrls: pictures.flatMap((a) => {
+        const url = shownUrl(a)
+        return url ? [url] : []
+      }),
       pdfCount: ordered.filter((a) => attachmentKind(a.mime_type) === 'pdf').length,
-      missingUrls: images.filter((a) => !a.presigned_url).length,
+      missingUrls: pictures.filter((a) => !shownUrl(a)).length,
     }
   }, [attachments])
 

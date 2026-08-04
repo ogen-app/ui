@@ -12,11 +12,10 @@
 // FOLLOW-UP: verify each row against the live platform APIs and move the
 // authoritative copy back to the platform rows, then delete this file.
 //
-// Video is deliberately absent — Ogen does not handle video yet. YouTube is
-// hidden outright and every other platform's video post types are withheld
-// from the pickers (`platformDictionary.ts`), so a video format should never
-// reach the attachment UI in the first place. CON-145 moves that gate to the
-// server.
+// Video is deliberately absent, for the opposite reason: its rules were
+// seeded by CON-148 from the same Zernio docs this table is sourced from, so
+// there is nothing to override. `lib/platformVideo.ts` reads them off
+// `GET /api/platforms` and applies Ogen's own ingest budget on top.
 //
 // Keyed by platform Sqid — see `platformDictionary.ts`.
 
