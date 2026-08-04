@@ -6,6 +6,7 @@ import {
 import type { ResolvedPostTypeRule } from '@/types/validation'
 import {
   getPlatformMedia,
+  imageSizeLimit,
   type DocumentMediaConstraints,
   type ImageMediaConstraints,
 } from '@/lib/platformMedia'
@@ -124,7 +125,11 @@ export function checkFile(
     }
   }
   const limit = kind === 'pdf' ? policy.document : policy.image
-  if (limit && file.size > limit.maxFileSizeBytes) {
+  const maxBytes =
+    kind === 'pdf'
+      ? policy.document?.maxFileSizeBytes
+      : policy.image && imageSizeLimit(policy.image, file.type)
+  if (maxBytes !== undefined && file.size > maxBytes) {
     return { ok: false, reason: `${file.name} is larger than this platform allows` }
   }
   if (limit && file.type && !limit.allowedMimes.includes(file.type)) {
