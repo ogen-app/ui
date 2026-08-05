@@ -5,12 +5,14 @@ import {
   listAttachments,
   reorderAttachment,
   uploadAttachment,
+  uploadVideoAttachment,
 } from '@/services/api/attachments'
 import { postKey } from '@/hooks/usePost'
 import { toast } from '@/stores/toastStore'
-import type {
-  AttachmentListResponse,
-  PostAttachmentWithValidation,
+import {
+  attachmentKind,
+  type AttachmentListResponse,
+  type PostAttachmentWithValidation,
 } from '@/types/attachments'
 
 /**
@@ -66,7 +68,12 @@ export function usePostAttachments(postId: string) {
         const key = `${Date.now()}-${i}-${file.name}`
         setPending((p) => [...p, { key, name: file.name, percent: 0 }])
         try {
-          await uploadAttachment(postId, file, {
+          // Video never passes through the API process — it goes presign →
+          // direct PUT → finalize (CON-148). Everything else posts the bytes
+          // to the upload endpoint as before.
+          const send =
+            attachmentKind(file.type) === 'video' ? uploadVideoAttachment : uploadAttachment
+          await send(postId, file, {
             onProgress: (percent) =>
               setPending((p) => p.map((u) => (u.key === key ? { ...u, percent } : u))),
           })

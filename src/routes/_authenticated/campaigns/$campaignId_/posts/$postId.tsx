@@ -12,6 +12,7 @@ import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActions'
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
+import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanel } from '@/components/posts/quality/PostQualityPanel'
@@ -22,12 +23,18 @@ import {
 } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
+import { charCount } from '@/lib/socialText'
 import { useCampaign } from '@/hooks/useCampaigns'
-import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
+import {
+  usePost,
+  type TransitionStatusResult,
+  type VerifyExternalResult,
+} from '@/hooks/usePost'
 import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
+import { cn } from '@/lib'
 import { resolvePublishMethod } from '@/lib/autoPublish'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
@@ -45,6 +52,7 @@ function PostPage() {
     doc,
     changeDoc,
     transitionStatus,
+    verifyExternal,
     schedule,
     cancelScheduled,
     cancelling,
@@ -74,6 +82,7 @@ function PostPage() {
       doc={doc}
       changeDoc={changeDoc}
       transitionStatus={transitionStatus}
+      verifyExternal={verifyExternal}
       schedule={schedule}
       cancelScheduled={cancelScheduled}
       cancelling={cancelling}
@@ -87,6 +96,7 @@ type PostEditorSurfaceProps = {
   doc: Post
   changeDoc: (fn: (p: Post) => void) => void
   transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
+  verifyExternal: (url: string) => Promise<VerifyExternalResult>
   schedule: () => Promise<TransitionStatusResult>
   cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
   cancelling: boolean
@@ -98,6 +108,7 @@ function PostEditorSurface({
   doc,
   changeDoc,
   transitionStatus,
+  verifyExternal,
   schedule,
   cancelScheduled,
   cancelling,
@@ -107,6 +118,9 @@ function PostEditorSurface({
   const [titleDraft, setTitleDraft] = useState(doc.title)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  // Opened by MARK AS PUBLISHED (the 'verify' mechanism), and by the
+  // quick-settings bar for a post that published without a link.
+  const [publishedUrlOpen, setPublishedUrlOpen] = useState(false)
   // Bumped when a status action is clicked while blocked; the quick-settings
   // bar flashes the fields that are missing.
   const [attention, setAttention] = useState(0)
@@ -151,6 +165,7 @@ function PostEditorSurface({
     transitionStatus,
     schedule,
     cancelScheduled,
+    requestVerification: () => setPublishedUrlOpen(true),
     cancelling,
     publishMethod: effectivePublishMethod,
     context: { account },
@@ -292,6 +307,7 @@ function PostEditorSurface({
                 attention={attention}
                 publishMethod={effectivePublishMethod}
                 onPublishMethodChange={setPublishMethod}
+                onAddPostLink={() => setPublishedUrlOpen(true)}
               />
             </div>
             <div className="w-content">
@@ -299,17 +315,25 @@ function PostEditorSurface({
             </div>
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
-                <textarea
-                  ref={titleRef}
-                  value={titleDraft}
-                  onChange={(e) => {
-                    const next = e.target.value.replace(/\n/g, '')
-                    handleTitleChange(next)
-                  }}
-                  placeholder="Title"
-                  rows={1}
-                  className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground mb-4"
-                />
+                <div className="mb-4 flex flex-col">
+                  <textarea
+                    ref={titleRef}
+                    value={titleDraft}
+                    onChange={(e) => {
+                      const next = e.target.value.replace(/\n/g, '')
+                      handleTitleChange(next)
+                    }}
+                    placeholder="Title"
+                    rows={1}
+                    className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground"
+                  />
+                  {/* Only where the platform publishes a title and caps it —
+                      YouTube today. Elsewhere the title is Ogen's own label
+                      and a counter on it would be noise. Deliberately not a
+                      `maxLength`: silently swallowing keystrokes mid-word is
+                      worse than showing how far over the title is. */}
+                  <TitleCounter title={titleDraft} limit={media.maxTitleChars} />
+                </div>
                 <PostContentEditor
                   content={doc.content}
                   onContentChange={handleContentChange}
@@ -370,7 +394,51 @@ function PostEditorSurface({
         isOpen={deleteOpen}
         onClose={() => setDeleteOpen(false)}
       />
+      <PublishedUrlDialog
+        post={doc}
+        isOpen={publishedUrlOpen}
+        onClose={() => setPublishedUrlOpen(false)}
+        verifyExternal={verifyExternal}
+        // Publishing unverified is the way out of the dialog, not of the
+        // status: an already-published post has nothing left to skip to.
+        onSkip={
+          doc.status === 'published'
+            ? undefined
+            : () => transitionStatus('published')
+        }
+      />
     </PageContainer>
+  )
+}
+
+/**
+ * The title's character count against the platform's cap (CON-160).
+ *
+ * Renders nothing when the platform sets no title limit — five of the six do
+ * — and nothing while the platform row is still loading, so it never flashes
+ * a cap it is about to correct.
+ */
+function TitleCounter({
+  title,
+  limit,
+}: {
+  title: string
+  limit: number | null | undefined
+}) {
+  // Counted after this exit: five of the six platforms have no title cap, and
+  // a counter that renders nothing should cost nothing per keystroke.
+  if (!limit) return null
+  const length = charCount(title.trim())
+  const over = length > limit
+  return (
+    <span
+      className={cn(
+        'self-end text-xs tabular-nums',
+        over ? 'text-destructive' : 'text-tertiary-foreground',
+      )}
+    >
+      {length} / {limit}
+    </span>
   )
 }
 

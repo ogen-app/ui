@@ -1,8 +1,10 @@
 import { Fragment } from 'react'
-import { WarningIcon } from '@phosphor-icons/react'
+import { ArrowRightIcon, CopyIcon, WarningIcon } from '@phosphor-icons/react'
+import { Link } from '@tanstack/react-router'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { ThinkingTimeline } from './ThinkingTimeline'
 import { hasResultCard, ResultCard } from './ResultCard'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
 import type { AssistantAction, AssistantTurn } from '@/types/assistant'
 
@@ -63,6 +65,10 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
       {/* The structured result behind the action — campaign turns only. */}
       {showCard && turn.details && <ResultCard details={turn.details} />}
 
+      {/* A clone the turn created — an opt-in jump to the new post's editor
+          (CON-59). The source thread stays put; the user chooses to switch. */}
+      {settled && turn.clone && <CloneCard clone={turn.clone} />}
+
       {/* What the turn did to its subject, once it's settled. */}
       {settled && (footer || turn.saveVersion) && (
         <p className="text-xs text-tertiary-foreground">
@@ -100,6 +106,32 @@ const ACTION_LABELS: Record<AssistantAction, string | null> = {
 
 function actionLabel(action: AssistantAction): string | null {
   return ACTION_LABELS[action] ?? null
+}
+
+/**
+ * A jump to a clone the turn just created. Non-hijacking by design: the source
+ * thread stays active, and following the link lands on the clone's editor —
+ * which, on arrival, binds the assistant to the clone's own thread. Closing the
+ * panel mirrors the thread list's "open the post" affordance.
+ */
+function CloneCard({ clone }: { clone: NonNullable<AssistantTurn['clone']> }) {
+  return (
+    <Link
+      to="/campaigns/$campaignId/posts/$postId"
+      params={{ campaignId: clone.campaignId, postId: clone.postId }}
+      onClick={() => useSettingsStore.getState().closeRightPanel()}
+      className="group flex items-center gap-2 border border-border px-3 py-2.5 hover:bg-secondary"
+    >
+      <CopyIcon aria-hidden weight="regular" className="size-4 shrink-0 text-tertiary-foreground" />
+      <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+        Open the clone
+      </span>
+      <ArrowRightIcon
+        aria-hidden
+        className="size-4 shrink-0 text-tertiary-foreground transition-transform group-hover:translate-x-0.5"
+      />
+    </Link>
+  )
 }
 
 function ListBlock({ ordered, items }: { ordered: boolean; items: InlineSpan[][] }) {

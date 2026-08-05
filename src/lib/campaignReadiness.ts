@@ -4,8 +4,18 @@
 // no fetching, no stores — so the rules stay unit-testable and easy to evolve.
 
 import type { Campaign } from "@/types/campaigns";
-import type { Post, PostStatus } from "@/types/posts";
-import type { PlatformView } from "@/lib/platformDictionary";
+import type { Post, PostStatus, PostSummary } from "@/types/posts";
+import { getPlatformInfo, type PlatformView } from "@/lib/platformDictionary";
+
+/**
+ * A targeted channel's name. A campaign can target a platform the API no
+ * longer returns, which has no view and would otherwise read as "Unknown
+ * channel". The dictionary still knows the name, and naming it is what makes
+ * the row actionable: the user can see what to remove.
+ */
+function channelNameOf(view: PlatformView | undefined, id: string): string {
+  return view?.info.name ?? getPlatformInfo(id)?.name ?? "Unknown channel";
+}
 
 // --- Brief ------------------------------------------------------------------
 
@@ -110,9 +120,9 @@ export function channelReadiness(
   };
   for (const tp of campaign.target_platforms) {
     // Unknown platform id (dictionary/API mismatch) counts as unconnected —
-    // it certainly can't publish.
+    // it certainly can't publish. So does a hidden one, which has no view.
     const view = viewById.get(tp.id);
-    const name = view?.info.name ?? "Unknown channel";
+    const name = channelNameOf(view, tp.id);
     out.selected.push(name);
     if (!view || view.connectedPublishers.length === 0) continue;
     out.connected.push(name);
@@ -161,7 +171,7 @@ function channelsCheck(channels: ChannelReadiness): SetupCheck {
       ok: false,
       label: `No post type selected for ${missingPostTypes.join(", ")}`,
       detail:
-        "Post types tell Ogen what to write — a text post, a video, a carousel.",
+        "Post types tell Ogen what to write — a text post, an image post, a carousel.",
       fix: "settings",
     };
   }
@@ -227,7 +237,7 @@ export const SCHEDULED_STATUSES: PostStatus[] = [
   "scheduled_for_manual_publishing",
 ];
 
-export type ContentSnapshot = {
+export type ContentSnapshot<T extends PostSummary = Post> = {
   total: number;
   byStatus: Record<PostStatus, number>;
   /**
@@ -238,12 +248,22 @@ export type ContentSnapshot = {
   /** Still being written — the work left to do. */
   notReady: number;
   /** Last published first, capped at `limit`. */
-  recentlyPublished: Post[];
+  recentlyPublished: T[];
   /** Soonest scheduled_at first, capped at `limit`. */
-  upNext: Post[];
+  upNext: T[];
 };
 
-export function contentSnapshot(posts: Post[], limit = 5): ContentSnapshot {
+/**
+ * Generic in the post type, not merely widened to `PostSummary`: the counts
+ * work off a projection, but `recentlyPublished` / `upNext` hand posts back
+ * out, and the Overview renders their titles. Returning `T[]` lets the
+ * Campaigns list pass slim rows for the counts while the Overview keeps the
+ * full posts it puts on screen (CON-152).
+ */
+export function contentSnapshot<T extends PostSummary>(
+  posts: T[],
+  limit = 5,
+): ContentSnapshot<T> {
   const byStatus: Record<PostStatus, number> = {
     draft: 0,
     ready_for_publish: 0,
@@ -330,7 +350,7 @@ function plural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-function slotOf(post: Post): number | null {
+function slotOf(post: PostSummary): number | null {
   return post.scheduled_at ? Date.parse(post.scheduled_at) : null;
 }
 
@@ -347,7 +367,7 @@ function isOpen(status: PostStatus): boolean {
  */
 export function attentionItems(
   campaign: Campaign,
-  posts: Post[],
+  posts: PostSummary[],
   platformViews: PlatformView[],
   now: Date,
 ): AttentionItem[] {
@@ -356,8 +376,7 @@ export function attentionItems(
   const brief = briefPosture(campaign);
   const snapshot = contentSnapshot(posts);
   const viewById = new Map(platformViews.map((v) => [v.platform.id, v]));
-  const channelName = (id: string) =>
-    viewById.get(id)?.info.name ?? "Unknown channel";
+  const channelName = (id: string) => channelNameOf(viewById.get(id), id);
 
   const startMs = campaign.start_date ? Date.parse(campaign.start_date) : null;
   // `end_date` is stored as the *day* (serialized T00:00:00 — see
@@ -498,7 +517,7 @@ export function attentionItems(
 
   for (const tp of campaign.target_platforms) {
     const view = viewById.get(tp.id);
-    const name = view?.info.name ?? "Unknown channel";
+    const name = channelNameOf(view, tp.id);
     // Unknown platform id (dictionary/API mismatch) counts as unconnected —
     // it certainly can't publish.
     const connected = (view?.connectedPublishers.length ?? 0) > 0;
@@ -859,7 +878,7 @@ export function attentionItems(
  * `SLOT_COLLISION_WINDOW` of each other. Returns how many posts are involved
  * and on which channels.
  */
-function slotCollisions(posts: Post[]): {
+function slotCollisions(posts: PostSummary[]): {
   count: number;
   platformIds: string[];
 } {

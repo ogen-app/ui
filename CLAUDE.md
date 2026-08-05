@@ -63,6 +63,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   fetched data in a store. Query keys are co-located per hook and exported when
   another hook must invalidate them. Note the post editor (`["post", id]`) and
   post list (`["campaigns", id, "posts"]`) are separate namespaces.
+- **The Campaigns list reads one batched query, never one per card.**
+  `useCampaignSummaries` (`["campaigns","summaries"]`) returns a slim
+  `PostSummary` per post for the whole workspace; `CampaignCard` runs the same
+  `lib/campaignReadiness` rules over it. Never reintroduce a per-card fetch —
+  that was the N+1 CON-152 removed. See
+  `docs/technical-decisions.md#batched-summaries`.
 - **The post editor autosaves through the Query cache** (`usePost.changeDoc`,
   600ms debounce, generation-counter guarded, flush-on-unmount). Campaign forms
   autosave similarly. Prefer these patterns over new local edit stores.
@@ -77,6 +83,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **`src/lib/*` mirrors Go server rules** (`postStatusMachine`, `assetStatus`,
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.
+- **Video uploads take a different path from images and PDFs** — presign →
+  direct PUT to storage → finalize, so multi-hundred-megabyte files never
+  buffer in the API. Routed by kind inside `usePostAttachments.upload`; the
+  finalize response is the same shape an image upload returns. Video *rules*
+  come off `GET /api/platforms` (`video_constraints`) rather than the
+  `lib/platformMedia.ts` override table — but the size cap does not: 500 MB
+  (`MAX_VIDEO_UPLOAD_BYTES`) is ours, and always wins over the seeded ceiling.
+  A probed-but-zero `duration_ms` means video-service was down, not a
+  zero-length file. See `docs/technical-decisions.md#video-ingest`.
 - **`/api/settings` is tenant-scoped, not user-scoped.** Every key is visible
   to the whole workspace via `GET /api/settings`. Personal preferences get
   their identity from the key (`userScopedKey` →

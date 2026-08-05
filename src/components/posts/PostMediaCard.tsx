@@ -3,6 +3,7 @@ import {
   FileArrowUpIcon,
   FilePdfIcon,
   ImageBrokenIcon,
+  PlayCircleIcon,
   PlusIcon,
   TrashIcon,
   WarningCircleIcon,
@@ -10,8 +11,15 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx'
 import { toast } from '@/stores/toastStore.ts'
 import { cn } from '@/lib'
-import { acceptFor, describeImageConstraints, formatBytes } from '@/lib/platformMedia.ts'
-import { checkFile, type MediaPolicy } from '@/lib/postMedia.ts'
+import { formatBytes } from '@/lib/platformMedia.ts'
+import { formatTimecode } from '@/lib/platformVideo.ts'
+import {
+  acceptAttribute,
+  checkFile,
+  describeConstraints,
+  mediaNoun,
+  type MediaPolicy,
+} from '@/lib/postMedia.ts'
 import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments.ts'
 import type { PendingUpload } from '@/hooks/usePostAttachments.ts'
 import type { Post } from '@/types/posts.ts'
@@ -109,9 +117,9 @@ export function PostMediaCard({
             </span>
           )}
         </h2>
-        {policy.image && policy.accepts && (
+        {policy.accepts && (
           <span className="text-xs text-tertiary-foreground">
-            {describeImageConstraints(policy.image)}
+            {describeConstraints(policy)}
           </span>
         )}
       </div>
@@ -122,9 +130,9 @@ export function PostMediaCard({
           them, or pick a post type that uses them.
         </Notice>
       )}
-      {policy.videoOnly && (
+      {policy.videoUnsupported && (
         <Notice>
-          This post type needs video, which Ogen doesn&apos;t handle yet.
+          This post type needs video, which this platform doesn&apos;t publish.
         </Notice>
       )}
 
@@ -218,15 +226,15 @@ export function PostMediaCard({
       {policy.accepts && policy.required && attachments.length < policy.min && (
         <p className="text-xs text-warning">
           {policy.min === 1
-            ? 'This post type needs an image before it can be published.'
-            : `This post type needs at least ${policy.min} images before it can be published.`}
+            ? `This post type needs ${mediaNoun(policy)} before it can be published.`
+            : `This post type needs at least ${policy.min} ${mediaNoun(policy, true)} before it can be published.`}
         </p>
       )}
 
       <input
         ref={inputRef}
         type="file"
-        accept={acceptFor(post.platform_id)}
+        accept={acceptAttribute(policy)}
         multiple
         hidden
         onChange={(e) => {
@@ -268,7 +276,13 @@ function MediaTile({
 }: TileProps) {
   const kind = attachmentKind(attachment.mime_type)
   const issues = attachment.platform_validation ?? []
-  const src = kind === 'pdf' ? attachment.thumbnail_url : attachment.presigned_url
+  // PDFs show their first page and video its poster frame; both live in the
+  // thumbnail slot. A video's own presigned URL is the file itself, which is
+  // not something to drop into an <img>.
+  const src =
+    kind === 'pdf' || kind === 'video'
+      ? attachment.thumbnail_url
+      : attachment.presigned_url
 
   return (
     <div
@@ -305,21 +319,37 @@ function MediaTile({
       )}
     >
       {src ? (
-        <img
-          src={src}
-          alt=""
-          className="size-full object-cover"
-          draggable={false}
-        />
+        <>
+          <img
+            src={src}
+            alt=""
+            className="size-full object-cover"
+            draggable={false}
+          />
+          {/* The poster is a still — without this the tile is
+              indistinguishable from an image attachment. */}
+          {kind === 'video' && (
+            <PlayCircleIcon
+              weight="fill"
+              className="pointer-events-none absolute inset-0 m-auto size-8 text-primary/90"
+            />
+          )}
+        </>
       ) : (
         <div className="flex size-full flex-col items-center justify-center gap-1 text-tertiary-foreground">
           {kind === 'pdf' ? (
             <FilePdfIcon className="size-6" />
+          ) : kind === 'video' ? (
+            <PlayCircleIcon className="size-6" />
           ) : (
             <ImageBrokenIcon className="size-6" />
           )}
           <span className="text-[11px]">
-            {kind === 'pdf' ? `${attachment.page_count || '?'} pages` : 'No preview'}
+            {kind === 'pdf'
+              ? `${attachment.page_count || '?'} pages`
+              : kind === 'video'
+                ? 'Video'
+                : 'No preview'}
           </span>
         </div>
       )}
@@ -348,7 +378,9 @@ function MediaTile({
       <span className="absolute inset-x-0 bottom-0 truncate bg-primary/90 px-1 py-0.5 text-[11px] text-tertiary-foreground">
         {kind === 'pdf'
           ? `PDF · ${formatBytes(attachment.size_bytes)}`
-          : `${attachment.width}×${attachment.height} · ${formatBytes(attachment.size_bytes)}`}
+          : kind === 'video'
+            ? videoTileLabel(attachment)
+            : `${attachment.width}×${attachment.height} · ${formatBytes(attachment.size_bytes)}`}
       </span>
 
       {!frozen && (
@@ -363,6 +395,23 @@ function MediaTile({
       )}
     </div>
   )
+}
+
+/**
+ * "1:04 · 1920×1080 · 24.6 MB", dropping whatever the probe didn't fill in.
+ *
+ * `duration_ms: 0` and `width: 0` mean video-service was unreachable at
+ * finalize, not a zero-length or zero-pixel file — so they are omitted rather
+ * than rendered as "0:00", which would read as a broken upload.
+ */
+function videoTileLabel(attachment: PostAttachmentWithValidation): string {
+  const parts: string[] = []
+  if (attachment.duration_ms > 0) parts.push(formatTimecode(attachment.duration_ms))
+  if (attachment.width > 0 && attachment.height > 0) {
+    parts.push(`${attachment.width}×${attachment.height}`)
+  }
+  parts.push(formatBytes(attachment.size_bytes))
+  return parts.join(' · ')
 }
 
 function Notice({ children }: { children: React.ReactNode }) {

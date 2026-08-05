@@ -1,15 +1,18 @@
 import * as React from 'react'
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import {
+  ArrowSquareOutIcon,
   CalendarDotsIcon,
   CardsThreeIcon,
   CaretDoubleLeftIcon,
   GearSixIcon,
+  LifebuoyIcon,
   NotepadIcon,
   ScanIcon,
   SidebarIcon,
   SignOutIcon,
   ToolboxIcon,
+  UserIcon,
   XIcon,
 } from '@phosphor-icons/react'
 import {
@@ -28,6 +31,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/authStore'
@@ -37,7 +41,11 @@ import { Logo } from '@/components/Logo'
 import { cn } from '@/lib'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
 import { CampaignIcon, campaignAbbr } from '@/components/layout/CampaignIcon.tsx'
+import { LiveStatus } from '@/components/layout/LiveStatus'
 import { campaignColorVar } from '@/lib/campaignColor.ts'
+
+/** TODO: placeholder — no help site exists yet. Point at the real one when it does. */
+const HELP_URL = 'https://getogen.com/help'
 
 function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; isCollapsed: boolean }) {
   return (
@@ -242,6 +250,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarContent>
 
         <SidebarFooter>
+          <LiveStatus isCollapsed={isCollapsed} />
           <AppSidebarButtonMenu
             icon={
               <GearSixIcon weight="regular" className="size-5 flex-none" />
@@ -273,30 +282,65 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-68 px-6 pt-6 pb-4 shadow-md"
+                className="w-72 p-2 shadow-md"
                 side="right"
                 align="end"
                 sideOffset={8}
               >
-                <DropdownMenuLabel className="font-normal p-0" asChild>
-                  <div className="flex flex-col space-y-1">
-                    <div className="h-8 text-xl font-display font-medium truncate">{fullName}</div>
-                    <div className="text-sm leading-none text-tertiary-foreground">
-                      {user?.email}
+                {/* The same block the sidebar shows, in the same type — avatar,
+                    name, email — so opening the menu reads as the trigger
+                    unfolding rather than as a different screen. */}
+                <DropdownMenuLabel
+                  className="flex items-center gap-3 p-2 font-normal tracking-normal"
+                  asChild
+                >
+                  <div>
+                    <Avatar className="size-10 shrink-0">
+                      <AvatarFallback>{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex min-w-0 flex-col">
+                      <p className="truncate text-sm text-primary-foreground">{fullName}</p>
+                      <p className="truncate text-xs text-tertiary-foreground">{user?.email}</p>
+                      {user?.tenant && (
+                        <p className="truncate text-xs text-tertiary-foreground">
+                          {user.tenant.name}
+                        </p>
+                      )}
                     </div>
-                    {user?.tenant && (
-                      <div className="text-xs leading-none text-tertiary-foreground truncate pt-1">
-                        Workspace: {user.tenant.name}
-                      </div>
-                    )}
                   </div>
                 </DropdownMenuLabel>
 
+                <DropdownMenuSeparator className="my-2" />
 
-                  <DropdownMenuItem onClick={handleLogout} size="lg">
-                    <SignOutIcon />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
+                <DropdownMenuItem
+                  size="lg"
+                  className="px-2"
+                  onSelect={() => navigate({ to: '/profile' })}
+                >
+                  <UserIcon weight="bold" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem size="lg" className="px-2" asChild>
+                  {/* A real link, not an onSelect: middle-click and "copy link"
+                      should work on the one row that leaves the app. */}
+                  <a href={HELP_URL} target="_blank" rel="noreferrer noopener">
+                    <LifebuoyIcon weight="bold" />
+                    <span className="flex-1">Help and support</span>
+                    <ArrowSquareOutIcon
+                      weight="bold"
+                      className="text-tertiary-foreground"
+                      aria-label="Opens in a new tab"
+                    />
+                  </a>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-2" />
+
+                <DropdownMenuItem onClick={handleLogout} size="lg" className="px-2">
+                  <SignOutIcon weight="bold" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

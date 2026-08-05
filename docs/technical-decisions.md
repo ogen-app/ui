@@ -116,6 +116,36 @@ unmount** so navigation never drops an edit.
 **Where.** `hooks/usePost.ts`. Campaign forms use the analogous autosave in
 `components/forms/campaignBriefForm/shared.ts` (500ms, version-tracked).
 
+## The Campaigns list batches posts instead of moving the rules {#batched-summaries}
+
+**Decision.** The list gets its post data from one shared query —
+`GET /api/campaigns/summaries` via `useCampaignSummaries` — returning a slim
+projection (`PostSummary`) of every post in the tenant, grouped by campaign.
+Each `CampaignCard` reads `data?.[campaign.id] ?? []` and runs the unchanged
+`lib/campaignReadiness` rules over it (CON-152, fixing the N+1 in CON-127).
+
+**Why not compute the verdict server-side.** That is the endgame
+([attention-rules.md](./attention-rules.md#asks-for-the-backend) §6), not this
+change. Aggregate counts cannot reproduce the badge — `manual-publish-due`,
+`slot-collision`, `pipeline-gap`, `behind-pace` and the drift family all need
+per-post `scheduled_at` / `platform_id` / `platform_post_type` and the *local*
+clock. A reduced server-side set would make the list disagree with the Overview
+behind it, and would hand the server a timezone problem the client doesn't have.
+
+**Why a sibling endpoint, not fields on `GET /api/campaigns`.** Campaign
+metadata and post state go stale on different events; the query keys are
+already split for that reason (`campaignPostsKey` vs `campaignOverviewKey`).
+`CAMPAIGN_SUMMARIES_KEY` is workspace-wide, so `invalidateCampaignPosts` fires
+it once for every card rather than per campaign.
+
+**Consequences.** `contentSnapshot` is generic in its post type rather than
+merely widened: its counts work off a projection, but `upNext` /
+`recentlyPublished` hand posts back out and the Overview renders their titles,
+so it returns `T[]`. Campaign detail views (list, calendar, overview) keep
+`useCampaignPosts` — they genuinely need full posts. The list does not fold in
+assistant-streamed drafts the way `useCampaignPosts` does; new posts appear on
+the next invalidation. Accepted: streaming is a detail-view concern.
+
 ## The calendar card reads the post row and nothing else {#calendar-card-media}
 
 **Decision.** `PostCard` draws its leading image from `post.media_urls[0]` and
@@ -245,6 +275,52 @@ post (the account is locked while `scheduled`, see
 [`#status-machine`](#status-machine)). Disconnect invalidates the **platform**
 list, not post queries, because that list is what both the settings rows and the
 composer's picker read.
+
+## Video uploads bypass the API, and its rules come off the wire {#video-ingest}
+
+**Decision.** A video attachment does not go through the upload endpoint the
+way an image or PDF does. It is three steps — `POST
+…/attachments/presign` for a short-lived PUT URL, a direct `PUT` of the bytes
+to object storage, then `POST …/attachments/finalize` — and the third answers
+with the same `attachmentResponse` an image upload returns, so everything
+downstream treats the two alike (CON-148). `usePostAttachments.upload` picks
+the path by `attachmentKind(file.type)`; nothing above it knows the difference.
+
+Separately, the per-platform video rules are read straight off `GET
+/api/platforms` (`video_constraints`), **not** mirrored into
+`lib/platformMedia.ts` the way image and PDF rules are.
+
+**Why.** The API buffers an upload in memory and caps it at 100 MB; video is
+an order of magnitude larger, so the bytes must not touch the API process at
+all. And `platformMedia.ts` exists only because the seeded image/PDF values
+disagree with what the platforms accept — the video values were seeded by
+CON-148 from the same Zernio docs that table is sourced from, so a second copy
+would be two sources of truth and no correction.
+
+**Consequences.**
+
+- The PUT is cross-origin. `withCredentials` stays **off** — the URL carries
+  its own signature — and the storage bucket must allow `PUT` from the app's
+  origin, which is the first thing to check when an upload fails with a network
+  error rather than a status.
+- `Content-Type` on the PUT must match what presign was told; it is part of
+  what the signature covers.
+- The file-size ceiling is the one number we do *not* take from the server.
+  `MAX_VIDEO_UPLOAD_BYTES` (500 MB, `lib/platformVideo.ts`) is Ogen's own
+  ingest budget, far under both the API's 5 GiB cap and the seeds (YouTube is
+  64 GB); the effective limit is always the stricter of the two, and
+  `cappedByOgen` records which one bound so the rejection can name the right
+  culprit.
+- `duration_ms: 0` / `codec: ''` / a missing poster mean **video-service was
+  unreachable**, not a zero-length file — the server accepts the upload
+  unprobed by design. Anything rendering these has to omit rather than show a
+  `0:00` that reads as a broken upload, and the duration rules simply don't
+  fire on an unprobed video.
+- Publishing a video with an empty title is blocked where
+  `requires_video_title` is set (YouTube). Mirrored from
+  `platforms.ValidatePostType`, and the field is the post's existing title —
+  there is no separate video-metadata form, because the Zernio submit request
+  models nothing else yet (CON-159).
 
 ## Two form systems, on purpose
 

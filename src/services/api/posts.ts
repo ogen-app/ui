@@ -75,6 +75,62 @@ export function cancelPost(id: string, target: CancelTarget): Promise<void> {
   })
 }
 
+/**
+ * The engagement block `verify-external` echoes back for the post it
+ * matched (mirrors `models.PostAnalyticsMetrics`). Nothing renders it yet —
+ * the first snapshot it comes from is what later analytics reads build on.
+ */
+export type PostAnalyticsMetrics = {
+  impressions: number
+  reach: number
+  likes: number
+  comments: number
+  shares: number
+  saves: number
+  clicks: number
+  views: number
+  engagement_rate: number
+}
+
+/**
+ * `found: false` is a 200, not an error: the platform simply has no post at
+ * that URL, which is what a typo looks like and what the dialog must be able
+ * to show without treating it as a failure.
+ */
+export type VerifyExternalResponse = {
+  found: boolean
+  post?: {
+    id: string
+    publisher_post_id: string
+    sync_status: string
+  }
+  analytics?: PostAnalyticsMetrics
+}
+
+/**
+ * Confirms a manually-published post from the URL the user pasted, via
+ * Zernio's on-demand external sync (CON-153). On a match the *server*
+ * completes the publish: it back-fills `publisher_post_id`, sets the status
+ * to `published`, writes a first analytics snapshot and emits
+ * `post.analytics.updated`. The response carries only the linkage, so
+ * callers must refetch the post to see the new status.
+ *
+ * The account whose token reads the platform is resolved from the post's
+ * `social_account_id` (CON-150 rules) — it can't be passed here, so an
+ * ambiguous account comes back as a 422 the user resolves in the
+ * quick-settings bar, not in the request.
+ */
+export function verifyExternalPost(
+  id: string,
+  locator: { url?: string; post_id?: string },
+): Promise<VerifyExternalResponse> {
+  return apiJson<VerifyExternalResponse>(
+    `${BASE}/${id}/verify-external`,
+    'Unable to verify the published post',
+    { method: 'POST', body: locator },
+  )
+}
+
 export function postToPayload(post: Post): PostPayload {
   return {
     campaign_id: post.campaign_id,
