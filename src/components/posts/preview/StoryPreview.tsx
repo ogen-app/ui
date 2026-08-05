@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { HeartIcon, PaperPlaneTiltIcon } from '@phosphor-icons/react'
-import { PreviewAvatar, PreviewSurface } from './previewParts.tsx'
+import { PreviewAvatar, PreviewSurface, VideoChrome } from './previewParts.tsx'
 import type { PreviewProps, StoryNetwork } from './types.ts'
 
 /**
@@ -27,7 +27,12 @@ export function StoryPreview({
 }: PreviewProps & { network: StoryNetwork }) {
   const [failed, setFailed] = useState(false)
   const handle = author.username ?? author.name ?? 'your.account'
-  const url = media[0]?.url
+  const item = media[0]
+  const url = item?.url
+  // Most stories are video, so this is the common case rather than the edge
+  // one: without the play mark the card reads as a photo story, which is a
+  // different post.
+  const isVideo = item?.kind === 'video'
 
   return (
     <PreviewSurface
@@ -51,7 +56,11 @@ export function StoryPreview({
             className="flex h-full w-full items-center justify-center px-6 text-center"
             style={{ background: '#1c1c1e', color: '#a8a8a8', fontSize: 13, lineHeight: 1.4 }}
           >
-            {url ? 'Image unavailable' : 'A story is one image, full screen. This post has none.'}
+            {url
+              ? isVideo
+                ? 'No poster frame'
+                : 'Image unavailable'
+              : 'A story is one photo or video, full screen. This post has none.'}
           </div>
         )}
 
@@ -65,6 +74,12 @@ export function StoryPreview({
           className="pointer-events-none absolute inset-x-0 bottom-0"
           style={{ height: 96, background: 'linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.45))' }}
         />
+
+        {/* After the scrims so the bottom gradient does not wash the badge out,
+            and lifted clear of the reply bar so the running time never lands on
+            "Send message". A story's length is worth seeing: the networks cap a
+            single segment, and a file past that gets cut in two. */}
+        {isVideo && <VideoChrome durationMs={item.durationMs} size={44} badgeBottom={48} />}
 
         {/* One segment: the server takes exactly one attachment for a story
             (`platforms.postTypeRules`), so there is never a second bar. */}
