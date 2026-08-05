@@ -53,6 +53,12 @@ type Props = {
   attention?: number
   publishMethod: PublishMethod
   onPublishMethodChange: (method: PublishMethod) => void
+  /**
+   * Opens the "where did you publish it?" dialog. The only way back into
+   * verification once a post is `published`: that status is terminal, so the
+   * header has no button to offer (CON-149).
+   */
+  onAddPostLink: () => void
   className?: string
 }
 
@@ -81,6 +87,7 @@ export function PostQuickSettingsBar({
   attention = 0,
   publishMethod,
   onPublishMethodChange,
+  onAddPostLink,
   className,
 }: Props) {
   const platform = getPlatformInfo(doc.platform_id)
@@ -191,6 +198,7 @@ export function PostQuickSettingsBar({
             post={doc}
             cancelling={cancelling}
             onChange={setScheduledAt}
+            onAddPostLink={onAddPostLink}
           />
           {/* Only where the fork is still ahead of the post. Once it's
               scheduled the status itself records which way it went, and
@@ -648,16 +656,22 @@ function SchedulingDetails({
   post,
   cancelling,
   onChange,
+  onAddPostLink,
 }: {
   post: Post
   cancelling: boolean
   onChange: (iso: string | null) => void
+  onAddPostLink: () => void
 }) {
   // While `scheduled`/`published` the date is owned elsewhere (the Zernio
   // submission, or history) — show it as text, same as the settings rail.
   const editable = canEditScheduledAt(post.status) && !cancelling
   if (!editable) {
     const { text, warn } = schedulingDetails(post, cancelling)
+    // Published, but nothing ties it to the post that actually went out — so
+    // its analytics can never resolve. Offering the link here is the only
+    // route back in: `published` is terminal, so the header shows no actions.
+    const unlinked = post.status === 'published' && !post.publisher_post_id
     return (
       <span
         className={cn(
@@ -671,6 +685,19 @@ function SchedulingDetails({
           <ClockIcon className="size-4 shrink-0" />
         )}
         <span className="truncate">{text}</span>
+        {unlinked && (
+          <>
+            <Dot />
+            <Button
+              variant="link"
+              size="excluded"
+              className="shrink-0 text-sm underline underline-offset-4"
+              onClick={onAddPostLink}
+            >
+              Add post link
+            </Button>
+          </>
+        )}
       </span>
     )
   }

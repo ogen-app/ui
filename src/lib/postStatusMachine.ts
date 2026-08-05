@@ -62,7 +62,23 @@ export type PostStatusActionKind = 'user' | 'system'
 //     the request response. A plain PUT here would flip the local status
 //     while the auto-publish job keeps running — the publisher would then
 //     publish a post the user thought they had unscheduled.
-export type PostStatusActionMechanism = 'transition' | 'schedule' | 'cancel'
+//   - 'verify': POST /api/posts/:id/verify-external. Only for
+//     scheduled_for_manual_publishing → published. The user has published
+//     by hand on the platform; handing us the post's URL is what completes
+//     the move. The server matches the URL through Zernio's on-demand sync
+//     and, on a match, back-fills publisher_post_id, marks the post
+//     published and writes a first analytics snapshot — none of which the
+//     PUT path does, leaving the post published but unlinked and therefore
+//     invisible to analytics. Unlike the other mechanisms this one doesn't
+//     fire a request from the action itself: it opens the dialog that asks
+//     for the URL (see usePostStatusActions), and that dialog owns the
+//     call — including the fallback to a plain PUT when the user can't
+//     supply a link (Zernio cannot verify LinkedIn personal accounts).
+export type PostStatusActionMechanism =
+  | 'transition'
+  | 'schedule'
+  | 'cancel'
+  | 'verify'
 
 type ActionMeta = {
   // ALL CAPS form, used as the prominent header button label.
@@ -167,6 +183,9 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       menuLabel: 'Mark as published',
       intent: 'primary',
       kind: 'user',
+      // Asks for the published post's URL and verifies it, rather than
+      // flipping the status blind — see 'verify' above.
+      mechanism: 'verify',
     },
     // The back button, not a second labelled one: publishing is the move the
     // header should be urging, and admitting it never went out is the way

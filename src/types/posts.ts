@@ -33,6 +33,17 @@ export type Post = {
   target_audience_notes: string
   used_asset_ids: string[]
   campaign_type_phase_id: string | null
+  /**
+   * The publisher's own id for this post, set when it went out through a
+   * publisher — either by auto-publish or by verifying a manual one
+   * (CON-149). Absent means nothing links this post to the thing that was
+   * actually posted, so its analytics can never resolve; that absence is
+   * what the "add post link" affordance keys off.
+   *
+   * Read-only: the server owns it, and it is deliberately not in
+   * `PostPayload` — an autosave must never write it back.
+   */
+  publisher_post_id?: string
   created_by: string
   created_at: string
   updated_at: string

@@ -12,6 +12,7 @@ import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActions'
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
+import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanel } from '@/components/posts/quality/PostQualityPanel'
@@ -23,7 +24,11 @@ import {
 import { useSettingsStore } from '@/stores/settingsStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { useCampaign } from '@/hooks/useCampaigns'
-import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
+import {
+  usePost,
+  type TransitionStatusResult,
+  type VerifyExternalResult,
+} from '@/hooks/usePost'
 import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
@@ -45,6 +50,7 @@ function PostPage() {
     doc,
     changeDoc,
     transitionStatus,
+    verifyExternal,
     schedule,
     cancelScheduled,
     cancelling,
@@ -74,6 +80,7 @@ function PostPage() {
       doc={doc}
       changeDoc={changeDoc}
       transitionStatus={transitionStatus}
+      verifyExternal={verifyExternal}
       schedule={schedule}
       cancelScheduled={cancelScheduled}
       cancelling={cancelling}
@@ -87,6 +94,7 @@ type PostEditorSurfaceProps = {
   doc: Post
   changeDoc: (fn: (p: Post) => void) => void
   transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
+  verifyExternal: (url: string) => Promise<VerifyExternalResult>
   schedule: () => Promise<TransitionStatusResult>
   cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
   cancelling: boolean
@@ -98,6 +106,7 @@ function PostEditorSurface({
   doc,
   changeDoc,
   transitionStatus,
+  verifyExternal,
   schedule,
   cancelScheduled,
   cancelling,
@@ -107,6 +116,9 @@ function PostEditorSurface({
   const [titleDraft, setTitleDraft] = useState(doc.title)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  // Opened by MARK AS PUBLISHED (the 'verify' mechanism), and by the
+  // quick-settings bar for a post that published without a link.
+  const [publishedUrlOpen, setPublishedUrlOpen] = useState(false)
   // Bumped when a status action is clicked while blocked; the quick-settings
   // bar flashes the fields that are missing.
   const [attention, setAttention] = useState(0)
@@ -151,6 +163,7 @@ function PostEditorSurface({
     transitionStatus,
     schedule,
     cancelScheduled,
+    requestVerification: () => setPublishedUrlOpen(true),
     cancelling,
     publishMethod: effectivePublishMethod,
     context: { account },
@@ -292,6 +305,7 @@ function PostEditorSurface({
                 attention={attention}
                 publishMethod={effectivePublishMethod}
                 onPublishMethodChange={setPublishMethod}
+                onAddPostLink={() => setPublishedUrlOpen(true)}
               />
             </div>
             <div className="w-content">
@@ -369,6 +383,19 @@ function PostEditorSurface({
         post={doc}
         isOpen={deleteOpen}
         onClose={() => setDeleteOpen(false)}
+      />
+      <PublishedUrlDialog
+        post={doc}
+        isOpen={publishedUrlOpen}
+        onClose={() => setPublishedUrlOpen(false)}
+        verifyExternal={verifyExternal}
+        // Publishing unverified is the way out of the dialog, not of the
+        // status: an already-published post has nothing left to skip to.
+        onSkip={
+          doc.status === 'published'
+            ? undefined
+            : () => transitionStatus('published')
+        }
       />
     </PageContainer>
   )
