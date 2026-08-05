@@ -395,6 +395,16 @@ export const useAssistantStore = create<AssistantState>()(
                 })
                 break
 
+              case 'clone_complete':
+                // The clone shares the source's campaign; pair the event's new
+                // post id with the subject's campaign id so the reply can jump
+                // straight to the clone's editor.
+                patchLastTurn(threadId, (t) => ({
+                  ...t,
+                  clone: { postId: event.newPostId, campaignId: subject.campaignId },
+                }))
+                break
+
               case 'complete':
                 patchLastTurn(threadId, (t) => ({
                   ...t,
