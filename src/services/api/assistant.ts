@@ -61,6 +61,8 @@ export type AssistantStreamEvent =
   | { type: 'campaign_complete'; result: CampaignAssistantResult }
   /** A post the generation sub-flow has already persisted. */
   | { type: 'post_generated'; post: StreamedPost }
+  /** The assistant cloned the post into a new, already-persisted one (CON-59). */
+  | { type: 'clone_complete'; newPostId: string; platformId?: string; postType?: string; adapted: boolean }
   | { type: 'error'; message: string }
   /** Namespaced sub-flow progress, annotating the running tool step. */
   | { type: 'progress'; step: string }
@@ -172,6 +174,19 @@ export function streamPostAssistant(
             versionNote: typeof parsed.versionNote === 'string' ? parsed.versionNote : undefined,
           },
         })
+        return true
+      // The clone is a new, already-persisted post; the store attaches it to
+      // the turn so the reply can offer a jump to it. Emitted before `complete`.
+      case 'clone_complete':
+        if (typeof parsed.newPostId === 'string' && parsed.newPostId) {
+          onEvent({
+            type: 'clone_complete',
+            newPostId: parsed.newPostId,
+            platformId: typeof parsed.platformId === 'string' ? parsed.platformId : undefined,
+            postType: typeof parsed.postType === 'string' ? parsed.postType : undefined,
+            adapted: parsed.adapted === true,
+          })
+        }
         return true
       default:
         return false
