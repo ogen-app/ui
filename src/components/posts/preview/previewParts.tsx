@@ -415,6 +415,34 @@ function Frame({
 }
 
 /**
+ * The circular play mark laid over a poster frame.
+ *
+ * Split out from `VideoChrome` because a Short wants the mark without the
+ * corner badge: its right rail already owns that corner, so the running time
+ * has to go somewhere else.
+ */
+export function PlayMark({ size = 48 }: { size?: number }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      <div
+        className="flex items-center justify-center rounded-full"
+        style={{ width: size, height: size, background: 'rgba(0,0,0,0.55)' }}
+      >
+        <PlayIcon
+          weight="fill"
+          color="#ffffff"
+          size={size * 0.42}
+          /* The glyph's bounding box is wider than the triangle, so it reads
+             left-of-centre in a circle unless it is nudged back. */
+          style={{ marginLeft: size * 0.04 }}
+          aria-hidden
+        />
+      </div>
+    </div>
+  )
+}
+
+/**
  * What turns a poster frame back into a video: the play mark every feed puts
  * over one, and the running time in the corner.
  *
@@ -438,22 +466,7 @@ export function VideoChrome({
 }) {
   return (
     <>
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div
-          className="flex items-center justify-center rounded-full"
-          style={{ width: size, height: size, background: 'rgba(0,0,0,0.55)' }}
-        >
-          <PlayIcon
-            weight="fill"
-            color="#ffffff"
-            size={size * 0.42}
-            /* The glyph's bounding box is wider than the triangle, so it reads
-               left-of-centre in a circle unless it is nudged back. */
-            style={{ marginLeft: size * 0.04 }}
-            aria-hidden
-          />
-        </div>
-      </div>
+      <PlayMark size={size} />
       {durationMs > 0 && (
         <span
           className="absolute font-semibold text-white"

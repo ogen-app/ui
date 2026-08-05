@@ -11,6 +11,7 @@ import type { Post } from '@/types/posts'
 import { FacebookPreview } from './FacebookPreview.tsx'
 import { InstagramPreview } from './InstagramPreview.tsx'
 import { LinkedInPreview } from './LinkedInPreview.tsx'
+import { ShortsPreview } from './ShortsPreview.tsx'
 import { StoryPreview } from './StoryPreview.tsx'
 import { ThreadsPreview } from './ThreadsPreview.tsx'
 import { TwitterPreview } from './TwitterPreview.tsx'
@@ -153,6 +154,9 @@ export function PostPreviewPanel({
   // character limit is per post rather than for the whole text.
   const postType = doc.platform_post_type
   const isStory = postType === 'story' && !!platform && STORY_NETWORKS.has(platform.zernioId)
+  // A Short is the third: fullscreen vertical with its chrome laid over the
+  // video, nothing like the watch page it used to borrow (CON-169).
+  const isShort = postType === 'short' && platform?.zernioId === 'youtube'
   const isThread = postType === 'thread' && platform?.zernioId === 'twitter'
   // 1-based, because the note counts posts the way the reader will. Counted in
   // code points, like the whole-text check below — an emoji is one character
@@ -213,6 +217,15 @@ export function PostPreviewPanel({
               timeLabel={timeLabel}
               postType={postType}
               network={platform.zernioId as 'instagram' | 'facebook'}
+            />
+          ) : isShort ? (
+            <ShortsPreview
+              text={text}
+              title={doc.title}
+              media={publishable}
+              author={previewAuthor}
+              timeLabel={timeLabel}
+              postType={postType}
             />
           ) : (
             <Renderer

@@ -6,7 +6,6 @@ import {
 } from '@phosphor-icons/react'
 import type { ReactNode } from 'react'
 import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
-import { frameAspect } from './frames.ts'
 import { FoldedText, PreviewAvatar, PreviewSurface, VideoChrome } from './previewParts.tsx'
 import { YOUTUBE as C } from './previewTheme.ts'
 import type { PreviewProps } from './types.ts'
@@ -24,7 +23,6 @@ export function YouTubePreview({
   text,
   title,
   media,
-  postType,
   author,
   timeLabel,
 }: PreviewProps) {
@@ -37,9 +35,9 @@ export function YouTubePreview({
   // line of the description, then to a literal "Untitled Video" — a post with
   // no title still publishes, just not under a name anyone chose.
   const heading = title.trim() || firstLine(text) || 'Untitled Video'
-  // A Short is the same page in a vertical frame. The rest of the layout
-  // survives the difference well enough to be worth keeping.
-  const aspect = frameAspect(postType, 16 / 9) ?? 16 / 9
+  // Always 16:9. The one YouTube post type that is not — a Short — has its own
+  // card now (CON-169), because it is not this page in a narrow frame.
+  const aspect = 16 / 9
 
   return (
     <PreviewSurface style={{ borderRadius: 12 }}>
