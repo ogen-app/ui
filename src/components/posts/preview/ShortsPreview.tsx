@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   ChatCircleIcon,
   DotsThreeOutlineIcon,
@@ -38,6 +39,7 @@ const SHORTS_FOLD = 60
  * width a 9:16 card runs past the fold of the panel itself.
  */
 export function ShortsPreview({ text, title, media, author, timeLabel }: PreviewProps) {
+  const [failed, setFailed] = useState(false)
   const channel = author.username ?? author.name ?? 'yourchannel'
   const item = media[0]
   const isVideo = item?.kind === 'video'
@@ -54,10 +56,11 @@ export function ShortsPreview({ text, title, media, author, timeLabel }: Preview
       style={{ borderRadius: 12, background: '#000000', maxWidth: 300, width: '100%' }}
     >
       <div className="relative" style={{ aspectRatio: 9 / 16 }}>
-        {item ? (
+        {item && !failed ? (
           <img
             src={item.url}
             alt=""
+            onError={() => setFailed(true)}
             className="h-full w-full object-cover"
             style={{ display: 'block' }}
           />
@@ -66,7 +69,11 @@ export function ShortsPreview({ text, title, media, author, timeLabel }: Preview
             className="flex h-full w-full items-center justify-center px-6 text-center"
             style={{ background: '#1c1c1e', color: '#a8a8a8', fontSize: 13, lineHeight: 1.4 }}
           >
-            A Short is one vertical video, full screen. This post has none.
+            {item
+              ? isVideo
+                ? 'No poster frame'
+                : 'Image unavailable'
+              : 'A Short is one vertical video, full screen. This post has none.'}
           </div>
         )}
 
