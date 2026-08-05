@@ -6,6 +6,7 @@ import {
   postToPayload,
   schedulePost,
   updatePost,
+  verifyExternalPost,
   type CancelTarget,
 } from '@/services/api/posts'
 import { registerPendingSave } from '@/lib/pendingSaves'
@@ -27,10 +28,26 @@ export type TransitionStatusResult =
   | { ok: true; post: Post; notice?: string }
   | { ok: false; error: string }
 
+/**
+ * Outcome of handing the server a manually-published post's URL. `not_found`
+ * is deliberately its own case rather than an error: the platform having no
+ * post at that URL is the expected result of a typo, and the dialog answers
+ * it with a retry instead of a failure.
+ */
+export type VerifyExternalResult =
+  | { ok: true; post: Post }
+  | { ok: false; reason: 'not_found' }
+  | { ok: false; reason: 'error'; error: string }
+
 type UsePostResult = {
   doc: Post | undefined
   changeDoc: (fn: (p: Post) => void) => void
   transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
+  // Completes a manual publish by verifying the URL the user published at
+  // (POST /api/posts/:id/verify-external). The server owns the transition
+  // here — it marks the post published only if the URL really resolves to
+  // one — so unlike transitionStatus there is no optimistic flip.
+  verifyExternal: (url: string) => Promise<VerifyExternalResult>
   // Schedules a ready_for_publish post via POST /api/posts/:id/schedule
   // (NOT a status PUT — that path skips the server's date validation).
   // The returned post carries the allowlist-routed status: `scheduled`
@@ -231,6 +248,46 @@ export function usePost(postId: string): UsePostResult {
     [postId, qc],
   )
 
+  // Completing a manual publish: the user published by hand and hands us the
+  // URL, the server matches it through Zernio and only then marks the post
+  // published. No optimistic flip — "did this actually go out?" is precisely
+  // the question being asked, so showing `published` before the answer
+  // arrives would assert what we're checking.
+  const verifyExternal = useCallback(
+    async (url: string): Promise<VerifyExternalResult> => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
+      const pending = pendingRef.current
+      pendingRef.current = null
+      setSaving(false)
+      genRef.current += 1
+      try {
+        // Persist queued edits first. Verification moves the status
+        // server-side, so a debounced PUT landing afterwards would carry the
+        // pre-publish status in its payload and quietly undo the publish.
+        if (pending) {
+          await updatePost(postId, postToPayload(pending))
+        }
+        const result = await verifyExternalPost(postId, { url })
+        if (!result.found) return { ok: false, reason: 'not_found' }
+        // The response carries only the publisher linkage, so the status,
+        // published_at and publisher the server just wrote come from a
+        // refetch rather than being reconstructed here.
+        const fresh = await getPost(postId)
+        qc.setQueryData(postKey(postId), fresh)
+        return { ok: true, post: fresh }
+      } catch (err) {
+        qc.invalidateQueries({ queryKey: postKey(postId) })
+        const message =
+          err instanceof Error ? err.message : 'Unable to verify the published post'
+        return { ok: false, reason: 'error', error: message }
+      }
+    },
+    [postId, qc],
+  )
+
   // Clear the unscheduling indicator once the post leaves `scheduled` —
   // either the cancel job landed the target status, or it published in the
   // race. Until then the poll keeps the badge on `scheduled`.
@@ -255,6 +312,7 @@ export function usePost(postId: string): UsePostResult {
     doc: query.data,
     changeDoc,
     transitionStatus,
+    verifyExternal,
     schedule,
     cancelScheduled,
     cancelling,
