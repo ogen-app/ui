@@ -10,7 +10,6 @@ import {
   sourcesPayload,
   type SourceMode,
 } from "@/lib/campaignSources";
-import { toast } from "@/stores/toastStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import type { Campaign } from "@/types/campaigns";
 import { CampaignAssetsView } from "./CampaignAssetsView";
@@ -38,7 +37,9 @@ const SAVE_DELAY = 500;
  */
 export function CampaignAssetsPanel({ campaign }: { campaign: Campaign }) {
   const { data: assets, isLoading, isError } = useAssets();
-  const { mutateAsync: updateCampaign } = useUpdateCampaign();
+  const { mutateAsync: updateCampaign } = useUpdateCampaign({
+    errorTitle: "Unable to save content sources",
+  });
   const remember = useSettingsStore((s) => s.rememberAssetSelection);
   const stashed = useSettingsStore((s) => s.assetSelections[campaign.id]);
 
@@ -60,11 +61,10 @@ export function CampaignAssetsPanel({ campaign }: { campaign: Campaign }) {
     const run = updateCampaign({
       id: campaign.id,
       payload: campaignToPayload(campaign, sourcesPayload(m, ids)),
-    }).catch((e: unknown) => {
-      toast.error("Unable to save content sources", {
-        description: e instanceof Error ? e.message : undefined,
-      });
-    });
+    })
+      // Toasted by the mutation-cache default under the `errorTitle` above;
+      // swallowed here so a debounced save can't reject into nowhere.
+      .catch(() => {});
     inFlightRef.current = run;
     try {
       await run;

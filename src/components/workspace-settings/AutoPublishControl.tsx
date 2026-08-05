@@ -57,13 +57,10 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
     // Switching on is safe and immediate: it only widens what a *future*
     // schedule may do, and touches nothing already scheduled.
     if (next) {
-      try {
-        await toggle(info.zernioId, true)
-      } catch (e) {
-        toast.error(`Unable to allow auto-publishing for ${info.name}`, {
-          description: e instanceof Error ? e.message : undefined,
-        })
-      }
+      // A refused write reports itself through the mutation-cache default
+      // (CON-164); the catch is only here so the rejection doesn't escape as
+      // an unhandled promise.
+      await toggle(info.zernioId, true).catch(() => {})
       return
     }
 
@@ -77,7 +74,9 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
       })
       const pending = pendingAutoPosts(posts, platform.id, Date.now())
       if (pending.length === 0) {
-        await toggle(info.zernioId, false)
+        // Caught separately from the lookup below: a refused toggle is not a
+        // failure to *check*, and it already reports itself.
+        await toggle(info.zernioId, false).catch(() => {})
         return
       }
       setAffected(pending)
@@ -159,7 +158,10 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
           posts={affected}
           onClose={() => setAffected(null)}
           onConverted={async () => {
-            await toggle(info.zernioId, false)
+            // Was unguarded: a rejection here skipped the close *and* went
+            // unhandled, so switching off silently did nothing. The toast now
+            // comes from the mutation-cache default.
+            await toggle(info.zernioId, false).catch(() => {})
             setAffected(null)
           }}
         />

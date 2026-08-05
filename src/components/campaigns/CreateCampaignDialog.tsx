@@ -10,7 +10,6 @@ import {
   defaultCampaignTypeId,
 } from '@/components/campaigns/CampaignTypePicker'
 import { useCampaignTypes, useCreateCampaign } from '@/hooks/useCampaigns'
-import { toast } from '@/stores/toastStore'
 
 /**
  * The first step of a campaign: its name and its type.
@@ -64,10 +63,8 @@ export function CreateCampaignDialog({
             params: { campaignId: campaign.id },
           })
         },
-        onError: (e) =>
-          toast.error('Unable to create the campaign', {
-            description: e instanceof Error ? e.message : undefined,
-          }),
+        // No onError: `useCreateCampaign` carries this wording as
+        // `meta.errorTitle` and the mutation-cache default raises the toast.
       },
     )
   }

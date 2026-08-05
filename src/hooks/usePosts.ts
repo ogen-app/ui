@@ -134,6 +134,10 @@ export function useUpdatePost(campaignId: string) {
       }
       return { prev }
     },
+    // The rollback only. The toast comes from the mutation cache default
+    // (CON-164): without it this rollback is the *entire* visible effect of a
+    // refused update, so a dragged post snapping back reads as a UI glitch
+    // rather than as the server saying no.
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(campaignPostsKey(campaignId), ctx.prev)
     },
@@ -146,6 +150,10 @@ export function useUpdatePost(campaignId: string) {
 export function useDeletePost(campaignId: string) {
   const qc = useQueryClient()
   return useMutation({
+    // Keeps the wording `DeletePostDialog` used to supply itself: the server's
+    // reason for refusing lands in the description under a title that names
+    // what the user was trying to do.
+    meta: { errorTitle: 'Unable to delete post' },
     mutationFn: (id: string) => deletePost(id),
     onSuccess: () => {
       invalidateCampaignPosts(qc, campaignId)
