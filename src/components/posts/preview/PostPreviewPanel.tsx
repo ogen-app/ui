@@ -11,6 +11,7 @@ import type { Post } from '@/types/posts'
 import { FacebookPreview } from './FacebookPreview.tsx'
 import { InstagramPreview } from './InstagramPreview.tsx'
 import { LinkedInPreview } from './LinkedInPreview.tsx'
+import { ShortsPreview } from './ShortsPreview.tsx'
 import { StoryPreview } from './StoryPreview.tsx'
 import { ThreadsPreview } from './ThreadsPreview.tsx'
 import { TwitterPreview } from './TwitterPreview.tsx'
@@ -161,6 +162,9 @@ export function PostPreviewPanel({
     postType === 'story' &&
     !!platform &&
     (STORY_NETWORKS as readonly string[]).includes(platform.zernioId)
+  // A Short is the third: fullscreen vertical with its chrome laid over the
+  // video, nothing like the watch page it used to borrow (CON-169).
+  const isShort = postType === 'short' && platform?.zernioId === 'youtube'
   const isThread = postType === 'thread' && !!platform && THREAD_NETWORKS.has(platform.zernioId)
   // 1-based, because the note counts posts the way the reader will. The same
   // `threadSegments` verdicts the Twitter card badges, so the note and the
@@ -223,6 +227,15 @@ export function PostPreviewPanel({
               timeLabel={timeLabel}
               postType={postType}
               network={platform.zernioId as StoryNetwork}
+            />
+          ) : isShort ? (
+            <ShortsPreview
+              text={text}
+              title={doc.title}
+              media={publishable}
+              author={previewAuthor}
+              timeLabel={timeLabel}
+              postType={postType}
             />
           ) : (
             <Renderer
