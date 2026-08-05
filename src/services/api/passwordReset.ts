@@ -6,8 +6,7 @@
  * cannot log in. The capability is the emailed token, so `reset()` needs no
  * session and `credentials: "include"` on these calls is incidental.
  *
- * **The backend half does not exist yet.** The contract below is the one the
- * server issue is written against; until it lands both calls 404. See
+ * The server half shipped as CON-161 and matches the contract below. See
  * `docs/onboarding.md` → "Password reset".
  */
 
@@ -23,6 +22,12 @@ import { apiVoid } from "./http";
  * this one is public and unauthenticated. The UI therefore cannot tell the
  * user "no account with that email" — and must not go looking for the answer
  * by another route either.
+ *
+ * Rejects on a **429**: the endpoint is throttled per address and per client
+ * IP (CON-161), which the resend button makes genuinely reachable. The server's
+ * message is safe to print as-is — a 429 says a limit was hit and nothing about
+ * whether the address has an account, so surfacing it doesn't reopen the
+ * enumeration hole the 202 closes.
  */
 export async function requestPasswordReset(email: string): Promise<void> {
   await apiVoid("/api/password-reset", "Unable to send the reset link", {

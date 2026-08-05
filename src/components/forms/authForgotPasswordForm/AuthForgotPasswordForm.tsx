@@ -1,4 +1,4 @@
-import { type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link } from '@tanstack/react-router'
 import { EnvelopeSimpleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
@@ -17,9 +17,19 @@ import { forgotPasswordSchema, cn } from '@/lib'
  * is offered from there — the same address, one click — since a link that
  * hasn't arrived is the single most likely reason anyone is still looking at
  * this page.
+ *
+ * Which is why the panel is latched in local state instead of read off the
+ * mutation's `isSuccess`: resending reuses the same mutation, so a rejected
+ * resend would flip that flag back to false and yank the panel out from under
+ * the user — losing the address they were told about and the resend button
+ * itself. The endpoint is rate-limited per address (CON-161), so a rejected
+ * resend is a normal outcome of clicking the button twice, not an edge case.
+ * Once we've sent one link the panel stays; a failed resend reports itself
+ * inside it.
  */
 export function AuthForgotPasswordForm() {
-  const { mutate: request, isPending, isSuccess, error, reset } = useRequestPasswordReset()
+  const { mutate: request, isPending, error, reset } = useRequestPasswordReset()
+  const [sent, setSent] = useState(false)
   const { values, setField, fieldErrors, validate } = useFormValidation(forgotPasswordSchema, {
     email: '',
   })
@@ -28,10 +38,10 @@ export function AuthForgotPasswordForm() {
     e.preventDefault()
     const data = validate()
     if (!data) return
-    request(data.email)
+    request(data.email, { onSuccess: () => setSent(true) })
   }
 
-  if (isSuccess) {
+  if (sent) {
     return (
       <div className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500">
         <div className="flex items-start gap-3">
@@ -60,6 +70,11 @@ export function AuthForgotPasswordForm() {
             <span>SEND IT AGAIN</span>
             <ArrowUpRightIcon />
           </Button>
+          {/* Almost always the per-address rate limit: the first link is
+              already on its way, so this reads as "you don't need to", not as
+              a failure of the reset itself. The first send's copy above stays
+              on screen and stays true. */}
+          {error && <p className="text-[13px] leading-5 text-destructive">{error.message}</p>}
           <Link
             to="/auth/login"
             className="text-primary-foreground text-[13px] font-medium"

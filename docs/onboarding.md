@@ -82,8 +82,21 @@ Two properties are load-bearing and easy to undo by accident:
   someone else may have had the account. Login stays the only place a session
   is opened.
 
-**The backend half does not exist yet** — both calls 404 until CON-108's
-server issue lands. The contract above is what that issue is written against.
+The server half **has landed** (CON-161 in the API repo, the counterpart to
+this front-end's CON-108) and matches the contract above endpoint for endpoint,
+including the emailed `{APP_BASE_URL}/auth/reset?token=` shape.
+
+It adds one thing the diagram doesn't show: `POST /api/password-reset` is
+rate-limited **per address and per client IP**, and answers **429** with a
+`Retry-After` header once either budget is spent. That response is safe to show
+verbatim — it reveals only that a limit was hit, never whether the address has
+an account, so it preserves the anti-enumeration property above. The resend
+button is the realistic way to reach it, which is why a failed resend leaves
+the success panel standing instead of dropping the user back to the form.
+
+The confirm endpoint returns the same 400 message for an unknown, expired, or
+already-spent token, deliberately — it is written as a sentence because the UI
+prints it as-is next to "Request a new link".
 
 ## The root guard — `src/routes/__root.tsx`
 
@@ -211,16 +224,11 @@ UI-side (this repo):
 
 Backend-side (tracked against the API repo, listed here for context):
 
-- **No password-reset endpoints** (CON-108). Note the old framing of this gap
-  — "blocked on the backend growing email infrastructure" — is **out of date**:
-  CON-154 shipped the whole email service, and
-  `src/email/templates/templates.go` reserves the `password_reset` and
-  `verify_email` template keys for exactly this. What is missing is the two
-  auth endpoints and the token, not the ability to send mail.
-- **`POST /api/sessions` has no rate limiting or lockout.** The only limiter
-  in the API is Zernio's connect-link one, so login is unlimited-attempt
-  against a public endpoint. Signup is open and unthrottled too (no rate
-  limit / CAPTCHA / email loop).
+- **`POST /api/sessions` has no rate limiting or lockout.** Password reset is
+  throttled as of CON-161 and Zernio's connect-link endpoint has its own
+  limiter, but login has neither — it is unlimited-attempt against a public
+  endpoint. Signup is open and unthrottled too (no rate limit / CAPTCHA /
+  email loop).
 - **`/api/secrets` is reachable by any authenticated tenant user** (plain
   session auth), letting any tenant read metadata for / rotate / delete the
   **platform-wide** keys — contradicts CON-97 §10.3 ("no tenant-facing
