@@ -38,6 +38,16 @@ function onAuthRoute(): boolean {
   return window.location.pathname.startsWith("/auth");
 }
 
+/**
+ * True once the redirect above has been started and the page is on its way
+ * out. Read by the mutation-cache error default (`lib/queryClient.ts`): a 401
+ * still throws, so every in-flight mutation is about to report a failure that
+ * is really this one, in its own words, over the top of the explanation.
+ */
+export function isSessionExpiring(): boolean {
+  return handled;
+}
+
 export function handleUnauthorized(): void {
   if (handled || onAuthRoute()) return;
   handled = true;
