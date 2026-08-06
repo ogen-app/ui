@@ -189,7 +189,7 @@ function reportActionResult(
   }
   if (mechanism !== 'schedule') return
   if (result.notice) {
-    toast.message('Scheduled for manual publishing', {
+    toast.info('Scheduled for manual publishing', {
       description: result.notice,
     })
   } else {

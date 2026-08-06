@@ -1,6 +1,12 @@
 import { create } from 'zustand'
 
-export type ToastVariant = 'default' | 'success' | 'error' | 'warning'
+/**
+ * The four toast severities. These are the design's INFO / SUCCESS / DANGER /
+ * ERROR rows; `warning` keeps its name rather than becoming `danger` because
+ * that is what callers mean by it — "off but not broken" (`docs/colors.md`),
+ * e.g. "only 4 files fit on this post type". It renders in the DANGER orange.
+ */
+export type ToastVariant = 'info' | 'success' | 'error' | 'warning'
 
 export type ToastRecord = {
   id: number
@@ -21,19 +27,23 @@ export type ToastOptions = {
 }
 
 const DEFAULT_DURATION: Record<ToastVariant, number> = {
-  default: 5_000,
+  info: 5_000,
   success: 5_000,
   warning: 6_000,
   error: 8_000,
 }
 
-// Keep a dismissed toast mounted this long so its closed animation can
-// finish before it leaves the DOM. Matches the exit animation duration.
-const REMOVE_DELAY_MS = 200
+// Keep a dismissed toast mounted this long so its closed animation can finish
+// before it leaves the DOM. Must stay ahead of the 200ms fade in `toast.tsx` —
+// dropping the record is what unmounts the element, so if this fires first the
+// card vanishes mid-fade.
+const REMOVE_DELAY_MS = 260
 
-// How many toasts are visible at once; older ones are dropped past this
-// so a burst can't bury the screen.
-const MAX_TOASTS = 3
+// How deep the visible deck goes. Two means one card in front and one peeking
+// behind it; a third arrival dissolves the oldest. Raising this shows more of
+// the pile — `toast.tsx` derives its scale/offset from the depth, so nothing
+// else needs changing.
+const MAX_TOASTS = 2
 
 type ToastState = {
   toasts: ToastRecord[]
@@ -60,7 +70,12 @@ const useToastStore = create<ToastState>((set, get) => ({
       duration: opts?.duration ?? DEFAULT_DURATION[variant],
       open: true,
     }
-    set((s) => ({ toasts: [...s.toasts, record].slice(-MAX_TOASTS) }))
+    set((s) => ({ toasts: [...s.toasts, record] }))
+    // Push the deck past its depth and the card at the back leaves the normal
+    // way — dismissed, so it fades. Slicing it out of the array here instead
+    // would unmount it on the spot and it would pop out of existence.
+    const live = get().toasts.filter((t) => t.open)
+    for (const stale of live.slice(0, -MAX_TOASTS)) get().dismiss(stale.id)
     return id
   },
   dismiss: (id) => {
@@ -89,7 +104,7 @@ function make(variant: ToastVariant) {
  *   toast.error('Unable to schedule', { description: reason })
  */
 export const toast = {
-  message: make('default'),
+  info: make('info'),
   success: make('success'),
   warning: make('warning'),
   error: make('error'),
