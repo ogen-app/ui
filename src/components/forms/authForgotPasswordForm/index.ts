@@ -1,0 +1,1 @@
+export { AuthForgotPasswordForm } from "./AuthForgotPasswordForm";
