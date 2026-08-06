@@ -5,6 +5,7 @@ import {
   getPostAssessment,
   streamPostAssessment,
 } from '@/services/api/quality'
+import { beginLocalRun } from '@/lib/localRuns'
 import { toast } from '@/stores/toastStore'
 import type { PostEvaluation } from '@/types/quality'
 
@@ -109,6 +110,9 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
     if (abortRef.current) return
     const controller = new AbortController()
     abortRef.current = controller
+    // This run writes the assessment cache itself; the hub's copy of the same
+    // outcome would only refetch what we already have (CON-134).
+    const endLocalRun = beginLocalRun('assessment', postId)
 
     setAssessing(true)
     setSteps([])
@@ -159,6 +163,7 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
         reportFailure(message)
       })
       .finally(() => {
+        endLocalRun()
         if (abortRef.current === controller) abortRef.current = null
         // Unconditionally: an abort that came from switching posts rather
         // than unmounting leaves this hook alive, and a stuck `assessing`

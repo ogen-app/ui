@@ -32,6 +32,33 @@ export function contentLimitFor(
 }
 
 /**
+ * The platform's ceiling for the post *title*, or `null` when it sets none
+ * (CON-160). Only platforms with a distinct title field seed this — YouTube at
+ * 100, matching what Zernio documents; everywhere else the title is Ogen's own
+ * label and never leaves the app.
+ *
+ * There is no per-post-type override: unlike `max_content_chars`, the server's
+ * `TextConstraints` carries a single title cap per platform.
+ */
+export function titleLimitFor(
+  constraints: TextConstraints | undefined,
+): number | null {
+  if (!constraints) return null
+  return constraints.max_title_chars > 0 ? constraints.max_title_chars : null
+}
+
+/**
+ * The name a video actually publishes under. Mirrors Zernio's fallback chain
+ * for platforms with a real title field (YouTube): the post's title, else the
+ * first line of the description, else a literal "Untitled Video". The preview
+ * card renders this and the panel's notes describe it — one definition keeps
+ * them telling the same story.
+ */
+export function effectiveVideoTitle(title: string, text: string): string {
+  return title.trim() || text.split('\n', 1)[0].trim() || 'Untitled Video'
+}
+
+/**
  * The limit to measure a post against, preferring the server's own resolution.
  *
  * The post-type rule is authoritative — it is what the publish-time check uses

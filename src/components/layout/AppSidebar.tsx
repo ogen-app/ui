@@ -41,6 +41,7 @@ import { Logo } from '@/components/Logo'
 import { cn } from '@/lib'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
 import { CampaignIcon, campaignAbbr } from '@/components/layout/CampaignIcon.tsx'
+import { LiveStatus } from '@/components/layout/LiveStatus'
 import { campaignColorVar } from '@/lib/campaignColor.ts'
 
 /** TODO: placeholder — no help site exists yet. Point at the real one when it does. */
@@ -249,6 +250,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarContent>
 
         <SidebarFooter>
+          <LiveStatus isCollapsed={isCollapsed} />
           <AppSidebarButtonMenu
             icon={
               <GearSixIcon weight="regular" className="size-5 flex-none" />

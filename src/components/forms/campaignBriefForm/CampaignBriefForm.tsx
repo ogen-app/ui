@@ -86,8 +86,8 @@ export function BriefForm({ campaign }: BriefFormProps) {
     try {
       await save()
     } catch {
-      // Surfaced through the mutation's error state; a rejection here must
-      // not escape into the assistant turn awaiting this flush.
+      // Toasted by the mutation-cache default (CON-164); swallowed here so a
+      // rejection can't escape into the assistant turn awaiting this flush.
     }
   }, [form, save])
   useEffect(

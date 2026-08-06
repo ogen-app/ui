@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
-import { useCharLimit } from '@/hooks/useCharLimit'
+import { usePlatforms } from '@/hooks/usePlatforms'
 import { usePostAttachments } from '@/hooks/usePostAttachments'
 import { findRule, usePostTypeRules } from '@/hooks/usePostTypeRules'
+import { resolveCharLimit, titleLimitFor } from '@/lib/platformLimits'
 import { mediaPolicy, type MediaPolicy } from '@/lib/postMedia'
 import { evaluatePost, type PostCheck } from '@/lib/postValidation'
 import type { Post } from '@/types/posts'
@@ -15,19 +16,28 @@ import type { Post } from '@/types/posts'
 export function usePostMedia(post: Post) {
   const media = usePostAttachments(post.id)
   const { data: rules, isLoading: rulesLoading } = usePostTypeRules(post.platform_id)
+  // Reference data behind `staleTime: Infinity` — shared with every other
+  // reader of the platforms query, so this costs no extra fetch.
+  const { data: platforms, isLoading: platformsLoading } = usePlatforms()
 
   const ruleView = findRule(rules, post.platform_post_type)
   const rule = ruleView?.rule ?? null
+  const platform = platforms?.find((p) => p.id === post.platform_id)
 
   const policy: MediaPolicy = useMemo(
-    () => mediaPolicy(post.platform_id, rule),
-    [post.platform_id, rule],
+    () => mediaPolicy(post.platform_id, rule, platform),
+    [post.platform_id, rule, platform],
   )
 
-  const ready = !media.loading && !rulesLoading
+  const ready = !media.loading && !rulesLoading && !platformsLoading
 
-  const charLimit = useCharLimit(post.platform_id, post.platform_post_type)
-  const maxContentChars = charLimit.ready ? charLimit.limit : undefined
+  // The pure core of `useCharLimit`, fed the (platform, rule) pair resolved
+  // above rather than re-running the hook's own copies of the same lookups.
+  const limitsReady = !platformsLoading && !rulesLoading
+  const maxContentChars = limitsReady
+    ? resolveCharLimit(platform, rule, post.platform_post_type)
+    : undefined
+  const maxTitleChars = limitsReady ? titleLimitFor(platform?.text_constraints) : undefined
 
   const checks: PostCheck[] = useMemo(
     () =>
@@ -39,9 +49,19 @@ export function usePostMedia(post: Post) {
         postValidation: media.postValidation,
         requiresContent: rule?.requires_content ?? false,
         maxContentChars,
+        maxTitleChars,
       }),
-    [post, policy, media.attachments, media.postValidation, ready, rule, maxContentChars],
+    [
+      post,
+      policy,
+      media.attachments,
+      media.postValidation,
+      ready,
+      rule,
+      maxContentChars,
+      maxTitleChars,
+    ],
   )
 
-  return { ...media, policy, checks, ready }
+  return { ...media, policy, checks, ready, maxTitleChars }
 }

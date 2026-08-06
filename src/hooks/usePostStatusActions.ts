@@ -37,6 +37,12 @@ type UsePostStatusActionsOptions = {
   transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
   schedule: () => Promise<TransitionStatusResult>
   cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
+  // Opens the dialog that asks for the published post's URL. The 'verify'
+  // edge is the one action that doesn't call the API from here: the dialog
+  // owns POST /:id/verify-external, because the move can fail in ways only
+  // it can answer (no post at that URL → retry) and can be opted out of
+  // (no link to hand → plain status PUT).
+  requestVerification: () => void
   // True while a cancellation is in flight (see usePost.cancelling).
   // Disables every action so a second cancel job can't be enqueued.
   cancelling?: boolean
@@ -81,6 +87,7 @@ export function usePostStatusActions({
   transitionStatus,
   schedule,
   cancelScheduled,
+  requestVerification,
   cancelling = false,
   publishMethod,
   context,
@@ -109,6 +116,14 @@ export function usePostStatusActions({
               const message = blockers.map((b) => b.message).join('; ')
               toast.error('Not ready yet', { description: message })
               return { ok: false, error: message }
+            }
+            // Verification asks a question before it moves anything, so
+            // the action's job is to open the dialog and stop. Nothing is
+            // in flight yet — setting `pending` here would disable the
+            // header while the user types the URL.
+            if (mechanism === 'verify') {
+              requestVerification()
+              return { ok: true, post }
             }
             setPending(true)
             // Route by mechanism so a schedule or user-cancel never
@@ -174,7 +189,7 @@ function reportActionResult(
   }
   if (mechanism !== 'schedule') return
   if (result.notice) {
-    toast.message('Scheduled for manual publishing', {
+    toast.info('Scheduled for manual publishing', {
       description: result.notice,
     })
   } else {

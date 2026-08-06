@@ -6,6 +6,7 @@ import {
   ThumbsUpIcon,
 } from '@phosphor-icons/react'
 import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
+import { frameAspect } from './frames.ts'
 import {
   Action,
   ActionRow,
@@ -24,7 +25,7 @@ import type { PreviewProps } from './types.ts'
  * a late fold — so the preview mostly earns its keep on media layout, which is
  * where Facebook does the most rearranging of what you gave it.
  */
-export function FacebookPreview({ text, mediaUrls, author, timeLabel }: PreviewProps) {
+export function FacebookPreview({ text, media, postType, author, timeLabel }: PreviewProps) {
   const name = author.name ?? 'Your page'
 
   return (
@@ -61,7 +62,9 @@ export function FacebookPreview({ text, mediaUrls, author, timeLabel }: PreviewP
         />
       </div>
 
-      <PreviewMedia urls={mediaUrls} background={C.cardFill} />
+      {/* No default aspect: Facebook lets a single image keep its own shape.
+          A Reel is the exception — that frame is always 9:16. */}
+      <PreviewMedia items={media} aspect={frameAspect(postType)} background={C.cardFill} />
 
       <ActionRow color={C.action}>
         <Action icon={<ThumbsUpIcon className="size-5" aria-hidden />} label="Like" />

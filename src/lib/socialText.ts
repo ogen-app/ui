@@ -115,6 +115,65 @@ function inlineToText(input: string): string {
   return s.replace(MASKED, (_m, code: string) => String.fromCharCode(Number(code)))
 }
 
+/**
+ * An X thread, cut into its individual posts.
+ *
+ * Blank lines are the only division the document actually carries — the editor
+ * has no "next post" control and the API stores one `content` string — so that
+ * is the rule, and it matches how people write threads in practice. Ogen sends
+ * the copy as one block and the publisher does the real splitting, which is why
+ * the preview says so rather than presenting this as the final shape.
+ *
+ * Always returns at least one segment, so an empty thread previews as an empty
+ * post rather than as nothing at all.
+ */
+export function splitThread(text: string): string[] {
+  const parts = text
+    .split(/\n[ \t]*\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  return parts.length > 0 ? parts : ['']
+}
+
+/**
+ * Length as the networks (and the Go server) count it: Unicode code points,
+ * not UTF-16 units — an emoji is one character to a platform's counter and
+ * two to `String.length`. Every counter in the app measures through this, so
+ * no two of them can disagree about the same post.
+ *
+ * Counted without materializing `[...text]`: this runs per keystroke against
+ * copy that can legally reach tens of thousands of characters.
+ */
+export function charCount(text: string): number {
+  let count = 0
+  for (let i = 0; i < text.length; count++) {
+    i += (text.codePointAt(i) as number) > 0xffff ? 2 : 1
+  }
+  return count
+}
+
+/** One post of a thread, measured against the per-post limit. */
+export type ThreadSegment = {
+  text: string
+  /** Code points, via `charCount`. */
+  count: number
+  /** Past the limit — always false while the limit is unknown (`null`). */
+  over: boolean
+}
+
+/**
+ * `splitThread` with each post's verdict attached. The preview card's badge
+ * and the panel's notes both read from this, so "which post is too long" has
+ * exactly one answer.
+ */
+export function threadSegments(text: string, limit: number | null): ThreadSegment[] {
+  return splitThread(text).map((segment) => {
+    const count = charCount(segment)
+    return { text: segment, count, over: limit !== null && count > limit }
+  })
+}
+
 /** Splits text at the fold so a preview can render its own "see more". */
 export function foldText(
   text: string,

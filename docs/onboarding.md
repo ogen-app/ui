@@ -52,6 +52,52 @@ SameSite=Lax, 7-day TTL). On success the hook re-probes `checkSession()` to
 hydrate the auth store, and the form returns the user to the in-app path the
 root guard stashed in `?redirect=` (falling back to `/`).
 
+### 3. Password reset — `/auth/forgot` → email → `/auth/reset?token=…`
+
+Not an entry point on its own: it hands the user back to login. Two screens,
+both public, both using the lightweight `useFormValidation` pattern.
+
+```text
+/auth/forgot   AuthForgotPasswordForm → useRequestPasswordReset()
+               POST /api/password-reset          { email }         → 202 always
+               └─ success panel replaces the form ("if that address has an
+                  account…"), with a resend button
+
+emailed link   {APP_BASE_URL}/auth/reset?token=<one-time token>
+
+/auth/reset    no ?token= → "This link doesn't work" + link to /auth/forgot
+               AuthResetPasswordForm → useResetPassword()
+               POST /api/password-reset/confirm  { token, password }  → 204
+               └─ on success: /auth/login?reset=true (no session is opened)
+```
+
+Two properties are load-bearing and easy to undo by accident:
+
+- **The request endpoint answers 202 for an unknown address too.** Anything
+  else turns a public endpoint into an account-enumeration oracle, so the UI
+  can never say "no account with that email" — the success copy is phrased as
+  a conditional on purpose.
+- **A completed reset does not log the user in.** Spending the token proves
+  control of the mailbox, not of the password, and a reset is exactly when
+  someone else may have had the account. Login stays the only place a session
+  is opened.
+
+The server half **has landed** (CON-161 in the API repo, the counterpart to
+this front-end's CON-108) and matches the contract above endpoint for endpoint,
+including the emailed `{APP_BASE_URL}/auth/reset?token=` shape.
+
+It adds one thing the diagram doesn't show: `POST /api/password-reset` is
+rate-limited **per address and per client IP**, and answers **429** with a
+`Retry-After` header once either budget is spent. That response is safe to show
+verbatim — it reveals only that a limit was hit, never whether the address has
+an account, so it preserves the anti-enumeration property above. The resend
+button is the realistic way to reach it, which is why a failed resend leaves
+the success panel standing instead of dropping the user back to the form.
+
+The confirm endpoint returns the same 400 message for an unknown, expired, or
+already-spent token, deliberately — it is written as a sentence because the UI
+prints it as-is next to "Request a new link".
+
 ## The root guard — `src/routes/__root.tsx`
 
 Auth is guarded **once**, in the root route's `beforeLoad` (never on
@@ -80,9 +126,21 @@ Details that matter:
   in a module-level promise; failures are never cached; `invalidateSession()`
   clears it after login/logout/signup.
 - **Auth routes redirect away when already authenticated** (`/auth`,
-  `/auth/login`, `/auth/register` each `beforeLoad`-redirect to `/`).
+  `/auth/login`, `/auth/register`, `/auth/forgot`, `/auth/reset` each
+  `beforeLoad`-redirect to `/`).
 - **First-run instance setup no longer exists.** CON-97 removed the
   `setup_complete` bootstrap; onboarding is only the signup above.
+- **The guard only runs on a page load, so it can't catch a session that dies
+  mid-visit.** That case belongs to `src/lib/sessionExpiry.ts`: any 401 from
+  `services/api/http.ts` drops the persisted user and reloads onto
+  `/auth/login?redirect=<here>&expired=1`, which is why the login screen can
+  explain itself instead of appearing out of nowhere. It fires once per page
+  (a screen with four queries produces four 401s in one tick) and never on
+  `/auth/*`, where a 401 is simply the answer.
+- **`?redirect=` is filtered through `safeRedirect()`** (`src/lib/redirects.ts`)
+  before it is followed. The guard writes `location.href` into it, so the value
+  is attacker-supplied; `startsWith("/")` alone would accept `//evil.example`,
+  which browsers resolve to another origin.
 
 ## Identity & state plumbing
 
@@ -113,11 +171,50 @@ Details that matter:
 | `GET /api/tenants/current` | session | caller's tenant | ✅ workspace settings |
 | `PUT /api/tenants/:id` | session, own tenant | rename tenant | ✅ workspace settings |
 | `POST /api/users` | session | add teammate to caller's tenant | ❌ no invite UI |
+| `POST /api/password-reset` | public | email a one-time reset link | ⏳ UI built, **endpoint missing** |
+| `POST /api/password-reset/confirm` | public (token) | spend the token, set the password | ⏳ UI built, **endpoint missing** |
 
 Not offered by the backend at all: invitations with an email loop, email
 verification, password reset, roles/RBAC, tenant deletion, tenant switching,
 platform-admin tenant enumeration. (`/api/secrets` exists but is an
 instance-operator surface with no UI here — see backend gaps below.)
+
+## The account surface — `/profile`
+
+The personal counterpart to Workspace Settings, which is shared by everyone in
+the tenant. Three cards, all backed by `requireSelf`-gated endpoints, so
+nothing here can ever touch another user:
+
+- **Account** — first/last name and email, edited inline and applied by the
+  header's Save button, exactly like `WorkspaceSection`. All three fields
+  register as **one** save entry: `PUT /api/users/:id` requires `name` *and*
+  `email` on every call, so separate entries would race each other.
+- **Password** — deliberately *not* on the page's Save button. It replaces a
+  credential rather than editing a setting, so it has its own submit and its
+  own failure.
+- **Danger Zone** — `DELETE /api/users/:id`, behind a type-your-email
+  confirmation.
+
+Two properties of the API shape this screen, both tracked as **CON-193**:
+
+- **The update endpoint never asks for the current password.** Any live
+  session can replace the credential, which makes a borrowed tab enough to take
+  the account permanently. `useChangePassword` compensates by re-authenticating
+  through `POST /api/sessions` first — that endpoint verifies the password, 401s
+  on a wrong one, and mints a *fresh* session rather than disturbing the current
+  one. That is a lock on our own door; anything calling the API directly walks
+  straight past it, so it is not a substitute for the server-side check.
+- **A password change revokes nothing.** `POST /api/password-reset/confirm`
+  ends every session; `PUT /api/users/:id` ends none. No client can fix that, so
+  the card says so rather than implying otherwise.
+
+Account deletion is much larger than its name. `users.id` cascades through
+`created_by` into `tags`, `campaigns`, `assets`, `posts` and
+`post_attachments` — everything the user created is destroyed with them,
+including out from under colleagues in a shared workspace. The tenant row has
+no such link and survives. The dialog states this outright; "this cannot be
+undone" is equally true of deleting a draft and tells nobody what they are
+about to lose.
 
 ## Post-signup settings surface — `/workspace-settings`
 
@@ -150,22 +247,33 @@ The former bring-your-own **API-keys section was removed** (2026-07-05) —
 credentials are platform-managed (CON-99/104), so the whole `/api/secrets`
 client (`secrets.ts`, `useSecrets.ts`, `ApiKeysSection`) is gone.
 
-## Known gaps (as of 2026-07-06)
+## Known gaps (as of 2026-08-04)
 
 UI-side (this repo):
 
 1. **No invite-teammate UI** — `users.register()` is ready but unwired
    (CON-26 is the placeholder ticket for real invitations).
-2. **No password reset / email verification** — blocked on the backend
-   growing email infrastructure; the UI deliberately has no stub for either.
+2. **No email verification** — an address is never confirmed, at signup or
+   after. No UI stub for it.
+3. **No account deletion beyond the user's own.** `/profile` deletes yourself
+   (`DELETE /api/users/:id`, `requireSelf`); there is no way to remove anyone
+   else, and no way to delete a workspace. Deleting the last member leaves the
+   tenant row standing with nobody able to reach it.
 
 Backend-side (tracked against the API repo, listed here for context):
 
+- **`POST /api/sessions` has no rate limiting or lockout** (CON-194). Password
+  reset is throttled as of CON-161 and Zernio's connect-link endpoint has its
+  own limiter, but login has neither — it is unlimited-attempt against a public
+  endpoint. Signup is open and unthrottled too (no rate limit / CAPTCHA /
+  email loop).
+- **`PUT /api/users/:id` neither re-authenticates nor revokes** (CON-193) —
+  see the `/profile` section above for what the client does about it and what
+  it cannot.
 - **`/api/secrets` is reachable by any authenticated tenant user** (plain
   session auth), letting any tenant read metadata for / rotate / delete the
   **platform-wide** keys — contradicts CON-97 §10.3 ("no tenant-facing
   endpoint can read, set, or rotate them"). The UI no longer exposes it, but
   the endpoint itself must be locked down or removed.
-- Signup is open and unthrottled (no rate limit / CAPTCHA / email loop).
-- No invitations, email verification, or password reset exist server-side;
-  teammates are added by direct `POST /api/users` with a chosen password.
+- No invitations or email verification exist server-side; teammates are added
+  by direct `POST /api/users` with a chosen password.

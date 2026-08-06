@@ -12,9 +12,10 @@
 // FOLLOW-UP: verify each row against the live platform APIs and move the
 // authoritative copy back to the platform rows, then delete this file.
 //
-// Video is deliberately absent — Ogen does not handle video yet, so the
-// video-only platform (YouTube) has no entry and its post types never
-// reach the attachment UI.
+// Video is deliberately absent, for the opposite reason: its rules were
+// seeded by CON-148 from the same Zernio docs this table is sourced from, so
+// there is nothing to override. `lib/platformVideo.ts` reads them off
+// `GET /api/platforms` and applies Ogen's own ingest budget on top.
 //
 // Keyed by platform Sqid — see `platformDictionary.ts`.
 
@@ -115,20 +116,6 @@ export const PLATFORM_MEDIA: Record<string, PlatformMediaConstraints> = {
 
 export function getPlatformMedia(platformId: string): PlatformMediaConstraints {
   return PLATFORM_MEDIA[platformId] ?? {}
-}
-
-/**
- * `accept` attribute for the file picker: every MIME the platform takes,
- * or all supported kinds when no platform is selected yet (the server
- * accepts images and PDFs regardless; per-platform rules are a warning,
- * not an upload block).
- */
-export function acceptFor(platformId: string): string {
-  const media = getPlatformMedia(platformId)
-  const mimes = [...(media.image?.allowedMimes ?? []), ...(media.document?.allowedMimes ?? [])]
-  return mimes.length > 0
-    ? mimes.join(',')
-    : 'image/jpeg,image/png,image/webp,image/gif,application/pdf'
 }
 
 /**

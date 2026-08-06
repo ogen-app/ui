@@ -6,7 +6,6 @@ import { createPost, deletePost, listCampaignPosts, updatePost } from '@/service
 import { CAMPAIGN_SUMMARIES_KEY, campaignOverviewKey } from '@/hooks/useCampaigns'
 import { atDefaultTime } from '@/lib/postSchedule'
 import { selectStreamedPosts, useAssistantStore } from '@/stores/assistantStore'
-import { toast } from '@/stores/toastStore'
 import type { StreamedPost } from '@/types/assistant'
 import type { Post, PostPayload } from '@/types/posts'
 
@@ -112,14 +111,6 @@ export function useAddPost(campaignId: string) {
               params: { campaignId, postId: post.id },
             })
           },
-          // Without this the button is indistinguishable from a dead one: the
-          // only visible effect of a successful add is the navigation, so a
-          // rejected create looked exactly like nothing happening.
-          onError: (err) => {
-            toast.error('Unable to add post', {
-              description: err instanceof Error ? err.message : undefined,
-            })
-          },
         },
       )
     },
@@ -143,14 +134,12 @@ export function useUpdatePost(campaignId: string) {
       }
       return { prev }
     },
-    // The optimistic write above means a rejected update *undoes itself* on
-    // screen — a drag that snaps back, a bulk date that reverts. Silent, that
-    // reads as a UI glitch rather than as a refusal, so say what happened.
-    onError: (err, _vars, ctx) => {
+    // The rollback only. The toast comes from the mutation cache default
+    // (CON-164): without it this rollback is the *entire* visible effect of a
+    // refused update, so a dragged post snapping back reads as a UI glitch
+    // rather than as the server saying no.
+    onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(campaignPostsKey(campaignId), ctx.prev)
-      toast.error('Unable to save the post', {
-        description: err instanceof Error ? err.message : undefined,
-      })
     },
     onSettled: () => {
       invalidateCampaignPosts(qc, campaignId)
@@ -161,6 +150,10 @@ export function useUpdatePost(campaignId: string) {
 export function useDeletePost(campaignId: string) {
   const qc = useQueryClient()
   return useMutation({
+    // Keeps the wording `DeletePostDialog` used to supply itself: the server's
+    // reason for refusing lands in the description under a title that names
+    // what the user was trying to do.
+    meta: { errorTitle: 'Unable to delete post' },
     mutationFn: (id: string) => deletePost(id),
     onSuccess: () => {
       invalidateCampaignPosts(qc, campaignId)

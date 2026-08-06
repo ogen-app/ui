@@ -7,7 +7,15 @@ import {
   PaperPlaneTiltIcon,
 } from '@phosphor-icons/react'
 import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
-import { FoldedText, PreviewAvatar, PreviewMedia, PreviewSurface } from './previewParts.tsx'
+import { frameAspect } from './frames.ts'
+import {
+  CarouselDots,
+  FoldedText,
+  PreviewAvatar,
+  PreviewCarousel,
+  PreviewSurface,
+  useCarousel,
+} from './previewParts.tsx'
 import { INSTAGRAM as C } from './previewTheme.ts'
 import type { PreviewProps } from './types.ts'
 
@@ -18,9 +26,20 @@ import type { PreviewProps } from './types.ts'
  * footnote, folded after ~125 characters. It also cannot publish without
  * media at all, so the media slot shows that as a blocker rather than
  * quietly rendering a text-only card that could never exist.
+ *
+ * More than one image is a carousel, and it is drawn as one — CON-144. The
+ * old card showed the first frame and nothing else, which said "your other
+ * nine images are gone" to anyone reading it literally. What a carousel
+ * preview is actually for is the crop: every slide is squared to the *first*
+ * slide's ratio, so a portrait shot in position four loses its top and
+ * bottom, and there is nowhere else in the app to see that happen.
  */
-export function InstagramPreview({ text, mediaUrls, author, timeLabel }: PreviewProps) {
+export function InstagramPreview({ text, media, postType, author, timeLabel }: PreviewProps) {
   const handle = author.username ?? author.name ?? 'your.account'
+  const carousel = useCarousel(media.length)
+  // Square is the feed's shape; a Reel is 9:16 and previewing one in a square
+  // shows a crop that will never exist.
+  const aspect = frameAspect(postType, 1)
 
   return (
     <PreviewSurface style={{ borderRadius: 4 }}>
@@ -35,24 +54,38 @@ export function InstagramPreview({ text, mediaUrls, author, timeLabel }: Preview
         <DotsThreeIcon className="size-5 shrink-0" style={{ color: C.text }} aria-hidden />
       </div>
 
-      {mediaUrls.length > 0 ? (
-        <PreviewMedia urls={mediaUrls.slice(0, 1)} aspect={1} background="#fafafa" />
-      ) : (
+      {media.length === 0 ? (
         <div
           className="flex flex-col items-center justify-center gap-2 px-6 text-center"
-          style={{ aspectRatio: 1, background: '#fafafa', color: C.muted }}
+          style={{ aspectRatio: aspect, background: C.surface, color: C.muted }}
         >
           <ImageIcon className="size-8" aria-hidden />
           <span style={{ fontSize: 13 }}>
             Instagram posts need an image or video — this one has none.
           </span>
         </div>
+      ) : (
+        /* One slide included: the carousel draws a lone item as the same
+           plain frame, and all its chrome is gated on `count > 1`. */
+        <PreviewCarousel
+          carousel={carousel}
+          items={media}
+          aspect={aspect}
+          background={C.surface}
+          arrowColor={C.text}
+        />
       )}
 
-      <div className="flex items-center gap-4 px-3 pt-3" style={{ color: C.text }}>
+      {/* The dots sit in the action row, centred, exactly as Instagram places
+          them — which is why the carousel's index lives in this component
+          rather than inside the media block. */}
+      <div className="relative flex items-center gap-4 px-3 pt-3" style={{ color: C.text }}>
         <HeartIcon className="size-6" aria-hidden />
         <ChatCircleIcon className="size-6" aria-hidden />
         <PaperPlaneTiltIcon className="size-6" aria-hidden />
+        <div className="absolute inset-x-0 flex justify-center">
+          <CarouselDots carousel={carousel} activeColor={C.dot} mutedColor={C.dotMuted} />
+        </div>
         <BookmarkSimpleIcon className="ml-auto size-6" aria-hidden />
       </div>
 

@@ -4,8 +4,8 @@ import type {
   PostAttachmentWithValidation,
 } from '@/types/attachments'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
-import { strandedAttachments, type MediaPolicy } from '@/lib/postMedia'
-import { markdownToSocialText } from '@/lib/socialText'
+import { mediaNoun, strandedAttachments, type MediaPolicy } from '@/lib/postMedia'
+import { charCount, markdownToSocialText } from '@/lib/socialText'
 
 /**
  * `fail` blocks publishing (the server would reject it), `warn` is
@@ -37,10 +37,16 @@ export type EvaluateInput = {
    * which shows as pending rather than flashing a pass.
    */
   maxContentChars: number | null | undefined
+  /**
+   * The platform's title ceiling (CON-160). `null` on the five platforms that
+   * set none — the title is then Ogen's own label and never published — and
+   * `undefined` while the platform row is in flight.
+   */
+  maxTitleChars: number | null | undefined
 }
 
 export function evaluatePost(input: EvaluateInput): PostCheck[] {
-  const { post, policy, requiresContent, maxContentChars } = input
+  const { post, policy, requiresContent, maxContentChars, maxTitleChars } = input
   const checks: PostCheck[] = []
 
   const platform = getPlatformInfo(post.platform_id)
@@ -57,13 +63,44 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
   checks.push({
     id: 'post-type',
     label: 'Post type',
-    status: !post.platform_post_type ? 'fail' : policy.videoOnly ? 'warn' : 'pass',
+    status: !post.platform_post_type ? 'fail' : policy.videoUnsupported ? 'warn' : 'pass',
     detail: !post.platform_post_type
       ? 'Pick a post type'
-      : policy.videoOnly
-        ? `${typeLabel} needs video, which Ogen doesn't handle yet`
+      : policy.videoUnsupported
+        ? `${typeLabel} needs video, which this platform doesn't publish`
         : typeLabel,
   })
+
+  // Mirrors `platforms.ValidatePostType`'s `requires_video_title` branch: a
+  // video post type on a platform that demands a title (YouTube) cannot leave
+  // Draft without one. The title field is the post's existing one — Ogen
+  // carries no separate video-metadata form, because Zernio's submit request
+  // takes nothing beyond `title` today.
+  if (policy.kinds.includes('video') && policy.video?.requiresTitle) {
+    const titled = (post.title ?? '').trim().length > 0
+    checks.push({
+      id: 'video-title',
+      label: 'Title',
+      status: titled ? 'pass' : 'fail',
+      detail: titled ? undefined : `${platform?.name ?? 'This platform'} rejects a video with no title`,
+    })
+  }
+
+  // The title cap, where the platform publishes a title at all (CON-160).
+  // Silent on the five that don't: there the title is Ogen's own label, and a
+  // check on it would be a check on nothing.
+  if (maxTitleChars) {
+    const titleLength = charCount((post.title ?? '').trim())
+    const over = titleLength > maxTitleChars
+    checks.push({
+      id: 'title-limit',
+      label: 'Title length',
+      status: over ? 'fail' : 'pass',
+      detail: over
+        ? `${titleLength} / ${maxTitleChars} characters — ${titleLength - maxTitleChars} over`
+        : `${titleLength} / ${maxTitleChars} characters`,
+    })
+  }
 
   // Measured on the flattened text, not the Markdown the editor stores: the
   // syntax characters (`**`, `## `, the brackets around a link) are not part
@@ -83,9 +120,7 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
         : 'No copy yet',
   })
 
-  // Code points, not UTF-16 units: an emoji is one character to the network's
-  // counter and to the server's, so `[...s].length` rather than `s.length`.
-  const length = [...published].length
+  const length = charCount(published)
   if (maxContentChars === undefined) {
     checks.push({ id: 'char-limit', label: 'Length', status: 'pending', detail: 'Checking…' })
   } else if (maxContentChars === null) {
@@ -136,8 +171,8 @@ function mediaChecks({
       status: belowMin ? 'fail' : aboveMax ? 'warn' : 'pass',
       detail: belowMin
         ? policy.min === 1
-          ? 'This post type needs an image'
-          : `This post type needs at least ${policy.min} images — ${count} attached`
+          ? `This post type needs ${mediaNoun(policy)}`
+          : `This post type needs at least ${policy.min} ${mediaNoun(policy, true)} — ${count} attached`
         : aboveMax
           ? `${count} attached — this platform takes ${policy.max}`
           : count === 0

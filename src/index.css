@@ -78,6 +78,10 @@
   --shadow-lg: 0 10px 20px -3px rgb(20 40 80 / 10%), 0 4px 6px -2px rgb(20 40 80 / 5%);
   /* Upward shadow for panels overlapping content from below (e.g. calendar footer) */
   --shadow-top: 0 -2px 12px rgb(0 0 0 / 8%);
+  /* Toasts float free over the whole app rather than sitting on a surface, so
+     they take a wider, softer shadow than `--shadow-md` — lift without a hard
+     edge under the card. */
+  --shadow-toast: 0 8px 28px -6px rgb(20 40 80 / 14%), 0 2px 8px -4px rgb(20 40 80 / 10%);
   /* --shadow-xl: 0 20px 25px -5px rgb(60 40 0 / 0.1), 0 10px 10px -5px rgb(60 40 0 / 0.04); */
   /* --shadow-2xl: 0 25px 50px -12px rgb(60 40 0 / 0.2); */
 
@@ -461,6 +465,59 @@
   @media (prefers-reduced-motion: reduce) {
     .animate-attention {
       animation: attention-fade 1.5s ease-out both;
+    }
+  }
+
+  /* A toast entering and leaving the deck. Both halves stay off `transform`:
+     that property carries the deck geometry (`toast.tsx` sets it inline per
+     depth and transitions it), and a keyframe animation outranks an inline
+     style, so anything animating `transform` here would yank the card out of
+     its place in the pile. The entrance uses `translate` — a separate CSS
+     property — and the exit touches opacity only.
+
+     That is also why neither half can be tw-animate-css's `animate-in` /
+     `animate-out`: their shared `enter`/`exit` keyframes animate `transform`
+     toward identity, which slides a receding card forward to the front of the
+     deck at full size — it reads as a brand-new toast, not a dissolving one.
+
+     These are keyframe animations rather than JS-flipped transitions because a
+     transition needs a committed start value, and the usual way to get one —
+     requestAnimationFrame — never fires while the tab is in the background.
+     A toast raised there would stay stuck at opacity 0. Radix's Presence also
+     only ever watches `animationend`, never transitions.
+
+     Each half is scoped to its own [data-state] so the two never overlap. The
+     exit fills `forwards`: the store keeps the record ~60ms past the fade so
+     it never unmounts mid-animation, and without the fill the card would flash
+     back to full opacity for those last frames. */
+  @keyframes toast-enter {
+    from {
+      opacity: 0;
+      translate: 0 16px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes toast-exit {
+    to {
+      opacity: 0;
+    }
+  }
+
+  .toast-motion[data-state='open'] {
+    animation: toast-enter 200ms ease-out;
+  }
+
+  .toast-motion[data-state='closed'] {
+    animation: toast-exit 200ms ease-in forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast-motion[data-state='open'] {
+      animation: none;
     }
   }
 

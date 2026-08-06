@@ -104,6 +104,13 @@ export type AssistantTurn = {
   /** Post turns only. */
   saveVersion?: boolean
   versionNote?: string
+  /**
+   * Set when a post turn cloned the post (CON-59): the clone is a new,
+   * already-persisted post in the same campaign, and the reply offers a jump to
+   * it. `campaignId` is the subject's — resolved in the store, as the event
+   * omits it — so the jump can target the clone's editor.
+   */
+  clone?: { postId: string; campaignId: string }
   steps?: AssistantStep[]
   /** Monotonic (`performance.now`) marks — timeline durations only. */
   startedAt?: number

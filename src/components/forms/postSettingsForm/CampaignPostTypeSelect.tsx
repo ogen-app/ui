@@ -62,6 +62,8 @@ export function CampaignPostTypeSelect({
         const camp = campaignMap.get(view.platform.id)
         if (camp && camp.size > 0) anySelected = true
 
+        // Not `info.postTypes`: the video formats are never offered, and
+        // counting them into "N other post types" would advertise them.
         for (const pt of view.info.postTypes) {
           const id = joinId(view.platform.id, pt.slug)
           const item: Item = {

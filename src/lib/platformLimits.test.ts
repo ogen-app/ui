@@ -1,19 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { Platform, TextConstraints } from '@/types/campaigns'
 import type { ResolvedPostTypeRule } from '@/types/validation'
-import { contentLimitFor, resolveCharLimit } from './platformLimits.ts'
+import { makePlatform } from './platformFixtures.ts'
+import { contentLimitFor, resolveCharLimit, titleLimitFor } from './platformLimits.ts'
 
 function platform(text_constraints: TextConstraints): Platform {
-  return {
-    id: 'AXqWG7U2qnpt',
-    name: 'LinkedIn',
-    post_types: {},
-    cadence: '',
-    constraints: '',
-    text_constraints,
-    created_at: '',
-    updated_at: '',
-  }
+  return makePlatform({ text_constraints })
 }
 
 function rule(max_content_chars: number | null): ResolvedPostTypeRule {
@@ -81,5 +73,18 @@ describe('resolveCharLimit', () => {
 
   it('honours an explicitly unbounded rule over the platform default', () => {
     expect(resolveCharLimit(p, rule(null), 'live-video')).toBeNull()
+  })
+})
+
+describe('titleLimitFor', () => {
+  it('reads YouTube’s seeded title cap', () => {
+    expect(titleLimitFor({ max_content_chars: 5000, max_title_chars: 100 })).toBe(100)
+  })
+
+  // Five of the six platforms publish no title, and seed 0. That is "no cap",
+  // not "no characters" — a counter reading 0/0 would fail every post.
+  it('reads an unseeded cap as unbounded, not as zero', () => {
+    expect(titleLimitFor({ max_content_chars: 3000, max_title_chars: 0 })).toBeNull()
+    expect(titleLimitFor(undefined)).toBeNull()
   })
 })
