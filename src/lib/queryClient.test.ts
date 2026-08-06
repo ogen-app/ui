@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { queryClient, type MutationErrorMeta } from './queryClient'
+import * as sessionExpiry from './sessionExpiry'
 import { useToastStore } from '@/stores/toastStore'
 
 /**
@@ -73,5 +74,18 @@ describe('the mutation-cache error default', () => {
   it('still says something when an Error carries an empty message', async () => {
     const toasts = await failWith(new Error(''))
     expect(toasts[0].title).toBe('Something went wrong')
+  })
+
+  it('stays quiet while a session-expiry redirect is in flight', async () => {
+    // Every request 401s at once, and `handleUnauthorized` is already taking
+    // the user to the login screen. Each mutation blaming itself on the way
+    // out would bury the one explanation that is true.
+    const expiring = vi.spyOn(sessionExpiry, 'isSessionExpiring')
+    expiring.mockReturnValue(true)
+    try {
+      expect(await failWith(new Error('Unable to update post'))).toHaveLength(0)
+    } finally {
+      expiring.mockRestore()
+    }
   })
 })

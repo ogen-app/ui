@@ -1,6 +1,7 @@
 import { MutationCache, QueryClient } from '@tanstack/react-query'
 
 import { toast } from '@/stores/toastStore'
+import { isSessionExpiring } from '@/lib/sessionExpiry'
 
 const FIVE_MINUTES = 1000 * 60 * 5
 
@@ -61,6 +62,13 @@ export const queryClient = new QueryClient({
    */
   mutationCache: new MutationCache({
     onError: (error, _variables, _context, mutation) => {
+      // A 401 has already started a full-page redirect to the login screen
+      // (`handleUnauthorized`), and that is the honest explanation. The 401
+      // still throws, though, so without this every mutation in flight would
+      // flash its own version — "Unable to update post" — blaming the write
+      // for what was really the session ending. `sessionExpiry.ts` was
+      // written to stop exactly that, one layer up.
+      if (isSessionExpiring()) return
       const meta = mutation.options.meta
       if (meta?.errorToast === false) return
       // `apiJson`/`apiVoid` throw with the backend's message, or with the

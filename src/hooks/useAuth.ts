@@ -71,6 +71,8 @@ export function useSignup() {
  */
 export function useRequestPasswordReset() {
   return useMutation<void, Error, string>({
+    // `AuthForgotPasswordForm` renders `error.message` under the field.
+    meta: { errorToast: false },
     mutationFn: requestPasswordReset,
   });
 }
@@ -78,6 +80,9 @@ export function useRequestPasswordReset() {
 /** Step two: spend the token and set the new password (CON-108). */
 export function useResetPassword() {
   return useMutation<void, Error, { token: string; password: string }>({
+    // `AuthResetPasswordForm` renders `error.message`, and next to it the way
+    // out of an expired token — which a toast would drop.
+    meta: { errorToast: false },
     mutationFn: ({ token, password }) => resetPasswordRequest(token, password),
   });
 }
@@ -134,6 +139,12 @@ export function useUpdateProfile() {
 export function useChangePassword() {
   const user = useAuthStore((s) => s.user);
   return useMutation<void, Error, { currentPassword: string; password: string }>({
+    // `ChangePasswordSection` sorts this error out by hand: a wrong current
+    // password is shown against the current-password field and deliberately
+    // kept out of the generic paragraph. A toast would take that
+    // field-scoped message — "invalid credentials" — and repeat it globally,
+    // pointing at nothing.
+    meta: { errorToast: false },
     mutationFn: async ({ currentPassword, password }) => {
       if (!user) throw new Error("You are not signed in");
       // Throws "invalid credentials" on a wrong password — surfaced against
@@ -171,6 +182,9 @@ export function useChangePassword() {
 export function useDeleteAccount() {
   const clearUser = useAuthStore((s) => s.clearUser);
   return useMutation<void, Error, string>({
+    // `DeleteAccountDialog` renders `error.message` inside itself, which is
+    // where the user is looking and where the retry is.
+    meta: { errorToast: false },
     mutationFn: deleteUser,
     onSuccess: async () => {
       invalidateSession();
