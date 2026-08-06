@@ -13,6 +13,12 @@ type PostsToolbarProps = {
   /** Present only on the calendar; drives the range label and day nav. */
   anchor?: Date
   onAnchorChange?: (anchor: Date) => void
+  /**
+   * Fills the heading slot on views with no date range — the list. Sits where
+   * the week range does, in the same type, so switching views moves the
+   * content of that line rather than emptying it.
+   */
+  subheading?: string
 }
 
 function formatWeekRange(weekStart: Date): string {
@@ -33,7 +39,13 @@ function formatWeekRange(weekStart: Date): string {
  * Toolbar shared by the posts views: date range (calendar only), the
  * WEEK / MONTH / LIST switch, week navigation, and ADD POST.
  */
-export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: PostsToolbarProps) {
+export function PostsToolbar({
+  campaignId,
+  view,
+  anchor,
+  onAnchorChange,
+  subheading,
+}: PostsToolbarProps) {
   const navigate = useNavigate()
   const addPost = useAddPost(campaignId)
   const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings(campaignId)
@@ -58,17 +70,53 @@ export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: Posts
     <div className="flex items-center justify-between gap-4 py-2 shrink-0 flex-wrap">
       {/* The range starts on the user's first day of the week, so it can't be
           written until that setting is known — a Monday–Sunday label that
-          turns into Sunday–Saturday is worse than a beat of nothing. */}
+          turns into Sunday–Saturday is worse than a beat of nothing.
+          The list has no range to show, so the slot carries what the view is
+          showing instead of standing empty. */}
       <span className="flex h-6 items-center text-[18px] font-medium">
-        {anchor &&
-          (settingsPending ? (
+        {anchor ? (
+          settingsPending ? (
             <Skeleton className="h-4 w-56" />
           ) : (
             formatWeekRange(startOfWeek(anchor, firstDayOfWeek))
-          ))}
+          )
+        ) : (
+          subheading
+        )}
       </span>
 
+      {/* Week navigation, then the view switch, then ADD POST: the switch sits
+          between the two so navigating the current view and leaving it are not
+          adjacent, and the action that creates something stays last. */}
       <div className="flex items-center gap-3">
+        {view === 'week' && anchor && onAnchorChange && (
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="default"
+              size="defaultIcon"
+              onClick={() => onAnchorChange(addDays(anchor, -7))}
+              aria-label="Previous week"
+            >
+              <CaretLeftIcon />
+            </Button>
+            <Button
+              variant="default"
+              size="default"
+              onClick={() => onAnchorChange(new Date())}
+            >
+              TODAY
+            </Button>
+            <Button
+              variant="default"
+              size="defaultIcon"
+              onClick={() => onAnchorChange(addDays(anchor, 7))}
+              aria-label="Next week"
+            >
+              <CaretRightIcon />
+            </Button>
+          </div>
+        )}
+
         {/* MONTH is hidden until the month view exists. */}
         <Tabs value={view}>
           <TabsList variant="segmented" size="excluded">
@@ -89,40 +137,10 @@ export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: Posts
           </TabsList>
         </Tabs>
 
-        <div className="flex items-center gap-2">
-          {view === 'week' && anchor && onAnchorChange && (
-            <div className="flex items-center gap-0.5">
-              <Button
-                variant="default"
-                size="defaultIcon"
-                onClick={() => onAnchorChange(addDays(anchor, -7))}
-                aria-label="Previous week"
-              >
-                <CaretLeftIcon />
-              </Button>
-              <Button
-                variant="default"
-                size="default"
-                onClick={() => onAnchorChange(new Date())}
-              >
-                TODAY
-              </Button>
-              <Button
-                variant="default"
-                size="defaultIcon"
-                onClick={() => onAnchorChange(addDays(anchor, 7))}
-                aria-label="Next week"
-              >
-                <CaretRightIcon />
-              </Button>
-            </div>
-          )}
-
-          <Button variant="default" onClick={() => addPost()}>
-            <PlusIcon />
-            <span>ADD POST</span>
-          </Button>
-        </div>
+        <Button variant="default" onClick={() => addPost()}>
+          <PlusIcon />
+          <span>ADD POST</span>
+        </Button>
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { TextSelect } from '@/components/ui/text-select'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
+import { useSchedulingPreferences } from '@/hooks/useSchedulingPreferences'
 
 // Displayed Monday-first regardless of the chosen first day of week.
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0] as const
@@ -40,6 +41,10 @@ export function CalendarSettingsPanel({
 }) {
   const { firstDayOfWeek, hiddenDays, isPending, setFirstDayOfWeek, setDayVisible } =
     useCalendarSettings(campaignId)
+  // The campaign's publishing days, so the panel can say which of these rows
+  // the campaign will never put anything on. Shares the cached query the
+  // settings page fills, so opening the panel costs no extra request.
+  const { bannedDays } = useSchedulingPreferences(campaignId)
 
   return (
     <RailPanel title="Calendar Settings" onClose={onClose} className="h-full">
@@ -53,6 +58,8 @@ export function CalendarSettingsPanel({
             <Skeleton className="h-10 w-full" />
           ) : (
             <TextSelect
+              variant="default"
+              size="default"
               value={String(firstDayOfWeek)}
               onValueChange={(v) => setFirstDayOfWeek(Number(v))}
               elements={FIRST_DAY_OPTIONS}
@@ -63,23 +70,36 @@ export function CalendarSettingsPanel({
 
       <Collapse title="DAYS VISIBILITY" defaultOpen className="border-b border-border pb-6">
         <div className="flex flex-col gap-1 pt-2">
-          {WEEK_DAYS.map((day) => (
-            <div
-              key={day}
-              className="flex h-10 items-center justify-between bg-secondary px-4"
-            >
-              <span className="text-sm">{DAY_LABELS[day]}</span>
-              {isPending ? (
-                <Skeleton className="h-5 w-9" />
-              ) : (
-                <Switch
-                  checked={!hiddenDays.includes(day)}
-                  onCheckedChange={(checked) => setDayVisible(day, checked)}
-                  aria-label={`Show ${DAY_LABELS[day]}`}
-                />
-              )}
-            </div>
-          ))}
+          {WEEK_DAYS.map((day) => {
+            // Why a hidden day may be safe to hide: the campaign never
+            // publishes on it. State, not teaching, so it sits in the row
+            // rather than in a note the user can close.
+            const unused = bannedDays.includes(day)
+            return (
+              <div
+                key={day}
+                className="flex h-10 items-center justify-between gap-3 bg-secondary px-4"
+              >
+                <span className="flex min-w-0 items-baseline gap-2">
+                  <span className="text-sm">{DAY_LABELS[day]}</span>
+                  {unused && (
+                    <span className="truncate text-xs text-tertiary-foreground">
+                      Not a publishing day
+                    </span>
+                  )}
+                </span>
+                {isPending ? (
+                  <Skeleton className="h-5 w-9" />
+                ) : (
+                  <Switch
+                    checked={!hiddenDays.includes(day)}
+                    onCheckedChange={(checked) => setDayVisible(day, checked)}
+                    aria-label={`Show ${DAY_LABELS[day]}`}
+                  />
+                )}
+              </div>
+            )
+          })}
         </div>
       </Collapse>
     </RailPanel>

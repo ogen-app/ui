@@ -141,15 +141,14 @@ describe("setupChecks", () => {
     return setupChecks(campaign, views).find((c) => c.id === "channels")!;
   }
 
-  it("fails dates/channels/post target on a fresh campaign", () => {
+  it("fails dates and channels on a fresh campaign", () => {
     const checks = setupChecks(makeCampaign(), []);
-    expect(checks.map((c) => c.id)).toEqual(["dates", "channels", "post_target"]);
+    expect(checks.map((c) => c.id)).toEqual(["dates", "channels"]);
     expect(checks.every((c) => !c.ok)).toBe(true);
     // A gap names itself in the label; the detail says what the setting is for.
     expect(checks.map((c) => c.label)).toEqual([
       "Campaign dates not set",
       "No channels selected",
-      "Post target not set",
     ]);
     expect(checks.every((c) => c.detail.length > 0)).toBe(true);
   });
@@ -168,10 +167,9 @@ describe("setupChecks", () => {
       start_date: "2026-06-01T00:00:00Z",
       end_date: "2026-08-31T00:00:00Z",
       target_platforms: [{ id: "p1", post_types: ["text-post"] }],
-      estimated_post_count: 24,
     });
     const checks = setupChecks(campaign, [makeView("p1", "LinkedIn", true)]);
-    expect(checks.map((c) => c.id)).toEqual(["dates", "channels", "post_target"]);
+    expect(checks.map((c) => c.id)).toEqual(["dates", "channels"]);
     expect(checks.every((c) => c.ok)).toBe(true);
     expect(checks[1].detail).toBe("Publishing to LinkedIn");
   });
@@ -277,7 +275,6 @@ function liveCampaign(overrides: Partial<Campaign> = {}): Campaign {
     ...filledBrief,
     start_date: "2026-06-01T00:00:00Z",
     end_date: "2026-08-31T00:00:00Z",
-    estimated_post_count: 10,
     target_platforms: [{ id: "p1", post_types: ["text-post"] }],
     ...overrides,
   });
@@ -320,7 +317,7 @@ describe("attentionItems", () => {
   });
 
   it("sorts alerts before risks before todos before infos", () => {
-    const campaign = liveCampaign({ estimated_post_count: null, use_assets: true });
+    const campaign = liveCampaign({ use_assets: true });
     const posts = [
       makePost({ status: "failed" }),
       makePost({ status: "draft", scheduled_at: iso(3 * HOUR) }),
@@ -587,13 +584,11 @@ describe("attentionItems", () => {
     expect(ids(campaign, healthyPosts())).not.toContain("assets-expected");
   });
 
-  it("mentions a missing post target only as info, once content exists", () => {
-    const campaign = liveCampaign({ estimated_post_count: null });
-    const item = attentionItems(campaign, healthyPosts(), connected, NOW).find(
-      (i) => i.id === "post-target",
+  it("says nothing about the campaign's post target, set or not", () => {
+    // The field is being reworked into a goal (CON-156); no rule may read it.
+    expect(ids(liveCampaign({ estimated_post_count: null }), healthyPosts())).not.toContain(
+      "post-target",
     );
-    expect(item).toMatchObject({ severity: "info" });
-    expect(ids(liveCampaign({ estimated_post_count: null }), [])).not.toContain("post-target");
   });
 
   // --- Content --------------------------------------------------------------

@@ -155,7 +155,6 @@ records what the post was built from, and that stays true. Drift needs a
 | `brief-partial` | `todo` | some brief fields blank | *Brief is missing: `<fields>`* | brief | `client` | – |
 | `dates` | `todo` | `start_date` or `end_date` missing | *Campaign dates are not set* | settings | `client` | – |
 | `channels` | `todo` | no `target_platforms` | *No channels selected* | settings | `client` | – |
-| `post-target` | `info` | `estimated_post_count` unset while the campaign has content | *No post target set* | settings | `client` | – |
 
 `brief-empty` and `brief-partial` are mutually exclusive, as are `channels` and
 the connectivity rules — a campaign with no channels does not also get told its
@@ -183,9 +182,10 @@ empty campaign gets one row, not six.
 `pipeline-gap` suppresses `nothing-scheduled`: on a live campaign both say
 "nothing is going out", and the risk row says it with a deadline attached.
 
-`behind-pace` measures against `estimated_post_count` when there is one and
-against the posts that exist otherwise, so it still means something before a
-target is set. It only runs while the campaign is live.
+`behind-pace` measures against the posts that exist. It deliberately ignores
+the campaign's own `estimated_post_count`: that field is being reworked into a
+per-account goal (CON-156), and no readiness rule may depend on it meanwhile.
+It only runs while the campaign is live.
 
 `channel-uncovered` only counts channels that could publish today. Asking for
 content on a channel with no connected account is asking for posts with nowhere

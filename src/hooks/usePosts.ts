@@ -6,6 +6,7 @@ import { createPost, deletePost, listCampaignPosts, updatePost } from '@/service
 import { CAMPAIGN_SUMMARIES_KEY, campaignOverviewKey } from '@/hooks/useCampaigns'
 import { atDefaultTime } from '@/lib/postSchedule'
 import { selectStreamedPosts, useAssistantStore } from '@/stores/assistantStore'
+import { toast } from '@/stores/toastStore'
 import type { StreamedPost } from '@/types/assistant'
 import type { Post, PostPayload } from '@/types/posts'
 
@@ -111,6 +112,14 @@ export function useAddPost(campaignId: string) {
               params: { campaignId, postId: post.id },
             })
           },
+          // Without this the button is indistinguishable from a dead one: the
+          // only visible effect of a successful add is the navigation, so a
+          // rejected create looked exactly like nothing happening.
+          onError: (err) => {
+            toast.error('Unable to add post', {
+              description: err instanceof Error ? err.message : undefined,
+            })
+          },
         },
       )
     },
@@ -134,8 +143,14 @@ export function useUpdatePost(campaignId: string) {
       }
       return { prev }
     },
-    onError: (_err, _vars, ctx) => {
+    // The optimistic write above means a rejected update *undoes itself* on
+    // screen — a drag that snaps back, a bulk date that reverts. Silent, that
+    // reads as a UI glitch rather than as a refusal, so say what happened.
+    onError: (err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(campaignPostsKey(campaignId), ctx.prev)
+      toast.error('Unable to save the post', {
+        description: err instanceof Error ? err.message : undefined,
+      })
     },
     onSettled: () => {
       invalidateCampaignPosts(qc, campaignId)

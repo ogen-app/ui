@@ -1,5 +1,12 @@
 import type { Tag } from "@/types/content";
 
+/**
+ * Server-owned and no longer user-facing: `draft` and `active` both mean
+ * active, and the UI neither shows nor sets this. It stays on the DTO only so
+ * an update round-trips the server's own value instead of clearing it. Once
+ * campaigns are created `active` server-side and the lifecycle moves to
+ * soft-delete/archive (CON-156 §6), this and its pass-through come out.
+ */
 export type CampaignStatus = "draft" | "active";
 
 export type CampaignPlatform = {

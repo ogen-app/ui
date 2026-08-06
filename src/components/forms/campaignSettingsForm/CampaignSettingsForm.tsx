@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { TagsInput } from '@/components/ui/tags-input'
 import { Button } from '@/components/ui/button'
-import { CheckCircleIcon, TrashIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { TrashIcon } from '@phosphor-icons/react'
 import {
   Form,
   FormControl,
@@ -28,9 +28,12 @@ import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { cn } from '@/lib'
 import { selectCampaignRunning, useAssistantStore } from '@/stores/assistantStore'
 import { toast } from '@/stores/toastStore'
-import type { Campaign, CampaignPlatform, CampaignStatus } from '@/types/campaigns'
+import type { Campaign, CampaignPlatform } from '@/types/campaigns'
 import { campaignToPayload, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
 import { PlatformsControl } from './PlatformsControl'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { PostGoalCard } from './PostGoalCard'
+import { SchedulingCard } from './SchedulingCard'
 
 const numericString = z
   .string()
@@ -152,25 +155,39 @@ export function CampaignSettingsForm({ campaign }: Props) {
   )
 
   // Watched rather than read from the campaign: adding a platform persists
-  // immediately, so the heading's warning has to clear on the click.
-  const noPlatforms = form.watch('target_platforms').length === 0
+  // immediately, so the heading's warning has to clear on the click. The Goals
+  // card counts the same list, and its total moves with the dates being edited
+  // above it rather than with the ones last saved.
+  const targetPlatforms = form.watch('target_platforms')
+  const startDate = form.watch('start_date')
+  const endDate = form.watch('end_date')
+  const noPlatforms = targetPlatforms.length === 0
+  // Recomputed only when the selection itself changes: the Goals card counts
+  // accounts off this list inside an effect dependency, and a fresh array on
+  // every render would churn it.
+  const platformIds = useMemo(
+    () => targetPlatforms.map((p) => p.id),
+    [targetPlatforms],
+  )
 
-  const isActive = campaign.status === 'active'
-  const { mutate: updateStatus, isPending: statusSaving } = useUpdateCampaign()
-  const setStatus = (status: CampaignStatus) => {
-    updateStatus(
-      { id: campaign.id, payload: campaignToPayload(campaign, { status }) },
-      {
-        onError: (e) =>
-          toast.error(
-            status === 'active'
-              ? 'Unable to activate the campaign'
-              : 'Unable to deactivate the campaign',
-            { description: e instanceof Error ? e.message : undefined },
-          ),
-      },
-    )
-  }
+  // Off leaves the campaign's stored post target alone: the card is the only
+  // thing that writes it, so a hidden card means the number is simply not
+  // touched by this page.
+  const goalsEnabled = useFeatureFlag('campaign-goals')
+
+  /**
+   * The campaign's post target is the goal's total, not a field of its own —
+   * the Goals card computes it and hands it over here, and it rides along with
+   * the rest of the form on the header's Save.
+   */
+  const setGoalTotal = useCallback(
+    (total: number | null) => {
+      form.setValue('estimated_post_count', total == null ? '' : String(total), {
+        shouldDirty: true,
+      })
+    },
+    [form],
+  )
 
   // `setCampaignDates` / `redistributePosts` rewrite these fields server-side
   // (CON-115), so the form is held read-only for the length of a turn. Unsaved
@@ -274,64 +291,24 @@ export function CampaignSettingsForm({ campaign }: Props) {
           </div>
         </SettingsCard>
 
-        {/* The heading is the status — the card says what the campaign is
-            rather than labelling a line that says it, so the whole thing is
-            one line. Status is an action, not a field: it applies on the
-            click rather than waiting for the header's Save, and it is built
-            on the server's campaign so pending edits elsewhere on the page
-            stay pending instead of being smuggled out with it. */}
-        <SettingsCard
-          // One row, not a form: the form cards' 24px of breathing room reads
-          // as an empty half-card under a single line.
-          className="py-3"
-          title={
-            <>
-              {/* Both states carry a mark of the same size, so the heading
-                  starts at the same place either way and the card doesn't
-                  shift as the status changes. */}
-              {isActive ? (
-                <CheckCircleIcon
-                  weight="fill"
-                  className="size-5 shrink-0 text-positive"
-                  aria-hidden
-                />
-              ) : (
-                <WarningCircleIcon
-                  weight="fill"
-                  className="size-5 shrink-0 text-warning"
-                  aria-hidden
-                />
-              )}
-              <span className="truncate">
-                {isActive ? 'Campaign is active' : 'Campaign is not active'}
-              </span>
-            </>
-          }
-          actions={
-            isActive ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="uppercase"
-                onClick={() => setStatus('draft')}
-                loading={statusSaving}
-              >
-                Deactivate
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="ghost"
-                className="uppercase"
-                onClick={() => setStatus('active')}
-                loading={statusSaving}
-              >
-                <CheckCircleIcon />
-                <span>Activate</span>
-              </Button>
-            )
-          }
-        />
+        {/* How much the campaign should produce, then when it goes out. The
+            post target used to sit in Advanced next to budget and language,
+            where it read as trivia rather than as the number the assistant
+            plans against. `estimated_post_count` is still a form field — it is
+            just computed from the goal now rather than typed. */}
+        {goalsEnabled && (
+          <PostGoalCard
+            campaign={campaign}
+            platformIds={platformIds}
+            startDate={startDate}
+            endDate={endDate}
+            onTotalChange={setGoalTotal}
+          />
+        )}
+
+        {/* Saved on its own, not through the header's Save — see
+            `useSchedulingPreferences`. */}
+        <SchedulingCard campaignId={campaign.id} />
 
         <SettingsCard title="Advanced">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
@@ -356,19 +333,6 @@ export function CampaignSettingsForm({ campaign }: Props) {
                   <FormLabel>Currency</FormLabel>
                   <FormControl>
                     <Input placeholder="USD" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="estimated_post_count"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estimated post count</FormLabel>
-                  <FormControl>
-                    <Input type="number" min={0} placeholder="e.g. 12" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

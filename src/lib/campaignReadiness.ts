@@ -56,7 +56,7 @@ export type FixTarget =
   | "assets";
 
 export type SetupCheck = {
-  id: "dates" | "channels" | "post_target";
+  id: "dates" | "channels";
   ok: boolean;
   /**
    * State-aware: the setting's name once it's set, the gap itself when it
@@ -188,8 +188,6 @@ export function setupChecks(
 ): SetupCheck[] {
   const hasDates = !!campaign.start_date && !!campaign.end_date;
   const halfDates = !hasDates && !!(campaign.start_date || campaign.end_date);
-  const target = campaign.estimated_post_count;
-  const hasTarget = target != null && target > 0;
 
   return [
     {
@@ -208,15 +206,6 @@ export function setupChecks(
       fix: "settings",
     },
     channelsCheck(channelReadiness(campaign, platformViews)),
-    {
-      id: "post_target",
-      ok: hasTarget,
-      label: hasTarget ? "Post target" : "Post target not set",
-      detail: hasTarget
-        ? `${target} posts planned`
-        : "The target is what progress is measured against — how much of the plan is done.",
-      fix: "settings",
-    },
   ];
 }
 
@@ -744,16 +733,6 @@ export function attentionItems(
   // an empty list means *every* ready asset (CON-118, `lib/campaignSources.ts`).
   // Flagging it would nag every campaign that picked the broadest option.
 
-  if (snapshot.total > 0 && !campaign.estimated_post_count) {
-    items.push({
-      id: "post-target",
-      severity: "info",
-      label: "No post target set",
-      actionLabel: "Set a target",
-      fix: "settings",
-    });
-  }
-
   // --- Content --------------------------------------------------------------
   // An empty campaign gets one row, not six: `no-posts` suppresses every other
   // content rule (and `pipeline-gap` above).
@@ -812,10 +791,11 @@ export function attentionItems(
       });
     }
 
-    // Pace is measured against the plan when there is one, otherwise against
-    // the posts that exist — so it still means something before a target is set.
+    // Pace is measured against the posts that exist. The campaign's own post
+    // target is deliberately not consulted: it is being reworked into a goal
+    // (CON-156) and nothing here may depend on it in the meantime.
     if (isLive && endMs! > startMs!) {
-      const planned = campaign.estimated_post_count || snapshot.total;
+      const planned = snapshot.total;
       const elapsed = ((nowMs - startMs!) / (endMs! - startMs!)) * 100;
       const done = (snapshot.byStatus.published / planned) * 100;
       if (elapsed - done > PACE_LAG_POINTS) {

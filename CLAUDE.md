@@ -95,6 +95,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   message, or link the user needs while working, because all of it disappears
   for anyone who closes the note. Check the screen still reads correctly with
   the Explainer deleted. See `docs/technical-decisions.md#explainers`.
+- **Anything the API doesn't support yet ships behind a feature flag** — see
+  the global rule at the bottom of this file. Flags are declared in
+  `config/featureFlags.ts` (a constant today, flipped by editing that file) and
+  read with `useFeatureFlag(id)` (`isFeatureEnabled(id)` outside React), never
+  from the `FEATURE_FLAGS` record directly: the hook is the seam where
+  server-driven values will land, and going through it keeps every call site
+  untouched when they do. A flag is not a permission.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
@@ -136,6 +143,33 @@ dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
 have no committed config in this repo.
 
-## Global rule
+## Global rules
 
 Do not keep backwards compatibility unless explicitly required.
+
+**Front-end runs ahead of the back end, behind feature flags.** Build the UI
+when the design is ready, not when the API is. If the server can't back it yet
+— no endpoint, no column, a field that means something else — the feature ships
+to `develop` with its flag **off**, so `develop` is always shippable and the
+work is reviewable instead of parked on a branch.
+
+The rules that make that safe:
+
+1. **Declare the flag in `config/featureFlags.ts`** and gate the whole feature
+   on it — every entry point, not just the main screen. With the flag off the
+   app must behave exactly as it did before the feature existed.
+2. **Nothing outside the flag may depend on the feature's data.** A half-backed
+   field is worse than a missing one: don't let other screens, readiness rules
+   or the assistant read a value the feature is still redefining. (Why
+   `campaignReadiness` stopped reading `estimated_post_count` — CON-156.)
+3. **Say what is missing** in the flag's doc comment: which endpoint, column or
+   decision the feature is waiting on. That comment is the hand-off to the
+   back end.
+4. **When the API lands, re-test the feature against the real thing** — a UI
+   built against an assumed contract usually needs a pass — and only then
+   decide the flag's fate. Turning it on and deleting the flag (with its
+   off-branch) is a deliberate step, never a side effect of the endpoint
+   appearing.
+
+A flag is for "not built yet", never for who is allowed to see what — that is
+the server's business.

@@ -27,8 +27,11 @@ const selectTriggerVariants = cva(
   {
     variants: {
       variant: {
+        // Matches `Input` and `DatePicker`'s default variant token for token —
+        // the three sit next to each other in a settings card, and this used
+        // to be the one with a `border-border` edge instead of `quaternary`.
         default:
-          'bg-input border-b-1 border-border focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
+          'bg-input border-b-1 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
         primary:
           'bg-input-secondary border-b-2 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
         ghost: 'border-0 rounded-md bg-transparent px-3 py-1 shadow-none text-sm',
@@ -84,8 +87,14 @@ function TextSelect({
           className
         )}
       >
-        <SelectPrimitive.Value placeholder={placeholder ?? 'Select...'} />
-        <div className="w-8 h-8 flex justify-center items-center text-center relative">
+        {/* The trigger is as wide as its column, not as wide as its value: a
+            long option (a time-zone name, a full campaign title) trims to an
+            ellipsis instead of pushing the caret out of the field. */}
+        <SelectPrimitive.Value
+          className="min-w-0 truncate text-left"
+          placeholder={placeholder ?? 'Select...'}
+        />
+        <div className="w-8 h-8 shrink-0 flex justify-center items-center text-center relative">
           <CaretDownIcon className={'size-4'} />
         </div>
       </SelectPrimitive.Trigger>

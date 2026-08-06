@@ -76,7 +76,6 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
     ? attentionItems(campaign, posts, platformViews, new Date())
     : []
   const snapshot = contentSnapshot(posts)
-  const planned = campaign.estimated_post_count
 
   // A count, not a roster. Which channels a campaign runs on is settings'
   // business; here it only has to say whether it can publish at all, and six
@@ -146,12 +145,10 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
             label="Failed"
             tone={snapshot.byStatus.failed > 0 ? 'alert' : 'default'}
           />
-          {/* The total carries the plan with it — a count with nothing to
-              measure against says less than "12 of 40". */}
-          <StatTile
-            value={snapshot.total}
-            label={planned ? `of ${planned} planned` : 'Total'}
-          />
+          {/* Just the total: the campaign's post target is being reworked into
+              a goal (CON-156), and until it is, "of 40 planned" would be
+              measuring against a number nothing maintains. */}
+          <StatTile value={snapshot.total} label="Total" />
         </div>
       ) : (
         <Skeleton className="h-16 w-full" />
@@ -233,15 +230,8 @@ function advancedSummary(campaign: Campaign): string | null {
       `Budget ${campaign.budget.toLocaleString()} ${campaign.currency}`.trim(),
     )
   }
-  const target = campaign.estimated_post_count
   const language = campaign.language.trim()
-  if (target != null && target > 0) {
-    parts.push(
-      language
-        ? `Target: ${target} posts in ${language.toUpperCase()}`
-        : `Target: ${target} posts`,
-    )
-  } else if (language) {
+  if (language) {
     parts.push(`Language: ${language.toUpperCase()}`)
   }
   return parts.length > 0 ? parts.join(' · ') : null
