@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AccountAvatar } from '@/components/ui/account-avatar'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge'
 import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
 import { useCampaign } from '@/hooks/useCampaigns'
@@ -536,12 +536,7 @@ function AccountSlot({
       <DropdownMenuContent align="start">
         {account.accounts.map((a) => (
           <DropdownMenuItem key={a.id} onSelect={() => onSelect(a.id)}>
-            <Avatar className="size-6 shrink-0">
-              {a.avatar_url && <AvatarImage src={a.avatar_url} alt={accountLabel(a)} />}
-              <AvatarFallback>
-                {(accountLabel(a) || '?').slice(0, 1).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <AccountAvatar src={a.avatar_url} name={accountLabel(a)} size="sm" />
             <div className="flex min-w-0 flex-col">
               <span
                 className={cn('truncate', a.id === account.account?.id && 'font-medium')}
