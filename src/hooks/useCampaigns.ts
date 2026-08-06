@@ -10,6 +10,7 @@ import {
   listCampaignTypes,
 } from "@/services/api/campaigns";
 import type { CreateCampaignPayload, UpdateCampaignPayload } from "@/types/campaigns";
+import type { MutationErrorMeta } from "@/lib/queryClient";
 
 const CAMPAIGNS_KEY = ["campaigns"] as const;
 // Exported so the assistant store can invalidate it from outside React. The
@@ -82,6 +83,7 @@ export function useCampaignSummaries() {
 export function useCreateCampaign() {
   const qc = useQueryClient();
   return useMutation({
+    meta: { errorTitle: "Unable to create the campaign" },
     mutationFn: (payload: CreateCampaignPayload) => createCampaign(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY });
@@ -89,9 +91,19 @@ export function useCreateCampaign() {
   });
 }
 
-export function useUpdateCampaign() {
+/**
+ * The campaign PUT, shared by the settings form, the brief, the assets panel
+ * and the content-usage form.
+ *
+ * `meta` is a parameter because those call sites describe the same request in
+ * different words — toggling a platform is not "updating the campaign" to the
+ * person doing it — and one of them (activate/deactivate) picks its wording
+ * per click, which no static `meta` can express. See `MutationErrorMeta`.
+ */
+export function useUpdateCampaign(meta?: MutationErrorMeta) {
   const qc = useQueryClient();
   return useMutation({
+    meta,
     mutationFn: ({ id, payload }: { id: string; payload: UpdateCampaignPayload }) =>
       updateCampaign(id, payload),
     onSuccess: (_data, { id }) => {

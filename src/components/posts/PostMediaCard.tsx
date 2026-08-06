@@ -177,13 +177,9 @@ export function PostMediaCard({
             }}
             onMove={(to) => moveTo(index, to)}
             onRemove={async () => {
-              try {
-                await remove(att.id)
-              } catch (err) {
-                toast.error('Unable to remove file', {
-                  description: err instanceof Error ? err.message : undefined,
-                })
-              }
+              // The toast is the mutation's `errorTitle`; this only stops the
+              // rejection escaping as an unhandled promise.
+              await remove(att.id).catch(() => {})
             }}
           />
         ))}

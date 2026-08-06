@@ -20,6 +20,9 @@ import { useAuthStore } from "@/stores/authStore";
 export function useLogin() {
   const setUser = useAuthStore((s) => s.setUser);
   return useMutation<Session, Error, LoginPayload>({
+    // The form renders `error` beside the fields it refers to; a toast on top
+    // of that would say the same thing twice and further from the inputs.
+    meta: { errorToast: false },
     mutationFn: loginRequest,
     onSuccess: async () => {
       // Re-probe through the same cached path the root guard uses: one
@@ -47,6 +50,8 @@ export function useLogin() {
 export function useSignup() {
   const setUser = useAuthStore((s) => s.setUser);
   return useMutation<User, Error, SignupPayload>({
+    // Same as login: `AuthRegisterForm` shows `error` inline.
+    meta: { errorToast: false },
     mutationFn: signupRequest,
     onSuccess: (user) => {
       invalidateSession();

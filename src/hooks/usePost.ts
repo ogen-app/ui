@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   cancelPost,
   getPost,
@@ -87,6 +87,28 @@ export function usePost(postId: string): UsePostResult {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const genRef = useRef(0)
 
+  /**
+   * The autosave PUT, and the only call in this hook that goes through a
+   * mutation.
+   *
+   * It has to, because it is the one write with nobody to report it: the
+   * deliberate actions below all hand a `{ ok: false, error }` back to a
+   * caller that raises its own toast, while an autosave has no caller — it
+   * fires off a debounce. Its failure path invalidates, which pulls the
+   * server's copy back over what the user typed, so without a toast the
+   * editor silently discards their words (CON-164 §2, the `useUpdatePost`
+   * pathology in a hook that isn't one).
+   *
+   * Routing the others through here too would make them toast twice.
+   *
+   * Only `mutateAsync` is used; the mutation's own state is ignored, since
+   * `saving` below tracks the debounce as well as the request.
+   */
+  const { mutateAsync: saveDoc } = useMutation({
+    meta: { errorTitle: 'Unable to save your changes' },
+    mutationFn: (next: Post) => updatePost(postId, postToPayload(next)),
+  })
+
   const flush = useCallback(async () => {
     const next = pendingRef.current
     if (!next) return
@@ -94,11 +116,14 @@ export function usePost(postId: string): UsePostResult {
     pendingRef.current = null
     const genAtFlush = genRef.current
     try {
-      const saved = await updatePost(postId, postToPayload(next))
+      const saved = await saveDoc(next)
       if (genRef.current === genAtFlush) {
         qc.setQueryData(postKey(postId), saved)
       }
     } catch {
+      // Toasted by the mutation-cache default under the `errorTitle` above.
+      // The invalidate is what makes that toast necessary: it replaces the
+      // user's unsaved edit with the server's copy.
       qc.invalidateQueries({ queryKey: postKey(postId) })
     } finally {
       // A new edit may have queued another debounce while the PUT was in
@@ -107,7 +132,7 @@ export function usePost(postId: string): UsePostResult {
         setSaving(false)
       }
     }
-  }, [postId, qc])
+  }, [postId, qc, saveDoc])
 
   const changeDoc = useCallback(
     (fn: (p: Post) => void) => {

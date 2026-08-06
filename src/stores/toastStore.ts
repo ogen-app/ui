@@ -61,6 +61,20 @@ let counter = 0
 const useToastStore = create<ToastState>((set, get) => ({
   toasts: [],
   push: (variant, title, opts) => {
+    // Collapse a repeat of something already on screen. A bulk action fires
+    // one mutation per post, so a rejected date change can fail thirty times
+    // over with the same message — without this the deck would spend the next
+    // few seconds dissolving identical cards, and the count would read as
+    // thirty separate problems rather than one refusal.
+    const duplicate = get().toasts.find(
+      (t) =>
+        t.open &&
+        t.variant === variant &&
+        t.title === title &&
+        t.description === opts?.description,
+    )
+    if (duplicate) return duplicate.id
+
     const id = ++counter
     const record: ToastRecord = {
       id,

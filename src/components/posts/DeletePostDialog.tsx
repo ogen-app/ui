@@ -108,11 +108,8 @@ export function DeletePostDialog({ post, isOpen, onClose, onDeleted }: Props) {
           },
         })
       },
-      onError: (err) => {
-        toast.error('Unable to delete post', {
-          description: err instanceof Error ? err.message : undefined,
-        })
-      },
+      // No onError: `useDeletePost` carries the same wording as
+      // `meta.errorTitle`, and the mutation-cache default raises the toast.
     })
   }
 

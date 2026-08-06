@@ -123,7 +123,9 @@ export function CampaignSettingsForm({ campaign }: Props) {
    * other fields stay pending — this toggle must not smuggle them out. Only
    * target_platforms is re-baselined, leaving the rest dirty.
    */
-  const { mutate: updateCampaignNow } = useUpdateCampaign()
+  const { mutate: updateCampaignNow } = useUpdateCampaign({
+    errorTitle: 'Unable to update platforms',
+  })
   const commitPlatforms = useCallback(
     (next: CampaignPlatform[]) => {
       const previous = form.getValues('target_platforms')
@@ -136,14 +138,12 @@ export function CampaignSettingsForm({ campaign }: Props) {
         {
           onSuccess: () =>
             form.resetField('target_platforms', { defaultValue: next }),
-          onError: (e) => {
+          onError: () => {
             // The optimistic setValue above must not outlive a rejected
             // request: left in place (and dirty), the header's Save would
             // quietly push the very change the server just refused.
+            // The toast is the hook's `errorTitle`, not ours — CON-164.
             form.resetField('target_platforms', { defaultValue: previous })
-            toast.error('Unable to update platforms', {
-              description: e instanceof Error ? e.message : undefined,
-            })
           },
         },
       )
@@ -156,7 +156,11 @@ export function CampaignSettingsForm({ campaign }: Props) {
   const noPlatforms = form.watch('target_platforms').length === 0
 
   const isActive = campaign.status === 'active'
-  const { mutate: updateStatus, isPending: statusSaving } = useUpdateCampaign()
+  // Opted out of the default toast: the wording depends on which way the
+  // switch was thrown, which a `meta` fixed at hook-creation can't say.
+  const { mutate: updateStatus, isPending: statusSaving } = useUpdateCampaign({
+    errorToast: false,
+  })
   const setStatus = (status: CampaignStatus) => {
     updateStatus(
       { id: campaign.id, payload: campaignToPayload(campaign, { status }) },
