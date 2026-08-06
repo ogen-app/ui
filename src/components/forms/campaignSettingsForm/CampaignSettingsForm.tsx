@@ -173,6 +173,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
   // thing that writes it, so a hidden card means the number is simply not
   // touched by this page.
   const goalsEnabled = useFeatureFlag('campaign-goals')
+  const schedulingEnabled = useFeatureFlag('campaign-scheduling')
 
   /**
    * The campaign's post target is the goal's total, not a field of its own —
@@ -307,7 +308,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
 
         {/* Saved on its own, not through the header's Save — see
             `useSchedulingPreferences`. */}
-        <SchedulingCard campaignId={campaign.id} />
+        {schedulingEnabled && <SchedulingCard campaignId={campaign.id} />}
 
         <SettingsCard title="Advanced">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">

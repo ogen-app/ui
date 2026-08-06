@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { getSetting, putSetting } from '@/services/api/settings'
 import { toast } from '@/stores/toastStore'
 
@@ -98,9 +99,15 @@ function parse(raw: string | null): SchedulingPreferences {
  *
  * Changes paint from the Query cache immediately and the write is debounced
  * behind them, so toggling four days costs one request instead of four.
+ *
+ * The `campaign-scheduling` flag is applied here rather than at each call
+ * site: with the feature off there is nothing stored worth reading, and this
+ * way the calendar's "Not a publishing day" note disappears with the card that
+ * sets it instead of quoting defaults at the user.
  */
 export function useSchedulingPreferences(campaignId: string) {
   const qc = useQueryClient()
+  const enabled = useFeatureFlag('campaign-scheduling')
   const queryKey = schedulingPreferencesKey(campaignId)
   const storageKey = `${NAMESPACE}.${campaignId}`
 
@@ -109,7 +116,7 @@ export function useSchedulingPreferences(campaignId: string) {
   const { data, isLoading } = useQuery({
     queryKey,
     queryFn: async () => parse(await getSetting(storageKey)),
-    enabled: !!campaignId,
+    enabled: enabled && !!campaignId,
     // Nothing else writes these, so the cache is authoritative once loaded.
     staleTime: Infinity,
   })

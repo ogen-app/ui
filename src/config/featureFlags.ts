@@ -32,6 +32,15 @@ const FEATURE_FLAGS = {
    * campaign row can hold the breakdown (CON-156 §3) rather than the K/V store.
    */
   'campaign-goals': false,
+
+  /**
+   * The Scheduling card in campaign settings: publishing time, time zone,
+   * spread, and the days a campaign must not publish on. Off until the server
+   * reads them — the scheduler places posts by its own rules today, so a user
+   * setting a publishing hour would be configuring nothing. They also live in
+   * the tenant K/V store for want of campaign columns (CON-156 §1).
+   */
+  'campaign-scheduling': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS
