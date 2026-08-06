@@ -179,6 +179,43 @@ verification, password reset, roles/RBAC, tenant deletion, tenant switching,
 platform-admin tenant enumeration. (`/api/secrets` exists but is an
 instance-operator surface with no UI here — see backend gaps below.)
 
+## The account surface — `/profile`
+
+The personal counterpart to Workspace Settings, which is shared by everyone in
+the tenant. Three cards, all backed by `requireSelf`-gated endpoints, so
+nothing here can ever touch another user:
+
+- **Account** — first/last name and email, edited inline and applied by the
+  header's Save button, exactly like `WorkspaceSection`. All three fields
+  register as **one** save entry: `PUT /api/users/:id` requires `name` *and*
+  `email` on every call, so separate entries would race each other.
+- **Password** — deliberately *not* on the page's Save button. It replaces a
+  credential rather than editing a setting, so it has its own submit and its
+  own failure.
+- **Danger Zone** — `DELETE /api/users/:id`, behind a type-your-email
+  confirmation.
+
+Two properties of the API shape this screen, both tracked as **CON-193**:
+
+- **The update endpoint never asks for the current password.** Any live
+  session can replace the credential, which makes a borrowed tab enough to take
+  the account permanently. `useChangePassword` compensates by re-authenticating
+  through `POST /api/sessions` first — that endpoint verifies the password, 401s
+  on a wrong one, and mints a *fresh* session rather than disturbing the current
+  one. That is a lock on our own door; anything calling the API directly walks
+  straight past it, so it is not a substitute for the server-side check.
+- **A password change revokes nothing.** `POST /api/password-reset/confirm`
+  ends every session; `PUT /api/users/:id` ends none. No client can fix that, so
+  the card says so rather than implying otherwise.
+
+Account deletion is much larger than its name. `users.id` cascades through
+`created_by` into `tags`, `campaigns`, `assets`, `posts` and
+`post_attachments` — everything the user created is destroyed with them,
+including out from under colleagues in a shared workspace. The tenant row has
+no such link and survives. The dialog states this outright; "this cannot be
+undone" is equally true of deleting a draft and tells nobody what they are
+about to lose.
+
 ## Post-signup settings surface — `/workspace-settings`
 
 `src/routes/_authenticated/workspace-settings/` renders three sections:
@@ -218,17 +255,21 @@ UI-side (this repo):
    (CON-26 is the placeholder ticket for real invitations).
 2. **No email verification** — an address is never confirmed, at signup or
    after. No UI stub for it.
-3. **Nothing changes a password from inside the app.** `/profile` says so
-   plainly. The reset flow above is the only path, and it goes through the
-   mailbox.
+3. **No account deletion beyond the user's own.** `/profile` deletes yourself
+   (`DELETE /api/users/:id`, `requireSelf`); there is no way to remove anyone
+   else, and no way to delete a workspace. Deleting the last member leaves the
+   tenant row standing with nobody able to reach it.
 
 Backend-side (tracked against the API repo, listed here for context):
 
-- **`POST /api/sessions` has no rate limiting or lockout.** Password reset is
-  throttled as of CON-161 and Zernio's connect-link endpoint has its own
-  limiter, but login has neither — it is unlimited-attempt against a public
+- **`POST /api/sessions` has no rate limiting or lockout** (CON-194). Password
+  reset is throttled as of CON-161 and Zernio's connect-link endpoint has its
+  own limiter, but login has neither — it is unlimited-attempt against a public
   endpoint. Signup is open and unthrottled too (no rate limit / CAPTCHA /
   email loop).
+- **`PUT /api/users/:id` neither re-authenticates nor revokes** (CON-193) —
+  see the `/profile` section above for what the client does about it and what
+  it cannot.
 - **`/api/secrets` is reachable by any authenticated tenant user** (plain
   session auth), letting any tenant read metadata for / rotate / delete the
   **platform-wide** keys — contradicts CON-97 §10.3 ("no tenant-facing

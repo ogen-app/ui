@@ -6,6 +6,8 @@ import {
   resetPassword as resetPasswordRequest,
 } from "@/services/api/passwordReset";
 import { signup as signupRequest } from "@/services/api/tenants";
+import { deleteUser, updateUser } from "@/services/api/users";
+import { clearAllApplicationData } from "@/lib/cache-utils";
 import type { LoginPayload, Session } from "@/types/session";
 import type { SignupPayload } from "@/types/tenant";
 import type { User } from "@/types/user";
@@ -72,5 +74,107 @@ export function useRequestPasswordReset() {
 export function useResetPassword() {
   return useMutation<void, Error, { token: string; password: string }>({
     mutationFn: ({ token, password }) => resetPasswordRequest(token, password),
+  });
+}
+
+/**
+ * Edits the signed-in user's own name and email.
+ *
+ * The store is the source of truth for the screen, so it's updated from the
+ * server's response rather than from what was typed — the server owns the
+ * canonical `name` string we split back into first/last. The cached session
+ * probe is dropped too, so the next root-guard pass re-reads the changed
+ * identity instead of serving the stale one for the rest of the page's life.
+ *
+ * Note there is no email verification anywhere in the product: this writes a
+ * new login address immediately and unconfirmed, and a typo locks the account
+ * out at the next login. The form says so; it can't do better than say so.
+ */
+export function useUpdateProfile() {
+  const setUser = useAuthStore((s) => s.setUser);
+  return useMutation<
+    User,
+    Error,
+    { id: string; firstName: string; lastName: string; email: string }
+  >({
+    mutationFn: ({ id, firstName, lastName, email }) =>
+      updateUser(id, { name: `${firstName} ${lastName}`.trim(), email }),
+    onSuccess: (user) => {
+      invalidateSession();
+      setUser(user);
+    },
+  });
+}
+
+/**
+ * Changes the password from inside the app — re-authenticating first.
+ *
+ * `PUT /api/users/:id` accepts a new password from any live session without
+ * asking for the old one (CON-193), which would make a borrowed tab or a
+ * stolen cookie enough to take the account permanently. So this hook proves
+ * the current password before it changes anything, by logging in again:
+ * `POST /api/sessions` verifies the credential and 401s on a wrong one, and
+ * on success mints a *fresh* session rather than disturbing the existing one.
+ * A wrong current password therefore fails here, having changed nothing.
+ *
+ * This is a lock on our own door. The endpoint is still open to anything that
+ * calls it directly, and the real fix is server-side — as is revoking the
+ * user's other sessions afterwards, which nothing here can do. Both are
+ * CON-193.
+ *
+ * The email is read from the store rather than taken as an argument: it must
+ * be the address the *current* password belongs to, and a form that let the
+ * caller pass one could re-authenticate against the wrong account.
+ */
+export function useChangePassword() {
+  const user = useAuthStore((s) => s.user);
+  return useMutation<void, Error, { currentPassword: string; password: string }>({
+    mutationFn: async ({ currentPassword, password }) => {
+      if (!user) throw new Error("You are not signed in");
+      // Throws "invalid credentials" on a wrong password — surfaced against
+      // the current-password field, which is the one the user got wrong.
+      await loginRequest({ email: user.email, password: currentPassword });
+      // Name and email are required by the endpoint even here; resend the
+      // current values so a password change can't quietly rewrite identity.
+      await updateUser(user.id, {
+        name: `${user.firstName} ${user.lastName}`.trim(),
+        email: user.email,
+        password,
+      });
+    },
+    onSuccess: () => {
+      // The re-auth above replaced the session cookie; drop the cached probe
+      // so nothing keeps answering from the pre-change session.
+      invalidateSession();
+    },
+  });
+}
+
+/**
+ * Deletes the signed-in user's own account, then tears down every local trace
+ * of them.
+ *
+ * The local teardown is deliberately unconditional and best-effort, the same
+ * rule the logout screen follows: once the server has destroyed the account,
+ * a persisted user and a warm query cache on this device are stale at best and
+ * misleading at worst, so a storage API refusing us must not leave them behind.
+ *
+ * What the server does is far larger than "the account" suggests — see
+ * `deleteUser` in `services/api/users.ts`. The caller is responsible for
+ * saying so before it gets here.
+ */
+export function useDeleteAccount() {
+  const clearUser = useAuthStore((s) => s.clearUser);
+  return useMutation<void, Error, string>({
+    mutationFn: deleteUser,
+    onSuccess: async () => {
+      invalidateSession();
+      clearUser();
+      try {
+        await clearAllApplicationData();
+      } catch {
+        // Best-effort — the account is already gone server-side.
+      }
+    },
   });
 }

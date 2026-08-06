@@ -80,6 +80,41 @@ export const resetPasswordSchema = z
     path: ['confirmPassword'],
   })
 
+/** The identity half of `/profile` — what `PUT /api/users/:id` calls name + email. */
+export const profileSchema = z.object({
+  firstName: nameField('First name'),
+  lastName: nameField('Last name'),
+  email: emailField,
+})
+
+/**
+ * Changing the password from inside the app.
+ *
+ * `currentPassword` is not decoration and is not checked by the server: the
+ * update endpoint takes a new password from any live session without asking
+ * what the old one was (CON-193). The client verifies it by re-authenticating
+ * against `POST /api/sessions` first, so the field has to be collected here
+ * even though the eventual `PUT` never carries it.
+ *
+ * Only a minimum length is asserted on it. It is an existing credential, so
+ * the strength rules below don't apply — an account created before those rules
+ * would fail its own real password.
+ */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Enter your current password'),
+    password: passwordField,
+    confirmPassword: z.string().min(1, 'Confirm your new password'),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  })
+  .refine((v) => v.password !== v.currentPassword, {
+    message: 'That is already your password',
+    path: ['password'],
+  })
+
 export const PASSWORD_RULES = [
   { test: (v: string) => v.length >= 8, label: 'Min. 8 chars' },
   { test: (v: string) => /[A-Z]/.test(v), label: 'an uppercase' },

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { loginSchema, resetPasswordSchema } from "./auth-validation.ts";
+import {
+  changePasswordSchema,
+  loginSchema,
+  profileSchema,
+  resetPasswordSchema,
+} from "./auth-validation.ts";
 
 /** First message for a field, or undefined when the field passed. */
 function errorFor(
@@ -60,5 +65,76 @@ describe("loginSchema", () => {
   it("still requires a well-formed email", () => {
     const result = loginSchema.safeParse({ email: "not-an-email", password: "x" });
     expect(errorFor(result, "email")).toBe("Invalid email format");
+  });
+});
+
+describe("profileSchema", () => {
+  const valid = { firstName: "Ada", lastName: "Lovelace", email: "ada@example.com" };
+
+  it("accepts a filled-in profile", () => {
+    expect(profileSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects a whitespace-only name", () => {
+    // The field is trimmed before it is sent, so " " would reach the server as
+    // an empty name and be rejected there.
+    const result = profileSchema.safeParse({ ...valid, firstName: "   " });
+    expect(errorFor(result, "firstName")).toBeDefined();
+  });
+
+  it("rejects a malformed email", () => {
+    const result = profileSchema.safeParse({ ...valid, email: "ada@" });
+    expect(errorFor(result, "email")).toBe("Invalid email format");
+  });
+});
+
+describe("changePasswordSchema", () => {
+  const current = "OldHarbour9";
+  const next = "Sunlit7Harbour";
+  const valid = { currentPassword: current, password: next, confirmPassword: next };
+
+  it("accepts a current password plus a strong new one typed twice", () => {
+    expect(changePasswordSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("takes any non-empty current password", () => {
+    // It is an existing credential — applying the strength rules to it would
+    // lock out anyone whose password predates them, exactly as for login.
+    const result = changePasswordSchema.safeParse({ ...valid, currentPassword: "x" });
+    expect(result.success).toBe(true);
+  });
+
+  it("asks for the current password when it is left empty", () => {
+    const result = changePasswordSchema.safeParse({ ...valid, currentPassword: "" });
+    expect(errorFor(result, "currentPassword")).toBe("Enter your current password");
+  });
+
+  it("applies the strength rules to the new password", () => {
+    const result = changePasswordSchema.safeParse({
+      ...valid,
+      password: "alllowercase1",
+      confirmPassword: "alllowercase1",
+    });
+    expect(errorFor(result, "password")).toBeDefined();
+  });
+
+  it("catches a mistyped confirmation", () => {
+    const result = changePasswordSchema.safeParse({
+      ...valid,
+      confirmPassword: "Sunlit7Harbor",
+    });
+    expect(errorFor(result, "confirmPassword")).toBe("Passwords do not match");
+  });
+
+  it("rejects re-submitting the password the account already has", () => {
+    // Not pedantry: the change costs a re-authentication and reads as a
+    // security action, so silently accepting a no-op would tell the user they
+    // rotated a credential they did not.
+    const result = changePasswordSchema.safeParse({
+      currentPassword: next,
+      password: next,
+      confirmPassword: next,
+    });
+    expect(errorFor(result, "password")).toBe("That is already your password");
   });
 });

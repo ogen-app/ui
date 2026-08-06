@@ -1,8 +1,18 @@
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { TrashIcon } from '@phosphor-icons/react'
+
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
+import { Button } from '@/components/ui/button'
 import { SettingsCard } from '@/components/settings/SettingsCard'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  SettingsSaveButton,
+  SettingsSaveProvider,
+} from '@/components/settings/settingsSave'
+import { ProfileIdentitySection } from '@/components/profile/ProfileIdentitySection'
+import { ChangePasswordSection } from '@/components/profile/ChangePasswordSection'
+import { DeleteAccountDialog } from '@/components/profile/DeleteAccountDialog'
 import { useAuthStore } from '@/stores/authStore'
 
 export const Route = createFileRoute('/_authenticated/profile/')({
@@ -12,42 +22,64 @@ export const Route = createFileRoute('/_authenticated/profile/')({
 /**
  * The account, as opposed to the workspace.
  *
- * A placeholder: the API has no endpoint for changing a user's own name,
- * email or password yet, so this only shows what the session already knows.
- * It exists because the account menu needs somewhere to send "Profile" —
- * personal details do not belong in Workspace Settings, which is shared by
- * everyone in the workspace.
+ * Personal details do not belong in Workspace Settings, which everyone in the
+ * workspace shares — so name, email, password and account deletion all live
+ * here, and this is where the account menu's "Profile" lands.
+ *
+ * Name and email follow the Workspace Settings pattern: edited inline, applied
+ * by the header's Save button. The password and the deletion do not — each is
+ * a discrete action with its own confirmation, not a settings edit.
  */
 function ProfilePage() {
-  const { user } = useAuthStore()
+  const user = useAuthStore((s) => s.user)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
-  const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
-  const initials =
-    `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`.toUpperCase() || '?'
+  // The route sits under `_authenticated`, so the guard has already resolved a
+  // session by the time this renders; the null branch is for the moment
+  // between deleting the account and the redirect landing.
+  if (!user) {
+    return (
+      <PageContainer variant="fullFlex">
+        <PageHeader title="Profile" />
+      </PageContainer>
+    )
+  }
 
   return (
     <PageContainer variant="fullFlex">
-      <div className="flex h-0 grow flex-col overflow-y-auto">
-        <PageHeader title="Profile" fadeOnScroll />
-        <div className="flex flex-col gap-8 px-3 pt-4 pb-10 lg:px-6">
-          <SettingsCard title="Account">
-            <div className="flex items-center gap-4">
-              <Avatar className="size-12">
-                <AvatarFallback>{initials}</AvatarFallback>
-              </Avatar>
-              <div className="flex min-w-0 flex-col gap-1">
-                <p className="truncate text-base font-medium">{fullName}</p>
-                <p className="truncate text-sm text-tertiary-foreground">{user?.email}</p>
+      <SettingsSaveProvider>
+        <div className="flex h-0 grow flex-col overflow-y-auto">
+          <PageHeader title="Profile" fadeOnScroll actions={<SettingsSaveButton />} />
+          <div className="flex flex-col gap-8 px-3 pt-4 pb-10 lg:px-6">
+            <ProfileIdentitySection user={user} />
+            <ChangePasswordSection />
+            <SettingsCard title="Danger Zone">
+              <div className="flex flex-col items-start gap-3">
+                <p className="max-w-150 text-sm text-tertiary-foreground">
+                  Deleting your account also deletes the campaigns, posts and assets you
+                  created in this workspace. This cannot be undone.
+                </p>
+                <Button
+                  type="button"
+                  variant="destructiveInverted"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <TrashIcon />
+                  {/* Literal caps, not `uppercase` — see CLAUDE.md. */}
+                  <span>DELETE ACCOUNT</span>
+                </Button>
               </div>
-            </div>
-            <p className="max-w-150 text-sm text-tertiary-foreground">
-              Changing your name, email or password isn't available yet — the API has no
-              endpoint for it. Workspace-level settings, including who else has access,
-              live in Workspace Settings.
-            </p>
-          </SettingsCard>
+            </SettingsCard>
+          </div>
         </div>
-      </div>
+      </SettingsSaveProvider>
+      <DeleteAccountDialog
+        user={user}
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+      />
     </PageContainer>
   )
 }
+
+export default ProfilePage
