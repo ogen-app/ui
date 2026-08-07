@@ -1,5 +1,13 @@
 import type { Tag } from "@/types/content";
+import type { GoalCadence } from "@/lib/postGoal";
 
+/**
+ * Server-owned and no longer user-facing: `draft` and `active` both mean
+ * active, and the UI neither shows nor sets this. It stays on the DTO only so
+ * an update round-trips the server's own value instead of clearing it. Once
+ * campaigns are created `active` server-side and the lifecycle moves to
+ * soft-delete/archive (CON-156 §6), this and its pass-through come out.
+ */
 export type CampaignStatus = "draft" | "active";
 
 export type CampaignPlatform = {
@@ -121,7 +129,26 @@ export type Campaign = {
   status: CampaignStatus;
   start_date: string | null;
   end_date: string | null;
+  /**
+   * The post goal's rate: posts per `goal_cadence` period, **not** a
+   * whole-campaign total (CON-182 reinterpreted the column, and backfilled
+   * every existing campaign to a monthly cadence). Read it through
+   * `lib/postGoal`, never as a total.
+   */
   estimated_post_count: number | null;
+  goal_cadence: GoalCadence;
+  /**
+   * Scheduling settings (CON-181), which the content-plan flow places every
+   * generated draft by. `publishing_time` is a zero-padded 24-hour "HH:MM" read
+   * in `timezone`; `timezone` is an IANA name where `""` means UTC;
+   * `publishing_days` is the enabled weekday set as lowercase `"mon"`…`"sun"`
+   * tokens; `spread_minutes` is the ± jitter around the time. See
+   * `lib/campaignScheduling`.
+   */
+  publishing_time: string;
+  timezone: string;
+  publishing_days: string[];
+  spread_minutes: number;
   language: string;
   budget: number | null;
   currency: string;
@@ -150,6 +177,41 @@ export type CampaignOverviewPhase = {
   postCount: number;
 };
 
+/**
+ * The server's recap of the post goal (CON-182), or `null` on a campaign with
+ * no goal set. `achieved` counts *committed* posts — scheduled and published —
+ * bucketed by `scheduled_at`, so a bucket of drafts reads as zero.
+ */
+export type CampaignOverviewGoalBucket = {
+  /** 1-based. */
+  index: number;
+  /** "Week 1" / "Aug 2026". */
+  label: string;
+  /** Inclusive. */
+  start: string;
+  /** Exclusive. */
+  end: string;
+  target: number;
+  achieved: number;
+  reached: boolean;
+};
+
+export type CampaignOverviewGoal = {
+  cadence: GoalCadence;
+  /** The campaign's `estimated_post_count`. */
+  postsPerPeriod: number;
+  periods: number;
+  /** postsPerPeriod × periods. */
+  totalTarget: number;
+  totalAchieved: number;
+  reached: boolean;
+  /** 0–100, capped. */
+  percent: number;
+  /** Trailing consecutive periods that hit their target. */
+  streak: number;
+  buckets: CampaignOverviewGoalBucket[];
+};
+
 export type CampaignOverview = {
   campaignId: string;
   name: string;
@@ -170,6 +232,7 @@ export type CampaignOverview = {
     byPlatform: CampaignOverviewBucket[];
     byContentType: CampaignOverviewBucket[];
   };
+  goal: CampaignOverviewGoal | null;
   generatedAt: string;
 };
 
@@ -187,6 +250,17 @@ export type CreateCampaignPayload = {
   start_date?: string | null;
   end_date?: string | null;
   estimated_post_count?: number | null;
+  goal_cadence?: GoalCadence;
+  /**
+   * Omitting any of these does not leave the stored value alone — the server
+   * normalizes an absent field to its default (09:00 / UTC / every day / ±15),
+   * so a partial payload silently resets the campaign's schedule. Build every
+   * update through `campaignToPayload`, which round-trips them.
+   */
+  publishing_time?: string;
+  timezone?: string;
+  publishing_days?: string[];
+  spread_minutes?: number;
   budget?: number | null;
   currency?: string;
   language?: string;
