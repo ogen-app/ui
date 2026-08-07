@@ -1,4 +1,4 @@
-import { ArrowRightIcon, WarningIcon } from '@phosphor-icons/react'
+import { WarningIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
 import {
   BAND_LABEL,
@@ -7,7 +7,6 @@ import {
   overallBand,
   overallPct,
   scoreBand,
-  totalSuggestions,
   type QualityDimensionMeta,
 } from '@/lib/postQuality.ts'
 import { relativeTime } from '@/lib/relativeTime.ts'
@@ -22,14 +21,6 @@ type Props = {
   postUpdatedAt: string
   onOpenPanel: () => void
 }
-
-/**
- * The ring (size-16) plus the gap that follows it. Anything that belongs to
- * the text column but has to span the full width — the staleness note — is
- * indented by this so it starts on the same x as "Overall quality" rather
- * than under the ring.
- */
-const TEXT_COLUMN_INDENT = 'pl-[calc(--spacing(16)+--spacing(3))]'
 
 /**
  * The quality score as it appears inside the expanded checks bar (CON-183).
@@ -51,12 +42,14 @@ const TEXT_COLUMN_INDENT = 'pl-[calc(--spacing(16)+--spacing(3))]'
 export function QualityInlineSummary({ assessment, postUpdatedAt, onOpenPanel }: Props) {
   const pct = overallPct(assessment)
   const band = overallBand(pct)
-  const suggestions = totalSuggestions(assessment)
   const stale = isAssessmentStale(assessment, postUpdatedAt)
   const scored = relativeTime(assessment.updated_at)
 
   return (
-    <section className="mt-3 flex flex-col gap-3 border-t border-border pt-3">
+    // The rule and the space around it are what separate this from the
+    // requirements list above — matching the `pt-5` that opens that one, so
+    // both sections stand off their neighbours by the same amount.
+    <section className="mt-5 flex flex-col gap-3 border-t border-border pt-5">
       {/* The app's section-label typography — `AppSidebar`'s `SectionLabel`
           recipe. This region sits inside a bar that is already about the post,
           so it needs to say which of the two questions it answers, and a
@@ -74,9 +67,11 @@ export function QualityInlineSummary({ assessment, postUpdatedAt, onOpenPanel }:
               and drags the grid out of alignment for a fact that reads just as
               well below it. */}
           <div className="flex min-w-0 flex-col">
-            <p className="text-sm text-foreground">
-              Overall quality: <span className="font-medium">{BAND_LABEL[band]}</span>
-            </p>
+            {/* The band alone. "Overall quality:" repeated the heading two
+                rows up, and the ring beside it already says this is the
+                overall — the label was only there to introduce a word that
+                needs no introduction. */}
+            <p className="text-sm font-medium text-foreground">{BAND_LABEL[band]}</p>
             <p className="text-sm text-tertiary-foreground">
               {scored ? `Scored ${scored}` : 'Scored'}
             </p>
@@ -93,12 +88,7 @@ export function QualityInlineSummary({ assessment, postUpdatedAt, onOpenPanel }:
       </div>
 
       {stale && (
-        <p
-          className={cn(
-            'flex items-start gap-1.5 text-sm/[1.5] text-secondary-foreground',
-            TEXT_COLUMN_INDENT,
-          )}
-        >
+        <p className="flex items-start gap-1.5 text-sm/[1.5] text-secondary-foreground">
           <WarningIcon
             aria-hidden
             weight="regular"
@@ -113,14 +103,13 @@ export function QualityInlineSummary({ assessment, postUpdatedAt, onOpenPanel }:
 
       {/* Its own row under everything it summarises: the button is the one
           thing here that does something, and beside the ring it was competing
-          with the score for the same corner of the eye. The suggestion count
-          rides on the label — a total the reader can't reach is just a number,
-          and the label alone doesn't say how much waits behind it. */}
+          with the score for the same corner of the eye.
+
+          `-ml-3` cancels the ghost's own left padding so the label starts on
+          the section's left edge rather than inside it — the padding is there
+          for the hover surface, not for indentation. `uppercase` matches every
+          other button in the quality rail. */}
       <div>
-        {/* `-ml-3` cancels the ghost's own left padding so the label starts on
-            the section's left edge rather than three pixels inside it — the
-            padding is there for the hover surface, not for indentation.
-            `uppercase` matches every other button in the quality rail. */}
         <Button
           type="button"
           variant="ghost"
@@ -128,11 +117,7 @@ export function QualityInlineSummary({ assessment, postUpdatedAt, onOpenPanel }:
           onClick={onOpenPanel}
           className="-ml-3 uppercase"
         >
-          <span>
-            See the full breakdown
-            {suggestions > 0 && ` (${suggestions})`}
-          </span>
-          <ArrowRightIcon className="size-4" />
+          See the full breakdown
         </Button>
       </div>
     </section>

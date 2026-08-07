@@ -39,20 +39,30 @@ describe('worstStatus', () => {
 
 describe('foldChecks', () => {
   it('reduces a healthy post to the one row that measures something', () => {
-    const { context, rows } = foldChecks(HEALTHY_TEXT_POST)
-    expect(context).toBe('LinkedIn Text post')
+    const { heading, rows } = foldChecks(HEALTHY_TEXT_POST)
+    expect(heading).toBe('LinkedIn Text post requirements')
     expect(rows.map((r) => r.id)).toEqual(['char-limit'])
   })
 
   it('keeps a folded check as a row the moment it stops passing', () => {
     // A failing platform carries the only thing worth reading — "Pick a
-    // platform" — so folding it away would hide the instruction.
-    const { context, rows } = foldChecks([
+    // platform" — so folding it away would hide the instruction. With no
+    // platform there is nothing to name, and the post type alone would make a
+    // heading that reads as if it were the platform.
+    const { heading, rows } = foldChecks([
       { id: 'platform', label: 'Platform', status: 'fail', detail: 'Pick a platform' },
       { id: 'post-type', label: 'Post type', status: 'pass', detail: 'Text post' },
     ])
-    expect(context).toBe('Text post')
+    expect(heading).toBe('Platform requirements')
     expect(rows.map((r) => r.id)).toEqual(['platform'])
+  })
+
+  it('names the platform alone when the post type is unpicked', () => {
+    const { heading } = foldChecks([
+      { id: 'platform', label: 'Platform', status: 'pass', detail: 'LinkedIn' },
+      { id: 'post-type', label: 'Post type', status: 'fail', detail: 'Pick a post type' },
+    ])
+    expect(heading).toBe('LinkedIn requirements')
   })
 
   it('keeps a detail-less check that fails or warns', () => {
@@ -80,9 +90,9 @@ describe('foldChecks', () => {
     expect(rows.map((r) => r.id)).toEqual(['media-count'])
   })
 
-  it('has no context when neither setting is settled', () => {
-    expect(foldChecks([check('fail', 'platform'), check('fail', 'post-type')]).context).toBe(
-      null,
+  it('falls back to the generic heading when neither setting is settled', () => {
+    expect(foldChecks([check('fail', 'platform'), check('fail', 'post-type')]).heading).toBe(
+      'Platform requirements',
     )
   })
 })
@@ -112,6 +122,19 @@ describe('checksSummary', () => {
     expect(checksSummary([check('warn', 'a'), check('warn', 'b')])).toBe(
       '2 issues to look at',
     )
+  })
+
+  it('asks for a platform instead of counting rules no platform set', () => {
+    // Every other check falls back to a default when the platform is unpicked,
+    // so a count here would be reporting some other platform's rules as this
+    // post's — and it would change the moment one is chosen.
+    expect(
+      checksSummary([
+        { id: 'platform', label: 'Platform', status: 'fail', detail: 'Pick a platform' },
+        check('fail', 'post-type'),
+        check('warn', 'char-limit'),
+      ]),
+    ).toBe('Select platform to see requirements')
   })
 
   it('withholds a verdict while a check is still loading', () => {

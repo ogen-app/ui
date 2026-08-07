@@ -8,6 +8,7 @@ import {
 } from '@phosphor-icons/react'
 import { cn } from '@/lib'
 import {
+  awaitingPlatform,
   checksSummary,
   foldChecks,
   worstStatus,
@@ -63,10 +64,15 @@ export function PostValidationsSection({
   className,
 }: Props) {
   const overall = worstStatus(checks)
-  const { context, rows } = foldChecks(checks)
+  const { heading, rows } = foldChecks(checks)
   const [open, setOpen] = useState(false)
   const toggle = () => setOpen((o) => !o)
   const showQuality = !qualityUnavailable
+  const awaiting = awaitingPlatform(checks)
+  // With no platform there are no requirements to list, so the only thing
+  // left to expand is a score — and if there isn't one, the disclosure would
+  // open an empty drawer. It goes away instead of opening onto nothing.
+  const expandable = !awaiting || Boolean(showQuality && assessment)
 
   return (
     <div className={cn('w-full bg-primary px-10 py-3', className)}>
@@ -80,12 +86,10 @@ export function PostValidationsSection({
           control of the list. */}
       <div className="flex items-center gap-3 text-sm">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <button
-            type="button"
-            onClick={toggle}
-            aria-expanded={open}
-            className="flex min-w-0 items-center gap-2 text-left cursor-pointer"
-          >
+          {/* A plain span when there is nothing behind it: a control that
+              looks identical to the one that opens the list, and does
+              nothing, is worse than no control. */}
+          <Summary as={expandable ? 'button' : 'span'} onClick={toggle} open={open}>
             <StatusIcon status={overall} />
             <span className="min-w-0 truncate">
               {checksSummary(checks)}
@@ -93,22 +97,26 @@ export function PostValidationsSection({
                 assessment &&
                 ` · Post quality ${Math.round(overallPct(assessment))}`}
             </span>
-          </button>
+          </Summary>
 
           {showQuality && (
             <AssessLink assessment={assessment} assessing={assessing} onAssess={onAssess} />
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={toggle}
-          aria-expanded={open}
-          className="flex shrink-0 items-center gap-2 cursor-pointer text-tertiary-foreground"
-        >
-          <span>{open ? 'Hide checks' : 'Show checks'}</span>
-          <CaretDownIcon className={cn('size-4 transition-transform', open && 'rotate-180')} />
-        </button>
+        {expandable && (
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={open}
+            className="flex shrink-0 items-center gap-2 cursor-pointer text-tertiary-foreground"
+          >
+            <span>{open ? 'Hide checks' : 'Show checks'}</span>
+            <CaretDownIcon
+              className={cn('size-4 transition-transform', open && 'rotate-180')}
+            />
+          </button>
+        )}
       </div>
 
       <div
@@ -117,26 +125,28 @@ export function PostValidationsSection({
           open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
         )}
       >
-        <div className="overflow-hidden">
-          {/* The context rides on the row it qualifies when there is only one
-              — which is the common case, and gives the whole list as a single
-              line. With several rows it goes above them instead: repeating
-              "(LinkedIn Text post)" against every measurement would put the
-              part that never changes in front of the parts that do. */}
-          {context && rows.length > 1 && (
-            <p className="pt-3 text-sm text-tertiary-foreground">{context}</p>
-          )}
+        {/* `pb-2` closes the expanded area against the bar's own `py-3`: the
+            two sections need more room around them than the collapsed line
+            does, and without it the quality button sat on the bottom edge. */}
+        <div className="overflow-hidden pb-2">
+          {/* Nothing at all while the platform is unpicked — the collapsed
+              line has already said the only true thing there is to say. */}
+          {!awaiting && (
+            <>
+              {/* The platform and post type live in the heading rather than
+                  beside the rows: they are what the rows are measured
+                  against, and the expanded area now holds two sections, so
+                  each needs to say which question it answers. Same typography
+                  as the quality heading below it. */}
+              <h3 className="pt-5 font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
+                {heading}
+              </h3>
 
-          <ul className="flex flex-col gap-1.5 pt-3">
+              <ul className="flex flex-col gap-1.5 pt-3">
             {rows.map((check) => (
               <li key={check.id} className="flex items-start gap-2 text-sm">
                 <StatusIcon status={check.status} className="mt-0.5" />
-                <span className="text-foreground">
-                  {check.label}
-                  {context && rows.length === 1 && (
-                    <span className="text-tertiary-foreground"> ({context})</span>
-                  )}
-                </span>
+                <span className="text-foreground">{check.label}</span>
                 {check.detail && (
                   <span
                     className={cn(
@@ -156,9 +166,11 @@ export function PostValidationsSection({
                     {check.detail}
                   </span>
                 )}
-              </li>
-            ))}
-          </ul>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
 
           {showQuality && assessment && (
             <QualityInlineSummary
@@ -213,6 +225,36 @@ function AssessLink({
     >
       <SparkleIcon className="size-4" />
       <span>{assessment ? 'Re-assess' : 'Assess quality'}</span>
+    </button>
+  )
+}
+
+/**
+ * The verdict line, which is a disclosure control only when there is something
+ * behind it. Same classes either way so the text does not shift by a pixel
+ * when a score arrives and turns it into a button.
+ */
+function Summary({
+  as,
+  open,
+  onClick,
+  children,
+}: {
+  as: 'button' | 'span'
+  open: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  const className = 'flex min-w-0 items-center gap-2 text-left'
+  if (as === 'span') return <span className={className}>{children}</span>
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={open}
+      className={cn(className, 'cursor-pointer')}
+    >
+      {children}
     </button>
   )
 }

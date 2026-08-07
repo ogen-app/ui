@@ -263,29 +263,56 @@ export function worstStatus(checks: PostCheck[]): CheckStatus {
  * beside a bare word. Listed in full, a healthy post produced four rows of
  * which one — the character count — said anything.
  *
- * So a passing platform and post type fold into `context`, which the caller
- * hangs on the row they qualify ("Length (LinkedIn Text post)"), and a passing
- * check with nothing to report is dropped. Both keep their rows the moment
- * they stop passing, because then they carry the only thing worth reading:
- * *why*. Nothing that fails or warns is ever folded or hidden.
+ * So a passing platform and post type fold into the `heading` over the list —
+ * they are what the remaining rows are measured *against*, not results — and a
+ * passing check with nothing to report is dropped. Both keep their rows the
+ * moment they stop passing, because then they carry the only thing worth
+ * reading: *why*. Nothing that fails or warns is ever folded or hidden.
  */
 export type ChecksDisplay = {
-  /** e.g. `LinkedIn Text post` — null when neither is settled and passing. */
-  context: string | null
+  /** e.g. `LinkedIn Text post requirements`. Never empty — see `heading()`. */
+  heading: string
   rows: PostCheck[]
 }
 
 /** The ids whose passing value is context for the other checks, not a check. */
 const CONTEXT_IDS = ['platform', 'post-type'] as const
 
+/**
+ * Nothing has been chosen for the rules to come from yet.
+ *
+ * The checks still evaluate — character limits and post-type structure fall
+ * back to defaults — but every answer they give is provisional, and the list
+ * would be reporting a made-up platform's rules as this post's. So the bar
+ * says the one useful thing instead, and shows nothing else.
+ */
+export function awaitingPlatform(checks: PostCheck[]): boolean {
+  return checks.some((c) => c.id === 'platform' && c.status === 'fail')
+}
+
+/**
+ * Names whose rules the list is applying. Falls back to the generic form while
+ * either setting is unpicked, so the heading is never half a sentence — the
+ * rows underneath will be saying which setting is missing anyway.
+ */
+function heading(platform: string | null, postType: string | null): string {
+  if (platform && postType) return `${platform} ${postType} requirements`
+  if (platform) return `${platform} requirements`
+  return 'Platform requirements'
+}
+
 export function foldChecks(checks: PostCheck[]): ChecksDisplay {
-  const context: string[] = []
+  let platform: string | null = null
+  let postType: string | null = null
   const rows: PostCheck[] = []
 
   for (const check of checks) {
     const foldable = (CONTEXT_IDS as readonly string[]).includes(check.id)
     if (check.status === 'pass' && foldable) {
-      if (check.detail) context.push(check.detail)
+      if (check.detail) {
+        if (check.id === 'platform') platform = check.detail
+        else postType = check.detail
+      }
       continue
     }
     // A tick against a label with nothing beside it tells the reader only that
@@ -294,7 +321,7 @@ export function foldChecks(checks: PostCheck[]): ChecksDisplay {
     rows.push(check)
   }
 
-  return { context: context.length > 0 ? context.join(' ') : null, rows }
+  return { heading: heading(platform, postType), rows }
 }
 
 /**
@@ -314,6 +341,11 @@ export function foldChecks(checks: PostCheck[]): ChecksDisplay {
  * teach the user to ignore the icon that also means "this will be rejected".
  */
 export function checksSummary(checks: PostCheck[]): string {
+  // Before anything else: every other requirement is a rule *of* a platform,
+  // so counting them against no platform would report a number that changes
+  // the moment one is picked, from rules that were never this post's.
+  if (awaitingPlatform(checks)) return 'Select platform to see requirements'
+
   const overall = worstStatus(checks)
   if (overall === 'pending') return 'Checking this post…'
 
