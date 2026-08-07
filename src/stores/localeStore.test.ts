@@ -10,7 +10,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { bootstrapLocale, useLocaleStore } from './localeStore'
 import { LOCALE_STORAGE_KEY } from './constants'
-import { MIN_LOCALE_SWITCH_MS } from '@/i18n/config'
+import {
+  ENABLED_LOCALES,
+  isEnabledLocale,
+  isLocale,
+  MIN_LOCALE_SWITCH_MS,
+} from '@/i18n/config'
 import { i18next } from '@/i18n'
 
 function resetAll() {
@@ -36,22 +41,20 @@ describe('bootstrapLocale', () => {
   })
 
   it('honours a previous choice on the next visit', () => {
-    localStorage.setItem(LOCALE_STORAGE_KEY, 'es')
+    localStorage.setItem(LOCALE_STORAGE_KEY, 'en')
     bootstrapLocale()
-    // Synchronously up, so the first paint is the loader rather than a flash
-    // of English.
-    expect(useLocaleStore.getState().switchingTo).toBe('es')
+    expect(useLocaleStore.getState().locale).toBe('en')
+    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('en')
   })
 
   it('takes ?lang= and persists it, so the link sticks', () => {
-    window.history.replaceState(null, '', '/campaigns?lang=es')
+    window.history.replaceState(null, '', '/campaigns?lang=en')
     bootstrapLocale()
-    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('es')
-    expect(useLocaleStore.getState().switchingTo).toBe('es')
+    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('en')
   })
 
   it('strips ?lang= from the address bar without adding a history entry', () => {
-    window.history.replaceState(null, '', '/campaigns?view=week&lang=es')
+    window.history.replaceState(null, '', '/campaigns?view=week&lang=en')
     const before = window.history.length
     bootstrapLocale()
     // The router round-trips search params; leaving ours there would make it
@@ -60,30 +63,60 @@ describe('bootstrapLocale', () => {
     expect(window.history.length).toBe(before)
   })
 
-  it('outranks a stored choice', () => {
-    localStorage.setItem(LOCALE_STORAGE_KEY, 'en')
-    window.history.replaceState(null, '', '/?lang=es')
-    bootstrapLocale()
-    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('es')
-  })
-
-  it('ignores a bad code rather than erroring — a mangled link still opens', () => {
-    localStorage.setItem(LOCALE_STORAGE_KEY, 'es')
+  it('strips ?lang= even when the code is unusable — a mangled link still opens', () => {
     window.history.replaceState(null, '', '/?lang=klingon')
     bootstrapLocale()
     expect(window.location.search).toBe('')
-    // Fell through to the stored preference.
-    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('es')
-    expect(useLocaleStore.getState().switchingTo).toBe('es')
+    expect(useLocaleStore.getState().locale).toBe('en')
+    expect(useLocaleStore.getState().switchingTo).toBeNull()
   })
 
   it('marks the document for screen readers and hyphenation', () => {
-    localStorage.setItem(LOCALE_STORAGE_KEY, 'es')
     bootstrapLocale()
-    expect(document.documentElement.lang).toBe('es')
+    expect(document.documentElement.lang).toBe('en')
   })
 })
 
+/**
+ * Spanish exists in full but is gated (`LOCALES.enabled`), so neither route
+ * into it may open. These are the tests that come off the gate when a language
+ * is released; until then they are what stops a half-released locale reaching
+ * a user through a stale preference or a shared link.
+ */
+describe('a gated locale', () => {
+  it('is not offered in the picker', () => {
+    expect(ENABLED_LOCALES.map(({ code }) => code)).toEqual(['en'])
+    // Still a known code, and still loadable — see the setLocale tests below.
+    expect(isLocale('es')).toBe(true)
+    expect(isEnabledLocale('es')).toBe(false)
+  })
+
+  it('is refused from ?lang=, which is otherwise a way around the picker', () => {
+    window.history.replaceState(null, '', '/?lang=es')
+    bootstrapLocale()
+    expect(useLocaleStore.getState().switchingTo).toBeNull()
+    expect(useLocaleStore.getState().locale).toBe('en')
+    expect(document.documentElement.lang).toBe('en')
+    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBeNull()
+  })
+
+  it('is forgotten rather than left dormant when it was chosen before the gate', () => {
+    // Anyone who picked Spanish while it was open — or on a preview build.
+    localStorage.setItem(LOCALE_STORAGE_KEY, 'es')
+    bootstrapLocale()
+    expect(useLocaleStore.getState().locale).toBe('en')
+    // Cleared, so releasing Spanish later does not silently switch them back
+    // to a language they last chose months ago.
+    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBeNull()
+  })
+})
+
+/**
+ * `setLocale` is the mechanism, and is not gated — so these keep covering the
+ * fetch, the floor and the handover to i18next with a real second locale while
+ * only English is released. They are the reason the gate can be flipped with
+ * some confidence rather than none.
+ */
 describe('setLocale', () => {
   it('holds the waiting screen for the full minimum even when the fetch is instant', async () => {
     vi.useFakeTimers()

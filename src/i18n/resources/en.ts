@@ -2,6 +2,13 @@
  * The English catalogue — bundled into the main chunk, and the shape every
  * other locale is typed against (`Translation`).
  *
+ * Everything the user can read lives here — not just labels and headings, but
+ * placeholders, empty states, toast and validation messages, tooltips, and the
+ * strings only a screen reader reaches (`aria-label`, `title`, `alt`). A
+ * literal left in a component is invisible until someone switches language and
+ * finds one word of English in the middle of their page. Developer-facing text
+ * (`console.*`, thrown errors, test fixtures) stays where it is.
+ *
  * Conventions:
  *
  * - **Keys name the place, values carry the voice.** `profile.dangerZone.body`,

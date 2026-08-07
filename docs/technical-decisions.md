@@ -374,6 +374,17 @@ is now `(t) => schema`, memoised on `t` by the hooks in
 `hooks/useAuthSchemas.ts` — which also means a language switch rebuilds any
 validation error already on screen.
 
+**What has to be a key.** Every string the user can read: button and menu
+labels, headings, placeholders, empty and error states, toast and validation
+messages, tooltips, and the strings only assistive tech reads — `aria-label`,
+`title`, `alt`, visually hidden text. The accessible ones are the ones that get
+missed, because nothing looks wrong on screen when they stay English. Exempt:
+developer-facing text (`console.*`, thrown `Error` messages, test fixtures) and
+`bootMessages.ts`. A string that has to be picked before render — a status
+label map, a `const` array of select options — moves inside a `(t) => …`
+factory or a hook rather than sitting at module level; see the Zod note above,
+which is the same failure in a different shape.
+
 **Catalogue conventions** (also stated at the top of `en.ts`): keys name the
 place, never quote their own English; one key per sentence the user reads, with
 `<Trans>` for a sentence that has a link or emphasis inside it; plurals use
@@ -387,11 +398,25 @@ capitals in every language (`DELETE ACCOUNT` / `ELIMINAR CUENTA`).
 `stores/localeStore.ts`, `components/layout/{AppLoader,LocaleSwitchOverlay}.tsx`,
 `components/settings/LanguageSection.tsx`, `hooks/useAuthSchemas.ts`.
 
+**A release gate per language, not per feature.** `LOCALES` carries an
+`enabled` flag on each row. A disabled locale still compiles, still type-checks
+against `en.ts` and still ships its chunk — it is simply not offered in the
+picker, not accepted from `?lang=`, and not restored from a previous visit;
+a stored preference for one is cleared, so it cannot lie dormant and switch
+someone's language by itself on the deploy that releases it. The gate is on
+those entry points rather than on `setLocale`, which keeps the switch covered
+end to end by its tests while nothing but English is out. Per language rather
+than one flag for i18n as a whole, because a locale is finished, reviewed and
+released on its own schedule.
+
 **Scope today (CON-174).** The machinery plus real conversion of the auth
 screens, the sidebar, Profile and Workspace Settings. The rest of the app —
 campaigns, posts, calendar, content bank, the assistant — is still hard-coded
 English and reads correctly, because English is what `t` falls back to.
-Converting a surface is per-area work, not a flag day.
+Converting a surface is per-area work, not a flag day. Spanish is translated in
+full for those surfaces and gated: with the app only part-converted, choosing
+it today would yield a half-Spanish UI, and the copy has had no native review.
+Releasing it is `enabled: true`.
 
 ## Two form systems, on purpose
 

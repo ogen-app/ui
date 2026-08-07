@@ -13,16 +13,38 @@
  *
  * Labels are written in the language they name: someone hunting for their own
  * language scans for "Español", not for "Spanish".
+ *
+ * `enabled` is the release gate, per language rather than one flag for the
+ * feature: a locale can be finished, typed and tested long before its copy has
+ * been reviewed, and each one is ready on its own schedule. A disabled locale
+ * still compiles and still ships its chunk — it is simply not offered, not
+ * accepted from `?lang=`, and not restored from a previous visit. Releasing it
+ * is this one boolean.
  */
 export const LOCALES = [
-  { code: 'en', label: 'English' },
-  { code: 'es', label: 'Español' },
+  { code: 'en', label: 'English', enabled: true },
+  // Translated in full (CON-174) but not released: the copy has not been
+  // reviewed by a Spanish speaker, and the app is only part-converted, so
+  // choosing it today yields a half-Spanish UI.
+  { code: 'es', label: 'Español', enabled: false },
 ] as const
 
 export type Locale = (typeof LOCALES)[number]['code']
 
-/** Bundled, and the fallback for any key a translation has not filled in. */
-export const DEFAULT_LOCALE = 'en' satisfies Locale
+/** The subset offered in the picker — see `enabled` above. */
+export const ENABLED_LOCALES = LOCALES.filter(({ enabled }) => enabled)
+
+/**
+ * Bundled, and the fallback for any key a translation has not filled in.
+ *
+ * Typed against the *enabled* codes rather than all of them: it is where every
+ * gated locale falls back to, so disabling it would leave nothing to fall back
+ * on. Doing so is a compile error here rather than an empty picker at runtime.
+ */
+export const DEFAULT_LOCALE = 'en' satisfies Extract<
+  (typeof LOCALES)[number],
+  { enabled: true }
+>['code']
 
 /**
  * `?lang=es` forces a locale for this page load and is then persisted like any
@@ -47,6 +69,12 @@ export const LOCALE_QUERY_PARAM = 'lang'
  */
 export const MIN_LOCALE_SWITCH_MS = 2000
 
+/** A code this app knows about, released or not. */
 export function isLocale(value: unknown): value is Locale {
   return LOCALES.some(({ code }) => code === value)
+}
+
+/** A code a user is allowed to land on — the check every entry point makes. */
+export function isEnabledLocale(value: unknown): value is Locale {
+  return ENABLED_LOCALES.some(({ code }) => code === value)
 }

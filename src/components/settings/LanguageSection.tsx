@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Label } from '@/components/ui/label'
 import { TextSelect } from '@/components/ui/text-select'
 import { SettingsCard } from '@/components/settings/SettingsCard'
-import { LOCALES, isLocale } from '@/i18n/config'
+import { ENABLED_LOCALES, isEnabledLocale } from '@/i18n/config'
 import { useLocaleStore } from '@/stores/localeStore'
 
 /**
@@ -15,6 +15,11 @@ import { useLocaleStore } from '@/stores/localeStore'
  * the login screen, where there is no session to read `/api/settings` with.
  * The copy says as much, because "changed it on my laptop, still English on
  * my phone" is otherwise a bug report.
+ *
+ * The picker lists released locales only (`ENABLED_LOCALES`), which is why it
+ * currently shows one. It stays on screen at one option on purpose: this is
+ * where the setting lives, and releasing a language should be a boolean in
+ * `i18n/config.ts`, not a component that reappears.
  *
  * Choosing applies immediately. There is no Save entry to register with the
  * page's save context: nothing is staged, and a language you have to confirm
@@ -34,13 +39,21 @@ export function LanguageSection() {
           <Label htmlFor={id}>{t('locale.section.label')}</Label>
           <TextSelect
             id={id}
+            // `TextSelect` defaults to the `primary`/`lg` pairing; the fields
+            // above it on this page are `Input`s on the defaults. Match them,
+            // or the picker reads as a different kind of control.
+            variant="default"
+            size="default"
             value={locale}
             disabled={switching}
-            elements={LOCALES.map(({ code, label }) => ({ id: code, displayValue: label }))}
+            elements={ENABLED_LOCALES.map(({ code, label }) => ({
+              id: code,
+              displayValue: label,
+            }))}
             onValueChange={(next) => {
               // The select can only ever hand back one of its own options, but
               // its value type is a bare string — narrow rather than assert.
-              if (isLocale(next)) void setLocale(next).catch(() => {})
+              if (isEnabledLocale(next)) void setLocale(next).catch(() => {})
             }}
           />
         </div>

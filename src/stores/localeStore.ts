@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware'
 
 import {
   DEFAULT_LOCALE,
+  isEnabledLocale,
   isLocale,
   LOCALE_QUERY_PARAM,
   MIN_LOCALE_SWITCH_MS,
@@ -24,6 +25,12 @@ type LocaleState = {
    * from the catalogue.
    */
   switchingTo: Locale | null
+  /**
+   * Deliberately not gated on `enabled`. The release gate belongs on the two
+   * ways a user reaches a locale — the picker and `bootstrapLocale` — and
+   * leaving the mechanism itself open is what keeps the switch exercised
+   * end to end while only English is released.
+   */
   setLocale: (locale: Locale) => Promise<void>
 }
 
@@ -42,6 +49,14 @@ function writeStoredLocale(locale: Locale): void {
     localStorage.setItem(LOCALE_STORAGE_KEY, locale)
   } catch {
     // The choice still applies to this page load; it just won't outlive it.
+  }
+}
+
+function clearStoredLocale(): void {
+  try {
+    localStorage.removeItem(LOCALE_STORAGE_KEY)
+  } catch {
+    // Nothing was readable to begin with.
   }
 }
 
@@ -116,15 +131,20 @@ export const useLocaleStore = create<LocaleState>()(
  * all behind a switching screen on first load.
  */
 export function bootstrapLocale(): void {
-  const forced = takeForcedLocale()
-  const next = forced ?? readStoredLocale() ?? DEFAULT_LOCALE
+  const requested = takeForcedLocale() ?? readStoredLocale()
+  const next = requested !== null && isEnabledLocale(requested) ? requested : DEFAULT_LOCALE
 
   document.documentElement.lang = next
 
   if (next === DEFAULT_LOCALE) {
     // Bundled — there is nothing to fetch, so no switching screen. Opening
     // the app in English, which is nearly every load, costs nothing.
-    if (forced) writeStoredLocale(forced)
+    if (requested === null) return
+    // A request for a locale that exists but is gated (see `LOCALES.enabled`):
+    // forget it rather than leaving it dormant in storage, where it would
+    // reactivate by itself on whichever deploy releases that language.
+    if (isEnabledLocale(requested)) writeStoredLocale(requested)
+    else clearStoredLocale()
     return
   }
 
