@@ -75,7 +75,9 @@ function makePost(overrides: Partial<Post> = {}): Post {
     campaign_id: 'c1',
     platform_id: INSTAGRAM,
     platform_post_type: 'carousel',
-    social_account_id: '',
+    // A publishable post by default, so a test that asserts "nothing fails"
+    // is asserting the thing it is about rather than the account check.
+    social_account_id: 'acc-1',
     title: '',
     content: 'Hello',
     media_urls: [],
@@ -515,6 +517,12 @@ describe('hasVisibleProblem', () => {
     expect(hasVisibleProblem(makePost({ platform_id: '' }))).toBe(true)
     expect(hasVisibleProblem(makePost({ platform_id: 'not-a-platform' }))).toBe(true)
     expect(hasVisibleProblem(makePost({ platform_post_type: '' }))).toBe(true)
+  })
+
+  it('flags a post with no account to publish as', () => {
+    // The id is on the post row, so the card can see this without the
+    // publisher fetch the editor makes.
+    expect(hasVisibleProblem(makePost({ social_account_id: '' }))).toBe(true)
   })
 
   it('reads only the post row — no attachments, no server rules', () => {
