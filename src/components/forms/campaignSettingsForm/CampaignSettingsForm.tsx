@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { TagsInput } from '@/components/ui/tags-input'
 import { Button } from '@/components/ui/button'
-import { CheckCircleIcon, TrashIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { TrashIcon } from '@phosphor-icons/react'
 import {
   Form,
   FormControl,
@@ -30,11 +30,9 @@ import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { cn } from '@/lib'
 import { selectCampaignRunning, useAssistantStore } from '@/stores/assistantStore'
-import { toast } from '@/stores/toastStore'
 import type {
   Campaign,
   CampaignPlatform,
-  CampaignStatus,
   CampaignType,
 } from '@/types/campaigns'
 import { campaignToPayload, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
@@ -176,27 +174,6 @@ export function CampaignSettingsForm({ campaign }: Props) {
   // immediately, so the heading's warning has to clear on the click.
   const noPlatforms = form.watch('target_platforms').length === 0
 
-  const isActive = campaign.status === 'active'
-  // Opted out of the default toast: the wording depends on which way the
-  // switch was thrown, which a `meta` fixed at hook-creation can't say.
-  const { mutate: updateStatus, isPending: statusSaving } = useUpdateCampaign({
-    errorToast: false,
-  })
-  const setStatus = (status: CampaignStatus) => {
-    updateStatus(
-      { id: campaign.id, payload: campaignToPayload(campaign, { status }) },
-      {
-        onError: (e) =>
-          toast.error(
-            status === 'active'
-              ? 'Unable to activate the campaign'
-              : 'Unable to deactivate the campaign',
-            { description: e instanceof Error ? e.message : undefined },
-          ),
-      },
-    )
-  }
-
   // `setCampaignDates` / `redistributePosts` rewrite these fields server-side
   // (CON-115), so the form is held read-only for the length of a turn. Unsaved
   // edits stay in the form (header save) and are not flushed by the turn.
@@ -329,65 +306,6 @@ export function CampaignSettingsForm({ campaign }: Props) {
             />
           </div>
         </SettingsCard>
-
-        {/* The heading is the status — the card says what the campaign is
-            rather than labelling a line that says it, so the whole thing is
-            one line. Status is an action, not a field: it applies on the
-            click rather than waiting for the header's Save, and it is built
-            on the server's campaign so pending edits elsewhere on the page
-            stay pending instead of being smuggled out with it. */}
-        <SettingsCard
-          // One row, not a form: the form cards' 24px of breathing room reads
-          // as an empty half-card under a single line.
-          className="py-3"
-          title={
-            <>
-              {/* Both states carry a mark of the same size, so the heading
-                  starts at the same place either way and the card doesn't
-                  shift as the status changes. */}
-              {isActive ? (
-                <CheckCircleIcon
-                  weight="fill"
-                  className="size-5 shrink-0 text-positive"
-                  aria-hidden
-                />
-              ) : (
-                <WarningCircleIcon
-                  weight="fill"
-                  className="size-5 shrink-0 text-warning"
-                  aria-hidden
-                />
-              )}
-              <span className="truncate">
-                {isActive ? 'Campaign is active' : 'Campaign is not active'}
-              </span>
-            </>
-          }
-          actions={
-            isActive ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="uppercase"
-                onClick={() => setStatus('draft')}
-                loading={statusSaving}
-              >
-                Deactivate
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="ghost"
-                className="uppercase"
-                onClick={() => setStatus('active')}
-                loading={statusSaving}
-              >
-                <CheckCircleIcon />
-                <span>Activate</span>
-              </Button>
-            )
-          }
-        />
 
         <SettingsCard title="Advanced">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">

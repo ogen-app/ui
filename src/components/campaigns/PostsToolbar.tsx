@@ -69,54 +69,56 @@ export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: Posts
       </span>
 
       <div className="flex items-center gap-3">
-        {/* MONTH is hidden until the month view exists. */}
-        <Tabs value={view}>
-          <TabsList variant="segmented" size="excluded">
-            <TabsTrigger
-              variant="segmented"
-              value="week"
-              onClick={() => handleViewSelect('week')}
+        {view === 'week' && anchor && onAnchorChange && (
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="default"
+              size="defaultIcon"
+              onClick={() => onAnchorChange(addDays(anchor, -7))}
+              aria-label="Previous week"
             >
-              WEEK
-            </TabsTrigger>
-            <TabsTrigger
-              variant="segmented"
-              value="list"
-              onClick={() => handleViewSelect('list')}
+              <CaretLeftIcon />
+            </Button>
+            <Button
+              variant="default"
+              size="default"
+              onClick={() => onAnchorChange(new Date())}
             >
-              LIST
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+              TODAY
+            </Button>
+            <Button
+              variant="default"
+              size="defaultIcon"
+              onClick={() => onAnchorChange(addDays(anchor, 7))}
+              aria-label="Next week"
+            >
+              <CaretRightIcon />
+            </Button>
+          </div>
+        )}
 
+        {/* The view switch stays beside ADD POST; the week navigator sits to
+            their left rather than between them. MONTH is hidden until the
+            month view exists. */}
         <div className="flex items-center gap-2">
-          {view === 'week' && anchor && onAnchorChange && (
-            <div className="flex items-center gap-0.5">
-              <Button
-                variant="default"
-                size="defaultIcon"
-                onClick={() => onAnchorChange(addDays(anchor, -7))}
-                aria-label="Previous week"
+          <Tabs value={view}>
+            <TabsList variant="segmented" size="excluded">
+              <TabsTrigger
+                variant="segmented"
+                value="week"
+                onClick={() => handleViewSelect('week')}
               >
-                <CaretLeftIcon />
-              </Button>
-              <Button
-                variant="default"
-                size="default"
-                onClick={() => onAnchorChange(new Date())}
+                WEEK
+              </TabsTrigger>
+              <TabsTrigger
+                variant="segmented"
+                value="list"
+                onClick={() => handleViewSelect('list')}
               >
-                TODAY
-              </Button>
-              <Button
-                variant="default"
-                size="defaultIcon"
-                onClick={() => onAnchorChange(addDays(anchor, 7))}
-                aria-label="Next week"
-              >
-                <CaretRightIcon />
-              </Button>
-            </div>
-          )}
+                LIST
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           <Button variant="default" onClick={() => addPost()}>
             <PlusIcon />
