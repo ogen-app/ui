@@ -5,6 +5,7 @@
 
 import type { Campaign } from "@/types/campaigns";
 import type { Post, PostStatus, PostSummary } from "@/types/posts";
+import { campaignTypeInfo } from "@/lib/campaignTypeDictionary";
 import { getPlatformInfo, type PlatformView } from "@/lib/platformDictionary";
 
 /**
@@ -688,7 +689,7 @@ export function attentionItems(
       items.push({
         id: "phase-orphaned",
         severity: "todo",
-        label: `${plural(orphaned, "post", "posts")} ${orphaned === 1 ? "sits" : "sit"} in a phase the ${campaign.campaign_type?.label ?? "campaign"} plan doesn't have`,
+        label: `${plural(orphaned, "post", "posts")} ${orphaned === 1 ? "sits" : "sit"} in a phase the ${campaign.campaign_type ? campaignTypeInfo(campaign.campaign_type.name).label : "campaign"} plan doesn't have`,
         actionLabel: "Reassign posts",
         fix: "posts",
       });

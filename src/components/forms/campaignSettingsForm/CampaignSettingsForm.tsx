@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,12 +21,19 @@ import {
   useDeleteCampaign,
   useUpdateCampaign,
 } from '@/hooks/useCampaigns'
-import { CampaignTypePicker } from '@/components/campaigns/CampaignTypePicker'
+import {
+  CampaignTypeCard,
+  CampaignTypePicker,
+} from '@/components/campaigns/CampaignTypePicker'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { cn } from '@/lib'
 import { selectCampaignRunning, useAssistantStore } from '@/stores/assistantStore'
-import type { Campaign, CampaignPlatform } from '@/types/campaigns'
+import type {
+  Campaign,
+  CampaignPlatform,
+  CampaignType,
+} from '@/types/campaigns'
 import { campaignToPayload, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
 import { AccountsControl } from './AccountsControl'
 import { PlatformsControl } from './PlatformsControl'
@@ -34,6 +41,15 @@ import { useFeatureFlag } from '@/config/featureFlags'
 import { PostGoalCard } from './PostGoalCard'
 import { SchedulingCard } from './SchedulingCard'
 import { settingsDefaultValues, settingsSchema, type SettingsFormValues } from './schema'
+
+/**
+ * The chosen type out of the fetched list. Falls back to the campaign's own
+ * hydrated relation at the call site, so the card names the type on the first
+ * frame instead of reading "No type set" until the list arrives.
+ */
+function typeById(types: CampaignType[] | undefined, id: string): CampaignType | undefined {
+  return types?.find((t) => t.id === id)
+}
 
 type Props = {
   campaign: Campaign
@@ -55,6 +71,10 @@ export function CampaignSettingsForm({ campaign }: Props) {
   const { data: types, isLoading: typesLoading } = useCampaignTypes()
   const { mutate: deleteCampaign, isPending: deleting } = useDeleteCampaign()
   const navigate = useNavigate()
+
+  // The type is stated, not offered — the chooser only appears once the user
+  // asks for it by name.
+  const [changingType, setChangingType] = useState(false)
 
   // No autosave here: edits mark the page dirty and are applied by the
   // header's Save button (settingsSave context), like the brief form.
@@ -156,27 +176,6 @@ export function CampaignSettingsForm({ campaign }: Props) {
             assistantRunning && 'opacity-60',
           )}
         >
-        {/* The type picks the phase plan the campaign's content is generated
-            against, so it sits above the fields that describe the campaign
-            rather than inside the brief, where it used to live. */}
-        <SettingsCard title="Campaign type">
-          <FormField
-            control={form.control}
-            name="campaign_type_id"
-            render={({ field }) => (
-              <FormItem>
-                <CampaignTypePicker
-                  types={types ?? []}
-                  value={field.value}
-                  onChange={field.onChange}
-                  disabled={typesLoading}
-                />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </SettingsCard>
-
         <SettingsCard title="Basic">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
             <FormField
@@ -226,6 +225,58 @@ export function CampaignSettingsForm({ campaign }: Props) {
                 <FormItem className="lg:col-span-2">
                   <FormLabel>Tags</FormLabel>
                   <TagsInput value={field.value} onChange={field.onChange} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* The type used to own a card at the top of the page, which put
+                the campaign's least changeable decision above its name. It
+                belongs with the rest of what the campaign *is* — stated, not
+                offered, because it picks the phase plan every post is written
+                against and switching it mid-campaign is something the product
+                means to restrict. */}
+            <FormField
+              control={form.control}
+              name="campaign_type_id"
+              render={({ field }) => (
+                <FormItem className="lg:col-span-2">
+                  <FormLabel>Campaign type</FormLabel>
+                  {changingType ? (
+                    <div className="flex flex-col gap-3">
+                      <CampaignTypePicker
+                        types={types ?? []}
+                        value={field.value}
+                        onChange={(id) => {
+                          field.onChange(id)
+                          setChangingType(false)
+                        }}
+                        disabled={typesLoading}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="self-start"
+                        onClick={() => setChangingType(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <CampaignTypeCard
+                      type={typeById(types, field.value) ?? campaign.campaign_type}
+                      action={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={typesLoading}
+                          onClick={() => setChangingType(true)}
+                        >
+                          CHANGE
+                        </Button>
+                      }
+                    />
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

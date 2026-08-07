@@ -547,10 +547,10 @@ describe("attentionItems", () => {
   it("flags posts left on a phase the campaign type no longer has", () => {
     const campaign = liveCampaign({
       campaign_type: {
+        // Not a type the dictionary knows — the label below comes from
+        // campaignTypeInfo's capitalize-the-slug fallback.
         id: "ct1",
         name: "launch",
-        label: "Launch",
-        description: "",
         is_system: true,
         phases: [makePhase("ph1", "Warm-up", 1)],
       },
@@ -572,8 +572,6 @@ describe("attentionItems", () => {
       campaign_type: {
         id: "ct2",
         name: "evergreen",
-        label: "Evergreen",
-        description: "",
         is_system: true,
         phases: [],
       },

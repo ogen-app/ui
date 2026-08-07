@@ -85,9 +85,6 @@ export function PostsToolbar({
         )}
       </span>
 
-      {/* Week navigation, then the view switch, then ADD POST: the switch sits
-          between the two so navigating the current view and leaving it are not
-          adjacent, and the action that creates something stays last. */}
       <div className="flex items-center gap-3">
         {view === 'week' && anchor && onAnchorChange && (
           <div className="flex items-center gap-0.5">
@@ -117,30 +114,34 @@ export function PostsToolbar({
           </div>
         )}
 
-        {/* MONTH is hidden until the month view exists. */}
-        <Tabs value={view}>
-          <TabsList variant="segmented" size="excluded">
-            <TabsTrigger
-              variant="segmented"
-              value="week"
-              onClick={() => handleViewSelect('week')}
-            >
-              WEEK
-            </TabsTrigger>
-            <TabsTrigger
-              variant="segmented"
-              value="list"
-              onClick={() => handleViewSelect('list')}
-            >
-              LIST
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* The view switch stays beside ADD POST; the week navigator sits to
+            their left rather than between them. MONTH is hidden until the
+            month view exists. */}
+        <div className="flex items-center gap-2">
+          <Tabs value={view}>
+            <TabsList variant="segmented" size="excluded">
+              <TabsTrigger
+                variant="segmented"
+                value="week"
+                onClick={() => handleViewSelect('week')}
+              >
+                WEEK
+              </TabsTrigger>
+              <TabsTrigger
+                variant="segmented"
+                value="list"
+                onClick={() => handleViewSelect('list')}
+              >
+                LIST
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-        <Button variant="default" onClick={() => addPost()}>
-          <PlusIcon />
-          <span>ADD POST</span>
-        </Button>
+          <Button variant="default" onClick={() => addPost()}>
+            <PlusIcon />
+            <span>ADD POST</span>
+          </Button>
+        </div>
       </div>
     </div>
   )

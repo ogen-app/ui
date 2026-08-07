@@ -71,6 +71,12 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
         : typeLabel,
   })
 
+  // No account check here, deliberately. Who the post publishes as is metadata,
+  // and it is already set, shown and corrected one line above in the
+  // quick-settings bar — this bar answers whether the *content* satisfies the
+  // platform. `hasVisibleProblem` still tests it, because a calendar card has
+  // no quick-settings bar to say it instead.
+
   // Mirrors `platforms.ValidatePostType`'s `requires_video_title` branch: a
   // video post type on a platform that demands a title (YouTube) cannot leave
   // Draft without one. The title field is the post's existing one — Ogen
@@ -232,9 +238,12 @@ function mediaChecks({
 export function hasVisibleProblem(post: Post): boolean {
   // The publish already went wrong, or the window passed without it going out.
   if (post.status === 'failed' || post.status === 'not_published') return true
-  // Nothing can publish without a channel and a shape to publish in.
+  // Nothing can publish without a channel, a shape to publish in, and an
+  // account to publish as. All three are on the post row, which is what makes
+  // them checkable from a calendar card.
   if (!getPlatformInfo(post.platform_id)) return true
   if (!post.platform_post_type) return true
+  if (!post.social_account_id) return true
   return false
 }
 
@@ -243,4 +252,113 @@ export function worstStatus(checks: PostCheck[]): CheckStatus {
   if (checks.some((c) => c.status === 'warn')) return 'warn'
   if (checks.some((c) => c.status === 'pending')) return 'pending'
   return 'pass'
+}
+
+/**
+ * What the expanded checks list actually draws.
+ *
+ * A passing check is not automatically worth a row. `Platform → LinkedIn` and
+ * `Post type → Text post` restate two settings the user picked in the bar
+ * directly above; `Copy` passes with no detail at all, so it renders as a tick
+ * beside a bare word. Listed in full, a healthy post produced four rows of
+ * which one — the character count — said anything.
+ *
+ * So a passing platform and post type fold into the `heading` over the list —
+ * they are what the remaining rows are measured *against*, not results — and a
+ * passing check with nothing to report is dropped. Both keep their rows the
+ * moment they stop passing, because then they carry the only thing worth
+ * reading: *why*. Nothing that fails or warns is ever folded or hidden.
+ */
+export type ChecksDisplay = {
+  /** e.g. `LinkedIn Text post requirements`. Never empty — see `heading()`. */
+  heading: string
+  rows: PostCheck[]
+}
+
+/** The ids whose passing value is context for the other checks, not a check. */
+const CONTEXT_IDS = ['platform', 'post-type'] as const
+
+/**
+ * Nothing has been chosen for the rules to come from yet.
+ *
+ * The checks still evaluate — character limits and post-type structure fall
+ * back to defaults — but every answer they give is provisional, and the list
+ * would be reporting a made-up platform's rules as this post's. So the bar
+ * says the one useful thing instead, and shows nothing else.
+ */
+export function awaitingPlatform(checks: PostCheck[]): boolean {
+  return checks.some((c) => c.id === 'platform' && c.status === 'fail')
+}
+
+/**
+ * Names whose rules the list is applying. Falls back to the generic form while
+ * either setting is unpicked, so the heading is never half a sentence — the
+ * rows underneath will be saying which setting is missing anyway.
+ */
+function heading(platform: string | null, postType: string | null): string {
+  if (platform && postType) return `${platform} ${postType} requirements`
+  if (platform) return `${platform} requirements`
+  return 'Platform requirements'
+}
+
+export function foldChecks(checks: PostCheck[]): ChecksDisplay {
+  let platform: string | null = null
+  let postType: string | null = null
+  const rows: PostCheck[] = []
+
+  for (const check of checks) {
+    const foldable = (CONTEXT_IDS as readonly string[]).includes(check.id)
+    if (check.status === 'pass' && foldable) {
+      if (check.detail) {
+        if (check.id === 'platform') platform = check.detail
+        else postType = check.detail
+      }
+      continue
+    }
+    // A tick against a label with nothing beside it tells the reader only that
+    // a check they can't see the result of went the right way.
+    if (check.status === 'pass' && !check.detail) continue
+    rows.push(check)
+  }
+
+  return { heading: heading(platform, postType), rows }
+}
+
+/**
+ * The one line the collapsed checks bar shows.
+ *
+ * Only the passing case names *platform requirements*, and it says so because
+ * since CON-183 the bar carries the quality score too: "everything checks out"
+ * would claim the writing was fine as well. When something is wrong the string
+ * is just the work — `2 issues to fix`. Restating the verdict in front of it
+ * ("doesn't meet platform requirements — 2 issues to fix") spends the widest
+ * part of the line on the half the reader can already see from the icon, and
+ * pushes the count, which is the actionable part, toward the truncation.
+ *
+ * Quality deliberately cannot reach this string. A post that has never been
+ * assessed is the default state of every new post, and it must not look
+ * broken; a weak score is advice, not a blocker, and dressing it as one would
+ * teach the user to ignore the icon that also means "this will be rejected".
+ */
+export function checksSummary(checks: PostCheck[]): string {
+  // Before anything else: every other requirement is a rule *of* a platform,
+  // so counting them against no platform would report a number that changes
+  // the moment one is picked, from rules that were never this post's.
+  if (awaitingPlatform(checks)) return 'Select platform to see requirements'
+
+  const overall = worstStatus(checks)
+  if (overall === 'pending') return 'Checking this post…'
+
+  const failing = checks.filter((c) => c.status === 'fail').length
+  const warning = checks.filter((c) => c.status === 'warn').length
+  const plural = (n: number) => (n === 1 ? 'issue' : 'issues')
+
+  if (failing > 0) {
+    const rest = warning > 0 ? `, ${warning} to look at` : ''
+    return `${failing} ${plural(failing)} to fix${rest}`
+  }
+  if (warning > 0) {
+    return `${warning} ${plural(warning)} to look at`
+  }
+  return 'Post meets platform requirements'
 }
