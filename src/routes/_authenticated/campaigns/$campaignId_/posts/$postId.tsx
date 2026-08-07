@@ -15,7 +15,7 @@ import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
-import { PostQualityPanel } from '@/components/posts/quality/PostQualityPanel'
+import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
 import {
   POST_PREVIEW_PORTAL_ID,
   POST_QUALITY_PORTAL_ID,
@@ -30,6 +30,7 @@ import {
   type TransitionStatusResult,
   type VerifyExternalResult,
 } from '@/hooks/usePost'
+import { usePostAssessment } from '@/hooks/usePostAssessment'
 import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
@@ -183,7 +184,20 @@ function PostEditorSurface({
   const previewOpen = useSettingsStore((s) => s.activeRightPanel === 'postPreview')
   const qualityOpen = useSettingsStore((s) => s.activeRightPanel === 'postQuality')
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
+  const openRightPanel = useSettingsStore((s) => s.openRightPanel)
   const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
+
+  // Owned here rather than inside the quality panel (CON-183): the checks bar
+  // shows the score and can start a run, and the panel draws that same run's
+  // progress. Two `usePostAssessment` instances would share the cached result
+  // but not the run — the bar would stream while the panel sat on its "assess
+  // this post" empty state, offering a second one.
+  const quality = usePostAssessment(doc.id)
+  const { assessment, assess: startAssessment, assessing } = quality
+  // Opening the rail is its own action, separate from starting a run: the bar
+  // can now do both, and a link that says "see the full breakdown" must not
+  // also spend a model call.
+  const openQuality = useCallback(() => openRightPanel('postQuality'), [openRightPanel])
   const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
   const [previewHost, setPreviewHost] = useState<HTMLElement | null>(null)
   const [qualityHost, setQualityHost] = useState<HTMLElement | null>(null)
@@ -311,7 +325,15 @@ function PostEditorSurface({
               />
             </div>
             <div className="w-content">
-              <PostValidationsSection checks={media.checks} />
+              <PostValidationsSection
+                checks={media.checks}
+                assessment={assessment}
+                postUpdatedAt={doc.updated_at}
+                qualityUnavailable={quality.unavailable}
+                assessing={assessing}
+                onAssess={startAssessment}
+                onOpenQuality={openQuality}
+              />
             </div>
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
@@ -383,9 +405,23 @@ function PostEditorSurface({
 
         {qualityHost &&
           createPortal(
-            /* The live document, so the panel can tell a score that still
-               describes this post from one taken before the last edit. */
-            <PostQualityPanel doc={doc} onClose={closeRightPanel} />,
+            /* `doc.updated_at` rather than the stored evaluation's copy of the
+               post, so the panel can tell a score that still describes what is
+               in the editor from one taken before the last edit. */
+            <PostQualityPanelView
+              assessment={assessment}
+              postUpdatedAt={doc.updated_at}
+              loading={quality.loading}
+              unavailable={quality.unavailable}
+              loadError={quality.loadError}
+              onReload={quality.reload}
+              onAssess={startAssessment}
+              assessing={assessing}
+              steps={quality.steps}
+              cached={quality.cached}
+              assessError={quality.assessError}
+              onClose={closeRightPanel}
+            />,
             qualityHost,
           )}
       </div>

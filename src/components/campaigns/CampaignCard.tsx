@@ -7,6 +7,7 @@ import { StatTile } from '@/components/campaigns/overview/StatTile.tsx'
 import { useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { campaignColorVar } from '@/lib/campaignColor.ts'
+import { campaignTypeInfo } from '@/lib/campaignTypeDictionary.ts'
 import {
   attentionItems,
   contentSnapshot,
@@ -49,8 +50,8 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
   const platformViews = usePlatformViews()
 
   const title = campaign.name.trim() || 'Untitled campaign'
-  const typeLabel =
-    campaign.campaign_type?.label ?? campaign.campaign_type?.name ?? null
+  const typeName = campaign.campaign_type?.name
+  const typeLabel = typeName ? campaignTypeInfo(typeName).label : null
   const dates = setupChecks(campaign, platformViews).find((c) => c.id === 'dates')!
   // Only a complete range describes the campaign; a half-set one is a gap, and
   // the attention badge already carries it.
