@@ -132,8 +132,11 @@ export function ModalContainer({
       // Store the currently focused element
       previousActiveElement.current = document.activeElement
 
-      // Focus the modal container
-      if (modalRef.current) {
+      // Pull focus into the modal — but only if nothing inside it has already
+      // claimed it. React applies a child's `autoFocus` during commit, before
+      // this effect runs, so focusing the container unconditionally would take
+      // focus straight back off the field the modal meant to start on.
+      if (modalRef.current && !modalRef.current.contains(document.activeElement)) {
         modalRef.current.focus()
       }
 
@@ -217,6 +220,11 @@ export function ModalContainer({
           'focus:outline-none',
           sizeClasses[size],
           heightClasses[height],
+          // A modal with a height budget stacks header and body as flex items
+          // so the body can be told what it has left to work with. Auto-height
+          // modals are untouched — they grow with their content, and a flex
+          // column would change nothing except what can go wrong.
+          height !== 'auto' && 'flex flex-col',
           className
         )}
         tabIndex={-1}
@@ -245,8 +253,17 @@ export function ModalContainer({
           </Button>
         )}
 
-        {/* Content */}
-        <div className={isContainer ? 'h-full' : 'p-6'}>{children}</div>
+        {/* Content — a height-bounded modal hands its body whatever the header
+            left over and lets the body decide what scrolls inside it, so a
+            form can pin its buttons while only the long part moves. */}
+        <div
+          className={cn(
+            isContainer ? 'h-full' : 'p-6',
+            height !== 'auto' && 'min-h-0 flex-1',
+          )}
+        >
+          {children}
+        </div>
       </div>
     </Backdrop>,
     document.body
