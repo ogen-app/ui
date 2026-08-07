@@ -101,18 +101,26 @@ function ConnectPlatformModal({
   const { mutate: syncNow, isPending: isSyncing } = useTriggerZernioSync()
 
   // Watch the live platform list: the row flips to connected once the
-  // background sync mirrors the authorized account back. Compare against the
-  // count at open time rather than zero — a platform may already have
-  // accounts, and this connect is about the *new* one.
+  // background sync mirrors the authorized account back. Two outcomes count
+  // as success, because two entry points share this modal:
   //
-  // Counts accounts, not publishers. Publishers were the wrong unit: Zernio
-  // is the only one and it reads `connected` once it holds any account, so
-  // connecting a *second* account left this at 1 > 1 and the modal never
-  // reached its success state (CON-150).
+  // - Connect: a *new* account landed, so the count rose past the count at
+  //   open time. Counted in accounts, not publishers — Zernio is the only
+  //   publisher and reads `connected` once it holds any account, so a second
+  //   account never moved the publisher count (CON-150).
+  // - Reconnect: re-authorizing an *existing* inactive account flips it
+  //   active in place — same id, same count — so the count check alone left
+  //   this modal polling forever after the row behind it already recovered.
   const liveViews = usePlatformViews()
-  const baseline = connectedAccounts(view).length
+  const accountsAtOpen = connectedAccounts(view)
   const live = liveViews.find((v) => v.platform.id === view.platform.id)
-  const connected = (live ? connectedAccounts(live).length : 0) > baseline
+  const liveAccounts = live ? connectedAccounts(live) : []
+  const inactiveAtOpen = new Set(
+    accountsAtOpen.filter((a) => !a.is_active).map((a) => a.id),
+  )
+  const connected =
+    liveAccounts.length > accountsAtOpen.length ||
+    liveAccounts.some((a) => a.is_active && inactiveAtOpen.has(a.id))
 
   // While waiting, re-check the platform list so the success state appears
   // without a manual refresh.
