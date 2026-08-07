@@ -41,6 +41,29 @@ const FEATURE_FLAGS = {
    * this flag once the card has been exercised against the deployed API.
    */
   'campaign-scheduling': true,
+
+  /**
+   * "Accounts & Post Types" in campaign settings: the campaign targets an
+   * **account on a platform** rather than the platform, so a workspace with two
+   * Facebook pages can send a campaign to one of them, or to both with
+   * different post types.
+   *
+   * **Waiting on:** an account dimension on the campaign. `CampaignPlatform` is
+   * `{id, post_types}` (`models/types.go`), the column is jsonb, and the
+   * handler drops any field it doesn't know — so a per-account choice sent to
+   * `PUT /api/campaigns/:id` is lost on the round trip. It needs
+   * `CampaignPlatform.AccountID` (`""` = the placeholder kind, i.e. today's
+   * platform-level entry) with the content-plan flow and the submit worker
+   * reading it, plus a uniqueness rule on `(platform, account)`.
+   *
+   * Until then the choice lives in the tenant key/value store
+   * (`campaign-accounts.<campaignId>`, see `useCampaignAccounts`) and the
+   * campaign's own `target_platforms` is written from it at platform
+   * granularity, so nothing downstream reads half-backed data. When the column
+   * lands, migrate the key onto it, re-test, and delete this flag with its
+   * off-branch (`PlatformsControl`).
+   */
+  'campaign-accounts': true,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

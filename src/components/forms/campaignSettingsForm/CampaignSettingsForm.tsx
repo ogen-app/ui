@@ -28,6 +28,7 @@ import { cn } from '@/lib'
 import { selectCampaignRunning, useAssistantStore } from '@/stores/assistantStore'
 import type { Campaign, CampaignPlatform } from '@/types/campaigns'
 import { campaignToPayload, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
+import { AccountsControl } from './AccountsControl'
 import { PlatformsControl } from './PlatformsControl'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { PostGoalCard } from './PostGoalCard'
@@ -128,6 +129,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
   // are still the campaign's own, and Save round-trips them untouched.
   const goalsEnabled = useFeatureFlag('campaign-goals')
   const schedulingEnabled = useFeatureFlag('campaign-scheduling')
+  const accountsEnabled = useFeatureFlag('campaign-accounts')
 
   // `setCampaignDates` / `redistributePosts` rewrite these fields server-side
   // (CON-115), so the form is held read-only for the length of a turn. Unsaved
@@ -286,7 +288,9 @@ export function CampaignSettingsForm({ campaign }: Props) {
         <SettingsCard
           title={
             <>
-              <span className="truncate">Platforms &amp; Post Types</span>
+              <span className="truncate">
+                {accountsEnabled ? 'Accounts & Post Types' : 'Platforms & Post Types'}
+              </span>
               {/* After the heading, not before it: the dot comes and goes, and
                   leading it would shift the title sideways as platforms are
                   added. Same warning tone as the summary line inside. */}
@@ -294,26 +298,39 @@ export function CampaignSettingsForm({ campaign }: Props) {
                 <span
                   className="size-2 shrink-0 rounded-full bg-warning"
                   role="img"
-                  aria-label="No platforms selected"
+                  aria-label={
+                    accountsEnabled ? 'No accounts selected' : 'No platforms selected'
+                  }
                 />
               )}
             </>
           }
         >
-          <FormField
-            control={form.control}
-            name="target_platforms"
-            render={({ field }) => (
-              <FormItem>
-                <PlatformsControl
-                  value={field.value}
-                  onChange={field.onChange}
-                  onCommitPlatforms={commitPlatforms}
-                />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {accountsEnabled ? (
+            // Outside the form field: the account choice is stored beside the
+            // campaign rather than on it, and it writes `target_platforms`
+            // itself through `commitPlatforms`.
+            <AccountsControl
+              campaignId={campaign.id}
+              targetPlatforms={campaign.target_platforms}
+              onCommitPlatforms={commitPlatforms}
+            />
+          ) : (
+            <FormField
+              control={form.control}
+              name="target_platforms"
+              render={({ field }) => (
+                <FormItem>
+                  <PlatformsControl
+                    value={field.value}
+                    onChange={field.onChange}
+                    onCommitPlatforms={commitPlatforms}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </SettingsCard>
 
         <SettingsCard title="Danger Zone">
