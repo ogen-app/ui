@@ -676,12 +676,18 @@ function SchedulingDetails({
           warn ? 'text-primary-foreground' : 'text-secondary-foreground',
         )}
       >
-        {warn ? (
-          <WarningCircleIcon weight="fill" className="size-4 shrink-0 text-warning" />
-        ) : (
-          <ClockIcon className="size-4 shrink-0" />
-        )}
-        <span className="truncate">{text}</span>
+        {/* The icon and the thing it labels are one unit at gap-1.5, matching
+            the platform trigger below (icon + name). The row's own gap-2.5 is
+            for what separates units — the Dot — so leaving the icon to inherit
+            it made the same pairing read two different ways on two lines. */}
+        <span className="flex min-w-0 items-center gap-1.5">
+          {warn ? (
+            <WarningCircleIcon weight="fill" className="size-4 shrink-0 text-warning" />
+          ) : (
+            <ClockIcon className="size-4 shrink-0" />
+          )}
+          <span className="truncate">{text}</span>
+        </span>
         {unlinked && (
           <>
             <Dot />
@@ -722,21 +728,25 @@ function ScheduleEditor({
 
   return (
     <span className="flex min-w-0 items-center gap-2.5 text-sm">
-      {!valid ? (
-        <WarningHint
-          focusable
-          text="This post has no publish date, so it can't be scheduled. Pick a date and time to publish it."
-        />
-      ) : inPast ? (
-        <WarningHint
-          focusable
-          text="The publish date is in the past. Scheduling needs a date in the future — pick a new one."
-        />
-      ) : (
-        <ClockIcon className="size-4 shrink-0 text-secondary-foreground" />
-      )}
+      {/* Icon and date as one unit at gap-1.5 — see the note in
+          `SchedulingDetails`. The row's gap-2.5 stays for the Dot that
+          separates the date from the time. */}
+      <span className="flex min-w-0 items-center gap-1.5">
+        {!valid ? (
+          <WarningHint
+            focusable
+            text="This post has no publish date, so it can't be scheduled. Pick a date and time to publish it."
+          />
+        ) : inPast ? (
+          <WarningHint
+            focusable
+            text="The publish date is in the past. Scheduling needs a date in the future — pick a new one."
+          />
+        ) : (
+          <ClockIcon className="size-4 shrink-0 text-secondary-foreground" />
+        )}
 
-      <DropdownMenu open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <DropdownMenu open={calendarOpen} onOpenChange={setCalendarOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
@@ -771,8 +781,9 @@ function ScheduleEditor({
                 : undefined
             }
           />
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </span>
 
       {valid && (
         <>
