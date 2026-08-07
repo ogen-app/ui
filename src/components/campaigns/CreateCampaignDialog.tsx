@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { Explainer } from '@/components/page-primitives/Explainer'
 import { ModalContainer } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -74,10 +75,11 @@ export function CreateCampaignDialog({
       isOpen={open}
       onClose={onClose}
       title="New campaign"
-      size="large"
+      size="xlarge"
+      height="large"
     >
       <form
-        className="flex flex-col gap-6"
+        className="flex h-full flex-col gap-6"
         noValidate
         autoComplete="off"
         onSubmit={(e) => {
@@ -98,18 +100,32 @@ export function CreateCampaignDialog({
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        {/* The only part that grows: the name field above and the buttons
+            below keep their place while the list of types takes the rest. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-2">
           <Label>Campaign type</Label>
+          {/* Teaching only — every card below states what its own type does,
+              so closing this costs nothing. */}
+          <Explainer id="campaign-type">
+            The type sets the phases your content is planned and written
+            against, so it shapes every post the campaign produces. Pick the
+            outcome you're after — you can't easily change it later.
+          </Explainer>
           {typesLoading ? (
             <div className="flex h-24 items-center justify-center">
               <Spinner />
             </div>
           ) : (
-            <CampaignTypePicker
-              types={types ?? []}
-              value={typeId}
-              onChange={setTypeId}
-            />
+            // Scrolls only when the cards genuinely outgrow the window — on a
+            // normal screen all five now fit without moving. px-1 keeps focus
+            // rings off the clipping edge.
+            <div className="min-h-0 flex-1 overflow-y-auto px-1 py-1">
+              <CampaignTypePicker
+                types={types ?? []}
+                value={typeId}
+                onChange={setTypeId}
+              />
+            </div>
           )}
         </div>
 
