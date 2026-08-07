@@ -2,7 +2,7 @@ import { useMemo, useRef, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { PlusIcon, WarningCircleIcon } from '@phosphor-icons/react'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AccountAvatar } from '@/components/ui/account-avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
@@ -311,7 +311,7 @@ function SupersedeOffer({
       </p>
       {accounts.map((account) => (
         <div key={account.id} className="flex items-center justify-between gap-3">
-          <AccountIdentity account={account} className="size-8" />
+          <AccountIdentity account={account} />
           <Button
             type="button"
             variant="outline"
@@ -364,22 +364,18 @@ function RowShell({
   )
 }
 
-/** Avatar over `@handle` — an account is a face, which is what tells it apart
- *  from the placeholder rows below it. */
-function AccountIdentity({
-  account,
-  className,
-}: {
-  account: PublisherAccount
-  className?: string
-}) {
+/**
+ * Avatar beside `@handle` — an account is a face, which is what tells it apart
+ * from the placeholder rows below it.
+ *
+ * No platform badge: this only ever renders inside the offer on that
+ * platform's own row, where the badge would repeat what the row already says.
+ */
+function AccountIdentity({ account }: { account: PublisherAccount }) {
   const name = accountLabel(account)
   return (
     <div className="min-w-0 flex items-center gap-2">
-      <Avatar className={cn('shrink-0', className)}>
-        {account.avatar_url && <AvatarImage src={account.avatar_url} alt={name} />}
-        <AvatarFallback>{(name || '?').slice(0, 1).toUpperCase()}</AvatarFallback>
-      </Avatar>
+      <AccountAvatar src={account.avatar_url} name={name} size="sm" />
       <span className="min-w-0 truncate text-sm">
         {name}
         <span className="text-tertiary-foreground"> @{account.username}</span>
@@ -455,20 +451,10 @@ function AccountLabel({
             style={{ color: info.color }}
           />
         ) : (
-          <>
-            <Avatar className="size-10">
-              {account.avatar_url && <AvatarImage src={account.avatar_url} alt={name} />}
-              <AvatarFallback>{(name || '?').slice(0, 1).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            {/* Which platform this face belongs to. Full colour whether or not
-                the campaign targets it — it is identity, not selection. */}
-            <Icon
-              aria-hidden
-              weight="fill"
-              className="absolute -right-0.5 -bottom-0.5 size-4 rounded-full bg-secondary"
-              style={{ color: info.color }}
-            />
-          </>
+          // The badge is full colour whether or not the campaign targets this
+          // account — which platform a face belongs to is identity, not
+          // selection.
+          <AccountAvatar src={account.avatar_url} name={name} platform={info} size="md" />
         )}
         {/* A targeted placeholder is a campaign that cannot publish, and from a
             distance the row looks like any other. The badge is the one thing
