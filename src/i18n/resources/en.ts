@@ -254,22 +254,20 @@ export const en = {
       empty: 'No platforms connected yet — pick one under “Connect Platforms” below.',
       cadence: 'Cadence',
       constraints: 'Constraints',
+      /** Cadence and constraints await real backend data — see PlatformRow. */
+      comingSoon: 'Coming soon',
       contentTypes: 'Available Content Types',
       contentTypesEmpty: 'None',
-      inactiveSuffix: ' (inactive)',
+      accountInactive: 'Inactive on {{platform}} — can’t receive posts',
+      reconnect: 'Reconnect',
       disconnectAccount: 'Disconnect {{name}}',
       disconnectTooltip: 'Disconnect this account',
       status: {
         connected: 'Connected',
-        degraded: 'Sync degraded',
         degradedMessage:
           'Connected, but the {{publisher}} sync is degraded — we retry automatically.',
-        disabled: 'Integration off',
         disabledMessage:
           'Connected, but the publishing integration is currently disabled on the server.',
-        inactive: 'Inactive',
-        inactiveMessage:
-          'The connected account is inactive on {{publisher}} and can’t receive posts.',
       },
     },
     autoPublish: {

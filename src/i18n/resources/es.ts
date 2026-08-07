@@ -228,22 +228,20 @@ export const es: Translation = {
         'Aún no hay plataformas conectadas — elige una en «Conectar plataformas», más abajo.',
       cadence: 'Frecuencia',
       constraints: 'Restricciones',
+      /** Cadence and constraints await real backend data — see PlatformRow. */
+      comingSoon: 'Próximamente',
       contentTypes: 'Tipos de contenido disponibles',
       contentTypesEmpty: 'Ninguno',
-      inactiveSuffix: ' (inactiva)',
+      accountInactive: 'Inactiva en {{platform}} — no puede recibir publicaciones',
+      reconnect: 'Reconectar',
       disconnectAccount: 'Desconectar {{name}}',
       disconnectTooltip: 'Desconectar esta cuenta',
       status: {
         connected: 'Conectada',
-        degraded: 'Sincronización degradada',
         degradedMessage:
           'Conectada, pero la sincronización con {{publisher}} está degradada — lo reintentamos automáticamente.',
-        disabled: 'Integración desactivada',
         disabledMessage:
           'Conectada, pero la integración de publicación está desactivada en el servidor.',
-        inactive: 'Inactiva',
-        inactiveMessage:
-          'La cuenta conectada está inactiva en {{publisher}} y no puede recibir publicaciones.',
       },
     },
     autoPublish: {

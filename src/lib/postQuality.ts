@@ -76,6 +76,19 @@ export function overallBand(pct: number): QualityBand {
   return 'weak'
 }
 
+/**
+ * The band as a word, for places that state the verdict rather than draw it.
+ *
+ * A number needs a rubric to read; "Good" needs nothing. Deliberately three
+ * flat words with no praise or alarm in them — the score is advisory, and copy
+ * that congratulated or scolded would make an opinion sound like a result.
+ */
+export const BAND_LABEL: Record<QualityBand, string> = {
+  strong: 'Good',
+  workable: 'Workable',
+  weak: 'Weak',
+}
+
 /** Clamps the stored percentage into the range a progress ring can draw. */
 export function overallPct(evaluation: PostEvaluation): number {
   const pct = evaluation.overall_pct
