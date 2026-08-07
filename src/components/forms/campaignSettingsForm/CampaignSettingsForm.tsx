@@ -1,8 +1,7 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -33,46 +32,7 @@ import { PlatformsControl } from './PlatformsControl'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { PostGoalCard } from './PostGoalCard'
 import { SchedulingCard } from './SchedulingCard'
-
-const numericString = z
-  .string()
-  .refine((v) => v === '' || Number.isFinite(Number(v)), 'Must be a number')
-
-const settingsSchema = z.object({
-  name: z.string(),
-  campaign_type_id: z.string().min(1, 'Campaign type is required'),
-  start_date: z.string().nullable(),
-  end_date: z.string().nullable(),
-  estimated_post_count: numericString,
-  budget: numericString,
-  currency: z.string(),
-  language: z.string(),
-  tag_ids: z.array(z.string()),
-  target_platforms: z.array(
-    z.object({
-      id: z.string(),
-      post_types: z.array(z.string()),
-    }),
-  ),
-})
-
-type SettingsFormValues = z.infer<typeof settingsSchema>
-
-function defaultValues(campaign: Campaign): SettingsFormValues {
-  return {
-    name: campaign.name,
-    campaign_type_id: campaign.campaign_type_id,
-    start_date: campaign.start_date,
-    end_date: campaign.end_date,
-    estimated_post_count:
-      campaign.estimated_post_count == null ? '' : String(campaign.estimated_post_count),
-    budget: campaign.budget == null ? '' : String(campaign.budget),
-    currency: campaign.currency,
-    language: campaign.language,
-    tag_ids: campaign.tag_ids ?? [],
-    target_platforms: campaign.target_platforms ?? [],
-  }
-}
+import { settingsDefaultValues, settingsSchema, type SettingsFormValues } from './schema'
 
 type Props = {
   campaign: Campaign
@@ -88,7 +48,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
   const form = useForm<SettingsFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(settingsSchema as any),
-    defaultValues: defaultValues(campaign),
+    defaultValues: settingsDefaultValues(campaign),
   })
 
   const { data: types, isLoading: typesLoading } = useCampaignTypes()
@@ -107,6 +67,11 @@ export function CampaignSettingsForm({ campaign }: Props) {
       start_date: toISODateTime(v.start_date),
       end_date: toISODateTime(v.end_date),
       estimated_post_count: toNumberOrNull(v.estimated_post_count),
+      goal_cadence: v.goal_cadence,
+      publishing_time: v.publishing_time,
+      timezone: v.timezone,
+      publishing_days: v.publishing_days,
+      spread_minutes: v.spread_minutes,
       budget: toNumberOrNull(v.budget),
       currency: v.currency,
       language: v.language,
@@ -154,40 +119,15 @@ export function CampaignSettingsForm({ campaign }: Props) {
   )
 
   // Watched rather than read from the campaign: adding a platform persists
-  // immediately, so the heading's warning has to clear on the click. The Goals
-  // card counts the same list, and its total moves with the dates being edited
-  // above it rather than with the ones last saved.
+  // immediately, so the heading's warning has to clear on the click.
   const targetPlatforms = form.watch('target_platforms')
-  const startDate = form.watch('start_date')
-  const endDate = form.watch('end_date')
   const noPlatforms = targetPlatforms.length === 0
-  // Recomputed only when the selection itself changes: the Goals card counts
-  // accounts off this list inside an effect dependency, and a fresh array on
-  // every render would churn it.
-  const platformIds = useMemo(
-    () => targetPlatforms.map((p) => p.id),
-    [targetPlatforms],
-  )
 
-  // Off leaves the campaign's stored post target alone: the card is the only
-  // thing that writes it, so a hidden card means the number is simply not
-  // touched by this page.
+  // Both cards edit campaign columns through this same form, so a flag being
+  // off simply means the page doesn't offer those fields — the values it holds
+  // are still the campaign's own, and Save round-trips them untouched.
   const goalsEnabled = useFeatureFlag('campaign-goals')
   const schedulingEnabled = useFeatureFlag('campaign-scheduling')
-
-  /**
-   * The campaign's post target is the goal's total, not a field of its own —
-   * the Goals card computes it and hands it over here, and it rides along with
-   * the rest of the form on the header's Save.
-   */
-  const setGoalTotal = useCallback(
-    (total: number | null) => {
-      form.setValue('estimated_post_count', total == null ? '' : String(total), {
-        shouldDirty: true,
-      })
-    },
-    [form],
-  )
 
   // `setCampaignDates` / `redistributePosts` rewrite these fields server-side
   // (CON-115), so the form is held read-only for the length of a turn. Unsaved
@@ -293,22 +233,11 @@ export function CampaignSettingsForm({ campaign }: Props) {
 
         {/* How much the campaign should produce, then when it goes out. The
             post target used to sit in Advanced next to budget and language,
-            where it read as trivia rather than as the number the assistant
-            plans against. `estimated_post_count` is still a form field — it is
-            just computed from the goal now rather than typed. */}
-        {goalsEnabled && (
-          <PostGoalCard
-            campaign={campaign}
-            platformIds={platformIds}
-            startDate={startDate}
-            endDate={endDate}
-            onTotalChange={setGoalTotal}
-          />
-        )}
+            where it read as trivia rather than as the rate the assistant plans
+            against. */}
+        {goalsEnabled && <PostGoalCard />}
 
-        {/* Saved on its own, not through the header's Save — see
-            `useSchedulingPreferences`. */}
-        {schedulingEnabled && <SchedulingCard campaignId={campaign.id} />}
+        {schedulingEnabled && <SchedulingCard />}
 
         <SettingsCard title="Advanced">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">

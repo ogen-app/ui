@@ -4,7 +4,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { TextSelect } from '@/components/ui/text-select'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
-import { useSchedulingPreferences } from '@/hooks/useSchedulingPreferences'
+import { useCampaign } from '@/hooks/useCampaigns'
+import { publishingDayNumbers } from '@/lib/campaignScheduling'
 
 // Displayed Monday-first regardless of the chosen first day of week.
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0] as const
@@ -42,9 +43,12 @@ export function CalendarSettingsPanel({
   const { firstDayOfWeek, hiddenDays, isPending, setFirstDayOfWeek, setDayVisible } =
     useCalendarSettings(campaignId)
   // The campaign's publishing days, so the panel can say which of these rows
-  // the campaign will never put anything on. Shares the cached query the
-  // settings page fills, so opening the panel costs no extra request.
-  const { bannedDays } = useSchedulingPreferences(campaignId)
+  // the campaign will never put anything on. Shares the cached campaign the
+  // page around it already loaded, so opening the panel costs no extra request.
+  // While it is loading there is nothing to annotate — and no annotation is the
+  // right guess, since a campaign publishes on every day by default.
+  const { data: campaign } = useCampaign(campaignId)
+  const publishingDays = campaign ? publishingDayNumbers(campaign.publishing_days) : null
 
   return (
     <RailPanel title="Calendar Settings" onClose={onClose} className="h-full">
@@ -74,7 +78,7 @@ export function CalendarSettingsPanel({
             // Why a hidden day may be safe to hide: the campaign never
             // publishes on it. State, not teaching, so it sits in the row
             // rather than in a note the user can close.
-            const unused = bannedDays.includes(day)
+            const unused = publishingDays !== null && !publishingDays.includes(day)
             return (
               <div
                 key={day}

@@ -1,40 +1,44 @@
 import { useMemo } from 'react'
+import { useFormContext } from 'react-hook-form'
 
 import { Explainer } from '@/components/page-primitives/Explainer'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Skeleton } from '@/components/ui/skeleton'
 import { TextSelect } from '@/components/ui/text-select'
-import { useSchedulingPreferences } from '@/hooks/useSchedulingPreferences'
 import { cn } from '@/lib'
+import {
+  WEEKDAY_TOKENS,
+  isValidClock,
+  type WeekdayToken,
+} from '@/lib/campaignScheduling'
 import { describeTimeZone, timeZoneNames } from '@/lib/timeZones'
+import type { SettingsFormValues } from './schema'
 
-// Monday-first, which is how a publishing week reads even where the calendar
-// starts on Sunday.
-const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0] as const
-
-const DAY_LABELS: Record<number, string> = {
-  0: 'Sun',
-  1: 'Mon',
-  2: 'Tue',
-  3: 'Wed',
-  4: 'Thu',
-  5: 'Fri',
-  6: 'Sat',
+// The server's own token order is Monday-first, which is also how a publishing
+// week reads even where the calendar starts on Sunday — so the picker walks the
+// tokens as they come.
+const DAY_LABELS: Record<WeekdayToken, string> = {
+  mon: 'Mon',
+  tue: 'Tue',
+  wed: 'Wed',
+  thu: 'Thu',
+  fri: 'Fri',
+  sat: 'Sat',
+  sun: 'Sun',
 }
 
-const DAY_NAMES: Record<number, string> = {
-  0: 'Sunday',
-  1: 'Monday',
-  2: 'Tuesday',
-  3: 'Wednesday',
-  4: 'Thursday',
-  5: 'Friday',
-  6: 'Saturday',
+const DAY_NAMES: Record<WeekdayToken, string> = {
+  mon: 'Monday',
+  tue: 'Tuesday',
+  wed: 'Wednesday',
+  thu: 'Thursday',
+  fri: 'Friday',
+  sat: 'Saturday',
+  sun: 'Sunday',
 }
 
-const DEVIATION_OPTIONS = [
+const SPREAD_OPTIONS = [
   { id: '0', displayValue: 'Exactly on time' },
   { id: '15', displayValue: '± 15 minutes' },
   { id: '30', displayValue: '± 30 minutes' },
@@ -44,44 +48,61 @@ const DEVIATION_OPTIONS = [
 
 /**
  * When the campaign publishes: the hour the scheduler aims at, how far it may
- * drift from it, and the days it must skip (CON-156 §1).
+ * drift from it, and the days it skips (CON-181).
  *
- * These are not campaign fields — they are saved on their own, immediately,
- * through the settings store rather than through the page's Save. See
- * `useSchedulingPreferences`.
+ * These are campaign columns, edited on the same form as the rest of the page
+ * and written by the header's Save. The content-plan flow reads them when it
+ * places each generated draft.
  */
-export function SchedulingCard({ campaignId }: { campaignId: string }) {
-  const {
-    publishTime,
-    timeZone,
-    maxDeviationMinutes,
-    bannedDays,
-    isPending,
-    setPublishTime,
-    setTimeZone,
-    setMaxDeviationMinutes,
-    setDayBanned,
-  } = useSchedulingPreferences(campaignId)
+export function SchedulingCard() {
+  const form = useFormContext<SettingsFormValues>()
+  const publishingTime = form.watch('publishing_time')
+  const timezone = form.watch('timezone')
+  const spreadMinutes = form.watch('spread_minutes')
+  const publishingDays = form.watch('publishing_days')
+
+  const enabledDays = useMemo(
+    () => new Set(publishingDays.map((d) => d.trim().toLowerCase())),
+    [publishingDays],
+  )
 
   // A stored zone this browser's ICU data doesn't list still has to be
   // selectable, or opening the page would silently offer to replace it.
   const zoneOptions = useMemo(() => {
     const names = timeZoneNames()
-    const all = names.includes(timeZone) ? names : [timeZone, ...names]
+    const all = names.includes(timezone) ? names : [timezone, ...names]
     return all.map((name) => ({ id: name, displayValue: describeTimeZone(name) }))
-  }, [timeZone])
+  }, [timezone])
 
-  // The deviation the campaign actually has may not be one of the presets — a
+  // The spread the campaign actually has may not be one of the presets — a
   // value written before the list changed, or by the assistant. Show it rather
   // than silently snapping to a neighbour.
-  const deviationOptions = DEVIATION_OPTIONS.some(
-    (o) => Number(o.id) === maxDeviationMinutes,
-  )
-    ? DEVIATION_OPTIONS
+  const spreadOptions = SPREAD_OPTIONS.some((o) => Number(o.id) === spreadMinutes)
+    ? SPREAD_OPTIONS
     : [
-        ...DEVIATION_OPTIONS,
-        { id: String(maxDeviationMinutes), displayValue: `± ${maxDeviationMinutes} minutes` },
+        ...SPREAD_OPTIONS,
+        { id: String(spreadMinutes), displayValue: `± ${spreadMinutes} minutes` },
       ]
+
+  const toggleDay = (token: WeekdayToken) => {
+    const next = new Set(enabledDays)
+    if (next.has(token)) {
+      // Switching the last day off would not stop publishing — the server reads
+      // an empty set as every day (`scheduling.EnabledWeekdays`), so the card
+      // would say "never" while the scheduler published daily.
+      if (next.size <= 1) return
+      next.delete(token)
+    } else {
+      next.add(token)
+    }
+    form.setValue(
+      'publishing_days',
+      WEEKDAY_TOKENS.filter((t) => next.has(t)),
+      { shouldDirty: true },
+    )
+  }
+
+  const skipped = WEEKDAY_TOKENS.filter((t) => !enabledDays.has(t))
 
   return (
     <SettingsCard title="Scheduling">
@@ -100,33 +121,36 @@ export function SchedulingCard({ campaignId }: { campaignId: string }) {
             description under the pair rather than each carrying their own. */}
         <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="publish-time">Publishing time</Label>
-          {isPending ? (
-            <Skeleton className="h-12 w-full" />
-          ) : (
-            <div className="flex items-stretch gap-4 min-w-0">
-              <Input
-                id="publish-time"
-                type="time"
-                inputSize="lg"
-                value={publishTime}
-                onChange={(e) => setPublishTime(e.target.value)}
-                className="w-28 shrink-0"
+          <div className="flex items-stretch gap-4 min-w-0">
+            <Input
+              id="publish-time"
+              type="time"
+              inputSize="lg"
+              value={publishingTime}
+              onChange={(e) => {
+                // The time input clears to "" mid-edit, and the server rejects
+                // anything that isn't a zero-padded HH:MM.
+                if (!isValidClock(e.target.value)) return
+                form.setValue('publishing_time', e.target.value, { shouldDirty: true })
+              }}
+              className="w-28 shrink-0"
+            />
+            {/* The zone name is the long one — "Europe/Amsterdam (GMT+2)" —
+                so it takes what the time field leaves and truncates rather
+                than pushing the row wider. */}
+            <div className="min-w-0 flex-1">
+              <TextSelect
+                id="publish-timezone"
+                variant="default"
+                size="lg"
+                value={timezone}
+                onValueChange={(value) =>
+                  form.setValue('timezone', value, { shouldDirty: true })
+                }
+                elements={zoneOptions}
               />
-              {/* The zone name is the long one — "Europe/Amsterdam (GMT+2)" —
-                  so it takes what the time field leaves and truncates rather
-                  than pushing the row wider. */}
-              <div className="min-w-0 flex-1">
-                <TextSelect
-                  id="publish-timezone"
-                  variant="default"
-                  size="lg"
-                  value={timeZone}
-                  onValueChange={setTimeZone}
-                  elements={zoneOptions}
-                />
-              </div>
             </div>
-          )}
+          </div>
           <p className="text-xs text-tertiary-foreground">
             Posts are placed around this time, in this zone, on every publishing day.
           </p>
@@ -134,18 +158,16 @@ export function SchedulingCard({ campaignId }: { campaignId: string }) {
 
         <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="publish-spread">Spread</Label>
-          {isPending ? (
-            <Skeleton className="h-12 w-full" />
-          ) : (
-            <TextSelect
-              id="publish-spread"
-              variant="default"
-              size="lg"
-              value={String(maxDeviationMinutes)}
-              onValueChange={(v) => setMaxDeviationMinutes(Number(v))}
-              elements={deviationOptions}
-            />
-          )}
+          <TextSelect
+            id="publish-spread"
+            variant="default"
+            size="lg"
+            value={String(spreadMinutes)}
+            onValueChange={(v) =>
+              form.setValue('spread_minutes', Number(v), { shouldDirty: true })
+            }
+            elements={spreadOptions}
+          />
           <p className="text-xs text-tertiary-foreground">
             How far a post may drift from the publishing time.
           </p>
@@ -156,48 +178,40 @@ export function SchedulingCard({ campaignId }: { campaignId: string }) {
         <Label asChild>
           <span>Publishing days</span>
         </Label>
-        {isPending ? (
-          <Skeleton className="h-16 w-full" />
-        ) : (
-          // Seven equal columns across the full width, so the week reads as a
-          // week rather than as a row of chips that happens to be seven long.
-          <div className="grid grid-cols-7 gap-2">
-            {WEEK_DAYS.map((day) => {
-              const banned = bannedDays.includes(day)
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  role="switch"
-                  aria-checked={!banned}
-                  aria-label={DAY_NAMES[day]}
-                  onClick={() => setDayBanned(day, !banned)}
-                  className={cn(
-                    'flex h-16 min-w-0 items-center justify-center rounded-lg border',
-                    'px-2 text-[13px] font-medium',
-                    'transition-colors cursor-pointer',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    banned
-                      ? 'border-senary-foreground bg-transparent text-tertiary-foreground line-through'
-                      : 'border-transparent bg-tertiary text-foreground',
-                  )}
-                >
-                  {DAY_LABELS[day]}
-                </button>
-              )
-            })}
-          </div>
-        )}
+        {/* Seven equal columns across the full width, so the week reads as a
+            week rather than as a row of chips that happens to be seven long. */}
+        <div className="grid grid-cols-7 gap-2">
+          {WEEKDAY_TOKENS.map((token) => {
+            const on = enabledDays.has(token)
+            return (
+              <button
+                key={token}
+                type="button"
+                role="switch"
+                aria-checked={on}
+                aria-label={DAY_NAMES[token]}
+                onClick={() => toggleDay(token)}
+                className={cn(
+                  'flex h-16 min-w-0 items-center justify-center rounded-lg border',
+                  'px-2 text-[13px] font-medium',
+                  'transition-colors cursor-pointer',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  on
+                    ? 'border-transparent bg-tertiary text-foreground'
+                    : 'border-senary-foreground bg-transparent text-tertiary-foreground line-through',
+                )}
+              >
+                {DAY_LABELS[token]}
+              </button>
+            )
+          })}
+        </div>
         {/* Outside the Explainer on purpose: this is the state of the campaign,
             not a lesson, so it has to survive the note being closed. */}
         <p className="text-xs text-tertiary-foreground">
-          {bannedDays.length === 0
+          {skipped.length === 0
             ? 'Publishing on every day of the week.'
-            : `Skipping ${bannedDays
-                .slice()
-                .sort((a, b) => a - b)
-                .map((d) => DAY_NAMES[d])
-                .join(', ')}.`}
+            : `Skipping ${skipped.map((t) => DAY_NAMES[t]).join(', ')}.`}
         </p>
       </div>
     </SettingsCard>

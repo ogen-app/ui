@@ -1,200 +1,98 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Campaign } from '@/types/campaigns'
 import {
+  DEFAULT_GOAL_CADENCE,
   describePostGoalTotal,
-  NO_POST_GOAL,
-  parsePostGoal,
+  normalizeGoalCadence,
   periodsInRange,
   postGoalTotal,
-  seedPostGoal,
-  type PostGoal,
-  type PostGoalContext,
 } from './postGoal'
 
-const goal = (over: Partial<PostGoal> = {}): PostGoal => ({
-  ...NO_POST_GOAL,
-  enabled: true,
-  perAccount: 3,
-  ...over,
-})
-
-const ctx = (over: Partial<PostGoalContext> = {}): PostGoalContext => ({
-  platforms: 2,
-  accounts: 2,
-  startDate: '2026-01-01T00:00:00Z',
-  endDate: '2026-03-31T00:00:00Z',
-  ...over,
-})
-
-describe('parsePostGoal', () => {
-  it('reads nothing stored as nothing stored, not as a default', () => {
-    expect(parsePostGoal(null)).toBeNull()
-    expect(parsePostGoal('')).toBeNull()
-    expect(parsePostGoal('not json')).toBeNull()
-    expect(parsePostGoal('42')).toBeNull()
+describe('normalizeGoalCadence', () => {
+  it('keeps a cadence the server accepts', () => {
+    expect(normalizeGoalCadence('week')).toBe('week')
+    expect(normalizeGoalCadence('month')).toBe('month')
   })
 
-  it('keeps a well-formed goal', () => {
-    const stored = JSON.stringify({
-      enabled: true,
-      perAccount: 6,
-      period: 'weekly',
-      mode: 'default',
-    })
-    expect(parsePostGoal(stored)).toEqual({
-      enabled: true,
-      perAccount: 6,
-      period: 'weekly',
-      mode: 'default',
-    })
-  })
-
-  it('falls back per field rather than dropping the whole goal', () => {
-    const stored = JSON.stringify({
-      enabled: true,
-      perAccount: -4,
-      period: 'fortnightly',
-      mode: 'bespoke',
-    })
-    expect(parsePostGoal(stored)).toEqual({
-      enabled: true,
-      perAccount: 0,
-      period: 'total',
-      mode: 'default',
-    })
-  })
-})
-
-describe('seedPostGoal', () => {
-  const campaign = (over: Partial<Campaign>) =>
-    ({
-      estimated_post_count: null,
-      target_platforms: [],
-      ...over,
-    }) as Campaign
-
-  it('leaves a campaign with no target without a goal', () => {
-    expect(seedPostGoal(campaign({}), 3)).toEqual(NO_POST_GOAL)
-    expect(seedPostGoal(campaign({ estimated_post_count: 0 }), 3)).toEqual(NO_POST_GOAL)
-  })
-
-  it('spreads an existing total across the connected accounts', () => {
-    expect(seedPostGoal(campaign({ estimated_post_count: 12 }), 2)).toEqual({
-      enabled: true,
-      perAccount: 6,
-      period: 'total',
-      mode: 'default',
-    })
-  })
-
-  it('round-trips back to the total it was seeded from', () => {
-    const c = campaign({ estimated_post_count: 12 })
-    const total = postGoalTotal(seedPostGoal(c, 2), ctx({ accounts: 2 }))
-    expect(total).toMatchObject({ kind: 'ok', total: 12 })
-  })
-
-  it('reads a total with nothing connected yet as the goal for one account', () => {
-    expect(seedPostGoal(campaign({ estimated_post_count: 9 }), 0).perAccount).toBe(9)
+  it('falls back to the default the server applies to an unset value', () => {
+    expect(normalizeGoalCadence('')).toBe(DEFAULT_GOAL_CADENCE)
+    expect(normalizeGoalCadence(null)).toBe(DEFAULT_GOAL_CADENCE)
+    expect(normalizeGoalCadence(undefined)).toBe(DEFAULT_GOAL_CADENCE)
+    // The pre-CON-182 vocabulary, which no campaign should still be sending.
+    expect(normalizeGoalCadence('total')).toBe(DEFAULT_GOAL_CADENCE)
+    expect(normalizeGoalCadence('weekly')).toBe(DEFAULT_GOAL_CADENCE)
   })
 })
 
 describe('periodsInRange', () => {
-  it('counts the whole campaign as one period', () => {
-    expect(periodsInRange('total', null, null)).toBe(1)
-  })
-
-  it('counts both bounding days in a week span', () => {
-    // Jan 1–7 inclusive is exactly one week, Jan 1–8 spills into a second.
-    expect(periodsInRange('weekly', '2026-01-01T00:00:00Z', '2026-01-07T00:00:00Z')).toBe(1)
-    expect(periodsInRange('weekly', '2026-01-01T00:00:00Z', '2026-01-08T00:00:00Z')).toBe(2)
+  it('counts a partial trailing week as a whole one', () => {
+    // Jan 1–7 is exactly one week; one more day owes a second week's posts.
+    expect(periodsInRange('week', '2026-01-01T00:00:00Z', '2026-01-07T00:00:00Z')).toBe(1)
+    expect(periodsInRange('week', '2026-01-01T00:00:00Z', '2026-01-08T00:00:00Z')).toBe(2)
   })
 
   it('counts calendar months, not 30-day blocks', () => {
-    expect(periodsInRange('monthly', '2026-01-01T00:00:00Z', '2026-01-31T00:00:00Z')).toBe(1)
-    expect(periodsInRange('monthly', '2026-01-01T00:00:00Z', '2026-02-15T00:00:00Z')).toBe(2)
-    expect(periodsInRange('monthly', '2026-01-01T00:00:00Z', '2026-12-31T00:00:00Z')).toBe(12)
+    expect(periodsInRange('month', '2026-01-01T00:00:00Z', '2026-01-31T00:00:00Z')).toBe(1)
+    // Barely over a month long, but it runs in two of them.
+    expect(periodsInRange('month', '2026-01-25T00:00:00Z', '2026-02-02T00:00:00Z')).toBe(2)
+    expect(periodsInRange('month', '2026-01-01T00:00:00Z', '2026-03-31T00:00:00Z')).toBe(3)
   })
 
-  it('gives up on dates it cannot read', () => {
-    expect(periodsInRange('weekly', null, '2026-01-08T00:00:00Z')).toBeNull()
-    expect(periodsInRange('weekly', '2026-01-01T00:00:00Z', null)).toBeNull()
-    expect(periodsInRange('monthly', 'whenever', '2026-01-08T00:00:00Z')).toBeNull()
-    // End before start is not a range the goal can be counted over.
-    expect(periodsInRange('weekly', '2026-02-01T00:00:00Z', '2026-01-01T00:00:00Z')).toBeNull()
+  it('reads a missing or backwards window as one period', () => {
+    // Matches campaigngoal.Periods: without dates the rate *is* the total, so
+    // the server plans rather than refusing to.
+    expect(periodsInRange('month', null, null)).toBe(1)
+    expect(periodsInRange('week', '2026-01-01T00:00:00Z', null)).toBe(1)
+    expect(periodsInRange('week', '2026-03-01T00:00:00Z', '2026-01-01T00:00:00Z')).toBe(1)
   })
 })
 
 describe('postGoalTotal', () => {
-  it('multiplies the goal by accounts and periods', () => {
-    // 3 posts a week, 2 accounts, Jan 1 – Mar 31 (90 days → 13 weeks).
-    expect(postGoalTotal(goal({ period: 'weekly' }), ctx())).toEqual({
-      kind: 'ok',
-      total: 78,
-      periods: 13,
-      accounts: 2,
-    })
+  it('multiplies the rate by the periods the campaign spans', () => {
+    expect(
+      postGoalTotal(3, 'week', '2026-01-01T00:00:00Z', '2026-01-28T00:00:00Z'),
+    ).toEqual({ kind: 'ok', total: 12, periods: 4, dated: true })
   })
 
-  it('counts accounts, not platforms — two accounts on one platform is double', () => {
-    const oneAccount = postGoalTotal(goal(), ctx({ platforms: 1, accounts: 1 }))
-    const twoAccounts = postGoalTotal(goal(), ctx({ platforms: 1, accounts: 2 }))
-    expect(oneAccount).toMatchObject({ kind: 'ok', total: 3 })
-    expect(twoAccounts).toMatchObject({ kind: 'ok', total: 6 })
+  it('has nothing to total without a count', () => {
+    expect(postGoalTotal(null, 'month', null, null)).toEqual({ kind: 'needs-count' })
+    expect(postGoalTotal(0, 'month', null, null)).toEqual({ kind: 'needs-count' })
+    expect(postGoalTotal(-2, 'month', null, null)).toEqual({ kind: 'needs-count' })
   })
 
-  it('counts a total goal once per account', () => {
-    expect(postGoalTotal(goal({ period: 'total' }), ctx())).toMatchObject({
+  it('still totals an undated campaign, and says the dates are missing', () => {
+    expect(postGoalTotal(5, 'month', null, null)).toEqual({
       kind: 'ok',
-      total: 6,
+      total: 5,
       periods: 1,
+      dated: false,
     })
-  })
-
-  it('needs a count before anything else', () => {
-    expect(postGoalTotal(goal({ perAccount: 0 }), ctx())).toEqual({ kind: 'needs-count' })
-    expect(postGoalTotal(goal({ enabled: false }), ctx())).toEqual({ kind: 'needs-count' })
-  })
-
-  it('separates "no platforms" from "no accounts on them"', () => {
-    expect(postGoalTotal(goal(), ctx({ platforms: 0, accounts: 0 }))).toEqual({
-      kind: 'needs-platforms',
-    })
-    expect(postGoalTotal(goal(), ctx({ platforms: 2, accounts: 0 }))).toEqual({
-      kind: 'needs-accounts',
-    })
-  })
-
-  it('needs dates only when the period is measured over them', () => {
-    const undated = ctx({ startDate: null, endDate: null })
-    expect(postGoalTotal(goal({ period: 'monthly' }), undated)).toEqual({ kind: 'needs-dates' })
-    expect(postGoalTotal(goal({ period: 'total' }), undated)).toMatchObject({ kind: 'ok' })
   })
 })
 
 describe('describePostGoalTotal', () => {
   it('spells out the arithmetic behind the total', () => {
-    const g = goal({ period: 'weekly' })
-    expect(describePostGoalTotal(g, postGoalTotal(g, ctx()))).toBe(
-      '3 posts × 2 accounts × 13 weeks = 78 posts in total.',
+    const total = postGoalTotal(3, 'week', '2026-01-01T00:00:00Z', '2026-04-01T00:00:00Z')
+    expect(describePostGoalTotal(3, 'week', total)).toBe(
+      '3 posts a week × 13 weeks = 39 posts in total.',
     )
   })
 
-  it('drops the period from a whole-campaign goal', () => {
-    const g = goal({ period: 'total', perAccount: 1 })
-    expect(
-      describePostGoalTotal(g, postGoalTotal(g, ctx({ platforms: 1, accounts: 1 }))),
-    ).toBe('1 post × 1 account = 1 post in total.')
+  it('reads as a singular where the numbers are one', () => {
+    const total = postGoalTotal(1, 'month', '2026-01-01T00:00:00Z', '2026-01-31T00:00:00Z')
+    expect(describePostGoalTotal(1, 'month', total)).toBe(
+      '1 post a month × 1 month = 1 post in total.',
+    )
+  })
+
+  it('points at the dates rather than asserting a campaign-long total', () => {
+    const total = postGoalTotal(5, 'month', null, null)
+    expect(describePostGoalTotal(5, 'month', total)).toContain('Set the campaign dates')
+    expect(describePostGoalTotal(5, 'month', total)).toContain('5 posts in total')
   })
 
   it('names what is missing instead of a total', () => {
-    const g = goal({ period: 'monthly' })
-    expect(describePostGoalTotal(g, { kind: 'needs-platforms' })).toContain('Add a platform')
-    expect(describePostGoalTotal(g, { kind: 'needs-accounts' })).toContain(
-      'Workspace Settings',
-    )
-    expect(describePostGoalTotal(g, { kind: 'needs-dates' })).toContain('a monthly goal')
-    expect(describePostGoalTotal(g, { kind: 'needs-count' })).toContain(
+    expect(describePostGoalTotal(null, 'month', { kind: 'needs-count' })).toContain(
       'will appear here',
     )
   })

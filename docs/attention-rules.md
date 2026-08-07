@@ -183,9 +183,11 @@ empty campaign gets one row, not six.
 "nothing is going out", and the risk row says it with a deadline attached.
 
 `behind-pace` measures against the posts that exist. It deliberately ignores
-the campaign's own `estimated_post_count`: that field is being reworked into a
-per-account goal (CON-156), and no readiness rule may depend on it meanwhile.
-It only runs while the campaign is live.
+the campaign's own goal — `estimated_post_count` × `goal_cadence` (CON-182).
+Wiring the rule to the goal is a live decision, not an oversight: the server
+already reports goal progress period by period on the campaign overview, so a
+readiness rule that restates it would be a second, cruder answer to the same
+question. It only runs while the campaign is live.
 
 `channel-uncovered` only counts channels that could publish today. Asking for
 content on a channel with no connected account is asking for posts with nowhere

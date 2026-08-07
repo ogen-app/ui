@@ -27,20 +27,20 @@
  */
 const FEATURE_FLAGS = {
   /**
-   * The Goals card in campaign settings: a post goal per connected account,
-   * from which the campaign's total post target is computed. Off until the
-   * campaign row can hold the breakdown (CON-156 §3) rather than the K/V store.
+   * The Goals card in campaign settings: the post rate the campaign is planned
+   * against. On — CON-182 landed `goal_cadence` beside `estimated_post_count`
+   * and the content-plan flow generates against the pair. Delete this flag once
+   * the card has been exercised against the deployed API.
    */
-  'campaign-goals': false,
+  'campaign-goals': true,
 
   /**
    * The Scheduling card in campaign settings: publishing time, time zone,
-   * spread, and the days a campaign must not publish on. Off until the server
-   * reads them — the scheduler places posts by its own rules today, so a user
-   * setting a publishing hour would be configuring nothing. They also live in
-   * the tenant K/V store for want of campaign columns (CON-156 §1).
+   * spread, and the days the campaign publishes on. On — CON-181 landed the
+   * four columns and the content-plan flow places every draft by them. Delete
+   * this flag once the card has been exercised against the deployed API.
    */
-  'campaign-scheduling': false,
+  'campaign-scheduling': true,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

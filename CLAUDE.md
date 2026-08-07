@@ -92,6 +92,17 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`MAX_VIDEO_UPLOAD_BYTES`) is ours, and always wins over the seeded ceiling.
   A probed-but-zero `duration_ms` means video-service was down, not a
   zero-length file. See `docs/technical-decisions.md#video-ingest`.
+- **A campaign update is a whole-resource PUT, and the server defaults every
+  field the payload omits.** Leaving `publishing_days` out does not preserve the
+  campaign's publishing days — it resets them to all seven, same for the rest of
+  the CON-181/182 columns. Always build the payload through `campaignToPayload`
+  (`campaignBriefForm/shared.ts`), which round-trips the server's own values and
+  takes only the fields you mean to change as overrides.
+- **The campaign's `estimated_post_count` is a rate, not a total.** Since
+  CON-182 it means "this many posts per `goal_cadence` period" (`week`/`month`),
+  and the server backfilled every campaign to `month` — so an old total of 12 on
+  a three-month campaign now plans 36 posts. Read it through `lib/postGoal`
+  (`postGoalTotal`), never as a campaign total.
 - **`/api/settings` is tenant-scoped, not user-scoped.** Every key is visible
   to the whole workspace via `GET /api/settings`. Personal preferences get
   their identity from the key (`userScopedKey` →
@@ -170,7 +181,8 @@ The rules that make that safe:
 2. **Nothing outside the flag may depend on the feature's data.** A half-backed
    field is worse than a missing one: don't let other screens, readiness rules
    or the assistant read a value the feature is still redefining. (Why
-   `campaignReadiness` stopped reading `estimated_post_count` — CON-156.)
+   `campaignReadiness` stopped reading `estimated_post_count` while CON-182 was
+   redefining it from a campaign total into a per-period rate.)
 3. **Say what is missing** in the flag's doc comment: which endpoint, column or
    decision the feature is waiting on. That comment is the hand-off to the
    back end.
