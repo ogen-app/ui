@@ -163,6 +163,13 @@ dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
 have no committed config in this repo.
 
+**The Profile marketing-email switch has no endpoint behind it yet.** CON-155
+shipped the server's token-gated unsubscribe pages, not a session-authenticated
+one, so `GET`/`PUT /api/users/:id/email-preferences` still has to be written.
+The contract is in `services/api/emailPreferences.ts` and asserted by its test;
+until the handler lands the section renders its error line instead of a switch.
+See `docs/technical-decisions.md#email-preferences`.
+
 ## Global rules
 
 Do not keep backwards compatibility unless explicitly required.
