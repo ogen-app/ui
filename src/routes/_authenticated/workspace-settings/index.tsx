@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
@@ -18,6 +19,7 @@ export const Route = createFileRoute('/_authenticated/workspace-settings/')({
 
 /** Workspace Settings page: workspace identity, connected platforms, connect grid. */
 function WorkspaceSettings() {
+  const { t } = useTranslation()
   const { isLoading, isError } = usePlatforms()
 
   if (isLoading) {
@@ -31,7 +33,7 @@ function WorkspaceSettings() {
   if (isError) {
     return (
       <PageContainer>
-        <PageError header="Failed to load settings" />
+        <PageError header={t('workspaceSettings.loadFailed')} />
       </PageContainer>
     )
   }
@@ -41,7 +43,7 @@ function WorkspaceSettings() {
       <SettingsSaveProvider>
         <div className="h-0 grow overflow-y-auto flex flex-col">
           <PageHeader
-            title="Workspace Settings"
+            title={t('workspaceSettings.title')}
             fadeOnScroll
             actions={<SettingsSaveButton />}
           />

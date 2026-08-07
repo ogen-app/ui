@@ -1,17 +1,21 @@
 import { type FormEvent } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { useSignup } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { signupSchema, PASSWORD_RULES, cn } from '@/lib'
+import { useSignupSchema } from '@/hooks/useAuthSchemas'
+import { PasswordRulesHint } from '@/components/forms/shared/PasswordRulesHint'
+import { cn } from '@/lib'
 
 export function AuthRegisterForm() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { mutate: signup, isPending, error } = useSignup()
-  const { values, setField, fieldErrors, validate } = useFormValidation(signupSchema, {
+  const { values, setField, fieldErrors, validate } = useFormValidation(useSignupSchema(), {
     organizationName: '',
     firstName: '',
     lastName: '',
@@ -42,13 +46,13 @@ export function AuthRegisterForm() {
         noValidate
       >
         <div className="flex flex-col gap-2">
-          <Label htmlFor="organizationName">Organization Name</Label>
+          <Label htmlFor="organizationName">{t('auth.register.organizationLabel')}</Label>
           <Input
             id="organizationName"
             type="text"
             autoComplete="organization"
             variant="default"
-            placeholder="Enter your organization name"
+            placeholder={t('auth.register.organizationPlaceholder')}
             value={values.organizationName}
             onChange={(e) => setField('organizationName', e.target.value)}
             aria-invalid={!!fieldErrors.organizationName}
@@ -59,13 +63,13 @@ export function AuthRegisterForm() {
           )}
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="firstName">First Name</Label>
+          <Label htmlFor="firstName">{t('auth.register.firstNameLabel')}</Label>
           <Input
             id="firstName"
             type="text"
             autoComplete="given-name"
             variant="default"
-            placeholder="Enter your first name"
+            placeholder={t('auth.register.firstNamePlaceholder')}
             value={values.firstName}
             onChange={(e) => setField('firstName', e.target.value)}
             aria-invalid={!!fieldErrors.firstName}
@@ -76,13 +80,13 @@ export function AuthRegisterForm() {
           )}
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="lastName">Last Name</Label>
+          <Label htmlFor="lastName">{t('auth.register.lastNameLabel')}</Label>
           <Input
             id="lastName"
             type="text"
             autoComplete="family-name"
             variant="default"
-            placeholder="Enter your last name"
+            placeholder={t('auth.register.lastNamePlaceholder')}
             value={values.lastName}
             onChange={(e) => setField('lastName', e.target.value)}
             aria-invalid={!!fieldErrors.lastName}
@@ -93,13 +97,13 @@ export function AuthRegisterForm() {
           )}
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t('auth.register.emailLabel')}</Label>
           <Input
             id="email"
             type="email"
             autoComplete="username"
             variant="default"
-            placeholder="Enter your email"
+            placeholder={t('auth.register.emailPlaceholder')}
             value={values.email}
             onChange={(e) => setField('email', e.target.value)}
             aria-invalid={!!fieldErrors.email}
@@ -108,41 +112,19 @@ export function AuthRegisterForm() {
           {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t('auth.register.passwordLabel')}</Label>
           <Input
             id="password"
             type="password"
             autoComplete="new-password"
             variant="default"
-            placeholder="Enter password"
+            placeholder={t('auth.register.passwordPlaceholder')}
             value={values.password}
             onChange={(e) => setField('password', e.target.value)}
             aria-invalid={!!fieldErrors.password}
             disabled={isPending}
           />
-          {(() => {
-            const allPassed = PASSWORD_RULES.every(({ test }) => test(values.password))
-            return (
-              <p className={`text-xs ${allPassed ? 'text-positive' : 'text-tertiary-foreground'}`}>
-                {PASSWORD_RULES.map(({ test, label }, i) => {
-                  const passed = test(values.password)
-                  const isLast = i === PASSWORD_RULES.length - 1
-                  return (
-                    <span key={label}>
-                      <span
-                        className={`text-xs ${allPassed ? 'text-positive' : passed ? 'text-positive' : 'text-tertiary-foreground'}`}
-                      >
-                        {isLast ? 'and ' : ''}
-                        {label}
-                        {isLast ? '' : ', '}
-                      </span>
-                    </span>
-                  )
-                })}
-                {allPassed && '  \u2713'}
-              </p>
-            )
-          })()}
+          <PasswordRulesHint value={values.password} />
         </div>
         <div className="w-full">
           <Button
@@ -153,7 +135,7 @@ export function AuthRegisterForm() {
             loading={isPending}
             disabled={isPending}
           >
-            <span>SIGN UP</span>
+            <span>{t('auth.register.submit')}</span>
             <ArrowUpRightIcon />
           </Button>
           <div className="h-4 my-4">

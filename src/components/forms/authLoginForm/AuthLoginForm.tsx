@@ -1,12 +1,14 @@
 import { type FormEvent } from 'react'
 import { Link, useRouter, useSearch } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { useLogin } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { loginSchema, safeRedirect, cn } from '@/lib'
+import { useLoginSchema } from '@/hooks/useAuthSchemas'
+import { safeRedirect, cn } from '@/lib'
 
 /**
  * Email/password login form. On success it returns the user to the in-app
@@ -14,9 +16,10 @@ import { loginSchema, safeRedirect, cn } from '@/lib'
  */
 export function AuthLoginForm() {
   const router = useRouter()
+  const { t } = useTranslation()
   const { redirect, expired, reset: afterReset } = useSearch({ from: '/auth/login/' })
   const { mutate: login, isPending, error, reset } = useLogin()
-  const { values, setField, fieldErrors, validate } = useFormValidation(loginSchema, {
+  const { values, setField, fieldErrors, validate } = useFormValidation(useLoginSchema(), {
     email: '',
     password: '',
   })
@@ -48,23 +51,21 @@ export function AuthLoginForm() {
           randomly logged you out. */}
       {expired && (
         <p className="text-[13px] leading-5 text-secondary-foreground">
-          Your session expired. Log in again to pick up where you left off.
+          {t('auth.login.expired')}
         </p>
       )}
       {afterReset && (
-        <p className="text-positive text-[13px] leading-5">
-          Your password has been changed. Log in with the new one.
-        </p>
+        <p className="text-positive text-[13px] leading-5">{t('auth.login.afterReset')}</p>
       )}
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t('auth.login.emailLabel')}</Label>
         <Input
           id="email"
           name="email"
           type="email"
           autoComplete="username"
           variant="default"
-          placeholder="Enter your email"
+          placeholder={t('auth.login.emailPlaceholder')}
           value={values.email}
           onChange={(e) => {
             setField('email', e.target.value)
@@ -77,12 +78,12 @@ export function AuthLoginForm() {
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-4">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t('auth.login.passwordLabel')}</Label>
           <Link
             to="/auth/forgot"
             className="text-tertiary-foreground hover:text-primary-foreground text-xs"
           >
-            Forgot password?
+            {t('auth.login.forgotLink')}
           </Link>
         </div>
         <Input
@@ -91,7 +92,7 @@ export function AuthLoginForm() {
           type="password"
           autoComplete="current-password"
           variant="default"
-          placeholder="Enter password"
+          placeholder={t('auth.login.passwordPlaceholder')}
           value={values.password}
           onChange={(e) => {
             setField('password', e.target.value)
@@ -116,7 +117,7 @@ export function AuthLoginForm() {
           loading={isPending}
           disabled={isPending}
         >
-          <span>LOG IN</span>
+          <span>{t('auth.login.submit')}</span>
           <ArrowUpRightIcon />
         </Button>
         <div className="h-4 my-4">

@@ -1,4 +1,5 @@
 import { memo, useCallback, useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Tenant } from '@/types/tenant'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,24 +15,31 @@ import { ReadOnlyField, SettingsRow } from './SettingsRow'
  * editable.
  */
 function WorkspaceSectionComponent() {
+  const { t } = useTranslation()
   const { data: tenant, isLoading, isError } = useCurrentTenant()
 
   return (
     <SettingsCard>
       {isLoading ? (
-        <p className="text-sm text-tertiary-foreground">Loading…</p>
+        <p className="text-sm text-tertiary-foreground">{t('common.loading')}</p>
       ) : isError || !tenant ? (
-        <p className="text-sm text-destructive">Failed to load the workspace.</p>
+        <p className="text-sm text-destructive">
+          {t('workspaceSettings.workspace.loadFailed')}
+        </p>
       ) : (
         <ul className="flex flex-col">
           {/* No card h2 here — the row title doubles as the section heading,
-              e.g. "BN Digital Workspace". */}
-          <SettingsRow title={`${tenant.name} Workspace`}>
+              e.g. "BN Digital Workspace". The whole phrase is one key: the
+              name does not sit in the same place in every language. */}
+          <SettingsRow title={t('workspaceSettings.workspace.rowTitle', { name: tenant.name })}>
             {/* Same two-column body as the platform rows, so the fields line
                 up and stretch across the card. */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
               <NameField tenant={tenant} />
-              <ReadOnlyField label="Slug" value={tenant.slug} />
+              <ReadOnlyField
+                label={t('workspaceSettings.workspace.slugLabel')}
+                value={tenant.slug}
+              />
             </div>
           </SettingsRow>
         </ul>
@@ -46,6 +54,7 @@ function WorkspaceSectionComponent() {
  * Save button.
  */
 function NameField({ tenant }: { tenant: Tenant }) {
+  const { t } = useTranslation()
   const id = useId()
   // null = pristine; reseeds from the freshest tenant after every save.
   const [draft, setDraft] = useState<string | null>(null)
@@ -63,14 +72,18 @@ function NameField({ tenant }: { tenant: Tenant }) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>Organization name</Label>
+      <Label htmlFor={id}>{t('workspaceSettings.workspace.nameLabel')}</Label>
       <Input
         id={id}
         value={value}
         onChange={(e) => setDraft(e.target.value)}
         aria-invalid={invalid}
       />
-      {invalid && <p className="text-xs text-destructive">Name can’t be empty</p>}
+      {invalid && (
+        <p className="text-xs text-destructive">
+          {t('workspaceSettings.workspace.nameEmpty')}
+        </p>
+      )}
     </div>
   )
 }

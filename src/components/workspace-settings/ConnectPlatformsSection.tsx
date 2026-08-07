@@ -1,4 +1,6 @@
 import { memo, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { ArrowSquareOutIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -35,6 +37,7 @@ const POLL_INTERVAL_MS = 5_000
  * is steered to the connect URL when the response arrives.
  */
 function ConnectPlatformsSectionComponent() {
+  const { t } = useTranslation()
   const views = usePlatformViews()
   const { data: health, isPending: healthPending } = useZernioHealth()
   const [connecting, setConnecting] = useState<PlatformView | null>(null)
@@ -67,15 +70,16 @@ function ConnectPlatformsSectionComponent() {
   }
 
   return (
-    <SettingsCard title="Connect Platforms">
+    <SettingsCard title={t('workspaceSettings.connect.title')}>
       {integrationOff && (
         <p className="text-sm text-tertiary-foreground">
-          The publishing integration isn’t configured on this server, so connecting is
-          unavailable for now.
+          {t('workspaceSettings.connect.integrationOff')}
         </p>
       )}
       {views.length === 0 ? (
-        <p className="text-sm text-tertiary-foreground">No platforms are available to connect.</p>
+        <p className="text-sm text-tertiary-foreground">
+          {t('workspaceSettings.connect.noPlatforms')}
+        </p>
       ) : (
         // auto-fill keeps tiles at a comfortable minimum width instead of
         // forcing a fixed column count into the 740px card.
@@ -124,6 +128,7 @@ function PlatformTile({
   disabled: boolean
   onConnect: () => void
 }) {
+  const { t } = useTranslation()
   const { info } = view
   const Icon = info.icon
   const count = connectedAccounts(view).length
@@ -140,21 +145,23 @@ function PlatformTile({
         <Icon className="size-8" weight="fill" style={{ color: info.color }} />
         <span className="text-sm font-medium text-center">{info.name}</span>
         {count === 0 ? (
-          <span className="text-xs text-tertiary-foreground">Connect</span>
+          <span className="text-xs text-tertiary-foreground">
+            {t('workspaceSettings.connect.connect')}
+          </span>
         ) : (
           <span className="relative block h-4 overflow-hidden text-xs">
             <span
               className="block leading-4 text-tertiary-foreground transition-transform duration-200
                 group-hover:-translate-y-full group-focus-visible:-translate-y-full"
             >
-              {count} connected
+              {t('workspaceSettings.connect.connectedCount', { count })}
             </span>
             <span
               className="absolute inset-x-0 top-full block leading-4 text-tertiary-foreground
                 transition-transform duration-200
                 group-hover:-translate-y-full group-focus-visible:-translate-y-full"
             >
-              Connect
+              {t('workspaceSettings.connect.connect')}
             </span>
           </span>
         )}
@@ -183,6 +190,7 @@ function ConnectPlatformModal({
   onRetry: () => void
   onClose: () => void
 }) {
+  const { t, i18n } = useTranslation()
   const { info } = view
   const qc = useQueryClient()
   const { mutate: syncNow, isPending: isSyncing } = useTriggerZernioSync()
@@ -213,39 +221,43 @@ function ConnectPlatformModal({
   }, [link, connected, qc])
 
   return (
-    <ModalContainer isOpen onClose={onClose} title={`Connect ${info.name}`} size="default">
+    <ModalContainer
+      isOpen
+      onClose={onClose}
+      title={t('workspaceSettings.connect.modalTitle', { platform: info.name })}
+      size="default"
+    >
       {connected ? (
         <div className="flex flex-col items-center gap-4 py-2 text-center">
           <CheckCircleIcon className="size-10 text-positive" weight="fill" />
           <p className="text-sm">
-            {info.name} is connected. You’ll find it under Platform Settings.
+            {t('workspaceSettings.connect.success', { platform: info.name })}
           </p>
           <Button type="button" onClick={onClose}>
-            Done
+            {t('common.done')}
           </Button>
         </div>
       ) : isPending ? (
         <div className="flex items-center gap-3 py-2 text-sm text-tertiary-foreground">
           <Spinner className="size-4" />
-          Preparing your connect link…
+          {t('workspaceSettings.connect.preparing')}
         </div>
       ) : error ? (
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-destructive">{connectErrorMessage(error)}</p>
+          <p className="text-sm text-destructive">{connectErrorMessage(error, t)}</p>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="button" onClick={onRetry}>
-              Try again
+              {t('common.tryAgain')}
             </Button>
           </div>
         </div>
       ) : link ? (
         <div className="flex flex-col gap-4">
           <p className="text-sm">
-            Authorize your {info.name} account in the tab that just opened. If nothing opened,
-            use the button below.
+            {t('workspaceSettings.connect.authorize', { platform: info.name })}
           </p>
           <a
             href={link.connectUrl}
@@ -253,16 +265,17 @@ function ConnectPlatformModal({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-primary-foreground font-medium hover:underline"
           >
-            Open the {info.name} connect page
+            {t('workspaceSettings.connect.openConnectPage', { platform: info.name })}
             <ArrowSquareOutIcon className="size-3.5" />
           </a>
           <p className="text-xs text-tertiary-foreground">
-            The link expires at {formatExpiry(link.expiresAt)}. Once you finish, the account
-            appears here automatically — this can take a minute.
+            {t('workspaceSettings.connect.expiry', {
+              time: formatExpiry(link.expiresAt, i18n.language, t),
+            })}
           </p>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              Close
+              {t('common.close')}
             </Button>
             <Button
               type="button"
@@ -270,7 +283,7 @@ function ConnectPlatformModal({
               disabled={isSyncing}
               onClick={() => syncNow()}
             >
-              Check now
+              {t('workspaceSettings.connect.checkNow')}
             </Button>
           </div>
         </div>
@@ -279,31 +292,38 @@ function ConnectPlatformModal({
   )
 }
 
-/** Renders the connect link's expiry as a local HH:MM, or "soon" if unparsable. */
-function formatExpiry(iso: string): string {
+/**
+ * The connect link's expiry as a local HH:MM, or "soon" if unparsable.
+ *
+ * Formatted for the active language rather than the browser's: someone reading
+ * the app in Spanish should get 14:30, not 2:30 PM, whatever their OS says.
+ */
+function formatExpiry(iso: string, locale: string, t: TFunction): string {
   const d = new Date(iso)
   return Number.isNaN(d.getTime())
-    ? 'soon'
-    : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    ? t('workspaceSettings.connect.expirySoon')
+    : d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
 }
 
 /** Maps typed Zernio errors (rate limit, disabled, degraded) to friendly copy. */
-function connectErrorMessage(err: unknown): string {
+function connectErrorMessage(err: unknown, t: TFunction): string {
   if (err instanceof ZernioError) {
     switch (err.code) {
       case 'rate_limited':
         return err.retryAfterSeconds
-          ? `Too many attempts — try again in ${err.retryAfterSeconds}s.`
-          : 'Too many attempts — try again shortly.'
+          ? t('integration.rateLimitedIn', { seconds: err.retryAfterSeconds })
+          : t('integration.rateLimited')
       case 'integration_disabled':
-        return 'The publishing integration is not configured on this server.'
+        return t('integration.disabled')
       case 'integration_degraded':
-        return 'The publishing integration is temporarily unavailable. Try again in a moment.'
+        return t('integration.degraded')
       default:
+        // The server's own prose, which we cannot translate — better than
+        // replacing a specific reason with a generic one.
         return err.message
     }
   }
-  return err instanceof Error ? err.message : 'Something went wrong.'
+  return err instanceof Error ? err.message : t('common.somethingWentWrong')
 }
 
 export const ConnectPlatformsSection = memo(ConnectPlatformsSectionComponent)

@@ -322,6 +322,77 @@ would be two sources of truth and no correction.
   there is no separate video-metadata form, because the Zernio submit request
   models nothing else yet (CON-159).
 
+## English is bundled, every other language is a chunk {#i18n}
+
+**Decision.** i18next + react-i18next, one namespace, with English statically
+imported into the main bundle (`i18n/resources/en.ts`) and every other locale
+behind an `import()` (`i18n/index.ts`, `LAZY_RESOURCES`). The chosen language
+lives in `localStorage`, not in `/api/settings`. `?lang=es` forces one for a
+page load and is then persisted like any other choice. Any load or switch that
+actually has to fetch a locale is covered by a full-screen waiting screen held
+for a minimum of two seconds (`MIN_LOCALE_SWITCH_MS`).
+
+**Why each half of that.**
+
+- **English bundled** — the app has to paint before any network request
+  resolves, and it is the fallback for every key, so a translation that misses
+  one shows real copy rather than a raw dotted path. It is also the
+  overwhelmingly common case: opening the app in English costs nothing and
+  shows no loader at all.
+- **`localStorage`, not `/api/settings`** — the login screen has no session to
+  read tenant settings with, and this is a per-device preference, not a
+  workspace one. It sits alongside `dismissedNotes` in kind, though not in
+  file: `bootstrapLocale` needs it *synchronously*, before React mounts, to
+  decide whether the first paint is the app or the waiting screen, so it is
+  read directly rather than through zustand's `persist` middleware.
+- **`?lang=` is read and stripped before the router is created** — routes here
+  declare strict `validateSearch` schemas that would drop an unknown key on the
+  next navigation anyway. Stripping it with `replaceState` (not a navigation)
+  keeps Back from landing on the same URL with the parameter still attached.
+  Precedence is `?lang=` → stored choice → English; there is deliberately no
+  `navigator.language` step, because inferring a language nobody asked for
+  hides the fact that a translation exists behind a loader on first load.
+- **The two-second floor** — a locale chunk arrives in well under a frame on a
+  warm connection, and a UI that swaps language between two paints reads as a
+  glitch rather than as something you did. The floor and the fetch race
+  together (`Promise.all`), so a slow connection costs its own time, not that
+  time plus two seconds.
+- **Nothing unmounts** — the waiting screen is an opaque `fixed` panel over a
+  still-mounted app, so a switch keeps scroll position, the query cache and any
+  in-flight edit.
+
+**The one screen that can't read from the catalogue.** `i18n/bootMessages.ts`
+holds the waiting screen's own two lines for *every* language, in the main
+chunk. It is what covers the fetch, so on a reload by someone whose language is
+Spanish the Spanish bundle is precisely what has not arrived — read through
+`t`, it would greet them in English on every single page load. Keep that file
+to those two lines; everything else belongs in `resources/`.
+
+**Zod schemas are factories, not constants.** A schema bakes its messages in at
+construction, so a module-level `loginSchema` would freeze English forever. Each
+is now `(t) => schema`, memoised on `t` by the hooks in
+`hooks/useAuthSchemas.ts` — which also means a language switch rebuilds any
+validation error already on screen.
+
+**Catalogue conventions** (also stated at the top of `en.ts`): keys name the
+place, never quote their own English; one key per sentence the user reads, with
+`<Trans>` for a sentence that has a link or emphasis inside it; plurals use
+i18next's `_one`/`_other` and spell out each form whole, because English
+pronouns and Spanish agreement do not survive being stitched at runtime. Even
+the list separators are translated — English writes "a, b, c, and d" where
+Spanish writes "a, b, c y d". Destructive-action labels keep their literal
+capitals in every language (`DELETE ACCOUNT` / `ELIMINAR CUENTA`).
+
+**Where.** `src/i18n/` (config, resources, boot messages),
+`stores/localeStore.ts`, `components/layout/{AppLoader,LocaleSwitchOverlay}.tsx`,
+`components/settings/LanguageSection.tsx`, `hooks/useAuthSchemas.ts`.
+
+**Scope today (CON-174).** The machinery plus real conversion of the auth
+screens, the sidebar, Profile and Workspace Settings. The rest of the app —
+campaigns, posts, calendar, content bank, the assistant — is still hard-coded
+English and reads correctly, because English is what `t` falls back to.
+Converting a surface is per-area work, not a flag day.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain
@@ -333,8 +404,9 @@ feedback — the heavyweight abstraction buys nothing there. Feature forms need
 accessibility wiring (`aria-describedby`/`aria-invalid`), field-level control,
 and autosave. Pick per the form's needs; don't unify them reflexively.
 
-**Where.** `hooks/useFormValidation.ts` + `lib/auth-validation.ts` vs
-`components/ui/form.tsx` + the `components/forms/*` feature forms.
+**Where.** `hooks/useFormValidation.ts` + `lib/auth-validation.ts` (whose
+schemas are `t`-taking factories — see [i18n](#i18n)) vs `components/ui/form.tsx`
++ the `components/forms/*` feature forms.
 
 ## Routing conventions that look like accidents but aren't
 

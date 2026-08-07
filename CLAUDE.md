@@ -97,6 +97,23 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   their identity from the key (`userScopedKey` →
   `calendar.<userId>.<campaignId>`); never put anything sensitive there. See
   `docs/technical-decisions.md#user-scoped-settings`.
+- **User-facing copy goes through `t()`; English is bundled and is the
+  fallback.** Catalogues live in `src/i18n/resources/` (`en.ts` is the shape
+  everything else is typed against, so a missing key is a compile error).
+  Keys name the place, never quote their own English; keep one key per sentence
+  and reach for `<Trans>` when a link or `<strong>` sits inside one — never
+  assemble a sentence from fragments in JSX. Plurals use i18next's
+  `_one`/`_other` with each form written out whole. Destructive-action labels
+  keep their literal capitals in **every** language. Zod schemas are `(t) =>
+  schema` factories (`hooks/useAuthSchemas.ts`) — a module-level constant would
+  freeze English. Only the auth screens, sidebar, Profile and Workspace
+  Settings are converted so far (CON-174); the rest is still hard-coded English
+  and renders fine. See `docs/technical-decisions.md#i18n`.
+- **The language switch is covered by a 2-second full-screen loader**, and
+  `?lang=es` forces one for a page load then persists it. The waiting screen's
+  own copy is the one string that must *not* come from the catalogue — it lives
+  in `i18n/bootMessages.ts`, in the main chunk, because it renders while the
+  catalogue is being fetched. Keep that file to those two lines.
 - **Explanatory copy goes in `<Explainer>`**, which the user can close for
   good (`settingsStore.dismissedNotes`, device-local — display noise doesn't
   belong in the workspace-wide `/api/settings`). The rule that makes it safe:
@@ -143,7 +160,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 No invite-teammate UI yet (`users.register()` is the ready building block) ·
 dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
-have no committed config in this repo.
+have no committed config in this repo · **i18n covers the auth screens, sidebar,
+Profile and Workspace Settings only** — everything else is still hard-coded
+English (CON-174).
 
 ## Global rule
 

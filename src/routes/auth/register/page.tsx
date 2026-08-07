@@ -1,19 +1,21 @@
 import { Link } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 
 import { AppAuth } from '@/components/layout/AppAuth'
 import { AuthRegisterForm } from '@/components/forms/authRegisterForm'
 
 function RegisterPage() {
+  const { t } = useTranslation()
   return (
     <AppAuth
-      title="Create your organization"
-      subtitle="Sign up to start managing your content"
+      title={t('auth.register.title')}
+      subtitle={t('auth.register.subtitle')}
       form={<AuthRegisterForm />}
       bottomNav={
         <>
-          Already have an account?{' '}
+          {t('auth.register.haveAccount')}{' '}
           <Link to="/auth/login" className="text-primary-foreground font-medium">
-            Log in here
+            {t('auth.register.logInLink')}
           </Link>
         </>
       }

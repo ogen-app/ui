@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
 import { useDisconnectZernioAccount } from '@/hooks/useZernio'
@@ -25,6 +27,7 @@ type Props = {
  * is only ever shown when it is actually warranted.
  */
 export function DisconnectAccountDialog({ account, platformName, isOpen, onClose }: Props) {
+  const { t } = useTranslation()
   const { mutate: disconnect, isPending, error, reset } = useDisconnectZernioAccount()
   // Set once the server has told us the guard fired, and how many posts it
   // covers. Null means we're still on the first screen.
@@ -46,7 +49,7 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
       { id: account.id, force },
       {
         onSuccess: () => {
-          toast.success(`Disconnected ${name}`)
+          toast.success(t('workspaceSettings.disconnect.succeeded', { name }))
           onClose()
         },
         onError: (err) => {
@@ -66,7 +69,11 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
     <ModalContainer
       isOpen={isOpen}
       onClose={isPending ? () => {} : onClose}
-      title={forcing ? 'This account has scheduled posts' : `Disconnect ${name}?`}
+      title={
+        forcing
+          ? t('workspaceSettings.disconnect.blocked.title')
+          : t('workspaceSettings.disconnect.title', { name })
+      }
       size="small"
       closeOnBackdropClick={!isPending}
       closeOnEscape={!isPending}
@@ -74,42 +81,39 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2 text-sm text-secondary-foreground">
           {forcing ? (
+            // Each plural form is written out whole rather than stitched from
+            // "it"/"them" fragments — the pronouns and agreement that English
+            // needs here are not the ones Spanish needs.
             <>
               <p>
-                <strong>
-                  {blockedBy === 1
-                    ? '1 scheduled post publishes'
-                    : `${blockedBy} scheduled posts publish`}
-                </strong>{' '}
-                as {name}. Disconnecting now leaves {blockedBy === 1 ? 'it' : 'them'} pointing
-                at an account that no longer exists, so {blockedBy === 1 ? 'it' : 'they'} will
-                fail to publish.
+                <Trans
+                  i18nKey="workspaceSettings.disconnect.blocked.body"
+                  count={blockedBy ?? 0}
+                  values={{ name }}
+                  components={{ strong: <strong /> }}
+                />
               </p>
               <p>
-                To keep {blockedBy === 1 ? 'it' : 'them'}, close this and unschedule{' '}
-                {blockedBy === 1 ? 'the post' : 'those posts'} first — then you can pick a
-                different account for {blockedBy === 1 ? 'it' : 'each'}.
+                {t('workspaceSettings.disconnect.blocked.keep', { count: blockedBy ?? 0 })}
               </p>
             </>
           ) : (
             <>
               <p>
-                Ogen will stop publishing to this {platformName} account, and the connection is
-                removed on the publishing provider too — so it won’t come back on the next sync.
+                {t('workspaceSettings.disconnect.body', { platform: platformName })}
               </p>
               <p>
-                Posts already published stay live on {platformName}. You can reconnect the
-                account later, but it has to go through the authorization flow again.
+                {t('workspaceSettings.disconnect.published', { platform: platformName })}
               </p>
             </>
           )}
           {error && !forcing && (
-            <p className="text-destructive">{disconnectErrorMessage(error)}</p>
+            <p className="text-destructive">{disconnectErrorMessage(error, t)}</p>
           )}
         </div>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
-            KEEP CONNECTED
+            {t('workspaceSettings.disconnect.keep')}
           </Button>
           <Button
             type="button"
@@ -117,8 +121,11 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
             onClick={() => run(forcing)}
             loading={isPending}
           >
-            {/* Literal caps, not `uppercase` — see CLAUDE.md on destructive labels. */}
-            {forcing ? 'DISCONNECT ANYWAY' : 'DISCONNECT ACCOUNT'}
+            {/* Literal caps in the catalogue, not an `uppercase` class — see
+                CLAUDE.md on destructive labels. Every translation keeps them. */}
+            {forcing
+              ? t('workspaceSettings.disconnect.blocked.confirm')
+              : t('workspaceSettings.disconnect.confirm')}
           </Button>
         </div>
       </div>
@@ -130,25 +137,27 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
  * Turns the disconnect failures into prose. The server answers these with bare
  * machine codes, so without this the dialog would render "integration_degraded".
  */
-function disconnectErrorMessage(err: unknown): string {
+function disconnectErrorMessage(err: unknown, t: TFunction): string {
   if (err instanceof ZernioError) {
     switch (err.code) {
       case 'account_not_found':
-        return 'This account is already disconnected.'
+        return t('integration.alreadyDisconnected')
       case 'integration_degraded':
         // The server stops before touching local state on an upstream failure,
         // so "nothing changed" is a guarantee, not a guess — say so, because it
         // makes retrying obviously safe.
-        return 'The publishing provider didn’t confirm the removal, so nothing was changed. Try again in a moment.'
+        return t('integration.removalUnconfirmed')
       case 'integration_disabled':
-        return 'The publishing integration is not configured on this server.'
+        return t('integration.disabled')
       case 'rate_limited':
         return err.retryAfterSeconds
-          ? `Too many attempts — try again in ${err.retryAfterSeconds}s.`
-          : 'Too many attempts — try again shortly.'
+          ? t('integration.rateLimitedIn', { seconds: err.retryAfterSeconds })
+          : t('integration.rateLimited')
       default:
+        // The server's own prose, which we cannot translate — better than
+        // replacing a specific reason with a generic one.
         return err.message
     }
   }
-  return err instanceof Error ? err.message : 'Something went wrong.'
+  return err instanceof Error ? err.message : t('common.somethingWentWrong')
 }

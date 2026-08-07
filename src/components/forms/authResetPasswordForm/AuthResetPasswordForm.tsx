@@ -1,12 +1,14 @@
 import { type FormEvent } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useResetPassword } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { resetPasswordSchema, PASSWORD_RULES, cn } from '@/lib'
+import { useResetPasswordSchema } from '@/hooks/useAuthSchemas'
+import { PasswordRulesHint } from '@/components/forms/shared/PasswordRulesHint'
 
 type Props = {
   /** The one-time token from the emailed link's `?token=`. */
@@ -25,11 +27,12 @@ type Props = {
  */
 export function AuthResetPasswordForm({ token }: Props) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { mutate: submit, isPending, error, reset } = useResetPassword()
-  const { values, setField, fieldErrors, validate } = useFormValidation(resetPasswordSchema, {
-    password: '',
-    confirmPassword: '',
-  })
+  const { values, setField, fieldErrors, validate } = useFormValidation(
+    useResetPasswordSchema(),
+    { password: '', confirmPassword: '' }
+  )
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -41,8 +44,6 @@ export function AuthResetPasswordForm({ token }: Props) {
     )
   }
 
-  const allPassed = PASSWORD_RULES.every(({ test }) => test(values.password))
-
   return (
     <form
       onSubmit={handleSubmit}
@@ -50,14 +51,14 @@ export function AuthResetPasswordForm({ token }: Props) {
       noValidate
     >
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">New password</Label>
+        <Label htmlFor="password">{t('auth.reset.passwordLabel')}</Label>
         <Input
           id="password"
           name="password"
           type="password"
           autoComplete="new-password"
           variant="default"
-          placeholder="Enter a new password"
+          placeholder={t('auth.reset.passwordPlaceholder')}
           value={values.password}
           onChange={(e) => {
             setField('password', e.target.value)
@@ -66,35 +67,17 @@ export function AuthResetPasswordForm({ token }: Props) {
           aria-invalid={!!fieldErrors.password}
           disabled={isPending}
         />
-        <p className={cn('text-xs', allPassed ? 'text-positive' : 'text-tertiary-foreground')}>
-          {PASSWORD_RULES.map(({ test, label }, i) => {
-            const isLast = i === PASSWORD_RULES.length - 1
-            return (
-              <span
-                key={label}
-                className={cn(
-                  'text-xs',
-                  test(values.password) ? 'text-positive' : 'text-tertiary-foreground'
-                )}
-              >
-                {isLast ? 'and ' : ''}
-                {label}
-                {isLast ? '' : ', '}
-              </span>
-            )
-          })}
-          {allPassed && '  ✓'}
-        </p>
+        <PasswordRulesHint value={values.password} />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="confirmPassword">Confirm new password</Label>
+        <Label htmlFor="confirmPassword">{t('auth.reset.confirmLabel')}</Label>
         <Input
           id="confirmPassword"
           name="confirmPassword"
           type="password"
           autoComplete="new-password"
           variant="default"
-          placeholder="Enter it again"
+          placeholder={t('auth.reset.confirmPlaceholder')}
           value={values.confirmPassword}
           onChange={(e) => {
             setField('confirmPassword', e.target.value)
@@ -116,7 +99,7 @@ export function AuthResetPasswordForm({ token }: Props) {
           loading={isPending}
           disabled={isPending}
         >
-          <span>SET NEW PASSWORD</span>
+          <span>{t('auth.reset.submit')}</span>
           <ArrowUpRightIcon />
         </Button>
         {/* A dead link is the one failure the user can act on, so it gets a
@@ -129,7 +112,7 @@ export function AuthResetPasswordForm({ token }: Props) {
                 to="/auth/forgot"
                 className="text-primary-foreground text-[13px] font-medium"
               >
-                Request a new link
+                {t('auth.reset.requestNewLink')}
               </Link>
             </>
           )}

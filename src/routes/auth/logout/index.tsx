@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageStatusFooter } from '@/components/page-primitives/PageStatusFooter'
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/auth/logout/')({
  * either way, and the user reaches the same screen.
  */
 function LogoutPage() {
+  const { t } = useTranslation()
   const logout = useAuthStore((state) => state.logout)
   const [isDone, setIsDone] = useState(false)
   const navigate = useNavigate()
@@ -58,10 +60,10 @@ function LogoutPage() {
             &nbsp;
           </span>
           <span className="text-[2rem] leading-[46px] font-medium font-display tracking-tight">
-            {isDone ? "You've Been Logged Out" : 'Logging Out...'}
+            {isDone ? t('auth.logout.doneTitle') : t('auth.logout.pendingTitle')}
           </span>
           <p className="text-[14px] leading-[24px] text-tertiary-foreground">
-            {isDone ? 'See you next time!' : 'This may take a few seconds'}
+            {isDone ? t('auth.logout.doneMessage') : t('auth.logout.pendingMessage')}
           </p>
           <div className="mt-4 h-12 flex items-center justify-center">
             {isDone ? (
@@ -71,7 +73,7 @@ function LogoutPage() {
                 className={'gap-10'}
                 onClick={() => navigate({ to: '/' })}
               >
-                <span>TAKE ME HOME</span>
+                <span>{t('auth.logout.home')}</span>
                 <ArrowUpRightIcon className={'size-4'} />
               </Button>
             ) : (
@@ -80,7 +82,7 @@ function LogoutPage() {
           </div>
         </div>
       </div>
-      <PageStatusFooter message={'LOGOUT'} />
+      <PageStatusFooter message={t('auth.logout.footer')} />
     </PageContainer>
   )
 }

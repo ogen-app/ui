@@ -1,20 +1,22 @@
 import { Link } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 
 import { AppAuth } from '@/components/layout/AppAuth'
 import { AuthLoginForm } from '@/components/forms/authLoginForm'
 
 /** The login screen: shared auth layout around `AuthLoginForm`. */
 function LoginPage() {
+  const { t } = useTranslation()
   return (
     <AppAuth
-      title="Log in"
-      subtitle="Log in to continue managing your content"
+      title={t('auth.login.title')}
+      subtitle={t('auth.login.subtitle')}
       form={<AuthLoginForm />}
       bottomNav={
         <>
-          Don&apos;t have an account?{' '}
+          {t('auth.login.noAccount')}{' '}
           <Link to="/auth/register" className="text-primary-foreground font-medium">
-            Sign up
+            {t('auth.login.signUpLink')}
           </Link>
         </>
       }
