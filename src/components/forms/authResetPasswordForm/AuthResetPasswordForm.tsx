@@ -6,7 +6,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useResetPassword } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { resetPasswordSchema, PASSWORD_RULES, cn } from '@/lib'
+import { resetPasswordSchema } from '@/lib'
+import { FormError } from '@/components/forms/shared/FormError'
+import { PasswordRules } from '@/components/forms/shared/PasswordRules'
+import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
 
 type Props = {
   /** The one-time token from the emailed link's `?token=`. */
@@ -31,17 +34,18 @@ export function AuthResetPasswordForm({ token }: Props) {
     confirmPassword: '',
   })
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const data = validate()
-    if (!data) return
+    if (!data) {
+      focusFirstInvalid(e.currentTarget)
+      return
+    }
     submit(
       { token, password: data.password },
       { onSuccess: () => void navigate({ to: '/auth/login', search: { reset: true } }) }
     )
   }
-
-  const allPassed = PASSWORD_RULES.every(({ test }) => test(values.password))
 
   return (
     <form
@@ -64,27 +68,11 @@ export function AuthResetPasswordForm({ token }: Props) {
             if (error) reset()
           }}
           aria-invalid={!!fieldErrors.password}
+          // The rules line is this field's error message — see `PasswordRules`.
+          aria-describedby="password-rules"
           disabled={isPending}
         />
-        <p className={cn('text-xs', allPassed ? 'text-positive' : 'text-tertiary-foreground')}>
-          {PASSWORD_RULES.map(({ test, label }, i) => {
-            const isLast = i === PASSWORD_RULES.length - 1
-            return (
-              <span
-                key={label}
-                className={cn(
-                  'text-xs',
-                  test(values.password) ? 'text-positive' : 'text-tertiary-foreground'
-                )}
-              >
-                {isLast ? 'and ' : ''}
-                {label}
-                {isLast ? '' : ', '}
-              </span>
-            )
-          })}
-          {allPassed && '  ✓'}
-        </p>
+        <PasswordRules id="password-rules" value={values.password} />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="confirmPassword">Confirm new password</Label>
@@ -101,10 +89,20 @@ export function AuthResetPasswordForm({ token }: Props) {
             if (error) reset()
           }}
           aria-invalid={!!fieldErrors.confirmPassword}
+          aria-describedby="confirmPassword-note"
           disabled={isPending}
         />
-        {fieldErrors.confirmPassword && (
-          <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>
+        {/* Says why the field is here at all. This sets a credential you can't
+            see and won't use again until your next login, possibly on another
+            device — the second box is the only check there is. */}
+        {fieldErrors.confirmPassword ? (
+          <p id="confirmPassword-note" className="text-xs text-destructive">
+            {fieldErrors.confirmPassword}
+          </p>
+        ) : (
+          <p id="confirmPassword-note" className="text-xs text-tertiary-foreground">
+            Type it again — a typo here locks you out of your own account.
+          </p>
         )}
       </div>
       <div className="w-full">
@@ -121,19 +119,11 @@ export function AuthResetPasswordForm({ token }: Props) {
         </Button>
         {/* A dead link is the one failure the user can act on, so it gets a
             way out rather than only an error string. */}
-        <div className="my-4 flex min-h-4 flex-col gap-2">
-          {error && (
-            <>
-              <span className="text-sm text-destructive">{error.message}</span>
-              <Link
-                to="/auth/forgot"
-                className="text-primary-foreground text-[13px] font-medium"
-              >
-                Request a new link
-              </Link>
-            </>
-          )}
-        </div>
+        <FormError message={error?.message}>
+          <Link to="/auth/forgot" className="text-primary-foreground text-[13px] font-medium">
+            Request a new link
+          </Link>
+        </FormError>
       </div>
     </form>
   )

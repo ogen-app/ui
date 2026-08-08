@@ -31,8 +31,14 @@ export function AppAuth({ title, subtitle, form, bottomNav }: AppAuthProps) {
                     >
                       {title}
                     </h1>
+                    {/* Shown at every width. It used to be desktop-only, which
+                        was defensible while it only ever held a tagline — but
+                        the login screen now says *why* it appeared here (an
+                        expired session, a finished reset), and a phone is
+                        exactly where being logged out without explanation is
+                        most alarming. */}
                     {subtitle && (
-                      <div className="hidden md:block text-[13px] pt-1 leading-4 text-secondary-foreground">
+                      <div className="text-[13px] pt-1 leading-4 text-secondary-foreground">
                         {subtitle}
                       </div>
                     )}
