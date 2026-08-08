@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { SettingsCard } from '@/components/settings/SettingsCard'
@@ -26,6 +27,7 @@ import { cn } from '@/lib'
  * be aimed at another account.
  */
 export function PasswordSection() {
+  const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const { mutate: request, isPending, error, reset } = useRequestPasswordReset()
   const [sent, setSent] = useState(false)
@@ -42,22 +44,26 @@ export function PasswordSection() {
   }
 
   return (
-    <SettingsCard title="Password">
+    <SettingsCard title={t('profile.password.title')}>
       <div className="flex max-w-150 flex-col items-start gap-4">
         {sent ? (
           <p className="text-sm text-secondary-foreground">
-            A link to set a new password is on its way to{' '}
-            <span className="font-medium text-foreground">{user.email}</span>. It expires in
-            an hour, and using it signs out every device — including this one.
+            <Trans
+              i18nKey="profile.password.sentBody"
+              values={{ email: user.email }}
+              components={{ email: <span className="font-medium text-foreground" /> }}
+            />
           </p>
         ) : (
           /* The reason is the feature, so it is stated rather than left to be
              discovered: people change a password because they suspect someone
              else has it, and the emailed route is the one that acts on that. */
           <p className="text-sm text-tertiary-foreground">
-            Your password is changed by email. We&apos;ll send a link to{' '}
-            <span className="font-medium text-foreground">{user.email}</span> — it&apos;s the
-            only route that also signs out your other devices, which is usually the point.
+            <Trans
+              i18nKey="profile.password.body"
+              values={{ email: user.email }}
+              components={{ email: <span className="font-medium text-foreground" /> }}
+            />
           </p>
         )}
 
@@ -68,7 +74,7 @@ export function PasswordSection() {
           loading={isPending}
           disabled={isPending}
         >
-          {sent ? 'SEND IT AGAIN' : 'EMAIL ME A RESET LINK'}
+          {sent ? t('profile.password.resend') : t('profile.password.send')}
         </Button>
 
         {/* One region for both answers to the same click, so a stale "sent"
@@ -81,7 +87,7 @@ export function PasswordSection() {
             error ? 'text-destructive' : 'text-tertiary-foreground',
           )}
         >
-          {error ? error.message : resent ? 'Sent again — give it a minute.' : ''}
+          {error ? error.message : resent ? t('profile.password.resentNote') : ''}
         </p>
       </div>
     </SettingsCard>

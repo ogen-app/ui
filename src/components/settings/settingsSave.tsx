@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 
@@ -97,6 +98,7 @@ export function useRegisterSettingsSave(
 
 /** Header Save button — hidden until some registered field is dirty. */
 export function SettingsSaveButton() {
+  const { t } = useTranslation()
   const { dirty, saving, saveAll } = useSettingsSave()
   if (!dirty && !saving) return null
   return (
@@ -107,7 +109,7 @@ export function SettingsSaveButton() {
       onClick={saveAll}
       loading={saving}
     >
-      Save
+      {t('common.save')}
     </Button>
   )
 }

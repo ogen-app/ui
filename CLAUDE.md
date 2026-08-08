@@ -108,6 +108,43 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   their identity from the key (`userScopedKey` →
   `calendar.<userId>.<campaignId>`); never put anything sensitive there. See
   `docs/technical-decisions.md#user-scoped-settings`.
+- **Every user-facing string is a catalogue entry — never a literal in a
+  component.** New UI adds its keys to `src/i18n/resources/en.ts` *and* its
+  translation to every other catalogue, and reads them through `t()`. This
+  covers all of it, not just the obvious labels: button and menu text, headings,
+  placeholders, empty and error states, toast and validation messages, tooltips,
+  and the accessible strings nobody sees — `aria-label`, `title`, `alt`, visually
+  hidden text. Editing a screen that still holds hard-coded English? Move the
+  strings you touch into the catalogue rather than adding a literal beside them.
+  Genuinely exempt: developer-facing text (`console.*`, thrown `Error` messages,
+  test fixtures), and `i18n/bootMessages.ts` — see the next bullet.
+- **How the catalogues work.** English is bundled and is the fallback; `en.ts`
+  is the shape everything else is typed against, so a key missing from `es.ts`
+  is a compile error (a key missing from `en.ts` is a compile error at the call
+  site). Keys name the place, never quote their own English; keep one key per
+  sentence and reach for `<Trans>` when a link or `<strong>` sits inside one —
+  never assemble a sentence from fragments in JSX. Plurals use i18next's
+  `_one`/`_other` with each form written out whole. Destructive-action labels
+  keep their literal capitals in **every** language. Anything that bakes copy in
+  at construction takes `t` and is built per render instead: Zod schemas are
+  `(t) => schema` factories (`hooks/useAuthSchemas.ts`), and the same goes for
+  label maps and `const` option arrays — a module-level constant freezes
+  whichever language loaded first. Only the auth screens, sidebar, Profile and
+  Workspace Settings are converted so far (CON-174); the rest is still
+  hard-coded English and renders fine — that is legacy to be converted, not a
+  precedent to copy. See `docs/technical-decisions.md#i18n`.
+- **A language is released by one boolean.** `LOCALES` in `i18n/config.ts`
+  carries `enabled` per locale; only enabled ones are offered in the picker,
+  accepted from `?lang=` or restored from a previous visit — and a stored
+  preference for a gated locale is cleared rather than left to reactivate on
+  the deploy that releases it. The gate sits on those entry points, not on
+  `setLocale`, so the switching machinery stays exercised by its tests while
+  nothing but English is released. Spanish is complete and gated today.
+- **The language switch is covered by a 2-second full-screen loader**, and
+  `?lang=es` forces one for a page load then persists it. The waiting screen's
+  own copy is the one string that must *not* come from the catalogue — it lives
+  in `i18n/bootMessages.ts`, in the main chunk, because it renders while the
+  catalogue is being fetched. Keep that file to those two lines.
 - **Explanatory copy goes in `<Explainer>`**, which the user can close for
   good (`settingsStore.dismissedNotes`, device-local — display noise doesn't
   belong in the workspace-wide `/api/settings`). The rule that makes it safe:
@@ -161,7 +198,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 No invite-teammate UI yet (`users.register()` is the ready building block) ·
 dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
-have no committed config in this repo.
+have no committed config in this repo · **i18n covers the auth screens, sidebar,
+Profile and Workspace Settings only** — everything else is still hard-coded
+English (CON-174) · **English is the only released language**: Spanish is
+translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
+picker shows one option.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's

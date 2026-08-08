@@ -1,4 +1,6 @@
 import { Link, useSearch } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 
 import { AppAuth } from '@/components/layout/AppAuth'
 import { AuthLoginForm } from '@/components/forms/authLoginForm'
@@ -18,26 +20,27 @@ type LoginFlags = { expired?: boolean; reset?: boolean }
  * are the reason you are looking at a login form, and colour would make the
  * reset case read as a congratulation and the expiry as an error.
  */
-export function loginSubtitle({ expired, reset }: LoginFlags): string {
-  if (expired) return 'Your session expired — log in again to pick up where you left off'
-  if (reset) return 'Your password has been changed. Log in with the new one'
-  return 'Log in to continue managing your content'
+export function loginSubtitle({ expired, reset }: LoginFlags, t: TFunction): string {
+  if (expired) return t('auth.login.expired')
+  if (reset) return t('auth.login.afterReset')
+  return t('auth.login.subtitle')
 }
 
 /** The login screen: shared auth layout around `AuthLoginForm`. */
 function LoginPage() {
+  const { t } = useTranslation()
   const { expired, reset } = useSearch({ from: '/auth/login/' })
 
   return (
     <AppAuth
-      title="Log in"
-      subtitle={loginSubtitle({ expired, reset })}
+      title={t('auth.login.title')}
+      subtitle={loginSubtitle({ expired, reset }, t)}
       form={<AuthLoginForm />}
       bottomNav={
         <>
-          Don&apos;t have an account?{' '}
+          {t('auth.login.noAccount')}{' '}
           <Link to="/auth/register" className="text-primary-foreground font-medium">
-            Sign up
+            {t('auth.login.signUpLink')}
           </Link>
         </>
       }

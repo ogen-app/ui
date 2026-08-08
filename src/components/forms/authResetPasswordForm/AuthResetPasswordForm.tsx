@@ -1,12 +1,13 @@
 import { type FormEvent } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useResetPassword } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { resetPasswordSchema } from '@/lib'
+import { useResetPasswordSchema } from '@/hooks/useAuthSchemas'
 import { FormError } from '@/components/forms/shared/FormError'
 import { PasswordRules } from '@/components/forms/shared/PasswordRules'
 import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
@@ -28,11 +29,12 @@ type Props = {
  */
 export function AuthResetPasswordForm({ token }: Props) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { mutate: submit, isPending, error, reset } = useResetPassword()
-  const { values, setField, fieldErrors, validate } = useFormValidation(resetPasswordSchema, {
-    password: '',
-    confirmPassword: '',
-  })
+  const { values, setField, fieldErrors, validate } = useFormValidation(
+    useResetPasswordSchema(),
+    { password: '', confirmPassword: '' }
+  )
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -54,14 +56,14 @@ export function AuthResetPasswordForm({ token }: Props) {
       noValidate
     >
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">New password</Label>
+        <Label htmlFor="password">{t('auth.reset.passwordLabel')}</Label>
         <Input
           id="password"
           name="password"
           type="password"
           autoComplete="new-password"
           variant="default"
-          placeholder="Enter a new password"
+          placeholder={t('auth.reset.passwordPlaceholder')}
           value={values.password}
           onChange={(e) => {
             setField('password', e.target.value)
@@ -75,14 +77,14 @@ export function AuthResetPasswordForm({ token }: Props) {
         <PasswordRules id="password-rules" value={values.password} />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="confirmPassword">Confirm new password</Label>
+        <Label htmlFor="confirmPassword">{t('auth.reset.confirmLabel')}</Label>
         <Input
           id="confirmPassword"
           name="confirmPassword"
           type="password"
           autoComplete="new-password"
           variant="default"
-          placeholder="Enter it again"
+          placeholder={t('auth.reset.confirmPlaceholder')}
           value={values.confirmPassword}
           onChange={(e) => {
             setField('confirmPassword', e.target.value)
@@ -101,7 +103,7 @@ export function AuthResetPasswordForm({ token }: Props) {
           </p>
         ) : (
           <p id="confirmPassword-note" className="text-xs text-tertiary-foreground">
-            Type it again — a typo here locks you out of your own account.
+            {t('auth.reset.confirmHint')}
           </p>
         )}
       </div>
@@ -114,14 +116,14 @@ export function AuthResetPasswordForm({ token }: Props) {
           loading={isPending}
           disabled={isPending}
         >
-          <span>SET NEW PASSWORD</span>
+          <span>{t('auth.reset.submit')}</span>
           <ArrowUpRightIcon />
         </Button>
         {/* A dead link is the one failure the user can act on, so it gets a
             way out rather than only an error string. */}
         <FormError message={error?.message}>
           <Link to="/auth/forgot" className="text-primary-foreground text-[13px] font-medium">
-            Request a new link
+            {t('auth.reset.requestNewLink')}
           </Link>
         </FormError>
       </div>

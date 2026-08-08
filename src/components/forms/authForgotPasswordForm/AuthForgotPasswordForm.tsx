@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from '@tanstack/react-router'
+import { Trans, useTranslation } from 'react-i18next'
 import { EnvelopeSimpleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { useRequestPasswordReset } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { forgotPasswordSchema } from '@/lib'
+import { useForgotPasswordSchema } from '@/hooks/useAuthSchemas'
 import { FormError } from '@/components/forms/shared/FormError'
 import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
 import { cn } from '@/lib'
@@ -31,12 +32,14 @@ import { cn } from '@/lib'
  * inside it.
  */
 export function AuthForgotPasswordForm() {
+  const { t } = useTranslation()
   const { mutate: request, isPending, error, reset } = useRequestPasswordReset()
   const [sent, setSent] = useState(false)
   const [resent, setResent] = useState(false)
-  const { values, setField, fieldErrors, validate } = useFormValidation(forgotPasswordSchema, {
-    email: '',
-  })
+  const { values, setField, fieldErrors, validate } = useFormValidation(
+    useForgotPasswordSchema(),
+    { email: '' }
+  )
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -66,13 +69,19 @@ export function AuthForgotPasswordForm() {
         <div className="flex items-start gap-3">
           <EnvelopeSimpleIcon className="size-5 shrink-0 mt-0.5" aria-hidden />
           <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium">Check your inbox</p>
+            <p className="text-sm font-medium">{t('auth.forgot.sentTitle')}</p>
             {/* Phrased as a conditional on purpose: the endpoint answers the
                 same way for an address with no account, so stating that mail
-                is on its way would be a claim we can't make. */}
+                is on its way would be a claim we can't make.
+
+                One key, not three fragments — `<Trans>` keeps the sentence
+                whole so a translator can move the address within it. */}
             <p className="text-[13px] leading-5 text-secondary-foreground">
-              If <span className="font-medium">{values.email}</span> has an Ogen account, a
-              link to set a new password is on its way. It expires in an hour.
+              <Trans
+                i18nKey="auth.forgot.sentBody"
+                values={{ email: values.email }}
+                components={{ strong: <span className="font-medium" /> }}
+              />
             </p>
           </div>
         </div>
@@ -86,7 +95,7 @@ export function AuthForgotPasswordForm() {
             loading={isPending}
             disabled={isPending}
           >
-            <span>SEND IT AGAIN</span>
+            <span>{t('auth.forgot.resend')}</span>
             <ArrowUpRightIcon />
           </Button>
           {/* Both answers to the same click share one region, so the previous
@@ -104,13 +113,13 @@ export function AuthForgotPasswordForm() {
               error ? 'text-destructive' : 'text-tertiary-foreground',
             )}
           >
-            {error ? error.message : resent ? 'Sent again — give it a minute.' : ''}
+            {error ? error.message : resent ? t('auth.forgot.resentNote') : ''}
           </p>
           <Link
             to="/auth/login"
             className="text-primary-foreground text-[13px] font-medium"
           >
-            Back to log in
+            {t('auth.forgot.backToLogin')}
           </Link>
         </div>
       </div>
@@ -124,14 +133,14 @@ export function AuthForgotPasswordForm() {
       noValidate
     >
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t('auth.forgot.emailLabel')}</Label>
         <Input
           id="email"
           name="email"
           type="email"
           autoComplete="username"
           variant="default"
-          placeholder="Enter your email"
+          placeholder={t('auth.forgot.emailPlaceholder')}
           value={values.email}
           onChange={(e) => {
             setField('email', e.target.value)
@@ -149,9 +158,7 @@ export function AuthForgotPasswordForm() {
         {/* The note every other form's last field has, and the reason the
             button no longer sits right under the input. It also answers the
             question this screen reliably produces — which of my addresses? */}
-        <p className="text-xs text-tertiary-foreground">
-          Use the address you log in with. The link stops working after an hour.
-        </p>
+        <p className="text-xs text-tertiary-foreground">{t('auth.forgot.emailHint')}</p>
       </div>
       <div className="w-full pt-2">
         <Button
@@ -162,7 +169,7 @@ export function AuthForgotPasswordForm() {
           loading={isPending}
           disabled={isPending}
         >
-          <span>SEND RESET LINK</span>
+          <span>{t('auth.forgot.submit')}</span>
           <ArrowUpRightIcon />
         </Button>
         <FormError message={error?.message} />

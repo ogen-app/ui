@@ -1,4 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router'
+import { Trans, useTranslation } from 'react-i18next'
 
 import { AppAuth } from '@/components/layout/AppAuth'
 import { AuthResetPasswordForm } from '@/components/forms/authResetPasswordForm'
@@ -11,47 +12,48 @@ import { AuthResetPasswordForm } from '@/components/forms/authResetPasswordForm'
  * would be worse than saying so.
  */
 function ResetPasswordPage() {
+  const { t } = useTranslation()
   const { token } = useSearch({ from: '/auth/reset/' })
+
+  const bottomNav = (
+    <>
+      {t('auth.reset.knowPassword')}{' '}
+      <Link to="/auth/login" className="text-primary-foreground font-medium">
+        {t('auth.reset.logInLink')}
+      </Link>
+    </>
+  )
 
   if (!token) {
     return (
       <AppAuth
-        title="This link doesn't work"
-        subtitle="It looks incomplete — mail clients sometimes cut long links in half"
+        title={t('auth.reset.brokenTitle')}
+        subtitle={t('auth.reset.brokenSubtitle')}
         form={
           <p className="text-[13px] leading-5 text-secondary-foreground">
-            Open the link straight from the email, or{' '}
-            <Link to="/auth/forgot" className="text-primary-foreground font-medium">
-              request a new one
-            </Link>
-            .
+            {/* The link sits mid-sentence, so the sentence stays one key and
+                `<Trans>` places the anchor — translations move it. */}
+            <Trans
+              i18nKey="auth.reset.brokenBody"
+              components={{
+                request: (
+                  <Link to="/auth/forgot" className="text-primary-foreground font-medium" />
+                ),
+              }}
+            />
           </p>
         }
-        bottomNav={
-          <>
-            Know your password?{' '}
-            <Link to="/auth/login" className="text-primary-foreground font-medium">
-              Log in
-            </Link>
-          </>
-        }
+        bottomNav={bottomNav}
       />
     )
   }
 
   return (
     <AppAuth
-      title="Set a new password"
-      subtitle="Choose something you haven't used here before"
+      title={t('auth.reset.title')}
+      subtitle={t('auth.reset.subtitle')}
       form={<AuthResetPasswordForm token={token} />}
-      bottomNav={
-        <>
-          Know your password?{' '}
-          <Link to="/auth/login" className="text-primary-foreground font-medium">
-            Log in
-          </Link>
-        </>
-      }
+      bottomNav={bottomNav}
     />
   )
 }

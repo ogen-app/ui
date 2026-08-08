@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { useZernioHealth } from '@/hooks/useZernio'
 import { connectedAccounts, type PlatformView } from '@/lib/platformDictionary'
@@ -14,6 +15,7 @@ import { useConnectPlatform } from './connectPlatform'
  * shared with the Reconnect button on a broken platform row.
  */
 function ConnectPlatformsSectionComponent() {
+  const { t } = useTranslation()
   const views = usePlatformViews()
   const { data: health, isPending: healthPending } = useZernioHealth()
   const { start, modal } = useConnectPlatform()
@@ -26,15 +28,16 @@ function ConnectPlatformsSectionComponent() {
   const integrationOff = health?.state === 'disabled'
 
   return (
-    <SettingsCard title="Connect Platforms">
+    <SettingsCard title={t('workspaceSettings.connect.title')}>
       {integrationOff && (
         <p className="text-sm text-tertiary-foreground">
-          The publishing integration isn’t configured on this server, so connecting is
-          unavailable for now.
+          {t('workspaceSettings.connect.integrationOff')}
         </p>
       )}
       {views.length === 0 ? (
-        <p className="text-sm text-tertiary-foreground">No platforms are available to connect.</p>
+        <p className="text-sm text-tertiary-foreground">
+          {t('workspaceSettings.connect.noPlatforms')}
+        </p>
       ) : (
         // auto-fill keeps tiles at a comfortable minimum width instead of
         // forcing a fixed column count into the 740px card.
@@ -71,6 +74,7 @@ function PlatformTile({
   disabled: boolean
   onConnect: () => void
 }) {
+  const { t } = useTranslation()
   const { info } = view
   const Icon = info.icon
   const count = connectedAccounts(view).length
@@ -87,21 +91,23 @@ function PlatformTile({
         <Icon className="size-8" weight="fill" style={{ color: info.color }} />
         <span className="text-sm font-medium text-center">{info.name}</span>
         {count === 0 ? (
-          <span className="text-xs text-tertiary-foreground">Connect</span>
+          <span className="text-xs text-tertiary-foreground">
+            {t('workspaceSettings.connect.connect')}
+          </span>
         ) : (
           <span className="relative block h-4 overflow-hidden text-xs">
             <span
               className="block leading-4 text-tertiary-foreground transition-transform duration-200
                 group-hover:-translate-y-full group-focus-visible:-translate-y-full"
             >
-              {count} connected
+              {t('workspaceSettings.connect.connectedCount', { count })}
             </span>
             <span
               className="absolute inset-x-0 top-full block leading-4 text-tertiary-foreground
                 transition-transform duration-200
                 group-hover:-translate-y-full group-focus-visible:-translate-y-full"
             >
-              Connect
+              {t('workspaceSettings.connect.connect')}
             </span>
           </span>
         )}

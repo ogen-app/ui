@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { TFunction } from 'i18next'
 
 /**
  * Auth validation schemas for login and self-service signup.
@@ -8,58 +9,66 @@ import { z } from 'zod'
  * characters. The extra password-strength rules below are a deliberately
  * stricter client-side gate (better UX, never rejects a password the backend
  * would have accepted for the wrong reason).
+ *
+ * Every schema here is a **factory taking `t`**, not a module-level constant.
+ * A zod schema bakes its messages in at construction, so a constant would
+ * freeze whichever language happened to be loaded when this module first
+ * evaluated — English, always, since it is the bundled one. Building the
+ * schema inside the component (via the hooks in `hooks/useAuthSchemas.ts`,
+ * which memoise on `t`) means the messages are rebuilt when the language
+ * changes, and an error already on screen re-renders in the new one.
  */
 
-const nameField = (label: string) =>
-  z
-    .string()
-    .min(1, `${label} is required`)
-    .max(50, `${label} must be at most 50 characters`)
-    .refine((v) => v.trim().length > 0, `${label} cannot be only whitespace`)
-
-const organizationField = z
-  .string()
-  .min(1, 'Organization name is required')
-  .max(100, 'Organization name must be at most 100 characters')
-  .refine((v) => v.trim().length > 0, 'Organization name cannot be only whitespace')
-
-const emailField = z.email('Invalid email format').min(1, 'Email is required')
-
-const passwordField = z
-  .string()
-  .min(8, 'Password must be at least 8 characters')
-  .regex(/[A-Z]/, 'Must contain an uppercase letter')
-  .regex(/[a-z]/, 'Must contain a lowercase letter')
-  .regex(/\d/, 'Must contain a digit')
-
-export const loginSchema = z.object({
-  email: emailField,
-  password: z.string().min(1, 'Password is required'),
-})
-
-export const registerSchema = z.object({
-  firstName: nameField('First name'),
-  lastName: nameField('Last name'),
-  email: emailField,
-  password: passwordField,
-})
+type T = TFunction
 
 /**
- * Self-service signup (CON-97): the register fields plus the organization name
- * that bootstraps the new tenant.
+ * The three free-text name fields. They share a shape but not their copy —
+ * "El nombre es obligatorio" and "Los apellidos son obligatorios" disagree in
+ * number, so a generic "{{field}} is required" would be wrong in Spanish
+ * before it was wrong anywhere else. The key prefix picks the whole sentence.
  */
-export const signupSchema = z.object({
-  organizationName: organizationField,
-  firstName: nameField('First name'),
-  lastName: nameField('Last name'),
-  email: emailField,
-  password: passwordField,
-})
+const nameField = (t: T, field: 'firstName' | 'lastName' | 'organizationName', max: number) =>
+  z
+    .string()
+    .min(1, t(`validation.${field}.required`))
+    .max(max, t(`validation.${field}.tooLong`))
+    .refine((v) => v.trim().length > 0, t(`validation.${field}.whitespace`))
+
+const emailField = (t: T) =>
+  z.email(t('validation.email.invalid')).min(1, t('validation.email.required'))
+
+const passwordField = (t: T) =>
+  z
+    .string()
+    .min(8, t('validation.password.tooShort'))
+    .regex(/[A-Z]/, t('validation.password.needsUppercase'))
+    .regex(/[a-z]/, t('validation.password.needsLowercase'))
+    .regex(/\d/, t('validation.password.needsDigit'))
+
+export const loginSchema = (t: T) =>
+  z.object({
+    email: emailField(t),
+    password: z.string().min(1, t('validation.password.required')),
+  })
+
+/**
+ * Self-service signup (CON-97): name, email and password plus the
+ * organization name that bootstraps the new tenant.
+ */
+export const signupSchema = (t: T) =>
+  z.object({
+    organizationName: nameField(t, 'organizationName', 100),
+    firstName: nameField(t, 'firstName', 50),
+    lastName: nameField(t, 'lastName', 50),
+    email: emailField(t),
+    password: passwordField(t),
+  })
 
 /** Step one of the reset: the address the one-time link is sent to. */
-export const forgotPasswordSchema = z.object({
-  email: emailField,
-})
+export const forgotPasswordSchema = (t: T) =>
+  z.object({
+    email: emailField(t),
+  })
 
 /**
  * Step two: the new password, typed twice.
@@ -70,22 +79,24 @@ export const forgotPasswordSchema = z.object({
  * not use again until their next login, possibly on another device. Typing it
  * twice is the only check there is.
  */
-export const resetPasswordSchema = z
-  .object({
-    password: passwordField,
-    confirmPassword: z.string().min(1, 'Confirm your password'),
-  })
-  .refine((v) => v.password === v.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  })
+export const resetPasswordSchema = (t: T) =>
+  z
+    .object({
+      password: passwordField(t),
+      confirmPassword: z.string().min(1, t('validation.confirmPassword.required')),
+    })
+    .refine((v) => v.password === v.confirmPassword, {
+      message: t('validation.confirmPassword.mismatch'),
+      path: ['confirmPassword'],
+    })
 
 /** The identity half of `/profile` — what `PUT /api/users/:id` calls name + email. */
-export const profileSchema = z.object({
-  firstName: nameField('First name'),
-  lastName: nameField('Last name'),
-  email: emailField,
-})
+export const profileSchema = (t: T) =>
+  z.object({
+    firstName: nameField(t, 'firstName', 50),
+    lastName: nameField(t, 'lastName', 50),
+    email: emailField(t),
+  })
 
 /*
  * There is no in-app change-password schema. `PasswordSection` on /profile
@@ -94,22 +105,20 @@ export const profileSchema = z.object({
  * that component for why the form went away (CON-193).
  */
 
-export const PASSWORD_RULES = [
-  { test: (v: string) => v.length >= 8, label: 'Min. 8 chars' },
-  { test: (v: string) => /[A-Z]/.test(v), label: 'an uppercase' },
-  { test: (v: string) => /[a-z]/.test(v), label: 'a lowercase' },
-  { test: (v: string) => /\d/.test(v), label: 'a digit' },
-] as const
+/**
+ * The live checklist under a new-password field, in display order.
+ *
+ * `separator` / `lastSeparator` are translated alongside the rules because the
+ * joins differ by language: English writes "a, b, c, and d" and Spanish writes
+ * "a, b, c y d". The list is still assembled from parts rather than being one
+ * sentence, because each rule is coloured on its own as the user types.
+ */
+export const passwordRules = (t: T) =>
+  [
+    { test: (v: string) => v.length >= 8, label: t('validation.passwordRules.minChars') },
+    { test: (v: string) => /[A-Z]/.test(v), label: t('validation.passwordRules.uppercase') },
+    { test: (v: string) => /[a-z]/.test(v), label: t('validation.passwordRules.lowercase') },
+    { test: (v: string) => /\d/.test(v), label: t('validation.passwordRules.digit') },
+  ] as const
 
 export type FieldErrors<T> = Partial<Record<keyof T, string>>
-
-export function validateField<T extends z.ZodObject<Record<string, z.ZodType>>>(
-  schema: T,
-  field: keyof z.infer<T>,
-  value: string
-): string | undefined {
-  const fieldSchema = schema.shape[field as string]
-  if (!fieldSchema) return undefined
-  const result = fieldSchema.safeParse(value)
-  return result.success ? undefined : result.error.issues[0]?.message
-}

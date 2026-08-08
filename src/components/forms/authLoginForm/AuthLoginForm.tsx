@@ -1,12 +1,14 @@
 import { type FormEvent } from 'react'
 import { Link, useRouter, useSearch } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { useLogin } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { loginSchema, safeRedirect } from '@/lib'
+import { useLoginSchema } from '@/hooks/useAuthSchemas'
+import { safeRedirect } from '@/lib'
 import { FormError } from '@/components/forms/shared/FormError'
 import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
 
@@ -16,11 +18,12 @@ import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
  */
 export function AuthLoginForm() {
   const router = useRouter()
+  const { t } = useTranslation()
   // Only the return path. Why the user is here — an expired session, a
   // finished reset — is answered by the screen's subtitle, not by the form.
   const { redirect } = useSearch({ from: '/auth/login/' })
   const { mutate: login, isPending, error, reset } = useLogin()
-  const { values, setField, fieldErrors, validate } = useFormValidation(loginSchema, {
+  const { values, setField, fieldErrors, validate } = useFormValidation(useLoginSchema(), {
     email: '',
     password: '',
   })
@@ -51,14 +54,14 @@ export function AuthLoginForm() {
       noValidate
     >
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t('auth.login.emailLabel')}</Label>
         <Input
           id="email"
           name="email"
           type="email"
           autoComplete="username"
           variant="default"
-          placeholder="Enter your email"
+          placeholder={t('auth.login.emailPlaceholder')}
           value={values.email}
           onChange={(e) => {
             setField('email', e.target.value)
@@ -75,14 +78,14 @@ export function AuthLoginForm() {
         )}
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">{t('auth.login.passwordLabel')}</Label>
         <Input
           id="password"
           name="password"
           type="password"
           autoComplete="current-password"
           variant="default"
-          placeholder="Enter password"
+          placeholder={t('auth.login.passwordPlaceholder')}
           value={values.password}
           onChange={(e) => {
             setField('password', e.target.value)
@@ -107,9 +110,9 @@ export function AuthLoginForm() {
           the typography we use for asides. Never conditional either — a field
           error must not be able to displace it. */}
       <p className="text-[13px] leading-5 text-primary-foreground">
-        Forgot your password?{' '}
+        {t('auth.login.forgotPrompt')}{' '}
         <Link to="/auth/forgot" className="font-medium">
-          Reset it here
+          {t('auth.login.forgotAction')}
         </Link>
         .
       </p>
@@ -122,7 +125,7 @@ export function AuthLoginForm() {
           loading={isPending}
           disabled={isPending}
         >
-          <span>LOG IN</span>
+          <span>{t('auth.login.submit')}</span>
           <ArrowUpRightIcon />
         </Button>
         <FormError message={error?.message} />

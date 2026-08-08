@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next'
+
+import { usePasswordRules } from '@/hooks/useAuthSchemas'
 import { cn } from '@/lib'
-import { PASSWORD_RULES } from '@/lib/auth-validation'
 
 /**
  * The password policy, written as one sentence that colours itself in as the
@@ -14,28 +16,32 @@ import { PASSWORD_RULES } from '@/lib/auth-validation'
  * that renders this shows no separate one — `aria-describedby` should point
  * here. Two texts saying the same rule, one red and one grey, is worse than
  * the rule going green.
+ *
+ * The joins come from the catalogue rather than being literals: the rules are
+ * coloured individually, but English's ", and " is Spanish's " y ", so the
+ * separators translate alongside the rules themselves.
  */
 export function PasswordRules({ value, id }: { value: string; id?: string }) {
-  const allPassed = PASSWORD_RULES.every(({ test }) => test(value))
+  const { t } = useTranslation()
+  const rules = usePasswordRules()
+  const allPassed = rules.every(({ test }) => test(value))
 
   return (
     <p
       id={id}
       className={cn('text-xs', allPassed ? 'text-positive' : 'text-tertiary-foreground')}
     >
-      {PASSWORD_RULES.map(({ test, label }, i) => {
-        const isLast = i === PASSWORD_RULES.length - 1
-        return (
-          <span
-            key={label}
-            className={cn(test(value) ? 'text-positive' : 'text-tertiary-foreground')}
-          >
-            {isLast ? 'and ' : ''}
+      {rules.map(({ test, label }, i) => (
+        <span key={label}>
+          {i > 0 &&
+            (i === rules.length - 1
+              ? t('validation.passwordRules.lastSeparator')
+              : t('validation.passwordRules.separator'))}
+          <span className={cn(test(value) ? 'text-positive' : 'text-tertiary-foreground')}>
             {label}
-            {isLast ? '' : ', '}
           </span>
-        )
-      })}
+        </span>
+      ))}
       {allPassed && ' ✓'}
     </p>
   )
