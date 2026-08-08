@@ -20,7 +20,7 @@ export const campaignPostsKey = (campaignId: string) => ['campaigns', campaignId
  * sit beside them too — across *all* campaigns, so one workspace-wide key
  * covers every card at once.
  */
-function invalidateCampaignPosts(qc: QueryClient, campaignId: string): void {
+export function invalidateCampaignPosts(qc: QueryClient, campaignId: string): void {
   qc.invalidateQueries({ queryKey: campaignPostsKey(campaignId) })
   qc.invalidateQueries({ queryKey: campaignOverviewKey(campaignId) })
   qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })

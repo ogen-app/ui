@@ -8,7 +8,9 @@ import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { useLogin } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
 import { useLoginSchema } from '@/hooks/useAuthSchemas'
-import { safeRedirect, cn } from '@/lib'
+import { safeRedirect } from '@/lib'
+import { FormError } from '@/components/forms/shared/FormError'
+import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
 
 /**
  * Email/password login form. On success it returns the user to the in-app
@@ -17,18 +19,23 @@ import { safeRedirect, cn } from '@/lib'
 export function AuthLoginForm() {
   const router = useRouter()
   const { t } = useTranslation()
-  const { redirect, expired, reset: afterReset } = useSearch({ from: '/auth/login/' })
+  // Only the return path. Why the user is here — an expired session, a
+  // finished reset — is answered by the screen's subtitle, not by the form.
+  const { redirect } = useSearch({ from: '/auth/login/' })
   const { mutate: login, isPending, error, reset } = useLogin()
   const { values, setField, fieldErrors, validate } = useFormValidation(useLoginSchema(), {
     email: '',
     password: '',
   })
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     const data = validate()
-    if (!data) return
+    if (!data) {
+      focusFirstInvalid(e.currentTarget)
+      return
+    }
 
     login(data, {
       onSuccess: () => {
@@ -46,17 +53,6 @@ export function AuthLoginForm() {
       className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500"
       noValidate
     >
-      {/* Why you are looking at a login screen you didn't ask for. Without
-          this, a session that expired mid-edit reads as the app having
-          randomly logged you out. */}
-      {expired && (
-        <p className="text-[13px] leading-5 text-secondary-foreground">
-          {t('auth.login.expired')}
-        </p>
-      )}
-      {afterReset && (
-        <p className="text-positive text-[13px] leading-5">{t('auth.login.afterReset')}</p>
-      )}
       <div className="flex flex-col gap-2">
         <Label htmlFor="email">{t('auth.login.emailLabel')}</Label>
         <Input
@@ -72,20 +68,17 @@ export function AuthLoginForm() {
             if (error) reset()
           }}
           aria-invalid={!!fieldErrors.email}
+          aria-describedby={fieldErrors.email ? 'email-error' : undefined}
           disabled={isPending}
         />
-        {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
+        {fieldErrors.email && (
+          <p id="email-error" className="text-xs text-destructive">
+            {fieldErrors.email}
+          </p>
+        )}
       </div>
       <div className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between gap-4">
-          <Label htmlFor="password">{t('auth.login.passwordLabel')}</Label>
-          <Link
-            to="/auth/forgot"
-            className="text-tertiary-foreground hover:text-primary-foreground text-xs"
-          >
-            {t('auth.login.forgotLink')}
-          </Link>
-        </div>
+        <Label htmlFor="password">{t('auth.login.passwordLabel')}</Label>
         <Input
           id="password"
           name="password"
@@ -99,15 +92,30 @@ export function AuthLoginForm() {
             if (error) reset()
           }}
           aria-invalid={!!fieldErrors.password}
+          aria-describedby={fieldErrors.password ? 'password-error' : undefined}
           disabled={isPending}
         />
         {/* No password-policy hint here — the rules govern choosing a
             password, not typing one you already have, and repeating them on
             login only tells a visitor what our passwords look like. */}
         {fieldErrors.password && (
-          <p className="text-xs text-destructive">{fieldErrors.password}</p>
+          <p id="password-error" className="text-xs text-destructive">
+            {fieldErrors.password}
+          </p>
         )}
       </div>
+      {/* Its own row rather than a note under the field, and in the link
+          colour rather than the muted one: for a user who can't get in this is
+          the only thing on the screen that helps, so it is not going to sit in
+          the typography we use for asides. Never conditional either — a field
+          error must not be able to displace it. */}
+      <p className="text-[13px] leading-5 text-primary-foreground">
+        {t('auth.login.forgotPrompt')}{' '}
+        <Link to="/auth/forgot" className="font-medium">
+          {t('auth.login.forgotAction')}
+        </Link>
+        .
+      </p>
       <div className="w-full">
         <Button
           type="submit"
@@ -120,16 +128,7 @@ export function AuthLoginForm() {
           <span>{t('auth.login.submit')}</span>
           <ArrowUpRightIcon />
         </Button>
-        <div className="h-4 my-4">
-          <span
-            className={cn(
-              'text-sm text-destructive transition-opacity duration-300',
-              error ? ' opacity-100' : 'opacity-0'
-            )}
-          >
-            {error && error.message}
-          </span>
-        </div>
+        <FormError message={error?.message} />
       </div>
     </form>
   )

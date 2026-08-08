@@ -58,15 +58,9 @@ export const es: Translation = {
       needsUppercase: 'Debe contener una letra mayúscula',
       needsLowercase: 'Debe contener una letra minúscula',
       needsDigit: 'Debe contener un dígito',
-      unchanged: 'Esa ya es tu contraseña',
-    },
-    currentPassword: {
-      required: 'Introduce tu contraseña actual',
-      wrong: 'Esa no es tu contraseña actual',
     },
     confirmPassword: {
       required: 'Confirma tu contraseña',
-      requiredNew: 'Confirma tu nueva contraseña',
       mismatch: 'Las contraseñas no coinciden',
     },
     passwordRules: {
@@ -85,13 +79,14 @@ export const es: Translation = {
       title: 'Iniciar sesión',
       subtitle: 'Inicia sesión para seguir gestionando tu contenido',
       submit: 'INICIAR SESIÓN',
-      expired: 'Tu sesión ha caducado. Inicia sesión de nuevo para continuar donde lo dejaste.',
-      afterReset: 'Tu contraseña se ha cambiado. Inicia sesión con la nueva.',
+      expired: 'Tu sesión ha caducado — inicia sesión de nuevo para continuar donde lo dejaste',
+      afterReset: 'Tu contraseña se ha cambiado. Inicia sesión con la nueva',
       emailLabel: 'Correo electrónico',
       emailPlaceholder: 'Introduce tu correo electrónico',
       passwordLabel: 'Contraseña',
       passwordPlaceholder: 'Introduce la contraseña',
-      forgotLink: '¿Has olvidado la contraseña?',
+      forgotPrompt: '¿Has olvidado tu contraseña?',
+      forgotAction: 'Restablécela aquí',
       noAccount: '¿Aún no tienes cuenta?',
       signUpLink: 'Regístrate',
     },
@@ -124,6 +119,8 @@ export const es: Translation = {
       sentBody:
         'Si <strong>{{email}}</strong> tiene una cuenta de Ogen, va camino un enlace para elegir una contraseña nueva. Caduca en una hora.',
       resend: 'ENVIAR DE NUEVO',
+      resentNote: 'Enviado de nuevo — dale un minuto.',
+      emailHint: 'Usa la dirección con la que inicias sesión. El enlace deja de funcionar después de una hora.',
       backToLogin: 'Volver al inicio de sesión',
     },
     reset: {
@@ -134,6 +131,7 @@ export const es: Translation = {
       passwordPlaceholder: 'Introduce una contraseña nueva',
       confirmLabel: 'Confirma la nueva contraseña',
       confirmPlaceholder: 'Introdúcela otra vez',
+      confirmHint: 'Escríbela otra vez — un error aquí te deja fuera de tu propia cuenta.',
       requestNewLink: 'Pedir un enlace nuevo',
       knowPassword: '¿Recuerdas tu contraseña?',
       logInLink: 'Inicia sesión',
@@ -186,14 +184,12 @@ export const es: Translation = {
     },
     password: {
       title: 'Contraseña',
-      current: 'Contraseña actual',
-      new: 'Nueva contraseña',
-      confirm: 'Confirma la nueva contraseña',
-      forgotten: '¿La has olvidado? <reset>Restablécela por correo</reset> en su lugar.',
-      otherDevices:
-        'Cambiar la contraseña aquí no cierra la sesión en tus otros dispositivos. Para terminar todas las demás sesiones, usa el restablecimiento por correo — ese sí lo hace.',
-      submit: 'CAMBIAR CONTRASEÑA',
-      changed: 'Contraseña cambiada',
+      body: 'Tu contraseña se cambia por correo. Te enviaremos un enlace a <email>{{email}}</email> — es la única vía que además cierra la sesión en tus otros dispositivos, que suele ser justo lo que se busca.',
+      sentBody:
+        'Un enlace para establecer una nueva contraseña va de camino a <email>{{email}}</email>. Caduca en una hora, y usarlo cierra la sesión en todos los dispositivos — incluido este.',
+      send: 'ENVIARME UN ENLACE DE RESTABLECIMIENTO',
+      resend: 'ENVIARLO DE NUEVO',
+      resentNote: 'Enviado de nuevo — dale un minuto.',
     },
     dangerZone: {
       title: 'Zona de peligro',

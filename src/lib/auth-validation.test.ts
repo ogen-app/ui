@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  changePasswordSchema,
   loginSchema,
   profileSchema,
   resetPasswordSchema,
@@ -98,57 +97,6 @@ describe("profileSchema", () => {
   });
 });
 
-describe("changePasswordSchema", () => {
-  const schema = changePasswordSchema(t);
-  const current = "OldHarbour9";
-  const next = "Sunlit7Harbour";
-  const valid = { currentPassword: current, password: next, confirmPassword: next };
-
-  it("accepts a current password plus a strong new one typed twice", () => {
-    expect(schema.safeParse(valid).success).toBe(true);
-  });
-
-  it("takes any non-empty current password", () => {
-    // It is an existing credential — applying the strength rules to it would
-    // lock out anyone whose password predates them, exactly as for login.
-    const result = schema.safeParse({ ...valid, currentPassword: "x" });
-    expect(result.success).toBe(true);
-  });
-
-  it("asks for the current password when it is left empty", () => {
-    const result = schema.safeParse({ ...valid, currentPassword: "" });
-    expect(errorFor(result, "currentPassword")).toBe("Enter your current password");
-  });
-
-  it("applies the strength rules to the new password", () => {
-    const result = schema.safeParse({
-      ...valid,
-      password: "alllowercase1",
-      confirmPassword: "alllowercase1",
-    });
-    expect(errorFor(result, "password")).toBeDefined();
-  });
-
-  it("catches a mistyped confirmation", () => {
-    const result = schema.safeParse({
-      ...valid,
-      confirmPassword: "Sunlit7Harbor",
-    });
-    expect(errorFor(result, "confirmPassword")).toBe("Passwords do not match");
-  });
-
-  it("rejects re-submitting the password the account already has", () => {
-    // Not pedantry: the change costs a re-authentication and reads as a
-    // security action, so silently accepting a no-op would tell the user they
-    // rotated a credential they did not.
-    const result = schema.safeParse({
-      currentPassword: next,
-      password: next,
-      confirmPassword: next,
-    });
-    expect(errorFor(result, "password")).toBe("That is already your password");
-  });
-});
 
 /**
  * The whole point of the factories: the same schema built after a language

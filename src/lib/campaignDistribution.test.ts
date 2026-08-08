@@ -42,6 +42,7 @@ function overview(overrides: Partial<CampaignOverview> = {}): CampaignOverview {
       ],
       byContentType: [],
     },
+    goal: null,
     generatedAt: '2026-07-28T09:00:00Z',
     ...overrides,
   }

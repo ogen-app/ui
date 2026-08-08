@@ -75,15 +75,9 @@ export const en = {
       needsUppercase: 'Must contain an uppercase letter',
       needsLowercase: 'Must contain a lowercase letter',
       needsDigit: 'Must contain a digit',
-      unchanged: 'That is already your password',
-    },
-    currentPassword: {
-      required: 'Enter your current password',
-      wrong: "That's not your current password",
     },
     confirmPassword: {
       required: 'Confirm your password',
-      requiredNew: 'Confirm your new password',
       mismatch: 'Passwords do not match',
     },
     /**
@@ -107,13 +101,14 @@ export const en = {
       title: 'Log in',
       subtitle: 'Log in to continue managing your content',
       submit: 'LOG IN',
-      expired: 'Your session expired. Log in again to pick up where you left off.',
-      afterReset: 'Your password has been changed. Log in with the new one.',
+      expired: 'Your session expired — log in again to pick up where you left off',
+      afterReset: 'Your password has been changed. Log in with the new one',
       emailLabel: 'Email',
       emailPlaceholder: 'Enter your email',
       passwordLabel: 'Password',
       passwordPlaceholder: 'Enter password',
-      forgotLink: 'Forgot password?',
+      forgotPrompt: 'Forgot your password?',
+      forgotAction: 'Reset it here',
       noAccount: "Don't have an account?",
       signUpLink: 'Sign up',
     },
@@ -149,6 +144,8 @@ export const en = {
       sentBody:
         'If <strong>{{email}}</strong> has an Ogen account, a link to set a new password is on its way. It expires in an hour.',
       resend: 'SEND IT AGAIN',
+      resentNote: 'Sent again — give it a minute.',
+      emailHint: 'Use the address you log in with. The link stops working after an hour.',
       backToLogin: 'Back to log in',
     },
     reset: {
@@ -159,6 +156,7 @@ export const en = {
       passwordPlaceholder: 'Enter a new password',
       confirmLabel: 'Confirm new password',
       confirmPlaceholder: 'Enter it again',
+      confirmHint: 'Type it again — a typo here locks you out of your own account.',
       requestNewLink: 'Request a new link',
       knowPassword: 'Know your password?',
       logInLink: 'Log in',
@@ -212,14 +210,14 @@ export const en = {
     },
     password: {
       title: 'Password',
-      current: 'Current password',
-      new: 'New password',
-      confirm: 'Confirm new password',
-      forgotten: 'Forgotten it? <reset>Reset it by email</reset> instead.',
-      otherDevices:
-        'Changing your password here does not sign out your other devices. To end every other session, use the emailed reset instead — that one does.',
-      submit: 'CHANGE PASSWORD',
-      changed: 'Password changed',
+      /** The reason is the feature: the emailed route is the one that also
+       *  revokes every other session (CON-193), so the copy says so. */
+      body: "Your password is changed by email. We'll send a link to <email>{{email}}</email> — it's the only route that also signs out your other devices, which is usually the point.",
+      sentBody:
+        'A link to set a new password is on its way to <email>{{email}}</email>. It expires in an hour, and using it signs out every device — including this one.',
+      send: 'EMAIL ME A RESET LINK',
+      resend: 'SEND IT AGAIN',
+      resentNote: 'Sent again — give it a minute.',
     },
     dangerZone: {
       title: 'Danger Zone',

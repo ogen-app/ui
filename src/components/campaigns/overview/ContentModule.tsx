@@ -101,7 +101,6 @@ export function ContentModule({
     ? posts.filter((p) => p.platform_id === selected.id)
     : posts;
   const snapshot = contentSnapshot(shown);
-  const planned = campaign.estimated_post_count;
 
   return (
     <OverviewCard
@@ -146,17 +145,11 @@ export function ContentModule({
           label="Failed"
           tone={snapshot.byStatus.failed > 0 ? "alert" : "default"}
         />
-        {/* The total carries the plan with it — the target is campaign-wide,
-            so filtering to one channel drops it. */}
+        {/* Just the total: the campaign's post target is being reworked into a
+            goal (CON-156), so nothing is measured against it for now. */}
         <StatTile
           value={snapshot.total}
-          label={
-            selected
-              ? `on ${selected.name}`
-              : planned
-                ? `of ${planned} planned`
-                : "Total"
-          }
+          label={selected ? `on ${selected.name}` : "Total"}
         />
       </div>
 

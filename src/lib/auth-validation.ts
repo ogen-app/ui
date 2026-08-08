@@ -98,34 +98,12 @@ export const profileSchema = (t: T) =>
     email: emailField(t),
   })
 
-/**
- * Changing the password from inside the app.
- *
- * `currentPassword` is not decoration and is not checked by the server: the
- * update endpoint takes a new password from any live session without asking
- * what the old one was (CON-193). The client verifies it by re-authenticating
- * against `POST /api/sessions` first, so the field has to be collected here
- * even though the eventual `PUT` never carries it.
- *
- * Only a minimum length is asserted on it. It is an existing credential, so
- * the strength rules above don't apply — an account created before those rules
- * would fail its own real password.
+/*
+ * There is no in-app change-password schema. `PasswordSection` on /profile
+ * sends the emailed reset instead of collecting a new credential, so the only
+ * screen that sets a password from typed input is `/auth/reset` above. See
+ * that component for why the form went away (CON-193).
  */
-export const changePasswordSchema = (t: T) =>
-  z
-    .object({
-      currentPassword: z.string().min(1, t('validation.currentPassword.required')),
-      password: passwordField(t),
-      confirmPassword: z.string().min(1, t('validation.confirmPassword.requiredNew')),
-    })
-    .refine((v) => v.password === v.confirmPassword, {
-      message: t('validation.confirmPassword.mismatch'),
-      path: ['confirmPassword'],
-    })
-    .refine((v) => v.password !== v.currentPassword, {
-      message: t('validation.password.unchanged'),
-      path: ['password'],
-    })
 
 /**
  * The live checklist under a new-password field, in display order.

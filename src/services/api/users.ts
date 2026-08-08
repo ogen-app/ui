@@ -41,17 +41,15 @@ export function rawUserToUser(raw: RawUser): User {
 
 /**
  * Body of `PUT /api/users/:id`. `name` and `email` are **both required** by
- * the server even when only one of them changed, and even when the real
- * subject of the call is the password — so every caller has to send the
- * user's current values alongside whatever it is actually changing.
+ * the server even when only one of them changed, so every caller has to send
+ * the user's current values alongside whatever it is actually changing.
  *
- * `password` is optional; when present the server hashes and stores it with
- * no further checks. See `updateUser` for what that means for the caller.
+ * The server also accepts a `password` here. It is deliberately not declared:
+ * see `updateUser`.
  */
 export type UpdateUserPayload = {
   name: string;
   email: string;
-  password?: string;
 };
 
 /**
@@ -60,14 +58,14 @@ export type UpdateUserPayload = {
  * Authorized by `requireSelf` on the server: the session's user id must equal
  * the path id, so this can only ever edit yourself (403 otherwise).
  *
- * **It does not ask for the current password, and it does not revoke other
- * sessions.** Both are server-side gaps (CON-193), and both matter to whoever
- * calls this with a `password`: without the first, any live session can
- * replace the credential; without the second, a password change leaves every
- * other session logged in. The UI compensates for the first by re-authenticating
- * through `POST /api/sessions` before it calls this — see
- * `useChangePassword` — which is a lock on our own door, not on the endpoint.
- * Nothing the client can do substitutes for the second.
+ * **This is identity only — it must never carry a password.** The endpoint
+ * accepts one, but it asks for no current password and revokes no sessions
+ * (CON-193): a borrowed tab could replace the credential outright, and the
+ * real owner's other devices would stay logged in afterwards. The client can't
+ * fix either. So the UI changes passwords through the emailed reset instead,
+ * which proves control of the mailbox and revokes every session — and the
+ * `password` field is left off `UpdateUserPayload` so that decision can't be
+ * undone by accident.
  */
 export async function updateUser(
   id: string,

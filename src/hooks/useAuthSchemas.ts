@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 
 import {
-  changePasswordSchema,
   forgotPasswordSchema,
   loginSchema,
   passwordRules,
@@ -32,7 +31,6 @@ export const useSignupSchema = () => useSchema(signupSchema)
 export const useForgotPasswordSchema = () => useSchema(forgotPasswordSchema)
 export const useResetPasswordSchema = () => useSchema(resetPasswordSchema)
 export const useProfileSchema = () => useSchema(profileSchema)
-export const useChangePasswordSchema = () => useSchema(changePasswordSchema)
 
-/** The live checklist under a new-password field. See `PasswordRulesHint`. */
+/** The live checklist under a new-password field. See `PasswordRules`. */
 export const usePasswordRules = () => useSchema(passwordRules)

@@ -92,6 +92,17 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`MAX_VIDEO_UPLOAD_BYTES`) is ours, and always wins over the seeded ceiling.
   A probed-but-zero `duration_ms` means video-service was down, not a
   zero-length file. See `docs/technical-decisions.md#video-ingest`.
+- **A campaign update is a whole-resource PUT, and the server defaults every
+  field the payload omits.** Leaving `publishing_days` out does not preserve the
+  campaign's publishing days — it resets them to all seven, same for the rest of
+  the CON-181/182 columns. Always build the payload through `campaignToPayload`
+  (`campaignBriefForm/shared.ts`), which round-trips the server's own values and
+  takes only the fields you mean to change as overrides.
+- **The campaign's `estimated_post_count` is a rate, not a total.** Since
+  CON-182 it means "this many posts per `goal_cadence` period" (`week`/`month`),
+  and the server backfilled every campaign to `month` — so an old total of 12 on
+  a three-month campaign now plans 36 posts. Read it through `lib/postGoal`
+  (`postGoalTotal`), never as a campaign total.
 - **`/api/settings` is tenant-scoped, not user-scoped.** Every key is visible
   to the whole workspace via `GET /api/settings`. Personal preferences get
   their identity from the key (`userScopedKey` →
@@ -141,6 +152,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   message, or link the user needs while working, because all of it disappears
   for anyone who closes the note. Check the screen still reads correctly with
   the Explainer deleted. See `docs/technical-decisions.md#explainers`.
+- **Anything the API doesn't support yet ships behind a feature flag** — see
+  the global rule at the bottom of this file. Flags are declared in
+  `config/featureFlags.ts` (a constant today, flipped by editing that file) and
+  read with `useFeatureFlag(id)` (`isFeatureEnabled(id)` outside React), never
+  from the `FEATURE_FLAGS` record directly: the hook is the seam where
+  server-driven values will land, and going through it keeps every call site
+  untouched when they do. A flag is not a permission.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
@@ -186,6 +204,42 @@ English (CON-174) · **English is the only released language**: Spanish is
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
 
-## Global rule
+**The Profile marketing-email switch is built but flagged off**
+(`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's
+token-gated unsubscribe pages, not a session-authenticated one, so
+`GET`/`PUT /api/users/:id/email-preferences` still has to be written. The
+contract is in `services/api/emailPreferences.ts` and asserted by its test.
+Flip the flag when the handler answers. See
+`docs/technical-decisions.md#email-preferences`.
+
+## Global rules
 
 Do not keep backwards compatibility unless explicitly required.
+
+**Front-end runs ahead of the back end, behind feature flags.** Build the UI
+when the design is ready, not when the API is. If the server can't back it yet
+— no endpoint, no column, a field that means something else — the feature ships
+to `develop` with its flag **off**, so `develop` is always shippable and the
+work is reviewable instead of parked on a branch.
+
+The rules that make that safe:
+
+1. **Declare the flag in `config/featureFlags.ts`** and gate the whole feature
+   on it — every entry point, not just the main screen. With the flag off the
+   app must behave exactly as it did before the feature existed.
+2. **Nothing outside the flag may depend on the feature's data.** A half-backed
+   field is worse than a missing one: don't let other screens, readiness rules
+   or the assistant read a value the feature is still redefining. (Why
+   `campaignReadiness` stopped reading `estimated_post_count` while CON-182 was
+   redefining it from a campaign total into a per-period rate.)
+3. **Say what is missing** in the flag's doc comment: which endpoint, column or
+   decision the feature is waiting on. That comment is the hand-off to the
+   back end.
+4. **When the API lands, re-test the feature against the real thing** — a UI
+   built against an assumed contract usually needs a pass — and only then
+   decide the flag's fate. Turning it on and deleting the flag (with its
+   off-branch) is a deliberate step, never a side effect of the endpoint
+   appearing.
+
+A flag is for "not built yet", never for who is allowed to see what — that is
+the server's business.

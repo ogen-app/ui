@@ -13,9 +13,11 @@ import {
   SettingsSaveProvider,
 } from '@/components/settings/settingsSave'
 import { ProfileIdentitySection } from '@/components/profile/ProfileIdentitySection'
-import { ChangePasswordSection } from '@/components/profile/ChangePasswordSection'
+import { PasswordSection } from '@/components/profile/PasswordSection'
+import { EmailPreferencesSection } from '@/components/profile/EmailPreferencesSection'
 import { DeleteAccountDialog } from '@/components/profile/DeleteAccountDialog'
 import { useAuthStore } from '@/stores/authStore'
+import { useFeatureFlag } from '@/config/featureFlags'
 
 export const Route = createFileRoute('/_authenticated/profile/')({
   component: ProfilePage,
@@ -29,13 +31,16 @@ export const Route = createFileRoute('/_authenticated/profile/')({
  * here, and this is where the account menu's "Profile" lands.
  *
  * Name and email follow the Workspace Settings pattern: edited inline, applied
- * by the header's Save button. The password and the deletion do not — each is
- * a discrete action with its own confirmation, not a settings edit.
+ * by the header's Save button. The password, the marketing-email switch and
+ * the deletion do not — each takes effect on its own, as a discrete action
+ * rather than a pending settings edit. The password isn't even changed here:
+ * see `PasswordSection`.
  */
 function ProfilePage() {
   const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const emailPreferencesEnabled = useFeatureFlag('email-preferences')
 
   // The route sits under `_authenticated`, so the guard has already resolved a
   // session by the time this renders; the null branch is for the moment
@@ -60,7 +65,8 @@ function ProfilePage() {
           <div className="flex flex-col gap-8 px-3 pt-4 pb-10 lg:px-6">
             <ProfileIdentitySection user={user} />
             <LanguageSection />
-            <ChangePasswordSection />
+            <PasswordSection />
+            {emailPreferencesEnabled && <EmailPreferencesSection userId={user.id} />}
             <SettingsCard title={t('profile.dangerZone.title')}>
               <div className="flex flex-col items-start gap-3">
                 <p className="max-w-150 text-sm text-tertiary-foreground">

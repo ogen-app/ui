@@ -8,7 +8,6 @@ export {
   forgotPasswordSchema,
   resetPasswordSchema,
   profileSchema,
-  changePasswordSchema,
   passwordRules,
   type FieldErrors,
 } from "./auth-validation.ts";
