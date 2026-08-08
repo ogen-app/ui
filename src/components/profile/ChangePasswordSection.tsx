@@ -1,13 +1,15 @@
 import { type FormEvent } from 'react'
 import { Link } from '@tanstack/react-router'
+import { Trans, useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SettingsCard } from '@/components/settings/SettingsCard'
+import { PasswordRulesHint } from '@/components/forms/shared/PasswordRulesHint'
 import { useChangePassword } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { changePasswordSchema, PASSWORD_RULES, cn } from '@/lib'
+import { useChangePasswordSchema } from '@/hooks/useAuthSchemas'
 import { toast } from '@/stores/toastStore'
 
 /**
@@ -23,9 +25,10 @@ import { toast } from '@/stores/toastStore'
  * before it writes — the server does not check it (CON-193).
  */
 export function ChangePasswordSection() {
+  const { t } = useTranslation()
   const { mutate: change, isPending, error, reset } = useChangePassword()
   const { values, setField, fieldErrors, validate, reset: resetFields } =
-    useFormValidation(changePasswordSchema, {
+    useFormValidation(useChangePasswordSchema(), {
       currentPassword: '',
       password: '',
       confirmPassword: '',
@@ -45,20 +48,18 @@ export function ChangePasswordSection() {
       {
         onSuccess: () => {
           resetFields()
-          toast.success('Password changed')
+          toast.success(t('profile.password.changed'))
         },
       },
     )
   }
 
-  const allPassed = PASSWORD_RULES.every(({ test }) => test(values.password))
-
   return (
-    <SettingsCard title="Password">
+    <SettingsCard title={t('profile.password.title')}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
         <div className="grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-2">
           <div className="flex flex-col gap-1.5 lg:col-span-2">
-            <Label htmlFor="currentPassword">Current password</Label>
+            <Label htmlFor="currentPassword">{t('profile.password.current')}</Label>
             <Input
               id="currentPassword"
               name="currentPassword"
@@ -75,20 +76,27 @@ export function ChangePasswordSection() {
             />
             {(fieldErrors.currentPassword || wrongCurrent) && (
               <p className="text-xs text-destructive">
-                {fieldErrors.currentPassword ?? "That's not your current password"}
+                {fieldErrors.currentPassword ?? t('validation.currentPassword.wrong')}
               </p>
             )}
             <p className="text-xs text-tertiary-foreground">
-              Forgotten it?{' '}
-              <Link to="/auth/forgot" className="font-medium text-primary-foreground">
-                Reset it by email
-              </Link>{' '}
-              instead.
+              {/* The link is mid-sentence, so the sentence stays one key. */}
+              <Trans
+                i18nKey="profile.password.forgotten"
+                components={{
+                  reset: (
+                    <Link
+                      to="/auth/forgot"
+                      className="font-medium text-primary-foreground"
+                    />
+                  ),
+                }}
+              />
             </p>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="newPassword">New password</Label>
+            <Label htmlFor="newPassword">{t('profile.password.new')}</Label>
             <Input
               id="newPassword"
               name="newPassword"
@@ -105,31 +113,12 @@ export function ChangePasswordSection() {
             {fieldErrors.password ? (
               <p className="text-xs text-destructive">{fieldErrors.password}</p>
             ) : (
-              <p className="text-xs">
-                {PASSWORD_RULES.map(({ test, label }, i) => {
-                  const isLast = i === PASSWORD_RULES.length - 1
-                  return (
-                    <span
-                      key={label}
-                      className={cn(
-                        test(values.password)
-                          ? 'text-positive'
-                          : 'text-tertiary-foreground',
-                      )}
-                    >
-                      {isLast ? 'and ' : ''}
-                      {label}
-                      {isLast ? '' : ', '}
-                    </span>
-                  )
-                })}
-                {allPassed && '  ✓'}
-              </p>
+              <PasswordRulesHint value={values.password} />
             )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="confirmNewPassword">Confirm new password</Label>
+            <Label htmlFor="confirmNewPassword">{t('profile.password.confirm')}</Label>
             <Input
               id="confirmNewPassword"
               name="confirmNewPassword"
@@ -153,8 +142,7 @@ export function ChangePasswordSection() {
             password because they think another device is in the account needs
             to know this doesn't evict it. Server-side revocation is CON-193. */}
         <p className="max-w-150 text-xs text-tertiary-foreground">
-          Changing your password here does not sign out your other devices. To end
-          every other session, use the emailed reset instead — that one does.
+          {t('profile.password.otherDevices')}
         </p>
 
         {error && !wrongCurrent && (
@@ -163,7 +151,7 @@ export function ChangePasswordSection() {
 
         <div>
           <Button type="submit" variant="defaultInverted" loading={isPending}>
-            CHANGE PASSWORD
+            {t('profile.password.submit')}
           </Button>
         </div>
       </form>

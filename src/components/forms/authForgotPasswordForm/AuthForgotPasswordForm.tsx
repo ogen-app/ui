@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from '@tanstack/react-router'
+import { Trans, useTranslation } from 'react-i18next'
 import { EnvelopeSimpleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,7 +8,8 @@ import { Label } from '@/components/ui/label'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { useRequestPasswordReset } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { forgotPasswordSchema, cn } from '@/lib'
+import { useForgotPasswordSchema } from '@/hooks/useAuthSchemas'
+import { cn } from '@/lib'
 
 /**
  * Step one of a password reset: name the account.
@@ -28,11 +30,13 @@ import { forgotPasswordSchema, cn } from '@/lib'
  * inside it.
  */
 export function AuthForgotPasswordForm() {
+  const { t } = useTranslation()
   const { mutate: request, isPending, error, reset } = useRequestPasswordReset()
   const [sent, setSent] = useState(false)
-  const { values, setField, fieldErrors, validate } = useFormValidation(forgotPasswordSchema, {
-    email: '',
-  })
+  const { values, setField, fieldErrors, validate } = useFormValidation(
+    useForgotPasswordSchema(),
+    { email: '' }
+  )
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -47,13 +51,19 @@ export function AuthForgotPasswordForm() {
         <div className="flex items-start gap-3">
           <EnvelopeSimpleIcon className="size-5 shrink-0 mt-0.5" aria-hidden />
           <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium">Check your inbox</p>
+            <p className="text-sm font-medium">{t('auth.forgot.sentTitle')}</p>
             {/* Phrased as a conditional on purpose: the endpoint answers the
                 same way for an address with no account, so stating that mail
-                is on its way would be a claim we can't make. */}
+                is on its way would be a claim we can't make.
+
+                One key, not three fragments — `<Trans>` keeps the sentence
+                whole so a translator can move the address within it. */}
             <p className="text-[13px] leading-5 text-secondary-foreground">
-              If <span className="font-medium">{values.email}</span> has an Ogen account, a
-              link to set a new password is on its way. It expires in an hour.
+              <Trans
+                i18nKey="auth.forgot.sentBody"
+                values={{ email: values.email }}
+                components={{ strong: <span className="font-medium" /> }}
+              />
             </p>
           </div>
         </div>
@@ -67,7 +77,7 @@ export function AuthForgotPasswordForm() {
             loading={isPending}
             disabled={isPending}
           >
-            <span>SEND IT AGAIN</span>
+            <span>{t('auth.forgot.resend')}</span>
             <ArrowUpRightIcon />
           </Button>
           {/* Almost always the per-address rate limit: the first link is
@@ -79,7 +89,7 @@ export function AuthForgotPasswordForm() {
             to="/auth/login"
             className="text-primary-foreground text-[13px] font-medium"
           >
-            Back to log in
+            {t('auth.forgot.backToLogin')}
           </Link>
         </div>
       </div>
@@ -93,14 +103,14 @@ export function AuthForgotPasswordForm() {
       noValidate
     >
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t('auth.forgot.emailLabel')}</Label>
         <Input
           id="email"
           name="email"
           type="email"
           autoComplete="username"
           variant="default"
-          placeholder="Enter your email"
+          placeholder={t('auth.forgot.emailPlaceholder')}
           value={values.email}
           onChange={(e) => {
             setField('email', e.target.value)
@@ -120,7 +130,7 @@ export function AuthForgotPasswordForm() {
           loading={isPending}
           disabled={isPending}
         >
-          <span>SEND RESET LINK</span>
+          <span>{t('auth.forgot.submit')}</span>
           <ArrowUpRightIcon />
         </Button>
         <div className="h-4 my-4">

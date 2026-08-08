@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 import { PageContainer } from "@/components/page-primitives/PageContainer";
 import { PageError } from "@/components/page-primitives/PageError";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 
 function ServerUnavailablePage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [retrying, setRetrying] = useState(false);
 
   // Re-run the root guard: it re-probes the backend (the probe caches were
@@ -24,19 +26,19 @@ function ServerUnavailablePage() {
   return (
     <PageContainer variant="fullscreen">
       <PageError
-        subHeader="503"
-        header="Can't reach the server"
+        subHeader={t("errors.serverUnavailable.code")}
+        header={t("errors.serverUnavailable.title")}
         message={
           <>
-            The app can't connect to the server right now.
+            {t("errors.serverUnavailable.message")}
             <br />
-            It may be restarting or temporarily offline.
+            {t("errors.serverUnavailable.messageSecondLine")}
           </>
         }
-        errorType="OFFLINE"
+        errorType={t("errors.serverUnavailable.type")}
         action={
           <Button variant="outline" onClick={retry} disabled={retrying}>
-            {retrying ? "Trying…" : "Try again"}
+            {retrying ? t("common.trying") : t("common.tryAgain")}
           </Button>
         }
       />

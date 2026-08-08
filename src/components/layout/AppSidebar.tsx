@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowSquareOutIcon,
   CalendarDotsIcon,
@@ -60,12 +61,15 @@ function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; is
   )
 }
 
+// Module scope, so the label is a key rather than a string — `t` is only
+// available inside the component, and a constant built at import time would
+// freeze whichever language was loaded first.
 const CAMPAIGN_SUB_ITEMS = [
-  { id: 'overview', text: 'Overview', icon: SidebarIcon },
-  { id: 'posts', text: 'Posts', icon: CalendarDotsIcon },
-  { id: 'brief', text: 'Brief', icon: NotepadIcon },
-  { id: 'assets', text: 'Assets', icon: ScanIcon },
-  { id: 'settings', text: 'Settings', icon: GearSixIcon },
+  { id: 'overview', labelKey: 'nav.campaign.overview', icon: SidebarIcon },
+  { id: 'posts', labelKey: 'nav.campaign.posts', icon: CalendarDotsIcon },
+  { id: 'brief', labelKey: 'nav.campaign.brief', icon: NotepadIcon },
+  { id: 'assets', labelKey: 'nav.campaign.assets', icon: ScanIcon },
+  { id: 'settings', labelKey: 'nav.campaign.settings', icon: GearSixIcon },
 ] as const
 
 type CampaignSubItemId = (typeof CAMPAIGN_SUB_ITEMS)[number]['id']
@@ -73,6 +77,7 @@ type CampaignSubItemId = (typeof CAMPAIGN_SUB_ITEMS)[number]['id']
 /** The app's main navigation sidebar, including the user/workspace menu. */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state, isMobile, setOpen, toggleSidebar } = useSidebar()
+  const { t } = useTranslation()
   const location = useLocation()
   const isCollapsed = isMobile ? false : state === 'collapsed'
   const { user } = useAuthStore()
@@ -126,7 +131,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 variant="default"
                 size="smIcon"
                 onClick={toggleSidebar}
-                aria-label="Close sidebar"
+                aria-label={t('nav.closeSidebar')}
               >
                 <XIcon className="size-5" />
               </Button>
@@ -162,12 +167,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <nav
             className={cn('flex flex-col gap-1 px-3 py-0 lg:px-6', isCollapsed && 'items-center')}
           >
-            <SectionLabel isCollapsed={isCollapsed}>Modules</SectionLabel>
+            <SectionLabel isCollapsed={isCollapsed}>{t('nav.modules')}</SectionLabel>
             <AppSidebarButtonMenu
               icon={
                 <ToolboxIcon weight="regular" className="size-5 flex-none" />
               }
-              text="Campaigns"
+              text={t('nav.campaigns')}
               isActive={location.pathname === '/campaigns'}
               to="/campaigns"
             />
@@ -175,7 +180,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               icon={
                 <CardsThreeIcon weight="regular" className="size-5 flex-none" />
               }
-              text="Content Bank"
+              text={t('nav.contentBank')}
               isActive={location.pathname.startsWith('/content-bank')}
               to="/content-bank"
             />
@@ -184,7 +189,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 the first thing you see on a cold load. Three rows hold the
                 space the campaigns will take. */}
             {showCampaignsGroup && (
-              <SectionLabel isCollapsed={isCollapsed}>Campaigns</SectionLabel>
+              <SectionLabel isCollapsed={isCollapsed}>{t('nav.campaigns')}</SectionLabel>
             )}
             {campaignsPending && !isCollapsed && (
               <>
@@ -196,7 +201,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
             {campaigns?.map((campaign) => {
               const isActive = campaign.id === activeCampaignId
-              const name = campaign.name.trim() || 'Untitled campaign'
+              const name = campaign.name.trim() || t('nav.untitledCampaign')
               return (
                 <React.Fragment key={campaign.id}>
                   <AppSidebarButtonMenu
@@ -233,7 +238,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 <item.icon className="size-4" />
                               </span>
                             }
-                            text={item.text}
+                            text={t(item.labelKey)}
                             isActive={subActive}
                             to={link.to}
                             params={link.params}
@@ -255,7 +260,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             icon={
               <GearSixIcon weight="regular" className="size-5 flex-none" />
             }
-            text="Workspace Settings"
+            text={t('nav.workspaceSettings')}
             isActive={location.pathname.startsWith('/workspace-settings')}
             to="/workspace-settings"
           />
@@ -318,7 +323,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   onSelect={() => navigate({ to: '/profile' })}
                 >
                   <UserIcon weight="bold" />
-                  <span>Profile</span>
+                  <span>{t('nav.profile')}</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem size="lg" className="px-2" asChild>
@@ -326,11 +331,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       should work on the one row that leaves the app. */}
                   <a href={HELP_URL} target="_blank" rel="noreferrer noopener">
                     <LifebuoyIcon weight="bold" />
-                    <span className="flex-1">Help and support</span>
+                    <span className="flex-1">{t('nav.help')}</span>
                     <ArrowSquareOutIcon
                       weight="bold"
                       className="text-tertiary-foreground"
-                      aria-label="Opens in a new tab"
+                      aria-label={t('common.opensInNewTab')}
                     />
                   </a>
                 </DropdownMenuItem>
@@ -339,7 +344,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                 <DropdownMenuItem onClick={handleLogout} size="lg" className="px-2">
                   <SignOutIcon weight="bold" />
-                  <span>Log out</span>
+                  <span>{t('nav.logOut')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

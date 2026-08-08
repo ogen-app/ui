@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { TrashIcon } from '@phosphor-icons/react'
 
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { Button } from '@/components/ui/button'
 import { SettingsCard } from '@/components/settings/SettingsCard'
+import { LanguageSection } from '@/components/settings/LanguageSection'
 import {
   SettingsSaveButton,
   SettingsSaveProvider,
@@ -31,6 +33,7 @@ export const Route = createFileRoute('/_authenticated/profile/')({
  * a discrete action with its own confirmation, not a settings edit.
  */
 function ProfilePage() {
+  const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
@@ -40,7 +43,7 @@ function ProfilePage() {
   if (!user) {
     return (
       <PageContainer variant="fullFlex">
-        <PageHeader title="Profile" />
+        <PageHeader title={t('profile.title')} />
       </PageContainer>
     )
   }
@@ -49,15 +52,19 @@ function ProfilePage() {
     <PageContainer variant="fullFlex">
       <SettingsSaveProvider>
         <div className="flex h-0 grow flex-col overflow-y-auto">
-          <PageHeader title="Profile" fadeOnScroll actions={<SettingsSaveButton />} />
+          <PageHeader
+            title={t('profile.title')}
+            fadeOnScroll
+            actions={<SettingsSaveButton />}
+          />
           <div className="flex flex-col gap-8 px-3 pt-4 pb-10 lg:px-6">
             <ProfileIdentitySection user={user} />
+            <LanguageSection />
             <ChangePasswordSection />
-            <SettingsCard title="Danger Zone">
+            <SettingsCard title={t('profile.dangerZone.title')}>
               <div className="flex flex-col items-start gap-3">
                 <p className="max-w-150 text-sm text-tertiary-foreground">
-                  Deleting your account also deletes the campaigns, posts and assets you
-                  created in this workspace. This cannot be undone.
+                  {t('profile.dangerZone.body')}
                 </p>
                 <Button
                   type="button"
@@ -65,8 +72,9 @@ function ProfilePage() {
                   onClick={() => setDeleteOpen(true)}
                 >
                   <TrashIcon />
-                  {/* Literal caps, not `uppercase` — see CLAUDE.md. */}
-                  <span>DELETE ACCOUNT</span>
+                  {/* Literal caps in the catalogue, not an `uppercase` class —
+                      see CLAUDE.md. Every translation keeps them. */}
+                  <span>{t('profile.dangerZone.action')}</span>
                 </Button>
               </div>
             </SettingsCard>
