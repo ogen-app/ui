@@ -1,6 +1,6 @@
-import { useMemo, useRef, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
-import { PlusIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { CaretDownIcon, PlusIcon, SwapIcon, WarningCircleIcon } from '@phosphor-icons/react'
 
 import { AccountAvatar } from '@/components/ui/account-avatar'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,7 @@ import {
   type CampaignAccountRow,
   type CampaignAccountTarget,
 } from '@/lib/campaignAccounts'
+import type { PlatformInfo } from '@/lib/platformDictionary'
 import { accountLabel } from '@/lib/publishingAccount'
 import type { CampaignPlatform, PublisherAccount } from '@/types/campaigns'
 
@@ -81,50 +82,98 @@ export function AccountsControl({
     )
   }
 
+  const renderRow = (row: CampaignAccountRow) => {
+    const platformId = row.view.platform.id
+    const accountId = row.account?.id ?? PLACEHOLDER_ACCOUNT_ID
+    const allowed = row.view.allowed.map((pt) => pt.slug)
+
+    return (
+      <AccountRow
+        key={row.key}
+        row={row}
+        onAdd={() =>
+          // Everything the expanded region renders starts switched on —
+          // `allowed`, not `available`, so a placeholder arrives fully
+          // targeted rather than as a row of dormant switches.
+          apply(activateTarget(targets, platformId, accountId, allowed))
+        }
+        onSupersede={(account) =>
+          // The placeholder's own post types come across with it —
+          // `activateTarget` treats this as the same row gaining a name.
+          apply(activateTarget(targets, platformId, account.id, allowed))
+        }
+        onTogglePostType={(slug) =>
+          // Switching the last post type off leaves the account active
+          // with nothing to publish, and it stays that way. Deactivating
+          // on the user's behalf was one click doing two things — the row
+          // would vanish mid-sentence while they were still deciding what
+          // it posts. The row says it publishes nothing instead, and
+          // DEACTIVATE is still right there when that is what they meant.
+          apply(togglePostType(targets, platformId, accountId, slug))
+        }
+        onDeactivate={() => apply(deactivateTarget(targets, platformId, accountId))}
+      />
+    )
+  }
+
+  // Two groups rather than one list in two sorts: an active row and an
+  // inactive one look alike at a glance — same tile, same name, same width —
+  // and interleaving them made the campaign's actual choice something you had
+  // to read the right-hand end of every row to find.
+  //
+  // Both filters preserve `accountRows`' order, which is already the display
+  // order for both halves — accounts before placeholders, and inside the
+  // active half by when each was chosen, so activating a row lands it at the
+  // foot of its kind rather than somewhere up the group.
+  const active = rows.filter((row) => row.selection !== undefined)
+  const inactive = rows.filter((row) => row.selection === undefined)
+
   return (
     <div className="flex flex-col gap-1">
       <AccountsSummary targets={targets} />
-      {rows.map((row) => {
-        const platformId = row.view.platform.id
-        const accountId = row.account?.id ?? PLACEHOLDER_ACCOUNT_ID
-        const allowed = row.view.allowed.map((pt) => pt.slug)
-        const deactivate = () =>
-          apply(deactivateTarget(targets, platformId, accountId))
+      <GroupLabel>ACTIVE</GroupLabel>
+      {active.length > 0 ? active.map(renderRow) : <NoneActive />}
+      {inactive.length > 0 && (
+        <>
+          <GroupLabel className="mt-4">INACTIVE</GroupLabel>
+          {inactive.map(renderRow)}
+        </>
+      )}
+    </div>
+  )
+}
 
-        return (
-          <AccountRow
-            key={row.key}
-            row={row}
-            onAdd={() =>
-              // Everything the expanded region renders starts switched on —
-              // `allowed`, not `available`, so a placeholder arrives fully
-              // targeted rather than as a row of dormant switches.
-              apply(activateTarget(targets, platformId, accountId, allowed))
-            }
-            onSupersede={(account) =>
-              // The placeholder's own post types come across with it —
-              // `activateTarget` treats this as the same row gaining a name.
-              apply(activateTarget(targets, platformId, account.id, allowed))
-            }
-            onTogglePostType={(slug) => {
-              const next = togglePostType(targets, platformId, accountId, slug)
-              // Switching the last post type off leaves an account that is
-              // targeted but publishes nothing — a state the campaign has no
-              // use for and no obvious way out of. Treat it as the same
-              // intention as DEACTIVATE ALL.
-              const entry = next.find(
-                (t) => t.platform_id === platformId && t.account_id === accountId,
-              )
-              if (entry?.post_types.length === 0) {
-                deactivate()
-                return
-              }
-              apply(next)
-            }}
-            onDeactivate={deactivate}
-          />
-        )
-      })}
+function GroupLabel({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <p className={cn('mb-1 text-xs font-medium text-tertiary-foreground', className)}>
+      {children}
+    </p>
+  )
+}
+
+/**
+ * Holds the active group open at row height while it is empty.
+ *
+ * Without it the heading sits directly on top of INACTIVE and the card looks
+ * like a list with a stray word in it — and the group the campaign is actually
+ * defined by would be the one thing on screen with no substance to it.
+ *
+ * It carries the warning too, rather than repeating it in the summary line
+ * above: a campaign with nowhere to publish is a state, and this is the shape
+ * of the thing that is missing.
+ */
+function NoneActive() {
+  return (
+    <div className="flex h-16 items-center justify-center border border-dashed border-warning/40 px-3">
+      <span className="text-sm text-warning">
+        No accounts active — this campaign has nowhere to publish.
+      </span>
     </div>
   )
 }
@@ -137,13 +186,10 @@ export function AccountsControl({
  * the dot on the card heading.
  */
 function AccountsSummary({ targets }: { targets: CampaignAccountTarget[] }) {
-  if (targets.length === 0) {
-    return (
-      <p className="mb-3 text-sm text-warning">
-        No accounts selected — this campaign has nowhere to publish.
-      </p>
-    )
-  }
+  // Nothing to summarise, and the empty ACTIVE group says it in the place the
+  // eye is already going. Two sentences about the same nothing read as two
+  // problems.
+  if (targets.length === 0) return null
 
   const postTypes = targets.reduce((n, t) => n + t.post_types.length, 0)
   const placeholders = targets.filter(
@@ -152,11 +198,17 @@ function AccountsSummary({ targets }: { targets: CampaignAccountTarget[] }) {
 
   return (
     <p className="mb-3 text-sm text-tertiary-foreground">
-      {targets.length} account{targets.length === 1 ? '' : 's'} added with {postTypes}{' '}
+      {/* "Active", the same word the rows and their buttons use — the campaign
+          has one verb for this and the summary shouldn't invent a second. */}
+      {targets.length} account{targets.length === 1 ? '' : 's'} active with {postTypes}{' '}
       post type{postTypes === 1 ? '' : 's'}.
+      {/* Not left to the rows: a placeholder is an active row that cannot
+          publish at all, and a reader who takes the count above at face value
+          would think it can. A row with no post types is the rows' own
+          business — it says so on its face and again when opened, and a
+          second tally up here was one warning too many for a state the user
+          is usually halfway through creating. */}
       {placeholders > 0 && (
-        // Not left to the rows: a placeholder cannot publish, and a reader
-        // who takes the count above at face value would think it can.
         <span className="text-warning">
           {' '}
           {placeholders} of {placeholders === 1 ? 'them has' : 'them have'} no account
@@ -167,7 +219,10 @@ function AccountsSummary({ targets }: { targets: CampaignAccountTarget[] }) {
   )
 }
 
-const ROW = 'group flex items-center justify-between gap-3 px-3 py-3 bg-secondary'
+// `pr-5` against `pl-3`: the right end carries a label and an icon rather than
+// a fixed control, and at the row's own padding they sat on the card's edge.
+// Everything inside the expanded region uses the same right inset.
+const ROW = 'group flex items-center justify-between gap-3 pl-3 pr-5 py-3 bg-secondary'
 
 /**
  * One row, targeted or not.
@@ -176,10 +231,15 @@ const ROW = 'group flex items-center justify-between gap-3 px-3 py-3 bg-secondar
  * transition rather than a mount: swapping components here would unmount the
  * region on deactivate, and an unmounted element cannot animate out.
  *
- * There is no collapse control. Being expanded *is* how the list says a row is
- * targeted, so a caret would let the row lie about its own state. Activation
- * lives at both ends: the row itself on the way in, DEACTIVATE ALL at the foot
- * of the expanded region on the way out.
+ * The row is one click target throughout, and what that click does is what the
+ * right-hand end says it does: ACTIVATE + while the campaign doesn't target
+ * this account, a caret once it does. Those are different verbs, so they never
+ * share an affordance — a plus that sometimes expands and sometimes adds is the
+ * thing this replaced.
+ *
+ * Expansion is therefore its own state rather than a reading of `selection`: a
+ * targeted row can be folded away without losing its post types, and a row
+ * being open no longer claims the campaign publishes there.
  */
 function AccountRow({
   row,
@@ -199,6 +259,13 @@ function AccountRow({
   const selected = selection !== undefined
   const name = account ? accountLabel(account) : info.name
 
+  // Targeted rows start open, the way they did when being open *was* being
+  // targeted; from then on it is the user's to set. Activating opens the row
+  // it activated — the post types are the rest of that decision, and burying
+  // them behind a second click would be an odd place to stop.
+  const [expanded, setExpanded] = useState(selected)
+  const open = selected && expanded
+
   // Deactivating drops the entry on the same click that starts the collapse,
   // so the switches would flip off under the user while the region is still
   // closing. They keep their last state on the way out.
@@ -206,32 +273,52 @@ function AccountRow({
   if (selection) lastPostTypes.current = selection.post_types
   const postTypes = selection?.post_types ?? lastPostTypes.current
 
+  const activate = () => {
+    setExpanded(true)
+    onAdd()
+  }
+
   return (
     <div className="flex flex-col bg-secondary">
-      {/* Clickable only while untargeted. Adding is the safe direction — one
-          click to undo — so it gets the whole row; leaving is DEACTIVATE ALL
-          alone, at the far end of what it throws away. */}
-      <RowShell onToggle={selected ? undefined : onAdd} label={`Add ${name} to the campaign`}>
+      <RowShell
+        onToggle={selected ? () => setExpanded((v) => !v) : activate}
+        label={selected ? `${name} — post types` : `Activate ${name} for this campaign`}
+        expanded={selected ? expanded : undefined}
+      >
         <div className="flex-1 min-w-0">
           <AccountLabel
             row={row}
             selectedCount={selected ? postTypes.length : undefined}
+            open={open}
           />
         </div>
-        {!selected && (
-          <div className="flex shrink-0 items-center gap-1" onClick={stopRowClick}>
-            <Button
-              type="button"
-              variant="ghost"
-              size="smIcon"
-              onClick={onAdd}
-              aria-label={`Add ${name}`}
-              title={`Add ${name}`}
-              className="group-hover:bg-primary group-hover:text-primary-foreground"
-            >
-              <PlusIcon className="size-4" />
-            </Button>
-          </div>
+        {/* Not a nested button in either state: the row is the control, and a
+            second tab stop that does exactly what the row does would be one
+            more thing for a keyboard user to step past. Colour is the whole of
+            the hover feedback — the row keeps its background, so a pointer
+            moving down the list doesn't set off a column of blocks. */}
+        {/* Bolder and a couple of pixels larger than the plus it replaces: a
+            caret is two strokes where a plus is a filled cross, so matching
+            box sizes leaves it looking like the lighter of the two. */}
+        {selected ? (
+          <CaretDownIcon
+            aria-hidden
+            weight="bold"
+            className={cn(
+              'size-[18px] shrink-0 text-tertiary-foreground',
+              'transition-[transform,color] duration-200 group-hover:text-primary-foreground',
+              expanded && 'rotate-180',
+            )}
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="flex shrink-0 items-center gap-2.5 text-tertiary-foreground transition-colors group-hover:text-primary-foreground"
+          >
+            {/* Literal caps, matching every other action label in the app. */}
+            <span className="text-[13px]/4 font-medium">ACTIVATE</span>
+            <PlusIcon className="size-4" weight="bold" />
+          </span>
         )}
       </RowShell>
 
@@ -243,13 +330,28 @@ function AccountRow({
       <div
         className={cn(
           'grid transition-[grid-template-rows,visibility] duration-200 ease-out',
-          selected ? 'grid-rows-[1fr] visible' : 'grid-rows-[0fr] invisible',
+          open ? 'grid-rows-[1fr] visible' : 'grid-rows-[0fr] invisible',
         )}
       >
         <div className="overflow-hidden">
           <div className="flex flex-col pb-2">
             {supersededBy.length > 0 && (
-              <SupersedeOffer accounts={supersededBy} onSupersede={onSupersede} />
+              <SupersedeOffer
+                accounts={supersededBy}
+                platform={info}
+                onSupersede={onSupersede}
+              />
+            )}
+            {/* An active row with every switch off publishes nothing, and
+                nothing else on screen says so — the switches are all in their
+                normal off state and the row looks targeted. Only while
+                targeted: on the way out `postTypes` is the last state, which
+                is not this. */}
+            {selected && postTypes.length === 0 && (
+              <p className="ml-3 mr-5 mb-2 border border-warning/40 px-3 py-2 text-sm text-warning">
+                No post types selected — this{' '}
+                {account ? 'account' : 'platform'} won’t publish anything.
+              </p>
             )}
             {[...available, ...unavailable].map((pt) => (
               <PostTypeSwitchRow
@@ -261,20 +363,36 @@ function AccountRow({
                 muted={unavailable.includes(pt)}
               />
             ))}
-            {/* Under the switches rather than up on the row: it is the end of
-                what this account does for the campaign, and the last switch off
-                reaches the same place. `ml-13` is the button's own px-3 backed
-                out of the switch rows' pl-16, so the label starts on their left
-                edge while the button stays the width of its text. */}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onDeactivate}
-              className="mt-1 ml-13 self-start"
-            >
-              DEACTIVATE ALL
-            </Button>
+            {/* The last line of the same list, not a button parked under it:
+                the label starts where the switch labels do and what it says
+                sits where their switches do, so the column reads straight
+                down. It ends what this account does for the campaign, which is
+                why it comes after everything that account does.
+
+                Two controls in this app take an account away from something,
+                and they take it away from different things. Workspace
+                Settings' Disconnect is a red plug icon that ends the
+                connection for the whole tenant; this one is words only, and
+                the line beside it names what it removes — a campaign's
+                targeting comes back with one click, an OAuth grant does not.
+                Literal caps, per the app's action-label convention. */}
+            <div className="flex items-center justify-between gap-4 pl-16 pr-5 py-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="excluded"
+                // Nothing to close by hand: dropping the entry closes the
+                // region on its own, and reactivating opens it again.
+                onClick={onDeactivate}
+              >
+                {account ? 'DEACTIVATE ACCOUNT' : 'DEACTIVATE PLATFORM'}
+              </Button>
+              <span className="text-right text-xs text-tertiary-foreground">
+                {account
+                  ? 'The account stays connected to the workspace.'
+                  : 'Removes this platform from the campaign.'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -294,32 +412,46 @@ function AccountRow({
  * It lives inside the expanded region rather than on the row because it is only
  * ever true of a targeted placeholder, and it has to sit above the switches it
  * is about to move.
+ *
+ * Presented as a heading over ordinary account rows rather than as a notice:
+ * the accounts are the point, and drawing them the way the card draws every
+ * other account — round avatar, platform badge, name over platform — is what
+ * says they are the same kind of thing as the rows above. No warning colour;
+ * this is something the user has gained, not something wrong. A rule under it
+ * keeps it from reading as the first two entries of the post-type list.
  */
 function SupersedeOffer({
   accounts,
+  platform,
   onSupersede,
 }: {
   accounts: PublisherAccount[]
+  platform: PlatformInfo
   onSupersede: (account: PublisherAccount) => void
 }) {
   return (
-    <div className="mx-3 mb-2 flex flex-col gap-2 border border-warning/40 px-3 py-2">
-      <p className="text-sm text-warning">
-        {accounts.length === 1
-          ? 'This platform is connected now. Use the account instead of the placeholder?'
-          : 'This platform is connected now. Pick the account to use instead of the placeholder.'}
-      </p>
+    // The rule is drawn by the block's own bottom edge, inset to the content
+    // it is separating rather than run to the card's edges — a full-bleed line
+    // would cut the row in half instead of ending a section inside it.
+    <div className="ml-16 mr-5 mb-2 border-b border-border pb-2">
+      <GroupLabel>
+        {accounts.length === 1 ? 'AVAILABLE ACCOUNT' : 'AVAILABLE ACCOUNTS'}
+      </GroupLabel>
       {accounts.map((account) => (
-        <div key={account.id} className="flex items-center justify-between gap-3">
-          <AccountIdentity account={account} />
+        <div key={account.id} className="flex items-center justify-between gap-3 py-1">
+          <AccountIdentity account={account} platform={platform} />
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={() => onSupersede(account)}
+            aria-label={`Use ${accountLabel(account)} instead of the placeholder`}
           >
-            {/* Literal caps, not `uppercase` — the caps are the copy. */}
-            USE THIS ACCOUNT
+            {/* Literal caps, not `uppercase` — the caps are the copy. The
+                glyph is a swap, which is what this does: the placeholder
+                leaves as the account arrives, carrying its post types. */}
+            <span>USE</span>
+            <SwapIcon />
           </Button>
         </div>
       ))}
@@ -328,26 +460,30 @@ function SupersedeOffer({
 }
 
 /**
- * The row's clickable shell. Only the untargeted one is a button: adding is the
- * safe direction and it persists immediately, so it gets the big target. A
- * targeted row is inert and renders as a plain container.
+ * The row's clickable shell — always pressable, whichever verb the row is
+ * currently offering.
+ *
+ * `aria-expanded` is passed only by a targeted row, which is the only one that
+ * has a region to open; on an untargeted row the same click activates, and
+ * announcing it as collapsed would name the wrong action.
  */
 function RowShell({
   onToggle,
   label,
+  expanded,
   children,
 }: {
-  onToggle?: () => void
-  label?: string
+  onToggle: () => void
+  label: string
+  expanded?: boolean
   children: ReactNode
 }) {
-  if (!onToggle) return <div className={ROW}>{children}</div>
-
   return (
     <div
       role="button"
       tabIndex={0}
       aria-label={label}
+      aria-expanded={expanded}
       onClick={onToggle}
       onKeyDown={(e) => {
         // Only the row's own keys: Enter/Space on a nested control bubbles
@@ -365,21 +501,34 @@ function RowShell({
 }
 
 /**
- * Avatar beside `@handle` — an account is a face, which is what tells it apart
- * from the placeholder rows below it.
+ * An offered account, drawn exactly as an account row draws itself: round
+ * avatar with the platform badged on it, name over the platform's name.
  *
- * No platform badge: this only ever renders inside the offer on that
- * platform's own row, where the badge would repeat what the row already says.
+ * The badge repeats what the row it sits in already says, and it stays anyway —
+ * the point of this block is that these are the same objects as the rows above,
+ * and dropping a piece of the identity to save a repetition would make them
+ * look like something lesser.
+ *
+ * No post-type count, which is the one thing an account row carries that this
+ * doesn't: nothing has been decided about these yet.
  */
-function AccountIdentity({ account }: { account: PublisherAccount }) {
+function AccountIdentity({
+  account,
+  platform,
+}: {
+  account: PublisherAccount
+  platform: PlatformInfo
+}) {
   const name = accountLabel(account)
   return (
-    <div className="min-w-0 flex items-center gap-2">
-      <AccountAvatar src={account.avatar_url} name={name} size="sm" />
-      <span className="min-w-0 truncate text-sm">
-        {name}
-        <span className="text-tertiary-foreground"> @{account.username}</span>
-      </span>
+    <div className="min-w-0 flex items-center gap-3">
+      <AccountAvatar src={account.avatar_url} name={name} platform={platform} size="md" />
+      <div className="min-w-0 flex flex-col">
+        <span className="truncate text-base font-semibold text-primary-foreground">
+          {name}
+        </span>
+        <span className="truncate text-xs text-tertiary-foreground">{platform.name}</span>
+      </div>
     </div>
   )
 }
@@ -409,9 +558,12 @@ function ConnectLink({ platformName }: { platformName: string }) {
 function AccountLabel({
   row,
   selectedCount,
+  open = false,
 }: {
   row: CampaignAccountRow
   selectedCount?: number
+  /** Whether the row's own region is showing — some of this line is a pointer at it. */
+  open?: boolean
 }) {
   const { view, account } = row
   const { info } = view
@@ -425,11 +577,18 @@ function AccountLabel({
   // block actually renders. An untargeted placeholder gives up the count
   // entirely — how many kinds of post it could take is the wrong thing to
   // answer when the workspace cannot reach the platform at all.
-  const counts = selected
-    ? `${selectedCount} of ${view.allowed.length} post types`
-    : placeholder
-      ? null
-      : `${view.allowed.length} post types available`
+  // Zero is not a count worth reporting neutrally — "0 of 4 post types" reads
+  // as a setting, and it is a row that publishes nothing. The folded row has
+  // to carry that on its own, since the warning inside is folded away with it.
+  const counts = selected ? (
+    selectedCount === 0 ? (
+      <span className="text-warning">No post types selected</span>
+    ) : (
+      `${selectedCount} of ${view.allowed.length} post types`
+    )
+  ) : placeholder ? null : (
+    `${view.allowed.length} post types available`
+  )
 
   // Set in Workspace Settings, not here: this is the workspace's decision
   // showing through, so the campaign can see how its posts will go out without
@@ -440,16 +599,32 @@ function AccountLabel({
     <div className="min-w-0 flex items-center gap-3">
       <span className="relative shrink-0">
         {placeholder ? (
-          // The logo alone, desaturated until targeted: a placeholder has no
-          // face to show, and the platform is the whole of what it names.
-          <Icon
+          // Square where an account is round, and that is the whole of the
+          // difference at a glance: a circle is somebody's face, a tile is a
+          // network.
+          //
+          // Monochrome, not the brand's colour: this row is a platform with
+          // nobody behind it, and a full-colour logo would out-shout the
+          // connected accounts above it — the rows that can actually publish.
+          // Selection is the whole of what the tile encodes, so it darkens
+          // and the mark turns white; hover only moves the unselected tile,
+          // because a selected one has nowhere left to go.
+          <span
             className={cn(
-              'size-10 transition-[filter]',
-              !selected && 'grayscale group-hover:grayscale-0',
+              'flex size-10 items-center justify-center rounded-lg transition-colors',
+              selected
+                ? 'bg-secondary-foreground'
+                : 'bg-platform-tile group-hover:bg-platform-tile-hover',
             )}
-            weight="fill"
-            style={{ color: info.color }}
-          />
+          >
+            <Icon
+              className={cn(
+                'size-7',
+                selected ? 'text-primary' : 'text-platform-tile-foreground',
+              )}
+              weight="fill"
+            />
+          </span>
         ) : (
           // The badge is full colour whether or not the campaign targets this
           // account — which platform a face belongs to is identity, not
@@ -500,8 +675,28 @@ function AccountLabel({
             (selected ? (
               <>
                 {counts && ' · '}
-                <span className="text-warning">No account connected.</span>{' '}
-                <ConnectLink platformName={info.name} />
+                {row.supersededBy.length > 0 ? (
+                  // The offer that says this is inside the row, and the row
+                  // folds — so the line has to carry it, or a collapsed
+                  // placeholder would go on claiming nothing is connected
+                  // while an account sits waiting one click away. Once the row
+                  // is open the accounts are on screen with a button each, and
+                  // the directions come off: nothing ages worse than being
+                  // told to open something you are looking inside.
+                  <span className="text-warning">
+                    {row.supersededBy.length === 1
+                      ? 'Account available'
+                      : 'Accounts available'}
+                    {!open &&
+                      ` — open the row to use ${row.supersededBy.length === 1 ? 'it' : 'one'}`}
+                    .
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-warning">No account connected.</span>{' '}
+                    <ConnectLink platformName={info.name} />
+                  </>
+                )}
               </>
             ) : (
               'No account connected — add it as a placeholder.'
@@ -530,7 +725,7 @@ function PostTypeSwitchRow({
       className={cn(
         // Left edge lines up with the name: row padding (12) + avatar (40) +
         // gap (12).
-        'flex items-center justify-between gap-3 pl-16 pr-[18px] py-2',
+        'flex items-center justify-between gap-3 pl-16 pr-5 py-2',
         'cursor-pointer select-none hover:bg-secondary/60',
         muted && 'opacity-60',
       )}

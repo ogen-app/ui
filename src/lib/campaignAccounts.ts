@@ -209,11 +209,29 @@ export type CampaignAccountRow = {
 }
 
 /**
- * Every row the card offers, connected accounts first and placeholders after.
+ * Every row the card offers, in the order it shows them:
  *
- * Real accounts lead because they are the rows that can actually publish; a
- * placeholder is a note about a platform nobody has connected, and sorting it
- * among the accounts would put an intention next to a capability.
+ * 1. active connected accounts, oldest choice first;
+ * 2. active placeholders, oldest choice first;
+ * 3. inactive connected accounts, in platform order;
+ * 4. inactive placeholders, in platform order.
+ *
+ * Real accounts lead their half because they are the rows that can actually
+ * publish; a placeholder is a note about a platform nobody has connected, and
+ * sorting it among the accounts would put an intention next to a capability.
+ *
+ * The active half is ordered by *when* rather than by platform, so a row the
+ * user just activated arrives at the foot of its kind instead of appearing
+ * somewhere up the list — the list stops rearranging itself under the click
+ * that changed it. `targets` is that history: `activateTarget` appends, so its
+ * index is the order the campaign chose things in, and it survives the round
+ * trip through storage. Accepting a connected account in a placeholder's place
+ * is a new choice by this measure and moves to the foot of the accounts — it
+ * is a different audience than "the platform", which is the whole point of the
+ * swap.
+ *
+ * The caller splits this into its two groups on `selection`, which is why the
+ * order has to be total rather than per-group.
  *
  * A placeholder is only offered where there is nothing to choose instead — a
  * platform with connected accounts has real rows, and targeting "Facebook, no
@@ -225,15 +243,14 @@ export function accountRows(
   views: readonly PlatformView[],
   targets: readonly CampaignAccountTarget[],
 ): CampaignAccountRow[] {
-  const accountRowsOut: CampaignAccountRow[] = []
-  const placeholderRows: CampaignAccountRow[] = []
+  const rows: CampaignAccountRow[] = []
 
   for (const view of views) {
     const platformId = view.platform.id
     const accounts = connectedAccounts(view)
 
     for (const account of accounts) {
-      accountRowsOut.push({
+      rows.push({
         key: targetKey(platformId, account.id),
         view,
         account,
@@ -245,7 +262,7 @@ export function accountRows(
     const placeholder = find(targets, platformId, PLACEHOLDER_ACCOUNT_ID)
     if (accounts.length > 0 && !placeholder) continue
 
-    placeholderRows.push({
+    rows.push({
       key: targetKey(platformId, PLACEHOLDER_ACCOUNT_ID),
       view,
       account: null,
@@ -254,5 +271,24 @@ export function accountRows(
     })
   }
 
-  return [...accountRowsOut, ...placeholderRows]
+  const chosenAt = new Map<string, number>()
+  targets.forEach((t, i) => chosenAt.set(targetKey(t.platform_id, t.account_id), i))
+
+  // 0/1 for the active half, 2/3 for the inactive one; inside a rank, active
+  // rows go by when they were chosen and inactive rows keep the order the
+  // platforms came in.
+  const rank = (row: CampaignAccountRow) =>
+    (row.selection ? 0 : 2) + (row.account ? 0 : 1)
+
+  return rows
+    .map((row, index) => ({ row, index }))
+    .sort((a, b) => {
+      const byRank = rank(a.row) - rank(b.row)
+      if (byRank !== 0) return byRank
+      if (a.row.selection && b.row.selection) {
+        return (chosenAt.get(a.row.key) ?? 0) - (chosenAt.get(b.row.key) ?? 0)
+      }
+      return a.index - b.index
+    })
+    .map(({ row }) => row)
 }

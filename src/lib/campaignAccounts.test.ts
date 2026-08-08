@@ -16,6 +16,7 @@ import type { Platform, PublisherAccount } from '@/types/campaigns'
 
 const FACEBOOK = 'zBU1zqVICGfk'
 const LINKEDIN = 'AXqWG7U2qnpt'
+const INSTAGRAM = 'rzgpTkARLH0L'
 
 function account(id: string, username: string): PublisherAccount {
   return {
@@ -213,11 +214,43 @@ describe('accountRows', () => {
     expect(rows[0].supersededBy).toEqual([])
   })
 
-  it('marks which rows the campaign targets', () => {
+  it('marks which rows the campaign targets, and lifts them above the rest', () => {
     const views = [view(FACEBOOK, [account('a1', 'one'), account('a2', 'two')])]
     const rows = accountRows(views, [
       { platform_id: FACEBOOK, account_id: 'a2', post_types: ['reel'] },
     ])
-    expect(rows.map((r) => r.selection !== undefined)).toEqual([false, true])
+    expect(rows.map((r) => r.account?.id)).toEqual(['a2', 'a1'])
+    expect(rows.map((r) => r.selection !== undefined)).toEqual([true, false])
+  })
+
+  it('orders active rows by when they were chosen, not by platform', () => {
+    const views = [
+      view(FACEBOOK, [account('a1', 'one'), account('a2', 'two')]),
+      view(LINKEDIN, [account('l1', 'work')]),
+    ]
+    // Chosen LinkedIn first, then the second Facebook page.
+    const rows = accountRows(views, [
+      { platform_id: LINKEDIN, account_id: 'l1', post_types: ['post'] },
+      { platform_id: FACEBOOK, account_id: 'a2', post_types: ['reel'] },
+    ])
+    expect(rows.map((r) => r.account?.id)).toEqual(['l1', 'a2', 'a1'])
+  })
+
+  it('keeps active placeholders under the active accounts, and both above the inactive rows', () => {
+    const views = [
+      view(FACEBOOK, [account('a1', 'one')]),
+      view(LINKEDIN, []),
+      view(INSTAGRAM, [account('i1', 'gram')]),
+    ]
+    const rows = accountRows(views, [
+      // The placeholder was chosen first and still sits below the account.
+      { platform_id: LINKEDIN, account_id: PLACEHOLDER_ACCOUNT_ID, post_types: ['post'] },
+      { platform_id: FACEBOOK, account_id: 'a1', post_types: ['reel'] },
+    ])
+    expect(rows.map((r) => r.key)).toEqual([
+      `${FACEBOOK}:a1`,
+      `${LINKEDIN}:`,
+      `${INSTAGRAM}:i1`,
+    ])
   })
 })

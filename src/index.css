@@ -162,6 +162,9 @@
   --color-table-row-hover: var(--table-row-hover);
   --color-table-footer: var(--table-footer);
   /* Misc */
+  --color-platform-tile: var(--platform-tile);
+  --color-platform-tile-hover: var(--platform-tile-hover);
+  --color-platform-tile-foreground: var(--platform-tile-foreground);
   --color-selection: var(--selection);
   --color-ring: var(--ring);
   --color-editable: var(--editable);
@@ -255,6 +258,22 @@
   --table-row-hover: var(--secondary);
   --table-footer: var(--primary);
 
+  /* The square a platform's logo sits in where the network stands for itself
+     rather than for somebody's account — a placeholder the campaign hasn't
+     put an account behind.
+
+     Monochrome on purpose: this tile is the *unselected* state of a row, and
+     brand colour there competes with the connected accounts above it, which
+     are the rows that can actually publish. The selected tile drops these and
+     uses Layer 2 (`--secondary-foreground` behind a white mark).
+
+     Straight to Layer 1: these are surfaces at beige-400/500, and the Layer 2
+     tokens carrying those values are a disabled surface and a faint
+     foreground — rule 2 says don't borrow a token whose meaning doesn't fit
+     just because the value matches. */
+  --platform-tile: var(--beige-400);
+  --platform-tile-hover: var(--beige-500);
+  --platform-tile-foreground: var(--beige-100);
   --selection: var(--beige-500);
   --ring: var(--beige-400);
   --editable: oklch(0.4895 0.2063 260.59);
