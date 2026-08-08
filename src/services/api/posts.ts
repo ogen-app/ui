@@ -131,6 +131,79 @@ export function verifyExternalPost(
   )
 }
 
+/**
+ * One saved snapshot of a post's text (CON-68).
+ *
+ * `content` only — a version does not carry the title, attachments, platform
+ * or schedule, so restoring one changes the words and nothing else.
+ *
+ * `creator` says who took the snapshot: the assistant saves one before it
+ * rewrites, the user saves one by asking.
+ */
+export type PostVersion = {
+  id: string
+  post_id: string
+  version_number: number
+  content: string
+  note: string
+  creator: 'user' | 'assistant'
+  created_at: string
+}
+
+/** Every snapshot for the post, oldest first — the server orders it. */
+export function listPostVersions(postId: string): Promise<PostVersion[]> {
+  return apiJson<PostVersion[] | null>(
+    `${BASE}/${postId}/versions`,
+    'Unable to load versions',
+    // A post with no versions answers `null`, not `[]`.
+  ).then((rows) => rows ?? [])
+}
+
+/** Snapshots the post's *stored* content — flush pending edits before calling. */
+export function createPostVersion(postId: string, note: string): Promise<PostVersion> {
+  return apiJson<PostVersion>(`${BASE}/${postId}/versions`, 'Unable to save a version', {
+    method: 'POST',
+    body: { note },
+  })
+}
+
+/**
+ * Discards one snapshot. The post's content is untouched — this removes the
+ * ability to go back to it, nothing else.
+ *
+ * NOTE: the server does not implement this yet. `DELETE /api/posts/:id/
+ * versions/:versionId` is the shape the rest of the post routes imply, but
+ * `handlers/posts.go` registers only GET and POST on `/versions`, so this
+ * currently 404s. Requested on CON-44; the caller is behind the
+ * `post-version-delete` flag until it lands.
+ */
+export function deletePostVersion(postId: string, versionId: string): Promise<void> {
+  return apiVoid(
+    `${BASE}/${postId}/versions/${versionId}`,
+    'Unable to delete the version',
+    { method: 'DELETE' },
+  )
+}
+
+/**
+ * Rolls the post's content back to an earlier version.
+ *
+ * Non-destructive, and worth knowing before writing copy against it: the
+ * server copies the target version's content into a *brand-new* version that
+ * becomes the latest, so history is never rewritten and the restore is itself
+ * reversible. Unsnapshotted edits are saved as a version first, so nothing is
+ * lost. Restoring the version that already matches the live content is a no-op.
+ *
+ * Returns the hydrated post, like `updatePost` — the caller can write it
+ * straight into the editor's cache entry.
+ */
+export function restorePost(postId: string, versionNumber: number): Promise<Post> {
+  return apiJson<Post>(`${BASE}/${postId}/restore`, 'Unable to restore the version', {
+    method: 'POST',
+    body: { version_number: versionNumber },
+  })
+}
+
 export function postToPayload(post: Post): PostPayload {
   return {
     campaign_id: post.campaign_id,

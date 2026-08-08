@@ -16,10 +16,12 @@ import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
+import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
 import {
   POST_PREVIEW_PORTAL_ID,
   POST_QUALITY_PORTAL_ID,
   POST_SETTINGS_PORTAL_ID,
+  POST_VERSIONS_PORTAL_ID,
 } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
@@ -183,6 +185,7 @@ function PostEditorSurface({
   const settingsOpen = useSettingsStore((s) => s.activeRightPanel === 'postSettings')
   const previewOpen = useSettingsStore((s) => s.activeRightPanel === 'postPreview')
   const qualityOpen = useSettingsStore((s) => s.activeRightPanel === 'postQuality')
+  const versionsOpen = useSettingsStore((s) => s.activeRightPanel === 'postVersions')
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
   const openRightPanel = useSettingsStore((s) => s.openRightPanel)
   const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
@@ -201,10 +204,12 @@ function PostEditorSurface({
   const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
   const [previewHost, setPreviewHost] = useState<HTMLElement | null>(null)
   const [qualityHost, setQualityHost] = useState<HTMLElement | null>(null)
+  const [versionsHost, setVersionsHost] = useState<HTMLElement | null>(null)
   useEffect(() => {
     setSettingsHost(document.getElementById(POST_SETTINGS_PORTAL_ID))
     setPreviewHost(document.getElementById(POST_PREVIEW_PORTAL_ID))
     setQualityHost(document.getElementById(POST_QUALITY_PORTAL_ID))
+    setVersionsHost(document.getElementById(POST_VERSIONS_PORTAL_ID))
   }, [])
 
   // Being on a post page is what makes its assistant thread available: the
@@ -238,7 +243,8 @@ function PostEditorSurface({
       if (
         s.activeRightPanel === 'postSettings' ||
         s.activeRightPanel === 'postPreview' ||
-        s.activeRightPanel === 'postQuality'
+        s.activeRightPanel === 'postQuality' ||
+        s.activeRightPanel === 'postVersions'
       ) {
         s.closeRightPanel()
       }
@@ -301,6 +307,8 @@ function PostEditorSurface({
             onTogglePreview={() => toggleRightPanel('postPreview')}
             qualityOpen={qualityOpen}
             onToggleQuality={() => toggleRightPanel('postQuality')}
+            versionsOpen={versionsOpen}
+            onToggleVersions={() => toggleRightPanel('postVersions')}
             onDownloadMarkdown={handleDownloadMarkdown}
             onDeletePost={() => setDeleteOpen(true)}
             actions={
@@ -423,6 +431,16 @@ function PostEditorSurface({
               onClose={closeRightPanel}
             />,
             qualityHost,
+          )}
+
+        {versionsHost &&
+          createPortal(
+            /* The live document, so the list can tell whether the newest
+               snapshot still *is* the post's text or has been edited past.
+               Its writes still go through the server's stored copy, flushing
+               the autosave first. */
+            <PostVersionsPanel doc={doc} onClose={closeRightPanel} />,
+            versionsHost,
           )}
       </div>
       <DeletePostDialog

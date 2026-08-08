@@ -54,6 +54,15 @@ const FEATURE_FLAGS = {
    * against the deployed API.
    */
   'email-preferences': false,
+
+  /**
+   * Deleting one saved version of a post, from the version-history panel
+   * (CON-168). Off until the API grows `DELETE /api/posts/:id/versions/
+   * :versionId` — `handlers/posts.go` registers `GET`/`POST` on `/versions`
+   * and `POST /restore` and nothing else, so the call 404s today. Requested on
+   * CON-44; the client, the menu item and the confirm step are already written.
+   */
+  'post-version-delete': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS
