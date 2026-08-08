@@ -196,8 +196,9 @@ editor's autosave.
 **Decision.** The Profile switch reads and writes
 `GET`/`PUT /api/users/:id/email-preferences`, a route that does not exist yet —
 `services/api/emailPreferences.ts` carries the contract and
-`emailPreferences.test.ts` states it executably. It is **not** a
-`userScopedKey` in `/api/settings`.
+`emailPreferences.test.ts` states it executably. The section ships behind the
+`email-preferences` feature flag, off, so `develop` doesn't carry a card that
+can only fail. It is **not** a `userScopedKey` in `/api/settings`.
 
 **Why.** CON-154/CON-155 built the entire suppression engine server-side, but
 every endpoint it exposes is public and token-gated: it verifies a signature

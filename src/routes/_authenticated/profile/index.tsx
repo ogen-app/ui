@@ -15,6 +15,7 @@ import { ChangePasswordSection } from '@/components/profile/ChangePasswordSectio
 import { EmailPreferencesSection } from '@/components/profile/EmailPreferencesSection'
 import { DeleteAccountDialog } from '@/components/profile/DeleteAccountDialog'
 import { useAuthStore } from '@/stores/authStore'
+import { useFeatureFlag } from '@/config/featureFlags'
 
 export const Route = createFileRoute('/_authenticated/profile/')({
   component: ProfilePage,
@@ -35,6 +36,7 @@ export const Route = createFileRoute('/_authenticated/profile/')({
 function ProfilePage() {
   const user = useAuthStore((s) => s.user)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const emailPreferencesEnabled = useFeatureFlag('email-preferences')
 
   // The route sits under `_authenticated`, so the guard has already resolved a
   // session by the time this renders; the null branch is for the moment
@@ -55,7 +57,7 @@ function ProfilePage() {
           <div className="flex flex-col gap-8 px-3 pt-4 pb-10 lg:px-6">
             <ProfileIdentitySection user={user} />
             <ChangePasswordSection />
-            <EmailPreferencesSection userId={user.id} />
+            {emailPreferencesEnabled && <EmailPreferencesSection userId={user.id} />}
             <SettingsCard title="Danger Zone">
               <div className="flex flex-col items-start gap-3">
                 <p className="max-w-150 text-sm text-tertiary-foreground">
