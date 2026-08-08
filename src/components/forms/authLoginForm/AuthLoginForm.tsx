@@ -92,26 +92,27 @@ export function AuthLoginForm() {
           aria-describedby={fieldErrors.password ? 'password-error' : undefined}
           disabled={isPending}
         />
+        {/* No password-policy hint here — the rules govern choosing a
+            password, not typing one you already have, and repeating them on
+            login only tells a visitor what our passwords look like. */}
         {fieldErrors.password && (
           <p id="password-error" className="text-xs text-destructive">
             {fieldErrors.password}
           </p>
         )}
-        {/* The slot every other password field gives to `PasswordRules` — the
-            rules themselves have no business here, since they govern choosing
-            a password rather than typing one you already have, and printing
-            them on a public screen only tells a visitor what our passwords
-            look like. The way out of not knowing it goes here instead, on its
-            own line and never conditional: it is the one link a user who
-            can't get in actually needs. */}
-        <p className="text-xs text-tertiary-foreground">
-          Forgot your password?{' '}
-          <Link to="/auth/forgot" className="font-medium text-primary-foreground">
-            Reset it here
-          </Link>
-          .
-        </p>
       </div>
+      {/* Its own row rather than a note under the field, and in the link
+          colour rather than the muted one: for a user who can't get in this is
+          the only thing on the screen that helps, so it is not going to sit in
+          the typography we use for asides. Never conditional either — a field
+          error must not be able to displace it. */}
+      <p className="text-[13px] leading-5 text-primary-foreground">
+        Forgot your password?{' '}
+        <Link to="/auth/forgot" className="font-medium">
+          Reset it here
+        </Link>
+        .
+      </p>
       <div className="w-full">
         <Button
           type="submit"

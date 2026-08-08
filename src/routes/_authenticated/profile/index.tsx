@@ -11,7 +11,7 @@ import {
   SettingsSaveProvider,
 } from '@/components/settings/settingsSave'
 import { ProfileIdentitySection } from '@/components/profile/ProfileIdentitySection'
-import { ChangePasswordSection } from '@/components/profile/ChangePasswordSection'
+import { PasswordSection } from '@/components/profile/PasswordSection'
 import { DeleteAccountDialog } from '@/components/profile/DeleteAccountDialog'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -28,7 +28,8 @@ export const Route = createFileRoute('/_authenticated/profile/')({
  *
  * Name and email follow the Workspace Settings pattern: edited inline, applied
  * by the header's Save button. The password and the deletion do not — each is
- * a discrete action with its own confirmation, not a settings edit.
+ * a discrete action with its own confirmation, not a settings edit. The
+ * password isn't even changed here: see `PasswordSection`.
  */
 function ProfilePage() {
   const user = useAuthStore((s) => s.user)
@@ -52,7 +53,7 @@ function ProfilePage() {
           <PageHeader title="Profile" fadeOnScroll actions={<SettingsSaveButton />} />
           <div className="flex flex-col gap-8 px-3 pt-4 pb-10 lg:px-6">
             <ProfileIdentitySection user={user} />
-            <ChangePasswordSection />
+            <PasswordSection />
             <SettingsCard title="Danger Zone">
               <div className="flex flex-col items-start gap-3">
                 <p className="max-w-150 text-sm text-tertiary-foreground">
