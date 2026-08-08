@@ -43,6 +43,11 @@ export default defineConfig(({ command, mode }) => {
       // repo; without this, vitest runs their stale test copies too and the
       // suite reports phantom counts (and phantom failures).
       exclude: [...configDefaults.exclude, "**/.claude/**"],
+      // jsdom for everything rather than per-file environments: the pure-logic
+      // suite doesn't care, and a component test that silently ran in node
+      // fails with "document is not defined" a long way from the cause.
+      environment: "jsdom",
+      setupFiles: ["./src/test/setup.ts"],
     },
     server: {
       // Polling lets HMR see host edits inside Docker bind mounts (native
