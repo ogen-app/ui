@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { queryClient } from '@/lib/queryClient'
 import { postKey } from '@/hooks/usePost'
+import { postVersionsKey } from '@/lib/queryKeys'
 import { campaignKey } from '@/hooks/useCampaigns'
 import { describeTool, humanizeStep } from '@/lib/assistantTools'
 import { flushPendingSave } from '@/lib/pendingSaves'
@@ -504,6 +505,14 @@ async function refreshSubject(
     const applied = turns[turns.length - 1]
     if (applied?.action === 'edited' || streamedContent) {
       await queryClient.invalidateQueries({ queryKey: postKey(subject.postId) })
+      // The flow snapshots the post before it rewrites, so an edited turn
+      // leaves a version the history doesn't know about. The broadcast can't
+      // cover this: `beginLocalRun` suppresses the actor's own
+      // `assistant_completed`, so for the person who ran the turn — the one
+      // most likely to have the panel open — nothing else would refresh it.
+      await queryClient.invalidateQueries({
+        queryKey: postVersionsKey(subject.postId),
+      })
     }
     return
   }

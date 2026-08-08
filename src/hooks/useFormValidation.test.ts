@@ -120,9 +120,9 @@ describe('useFormValidation', () => {
   })
 
   it('goes quiet again after a reset, not just empty', () => {
-    // `ChangePasswordSection` resets on success and the card stays on screen.
-    // If the submitted flag survived, the freshly emptied fields would come
-    // back red the moment the user touched one.
+    // The reset form resets on success and stays on screen (the forgot page's
+    // resend works the same way). If the submitted flag survived, the freshly
+    // emptied fields would come back red the moment the user touched one.
     const { result } = setup()
     act(() => {
       result.current.setField('email', 'ada@example.com')

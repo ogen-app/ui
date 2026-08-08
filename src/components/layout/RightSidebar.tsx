@@ -38,6 +38,13 @@ export const POST_PREVIEW_PORTAL_ID = 'right-sidebar-post-preview'
 export const POST_QUALITY_PORTAL_ID = 'right-sidebar-post-quality'
 
 /**
+ * Portal target for the post editor's version history. Hosted here for the
+ * same reason as its siblings — it is scoped to one post, and the post route
+ * is what knows which one.
+ */
+export const POST_VERSIONS_PORTAL_ID = 'right-sidebar-post-versions'
+
+/**
  * One stacked content layer inside the sidebar. Inactive layers stay mounted
  * and fade out (opacity only), so switching panels cross-fades and the AI
  * assistant keeps running invisibly.
@@ -113,6 +120,9 @@ export function RightSidebar() {
             </PanelLayer>
             <PanelLayer active={activePanel === 'postQuality'}>
               <div id={POST_QUALITY_PORTAL_ID} className="h-full" />
+            </PanelLayer>
+            <PanelLayer active={activePanel === 'postVersions'}>
+              <div id={POST_VERSIONS_PORTAL_ID} className="h-full" />
             </PanelLayer>
           </div>
         </div>
