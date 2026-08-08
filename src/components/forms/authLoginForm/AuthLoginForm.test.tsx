@@ -71,25 +71,27 @@ describe('AuthLoginForm', () => {
     expect(router.state.location.href).not.toContain('evil.example')
   })
 
-  it('says why the login screen appeared, when it appeared uninvited', async () => {
-    // Without this a session that died mid-edit reads as the app having
-    // randomly logged you out.
-    await renderWithProviders(<AuthLoginForm />, { path: LOGIN_ROUTE, search: '?expired=1' })
-
-    expect(screen.getByText(/session expired/i)).toBeInTheDocument()
-  })
-
-  it('confirms a completed password reset', async () => {
-    await renderWithProviders(<AuthLoginForm />, { path: LOGIN_ROUTE, search: '?reset=true' })
-
-    expect(screen.getByText(/password has been changed/i)).toBeInTheDocument()
-  })
-
-  it('shows neither banner on a plain visit', async () => {
+  it('offers the way out to someone who cannot get in, whatever else is wrong', async () => {
+    // The one link a user stuck on this screen actually needs, so it is never
+    // conditional — not on a field error, not on a rejected password.
+    const user = userEvent.setup()
+    login.mockRejectedValue(new Error('Invalid email or password'))
     await renderWithProviders(<AuthLoginForm />, { path: LOGIN_ROUTE })
 
-    expect(screen.queryByText(/session expired/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/password has been changed/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /reset it here/i })).toBeInTheDocument()
+
+    await signIn(user)
+    await screen.findByText('Invalid email or password')
+
+    expect(screen.getByRole('link', { name: /reset it here/i })).toBeInTheDocument()
+  })
+
+  it('does not print the password policy on a public screen', async () => {
+    // The rules govern choosing a password, not typing one you already have,
+    // and showing them here only tells a visitor what our passwords look like.
+    await renderWithProviders(<AuthLoginForm />, { path: LOGIN_ROUTE })
+
+    expect(screen.queryByText(/min\. 8 chars/i)).not.toBeInTheDocument()
   })
 
   it('announces a rejected credential and clears it on the next keystroke', async () => {

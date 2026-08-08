@@ -89,12 +89,19 @@ export function AuthResetPasswordForm({ token }: Props) {
             if (error) reset()
           }}
           aria-invalid={!!fieldErrors.confirmPassword}
-          aria-describedby={fieldErrors.confirmPassword ? 'confirmPassword-error' : undefined}
+          aria-describedby="confirmPassword-note"
           disabled={isPending}
         />
-        {fieldErrors.confirmPassword && (
-          <p id="confirmPassword-error" className="text-xs text-destructive">
+        {/* Says why the field is here at all. This sets a credential you can't
+            see and won't use again until your next login, possibly on another
+            device — the second box is the only check there is. */}
+        {fieldErrors.confirmPassword ? (
+          <p id="confirmPassword-note" className="text-xs text-destructive">
             {fieldErrors.confirmPassword}
+          </p>
+        ) : (
+          <p id="confirmPassword-note" className="text-xs text-tertiary-foreground">
+            Type it again — a typo here locks you out of your own account.
           </p>
         )}
       </div>

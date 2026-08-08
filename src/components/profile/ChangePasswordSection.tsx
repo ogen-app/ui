@@ -142,14 +142,18 @@ export function ChangePasswordSection() {
                 if (error) reset()
               }}
               aria-invalid={!!fieldErrors.confirmPassword}
-              aria-describedby={
-                fieldErrors.confirmPassword ? 'confirmNewPassword-error' : undefined
-              }
+              aria-describedby="confirmNewPassword-note"
               disabled={isPending}
             />
-            {fieldErrors.confirmPassword && (
-              <p id="confirmNewPassword-error" className="text-xs text-destructive">
+            {/* Also keeps this column the same height as the rules line beside
+                it, so the two halves of the grid don't sit at different depths. */}
+            {fieldErrors.confirmPassword ? (
+              <p id="confirmNewPassword-note" className="text-xs text-destructive">
                 {fieldErrors.confirmPassword}
+              </p>
+            ) : (
+              <p id="confirmNewPassword-note" className="text-xs text-tertiary-foreground">
+                Type it again — a typo here locks you out of your own account.
               </p>
             )}
           </div>

@@ -16,7 +16,9 @@ import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
  */
 export function AuthLoginForm() {
   const router = useRouter()
-  const { redirect, expired, reset: afterReset } = useSearch({ from: '/auth/login/' })
+  // Only the return path. Why the user is here — an expired session, a
+  // finished reset — is answered by the screen's subtitle, not by the form.
+  const { redirect } = useSearch({ from: '/auth/login/' })
   const { mutate: login, isPending, error, reset } = useLogin()
   const { values, setField, fieldErrors, validate } = useFormValidation(loginSchema, {
     email: '',
@@ -48,19 +50,6 @@ export function AuthLoginForm() {
       className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500"
       noValidate
     >
-      {/* Why you are looking at a login screen you didn't ask for. Without
-          this, a session that expired mid-edit reads as the app having
-          randomly logged you out. */}
-      {expired && (
-        <p className="text-[13px] leading-5 text-secondary-foreground">
-          Your session expired. Log in again to pick up where you left off.
-        </p>
-      )}
-      {afterReset && (
-        <p className="text-positive text-[13px] leading-5">
-          Your password has been changed. Log in with the new one.
-        </p>
-      )}
       <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -86,15 +75,7 @@ export function AuthLoginForm() {
         )}
       </div>
       <div className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between gap-4">
-          <Label htmlFor="password">Password</Label>
-          <Link
-            to="/auth/forgot"
-            className="text-tertiary-foreground hover:text-primary-foreground text-xs"
-          >
-            Forgot password?
-          </Link>
-        </div>
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
           name="password"
@@ -111,14 +92,25 @@ export function AuthLoginForm() {
           aria-describedby={fieldErrors.password ? 'password-error' : undefined}
           disabled={isPending}
         />
-        {/* No password-policy hint here — the rules govern choosing a
-            password, not typing one you already have, and repeating them on
-            login only tells a visitor what our passwords look like. */}
         {fieldErrors.password && (
           <p id="password-error" className="text-xs text-destructive">
             {fieldErrors.password}
           </p>
         )}
+        {/* The slot every other password field gives to `PasswordRules` — the
+            rules themselves have no business here, since they govern choosing
+            a password rather than typing one you already have, and printing
+            them on a public screen only tells a visitor what our passwords
+            look like. The way out of not knowing it goes here instead, on its
+            own line and never conditional: it is the one link a user who
+            can't get in actually needs. */}
+        <p className="text-xs text-tertiary-foreground">
+          Forgot your password?{' '}
+          <Link to="/auth/forgot" className="font-medium text-primary-foreground">
+            Reset it here
+          </Link>
+          .
+        </p>
       </div>
       <div className="w-full">
         <Button

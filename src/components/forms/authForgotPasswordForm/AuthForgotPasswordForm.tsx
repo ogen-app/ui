@@ -146,8 +146,14 @@ export function AuthForgotPasswordForm() {
             {fieldErrors.email}
           </p>
         )}
+        {/* The note every other form's last field has, and the reason the
+            button no longer sits right under the input. It also answers the
+            question this screen reliably produces — which of my addresses? */}
+        <p className="text-xs text-tertiary-foreground">
+          Use the address you log in with. The link stops working after an hour.
+        </p>
       </div>
-      <div className="w-full">
+      <div className="w-full pt-2">
         <Button
           type="submit"
           variant="defaultInverted"
