@@ -14,6 +14,7 @@ import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unav
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedContentBankRouteImport } from './routes/_authenticated/content-bank'
+import { Route as DesignAuthFormsIndexRouteImport } from './routes/design/auth-forms/index'
 import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
@@ -64,6 +65,11 @@ const AuthenticatedContentBankRoute =
     path: '/content-bank',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const DesignAuthFormsIndexRoute = DesignAuthFormsIndexRouteImport.update({
+  id: '/design/auth-forms/',
+  path: '/design/auth-forms/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthResetIndexRoute = AuthResetIndexRouteImport.update({
   id: '/auth/reset/',
   path: '/auth/reset/',
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
+  '/design/auth-forms/': typeof DesignAuthFormsIndexRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -252,6 +259,7 @@ export interface FileRoutesByTo {
   '/auth/logout': typeof AuthLogoutIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
   '/auth/reset': typeof AuthResetIndexRoute
+  '/design/auth-forms': typeof DesignAuthFormsIndexRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
+  '/design/auth-forms/': typeof DesignAuthFormsIndexRoute
   '/_authenticated/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/_authenticated/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/_authenticated/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/auth/logout/'
     | '/auth/register/'
     | '/auth/reset/'
+    | '/design/auth-forms/'
     | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
@@ -344,6 +354,7 @@ export interface FileRouteTypes {
     | '/auth/logout'
     | '/auth/register'
     | '/auth/reset'
+    | '/design/auth-forms'
     | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/auth/logout/'
     | '/auth/register/'
     | '/auth/reset/'
+    | '/design/auth-forms/'
     | '/_authenticated/campaigns/$campaignId/assets'
     | '/_authenticated/campaigns/$campaignId/brief'
     | '/_authenticated/campaigns/$campaignId/list'
@@ -395,6 +407,7 @@ export interface RootRouteChildren {
   AuthLogoutIndexRoute: typeof AuthLogoutIndexRoute
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
   AuthResetIndexRoute: typeof AuthResetIndexRoute
+  DesignAuthFormsIndexRoute: typeof DesignAuthFormsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -433,6 +446,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/content-bank'
       preLoaderRoute: typeof AuthenticatedContentBankRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/design/auth-forms/': {
+      id: '/design/auth-forms/'
+      path: '/design/auth-forms'
+      fullPath: '/design/auth-forms/'
+      preLoaderRoute: typeof DesignAuthFormsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/reset/': {
       id: '/auth/reset/'
@@ -701,6 +721,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLogoutIndexRoute: AuthLogoutIndexRoute,
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,
   AuthResetIndexRoute: AuthResetIndexRoute,
+  DesignAuthFormsIndexRoute: DesignAuthFormsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
