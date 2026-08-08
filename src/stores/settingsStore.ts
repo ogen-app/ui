@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, devtools } from 'zustand/middleware'
 import { SETTINGS_STORE_PERSIST_KEY } from '@/stores/constants'
 import {
-  EMPTY_PANEL_MEMORY,
+  DEFAULT_PANEL_MEMORY,
   closePanel,
   openPanel,
   resolveActivePanel,
@@ -102,7 +102,7 @@ type SettingsState = LocalSettings &
 
 const DEFAULT_SETTINGS: LocalSettings = {
   sidebarCollapsed: false,
-  panelMemory: EMPTY_PANEL_MEMORY,
+  panelMemory: DEFAULT_PANEL_MEMORY,
   lastOpenedModals: {},
   dismissedNotes: [],
   assetSelections: {},

@@ -224,6 +224,12 @@ reveals the assistant underneath. It also means "open the assistant" has to
 clear the current screen's overlay — otherwise the assistant is recorded as
 open beneath something still covering it and the trigger looks broken.
 
+It is also **open on first run** (`DEFAULT_PANEL_MEMORY`): the assistant is the
+product, and hiding it behind a small mark in the corner buries the thing the
+app is for. A default, not a rule — close it once and that sticks, everywhere.
+Following a thread's "open the post" link does *not* close it: you asked to see
+the post, not to dismiss the assistant that wrote it.
+
 **Rehydration distrusts the blob.** `sanitizePanelMemory` rebuilds the memory
 from scratch on load, dropping any panel id this build doesn't have and any
 panel filed under a screen that doesn't own it. Persisted enum values outlive

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  DEFAULT_PANEL_MEMORY,
   EMPTY_PANEL_MEMORY,
   closePanel,
   openPanel,
@@ -149,9 +150,16 @@ describe('sanitizePanelMemory', () => {
     expect(m.scoped).toEqual({})
   })
 
-  it('survives a blob that is not a memory at all', () => {
-    expect(sanitizePanelMemory(undefined)).toEqual(EMPTY_PANEL_MEMORY)
-    expect(sanitizePanelMemory('assistant')).toEqual(EMPTY_PANEL_MEMORY)
+  it('treats an unreadable blob as a first run', () => {
+    expect(sanitizePanelMemory(undefined)).toEqual(DEFAULT_PANEL_MEMORY)
+    expect(sanitizePanelMemory('assistant')).toEqual(DEFAULT_PANEL_MEMORY)
+  })
+
+  it('keeps the rail shut for someone who shut it', () => {
+    // The first-run default must not resurrect itself on every reload.
+    expect(sanitizePanelMemory({ assistantOpen: false, scoped: {} })).toEqual(
+      EMPTY_PANEL_MEMORY,
+    )
     expect(sanitizePanelMemory({ assistantOpen: 'yes' })).toEqual(EMPTY_PANEL_MEMORY)
   })
 })

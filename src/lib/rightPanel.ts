@@ -60,7 +60,18 @@ export type PanelMemory = {
   scoped: Partial<Record<PanelScope, ScopedPanel>>
 }
 
+/** Nothing open anywhere. The floor of the model, and what closing everything reaches. */
 export const EMPTY_PANEL_MEMORY: PanelMemory = { assistantOpen: false, scoped: {} }
+
+/**
+ * What someone who has never touched the rail gets: the assistant, open.
+ *
+ * The assistant is the product, not a utility drawer — a first run that hides
+ * it behind a small mark in the corner buries the thing the app is for. It
+ * stays a default rather than a rule: close it once and the memory holds that
+ * from then on, everywhere.
+ */
+export const DEFAULT_PANEL_MEMORY: PanelMemory = { assistantOpen: true, scoped: {} }
 
 /**
  * The panel on screen: the most specific thing the current screen can actually
@@ -151,7 +162,9 @@ export function togglePanel(
  * reintroduced through the back door.
  */
 export function sanitizePanelMemory(value: unknown): PanelMemory {
-  if (typeof value !== 'object' || value === null) return EMPTY_PANEL_MEMORY
+  // Nothing readable there — including the first run, where there is nothing at
+  // all. Treat unreadable as never-seen and hand back the first-run default.
+  if (typeof value !== 'object' || value === null) return DEFAULT_PANEL_MEMORY
   const raw = value as Partial<PanelMemory>
   const scoped: PanelMemory['scoped'] = {}
   if (typeof raw.scoped === 'object' && raw.scoped !== null) {
