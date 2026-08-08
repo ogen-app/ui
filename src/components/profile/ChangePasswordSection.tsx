@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SettingsCard } from '@/components/settings/SettingsCard'
+import { FormError } from '@/components/forms/shared/FormError'
+import { PasswordRules } from '@/components/forms/shared/PasswordRules'
+import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
 import { useChangePassword } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { changePasswordSchema, PASSWORD_RULES, cn } from '@/lib'
+import { changePasswordSchema } from '@/lib'
 import { toast } from '@/stores/toastStore'
 
 /**
@@ -36,10 +39,13 @@ export function ChangePasswordSection() {
   // some unknown reason. It has exactly one cause here, and one field.
   const wrongCurrent = /invalid credentials/i.test(error?.message ?? '')
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const data = validate()
-    if (!data) return
+    if (!data) {
+      focusFirstInvalid(e.currentTarget)
+      return
+    }
     change(
       { currentPassword: data.currentPassword, password: data.password },
       {
@@ -50,8 +56,6 @@ export function ChangePasswordSection() {
       },
     )
   }
-
-  const allPassed = PASSWORD_RULES.every(({ test }) => test(values.password))
 
   return (
     <SettingsCard title="Password">
@@ -71,10 +75,18 @@ export function ChangePasswordSection() {
                 if (error) reset()
               }}
               aria-invalid={!!fieldErrors.currentPassword || wrongCurrent}
+              aria-describedby={
+                fieldErrors.currentPassword || wrongCurrent
+                  ? 'currentPassword-error'
+                  : undefined
+              }
               disabled={isPending}
             />
+            {/* `alert` because unlike the schema errors this one arrives from
+                the server, a moment after the click, with focus still on the
+                button — nothing would otherwise announce it. */}
             {(fieldErrors.currentPassword || wrongCurrent) && (
-              <p className="text-xs text-destructive">
+              <p id="currentPassword-error" role="alert" className="text-xs text-destructive">
                 {fieldErrors.currentPassword ?? "That's not your current password"}
               </p>
             )}
@@ -100,31 +112,20 @@ export function ChangePasswordSection() {
                 if (error) reset()
               }}
               aria-invalid={!!fieldErrors.password}
+              // Whichever of the two lines below is showing, it is this field's
+              // description — the rules when they are the instruction, the
+              // error when the schema has something the rules can't say.
+              aria-describedby="newPassword-rules"
               disabled={isPending}
             />
+            {/* The one message the rules line cannot carry: reusing the current
+                password passes every rule and is still refused. */}
             {fieldErrors.password ? (
-              <p className="text-xs text-destructive">{fieldErrors.password}</p>
-            ) : (
-              <p className="text-xs">
-                {PASSWORD_RULES.map(({ test, label }, i) => {
-                  const isLast = i === PASSWORD_RULES.length - 1
-                  return (
-                    <span
-                      key={label}
-                      className={cn(
-                        test(values.password)
-                          ? 'text-positive'
-                          : 'text-tertiary-foreground',
-                      )}
-                    >
-                      {isLast ? 'and ' : ''}
-                      {label}
-                      {isLast ? '' : ', '}
-                    </span>
-                  )
-                })}
-                {allPassed && '  ✓'}
+              <p id="newPassword-rules" className="text-xs text-destructive">
+                {fieldErrors.password}
               </p>
+            ) : (
+              <PasswordRules id="newPassword-rules" value={values.password} />
             )}
           </div>
 
@@ -141,10 +142,15 @@ export function ChangePasswordSection() {
                 if (error) reset()
               }}
               aria-invalid={!!fieldErrors.confirmPassword}
+              aria-describedby={
+                fieldErrors.confirmPassword ? 'confirmNewPassword-error' : undefined
+              }
               disabled={isPending}
             />
             {fieldErrors.confirmPassword && (
-              <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>
+              <p id="confirmNewPassword-error" className="text-xs text-destructive">
+                {fieldErrors.confirmPassword}
+              </p>
             )}
           </div>
         </div>
@@ -157,9 +163,11 @@ export function ChangePasswordSection() {
           every other session, use the emailed reset instead — that one does.
         </p>
 
-        {error && !wrongCurrent && (
-          <p className="text-sm text-destructive">{error.message}</p>
-        )}
+        {/* A wrong current password is deliberately excluded: it is already
+            shown against the field it belongs to, and repeating it down here
+            would read as a second, unrelated failure. `my-0` because the form
+            spaces its own rows. */}
+        <FormError message={wrongCurrent ? undefined : error?.message} className="my-0" />
 
         <div>
           <Button type="submit" variant="defaultInverted" loading={isPending}>

@@ -7,7 +7,10 @@ import { Label } from '@/components/ui/label'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { useRequestPasswordReset } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { forgotPasswordSchema, cn } from '@/lib'
+import { forgotPasswordSchema } from '@/lib'
+import { FormError } from '@/components/forms/shared/FormError'
+import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
+import { cn } from '@/lib'
 
 /**
  * Step one of a password reset: name the account.
@@ -30,15 +33,31 @@ import { forgotPasswordSchema, cn } from '@/lib'
 export function AuthForgotPasswordForm() {
   const { mutate: request, isPending, error, reset } = useRequestPasswordReset()
   const [sent, setSent] = useState(false)
+  const [resent, setResent] = useState(false)
   const { values, setField, fieldErrors, validate } = useFormValidation(forgotPasswordSchema, {
     email: '',
   })
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const data = validate()
-    if (!data) return
+    if (!data) {
+      focusFirstInvalid(e.currentTarget)
+      return
+    }
     request(data.email, { onSuccess: () => setSent(true) })
+  }
+
+  /**
+   * A second send has no visible consequence — the panel is already up and
+   * says the same thing it said before the click. Without an answer here the
+   * button reads as broken, and the obvious response to that is to press it
+   * again, which is the one thing the rate limit will refuse.
+   */
+  const handleResend = () => {
+    setResent(false)
+    if (error) reset()
+    request(values.email, { onSuccess: () => setResent(true) })
   }
 
   if (sent) {
@@ -63,18 +82,30 @@ export function AuthForgotPasswordForm() {
             variant="outline"
             size="default"
             className="w-full justify-between"
-            onClick={() => request(values.email)}
+            onClick={handleResend}
             loading={isPending}
             disabled={isPending}
           >
             <span>SEND IT AGAIN</span>
             <ArrowUpRightIcon />
           </Button>
-          {/* Almost always the per-address rate limit: the first link is
-              already on its way, so this reads as "you don't need to", not as
-              a failure of the reset itself. The first send's copy above stays
-              on screen and stays true. */}
-          {error && <p className="text-[13px] leading-5 text-destructive">{error.message}</p>}
+          {/* Both answers to the same click share one region, so the previous
+              one is replaced rather than sitting next to its contradiction.
+              `status` rather than `alert` even for the failure: it is almost
+              always the per-address rate limit (CON-161), which means the
+              first link is already on its way — "you don't need to", not a
+              failure of the reset. The copy above stays true either way, and
+              nothing here is worth interrupting a screen reader mid-sentence
+              for. */}
+          <p
+            role="status"
+            className={cn(
+              'min-h-5 text-[13px] leading-5',
+              error ? 'text-destructive' : 'text-tertiary-foreground',
+            )}
+          >
+            {error ? error.message : resent ? 'Sent again — give it a minute.' : ''}
+          </p>
           <Link
             to="/auth/login"
             className="text-primary-foreground text-[13px] font-medium"
@@ -107,9 +138,14 @@ export function AuthForgotPasswordForm() {
             if (error) reset()
           }}
           aria-invalid={!!fieldErrors.email}
+          aria-describedby={fieldErrors.email ? 'email-error' : undefined}
           disabled={isPending}
         />
-        {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
+        {fieldErrors.email && (
+          <p id="email-error" className="text-xs text-destructive">
+            {fieldErrors.email}
+          </p>
+        )}
       </div>
       <div className="w-full">
         <Button
@@ -123,16 +159,7 @@ export function AuthForgotPasswordForm() {
           <span>SEND RESET LINK</span>
           <ArrowUpRightIcon />
         </Button>
-        <div className="h-4 my-4">
-          <span
-            className={cn(
-              'text-sm text-destructive transition-opacity duration-300',
-              error ? 'opacity-100' : 'opacity-0'
-            )}
-          >
-            {error && error.message}
-          </span>
-        </div>
+        <FormError message={error?.message} />
       </div>
     </form>
   )

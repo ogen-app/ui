@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { useLogin } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { loginSchema, safeRedirect, cn } from '@/lib'
+import { loginSchema, safeRedirect } from '@/lib'
+import { FormError } from '@/components/forms/shared/FormError'
+import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
 
 /**
  * Email/password login form. On success it returns the user to the in-app
@@ -21,11 +23,14 @@ export function AuthLoginForm() {
     password: '',
   })
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     const data = validate()
-    if (!data) return
+    if (!data) {
+      focusFirstInvalid(e.currentTarget)
+      return
+    }
 
     login(data, {
       onSuccess: () => {
@@ -71,9 +76,14 @@ export function AuthLoginForm() {
             if (error) reset()
           }}
           aria-invalid={!!fieldErrors.email}
+          aria-describedby={fieldErrors.email ? 'email-error' : undefined}
           disabled={isPending}
         />
-        {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
+        {fieldErrors.email && (
+          <p id="email-error" className="text-xs text-destructive">
+            {fieldErrors.email}
+          </p>
+        )}
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-4">
@@ -98,13 +108,16 @@ export function AuthLoginForm() {
             if (error) reset()
           }}
           aria-invalid={!!fieldErrors.password}
+          aria-describedby={fieldErrors.password ? 'password-error' : undefined}
           disabled={isPending}
         />
         {/* No password-policy hint here — the rules govern choosing a
             password, not typing one you already have, and repeating them on
             login only tells a visitor what our passwords look like. */}
         {fieldErrors.password && (
-          <p className="text-xs text-destructive">{fieldErrors.password}</p>
+          <p id="password-error" className="text-xs text-destructive">
+            {fieldErrors.password}
+          </p>
         )}
       </div>
       <div className="w-full">
@@ -119,16 +132,7 @@ export function AuthLoginForm() {
           <span>LOG IN</span>
           <ArrowUpRightIcon />
         </Button>
-        <div className="h-4 my-4">
-          <span
-            className={cn(
-              'text-sm text-destructive transition-opacity duration-300',
-              error ? ' opacity-100' : 'opacity-0'
-            )}
-          >
-            {error && error.message}
-          </span>
-        </div>
+        <FormError message={error?.message} />
       </div>
     </form>
   )
