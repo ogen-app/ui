@@ -18,7 +18,12 @@ reviews:
     # review scope to keep the source files reviewable.
     - "!**/*.md"
     - "!**/*.test.ts"
+    - "!**/*.test.tsx"
     - "!.env.example"
     - "!.coderabbit.yaml"
+    # Same cap-management, continued: the generated route tree and the i18n
+    # string catalogues are bulk without review value.
+    - "!src/routeTree.gen.ts"
+    - "!src/i18n/resources/**"
 chat:
   auto_reply: true
