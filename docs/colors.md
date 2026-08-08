@@ -22,7 +22,8 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
 2. **Layer 3 references Layer 2** (`--sidebar-secondary: var(--tertiary)`),
    and only falls back to a Layer 1 primitive when no meaning-aligned semantic
    token exists (currently: `--header-icon: var(--beige-800)`,
-   `--selection: var(--beige-500)`, `--chart-other/neutral*`).
+   `--selection: var(--beige-500)`, `--platform-tile*` (beige-400/500/100),
+   `--chart-other/neutral*`).
    Never map to a token whose *meaning* doesn't fit just because the value
    matches (e.g. don't use `--quaternary-foreground` as a surface).
 3. **Layer 2 references Layer 1.** Raw oklch values are allowed only in
