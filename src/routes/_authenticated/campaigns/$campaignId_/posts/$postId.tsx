@@ -23,7 +23,8 @@ import {
   POST_SETTINGS_PORTAL_ID,
   POST_VERSIONS_PORTAL_ID,
 } from '@/components/layout/RightSidebar'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
+import { usePanelScope } from '@/hooks/usePanelScope'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { charCount } from '@/lib/socialText'
 import { useCampaign } from '@/hooks/useCampaigns'
@@ -182,10 +183,14 @@ function PostEditorSurface({
   // The settings form renders in the shared right sidebar (one panel at a
   // time, alongside the AI assistant). The route owns the form because it
   // owns the post's autosave pipeline; the sidebar only hosts the layer.
-  const settingsOpen = useSettingsStore((s) => s.activeRightPanel === 'postSettings')
-  const previewOpen = useSettingsStore((s) => s.activeRightPanel === 'postPreview')
-  const qualityOpen = useSettingsStore((s) => s.activeRightPanel === 'postQuality')
-  const versionsOpen = useSettingsStore((s) => s.activeRightPanel === 'postVersions')
+  // Declaring the scope is what makes these four resolvable at all — off this
+  // screen they stay remembered but the rail falls back to the assistant.
+  usePanelScope('post', campaignId)
+  const activePanel = useSettingsStore(selectActivePanel)
+  const settingsOpen = activePanel === 'postSettings'
+  const previewOpen = activePanel === 'postPreview'
+  const qualityOpen = activePanel === 'postQuality'
+  const versionsOpen = activePanel === 'postVersions'
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
   const openRightPanel = useSettingsStore((s) => s.openRightPanel)
   const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
@@ -235,22 +240,6 @@ function PostEditorSurface({
   useEffect(() => {
     renameThread(threadId, doc.title, campaignName?.trim())
   }, [renameThread, threadId, doc.title, campaignName])
-
-  // Leaving the editor closes its panels; an open assistant stays open.
-  useEffect(
-    () => () => {
-      const s = useSettingsStore.getState()
-      if (
-        s.activeRightPanel === 'postSettings' ||
-        s.activeRightPanel === 'postPreview' ||
-        s.activeRightPanel === 'postQuality' ||
-        s.activeRightPanel === 'postVersions'
-      ) {
-        s.closeRightPanel()
-      }
-    },
-    [],
-  )
 
   const autosizeTitle = useCallback(() => {
     const el = titleRef.current

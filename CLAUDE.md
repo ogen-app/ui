@@ -145,6 +145,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   own copy is the one string that must *not* come from the catalogue — it lives
   in `i18n/bootMessages.ts`, in the main chunk, because it renders while the
   catalogue is being fetched. Keep that file to those two lines.
+- **The right sidebar never stores which panel is open.** It persists one
+  remembered choice per screen (`panelMemory` in `settingsStore`) and derives
+  the rest: ask `selectActivePanel`, never `panelMemory` directly. A route makes
+  its panels reachable by calling `usePanelScope('post' | 'calendar', campaignId)`
+  — that is the *only* write navigation is allowed, and it's why routes no
+  longer close their own panels on unmount. Never add such a cleanup effect
+  back; it would save the side effects of navigating instead of the user's
+  choice. New panels go in `PANEL_SCOPE` (`lib/rightPanel.ts`), which won't
+  compile until they say which screen they belong to. The assistant is the
+  rail's floor — open on first run, closing another panel reveals it rather
+  than collapsing the rail, and navigating never closes it. See
+  `docs/technical-decisions.md#panel-memory`.
 - **Explanatory copy goes in `<Explainer>`**, which the user can close for
   good (`settingsStore.dismissedNotes`, device-local — display noise doesn't
   belong in the workspace-wide `/api/settings`). The rule that makes it safe:
