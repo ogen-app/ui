@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   CaretLeftIcon,
+  ClockCounterClockwiseIcon,
   CloudCheckIcon,
   CloudIcon,
   DevicesIcon,
@@ -34,6 +35,8 @@ type Props = {
   onTogglePreview: () => void
   qualityOpen: boolean
   onToggleQuality: () => void
+  versionsOpen: boolean
+  onToggleVersions: () => void
   onDownloadMarkdown: () => void
   /** Opens the status-aware delete confirmation. */
   onDeletePost: () => void
@@ -56,6 +59,8 @@ export function PostDetailsHeader({
   onTogglePreview,
   qualityOpen,
   onToggleQuality,
+  versionsOpen,
+  onToggleVersions,
   onDownloadMarkdown,
   onDeletePost,
   actions,
@@ -114,6 +119,24 @@ export function PostDetailsHeader({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Quality</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="smIcon"
+                className={cn(versionsOpen && 'text-accent hover:text-accent')}
+                onClick={onToggleVersions}
+                aria-label="Versions"
+                aria-expanded={versionsOpen}
+              >
+                <ClockCounterClockwiseIcon
+                  weight={versionsOpen ? 'fill' : 'regular'}
+                  className="size-5"
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Versions</TooltipContent>
           </Tooltip>
           <Button
             variant="ghost"

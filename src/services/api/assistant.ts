@@ -25,16 +25,6 @@ export type AssistantHistoryMessage = {
   created_at: string
 }
 
-export type PostVersion = {
-  id: string
-  post_id: string
-  version_number: number
-  content: string
-  note: string
-  creator: 'user' | 'assistant'
-  created_at: string
-}
-
 /** The structured result the post flow returns, at `complete` and in history. */
 export type AssistantResult = {
   explanation: string
@@ -81,20 +71,6 @@ export function listCampaignMessages(campaignId: string): Promise<AssistantHisto
     `/api/campaigns/${campaignId}/messages`,
     'Unable to load the conversation',
   ).then(orderHistory)
-}
-
-export function listPostVersions(postId: string): Promise<PostVersion[]> {
-  return apiJson<PostVersion[] | null>(
-    `/api/posts/${postId}/versions`,
-    'Unable to load versions',
-  ).then((rows) => rows ?? [])
-}
-
-export function createPostVersion(postId: string, note: string): Promise<PostVersion> {
-  return apiJson<PostVersion>(`/api/posts/${postId}/versions`, 'Unable to save a version', {
-    method: 'POST',
-    body: { note },
-  })
 }
 
 /**
