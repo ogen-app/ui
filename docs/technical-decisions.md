@@ -191,6 +191,38 @@ first and the PUT is debounced 500ms behind them — flipping six day switches
 costs one request — with a flush on unmount, the same shape as the post
 editor's autosave.
 
+## The marketing-email opt-out gets its own endpoint {#email-preferences}
+
+**Decision.** The Profile switch reads and writes
+`GET`/`PUT /api/users/:id/email-preferences`, a route that does not exist yet —
+`services/api/emailPreferences.ts` carries the contract and
+`emailPreferences.test.ts` states it executably. The section ships behind the
+`email-preferences` feature flag, off, so `develop` doesn't carry a card that
+can only fail. It is **not** a `userScopedKey` in `/api/settings`.
+
+**Why.** CON-154/CON-155 built the entire suppression engine server-side, but
+every endpoint it exposes is public and token-gated: it verifies a signature
+lifted from an email footer, not a session, so none of them can answer "is the
+person on this page subscribed?". Routing the switch through `/api/settings`
+instead would have avoided the new endpoint and been wrong twice over — that
+store is tenant-scoped and readable by every teammate (see
+[#user-scoped-settings](#user-scoped-settings)), and it would have created a
+*second* record of subscription state that the emailed unsubscribe link doesn't
+update. One `email_suppressions` row, two ways to reach it.
+
+**The two booleans.** `marketing` is the subscription; `delivery_blocked`
+reports a `scope='all'` suppression, the row a hard bounce or spam complaint
+writes through the Resend webhook. They have to be separate because
+`RemoveMarketing` doesn't touch an `all` row: a bounced address can be
+subscribed and still receive nothing. The UI disables the switch and says so
+rather than offering a toggle that can't take effect.
+
+**Where.** `services/api/emailPreferences.ts`, `hooks/useEmailPreferences.ts`,
+`components/profile/EmailPreferencesSection.tsx`. The switch sits outside the
+Profile page's `SettingsSaveProvider` — it applies on flip, because a control
+that looks applied and is actually queued behind a header Save button would let
+someone leave believing they had unsubscribed.
+
 ## Explanatory copy is dismissible, and dismissal is permanent {#explainers}
 
 **Decision.** Copy that teaches how a screen works goes in an `<Explainer>`,
