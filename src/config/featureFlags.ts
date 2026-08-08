@@ -63,7 +63,29 @@ const FEATURE_FLAGS = {
    * lands, migrate the key onto it, re-test, and delete this flag with its
    * off-branch (`PlatformsControl`).
    */
-  'campaign-accounts': true,
+  'campaign-accounts': false,
+
+  /**
+   * The marketing-email switch on Profile (CON-155). **Off — waiting on the
+   * back end.** CON-154/CON-155 shipped the suppression engine, but every
+   * endpoint it exposes is public and token-gated: it verifies a signature
+   * lifted from an email footer, not a session, so nothing there can say
+   * whether the signed-in user is subscribed. Needs `GET`/`PUT
+   * /api/users/:id/email-preferences` behind `requireSelf` — contract in
+   * `services/api/emailPreferences.ts`, asserted by its test. Switch this on
+   * once the handler answers, and delete the flag once it has been exercised
+   * against the deployed API.
+   */
+  'email-preferences': false,
+
+  /**
+   * Deleting one saved version of a post, from the version-history panel
+   * (CON-168). Off until the API grows `DELETE /api/posts/:id/versions/
+   * :versionId` — `handlers/posts.go` registers `GET`/`POST` on `/versions`
+   * and `POST /restore` and nothing else, so the call 404s today. Requested on
+   * CON-44; the client, the menu item and the confirm step are already written.
+   */
+  'post-version-delete': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

@@ -116,55 +116,16 @@ export function useUpdateProfile() {
   });
 }
 
-/**
- * Changes the password from inside the app — re-authenticating first.
+/*
+ * There is no in-app password change. `PasswordSection` on /profile sends the
+ * emailed reset instead, so `useRequestPasswordReset` above serves both it and
+ * the signed-out /auth/forgot screen.
  *
- * `PUT /api/users/:id` accepts a new password from any live session without
- * asking for the old one (CON-193), which would make a borrowed tab or a
- * stolen cookie enough to take the account permanently. So this hook proves
- * the current password before it changes anything, by logging in again:
- * `POST /api/sessions` verifies the credential and 401s on a wrong one, and
- * on success mints a *fresh* session rather than disturbing the existing one.
- * A wrong current password therefore fails here, having changed nothing.
- *
- * This is a lock on our own door. The endpoint is still open to anything that
- * calls it directly, and the real fix is server-side — as is revoking the
- * user's other sessions afterwards, which nothing here can do. Both are
- * CON-193.
- *
- * The email is read from the store rather than taken as an argument: it must
- * be the address the *current* password belongs to, and a form that let the
- * caller pass one could re-authenticate against the wrong account.
+ * What used to be here re-authenticated through POST /api/sessions and then
+ * PUT the new password, because the endpoint asks for no current password and
+ * revokes no sessions (CON-193). Both of those are still true of the endpoint;
+ * the difference is that nothing in the UI calls it with a password anymore.
  */
-export function useChangePassword() {
-  const user = useAuthStore((s) => s.user);
-  return useMutation<void, Error, { currentPassword: string; password: string }>({
-    // `ChangePasswordSection` sorts this error out by hand: a wrong current
-    // password is shown against the current-password field and deliberately
-    // kept out of the generic paragraph. A toast would take that
-    // field-scoped message — "invalid credentials" — and repeat it globally,
-    // pointing at nothing.
-    meta: { errorToast: false },
-    mutationFn: async ({ currentPassword, password }) => {
-      if (!user) throw new Error("You are not signed in");
-      // Throws "invalid credentials" on a wrong password — surfaced against
-      // the current-password field, which is the one the user got wrong.
-      await loginRequest({ email: user.email, password: currentPassword });
-      // Name and email are required by the endpoint even here; resend the
-      // current values so a password change can't quietly rewrite identity.
-      await updateUser(user.id, {
-        name: `${user.firstName} ${user.lastName}`.trim(),
-        email: user.email,
-        password,
-      });
-    },
-    onSuccess: () => {
-      // The re-auth above replaced the session cookie; drop the cached probe
-      // so nothing keeps answering from the pre-change session.
-      invalidateSession();
-    },
-  });
-}
 
 /**
  * Deletes the signed-in user's own account, then tears down every local trace

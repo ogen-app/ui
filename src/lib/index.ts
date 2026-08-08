@@ -7,7 +7,6 @@ export {
   forgotPasswordSchema,
   resetPasswordSchema,
   profileSchema,
-  changePasswordSchema,
   PASSWORD_RULES,
   validateField,
   type FieldErrors,
