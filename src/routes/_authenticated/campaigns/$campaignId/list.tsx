@@ -10,6 +10,7 @@ import {
   useDeletePost,
   useUpdatePost,
 } from "@/hooks/usePosts.ts";
+import { usePostsTableSort } from "@/hooks/usePostsTableSort.ts";
 import type { BulkPlan } from "@/lib/bulkPostEdits";
 import { postToPayload } from "@/services/api/posts";
 import type { Post } from "@/types/posts";
@@ -30,6 +31,15 @@ function CampaignListView() {
   const { mutate: handleDelete } = useDeletePost(campaignId);
   const { mutate: updatePost, isPending: applying } = useUpdatePost(campaignId);
   const addPost = useAddPost(campaignId);
+
+  // The order is the user's, stored server-side and shared by every campaign's
+  // list (CON-170). Until it arrives the table draws skeleton rows rather than
+  // the default order, so it never sorts itself again under the reader.
+  const {
+    sorting,
+    setSorting,
+    isPending: sortPending,
+  } = usePostsTableSort();
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -128,10 +138,12 @@ function CampaignListView() {
             emptyStateMessage="No posts yet"
             emptyStateActionLabel="Add Post"
             onEmptyStateAction={addPost}
-            loading={isLoading}
+            loading={isLoading || sortPending}
             selectedIds={selectedIds}
             onToggleRow={toggleRow}
             onToggleAll={toggleAll}
+            sorting={sorting}
+            onSortingChange={setSorting}
           />
         </div>
       )}

@@ -323,6 +323,10 @@ export const es: Translation = {
       'El proveedor de publicación no ha confirmado la eliminación, así que no se ha cambiado nada. Inténtalo de nuevo en un momento.',
   },
 
+  postsTable: {
+    sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
+  },
+
   errors: {
     notFound: {
       code: '404',

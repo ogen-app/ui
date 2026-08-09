@@ -354,6 +354,10 @@ export const en = {
       'The publishing provider didn’t confirm the removal, so nothing was changed. Try again in a moment.',
   },
 
+  postsTable: {
+    sortSaveFailed: "Couldn't save the order you sorted by",
+  },
+
   errors: {
     notFound: {
       code: '404',
