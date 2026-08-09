@@ -38,6 +38,19 @@ export type LocalSettings = {
   dismissedNotes: string[]
 
   /**
+   * Note id -> whether it sits above the post body (CON-188).
+   *
+   * A map rather than a list because the default is not "unpinned": a
+   * `draft_thesis` starts pinned, so an explicit `false` has to be storable to
+   * outvote it. Absent means "whatever the type says" (`lib/postNotes`).
+   *
+   * Device-local, which is the compromise the API forces — `post_notes` has no
+   * `pinned` column, so there is nowhere shared to put it. A teammate opening
+   * the same post sees the type-based default, not your arrangement.
+   */
+  notePins: Record<string, boolean>
+
+  /**
    * Campaign id -> the asset ids that campaign last had explicitly picked.
    *
    * A stash, not the record: the campaign itself is the record. It exists
@@ -65,6 +78,9 @@ type SettingsState = LocalSettings & {
   /** Close an explainer permanently. Idempotent. */
   dismissNote: (id: string) => void
 
+  /** Pin a note above the post body, or send it back down. */
+  setNotePin: (noteId: string, pinned: boolean) => void
+
   /** Stash what this campaign has picked, so "all assets" can't lose it. */
   rememberAssetSelection: (campaignId: string, assetIds: string[]) => void
 
@@ -78,6 +94,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   rightPanelCampaignId: null,
   lastOpenedModals: {},
   dismissedNotes: [],
+  notePins: {},
   assetSelections: {},
 }
 
@@ -134,6 +151,10 @@ export const useSettingsStore = create<SettingsState>()(
           )
         },
 
+        setNotePin: (noteId, pinned) => {
+          set((state) => ({ notePins: { ...state.notePins, [noteId]: pinned } }))
+        },
+
         rememberAssetSelection: (campaignId, assetIds) => {
           set((state) => ({
             assetSelections: {
@@ -156,6 +177,7 @@ export const useSettingsStore = create<SettingsState>()(
           sidebarCollapsed: state.sidebarCollapsed,
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
+          notePins: state.notePins,
           assetSelections: state.assetSelections,
           // Don't persist
           // activeRightPanel, rightPanelCampaignId

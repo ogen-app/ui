@@ -94,6 +94,9 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
 const ACTION_LABELS: Record<AssistantAction, string | null> = {
   edited: 'Post updated',
   declined: 'No changes made',
+  // The body was deliberately left alone (CON-188), so "post updated" would be
+  // wrong — the note is the whole of what happened.
+  noted: 'Note added',
   answered: null,
   content_plan_generated: 'Content plan generated',
   posts_generated: 'Posts added',
