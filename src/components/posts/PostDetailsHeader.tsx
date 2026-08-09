@@ -1,10 +1,7 @@
-import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   CaretLeftIcon,
   ClockCounterClockwiseIcon,
-  CloudCheckIcon,
-  CloudIcon,
   DevicesIcon,
   DotsThreeVerticalIcon,
   DownloadSimpleIcon,
@@ -23,6 +20,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
+import { SaveStatus } from '@/components/page-primitives/SaveStatus'
 import { cn } from '@/lib'
 
 type Props = {
@@ -40,15 +38,18 @@ type Props = {
   onDownloadMarkdown: () => void
   /** Opens the status-aware delete confirmation. */
   onDeletePost: () => void
-  /** Status transition buttons (primary action + overflow). */
-  actions?: ReactNode
 }
 
 /**
- * Post details top bar: back to the campaign calendar on the left; status
- * actions and the icon cluster (sync state, preview, settings, more) on the
- * right. The post title intentionally lives only in the editor below.
- * Composes PageHeader, so the sticky fade-out chrome matches every other page.
+ * Post details top bar: back to the campaign calendar on the left, the save
+ * state in the centre, and the view toggles (preview, quality, versions,
+ * settings, overflow) on the right. The post title intentionally lives only in
+ * the editor below. Composes PageHeader, so the sticky fade-out chrome matches
+ * every other page.
+ *
+ * The right corner is **views only** — nothing here changes the document. The
+ * status transitions that used to sit alongside them are on the bottom action
+ * bar now (`PostStatusActionBar`), which is what lets this row mean one thing.
  */
 export function PostDetailsHeader({
   campaignId,
@@ -63,7 +64,6 @@ export function PostDetailsHeader({
   onToggleVersions,
   onDownloadMarkdown,
   onDeletePost,
-  actions,
 }: Props) {
   return (
     <PageHeader
@@ -82,10 +82,9 @@ export function PostDetailsHeader({
           </Link>
         </Button>
       }
+      center={<SaveStatus saving={saving} />}
       actions={
         <>
-          {actions}
-          <SyncStatus saving={saving} />
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -169,28 +168,5 @@ export function PostDetailsHeader({
         </>
       }
     />
-  )
-}
-
-function SyncStatus({ saving }: { saving: boolean }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          className="flex size-8 items-center justify-center text-secondary-foreground"
-          role="status"
-          aria-label={saving ? 'Saving…' : 'All changes saved'}
-        >
-          {saving ? (
-            <CloudIcon className="size-5 animate-pulse-opacity" />
-          ) : (
-            <CloudCheckIcon className="size-5" />
-          )}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        {saving ? 'Saving…' : 'All changes saved'}
-      </TooltipContent>
-    </Tooltip>
   )
 }

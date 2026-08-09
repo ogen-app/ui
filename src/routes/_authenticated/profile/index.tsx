@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { LanguageSection } from '@/components/settings/LanguageSection'
 import {
-  SettingsSaveButton,
+  SettingsSaveBar,
   SettingsSaveProvider,
 } from '@/components/settings/settingsSave'
+import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
+import { cn } from '@/lib'
 import { ProfileIdentitySection } from '@/components/profile/ProfileIdentitySection'
 import { PasswordSection } from '@/components/profile/PasswordSection'
 import { EmailPreferencesSection } from '@/components/profile/EmailPreferencesSection'
@@ -31,7 +33,7 @@ export const Route = createFileRoute('/_authenticated/profile/')({
  * here, and this is where the account menu's "Profile" lands.
  *
  * Name and email follow the Workspace Settings pattern: edited inline, applied
- * by the header's Save button. The password, the marketing-email switch and
+ * by the Save bar at the bottom. The password, the marketing-email switch and
  * the deletion do not — each takes effect on its own, as a discrete action
  * rather than a pending settings edit. The password isn't even changed here:
  * see `PasswordSection`.
@@ -56,35 +58,41 @@ function ProfilePage() {
   return (
     <PageContainer variant="fullFlex">
       <SettingsSaveProvider>
-        <div className="flex h-0 grow flex-col overflow-y-auto">
-          <PageHeader
-            title={t('profile.title')}
-            fadeOnScroll
-            actions={<SettingsSaveButton />}
-          />
-          <div className="flex flex-col gap-8 px-3 pt-4 pb-10 lg:px-6">
-            <ProfileIdentitySection user={user} />
-            <LanguageSection />
-            <PasswordSection />
-            {emailPreferencesEnabled && <EmailPreferencesSection userId={user.id} />}
-            <SettingsCard title={t('profile.dangerZone.title')}>
-              <div className="flex flex-col items-start gap-3">
-                <p className="max-w-150 text-sm text-tertiary-foreground">
-                  {t('profile.dangerZone.body')}
-                </p>
-                <Button
-                  type="button"
-                  variant="destructiveInverted"
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  <TrashIcon />
-                  {/* Literal caps in the catalogue, not an `uppercase` class —
-                      see CLAUDE.md. Every translation keeps them. */}
-                  <span>{t('profile.dangerZone.action')}</span>
-                </Button>
-              </div>
-            </SettingsCard>
+        {/* The scroller is nested inside a positioned wrapper so the save bar
+            can anchor to the column without scrolling away with the cards. */}
+        <div className="relative flex h-0 grow flex-col">
+          <div className="flex h-0 grow flex-col overflow-y-auto">
+            <PageHeader title={t('profile.title')} fadeOnScroll />
+            <div
+              className={cn(
+                'flex flex-col gap-8 px-3 pt-4 lg:px-6',
+                PAGE_ACTION_BAR_INSET,
+              )}
+            >
+              <ProfileIdentitySection user={user} />
+              <LanguageSection />
+              <PasswordSection />
+              {emailPreferencesEnabled && <EmailPreferencesSection userId={user.id} />}
+              <SettingsCard title={t('profile.dangerZone.title')}>
+                <div className="flex flex-col items-start gap-3">
+                  <p className="max-w-150 text-sm text-tertiary-foreground">
+                    {t('profile.dangerZone.body')}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="destructiveInverted"
+                    onClick={() => setDeleteOpen(true)}
+                  >
+                    <TrashIcon />
+                    {/* Literal caps in the catalogue, not an `uppercase` class —
+                        see CLAUDE.md. Every translation keeps them. */}
+                    <span>{t('profile.dangerZone.action')}</span>
+                  </Button>
+                </div>
+              </SettingsCard>
+            </div>
           </div>
+          <SettingsSaveBar />
         </div>
       </SettingsSaveProvider>
       <DeleteAccountDialog

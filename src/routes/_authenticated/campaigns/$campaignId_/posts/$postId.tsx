@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
+import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -9,7 +10,7 @@ import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
-import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActions'
+import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
@@ -17,6 +18,8 @@ import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettin
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
 import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
+import { PinnedPostNotes } from '@/components/posts/notes/PinnedPostNotes'
+import { PostNotesCard } from '@/components/posts/notes/PostNotesCard'
 import {
   POST_PREVIEW_PORTAL_ID,
   POST_QUALITY_PORTAL_ID,
@@ -34,13 +37,16 @@ import {
 } from '@/hooks/usePost'
 import { usePostAssessment } from '@/hooks/usePostAssessment'
 import { usePostMedia } from '@/hooks/usePostMedia'
+import { usePostNotes } from '@/hooks/usePostNotes'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import { cn } from '@/lib'
 import { resolvePublishMethod } from '@/lib/autoPublish'
+import { isNotePinned, splitNotesByPin } from '@/lib/postNotes'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
+import type { PostNote } from '@/services/api/postNotes'
 import type { Post, PostStatus } from '@/types/posts'
 
 export const Route = createFileRoute(
@@ -201,6 +207,31 @@ function PostEditorSurface({
   // can now do both, and a link that says "see the full breakdown" must not
   // also spend a model call.
   const openQuality = useCallback(() => openRightPanel('postQuality'), [openRightPanel])
+  // Notes (CON-188). Where a note renders is a device-local preference, so the
+  // pin map comes from the settings store rather than the record — the API has
+  // no `pinned` column, and `lib/postNotes` supplies the default.
+  const notes = usePostNotes(doc.id)
+  const notePins = useSettingsStore((s) => s.notePins)
+  const setNotePin = useSettingsStore((s) => s.setNotePin)
+  const isPinned = useCallback(
+    (note: PostNote) => isNotePinned(note, notePins),
+    [notePins],
+  )
+  const togglePin = useCallback(
+    (note: PostNote) => setNotePin(note.id, !isNotePinned(note, notePins)),
+    [notePins, setNotePin],
+  )
+  const { pinned: pinnedNotes, rest: unpinnedNotes } = splitNotesByPin(
+    notes.notes,
+    notePins,
+  )
+  const { edit: editNote } = notes
+  const saveNote = useCallback(
+    (note: PostNote, patch: { title: string; body: string }) =>
+      editNote(note.id, patch),
+    [editNote],
+  )
+
   const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
   const [previewHost, setPreviewHost] = useState<HTMLElement | null>(null)
   const [qualityHost, setQualityHost] = useState<HTMLElement | null>(null)
@@ -296,7 +327,11 @@ function PostEditorSurface({
 
   return (
     <PageContainer variant="fullFlex">
-      <div className="flex flex-1 min-h-0">
+      {/* `relative` so the action bar anchors to the content column rather
+          than the window: the right rail is a sibling of this container, so
+          the bar recentres when a panel opens instead of drifting off the
+          post it acts on. */}
+      <div className="relative flex flex-1 min-h-0">
         <ScrollArea className="flex-1 min-h-0" type="scroll" scrollHideDelay={350}>
           <PostDetailsHeader
             campaignId={campaignId}
@@ -311,16 +346,13 @@ function PostEditorSurface({
             onToggleVersions={() => toggleRightPanel('postVersions')}
             onDownloadMarkdown={handleDownloadMarkdown}
             onDeletePost={() => setDeleteOpen(true)}
-            actions={
-              <PostStatusHeaderActions
-                buttons={buttons}
-                back={back}
-                pending={statusBusy}
-                onBlocked={flashBlockers}
-              />
-            }
           />
-          <div className="flex flex-col items-center gap-3 relative z-0 pb-8">
+          <div
+            className={cn(
+              'flex flex-col items-center gap-3 relative z-0',
+              PAGE_ACTION_BAR_INSET,
+            )}
+          >
             <div className="w-content">
               <PostQuickSettingsBar
                 doc={doc}
@@ -343,6 +375,12 @@ function PostEditorSurface({
                 onOpenQuality={openQuality}
               />
             </div>
+            <PinnedPostNotes
+              notes={pinnedNotes}
+              onTogglePin={togglePin}
+              onSave={saveNote}
+              onDelete={notes.remove}
+            />
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
                 <div className="mb-4 flex flex-col">
@@ -382,8 +420,27 @@ function PostEditorSurface({
                 reorder={media.reorder}
               />
             </div>
+            <div className="w-content">
+              <PostNotesCard
+                notes={unpinnedNotes}
+                isPinned={isPinned}
+                onTogglePin={togglePin}
+                onAdd={notes.add}
+                onSave={saveNote}
+                onDelete={notes.remove}
+              />
+            </div>
           </div>
         </ScrollArea>
+
+        {/* Outside the ScrollArea on purpose — inside it the bar would scroll
+            away with the post. Renders nothing once the post is terminal. */}
+        <PostStatusActionBar
+          buttons={buttons}
+          back={back}
+          pending={statusBusy}
+          onBlocked={flashBlockers}
+        />
 
         {settingsHost &&
           createPortal(
