@@ -146,8 +146,13 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={!!error}
+        aria-describedby={error ? `${id}-error` : undefined}
       />
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

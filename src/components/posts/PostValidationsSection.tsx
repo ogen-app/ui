@@ -127,8 +127,19 @@ export function PostValidationsSection({
       >
         {/* `pb-2` closes the expanded area against the bar's own `py-3`: the
             two sections need more room around them than the collapsed line
-            does, and without it the quality button sat on the bottom edge. */}
-        <div className="overflow-hidden pb-2">
+            does, and without it the quality button sat on the bottom edge.
+
+            `invisible` while closed: `overflow-hidden` only clips the drawer
+            visually — the quality button inside it stays tabbable, and a
+            keyboard user's focus lands on an element they cannot see.
+            `visibility` participates in the transition, so it flips after
+            the collapse finishes and before the expand starts. */}
+        <div
+          className={cn(
+            'overflow-hidden pb-2 transition-[visibility] duration-200',
+            open ? 'visible' : 'invisible',
+          )}
+        >
           {/* Nothing at all while the platform is unpicked — the collapsed
               line has already said the only true thing there is to say. */}
           {!awaiting && (

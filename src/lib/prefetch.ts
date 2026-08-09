@@ -23,6 +23,17 @@ import { listPlatforms } from "@/services/api/platforms";
 
 let started = false;
 
+/**
+ * Re-arms the prefetch. Called from `clearAllApplicationData` on logout:
+ * `started` is module state, so it survives an in-SPA logout, and without
+ * this the next session's `/_authenticated` load would skip the prefetch and
+ * read the previous session's campaign types, tags and platforms out of the
+ * still-warm cache.
+ */
+export function resetPrefetchLatch(): void {
+  started = false;
+}
+
 /** Idempotent: the layout remounts on every navigation, the fetches don't. */
 export function prefetchReferenceData(): void {
   if (started) return;

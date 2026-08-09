@@ -12,6 +12,7 @@ import { cn, formatTitle } from '@/lib'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { hasVisibleProblem } from '@/lib/postValidation'
+import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 
 type PostCardProps = {
   post: Post
@@ -79,7 +80,15 @@ function PostCardComponent({ post }: PostCardProps) {
   // post, and a week view will not make one request per card for them. See
   // the note in docs/technical-decisions.md#calendar-card-media.
   const image = post.media_urls[0]
-  const problem = hasVisibleProblem(post)
+  // Resolved the same way the status machine resolves it, so the card and
+  // the schedule button never disagree about whether the account is a
+  // problem. Reads the cached platform list — no per-card fetch.
+  const account = usePublishingAccount(
+    post.platform_id,
+    post.social_account_id,
+    post.social_account,
+  )
+  const problem = hasVisibleProblem(post, account)
 
   // Dragging rewrites scheduled_at, which is locked while `scheduled`
   // (the Zernio submission owns the publish time) and once `published`.

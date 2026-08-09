@@ -538,6 +538,12 @@
     .toast-motion[data-state='open'] {
       animation: none;
     }
+
+    /* The deck geometry in `toast.tsx` also moves and scales a card as newer
+       ones land (`transition-transform`). Snap to the new position instead. */
+    .toast-motion {
+      transition: none;
+    }
   }
 
   /* A highlight travelling along a line of text, for work still in progress.

@@ -30,4 +30,18 @@ describe("safeRedirect", () => {
     // Browsers normalise "/\" to "//" when resolving.
     expect(safeRedirect("/\\evil.example")).toBe("/");
   });
+
+  // URL parsers strip tab, LF and CR before interpreting the string, so a
+  // control character can hide the second slash from a naive check while the
+  // browser still sees an authority.
+  it("rejects an authority hidden behind a control character", () => {
+    expect(safeRedirect("/\t/evil.example")).toBe("/");
+    expect(safeRedirect("/\n/evil.example")).toBe("/");
+    expect(safeRedirect("/\r\\evil.example")).toBe("/");
+    expect(safeRedirect("\t//evil.example")).toBe("/");
+  });
+
+  it("strips control characters from an otherwise valid path", () => {
+    expect(safeRedirect("/campa\tigns")).toBe("/campaigns");
+  });
 });

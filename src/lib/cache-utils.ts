@@ -4,6 +4,8 @@
 
 // import { useAuthStore } from '@/stores/authStore'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { queryClient } from '@/lib/queryClient'
+import { resetPrefetchLatch } from '@/lib/prefetch'
 
 /**
  * Result of a storage clearing operation
@@ -74,6 +76,19 @@ export async function clearAllApplicationData(): Promise<void> {
   } catch (error) {
     results.push({ type: 'zustandStores', success: false, error: error as Error })
     console.error('Failed to reset Zustand stores:', error)
+  }
+
+  // Drop everything TanStack Query holds in memory and re-arm the
+  // reference-data prefetch. Neither lives in the storage cleared above, so
+  // both survive an in-SPA logout — without this, the next login on this tab
+  // reads the previous session's campaigns, tags and platforms out of the
+  // warm cache instead of fetching its own.
+  try {
+    queryClient.clear()
+    resetPrefetchLatch()
+    results.push({ type: 'queryCache', success: true })
+  } catch (error) {
+    results.push({ type: 'queryCache', success: false, error: error as Error })
   }
 
   // Clear sessionStorage

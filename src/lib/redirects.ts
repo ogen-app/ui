@@ -15,8 +15,13 @@ const FALLBACK = '/'
 
 export function safeRedirect(target: string | undefined): string {
   if (!target) return FALLBACK
-  if (!target.startsWith('/')) return FALLBACK
+  // URL parsers strip ASCII tab, LF and CR *before* interpreting the string,
+  // so "/\t/evil.com" reaches the browser as "//evil.com" — an authority
+  // again. Strip every ASCII control character first so the shape checks
+  // below see what the parser will see.
+  const cleaned = target.replace(/[\u0000-\u001F\u007F]/g, '')
+  if (!cleaned.startsWith('/')) return FALLBACK
   // "//host" and "/\host" — an authority, not a path.
-  if (target[1] === '/' || target[1] === '\\') return FALLBACK
-  return target
+  if (cleaned[1] === '/' || cleaned[1] === '\\') return FALLBACK
+  return cleaned
 }

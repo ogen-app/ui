@@ -66,7 +66,13 @@ export function AuthForgotPasswordForm() {
   if (sent) {
     return (
       <div className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500">
-        <div className="flex items-start gap-3">
+        {/* `role="status"`: the panel replaces the form the user just
+            submitted, and focus stays where the submit button was — without a
+            live region a screen reader hears nothing about the request having
+            succeeded. On the message block, not the whole panel: `status`
+            implies `aria-atomic`, and wrapping the resend region too would
+            re-announce all of this on every resend. */}
+        <div role="status" className="flex items-start gap-3">
           <EnvelopeSimpleIcon className="size-5 shrink-0 mt-0.5" aria-hidden />
           <div className="flex flex-col gap-1">
             <p className="text-sm font-medium">{t('auth.forgot.sentTitle')}</p>
