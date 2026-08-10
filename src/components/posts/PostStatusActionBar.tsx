@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   ArrowUUpLeftIcon,
   CalendarPlusIcon,
@@ -43,6 +43,14 @@ type Props = {
  * published post is still editable, and its save state has to outlive the bar.
  */
 export function PostStatusActionBar({ buttons, back, pending, onBlocked }: Props) {
+  // Which move is running, known only here: the parent's `pending` is one flag
+  // for the whole machine, and pinning the spinner to the primary would show
+  // it spinning while the step back beside it is what's actually working.
+  const [running, setRunning] = useState<string | null>(null)
+  useEffect(() => {
+    if (!pending) setRunning(null)
+  }, [pending])
+
   if (!back && buttons.length === 0) return null
 
   // Primary last — `usePostStatusActions` orders `buttons` so the most
@@ -58,6 +66,8 @@ export function PostStatusActionBar({ buttons, back, pending, onBlocked }: Props
           action={action}
           isPrimary={action === primary}
           pending={pending}
+          running={pending && running === action.next}
+          onRun={() => setRunning(action.next)}
           onBlocked={onBlocked}
         />
       ))}
@@ -75,11 +85,15 @@ function ActionButton({
   action,
   isPrimary,
   pending,
+  running,
+  onRun,
   onBlocked,
 }: {
   action: PostStatusAction
   isPrimary: boolean
   pending: boolean
+  running: boolean
+  onRun: () => void
   onBlocked?: (blockers: PostStatusBlocker[]) => void
 }) {
   const destructive = action.intent === 'destructive'
@@ -99,11 +113,11 @@ function ActionButton({
       )}
       // Only in-flight work disables the button; blockers are handled on click.
       disabled={pending}
-      // One spinner, on the move that is actually running — the step back
-      // beside it is disabled, which already says enough.
-      loading={pending && isPrimary}
+      // One spinner, on the move that was actually clicked — the others are
+      // disabled, which already says enough.
+      loading={running}
       aria-disabled={action.blockers.length > 0 || undefined}
-      onClick={() => runOrReport(action, onBlocked)}
+      onClick={() => runOrReport(action, onRun, onBlocked)}
     >
       {iconFor(action)}
       <span>{action.buttonLabel}</span>
@@ -139,11 +153,13 @@ function iconFor(action: PostStatusAction): ReactNode {
 
 function runOrReport(
   action: PostStatusAction,
+  onRun: () => void,
   onBlocked?: (blockers: PostStatusBlocker[]) => void,
 ) {
   if (action.blockers.length > 0) {
     onBlocked?.(action.blockers)
     return
   }
+  onRun()
   void action.run()
 }

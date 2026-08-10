@@ -109,6 +109,9 @@ type SettingsState = LocalSettings &
     /** Pin a note above the post body, or send it back down. */
     setNotePin: (noteId: string, pinned: boolean) => void
 
+    /** Forget a deleted note's pin — the map is persisted and never expires. */
+    clearNotePin: (noteId: string) => void
+
     /** Stash what this campaign has picked, so "all assets" can't lose it. */
     rememberAssetSelection: (campaignId: string, assetIds: string[]) => void
 
@@ -199,6 +202,15 @@ export const useSettingsStore = create<SettingsState>()(
 
         setNotePin: (noteId, pinned) => {
           set((state) => ({ notePins: { ...state.notePins, [noteId]: pinned } }))
+        },
+
+        clearNotePin: (noteId) => {
+          set((state) => {
+            if (!(noteId in state.notePins)) return state
+            const next = { ...state.notePins }
+            delete next[noteId]
+            return { notePins: next }
+          })
         },
 
         rememberAssetSelection: (campaignId, assetIds) => {

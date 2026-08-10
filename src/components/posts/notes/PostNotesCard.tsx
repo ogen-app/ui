@@ -4,12 +4,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { NoteCard } from '@/components/posts/notes/NoteCard'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib'
 import type { PostNote } from '@/services/api/postNotes'
 
 type Props = {
   /** The unpinned notes — pinned ones render above the post body instead. */
   notes: PostNote[]
+  /** The list is still being read; an empty `notes` means nothing yet. */
+  loading?: boolean
+  /**
+   * The read failed. Has to be said here: queries get no global error toast,
+   * and a post whose notes silently failed to load looks identical to a post
+   * that has none — including the pinned thesis, which just isn't there.
+   */
+  error?: boolean
   isPinned: (note: PostNote) => boolean
   onTogglePin: (note: PostNote) => void
   onAdd: (note: { title: string; body: string }) => Promise<unknown>
@@ -28,6 +37,8 @@ type Props = {
  */
 export function PostNotesCard({
   notes,
+  loading = false,
+  error = false,
   isPinned,
   onTogglePin,
   onAdd,
@@ -67,6 +78,20 @@ export function PostNotesCard({
             setComposing(false)
           }}
         />
+      )}
+
+      {loading && (
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-3 w-2/5" />
+          <Skeleton className="h-3 w-3/5" />
+        </div>
+      )}
+
+      {error && !loading && (
+        <p className="text-sm text-destructive">
+          The notes couldn't be loaded — anything pinned above the post is
+          missing too, not gone. Reload the page to try again.
+        </p>
       )}
 
       {/* A rule between rows rather than a gap: without it two notes with no

@@ -42,9 +42,21 @@ export function NoteCard({
   className,
 }: Props) {
   const [editing, setEditing] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const [title, setTitle] = useState(note.title)
   const [body, setBody] = useState(note.body)
   const [busy, setBusy] = useState(false)
+  const [removing, setRemoving] = useState(false)
+
+  const remove = async () => {
+    if (removing) return
+    setRemoving(true)
+    try {
+      await onDelete()
+    } finally {
+      setRemoving(false)
+    }
+  }
 
   const open = () => {
     setTitle(note.title)
@@ -128,13 +140,44 @@ export function NoteCard({
             type="button"
             variant="ghost"
             size="smIcon"
-            onClick={() => void onDelete()}
+            onClick={() => setConfirming(true)}
             aria-label="Delete note"
           >
             <TrashIcon className="text-destructive" />
           </Button>
         </div>
       </div>
+
+      {/* An inline confirm, same as the versions panel next door: the trash
+          icon sits a few pixels from pin and edit, the delete is permanent,
+          and a `draft_thesis` can be the only copy of the brief. */}
+      {confirming && (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-secondary-foreground">
+            Delete this note? There is no way to get it back.
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={removing}
+              loading={removing}
+              onClick={() => void remove()}
+            >
+              DELETE
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setConfirming(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
 
       {editing ? (
         <div className="flex flex-col gap-2">

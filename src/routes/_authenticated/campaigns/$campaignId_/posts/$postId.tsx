@@ -412,6 +412,8 @@ function PostEditorSurface({
             <div className="w-content">
               <PostNotesCard
                 notes={unpinnedNotes}
+                loading={notes.loading}
+                error={notes.error !== null}
                 isPinned={isPinned}
                 onTogglePin={togglePin}
                 onAdd={notes.add}
