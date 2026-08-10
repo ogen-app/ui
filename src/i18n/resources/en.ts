@@ -365,10 +365,11 @@ export const en = {
      * reminder on the date and nothing else.
      */
     publishStatus: {
-      auto: 'Will be published {{when}}',
-      autoAs: 'Will be published {{when}} as {{account}}',
-      manual: 'Reminder to publish {{when}}',
-      manualAs: 'Reminder to publish {{when}} as {{account}}',
+      auto: 'Auto-publishing {{when}}',
+      manual: 'Reminding {{when}}',
+      /** The short forms, for a bar too narrow for the sentence. */
+      compactNow: 'now',
+      compactLate: '{{amount}} late',
     },
   },
   errors: {

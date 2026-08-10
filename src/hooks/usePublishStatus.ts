@@ -1,33 +1,33 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import {
   countdownRefreshMs,
   publishTiming,
+  type PublishCountdown,
   type PublishTiming,
 } from '@/lib/publishCountdown'
 import type { Post } from '@/types/posts'
 
+export type PublishStatus = {
+  /** "Auto-publishing in 2 days" — what the bar says when it has the room. */
+  full: string
+  /** "2d" — the same fact, for when it doesn't. */
+  compact: string
+}
+
 /**
- * "Will be published in 2 days as Alephbet" — or null when nothing is going to
- * publish this post (CON-195).
+ * What is going to happen to this post, or null when nothing is (CON-195).
  *
- * A hook returning the sentence, rather than a component that renders nothing,
+ * A hook returning strings, rather than a component that renders nothing,
  * because of where the answer is consumed: the bar it sits on rules a divider
  * between its children, and `Children.toArray` counts an element whose render
  * returns `null` as a child all the same. The caller has to be able to see the
  * emptiness to leave the slot out, so the emptiness has to be a value.
  */
-export function usePublishStatus(post: Post): string | null {
+export function usePublishStatus(post: Post): PublishStatus | null {
   const { t, i18n } = useTranslation()
   const timing = useLiveTiming(post)
-  // The same resolution the quick-settings bar and the preview use, so the
-  // three can't name different accounts for one post.
-  const account = usePublishingAccount(
-    post.platform_id,
-    post.social_account_id,
-    post.social_account,
-  )
+  const locale = i18n.language
 
   /**
    * "in 2 days" / "2 days ago" / "now", in the active language.
@@ -37,25 +37,55 @@ export function usePublishStatus(post: Post): string | null {
    * so the catalogue only carries the sentence around it.
    */
   const relative = useMemo(
-    () => new Intl.RelativeTimeFormat(i18n.language, { numeric: 'auto' }),
-    [i18n.language],
+    () => new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }),
+    [locale],
   )
 
   if (!timing) return null
 
-  const when = relative.format(timing.countdown.value, timing.countdown.unit)
-  const named = account.name
+  const { value, unit } = timing.countdown
+  const when = relative.format(value, unit)
 
-  return t(
-    timing.method === 'auto'
-      ? named
-        ? 'posts.publishStatus.autoAs'
-        : 'posts.publishStatus.auto'
-      : named
-        ? 'posts.publishStatus.manualAs'
+  return {
+    full: t(
+      timing.method === 'auto'
+        ? 'posts.publishStatus.auto'
         : 'posts.publishStatus.manual',
-    { when, account: named ?? '' },
-  )
+      { when },
+    ),
+    compact:
+      value === 0
+        ? t('posts.publishStatus.compactNow')
+        : // Compact drops the "in …" framing, so an overdue post would
+          // otherwise read exactly like an upcoming one. The marker is the
+          // only thing left telling them apart.
+          value < 0
+          ? t('posts.publishStatus.compactLate', {
+              amount: compactAmount(timing.countdown, locale),
+            })
+          : compactAmount(timing.countdown, locale),
+  }
+}
+
+/**
+ * "2 days", "3 hr", "3 mths".
+ *
+ * `Intl.NumberFormat`'s unit style rather than a table of English suffixes: it
+ * abbreviates correctly per language, and the catalogue never has to learn a
+ * form per unit. Only the two words around it — "now" and the overdue marker —
+ * are entries.
+ *
+ * `short`, not `narrow`, and the difference matters: narrow renders both
+ * `minute` and `month` as "3m" in English. On a publish countdown that is the
+ * one collision worth paying two characters to avoid — "3m" meaning three
+ * minutes and "3m" meaning three months call for very different reactions.
+ */
+function compactAmount({ value, unit }: PublishCountdown, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'unit',
+    unit,
+    unitDisplay: 'short',
+  }).format(Math.abs(value))
 }
 
 /**

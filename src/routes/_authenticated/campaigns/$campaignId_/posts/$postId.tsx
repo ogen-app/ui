@@ -9,7 +9,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
-import { PostPublishStatus } from '@/components/posts/PostPublishStatus'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
@@ -445,11 +444,7 @@ function PostEditorSurface({
           back={back}
           pending={statusBusy}
           onBlocked={flashBlockers}
-          // Null, not an element that renders nothing: the bar rules a divider
-          // between its children and cannot tell the two apart.
-          status={
-            publishStatus ? <PostPublishStatus message={publishStatus} /> : null
-          }
+          status={publishStatus}
         />
 
         {settingsHost &&

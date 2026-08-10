@@ -325,10 +325,10 @@ export const es: Translation = {
 
   posts: {
     publishStatus: {
-      auto: 'Se publicará {{when}}',
-      autoAs: 'Se publicará {{when}} como {{account}}',
-      manual: 'Recordatorio para publicar {{when}}',
-      manualAs: 'Recordatorio para publicar {{when}} como {{account}}',
+      auto: 'Publicación automática {{when}}',
+      manual: 'Recordatorio {{when}}',
+      compactNow: 'ahora',
+      compactLate: '{{amount}} de retraso',
     },
   },
   errors: {

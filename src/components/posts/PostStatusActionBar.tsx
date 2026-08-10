@@ -9,6 +9,8 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { PageActionBar } from '@/components/page-primitives/PageActionBar'
+import { PostPublishStatus } from '@/components/posts/PostPublishStatus'
+import type { PublishStatus } from '@/hooks/usePublishStatus'
 import type { PostStatusAction } from '@/hooks/usePostStatusActions'
 import type { PostStatusBlocker } from '@/lib/postStatusMachine'
 import { cn } from '@/lib'
@@ -19,11 +21,10 @@ type Props = {
   /** The one step back, if the post can also still move forward. */
   back: PostStatusAction | null
   /**
-   * Read-only text about what happens next, rendered ahead of the actions
-   * (CON-195). Not a control: see `PostPublishStatus` for why the fields it
-   * names stay editable only in the quick-settings bar.
+   * What happens to this post next, in both its forms (CON-195). Null when
+   * nothing is going to publish it — see `usePublishStatus`.
    */
-  status?: ReactNode
+  status?: PublishStatus | null
   /** A transition or a cancellation is in flight. */
   pending: boolean
   /**
@@ -67,8 +68,20 @@ export function PostStatusActionBar({
   const actions = back ? [back, ...buttons] : buttons
 
   return (
-    <PageActionBar blocker={primary?.blockers[0]?.message}>
-      {status}
+    <PageActionBar
+      blocker={primary?.blockers[0]?.message}
+      // The edges on offer, not their in-flight state: the bar animates on
+      // this, and a value that also moved for a spinner would restart the
+      // hand-off while a transition was still running.
+      contentKey={actions.map((action) => action.next).join('|')}
+      status={
+        status && {
+          full: <PostPublishStatus text={status.full} />,
+          compact: <PostPublishStatus text={status.compact} title={status.full} />,
+          key: status.full,
+        }
+      }
+    >
       {actions.map((action) => (
         <ActionButton
           key={action.next}
