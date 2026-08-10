@@ -8,7 +8,6 @@ import {
 } from '@phosphor-icons/react'
 import { Logo } from '@/components/Logo'
 import { useAssistantStore } from '@/stores/assistantStore'
-import { useSettingsStore } from '@/stores/settingsStore'
 import { useTick } from '@/hooks/useTick'
 import { cn } from '@/lib/styles'
 import { formatDuration } from '@/lib/assistantTools'
@@ -108,23 +107,28 @@ export function ThreadList() {
                 aria-hidden
               />
               <span className="flex h-full items-center gap-1 bg-secondary">
+                {/* Goes to the subject and leaves the rail exactly as it is.
+                    Jumping to a post is not a request to put the assistant
+                    away — you usually want it there when you arrive. */}
                 <Link
                   {...openLink(thread)}
-                  onClick={() => useSettingsStore.getState().closeRightPanel()}
                   aria-label={
                     thread.subject.kind === 'campaign' ? 'Open the campaign' : 'Open the post'
                   }
-                  className="flex size-6 shrink-0 items-center justify-center text-quaternary-foreground hover:text-foreground"
+                  className="flex size-6 shrink-0 items-center justify-center text-secondary-foreground hover:text-foreground"
                 >
-                  <ArrowSquareOutIcon className="size-5" />
+                  {/* Bold at this size: these two only appear over the row's
+                      hover fill, and at regular weight they barely register
+                      against it. */}
+                  <ArrowSquareOutIcon weight="bold" className="size-5" />
                 </Link>
                 <button
                   type="button"
                   onClick={() => close(thread.id)}
                   aria-label="Close this conversation"
-                  className="flex size-6 shrink-0 items-center justify-center text-quaternary-foreground hover:text-foreground cursor-pointer"
+                  className="flex size-6 shrink-0 items-center justify-center text-secondary-foreground hover:text-foreground cursor-pointer"
                 >
-                  <XIcon className="size-5" />
+                  <XIcon weight="bold" className="size-5" />
                 </button>
               </span>
             </div>

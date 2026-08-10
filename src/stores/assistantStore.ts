@@ -16,7 +16,7 @@ import {
   streamPostAssistant,
   type AssistantStreamEvent,
 } from '@/services/api/assistant'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import type {
   AssistantStep,
   AssistantThread,
@@ -306,9 +306,12 @@ export const useAssistantStore = create<AssistantState>()(
           // A turn that lands while the user is elsewhere is "unread" — the
           // sidebar trigger carries the dot until they come back to it.
           const finish = (status: AssistantThread['status']) => {
-            const settings = useSettingsStore.getState()
+            // The *resolved* panel, not the remembered one: the assistant can
+            // be remembered as open while a post panel covers it, and nobody
+            // reading a quality report is watching a turn finish.
             const watching =
-              settings.activeRightPanel === 'assistant' && get().activeThreadId === threadId
+              selectActivePanel(useSettingsStore.getState()) === 'assistant' &&
+              get().activeThreadId === threadId
             patchThread(threadId, { status, runStartedAt: null, unread: !watching })
           }
 

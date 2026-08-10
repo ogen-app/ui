@@ -9,7 +9,7 @@ import {
   selectAnyUnread,
   useAssistantStore,
 } from '@/stores/assistantStore'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { ZIndex } from '@/config/zIndex'
 import { cn } from '@/lib'
 
@@ -64,15 +64,21 @@ function PanelLayer({ active, children }: { active: boolean; children: ReactNode
 }
 
 /**
- * The app's right sidebar: a single slide-in container hosting the global AI
- * assistant and contextual panels (calendar settings, not-scheduled posts).
- * Only one panel is active at a time; the container stays open while panels
- * swap. Session-only state lives in the settings store; the floating trigger
- * in the bottom-right corner shifts left while the sidebar is open.
+ * The app's right sidebar: a single slide-in container hosting the AI assistant
+ * and the panels belonging to whichever screen is open (calendar settings,
+ * not-scheduled posts, the post editor's four). One panel shows at a time and
+ * the container stays open while they swap; the floating trigger in the
+ * bottom-right corner shifts left while it is open.
+ *
+ * What shows is *derived*, never stored: the settings store remembers one
+ * choice per screen, and `selectActivePanel` picks the one this screen can
+ * serve — so a remembered panel that belongs elsewhere falls back to the
+ * assistant instead of opening the rail onto an empty layer. See
+ * `lib/rightPanel`.
  */
 export function RightSidebar() {
-  const activePanel = useSettingsStore((s) => s.activeRightPanel)
-  const campaignId = useSettingsStore((s) => s.rightPanelCampaignId)
+  const activePanel = useSettingsStore(selectActivePanel)
+  const campaignId = useSettingsStore((s) => s.campaignId)
   const toggle = useSettingsStore((s) => s.toggleRightPanel)
   const close = useSettingsStore((s) => s.closeRightPanel)
 

@@ -191,6 +191,60 @@ first and the PUT is debounced 500ms behind them — flipping six day switches
 costs one request — with a flush on unmount, the same shape as the post
 editor's autosave.
 
+## The right sidebar remembers a choice per screen, and derives what's open {#panel-memory}
+
+**Decision.** `settingsStore` persists `panelMemory` — `{ assistantOpen,
+scoped: { calendar?, post? } }` — to localStorage, and **never** persists which
+panel is open. What's on screen is computed on every read by
+`resolveActivePanel(memory, scope)`: the panel remembered for the screen you're
+on, else the assistant, else closed. Routes declare their screen with
+`usePanelScope('post' | 'calendar', campaignId)`; that is the only thing
+navigation is allowed to write.
+
+**Why.** The panels aren't peers. `assistant` renders anywhere; the other six
+are portal targets or campaign-scoped views that only exist on one route.
+Persisting a single `activeRightPanel` would restore a fact about one screen
+onto whichever screen you reloaded on — `postQuality` remembered, campaign list
+open, and the rail slides out 480px wide hosting an empty `<div>`. Deriving
+instead makes that unrepresentable: a remembered panel the current screen can't
+serve simply falls through to the assistant.
+
+The second half matters as much. Before this, leaving the post editor or the
+calendar ran a cleanup effect that closed the route's panels by hand
+(`$postId.tsx`, `CalendarHeaderActions.tsx`). Those are gone. They had to be:
+persisting a value that navigation itself rewrites means saving the *side
+effects of moving around* rather than the user's choice, so going away and
+coming back could never be a no-op. Now memory is written by clicks alone.
+
+**The assistant is the floor, not a seventh panel.** Every other panel is an
+overlay on top of it, so closing one drops back to the assistant rather than
+collapsing the rail, and only closing the assistant shuts it. This is a
+behaviour change: toggling a post panel off used to close the sidebar and now
+reveals the assistant underneath. It also means "open the assistant" has to
+clear the current screen's overlay — otherwise the assistant is recorded as
+open beneath something still covering it and the trigger looks broken.
+
+It is also **open on first run** (`DEFAULT_PANEL_MEMORY`): the assistant is the
+product, and hiding it behind a small mark in the corner buries the thing the
+app is for. A default, not a rule — close it once and that sticks, everywhere.
+Following a thread's "open the post" link does *not* close it: you asked to see
+the post, not to dismiss the assistant that wrote it.
+
+**Rehydration distrusts the blob.** `sanitizePanelMemory` rebuilds the memory
+from scratch on load, dropping any panel id this build doesn't have and any
+panel filed under a screen that doesn't own it. Persisted enum values outlive
+the code that named them; without this, renaming a panel reintroduces the empty
+rail through the back door.
+
+**Where.** `lib/rightPanel.ts` holds the model and every state transition as
+pure functions (`rightPanel.test.ts` covers them); `stores/settingsStore.ts`
+holds them behind `openRightPanel` / `toggleRightPanel` / `closeRightPanel` and
+exports `selectActivePanel`, which is how components ask what's open —
+`panelMemory` is never read directly. `hooks/usePanelScope.ts` runs as a
+*layout* effect so a reload straight into a post paints the restored panel
+rather than opening it a frame later. Scope and `campaignId` are session-only:
+where you are is not a preference.
+
 ## The marketing-email opt-out gets its own endpoint {#email-preferences}
 
 **Decision.** The Profile switch reads and writes
