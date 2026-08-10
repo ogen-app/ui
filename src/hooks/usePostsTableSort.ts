@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { SortingState } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
@@ -85,7 +85,10 @@ export function usePostsTableSort() {
   const { t } = useTranslation()
   const userId = useAuthStore((s) => s.user?.id ?? '')
   const qc = useQueryClient()
-  const queryKey = postsTableSortKey(userId)
+  // Stable per user, not per render: the key sits in `setSorting`'s deps, and
+  // a fresh array each render would give the callback a fresh identity —
+  // defeating the `memo` on PostsTable/VirtualTable it flows into.
+  const queryKey = useMemo(() => postsTableSortKey(userId), [userId])
   const storageKey = userScopedKey(NAMESPACE, userId)
 
   // `isLoading`, not `isPending`: the latter never resolves on a disabled
@@ -97,6 +100,10 @@ export function usePostsTableSort() {
     enabled: !!userId,
     // Nothing else writes this, so the cache is authoritative once loaded.
     staleTime: Infinity,
+    // A missing key already resolves `null`, so a retry can only be masking a
+    // real failure — and the whole table sits in skeleton while it does. The
+    // default order is a fine answer; fail to it fast.
+    retry: false,
   })
   const sorting = data ?? DEFAULT_POSTS_SORT
 
@@ -121,6 +128,10 @@ export function usePostsTableSort() {
 
   const setSorting = useCallback(
     (next: SortingState) => {
+      // A read still in flight must not land on top of this choice: cancel it,
+      // or its (older) answer overwrites the cache while the debounced PUT
+      // writes the newer one — table and server disagreeing until next reload.
+      void qc.cancelQueries({ queryKey })
       qc.setQueryData(queryKey, next)
       if (!userId) return
       pending.current = { key: storageKey, value: next }
