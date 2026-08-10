@@ -9,6 +9,7 @@ import {
   formatEngagementRate,
   formatMetric,
 } from "@/lib/campaignAnalytics.ts";
+import { useFeatureFlag } from "@/config/featureFlags.ts";
 import { OverviewCard } from "./OverviewCard.tsx";
 
 /**
@@ -22,10 +23,36 @@ import { OverviewCard } from "./OverviewCard.tsx";
  *
  * Four numbers and a link, deliberately: the card exists to say whether it is
  * worth opening the section, not to be the section.
+ *
+ * While `campaign-analytics` is off the card still stands where it will stand,
+ * saying what it will hold and pointing at the section — the two components
+ * keep the fetch unmounted until there is something to fetch for.
  */
 export function AnalyticsModule({ campaignId }: { campaignId: string }) {
+  const enabled = useFeatureFlag("campaign-analytics");
+  if (!enabled) return <ComingSoon campaignId={campaignId} />;
+  return <AnalyticsModuleLive campaignId={campaignId} />;
+}
+
+function AnalyticsModuleLive({ campaignId }: { campaignId: string }) {
   const result = useCampaignAnalytics(campaignId);
   return <AnalyticsModuleView campaignId={campaignId} {...result} />;
+}
+
+/** The card's place held, with no numbers in it — real or invented. */
+function ComingSoon({ campaignId }: { campaignId: string }) {
+  return (
+    <OverviewCard
+      title="Analytics"
+      status={<StatusBadge tone="neutral" label="Coming soon" />}
+      link={{ target: "analytics", campaignId, label: "See what's coming" }}
+    >
+      <p className="text-sm text-secondary-foreground">
+        Once this campaign's posts start being measured, what they earned shows
+        up here.
+      </p>
+    </OverviewCard>
+  );
 }
 
 /** The card as pure rendering — see `CampaignAnalyticsView` for why. */

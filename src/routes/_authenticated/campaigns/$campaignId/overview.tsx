@@ -6,7 +6,6 @@ import { AttentionRail } from "@/components/campaigns/overview/AttentionRail.tsx
 import { BriefModule } from "@/components/campaigns/overview/BriefModule.tsx";
 import { ContentModule } from "@/components/campaigns/overview/ContentModule.tsx";
 import { SetupModule } from "@/components/campaigns/overview/SetupModule.tsx";
-import { useFeatureFlag } from "@/config/featureFlags.ts";
 import { useCampaign } from "@/hooks/useCampaigns.ts";
 import { useCampaignPosts } from "@/hooks/usePosts.ts";
 import { usePlatformViews } from "@/hooks/usePlatforms.ts";
@@ -29,7 +28,6 @@ function CampaignOverviewScreen() {
   const { data: campaign } = useCampaign(campaignId);
   const postsQuery = useCampaignPosts(campaignId);
   const platformViews = usePlatformViews();
-  const analyticsEnabled = useFeatureFlag("campaign-analytics");
 
   // The backend sends `null` for a campaign with no posts (Go nil slice), so
   // gate on the query settling, not on the data being truthy.
@@ -64,9 +62,10 @@ function CampaignOverviewScreen() {
       {!briefDone && brief}
       <ContentModule campaign={campaign} posts={posts} />
       {/* Directly under Content: the same posts, seen by what they earned
-          rather than by where they are in the pipeline. Renders nothing while
-          `campaign-analytics` is off. */}
-      {analyticsEnabled && <AnalyticsModule campaignId={campaignId} />}
+          rather than by where they are in the pipeline. The card reads its own
+          flag — while `campaign-analytics` is off it holds its place with a
+          preview rather than disappearing. */}
+      <AnalyticsModule campaignId={campaignId} />
       {briefDone && brief}
       <SetupModule campaign={campaign} platformViews={platformViews} />
       <AssetsModule campaign={campaign} />

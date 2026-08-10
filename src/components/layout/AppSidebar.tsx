@@ -36,7 +36,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useAuthStore } from '@/stores/authStore'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
@@ -98,13 +97,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleLogout = () => {
     navigate({ to: '/auth/logout' })
   }
-
-  // Analytics is still being built (`campaign-analytics`): with the flag off a
-  // campaign has no Analytics section at all, so the row isn't offered either.
-  const analyticsEnabled = useFeatureFlag('campaign-analytics')
-  const subItems = CAMPAIGN_SUB_ITEMS.filter(
-    (item) => item.id !== 'analytics' || analyticsEnabled
-  )
 
   // Everything unrecognised is the calendar, which is what Posts opens — so
   // each real section has to be named before that fallback is reached.
@@ -239,7 +231,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     // campaign that follows doesn't read as one more of
                     // its sections.
                     <div className="flex w-full flex-col gap-0 pb-3 border-b-2 border-quaternary">
-                      {subItems.map((item) => {
+                      {CAMPAIGN_SUB_ITEMS.map((item) => {
                         const subActive = activeSubItem === item.id
                         const link = subItemLink(campaign.id, item.id)
                         return (

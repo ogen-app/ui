@@ -66,10 +66,11 @@ const FEATURE_FLAGS = {
   'campaign-accounts': false,
 
   /**
-   * The campaign's Analytics section (CON-175): its own page under the
-   * campaign, plus the summary card on Overview. Gates the sidebar item, the
-   * route's content and the card together — with it off, a campaign has no
-   * Analytics anywhere.
+   * The **numbers** in the campaign's Analytics section (CON-175) — not the
+   * section itself. The page, the sidebar item and the Overview card are
+   * always there; with this off they say what the section will hold and
+   * measure nothing, and no analytics request is made. Turning it on swaps
+   * that preview for the real totals in both places.
    *
    * **Waiting on:** a campaign dimension on `GET /api/analytics/posts`. The
    * endpoint filters by `platform` and nothing else (`handlers/analytics.go`),

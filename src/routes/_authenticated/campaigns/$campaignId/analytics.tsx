@@ -1,21 +1,14 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { CampaignAnalyticsPanel } from "@/components/campaigns/analytics/CampaignAnalyticsPanel.tsx";
-import { isFeatureEnabled } from "@/config/featureFlags.ts";
 
+/**
+ * The section exists whether or not the numbers do: `campaign-analytics`
+ * decides which of the two the panel renders, not whether the route resolves.
+ * A guard here would make the sidebar item lead nowhere.
+ */
 export const Route = createFileRoute(
   "/_authenticated/campaigns/$campaignId/analytics",
 )({
-  // The sidebar hides the item while the flag is off, but a bookmark or a
-  // typed URL doesn't go through the sidebar — the route has to hold the gate
-  // too, or the feature has an entry point its flag doesn't cover.
-  beforeLoad: ({ params }) => {
-    if (!isFeatureEnabled("campaign-analytics")) {
-      throw redirect({
-        to: "/campaigns/$campaignId/overview",
-        params: { campaignId: params.campaignId },
-      });
-    }
-  },
   component: CampaignAnalytics,
 });
 
