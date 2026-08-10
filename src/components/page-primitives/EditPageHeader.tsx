@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import { PageHeader } from './PageHeader.tsx'
-import { SaveStatus } from './SaveStatus.tsx'
+import { PageHeader } from './PageHeader'
+import { SaveStatus } from './SaveStatus'
 
 type Breadcrumb = {
   label: string

@@ -56,7 +56,21 @@ export function normalizeGoalCadence(value: string | null | undefined): GoalCade
 function calendarParts(value: string): { y: number; m: number; d: number } | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
   if (!match) return null
-  return { y: Number(match[1]), m: Number(match[2]), d: Number(match[3]) }
+  const y = Number(match[1])
+  const m = Number(match[2])
+  const d = Number(match[3])
+  // Round-trip through UTC to reject dates the calendar doesn't have —
+  // Date.UTC would silently roll "2026-02-31" into March and the range would
+  // count a month that was never asked for.
+  const probe = new Date(Date.UTC(y, m - 1, d))
+  if (
+    probe.getUTCFullYear() !== y ||
+    probe.getUTCMonth() !== m - 1 ||
+    probe.getUTCDate() !== d
+  ) {
+    return null
+  }
+  return { y, m, d }
 }
 
 export function periodsInRange(

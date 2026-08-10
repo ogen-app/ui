@@ -10,7 +10,7 @@ import {
   useDeletePost,
   useUpdatePost,
 } from "@/hooks/usePosts.ts";
-import { usePostsTableSort } from "@/hooks/usePostsTableSort.ts";
+import { usePostsTableSort } from "@/hooks/usePostsTableSort";
 import type { BulkPlan } from "@/lib/bulkPostEdits";
 import { postToPayload } from "@/services/api/posts";
 import type { Post } from "@/types/posts";
@@ -28,7 +28,7 @@ function CampaignListView() {
   const { campaignId } = Route.useParams();
   const { data: posts, isLoading } = useCampaignPosts(campaignId);
   // `mutateAsync` is stable, so the columns aren't rebuilt on every render.
-  const { mutateAsync: deletePost } = useDeletePost(campaignId);
+  const { mutateAsync: deletePost, isPending: deleting } = useDeletePost(campaignId);
   const { mutateAsync: updatePost, isPending: applying } = useUpdatePost(campaignId);
   // The single-row delete: fire-and-forget on purpose, and caught because the
   // mutation rethrows after its own error toast.
@@ -124,7 +124,9 @@ function CampaignListView() {
           onClear={clearSelection}
           onApply={applyPlan}
           onDelete={deletePosts}
-          busy={applying}
+          // Both bulk actions: a delete sweep in flight must hold the bar just
+          // like an update sweep, or a second action can race the first.
+          busy={applying || deleting}
         />
       ) : (
         <PostsToolbar
