@@ -232,8 +232,9 @@ variables and `config/zIndex.ts`. Concrete tables: `postsTable` and `docsTable`
 ## Styling — Tailwind CSS v4
 
 Styling is **CSS-first**: there is no `tailwind.config.js`. `src/index.css` is
-the single source of truth — it declares the fonts (Space Grotesk + Zalando
-Sans), a `@theme inline` block with a beige OKLCH palette and semantic tokens
+the single source of truth — it declares the fonts (Zalando Sans + Space
+Grotesk, plus Archivo for the tabular-figure `--font-mono` role), a
+`@theme inline` block with the Ocean OKLCH ramp and semantic tokens
 (`--color-primary…senary`, sidebar, table, chart), radii, and shadows. `:root`
 maps semantics to the light theme; a `.dark` block exists but is essentially
 empty — **dark mode is scaffolded, not implemented.** `lib/styles.ts` exports

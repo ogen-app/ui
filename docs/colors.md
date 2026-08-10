@@ -4,6 +4,19 @@ How color works in this app, the rules for using it, and the open naming
 questions. Produced from the 2026-07 color audit (branch
 `chore/color-token-audit`). All tokens live in [`src/index.css`](../src/index.css).
 
+> **The ramp is cool, not beige (2026-08).** Layer 1 was swapped for the
+> "Ocean" palette: the same ten lightness steps, moved to hue ~235–250 with
+> chroma rising as the ramp darkens. Every mapping below is unchanged — only
+> the values under it moved, which is rule 4 working as intended. Four accents
+> moved with it (`--accent` orange → marine cyan, `--info` towards cyan,
+> `--positive` towards teal, `--warning` lighter and yellower); see the
+> per-token comments in `index.css` for why each one had to.
+>
+> **`--beige-*` is now a misnomer** — the names are ramp slots, not a hue. The
+> rename to `--ramp-*` is contained (these primitives are referenced nowhere
+> outside `index.css`) and is the first follow-up if the palette sticks.
+> The alternatives it was chosen against are on the `design/themes` harness.
+
 ## Architecture: three layers
 
 ```
@@ -57,7 +70,7 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
 | `--border` | beige-300 | Default hairlines |
 | `--border-primary` | black | Emphasized border |
 | `--ring` | beige-400 | Focus ring |
-| `--destructive`, `--positive`, `--negative`, `--warning`, `--info`, `--attention`, `--accent`, `--editable` | oklch accents | Status / affordance accents (`--warning` = validation warnings, orange; `--accent` = active/selected control, orange, provisional) |
+| `--destructive`, `--positive`, `--negative`, `--warning`, `--info`, `--attention`, `--accent`, `--editable` | oklch accents | Status / affordance accents (`--warning` = validation warnings, orange — the only warm hue left in the system; `--accent` = active/selected control, marine cyan) |
 
 ### The status hues
 

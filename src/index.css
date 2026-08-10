@@ -1,3 +1,18 @@
+/* EVALUATION ONLY — Archivo, loaded from Google rather than vendored. Every
+   other face in this file is self-hosted from `src/assets/fonts`, and this one
+   must be too before it ships: a remote font host is a third-party request on
+   every page load, it breaks offline, and it puts a render-blocking dependency
+   in front of the app. This form exists so it can be clicked through today.
+
+   To adopt: download Archivo (OFL) into `src/assets/fonts`, replace this
+   @import with an @font-face block in the style of the ones below, and delete
+   the Space Grotesk face — nothing references it once Archivo takes `--font-mono`.
+
+   It has to be the first statement in the file: `@import 'tailwindcss'` is
+   inlined where it sits, so anything after it is no longer at the top of the
+   stylesheet and CSS drops the import. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@300..700&display=swap');
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -33,29 +48,49 @@
 
 @theme inline {
   --white: oklch(1 0 0);
-  --black: oklch(0.1957 0 0);
-  /* Custom Palette - Beige Scale */
-  --beige-50: oklch(0.9796 0.0017 84.56);
-  --beige-100: oklch(0.9584 0.0029 84.56);
-  --beige-200: oklch(0.9312 0.0029 84.56);
-  --beige-300: oklch(0.901 0.0058 84.56);
-  --beige-400: oklch(0.8558 0.0064 75.4);
-  --beige-500: oklch(0.8221 0.0044 56.36);
-  --beige-600: oklch(0.6417 0.01 78.26);
-  --beige-700: oklch(0.5352 0.0108 62.45);
-  --beige-800: oklch(0.4252 0.0108 62.45);
-  --beige-900: oklch(0.3132 0 0);
+  --black: oklch(0.1957 0.022 250);
+  /* Custom Palette — the Ocean ramp (was the beige scale).
+
+     The ten lightness steps are unchanged from the beige they replace, so
+     every surface relationship above this layer is preserved exactly: a card
+     still sits the same distance above the canvas, a hover still lands the
+     same distance from a rest state. Only hue and chroma moved.
+
+     Chroma climbs with depth — 0.0045 at the top, 0.035 at the bottom —
+     rather than staying flat as beige's did. A cool ramp held at beige's
+     near-zero chroma reads as plain grey, and the light end is where most of
+     the app's surface area is, so it has to carry the hue there without
+     tinting the text at the dark end.
+
+     `--beige-*` is now a misnomer: the names are ramp slots, not a hue.
+     Renaming to `--ramp-*` is a contained change — these primitives are
+     referenced only inside this file — and should follow if the palette is
+     adopted rather than land in the same commit that is still being judged. */
+  --beige-50: oklch(0.9796 0.0045 235);
+  --beige-100: oklch(0.9584 0.0075 235);
+  --beige-200: oklch(0.9312 0.0105 235);
+  --beige-300: oklch(0.901 0.0145 235);
+  --beige-400: oklch(0.8558 0.0185 235);
+  --beige-500: oklch(0.8221 0.0215 235);
+  --beige-600: oklch(0.6417 0.03 240);
+  --beige-700: oklch(0.5352 0.0345 243);
+  --beige-800: oklch(0.4252 0.035 245);
+  --beige-900: oklch(0.3132 0.03 248);
 
   /* Fonts */
   --font-sans:
     'Zalando Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  /* "Mono" names a voice, not a fixed-width face: Space Grotesk with tabular
-     lining figures (see the `.font-mono` rule below), which is what the table
-     columns and timestamps wearing it actually need. It used to be the stock
-     Fira Code stack — none of which is shipped here, so it rendered as
-     whatever face each machine happened to have installed. */
-  --font-mono: 'Space Grotesk', var(--font-sans);
+  /* "Mono" names a voice, not a fixed-width face — Archivo is a grotesque, as
+     Space Grotesk was before it. What the table columns and timestamps wearing
+     this token actually need is tabular lining figures, which the `.font-mono`
+     rule below switches on and which Archivo carries; the fixed pitch was
+     never the point. That rule is therefore load-bearing here, not decorative:
+     drop it and the columns stop lining up.
+
+     Falls back to the sans stack rather than to `monospace`, so a failed
+     webfont degrades to the app's own face instead of to Courier. */
+  --font-mono: 'Archivo', var(--font-sans);
   --font-display:
     'Zalando Sans Semi Expanded', 'Zalando Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     'Roboto', sans-serif;
@@ -196,27 +231,41 @@
   --popover: var(--primary);
   --popover-hover: var(--secondary);
   --popover-foreground: var(--primary-foreground);
-  --destructive: oklch(0.577 0.245 27.325);
+  /* Chroma pulled back from 0.245 — against a cool ramp the old red read as
+     hot enough to look like a rendering error rather than a state. */
+  --destructive: oklch(0.577 0.21 25);
   --border: var(--beige-300);
   --border-primary: var(--black);
   --input-label: var(--tertiary-foreground);
   --input: var(--secondary);
   --input-secondary: var(--primary);
 
-  --positive: oklch(0.5816 0.1169 164.11);
-  --negative: oklch(0.6221 0.1943 29.8);
-  /* Non-blocking validation warnings (orange) */
-  --warning: oklch(0.6659 0.157 58.32);
+  /* Shifted towards teal (164 → 172): a marine-adjacent green sits with the
+     ramp instead of reading as the one leftover warm token. */
+  --positive: oklch(0.6 0.13 172);
+  --negative: oklch(0.62 0.19 28);
+  /* Non-blocking validation warnings (orange). Lightened and pushed yellower
+     (58.32 → 70) because orange is now the only warm hue in the system, and
+     against a cool ramp the old value was dark enough to read as brown. */
+  --warning: oklch(0.72 0.15 70);
   /* Work in flight, on track — ready to publish, uploading, processing
      (blue). Status hues carry meaning, so they are their own tokens: these
      two used to borrow `--chart-4` / `--chart-5`, both orange, which made
      every in-progress badge read as a warning. */
-  --info: oklch(0.55 0.14 258);
+  /* The token this palette put most at risk: a blue "in flight" dot on a
+     blue-tinted surface. Brighter and cyan-ward of the ramp (258 → 225, and
+     lighter) so it separates from the background it now shares a family with,
+     instead of disappearing into it. */
+  --info: oklch(0.62 0.14 225);
   /* Waiting on a person, with nothing wrong — a post you publish by hand
      (violet). Deliberately not orange: "your turn" is not "this is broken". */
-  --attention: oklch(0.53 0.16 305);
-  /* Selected/active affordance accent (orange, provisional) */
-  --accent: oklch(0.705 0.213 47.604);
+  --attention: oklch(0.55 0.16 300);
+  /* Selected/active affordance accent — marine cyan, replacing the
+     provisional orange. It is used both as a fill with white knocked out of it
+     (the assistant's unread badge) and as ink (`text-accent` on the active
+     Preview/Quality toggles), so it has to hold at 0.68 lightness in both
+     directions; there is no `--accent-foreground` to escape into. */
+  --accent: oklch(0.68 0.14 215);
 
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
