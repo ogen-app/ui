@@ -41,6 +41,7 @@ import { usePostNotes } from '@/hooks/usePostNotes'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
+import { usePostArrowNavigation } from '@/hooks/usePostNavigation'
 import { usePublishStatus } from '@/hooks/usePublishStatus'
 import { cn } from '@/lib'
 import { resolvePublishMethod } from '@/lib/autoPublish'
@@ -89,6 +90,14 @@ function PostPage() {
 
   return (
     <PostEditorSurface
+      // A different post is a different document, not new props for this one.
+      // The surface holds page-local state that only makes sense against the
+      // post it was opened on — the title draft, the auto/manual choice, the
+      // blocked-action flash — and until the arrow keys (`usePostArrowNavigation`)
+      // there was no way to reach one post from another without the loader
+      // unmounting it in between. Arriving on a post already in cache skips
+      // that loader entirely, so the identity has to be stated.
+      key={postId}
       doc={doc}
       changeDoc={changeDoc}
       transitionStatus={transitionStatus}
@@ -183,6 +192,9 @@ function PostEditorSurface({
   // Null unless something really is going to publish the post — see
   // `publishTiming` for which statuses those are.
   const publishStatus = usePublishStatus(doc)
+  // ← / → step to the neighbouring post, unless the keypress belongs to a
+  // field the user is typing in.
+  usePostArrowNavigation(campaignId, doc.id)
   // The allowlist decides whether SCHEDULE lands on auto or manual, so the
   // status actions wait for it too — scheduling a post the wrong way is not
   // something the user can see happening, let alone undo.
