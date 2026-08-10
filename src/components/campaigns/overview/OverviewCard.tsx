@@ -128,6 +128,12 @@ export function SectionLink({
           {children}
         </Link>
       );
+    case "analytics":
+      return (
+        <Link to="/campaigns/$campaignId/analytics" params={params} className={className}>
+          {children}
+        </Link>
+      );
     case "workspace-settings":
       return (
         <Link to="/workspace-settings" className={className}>

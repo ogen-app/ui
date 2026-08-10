@@ -164,6 +164,7 @@ export const es: Translation = {
     campaign: {
       overview: 'Resumen',
       posts: 'Publicaciones',
+      analytics: 'Analíticas',
       brief: 'Briefing',
       assets: 'Recursos',
       settings: 'Ajustes',

@@ -6,6 +6,7 @@ import {
   CalendarDotsIcon,
   CardsThreeIcon,
   CaretDoubleLeftIcon,
+  ChartLineUpIcon,
   GearSixIcon,
   LifebuoyIcon,
   NotepadIcon,
@@ -35,6 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { useAuthStore } from '@/stores/authStore'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
@@ -67,6 +69,7 @@ function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; is
 const CAMPAIGN_SUB_ITEMS = [
   { id: 'overview', labelKey: 'nav.campaign.overview', icon: SidebarIcon },
   { id: 'posts', labelKey: 'nav.campaign.posts', icon: CalendarDotsIcon },
+  { id: 'analytics', labelKey: 'nav.campaign.analytics', icon: ChartLineUpIcon },
   { id: 'brief', labelKey: 'nav.campaign.brief', icon: NotepadIcon },
   { id: 'assets', labelKey: 'nav.campaign.assets', icon: ScanIcon },
   { id: 'settings', labelKey: 'nav.campaign.settings', icon: GearSixIcon },
@@ -96,17 +99,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     navigate({ to: '/auth/logout' })
   }
 
+  // Analytics is still being built (`campaign-analytics`): with the flag off a
+  // campaign has no Analytics section at all, so the row isn't offered either.
+  const analyticsEnabled = useFeatureFlag('campaign-analytics')
+  const subItems = CAMPAIGN_SUB_ITEMS.filter(
+    (item) => item.id !== 'analytics' || analyticsEnabled
+  )
+
+  // Everything unrecognised is the calendar, which is what Posts opens — so
+  // each real section has to be named before that fallback is reached.
   const activeSubItem: CampaignSubItemId | null = !activeCampaignId
     ? null
     : location.pathname.includes('/overview')
       ? 'overview'
-      : location.pathname.includes('/brief')
-        ? 'brief'
-        : location.pathname.includes('/assets')
-          ? 'assets'
-          : location.pathname.includes('/settings')
-            ? 'settings'
-            : 'posts'
+      : location.pathname.includes('/analytics')
+        ? 'analytics'
+        : location.pathname.includes('/brief')
+          ? 'brief'
+          : location.pathname.includes('/assets')
+            ? 'assets'
+            : location.pathname.includes('/settings')
+              ? 'settings'
+              : 'posts'
 
   // Posts lands on the current week of the calendar; the rest are plain pages.
   const subItemLink = (campaignId: string, id: CampaignSubItemId): { to: string; params: Record<string, string> } =>
@@ -225,7 +239,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     // campaign that follows doesn't read as one more of
                     // its sections.
                     <div className="flex w-full flex-col gap-0 pb-3 border-b-2 border-quaternary">
-                      {CAMPAIGN_SUB_ITEMS.map((item) => {
+                      {subItems.map((item) => {
                         const subActive = activeSubItem === item.id
                         const link = subItemLink(campaign.id, item.id)
                         return (

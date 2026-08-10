@@ -24,7 +24,11 @@ const SECTIONS = [
   { slug: "/assets", label: "Assets" },
   { slug: "/settings", label: "Settings" },
   { slug: "/overview", label: "Overview" },
-] as const;
+  { slug: "/analytics", label: "Analytics" },
+] as const
+
+/** Sections that read as a document: one scroll container, fading header. */
+const DOCUMENT_SECTIONS: readonly string[] = ["Overview", "Analytics"];
 
 function CampaignLayout() {
   const { campaignId } = Route.useParams();
@@ -100,9 +104,9 @@ function CampaignLayout() {
     );
   }
 
-  // Overview reads as a document too — same scrolling shell and fading header,
-  // minus the save button, since nothing on it is edited in place.
-  if (section === "Overview") {
+  // Overview and Analytics read as documents too — same scrolling shell and
+  // fading header, minus the save button: nothing on them is edited in place.
+  if (DOCUMENT_SECTIONS.includes(section)) {
     return (
       <PageContainer variant={"fullFlex"}>
         <div className={"h-0 grow overflow-y-auto flex flex-col"}>

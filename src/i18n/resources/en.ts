@@ -188,6 +188,7 @@ export const en = {
     campaign: {
       overview: 'Overview',
       posts: 'Posts',
+      analytics: 'Analytics',
       brief: 'Brief',
       assets: 'Assets',
       settings: 'Settings',
