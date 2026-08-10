@@ -51,30 +51,60 @@
   --black: oklch(0.1957 0.022 250);
   /* Custom Palette — the Ocean ramp (was the beige scale).
 
-     The ten lightness steps are unchanged from the beige they replace, so
-     every surface relationship above this layer is preserved exactly: a card
-     still sits the same distance above the canvas, a hover still lands the
-     same distance from a rest state. Only hue and chroma moved.
+     Hue and chroma are the palette; lightness is the layout. Chroma climbs
+     with depth — 0.0045 at the top, 0.035 at the bottom — rather than staying
+     flat as beige's did. A cool ramp held at beige's near-zero chroma reads as
+     plain grey, and the light end is where most of the app's surface area is,
+     so it has to carry the hue there without tinting the text at the dark end.
 
-     Chroma climbs with depth — 0.0045 at the top, 0.035 at the bottom —
-     rather than staying flat as beige's did. A cool ramp held at beige's
-     near-zero chroma reads as plain grey, and the light end is where most of
-     the app's surface area is, so it has to carry the hue there without
-     tinting the text at the dark end.
+     Lightness was re-cut in a second pass (2026-08) to lift the canvas. Only
+     the L channel moved; every hue and chroma above is exactly what the first
+     Ocean cut shipped with, so this is a brightness change and not a second
+     palette.
+
+     The two halves were re-cut in opposite directions, which is the whole
+     idea:
+
+       50-500 (surfaces) are lighter and packed tighter — the band narrowed
+       from 0.158 to 0.129 of L. These are canvas, cards, hovers and hairlines,
+       and they all live within a few points of white, so buying brightness
+       here costs separation. Steps grow monotonically (0.019 -> 0.034) so the
+       compression is spent at the top, where the eye discriminates least. That
+       also irons out a kink the beige ramp carried, where 300 -> 400 stepped
+       further than 400 -> 500.
+
+       600-900 (inks) are stretched by the same amount the surfaces gave up
+       (x1.062 about a fixed 900), so the ramp still spans the same total range
+       and the deliberate gap between the surface cluster and the ink cluster
+       widens rather than drifting. 900 is the anchor: it is the darkest ink in
+       the system and moving it would restyle text weight, which is not what a
+       background change should do.
+
+     How far to lift is a judgement, and this is the second answer to it. The
+     first cut of this pass put the band at 0.101 and read as washed out; these
+     values sit halfway back towards the original, which is why the numbers
+     look unround.
+
+     The cost is separation at the light end, and it is real: --background sits
+     0.036 of L below --primary where it used to sit 0.042, so a card reads
+     slightly flatter against the canvas, and --border (300) and --ring (400)
+     are lighter hairlines than before. If any of those stop reading, the fix
+     is to re-point that Layer 2 token one step down the ramp, not to darken
+     the canvas again.
 
      `--beige-*` is now a misnomer: the names are ramp slots, not a hue.
      Renaming to `--ramp-*` is a contained change — these primitives are
      referenced only inside this file — and should follow if the palette is
      adopted rather than land in the same commit that is still being judged. */
-  --beige-50: oklch(0.9796 0.0045 235);
-  --beige-100: oklch(0.9584 0.0075 235);
-  --beige-200: oklch(0.9312 0.0105 235);
-  --beige-300: oklch(0.901 0.0145 235);
-  --beige-400: oklch(0.8558 0.0185 235);
-  --beige-500: oklch(0.8221 0.0215 235);
-  --beige-600: oklch(0.6417 0.03 240);
-  --beige-700: oklch(0.5352 0.0345 243);
-  --beige-800: oklch(0.4252 0.035 245);
+  --beige-50: oklch(0.9828 0.0045 235);
+  --beige-100: oklch(0.9636 0.0075 235);
+  --beige-200: oklch(0.9419 0.0105 235);
+  --beige-300: oklch(0.9169 0.0145 235);
+  --beige-400: oklch(0.8875 0.0185 235);
+  --beige-500: oklch(0.8536 0.0215 235);
+  --beige-600: oklch(0.662 0.03 240);
+  --beige-700: oklch(0.5489 0.0345 243);
+  --beige-800: oklch(0.4321 0.035 245);
   --beige-900: oklch(0.3132 0.03 248);
 
   /* Fonts */

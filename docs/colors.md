@@ -5,12 +5,28 @@ questions. Produced from the 2026-07 color audit (branch
 `chore/color-token-audit`). All tokens live in [`src/index.css`](../src/index.css).
 
 > **The ramp is cool, not beige (2026-08).** Layer 1 was swapped for the
-> "Ocean" palette: the same ten lightness steps, moved to hue ~235–250 with
-> chroma rising as the ramp darkens. Every mapping below is unchanged — only
-> the values under it moved, which is rule 4 working as intended. Four accents
-> moved with it (`--accent` orange → marine cyan, `--info` towards cyan,
-> `--positive` towards teal, `--warning` lighter and yellower); see the
-> per-token comments in `index.css` for why each one had to.
+> "Ocean" palette: hue ~235–250, with chroma rising as the ramp darkens. Every
+> mapping below is unchanged — only the values under it moved, which is rule 4
+> working as intended. Four accents moved with it (`--accent` orange → marine
+> cyan, `--info` towards cyan, `--positive` towards teal, `--warning` lighter
+> and yellower); see the per-token comments in `index.css` for why each one had
+> to.
+>
+> **The lightness was then re-cut to lift the canvas (2026-08, second pass).**
+> Surfaces (50–500) moved up and packed tighter; inks (600–900) stretched by
+> what the surfaces gave up, about a fixed 900. Nothing was re-hued — only L.
+> It buys a brighter app and spends separation at the light end: measured on
+> `/campaigns`, the card-over-canvas step fell 1.13 → 1.11, `--border` on a
+> card 1.34 → 1.28, and muted text (`--tertiary-foreground`) on the canvas
+> 2.94 → 2.76. Body text improved (16.18 → 16.43) and `--secondary-foreground`
+> still clears AA at 4.85. If a hairline or a muted label stops reading, the
+> fix is to re-point that Layer 2 token one step down the ramp — the ramp
+> itself is the palette and should not be darkened back.
+>
+> How far to lift is a judgement, not a derivation. A first attempt narrowed
+> the surface band to 0.101 of L and read as washed out; the values in the file
+> sit halfway back towards the original at 0.129, which is why they look
+> unround.
 >
 > **`--beige-*` is now a misnomer** — the names are ramp slots, not a hue. The
 > rename to `--ramp-*` is contained (these primitives are referenced nowhere
