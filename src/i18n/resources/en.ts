@@ -354,6 +354,23 @@ export const en = {
       'The publishing provider didn’t confirm the removal, so nothing was changed. Try again in a moment.',
   },
 
+  posts: {
+    /**
+     * The bottom bar's read-only publish status (CON-195). `when` arrives
+     * already localised from `Intl.RelativeTimeFormat` ("in 2 days", "2 days
+     * ago", "now"), so a translation places it rather than rebuilding it.
+     *
+     * Auto and manual are separate sentences on purpose: only one of them is
+     * a promise that the app will publish anything. A manual post gets a
+     * reminder on the date and nothing else.
+     */
+    publishStatus: {
+      auto: 'Will be published {{when}}',
+      autoAs: 'Will be published {{when}} as {{account}}',
+      manual: 'Reminder to publish {{when}}',
+      manualAs: 'Reminder to publish {{when}} as {{account}}',
+    },
+  },
   errors: {
     notFound: {
       code: '404',

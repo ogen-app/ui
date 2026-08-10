@@ -323,6 +323,14 @@ export const es: Translation = {
       'El proveedor de publicación no ha confirmado la eliminación, así que no se ha cambiado nada. Inténtalo de nuevo en un momento.',
   },
 
+  posts: {
+    publishStatus: {
+      auto: 'Se publicará {{when}}',
+      autoAs: 'Se publicará {{when}} como {{account}}',
+      manual: 'Recordatorio para publicar {{when}}',
+      manualAs: 'Recordatorio para publicar {{when}} como {{account}}',
+    },
+  },
   errors: {
     notFound: {
       code: '404',

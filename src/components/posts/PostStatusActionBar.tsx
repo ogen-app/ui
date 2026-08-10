@@ -18,6 +18,12 @@ type Props = {
   buttons: PostStatusAction[]
   /** The one step back, if the post can also still move forward. */
   back: PostStatusAction | null
+  /**
+   * Read-only text about what happens next, rendered ahead of the actions
+   * (CON-195). Not a control: see `PostPublishStatus` for why the fields it
+   * names stay editable only in the quick-settings bar.
+   */
+  status?: ReactNode
   /** A transition or a cancellation is in flight. */
   pending: boolean
   /**
@@ -42,7 +48,17 @@ type Props = {
  * edge), which is exactly why the save indicator does *not* live in it — a
  * published post is still editable, and its save state has to outlive the bar.
  */
-export function PostStatusActionBar({ buttons, back, pending, onBlocked }: Props) {
+export function PostStatusActionBar({
+  buttons,
+  back,
+  pending,
+  onBlocked,
+  status,
+}: Props) {
+  // Still gated on there being a move to make, `status` or not. The statuses
+  // that carry a countdown all have an outgoing user edge (a scheduled post
+  // can be cancelled, a manual one verified), so this never hides one — and a
+  // bar holding nothing but a sentence would be a banner, not a commit bar.
   if (!back && buttons.length === 0) return null
 
   // Primary last — `usePostStatusActions` orders `buttons` so the most
@@ -52,6 +68,7 @@ export function PostStatusActionBar({ buttons, back, pending, onBlocked }: Props
 
   return (
     <PageActionBar blocker={primary?.blockers[0]?.message}>
+      {status}
       {actions.map((action) => (
         <ActionButton
           key={action.next}

@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
+import { PostPublishStatus } from '@/components/posts/PostPublishStatus'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
@@ -41,6 +42,7 @@ import { usePostNotes } from '@/hooks/usePostNotes'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
+import { usePublishStatus } from '@/hooks/usePublishStatus'
 import { cn } from '@/lib'
 import { resolvePublishMethod } from '@/lib/autoPublish'
 import { isNotePinned, splitNotesByPin } from '@/lib/postNotes'
@@ -179,6 +181,9 @@ function PostEditorSurface({
     publishMethod: effectivePublishMethod,
     context: { account },
   })
+  // Null unless something really is going to publish the post — see
+  // `publishTiming` for which statuses those are.
+  const publishStatus = usePublishStatus(doc)
   // The allowlist decides whether SCHEDULE lands on auto or manual, so the
   // status actions wait for it too — scheduling a post the wrong way is not
   // something the user can see happening, let alone undo.
@@ -440,6 +445,11 @@ function PostEditorSurface({
           back={back}
           pending={statusBusy}
           onBlocked={flashBlockers}
+          // Null, not an element that renders nothing: the bar rules a divider
+          // between its children and cannot tell the two apart.
+          status={
+            publishStatus ? <PostPublishStatus message={publishStatus} /> : null
+          }
         />
 
         {settingsHost &&
