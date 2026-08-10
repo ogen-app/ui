@@ -2,20 +2,14 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient, QUERY_FIVE_MINUTES } from "./lib/queryClient";
+import { queryClient } from "./lib/queryClient";
 import { routeTree } from "./routeTree.gen";
 import { Toaster } from "./components/ui/toaster";
-import { CAMPAIGN_TYPES_KEY } from "./hooks/useCampaigns";
-import { TAGS_KEY } from "./hooks/useTags";
-import { PLATFORMS_KEY } from "./hooks/usePlatforms";
-import { listCampaignTypes } from "./services/api/campaigns";
-import { listTags } from "./services/api/tags";
-import { listPlatforms } from "./services/api/platforms";
 import "./index.css";
 
-queryClient.prefetchQuery({ queryKey: CAMPAIGN_TYPES_KEY, queryFn: listCampaignTypes, staleTime: Infinity });
-queryClient.prefetchQuery({ queryKey: TAGS_KEY, queryFn: listTags, staleTime: QUERY_FIVE_MINUTES });
-queryClient.prefetchQuery({ queryKey: PLATFORMS_KEY, queryFn: listPlatforms, staleTime: Infinity });
+// Reference-data prefetching moved to the authenticated layout's loader — at
+// module scope it fired before the session probe and 401'd on the login page.
+// See `lib/prefetch.ts`.
 
 const router = createRouter({
   routeTree,

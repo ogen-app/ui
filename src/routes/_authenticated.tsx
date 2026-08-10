@@ -5,8 +5,12 @@ import { UploadTracker } from "@/components/uploads/UploadTracker";
 import { RightSidebar } from "@/components/layout/RightSidebar";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useEventStream } from "@/hooks/useEventStream";
+import { prefetchReferenceData } from "@/lib/prefetch";
 
 export const Route = createFileRoute("/_authenticated")({
+  // Warm the shared reference caches now that we know there is a session —
+  // see `lib/prefetch.ts` for why this can't live at module scope.
+  loader: () => prefetchReferenceData(),
   component: AuthenticatedLayout,
 });
 

@@ -1,12 +1,12 @@
 import { type FormEvent } from 'react'
-import { useRouter, useSearch } from '@tanstack/react-router'
+import { Link, useRouter, useSearch } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { useLogin } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { loginSchema, cn } from '@/lib'
+import { loginSchema, safeRedirect, cn } from '@/lib'
 
 /**
  * Email/password login form. On success it returns the user to the in-app
@@ -14,7 +14,7 @@ import { loginSchema, cn } from '@/lib'
  */
 export function AuthLoginForm() {
   const router = useRouter()
-  const { redirect } = useSearch({ from: '/auth/login/' })
+  const { redirect, expired, reset: afterReset } = useSearch({ from: '/auth/login/' })
   const { mutate: login, isPending, error, reset } = useLogin()
   const { values, setField, fieldErrors, validate } = useFormValidation(loginSchema, {
     email: '',
@@ -29,10 +29,10 @@ export function AuthLoginForm() {
 
     login(data, {
       onSuccess: () => {
-        // Return to where the root guard bounced us from; only in-app paths
-        // are honored (the guard writes `location.href` into the param).
-        const to = redirect?.startsWith('/') ? redirect : '/'
-        void router.navigate({ href: to })
+        // Only in-app paths are honored — the guard writes `location.href`
+        // into the param, so its value is attacker-supplied. See
+        // `lib/redirects.ts` for why `startsWith("/")` isn't the whole test.
+        void router.navigate({ href: safeRedirect(redirect) })
       },
     })
   }
@@ -43,11 +43,26 @@ export function AuthLoginForm() {
       className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500"
       noValidate
     >
+      {/* Why you are looking at a login screen you didn't ask for. Without
+          this, a session that expired mid-edit reads as the app having
+          randomly logged you out. */}
+      {expired && (
+        <p className="text-[13px] leading-5 text-secondary-foreground">
+          Your session expired. Log in again to pick up where you left off.
+        </p>
+      )}
+      {afterReset && (
+        <p className="text-positive text-[13px] leading-5">
+          Your password has been changed. Log in with the new one.
+        </p>
+      )}
       <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
+          name="email"
           type="email"
+          autoComplete="username"
           variant="default"
           placeholder="Enter your email"
           value={values.email}
@@ -61,10 +76,20 @@ export function AuthLoginForm() {
         {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Password</Label>
+        <div className="flex items-baseline justify-between gap-4">
+          <Label htmlFor="password">Password</Label>
+          <Link
+            to="/auth/forgot"
+            className="text-tertiary-foreground hover:text-primary-foreground text-xs"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <Input
           id="password"
+          name="password"
           type="password"
+          autoComplete="current-password"
           variant="default"
           placeholder="Enter password"
           value={values.password}
@@ -75,15 +100,13 @@ export function AuthLoginForm() {
           aria-invalid={!!fieldErrors.password}
           disabled={isPending}
         />
-        {fieldErrors.password ? (
+        {/* No password-policy hint here — the rules govern choosing a
+            password, not typing one you already have, and repeating them on
+            login only tells a visitor what our passwords look like. */}
+        {fieldErrors.password && (
           <p className="text-xs text-destructive">{fieldErrors.password}</p>
-        ) : (
-          <p className="text-xs text-tertiary-foreground">
-            Min. 8 chars, an uppercase, a lowercase, and a digit
-          </p>
         )}
       </div>
-      <div></div>
       <div className="w-full">
         <Button
           type="submit"

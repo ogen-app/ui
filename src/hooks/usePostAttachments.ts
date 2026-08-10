@@ -8,7 +8,6 @@ import {
   uploadVideoAttachment,
 } from '@/services/api/attachments'
 import { postKey } from '@/hooks/usePost'
-import { toast } from '@/stores/toastStore'
 import {
   attachmentKind,
   type AttachmentListResponse,
@@ -91,6 +90,9 @@ export function usePostAttachments(postId: string) {
   )
 
   const remove = useMutation({
+    // The user's word for it, and for the thing on screen — the API calls
+    // this deleting an attachment.
+    meta: { errorTitle: 'Unable to remove file' },
     mutationFn: (attachmentId: string) => deleteAttachment(postId, attachmentId),
     onSuccess: invalidate,
   })
@@ -113,6 +115,9 @@ export function usePostAttachments(postId: string) {
    * atomic request instead of n — see CON-124.
    */
   const reorder = useMutation({
+    // "media" rather than the API's "attachment": this is the drag-and-drop
+    // list, and the user is looking at their files.
+    meta: { errorTitle: 'Unable to reorder media' },
     mutationFn: async (ordered: PostAttachmentWithValidation[]) => {
       const base = Math.max(-1, ...ordered.map((a) => a.position)) + 1
       for (const [index, att] of ordered.entries()) {
@@ -133,13 +138,11 @@ export function usePostAttachments(postId: string) {
       }
       return { previous }
     },
-    onError: (err, _ordered, ctx) => {
+    // The rollback only; the toast comes from `meta.errorTitle` above.
+    onError: (_err, _ordered, ctx) => {
       if (ctx?.previous) {
         qc.setQueryData(postAttachmentsKey(postId), ctx.previous)
       }
-      toast.error('Unable to reorder media', {
-        description: err instanceof Error ? err.message : undefined,
-      })
     },
     onSettled: invalidate,
   })

@@ -8,6 +8,7 @@ import {
   TrashIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
+import { Button } from '@/components/ui/button.tsx'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx'
 import { toast } from '@/stores/toastStore.ts'
 import { cn } from '@/lib'
@@ -59,6 +60,7 @@ export function PostMediaCard({
   const [dragging, setDragging] = useState(false)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [overIndex, setOverIndex] = useState<number | null>(null)
+  const [revealed, setRevealed] = useState(false)
 
   // Attachments freeze once the post is published (the server rejects
   // mutations with a 409), so the card becomes a read-only record.
@@ -69,6 +71,15 @@ export function PostMediaCard({
   if (attachments.length === 0 && pending.length === 0 && (!policy.accepts || frozen)) {
     return null
   }
+
+  // Without a platform the policy is a guess — `mediaPolicy` falls back to
+  // "accepts everything" so an unconfigured post isn't blocked, which means
+  // the dropzone would be advertising limits nobody has agreed to. So the
+  // card offers the one thing that is certainly true (you may attach
+  // something) and stays shut until asked. Once open it stays open: a card
+  // that closed itself again would look like the upload had failed.
+  const collapsed =
+    !post.platform_id && !revealed && attachments.length === 0 && pending.length === 0
 
   const handleFiles = async (files: File[]) => {
     const accepted: File[] = []
@@ -105,11 +116,14 @@ export function PostMediaCard({
 
   return (
     <div className={cn('w-full bg-primary px-10 py-6 flex flex-col gap-3', className)}>
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-sm font-medium text-foreground">
+      {/* `SettingsCard`'s header, matched deliberately: title left, the one
+          action opposite it. This is a card with a heading and a body like
+          any settings section, and it was the only one drawing its own. */}
+      <div className="flex items-center justify-between gap-4 min-w-0">
+        <h2 className="flex items-center gap-2 min-w-0 text-xl font-display font-medium tracking-tight">
           Media
           {attachments.length > 0 && (
-            <span className="ml-2 font-normal text-tertiary-foreground">
+            <span className="font-normal text-tertiary-foreground">
               {attachments.length}
               {/* Only against a cap the post type can actually reach — a text
                   post caps at 0, and "2 / 0" reads as a broken counter. */}
@@ -117,10 +131,27 @@ export function PostMediaCard({
             </span>
           )}
         </h2>
-        {policy.accepts && (
-          <span className="text-xs text-tertiary-foreground">
-            {describeConstraints(policy)}
-          </span>
+
+        {/* The two share the slot because they never coexist: constraints are
+            what the card says once it is open, the button is what it offers
+            while shut. With no platform the numbers would be the fallback
+            policy's rather than a platform's, and stating them would be
+            inventing rules. */}
+        {collapsed ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setRevealed(true)}
+          >
+            ADD MEDIA
+          </Button>
+        ) : (
+          policy.accepts && (
+            <span className="shrink-0 text-xs text-tertiary-foreground">
+              {describeConstraints(policy)}
+            </span>
+          )
         )}
       </div>
 
@@ -177,13 +208,9 @@ export function PostMediaCard({
             }}
             onMove={(to) => moveTo(index, to)}
             onRemove={async () => {
-              try {
-                await remove(att.id)
-              } catch (err) {
-                toast.error('Unable to remove file', {
-                  description: err instanceof Error ? err.message : undefined,
-                })
-              }
+              // The toast is the mutation's `errorTitle`; this only stops the
+              // rejection escaping as an unhandled promise.
+              await remove(att.id).catch(() => {})
             }}
           />
         ))}
@@ -206,7 +233,9 @@ export function PostMediaCard({
           </div>
         ))}
 
-        {canAdd && (
+        {/* While collapsed the surrounding flex row renders empty, which
+            costs nothing — this tile is the only thing in it. */}
+        {canAdd && !collapsed && (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}

@@ -94,11 +94,15 @@ export type CampaignTypePhase = {
   sequence: number;
 };
 
+/**
+ * `name` is the slug, and the only part of the row the UI reads for display —
+ * it keys into `lib/campaignTypeDictionary` for the label, the sentence, and
+ * the icon. The response also carries `label` and `description`; they are left
+ * off this type on purpose, so nobody wires seeded copy back into the UI.
+ */
 export type CampaignType = {
   id: string;
   name: string;
-  label: string;
-  description: string;
   is_system: boolean;
   phases?: CampaignTypePhase[];
 };

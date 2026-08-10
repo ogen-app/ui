@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { TagsInput } from '@/components/ui/tags-input'
 import { Button } from '@/components/ui/button'
-import { CheckCircleIcon, TrashIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { TrashIcon } from '@phosphor-icons/react'
 import {
   Form,
   FormControl,
@@ -22,13 +22,19 @@ import {
   useDeleteCampaign,
   useUpdateCampaign,
 } from '@/hooks/useCampaigns'
-import { CampaignTypePicker } from '@/components/campaigns/CampaignTypePicker'
+import {
+  CampaignTypeCard,
+  CampaignTypePicker,
+} from '@/components/campaigns/CampaignTypePicker'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { cn } from '@/lib'
 import { selectCampaignRunning, useAssistantStore } from '@/stores/assistantStore'
-import { toast } from '@/stores/toastStore'
-import type { Campaign, CampaignPlatform, CampaignStatus } from '@/types/campaigns'
+import type {
+  Campaign,
+  CampaignPlatform,
+  CampaignType,
+} from '@/types/campaigns'
 import { campaignToPayload, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
 import { PlatformsControl } from './PlatformsControl'
 
@@ -72,6 +78,15 @@ function defaultValues(campaign: Campaign): SettingsFormValues {
   }
 }
 
+/**
+ * The chosen type out of the fetched list. Falls back to the campaign's own
+ * hydrated relation at the call site, so the card names the type on the first
+ * frame instead of reading "No type set" until the list arrives.
+ */
+function typeById(types: CampaignType[] | undefined, id: string): CampaignType | undefined {
+  return types?.find((t) => t.id === id)
+}
+
 type Props = {
   campaign: Campaign
 }
@@ -92,6 +107,10 @@ export function CampaignSettingsForm({ campaign }: Props) {
   const { data: types, isLoading: typesLoading } = useCampaignTypes()
   const { mutate: deleteCampaign, isPending: deleting } = useDeleteCampaign()
   const navigate = useNavigate()
+
+  // The type is stated, not offered — the chooser only appears once the user
+  // asks for it by name.
+  const [changingType, setChangingType] = useState(false)
 
   // No autosave here: edits mark the page dirty and are applied by the
   // header's Save button (settingsSave context), like the brief form.
@@ -123,7 +142,9 @@ export function CampaignSettingsForm({ campaign }: Props) {
    * other fields stay pending — this toggle must not smuggle them out. Only
    * target_platforms is re-baselined, leaving the rest dirty.
    */
-  const { mutate: updateCampaignNow } = useUpdateCampaign()
+  const { mutate: updateCampaignNow } = useUpdateCampaign({
+    errorTitle: 'Unable to update platforms',
+  })
   const commitPlatforms = useCallback(
     (next: CampaignPlatform[]) => {
       const previous = form.getValues('target_platforms')
@@ -136,14 +157,12 @@ export function CampaignSettingsForm({ campaign }: Props) {
         {
           onSuccess: () =>
             form.resetField('target_platforms', { defaultValue: next }),
-          onError: (e) => {
+          onError: () => {
             // The optimistic setValue above must not outlive a rejected
             // request: left in place (and dirty), the header's Save would
             // quietly push the very change the server just refused.
+            // The toast is the hook's `errorTitle`, not ours — CON-164.
             form.resetField('target_platforms', { defaultValue: previous })
-            toast.error('Unable to update platforms', {
-              description: e instanceof Error ? e.message : undefined,
-            })
           },
         },
       )
@@ -154,23 +173,6 @@ export function CampaignSettingsForm({ campaign }: Props) {
   // Watched rather than read from the campaign: adding a platform persists
   // immediately, so the heading's warning has to clear on the click.
   const noPlatforms = form.watch('target_platforms').length === 0
-
-  const isActive = campaign.status === 'active'
-  const { mutate: updateStatus, isPending: statusSaving } = useUpdateCampaign()
-  const setStatus = (status: CampaignStatus) => {
-    updateStatus(
-      { id: campaign.id, payload: campaignToPayload(campaign, { status }) },
-      {
-        onError: (e) =>
-          toast.error(
-            status === 'active'
-              ? 'Unable to activate the campaign'
-              : 'Unable to deactivate the campaign',
-            { description: e instanceof Error ? e.message : undefined },
-          ),
-      },
-    )
-  }
 
   // `setCampaignDates` / `redistributePosts` rewrite these fields server-side
   // (CON-115), so the form is held read-only for the length of a turn. Unsaved
@@ -197,27 +199,6 @@ export function CampaignSettingsForm({ campaign }: Props) {
             assistantRunning && 'opacity-60',
           )}
         >
-        {/* The type picks the phase plan the campaign's content is generated
-            against, so it sits above the fields that describe the campaign
-            rather than inside the brief, where it used to live. */}
-        <SettingsCard title="Campaign type">
-          <FormField
-            control={form.control}
-            name="campaign_type_id"
-            render={({ field }) => (
-              <FormItem>
-                <CampaignTypePicker
-                  types={types ?? []}
-                  value={field.value}
-                  onChange={field.onChange}
-                  disabled={typesLoading}
-                />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </SettingsCard>
-
         <SettingsCard title="Basic">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
             <FormField
@@ -271,67 +252,60 @@ export function CampaignSettingsForm({ campaign }: Props) {
                 </FormItem>
               )}
             />
+            {/* The type used to own a card at the top of the page, which put
+                the campaign's least changeable decision above its name. It
+                belongs with the rest of what the campaign *is* — stated, not
+                offered, because it picks the phase plan every post is written
+                against and switching it mid-campaign is something the product
+                means to restrict. */}
+            <FormField
+              control={form.control}
+              name="campaign_type_id"
+              render={({ field }) => (
+                <FormItem className="lg:col-span-2">
+                  <FormLabel>Campaign type</FormLabel>
+                  {changingType ? (
+                    <div className="flex flex-col gap-3">
+                      <CampaignTypePicker
+                        types={types ?? []}
+                        value={field.value}
+                        onChange={(id) => {
+                          field.onChange(id)
+                          setChangingType(false)
+                        }}
+                        disabled={typesLoading}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="self-start"
+                        onClick={() => setChangingType(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <CampaignTypeCard
+                      type={typeById(types, field.value) ?? campaign.campaign_type}
+                      action={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={typesLoading}
+                          onClick={() => setChangingType(true)}
+                        >
+                          CHANGE
+                        </Button>
+                      }
+                    />
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
         </SettingsCard>
-
-        {/* The heading is the status — the card says what the campaign is
-            rather than labelling a line that says it, so the whole thing is
-            one line. Status is an action, not a field: it applies on the
-            click rather than waiting for the header's Save, and it is built
-            on the server's campaign so pending edits elsewhere on the page
-            stay pending instead of being smuggled out with it. */}
-        <SettingsCard
-          // One row, not a form: the form cards' 24px of breathing room reads
-          // as an empty half-card under a single line.
-          className="py-3"
-          title={
-            <>
-              {/* Both states carry a mark of the same size, so the heading
-                  starts at the same place either way and the card doesn't
-                  shift as the status changes. */}
-              {isActive ? (
-                <CheckCircleIcon
-                  weight="fill"
-                  className="size-5 shrink-0 text-positive"
-                  aria-hidden
-                />
-              ) : (
-                <WarningCircleIcon
-                  weight="fill"
-                  className="size-5 shrink-0 text-warning"
-                  aria-hidden
-                />
-              )}
-              <span className="truncate">
-                {isActive ? 'Campaign is active' : 'Campaign is not active'}
-              </span>
-            </>
-          }
-          actions={
-            isActive ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="uppercase"
-                onClick={() => setStatus('draft')}
-                loading={statusSaving}
-              >
-                Deactivate
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="ghost"
-                className="uppercase"
-                onClick={() => setStatus('active')}
-                loading={statusSaving}
-              >
-                <CheckCircleIcon />
-                <span>Activate</span>
-              </Button>
-            )
-          }
-        />
 
         <SettingsCard title="Advanced">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
