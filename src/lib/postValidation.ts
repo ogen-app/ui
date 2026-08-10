@@ -5,6 +5,7 @@ import type {
 } from '@/types/attachments'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import { mediaNoun, strandedAttachments, type MediaPolicy } from '@/lib/postMedia'
+import type { PublishingAccountResolution } from '@/lib/publishingAccount'
 import { charCount, markdownToSocialText } from '@/lib/socialText'
 
 /**
@@ -224,8 +225,8 @@ function mediaChecks({
 }
 
 /**
- * The part of `evaluatePost` that needs nothing but the post row — no
- * attachment fetch, no server-side post-type rules.
+ * The part of `evaluatePost` that needs the post row and the account
+ * resolution — no attachment fetch, no server-side post-type rules.
  *
  * The calendar draws a card per post straight from the list payload, so this
  * is as much as "something is wrong here" can mean there. Everything it
@@ -235,15 +236,24 @@ function mediaChecks({
  * card is not a promise that the post will publish, but a flagged one is
  * always really broken.
  */
-export function hasVisibleProblem(post: Post): boolean {
+export function hasVisibleProblem(
+  post: Post,
+  /**
+   * The post's account resolution (`usePublishingAccount`) — the same shape
+   * `getTransitionBlockers` takes, because it must be the same rule: the
+   * server only refuses to schedule when the choice is ambiguous or the
+   * chosen account is gone. An empty `social_account_id` on a single-account
+   * platform auto-resolves and publishes fine, so it is not a problem to flag.
+   */
+  account: Pick<PublishingAccountResolution, 'ambiguous' | 'mismatched'>,
+): boolean {
   // The publish already went wrong, or the window passed without it going out.
   if (post.status === 'failed' || post.status === 'not_published') return true
   // Nothing can publish without a channel, a shape to publish in, and an
-  // account to publish as. All three are on the post row, which is what makes
-  // them checkable from a calendar card.
+  // account resolution the server would accept.
   if (!getPlatformInfo(post.platform_id)) return true
   if (!post.platform_post_type) return true
-  if (!post.social_account_id) return true
+  if (account.ambiguous || account.mismatched) return true
   return false
 }
 

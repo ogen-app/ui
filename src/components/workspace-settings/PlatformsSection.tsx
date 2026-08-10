@@ -1,4 +1,6 @@
 import { memo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { ArrowsClockwiseIcon, PlugsIcon } from '@phosphor-icons/react'
 import type { PublisherAccount } from '@/types/campaigns'
 import { AccountAvatar } from '@/components/ui/account-avatar'
@@ -24,15 +26,16 @@ import { ReadOnlyField, SettingsRow } from './SettingsRow'
  * "Connect Platforms" grid instead (ConnectPlatformsSection).
  */
 function PlatformsSectionComponent() {
+  const { t } = useTranslation()
   const views = usePlatformViews()
   const connected = views.filter((v) => v.connectedPublishers.length > 0)
   const { start, modal } = useConnectPlatform()
 
   return (
-    <SettingsCard title="Platform Settings">
+    <SettingsCard title={t('workspaceSettings.platforms.title')}>
       {connected.length === 0 ? (
         <p className="text-sm text-tertiary-foreground">
-          No platforms connected yet — pick one under “Connect Platforms” below.
+          {t('workspaceSettings.platforms.empty')}
         </p>
       ) : (
         // Every row gets a separator above it: the ul's own top border covers
@@ -55,13 +58,15 @@ function PlatformsSectionComponent() {
  * this is a sentence above the row rather than a state on the account's
  * button — see `AccountRow` for the one that is.
  */
-function platformNotice(view: PlatformView): string {
+function platformNotice(view: PlatformView, t: TFunction): string {
   const publisher = view.connectedPublishers[0]
   if (publisher.state === 'degraded') {
-    return `Connected, but the ${publisher.name} sync is degraded — we retry automatically.`
+    return t('workspaceSettings.platforms.status.degradedMessage', {
+      publisher: publisher.name,
+    })
   }
   if (publisher.state === 'disabled') {
-    return 'Connected, but the publishing integration is currently disabled on the server.'
+    return t('workspaceSettings.platforms.status.disabledMessage')
   }
   return ''
 }
@@ -76,8 +81,9 @@ function platformNotice(view: PlatformView): string {
  * carries the connection state.
  */
 function PlatformRow({ view, onReconnect }: { view: PlatformView; onReconnect: () => void }) {
+  const { t } = useTranslation()
   const accounts = connectedAccounts(view)
-  const notice = platformNotice(view)
+  const notice = platformNotice(view, t)
 
   return (
     <SettingsRow description={notice ? <p>{notice}</p> : undefined}>
@@ -87,8 +93,16 @@ function PlatformRow({ view, onReconnect }: { view: PlatformView; onReconnect: (
           showing it would state a rule the platform doesn't actually enforce.
           The fields stay — named and in place — reading as pending until the
           backend has something true to put in them. */}
-      <ReadOnlyField label="Cadence" value={undefined} placeholder="Coming soon" />
-      <ReadOnlyField label="Constraints" value={undefined} placeholder="Coming soon" />
+      <ReadOnlyField
+        label={t('workspaceSettings.platforms.cadence')}
+        value={undefined}
+        placeholder={t('workspaceSettings.platforms.comingSoon')}
+      />
+      <ReadOnlyField
+        label={t('workspaceSettings.platforms.constraints')}
+        value={undefined}
+        placeholder={t('workspaceSettings.platforms.comingSoon')}
+      />
       <PostTypeChips view={view} />
     </SettingsRow>
   )
@@ -99,10 +113,17 @@ function PlatformRow({ view, onReconnect }: { view: PlatformView; onReconnect: (
  * publisher, since the workspace can post through any of them.
  */
 function PostTypeChips({ view }: { view: PlatformView }) {
+  const { t } = useTranslation()
   const supported = new Set(view.connectedPublishers.flatMap((p) => p.supported_post_types))
   const items = view.allowed.filter((pt) => supported.has(pt.slug))
 
-  return <ChipGroup label="Available Content Types" items={items} emptyText="None" />
+  return (
+    <ChipGroup
+      label={t('workspaceSettings.platforms.contentTypes')}
+      items={items}
+      emptyText={t('workspaceSettings.platforms.contentTypesEmpty')}
+    />
+  )
 }
 
 /** A labeled row of chips, or `emptyText` when there are none. */
@@ -183,6 +204,7 @@ function AccountRow({
   account: PublisherAccount
   onReconnect: () => void
 }) {
+  const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
   const name = account.display_name || account.username
   const broken = !account.is_active
@@ -195,17 +217,23 @@ function AccountRow({
             carries the weight that heading used to. */}
         <p className="w-full text-base font-medium truncate text-left">{name}</p>
         <p className="w-full text-xs text-tertiary-foreground truncate text-left">
-          {broken ? `Inactive on ${view.info.name} — can’t receive posts` : `@${account.username}`}
+          {broken
+            ? t('workspaceSettings.platforms.accountInactive', { platform: view.info.name })
+            : `@${account.username}`}
         </p>
       </div>
 
       {broken ? (
         <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={onReconnect}>
           <ArrowsClockwiseIcon />
-          <span>Reconnect</span>
+          <span>{t('workspaceSettings.platforms.reconnect')}</span>
         </Button>
       ) : (
-        <StatusBadge tone="positive" label="Connected" className="shrink-0" />
+        <StatusBadge
+          tone="positive"
+          label={t('workspaceSettings.platforms.status.connected')}
+          className="shrink-0"
+        />
       )}
 
       <Tooltip>
@@ -219,12 +247,12 @@ function AccountRow({
             // as a warning about the account itself.
             className="shrink-0 hover:text-destructive"
             onClick={() => setConfirming(true)}
-            aria-label={`Disconnect ${name}`}
+            aria-label={t('workspaceSettings.platforms.disconnectAccount', { name })}
           >
             <PlugsIcon className="size-5" weight="regular" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Disconnect this account</TooltipContent>
+        <TooltipContent>{t('workspaceSettings.platforms.disconnectTooltip')}</TooltipContent>
       </Tooltip>
 
       <DisconnectAccountDialog

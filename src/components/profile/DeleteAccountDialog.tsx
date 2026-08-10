@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { Trans, useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +31,7 @@ type Props = {
  */
 export function DeleteAccountDialog({ user, isOpen, onClose }: Props) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { mutate: deleteAccount, isPending, error, reset } = useDeleteAccount()
   const [typed, setTyped] = useState('')
 
@@ -58,7 +60,7 @@ export function DeleteAccountDialog({ user, isOpen, onClose }: Props) {
     <ModalContainer
       isOpen={isOpen}
       onClose={isPending ? () => {} : onClose}
-      title="Delete your account?"
+      title={t('profile.delete.title')}
       size="small"
       closeOnBackdropClick={!isPending}
       closeOnEscape={!isPending}
@@ -66,20 +68,30 @@ export function DeleteAccountDialog({ user, isOpen, onClose }: Props) {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2 text-sm text-secondary-foreground">
           <p>
-            This permanently deletes <strong>{user.email}</strong> and everything you
-            created in this workspace — your campaigns, their posts, your uploaded
-            assets and tags. It cannot be undone.
+            <Trans
+              i18nKey="profile.delete.body"
+              values={{ email: user.email }}
+              components={{ strong: <strong /> }}
+            />
           </p>
           <p>
-            If anyone else uses{' '}
-            <strong>{user.tenant?.name ?? 'this workspace'}</strong>, that content
-            disappears for them too. The workspace itself is not deleted.
+            <Trans
+              i18nKey="profile.delete.shared"
+              values={{
+                workspace: user.tenant?.name ?? t('profile.delete.thisWorkspace'),
+              }}
+              components={{ strong: <strong /> }}
+            />
           </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="confirmEmail">
-            Type <span className="font-medium">{user.email}</span> to confirm
+            <Trans
+              i18nKey="profile.delete.confirmLabel"
+              values={{ email: user.email }}
+              components={{ email: <span className="font-medium" /> }}
+            />
           </Label>
           <Input
             id="confirmEmail"
@@ -94,7 +106,7 @@ export function DeleteAccountDialog({ user, isOpen, onClose }: Props) {
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
-            KEEP MY ACCOUNT
+            {t('profile.delete.keep')}
           </Button>
           <Button
             type="button"
@@ -103,8 +115,9 @@ export function DeleteAccountDialog({ user, isOpen, onClose }: Props) {
             disabled={!confirmed || isPending}
             loading={isPending}
           >
-            {/* Literal caps, not `uppercase` — see CLAUDE.md on destructive labels. */}
-            <span>DELETE MY ACCOUNT</span>
+            {/* Literal caps in the catalogue, not an `uppercase` class — see
+                CLAUDE.md on destructive labels. Every translation keeps them. */}
+            <span>{t('profile.delete.confirm')}</span>
           </Button>
         </div>
       </div>

@@ -191,6 +191,38 @@ first and the PUT is debounced 500ms behind them — flipping six day switches
 costs one request — with a flush on unmount, the same shape as the post
 editor's autosave.
 
+## The marketing-email opt-out gets its own endpoint {#email-preferences}
+
+**Decision.** The Profile switch reads and writes
+`GET`/`PUT /api/users/:id/email-preferences`, a route that does not exist yet —
+`services/api/emailPreferences.ts` carries the contract and
+`emailPreferences.test.ts` states it executably. The section ships behind the
+`email-preferences` feature flag, off, so `develop` doesn't carry a card that
+can only fail. It is **not** a `userScopedKey` in `/api/settings`.
+
+**Why.** CON-154/CON-155 built the entire suppression engine server-side, but
+every endpoint it exposes is public and token-gated: it verifies a signature
+lifted from an email footer, not a session, so none of them can answer "is the
+person on this page subscribed?". Routing the switch through `/api/settings`
+instead would have avoided the new endpoint and been wrong twice over — that
+store is tenant-scoped and readable by every teammate (see
+[#user-scoped-settings](#user-scoped-settings)), and it would have created a
+*second* record of subscription state that the emailed unsubscribe link doesn't
+update. One `email_suppressions` row, two ways to reach it.
+
+**The two booleans.** `marketing` is the subscription; `delivery_blocked`
+reports a `scope='all'` suppression, the row a hard bounce or spam complaint
+writes through the Resend webhook. They have to be separate because
+`RemoveMarketing` doesn't touch an `all` row: a bounced address can be
+subscribed and still receive nothing. The UI disables the switch and says so
+rather than offering a toggle that can't take effect.
+
+**Where.** `services/api/emailPreferences.ts`, `hooks/useEmailPreferences.ts`,
+`components/profile/EmailPreferencesSection.tsx`. The switch sits outside the
+Profile page's `SettingsSaveProvider` — it applies on flip, because a control
+that looks applied and is actually queued behind a header Save button would let
+someone leave believing they had unsubscribed.
+
 ## Explanatory copy is dismissible, and dismissal is permanent {#explainers}
 
 **Decision.** Copy that teaches how a screen works goes in an `<Explainer>`,
@@ -322,6 +354,102 @@ would be two sources of truth and no correction.
   there is no separate video-metadata form, because the Zernio submit request
   models nothing else yet (CON-159).
 
+## English is bundled, every other language is a chunk {#i18n}
+
+**Decision.** i18next + react-i18next, one namespace, with English statically
+imported into the main bundle (`i18n/resources/en.ts`) and every other locale
+behind an `import()` (`i18n/index.ts`, `LAZY_RESOURCES`). The chosen language
+lives in `localStorage`, not in `/api/settings`. `?lang=es` forces one for a
+page load and is then persisted like any other choice. Any load or switch that
+actually has to fetch a locale is covered by a full-screen waiting screen held
+for a minimum of two seconds (`MIN_LOCALE_SWITCH_MS`).
+
+**Why each half of that.**
+
+- **English bundled** — the app has to paint before any network request
+  resolves, and it is the fallback for every key, so a translation that misses
+  one shows real copy rather than a raw dotted path. It is also the
+  overwhelmingly common case: opening the app in English costs nothing and
+  shows no loader at all.
+- **`localStorage`, not `/api/settings`** — the login screen has no session to
+  read tenant settings with, and this is a per-device preference, not a
+  workspace one. It sits alongside `dismissedNotes` in kind, though not in
+  file: `bootstrapLocale` needs it *synchronously*, before React mounts, to
+  decide whether the first paint is the app or the waiting screen, so it is
+  read directly rather than through zustand's `persist` middleware.
+- **`?lang=` is read and stripped before the router is created** — routes here
+  declare strict `validateSearch` schemas that would drop an unknown key on the
+  next navigation anyway. Stripping it with `replaceState` (not a navigation)
+  keeps Back from landing on the same URL with the parameter still attached.
+  Precedence is `?lang=` → stored choice → English; there is deliberately no
+  `navigator.language` step, because inferring a language nobody asked for
+  hides the fact that a translation exists behind a loader on first load.
+- **The two-second floor** — a locale chunk arrives in well under a frame on a
+  warm connection, and a UI that swaps language between two paints reads as a
+  glitch rather than as something you did. The floor and the fetch race
+  together (`Promise.all`), so a slow connection costs its own time, not that
+  time plus two seconds.
+- **Nothing unmounts** — the waiting screen is an opaque `fixed` panel over a
+  still-mounted app, so a switch keeps scroll position, the query cache and any
+  in-flight edit.
+
+**The one screen that can't read from the catalogue.** `i18n/bootMessages.ts`
+holds the waiting screen's own two lines for *every* language, in the main
+chunk. It is what covers the fetch, so on a reload by someone whose language is
+Spanish the Spanish bundle is precisely what has not arrived — read through
+`t`, it would greet them in English on every single page load. Keep that file
+to those two lines; everything else belongs in `resources/`.
+
+**Zod schemas are factories, not constants.** A schema bakes its messages in at
+construction, so a module-level `loginSchema` would freeze English forever. Each
+is now `(t) => schema`, memoised on `t` by the hooks in
+`hooks/useAuthSchemas.ts` — which also means a language switch rebuilds any
+validation error already on screen.
+
+**What has to be a key.** Every string the user can read: button and menu
+labels, headings, placeholders, empty and error states, toast and validation
+messages, tooltips, and the strings only assistive tech reads — `aria-label`,
+`title`, `alt`, visually hidden text. The accessible ones are the ones that get
+missed, because nothing looks wrong on screen when they stay English. Exempt:
+developer-facing text (`console.*`, thrown `Error` messages, test fixtures) and
+`bootMessages.ts`. A string that has to be picked before render — a status
+label map, a `const` array of select options — moves inside a `(t) => …`
+factory or a hook rather than sitting at module level; see the Zod note above,
+which is the same failure in a different shape.
+
+**Catalogue conventions** (also stated at the top of `en.ts`): keys name the
+place, never quote their own English; one key per sentence the user reads, with
+`<Trans>` for a sentence that has a link or emphasis inside it; plurals use
+i18next's `_one`/`_other` and spell out each form whole, because English
+pronouns and Spanish agreement do not survive being stitched at runtime. Even
+the list separators are translated — English writes "a, b, c, and d" where
+Spanish writes "a, b, c y d". Destructive-action labels keep their literal
+capitals in every language (`DELETE ACCOUNT` / `ELIMINAR CUENTA`).
+
+**Where.** `src/i18n/` (config, resources, boot messages),
+`stores/localeStore.ts`, `components/layout/{AppLoader,LocaleSwitchOverlay}.tsx`,
+`components/settings/LanguageSection.tsx`, `hooks/useAuthSchemas.ts`.
+
+**A release gate per language, not per feature.** `LOCALES` carries an
+`enabled` flag on each row. A disabled locale still compiles, still type-checks
+against `en.ts` and still ships its chunk — it is simply not offered in the
+picker, not accepted from `?lang=`, and not restored from a previous visit;
+a stored preference for one is cleared, so it cannot lie dormant and switch
+someone's language by itself on the deploy that releases it. The gate is on
+those entry points rather than on `setLocale`, which keeps the switch covered
+end to end by its tests while nothing but English is out. Per language rather
+than one flag for i18n as a whole, because a locale is finished, reviewed and
+released on its own schedule.
+
+**Scope today (CON-174).** The machinery plus real conversion of the auth
+screens, the sidebar, Profile and Workspace Settings. The rest of the app —
+campaigns, posts, calendar, content bank, the assistant — is still hard-coded
+English and reads correctly, because English is what `t` falls back to.
+Converting a surface is per-area work, not a flag day. Spanish is translated in
+full for those surfaces and gated: with the app only part-converted, choosing
+it today would yield a half-Spanish UI, and the copy has had no native review.
+Releasing it is `enabled: true`.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain
@@ -333,8 +461,9 @@ feedback — the heavyweight abstraction buys nothing there. Feature forms need
 accessibility wiring (`aria-describedby`/`aria-invalid`), field-level control,
 and autosave. Pick per the form's needs; don't unify them reflexively.
 
-**Where.** `hooks/useFormValidation.ts` + `lib/auth-validation.ts` vs
-`components/ui/form.tsx` + the `components/forms/*` feature forms.
+**Where.** `hooks/useFormValidation.ts` + `lib/auth-validation.ts` (whose
+schemas are `t`-taking factories — see [i18n](#i18n)) vs `components/ui/form.tsx`
++ the `components/forms/*` feature forms.
 
 ## Routing conventions that look like accidents but aren't
 

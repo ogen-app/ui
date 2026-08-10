@@ -4,6 +4,7 @@ import {
   Outlet,
   redirect,
 } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 import { PageContainer } from "../components/page-primitives/PageContainer";
 import { PageError } from "../components/page-primitives/PageError";
@@ -77,19 +78,25 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     return { auth: { isAuthenticated: user !== null } };
   },
   component: () => <Outlet />,
-  notFoundComponent: () => (
+  notFoundComponent: NotFound,
+});
+
+/** Named rather than inline, so it is a component the hooks rules can see. */
+function NotFound() {
+  const { t } = useTranslation();
+  return (
     <PageContainer variant="fullscreen">
       <PageError
-        subHeader="404"
-        header="Page not found"
-        message="The page you're looking for doesn't exist or has been moved."
-        errorType="NOT FOUND"
+        subHeader={t("errors.notFound.code")}
+        header={t("errors.notFound.title")}
+        message={t("errors.notFound.message")}
+        errorType={t("errors.notFound.type")}
         action={
           <Link to="/">
-            <Button variant="outline">Go home</Button>
+            <Button variant="outline">{t("errors.notFound.home")}</Button>
           </Link>
         }
       />
     </PageContainer>
-  ),
-});
+  );
+}

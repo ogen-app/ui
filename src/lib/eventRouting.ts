@@ -5,6 +5,7 @@ import { campaignKey } from '@/hooks/useCampaigns'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
+import { postVersionsKey } from '@/lib/queryKeys'
 import type { AppEvent, EventSubject } from '@/types/events'
 
 /**
@@ -110,6 +111,7 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
   switch (subject.kind) {
     case 'post': {
       const post = { queryKey: postKey(subject.id) }
+      const versions = { queryKey: postVersionsKey(subject.id) }
       switch (event.type) {
         // A background job wrote numbers no client could have known about.
         // The single genuinely new fact in the catalogue.
@@ -119,10 +121,17 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         // the post it was cloned *from*, which didn't.
         case 'post_cloned':
           return [CAMPAIGN_POST_LISTS]
+        // A restore writes two versions (the auto-save of unsnapshotted
+        // edits, then the copy) — the history is as stale as the post is.
         case 'post_restored':
+          return [post, versions, CAMPAIGN_POST_LISTS]
         case 'post_scheduled':
           return [post, CAMPAIGN_POST_LISTS]
+        // The post flow snapshots before it rewrites. Only reaches other
+        // people's tabs — the actor's own copy is suppressed as a local run,
+        // and handled where the turn settles (assistantStore.refreshSubject).
         case 'assistant_completed':
+          return [post, versions]
         case 'assistant_failed':
           return [post]
         case 'assessment_completed':

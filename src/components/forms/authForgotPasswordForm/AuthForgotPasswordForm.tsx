@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from '@tanstack/react-router'
+import { Trans, useTranslation } from 'react-i18next'
 import { EnvelopeSimpleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,7 +8,10 @@ import { Label } from '@/components/ui/label'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { useRequestPasswordReset } from '@/hooks/useAuth'
 import { useFormValidation } from '@/hooks/useFormValidation'
-import { forgotPasswordSchema, cn } from '@/lib'
+import { useForgotPasswordSchema } from '@/hooks/useAuthSchemas'
+import { FormError } from '@/components/forms/shared/FormError'
+import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
+import { cn } from '@/lib'
 
 /**
  * Step one of a password reset: name the account.
@@ -28,32 +32,62 @@ import { forgotPasswordSchema, cn } from '@/lib'
  * inside it.
  */
 export function AuthForgotPasswordForm() {
+  const { t } = useTranslation()
   const { mutate: request, isPending, error, reset } = useRequestPasswordReset()
   const [sent, setSent] = useState(false)
-  const { values, setField, fieldErrors, validate } = useFormValidation(forgotPasswordSchema, {
-    email: '',
-  })
+  const [resent, setResent] = useState(false)
+  const { values, setField, fieldErrors, validate } = useFormValidation(
+    useForgotPasswordSchema(),
+    { email: '' }
+  )
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const data = validate()
-    if (!data) return
+    if (!data) {
+      focusFirstInvalid(e.currentTarget)
+      return
+    }
     request(data.email, { onSuccess: () => setSent(true) })
+  }
+
+  /**
+   * A second send has no visible consequence — the panel is already up and
+   * says the same thing it said before the click. Without an answer here the
+   * button reads as broken, and the obvious response to that is to press it
+   * again, which is the one thing the rate limit will refuse.
+   */
+  const handleResend = () => {
+    setResent(false)
+    if (error) reset()
+    request(values.email, { onSuccess: () => setResent(true) })
   }
 
   if (sent) {
     return (
       <div className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500">
-        <div className="flex items-start gap-3">
+        {/* `role="status"`: the panel replaces the form the user just
+            submitted, and focus stays where the submit button was — without a
+            live region a screen reader hears nothing about the request having
+            succeeded. On the message block, not the whole panel: `status`
+            implies `aria-atomic`, and wrapping the resend region too would
+            re-announce all of this on every resend. */}
+        <div role="status" className="flex items-start gap-3">
           <EnvelopeSimpleIcon className="size-5 shrink-0 mt-0.5" aria-hidden />
           <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium">Check your inbox</p>
+            <p className="text-sm font-medium">{t('auth.forgot.sentTitle')}</p>
             {/* Phrased as a conditional on purpose: the endpoint answers the
                 same way for an address with no account, so stating that mail
-                is on its way would be a claim we can't make. */}
+                is on its way would be a claim we can't make.
+
+                One key, not three fragments — `<Trans>` keeps the sentence
+                whole so a translator can move the address within it. */}
             <p className="text-[13px] leading-5 text-secondary-foreground">
-              If <span className="font-medium">{values.email}</span> has an Ogen account, a
-              link to set a new password is on its way. It expires in an hour.
+              <Trans
+                i18nKey="auth.forgot.sentBody"
+                values={{ email: values.email }}
+                components={{ strong: <span className="font-medium" /> }}
+              />
             </p>
           </div>
         </div>
@@ -63,23 +97,35 @@ export function AuthForgotPasswordForm() {
             variant="outline"
             size="default"
             className="w-full justify-between"
-            onClick={() => request(values.email)}
+            onClick={handleResend}
             loading={isPending}
             disabled={isPending}
           >
-            <span>SEND IT AGAIN</span>
+            <span>{t('auth.forgot.resend')}</span>
             <ArrowUpRightIcon />
           </Button>
-          {/* Almost always the per-address rate limit: the first link is
-              already on its way, so this reads as "you don't need to", not as
-              a failure of the reset itself. The first send's copy above stays
-              on screen and stays true. */}
-          {error && <p className="text-[13px] leading-5 text-destructive">{error.message}</p>}
+          {/* Both answers to the same click share one region, so the previous
+              one is replaced rather than sitting next to its contradiction.
+              `status` rather than `alert` even for the failure: it is almost
+              always the per-address rate limit (CON-161), which means the
+              first link is already on its way — "you don't need to", not a
+              failure of the reset. The copy above stays true either way, and
+              nothing here is worth interrupting a screen reader mid-sentence
+              for. */}
+          <p
+            role="status"
+            className={cn(
+              'min-h-5 text-[13px] leading-5',
+              error ? 'text-destructive' : 'text-tertiary-foreground',
+            )}
+          >
+            {error ? error.message : resent ? t('auth.forgot.resentNote') : ''}
+          </p>
           <Link
             to="/auth/login"
             className="text-primary-foreground text-[13px] font-medium"
           >
-            Back to log in
+            {t('auth.forgot.backToLogin')}
           </Link>
         </div>
       </div>
@@ -93,25 +139,34 @@ export function AuthForgotPasswordForm() {
       noValidate
     >
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t('auth.forgot.emailLabel')}</Label>
         <Input
           id="email"
           name="email"
           type="email"
           autoComplete="username"
           variant="default"
-          placeholder="Enter your email"
+          placeholder={t('auth.forgot.emailPlaceholder')}
           value={values.email}
           onChange={(e) => {
             setField('email', e.target.value)
             if (error) reset()
           }}
           aria-invalid={!!fieldErrors.email}
+          aria-describedby={fieldErrors.email ? 'email-error' : undefined}
           disabled={isPending}
         />
-        {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
+        {fieldErrors.email && (
+          <p id="email-error" className="text-xs text-destructive">
+            {fieldErrors.email}
+          </p>
+        )}
+        {/* The note every other form's last field has, and the reason the
+            button no longer sits right under the input. It also answers the
+            question this screen reliably produces — which of my addresses? */}
+        <p className="text-xs text-tertiary-foreground">{t('auth.forgot.emailHint')}</p>
       </div>
-      <div className="w-full">
+      <div className="w-full pt-2">
         <Button
           type="submit"
           variant="defaultInverted"
@@ -120,19 +175,10 @@ export function AuthForgotPasswordForm() {
           loading={isPending}
           disabled={isPending}
         >
-          <span>SEND RESET LINK</span>
+          <span>{t('auth.forgot.submit')}</span>
           <ArrowUpRightIcon />
         </Button>
-        <div className="h-4 my-4">
-          <span
-            className={cn(
-              'text-sm text-destructive transition-opacity duration-300',
-              error ? 'opacity-100' : 'opacity-0'
-            )}
-          >
-            {error && error.message}
-          </span>
-        </div>
+        <FormError message={error?.message} />
       </div>
     </form>
   )

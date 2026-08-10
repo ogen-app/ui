@@ -40,7 +40,9 @@ export function Explainer({ id, children, className }: Props) {
   return (
     <aside
       className={cn(
-        "flex items-start gap-3 rounded-md bg-secondary px-4 py-3",
+        // `relative` for the close button, and the right padding is the room it
+        // sits in — the text must not run under it on a narrow column.
+        "relative rounded-md bg-secondary py-3 pr-10 pl-4",
         className,
       )}
     >
@@ -48,17 +50,16 @@ export function Explainer({ id, children, className }: Props) {
           line length inside it doesn't — past ~75 characters the eye loses the
           start of the next line, and this is the one block on a page that is
           actually meant to be read. */}
-      <div className="min-w-0 flex-1">
-        <div className="max-w-150 text-base text-primary-foreground">
-          {children}
-        </div>
+      <div className="max-w-150 text-[13px] leading-normal text-primary-foreground">
+        {children}
       </div>
-      {/* 24px rather than the 32 `smIcon` gives it: this button dismisses the
-          note, it isn't the point of it. */}
+      {/* Parked in the corner rather than sharing the row: the note is one
+          block of prose, and 24px rather than the 32 `smIcon` gives it because
+          this button dismisses the note, it isn't the point of it. */}
       <Button
         variant="ghost"
         size="smIcon"
-        className="-mr-1 size-6 shrink-0"
+        className="absolute top-2 right-2 size-6"
         aria-label="Hide this explanation"
         onClick={() => dismissNote(id)}
       >

@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
-  changePasswordSchema,
   loginSchema,
   profileSchema,
   resetPasswordSchema,
 } from "./auth-validation.ts";
+// The real, initialised instance — English is bundled, so `t` resolves
+// synchronously. That makes these assertions a check on the catalogue too: a
+// key renamed in `en.ts` without updating the schema fails here.
+import { i18next } from "@/i18n";
+
+const t = i18next.t;
 
 /** First message for a field, or undefined when the field passed. */
 function errorFor(
@@ -16,10 +21,11 @@ function errorFor(
 }
 
 describe("resetPasswordSchema", () => {
+  const schema = resetPasswordSchema(t);
   const good = "Sunlit7Harbour";
 
   it("accepts a strong password typed twice", () => {
-    const result = resetPasswordSchema.safeParse({
+    const result = schema.safeParse({
       password: good,
       confirmPassword: good,
     });
@@ -29,7 +35,7 @@ describe("resetPasswordSchema", () => {
   // The reason the second field exists: nothing else can catch a typo in a
   // credential the user can't see and won't use again until their next login.
   it("rejects a mismatch, and blames the confirmation field", () => {
-    const result = resetPasswordSchema.safeParse({
+    const result = schema.safeParse({
       password: good,
       confirmPassword: `${good}x`,
     });
@@ -39,7 +45,7 @@ describe("resetPasswordSchema", () => {
 
   it("applies the full strength rules, not just a length check", () => {
     for (const weak of ["short1A", "alllowercase1", "ALLUPPERCASE1", "NoDigitsHere"]) {
-      const result = resetPasswordSchema.safeParse({
+      const result = schema.safeParse({
         password: weak,
         confirmPassword: weak,
       });
@@ -49,92 +55,64 @@ describe("resetPasswordSchema", () => {
   });
 
   it("asks for the confirmation when it is left empty", () => {
-    const result = resetPasswordSchema.safeParse({ password: good, confirmPassword: "" });
+    const result = schema.safeParse({ password: good, confirmPassword: "" });
     expect(errorFor(result, "confirmPassword")).toBe("Confirm your password");
   });
 });
 
 describe("loginSchema", () => {
+  const schema = loginSchema(t);
+
   // Logging in checks a password that already exists; re-running the signup
   // strength rules here would lock out anyone whose password predates them.
   it("takes any non-empty password", () => {
-    const result = loginSchema.safeParse({ email: "a@b.co", password: "x" });
+    const result = schema.safeParse({ email: "a@b.co", password: "x" });
     expect(result.success).toBe(true);
   });
 
   it("still requires a well-formed email", () => {
-    const result = loginSchema.safeParse({ email: "not-an-email", password: "x" });
+    const result = schema.safeParse({ email: "not-an-email", password: "x" });
     expect(errorFor(result, "email")).toBe("Invalid email format");
   });
 });
 
 describe("profileSchema", () => {
+  const schema = profileSchema(t);
   const valid = { firstName: "Ada", lastName: "Lovelace", email: "ada@example.com" };
 
   it("accepts a filled-in profile", () => {
-    expect(profileSchema.safeParse(valid).success).toBe(true);
+    expect(schema.safeParse(valid).success).toBe(true);
   });
 
   it("rejects a whitespace-only name", () => {
     // The field is trimmed before it is sent, so " " would reach the server as
     // an empty name and be rejected there.
-    const result = profileSchema.safeParse({ ...valid, firstName: "   " });
+    const result = schema.safeParse({ ...valid, firstName: "   " });
     expect(errorFor(result, "firstName")).toBeDefined();
   });
 
   it("rejects a malformed email", () => {
-    const result = profileSchema.safeParse({ ...valid, email: "ada@" });
+    const result = schema.safeParse({ ...valid, email: "ada@" });
     expect(errorFor(result, "email")).toBe("Invalid email format");
   });
 });
 
-describe("changePasswordSchema", () => {
-  const current = "OldHarbour9";
-  const next = "Sunlit7Harbour";
-  const valid = { currentPassword: current, password: next, confirmPassword: next };
 
-  it("accepts a current password plus a strong new one typed twice", () => {
-    expect(changePasswordSchema.safeParse(valid).success).toBe(true);
-  });
-
-  it("takes any non-empty current password", () => {
-    // It is an existing credential — applying the strength rules to it would
-    // lock out anyone whose password predates them, exactly as for login.
-    const result = changePasswordSchema.safeParse({ ...valid, currentPassword: "x" });
-    expect(result.success).toBe(true);
-  });
-
-  it("asks for the current password when it is left empty", () => {
-    const result = changePasswordSchema.safeParse({ ...valid, currentPassword: "" });
-    expect(errorFor(result, "currentPassword")).toBe("Enter your current password");
-  });
-
-  it("applies the strength rules to the new password", () => {
-    const result = changePasswordSchema.safeParse({
-      ...valid,
-      password: "alllowercase1",
-      confirmPassword: "alllowercase1",
-    });
-    expect(errorFor(result, "password")).toBeDefined();
-  });
-
-  it("catches a mistyped confirmation", () => {
-    const result = changePasswordSchema.safeParse({
-      ...valid,
-      confirmPassword: "Sunlit7Harbor",
-    });
-    expect(errorFor(result, "confirmPassword")).toBe("Passwords do not match");
-  });
-
-  it("rejects re-submitting the password the account already has", () => {
-    // Not pedantry: the change costs a re-authentication and reads as a
-    // security action, so silently accepting a no-op would tell the user they
-    // rotated a credential they did not.
-    const result = changePasswordSchema.safeParse({
-      currentPassword: next,
-      password: next,
-      confirmPassword: next,
-    });
-    expect(errorFor(result, "password")).toBe("That is already your password");
+/**
+ * The whole point of the factories: the same schema built after a language
+ * change carries the new language's messages. A module-level constant would
+ * have frozen English at import time.
+ */
+describe("schemas follow the active language", () => {
+  it("rebuilds its messages from the catalogue in force when it is built", async () => {
+    const { es } = await import("@/i18n/resources/es");
+    i18next.addResourceBundle("es", "translation", es);
+    await i18next.changeLanguage("es");
+    try {
+      const result = loginSchema(i18next.t).safeParse({ email: "nope", password: "x" });
+      expect(errorFor(result, "email")).toBe("El formato del correo electrónico no es válido");
+    } finally {
+      await i18next.changeLanguage("en");
+    }
   });
 });

@@ -11,6 +11,7 @@ export type RightPanel =
   | 'postSettings'
   | 'postPreview'
   | 'postQuality'
+  | 'postVersions'
 
 /**
  * Local-only settings stored in localStorage

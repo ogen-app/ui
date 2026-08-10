@@ -502,32 +502,45 @@ describe('evaluatePost', () => {
 })
 
 describe('hasVisibleProblem', () => {
+  // A platform whose account resolution raises no objection — the common case.
+  const resolved = { ambiguous: false, mismatched: false }
+
   it('stays quiet on a post that is merely unfinished', () => {
-    expect(hasVisibleProblem(makePost({ status: 'draft' }))).toBe(false)
-    expect(hasVisibleProblem(makePost({ status: 'scheduled' }))).toBe(false)
-    expect(hasVisibleProblem(makePost({ status: 'published' }))).toBe(false)
+    expect(hasVisibleProblem(makePost({ status: 'draft' }), resolved)).toBe(false)
+    expect(hasVisibleProblem(makePost({ status: 'scheduled' }), resolved)).toBe(false)
+    expect(hasVisibleProblem(makePost({ status: 'published' }), resolved)).toBe(false)
   })
 
   it('flags a publish that went wrong or never went out', () => {
-    expect(hasVisibleProblem(makePost({ status: 'failed' }))).toBe(true)
-    expect(hasVisibleProblem(makePost({ status: 'not_published' }))).toBe(true)
+    expect(hasVisibleProblem(makePost({ status: 'failed' }), resolved)).toBe(true)
+    expect(hasVisibleProblem(makePost({ status: 'not_published' }), resolved)).toBe(true)
   })
 
   it('flags a post that has nowhere to go', () => {
-    expect(hasVisibleProblem(makePost({ platform_id: '' }))).toBe(true)
-    expect(hasVisibleProblem(makePost({ platform_id: 'not-a-platform' }))).toBe(true)
-    expect(hasVisibleProblem(makePost({ platform_post_type: '' }))).toBe(true)
+    expect(hasVisibleProblem(makePost({ platform_id: '' }), resolved)).toBe(true)
+    expect(hasVisibleProblem(makePost({ platform_id: 'not-a-platform' }), resolved)).toBe(true)
+    expect(hasVisibleProblem(makePost({ platform_post_type: '' }), resolved)).toBe(true)
   })
 
-  it('flags a post with no account to publish as', () => {
-    // The id is on the post row, so the card can see this without the
-    // publisher fetch the editor makes.
-    expect(hasVisibleProblem(makePost({ social_account_id: '' }))).toBe(true)
+  it('follows the status machine on accounts: resolution, not presence', () => {
+    // Same rule as `getTransitionBlockers` and the server's
+    // `checkAccountSelection`: an empty id on a single-account platform
+    // auto-resolves and publishes fine, so the card must not flag it.
+    const empty = makePost({ social_account_id: '' })
+    expect(hasVisibleProblem(empty, resolved)).toBe(false)
+    expect(hasVisibleProblem(empty, { ambiguous: true, mismatched: false })).toBe(true)
+    // A chosen account the platform no longer has.
+    expect(
+      hasVisibleProblem(makePost({ social_account_id: 'gone' }), {
+        ambiguous: false,
+        mismatched: true,
+      }),
+    ).toBe(true)
   })
 
   it('reads only the post row — no attachments, no server rules', () => {
     // The guarantee the calendar leans on: hundreds of cards, zero extra
     // requests. A post whose *only* fault needs those fetches stays clean.
-    expect(hasVisibleProblem(makePost({ content: '', media_urls: [] }))).toBe(false)
+    expect(hasVisibleProblem(makePost({ content: '', media_urls: [] }), resolved)).toBe(false)
   })
 })

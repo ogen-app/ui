@@ -1,4 +1,5 @@
 import { useCallback, useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { useUpdateProfile } from '@/hooks/useAuth'
-import { profileSchema } from '@/lib'
+import { useProfileSchema } from '@/hooks/useAuthSchemas'
 import type { User } from '@/types/user'
 
 type Draft = { firstName: string; lastName: string; email: string }
@@ -22,6 +23,8 @@ type Draft = { firstName: string; lastName: string; email: string }
  * the last one home would win.
  */
 export function ProfileIdentitySection({ user }: { user: User }) {
+  const { t } = useTranslation()
+  const schema = useProfileSchema()
   const firstId = useId()
   const lastId = useId()
   const emailId = useId()
@@ -34,11 +37,11 @@ export function ProfileIdentitySection({ user }: { user: User }) {
     email: user.email,
   }
 
-  const parsed = profileSchema.safeParse(values)
-  const errors = parsed.success
+  const parsed = schema.safeParse(values)
+  const errors: Record<string, string> = parsed.success
     ? {}
     : Object.fromEntries(
-        parsed.error.issues.map((i) => [String(i.path[0]), i.message]),
+        parsed.error.issues.map((issue) => [String(issue.path[0]), issue.message]),
       )
 
   const changed =
@@ -70,28 +73,25 @@ export function ProfileIdentitySection({ user }: { user: User }) {
     `${values.firstName[0] ?? ''}${values.lastName[0] ?? ''}`.toUpperCase() || '?'
 
   return (
-    <SettingsCard title="Account">
+    <SettingsCard title={t('profile.account.title')}>
       <div className="flex items-center gap-4">
         <Avatar className="size-12">
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
-        <p className="text-sm text-tertiary-foreground">
-          Personal details. Workspace-level settings, including who else has access,
-          live in Workspace Settings.
-        </p>
+        <p className="text-sm text-tertiary-foreground">{t('profile.account.description')}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-2">
         <Field
           id={firstId}
-          label="First name"
+          label={t('profile.account.firstName')}
           value={values.firstName}
           error={errors.firstName}
           onChange={set('firstName')}
         />
         <Field
           id={lastId}
-          label="Last name"
+          label={t('profile.account.lastName')}
           value={values.lastName}
           error={errors.lastName}
           onChange={set('lastName')}
@@ -99,7 +99,7 @@ export function ProfileIdentitySection({ user }: { user: User }) {
         <div className="lg:col-span-2 flex flex-col gap-1.5">
           <Field
             id={emailId}
-            label="Email"
+            label={t('profile.account.email')}
             type="email"
             autoComplete="email"
             value={values.email}
@@ -111,11 +111,7 @@ export function ProfileIdentitySection({ user }: { user: User }) {
               only once the address is actually being changed, so it reads as a
               consequence of what they just did rather than ambient noise. */}
           {emailChanged && !errors.email && (
-            <p className="text-xs text-warning">
-              This is the address you log in with. It changes as soon as you save, and
-              nothing sends a confirmation to check it works — a typo here locks you out
-              at your next login.
-            </p>
+            <p className="text-xs text-warning">{t('profile.account.emailWarning')}</p>
           )}
         </div>
       </div>
@@ -150,8 +146,13 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={!!error}
+        aria-describedby={error ? `${id}-error` : undefined}
       />
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

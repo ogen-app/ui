@@ -118,8 +118,14 @@ creative brief and targeting that drive generation:
   (CON-57). Types can be system-provided or custom.
 - **Targeting** — `target_platforms` (each platform + the post types to produce).
 - **Grounding** — `use_assets` + `asset_ids` link Content-Bank material in.
-- **Planning metadata** — `start_date`/`end_date`, `estimated_post_count`,
-  `budget`/`currency`, `tags`.
+- **Planning metadata** — `start_date`/`end_date`, `budget`/`currency`, `tags`.
+- **Goal** (CON-182) — `estimated_post_count` posts per `goal_cadence` period
+  (`week`/`month`). A *rate*, not a total: the content plan multiplies it by the
+  periods the campaign's dates span, and the overview reports progress period by
+  period. It meant the whole-campaign total before CON-182.
+- **Schedule** (CON-181) — `publishing_time` + `timezone`, `publishing_days`
+  (the weekdays it publishes on), and `spread_minutes` of jitter either side of
+  the time. The content plan places every generated draft by these.
 - **Status** — `draft → active`.
 
 ### Content Plan (AI generation) 🔧
