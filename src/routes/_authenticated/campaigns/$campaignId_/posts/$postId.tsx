@@ -197,6 +197,14 @@ function PostEditorSurface({
   const previewOpen = activePanel === 'postPreview'
   const qualityOpen = activePanel === 'postQuality'
   const versionsOpen = activePanel === 'postVersions'
+  // Lazy, then sticky: the sidebar keeps every layer mounted for the
+  // crossfade, but the versions panel fetches its history on mount — portalled
+  // eagerly, merely opening a post costs a GET /versions nobody asked for.
+  // First open mounts it; after that it stays for the fade.
+  const [versionsWarm, setVersionsWarm] = useState(false)
+  useEffect(() => {
+    if (versionsOpen) setVersionsWarm(true)
+  }, [versionsOpen])
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
   const openRightPanel = useSettingsStore((s) => s.openRightPanel)
   const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
@@ -481,7 +489,8 @@ function PostEditorSurface({
             qualityHost,
           )}
 
-        {versionsHost &&
+        {versionsWarm &&
+          versionsHost &&
           createPortal(
             /* The live document, so the list can tell whether the newest
                snapshot still *is* the post's text or has been edited past.

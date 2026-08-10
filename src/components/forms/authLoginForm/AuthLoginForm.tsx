@@ -1,6 +1,6 @@
 import { type FormEvent } from 'react'
 import { Link, useRouter, useSearch } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -110,11 +110,13 @@ export function AuthLoginForm() {
           the typography we use for asides. Never conditional either — a field
           error must not be able to displace it. */}
       <p className="text-[13px] leading-5 text-primary-foreground">
-        {t('auth.login.forgotPrompt')}{' '}
-        <Link to="/auth/forgot" className="font-medium">
-          {t('auth.login.forgotAction')}
-        </Link>
-        .
+        {/* One key with the link inside it, not prompt + action + a glued-on
+            period: the full stop belongs to the sentence, and a translator has
+            to be able to move the link within it. */}
+        <Trans
+          i18nKey="auth.login.forgot"
+          components={{ resetLink: <Link to="/auth/forgot" className="font-medium" /> }}
+        />
       </p>
       <div className="w-full">
         <Button
