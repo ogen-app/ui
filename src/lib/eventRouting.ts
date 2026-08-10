@@ -5,7 +5,7 @@ import { campaignKey } from '@/hooks/useCampaigns'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
-import { postVersionsKey } from '@/lib/queryKeys'
+import { postNotesKey, postVersionsKey } from '@/lib/queryKeys'
 import type { AppEvent, EventSubject } from '@/types/events'
 
 /**
@@ -112,6 +112,7 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
     case 'post': {
       const post = { queryKey: postKey(subject.id) }
       const versions = { queryKey: postVersionsKey(subject.id) }
+      const notes = { queryKey: postNotesKey(subject.id) }
       switch (event.type) {
         // A background job wrote numbers no client could have known about.
         // The single genuinely new fact in the catalogue.
@@ -130,10 +131,16 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         // The post flow snapshots before it rewrites. Only reaches other
         // people's tabs — the actor's own copy is suppressed as a local run,
         // and handled where the turn settles (assistantStore.refreshSubject).
+        // The turn may also have written notes (CON-188) — its `createNote`
+        // tool persists as it runs, and a note-only turn changes neither the
+        // body nor the history. Listed unconditionally because the broadcast
+        // carries no record of which tools fired.
         case 'assistant_completed':
-          return [post, versions]
+          return [post, versions, notes]
         case 'assistant_failed':
-          return [post]
+          // Notes are written by the tool as it goes, not at the end, so a
+          // failed turn can still have left some behind.
+          return [post, notes]
         case 'assessment_completed':
         case 'assessment_failed':
           // Its own namespace, deliberately not nested under the post — see

@@ -172,6 +172,7 @@ const ACTION_LABELS: Record<AssistantAction, string> = {
   answered: 'Answered a question',
   declined: 'Declined the request',
   edited: 'Edited the post',
+  noted: 'Added a note',
   content_plan_generated: 'Generated a content plan',
   posts_generated: 'Added posts',
   brief_enriched: 'Improved the brief',

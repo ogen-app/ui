@@ -141,10 +141,15 @@ export function RightSidebar() {
         aria-expanded={assistantActive}
         style={{ zIndex: ZIndex.navigation }}
         className={cn(
-          'fixed bottom-6 size-12 rounded-none shadow-lg bg-primary justify-center',
+          // `size-12` and `bottom-4` are shared with PageActionBar, so the
+          // trigger and a page's commit bar sit on one line across the bottom
+          // of the app. 16px from the right is half a step inside the content
+          // gutter's 24px — the one deliberate break-out, because this is the
+          // only control on screen that belongs to the app and not the page.
+          'fixed bottom-4 size-12 rounded-none shadow-lg bg-primary justify-center',
           'transition-[right,color] duration-300 ease-in-out',
           // The logo mark inherits its fill via currentColor.
-          isOpen ? 'right-[calc(30rem+1.5rem)]' : 'right-6',
+          isOpen ? 'right-[calc(30rem+1rem)]' : 'right-4',
           assistantActive
             ? 'text-accent'
             : 'text-primary-foreground hover:text-accent',

@@ -3,8 +3,14 @@ export type ThreadSubject =
   | { kind: 'post'; postId: string; campaignId: string }
   | { kind: 'campaign'; campaignId: string }
 
-/** What the post assistant did with the instruction (CON-42). */
-export type PostAssistantAction = 'edited' | 'declined'
+/**
+ * What the post assistant did with the instruction (CON-42).
+ *
+ * `noted` means the turn wrote one or more notes and left the body alone
+ * (CON-188). A turn that did both reports `edited` and carries the notes
+ * alongside — so this value is "notes *only*", not "notes happened".
+ */
+export type PostAssistantAction = 'edited' | 'declined' | 'noted'
 
 /**
  * What the campaign assistant did (CON-112 and its sub-issues). Every action
