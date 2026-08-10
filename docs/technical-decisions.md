@@ -245,6 +245,52 @@ exports `selectActivePanel`, which is how components ask what's open —
 rather than opening it a frame later. Scope and `campaignId` are session-only:
 where you are is not a preference.
 
+## The posts table's sort order follows the user, not the device {#posts-table-sort}
+
+**Decision.** The posts list defaults to **schedule date, earliest first**, with
+unscheduled posts last. Whatever the user sorts by instead is stored server-side
+under `postsTable.<userId>` and applies to every campaign's list (CON-170).
+`usePostsTableSort` owns it; `VirtualTable` gained an optional controlled
+`sorting` / `onSortingChange` pair so a caller can persist an order the table
+knows nothing about.
+
+**Why schedule date.** A content calendar is read forwards — what goes out next.
+The previous default was title A–Z, which is the one order nobody plans in.
+Nulls sort last in *both* directions: "not scheduled yet" is not "scheduled at
+the beginning of time", which is what a raw `null` compares as. The column
+therefore maps `null → undefined` in its accessor so TanStack's
+`sortUndefined: 'last'` can take it.
+
+**Why the server, when the right sidebar's memory is in localStorage.** These
+look like the same problem and aren't. Panel memory is about the shape of one
+window — it is display noise, it is genuinely per-device, and putting it in the
+tenant-wide settings table would broadcast it to the workspace for no gain
+([#panel-memory](#panel-memory)). A sort order is a working habit: someone who
+reads this table newest-first wants that on their laptop and their desktop, and
+CON-170 asked for the `tenant_id : user_id_{KEY}` shape explicitly. The cost is
+the one documented at [#user-scoped-settings](#user-scoped-settings) — every
+key is readable by the whole workspace — and a column id is not sensitive.
+
+**Account-wide, not per campaign.** A per-campaign key would make the same list
+arrive sorted differently depending on which campaign you opened, which reads as
+a bug rather than a memory.
+
+**The table waits for it.** `isPending` holds the skeleton rows until the stored
+order has been read, rather than drawing the default and re-sorting a moment
+later. Rows jumping after paint looks broken, and on a long list it loses the
+row the reader was looking at.
+
+**Stored values are distrusted on the way in.** `parsePostsSort` drops entries
+that don't name a column in `SORTABLE_POST_COLUMNS` and falls back to the
+default, so renaming or retiring a column can't leave someone's saved preference
+pointing at a column that no longer exists. The parser is where this feature's
+tests are (`usePostsTableSort.test.ts`) — the stored blob is its only input the
+app doesn't control.
+
+**Where.** `hooks/usePostsTableSort.ts`, `components/tables/VirtualTable.tsx`
+(controlled sorting), `components/tables/postsTable/index.tsx`,
+`routes/_authenticated/campaigns/$campaignId/list.tsx`.
+
 ## The marketing-email opt-out gets its own endpoint {#email-preferences}
 
 **Decision.** The Profile switch reads and writes

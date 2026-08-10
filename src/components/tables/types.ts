@@ -42,7 +42,16 @@ export type VirtualTableProps<TData extends Record<string, unknown>> = {
   columnConfigs: ColumnConfig<TData>[]
   activeColumns: string[]
   className?: string
+  /** Seeds the table's own sorting state. Ignored when `sorting` is supplied. */
   initialSorting?: SortingState
+  /**
+   * Makes sorting controlled: the table renders this and reports changes
+   * through `onSortingChange` instead of keeping its own state. Both must be
+   * given together — for a table whose order is persisted somewhere the table
+   * itself knows nothing about.
+   */
+  sorting?: SortingState
+  onSortingChange?: (next: SortingState) => void
   enableFiltering?: boolean
   enableGlobalFilter?: boolean
   estimatedRowHeight?: number

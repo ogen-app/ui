@@ -106,8 +106,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **`/api/settings` is tenant-scoped, not user-scoped.** Every key is visible
   to the whole workspace via `GET /api/settings`. Personal preferences get
   their identity from the key (`userScopedKey` →
-  `calendar.<userId>.<campaignId>`); never put anything sensitive there. See
-  `docs/technical-decisions.md#user-scoped-settings`.
+  `calendar.<userId>.<campaignId>`, `postsTable.<userId>`); never put anything
+  sensitive there. Use it for working habits that should follow the user
+  between devices — the posts table's sort order
+  (`docs/technical-decisions.md#posts-table-sort`) — and localStorage for
+  per-device display state. See `docs/technical-decisions.md#user-scoped-settings`.
 - **Every user-facing string is a catalogue entry — never a literal in a
   component.** New UI adds its keys to `src/i18n/resources/en.ts` *and* its
   translation to every other catalogue, and reads them through `t()`. This
