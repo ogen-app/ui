@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
+import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -446,8 +447,24 @@ function PostEditorSurface({
                 onDelete={notes.remove}
               />
             </div>
+
+            {/* Scroll past the end. `PAGE_ACTION_BAR_INSET` above is only
+                clearance — the minimum that keeps the bar off the last card —
+                and it leaves the notes pinned against the bottom edge with
+                nowhere to go. This is the travel that lets the end of the post
+                come up to the middle of the screen, where you can read it. A
+                spacer rather than more padding: the two have different jobs,
+                and `cn` would merge one `pb-*` over the other and silently
+                drop the clearance. */}
+            <div className="h-40 shrink-0" aria-hidden />
           </div>
         </ScrollArea>
+
+        {/* The header's fade, mirrored: the post dissolves into the page on
+            its way under the action bar rather than being sliced off by the
+            bottom edge. Sibling of the scroll area, before the bar, so it
+            covers the document and nothing else. */}
+        <PageBottomFader />
 
         {/* Outside the ScrollArea on purpose — inside it the bar would scroll
             away with the post. Renders nothing once the post is terminal. */}
