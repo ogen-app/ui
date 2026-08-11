@@ -129,9 +129,12 @@ function ActionButton({
       )}
       // Only in-flight work disables the button; blockers are handled on click.
       disabled={pending}
-      // One spinner, on the move that is actually running — the step back
-      // beside it is disabled, which already says enough.
-      loading={pending && isPrimary}
+      // The spinner goes on the move the user actually pressed, which is not
+      // always the primary one: from `ready_for_publish` the step back to
+      // draft runs while SCHEDULE sits beside it, and spinning SCHEDULE there
+      // would name the wrong action. Nothing flips ahead of the response now,
+      // so this is the only thing telling the user their click landed.
+      loading={action.running}
       aria-disabled={action.blockers.length > 0 || undefined}
       onClick={() => runOrReport(action, onBlocked)}
     >
