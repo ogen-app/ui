@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { queryClient } from '@/lib/queryClient'
 import { postKey } from '@/hooks/usePost'
-import { postVersionsKey } from '@/lib/queryKeys'
+import { postNotesKey, postVersionsKey } from '@/lib/queryKeys'
 import { campaignKey } from '@/hooks/useCampaigns'
 import { describeTool, humanizeStep } from '@/lib/assistantTools'
 import { flushPendingSave } from '@/lib/pendingSaves'
@@ -16,7 +16,7 @@ import {
   streamPostAssistant,
   type AssistantStreamEvent,
 } from '@/services/api/assistant'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import type {
   AssistantStep,
   AssistantThread,
@@ -306,9 +306,12 @@ export const useAssistantStore = create<AssistantState>()(
           // A turn that lands while the user is elsewhere is "unread" — the
           // sidebar trigger carries the dot until they come back to it.
           const finish = (status: AssistantThread['status']) => {
-            const settings = useSettingsStore.getState()
+            // The *resolved* panel, not the remembered one: the assistant can
+            // be remembered as open while a post panel covers it, and nobody
+            // reading a quality report is watching a turn finish.
             const watching =
-              settings.activeRightPanel === 'assistant' && get().activeThreadId === threadId
+              selectActivePanel(useSettingsStore.getState()) === 'assistant' &&
+              get().activeThreadId === threadId
             patchThread(threadId, { status, runStartedAt: null, unread: !watching })
           }
 
@@ -503,6 +506,12 @@ async function refreshSubject(
   if (subject.kind === 'post') {
     const turns = thread?.turns ?? []
     const applied = turns[turns.length - 1]
+    // Unconditional, unlike the two below: the flow's `createNote` tool writes
+    // as it runs (CON-188), so a turn can leave notes behind whatever it did
+    // to the body — including one that only wrote notes, and one that failed
+    // after writing some. `beginLocalRun` suppresses the actor's own
+    // broadcast, so nothing else refreshes this for the person who ran it.
+    await queryClient.invalidateQueries({ queryKey: postNotesKey(subject.postId) })
     if (applied?.action === 'edited' || streamedContent) {
       await queryClient.invalidateQueries({ queryKey: postKey(subject.postId) })
       // The flow snapshots the post before it rewrites, so an edited turn

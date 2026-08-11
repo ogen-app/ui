@@ -9,7 +9,7 @@ import {
   selectAnyUnread,
   useAssistantStore,
 } from '@/stores/assistantStore'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { ZIndex } from '@/config/zIndex'
 import { cn } from '@/lib'
 
@@ -64,15 +64,21 @@ function PanelLayer({ active, children }: { active: boolean; children: ReactNode
 }
 
 /**
- * The app's right sidebar: a single slide-in container hosting the global AI
- * assistant and contextual panels (calendar settings, not-scheduled posts).
- * Only one panel is active at a time; the container stays open while panels
- * swap. Session-only state lives in the settings store; the floating trigger
- * in the bottom-right corner shifts left while the sidebar is open.
+ * The app's right sidebar: a single slide-in container hosting the AI assistant
+ * and the panels belonging to whichever screen is open (calendar settings,
+ * not-scheduled posts, the post editor's four). One panel shows at a time and
+ * the container stays open while they swap; the floating trigger in the
+ * bottom-right corner shifts left while it is open.
+ *
+ * What shows is *derived*, never stored: the settings store remembers one
+ * choice per screen, and `selectActivePanel` picks the one this screen can
+ * serve — so a remembered panel that belongs elsewhere falls back to the
+ * assistant instead of opening the rail onto an empty layer. See
+ * `lib/rightPanel`.
  */
 export function RightSidebar() {
-  const activePanel = useSettingsStore((s) => s.activeRightPanel)
-  const campaignId = useSettingsStore((s) => s.rightPanelCampaignId)
+  const activePanel = useSettingsStore(selectActivePanel)
+  const campaignId = useSettingsStore((s) => s.campaignId)
   const toggle = useSettingsStore((s) => s.toggleRightPanel)
   const close = useSettingsStore((s) => s.closeRightPanel)
 
@@ -135,10 +141,15 @@ export function RightSidebar() {
         aria-expanded={assistantActive}
         style={{ zIndex: ZIndex.navigation }}
         className={cn(
-          'fixed bottom-6 size-12 rounded-none shadow-lg bg-primary justify-center',
+          // `size-12` and `bottom-4` are shared with PageActionBar, so the
+          // trigger and a page's commit bar sit on one line across the bottom
+          // of the app. 16px from the right is half a step inside the content
+          // gutter's 24px — the one deliberate break-out, because this is the
+          // only control on screen that belongs to the app and not the page.
+          'fixed bottom-4 size-12 rounded-none shadow-lg bg-primary justify-center',
           'transition-[right,color] duration-300 ease-in-out',
           // The logo mark inherits its fill via currentColor.
-          isOpen ? 'right-[calc(30rem+1.5rem)]' : 'right-6',
+          isOpen ? 'right-[calc(30rem+1rem)]' : 'right-4',
           assistantActive
             ? 'text-accent'
             : 'text-primary-foreground hover:text-accent',

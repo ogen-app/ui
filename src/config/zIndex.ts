@@ -111,6 +111,15 @@ export const ZIndex = {
   sidebar: 150,
 
   /**
+   * Floating page action bar
+   * Used for: PageActionBar — the bottom-centre bar carrying a page's commit
+   * actions. Deliberately the same level as `navigation`, because it shares the
+   * bottom edge of the screen with the assistant trigger and the two must read
+   * as one plane rather than one floating over the other.
+   */
+  pageActionBar: 150,
+
+  /**
    * Upload tracker panel
    * Used for: UploadTracker - docked, non-blocking upload progress panel.
    * Sits above page content and chrome but below modals so an open modal can

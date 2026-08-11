@@ -1,18 +1,25 @@
-import { useEffect } from 'react'
 import { CalendarBlankIcon, GearSixIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useCampaignPosts } from '@/hooks/usePosts'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { usePanelScope } from '@/hooks/usePanelScope'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
 
 /**
  * Header icon set for the calendar section: settings and the not-scheduled
  * counter. The panels themselves live in the right sidebar (shared with the
- * AI assistant — one active at a time); these buttons only switch what it
- * shows. The active icon renders filled in the accent color.
+ * AI assistant — one at a time); these buttons only switch what it shows. The
+ * active icon renders filled in the accent color.
+ *
+ * This component exists exactly while the calendar does, so it is also where
+ * the calendar declares its panel scope: leaving hides the calendar's panels
+ * without forgetting which one was open, and coming back brings it straight
+ * back up.
  */
 export function CalendarHeaderActions({ campaignId }: { campaignId: string }) {
-  const activePanel = useSettingsStore((s) => s.activeRightPanel)
+  usePanelScope('calendar', campaignId)
+
+  const activePanel = useSettingsStore(selectActivePanel)
   const toggle = useSettingsStore((s) => s.toggleRightPanel)
   const { data: posts } = useCampaignPosts(campaignId)
   const unscheduledCount = (posts ?? []).filter((p) => !p.scheduled_at).length
@@ -20,28 +27,13 @@ export function CalendarHeaderActions({ campaignId }: { campaignId: string }) {
   const settingsActive = activePanel === 'calendarSettings'
   const unscheduledActive = activePanel === 'notScheduled'
 
-  // Leaving the calendar (or switching campaigns) closes calendar-owned
-  // panels; an open assistant stays open.
-  useEffect(
-    () => () => {
-      const s = useSettingsStore.getState()
-      if (
-        s.activeRightPanel === 'calendarSettings' ||
-        s.activeRightPanel === 'notScheduled'
-      ) {
-        s.closeRightPanel()
-      }
-    },
-    [campaignId],
-  )
-
   return (
     <div className="flex items-center gap-4">
       <Button
         variant="headerIcon"
         size="excluded"
         className={cn(settingsActive && 'text-accent hover:text-accent')}
-        onClick={() => toggle('calendarSettings', campaignId)}
+        onClick={() => toggle('calendarSettings')}
         aria-label="Calendar settings"
         aria-pressed={settingsActive}
       >
@@ -51,7 +43,7 @@ export function CalendarHeaderActions({ campaignId }: { campaignId: string }) {
         variant="headerIcon"
         size="excluded"
         className={cn('relative', unscheduledActive && 'text-accent hover:text-accent')}
-        onClick={() => toggle('notScheduled', campaignId)}
+        onClick={() => toggle('notScheduled')}
         aria-label="Not scheduled posts"
         aria-pressed={unscheduledActive}
       >

@@ -1,6 +1,8 @@
 import { memo, useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
+import type { SortingState } from '@tanstack/react-table'
 import { TrashIcon } from '@phosphor-icons/react'
+import { DEFAULT_POSTS_SORT } from '@/hooks/usePostsTableSort'
 import { VirtualTable } from '../VirtualTable'
 import { TextCell } from '../TableCells'
 import type { ColumnConfig } from '../types'
@@ -25,6 +27,13 @@ type PostsTableProps = {
   onToggleRow?: (id: string) => void
   /** Ticks every row, or clears them all when none are missing. */
   onToggleAll?: () => void
+  /**
+   * The order to render in, and where a header click reports to. Supplied
+   * together by a caller that persists the choice (`usePostsTableSort`);
+   * omitted, the table keeps its own order starting from the schedule date.
+   */
+  sorting?: SortingState
+  onSortingChange?: (next: SortingState) => void
 }
 
 function formatDate(dateStr: string | null): string {
@@ -63,6 +72,8 @@ function PostsTableComponent({
   selectedIds,
   onToggleRow,
   onToggleAll,
+  sorting,
+  onSortingChange,
 }: PostsTableProps) {
   const data = posts as PostRow[]
 
@@ -163,7 +174,12 @@ function PostsTableComponent({
       },
       {
         id: 'scheduled_at',
-        accessorKey: 'scheduled_at',
+        // `null` becomes `undefined` so `sortUndefined` can take it: an
+        // unscheduled post belongs at the bottom in both directions, not at
+        // the top of an ascending sort as the epoch-adjacent value it would
+        // otherwise compare as.
+        accessorFn: (row) => row.scheduled_at ?? undefined,
+        sortUndefined: 'last',
         header: 'Scheduled Date',
         size: 160,
         minSize: 130,
@@ -175,7 +191,8 @@ function PostsTableComponent({
       },
       {
         id: 'relative_time',
-        accessorKey: 'scheduled_at',
+        accessorFn: (row) => row.scheduled_at ?? undefined,
+        sortUndefined: 'last',
         header: 'When',
         size: 140,
         minSize: 110,
@@ -233,7 +250,9 @@ function PostsTableComponent({
       data={data}
       columnConfigs={columnConfigs}
       activeColumns={activeColumns}
-      initialSorting={[{ id: 'title', desc: false }]}
+      initialSorting={DEFAULT_POSTS_SORT}
+      sorting={sorting}
+      onSortingChange={onSortingChange}
       estimatedRowHeight={34}
       overscan={5}
       showFooter={false}

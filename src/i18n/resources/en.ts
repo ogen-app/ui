@@ -107,8 +107,9 @@ export const en = {
       emailPlaceholder: 'Enter your email',
       passwordLabel: 'Password',
       passwordPlaceholder: 'Enter password',
-      forgotPrompt: 'Forgot your password?',
-      forgotAction: 'Reset it here',
+      // `resetLink`, not `link`: `link` is an HTML void element, so the Trans
+      // parser self-closes it and the label falls outside the anchor.
+      forgot: 'Forgot your password? <resetLink>Reset it here</resetLink>.',
       noAccount: "Don't have an account?",
       signUpLink: 'Sign up',
     },
@@ -352,6 +353,10 @@ export const en = {
      *  "nothing changed" is a guarantee rather than a guess. */
     removalUnconfirmed:
       'The publishing provider didn’t confirm the removal, so nothing was changed. Try again in a moment.',
+  },
+
+  postsTable: {
+    sortSaveFailed: "Couldn't save the order you sorted by",
   },
 
   errors: {

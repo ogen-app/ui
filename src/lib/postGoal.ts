@@ -47,14 +47,45 @@ export function normalizeGoalCadence(value: string | null | undefined): GoalCade
  * `T00:00:00` (see `toISODateTime`), the same reading `campaignReadiness` uses
  * for the campaign window.
  */
+/**
+ * The date's own digits, no clock involved. `Date.parse` would read a
+ * `T00:00:00` value in the browser's zone, and then a range crossing a DST
+ * shift is short one hour's worth of day, and local midnight east of UTC
+ * lands `getUTCMonth` in the previous month.
+ */
+function calendarParts(value: string): { y: number; m: number; d: number } | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+  if (!match) return null
+  const y = Number(match[1])
+  const m = Number(match[2])
+  const d = Number(match[3])
+  // Round-trip through UTC to reject dates the calendar doesn't have —
+  // Date.UTC would silently roll "2026-02-31" into March and the range would
+  // count a month that was never asked for.
+  const probe = new Date(Date.UTC(y, m - 1, d))
+  if (
+    probe.getUTCFullYear() !== y ||
+    probe.getUTCMonth() !== m - 1 ||
+    probe.getUTCDate() !== d
+  ) {
+    return null
+  }
+  return { y, m, d }
+}
+
 export function periodsInRange(
   cadence: GoalCadence,
   startDate: string | null,
   endDate: string | null,
 ): number {
-  const start = startDate ? Date.parse(startDate) : NaN
-  const end = endDate ? Date.parse(endDate) : NaN
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return 1
+  const from = startDate ? calendarParts(startDate) : null
+  const to = endDate ? calendarParts(endDate) : null
+  if (!from || !to) return 1
+
+  // Both midnights UTC by construction, so the difference is whole days.
+  const start = Date.UTC(from.y, from.m - 1, from.d)
+  const end = Date.UTC(to.y, to.m - 1, to.d)
+  if (end < start) return 1
 
   if (cadence === 'week') {
     const days = Math.floor((end - start) / DAY_MS) + 1
@@ -64,12 +95,7 @@ export function periodsInRange(
   // Calendar months the campaign runs in, not 30-day blocks: a monthly goal is
   // read off a calendar, so Jan 1 – Feb 15 is two months' worth even though it
   // is barely one month long.
-  const from = new Date(start)
-  const to = new Date(end)
-  const months =
-    (to.getUTCFullYear() - from.getUTCFullYear()) * 12 +
-    (to.getUTCMonth() - from.getUTCMonth()) +
-    1
+  const months = (to.y - from.y) * 12 + (to.m - from.m) + 1
   return Math.max(1, months)
 }
 

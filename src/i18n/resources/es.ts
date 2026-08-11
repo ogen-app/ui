@@ -85,8 +85,7 @@ export const es: Translation = {
       emailPlaceholder: 'Introduce tu correo electrónico',
       passwordLabel: 'Contraseña',
       passwordPlaceholder: 'Introduce la contraseña',
-      forgotPrompt: '¿Has olvidado tu contraseña?',
-      forgotAction: 'Restablécela aquí',
+      forgot: '¿Has olvidado tu contraseña? <resetLink>Restablécela aquí</resetLink>.',
       noAccount: '¿Aún no tienes cuenta?',
       signUpLink: 'Regístrate',
     },
@@ -321,6 +320,10 @@ export const es: Translation = {
     alreadyDisconnected: 'Esta cuenta ya está desconectada.',
     removalUnconfirmed:
       'El proveedor de publicación no ha confirmado la eliminación, así que no se ha cambiado nada. Inténtalo de nuevo en un momento.',
+  },
+
+  postsTable: {
+    sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
   },
 
   errors: {

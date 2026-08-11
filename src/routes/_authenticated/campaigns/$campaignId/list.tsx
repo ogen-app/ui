@@ -10,6 +10,7 @@ import {
   useDeletePost,
   useUpdatePost,
 } from "@/hooks/usePosts.ts";
+import { usePostsTableSort } from "@/hooks/usePostsTableSort";
 import type { BulkPlan } from "@/lib/bulkPostEdits";
 import { postToPayload } from "@/services/api/posts";
 import type { Post } from "@/types/posts";
@@ -26,10 +27,25 @@ const NO_POSTS: Post[] = [];
 function CampaignListView() {
   const { campaignId } = Route.useParams();
   const { data: posts, isLoading } = useCampaignPosts(campaignId);
-  // `mutate` is stable, so the columns aren't rebuilt on every render.
-  const { mutate: handleDelete } = useDeletePost(campaignId);
-  const { mutate: updatePost, isPending: applying } = useUpdatePost(campaignId);
+  // `mutateAsync` is stable, so the columns aren't rebuilt on every render.
+  const { mutateAsync: deletePost, isPending: deleting } = useDeletePost(campaignId);
+  const { mutateAsync: updatePost, isPending: applying } = useUpdatePost(campaignId);
+  // The single-row delete: fire-and-forget on purpose, and caught because the
+  // mutation rethrows after its own error toast.
+  const handleDelete = useCallback(
+    (id: string) => void deletePost(id).catch(() => {}),
+    [deletePost],
+  );
   const addPost = useAddPost(campaignId);
+
+  // The order is the user's, stored server-side and shared by every campaign's
+  // list (CON-170). Until it arrives the table draws skeleton rows rather than
+  // the default order, so it never sorts itself again under the reader.
+  const {
+    sorting,
+    setSorting,
+    isPending: sortPending,
+  } = usePostsTableSort();
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -63,30 +79,41 @@ function CampaignListView() {
 
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
+  // Both bulk actions resolve with the number of requests that failed, so the
+  // bar can report what actually happened instead of announcing success the
+  // moment the requests leave. Each failure also raises its own error toast
+  // through the mutation's `meta`.
   const applyPlan = useCallback(
-    (plan: BulkPlan) => {
-      for (const { post, scheduled_at } of plan.changes) {
-        updatePost({
-          id: post.id,
-          payload: { ...postToPayload(post), scheduled_at },
-        });
-      }
+    async (plan: BulkPlan) => {
+      const results = await Promise.allSettled(
+        plan.changes.map(({ post, scheduled_at }) =>
+          updatePost({
+            id: post.id,
+            payload: { ...postToPayload(post), scheduled_at },
+          }),
+        ),
+      );
+      return results.filter((r) => r.status === "rejected").length;
     },
     [updatePost],
   );
 
   const deletePosts = useCallback(
-    (targets: Post[]) => {
-      for (const post of targets) handleDelete(post.id);
-      // Only the deleted ones leave the selection; anything the action
-      // refused stays ticked, so it is still there to act on.
+    async (targets: Post[]) => {
+      const results = await Promise.allSettled(
+        targets.map((post) => deletePost(post.id)),
+      );
+      const deleted = targets.filter((_, i) => results[i].status === "fulfilled");
+      // Only the posts that actually went leave the selection; anything the
+      // action refused — or that failed — stays ticked, still there to act on.
       setSelectedIds((prev) => {
         const next = new Set(prev);
-        for (const post of targets) next.delete(post.id);
+        for (const post of deleted) next.delete(post.id);
         return next;
       });
+      return targets.length - deleted.length;
     },
-    [handleDelete],
+    [deletePost],
   );
 
   return (
@@ -97,7 +124,9 @@ function CampaignListView() {
           onClear={clearSelection}
           onApply={applyPlan}
           onDelete={deletePosts}
-          busy={applying}
+          // Both bulk actions: a delete sweep in flight must hold the bar just
+          // like an update sweep, or a second action can race the first.
+          busy={applying || deleting}
         />
       ) : (
         <PostsToolbar
@@ -128,10 +157,12 @@ function CampaignListView() {
             emptyStateMessage="No posts yet"
             emptyStateActionLabel="Add Post"
             onEmptyStateAction={addPost}
-            loading={isLoading}
+            loading={isLoading || sortPending}
             selectedIds={selectedIds}
             onToggleRow={toggleRow}
             onToggleAll={toggleAll}
+            sorting={sorting}
+            onSortingChange={setSorting}
           />
         </div>
       )}

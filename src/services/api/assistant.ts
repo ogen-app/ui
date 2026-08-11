@@ -89,6 +89,16 @@ function orderHistory(rows: AssistantHistoryMessage[] | null): AssistantHistoryM
 }
 
 /**
+ * Coerces a stored or streamed action to the post enum. Every action the
+ * backend can emit must be listed — an omission here doesn't fail loudly, it
+ * relabels the turn "declined" and the reply banner lies about what happened
+ * (a `noted` turn saying "No changes made" while its note sits on the page).
+ */
+function postAction(value: unknown): PostAssistantAction {
+  return value === 'edited' || value === 'noted' ? value : 'declined'
+}
+
+/**
  * Parses a post-assistant history row's `content`. Older or malformed rows
  * fall back to being shown as plain explanation text rather than failing the
  * load.
@@ -98,7 +108,7 @@ export function parseModelContent(content: string): AssistantResult {
   if (typeof parsed.explanation === 'string') {
     return {
       explanation: parsed.explanation,
-      action: parsed.action === 'edited' ? 'edited' : 'declined',
+      action: postAction(parsed.action),
       saveVersion: parsed.saveVersion === true,
       versionNote: typeof parsed.versionNote === 'string' ? parsed.versionNote : undefined,
     }
@@ -146,7 +156,7 @@ export function streamPostAssistant(
             explanation: str(parsed.explanation),
             updatedContent:
               typeof parsed.updatedContent === 'string' ? parsed.updatedContent : undefined,
-            action: parsed.action === 'edited' ? 'edited' : 'declined',
+            action: postAction(parsed.action),
             saveVersion: parsed.saveVersion === true,
             versionNote: typeof parsed.versionNote === 'string' ? parsed.versionNote : undefined,
           },
