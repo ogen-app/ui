@@ -26,11 +26,14 @@ export function PostPublishStatus({
   title?: string
 }) {
   return (
-    // `role="status"` without a live region: the phrase changes on a timer, and
-    // announcing "in 3 hours … in 2 hours" through the afternoon would be
-    // noise. A reader picks it up when they reach the bar.
+    // `role="status"` implies `aria-live="polite"`, and the phrase changes on
+    // a timer — announcing "in 3 hours … in 2 hours" through the afternoon
+    // would be noise. The explicit `aria-live="off"` keeps the role (it names
+    // the span, so `aria-label` carries the full sentence) while a reader
+    // only picks the text up when they reach the bar.
     <span
       role="status"
+      aria-live="off"
       title={title}
       aria-label={title}
       className="flex min-w-0 items-center gap-1.5 px-1 text-xs text-tertiary-foreground"

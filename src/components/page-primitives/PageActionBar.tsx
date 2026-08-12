@@ -198,10 +198,13 @@ function BarSurface({
   }, [phase])
 
   // Anything that can change the content's natural width re-opens the
-  // question of whether the long status still fits.
+  // question of whether the long status still fits. The blocker is part of
+  // that width: it comes and goes without the action set changing (clear the
+  // date on a ready post and the row grows), and a surface stuck at the old
+  // width would clip the primary button.
   useLayoutEffect(() => {
     setMeasuring(true)
-  }, [shownKey, shown.status?.key])
+  }, [shownKey, shown.status?.key, shown.blocker])
 
   /**
    * Both passes are layout effects, so the browser never paints between them:
@@ -223,7 +226,7 @@ function BarSurface({
     const el = innerRef.current
     if (!el || measuring) return
     if (el.scrollWidth > 0) setWidth(el.scrollWidth)
-  }, [measuring, shownKey, compact, shown.status?.key])
+  }, [measuring, shownKey, compact, shown.status?.key, shown.blocker])
 
   // Measured against the long form, always: the short one is narrower by
   // definition, so measuring *it* would report that the long one now fits and
@@ -247,7 +250,10 @@ function BarSurface({
         className={cn(
           'flex h-12 w-max items-center gap-2 px-4',
           'transition-opacity duration-100 motion-reduce:transition-none',
-          phase === 'idle' ? 'opacity-100' : 'opacity-0',
+          // Faded doesn't mean gone: during the hand-off the old buttons are
+          // still in the tree at opacity 0, and the new set arrives before it
+          // is revealed. Neither may take a click the user can't see landing.
+          phase === 'idle' ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       >
         {shown.blocker && (

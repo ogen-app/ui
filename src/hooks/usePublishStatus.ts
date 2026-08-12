@@ -103,6 +103,15 @@ function useLiveTiming(post: Post): PublishTiming | null {
   // all, rather than one waking up to recompute nothing.
   const refreshMs = timing ? countdownRefreshMs(timing.countdown.unit) : null
 
+  // The clock only ticks while a countdown is showing, so it is stale by
+  // however long the editor sat on a draft — schedule a post after 45 minutes
+  // of editing and the first sentence would be computed against a `now` from
+  // 45 minutes ago, with the correcting tick up to a full period away. Any
+  // change to what is being counted restarts the clock from the real time.
+  useEffect(() => {
+    setNow(Date.now())
+  }, [post.id, post.status, post.scheduled_at])
+
   useEffect(() => {
     if (refreshMs === null) return
     const id = setInterval(() => setNow(Date.now()), refreshMs)
