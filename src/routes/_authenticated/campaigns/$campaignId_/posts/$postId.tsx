@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
+import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -42,6 +43,7 @@ import { usePostNotes } from '@/hooks/usePostNotes'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
+import { usePostArrowNavigation } from '@/hooks/usePostNavigation'
 import { usePublishStatus } from '@/hooks/usePublishStatus'
 import { cn } from '@/lib'
 import { resolvePublishMethod } from '@/lib/autoPublish'
@@ -90,6 +92,14 @@ function PostPage() {
 
   return (
     <PostEditorSurface
+      // A different post is a different document, not new props for this one.
+      // The surface holds page-local state that only makes sense against the
+      // post it was opened on — the title draft, the auto/manual choice, the
+      // blocked-action flash — and until the arrow keys (`usePostArrowNavigation`)
+      // there was no way to reach one post from another without the loader
+      // unmounting it in between. Arriving on a post already in cache skips
+      // that loader entirely, so the identity has to be stated.
+      key={postId}
       doc={doc}
       changeDoc={changeDoc}
       transitionStatus={transitionStatus}
@@ -184,6 +194,9 @@ function PostEditorSurface({
   // Null unless something really is going to publish the post — see
   // `publishTiming` for which statuses those are.
   const publishStatus = usePublishStatus(doc)
+  // ← / → step to the neighbouring post, unless the keypress belongs to a
+  // field the user is typing in.
+  usePostArrowNavigation(campaignId, doc.id)
   // The allowlist decides whether SCHEDULE lands on auto or manual, so the
   // status actions wait for it too — scheduling a post the wrong way is not
   // something the user can see happening, let alone undo.
@@ -433,8 +446,24 @@ function PostEditorSurface({
                 onDelete={notes.remove}
               />
             </div>
+
+            {/* Scroll past the end. `PAGE_ACTION_BAR_INSET` above is only
+                clearance — the minimum that keeps the bar off the last card —
+                and it leaves the notes pinned against the bottom edge with
+                nowhere to go. This is the travel that lets the end of the post
+                come up to the middle of the screen, where you can read it. A
+                spacer rather than more padding: the two have different jobs,
+                and `cn` would merge one `pb-*` over the other and silently
+                drop the clearance. */}
+            <div className="h-40 shrink-0" aria-hidden />
           </div>
         </ScrollArea>
+
+        {/* The header's fade, mirrored: the post dissolves into the page on
+            its way under the action bar rather than being sliced off by the
+            bottom edge. Sibling of the scroll area, before the bar, so it
+            covers the document and nothing else. */}
+        <PageBottomFader />
 
         {/* Outside the ScrollArea on purpose — inside it the bar would scroll
             away with the post. Renders nothing once the post is terminal. */}

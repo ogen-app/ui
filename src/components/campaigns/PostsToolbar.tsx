@@ -93,6 +93,10 @@ export function PostsToolbar({
               size="defaultIcon"
               onClick={() => onAnchorChange(addDays(anchor, -7))}
               aria-label="Previous week"
+              // The calendar binds the arrow keys to these two buttons; saying
+              // so here is what puts the shortcut in front of a screen-reader
+              // user, who has nothing else to discover it from.
+              aria-keyshortcuts="ArrowLeft"
             >
               <CaretLeftIcon />
             </Button>
@@ -108,6 +112,7 @@ export function PostsToolbar({
               size="defaultIcon"
               onClick={() => onAnchorChange(addDays(anchor, 7))}
               aria-label="Next week"
+              aria-keyshortcuts="ArrowRight"
             >
               <CaretRightIcon />
             </Button>

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import {
   ArrowUUpLeftIcon,
   CalendarPlusIcon,
@@ -56,14 +56,6 @@ export function PostStatusActionBar({
   onBlocked,
   status,
 }: Props) {
-  // Which move is running, known only here: the parent's `pending` is one flag
-  // for the whole machine, and pinning the spinner to the primary would show
-  // it spinning while the step back beside it is what's actually working.
-  const [running, setRunning] = useState<string | null>(null)
-  useEffect(() => {
-    if (!pending) setRunning(null)
-  }, [pending])
-
   // Still gated on there being a move to make, `status` or not. The statuses
   // that carry a countdown all have an outgoing user edge (a scheduled post
   // can be cancelled, a manual one verified), so this never hides one — and a
@@ -96,8 +88,6 @@ export function PostStatusActionBar({
           action={action}
           isPrimary={action === primary}
           pending={pending}
-          running={pending && running === action.next}
-          onRun={() => setRunning(action.next)}
           onBlocked={onBlocked}
         />
       ))}
@@ -115,15 +105,11 @@ function ActionButton({
   action,
   isPrimary,
   pending,
-  running,
-  onRun,
   onBlocked,
 }: {
   action: PostStatusAction
   isPrimary: boolean
   pending: boolean
-  running: boolean
-  onRun: () => void
   onBlocked?: (blockers: PostStatusBlocker[]) => void
 }) {
   const destructive = action.intent === 'destructive'
@@ -143,11 +129,14 @@ function ActionButton({
       )}
       // Only in-flight work disables the button; blockers are handled on click.
       disabled={pending}
-      // One spinner, on the move that was actually clicked — the others are
-      // disabled, which already says enough.
-      loading={running}
+      // The spinner goes on the move the user actually pressed, which is not
+      // always the primary one: from `ready_for_publish` the step back to
+      // draft runs while SCHEDULE sits beside it, and spinning SCHEDULE there
+      // would name the wrong action. Nothing flips ahead of the response now,
+      // so this is the only thing telling the user their click landed.
+      loading={action.running}
       aria-disabled={action.blockers.length > 0 || undefined}
-      onClick={() => runOrReport(action, onRun, onBlocked)}
+      onClick={() => runOrReport(action, onBlocked)}
     >
       {iconFor(action)}
       <span>{action.buttonLabel}</span>
@@ -183,13 +172,11 @@ function iconFor(action: PostStatusAction): ReactNode {
 
 function runOrReport(
   action: PostStatusAction,
-  onRun: () => void,
   onBlocked?: (blockers: PostStatusBlocker[]) => void,
 ) {
   if (action.blockers.length > 0) {
     onBlocked?.(action.blockers)
     return
   }
-  onRun()
   void action.run()
 }

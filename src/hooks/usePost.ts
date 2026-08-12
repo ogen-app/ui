@@ -170,6 +170,16 @@ export function usePost(postId: string): UsePostResult {
   // to surface failures (invalid edge, missing platform) immediately.
   // We merge any pending autosave changes into the same PUT so a
   // half-typed title isn't lost when the user clicks "Schedule".
+  //
+  // The new status is sent but never written to the cache ahead of the
+  // response — the badge is what the *server* says the post is. A status is
+  // not a field like a title, where showing the typed value early is simply
+  // showing what the user did: it is a claim about what the system will now
+  // do to the post, and the server can refuse (invalid edge, missing
+  // platform, a publisher that won't take it). Every other action here —
+  // `schedule`, `cancelScheduled`, `verifyExternal` — already waits for that
+  // answer; this one no longer pretends. The caller's `pending` flag is what
+  // covers the wait, not a badge that might have to be taken back.
   const transitionStatus = useCallback(
     async (next: PostStatus): Promise<TransitionStatusResult> => {
       if (timerRef.current) {
@@ -180,12 +190,14 @@ export function usePost(postId: string): UsePostResult {
       if (!base) return { ok: false, error: 'Post not loaded' }
       pendingRef.current = null
       setSaving(false)
-      const optimistic = structuredClone(base)
-      optimistic.status = next
+      // The payload, not a cache entry: `base` already carries the user's
+      // typed edits (changeDoc writes them through), so the editor keeps
+      // showing their words while only the status waits.
+      const requested = structuredClone(base)
+      requested.status = next
       genRef.current += 1
-      qc.setQueryData(postKey(postId), optimistic)
       try {
-        const saved = await updatePost(postId, postToPayload(optimistic))
+        const saved = await updatePost(postId, postToPayload(requested))
         qc.setQueryData(postKey(postId), saved)
         return { ok: true, post: saved }
       } catch (err) {
