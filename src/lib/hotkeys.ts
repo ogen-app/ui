@@ -77,6 +77,10 @@ export function shouldIgnoreHotkey(event: KeyboardEvent): boolean {
   // a discrete step, not something to scrub through at the OS repeat rate,
   // which on a held arrow key is thirty navigations a second.
   if (event.repeat) return true
+  // Mid-IME-composition arrows move the candidate selection. The target check
+  // below covers this in practice (composition happens in editable elements),
+  // but the event says so directly, and the direct answer is the reliable one.
+  if (event.isComposing) return true
   // A shortcut is the unmodified key. Modifiers belong to the browser and the
   // OS — Cmd+← is Back on a Mac, and stealing it would be a plain bug.
   if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
