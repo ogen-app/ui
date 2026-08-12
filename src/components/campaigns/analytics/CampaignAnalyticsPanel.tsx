@@ -134,7 +134,7 @@ function Engagement({ data }: { data: CampaignAnalytics<Post> }) {
         <p className="text-sm text-secondary-foreground">
           {data.coverage.published === 0
             ? "Nothing has been published yet, so there is nothing to measure."
-            : "None of this campaign's published posts have been measured yet. Numbers usually appear within a few hours of publishing."}
+            : "None of this campaign's published posts have been measured yet. Numbers appear here once the platforms report back."}
         </p>
       </OverviewCard>
     );
@@ -188,7 +188,7 @@ export function CoverageNote({ data }: { data: CampaignAnalytics<Post> }) {
     <p className="text-xs text-tertiary-foreground">
       {complete
         ? `Across all ${published} published ${published === 1 ? "post" : "posts"}`
-        : `Across ${measured} of ${published} published posts — the rest haven't been measured yet`}
+        : `Across ${measured} of ${published} published posts — the rest aren't counted here yet`}
       {data.lastRefreshedAt && ` · updated ${relativeTime(data.lastRefreshedAt)}`}
     </p>
   );

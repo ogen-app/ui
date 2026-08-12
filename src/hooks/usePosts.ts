@@ -3,7 +3,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useMemo } from 'react'
 import { createPost, deletePost, listCampaignPosts, updatePost } from '@/services/api/posts'
-import { CAMPAIGN_SUMMARIES_KEY, campaignOverviewKey } from '@/hooks/useCampaigns'
+import { CAMPAIGN_SUMMARIES_KEY } from '@/hooks/useCampaigns'
 import { atDefaultTime } from '@/lib/postSchedule'
 import { selectStreamedPosts, useAssistantStore } from '@/stores/assistantStore'
 import type { StreamedPost } from '@/types/assistant'
@@ -12,17 +12,13 @@ import type { Post, PostPayload } from '@/types/posts'
 export const campaignPostsKey = (campaignId: string) => ['campaigns', campaignId, 'posts'] as const
 
 /**
- * The server's overview is a roll-up of these posts, so it goes stale with
- * them. It sits beside this key rather than under it, so invalidating the
- * post list alone leaves the Overview's distribution showing the old totals.
- *
- * The Campaigns-list summaries (CON-152) are a roll-up of the same posts and
- * sit beside them too — across *all* campaigns, so one workspace-wide key
- * covers every card at once.
+ * The Campaigns-list summaries (CON-152) are a roll-up of these posts and sit
+ * beside this key rather than under it — across *all* campaigns, so one
+ * workspace-wide key covers every card at once. Invalidating the post list
+ * alone would leave the cards showing the old totals.
  */
 export function invalidateCampaignPosts(qc: QueryClient, campaignId: string): void {
   qc.invalidateQueries({ queryKey: campaignPostsKey(campaignId) })
-  qc.invalidateQueries({ queryKey: campaignOverviewKey(campaignId) })
   qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })
 }
 

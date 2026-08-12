@@ -101,7 +101,7 @@ export function AnalyticsModuleView({
         <p className="text-sm text-secondary-foreground">
           {data.coverage.published === 0
             ? "Once this campaign starts publishing, what each post earns shows up here."
-            : "The platforms haven't reported on this campaign's posts yet — this usually takes a few hours."}
+            : "The platforms haven't reported on this campaign's posts yet — numbers show up here once they do."}
         </p>
       </OverviewCard>
     );

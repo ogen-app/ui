@@ -51,13 +51,28 @@ export async function listPostAnalytics(
 }
 
 /**
+ * The exact message the Go handler sends with its no-analytics-database 503
+ * (`handlers/analytics.go`, CON-125 Track B). Matched verbatim: the status
+ * alone can't be trusted, because a proxy or gateway also answers 503 during
+ * a redeploy — and that body never parses to this message, so it falls
+ * through to the request's fallback text.
+ */
+const UNAVAILABLE_MESSAGE = "analytics is not available";
+
+/**
  * Whether a failure means "this deployment has no analytics database" rather
  * than "the request went wrong".
  *
  * The server fails open with a 503 when `ANALYTICS_DSN` is unset (CON-125
  * Track B), which is a normal configuration, not a fault — the UI explains it
- * instead of reporting an error the user can't act on.
+ * instead of reporting an error the user can't act on. Anything else — a
+ * transient 503 from the platform included — is a real failure and must be
+ * reported as one, not presented as a permanent workspace state.
  */
 export function isAnalyticsUnavailable(error: unknown): boolean {
-  return error instanceof ApiError && error.status === 503;
+  return (
+    error instanceof ApiError &&
+    error.status === 503 &&
+    error.message === UNAVAILABLE_MESSAGE
+  );
 }
