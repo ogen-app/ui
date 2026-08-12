@@ -6,15 +6,18 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { FloppyDiskIcon } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
-import { toast } from '@/stores/toastStore'
+import { PageActionBar } from '@/components/page-primitives/PageActionBar'
 
 /**
  * Settings pages have no per-row edit buttons — fields are edited inline and
- * the pending changes are applied together by one Save button in the page
- * header. Each editable field registers its dirtiness and a save callback
- * here; the header button shows up as soon as anything is dirty.
+ * the pending changes are applied together by one Save button. Each editable
+ * field registers its dirtiness and a save callback here; the button shows up
+ * as soon as anything is dirty.
  */
 
 type SaveEntry = {
@@ -61,17 +64,12 @@ export function SettingsSaveProvider({ children }: { children: ReactNode }) {
     const pending = Object.values(entries).filter((e) => e.dirty)
     if (pending.length === 0) return
     setSaving(true)
-    void Promise.allSettled(pending.map((e) => e.save())).then((results) => {
+    // `allSettled`, and nothing done with the rejections: every registered
+    // save writes through a mutation, and those report their own refusal with
+    // the server's reason (CON-164). A second, vaguer "Unable to save
+    // settings" on top of that would only bury the specific one.
+    void Promise.allSettled(pending.map((e) => e.save())).then(() => {
       setSaving(false)
-      const failed = results.find(
-        (r): r is PromiseRejectedResult => r.status === 'rejected'
-      )
-      if (failed) {
-        toast.error('Unable to save settings', {
-          description:
-            failed.reason instanceof Error ? failed.reason.message : undefined,
-        })
-      }
     })
   }, [entries])
 
@@ -101,19 +99,40 @@ export function useRegisterSettingsSave(
   useEffect(() => () => unregister(id), [id, unregister])
 }
 
-/** Header Save button — hidden until some registered field is dirty. */
-export function SettingsSaveButton() {
+/**
+ * The page's commit, on the floating bottom bar — hidden until some registered
+ * field is dirty.
+ *
+ * It used to appear and disappear in the top-right corner as you typed, which
+ * made the header jitter and put a commit next to whatever else that corner
+ * held. Down here it is the only thing on its surface, and appearing *is* the
+ * status: no bar means nothing to save.
+ *
+ * Needs a positioned ancestor that is the content column, not the page's
+ * scroller — see `PageActionBar`. Pages using it must also leave
+ * `PAGE_ACTION_BAR_INSET` at the bottom of their content.
+ */
+export function SettingsSaveBar() {
+  const { t } = useTranslation()
   const { dirty, saving, saveAll } = useSettingsSave()
   if (!dirty && !saving) return null
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      className="uppercase"
-      onClick={saveAll}
-      loading={saving}
-    >
-      Save
-    </Button>
+    <PageActionBar>
+      <Button
+        type="button"
+        // `ghost` — no fill, no border. See PostStatusActionBar: the bar is the
+        // surface, and anything drawn inside it is text.
+        variant="ghost"
+        size="sm"
+        className="text-primary-foreground"
+        onClick={saveAll}
+        loading={saving}
+      >
+        <FloppyDiskIcon />
+        {/* CSS casing, not literal caps: the label is translated (CON-174) and
+            the literal-caps rule is for irreversible actions, which this isn't. */}
+        <span className="uppercase">{t('common.save')}</span>
+      </Button>
+    </PageActionBar>
   )
 }

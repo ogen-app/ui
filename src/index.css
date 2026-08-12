@@ -1,65 +1,120 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* Using Zalando Sans and Space Grotesk fonts */
+/* One typeface, two widths of it: Geist for everything, Geist Mono for figures.
+   Both are Vercel's, both OFL-1.1 (licences alongside the files), and both are
+   vendored rather than fetched from a CDN — same rule the fonts they replace
+   followed.
+
+   Geist replaces three faces with one. Zalando Sans Semi Expanded is gone
+   deliberately: `--font-display` now points at plain Geist, so headings differ
+   from body text by size and weight rather than by width. Space Grotesk is gone
+   from `--font-grotesk` too, which means the uppercase label voice collapses
+   into the body voice — those labels still read as labels because they are
+   uppercase and tracked, not because they are a different face.
+
+   Latin and Latin-Extended only. Both carry the full 100-900 weight axis in one
+   file, so every weight the app uses costs nothing extra. `unicode-range` is
+   what keeps the ext subset off the wire until a page actually needs it. */
 
 @font-face {
-  font-family: 'Zalando Sans';
-  src: url('./assets/fonts/ZalandoSans/ZalandoSans-VariableFont_wdth,wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-stretch: 75% 125%;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Space Grotesk';
-  src: url('./assets/fonts/SpaceGrotesk/SpaceGrotesk-VariableFont_wght.ttf') format('truetype');
-  font-weight: 300 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Zalando Sans Semi Expanded';
-  src: url('./assets/fonts/ZalandoSans/ZalandoSansSemiExpanded-VariableFont_wght.ttf')
-    format('truetype');
+  font-family: 'Geist';
+  src: url('./assets/fonts/Geist/geist-latin-wght-normal.woff2') format('woff2-variations');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('./assets/fonts/Geist/geist-latin-ext-wght-normal.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('./assets/fonts/GeistMono/geist-mono-latin-wght-normal.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('./assets/fonts/GeistMono/geist-mono-latin-ext-wght-normal.woff2')
+    format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
 }
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --white: oklch(1 0 0);
-  --black: oklch(0.1957 0 0);
-  /* Custom Palette - Beige Scale */
-  --beige-50: oklch(0.9796 0.0017 84.56);
-  --beige-100: oklch(0.9584 0.0029 84.56);
-  --beige-200: oklch(0.9312 0.0029 84.56);
-  --beige-300: oklch(0.901 0.0058 84.56);
-  --beige-400: oklch(0.8558 0.0064 75.4);
-  --beige-500: oklch(0.8221 0.0044 56.36);
-  --beige-600: oklch(0.6417 0.01 78.26);
-  --beige-700: oklch(0.5352 0.0108 62.45);
-  --beige-800: oklch(0.4252 0.0108 62.45);
-  --beige-900: oklch(0.3132 0 0);
+  /* Ink, cooled to agree with the ramp. A neutral black on cool greys reads
+     faintly brown by comparison — the same trap the ramp is here to get out
+     of, just at the other end. */
+  --black: oklch(0.1957 0.012 262);
 
-  /* Fonts */
+  /* Custom Palette — Grey Scale, blue-cast.
+
+     Every lightness step is the one the beige ramp used, to the fourth decimal.
+     That is the whole reason this swap is cheap: `--secondary` still sits
+     exactly as far above `--tertiary` as it did, tables keep their striping,
+     and every contrast ratio in the app is unchanged. Only hue and chroma move.
+
+     The hue is blue (255 → 262 as it darkens) and the chroma is deliberately
+     tiny — 0.003 at the top, 0.025 at the bottom. This is meant to read as
+     *grey*, not as *blue*: the cast is there to take the warm, slightly muddy
+     tinge out of the light surfaces, not to colour them. Two earlier attempts
+     failed by trying to make a few points of chroma read as a colour; this one
+     is asking those few points to do the thing they are actually good at.
+
+     Chroma climbs with depth for the usual reason — the eye reads chroma more
+     easily on dark colours than pale ones, so a flat value would look tinted at
+     the bottom and dead at the top. */
+  --gray-50: oklch(0.9796 0.0028 255);
+  --gray-100: oklch(0.9584 0.0042 255);
+  --gray-200: oklch(0.9312 0.006 255);
+  --gray-300: oklch(0.901 0.0082 255);
+  --gray-400: oklch(0.8558 0.011 256);
+  --gray-500: oklch(0.8221 0.013 256);
+  --gray-600: oklch(0.6417 0.019 258);
+  --gray-700: oklch(0.5352 0.0225 258);
+  --gray-800: oklch(0.4252 0.025 260);
+  --gray-900: oklch(0.3132 0.025 262);
+
+  /* Fonts — one family, see the @font-face block above for what went and why. */
   --font-sans:
-    'Zalando Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  /* "Mono" names a voice, not a fixed-width face: Space Grotesk with tabular
-     lining figures (see the `.font-mono` rule below), which is what the table
-     columns and timestamps wearing it actually need. It used to be the stock
-     Fira Code stack — none of which is shipped here, so it rendered as
-     whatever face each machine happened to have installed. */
-  --font-mono: 'Space Grotesk', var(--font-sans);
-  --font-display:
-    'Zalando Sans Semi Expanded', 'Zalando Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    'Roboto', sans-serif;
-  --font-grotesk: 'Space Grotesk', var(--font-sans);
+  /* "Mono" is for figures that line up column to column — table columns,
+     counts, timestamps — and Geist Mono is a real fixed-width face, so they now
+     line up by construction rather than by asking a proportional font for
+     `tnum`. The feature settings below still apply and still do no harm. */
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Headings are the same face as body text now: no Semi Expanded width, and
+     nothing else standing in for it. They separate on size and weight alone. */
+  --font-display: var(--font-sans);
+  /* The uppercase label voice — buttons, section headers, the sidebar's group
+     labels. Also plain Geist, so what makes a label a label is the capitals and
+     the tracking the components already apply. Kept as its own token rather
+     than collapsed into `--font-sans` at the call sites: it is the seam where a
+     second face would go back in, and there are 9 of them. */
+  --font-grotesk: var(--font-sans);
 
   /* Layout: the shared content-column width — the post rich-text editor and
      the settings cards read at the same measure. Generates `w-content` /
@@ -78,6 +133,10 @@
   --shadow-lg: 0 10px 20px -3px rgb(20 40 80 / 10%), 0 4px 6px -2px rgb(20 40 80 / 5%);
   /* Upward shadow for panels overlapping content from below (e.g. calendar footer) */
   --shadow-top: 0 -2px 12px rgb(0 0 0 / 8%);
+  /* Toasts float free over the whole app rather than sitting on a surface, so
+     they take a wider, softer shadow than `--shadow-md` — lift without a hard
+     edge under the card. */
+  --shadow-toast: 0 8px 28px -6px rgb(20 40 80 / 14%), 0 2px 8px -4px rgb(20 40 80 / 10%);
   /* --shadow-xl: 0 20px 25px -5px rgb(60 40 0 / 0.1), 0 10px 10px -5px rgb(60 40 0 / 0.04); */
   /* --shadow-2xl: 0 25px 50px -12px rgb(60 40 0 / 0.2); */
 
@@ -158,6 +217,9 @@
   --color-table-row-hover: var(--table-row-hover);
   --color-table-footer: var(--table-footer);
   /* Misc */
+  --color-platform-tile: var(--platform-tile);
+  --color-platform-tile-hover: var(--platform-tile-hover);
+  --color-platform-tile-foreground: var(--platform-tile-foreground);
   --color-selection: var(--selection);
   --color-ring: var(--ring);
   --color-editable: var(--editable);
@@ -165,32 +227,32 @@
 
 :root {
   --radius: 1px;
-  --background: var(--beige-100); /* Rename to default? */
+  --background: var(--gray-100); /* Rename to default? */
   --foreground: var(--black); /* Rename to default? */
   --primary: var(--white);
   --primary-foreground: var(--black);
-  --primary-foreground-elevated: var(--beige-900);
-  --secondary: var(--beige-50);
-  --secondary-foreground: var(--beige-700);
-  --tertiary: var(--beige-100);
-  --tertiary-foreground: var(--beige-600);
-  --quaternary: var(--beige-200);
-  --quaternary-foreground: var(--beige-500);
-  --quinary: var(--beige-300);
-  --quinary-foreground: var(--beige-400);
-  --senary: var(--beige-400);
-  --senary-foreground: var(--beige-300);
-  --header-icon: var(--beige-800);
+  --primary-foreground-elevated: var(--gray-900);
+  --secondary: var(--gray-50);
+  --secondary-foreground: var(--gray-700);
+  --tertiary: var(--gray-100);
+  --tertiary-foreground: var(--gray-600);
+  --quaternary: var(--gray-200);
+  --quaternary-foreground: var(--gray-500);
+  --quinary: var(--gray-300);
+  --quinary-foreground: var(--gray-400);
+  --senary: var(--gray-400);
+  --senary-foreground: var(--gray-300);
+  --header-icon: var(--gray-800);
   /* Assistant chat: the user's own message bubble. An inverted surface — no
      Layer 2 surface token is dark, so this anchors to Layer 1 (colors.md
      rule 2), the same exception `--header-icon` takes. */
-  --assistant-bubble: var(--beige-700);
+  --assistant-bubble: var(--gray-700);
   --assistant-bubble-foreground: var(--white);
   --popover: var(--primary);
   --popover-hover: var(--secondary);
   --popover-foreground: var(--primary-foreground);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: var(--beige-300);
+  --border: var(--gray-300);
   --border-primary: var(--black);
   --input-label: var(--tertiary-foreground);
   --input: var(--secondary);
@@ -208,8 +270,26 @@
   /* Waiting on a person, with nothing wrong — a post you publish by hand
      (violet). Deliberately not orange: "your turn" is not "this is broken". */
   --attention: oklch(0.53 0.16 305);
-  /* Selected/active affordance accent (orange, provisional) */
-  --accent: oklch(0.705 0.213 47.604);
+  /* Selected/active affordance accent — teal, #00837F.
+     The brand hue at a lightness that reads. Two things it changes:
+
+     1. It gives orange back. `docs/colors.md` reserves orange for one meaning,
+        a non-blocking validation warning, which is why `--info` and
+        `--attention` had to be invented; the accent was the last *semantic*
+        token still borrowing the hue. `--warning` is now the only orange that
+        carries a meaning — the categorical scales below (charts, campaigns)
+        stay outside that rule by design.
+     2. It is a colour the neutrals agree with. A teal accent on a blue-cast
+        grey is the same family; the orange was in opposition to the beige.
+
+     Why not the brand hex #40A9A4: that value scores 2.83:1 on white — under
+     AA and under AA-Large — and `text-accent` is real text in ~14 places (the
+     assistant thread list runs it at 10px, where it drops to 2.50:1 on the
+     app canvas), plus white text sits *on* `bg-accent` in ThreadCount. This
+     is the same hue and chroma at 4.60:1; only lightness moved. If the brand
+     value ever has to come back, the text sites need their own `--accent-ink`
+     first. */
+  --accent: oklch(0.55 0.0955 190.71);
 
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -220,9 +300,9 @@
   --chart-country-base: oklch(0.7069 0.1871 45.39);
   --chart-country-domicile: oklch(0.5452 0.1036 166.77);
   --chart-currency-trading: oklch(0.813 0.1655 75.18);
-  --chart-other: var(--beige-500);
-  --chart-neutral: var(--beige-50);
-  --chart-neutral-secondary: var(--beige-100);
+  --chart-other: var(--gray-500);
+  --chart-neutral: var(--gray-50);
+  --chart-neutral-secondary: var(--gray-100);
 
   /* Identity palette — a categorical scale, like `--chart-*`: seven hues
      assigned to a campaign or a workspace by hashing its id
@@ -233,7 +313,12 @@
      muted first cut failed at it. Still dark enough to read as ink on the
      sidebar and to knock white letters out of when filled. */
   --identity-1: oklch(0.52 0.13 258); /* blue */
-  --identity-2: oklch(0.54 0.11 200); /* teal */
+  /* Pushed from hue 200 to 214. At 200 it sat 9° off the new teal accent, and
+     identity marks render in the sidebar right beside selected-state teal —
+     one campaign would have looked permanently selected. 214 keeps the gaps to
+     its neighbours (blue 258, green 150) wide enough to still tell seven
+     apart. */
+  --identity-2: oklch(0.54 0.11 214); /* cyan */
   --identity-3: oklch(0.52 0.13 150); /* green */
   --identity-4: oklch(0.55 0.12 108); /* olive */
   --identity-5: oklch(0.55 0.14 55); /* amber */
@@ -252,8 +337,24 @@
   --table-row-hover: var(--secondary);
   --table-footer: var(--primary);
 
-  --selection: var(--beige-500);
-  --ring: var(--beige-400);
+  /* The square a platform's logo sits in where the network stands for itself
+     rather than for somebody's account — a placeholder the campaign hasn't
+     put an account behind.
+
+     Monochrome on purpose: this tile is the *unselected* state of a row, and
+     brand colour there competes with the connected accounts above it, which
+     are the rows that can actually publish. The selected tile drops these and
+     uses Layer 2 (`--secondary-foreground` behind a white mark).
+
+     Straight to Layer 1: these are surfaces at gray-400/500, and the Layer 2
+     tokens carrying those values are a disabled surface and a faint
+     foreground — rule 2 says don't borrow a token whose meaning doesn't fit
+     just because the value matches. */
+  --platform-tile: var(--gray-400);
+  --platform-tile-hover: var(--gray-500);
+  --platform-tile-foreground: var(--gray-100);
+  --selection: var(--gray-500);
+  --ring: var(--gray-400);
   --editable: oklch(0.4895 0.2063 260.59);
 }
 
@@ -275,8 +376,10 @@
   }
 
   /* What `font-mono` is actually for: figures that line up column to column.
-     Space Grotesk carries `tnum`, `lnum` and `zero`, so all three still
-     apply — this is the whole difference between it and `font-grotesk`. */
+     Geist Mono is fixed-width, so the alignment no longer depends on `tnum`
+     landing — but the declarations stay: `lnum` still matters for the odd
+     figure set, and `'zero' 0` turns off the slashed zero, which is the one
+     glyph decision worth making explicitly rather than inheriting. */
   .font-mono {
     font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: 'zero' 0; /* Disable slashed zero */
@@ -462,6 +565,65 @@
   @media (prefers-reduced-motion: reduce) {
     .animate-attention {
       animation: attention-fade 1.5s ease-out both;
+    }
+  }
+
+  /* A toast entering and leaving the deck. Both halves stay off `transform`:
+     that property carries the deck geometry (`toast.tsx` sets it inline per
+     depth and transitions it), and a keyframe animation outranks an inline
+     style, so anything animating `transform` here would yank the card out of
+     its place in the pile. The entrance uses `translate` — a separate CSS
+     property — and the exit touches opacity only.
+
+     That is also why neither half can be tw-animate-css's `animate-in` /
+     `animate-out`: their shared `enter`/`exit` keyframes animate `transform`
+     toward identity, which slides a receding card forward to the front of the
+     deck at full size — it reads as a brand-new toast, not a dissolving one.
+
+     These are keyframe animations rather than JS-flipped transitions because a
+     transition needs a committed start value, and the usual way to get one —
+     requestAnimationFrame — never fires while the tab is in the background.
+     A toast raised there would stay stuck at opacity 0. Radix's Presence also
+     only ever watches `animationend`, never transitions.
+
+     Each half is scoped to its own [data-state] so the two never overlap. The
+     exit fills `forwards`: the store keeps the record ~60ms past the fade so
+     it never unmounts mid-animation, and without the fill the card would flash
+     back to full opacity for those last frames. */
+  @keyframes toast-enter {
+    from {
+      opacity: 0;
+      translate: 0 16px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes toast-exit {
+    to {
+      opacity: 0;
+    }
+  }
+
+  .toast-motion[data-state='open'] {
+    animation: toast-enter 200ms ease-out;
+  }
+
+  .toast-motion[data-state='closed'] {
+    animation: toast-exit 200ms ease-in forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast-motion[data-state='open'] {
+      animation: none;
+    }
+
+    /* The deck geometry in `toast.tsx` also moves and scales a card as newer
+       ones land (`transition-transform`). Snap to the new position instead. */
+    .toast-motion {
+      transition: none;
     }
   }
 

@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AccountAvatar } from '@/components/ui/account-avatar'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge'
 import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
 import { useCampaign } from '@/hooks/useCampaigns'
@@ -53,6 +53,12 @@ type Props = {
   attention?: number
   publishMethod: PublishMethod
   onPublishMethodChange: (method: PublishMethod) => void
+  /**
+   * Opens the "where did you publish it?" dialog. The only way back into
+   * verification once a post is `published`: that status is terminal, so the
+   * header has no button to offer (CON-149).
+   */
+  onAddPostLink: () => void
   className?: string
 }
 
@@ -81,6 +87,7 @@ export function PostQuickSettingsBar({
   attention = 0,
   publishMethod,
   onPublishMethodChange,
+  onAddPostLink,
   className,
 }: Props) {
   const platform = getPlatformInfo(doc.platform_id)
@@ -147,12 +154,14 @@ export function PostQuickSettingsBar({
         return
       }
       // Keep the post type when the new platform supports the same slug,
-      // otherwise prefer the campaign's first enabled type for it.
+      // otherwise prefer the campaign's first enabled type for it. Both
+      // sides read the selectable list, so switching platforms can never
+      // land the post on a video type the picker would not have offered.
       const next = getPlatformInfo(platformId)
-      if (next && !next.postTypes.some((t) => t.slug === d.platform_post_type)) {
+      const types = next?.postTypes ?? []
+      if (next && !types.some((t) => t.slug === d.platform_post_type)) {
         const camp = campaignPostTypes.get(platformId)
-        const preferred =
-          next.postTypes.find((t) => camp?.has(t.slug)) ?? next.postTypes[0]
+        const preferred = types.find((t) => camp?.has(t.slug)) ?? types[0]
         d.platform_post_type = preferred?.slug ?? ''
       }
     })
@@ -191,6 +200,7 @@ export function PostQuickSettingsBar({
             post={doc}
             cancelling={cancelling}
             onChange={setScheduledAt}
+            onAddPostLink={onAddPostLink}
           />
           {/* Only where the fork is still ahead of the post. Once it's
               scheduled the status itself records which way it went, and
@@ -526,12 +536,7 @@ function AccountSlot({
       <DropdownMenuContent align="start">
         {account.accounts.map((a) => (
           <DropdownMenuItem key={a.id} onSelect={() => onSelect(a.id)}>
-            <Avatar className="size-6 shrink-0">
-              {a.avatar_url && <AvatarImage src={a.avatar_url} alt={accountLabel(a)} />}
-              <AvatarFallback>
-                {(accountLabel(a) || '?').slice(0, 1).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <AccountAvatar src={a.avatar_url} name={accountLabel(a)} size="sm" />
             <div className="flex min-w-0 flex-col">
               <span
                 className={cn('truncate', a.id === account.account?.id && 'font-medium')}
@@ -648,16 +653,22 @@ function SchedulingDetails({
   post,
   cancelling,
   onChange,
+  onAddPostLink,
 }: {
   post: Post
   cancelling: boolean
   onChange: (iso: string | null) => void
+  onAddPostLink: () => void
 }) {
   // While `scheduled`/`published` the date is owned elsewhere (the Zernio
   // submission, or history) — show it as text, same as the settings rail.
   const editable = canEditScheduledAt(post.status) && !cancelling
   if (!editable) {
     const { text, warn } = schedulingDetails(post, cancelling)
+    // Published, but nothing ties it to the post that actually went out — so
+    // its analytics can never resolve. Offering the link here is the only
+    // route back in: `published` is terminal, so the header shows no actions.
+    const unlinked = post.status === 'published' && !post.publisher_post_id
     return (
       <span
         className={cn(
@@ -665,12 +676,31 @@ function SchedulingDetails({
           warn ? 'text-primary-foreground' : 'text-secondary-foreground',
         )}
       >
-        {warn ? (
-          <WarningCircleIcon weight="fill" className="size-4 shrink-0 text-warning" />
-        ) : (
-          <ClockIcon className="size-4 shrink-0" />
+        {/* The icon and the thing it labels are one unit at gap-1.5, matching
+            the platform trigger below (icon + name). The row's own gap-2.5 is
+            for what separates units — the Dot — so leaving the icon to inherit
+            it made the same pairing read two different ways on two lines. */}
+        <span className="flex min-w-0 items-center gap-1.5">
+          {warn ? (
+            <WarningCircleIcon weight="fill" className="size-4 shrink-0 text-warning" />
+          ) : (
+            <ClockIcon className="size-4 shrink-0" />
+          )}
+          <span className="truncate">{text}</span>
+        </span>
+        {unlinked && (
+          <>
+            <Dot />
+            <Button
+              variant="link"
+              size="excluded"
+              className="shrink-0 text-sm underline underline-offset-4"
+              onClick={onAddPostLink}
+            >
+              Add post link
+            </Button>
+          </>
         )}
-        <span className="truncate">{text}</span>
       </span>
     )
   }
@@ -698,21 +728,25 @@ function ScheduleEditor({
 
   return (
     <span className="flex min-w-0 items-center gap-2.5 text-sm">
-      {!valid ? (
-        <WarningHint
-          focusable
-          text="This post has no publish date, so it can't be scheduled. Pick a date and time to publish it."
-        />
-      ) : inPast ? (
-        <WarningHint
-          focusable
-          text="The publish date is in the past. Scheduling needs a date in the future — pick a new one."
-        />
-      ) : (
-        <ClockIcon className="size-4 shrink-0 text-secondary-foreground" />
-      )}
+      {/* Icon and date as one unit at gap-1.5 — see the note in
+          `SchedulingDetails`. The row's gap-2.5 stays for the Dot that
+          separates the date from the time. */}
+      <span className="flex min-w-0 items-center gap-1.5">
+        {!valid ? (
+          <WarningHint
+            focusable
+            text="This post has no publish date, so it can't be scheduled. Pick a date and time to publish it."
+          />
+        ) : inPast ? (
+          <WarningHint
+            focusable
+            text="The publish date is in the past. Scheduling needs a date in the future — pick a new one."
+          />
+        ) : (
+          <ClockIcon className="size-4 shrink-0 text-secondary-foreground" />
+        )}
 
-      <DropdownMenu open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <DropdownMenu open={calendarOpen} onOpenChange={setCalendarOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
@@ -747,8 +781,9 @@ function ScheduleEditor({
                 : undefined
             }
           />
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </span>
 
       {valid && (
         <>

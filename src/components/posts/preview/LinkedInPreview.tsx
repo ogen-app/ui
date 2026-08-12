@@ -6,7 +6,8 @@ import {
   RepeatIcon,
   ThumbsUpIcon,
 } from '@phosphor-icons/react'
-import { PLATFORM_TEXT_LIMITS } from '@/lib/socialText.ts'
+import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
+import { frameAspect } from './frames.ts'
 import {
   Action,
   ActionRow,
@@ -25,7 +26,7 @@ import type { PreviewProps } from './types.ts'
  * lines and hides the rest behind "…see more", so the first ~210 characters
  * are all most of the feed will ever read.
  */
-export function LinkedInPreview({ text, mediaUrls, author, timeLabel }: PreviewProps) {
+export function LinkedInPreview({ text, media, postType, author, timeLabel }: PreviewProps) {
   const name = author.name ?? 'Your page'
 
   return (
@@ -59,14 +60,14 @@ export function LinkedInPreview({ text, mediaUrls, author, timeLabel }: PreviewP
       <div className="px-3 pb-2 pt-1">
         <FoldedText
           text={text}
-          fold={PLATFORM_TEXT_LIMITS.linkedin.fold}
+          fold={PLATFORM_FOLDS.linkedin}
           moreLabel="see more"
           color={C.text}
           moreColor={C.muted}
         />
       </div>
 
-      <PreviewMedia urls={mediaUrls} aspect={1.91} background="#f3f2ef" />
+      <PreviewMedia items={media} aspect={frameAspect(postType, 1.91)} background="#f3f2ef" />
 
       <ActionRow color={C.action}>
         <Action icon={<ThumbsUpIcon className="size-5" aria-hidden />} label="Like" />

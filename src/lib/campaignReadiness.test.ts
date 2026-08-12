@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Campaign, CampaignTypePhase, Platform } from "@/types/campaigns";
-import type { Post } from "@/types/posts";
+import type { Post, PostSummary } from "@/types/posts";
 import type { PlatformInfo, PlatformView } from "@/lib/platformDictionary";
 import {
   attentionItems,
@@ -26,6 +26,11 @@ function makeCampaign(overrides: Partial<Campaign> = {}): Campaign {
     start_date: null,
     end_date: null,
     estimated_post_count: null,
+    goal_cadence: "month",
+    publishing_time: "09:00",
+    timezone: "",
+    publishing_days: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+    spread_minutes: 15,
     language: "en",
     budget: null,
     currency: "USD",
@@ -141,15 +146,14 @@ describe("setupChecks", () => {
     return setupChecks(campaign, views).find((c) => c.id === "channels")!;
   }
 
-  it("fails dates/channels/post target on a fresh campaign", () => {
+  it("fails dates and channels on a fresh campaign", () => {
     const checks = setupChecks(makeCampaign(), []);
-    expect(checks.map((c) => c.id)).toEqual(["dates", "channels", "post_target"]);
+    expect(checks.map((c) => c.id)).toEqual(["dates", "channels"]);
     expect(checks.every((c) => !c.ok)).toBe(true);
     // A gap names itself in the label; the detail says what the setting is for.
     expect(checks.map((c) => c.label)).toEqual([
       "Campaign dates not set",
       "No channels selected",
-      "Post target not set",
     ]);
     expect(checks.every((c) => c.detail.length > 0)).toBe(true);
   });
@@ -168,10 +172,9 @@ describe("setupChecks", () => {
       start_date: "2026-06-01T00:00:00Z",
       end_date: "2026-08-31T00:00:00Z",
       target_platforms: [{ id: "p1", post_types: ["text-post"] }],
-      estimated_post_count: 24,
     });
     const checks = setupChecks(campaign, [makeView("p1", "LinkedIn", true)]);
-    expect(checks.map((c) => c.id)).toEqual(["dates", "channels", "post_target"]);
+    expect(checks.map((c) => c.id)).toEqual(["dates", "channels"]);
     expect(checks.every((c) => c.ok)).toBe(true);
     expect(checks[1].detail).toBe("Publishing to LinkedIn");
   });
@@ -277,7 +280,6 @@ function liveCampaign(overrides: Partial<Campaign> = {}): Campaign {
     ...filledBrief,
     start_date: "2026-06-01T00:00:00Z",
     end_date: "2026-08-31T00:00:00Z",
-    estimated_post_count: 10,
     target_platforms: [{ id: "p1", post_types: ["text-post"] }],
     ...overrides,
   });
@@ -320,7 +322,7 @@ describe("attentionItems", () => {
   });
 
   it("sorts alerts before risks before todos before infos", () => {
-    const campaign = liveCampaign({ estimated_post_count: null, use_assets: true });
+    const campaign = liveCampaign({ use_assets: true });
     const posts = [
       makePost({ status: "failed" }),
       makePost({ status: "draft", scheduled_at: iso(3 * HOUR) }),
@@ -545,10 +547,10 @@ describe("attentionItems", () => {
   it("flags posts left on a phase the campaign type no longer has", () => {
     const campaign = liveCampaign({
       campaign_type: {
+        // Not a type the dictionary knows — the label below comes from
+        // campaignTypeInfo's capitalize-the-slug fallback.
         id: "ct1",
         name: "launch",
-        label: "Launch",
-        description: "",
         is_system: true,
         phases: [makePhase("ph1", "Warm-up", 1)],
       },
@@ -570,8 +572,6 @@ describe("attentionItems", () => {
       campaign_type: {
         id: "ct2",
         name: "evergreen",
-        label: "Evergreen",
-        description: "",
         is_system: true,
         phases: [],
       },
@@ -582,18 +582,16 @@ describe("attentionItems", () => {
 
   // --- Setup ----------------------------------------------------------------
 
-  it("flags assets enabled with none attached", () => {
+  it("says nothing about an empty asset list — that is the All assets mode", () => {
     const campaign = liveCampaign({ use_assets: true });
-    expect(ids(campaign, healthyPosts())).toContain("assets-expected");
+    expect(ids(campaign, healthyPosts())).not.toContain("assets-expected");
   });
 
-  it("mentions a missing post target only as info, once content exists", () => {
-    const campaign = liveCampaign({ estimated_post_count: null });
-    const item = attentionItems(campaign, healthyPosts(), connected, NOW).find(
-      (i) => i.id === "post-target",
+  it("says nothing about the campaign's post target, set or not", () => {
+    // The field is being reworked into a goal (CON-156); no rule may read it.
+    expect(ids(liveCampaign({ estimated_post_count: null }), healthyPosts())).not.toContain(
+      "post-target",
     );
-    expect(item).toMatchObject({ severity: "info" });
-    expect(ids(liveCampaign({ estimated_post_count: null }), [])).not.toContain("post-target");
   });
 
   // --- Content --------------------------------------------------------------
@@ -674,5 +672,90 @@ describe("attentionItems", () => {
     );
     expect(item).toMatchObject({ severity: "info" });
     expect(ids(liveCampaign(), [...healthyPosts(), makePost({ status: "draft", updated_at: iso(-1 * DAY) })])).not.toContain("stale-drafts");
+  });
+});
+
+/**
+ * The Campaigns list feeds these rules the server's slim projection while the
+ * Overview feeds them full posts (CON-152). AC-2 is that both read the same —
+ * "a list that scored campaigns its own way would quietly disagree with the
+ * screen behind it" — so the projection is the thing under test here.
+ */
+describe("PostSummary parity", () => {
+  /** Mirrors the server's `projectPost` (campaign_actions/summaries). */
+  function toSummary(p: Post): PostSummary {
+    return {
+      id: p.id,
+      campaign_id: p.campaign_id,
+      status: p.status,
+      scheduled_at: p.scheduled_at,
+      published_at: p.published_at,
+      platform_id: p.platform_id,
+      platform_post_type: p.platform_post_type,
+      campaign_type_phase_id: p.campaign_type_phase_id,
+      media_urls: p.media_urls,
+      created_at: p.created_at,
+      updated_at: p.updated_at,
+    };
+  }
+
+  /** A campaign with something wrong in several rule families at once. */
+  const messy = () => [
+    ...healthyPosts(),
+    makePost({ status: "failed" }),
+    makePost({ status: "draft", scheduled_at: iso(3 * HOUR) }),
+    makePost({ status: "draft", updated_at: iso(-30 * DAY) }),
+    makePost({ status: "scheduled", scheduled_at: iso(2 * DAY + MINUTE) }),
+  ];
+
+  it("scores a projection exactly as it scores full posts", () => {
+    const campaign = liveCampaign();
+    const posts = messy();
+
+    const fromFull = attentionItems(campaign, posts, connected, NOW);
+    const fromSlim = attentionItems(campaign, posts.map(toSummary), connected, NOW);
+
+    expect(fromSlim).toEqual(fromFull);
+    // Guard against the test passing because both sides found nothing.
+    expect(fromFull.length).toBeGreaterThan(0);
+  });
+
+  it("counts a projection exactly as it counts full posts", () => {
+    const posts = messy();
+    const full = contentSnapshot(posts);
+    const slim = contentSnapshot(posts.map(toSummary));
+
+    expect(slim.total).toBe(full.total);
+    expect(slim.readyToGo).toBe(full.readyToGo);
+    expect(slim.notReady).toBe(full.notReady);
+    expect(slim.byStatus).toEqual(full.byStatus);
+    expect(slim.upNext.map((p) => p.id)).toEqual(full.upNext.map((p) => p.id));
+    expect(slim.recentlyPublished.map((p) => p.id)).toEqual(
+      full.recentlyPublished.map((p) => p.id),
+    );
+  });
+
+  it("runs on rows that carry nothing but the projected fields", () => {
+    // Not a full Post with extras stripped by the type — an object that
+    // genuinely has no title, content or relations at runtime. If a rule ever
+    // reaches for one, this throws rather than reading undefined.
+    const bare: PostSummary = {
+      id: "po1",
+      campaign_id: "c1",
+      status: "failed",
+      scheduled_at: null,
+      published_at: null,
+      platform_id: "p1",
+      platform_post_type: "text-post",
+      campaign_type_phase_id: null,
+      media_urls: [],
+      created_at: "2026-07-01T00:00:00Z",
+      updated_at: "2026-07-01T00:00:00Z",
+    };
+    expect(Object.keys(bare)).toHaveLength(11);
+
+    const items = attentionItems(liveCampaign(), [bare], connected, NOW);
+    expect(items.map((i) => i.id)).toContain("failed-posts");
+    expect(contentSnapshot([bare]).byStatus.failed).toBe(1);
   });
 });

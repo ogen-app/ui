@@ -9,6 +9,7 @@ import {
   getSortedRowModel,
   type Row,
   type SortingState,
+  type Updater,
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -37,6 +38,8 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   activeColumns,
   className,
   initialSorting = [],
+  sorting: controlledSorting,
+  onSortingChange,
   enableFiltering = true,
   enableGlobalFilter = true,
   estimatedRowHeight = 34,
@@ -48,7 +51,21 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   onEmptyStateAction,
   loading = false,
 }: VirtualTableProps<TData>) {
-  const [sorting, setSorting] = useState<SortingState>(initialSorting)
+  // Controlled when the caller passes `sorting`, otherwise the table owns it.
+  // Whoever owns it, the header below only ever calls `setSorting`.
+  const [ownSorting, setOwnSorting] = useState<SortingState>(initialSorting)
+  const sorting = controlledSorting ?? ownSorting
+  const setSorting = useCallback(
+    (updater: Updater<SortingState>) => {
+      // TanStack hands us either the next state or a function of the current
+      // one; a controlled parent gets the resolved value either way, since it
+      // has no way to apply an updater against state it doesn't hold.
+      const next = typeof updater === 'function' ? updater(sorting) : updater
+      if (onSortingChange) onSortingChange(next)
+      else setOwnSorting(next)
+    },
+    [sorting, onSortingChange],
+  )
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [spacerHeight, setSpacerHeight] = useState(0)
@@ -267,7 +284,12 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   // walk it rather than re-deriving it per cell.
   const leafHeaders = table.getHeaderGroups()[0]?.headers ?? []
 
-  const hasData = rows.length > 0
+  // `!loading` is part of it: with a controlled sort the rows can already be
+  // in hand while the stored order is still being read, and rendering them
+  // under the skeleton would paint the default order only to re-sort a moment
+  // later. Loading means skeleton only — no body, no footer, and (via the
+  // header's pointer-events guard) no sort clicks racing the read.
+  const hasData = !loading && rows.length > 0
   const hasFooter =
     showFooter &&
     table

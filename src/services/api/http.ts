@@ -1,5 +1,6 @@
+import { handleUnauthorized } from "@/lib/sessionExpiry";
 import { apiUrl } from "./base";
-import { errorMessage } from "./errors";
+import { ApiError, errorMessage } from "./errors";
 
 type ApiRequestOptions = {
   method?: string;
@@ -21,7 +22,15 @@ async function send(
     init.body = JSON.stringify(options.body);
   }
   const res = await fetch(apiUrl(path), init);
-  if (!res.ok) throw new Error(await errorMessage(res, fallbackError));
+  if (!res.ok) {
+    // A 401 from an in-app request means the session died under us — recover
+    // globally rather than letting each caller render "authentication
+    // required" as if it were a problem with what the user just did. The
+    // throw still happens so the caller's own error path stays intact while
+    // the reload is in flight. See `lib/sessionExpiry.ts`.
+    if (res.status === 401) handleUnauthorized();
+    throw new ApiError(res.status, await errorMessage(res, fallbackError));
+  }
   return res;
 }
 

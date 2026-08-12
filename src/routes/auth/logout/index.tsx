@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageStatusFooter } from '@/components/page-primitives/PageStatusFooter'
@@ -12,26 +13,44 @@ export const Route = createFileRoute('/auth/logout/')({
   component: LogoutPage,
 })
 
+/**
+ * The logout screen.
+ *
+ * Its one rule: **it always finishes.** `DELETE /api/sessions` fails whenever
+ * the session is already gone — an expired cookie, a second tab that logged
+ * out first, React's StrictMode running the effect twice in dev — and every
+ * one of those used to leave the page spinning forever on an unhandled
+ * rejection, with the local data still on disk. A failed server call changes
+ * nothing about what has to happen here: the credentials are cleared locally
+ * either way, and the user reaches the same screen.
+ */
 function LogoutPage() {
+  const { t } = useTranslation()
   const logout = useAuthStore((state) => state.logout)
-  const [isResetting, setIsResetting] = useState(true)
-  const [isCounting, setIsCounting] = useState(true)
+  const [isDone, setIsDone] = useState(false)
   const navigate = useNavigate()
-  const isReady = !isResetting && !isCounting
 
   useEffect(() => {
+    let cancelled = false
     const performReset = async () => {
-      await logout()
-      await clearAllApplicationData()
-      setIsResetting(false)
+      try {
+        await logout()
+      } catch {
+        // Already logged out server-side, or the server is unreachable. The
+        // local half below is what actually matters, and it must still run.
+      }
+      try {
+        await clearAllApplicationData()
+      } catch {
+        // Best-effort: a storage API refusing us must not strand the user.
+      }
+      if (!cancelled) setIsDone(true)
     }
-    performReset()
-  }, [])
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsCounting(false), 5000)
-    return () => clearTimeout(timer)
-  }, [])
+    void performReset()
+    return () => {
+      cancelled = true
+    }
+  }, [logout])
 
   return (
     <PageContainer variant="fullscreen">
@@ -41,20 +60,20 @@ function LogoutPage() {
             &nbsp;
           </span>
           <span className="text-[2rem] leading-[46px] font-medium font-display tracking-tight">
-            {isReady ? "You've Been Logged Out" : 'Logging Out...'}
+            {isDone ? t('auth.logout.doneTitle') : t('auth.logout.pendingTitle')}
           </span>
           <p className="text-[14px] leading-[24px] text-tertiary-foreground">
-            {isReady ? 'See you next time!' : 'This may take a few seconds'}
+            {isDone ? t('auth.logout.doneMessage') : t('auth.logout.pendingMessage')}
           </p>
           <div className="mt-4 h-12 flex items-center justify-center">
-            {isReady ? (
+            {isDone ? (
               <Button
                 variant="defaultInverted"
                 size={'lg'}
                 className={'gap-10'}
                 onClick={() => navigate({ to: '/' })}
               >
-                <span>TAKE ME HOME</span>
+                <span>{t('auth.logout.home')}</span>
                 <ArrowUpRightIcon className={'size-4'} />
               </Button>
             ) : (
@@ -63,7 +82,7 @@ function LogoutPage() {
           </div>
         </div>
       </div>
-      <PageStatusFooter message={'LOGOUT'} />
+      <PageStatusFooter message={t('auth.logout.footer')} />
     </PageContainer>
   )
 }

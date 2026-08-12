@@ -8,9 +8,14 @@ import { PostsEmptyState } from "@/components/campaigns/PostsEmptyState";
 import { PostsToolbar } from "@/components/campaigns/PostsToolbar";
 import { WeeklyCalendar } from "@/components/campaigns/calendar/WeeklyCalendar";
 import { WeeklyCalendarSkeleton } from "@/components/campaigns/calendar/WeeklyCalendarSkeleton";
-import { formatAnchor, parseAnchor } from "@/components/campaigns/calendar/date";
+import {
+  addDays,
+  formatAnchor,
+  parseAnchor,
+} from "@/components/campaigns/calendar/date";
 import { useAddPost, useCampaignPosts } from "@/hooks/usePosts.ts";
 import { useCalendarSettings } from "@/hooks/useCalendarSettings";
+import { useHotkeys } from "@/hooks/useHotkeys";
 
 export const Route = createFileRoute(
   "/_authenticated/campaigns/$campaignId/calendar/$anchor/$view",
@@ -56,6 +61,14 @@ function CalendarView() {
       to: "/campaigns/$campaignId/calendar/$anchor/$view",
       params: { campaignId, anchor: formatAnchor(d), view: "week" },
     });
+
+  // The same step the toolbar's arrows take, on the arrow keys. Unbounded in
+  // both directions — a campaign's calendar has no first or last week, so
+  // unlike stepping through posts there is no end to stop at.
+  useHotkeys({
+    ArrowLeft: () => handleAnchorChange(addDays(anchorDate, -7)),
+    ArrowRight: () => handleAnchorChange(addDays(anchorDate, 7)),
+  });
 
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0">

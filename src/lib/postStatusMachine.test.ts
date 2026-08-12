@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { getTransitionBlockers, type TransitionContext } from './postStatusMachine.ts'
+import {
+  getActionMeta,
+  getTransitionBlockers,
+  type TransitionContext,
+} from './postStatusMachine.ts'
 import type { Post } from '@/types/posts'
 
 // Platform Sqid from platformDictionary.ts.
@@ -105,5 +109,36 @@ describe('getTransitionBlockers — account selection', () => {
       'scheduled_at',
       'social_account_id',
     ])
+  })
+})
+
+// The mechanism is the whole point of these three edges: each one has a
+// dedicated endpoint that does work the plain status PUT skips, and the PUT
+// is silently accepted by the server, so a regression here doesn't fail —
+// it publishes, cancels or verifies incorrectly.
+describe('action mechanisms', () => {
+  it('completes a manual publish by verifying the URL, not by a status PUT', () => {
+    // A PUT here would mark the post published with no publisher linkage,
+    // stranding it outside analytics forever (CON-149).
+    expect(getActionMeta('scheduled_for_manual_publishing', 'published')?.mechanism).toBe(
+      'verify',
+    )
+  })
+
+  it('unschedules through the cancel endpoint', () => {
+    expect(getActionMeta('scheduled', 'ready_for_publish')?.mechanism).toBe('cancel')
+    expect(getActionMeta('scheduled', 'draft')?.mechanism).toBe('cancel')
+  })
+
+  it('schedules auto-publish through the schedule endpoint', () => {
+    expect(getActionMeta('ready_for_publish', 'scheduled')?.mechanism).toBe('schedule')
+  })
+
+  it('keeps the manual-publish schedule edge on the PUT path', () => {
+    // Deliberately not 'schedule': the schedule endpoint would re-route an
+    // allowlisted platform to auto-publish against the user's explicit choice.
+    expect(
+      getActionMeta('ready_for_publish', 'scheduled_for_manual_publishing')?.mechanism,
+    ).toBeUndefined()
   })
 })

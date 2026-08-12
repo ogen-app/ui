@@ -2,9 +2,11 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { queryClient } from '@/lib/queryClient'
 import { postKey } from '@/hooks/usePost'
+import { postNotesKey, postVersionsKey } from '@/lib/queryKeys'
 import { campaignKey } from '@/hooks/useCampaigns'
 import { describeTool, humanizeStep } from '@/lib/assistantTools'
 import { flushPendingSave } from '@/lib/pendingSaves'
+import { beginLocalRun } from '@/lib/localRuns'
 import {
   listCampaignMessages,
   listPostMessages,
@@ -14,7 +16,7 @@ import {
   streamPostAssistant,
   type AssistantStreamEvent,
 } from '@/services/api/assistant'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import type {
   AssistantStep,
   AssistantThread,
@@ -296,13 +298,20 @@ export const useAssistantStore = create<AssistantState>()(
 
           const controller = new AbortController()
           runners.set(threadId, controller)
+          // The hub reports this turn's outcome too. This tab is streaming it
+          // already and refreshes the subject itself below, so the broadcast
+          // copy is muted for as long as the run is ours (CON-134).
+          const endLocalRun = beginLocalRun('assistant', saveKeyFor(subject))
 
           // A turn that lands while the user is elsewhere is "unread" — the
           // sidebar trigger carries the dot until they come back to it.
           const finish = (status: AssistantThread['status']) => {
-            const settings = useSettingsStore.getState()
+            // The *resolved* panel, not the remembered one: the assistant can
+            // be remembered as open while a post panel covers it, and nobody
+            // reading a quality report is watching a turn finish.
             const watching =
-              settings.activeRightPanel === 'assistant' && get().activeThreadId === threadId
+              selectActivePanel(useSettingsStore.getState()) === 'assistant' &&
+              get().activeThreadId === threadId
             patchThread(threadId, { status, runStartedAt: null, unread: !watching })
           }
 
@@ -390,6 +399,16 @@ export const useAssistantStore = create<AssistantState>()(
                 })
                 break
 
+              case 'clone_complete':
+                // The clone shares the source's campaign; pair the event's new
+                // post id with the subject's campaign id so the reply can jump
+                // straight to the clone's editor.
+                patchLastTurn(threadId, (t) => ({
+                  ...t,
+                  clone: { postId: event.newPostId, campaignId: subject.campaignId },
+                }))
+                break
+
               case 'complete':
                 patchLastTurn(threadId, (t) => ({
                   ...t,
@@ -459,6 +478,7 @@ export const useAssistantStore = create<AssistantState>()(
             finish(aborted ? 'idle' : 'error')
           } finally {
             runners.delete(threadId)
+            endLocalRun()
             patchThread(threadId, { streamedPosts: [] })
           }
         },
@@ -486,8 +506,22 @@ async function refreshSubject(
   if (subject.kind === 'post') {
     const turns = thread?.turns ?? []
     const applied = turns[turns.length - 1]
+    // Unconditional, unlike the two below: the flow's `createNote` tool writes
+    // as it runs (CON-188), so a turn can leave notes behind whatever it did
+    // to the body — including one that only wrote notes, and one that failed
+    // after writing some. `beginLocalRun` suppresses the actor's own
+    // broadcast, so nothing else refreshes this for the person who ran it.
+    await queryClient.invalidateQueries({ queryKey: postNotesKey(subject.postId) })
     if (applied?.action === 'edited' || streamedContent) {
       await queryClient.invalidateQueries({ queryKey: postKey(subject.postId) })
+      // The flow snapshots the post before it rewrites, so an edited turn
+      // leaves a version the history doesn't know about. The broadcast can't
+      // cover this: `beginLocalRun` suppresses the actor's own
+      // `assistant_completed`, so for the person who ran the turn — the one
+      // most likely to have the panel open — nothing else would refresh it.
+      await queryClient.invalidateQueries({
+        queryKey: postVersionsKey(subject.postId),
+      })
     }
     return
   }

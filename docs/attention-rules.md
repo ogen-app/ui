@@ -155,12 +155,16 @@ records what the post was built from, and that stays true. Drift needs a
 | `brief-partial` | `todo` | some brief fields blank | *Brief is missing: `<fields>`* | brief | `client` | – |
 | `dates` | `todo` | `start_date` or `end_date` missing | *Campaign dates are not set* | settings | `client` | – |
 | `channels` | `todo` | no `target_platforms` | *No channels selected* | settings | `client` | – |
-| `assets-expected` | `todo` | `use_assets = true` and no `asset_ids` | *Assets are enabled but none are attached* | assets | `client` | – |
-| `post-target` | `info` | `estimated_post_count` unset while the campaign has content | *No post target set* | settings | `client` | – |
 
 `brief-empty` and `brief-partial` are mutually exclusive, as are `channels` and
 the connectivity rules — a campaign with no channels does not also get told its
 channels are unconnected.
+
+There is deliberately **no rule about content sources**. `use_assets = true`
+with an empty `asset_ids` looks like an unfinished setup but is the *All assets*
+mode, where an empty list means every ready asset (CON-118; see
+`src/lib/campaignSources.ts`). A rule there would nag every campaign that chose
+the broadest option.
 
 ### Content — is there enough of it, in the right places
 
@@ -178,9 +182,12 @@ empty campaign gets one row, not six.
 `pipeline-gap` suppresses `nothing-scheduled`: on a live campaign both say
 "nothing is going out", and the risk row says it with a deadline attached.
 
-`behind-pace` measures against `estimated_post_count` when there is one and
-against the posts that exist otherwise, so it still means something before a
-target is set. It only runs while the campaign is live.
+`behind-pace` measures against the posts that exist. It deliberately ignores
+the campaign's own goal — `estimated_post_count` × `goal_cadence` (CON-182).
+Wiring the rule to the goal is a live decision, not an oversight: the server
+already reports goal progress period by period on the campaign overview, so a
+readiness rule that restates it would be a second, cruder answer to the same
+question. It only runs while the campaign is live.
 
 `channel-uncovered` only counts channels that could publish today. Asking for
 content on a channel with no connected account is asking for posts with nowhere
@@ -263,3 +270,14 @@ Rules marked `server` are blocked on these. Roughly in value order:
    catalogue. Worth it once these rules are also needed outside this screen
    (campaign list badges, digest emails, the assistant). Until then, keeping
    them in `src/lib` is the cheaper place to iterate.
+
+   The Campaigns list already needs them (CON-152), and was answered by
+   batching the *data* rather than the verdict: `GET /api/campaigns/summaries`
+   returns a slim per-post projection for every campaign in one request, and
+   the list runs this same catalogue over it. That keeps one rule set — a list
+   scored by a reduced server-side set would quietly disagree with the Overview
+   — and keeps the clock-dependent rules on the client's local `now`, with no
+   timezone to hand the server. A server-owned verdict stays the endgame: it
+   would make the payload constant per campaign instead of per post, and let
+   digests and the assistant reuse it. It must then take a client tz offset.
+   See [`technical-decisions.md#batched-summaries`](./technical-decisions.md#batched-summaries).

@@ -1,9 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { UseFormReturn, FieldValues } from 'react-hook-form'
-import { useUpdateCampaign } from '@/hooks/useCampaigns'
-import { registerPendingSave } from '@/lib/pendingSaves.ts'
+import {
+  DEFAULT_PUBLISHING_TIME,
+  DEFAULT_SPREAD_MINUTES,
+  defaultPublishingDays,
+} from '@/lib/campaignScheduling'
+import { normalizeGoalCadence } from '@/lib/postGoal'
 import type { Campaign, UpdateCampaignPayload } from '@/types/campaigns'
 
+/**
+ * A campaign update is a whole-resource PUT, and the server fills in a default
+ * for every field the payload leaves out — so this has to name all of them.
+ * Dropping `publishing_days` here does not preserve the campaign's publishing
+ * days, it resets them to all seven.
+ */
 export function campaignToPayload(
   campaign: Campaign,
   overrides: Partial<UpdateCampaignPayload> = {},
@@ -22,6 +30,13 @@ export function campaignToPayload(
     start_date: campaign.start_date,
     end_date: campaign.end_date,
     estimated_post_count: campaign.estimated_post_count,
+    goal_cadence: normalizeGoalCadence(campaign.goal_cadence),
+    publishing_time: campaign.publishing_time || DEFAULT_PUBLISHING_TIME,
+    timezone: campaign.timezone ?? '',
+    publishing_days: campaign.publishing_days?.length
+      ? campaign.publishing_days
+      : defaultPublishingDays(),
+    spread_minutes: campaign.spread_minutes ?? DEFAULT_SPREAD_MINUTES,
     budget: campaign.budget,
     currency: campaign.currency,
     language: campaign.language,
@@ -40,99 +55,4 @@ export function toISODateTime(value: string | null): string | null {
   if (!value) return null
   if (value.includes('T')) return value
   return `${value}T00:00:00Z`
-}
-
-type UseCampaignAutosaveArgs<T extends FieldValues> = {
-  campaign: Campaign
-  form: UseFormReturn<T>
-  buildOverrides: (values: T) => Partial<UpdateCampaignPayload>
-  onValuesChange?: (values: T, info: { name?: string }) => void
-  onFlushRef?: (flush: () => void) => void
-}
-
-export function useCampaignAutosave<T extends FieldValues>({
-  campaign,
-  form,
-  buildOverrides,
-  onValuesChange,
-  onFlushRef,
-}: UseCampaignAutosaveArgs<T>) {
-  const { mutateAsync: updateCampaign, error, reset } = useUpdateCampaign()
-  const editVersionRef = useRef(0)
-  const [editVersion, setEditVersion] = useState(0)
-  const [savedVersion, setSavedVersion] = useState(0)
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const isDirty = editVersion !== savedVersion
-
-  const inFlightRef = useRef<Promise<void> | null>(null)
-
-  const saveNow = useCallback(async () => {
-    const v = editVersionRef.current
-    const run = form.handleSubmit(async (values) => {
-      const payload = campaignToPayload(campaign, buildOverrides(values))
-      try {
-        await updateCampaign({ id: campaign.id, payload })
-        setSavedVersion(v)
-      } catch {
-        // Surfaced through the mutation's `error`; a rejection here must not
-        // escape, since callers await this to sequence their own work.
-      }
-    })()
-    inFlightRef.current = run
-    try {
-      await run
-    } finally {
-      if (inFlightRef.current === run) inFlightRef.current = null
-    }
-  }, [campaign, form, updateCampaign, buildOverrides])
-
-  const scheduleSave = useCallback(() => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(() => {
-      void saveNow()
-    }, 500)
-  }, [saveNow])
-
-  const flushSave = useCallback(async () => {
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current)
-      saveTimerRef.current = null
-      await saveNow()
-      return
-    }
-    // No queued timer doesn't mean nothing pending: the debounce may have
-    // fired and the PUT may still be open. Callers await this to know the
-    // edit *landed*, so wait for that request too.
-    await inFlightRef.current
-  }, [saveNow])
-
-  useEffect(() => {
-    onFlushRef?.(flushSave)
-  }, [onFlushRef, flushSave])
-
-  // The campaign assistant writes the campaign server-side. Land any queued
-  // edit before its turn starts, or the debounce would fire afterwards and
-  // overwrite what the assistant just saved.
-  useEffect(
-    () => registerPendingSave(campaign.id, flushSave),
-    [campaign.id, flushSave],
-  )
-
-  useEffect(() => {
-    const sub = form.watch((values, info) => {
-      onValuesChange?.(values as T, info)
-      editVersionRef.current += 1
-      setEditVersion(editVersionRef.current)
-      scheduleSave()
-    })
-    return () => sub.unsubscribe()
-  }, [form, scheduleSave, onValuesChange])
-
-  useEffect(() => {
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    }
-  }, [])
-
-  return { isDirty, error, resetError: reset, flushSave }
 }

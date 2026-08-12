@@ -4,9 +4,10 @@ import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge.tsx'
 import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
 import { StatTile } from '@/components/campaigns/overview/StatTile.tsx'
-import { useCampaignPosts } from '@/hooks/usePosts.ts'
+import { useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
+import { campaignTypeInfo } from '@/lib/campaignTypeDictionary.ts'
 import {
   attentionItems,
   contentSnapshot,
@@ -15,7 +16,7 @@ import {
   type AttentionSeverity,
 } from '@/lib/campaignReadiness.ts'
 import type { Campaign } from '@/types/campaigns.ts'
-import type { Post } from '@/types/posts.ts'
+import type { PostSummary } from '@/types/posts.ts'
 
 /**
  * One campaign on the Campaigns list: who it is, how it is doing, how it is
@@ -42,12 +43,15 @@ const HEADLINE_TONE: Record<AttentionSeverity, StatusTone> = {
 }
 
 export function CampaignCard({ campaign }: { campaign: Campaign }) {
-  const postsQuery = useCampaignPosts(campaign.id)
+  // One query for the whole list, not one per card (CON-152). Every card
+  // subscribes to the same key, so the request is fired once no matter how
+  // many campaigns are on screen.
+  const summariesQuery = useCampaignSummaries()
   const platformViews = usePlatformViews()
 
   const title = campaign.name.trim() || 'Untitled campaign'
-  const typeLabel =
-    campaign.campaign_type?.label ?? campaign.campaign_type?.name ?? null
+  const typeName = campaign.campaign_type?.name
+  const typeLabel = typeName ? campaignTypeInfo(typeName).label : null
   const dates = setupChecks(campaign, platformViews).find((c) => c.id === 'dates')!
   // Only a complete range describes the campaign; a half-set one is a gap, and
   // the attention badge already carries it.
@@ -60,16 +64,19 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
   // that has failures. A *failed* query is not an empty campaign either:
   // rendering "All clear" off an error would be a lie, so the verdict and the
   // tiles only draw from a successful fetch.
-  const settled = postsQuery.isSuccess
-  const failed = postsQuery.isError
-  const posts = postsQuery.data ?? []
+  //
+  // Load state comes from the query, never from the presence of this
+  // campaign's entry: the server omits campaigns with no posts, so an absent
+  // id means "none", not "not yet".
+  const settled = summariesQuery.isSuccess
+  const failed = summariesQuery.isError
+  const posts = summariesQuery.data?.[campaign.id] ?? []
   // Time-based rules are recomputed per render against the current clock,
   // exactly as the Overview screen does it.
   const items = settled
     ? attentionItems(campaign, posts, platformViews, new Date())
     : []
   const snapshot = contentSnapshot(posts)
-  const planned = campaign.estimated_post_count
 
   // A count, not a roster. Which channels a campaign runs on is settings'
   // business; here it only has to say whether it can publish at all, and six
@@ -126,8 +133,8 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
 
       {failed ? (
         <p className="text-sm text-tertiary-foreground">
-          Couldn’t load this campaign’s posts — the counts will appear once
-          they’re reachable again.
+          Couldn’t load post counts — they’ll appear once they’re reachable
+          again.
         </p>
       ) : settled ? (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
@@ -139,12 +146,10 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
             label="Failed"
             tone={snapshot.byStatus.failed > 0 ? 'alert' : 'default'}
           />
-          {/* The total carries the plan with it — a count with nothing to
-              measure against says less than "12 of 40". */}
-          <StatTile
-            value={snapshot.total}
-            label={planned ? `of ${planned} planned` : 'Total'}
-          />
+          {/* Just the total: the campaign's post target is being reworked into
+              a goal (CON-156), and until it is, "of 40 planned" would be
+              measuring against a number nothing maintains. */}
+          <StatTile value={snapshot.total} label="Total" />
         </div>
       ) : (
         <Skeleton className="h-16 w-full" />
@@ -174,7 +179,7 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
 }
 
 /** Posts due to go out inside today's local calendar day, still unpublished. */
-function plannedToday(posts: Post[], now: Date): number {
+function plannedToday(posts: PostSummary[], now: Date): number {
   const start = new Date(now)
   start.setHours(0, 0, 0, 0)
   const end = start.getTime() + 24 * 60 * 60 * 1000
@@ -197,7 +202,7 @@ function plannedToday(posts: Post[], now: Date): number {
  * finish is what the campaign is working on. Once every phase is done the
  * last one stands as where it ended up.
  */
-function currentStage(campaign: Campaign, posts: Post[]): string | null {
+function currentStage(campaign: Campaign, posts: PostSummary[]): string | null {
   const phases = [...(campaign.campaign_type?.phases ?? [])].sort(
     (a, b) => a.sequence - b.sequence,
   )
@@ -226,15 +231,8 @@ function advancedSummary(campaign: Campaign): string | null {
       `Budget ${campaign.budget.toLocaleString()} ${campaign.currency}`.trim(),
     )
   }
-  const target = campaign.estimated_post_count
   const language = campaign.language.trim()
-  if (target != null && target > 0) {
-    parts.push(
-      language
-        ? `Target: ${target} posts in ${language.toUpperCase()}`
-        : `Target: ${target} posts`,
-    )
-  } else if (language) {
+  if (language) {
     parts.push(`Language: ${language.toUpperCase()}`)
   }
   return parts.length > 0 ? parts.join(' · ') : null

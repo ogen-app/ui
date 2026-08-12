@@ -4,8 +4,19 @@
 // no fetching, no stores — so the rules stay unit-testable and easy to evolve.
 
 import type { Campaign } from "@/types/campaigns";
-import type { Post, PostStatus } from "@/types/posts";
-import type { PlatformView } from "@/lib/platformDictionary";
+import type { Post, PostStatus, PostSummary } from "@/types/posts";
+import { campaignTypeInfo } from "@/lib/campaignTypeDictionary";
+import { getPlatformInfo, type PlatformView } from "@/lib/platformDictionary";
+
+/**
+ * A targeted channel's name. A campaign can target a platform the API no
+ * longer returns, which has no view and would otherwise read as "Unknown
+ * channel". The dictionary still knows the name, and naming it is what makes
+ * the row actionable: the user can see what to remove.
+ */
+function channelNameOf(view: PlatformView | undefined, id: string): string {
+  return view?.info.name ?? getPlatformInfo(id)?.name ?? "Unknown channel";
+}
 
 // --- Brief ------------------------------------------------------------------
 
@@ -53,10 +64,14 @@ export type FixTarget =
   | "settings"
   | "workspace-settings"
   | "posts"
-  | "assets";
+  | "assets"
+  // No attention rule points here — analytics reports, it never asks for a
+  // fix. It is a target so the Overview's Analytics card can use the same
+  // header link as every other module.
+  | "analytics";
 
 export type SetupCheck = {
-  id: "dates" | "channels" | "post_target";
+  id: "dates" | "channels";
   ok: boolean;
   /**
    * State-aware: the setting's name once it's set, the gap itself when it
@@ -110,9 +125,9 @@ export function channelReadiness(
   };
   for (const tp of campaign.target_platforms) {
     // Unknown platform id (dictionary/API mismatch) counts as unconnected —
-    // it certainly can't publish.
+    // it certainly can't publish. So does a hidden one, which has no view.
     const view = viewById.get(tp.id);
-    const name = view?.info.name ?? "Unknown channel";
+    const name = channelNameOf(view, tp.id);
     out.selected.push(name);
     if (!view || view.connectedPublishers.length === 0) continue;
     out.connected.push(name);
@@ -161,7 +176,7 @@ function channelsCheck(channels: ChannelReadiness): SetupCheck {
       ok: false,
       label: `No post type selected for ${missingPostTypes.join(", ")}`,
       detail:
-        "Post types tell Ogen what to write — a text post, a video, a carousel.",
+        "Post types tell Ogen what to write — a text post, an image post, a carousel.",
       fix: "settings",
     };
   }
@@ -188,8 +203,6 @@ export function setupChecks(
 ): SetupCheck[] {
   const hasDates = !!campaign.start_date && !!campaign.end_date;
   const halfDates = !hasDates && !!(campaign.start_date || campaign.end_date);
-  const target = campaign.estimated_post_count;
-  const hasTarget = target != null && target > 0;
 
   return [
     {
@@ -208,15 +221,6 @@ export function setupChecks(
       fix: "settings",
     },
     channelsCheck(channelReadiness(campaign, platformViews)),
-    {
-      id: "post_target",
-      ok: hasTarget,
-      label: hasTarget ? "Post target" : "Post target not set",
-      detail: hasTarget
-        ? `${target} posts planned`
-        : "The target is what progress is measured against — how much of the plan is done.",
-      fix: "settings",
-    },
   ];
 }
 
@@ -227,7 +231,7 @@ export const SCHEDULED_STATUSES: PostStatus[] = [
   "scheduled_for_manual_publishing",
 ];
 
-export type ContentSnapshot = {
+export type ContentSnapshot<T extends PostSummary = Post> = {
   total: number;
   byStatus: Record<PostStatus, number>;
   /**
@@ -238,12 +242,22 @@ export type ContentSnapshot = {
   /** Still being written — the work left to do. */
   notReady: number;
   /** Last published first, capped at `limit`. */
-  recentlyPublished: Post[];
+  recentlyPublished: T[];
   /** Soonest scheduled_at first, capped at `limit`. */
-  upNext: Post[];
+  upNext: T[];
 };
 
-export function contentSnapshot(posts: Post[], limit = 5): ContentSnapshot {
+/**
+ * Generic in the post type, not merely widened to `PostSummary`: the counts
+ * work off a projection, but `recentlyPublished` / `upNext` hand posts back
+ * out, and the Overview renders their titles. Returning `T[]` lets the
+ * Campaigns list pass slim rows for the counts while the Overview keeps the
+ * full posts it puts on screen (CON-152).
+ */
+export function contentSnapshot<T extends PostSummary>(
+  posts: T[],
+  limit = 5,
+): ContentSnapshot<T> {
   const byStatus: Record<PostStatus, number> = {
     draft: 0,
     ready_for_publish: 0,
@@ -330,7 +344,7 @@ function plural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-function slotOf(post: Post): number | null {
+function slotOf(post: PostSummary): number | null {
   return post.scheduled_at ? Date.parse(post.scheduled_at) : null;
 }
 
@@ -347,7 +361,7 @@ function isOpen(status: PostStatus): boolean {
  */
 export function attentionItems(
   campaign: Campaign,
-  posts: Post[],
+  posts: PostSummary[],
   platformViews: PlatformView[],
   now: Date,
 ): AttentionItem[] {
@@ -356,8 +370,7 @@ export function attentionItems(
   const brief = briefPosture(campaign);
   const snapshot = contentSnapshot(posts);
   const viewById = new Map(platformViews.map((v) => [v.platform.id, v]));
-  const channelName = (id: string) =>
-    viewById.get(id)?.info.name ?? "Unknown channel";
+  const channelName = (id: string) => channelNameOf(viewById.get(id), id);
 
   const startMs = campaign.start_date ? Date.parse(campaign.start_date) : null;
   // `end_date` is stored as the *day* (serialized T00:00:00 — see
@@ -498,7 +511,7 @@ export function attentionItems(
 
   for (const tp of campaign.target_platforms) {
     const view = viewById.get(tp.id);
-    const name = view?.info.name ?? "Unknown channel";
+    const name = channelNameOf(view, tp.id);
     // Unknown platform id (dictionary/API mismatch) counts as unconnected —
     // it certainly can't publish.
     const connected = (view?.connectedPublishers.length ?? 0) > 0;
@@ -680,7 +693,7 @@ export function attentionItems(
       items.push({
         id: "phase-orphaned",
         severity: "todo",
-        label: `${plural(orphaned, "post", "posts")} ${orphaned === 1 ? "sits" : "sit"} in a phase the ${campaign.campaign_type?.label ?? "campaign"} plan doesn't have`,
+        label: `${plural(orphaned, "post", "posts")} ${orphaned === 1 ? "sits" : "sit"} in a phase the ${campaign.campaign_type ? campaignTypeInfo(campaign.campaign_type.name).label : "campaign"} plan doesn't have`,
         actionLabel: "Reassign posts",
         fix: "posts",
       });
@@ -729,25 +742,10 @@ export function attentionItems(
     });
   }
 
-  if (campaign.use_assets && campaign.asset_ids.length === 0) {
-    items.push({
-      id: "assets-expected",
-      severity: "todo",
-      label: "Assets are enabled but none are attached",
-      actionLabel: "Attach assets",
-      fix: "assets",
-    });
-  }
-
-  if (snapshot.total > 0 && !campaign.estimated_post_count) {
-    items.push({
-      id: "post-target",
-      severity: "info",
-      label: "No post target set",
-      actionLabel: "Set a target",
-      fix: "settings",
-    });
-  }
+  // There is deliberately no rule about `use_assets` with an empty `asset_ids`.
+  // That pair is not a half-finished setup — it is the "All assets" mode, where
+  // an empty list means *every* ready asset (CON-118, `lib/campaignSources.ts`).
+  // Flagging it would nag every campaign that picked the broadest option.
 
   // --- Content --------------------------------------------------------------
   // An empty campaign gets one row, not six: `no-posts` suppresses every other
@@ -807,10 +805,11 @@ export function attentionItems(
       });
     }
 
-    // Pace is measured against the plan when there is one, otherwise against
-    // the posts that exist — so it still means something before a target is set.
+    // Pace is measured against the posts that exist. The campaign's own post
+    // target is deliberately not consulted: it is being reworked into a goal
+    // (CON-156) and nothing here may depend on it in the meantime.
     if (isLive && endMs! > startMs!) {
-      const planned = campaign.estimated_post_count || snapshot.total;
+      const planned = snapshot.total;
       const elapsed = ((nowMs - startMs!) / (endMs! - startMs!)) * 100;
       const done = (snapshot.byStatus.published / planned) * 100;
       if (elapsed - done > PACE_LAG_POINTS) {
@@ -864,7 +863,7 @@ export function attentionItems(
  * `SLOT_COLLISION_WINDOW` of each other. Returns how many posts are involved
  * and on which channels.
  */
-function slotCollisions(posts: Post[]): {
+function slotCollisions(posts: PostSummary[]): {
   count: number;
   platformIds: string[];
 } {

@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
+import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
+import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -9,28 +11,46 @@ import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
-import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActions'
+import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
+import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
-import { PostQualityPanel } from '@/components/posts/quality/PostQualityPanel'
+import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
+import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
+import { PinnedPostNotes } from '@/components/posts/notes/PinnedPostNotes'
+import { PostNotesCard } from '@/components/posts/notes/PostNotesCard'
 import {
   POST_PREVIEW_PORTAL_ID,
   POST_QUALITY_PORTAL_ID,
   POST_SETTINGS_PORTAL_ID,
+  POST_VERSIONS_PORTAL_ID,
 } from '@/components/layout/RightSidebar'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
+import { usePanelScope } from '@/hooks/usePanelScope'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
+import { charCount } from '@/lib/socialText'
 import { useCampaign } from '@/hooks/useCampaigns'
-import { usePost, type TransitionStatusResult } from '@/hooks/usePost'
+import {
+  usePost,
+  type TransitionStatusResult,
+  type VerifyExternalResult,
+} from '@/hooks/usePost'
+import { usePostAssessment } from '@/hooks/usePostAssessment'
 import { usePostMedia } from '@/hooks/usePostMedia'
+import { usePostNotes } from '@/hooks/usePostNotes'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
+import { usePostArrowNavigation } from '@/hooks/usePostNavigation'
+import { usePublishStatus } from '@/hooks/usePublishStatus'
+import { cn } from '@/lib'
 import { resolvePublishMethod } from '@/lib/autoPublish'
+import { isNotePinned, splitNotesByPin } from '@/lib/postNotes'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
+import type { PostNote } from '@/services/api/postNotes'
 import type { Post, PostStatus } from '@/types/posts'
 
 export const Route = createFileRoute(
@@ -45,6 +65,7 @@ function PostPage() {
     doc,
     changeDoc,
     transitionStatus,
+    verifyExternal,
     schedule,
     cancelScheduled,
     cancelling,
@@ -71,9 +92,18 @@ function PostPage() {
 
   return (
     <PostEditorSurface
+      // A different post is a different document, not new props for this one.
+      // The surface holds page-local state that only makes sense against the
+      // post it was opened on — the title draft, the auto/manual choice, the
+      // blocked-action flash — and until the arrow keys (`usePostArrowNavigation`)
+      // there was no way to reach one post from another without the loader
+      // unmounting it in between. Arriving on a post already in cache skips
+      // that loader entirely, so the identity has to be stated.
+      key={postId}
       doc={doc}
       changeDoc={changeDoc}
       transitionStatus={transitionStatus}
+      verifyExternal={verifyExternal}
       schedule={schedule}
       cancelScheduled={cancelScheduled}
       cancelling={cancelling}
@@ -87,6 +117,7 @@ type PostEditorSurfaceProps = {
   doc: Post
   changeDoc: (fn: (p: Post) => void) => void
   transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
+  verifyExternal: (url: string) => Promise<VerifyExternalResult>
   schedule: () => Promise<TransitionStatusResult>
   cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
   cancelling: boolean
@@ -98,6 +129,7 @@ function PostEditorSurface({
   doc,
   changeDoc,
   transitionStatus,
+  verifyExternal,
   schedule,
   cancelScheduled,
   cancelling,
@@ -107,6 +139,9 @@ function PostEditorSurface({
   const [titleDraft, setTitleDraft] = useState(doc.title)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  // Opened by MARK AS PUBLISHED (the 'verify' mechanism), and by the
+  // quick-settings bar for a post that published without a link.
+  const [publishedUrlOpen, setPublishedUrlOpen] = useState(false)
   // Bumped when a status action is clicked while blocked; the quick-settings
   // bar flashes the fields that are missing.
   const [attention, setAttention] = useState(0)
@@ -151,10 +186,17 @@ function PostEditorSurface({
     transitionStatus,
     schedule,
     cancelScheduled,
+    requestVerification: () => setPublishedUrlOpen(true),
     cancelling,
     publishMethod: effectivePublishMethod,
     context: { account },
   })
+  // Null unless something really is going to publish the post — see
+  // `publishTiming` for which statuses those are.
+  const publishStatus = usePublishStatus(doc)
+  // ← / → step to the neighbouring post, unless the keypress belongs to a
+  // field the user is typing in.
+  usePostArrowNavigation(campaignId, doc.id)
   // The allowlist decides whether SCHEDULE lands on auto or manual, so the
   // status actions wait for it too — scheduling a post the wrong way is not
   // something the user can see happening, let alone undo.
@@ -164,18 +206,71 @@ function PostEditorSurface({
   // The settings form renders in the shared right sidebar (one panel at a
   // time, alongside the AI assistant). The route owns the form because it
   // owns the post's autosave pipeline; the sidebar only hosts the layer.
-  const settingsOpen = useSettingsStore((s) => s.activeRightPanel === 'postSettings')
-  const previewOpen = useSettingsStore((s) => s.activeRightPanel === 'postPreview')
-  const qualityOpen = useSettingsStore((s) => s.activeRightPanel === 'postQuality')
+  // Declaring the scope is what makes these four resolvable at all — off this
+  // screen they stay remembered but the rail falls back to the assistant.
+  usePanelScope('post', campaignId)
+  const activePanel = useSettingsStore(selectActivePanel)
+  const settingsOpen = activePanel === 'postSettings'
+  const previewOpen = activePanel === 'postPreview'
+  const qualityOpen = activePanel === 'postQuality'
+  const versionsOpen = activePanel === 'postVersions'
+  // Lazy, then sticky: the sidebar keeps every layer mounted for the
+  // crossfade, but the versions panel fetches its history on mount — portalled
+  // eagerly, merely opening a post costs a GET /versions nobody asked for.
+  // First open mounts it; after that it stays for the fade.
+  const [versionsWarm, setVersionsWarm] = useState(false)
+  useEffect(() => {
+    if (versionsOpen) setVersionsWarm(true)
+  }, [versionsOpen])
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
+  const openRightPanel = useSettingsStore((s) => s.openRightPanel)
   const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
+
+  // Owned here rather than inside the quality panel (CON-183): the checks bar
+  // shows the score and can start a run, and the panel draws that same run's
+  // progress. Two `usePostAssessment` instances would share the cached result
+  // but not the run — the bar would stream while the panel sat on its "assess
+  // this post" empty state, offering a second one.
+  const quality = usePostAssessment(doc.id)
+  const { assessment, assess: startAssessment, assessing } = quality
+  // Opening the rail is its own action, separate from starting a run: the bar
+  // can now do both, and a link that says "see the full breakdown" must not
+  // also spend a model call.
+  const openQuality = useCallback(() => openRightPanel('postQuality'), [openRightPanel])
+  // Notes (CON-188). Where a note renders is a device-local preference, so the
+  // pin map comes from the settings store rather than the record — the API has
+  // no `pinned` column, and `lib/postNotes` supplies the default.
+  const notes = usePostNotes(doc.id)
+  const notePins = useSettingsStore((s) => s.notePins)
+  const setNotePin = useSettingsStore((s) => s.setNotePin)
+  const isPinned = useCallback(
+    (note: PostNote) => isNotePinned(note, notePins),
+    [notePins],
+  )
+  const togglePin = useCallback(
+    (note: PostNote) => setNotePin(note.id, !isNotePinned(note, notePins)),
+    [notePins, setNotePin],
+  )
+  const { pinned: pinnedNotes, rest: unpinnedNotes } = splitNotesByPin(
+    notes.notes,
+    notePins,
+  )
+  const { edit: editNote } = notes
+  const saveNote = useCallback(
+    (note: PostNote, patch: { title: string; body: string }) =>
+      editNote(note.id, patch),
+    [editNote],
+  )
+
   const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
   const [previewHost, setPreviewHost] = useState<HTMLElement | null>(null)
   const [qualityHost, setQualityHost] = useState<HTMLElement | null>(null)
+  const [versionsHost, setVersionsHost] = useState<HTMLElement | null>(null)
   useEffect(() => {
     setSettingsHost(document.getElementById(POST_SETTINGS_PORTAL_ID))
     setPreviewHost(document.getElementById(POST_PREVIEW_PORTAL_ID))
     setQualityHost(document.getElementById(POST_QUALITY_PORTAL_ID))
+    setVersionsHost(document.getElementById(POST_VERSIONS_PORTAL_ID))
   }, [])
 
   // Being on a post page is what makes its assistant thread available: the
@@ -201,21 +296,6 @@ function PostEditorSurface({
   useEffect(() => {
     renameThread(threadId, doc.title, campaignName?.trim())
   }, [renameThread, threadId, doc.title, campaignName])
-
-  // Leaving the editor closes its panels; an open assistant stays open.
-  useEffect(
-    () => () => {
-      const s = useSettingsStore.getState()
-      if (
-        s.activeRightPanel === 'postSettings' ||
-        s.activeRightPanel === 'postPreview' ||
-        s.activeRightPanel === 'postQuality'
-      ) {
-        s.closeRightPanel()
-      }
-    },
-    [],
-  )
 
   const autosizeTitle = useCallback(() => {
     const el = titleRef.current
@@ -261,7 +341,11 @@ function PostEditorSurface({
 
   return (
     <PageContainer variant="fullFlex">
-      <div className="flex flex-1 min-h-0">
+      {/* `relative` so the action bar anchors to the content column rather
+          than the window: the right rail is a sibling of this container, so
+          the bar recentres when a panel opens instead of drifting off the
+          post it acts on. */}
+      <div className="relative flex flex-1 min-h-0">
         <ScrollArea className="flex-1 min-h-0" type="scroll" scrollHideDelay={350}>
           <PostDetailsHeader
             campaignId={campaignId}
@@ -272,18 +356,17 @@ function PostEditorSurface({
             onTogglePreview={() => toggleRightPanel('postPreview')}
             qualityOpen={qualityOpen}
             onToggleQuality={() => toggleRightPanel('postQuality')}
+            versionsOpen={versionsOpen}
+            onToggleVersions={() => toggleRightPanel('postVersions')}
             onDownloadMarkdown={handleDownloadMarkdown}
             onDeletePost={() => setDeleteOpen(true)}
-            actions={
-              <PostStatusHeaderActions
-                buttons={buttons}
-                back={back}
-                pending={statusBusy}
-                onBlocked={flashBlockers}
-              />
-            }
           />
-          <div className="flex flex-col items-center gap-3 relative z-0 pb-8">
+          <div
+            className={cn(
+              'flex flex-col items-center gap-3 relative z-0',
+              PAGE_ACTION_BAR_INSET,
+            )}
+          >
             <div className="w-content">
               <PostQuickSettingsBar
                 doc={doc}
@@ -292,24 +375,47 @@ function PostEditorSurface({
                 attention={attention}
                 publishMethod={effectivePublishMethod}
                 onPublishMethodChange={setPublishMethod}
+                onAddPostLink={() => setPublishedUrlOpen(true)}
               />
             </div>
             <div className="w-content">
-              <PostValidationsSection checks={media.checks} />
+              <PostValidationsSection
+                checks={media.checks}
+                assessment={assessment}
+                postUpdatedAt={doc.updated_at}
+                qualityUnavailable={quality.unavailable}
+                assessing={assessing}
+                onAssess={startAssessment}
+                onOpenQuality={openQuality}
+              />
             </div>
+            <PinnedPostNotes
+              notes={pinnedNotes}
+              onTogglePin={togglePin}
+              onSave={saveNote}
+              onDelete={notes.remove}
+            />
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
-                <textarea
-                  ref={titleRef}
-                  value={titleDraft}
-                  onChange={(e) => {
-                    const next = e.target.value.replace(/\n/g, '')
-                    handleTitleChange(next)
-                  }}
-                  placeholder="Title"
-                  rows={1}
-                  className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground mb-4"
-                />
+                <div className="mb-4 flex flex-col">
+                  <textarea
+                    ref={titleRef}
+                    value={titleDraft}
+                    onChange={(e) => {
+                      const next = e.target.value.replace(/\n/g, '')
+                      handleTitleChange(next)
+                    }}
+                    placeholder="Title"
+                    rows={1}
+                    className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground"
+                  />
+                  {/* Only where the platform publishes a title and caps it —
+                      YouTube today. Elsewhere the title is Ogen's own label
+                      and a counter on it would be noise. Deliberately not a
+                      `maxLength`: silently swallowing keystrokes mid-word is
+                      worse than showing how far over the title is. */}
+                  <TitleCounter title={titleDraft} limit={media.maxTitleChars} />
+                </div>
                 <PostContentEditor
                   content={doc.content}
                   onContentChange={handleContentChange}
@@ -328,8 +434,46 @@ function PostEditorSurface({
                 reorder={media.reorder}
               />
             </div>
+            <div className="w-content">
+              <PostNotesCard
+                notes={unpinnedNotes}
+                loading={notes.loading}
+                error={notes.error !== null}
+                isPinned={isPinned}
+                onTogglePin={togglePin}
+                onAdd={notes.add}
+                onSave={saveNote}
+                onDelete={notes.remove}
+              />
+            </div>
+
+            {/* Scroll past the end. `PAGE_ACTION_BAR_INSET` above is only
+                clearance — the minimum that keeps the bar off the last card —
+                and it leaves the notes pinned against the bottom edge with
+                nowhere to go. This is the travel that lets the end of the post
+                come up to the middle of the screen, where you can read it. A
+                spacer rather than more padding: the two have different jobs,
+                and `cn` would merge one `pb-*` over the other and silently
+                drop the clearance. */}
+            <div className="h-40 shrink-0" aria-hidden />
           </div>
         </ScrollArea>
+
+        {/* The header's fade, mirrored: the post dissolves into the page on
+            its way under the action bar rather than being sliced off by the
+            bottom edge. Sibling of the scroll area, before the bar, so it
+            covers the document and nothing else. */}
+        <PageBottomFader />
+
+        {/* Outside the ScrollArea on purpose — inside it the bar would scroll
+            away with the post. Renders nothing once the post is terminal. */}
+        <PostStatusActionBar
+          buttons={buttons}
+          back={back}
+          pending={statusBusy}
+          onBlocked={flashBlockers}
+          status={publishStatus}
+        />
 
         {settingsHost &&
           createPortal(
@@ -359,10 +503,35 @@ function PostEditorSurface({
 
         {qualityHost &&
           createPortal(
-            /* The live document, so the panel can tell a score that still
-               describes this post from one taken before the last edit. */
-            <PostQualityPanel doc={doc} onClose={closeRightPanel} />,
+            /* `doc.updated_at` rather than the stored evaluation's copy of the
+               post, so the panel can tell a score that still describes what is
+               in the editor from one taken before the last edit. */
+            <PostQualityPanelView
+              assessment={assessment}
+              postUpdatedAt={doc.updated_at}
+              loading={quality.loading}
+              unavailable={quality.unavailable}
+              loadError={quality.loadError}
+              onReload={quality.reload}
+              onAssess={startAssessment}
+              assessing={assessing}
+              steps={quality.steps}
+              cached={quality.cached}
+              assessError={quality.assessError}
+              onClose={closeRightPanel}
+            />,
             qualityHost,
+          )}
+
+        {versionsWarm &&
+          versionsHost &&
+          createPortal(
+            /* The live document, so the list can tell whether the newest
+               snapshot still *is* the post's text or has been edited past.
+               Its writes still go through the server's stored copy, flushing
+               the autosave first. */
+            <PostVersionsPanel doc={doc} onClose={closeRightPanel} />,
+            versionsHost,
           )}
       </div>
       <DeletePostDialog
@@ -370,7 +539,51 @@ function PostEditorSurface({
         isOpen={deleteOpen}
         onClose={() => setDeleteOpen(false)}
       />
+      <PublishedUrlDialog
+        post={doc}
+        isOpen={publishedUrlOpen}
+        onClose={() => setPublishedUrlOpen(false)}
+        verifyExternal={verifyExternal}
+        // Publishing unverified is the way out of the dialog, not of the
+        // status: an already-published post has nothing left to skip to.
+        onSkip={
+          doc.status === 'published'
+            ? undefined
+            : () => transitionStatus('published')
+        }
+      />
     </PageContainer>
+  )
+}
+
+/**
+ * The title's character count against the platform's cap (CON-160).
+ *
+ * Renders nothing when the platform sets no title limit — five of the six do
+ * — and nothing while the platform row is still loading, so it never flashes
+ * a cap it is about to correct.
+ */
+function TitleCounter({
+  title,
+  limit,
+}: {
+  title: string
+  limit: number | null | undefined
+}) {
+  // Counted after this exit: five of the six platforms have no title cap, and
+  // a counter that renders nothing should cost nothing per keystroke.
+  if (!limit) return null
+  const length = charCount(title.trim())
+  const over = length > limit
+  return (
+    <span
+      className={cn(
+        'self-end text-xs tabular-nums',
+        over ? 'text-destructive' : 'text-tertiary-foreground',
+      )}
+    >
+      {length} / {limit}
+    </span>
   )
 }
 

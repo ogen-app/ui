@@ -9,6 +9,14 @@ export type ResolvedPostTypeRule = {
   min_attachments: number
   /** `null` means unbounded by this rule (the platform cap still applies). */
   max_attachments: number | null
+  /**
+   * Body-text ceiling for this post type, already resolved by the server from
+   * the platform's `text_constraints` (per-post-type override, else the
+   * platform default). `null` means unbounded — show no cap.
+   *
+   * Counted in Unicode code points, matching the server-side check.
+   */
+  max_content_chars: number | null
 }
 
 export type PostTypeRuleView = {

@@ -18,7 +18,7 @@ export const PREVIEW_FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 
 /**
- * One border and one shadow across all three cards.
+ * One border and one shadow across every card.
  *
  * The networks each use a slightly different hairline — Facebook's #ced0d4 is
  * noticeably darker than LinkedIn's 8% black — and reproducing that difference
@@ -49,4 +49,39 @@ export const FACEBOOK = {
 export const INSTAGRAM = {
   text: '#000000',
   muted: '#737373',
+  /** The near-white behind an image that hasn't filled its frame. */
+  surface: '#fafafa',
+  /** Carousel dots: Instagram's blue for the current slide, grey for the rest. */
+  dot: '#0095f6',
+  dotMuted: '#c7c7c7',
+} as const
+
+export const TWITTER = {
+  link: '#1d9bf0',
+  text: '#0f1419',
+  muted: '#536471',
+  action: '#536471',
+  border: '#cfd9de',
+  surface: '#f7f9f9',
+  /** X's own red, for the over-length marker on a thread post. */
+  danger: '#f4212e',
+} as const
+
+export const THREADS = {
+  text: '#000000',
+  muted: '#999999',
+  surface: '#fafafa',
+  dot: '#000000',
+  dotMuted: '#d1d1d1',
+} as const
+
+// YouTube is a watch page rather than a feed card, so it needs two more
+// values than the others: the chip fill behind its pill buttons and the
+// description panel, and the near-black its Subscribe button uses.
+export const YOUTUBE = {
+  text: '#0f0f0f',
+  muted: '#606060',
+  chip: '#f2f2f2',
+  subscribe: '#0f0f0f',
+  brand: '#ff0000',
 } as const

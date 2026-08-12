@@ -13,6 +13,12 @@ type PostsToolbarProps = {
   /** Present only on the calendar; drives the range label and day nav. */
   anchor?: Date
   onAnchorChange?: (anchor: Date) => void
+  /**
+   * Fills the heading slot on views with no date range — the list. Sits where
+   * the week range does, in the same type, so switching views moves the
+   * content of that line rather than emptying it.
+   */
+  subheading?: string
 }
 
 function formatWeekRange(weekStart: Date): string {
@@ -33,7 +39,13 @@ function formatWeekRange(weekStart: Date): string {
  * Toolbar shared by the posts views: date range (calendar only), the
  * WEEK / MONTH / LIST switch, week navigation, and ADD POST.
  */
-export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: PostsToolbarProps) {
+export function PostsToolbar({
+  campaignId,
+  view,
+  anchor,
+  onAnchorChange,
+  subheading,
+}: PostsToolbarProps) {
   const navigate = useNavigate()
   const addPost = useAddPost(campaignId)
   const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings(campaignId)
@@ -58,65 +70,77 @@ export function PostsToolbar({ campaignId, view, anchor, onAnchorChange }: Posts
     <div className="flex items-center justify-between gap-4 py-2 shrink-0 flex-wrap">
       {/* The range starts on the user's first day of the week, so it can't be
           written until that setting is known — a Monday–Sunday label that
-          turns into Sunday–Saturday is worse than a beat of nothing. */}
+          turns into Sunday–Saturday is worse than a beat of nothing.
+          The list has no range to show, so the slot carries what the view is
+          showing instead of standing empty. */}
       <span className="flex h-6 items-center text-[18px] font-medium">
-        {anchor &&
-          (settingsPending ? (
+        {anchor ? (
+          settingsPending ? (
             <Skeleton className="h-4 w-56" />
           ) : (
             formatWeekRange(startOfWeek(anchor, firstDayOfWeek))
-          ))}
+          )
+        ) : (
+          subheading
+        )}
       </span>
 
       <div className="flex items-center gap-3">
-        {/* MONTH is hidden until the month view exists. */}
-        <Tabs value={view}>
-          <TabsList variant="segmented" size="excluded">
-            <TabsTrigger
-              variant="segmented"
-              value="week"
-              onClick={() => handleViewSelect('week')}
+        {view === 'week' && anchor && onAnchorChange && (
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="default"
+              size="defaultIcon"
+              onClick={() => onAnchorChange(addDays(anchor, -7))}
+              aria-label="Previous week"
+              // The calendar binds the arrow keys to these two buttons; saying
+              // so here is what puts the shortcut in front of a screen-reader
+              // user, who has nothing else to discover it from.
+              aria-keyshortcuts="ArrowLeft"
             >
-              WEEK
-            </TabsTrigger>
-            <TabsTrigger
-              variant="segmented"
-              value="list"
-              onClick={() => handleViewSelect('list')}
+              <CaretLeftIcon />
+            </Button>
+            <Button
+              variant="default"
+              size="default"
+              onClick={() => onAnchorChange(new Date())}
             >
-              LIST
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+              TODAY
+            </Button>
+            <Button
+              variant="default"
+              size="defaultIcon"
+              onClick={() => onAnchorChange(addDays(anchor, 7))}
+              aria-label="Next week"
+              aria-keyshortcuts="ArrowRight"
+            >
+              <CaretRightIcon />
+            </Button>
+          </div>
+        )}
 
+        {/* The view switch stays beside ADD POST; the week navigator sits to
+            their left rather than between them. MONTH is hidden until the
+            month view exists. */}
         <div className="flex items-center gap-2">
-          {view === 'week' && anchor && onAnchorChange && (
-            <div className="flex items-center gap-0.5">
-              <Button
-                variant="default"
-                size="defaultIcon"
-                onClick={() => onAnchorChange(addDays(anchor, -7))}
-                aria-label="Previous week"
+          <Tabs value={view}>
+            <TabsList variant="segmented" size="excluded">
+              <TabsTrigger
+                variant="segmented"
+                value="week"
+                onClick={() => handleViewSelect('week')}
               >
-                <CaretLeftIcon />
-              </Button>
-              <Button
-                variant="default"
-                size="default"
-                onClick={() => onAnchorChange(new Date())}
+                WEEK
+              </TabsTrigger>
+              <TabsTrigger
+                variant="segmented"
+                value="list"
+                onClick={() => handleViewSelect('list')}
               >
-                TODAY
-              </Button>
-              <Button
-                variant="default"
-                size="defaultIcon"
-                onClick={() => onAnchorChange(addDays(anchor, 7))}
-                aria-label="Next week"
-              >
-                <CaretRightIcon />
-              </Button>
-            </div>
-          )}
+                LIST
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           <Button variant="default" onClick={() => addPost()}>
             <PlusIcon />

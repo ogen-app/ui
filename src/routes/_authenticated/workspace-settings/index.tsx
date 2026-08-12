@@ -1,13 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { usePlatforms } from '@/hooks/usePlatforms'
 import {
-  SettingsSaveButton,
+  SettingsSaveBar,
   SettingsSaveProvider,
 } from '@/components/settings/settingsSave'
+import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
+import { cn } from '@/lib'
 import { WorkspaceSection } from '@/components/workspace-settings/WorkspaceSection'
 import { PeopleSection } from '@/components/workspace-settings/PeopleSection'
 import { PlatformsSection } from '@/components/workspace-settings/PlatformsSection'
@@ -20,6 +23,7 @@ export const Route = createFileRoute('/_authenticated/workspace-settings/')({
 
 /** Workspace Settings page: workspace identity, connected platforms, connect grid. */
 function WorkspaceSettings() {
+  const { t } = useTranslation()
   const { isLoading, isError } = usePlatforms()
 
   if (isLoading) {
@@ -33,7 +37,7 @@ function WorkspaceSettings() {
   if (isError) {
     return (
       <PageContainer>
-        <PageError header="Failed to load settings" />
+        <PageError header={t('workspaceSettings.loadFailed')} />
       </PageContainer>
     )
   }
@@ -41,22 +45,28 @@ function WorkspaceSettings() {
   return (
     <PageContainer variant="fullFlex">
       <SettingsSaveProvider>
-        <div className="h-0 grow overflow-y-auto flex flex-col">
-          <PageHeader
-            title="Workspace Settings"
-            fadeOnScroll
-            actions={<SettingsSaveButton />}
-          />
-          <div className="flex flex-col gap-8 px-3 lg:px-6 pt-4 pb-10">
-            {/* This page is about the workspace you're in; the list of all of
-                them lives at /workspaces, one click from the Switch button in
-                the card below. */}
-            <WorkspaceSection />
-            <PeopleSection />
-            <PlatformsSection />
-            <ConnectPlatformsSection />
-            <DeleteWorkspaceCard />
+        {/* The scroller is nested inside a positioned wrapper so the save bar
+            can anchor to the column without scrolling away with the cards. */}
+        <div className="relative flex h-0 grow flex-col">
+          <div className="h-0 grow overflow-y-auto flex flex-col">
+            <PageHeader title={t('workspaceSettings.title')} fadeOnScroll />
+            <div
+              className={cn(
+                'flex flex-col gap-8 px-3 lg:px-6 pt-4',
+                PAGE_ACTION_BAR_INSET,
+              )}
+            >
+              {/* This page is about the workspace you're in; the list of all
+                  of them lives at /workspaces, one click from the Switch
+                  button in the card below. */}
+              <WorkspaceSection />
+              <PeopleSection />
+              <PlatformsSection />
+              <ConnectPlatformsSection />
+              <DeleteWorkspaceCard />
+            </div>
           </div>
+          <SettingsSaveBar />
         </div>
       </SettingsSaveProvider>
     </PageContainer>

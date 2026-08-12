@@ -75,6 +75,26 @@ export const ROLE_LABELS: Record<WorkspaceRole, string> = {
 }
 
 /**
+ * The same four roles as catalogue keys, for the screens that have been
+ * converted (CON-174) — the sidebar today.
+ *
+ * Keys and not strings because this is module scope: a `const` holding
+ * translated copy freezes whichever language happened to load first, so the
+ * lookup has to happen inside a render, through `t`. `ROLE_LABELS` above stays
+ * for the workspace screens that are still hard-coded English; it goes when
+ * they are converted.
+ */
+export const ROLE_LABEL_KEYS = {
+  owner: 'workspace.role.owner',
+  admin: 'workspace.role.admin',
+  member: 'workspace.role.member',
+  viewer: 'workspace.role.viewer',
+  // `as const` so the values stay literal types — `t` only accepts keys the
+  // catalogue actually has, and a `Record<_, string>` would widen them away.
+  // `satisfies` keeps the exhaustiveness check the annotation was there for.
+} as const satisfies Record<WorkspaceRole, string>
+
+/**
  * What each role can do — whole sentences that stand on their own beside the
  * role picker, with no carrier phrase naming the invitee: the address is in
  * the field alongside, and repeating it said nothing the form didn't already.

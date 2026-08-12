@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { AnalyticsModule } from "@/components/campaigns/overview/AnalyticsModule.tsx";
 import { AssetsModule } from "@/components/campaigns/overview/AssetsModule.tsx";
 import { AttentionRail } from "@/components/campaigns/overview/AttentionRail.tsx";
 import { BriefModule } from "@/components/campaigns/overview/BriefModule.tsx";
@@ -60,6 +61,11 @@ function CampaignOverviewScreen() {
       <AttentionRail items={items} campaignId={campaignId} />
       {!briefDone && brief}
       <ContentModule campaign={campaign} posts={posts} />
+      {/* Directly under Content: the same posts, seen by what they earned
+          rather than by where they are in the pipeline. The card reads its own
+          flag — while `campaign-analytics` is off it holds its place with a
+          preview rather than disappearing. */}
+      <AnalyticsModule campaignId={campaignId} />
       {briefDone && brief}
       <SetupModule campaign={campaign} platformViews={platformViews} />
       <AssetsModule campaign={campaign} />

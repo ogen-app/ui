@@ -15,9 +15,11 @@ import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unav
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedContentBankRouteImport } from './routes/_authenticated/content-bank'
+import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
+import { Route as AuthForgotIndexRouteImport } from './routes/auth/forgot/index'
 import { Route as AuthenticatedWorkspaceSettingsIndexRouteImport } from './routes/_authenticated/workspace-settings/index'
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
 import { Route as AuthenticatedContentBankIndexRouteImport } from './routes/_authenticated/content-bank/index'
@@ -34,6 +36,7 @@ import { Route as AuthenticatedCampaignsCampaignIdOverviewRouteImport } from './
 import { Route as AuthenticatedCampaignsCampaignIdListRouteImport } from './routes/_authenticated/campaigns/$campaignId/list'
 import { Route as AuthenticatedCampaignsCampaignIdBriefRouteImport } from './routes/_authenticated/campaigns/$campaignId/brief'
 import { Route as AuthenticatedCampaignsCampaignIdAssetsRouteImport } from './routes/_authenticated/campaigns/$campaignId/assets'
+import { Route as AuthenticatedCampaignsCampaignIdAnalyticsRouteImport } from './routes/_authenticated/campaigns/$campaignId/analytics'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/index'
 import { Route as AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/posts/$postId'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarAnchorViewRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/$anchor/$view'
@@ -68,6 +71,11 @@ const AuthenticatedContentBankRoute =
     path: '/content-bank',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthResetIndexRoute = AuthResetIndexRouteImport.update({
+  id: '/auth/reset/',
+  path: '/auth/reset/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
   id: '/auth/register/',
   path: '/auth/register/',
@@ -81,6 +89,11 @@ const AuthLogoutIndexRoute = AuthLogoutIndexRouteImport.update({
 const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
   id: '/auth/login/',
   path: '/auth/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthForgotIndexRoute = AuthForgotIndexRouteImport.update({
+  id: '/auth/forgot/',
+  path: '/auth/forgot/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWorkspaceSettingsIndexRoute =
@@ -179,6 +192,12 @@ const AuthenticatedCampaignsCampaignIdAssetsRoute =
     path: '/assets',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
+const AuthenticatedCampaignsCampaignIdAnalyticsRoute =
+  AuthenticatedCampaignsCampaignIdAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
 const AuthenticatedCampaignsCampaignIdCalendarIndexRoute =
   AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport.update({
     id: '/calendar/',
@@ -214,9 +233,12 @@ export interface FileRoutesByFullPath {
   '/content-bank/': typeof AuthenticatedContentBankIndexRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
   '/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
+  '/auth/forgot/': typeof AuthForgotIndexRoute
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
+  '/auth/reset/': typeof AuthResetIndexRoute
+  '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -241,9 +263,12 @@ export interface FileRoutesByTo {
   '/content-bank': typeof AuthenticatedContentBankIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
   '/workspace-settings': typeof AuthenticatedWorkspaceSettingsIndexRoute
+  '/auth/forgot': typeof AuthForgotIndexRoute
   '/auth/login': typeof AuthLoginIndexRoute
   '/auth/logout': typeof AuthLogoutIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
+  '/auth/reset': typeof AuthResetIndexRoute
+  '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -272,9 +297,12 @@ export interface FileRoutesById {
   '/_authenticated/content-bank/': typeof AuthenticatedContentBankIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
   '/_authenticated/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
+  '/auth/forgot/': typeof AuthForgotIndexRoute
   '/auth/login/': typeof AuthLoginIndexRoute
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
+  '/auth/reset/': typeof AuthResetIndexRoute
+  '/_authenticated/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/_authenticated/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/_authenticated/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
   '/_authenticated/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -303,9 +331,12 @@ export interface FileRouteTypes {
     | '/content-bank/'
     | '/profile/'
     | '/workspace-settings/'
+    | '/auth/forgot/'
     | '/auth/login/'
     | '/auth/logout/'
     | '/auth/register/'
+    | '/auth/reset/'
+    | '/campaigns/$campaignId/analytics'
     | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
@@ -330,9 +361,12 @@ export interface FileRouteTypes {
     | '/content-bank'
     | '/profile'
     | '/workspace-settings'
+    | '/auth/forgot'
     | '/auth/login'
     | '/auth/logout'
     | '/auth/register'
+    | '/auth/reset'
+    | '/campaigns/$campaignId/analytics'
     | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
     | '/campaigns/$campaignId/list'
@@ -360,9 +394,12 @@ export interface FileRouteTypes {
     | '/_authenticated/content-bank/'
     | '/_authenticated/profile/'
     | '/_authenticated/workspace-settings/'
+    | '/auth/forgot/'
     | '/auth/login/'
     | '/auth/logout/'
     | '/auth/register/'
+    | '/auth/reset/'
+    | '/_authenticated/campaigns/$campaignId/analytics'
     | '/_authenticated/campaigns/$campaignId/assets'
     | '/_authenticated/campaigns/$campaignId/brief'
     | '/_authenticated/campaigns/$campaignId/list'
@@ -379,9 +416,11 @@ export interface RootRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute
   ServerUnavailableIndexRoute: typeof ServerUnavailableIndexRoute
   WorkspacesIndexRoute: typeof WorkspacesIndexRoute
+  AuthForgotIndexRoute: typeof AuthForgotIndexRoute
   AuthLoginIndexRoute: typeof AuthLoginIndexRoute
   AuthLogoutIndexRoute: typeof AuthLogoutIndexRoute
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
+  AuthResetIndexRoute: typeof AuthResetIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -428,6 +467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContentBankRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/auth/reset/': {
+      id: '/auth/reset/'
+      path: '/auth/reset'
+      fullPath: '/auth/reset/'
+      preLoaderRoute: typeof AuthResetIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/register/': {
       id: '/auth/register/'
       path: '/auth/register'
@@ -447,6 +493,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/login'
       fullPath: '/auth/login/'
       preLoaderRoute: typeof AuthLoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/forgot/': {
+      id: '/auth/forgot/'
+      path: '/auth/forgot'
+      fullPath: '/auth/forgot/'
+      preLoaderRoute: typeof AuthForgotIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/workspace-settings/': {
@@ -561,6 +614,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdAssetsRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
+    '/_authenticated/campaigns/$campaignId/analytics': {
+      id: '/_authenticated/campaigns/$campaignId/analytics'
+      path: '/analytics'
+      fullPath: '/campaigns/$campaignId/analytics'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
     '/_authenticated/campaigns/$campaignId/calendar/': {
       id: '/_authenticated/campaigns/$campaignId/calendar/'
       path: '/calendar'
@@ -608,6 +668,7 @@ const AuthenticatedContentBankRouteWithChildren =
   )
 
 interface AuthenticatedCampaignsCampaignIdRouteChildren {
+  AuthenticatedCampaignsCampaignIdAnalyticsRoute: typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   AuthenticatedCampaignsCampaignIdAssetsRoute: typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   AuthenticatedCampaignsCampaignIdBriefRoute: typeof AuthenticatedCampaignsCampaignIdBriefRoute
   AuthenticatedCampaignsCampaignIdListRoute: typeof AuthenticatedCampaignsCampaignIdListRoute
@@ -620,6 +681,8 @@ interface AuthenticatedCampaignsCampaignIdRouteChildren {
 
 const AuthenticatedCampaignsCampaignIdRouteChildren: AuthenticatedCampaignsCampaignIdRouteChildren =
   {
+    AuthenticatedCampaignsCampaignIdAnalyticsRoute:
+      AuthenticatedCampaignsCampaignIdAnalyticsRoute,
     AuthenticatedCampaignsCampaignIdAssetsRoute:
       AuthenticatedCampaignsCampaignIdAssetsRoute,
     AuthenticatedCampaignsCampaignIdBriefRoute:
@@ -677,9 +740,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
   ServerUnavailableIndexRoute: ServerUnavailableIndexRoute,
   WorkspacesIndexRoute: WorkspacesIndexRoute,
+  AuthForgotIndexRoute: AuthForgotIndexRoute,
   AuthLoginIndexRoute: AuthLoginIndexRoute,
   AuthLogoutIndexRoute: AuthLogoutIndexRoute,
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,
+  AuthResetIndexRoute: AuthResetIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

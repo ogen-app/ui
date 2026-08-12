@@ -1,5 +1,6 @@
 import { apiUrl } from './base'
 import { errorMessage } from './errors'
+import { isRecord } from './json'
 import { readSSEStream } from '@/lib/sse'
 import type { PostEvaluation } from '@/types/quality'
 
@@ -108,6 +109,3 @@ function safeParse(data: string): Record<string, unknown> {
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}

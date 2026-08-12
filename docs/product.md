@@ -118,8 +118,14 @@ creative brief and targeting that drive generation:
   (CON-57). Types can be system-provided or custom.
 - **Targeting** — `target_platforms` (each platform + the post types to produce).
 - **Grounding** — `use_assets` + `asset_ids` link Content-Bank material in.
-- **Planning metadata** — `start_date`/`end_date`, `estimated_post_count`,
-  `budget`/`currency`, `tags`.
+- **Planning metadata** — `start_date`/`end_date`, `budget`/`currency`, `tags`.
+- **Goal** (CON-182) — `estimated_post_count` posts per `goal_cadence` period
+  (`week`/`month`). A *rate*, not a total: the content plan multiplies it by the
+  periods the campaign's dates span, and the overview reports progress period by
+  period. It meant the whole-campaign total before CON-182.
+- **Schedule** (CON-181) — `publishing_time` + `timezone`, `publishing_days`
+  (the weekdays it publishes on), and `spread_minutes` of jitter either side of
+  the time. The content plan places every generated draft by these.
 - **Status** — `draft → active`.
 
 ### Content Plan (AI generation) 🔧
@@ -264,8 +270,8 @@ backlog, from Linear (status as of this writing):
 - **Multi-tenancy front-end completion** — ✅ landed 2026-07 (real
   `current_user` identity + tenant in the UI, workspace settings with rename,
   per-instance API-key config removed; in-app account-connect flow landed
-  2026-07-06). Remaining: an invite-teammate UI (CON-26, unspecified) and an
-  account **disconnect** path (needs a new API endpoint).
+  2026-07-06; per-account **disconnect** landed 2026-08, CON-133). Remaining:
+  an invite-teammate UI (CON-26, unspecified).
 
 **Secondary — desirable, not a main goal**
 

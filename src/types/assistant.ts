@@ -3,8 +3,14 @@ export type ThreadSubject =
   | { kind: 'post'; postId: string; campaignId: string }
   | { kind: 'campaign'; campaignId: string }
 
-/** What the post assistant did with the instruction (CON-42). */
-export type PostAssistantAction = 'edited' | 'declined'
+/**
+ * What the post assistant did with the instruction (CON-42).
+ *
+ * `noted` means the turn wrote one or more notes and left the body alone
+ * (CON-188). A turn that did both reports `edited` and carries the notes
+ * alongside — so this value is "notes *only*", not "notes happened".
+ */
+export type PostAssistantAction = 'edited' | 'declined' | 'noted'
 
 /**
  * What the campaign assistant did (CON-112 and its sub-issues). Every action
@@ -104,6 +110,13 @@ export type AssistantTurn = {
   /** Post turns only. */
   saveVersion?: boolean
   versionNote?: string
+  /**
+   * Set when a post turn cloned the post (CON-59): the clone is a new,
+   * already-persisted post in the same campaign, and the reply offers a jump to
+   * it. `campaignId` is the subject's — resolved in the store, as the event
+   * omits it — so the jump can target the clone's editor.
+   */
+  clone?: { postId: string; campaignId: string }
   steps?: AssistantStep[]
   /** Monotonic (`performance.now`) marks — timeline durations only. */
   startedAt?: number

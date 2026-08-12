@@ -1,12 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
 
+import { checkSession, login as loginRequest, invalidateSession } from "@/services/api/sessions";
 import {
-  checkSession,
-  login as loginRequest,
-  logout as logoutRequest,
-  invalidateSession,
-} from "@/services/api/sessions";
+  requestPasswordReset,
+  resetPassword as resetPasswordRequest,
+} from "@/services/api/passwordReset";
 import { signup as signupRequest } from "@/services/api/tenants";
+import { deleteUser, updateUser } from "@/services/api/users";
+import { clearAllApplicationData } from "@/lib/cache-utils";
 import type { LoginPayload, Session } from "@/types/session";
 import type { SignupPayload } from "@/types/tenant";
 import type { User } from "@/types/user";
@@ -20,6 +21,9 @@ import { useAuthStore } from "@/stores/authStore";
 export function useLogin() {
   const setUser = useAuthStore((s) => s.setUser);
   return useMutation<Session, Error, LoginPayload>({
+    // The form renders `error` beside the fields it refers to; a toast on top
+    // of that would say the same thing twice and further from the inputs.
+    meta: { errorToast: false },
     mutationFn: loginRequest,
     onSuccess: async () => {
       // Re-probe through the same cached path the root guard uses: one
@@ -47,6 +51,8 @@ export function useLogin() {
 export function useSignup() {
   const setUser = useAuthStore((s) => s.setUser);
   return useMutation<User, Error, SignupPayload>({
+    // Same as login: `AuthRegisterForm` shows `error` inline.
+    meta: { errorToast: false },
     mutationFn: signupRequest,
     onSuccess: (user) => {
       invalidateSession();
@@ -55,14 +61,100 @@ export function useSignup() {
   });
 }
 
-/** Logout mutation: ends the session, then clears the probe cache + store. */
-export function useLogout() {
+/**
+ * Step one of a password reset: ask for the one-time link (CON-108).
+ *
+ * Succeeds for an unknown address too — the endpoint answers 202 either way so
+ * it can't be used to test whether an email has an account. The success state
+ * is therefore "we've sent it if that address exists", never "check your
+ * inbox" stated as fact.
+ */
+export function useRequestPasswordReset() {
+  return useMutation<void, Error, string>({
+    // `AuthForgotPasswordForm` renders `error.message` under the field.
+    meta: { errorToast: false },
+    mutationFn: requestPasswordReset,
+  });
+}
+
+/** Step two: spend the token and set the new password (CON-108). */
+export function useResetPassword() {
+  return useMutation<void, Error, { token: string; password: string }>({
+    // `AuthResetPasswordForm` renders `error.message`, and next to it the way
+    // out of an expired token — which a toast would drop.
+    meta: { errorToast: false },
+    mutationFn: ({ token, password }) => resetPasswordRequest(token, password),
+  });
+}
+
+/**
+ * Edits the signed-in user's own name and email.
+ *
+ * The store is the source of truth for the screen, so it's updated from the
+ * server's response rather than from what was typed — the server owns the
+ * canonical `name` string we split back into first/last. The cached session
+ * probe is dropped too, so the next root-guard pass re-reads the changed
+ * identity instead of serving the stale one for the rest of the page's life.
+ *
+ * Note there is no email verification anywhere in the product: this writes a
+ * new login address immediately and unconfirmed, and a typo locks the account
+ * out at the next login. The form says so; it can't do better than say so.
+ */
+export function useUpdateProfile() {
+  const setUser = useAuthStore((s) => s.setUser);
+  return useMutation<
+    User,
+    Error,
+    { id: string; firstName: string; lastName: string; email: string }
+  >({
+    mutationFn: ({ id, firstName, lastName, email }) =>
+      updateUser(id, { name: `${firstName} ${lastName}`.trim(), email }),
+    onSuccess: (user) => {
+      invalidateSession();
+      setUser(user);
+    },
+  });
+}
+
+/*
+ * There is no in-app password change. `PasswordSection` on /profile sends the
+ * emailed reset instead, so `useRequestPasswordReset` above serves both it and
+ * the signed-out /auth/forgot screen.
+ *
+ * What used to be here re-authenticated through POST /api/sessions and then
+ * PUT the new password, because the endpoint asks for no current password and
+ * revokes no sessions (CON-193). Both of those are still true of the endpoint;
+ * the difference is that nothing in the UI calls it with a password anymore.
+ */
+
+/**
+ * Deletes the signed-in user's own account, then tears down every local trace
+ * of them.
+ *
+ * The local teardown is deliberately unconditional and best-effort, the same
+ * rule the logout screen follows: once the server has destroyed the account,
+ * a persisted user and a warm query cache on this device are stale at best and
+ * misleading at worst, so a storage API refusing us must not leave them behind.
+ *
+ * What the server does is far larger than "the account" suggests — see
+ * `deleteUser` in `services/api/users.ts`. The caller is responsible for
+ * saying so before it gets here.
+ */
+export function useDeleteAccount() {
   const clearUser = useAuthStore((s) => s.clearUser);
-  return useMutation<void, Error, void>({
-    mutationFn: logoutRequest,
-    onSuccess: () => {
+  return useMutation<void, Error, string>({
+    // `DeleteAccountDialog` renders `error.message` inside itself, which is
+    // where the user is looking and where the retry is.
+    meta: { errorToast: false },
+    mutationFn: deleteUser,
+    onSuccess: async () => {
       invalidateSession();
       clearUser();
+      try {
+        await clearAllApplicationData();
+      } catch {
+        // Best-effort — the account is already gone server-side.
+      }
     },
   });
 }

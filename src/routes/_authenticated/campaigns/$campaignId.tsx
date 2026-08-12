@@ -6,9 +6,11 @@ import { PageError } from "@/components/page-primitives/PageError.tsx";
 import { PageHeader } from "@/components/page-primitives/PageHeader.tsx";
 import { CalendarHeaderActions } from "@/components/campaigns/calendar/CalendarHeaderActions.tsx";
 import {
-  SettingsSaveButton,
+  SettingsSaveBar,
   SettingsSaveProvider,
 } from "@/components/settings/settingsSave.tsx";
+import { PAGE_ACTION_BAR_INSET } from "@/components/page-primitives/PageActionBar.tsx";
+import { cn } from "@/lib";
 import { useCampaign } from "@/hooks/useCampaigns.ts";
 import { threadIdFor, useAssistantStore } from "@/stores/assistantStore.ts";
 
@@ -24,7 +26,11 @@ const SECTIONS = [
   { slug: "/assets", label: "Assets" },
   { slug: "/settings", label: "Settings" },
   { slug: "/overview", label: "Overview" },
-] as const;
+  { slug: "/analytics", label: "Analytics" },
+] as const
+
+/** Sections that read as a document: one scroll container, fading header. */
+const DOCUMENT_SECTIONS: readonly string[] = ["Overview", "Analytics"];
 
 function CampaignLayout() {
   const { campaignId } = Route.useParams();
@@ -75,34 +81,34 @@ function CampaignLayout() {
   const displayName = campaign.name.trim();
   const title = `${displayName === "" ? "Untitled campaign" : displayName} ${section}`;
 
-  // Brief and Settings edit inline and save through the header button, so they
-  // get the settings-page shell: one scroll container owning the sticky
-  // header, whose title fades out on scroll.
+  // Brief and Settings edit inline and commit through the bottom save bar, so
+  // they get the settings-page shell: one scroll container owning the sticky
+  // header, whose title fades out on scroll, inside a positioned wrapper the
+  // bar can anchor to without scrolling away with the cards.
   if (section === "Brief" || section === "Settings") {
     return (
       <PageContainer variant={"fullFlex"}>
         <SettingsSaveProvider>
-          <div className={"h-0 grow overflow-y-auto flex flex-col"}>
-            <PageHeader
-              title={title}
-              fadeOnScroll
-              actions={<SettingsSaveButton />}
-            />
-            {/* pt-4 is the shared 16px breath between a page header and its
-                first card — see the same value on Overview and Workspace
-                Settings. */}
-            <div className={"px-3 lg:px-6 pt-4"}>
-              <Outlet />
+          <div className={"relative h-0 grow flex flex-col"}>
+            <div className={"h-0 grow overflow-y-auto flex flex-col"}>
+              <PageHeader title={title} fadeOnScroll />
+              {/* pt-4 is the shared 16px breath between a page header and its
+                  first card — see the same value on Overview and Workspace
+                  Settings. */}
+              <div className={cn("px-3 lg:px-6 pt-4", PAGE_ACTION_BAR_INSET)}>
+                <Outlet />
+              </div>
             </div>
+            <SettingsSaveBar />
           </div>
         </SettingsSaveProvider>
       </PageContainer>
     );
   }
 
-  // Overview reads as a document too — same scrolling shell and fading header,
-  // minus the save button, since nothing on it is edited in place.
-  if (section === "Overview") {
+  // Overview and Analytics read as documents too — same scrolling shell and
+  // fading header, minus the save button: nothing on them is edited in place.
+  if (DOCUMENT_SECTIONS.includes(section)) {
     return (
       <PageContainer variant={"fullFlex"}>
         <div className={"h-0 grow overflow-y-auto flex flex-col"}>

@@ -28,6 +28,14 @@ export type PostStatusAction = {
   /** The single step back from the current status; see ActionMeta.reverse. */
   reverse: boolean
   disabled: boolean
+  /**
+   * This action, specifically, is the one waiting on the server — not merely
+   * "something is in flight". Nothing flips ahead of the response any more
+   * (see `usePost.transitionStatus`), so the spinner is the whole of the
+   * feedback, and putting it on a button the user didn't press would report
+   * the wrong move as running.
+   */
+  running: boolean
   blockers: PostStatusBlocker[]
   run: () => Promise<TransitionStatusResult>
 }
@@ -37,6 +45,12 @@ type UsePostStatusActionsOptions = {
   transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
   schedule: () => Promise<TransitionStatusResult>
   cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
+  // Opens the dialog that asks for the published post's URL. The 'verify'
+  // edge is the one action that doesn't call the API from here: the dialog
+  // owns POST /:id/verify-external, because the move can fail in ways only
+  // it can answer (no post at that URL → retry) and can be opted out of
+  // (no link to hand → plain status PUT).
+  requestVerification: () => void
   // True while a cancellation is in flight (see usePost.cancelling).
   // Disables every action so a second cancel job can't be enqueued.
   cancelling?: boolean
@@ -81,11 +95,15 @@ export function usePostStatusActions({
   transitionStatus,
   schedule,
   cancelScheduled,
+  requestVerification,
   cancelling = false,
   publishMethod,
   context,
 }: UsePostStatusActionsOptions): UsePostStatusActionsResult {
-  const [pending, setPending] = useState(false)
+  // Which edge is in flight, rather than a bare boolean: the buttons need to
+  // know *which* of them is waiting, and "none" is the idle state.
+  const [running, setRunning] = useState<PostStatus | null>(null)
+  const pending = running !== null
 
   const actions: PostStatusAction[] = getAllowedNextStatuses(post.status).flatMap(
     (next) => {
@@ -103,6 +121,11 @@ export function usePostStatusActions({
           mechanism,
           reverse: meta.reverse ?? false,
           disabled: blockers.length > 0 || pending || cancelling,
+          // A cancellation's answer isn't its 202 — the post stays
+          // `scheduled` until the worker lands the flip, and `cancelling`
+          // spans exactly that. So the unschedule button keeps waiting after
+          // its request resolves, which is the truth of what is happening.
+          running: running === next || (cancelling && mechanism === 'cancel'),
           blockers,
           run: async () => {
             if (blockers.length > 0) {
@@ -110,7 +133,15 @@ export function usePostStatusActions({
               toast.error('Not ready yet', { description: message })
               return { ok: false, error: message }
             }
-            setPending(true)
+            // Verification asks a question before it moves anything, so
+            // the action's job is to open the dialog and stop. Nothing is
+            // in flight yet — setting `pending` here would disable the
+            // header while the user types the URL.
+            if (mechanism === 'verify') {
+              requestVerification()
+              return { ok: true, post }
+            }
+            setRunning(next)
             // Route by mechanism so a schedule or user-cancel never
             // executes as a plain status PUT — see
             // PostStatusActionMechanism.
@@ -120,7 +151,7 @@ export function usePostStatusActions({
                 : mechanism === 'schedule'
                   ? await schedule()
                   : await transitionStatus(next)
-            setPending(false)
+            setRunning(null)
             reportActionResult(mechanism, result)
             return result
           },
@@ -174,7 +205,7 @@ function reportActionResult(
   }
   if (mechanism !== 'schedule') return
   if (result.notice) {
-    toast.message('Scheduled for manual publishing', {
+    toast.info('Scheduled for manual publishing', {
       description: result.notice,
     })
   } else {

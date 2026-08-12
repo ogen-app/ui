@@ -33,6 +33,17 @@ export type Post = {
   target_audience_notes: string
   used_asset_ids: string[]
   campaign_type_phase_id: string | null
+  /**
+   * The publisher's own id for this post, set when it went out through a
+   * publisher — either by auto-publish or by verifying a manual one
+   * (CON-149). Absent means nothing links this post to the thing that was
+   * actually posted, so its analytics can never resolve; that absence is
+   * what the "add post link" affordance keys off.
+   *
+   * Read-only: the server owns it, and it is deliberately not in
+   * `PostPayload` — an autosave must never write it back.
+   */
+  publisher_post_id?: string
   created_by: string
   created_at: string
   updated_at: string
@@ -47,6 +58,48 @@ export type Post = {
   social_account?: PublisherAccount | null
   used_assets: unknown[]
   campaign_type_phase: unknown | null
+}
+
+/**
+ * The slim per-post projection behind the Campaigns list (CON-152) — exactly
+ * the fields `lib/campaignReadiness` reads, and nothing else. No title, no
+ * content, no hydrated relations: those are the payload, and the list only
+ * ever renders counts derived from them.
+ *
+ * A full `Post` structurally satisfies this, which is the point. The readiness
+ * rules are typed against `PostSummary`, so the Campaigns list can feed them
+ * projections while the Overview screen keeps feeding them real posts — one
+ * rule set, no divergence (docs/attention-rules.md).
+ */
+export type PostSummary = Pick<
+  Post,
+  | 'id'
+  | 'campaign_id'
+  | 'status'
+  | 'scheduled_at'
+  | 'published_at'
+  | 'platform_id'
+  | 'platform_post_type'
+  | 'campaign_type_phase_id'
+  | 'media_urls'
+  | 'created_at'
+  | 'updated_at'
+>
+
+/** One campaign's projected posts, as the server groups them. */
+export type CampaignPostSummary = {
+  campaign_id: string
+  posts: PostSummary[]
+}
+
+/**
+ * `GET /api/campaigns/summaries`. Campaigns with no posts are simply absent —
+ * the client defaults them to an empty list rather than the server sending a
+ * row per empty campaign.
+ */
+export type CampaignSummariesResponse = {
+  summaries: CampaignPostSummary[]
+  generated_at: string
 }
 
 export const POST_STATUS_LABELS: Record<PostStatus, string> = {

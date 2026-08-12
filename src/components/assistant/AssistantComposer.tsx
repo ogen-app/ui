@@ -111,7 +111,8 @@ export function AssistantComposer({
             aria-label="Suggestions"
             aria-expanded={suggestionsOpen}
             // Selected reads as an outline, not a fill: the button sits in the
-            // field's own beige, so a beige fill would only merge with it.
+            // field's own surface colour, so a matching fill would only merge
+            // with it.
             className={cn(
               'disabled:text-senary-foreground',
               'data-[active=true]:bg-primary data-[active=true]:inset-ring-[2px] data-[active=true]:inset-ring-border',

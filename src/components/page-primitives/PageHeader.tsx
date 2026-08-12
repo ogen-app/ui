@@ -13,6 +13,13 @@ type PageHeaderProps = {
   /** Custom left-side content rendered after the title (or instead of it). */
   children?: ReactNode
   className?: string
+  /**
+   * Passive status for the middle of the row — the autosave indicator, and
+   * nothing else. Non-interactive by rule: the slot is `pointer-events-none`
+   * so a wide status can never swallow a click meant for the title or an
+   * action behind it.
+   */
+  center?: ReactNode
   actions?: ReactNode
   /**
    * Fades the title and the fader gradient out once the page scrolls; the
@@ -42,6 +49,7 @@ export function PageHeader({
   back,
   children,
   className,
+  center,
   actions,
   fadeOnScroll,
 }: PageHeaderProps) {
@@ -99,7 +107,9 @@ export function PageHeader({
             <ListIcon className="size-5" />
           </Button>
         </div>
-        <div className="flex flex-1 min-w-0 items-center gap-2">
+        {/* `relative` on both side groups only so they paint over the
+            absolutely-positioned centre when a long title runs into it. */}
+        <div className="relative flex flex-1 min-w-0 items-center gap-2">
           {back &&
             (fadeOnScroll ? (
               <span className="flex shrink-0 pointer-events-auto">{back}</span>
@@ -119,10 +129,20 @@ export function PageHeader({
           )}
           {children}
         </div>
+        {/* Absolute rather than a third flex child: a flex centre only lands
+            on the true middle when both side groups are the same width, and
+            they never are. It also doesn't fade with the title — whether your
+            edits are saved matters most once you've scrolled into the
+            document. */}
+        {center && (
+          <div className="pointer-events-none absolute inset-x-0 flex justify-center">
+            <div className="flex items-center">{center}</div>
+          </div>
+        )}
         {actions && (
           <div
             className={cn(
-              'flex shrink-0 items-center gap-2',
+              'relative flex shrink-0 items-center gap-2',
               fadeOnScroll && 'pointer-events-auto',
             )}
           >

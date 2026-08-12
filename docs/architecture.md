@@ -29,14 +29,14 @@ src/
   routes/          File-based routes (see Routing). *.gen.ts is generated.
   components/
     ui/            Radix + CVA primitives (shadcn-style). ~35 components.
-    page-primitives/  Page scaffolding: PageContainer/Header/Loader/Error, RightRail, RailPanel.
-    layout/        App chrome: AppSidebar, SecondaryNavbar, OverlayOutlet, UploadTracker.
+    page-primitives/  Page scaffolding: PageContainer/Header/Loader/Error, RailPanel, Explainer.
+    layout/        App chrome: AppSidebar, RightSidebar, AppAuth, LiveStatus.
     tables/        VirtualTable engine + postsTable / docsTable + column-width solver.
     forms/         Feature forms (campaign, post, auth) — see Forms.
-    campaigns/ posts/ content-bank/ uploads/ workspace-settings/ overlays/ rail-panels/
-  hooks/           TanStack Query hooks + UI hooks (useOverlay, useRightRail*).
+    assistant/ campaigns/ posts/ content-bank/ uploads/ workspace-settings/ profile/ settings/
+  hooks/           TanStack Query hooks + UI hooks (useOverlay, usePanelScope).
   services/api/    The API client: base + http helpers + one module per resource.
-  stores/          Zustand stores (auth, overlay, rightRail, settings, upload).
+  stores/          Zustand stores (assistant, auth, eventStream, settings, toast, upload).
   lib/             Framework-free domain logic (post status machine, platforms, asset rules).
   types/           Domain types, mirroring the Go models.
   config/          overlayRegistry, zIndex.
@@ -174,27 +174,33 @@ use `devtools`; persisted ones add `persist` with keys centralized in
 | Store | Persisted | Holds |
 |---|---|---|
 | `authStore` | yes (`user` only) | The user mirror of the cookie session; `logout()`. |
-| `overlayStore` | no | Overlay `active`/`closing` stacks + a 300ms close-animation lifecycle and `beforeClose` guards. |
-| `rightRailStore` | yes (`dirtyByPage` only) | Registered rail sections, the active panel, and per-page "the user overrode the default panel" overrides. |
-| `settingsStore` | yes (minus transient) | `sidebarCollapsed`, secondary-navbar open state, last-opened modals. |
+| `assistantStore` | no (threads come from the API) | Assistant threads, the active thread, per-thread run status and unread marks. |
+| `eventStreamStore` | no | The SSE hub connection and per-subject local-run muting. |
+| `toastStore` | no | The imperative toast queue behind `toast(...)`. |
+| `settingsStore` | yes (minus transient) | `sidebarCollapsed`, `panelMemory` (right-sidebar choices), last-opened modals, dismissed explainers, asset selections. |
 | `uploadStore` | no | In-flight uploads with an `uploading → processing → ready\|partial\|failed` phase machine. |
 
-## Contextual UI: Overlays and the Right Rail
+## Contextual UI: modals and the right sidebar
 
-Two **independent** systems for contextual surfaces.
+**Modals and sheets** are plain primitives in `components/ui` (`modal.tsx`,
+`sheet.tsx`, `backdrop.tsx`, `screen-overlay.tsx`), rendered by whoever opens
+them and layered with `config/zIndex.ts`. There is no registry and no overlay
+store — an earlier `overlayRegistry` / `useOverlay` / `OverlayOutlet` system was
+removed along with the right rail.
 
-**Overlays** (modals / sheets / secondary-navbar dialogs). Registered by id in
-`config/overlayRegistry.ts` (`{ container, component }`), opened via
-`useOverlay(id)` → `{ isOpen, open(props), close() }`, and rendered by
-`layout/OverlayOutlet.tsx`. The outlet closes everything on navigation, wires a
-global ESC-closes-topmost handler, and stacks z-index via `getOverlayZIndex()`.
+**Right sidebar** (`layout/RightSidebar.tsx`) — one slide-out container on the
+right edge, showing one panel at a time. Every panel stays mounted and
+cross-fades, so the assistant keeps streaming while something else is on top of
+it. Panels that need the route's own data (the post editor's four) are rendered
+by the route and portalled into a layer here; the rest render in place.
+`page-primitives/RailPanel.tsx` is the standard panel chrome
+(title/close/actions/footer).
 
-**Right Rail** (persistent icon rail + slide-out panels on the right edge).
-Pages register button groups with `useRightRailSection(id, buttons)` and declare
-a default-open panel with `useRightRailPage(pageType, defaultActiveId)`. Once a
-user opens/closes a panel on a page, `rightRailStore.dirtyByPage` remembers their
-choice for return visits. `page-primitives/RightRail.tsx` renders the rail;
-`RailPanel.tsx` is the standard panel chrome (title/close/actions/footer).
+What's open is **derived, not stored**: `settingsStore.panelMemory` persists one
+remembered choice per screen, a route declares which screen it is with
+`usePanelScope`, and `selectActivePanel` resolves the two. The assistant is the
+fallback and the rail's floor. See
+[`technical-decisions.md#panel-memory`](./technical-decisions.md#panel-memory).
 
 ## Forms — react-hook-form + Zod
 
@@ -226,8 +232,9 @@ variables and `config/zIndex.ts`. Concrete tables: `postsTable` and `docsTable`
 ## Styling — Tailwind CSS v4
 
 Styling is **CSS-first**: there is no `tailwind.config.js`. `src/index.css` is
-the single source of truth — it declares the fonts (Space Grotesk + Zalando
-Sans), a `@theme inline` block with a beige OKLCH palette and semantic tokens
+the single source of truth — it declares the fonts (Geist + Geist Mono, both
+vendored under `src/assets/fonts`), a `@theme inline` block with a blue-cast
+grey OKLCH ramp (`--gray-*`), a teal accent, and semantic tokens
 (`--color-primary…senary`, sidebar, table, chart), radii, and shadows. `:root`
 maps semantics to the light theme; a `.dark` block exists but is essentially
 empty — **dark mode is scaffolded, not implemented.** `lib/styles.ts` exports

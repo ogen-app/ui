@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import { cn } from '@/lib'
-import { PageHeader } from './PageHeader.tsx'
+import { PageHeader } from './PageHeader'
+import { SaveStatus } from './SaveStatus'
 
 type Breadcrumb = {
   label: string
@@ -14,12 +14,17 @@ type EditPageHeaderProps = {
 }
 
 /**
- * Header for edit pages: a breadcrumb trail ending in the current title plus
- * an unsaved-changes dot, composed on the PageHeader chrome.
+ * Header for edit pages: a breadcrumb trail ending in the current title, with
+ * the autosave state centred, composed on the PageHeader chrome.
+ *
+ * The save state used to be a pulsing dot tucked after the title, which meant
+ * this page reported the same thing in a different shape and a different place
+ * from the post editor. It is the shared `SaveStatus` now — one glyph,
+ * top-centre, everywhere something autosaves.
  */
 export function EditPageHeader({ title, breadcrumbs = [], unsaved = false }: EditPageHeaderProps) {
   return (
-    <PageHeader>
+    <PageHeader center={<SaveStatus saving={unsaved} />}>
       <nav className="flex items-center gap-1.5 text-[13px] leading-4 font-medium font-sans tracking-tight truncate">
         {breadcrumbs.map((crumb) => (
           <span key={crumb.to} className="flex items-center gap-1.5">
@@ -31,15 +36,6 @@ export function EditPageHeader({ title, breadcrumbs = [], unsaved = false }: Edi
         ))}
         <span className="truncate">{title}</span>
       </nav>
-      <span
-        aria-hidden={!unsaved}
-        aria-label="Unsaved changes"
-        title="Unsaved changes"
-        className={cn(
-          'inline-block size-1.5 rounded-full bg-secondary-foreground shrink-0 transition-opacity duration-200',
-          unsaved ? 'opacity-100 animate-pulse' : 'opacity-0',
-        )}
-      />
     </PageHeader>
   )
 }
