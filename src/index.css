@@ -113,7 +113,7 @@
      labels. Also plain Geist, so what makes a label a label is the capitals and
      the tracking the components already apply. Kept as its own token rather
      than collapsed into `--font-sans` at the call sites: it is the seam where a
-     second face would go back in, and there are 15 of them. */
+     second face would go back in, and there are 9 of them. */
   --font-grotesk: var(--font-sans);
 
   /* Layout: the shared content-column width — the post rich-text editor and
@@ -270,24 +270,26 @@
   /* Waiting on a person, with nothing wrong — a post you publish by hand
      (violet). Deliberately not orange: "your turn" is not "this is broken". */
   --attention: oklch(0.53 0.16 305);
-  /* Selected/active affordance accent — teal, #40A9A4.
-     The brand colour, pinned to the hex it was given. Two things it changes:
+  /* Selected/active affordance accent — teal, #00837F.
+     The brand hue at a lightness that reads. Two things it changes:
 
      1. It gives orange back. `docs/colors.md` reserves orange for one meaning,
         a non-blocking validation warning, which is why `--info` and
-        `--attention` had to be invented; the accent was the last thing still
-        borrowing the hue. `--warning` is now the only orange in the app.
+        `--attention` had to be invented; the accent was the last *semantic*
+        token still borrowing the hue. `--warning` is now the only orange that
+        carries a meaning — the categorical scales below (charts, campaigns)
+        stay outside that rule by design.
      2. It is a colour the neutrals agree with. A teal accent on a blue-cast
         grey is the same family; the orange was in opposition to the beige.
 
-     What it does *not* fix: `text-accent` is used in ~14 places and this teal
-     scores 2.83:1 on white — under AA, and under AA-Large too. That is not a
-     regression (today's orange is 2.89:1, i.e. the same failure) but it is not
-     a pass either. If accent text has to be legible, `oklch(0.55 0.0955
-     190.71)` — #00837F, same hue, same chroma — reaches 4.60:1 and is the only
-     line that needs to change. Kept at the brand value here because that is
-     what the brand value is; darkening it is a decision, not a fix. */
-  --accent: oklch(0.6735 0.0955 190.71);
+     Why not the brand hex #40A9A4: that value scores 2.83:1 on white — under
+     AA and under AA-Large — and `text-accent` is real text in ~14 places (the
+     assistant thread list runs it at 10px, where it drops to 2.50:1 on the
+     app canvas), plus white text sits *on* `bg-accent` in ThreadCount. This
+     is the same hue and chroma at 4.60:1; only lightness moved. If the brand
+     value ever has to come back, the text sites need their own `--accent-ink`
+     first. */
+  --accent: oklch(0.55 0.0955 190.71);
 
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);

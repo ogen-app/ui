@@ -44,9 +44,10 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
 3. **Layer 2 references Layer 1.** Raw oklch values are allowed only in
    Layer 1 and for standalone accents that have no palette scale yet
    (`--destructive`, `--positive`, `--negative`, `--accent`, `--editable`, `--chart-1…5`).
-4. **Only Layer 1 knows actual color values.** A palette swap (e.g. the
-   previously-explored cool hue-200 variant, see git history of `index.css`)
-   must be possible by editing Layer 1 alone.
+4. **Only Layer 1 knows actual color values.** A palette swap must be
+   possible by editing Layer 1 alone — proven by the 2026-08 beige→grey
+   swap, which moved every neutral's hue and chroma without touching a
+   single component file.
 5. **Naming convention (decided 2026-07): the ordinal scale is the system.**
    Tokens are named `[scope-]<ordinal>[-foreground]`, where the ordinal is
    `primary`, `secondary`, `tertiary`, `quaternary`, `quinary`, `senary` — a
@@ -99,8 +100,11 @@ borrow `--chart-4` and `--chart-5`. Both are orange, so an in-progress badge
 and a publish-by-hand badge were the same colour as a validation warning, and
 the calendar's warning triangle was indistinguishable from a healthy card's
 status edge. **Orange now means exactly one thing** — and since the accent went
-teal it really is one thing: `--accent` was the last token still borrowing the
-hue, so `--warning` is the only orange left in the app. Don't reach into
+teal it really is one thing: `--accent` was the last *semantic* token still
+borrowing the hue, so `--warning` is the only orange that carries a meaning.
+(Orange-family hues survive in the categorical scales — `--chart-*`,
+`--campaign-5` — which is exactly why those are exempt from meaning.) Don't
+reach into
 `--chart-*` for a state — charts are a categorical scale and carry no meaning
 (see the exceptions below); add a semantic token instead.
 
