@@ -9,6 +9,8 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { PageActionBar } from '@/components/page-primitives/PageActionBar'
+import { PostPublishStatus } from '@/components/posts/PostPublishStatus'
+import type { PublishStatus } from '@/hooks/usePublishStatus'
 import type { PostStatusAction } from '@/hooks/usePostStatusActions'
 import type { PostStatusBlocker } from '@/lib/postStatusMachine'
 import { cn } from '@/lib'
@@ -18,6 +20,11 @@ type Props = {
   buttons: PostStatusAction[]
   /** The one step back, if the post can also still move forward. */
   back: PostStatusAction | null
+  /**
+   * What happens to this post next, in both its forms (CON-195). Null when
+   * nothing is going to publish it — see `usePublishStatus`.
+   */
+  status?: PublishStatus | null
   /** A transition or a cancellation is in flight. */
   pending: boolean
   /**
@@ -42,7 +49,13 @@ type Props = {
  * edge), which is exactly why the save indicator does *not* live in it — a
  * published post is still editable, and its save state has to outlive the bar.
  */
-export function PostStatusActionBar({ buttons, back, pending, onBlocked }: Props) {
+export function PostStatusActionBar({
+  buttons,
+  back,
+  pending,
+  onBlocked,
+  status,
+}: Props) {
   // Which move is running, known only here: the parent's `pending` is one flag
   // for the whole machine, and pinning the spinner to the primary would show
   // it spinning while the step back beside it is what's actually working.
@@ -51,6 +64,10 @@ export function PostStatusActionBar({ buttons, back, pending, onBlocked }: Props
     if (!pending) setRunning(null)
   }, [pending])
 
+  // Still gated on there being a move to make, `status` or not. The statuses
+  // that carry a countdown all have an outgoing user edge (a scheduled post
+  // can be cancelled, a manual one verified), so this never hides one — and a
+  // bar holding nothing but a sentence would be a banner, not a commit bar.
   if (!back && buttons.length === 0) return null
 
   // Primary last — `usePostStatusActions` orders `buttons` so the most
@@ -59,7 +76,20 @@ export function PostStatusActionBar({ buttons, back, pending, onBlocked }: Props
   const actions = back ? [back, ...buttons] : buttons
 
   return (
-    <PageActionBar blocker={primary?.blockers[0]?.message}>
+    <PageActionBar
+      blocker={primary?.blockers[0]?.message}
+      // The edges on offer, not their in-flight state: the bar animates on
+      // this, and a value that also moved for a spinner would restart the
+      // hand-off while a transition was still running.
+      contentKey={actions.map((action) => action.next).join('|')}
+      status={
+        status && {
+          full: <PostPublishStatus text={status.full} />,
+          compact: <PostPublishStatus text={status.compact} title={status.full} />,
+          key: status.full,
+        }
+      }
+    >
       {actions.map((action) => (
         <ActionButton
           key={action.next}

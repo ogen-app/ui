@@ -327,6 +327,14 @@ export const es: Translation = {
     sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
   },
 
+  posts: {
+    publishStatus: {
+      auto: 'Publicación automática {{when}}',
+      manual: 'Recordatorio {{when}}',
+      compactNow: 'ahora',
+      compactLate: '{{amount}} de retraso',
+    },
+  },
   errors: {
     notFound: {
       code: '404',

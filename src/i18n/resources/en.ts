@@ -360,6 +360,24 @@ export const en = {
     sortSaveFailed: "Couldn't save the order you sorted by",
   },
 
+  posts: {
+    /**
+     * The bottom bar's read-only publish status (CON-195). `when` arrives
+     * already localised from `Intl.RelativeTimeFormat` ("in 2 days", "2 days
+     * ago", "now"), so a translation places it rather than rebuilding it.
+     *
+     * Auto and manual are separate sentences on purpose: only one of them is
+     * a promise that the app will publish anything. A manual post gets a
+     * reminder on the date and nothing else.
+     */
+    publishStatus: {
+      auto: 'Auto-publishing {{when}}',
+      manual: 'Reminding {{when}}',
+      /** The short forms, for a bar too narrow for the sentence. */
+      compactNow: 'now',
+      compactLate: '{{amount}} late',
+    },
+  },
   errors: {
     notFound: {
       code: '404',
