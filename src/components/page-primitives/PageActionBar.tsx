@@ -25,9 +25,25 @@ export const PAGE_ACTION_BAR_INSET = 'pb-20'
  */
 export const MAX_BAR_WIDTH = 740
 
-/** Long enough to read as a deliberate hand-off, short enough not to wait on. */
+/**
+ * Long enough to read as a deliberate hand-off, short enough not to wait on.
+ * Each phase timer outlasts its CSS transition by 10ms (`duration-100` on the
+ * fade, `duration-200` on the width) so the next phase never starts while the
+ * previous animation is still visibly running — change the classes and these
+ * move together.
+ */
 const FADE_MS = 110
-const RESIZE_MS = 190
+const RESIZE_MS = 210
+
+/**
+ * The hand-off is animation, and these ~300ms exist only to pace it — someone
+ * who asked for no motion shouldn't get the blank unclickable middle with no
+ * motion to explain it. Read per hand-off rather than cached: it can change
+ * mid-session.
+ */
+const prefersReducedMotion = () =>
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /**
  * A fact about the object, shown beside the actions — with a short form for
@@ -183,6 +199,11 @@ function BarSurface({
   // Fade out, swap, then let the width transition run before revealing.
   useEffect(() => {
     if (contentKey === undefined || contentKey === shownKey) return
+    if (prefersReducedMotion()) {
+      setShownKey(contentKey)
+      setPhase('idle')
+      return
+    }
     setPhase('fading')
     const id = setTimeout(() => {
       setShownKey(contentKey)
@@ -243,7 +264,10 @@ function BarSurface({
         'pointer-events-auto overflow-hidden bg-primary shadow-lg',
         'transition-[width] duration-200 ease-out motion-reduce:transition-none',
       )}
-      style={{ width: width ?? undefined }}
+      // Capped at the track: the compact form only kicks in past
+      // MAX_BAR_WIDTH, so on a viewport narrower than the measured row the
+      // pixel width would otherwise push the bar off its column.
+      style={{ width: width ?? undefined, maxWidth: '100%' }}
     >
       <div
         ref={innerRef}

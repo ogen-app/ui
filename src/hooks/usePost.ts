@@ -225,6 +225,18 @@ export function usePost(postId: string): UsePostResult {
         }
         return { ok: true, post: saved }
       } catch (err) {
+        // The server refused the move, so any edit stamped with the requested
+        // status while the answer was in flight must stop asking for it — its
+        // flush would otherwise re-send the refused transition as a plain
+        // status PUT (and, for `scheduled`, dodge the schedule endpoint's
+        // date validation).
+        // The cast undoes control-flow narrowing: TS still sees the `= null`
+        // above and can't know `changeDoc` may have refilled the ref during
+        // the await.
+        const pendingEdit = pendingRef.current as Post | null
+        if (pendingEdit && pendingEdit.status === next) {
+          pendingEdit.status = base.status
+        }
         qc.invalidateQueries({ queryKey: postKey(postId) })
         const message = err instanceof Error ? err.message : 'Unable to update post'
         return { ok: false, error: message }
