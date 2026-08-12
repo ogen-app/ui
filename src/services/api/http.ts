@@ -1,6 +1,6 @@
 import { handleUnauthorized } from "@/lib/sessionExpiry";
 import { apiUrl } from "./base";
-import { errorMessage } from "./errors";
+import { ApiError, errorMessage } from "./errors";
 
 type ApiRequestOptions = {
   method?: string;
@@ -29,7 +29,7 @@ async function send(
     // throw still happens so the caller's own error path stays intact while
     // the reload is in flight. See `lib/sessionExpiry.ts`.
     if (res.status === 401) handleUnauthorized();
-    throw new Error(await errorMessage(res, fallbackError));
+    throw new ApiError(res.status, await errorMessage(res, fallbackError));
   }
   return res;
 }
