@@ -8,8 +8,8 @@ import {
   type PostVersion,
 } from '@/services/api/posts'
 import { postKey } from '@/hooks/usePost'
-import { invalidateCampaignPosts } from '@/hooks/usePosts'
 import { flushPendingSave } from '@/lib/pendingSaves'
+import { invalidateCampaignPosts } from '@/lib/postCache'
 import { postVersionsKey } from '@/lib/queryKeys'
 import { toast } from '@/stores/toastStore'
 
