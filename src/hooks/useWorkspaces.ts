@@ -18,6 +18,7 @@ import { invalidateSession } from '@/services/api/sessions'
 import { queryClient } from '@/lib/queryClient'
 import { getActiveWorkspaceId, setActiveWorkspaceId } from '@/lib/activeWorkspace'
 import { useFeatureFlag } from '@/config/featureFlags'
+import { reconnectEvents } from '@/stores/eventStreamStore'
 import { useAuthStore } from '@/stores/authStore'
 import type {
   CreateWorkspacePayload,
@@ -219,6 +220,11 @@ export function useSwitchWorkspace() {
     mutationFn: async (id: string) => {
       setActiveWorkspaceId(id)
       queryClient.clear()
+      // The event stream is a long-lived connection whose workspace was fixed
+      // by the header on the request that opened it, so clearing the cache
+      // does not reach it — left alone it would keep pushing the previous
+      // workspace's events into this tab.
+      reconnectEvents()
       // Deliberately not awaited before the UI moves, and deliberately not
       // allowed to reject: remembering the default is a convenience for the
       // *next* tab.

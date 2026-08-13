@@ -102,6 +102,28 @@ function start(): void {
   void connect()
 }
 
+/**
+ * Drops the connection and opens a new one, keeping the subscribers.
+ *
+ * For switching workspace (CON-147). The stream is deliberately a module-scope
+ * singleton that survives route changes — but the workspace it belongs to is
+ * fixed at the moment `GET /api/events` is opened, in the header that request
+ * carried. A tab that re-pins itself and does not do this keeps receiving the
+ * *previous* workspace's events: another client's post finishing, invalidating
+ * caches on a screen it has nothing to do with.
+ *
+ * A no-op when nobody is listening — there is no stream to be wrong.
+ */
+export function reconnectEvents(): void {
+  if (subscribers === 0) return
+  clearTimers()
+  controller?.abort()
+  controller = null
+  // Not `stop()`: this is the same session continuing in another workspace, so
+  // the reconnect should present as one (`reconnecting`, no "connecting" flash).
+  start()
+}
+
 function stop(): void {
   clearTimers()
   controller?.abort()
