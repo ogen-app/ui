@@ -4,6 +4,7 @@ import type { Post } from '@/types/posts'
 import { useAddPost, useUpdatePost } from '@/hooks/usePosts'
 import { postToPayload } from '@/services/api/posts'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
+import { comparePostOrder } from '@/lib/postOrder'
 import { DEFAULT_HOUR } from '@/lib/postSchedule'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { PostCard } from './PostCard'
@@ -63,6 +64,12 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
           break
         }
       }
+    }
+    // Each column in the order the arrow keys walk (time, then id) — the
+    // server's list order isn't time-sorted within a day, and a grid that
+    // shows [11:00, 09:00] while ←/→ visit [09:00, 11:00] reads as broken.
+    for (const column of map.values()) {
+      column.sort(comparePostOrder)
     }
     return map
   }, [posts, days])

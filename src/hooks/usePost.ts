@@ -86,6 +86,15 @@ export function usePost(postId: string): UsePostResult {
   const pendingRef = useRef<Post | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const genRef = useRef(0)
+  /**
+   * The status a transition has asked the server for, while the answer is in
+   * flight. An edit made during that window clones the cache, which still
+   * carries the *old* status — and its later flush would PUT the transition
+   * away again. Stamping the requested status onto the clone keeps the
+   * autosave and the transition agreeing; if the server refuses the move, the
+   * catch's invalidate restores the truth either way.
+   */
+  const transitionRef = useRef<PostStatus | null>(null)
 
   /**
    * The autosave PUT, and the only call in this hook that goes through a
@@ -106,7 +115,12 @@ export function usePost(postId: string): UsePostResult {
    */
   const { mutateAsync: saveDoc } = useMutation({
     meta: { errorTitle: 'Unable to save your changes' },
-    mutationFn: (next: Post) => updatePost(postId, postToPayload(next)),
+    // The id travels with the doc, not in the closure: `mutateAsync` resolves
+    // `mutationFn` from the *latest* render's options, so after an arrow-key
+    // post switch a flush of post A's pending edit would otherwise PUT it to
+    // post B — overwriting B wholesale with A's content (CON-195 review).
+    mutationFn: ({ id, next }: { id: string; next: Post }) =>
+      updatePost(id, postToPayload(next)),
   })
 
   const flush = useCallback(async () => {
@@ -116,7 +130,8 @@ export function usePost(postId: string): UsePostResult {
     pendingRef.current = null
     const genAtFlush = genRef.current
     try {
-      const saved = await saveDoc(next)
+      // `postId` here is the closure's — the post this flush was armed for.
+      const saved = await saveDoc({ id: postId, next })
       if (genRef.current === genAtFlush) {
         qc.setQueryData(postKey(postId), saved)
       }
@@ -140,6 +155,7 @@ export function usePost(postId: string): UsePostResult {
       if (!base) return
       const next = structuredClone(base)
       fn(next)
+      if (transitionRef.current) next.status = transitionRef.current
       pendingRef.current = next
       genRef.current += 1
       setSaving(true)
@@ -170,6 +186,16 @@ export function usePost(postId: string): UsePostResult {
   // to surface failures (invalid edge, missing platform) immediately.
   // We merge any pending autosave changes into the same PUT so a
   // half-typed title isn't lost when the user clicks "Schedule".
+  //
+  // The new status is sent but never written to the cache ahead of the
+  // response — the badge is what the *server* says the post is. A status is
+  // not a field like a title, where showing the typed value early is simply
+  // showing what the user did: it is a claim about what the system will now
+  // do to the post, and the server can refuse (invalid edge, missing
+  // platform, a publisher that won't take it). Every other action here —
+  // `schedule`, `cancelScheduled`, `verifyExternal` — already waits for that
+  // answer; this one no longer pretends. The caller's `pending` flag is what
+  // covers the wait, not a badge that might have to be taken back.
   const transitionStatus = useCallback(
     async (next: PostStatus): Promise<TransitionStatusResult> => {
       if (timerRef.current) {
@@ -180,18 +206,42 @@ export function usePost(postId: string): UsePostResult {
       if (!base) return { ok: false, error: 'Post not loaded' }
       pendingRef.current = null
       setSaving(false)
-      const optimistic = structuredClone(base)
-      optimistic.status = next
+      // The payload, not a cache entry: `base` already carries the user's
+      // typed edits (changeDoc writes them through), so the editor keeps
+      // showing their words while only the status waits.
+      const requested = structuredClone(base)
+      requested.status = next
       genRef.current += 1
-      qc.setQueryData(postKey(postId), optimistic)
+      const genAtStart = genRef.current
+      transitionRef.current = next
       try {
-        const saved = await updatePost(postId, postToPayload(optimistic))
-        qc.setQueryData(postKey(postId), saved)
+        const saved = await updatePost(postId, postToPayload(requested))
+        // Gen-guarded like `flush`: an edit made during the round-trip has
+        // already written its clone (carrying the requested status, via
+        // `transitionRef`) into the cache, and the server's copy must not
+        // stomp the user's newer words.
+        if (genRef.current === genAtStart) {
+          qc.setQueryData(postKey(postId), saved)
+        }
         return { ok: true, post: saved }
       } catch (err) {
+        // The server refused the move, so any edit stamped with the requested
+        // status while the answer was in flight must stop asking for it — its
+        // flush would otherwise re-send the refused transition as a plain
+        // status PUT (and, for `scheduled`, dodge the schedule endpoint's
+        // date validation).
+        // The cast undoes control-flow narrowing: TS still sees the `= null`
+        // above and can't know `changeDoc` may have refilled the ref during
+        // the await.
+        const pendingEdit = pendingRef.current as Post | null
+        if (pendingEdit && pendingEdit.status === next) {
+          pendingEdit.status = base.status
+        }
         qc.invalidateQueries({ queryKey: postKey(postId) })
         const message = err instanceof Error ? err.message : 'Unable to update post'
         return { ok: false, error: message }
+      } finally {
+        transitionRef.current = null
       }
     },
     [postId, qc],
@@ -312,6 +362,18 @@ export function usePost(postId: string): UsePostResult {
     },
     [postId, qc],
   )
+
+  // This hook survives a post switch (arrow-key navigation swaps the route
+  // param without unmounting `PostPage`), so per-post state has to be walked
+  // back by hand. Left alone, post A's `cancelling` would hold post B's bar
+  // in "busy" forever — B being `scheduled` too means the clearing effect
+  // below never fires — and A's `saving` would show over B. The pending-edit
+  // refs need no reset here: the flush-on-change cleanup at the bottom
+  // drains them to A before this runs.
+  useEffect(() => {
+    setCancelling(false)
+    setSaving(false)
+  }, [postId])
 
   // Clear the unscheduling indicator once the post leaves `scheduled` —
   // either the cancel job landed the target status, or it published in the

@@ -6,6 +6,7 @@ import {
   CalendarDotsIcon,
   CardsThreeIcon,
   CaretDoubleLeftIcon,
+  ChartLineUpIcon,
   GearSixIcon,
   LifebuoyIcon,
   NotepadIcon,
@@ -67,6 +68,7 @@ function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; is
 const CAMPAIGN_SUB_ITEMS = [
   { id: 'overview', labelKey: 'nav.campaign.overview', icon: SidebarIcon },
   { id: 'posts', labelKey: 'nav.campaign.posts', icon: CalendarDotsIcon },
+  { id: 'analytics', labelKey: 'nav.campaign.analytics', icon: ChartLineUpIcon },
   { id: 'brief', labelKey: 'nav.campaign.brief', icon: NotepadIcon },
   { id: 'assets', labelKey: 'nav.campaign.assets', icon: ScanIcon },
   { id: 'settings', labelKey: 'nav.campaign.settings', icon: GearSixIcon },
@@ -96,17 +98,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     navigate({ to: '/auth/logout' })
   }
 
+  // Everything unrecognised is the calendar, which is what Posts opens — so
+  // each real section has to be named before that fallback is reached.
   const activeSubItem: CampaignSubItemId | null = !activeCampaignId
     ? null
     : location.pathname.includes('/overview')
       ? 'overview'
-      : location.pathname.includes('/brief')
-        ? 'brief'
-        : location.pathname.includes('/assets')
-          ? 'assets'
-          : location.pathname.includes('/settings')
-            ? 'settings'
-            : 'posts'
+      : location.pathname.includes('/analytics')
+        ? 'analytics'
+        : location.pathname.includes('/brief')
+          ? 'brief'
+          : location.pathname.includes('/assets')
+            ? 'assets'
+            : location.pathname.includes('/settings')
+              ? 'settings'
+              : 'posts'
 
   // Posts lands on the current week of the calendar; the rest are plain pages.
   const subItemLink = (campaignId: string, id: CampaignSubItemId): { to: string; params: Record<string, string> } =>

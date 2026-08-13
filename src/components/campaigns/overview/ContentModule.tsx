@@ -2,19 +2,12 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { PlusIcon, SparkleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button.tsx";
-import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { StatusBadge } from "@/components/ui/status-badge.tsx";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { PostStatusBadge } from "@/components/posts/PostStatusBadge.tsx";
-import { useCampaignOverview } from "@/hooks/useCampaigns.ts";
 import { useAddPost } from "@/hooks/usePosts.ts";
 import { formatTitle } from "@/lib";
 import { contentSnapshot } from "@/lib/campaignReadiness.ts";
-import {
-  channelRows,
-  phaseRows,
-  type DistributionRow,
-} from "@/lib/campaignDistribution.ts";
 import { getPlatformInfo } from "@/lib/platformDictionary.ts";
 import { relativeTime } from "@/lib/relativeTime.ts";
 import { threadIdFor, useAssistantStore } from "@/stores/assistantStore.ts";
@@ -153,10 +146,10 @@ export function ContentModule({
         />
       </div>
 
-      {/* The server's roll-up is campaign-wide, so it only belongs on the
-          campaign-wide view — under a channel tab it would sit beneath tiles
-          counting one channel and quietly disagree with them. */}
-      {!selected && <Distribution campaignId={campaignId} />}
+      {/* Posts-per-phase and posts-per-channel used to sit here. They were the
+          only thing on this card that measured rather than listed, and the
+          card is about work in flight — so they moved out with the rest of the
+          reporting when Analytics became its own section (CON-175). */}
 
       {snapshot.upNext.length > 0 && (
         <PostList
@@ -185,46 +178,6 @@ export function ContentModule({
   );
 }
 
-/**
- * How the campaign's posts are spread — across the phases of its plan, and
- * across its channels — counted by the server rather than from the page's
- * post list (CON-113).
- *
- * It fetches on its own so a slow or failed roll-up costs only this section:
- * everything else in the module is derived from `posts`, which is already
- * loaded by the time this renders.
- */
-function Distribution({ campaignId }: { campaignId: string }) {
-  const { data, isPending, isError } = useCampaignOverview(campaignId);
-
-  if (isPending) return <Skeleton className="h-24 w-full" />;
-
-  // A one-liner, not an error card: the module behind it is fully usable, and
-  // the distribution is a detail of it rather than the point of it.
-  if (isError || !data) {
-    return (
-      <p className="text-sm text-tertiary-foreground">
-        Couldn't load the distribution.
-      </p>
-    );
-  }
-
-  const phases = phaseRows(data);
-  const channels = channelRows(data);
-  if (phases.length === 0 && channels.length === 0) return null;
-
-  return (
-    <div className="flex flex-col gap-4">
-      {phases.length > 0 && (
-        <CountList heading="Posts per phase" rows={phases} />
-      )}
-      {channels.length > 0 && (
-        <CountList heading="Posts per channel" rows={channels} withIcons />
-      )}
-    </div>
-  );
-}
-
 /** The platform's mark in a LineItem's 16px slot — shared by every list here. */
 function platformIndicator(platformId: string): LineItemIndicator | undefined {
   const info = getPlatformInfo(platformId);
@@ -233,34 +186,6 @@ function platformIndicator(platformId: string): LineItemIndicator | undefined {
     kind: "custom",
     node: <info.icon className="size-4" style={{ color: info.color }} />,
   };
-}
-
-function CountList({
-  heading,
-  rows,
-  withIcons = false,
-}: {
-  heading: string;
-  rows: DistributionRow[];
-  /** Channel rows key on a platform id, so they can carry its mark. */
-  withIcons?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <h3 className="text-xs text-tertiary-foreground">{heading}</h3>
-      <ul className="flex flex-col">
-        {rows.map((row) => (
-          <li key={row.key}>
-            <LineItem
-              indicator={withIcons ? platformIndicator(row.key) : undefined}
-              label={row.label}
-              trailing={row.count.toLocaleString()}
-            />
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
 }
 
 function PostList({

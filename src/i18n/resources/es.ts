@@ -163,6 +163,7 @@ export const es: Translation = {
     campaign: {
       overview: 'Resumen',
       posts: 'Publicaciones',
+      analytics: 'Analíticas',
       brief: 'Briefing',
       assets: 'Recursos',
       settings: 'Ajustes',
@@ -326,6 +327,14 @@ export const es: Translation = {
     sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
   },
 
+  posts: {
+    publishStatus: {
+      auto: 'Publicación automática {{when}}',
+      manual: 'Recordatorio {{when}}',
+      compactNow: 'ahora',
+      compactLate: '{{amount}} de retraso',
+    },
+  },
   errors: {
     notFound: {
       code: '404',

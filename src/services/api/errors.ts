@@ -32,6 +32,25 @@ export async function fetchOrThrowUnavailable(
 }
 
 /**
+ * An HTTP error response, carrying the status alongside the backend's message.
+ *
+ * It extends `Error` and keeps `message` as the human-readable text, so every
+ * existing `catch` that only reads the message is unaffected. The status is
+ * here for the few callers that must tell *why* a request failed apart from
+ * *that* it failed — analytics answers 503 when the deployment runs without an
+ * analytics database, which is a state to explain, not an error to report.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+/**
  * One rule failure from the pre-publish validation gate (mirrors
  * `platforms.ValidationError` in the Go backend, CON-73 §2.4). Only the
  * fields the UI consumes are declared; `message` is human-readable and

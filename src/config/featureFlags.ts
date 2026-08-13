@@ -66,6 +66,33 @@ const FEATURE_FLAGS = {
   'campaign-accounts': false,
 
   /**
+   * The **numbers** in the campaign's Analytics section (CON-175) — not the
+   * section itself. The page, the sidebar item and the Overview card are
+   * always there; with this off they say what the section will hold and
+   * measure nothing, and no analytics request is made. Turning it on swaps
+   * that preview for the real totals in both places.
+   *
+   * **Waiting on:** a campaign dimension on `GET /api/analytics/posts`. The
+   * endpoint filters by `platform` and nothing else (`handlers/analytics.go`),
+   * and its `overview` block totals the whole *workspace* — so a campaign
+   * screen cannot ask the server its own question. Until it takes a
+   * `campaign_id` (or the rows carry one), the page fetches one 100-row page,
+   * intersects it with the campaign's posts client-side, and sums the rows
+   * itself; the server's `overview` is deliberately ignored. Beyond ~100
+   * measured posts in a workspace that is no longer complete, which is why
+   * every surface states its coverage.
+   *
+   * The content is a first cut besides: only the stored post series is wired.
+   * `/followers`, `/best-times`, `/content-decay` and `/posting-frequency`
+   * exist and are typed but unused.
+   *
+   * Switch this on once `GET /api/analytics/posts` can be asked about one
+   * campaign, re-test the totals against the real thing, and delete the flag
+   * once the section has been exercised against the deployed API.
+   */
+  'campaign-analytics': false,
+
+  /**
    * The marketing-email switch on Profile (CON-155). **Off — waiting on the
    * back end.** CON-154/CON-155 shipped the suppression engine, but every
    * endpoint it exposes is public and token-gated: it verifies a signature
