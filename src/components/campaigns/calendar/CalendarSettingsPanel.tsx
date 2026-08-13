@@ -6,6 +6,12 @@ import { TextSelect } from '@/components/ui/text-select'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { publishingDayNumbers } from '@/lib/campaignScheduling'
+import {
+  CARD_FIELDS,
+  CARD_FIELD_LABELS,
+  CARD_FIELD_NOTES,
+  canHideField,
+} from './cardFields'
 
 // Displayed Monday-first regardless of the chosen first day of week.
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0] as const
@@ -40,8 +46,15 @@ export function CalendarSettingsPanel({
   campaignId: string
   onClose?: () => void
 }) {
-  const { firstDayOfWeek, hiddenDays, isPending, setFirstDayOfWeek, setDayVisible } =
-    useCalendarSettings(campaignId)
+  const {
+    firstDayOfWeek,
+    hiddenDays,
+    card,
+    isPending,
+    setFirstDayOfWeek,
+    setDayVisible,
+    setCardField,
+  } = useCalendarSettings(campaignId)
   // The campaign's publishing days, so the panel can say which of these rows
   // the campaign will never put anything on. Shares the cached campaign the
   // page around it already loaded, so opening the panel costs no extra request.
@@ -104,6 +117,46 @@ export function CalendarSettingsPanel({
               </div>
             )
           })}
+        </div>
+      </Collapse>
+
+      {/* The week card only. The month card is a single 20px line carrying two
+          of these six, and switching four things that aren't there for a view
+          they can't affect would be a worse control than none. */}
+      <Collapse title="WEEK CARD" defaultOpen className="border-b border-border pb-6">
+        <div className="flex flex-col gap-1 pt-2">
+          {CARD_FIELDS.map((field) => {
+            // The rule, said by the control rather than about it: the last
+            // switch left on won't turn off, and it looks like it won't.
+            const locked = !canHideField(card, field)
+            const note = CARD_FIELD_NOTES[field]
+            return (
+              <div
+                key={field}
+                className="flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2"
+              >
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-sm">{CARD_FIELD_LABELS[field]}</span>
+                  {note && <span className="text-xs text-tertiary-foreground">{note}</span>}
+                </span>
+                {isPending ? (
+                  <Skeleton className="h-5 w-9" />
+                ) : (
+                  <Switch
+                    checked={card[field]}
+                    disabled={locked}
+                    onCheckedChange={(checked) => setCardField(field, checked)}
+                    aria-label={`Show ${CARD_FIELD_LABELS[field].toLowerCase()} on the week card`}
+                  />
+                )}
+              </div>
+            )
+          })}
+          {/* State, not teaching — it names the thing the switches above can't
+              reach, so it can't live in a note the user is able to close. */}
+          <p className="px-4 pt-1 text-xs text-tertiary-foreground">
+            The status colour down the card&apos;s left edge is always shown.
+          </p>
         </div>
       </Collapse>
     </RailPanel>
