@@ -106,6 +106,29 @@ const FEATURE_FLAGS = {
   'email-preferences': false,
 
   /**
+   * Holding several workspaces and moving between them (CON-147): the
+   * `/workspaces` chooser, "Create or switch" in the sidebar, the SWITCH
+   * button in Workspace Settings, and the Danger Zone that deletes a
+   * workspace. **Off — the model doesn't exist server-side.**
+   *
+   * **Waiting on:** memberships. CON-26 landed people and invitations *inside*
+   * one workspace, and stops exactly where this begins: `users.tenant_id` is
+   * `NOT NULL`, `users.email` is globally unique (so an address can belong to
+   * one workspace, which is why inviting an existing account 409s), and the
+   * session is bound to the tenant its user row names. Needs a membership
+   * table, `GET/POST /api/workspaces`, `DELETE /api/workspaces/:id` and
+   * `POST /api/workspaces/:id/switch` to rebind the session — the contract is
+   * written out as executable request/response pairs in `src/mocks/handlers.ts`
+   * and in prose in `docs/workspace-api.md`.
+   *
+   * With it off the app is single-workspace throughout: what is in Workspace
+   * Settings is the workspace you are in, and there is nowhere else to go.
+   * When the endpoints land, re-test against them, then delete this flag with
+   * its off-branch and `src/mocks/`.
+   */
+  'multi-workspace': false,
+
+  /**
    * Deleting one saved version of a post, from the version-history panel
    * (CON-168). Off until the API grows `DELETE /api/posts/:id/versions/
    * :versionId` — `handlers/posts.go` registers `GET`/`POST` on `/versions`

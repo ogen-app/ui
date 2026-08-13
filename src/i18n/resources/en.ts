@@ -166,6 +166,25 @@ export const en = {
         'It looks incomplete — mail clients sometimes cut long links in half',
       brokenBody: 'Open the link straight from the email, or <request>request a new one</request>.',
     },
+    /** The emailed invitation's landing page (CON-26). */
+    invite: {
+      title: 'Join the workspace',
+      /** Who invited you and where — the two facts that decide whether this link was meant for you. */
+      subtitle: '{{inviter}} invited you to {{workspace}}',
+      emailLabel: 'Your email',
+      firstNameLabel: 'First name',
+      lastNameLabel: 'Last name',
+      passwordLabel: 'Password',
+      passwordPlaceholder: 'Choose a password',
+      submit: 'JOIN THE WORKSPACE',
+      haveAccount: 'Already have an Ogen account?',
+      logInLink: 'Log in',
+      brokenTitle: 'This invitation link no longer works',
+      brokenSubtitle:
+        'Invitations expire after seven days, and each one can only be used once',
+      brokenBody:
+        'Ask whoever invited you to send another. If you already accepted, <login>log in</login> instead.',
+    },
     logout: {
       pendingTitle: 'Logging Out...',
       pendingMessage: 'This may take a few seconds',
@@ -200,16 +219,24 @@ export const en = {
 
   /**
    * The workspace a user is in, as opposed to the settings screen for it
-   * (`workspaceSettings` below). Only what a converted screen reads today —
-   * the /workspaces page and the People card are still hard-coded English
-   * (CON-174).
+   * (`workspaceSettings` below). Two roles, because that is what the server
+   * recognises (CON-26); the /workspaces chooser is still hard-coded English
+   * and is flag-off besides (CON-174, CON-147).
    */
   workspace: {
     role: {
       owner: 'Owner',
-      admin: 'Admin',
       member: 'Member',
-      viewer: 'Viewer',
+    },
+    /**
+     * What each role can do — whole sentences that stand on their own beside
+     * the role picker, with no carrier phrase naming the invitee: the address
+     * is in the field alongside. Kept to within a few characters of each other
+     * on purpose, since they swap in place as the select changes.
+     */
+    ability: {
+      owner: 'Can invite people, change roles, connect accounts and rename the workspace.',
+      member: 'Can plan, write and publish content, but not manage the workspace or its people.',
     },
   },
 
@@ -271,6 +298,48 @@ export const en = {
       timeZoneLabel: 'Time zone',
       timeZoneNote:
         'Everything is scheduled in UTC for now; per-workspace time zones land with CON-94.',
+    },
+    people: {
+      title: 'People',
+      membersHeading: 'Workspace members',
+      pendingHeading: 'Pending invitations',
+      inviteHeading: 'Invite someone',
+      you: '(that’s you)',
+      /** Reading the invitation list is owner-only server-side, so a member sees neither it nor the form. */
+      memberNote: 'Only the workspace owner can invite people or change roles.',
+      emailLabel: 'Email',
+      emailPlaceholder: 'name@company.com',
+      roleLabel: 'Role',
+      invite: 'INVITE',
+      remove: 'REMOVE',
+      resend: 'RESEND',
+      cancel: 'CANCEL',
+      cancelInvitation: 'Cancel the invitation to {{email}}',
+      invitedBy: 'invited by {{name}}',
+      /** Nought days is neither "in 0 days" nor "0 days ago", so it gets its own line. */
+      expiresToday: 'expires today',
+      expiresIn_one: 'expires tomorrow',
+      expiresIn_other: 'expires in {{count}} days',
+      expiredToday: 'expired today',
+      expiredAgo_one: 'expired yesterday',
+      expiredAgo_other: 'expired {{count}} days ago',
+      roleChanged: 'Role updated for {{name}}',
+      roleChangeFailed: 'Unable to change the role',
+      removed: '{{name}} removed',
+      removeFailed: 'Unable to remove',
+      invitationSent: 'Invitation sent to {{email}}',
+      inviteFailed: 'Unable to send the invitation',
+      resendFailed: 'Unable to send it again',
+      invitationRevoked: 'Invitation revoked',
+      revokeFailed: 'Unable to revoke',
+      removeTitle: 'Remove {{name}}?',
+      /** The API deletes the user row and the schema cascades from it — the
+       *  copy has to carry that, because the button says "remove". */
+      removeBody:
+        'This deletes {{name}}’s account and everything they created in this workspace — their campaigns, those campaigns’ posts, and their uploaded assets — for everyone. Posts that already went out stay live on the social networks. It cannot be undone.',
+      removeConfirmLabel: 'Type their email address to confirm',
+      removeDismiss: 'KEEP THEM',
+      removeConfirm: 'DELETE THIS PERSON',
     },
     platforms: {
       title: 'Platform Settings',

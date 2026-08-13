@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as WorkspacesIndexRouteImport } from './routes/workspaces/index'
 import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unavailable/index'
+import { Route as InviteIndexRouteImport } from './routes/invite/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedContentBankRouteImport } from './routes/_authenticated/content-bank'
@@ -53,6 +54,11 @@ const WorkspacesIndexRoute = WorkspacesIndexRouteImport.update({
 const ServerUnavailableIndexRoute = ServerUnavailableIndexRouteImport.update({
   id: '/server-unavailable/',
   path: '/server-unavailable/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteIndexRoute = InviteIndexRouteImport.update({
+  id: '/invite/',
+  path: '/invite/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
@@ -221,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/content-bank': typeof AuthenticatedContentBankRouteWithChildren
   '/auth/': typeof AuthIndexRoute
+  '/invite/': typeof InviteIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
@@ -252,6 +259,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
+  '/invite': typeof InviteIndexRoute
   '/server-unavailable': typeof ServerUnavailableIndexRoute
   '/workspaces': typeof WorkspacesIndexRoute
   '/content-bank/all': typeof AuthenticatedContentBankAllRoute
@@ -285,6 +293,7 @@ export interface FileRoutesById {
   '/_authenticated/content-bank': typeof AuthenticatedContentBankRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
+  '/invite/': typeof InviteIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
   '/_authenticated/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
     | '/'
     | '/content-bank'
     | '/auth/'
+    | '/invite/'
     | '/server-unavailable/'
     | '/workspaces/'
     | '/campaigns/$campaignId'
@@ -350,6 +360,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/invite'
     | '/server-unavailable'
     | '/workspaces'
     | '/content-bank/all'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/_authenticated/content-bank'
     | '/_authenticated/'
     | '/auth/'
+    | '/invite/'
     | '/server-unavailable/'
     | '/workspaces/'
     | '/_authenticated/campaigns/$campaignId'
@@ -414,6 +426,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthIndexRoute: typeof AuthIndexRoute
+  InviteIndexRoute: typeof InviteIndexRoute
   ServerUnavailableIndexRoute: typeof ServerUnavailableIndexRoute
   WorkspacesIndexRoute: typeof WorkspacesIndexRoute
   AuthForgotIndexRoute: typeof AuthForgotIndexRoute
@@ -444,6 +457,13 @@ declare module '@tanstack/react-router' {
       path: '/server-unavailable'
       fullPath: '/server-unavailable/'
       preLoaderRoute: typeof ServerUnavailableIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/': {
+      id: '/invite/'
+      path: '/invite'
+      fullPath: '/invite/'
+      preLoaderRoute: typeof InviteIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/': {
@@ -738,6 +758,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
+  InviteIndexRoute: InviteIndexRoute,
   ServerUnavailableIndexRoute: ServerUnavailableIndexRoute,
   WorkspacesIndexRoute: WorkspacesIndexRoute,
   AuthForgotIndexRoute: AuthForgotIndexRoute,

@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import {
-  useActiveWorkspace,
   useDeleteWorkspace,
+  useWorkspace,
   useWorkspaces,
 } from '@/hooks/useWorkspaces'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { toast } from '@/stores/toastStore'
 
 /**
@@ -28,13 +29,20 @@ import { toast } from '@/stores/toastStore'
  *
  * Renders nothing for anyone but the owner, so the page has no disabled
  * control teasing an action that will never become available.
+ *
+ * **Behind `multi-workspace`.** `DELETE /api/workspaces/:id` does not exist,
+ * and deleting the only workspace a session can be bound to would be a way of
+ * locking yourself out rather than a feature — so with the flag off the page
+ * has no Danger Zone. Deleting your own *account* is a different act and lives
+ * on Profile, where it always has.
  */
 export function DeleteWorkspaceCard() {
-  const workspace = useActiveWorkspace()
+  const enabled = useFeatureFlag('multi-workspace')
+  const workspace = useWorkspace()
   const [open, setOpen] = useState(false)
   const [typed, setTyped] = useState('')
   const { mutate: remove, isPending } = useDeleteWorkspace()
-  const { data: workspaces } = useWorkspaces()
+  const { data: workspaces } = useWorkspaces({ enabled })
 
   const isLast = (workspaces?.length ?? 1) <= 1
   const matches = typed.trim() === workspace?.name
@@ -45,7 +53,7 @@ export function DeleteWorkspaceCard() {
     setOpen(false)
   }
 
-  if (!workspace || workspace.role !== 'owner') return null
+  if (!enabled || !workspace || workspace.role !== 'owner') return null
 
   const handleDelete = () => {
     remove(workspace.id, {

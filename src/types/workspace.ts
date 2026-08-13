@@ -1,60 +1,46 @@
 /**
- * Workspaces — the multi-workspace model (CON-26, CON-94).
+ * Workspaces — the workspace, its people and its invitations (CON-26).
  *
- * Today a workspace *is* the tenant of CON-97, and a user belongs to exactly
- * one (`users.tenant_id NOT NULL`). This model breaks that: a user holds a
- * **membership** in many workspaces and works inside one at a time. The
- * server-side tenant boundary is unchanged and still fail-closed — what
- * changes is only which tenant the session is currently bound to.
+ * A workspace **is** the tenant of CON-97, and a user belongs to exactly one:
+ * `users.tenant_id` is `NOT NULL` and the role is a column on the user row.
+ * That is why there is no membership type here — a member *is* a user, read
+ * from `GET /api/users`, and "remove from workspace" is `DELETE /api/users/:id`
+ * with everything that implies (see `removeMember`).
  *
- * Nothing here is implemented on the API yet. The shapes are served by the
- * stub handlers in `src/mocks/` and exist to pin the contract down before the
- * Go side is written; see `docs/workspace-api.md` for the endpoint list and
- * the open questions the backend has to answer.
+ * Holding several workspaces and switching between them is CON-147 and has no
+ * API. The screens written for it stay behind the `multi-workspace` flag
+ * (`config/featureFlags.ts`); `WorkspaceChoice` below is theirs.
  */
-
-/** A member's authority inside one workspace. Not global — a user can own one workspace and be a plain member of another. */
-export type WorkspaceRole = 'owner' | 'admin' | 'member' | 'viewer'
-
-/** Ordered weakest→strongest, so `ROLE_RANK[a] >= ROLE_RANK[b]` answers "can a do what b can". */
-export const ROLE_RANK: Record<WorkspaceRole, number> = {
-  viewer: 0,
-  member: 1,
-  admin: 2,
-  owner: 3,
-}
-
-/** Strongest first — the order the UI offers them in. */
-export const WORKSPACE_ROLES: WorkspaceRole[] = ['owner', 'admin', 'member', 'viewer']
 
 /**
- * Two rank rules cover the whole permission matrix, so no screen has to
- * enumerate roles:
- *
- * - you may act on someone **below** your rank,
- * - you may grant a role **at or below** your own.
- *
- * Together they reproduce CON-147 §8: an admin manages members and viewers and
- * can promote to admin, but cannot touch another admin or an owner.
- *
- * Owners are the exception, and they have to be. Nobody outranks an owner, so
- * under the strict rule an owner row could never be edited by anyone — and
- * since a workspace may have several, an owner appointed by mistake would be
- * permanent. Owners therefore act on each other as peers, which also lets one
- * step down.
- *
- * What ranks *can't* express is the last-owner invariant — a workspace always
- * keeps at least one owner — because that depends on the whole member list, not
- * on two roles. The server owns it and answers 409; the UI counts owners to
- * grey the control out first.
+ * A user's authority in their workspace. Two tiers, because that is what the
+ * server recognises (`models.IsValidRole`): `owner` manages the workspace and
+ * its people, `member` is a full content collaborator that cannot. CON-147
+ * inserts `admin` between them — when it does, the server adds it first.
  */
-export function canActOnMember(actor: WorkspaceRole, target: WorkspaceRole): boolean {
-  if (ROLE_RANK[actor] > ROLE_RANK[target]) return true
-  return actor === 'owner' && target === 'owner'
+export type WorkspaceRole = 'owner' | 'member'
+
+/** Strongest first — the order the UI offers them in. */
+export const WORKSPACE_ROLES: WorkspaceRole[] = ['owner', 'member']
+
+/**
+ * With two tiers the whole permission matrix is one question: are you an
+ * owner. The three predicates below stay separate anyway because they answer
+ * different questions and CON-147's `admin` will pull them apart again — a
+ * caller that asks the right one keeps working when it does.
+ *
+ * Every rule here is the server's (`requireOwner`, CON-26 §7); this is the
+ * mirror that greys a control out before the request, never the enforcement.
+ */
+
+/** Whether `actor` may change or remove a member holding `target`. */
+export function canActOnMember(actor: WorkspaceRole, _target: WorkspaceRole): boolean {
+  return actor === 'owner'
 }
 
-export function canGrantRole(actor: WorkspaceRole, role: WorkspaceRole): boolean {
-  return ROLE_RANK[actor] >= ROLE_RANK[role]
+/** Whether `actor` may hand out `role`. An owner may appoint a co-owner. */
+export function canGrantRole(actor: WorkspaceRole, _role: WorkspaceRole): boolean {
+  return actor === 'owner'
 }
 
 /** The roles `actor` is allowed to hand out, strongest first. */
@@ -62,118 +48,121 @@ export function grantableRoles(actor: WorkspaceRole): WorkspaceRole[] {
   return WORKSPACE_ROLES.filter((role) => canGrantRole(actor, role))
 }
 
-/** Invites, member management and workspace settings all sit behind this one line. */
+/** Invites, people management and workspace settings all sit behind this one line. */
 export function canManageWorkspace(actor: WorkspaceRole): boolean {
-  return ROLE_RANK[actor] >= ROLE_RANK.admin
-}
-
-export const ROLE_LABELS: Record<WorkspaceRole, string> = {
-  owner: 'Owner',
-  admin: 'Admin',
-  member: 'Member',
-  viewer: 'Viewer',
+  return actor === 'owner'
 }
 
 /**
- * The same four roles as catalogue keys, for the screens that have been
- * converted (CON-174) — the sidebar today.
- *
- * Keys and not strings because this is module scope: a `const` holding
- * translated copy freezes whichever language happened to load first, so the
- * lookup has to happen inside a render, through `t`. `ROLE_LABELS` above stays
- * for the workspace screens that are still hard-coded English; it goes when
- * they are converted.
+ * What the server will not do whatever the roles say: leave a workspace with
+ * no owner. It answers 409; the UI counts owners to grey the control out
+ * first. Not expressible in the predicates above — it depends on the whole
+ * member list, not on two roles.
+ */
+export function isLastOwner(member: WorkspaceMember, owners: number): boolean {
+  return member.role === 'owner' && owners <= 1
+}
+
+/**
+ * The same two roles as catalogue keys. Keys and not strings because this is
+ * module scope: a `const` holding translated copy freezes whichever language
+ * loaded first, so the lookup has to happen inside a render, through `t`.
  */
 export const ROLE_LABEL_KEYS = {
   owner: 'workspace.role.owner',
-  admin: 'workspace.role.admin',
   member: 'workspace.role.member',
-  viewer: 'workspace.role.viewer',
   // `as const` so the values stay literal types — `t` only accepts keys the
   // catalogue actually has, and a `Record<_, string>` would widen them away.
   // `satisfies` keeps the exhaustiveness check the annotation was there for.
 } as const satisfies Record<WorkspaceRole, string>
 
-/**
- * What each role can do — whole sentences that stand on their own beside the
- * role picker, with no carrier phrase naming the invitee: the address is in
- * the field alongside, and repeating it said nothing the form didn't already.
- *
- * Kept to within a few characters of each other on purpose. They swap in place
- * as the role changes, so a line that wraps for one role and not the next
- * shifts everything under it.
- */
-export const ROLE_ABILITIES: Record<WorkspaceRole, string> = {
-  owner: 'Can do anything here — billing, deleting the workspace, appointing owners.',
-  admin: 'Can invite people, connect social accounts and change workspace settings.',
-  member: 'Can plan, write and publish content, but not change workspace settings.',
-  viewer: 'Can read campaigns, posts and assets, but not change or publish anything.',
-}
+/** What each role can do — a caption under the role picker, one sentence each. */
+export const ROLE_ABILITY_KEYS = {
+  owner: 'workspace.ability.owner',
+  member: 'workspace.ability.member',
+} as const satisfies Record<WorkspaceRole, string>
 
 /**
- * A workspace as the caller sees it. `role` and `is_active` are
- * caller-relative — they come from the membership, not the workspace row —
- * which is why the list endpoint can't be a plain `SELECT * FROM workspaces`.
+ * The workspace the session is bound to: the tenant, plus the caller's own
+ * role in it. The two arrive from different endpoints — `GET
+ * /api/tenants/current` and `GET /api/current_user` — because the role belongs
+ * to the user, not to the workspace.
  */
 export type Workspace = {
   id: string
   name: string
-  /** Assigned at creation from the name, stable across renames (CON-97). */
+  /** Assigned at signup from the name, stable across renames (CON-97 §7.3). */
   slug: string
   /** The caller's role in this workspace. */
   role: WorkspaceRole
-  member_count: number
-  /** Whether the caller's session is currently bound to this workspace. */
-  is_active: boolean
   created_at: string
   updated_at: string
 }
 
-/** One person's membership of a workspace, flattened with their user record for display. */
+/**
+ * One person in the workspace, as `GET /api/users` sends them. `is_self` is
+ * derived client-side by comparing ids — the endpoint doesn't mark the caller's
+ * row, and doesn't need to.
+ */
 export type WorkspaceMember = {
-  /** Membership id, not user id — a user has one of these per workspace. */
+  /** The user id. There is no separate membership row to have an id of its own. */
   id: string
-  user_id: string
   name: string
   email: string
   role: WorkspaceRole
+  /** `users.created_at` — when the account was made, which for an invitee is when they accepted. */
   joined_at: string
-  /** True for the caller's own row, so the UI can label it and block self-removal. */
   is_self: boolean
 }
 
-export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked'
-
 /**
- * An outstanding invitation. Invitations are addressed to an **email**, not a
- * user id: the invitee may not have an Ogen account yet, and accepting is what
- * creates the membership (and, for a new email, the user).
+ * Wire statuses only. "Expired" is deliberately **not** one of them: an invite
+ * is expired iff it is still pending and `expires_at` has passed, so no sweeper
+ * has to run for the list to be correct (CON-26 §6.2). Ask `invitationState`.
  */
+export type InvitationStatus = 'pending' | 'accepted' | 'revoked'
+
 export type WorkspaceInvitation = {
   id: string
   email: string
   role: WorkspaceRole
-  /** Display name of whoever sent it. */
+  /** The **user id** of whoever sent it, not their name — resolve it against the member list. */
   invited_by: string
   status: InvitationStatus
-  created_at: string
   expires_at: string
+  created_at: string
+  accepted_at?: string
 }
 
-/**
- * No `timezone`: everything is UTC until CON-94 lands, and a field the UI can't
- * set is a field the API shouldn't have to accept. The zone arrives with the
- * scheduling surfaces that read it, as one piece of work.
- */
-export type CreateWorkspacePayload = {
-  name: string
-}
+/** What a row actually is, once `expires_at` is taken into account. */
+export type InvitationState = InvitationStatus | 'expired'
 
-export type UpdateWorkspacePayload = {
-  name?: string
+export function invitationState(inv: WorkspaceInvitation): InvitationState {
+  if (inv.status !== 'pending') return inv.status
+  return Date.parse(inv.expires_at) <= Date.now() ? 'expired' : 'pending'
 }
 
 export type InvitePayload = {
   email: string
   role: WorkspaceRole
+}
+
+export type UpdateWorkspacePayload = {
+  /** Required, not optional: `PUT /api/tenants/:id` validates `name` as required. */
+  name: string
+}
+
+/* ------------------------------------------------------------------------ *
+ * Below: the multi-workspace model (CON-147). No API — stub-served, behind
+ * the `multi-workspace` flag. Nothing outside the flag may read these.
+ * ------------------------------------------------------------------------ */
+
+/** A workspace as the chooser lists it: the caller's role and whether they're in it now. */
+export type WorkspaceChoice = Workspace & {
+  member_count: number
+  is_active: boolean
+}
+
+export type CreateWorkspacePayload = {
+  name: string
 }

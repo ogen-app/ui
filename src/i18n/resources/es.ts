@@ -140,6 +140,23 @@ export const es: Translation = {
       brokenBody:
         'Abre el enlace directamente desde el correo o <request>pide uno nuevo</request>.',
     },
+    invite: {
+      title: 'Únete al espacio',
+      subtitle: '{{inviter}} te ha invitado a {{workspace}}',
+      emailLabel: 'Tu correo electrónico',
+      firstNameLabel: 'Nombre',
+      lastNameLabel: 'Apellidos',
+      passwordLabel: 'Contraseña',
+      passwordPlaceholder: 'Elige una contraseña',
+      submit: 'UNIRME AL ESPACIO',
+      haveAccount: '¿Ya tienes una cuenta de Ogen?',
+      logInLink: 'Inicia sesión',
+      brokenTitle: 'Este enlace de invitación ya no funciona',
+      brokenSubtitle:
+        'Las invitaciones caducan a los siete días y solo pueden usarse una vez',
+      brokenBody:
+        'Pide a quien te invitó que te envíe otra. Si ya la aceptaste, <login>inicia sesión</login>.',
+    },
     logout: {
       pendingTitle: 'Cerrando sesión...',
       pendingMessage: 'Esto puede tardar unos segundos',
@@ -174,9 +191,13 @@ export const es: Translation = {
   workspace: {
     role: {
       owner: 'Propietario',
-      admin: 'Administrador',
       member: 'Miembro',
-      viewer: 'Lector',
+    },
+    ability: {
+      owner:
+        'Puede invitar personas, cambiar roles, conectar cuentas y renombrar el espacio.',
+      member:
+        'Puede planificar, escribir y publicar contenido, pero no gestionar el espacio ni a su gente.',
     },
   },
 
@@ -233,6 +254,45 @@ export const es: Translation = {
       timeZoneLabel: 'Zona horaria',
       timeZoneNote:
         'Por ahora todo se programa en UTC; las zonas horarias por espacio llegan con CON-94.',
+    },
+    people: {
+      title: 'Personas',
+      membersHeading: 'Miembros del espacio',
+      pendingHeading: 'Invitaciones pendientes',
+      inviteHeading: 'Invitar a alguien',
+      you: '(eres tú)',
+      memberNote:
+        'Solo el propietario del espacio puede invitar personas o cambiar roles.',
+      emailLabel: 'Correo electrónico',
+      emailPlaceholder: 'nombre@empresa.com',
+      roleLabel: 'Rol',
+      invite: 'INVITAR',
+      remove: 'ELIMINAR',
+      resend: 'REENVIAR',
+      cancel: 'CANCELAR',
+      cancelInvitation: 'Cancelar la invitación a {{email}}',
+      invitedBy: 'invitada por {{name}}',
+      expiresToday: 'caduca hoy',
+      expiresIn_one: 'caduca mañana',
+      expiresIn_other: 'caduca en {{count}} días',
+      expiredToday: 'caducó hoy',
+      expiredAgo_one: 'caducó ayer',
+      expiredAgo_other: 'caducó hace {{count}} días',
+      roleChanged: 'Rol actualizado para {{name}}',
+      roleChangeFailed: 'No se ha podido cambiar el rol',
+      removed: '{{name}} eliminada',
+      removeFailed: 'No se ha podido eliminar',
+      invitationSent: 'Invitación enviada a {{email}}',
+      inviteFailed: 'No se ha podido enviar la invitación',
+      resendFailed: 'No se ha podido volver a enviar',
+      invitationRevoked: 'Invitación revocada',
+      revokeFailed: 'No se ha podido revocar',
+      removeTitle: '¿Eliminar a {{name}}?',
+      removeBody:
+        'Esto elimina la cuenta de {{name}} y todo lo que creó en este espacio — sus campañas, las publicaciones de esas campañas y los archivos que subió — para todo el mundo. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
+      removeConfirmLabel: 'Escribe su correo electrónico para confirmar',
+      removeDismiss: 'MANTENERLA',
+      removeConfirm: 'ELIMINAR A ESTA PERSONA',
     },
     platforms: {
       title: 'Ajustes de plataformas',

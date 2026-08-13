@@ -1,37 +1,183 @@
 /**
- * Workspaces API — multi-workspace membership, people and preferences.
+ * Workspace API — the workspace itself, its people and its invitations.
  *
- * ⚠️ **None of these endpoints exist on the Go API yet.** They are served in
- * development by the stub handlers in `src/mocks/handlers.ts`, which is
- * deliberately written as request/response pairs so it doubles as the spec
- * handed to the backend. See `docs/workspace-api.md`.
+ * There is no `/api/workspaces` on the Go side and there does not need to be: a
+ * workspace **is** the tenant, and a member **is** a user. So this module is a
+ * façade — the screens ask it workspace questions and it asks the server tenant
+ * and user ones. Three routes carry the whole feature:
  *
- * The load-bearing decision here is `switchWorkspace()`: the workspace a request
- * reads is **bound to the session**, not passed per-request. Every existing
- * endpoint already resolves its tenant from the session cookie and fails
- * closed, so switching workspaces means rebinding that one value — no other
- * route changes, and no route can be tricked into reading the wrong workspace
- * by a client that forgets a header. The cost is that a session is one
- * workspace at a time; two browser tabs cannot sit in two workspaces. That
- * trade-off, and the header-based escape hatch, are written up in the doc.
+ * - `/api/tenants/current` and `PUT /api/tenants/:id` — read and rename,
+ * - `/api/users` — the member list, roles and removal,
+ * - `/api/invitations` — invite, list, revoke (CON-26).
+ *
+ * The one thing the façade must not hide is what removal costs. See
+ * `removeMember`.
+ *
+ * The multi-workspace calls at the bottom (list, create, delete, switch) have
+ * no server at all and are stub-served in development behind the
+ * `multi-workspace` flag.
  */
 
+import type { Tenant } from '@/types/tenant'
 import type {
   CreateWorkspacePayload,
   InvitePayload,
   UpdateWorkspacePayload,
   Workspace,
+  WorkspaceChoice,
   WorkspaceInvitation,
   WorkspaceMember,
   WorkspaceRole,
 } from '@/types/workspace'
 import { apiJson, apiVoid } from './http'
+import type { RawUser } from './users'
 
-const BASE = '/api/workspaces'
+/**
+ * `GET /api/tenants/current` — the workspace the session is bound to.
+ *
+ * Carries no role: the tenant row knows nothing about the caller. The role
+ * comes off `GET /api/current_user`, and `useWorkspace` puts the two together.
+ */
+export function getWorkspace(): Promise<Tenant> {
+  return apiJson<Tenant>('/api/tenants/current', 'Unable to load the workspace')
+}
+
+/**
+ * `PUT /api/tenants/:id` — rename. Any id but the caller's own answers 404.
+ *
+ * `name` is required by the server even though it is the only field, so this
+ * takes the whole value rather than a patch. The slug does not follow a rename
+ * (CON-97 §7.3).
+ */
+export function updateWorkspace(
+  id: string,
+  payload: UpdateWorkspacePayload,
+): Promise<Tenant> {
+  return apiJson<Tenant>(`/api/tenants/${id}`, 'Unable to update the workspace', {
+    method: 'PUT',
+    body: payload,
+  })
+}
+
+/**
+ * `GET /api/users` — everyone in the workspace, oldest first.
+ *
+ * Readable by any member: knowing who you work with is not an owner's
+ * privilege. `is_self` is stamped here from the caller's id, since the server
+ * doesn't mark the row.
+ */
+export async function listMembers(callerId: string): Promise<WorkspaceMember[]> {
+  const raw = await apiJson<RawUser[]>('/api/users', 'Unable to load members')
+  return raw.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role ?? 'member',
+    joined_at: u.created_at,
+    is_self: u.id === callerId,
+  }))
+}
+
+/**
+ * `PATCH /api/users/:id/role` — owner only.
+ *
+ * A workspace may have several owners, so promoting grants ownership rather
+ * than transferring it — nobody is demoted. The one thing the server refuses is
+ * demoting the last owner (409).
+ */
+export async function updateMemberRole(
+  userId: string,
+  role: WorkspaceRole,
+  callerId: string,
+): Promise<WorkspaceMember> {
+  const u = await apiJson<RawUser>(
+    `/api/users/${userId}/role`,
+    'Unable to change the role',
+    { method: 'PATCH', body: { role } },
+  )
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    joined_at: u.created_at,
+    is_self: u.id === callerId,
+  }
+}
+
+/**
+ * `DELETE /api/users/:id` — **deletes the person, not a membership.**
+ *
+ * There is no membership row to detach: one user belongs to one tenant, so the
+ * server hard-deletes the `users` row, and the schema cascades from `users.id`
+ * into `sessions`, `tags`, `campaigns`, `assets`, `posts` and
+ * `post_attachments` via `ON DELETE CASCADE` on `created_by`. Removing a
+ * teammate therefore destroys everything they ever made, for everybody.
+ *
+ * Callers must say that in the confirmation, in those terms. When CON-147
+ * splits memberships from users this becomes the detach it currently pretends
+ * to be — until then the copy carries the difference.
+ *
+ * Owner-gated for anyone else's id; a member may pass their own (which is
+ * account deletion, and lives on Profile). The last owner cannot go, 409.
+ */
+export function removeMember(userId: string): Promise<void> {
+  return apiVoid(`/api/users/${userId}`, 'Unable to remove the member', {
+    method: 'DELETE',
+  })
+}
+
+/**
+ * `GET /api/invitations` — every invitation ever issued, newest first, owner
+ * only.
+ *
+ * Accepted and revoked rows come back too, and expiry is not a status: a
+ * pending row whose `expires_at` has passed *is* the expired one. Filtering is
+ * the caller's (`invitationState`).
+ */
+export function listInvitations(): Promise<WorkspaceInvitation[]> {
+  return apiJson<WorkspaceInvitation[]>('/api/invitations', 'Unable to load invitations')
+}
+
+/**
+ * `POST /api/invitations` — invites by email and sends the mail. Owner only.
+ *
+ * **Not idempotent, and not a resend.** A live pending invitation for the same
+ * address answers 409; only one whose expiry has passed is replaced (the server
+ * clears it inside the minting transaction). An address that already has an
+ * Ogen account anywhere is 409 as well — `users.email` is globally unique, so
+ * there is no second row to create until CON-147. Rate-limited per workspace
+ * and per IP: 429 carries `Retry-After`.
+ *
+ * The UI shows the server's message rather than pre-checking against a list
+ * that can be stale.
+ */
+export function inviteMember(payload: InvitePayload): Promise<WorkspaceInvitation> {
+  return apiJson<WorkspaceInvitation>('/api/invitations', 'Unable to send the invitation', {
+    method: 'POST',
+    body: payload,
+  })
+}
+
+/** `DELETE /api/invitations/:id` — revokes it; the emailed link stops working. Owner only. */
+export function revokeInvitation(invitationId: string): Promise<void> {
+  return apiVoid(`/api/invitations/${invitationId}`, 'Unable to revoke the invitation', {
+    method: 'DELETE',
+  })
+}
+
+/* ------------------------------------------------------------------------ *
+ * Multi-workspace (CON-147). **No API.** Served in development by the stub
+ * handlers in `src/mocks/`, which are written as real request/response pairs
+ * so they double as the spec — see `docs/workspace-api.md`. Reachable only
+ * behind the `multi-workspace` flag.
+ * ------------------------------------------------------------------------ */
+
+const CHOICES = '/api/workspaces'
 
 /** `GET /api/workspaces` — every workspace the caller is a member of, with their role in each. */
-export function listWorkspaces(): Promise<Workspace[]> {
-  return apiJson<Workspace[]>(BASE, 'Unable to load workspaces')
+export function listWorkspaces(): Promise<WorkspaceChoice[]> {
+  return apiJson<WorkspaceChoice[]>(CHOICES, 'Unable to load workspaces')
 }
 
 /**
@@ -39,37 +185,18 @@ export function listWorkspaces(): Promise<Workspace[]> {
  *
  * Provisions a Zernio profile of its own, which is the point: one profile per
  * workspace is what lets the same person hold two accounts on the same
- * platform (one per workspace). Does **not** switch to it — the caller decides
- * whether to follow with `switchWorkspace`.
+ * platform. Does not switch to it.
  */
 export function createWorkspace(payload: CreateWorkspacePayload): Promise<Workspace> {
-  return apiJson<Workspace>(BASE, 'Unable to create the workspace', {
+  return apiJson<Workspace>(CHOICES, 'Unable to create the workspace', {
     method: 'POST',
     body: payload,
   })
 }
 
-/** `PATCH /api/workspaces/:id` — rename. Admin or owner. */
-export function updateWorkspace(
-  id: string,
-  payload: UpdateWorkspacePayload,
-): Promise<Workspace> {
-  return apiJson<Workspace>(`${BASE}/${id}`, 'Unable to update the workspace', {
-    method: 'PATCH',
-    body: payload,
-  })
-}
-
-/**
- * `DELETE /api/workspaces/:id` — owner only.
- *
- * The server soft-deletes (the row survives, writes are blocked, the workspace
- * leaves every member's list), but that is an operational safety net, not a
- * feature: there is no self-serve restore, so from the UI's point of view this
- * is gone. The copy says so.
- */
+/** `DELETE /api/workspaces/:id` — owner only, and gone as far as the UI is concerned. */
 export function deleteWorkspace(id: string): Promise<void> {
-  return apiVoid(`${BASE}/${id}`, 'Unable to delete the workspace', { method: 'DELETE' })
+  return apiVoid(`${CHOICES}/${id}`, 'Unable to delete the workspace', { method: 'DELETE' })
 }
 
 /**
@@ -79,92 +206,7 @@ export function deleteWorkspace(id: string): Promise<void> {
  * caller must clear the query cache on success. `useSwitchWorkspace` does it.
  */
 export function switchWorkspace(id: string): Promise<void> {
-  return apiVoid(`${BASE}/${id}/switch`, 'Unable to switch workspace', {
+  return apiVoid(`${CHOICES}/${id}/switch`, 'Unable to switch workspace', {
     method: 'POST',
   })
-}
-
-/** `GET /api/workspaces/:id/members` */
-export function listMembers(workspaceId: string): Promise<WorkspaceMember[]> {
-  return apiJson<WorkspaceMember[]>(
-    `${BASE}/${workspaceId}/members`,
-    'Unable to load members',
-  )
-}
-
-/**
- * `PATCH /api/workspaces/:id/members/:userId` — change someone's role.
- *
- * A workspace may have several owners, so promoting to `owner` grants it rather
- * than transferring it — nobody is demoted. The one thing the server refuses is
- * demoting the last owner (409): every workspace keeps at least one.
- */
-export function updateMemberRole(
-  workspaceId: string,
-  userId: string,
-  role: WorkspaceRole,
-): Promise<WorkspaceMember> {
-  return apiJson<WorkspaceMember>(
-    `${BASE}/${workspaceId}/members/${userId}`,
-    'Unable to change the role',
-    { method: 'PATCH', body: { role } },
-  )
-}
-
-/**
- * `DELETE /api/workspaces/:id/members/:userId` — removes a member; passing
- * one's own id is "leave workspace". The last owner cannot be removed.
- */
-export function removeMember(workspaceId: string, userId: string): Promise<void> {
-  return apiVoid(
-    `${BASE}/${workspaceId}/members/${userId}`,
-    'Unable to remove the member',
-    { method: 'DELETE' },
-  )
-}
-
-/** `GET /api/workspaces/:id/invitations` — outstanding invitations, newest first. */
-export function listInvitations(workspaceId: string): Promise<WorkspaceInvitation[]> {
-  return apiJson<WorkspaceInvitation[]>(
-    `${BASE}/${workspaceId}/invitations`,
-    'Unable to load invitations',
-  )
-}
-
-/**
- * `POST /api/workspaces/:id/invitations` — invites by email and sends the mail.
- *
- * **Idempotent per email.** Posting an address that already has a live
- * invitation re-issues it: fresh token, fresh expiry, mail sent again, `200`
- * instead of `201`. That is deliberate — "resend" is the same act as "send",
- * and giving it its own endpoint would mean two routes that differ only in
- * whether the client already knew the invitation's id. It also removes a
- * failure mode: an invite that 409s because a pending one exists forces the
- * user to find and cancel it before they can do the obvious thing.
- *
- * 409 is still returned when the email is already a **member** — that is a
- * different situation with a different fix. The UI shows the server's message
- * rather than pre-checking against a list that can be stale.
- */
-export function inviteMember(
-  workspaceId: string,
-  payload: InvitePayload,
-): Promise<WorkspaceInvitation> {
-  return apiJson<WorkspaceInvitation>(
-    `${BASE}/${workspaceId}/invitations`,
-    'Unable to send the invitation',
-    { method: 'POST', body: payload },
-  )
-}
-
-/** `DELETE /api/workspaces/:id/invitations/:invitationId` — revokes it; the link stops working. */
-export function revokeInvitation(
-  workspaceId: string,
-  invitationId: string,
-): Promise<void> {
-  return apiVoid(
-    `${BASE}/${workspaceId}/invitations/${invitationId}`,
-    'Unable to revoke the invitation',
-    { method: 'DELETE' },
-  )
 }

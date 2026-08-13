@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@tanstack/react-router'
 import { CheckCircleIcon, PlusIcon } from '@phosphor-icons/react'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
@@ -9,7 +10,7 @@ import { CreateWorkspaceDialog } from '@/components/workspace-settings/CreateWor
 import { WorkspaceSwitchOverlay } from '@/components/workspace-settings/WorkspaceSwitchOverlay'
 import { useSwitchWorkspace, useWorkspaces } from '@/hooks/useWorkspaces'
 import { useAuthStore } from '@/stores/authStore'
-import { ROLE_LABELS, type Workspace } from '@/types/workspace'
+import { ROLE_LABEL_KEYS, type WorkspaceChoice } from '@/types/workspace'
 import { toast } from '@/stores/toastStore'
 import { cn } from '@/lib'
 
@@ -35,7 +36,7 @@ export default function WorkspacesPage() {
 
   const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
 
-  const handleOpen = (workspace: Workspace) => {
+  const handleOpen = (workspace: WorkspaceChoice) => {
     // Already here — nothing to rebind, just go back into the app.
     if (workspace.is_active) {
       navigate({ to: '/' })
@@ -74,7 +75,7 @@ export default function WorkspacesPage() {
             <ul className="mt-8 flex flex-col gap-2">
               {workspaces.map((w) => (
                 <li key={w.id}>
-                  <WorkspaceChoice
+                  <WorkspaceCard
                     workspace={w}
                     busy={isPending}
                     onSelect={() => handleOpen(w)}
@@ -130,15 +131,16 @@ function Card({ className, children }: { className?: string; children: React.Rea
   return <section className={cn('w-full bg-primary px-10 py-6', className)}>{children}</section>
 }
 
-function WorkspaceChoice({
+function WorkspaceCard({
   workspace,
   busy,
   onSelect,
 }: {
-  workspace: Workspace
+  workspace: WorkspaceChoice
   busy: boolean
   onSelect: () => void
 }) {
+  const { t } = useTranslation()
   const { is_active: active } = workspace
 
   return (
@@ -160,7 +162,7 @@ function WorkspaceChoice({
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-regular">{workspace.name}</span>
         <span className="truncate text-xs text-tertiary-foreground">
-          {ROLE_LABELS[workspace.role]} · {workspace.member_count}{' '}
+          {t(ROLE_LABEL_KEYS[workspace.role])} · {workspace.member_count}{' '}
           {workspace.member_count === 1 ? 'member' : 'members'}
         </span>
       </span>

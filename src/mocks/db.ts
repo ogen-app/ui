@@ -1,40 +1,39 @@
 /**
- * In-memory store behind the workspace stubs, mirrored into `localStorage`.
+ * In-memory store behind the multi-workspace stubs, mirrored into
+ * `localStorage`.
  *
  * Persisting matters for the thing being prototyped: switching workspaces is
- * supposed to survive a reload, because on the real API it lives in the
- * session. Without persistence every refresh would drop you back into the
- * seed workspace and the flow wouldn't be testable.
+ * supposed to survive a reload, because on the real API it would live in the
+ * session. Without persistence every refresh would drop you back into the seed
+ * workspace and the flow wouldn't be testable.
  *
- * This file is development-only scaffolding — it goes away with the stub
- * handlers the moment the Go endpoints land.
+ * People and invitations are **not** here any more — CON-26 landed them, so
+ * they come from the real API (`/api/users`, `/api/invitations`). What is left
+ * is the part the server has no model for: holding several workspaces and
+ * moving between them (CON-147).
+ *
+ * Development-only scaffolding — it goes away with the stub handlers the moment
+ * the workspace endpoints land.
  */
 
-import type {
-  Workspace,
-  WorkspaceInvitation,
-  WorkspaceMember,
-  WorkspaceRole,
-} from '@/types/workspace'
+import type { WorkspaceChoice } from '@/types/workspace'
 
 // Bump when the seed or the shapes change: a stored state from an older
 // version is thrown away and reseeded rather than half-migrated.
-const STORAGE_KEY = 'ogen.stub.workspaces.v4'
+const STORAGE_KEY = 'ogen.stub.workspaces.v5'
 
-/** The signed-in user, as far as the stubs are concerned. Patched from the real `current_user` on boot. */
-export type StubSelf = {
+/** The real workspace the session is actually in, read once from the API. */
+export type StubTenant = {
   id: string
   name: string
-  email: string
+  slug: string
+  created_at: string
+  updated_at: string
 }
 
 type StubState = {
-  self: StubSelf
-  workspaces: Workspace[]
+  workspaces: WorkspaceChoice[]
   activeId: string
-  /** Keyed by workspace id. */
-  members: Record<string, WorkspaceMember[]>
-  invitations: Record<string, WorkspaceInvitation[]>
 }
 
 const now = () => new Date().toISOString()
@@ -65,213 +64,88 @@ export function slugify(name: string): string {
  * problem this concept exists to solve: the same person holding a LinkedIn
  * account of their own *and* running a client's, which one Zernio profile
  * cannot represent.
+ *
+ * The first one **is** the real tenant — same id, name and slug — so that
+ * everything the app reads from the live API still lines up while the workspace
+ * being switched *from* is the one it is genuinely in.
  */
-function seed(self: StubSelf): StubState {
-  const own: Workspace = {
-    id: 'wsOwn001',
-    name: 'My Workspace',
-    slug: 'my-workspace',
+function seed(tenant: StubTenant): StubState {
+  const own: WorkspaceChoice = {
+    ...tenant,
     role: 'owner',
     member_count: 3,
     is_active: true,
-    created_at: daysFromNow(-120),
-    updated_at: daysFromNow(-3),
   }
-  const client: Workspace = {
+  const client: WorkspaceChoice = {
     id: 'wsClient02',
     name: 'Northwind Client',
     slug: 'northwind-client',
-    role: 'admin',
+    role: 'member',
     member_count: 5,
     is_active: false,
     created_at: daysFromNow(-40),
     updated_at: daysFromNow(-1),
   }
-
-  const selfMember = (role: WorkspaceRole, joinedDaysAgo: number): WorkspaceMember => ({
-    id: newId('mem'),
-    user_id: self.id,
-    name: self.name,
-    email: self.email,
-    role,
-    joined_at: daysFromNow(-joinedDaysAgo),
-    is_self: true,
-  })
-
-  const member = (
-    userId: string,
-    name: string,
-    email: string,
-    role: WorkspaceRole,
-    joinedDaysAgo: number,
-  ): WorkspaceMember => ({
-    id: newId('mem'),
-    user_id: userId,
-    name,
-    email,
-    role,
-    joined_at: daysFromNow(-joinedDaysAgo),
-    is_self: false,
-  })
-
-  return {
-    self,
-    workspaces: [own, client],
-    activeId: own.id,
-    // Every role appears at least once, and in both a workspace the caller
-    // owns and one they only administer — the two rows whose controls differ.
-    //
-    // My Workspace deliberately has **two** owners: that is the state where an
-    // owner row is removable. Remove or demote Sofia and the caller's own row
-    // locks, which is the last-owner invariant demonstrating itself rather than
-    // being described.
-    members: {
-      [own.id]: [
-        selfMember('owner', 120),
-        member('usrOw01', 'Sofia Lindqvist', 'sofia@example.com', 'owner', 64),
-        member('usrOw02', 'Sam Whitfield', 'sam@example.com', 'viewer', 9),
-      ],
-      [client.id]: [
-        selfMember('admin', 40),
-        member('usrNw01', 'Dana Okafor', 'dana@northwind.example', 'owner', 40),
-        member('usrNw02', 'Ravi Patel', 'ravi@northwind.example', 'member', 12),
-        member('usrNw03', 'Lena Fischer', 'lena@northwind.example', 'admin', 21),
-        member('usrNw04', 'Tomás Ortiz', 'tomas@northwind.example', 'viewer', 3),
-      ],
-    },
-    // Fresh, about-to-lapse, expired, and two that should never reach the
-    // list — accepted and revoked.
-    invitations: {
-      [own.id]: [
-        {
-          id: newId('inv'),
-          email: 'alexis.n@example.com',
-          role: 'member',
-          invited_by: self.name,
-          status: 'pending',
-          created_at: daysFromNow(-1),
-          expires_at: daysFromNow(6),
-        },
-        {
-          id: newId('inv'),
-          email: 'j.morrow@example.com',
-          role: 'viewer',
-          invited_by: self.name,
-          status: 'pending',
-          created_at: daysFromNow(-7),
-          expires_at: daysFromNow(0),
-        },
-        {
-          id: newId('inv'),
-          email: 'sofia@example.com',
-          role: 'admin',
-          invited_by: self.name,
-          status: 'accepted',
-          created_at: daysFromNow(-65),
-          expires_at: daysFromNow(-58),
-        },
-      ],
-      [client.id]: [
-        {
-          id: newId('inv'),
-          email: 'mira@northwind.example',
-          role: 'member',
-          invited_by: self.name,
-          status: 'pending',
-          created_at: daysFromNow(-2),
-          expires_at: daysFromNow(5),
-        },
-        {
-          id: newId('inv'),
-          email: 'old.contact@northwind.example',
-          role: 'admin',
-          invited_by: 'Dana Okafor',
-          status: 'expired',
-          created_at: daysFromNow(-30),
-          expires_at: daysFromNow(-23),
-        },
-        {
-          id: newId('inv'),
-          email: 'wrong.address@northwind.example',
-          role: 'viewer',
-          invited_by: 'Dana Okafor',
-          status: 'revoked',
-          created_at: daysFromNow(-9),
-          expires_at: daysFromNow(-2),
-        },
-      ],
-    },
-  }
+  return { workspaces: [own, client], activeId: own.id }
 }
 
 let state: StubState | null = null
 
-function load(self: StubSelf): StubState {
-  const raw = localStorage.getItem(STORAGE_KEY)
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw) as StubState
-      // The signed-in user can change between sessions; the rest is kept.
-      // The "you" rows are restamped along with it — they are the caller's
-      // own membership, so a stored state from another account would
-      // otherwise show that account's name and email as you.
-      parsed.self = self
-      for (const members of Object.values(parsed.members)) {
-        for (const m of members) {
-          if (!m.is_self) continue
-          m.user_id = self.id
-          m.name = self.name
-          m.email = self.email
-        }
-      }
-      return parsed
-    } catch {
-      // Corrupt or from an older shape — start over rather than half-restore.
-    }
+function load(): StubState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as StubState) : null
+  } catch {
+    return null
   }
-  return seed(self)
 }
 
-function persist(): void {
-  if (state) localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-}
-
-/** Called once at startup with the real signed-in user, so the stub's "you" row is genuine. */
-export function initDb(self: StubSelf): void {
-  state = load(self)
-  persist()
+function save() {
+  if (!state) return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // A full or blocked storage is not worth breaking the stub over.
+  }
 }
 
 export function isInitialized(): boolean {
+  if (state) return true
+  state = load()
   return state !== null
 }
 
+/** Seeds from the caller's real tenant the first time the app asks for it. */
+export function initDb(tenant: StubTenant): void {
+  state = load() ?? seed(tenant)
+  save()
+}
+
+export function resetDb(): void {
+  localStorage.removeItem(STORAGE_KEY)
+  state = null
+}
+
 function db(): StubState {
-  if (!state) throw new Error('workspace stubs used before initDb()')
+  if (!state) throw new Error('stub db used before initDb()')
   return state
 }
 
-export function getSelf(): StubSelf {
-  return db().self
+export function listWorkspaces(): WorkspaceChoice[] {
+  return db().workspaces.map((w) => ({ ...w, is_active: w.id === db().activeId }))
 }
 
-export function listWorkspaces(): Workspace[] {
+export function getWorkspace(id: string): WorkspaceChoice | undefined {
+  return db().workspaces.find((w) => w.id === id)
+}
+
+export function getActiveWorkspace(): WorkspaceChoice {
   const s = db()
-  return s.workspaces.map((w) => ({ ...w, is_active: w.id === s.activeId }))
+  return s.workspaces.find((w) => w.id === s.activeId) ?? s.workspaces[0]
 }
 
-export function getWorkspace(id: string): Workspace | undefined {
-  return listWorkspaces().find((w) => w.id === id)
-}
-
-export function getActiveWorkspace(): Workspace {
-  const s = db()
-  return getWorkspace(s.activeId) ?? listWorkspaces()[0]
-}
-
-export function createWorkspace(name: string): Workspace {
-  const s = db()
-  const ws: Workspace = {
+export function createWorkspace(name: string): WorkspaceChoice {
+  const ws: WorkspaceChoice = {
     id: newId('ws'),
     name,
     slug: slugify(name),
@@ -281,186 +155,22 @@ export function createWorkspace(name: string): Workspace {
     created_at: now(),
     updated_at: now(),
   }
-  s.workspaces.push(ws)
-  s.members[ws.id] = [
-    {
-      id: newId('mem'),
-      user_id: s.self.id,
-      name: s.self.name,
-      email: s.self.email,
-      role: 'owner',
-      joined_at: now(),
-      is_self: true,
-    },
-  ]
-  s.invitations[ws.id] = []
-  persist()
+  db().workspaces.push(ws)
+  save()
   return ws
 }
 
-export function updateWorkspace(id: string, patch: { name?: string }): Workspace | undefined {
+export function deleteWorkspace(id: string): void {
   const s = db()
-  const ws = s.workspaces.find((w) => w.id === id)
-  if (!ws) return undefined
-  // The slug is assigned once and survives renames (CON-97) — deliberately
-  // not recomputed here, so the stub can't teach the UI otherwise.
-  if (patch.name !== undefined) ws.name = patch.name
-  ws.updated_at = now()
-  persist()
-  return getWorkspace(id)
-}
-
-/**
- * The server soft-deletes; the stub drops the row outright.
- *
- * Both look identical from here, which is the point — a soft-deleted workspace
- * leaves every member's list and rejects writes, and nothing in the client can
- * bring it back. Restoring one is a manual, support-side operation, so there is
- * nothing for this function to model.
- */
-export function deleteWorkspace(id: string): boolean {
-  const s = db()
-  const i = s.workspaces.findIndex((w) => w.id === id)
-  if (i === -1) return false
-  s.workspaces.splice(i, 1)
-  delete s.members[id]
-  delete s.invitations[id]
+  s.workspaces = s.workspaces.filter((w) => w.id !== id)
   if (s.activeId === id) s.activeId = s.workspaces[0]?.id ?? ''
-  persist()
-  return true
+  save()
 }
 
 export function switchWorkspace(id: string): boolean {
   const s = db()
   if (!s.workspaces.some((w) => w.id === id)) return false
   s.activeId = id
-  persist()
+  save()
   return true
-}
-
-export function listMembers(workspaceId: string): WorkspaceMember[] {
-  return db().members[workspaceId] ?? []
-}
-
-export function getMember(
-  workspaceId: string,
-  userId: string,
-): WorkspaceMember | undefined {
-  return listMembers(workspaceId).find((m) => m.user_id === userId)
-}
-
-/** How many owners a workspace has — the number the last-owner invariant is about. */
-export function ownerCount(workspaceId: string): number {
-  return listMembers(workspaceId).filter((m) => m.role === 'owner').length
-}
-
-export function updateMemberRole(
-  workspaceId: string,
-  userId: string,
-  role: WorkspaceRole,
-): WorkspaceMember | undefined {
-  const s = db()
-  const members = s.members[workspaceId]
-  const member = members?.find((m) => m.user_id === userId)
-  if (!member) return undefined
-  // Several owners are allowed, so promoting to owner grants the role rather
-  // than transferring it: nobody is demoted, and the guard against emptying
-  // the owner seat lives in the handler, where the 409 belongs.
-  member.role = role
-  if (member.is_self) {
-    // The caller's own role gates every control on the page, so the
-    // workspace's cached copy has to follow it.
-    const ws = s.workspaces.find((w) => w.id === workspaceId)
-    if (ws) ws.role = role
-  }
-  persist()
-  return member
-}
-
-export function removeMember(workspaceId: string, userId: string): boolean {
-  const s = db()
-  const members = s.members[workspaceId]
-  if (!members) return false
-  const i = members.findIndex((m) => m.user_id === userId)
-  if (i === -1) return false
-  members.splice(i, 1)
-  const ws = s.workspaces.find((w) => w.id === workspaceId)
-  if (ws) ws.member_count = members.length
-  persist()
-  return true
-}
-
-export function listInvitations(workspaceId: string): WorkspaceInvitation[] {
-  return db().invitations[workspaceId] ?? []
-}
-
-export function findMemberByEmail(
-  workspaceId: string,
-  email: string,
-): WorkspaceMember | undefined {
-  return listMembers(workspaceId).find(
-    (m) => m.email.toLowerCase() === email.toLowerCase(),
-  )
-}
-
-/**
- * Invites an email, or re-issues the invitation it already has.
- *
- * One operation covers both because they are the same act: a fresh token, a
- * fresh expiry, another mail. `created` tells the handler whether to answer 201
- * or 200 — the only thing the two cases differ in.
- *
- * Re-issuing also revives an expired invitation and can change its role, which
- * is what makes the pending row's RESEND button work with no endpoint of its
- * own.
- */
-export function upsertInvitation(
-  workspaceId: string,
-  email: string,
-  role: WorkspaceRole,
-): { invitation: WorkspaceInvitation; created: boolean } {
-  const s = db()
-  const existing = listInvitations(workspaceId).find(
-    (i) =>
-      i.email.toLowerCase() === email.toLowerCase() &&
-      (i.status === 'pending' || i.status === 'expired'),
-  )
-
-  if (existing) {
-    existing.role = role
-    existing.invited_by = s.self.name
-    existing.status = 'pending'
-    existing.created_at = now()
-    existing.expires_at = daysFromNow(7)
-    persist()
-    return { invitation: existing, created: false }
-  }
-
-  const invitation: WorkspaceInvitation = {
-    id: newId('inv'),
-    email,
-    role,
-    invited_by: s.self.name,
-    status: 'pending',
-    created_at: now(),
-    expires_at: daysFromNow(7),
-  }
-  s.invitations[workspaceId] = [invitation, ...(s.invitations[workspaceId] ?? [])]
-  persist()
-  return { invitation, created: true }
-}
-
-export function revokeInvitation(workspaceId: string, invitationId: string): boolean {
-  const invitations = db().invitations[workspaceId]
-  const i = invitations?.findIndex((inv) => inv.id === invitationId) ?? -1
-  if (i === -1 || !invitations) return false
-  invitations.splice(i, 1)
-  persist()
-  return true
-}
-
-/** Wipes the stub state; the next `initDb` reseeds. Exposed on `window` for manual resets. */
-export function resetDb(): void {
-  localStorage.removeItem(STORAGE_KEY)
-  state = null
 }

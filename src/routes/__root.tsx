@@ -41,7 +41,14 @@ async function probe<T>(
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ location }) => {
-    const isAuthRoute = location.pathname === "/auth" || location.pathname.startsWith("/auth/");
+    // `/invite` is public for the same reason the auth routes are, and one
+    // step further: the person following an emailed invitation has no account
+    // to have a session with — accepting the token is what creates it (CON-26).
+    const isAuthRoute =
+      location.pathname === "/auth" ||
+      location.pathname.startsWith("/auth/") ||
+      location.pathname === "/invite" ||
+      location.pathname.startsWith("/invite/");
     const isServerDownRoute = location.pathname === SERVER_DOWN_PATH;
 
     // CON-97: there is no instance-wide first-run setup anymore — onboarding is

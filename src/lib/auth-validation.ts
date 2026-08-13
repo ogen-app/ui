@@ -90,6 +90,23 @@ export const resetPasswordSchema = (t: T) =>
       path: ['confirmPassword'],
     })
 
+/**
+ * Accepting an invitation: the name to be known by, and the password for the
+ * account being created.
+ *
+ * No email field — the invitation is addressed to one, and the account is
+ * created with it whatever the form says. No confirmation field either: unlike
+ * a reset, this password is typed by someone who is about to use it
+ * immediately (accepting signs them straight in), so a typo announces itself
+ * at the next login rather than locking a stranger out of their own account.
+ */
+export const acceptInviteSchema = (t: T) =>
+  z.object({
+    firstName: nameField(t, 'firstName', 50),
+    lastName: nameField(t, 'lastName', 50),
+    password: passwordField(t),
+  })
+
 /** The identity half of `/profile` — what `PUT /api/users/:id` calls name + email. */
 export const profileSchema = (t: T) =>
   z.object({

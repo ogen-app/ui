@@ -177,13 +177,21 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
-- **`src/mocks/` stubs the workspace endpoints in development only** (MSW,
-  started from `main.tsx` behind `import.meta.env.DEV`; opt out with
-  `VITE_STUB_WORKSPACES=false`). The handlers are deliberately written as real
-  request/response pairs so they double as the spec for the Go side — see
-  [`docs/workspace-api.md`](./docs/workspace-api.md). Everything outside the
-  workspace routes passes through to the real API. Delete the directory when
-  the endpoints land; don't grow it into a general-purpose mock layer.
+- **A workspace is the tenant and a member is a user** — there is no workspace
+  resource on the API. `services/api/workspaces.ts` is a façade over
+  `/api/tenants/current`, `/api/users` and `/api/invitations` (CON-26), and the
+  two roles it deals in are the server's: `owner | member`, nothing else.
+  **`DELETE /api/users/:id` is not "remove from workspace"** — it deletes the
+  user row and cascades from `created_by` into their campaigns, posts and
+  assets, so every caller confirms it in those words. See
+  [`docs/workspace-api.md`](./docs/workspace-api.md) §4a.
+- **`src/mocks/` stubs the four *multi-workspace* endpoints in development
+  only** (MSW, started from `main.tsx` behind `import.meta.env.DEV` **and** the
+  `multi-workspace` flag; opt out with `VITE_STUB_WORKSPACES=false`). The
+  handlers are deliberately written as real request/response pairs so they
+  double as the spec for the Go side. Everything else — including people and
+  invitations, which CON-26 landed — goes to the real API. Delete the directory
+  when the endpoints land; don't grow it into a general-purpose mock layer.
 - **Styling is CSS-first:** the theme and tokens live in `src/index.css`; there
   is no `tailwind.config.js`. Use `cn()` from `lib/styles.ts`. Apply z-index
   from `config/zIndex.ts` via inline `style={{ zIndex }}`, not `z-[…]` classes.
@@ -232,7 +240,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 
 ## Known stubs / gaps
 
-No invite-teammate UI yet (`users.register()` is the ready building block) ·
+Inviting teammates is live end to end (People, in Workspace Settings; the
+emailed link lands on `/invite?token=…`, which is public and creates the
+account) · **one workspace per user**: the
+chooser, "Create or switch" and the workspace Danger Zone are built and sit
+behind the `multi-workspace` flag, off, waiting on memberships (CON-147) ·
 dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
 have no committed config in this repo · **i18n covers the auth screens, sidebar,

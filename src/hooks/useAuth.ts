@@ -6,6 +6,7 @@ import {
   resetPassword as resetPasswordRequest,
 } from "@/services/api/passwordReset";
 import { signup as signupRequest } from "@/services/api/tenants";
+import { acceptInvitation } from "@/services/api/invitations";
 import { deleteUser, updateUser } from "@/services/api/users";
 import { clearAllApplicationData } from "@/lib/cache-utils";
 import type { LoginPayload, Session } from "@/types/session";
@@ -84,6 +85,27 @@ export function useResetPassword() {
     // out of an expired token — which a toast would drop.
     meta: { errorToast: false },
     mutationFn: ({ token, password }) => resetPasswordRequest(token, password),
+  });
+}
+
+/**
+ * Accepting an invitation (CON-26): creates the account and signs it in.
+ *
+ * The server opens the session and sets the cookie as part of accepting, so
+ * there is nothing to log in with afterwards — the store is hydrated from the
+ * response the way signup does it, and the caller navigates into the app.
+ */
+export function useAcceptInvitation(token: string) {
+  const setUser = useAuthStore((s) => s.setUser);
+  return useMutation<User, Error, { name: string; password: string }>({
+    // The form renders `error` beside the fields, and for a dead token beside
+    // the way out of it — which a toast would drop.
+    meta: { errorToast: false },
+    mutationFn: (payload) => acceptInvitation(token, payload),
+    onSuccess: (user) => {
+      invalidateSession();
+      setUser(user);
+    },
   });
 }
 

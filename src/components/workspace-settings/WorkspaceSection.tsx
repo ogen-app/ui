@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
-import { useActiveWorkspace, useUpdateWorkspace } from '@/hooks/useWorkspaces'
+import { useWorkspace, useUpdateWorkspace } from '@/hooks/useWorkspaces'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { canManageWorkspace, type Workspace } from '@/types/workspace'
 import { ReadOnlyField, SettingsRow } from './SettingsRow'
 
@@ -20,8 +21,11 @@ import { ReadOnlyField, SettingsRow } from './SettingsRow'
  */
 function WorkspaceSectionComponent() {
   const { t } = useTranslation()
-  const workspace = useActiveWorkspace()
+  const workspace = useWorkspace()
   const navigate = useNavigate()
+  // Without the multi-workspace model there is nowhere to switch to: the
+  // workspace in this card is the only one the session can be bound to.
+  const canSwitch = useFeatureFlag('multi-workspace')
 
   return (
     <SettingsCard>
@@ -37,15 +41,17 @@ function WorkspaceSectionComponent() {
             actions={
               // The way out of this card: everything in it describes one
               // workspace, so the other ones belong behind a single move.
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate({ to: '/workspaces' })}
-              >
-                <ArrowsLeftRightIcon />
-                <span>{t('workspaceSettings.workspace.switch')}</span>
-              </Button>
+              canSwitch ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate({ to: '/workspaces' })}
+                >
+                  <ArrowsLeftRightIcon />
+                  <span>{t('workspaceSettings.workspace.switch')}</span>
+                </Button>
+              ) : null
             }
           >
             <div className="flex flex-col gap-5">

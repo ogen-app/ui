@@ -1,8 +1,15 @@
 # Workspaces — proposed API
 
-**Status:** front-end prototype, no backend. Every endpoint below is served in
-development by `src/mocks/handlers.ts` and consumed by real UI. Nothing here
-exists on the Go API yet — this document and those handlers are the proposal.
+**Status: half of this landed.** CON-26 shipped people, roles and invitations
+*inside* one workspace, and the UI now talks to the real endpoints for all of
+it — see §4a for the mapping, which is not the one this document proposed. What
+is still a proposal is the multi-workspace model itself: holding several
+workspaces and switching between them. That half is served in development by
+`src/mocks/handlers.ts`, consumed by real UI, and gated behind the
+`multi-workspace` feature flag (`config/featureFlags.ts`), which is **off**.
+
+The sections below are kept as written except where marked, because they are
+the argument for the remaining half.
 
 **Aligned to [CON-147](https://linear.app/ogen/issue/CON-147/workspaces)**,
 which carries the backend spec (identity split, `accounts` table, migration,
@@ -152,6 +159,65 @@ follow later without touching the client.
 
 Published posts stay live on the networks — the UI says so.
 
+### Members and invitations — see §4a
+
+Both were proposed here as workspace sub-resources. **CON-26 landed them
+elsewhere and differently**, and the UI follows the server. The proposal is
+kept below §4a for the record, since the multi-workspace version will have to
+answer the same questions again — but nothing in the app calls those paths.
+
+## 4a. What CON-26 landed, and how the UI maps onto it
+
+Three routes carry people and invitations, none of them under `/api/workspaces`
+— because there is no workspace resource to hang them off. A workspace *is* the
+tenant, and a member *is* a user.
+
+| Concept | Proposed here | What exists | Client |
+|---|---|---|---|
+| Read the workspace | `GET /api/workspaces` + `is_active` | `GET /api/tenants/current` | `getWorkspace` |
+| Rename it | `PATCH /api/workspaces/:id` | `PUT /api/tenants/:id` — whole body, `name` required | `updateWorkspace` |
+| List members | `GET /api/workspaces/:id/members` | `GET /api/users` — any member may read | `listMembers` |
+| Change a role | `PATCH …/members/:userId` | `PATCH /api/users/:id/role` — owner only | `updateMemberRole` |
+| Remove someone | `DELETE …/members/:userId` | `DELETE /api/users/:id` — **deletes the user row** | `removeMember` |
+| Invitations | `…/workspaces/:id/invitations` | `/api/invitations` — owner only, all three verbs | `services/api/workspaces.ts` |
+
+The differences that changed the UI, rather than just its URLs:
+
+- **Two roles, not four.** `owner | member` (`models.IsValidRole`); the server
+  400s anything else. `admin` and `viewer` are gone from the client — CON-147
+  inserts `admin` when the server does. `canActOnMember` / `canGrantRole` /
+  `canManageWorkspace` survive as the seam that will re-acquire nuance then.
+- **Removing a member deletes their account.** There is no membership row to
+  detach: one user, one tenant, so the server hard-deletes `users` and the
+  schema cascades from `users.id` into `sessions`, `tags`, `campaigns`,
+  `assets`, `posts` and `post_attachments` via `created_by ON DELETE CASCADE`.
+  Everything that person made is destroyed, for everyone. The People card
+  therefore asks for their email to be typed and says what goes, in those
+  words — the same confirmation shape as deleting a workspace. **Leaving** is
+  not offered here at all: it is the same call on your own id, i.e. deleting
+  your account, which already has its screen on Profile.
+- **`POST /api/invitations` is not idempotent.** A live pending invite for the
+  same address is `409`; only an *expired* one is replaced in place
+  (`CreateReplacingExpiredTx`). So "resend" is offered on expired rows only —
+  a live one is cancelled and re-sent. An address that already has an Ogen
+  account anywhere is also `409`, because `users.email` is globally unique.
+  Rate-limited per workspace and per IP; `429` carries `Retry-After`.
+- **`invited_by` is a user id**, not a display name. The People card resolves
+  it against the member list it already has, and drops the clause when the
+  inviter's account is gone.
+- **Expiry is not a status.** The wire has `pending | accepted | revoked`; a
+  pending row past `expires_at` *is* the expired one (`invitationState`).
+- **Reading the invitation list is owner-only.** A member's request is `403`,
+  so the query is never fired for them — they see the people and the note
+  saying who can change things.
+- **Accept is public and already built** — `GET/POST
+  /api/invitations/accept/:token`, which the "not yet designed" note below
+  anticipated. The invitee's landing page is not this repo's yet.
+
+---
+
+_The original proposal for members and invitations follows, unbuilt._
+
 ### Members
 
 | Method | Path | Body | Returns |
@@ -257,6 +323,8 @@ CON-147 §7 is the authoritative version of this (it splits identity into
 shape). The only parts that differ are the role set and the owner constraint:
 
 ```sql
+-- As proposed. CON-26 shipped `CHECK (role IN ('owner','member'))` on
+-- `users.role`; the membership row is what would carry it here.
 role TEXT NOT NULL CHECK (role IN ('owner','admin','member','viewer'))
 ```
 
@@ -336,25 +404,30 @@ fewer states the UI has to explain.
 
 | | CON-147 §10 | Here | Why |
 |---|---|---|---|
-| Roles | `owner \| admin \| member` | **+ `viewer`** | Read-only is the agency case in CON-147 §1 — a client who watches the plan without being able to touch it. One check constraint and one RBAC row. |
+| Roles | `owner \| admin \| member` | **`owner \| member`** (CON-26 shipped) | The client mirrors the server, which recognises two (`models.IsValidRole`). The `viewer` argument below stands and is unbuilt: read-only is the agency case in CON-147 §1 — a client who watches the plan without touching it. |
 | Owners | ≥1, multiple allowed (rec 3) | same | Adopted. The UI counts owners and locks the last one; the server answers `409`. |
 | Switch | `POST …/:id/switch` | same | Adopted (was `activate`). |
 | Verbs | `PATCH` | same | Adopted (was `PUT`). Bodies are partial, so `PATCH` is the honest verb. |
-| Resend | not specified | **no endpoint** — `POST /invitations` is idempotent per email | "Resend" and "send" are the same act; see §4. Removes a route, an auth check and the `409`-on-pending dead end. |
+| Resend | not specified | **no endpoint**, and `POST` is *not* idempotent (CON-26 shipped) | The proposal lost this one. A live pending invite `409`s; only an expired one is replaced. The UI offers "resend" on expired rows only — see §4a. |
 | `timezone` | absent | absent | Adopted. UTC everywhere; the settings page shows it as read-only text. |
 | List shape | `{id,name,slug,role,last_active_at}` | **+ `member_count`, `is_active`** | The switcher renders "Admin · 5 members" and marks the current row. Otherwise it's an N+1 over `/members`. |
 | Delete | soft-archive in v1 (rec 2) | **soft-delete, no self-serve restore** | Adopted, with the copy saying so plainly: recovery is a manual support request, not an undo button. |
 
 ## 8. Running the prototype
 
-Stubs are on by default in dev. `VITE_STUB_WORKSPACES=false` in `.env.local`
-turns them off (workspace calls then 404 against the real API). Everything
-outside the workspace routes passes through to the real backend, so auth,
-campaigns and posts behave normally.
+Turn `multi-workspace` on in `src/config/featureFlags.ts`. The stubs start only
+when that flag is on **and** the build is a dev one — they overlay
+`GET /api/tenants/current`, and answering a real request with invented data is
+exactly what a flag-off feature must not do. `VITE_STUB_WORKSPACES=false` in
+`.env.local` turns them off independently (the workspace calls then 404 against
+the real API).
 
-Seeded with two workspaces — one owned, one where the user is an admin
-alongside other members — because one workspace can't demonstrate any of this.
-`window.__resetWorkspaceStubs()` restores the seed.
+Only the four unbuilt routes are stubbed. People, roles and invitations go to
+the real backend either way, as does everything else.
 
-Delete `src/mocks/` and the `startStubs()` call in `src/main.tsx` when the real
-endpoints land.
+Seeded with two workspaces — the one you are genuinely in, taken from
+`/api/tenants/current`, plus a client workspace — because one workspace can't
+demonstrate any of this. `window.__resetWorkspaceStubs()` restores the seed.
+
+Delete `src/mocks/`, the `startStubs()` call in `src/main.tsx` and the flag when
+the real endpoints land.
