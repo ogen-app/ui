@@ -41,6 +41,81 @@ export function weekdayLabel(day: Date): string {
   return day.toLocaleDateString(undefined, { weekday: 'long' })
 }
 
+/** Column header for the month grid, where there is no room for "Wednesday". */
+export function weekdayShortLabel(day: Date): string {
+  return day.toLocaleDateString(undefined, { weekday: 'short' })
+}
+
+/**
+ * Move by whole months, clamping the day to the target month's length: one
+ * month on from 31 January is 28 February, not 3 March. Without the clamp,
+ * paging forward through a 31-day month skips the short one entirely.
+ */
+export function addMonths(date: Date, months: number): Date {
+  const target = new Date(date.getFullYear(), date.getMonth() + months, 1)
+  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate()
+  target.setDate(Math.min(date.getDate(), lastDay))
+  target.setHours(0, 0, 0, 0)
+  return target
+}
+
+export function isSameMonth(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
+}
+
+/**
+ * The month grid: whole weeks, so the first and last rows spill into the
+ * neighbouring months rather than starting the month mid-row with blanks.
+ * Those spill days are real and get drawn faded — a post scheduled on the 1st
+ * is still a post, and a week that stops halfway reads as missing data.
+ *
+ * Rows vary from 4 (a 28-day February starting on the week's first day) to 6,
+ * which is why the grid sizes its rows from the row count rather than fixing
+ * their height.
+ */
+export function monthWeeks(
+  anchor: Date,
+  firstDay: number,
+  hiddenDays: number[] = [],
+): Date[][] {
+  const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1)
+  const monthEnd = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0)
+  const gridStart = startOfWeek(monthStart, firstDay)
+  const lastRowStart = startOfWeek(monthEnd, firstDay)
+
+  const weeks: Date[][] = []
+  for (
+    let rowStart = gridStart;
+    rowStart.getTime() <= lastRowStart.getTime();
+    rowStart = addDays(rowStart, 7)
+  ) {
+    weeks.push(
+      Array.from({ length: 7 }, (_, i) => addDays(rowStart, i)).filter(
+        (day) => !hiddenDays.includes(day.getDay()),
+      ),
+    )
+  }
+  return weeks
+}
+
+/**
+ * The month grid's column days — one week's worth, in the user's order and
+ * minus what they hide. Only the weekday matters; the dates are arbitrary.
+ */
+export function monthColumnDays(firstDay: number, hiddenDays: number[] = []): Date[] {
+  // Any week will do as a source of seven weekdays in order; the epoch's
+  // first full week is stable and needs no clock read.
+  const base = startOfWeek(new Date(2024, 0, 3), firstDay)
+  return Array.from({ length: 7 }, (_, i) => addDays(base, i)).filter(
+    (day) => !hiddenDays.includes(day.getDay()),
+  )
+}
+
+/** The toolbar's heading in month view — e.g. "August 2026". */
+export function monthLabel(day: Date): string {
+  return `${day.toLocaleDateString(undefined, { month: 'long' })} ${day.getFullYear()}`
+}
+
 /** Column header, line 2 — e.g. "20 July 2026". */
 export function dayLabel(day: Date): string {
   return `${day.getDate()} ${day.toLocaleDateString(undefined, { month: 'long' })} ${day.getFullYear()}`
