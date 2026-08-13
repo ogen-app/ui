@@ -153,14 +153,22 @@ export type UpdateWorkspacePayload = {
 }
 
 /* ------------------------------------------------------------------------ *
- * Below: the multi-workspace model (CON-147). No API — stub-served, behind
- * the `multi-workspace` flag. Nothing outside the flag may read these.
+ * Below: the multi-workspace model (CON-147), behind the `multi-workspace`
+ * flag until ogen#109 is deployed. Nothing outside the flag may read these.
  * ------------------------------------------------------------------------ */
 
-/** A workspace as the chooser lists it: the caller's role and whether they're in it now. */
+/**
+ * A workspace as `GET /api/workspaces` lists it.
+ *
+ * There is deliberately no `is_active`: the server cannot know which workspace
+ * a given *tab* is working in, because the tab says so per request. Whether a
+ * row is the current one is a client-side comparison against
+ * `lib/activeWorkspace`. `is_default` is a different fact — the workspace a
+ * fresh tab or a new login starts in, which `POST …/switch` sets.
+ */
 export type WorkspaceChoice = Workspace & {
   member_count: number
-  is_active: boolean
+  is_default: boolean
 }
 
 export type CreateWorkspacePayload = {

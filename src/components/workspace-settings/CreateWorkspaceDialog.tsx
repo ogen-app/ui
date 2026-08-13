@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { useCreateWorkspace, useSwitchWorkspace } from '@/hooks/useWorkspaces'
-import { WorkspaceSwitchOverlay } from './WorkspaceSwitchOverlay'
 import { toast } from '@/stores/toastStore'
 
 type Props = {
@@ -33,7 +32,8 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
       {
         onSuccess: (workspace) => {
           if (thenSwitch) {
-            // The reload lives in `useSwitchWorkspace`; nothing after this runs.
+            // Re-pins this tab and navigates to the new workspace's index —
+            // see `useSwitchWorkspace`. The dialog goes with the screen.
             switchTo(workspace.id)
             return
           }
@@ -54,10 +54,6 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
 
   return (
     <>
-      {/* Create-and-switch ends in the same reload as any other switch, so it
-          gets the same cover — over the dialog, which is why the overlay
-          portals to the body. */}
-      <WorkspaceSwitchOverlay active={switching} />
       <ModalContainer
         isOpen={isOpen}
         onClose={busy ? () => {} : onClose}

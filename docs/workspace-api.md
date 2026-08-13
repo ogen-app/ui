@@ -1,21 +1,18 @@
-# Workspaces — proposed API
+# Workspaces — the API, and how the UI sits on it
 
-**Status: half of this landed.** CON-26 shipped people, roles and invitations
-*inside* one workspace, and the UI now talks to the real endpoints for all of
-it — see §4a for the mapping, which is not the one this document proposed. What
-is still a proposal is the multi-workspace model itself: holding several
-workspaces and switching between them. That half is served in development by
-`src/mocks/handlers.ts`, consumed by real UI, and gated behind the
-`multi-workspace` feature flag (`config/featureFlags.ts`), which is **off**.
+**Status: all of it is written; half of it is deployed.** CON-26 shipped people,
+roles and invitations *inside* one workspace, and the UI talks to those
+endpoints in production — §4a maps them. CON-147 shipped the rest on the API
+side (accounts split from memberships, per-request workspace resolution,
+`/api/workspaces`), but it lives on `feature/con-147-workspaces` /
+[ogen#109](https://github.com/ogen-app/ogen/pull/109) and is not on `main` yet.
+The client for it is built and complete, behind the `multi-workspace` flag
+(`config/featureFlags.ts`), which is **off** until that PR deploys and the
+feature has been re-tested against it.
 
-The sections below are kept as written except where marked, because they are
-the argument for the remaining half.
-
-**Aligned to [CON-147](https://linear.app/ogen/issue/CON-147/workspaces)**,
-which carries the backend spec (identity split, `accounts` table, migration,
-RBAC middleware). Where this document and CON-147 §10 differ, the differences
-are listed in §7 below and each one is a decision, not an oversight. Verbs and
-paths otherwise follow CON-147.
+This document is no longer a proposal. Where it once argued for a design that
+CON-147 decided differently — the session-bound active workspace of §3 is the
+big one — it now records the decision and what the client does about it.
 
 Related: CON-97 (multi-tenancy), CON-26 (user invitation), CON-94 (workspace
 timezone), CON-102 (per-tenant Zernio profiles).
@@ -25,19 +22,24 @@ timezone), CON-102 (per-tenant Zernio profiles).
 ## 1. What changes
 
 Today a **tenant** is a workspace and a user belongs to exactly one of them
-(`users.tenant_id NOT NULL`, CON-97). That is the only thing this proposal
-breaks. Membership becomes many-to-many, and a session is bound to one
-workspace at a time.
+(`users.tenant_id NOT NULL`, CON-97). That is the only thing CON-147 breaks.
+Identity splits from membership — an `accounts` row is the login, a `users` row
+becomes one (account, workspace) membership carrying the role — and which
+workspace a request acts in is decided **per request**.
 
 The tenant boundary itself does **not** change. Scoping stays central,
-server-side and fail-closed; every existing endpoint keeps resolving its
-tenant from the session. What becomes mutable is which tenant that is.
+server-side and fail-closed; every existing endpoint keeps reading its tenant
+out of `tenantctx`. What changes is only what puts the value there.
 
 ```
 before   users ──1:1──> tenants
-after    users ──*:*──> workspaces   (via memberships, with a role)
                         ▲
-                        └── session.active_workspace_id
+                        └── session.tenant_id
+
+after    accounts ──*:*──> workspaces   (via users-as-memberships, with a role)
+                           ▲
+                           └── X-Workspace-Id, per request, per tab
+                               (session.tenant_id demoted to "default")
 ```
 
 ## 2. Why: the Zernio account limit, corrected
@@ -79,27 +81,58 @@ workspaces first, an account picker later within a workspace.
 
 ## 3. Where the active workspace lives
 
-**Proposal: in the session.** `POST /api/workspaces/:id/switch` rebinds the
-session's `active_workspace_id`; every other endpoint is untouched.
+**Decided: per request, in an `X-Workspace-Id` header** (CON-147 §11, resolved
+2026-08-11). This document originally proposed binding it to the session and
+argued the header down; the argument lost, and it lost to the requirement rather
+than to taste. A session-bound workspace makes "client A in one tab, client B in
+another" structurally impossible, and that is the case workspaces exist for.
 
-The alternative is a per-request `X-Workspace-Id` header. It was rejected for
-v1 on one argument: with a header, a request that omits it has to fall back to
-*something*, and any fallback is a route that can read the wrong workspace when
-a client forgets. Session binding has no such path — the scoping middleware
-keeps reading exactly one value from exactly one place, and it is already
-audited.
+What the server does: the session identifies the **account**; a
+`ResolveWorkspace` middleware reads the header, checks it against membership,
+and puts the result where `tenantctx` has always read it. The ~150 scoped call
+sites are untouched. Two consequences worth knowing on the client:
 
-**The cost, stated honestly:** one session is one workspace, so two browser
-tabs cannot sit in two workspaces. For an agency user switching between clients
-all day, that will chafe. The escape hatch, when it's needed: accept
-`X-Workspace-Id` *when present and the caller is a member*, session value
-otherwise. That is additive — no migration, no behaviour change for clients
-that don't send it — so it can wait until the pain is real.
+- **Membership is re-validated on every request.** Someone removed mid-session
+  is refused on their next call rather than at their next login. There is no
+  stale-role window — and there is a new failure mode, below.
+- **A request without the header falls back to the account's default**
+  (`sessions.tenant_id`, which `POST …/:id/switch` sets). The fallback is a
+  seed, not a resting place — see below.
 
-Client-side consequence, already implemented: on a successful `switch` the UI
-clears the entire Query cache and does a full page load. Everything cached
-belongs to the workspace just left, and one missed key is another client's
-content on screen.
+### What the client does about it
+
+| Concern | Where |
+|---|---|
+| The tab's workspace | `lib/activeWorkspace.ts` — **`sessionStorage`**, never `localStorage`, which is shared by every tab and would couple them back together |
+| Attaching the header | `services/api/base.ts` — `workspaceHeader()` for `fetch`/XHR, `scopedFetch()` for the streams and typed-error resources |
+| Which calls stay unscoped | account-level routes: `GET/POST /api/workspaces` and below, `/api/current_user`, `/api/sessions`, and the public `/api/invitations/accept/:token` |
+| Switching | `useSwitchWorkspace` — re-pin, `queryClient.clear()`, navigate. No reload, no session rebind, no effect on other tabs |
+| Seeding a fresh tab | `routes/__root.tsx` — writes the account's default into `sessionStorage` on first load |
+| A stale pin | `lib/staleWorkspace.ts` — on 403, **verify then act** |
+
+Three of those are less obvious than they look.
+
+**The account-level exemption is the recovery path, not tidiness.** A tab pinned
+to a workspace that was deleted, or one it has been removed from, gets 403 on
+everything scoped. The calls that put it right — list my workspaces, who am I,
+log in — must be reachable from exactly that state, so they must never carry the
+header that is causing it.
+
+**A fresh tab is pinned immediately, rather than left to ride the default.**
+The default is shared account state, so an unpinned tab would follow *another*
+tab's switch — precisely the cross-tab interference this design exists to
+prevent.
+
+**403 is verified before it is acted on.** It is also the ordinary answer to a
+member calling an owner-only route (rename, list invitations), so the recovery
+asks the header-free workspace list whether the workspace is still the
+account's, and only then unpins and reloads. Tearing a tab down over a
+permission error would be worse than the bug it fixes.
+
+Clearing the whole Query cache on a switch is unchanged from the original
+proposal, and for the original reason: everything cached belongs to the
+workspace just left, and one missed key is another client's content on screen.
+What changed is the blast radius — it is this tab's cache, not the app's.
 
 ## 4. Endpoints
 
@@ -107,15 +140,20 @@ All are session-authenticated. `403` when the caller isn't a member; `404` is
 returned instead of `403` for workspaces they can't see at all, matching CON-97
 §12.3.
 
-### Workspaces
+### Workspaces — account-level
+
+These four are the exception to §3: they belong to the login, not to a
+workspace, and go out **without** `X-Workspace-Id`.
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| GET | `/api/workspaces` | — | `Workspace[]` — the caller's memberships |
+| GET | `/api/workspaces` | — | `Workspace[]` — the account's memberships |
 | POST | `/api/workspaces` | `{name}` | `201 Workspace` |
-| PATCH | `/api/workspaces/:id` | `{name?}` | `Workspace` (admin+) |
-| DELETE | `/api/workspaces/:id` | — | `204` (owner only) |
-| POST | `/api/workspaces/:id/switch` | — | `204` |
+| DELETE | `/api/workspaces/:id` | — | `204` (owner only; `409` if it's the account's only one) |
+| POST | `/api/workspaces/:id/switch` | — | `204` — sets the **default**, not the active workspace |
+
+Renaming goes through `PUT /api/tenants/:id` (§4a), which is scoped to the tab's
+own workspace and needs no id in the path from the client's point of view.
 
 ```jsonc
 // Workspace
@@ -123,21 +161,27 @@ returned instead of `403` for workspaces they can't see at all, matching CON-97
   "id": "wsOwn001",
   "name": "Northwind Client",
   "slug": "northwind-client",   // from the name at creation, stable across renames
-  "role": "admin",               // caller's role — from the membership
+  "role": "owner",               // caller's role in *this* workspace — from the membership
   "member_count": 3,
-  "is_active": true,             // caller's session is bound to this one
+  "is_default": true,            // where a fresh tab or a new login starts
   "created_at": "2026-06-18T09:00:00Z",
   "updated_at": "2026-07-27T11:20:00Z"
 }
 ```
 
-`role`, `is_active` and `member_count` are caller-relative or derived, so the
+`role`, `is_default` and `member_count` are caller-relative or derived, so the
 list is not a plain select — it is a join over memberships.
 
-**`member_count` and `is_active` are a request, not a nicety.** The switcher
-page renders "Admin · 5 members" per row and has to mark the one you're in.
-Without them it is an N+1 over `/members` to draw a list of three cards, or a
-second call to learn which workspace the session already holds.
+**There is no `is_active`, and there cannot be.** The server has no idea which
+workspace a given *tab* is in — the tab tells it, per request. "Current" on the
+chooser is a client-side comparison against `lib/activeWorkspace`. `is_default`
+is a different fact and answers a different question.
+
+**`member_count` and `role` are a request, not a nicety.** The switcher renders
+"Owner · 5 members" per row without an N+1 over the member list — and `role` is
+load-bearing beyond the caption: `/api/current_user` is account-level, so it
+reports the role in the *default* workspace. For any tab that has moved, this
+list is the only correct source (`useWorkspace`).
 
 **No `timezone`.** The zone is CON-94's, and until the scheduling surfaces read
 it there is nothing for the field to do but be wrong in a second place —
@@ -168,13 +212,15 @@ answer the same questions again — but nothing in the app calls those paths.
 
 ## 4a. What CON-26 landed, and how the UI maps onto it
 
-Three routes carry people and invitations, none of them under `/api/workspaces`
-— because there is no workspace resource to hang them off. A workspace *is* the
-tenant, and a member *is* a user.
+Three routes carry people and invitations, none of them under
+`/api/workspaces` — a workspace *is* the tenant, a member *is* a user, and since
+CON-147 the workspace is named by the request's `X-Workspace-Id` header rather
+than by a path segment. Managing the people of workspace B means being pinned to
+B (§3), not passing B in a URL.
 
 | Concept | Proposed here | What exists | Client |
 |---|---|---|---|
-| Read the workspace | `GET /api/workspaces` + `is_active` | `GET /api/tenants/current` | `getWorkspace` |
+| Read the workspace | `GET /api/workspaces/:id` | `GET /api/tenants/current` — the tab's own, via the header | `getWorkspace` |
 | Rename it | `PATCH /api/workspaces/:id` | `PUT /api/tenants/:id` — whole body, `name` required | `updateWorkspace` |
 | List members | `GET /api/workspaces/:id/members` | `GET /api/users` — any member may read | `listMembers` |
 | Change a role | `PATCH …/members/:userId` | `PATCH /api/users/:id/role` — owner only | `updateMemberRole` |
@@ -210,9 +256,19 @@ The differences that changed the UI, rather than just its URLs:
 - **Reading the invitation list is owner-only.** A member's request is `403`,
   so the query is never fired for them — they see the people and the note
   saying who can change things.
-- **Accept is public and already built** — `GET/POST
-  /api/invitations/accept/:token`, which the "not yet designed" note below
-  anticipated. The invitee's landing page is not this repo's yet.
+- **Accept is public, and it is two acts behind one route.** `GET
+  /api/invitations/accept/:token` previews (workspace, inviter, address);
+  `POST` to the same path either creates the account and signs it in
+  (`{name, password}` → `201` + cookie) **or** adds the workspace to an account
+  that already exists (no body at all → `200`, no new cookie, and the caller
+  must already be signed in as that address, else `403`).
+
+  The preview cannot say which applies — it returns the address, not whether
+  the address is taken — so `/invite` asks for a password by default and treats
+  the `403` as the branch. The invitation survives that refusal, which is what
+  makes the round trip safe to use as a decision. When someone is already signed
+  in there is nothing to guess: they are either the invitee (one button) or they
+  are not (no form on that page can help until they log out).
 
 ---
 
@@ -260,8 +316,9 @@ Rules the server owns:
   owner, who has to appoint another first.
 
 `src/types/workspace.ts` has these as `canActOnMember` / `canGrantRole` /
-`grantableRoles`, and `src/mocks/handlers.ts` calls the same functions, so the
-stub enforces exactly what the UI greys out.
+`grantableRoles`. With two roles they all collapse to "are you an owner"; they
+stay separate because they answer different questions, and a `viewer` or
+`admin` tier would pull them apart again.
 
 ### Invitations
 
@@ -305,16 +362,10 @@ rather than pre-checking against a list that can be stale.
 Since several owners are allowed, `owner` is a legal invite role — for an owner
 to send. An admin inviting an owner is `403` under the grant rule, not `422`.
 
-**Not yet designed — the accept flow.** It is the half that touches
-unauthenticated routes and mail, and the prototype stops at the boundary:
-
-- `GET /api/invitations/:token` — public, returns workspace name + inviter so
-  the landing page can say what is being joined without leaking more.
-- `POST /api/invitations/:token/accept` — authenticated: creates the membership
-  for the signed-in user. If the email has no account, signup has to carry the
-  token through so the account and membership are created together.
-- The token is the secret; the `id` above is not it and must not be usable to
-  accept.
+~~**Not yet designed — the accept flow.**~~ Shipped, on a different path than
+guessed here (`/api/invitations/accept/:token`, not `/:token/accept`) and in two
+modes rather than one — see §4a. The token is the secret; the `id` above is not
+it and is not usable to accept.
 
 ## 5. Data model sketch
 
@@ -376,58 +427,80 @@ than logging everyone out.
 change; "tenant" is the isolation mechanism, "workspace" is the product word,
 and they are allowed to differ. Worth an explicit decision either way.
 
-## 6. Open questions for the backend
+## 6. Questions, and where they landed
 
-1. **Session vs header** (§3) — is one-workspace-per-session acceptable for v1,
-   or do agency users need two tabs on day one?
-2. **Accept flow** (§4) — token format, expiry, and whether signup-with-token
-   creates account and membership in one transaction.
-3. **Zernio profile per workspace** — confirm CON-102's bootstrap job can be
-   reused as-is on workspace creation, and what happens to the profile on delete.
-4. **Can a user create workspaces freely?** The prototype assumes yes. If
-   workspaces become the billing unit, creation needs a limit and this becomes a
-   plan question.
-5. **Cross-workspace user identity** — one `users` row per email across all
-   workspaces (assumed here), or per-workspace user records? The first is
-   simpler and makes invitations resolve cleanly; it also means one password
-   across workspaces.
-6. **Timezone rollout** (CON-94) — deliberately not in this shape. The change
+1. ~~**Session vs header**~~ — **header** (§3). Two tabs on day one was the
+   requirement, not a nice-to-have.
+2. ~~**Accept flow**~~ — settled, and it is *two* flows behind one route: a new
+   address sends `{name, password}` and is signed in (`201`), an address that
+   already has an account sends **nothing** and must already be signed in as it
+   (`200`, no new cookie), otherwise `403`. See §4a.
+3. ~~**Zernio profile per workspace**~~ — CON-102's bootstrap job is reused on
+   creation; a teardown job runs on delete.
+4. ~~**Cross-workspace identity**~~ — one `accounts` row per email, `users`
+   repurposed as the (account, workspace) membership. One password across
+   workspaces.
+5. **Can an account create workspaces freely?** Still open. The client assumes
+   yes. If workspaces become the billing unit this needs a limit, and it becomes
+   a plan question rather than an API one.
+6. **`invited_by` is a user id, not a name.** `GET /api/invitations` sends the
+   id while the public preview sends `inviter_name`. The client resolves it
+   against the member list, which is why nothing is blocked on it — but the
+   list endpoint enriching it would delete that join. Serhii offered; worth
+   taking when the endpoint is next touched.
+7. **The preview can't say whether the address is taken**, so the accept screen
+   can't choose its mode up front — it asks for a password, and treats the
+   server's `403` as the branch (§4a). A boolean on the preview would make it a
+   decision instead of a round trip.
+8. **Timezone rollout** (CON-94) — deliberately still out of shape. The change
    that matters is every scheduling surface reading a workspace zone instead of
    the browser's, which is its own piece of work; adding the column now only
    creates a second place to be wrong. Everything is UTC until then.
 
-## 7. Divergences from CON-147 §10, and why
+## 7. Where the prototype and the shipped API differed
 
-Each of these is a decision taken while building the UI against the stubs. They
-are small, and they are all in this direction: fewer routes, fewer special cases,
-fewer states the UI has to explain.
+The client was built ahead of the server, so some of it was written against
+guesses. This is the reconciliation — kept because it says which way each
+argument went, and why.
 
-| | CON-147 §10 | Here | Why |
+| | Prototype | Shipped | Outcome |
 |---|---|---|---|
-| Roles | `owner \| admin \| member` | **`owner \| member`** (CON-26 shipped) | The client mirrors the server, which recognises two (`models.IsValidRole`). The `viewer` argument below stands and is unbuilt: read-only is the agency case in CON-147 §1 — a client who watches the plan without touching it. |
-| Owners | ≥1, multiple allowed (rec 3) | same | Adopted. The UI counts owners and locks the last one; the server answers `409`. |
-| Switch | `POST …/:id/switch` | same | Adopted (was `activate`). |
-| Verbs | `PATCH` | same | Adopted (was `PUT`). Bodies are partial, so `PATCH` is the honest verb. |
-| Resend | not specified | **no endpoint**, and `POST` is *not* idempotent (CON-26 shipped) | The proposal lost this one. A live pending invite `409`s; only an expired one is replaced. The UI offers "resend" on expired rows only — see §4a. |
+| Active workspace | session-bound `/switch` + full reload | **per-request `X-Workspace-Id`**, per-tab | **Prototype overridden.** Multi-tab is the requirement; a session-bound value forbids it. Rewritten — §3. |
+| Roles | `owner \| admin \| member \| viewer` | **`owner \| member`** | **Prototype overridden**, inherited unchanged from CON-26. `viewer` remains a real case (a client who watches the plan without touching it) and is deliberately unbuilt. |
+| Resend | `POST` idempotent per email, no resend route | **CON-26: not idempotent** — a live pending invite `409`s, only an expired one is replaced | **Prototype lost, for now.** RESEND is offered on expired rows only. CON-147 §7.3 makes it idempotent, so this flips back when ogen#109 lands. |
+| Accept | one mode: name + password | **two modes**, branched on whether the address already has an account | **Prototype was half.** Built out — §4a. |
+| List shape | `+ member_count, is_active` | `+ member_count, is_default` | **Half adopted.** `member_count` yes; `is_active` can't exist server-side, and "Current" is a client-side comparison. |
+| Owners | ≥1, multiple allowed | same | Adopted. The UI counts owners and locks the last one; the server answers `409`. |
+| Delete | soft-delete, no self-serve restore | same, `+ 409` when it's your only workspace | Adopted, copy unchanged: recovery is a manual support request, not an undo button. |
 | `timezone` | absent | absent | Adopted. UTC everywhere; the settings page shows it as read-only text. |
-| List shape | `{id,name,slug,role,last_active_at}` | **+ `member_count`, `is_active`** | The switcher renders "Admin · 5 members" and marks the current row. Otherwise it's an N+1 over `/members`. |
-| Delete | soft-archive in v1 (rec 2) | **soft-delete, no self-serve restore** | Adopted, with the copy saying so plainly: recovery is a manual support request, not an undo button. |
 
-## 8. Running the prototype
+## 8. Turning it on
 
-Turn `multi-workspace` on in `src/config/featureFlags.ts`. The stubs start only
-when that flag is on **and** the build is a dev one — they overlay
-`GET /api/tenants/current`, and answering a real request with invented data is
-exactly what a flag-off feature must not do. `VITE_STUB_WORKSPACES=false` in
-`.env.local` turns them off independently (the workspace calls then 404 against
-the real API).
+**The stubs are gone.** `src/mocks/` existed to answer the four routes nobody
+had written; ogen#109 wrote them, and a stub that now encodes the *wrong*
+contract — session-bound switching, `is_active` — is worse than no stub. MSW is
+off the dependency list with it.
 
-Only the four unbuilt routes are stubbed. People, roles and invitations go to
-the real backend either way, as does everything else.
+What is left is the flag. `multi-workspace` in `src/config/featureFlags.ts`
+gates the chooser, "Create or switch", the SWITCH button, the workspace Danger
+Zone **and** the `X-Workspace-Id` header itself: with it off,
+`services/api/base.ts` sends no workspace header on any request, so the app is
+byte-for-byte the single-workspace app it was before this work.
 
-Seeded with two workspaces — the one you are genuinely in, taken from
-`/api/tenants/current`, plus a client workspace — because one workspace can't
-demonstrate any of this. `window.__resetWorkspaceStubs()` restores the seed.
+Turning it on, in order:
 
-Delete `src/mocks/`, the `startStubs()` call in `src/main.tsx` and the flag when
-the real endpoints land.
+1. ogen#109 merges and deploys — until then `/api/workspaces` 404s and the
+   chooser has nothing to list.
+2. Flip the flag locally and exercise it against the deployed API: two tabs in
+   two workspaces at once (the acceptance case), a switch, a create, an invite
+   accepted by a brand-new address *and* by one that already has an account, a
+   delete, and a member removed while another tab is open in that workspace —
+   which is the 403 recovery path.
+3. Then decide the flag's fate. Deleting it, with its off-branch, is a
+   deliberate step and not a side effect of the endpoints appearing.
+
+One thing to re-check at step 2 rather than assume: **REMOVE's copy.** Against
+today's API `DELETE /api/users/:id` destroys the person and cascades into
+everything they made, and the confirmation says so in those words. Once `users`
+is a membership row that call is a detach, and the dialog has to stop saying it
+is a deletion.

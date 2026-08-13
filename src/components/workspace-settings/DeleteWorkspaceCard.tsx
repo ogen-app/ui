@@ -11,6 +11,7 @@ import {
   useWorkspaces,
 } from '@/hooks/useWorkspaces'
 import { useFeatureFlag } from '@/config/featureFlags'
+import { ApiError } from '@/services/api/errors'
 import { toast } from '@/stores/toastStore'
 
 /**
@@ -30,11 +31,11 @@ import { toast } from '@/stores/toastStore'
  * Renders nothing for anyone but the owner, so the page has no disabled
  * control teasing an action that will never become available.
  *
- * **Behind `multi-workspace`.** `DELETE /api/workspaces/:id` does not exist,
- * and deleting the only workspace a session can be bound to would be a way of
- * locking yourself out rather than a feature — so with the flag off the page
- * has no Danger Zone. Deleting your own *account* is a different act and lives
- * on Profile, where it always has.
+ * **Behind `multi-workspace`.** Deleting the only workspace an account has
+ * would be a way of locking yourself out rather than a feature — the server
+ * refuses it with a 409, and with the flag off it is the only case there is, so
+ * the page has no Danger Zone at all. Deleting your own *account* is a
+ * different act and lives on Profile, where it always has.
  */
 export function DeleteWorkspaceCard() {
   const enabled = useFeatureFlag('multi-workspace')
@@ -58,13 +59,24 @@ export function DeleteWorkspaceCard() {
   const handleDelete = () => {
     remove(workspace.id, {
       onSuccess: () => {
-        // This was the active workspace, so the session has nothing left to be
-        // bound to; a reload lands on whatever the server picks next.
+        // The tab was pinned to this workspace and `useDeleteWorkspace` has
+        // just unpinned it. A full load, not a navigation: the cache is still
+        // full of the deleted workspace's content, and the root guard re-seeds
+        // the tab from the account's default on the way back in.
         window.location.assign('/')
       },
       onError: (err) => {
-        toast.error('Unable to delete the workspace', {
-          description: err instanceof Error ? err.message : undefined,
+        // 409 is the server's own last-workspace guard — the same rule as the
+        // warning above, arriving from the other side (another tab may have
+        // deleted the workspace this count was drawn from). It reads as a fact
+        // about the account, not a failure of the click.
+        const only = err instanceof ApiError && err.status === 409
+        toast.error(only ? 'This is your only workspace' : 'Unable to delete the workspace', {
+          description: only
+            ? 'Create another workspace before deleting this one.'
+            : err instanceof Error
+              ? err.message
+              : undefined,
         })
       },
     })

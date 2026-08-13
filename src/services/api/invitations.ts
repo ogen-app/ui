@@ -34,22 +34,35 @@ export function previewInvitation(token: string): Promise<InvitationPreview> {
 }
 
 /**
- * `POST /api/invitations/accept/:token` — public. Creates the invited user
- * with the invited role, opens a session and sets the cookie, so the caller is
- * signed in on return and should go straight into the app.
+ * `POST /api/invitations/accept/:token` — public, and **two acts behind one
+ * route** (CON-147 §10).
  *
- * The password is validated before the token is spent, so a rejected one
- * leaves the invitation usable. A `409` means the address gained an account
- * between the invite and now — the only failure with a different fix (log in).
+ * - **The address has no Ogen account.** Send `{name, password}`: the account,
+ *   the membership and a session are created together, the cookie is set, and
+ *   the caller is signed in on return. `201`.
+ * - **The address already has one.** Send nothing. The server requires the
+ *   caller to *be* that account already and adds the membership to it — no
+ *   second set of credentials, no new cookie. `200`.
+ *
+ * Which one applies is not something the preview can tell the UI (it returns
+ * the address, not whether that address is taken), so the credentials path is
+ * the default and a `403` is the server saying "this is the other one, sign in
+ * as them first". The invitation stays pending through that refusal, which is
+ * what makes the round trip safe to use as the branch.
+ *
+ * The password is validated before the token is spent, so a rejected one also
+ * leaves the invitation usable.
  */
 export async function acceptInvitation(
   token: string,
-  payload: { name: string; password: string },
+  payload?: { name: string; password: string },
 ): Promise<User> {
   const body = await apiJson<{ user: RawUser; tenant?: User['tenant'] }>(
     `/api/invitations/accept/${encodeURIComponent(token)}`,
     'Unable to accept the invitation',
-    { method: 'POST', body: payload },
+    // No body at all for the existing-account path: the server reads a present
+    // body as "create an account" and would answer 409 for one that exists.
+    payload ? { method: 'POST', body: payload } : { method: 'POST' },
   )
   return rawUserToUser({ ...body.user, tenant: body.tenant })
 }

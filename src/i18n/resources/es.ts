@@ -156,6 +156,14 @@ export const es: Translation = {
         'Las invitaciones caducan a los siete días y solo pueden usarse una vez',
       brokenBody:
         'Pide a quien te invitó que te envíe otra. Si ya la aceptaste, <login>inicia sesión</login>.',
+      joinBody:
+        'Has iniciado sesión como {{email}}, que es a quien va dirigida esta invitación. Al aceptarla, este espacio se añade a tu cuenta.',
+      joinSubmit: 'ACEPTAR INVITACIÓN',
+      wrongAccountBody:
+        'Esta invitación es para {{invited}}, pero has iniciado sesión como {{current}}. Cierra sesión y vuelve a abrir el enlace para aceptarla.',
+      logOutLink: 'Cerrar sesión',
+      existingAccountBody:
+        '{{email}} ya tiene una cuenta de Ogen. Inicia sesión con esa cuenta y la invitación te estará esperando.',
     },
     logout: {
       pendingTitle: 'Cerrando sesión...',
@@ -199,6 +207,19 @@ export const es: Translation = {
       member:
         'Puede planificar, escribir y publicar contenido, pero no gestionar el espacio ni a su gente.',
     },
+  },
+
+  workspaces: {
+    title: 'Tus espacios',
+    loadFailed: 'No se han podido cargar tus espacios.',
+    create: 'NUEVO ESPACIO',
+    current: 'Actual',
+    memberCount_one: '{{count}} miembro',
+    memberCount_other: '{{count}} miembros',
+    loggedInAs: 'Sesión iniciada como',
+    wrongAccount: '¿Cuenta equivocada?',
+    logOut: 'Cerrar sesión',
+    switchFailed: 'No se ha podido cambiar de espacio',
   },
 
   profile: {

@@ -1,4 +1,4 @@
-import { apiUrl } from './base'
+import { scopedFetch } from './base'
 import { apiJson } from './http'
 import { errorMessage } from './errors'
 import { isRecord } from './json'
@@ -235,9 +235,8 @@ async function streamAssistant(
   handle: (event: string, parsed: Record<string, unknown>) => boolean,
   onEvent: (event: AssistantStreamEvent) => void,
 ): Promise<void> {
-  const res = await fetch(apiUrl(path), {
+  const res = await scopedFetch(path, {
     method: 'POST',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
     body: JSON.stringify({ instruction }),
     signal,

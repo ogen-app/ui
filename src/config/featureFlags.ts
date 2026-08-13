@@ -106,25 +106,24 @@ const FEATURE_FLAGS = {
   'email-preferences': false,
 
   /**
-   * Holding several workspaces and moving between them (CON-147): the
-   * `/workspaces` chooser, "Create or switch" in the sidebar, the SWITCH
-   * button in Workspace Settings, and the Danger Zone that deletes a
-   * workspace. **Off — the model doesn't exist server-side.**
+   * Holding several workspaces and working in several at once — one per browser
+   * tab (CON-147): the `/workspaces` chooser, "Create or switch" in the
+   * sidebar, the SWITCH button in Workspace Settings, the Danger Zone that
+   * deletes a workspace, and the `X-Workspace-Id` header that scopes every
+   * request to the tab's own workspace.
    *
-   * **Waiting on:** memberships. CON-26 landed people and invitations *inside*
-   * one workspace, and stops exactly where this begins: `users.tenant_id` is
-   * `NOT NULL`, `users.email` is globally unique (so an address can belong to
-   * one workspace, which is why inviting an existing account 409s), and the
-   * session is bound to the tenant its user row names. Needs a membership
-   * table, `GET/POST /api/workspaces`, `DELETE /api/workspaces/:id` and
-   * `POST /api/workspaces/:id/switch` to rebind the session — the contract is
-   * written out as executable request/response pairs in `src/mocks/handlers.ts`
-   * and in prose in `docs/workspace-api.md`.
+   * **Waiting on:** ogen#109 to merge and deploy. The server side is written
+   * (accounts split from memberships, `ResolveWorkspace` middleware,
+   * `GET/POST /api/workspaces`, `DELETE`, `POST …/switch`) but lives on
+   * `feature/con-147-workspaces` — against `main` today `/api/workspaces` 404s.
+   * The client is built to the shipped contract, mapped route by route in
+   * `docs/workspace-api.md` §4a.
    *
-   * With it off the app is single-workspace throughout: what is in Workspace
-   * Settings is the workspace you are in, and there is nowhere else to go.
-   * When the endpoints land, re-test against them, then delete this flag with
-   * its off-branch and `src/mocks/`.
+   * Off is load-bearing beyond hiding screens: `services/api/base.ts` sends no
+   * workspace header at all while this is false, so every request is
+   * byte-identical to before the feature existed and the app is
+   * single-workspace throughout. Turning it on is a deliberate step after
+   * re-testing against the deployed API — not a side effect of the PR landing.
    */
   'multi-workspace': false,
 

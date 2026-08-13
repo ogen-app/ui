@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
 import { WorkspaceMark } from '@/components/layout/WorkspaceMark.tsx'
 import { CreateWorkspaceDialog } from '@/components/workspace-settings/CreateWorkspaceDialog'
-import { WorkspaceSwitchOverlay } from '@/components/workspace-settings/WorkspaceSwitchOverlay'
 import { useSwitchWorkspace, useWorkspaces } from '@/hooks/useWorkspaces'
+import { useActiveWorkspaceId } from '@/lib/activeWorkspace'
 import { useAuthStore } from '@/stores/authStore'
 import { ROLE_LABEL_KEYS, type WorkspaceChoice } from '@/types/workspace'
 import { toast } from '@/stores/toastStore'
@@ -18,10 +18,10 @@ import { cn } from '@/lib'
  * The workspace chooser — a full page, on its own, with no app chrome around
  * it.
  *
- * Switching workspaces is not a menu action dressed up as one: it clears the
- * cache and reloads the app (see `useSwitchWorkspace`). Giving it a page says
- * that plainly, and gives the decision room for the things it actually turns
- * on — which client, and who else is in there.
+ * The decision deserves the room: which client, and who else is in there. What
+ * it no longer deserves is ceremony — since CON-147 a switch re-pins this tab
+ * and drops its cache, so it is over in a frame, and the other tabs never
+ * notice.
  *
  * A 480px column of identical cards, one per workspace. The logo, the title
  * and the account line stay off the cards: they address the page, and the
@@ -29,22 +29,26 @@ import { cn } from '@/lib'
  */
 export default function WorkspacesPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { user } = useAuthStore()
   const { data: workspaces, isLoading, isError } = useWorkspaces()
   const { mutate: switchTo, isPending } = useSwitchWorkspace()
   const [createOpen, setCreateOpen] = useState(false)
+  // Which workspace *this* tab is in. Not a field on the row: the server has no
+  // idea, because the tab is what decides (`lib/activeWorkspace`).
+  const activeId = useActiveWorkspaceId()
 
   const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
 
   const handleOpen = (workspace: WorkspaceChoice) => {
-    // Already here — nothing to rebind, just go back into the app.
-    if (workspace.is_active) {
-      navigate({ to: '/' })
+    // Already here — nothing to re-pin, just go back into the app.
+    if (workspace.id === activeId) {
+      void navigate({ to: '/' })
       return
     }
     switchTo(workspace.id, {
       onError: (err) =>
-        toast.error('Unable to switch workspace', {
+        toast.error(t('workspaces.switchFailed'), {
           description: err instanceof Error ? err.message : undefined,
         }),
     })
@@ -57,19 +61,21 @@ export default function WorkspacesPage() {
           <div className="flex flex-col items-center gap-5 text-center">
             <Logo className="size-12" />
             <h1 className="font-display text-[2rem] leading-12 font-medium tracking-tight">
-              Your workspaces
+              {t('workspaces.title')}
             </h1>
           </div>
 
           {/* One card per workspace, cut to the same pattern as the account
               card above — the only thing that changes between them is what
-              they say. The list is short and the choice reloads the app, so
-              each option gets the weight of a card rather than a row. */}
+              they say. The list is short, so each option gets the weight of a
+              card rather than a row. */}
           {isLoading ? (
-            <Card className="mt-8 text-sm text-tertiary-foreground">Loading…</Card>
+            <Card className="mt-8 text-sm text-tertiary-foreground">
+              {t('common.loading')}
+            </Card>
           ) : isError || !workspaces ? (
             <Card className="mt-8 text-sm text-destructive">
-              Failed to load your workspaces.
+              {t('workspaces.loadFailed')}
             </Card>
           ) : (
             <ul className="mt-8 flex flex-col gap-2">
@@ -77,6 +83,7 @@ export default function WorkspacesPage() {
                 <li key={w.id}>
                   <WorkspaceCard
                     workspace={w}
+                    active={w.id === activeId}
                     busy={isPending}
                     onSelect={() => handleOpen(w)}
                   />
@@ -94,7 +101,7 @@ export default function WorkspacesPage() {
             disabled={isPending}
           >
             <PlusIcon />
-            <span>NEW WORKSPACE</span>
+            <span>{t('workspaces.create')}</span>
           </Button>
         </div>
       </div>
@@ -104,25 +111,24 @@ export default function WorkspacesPage() {
           choice, not part of it. */}
       <div className="flex flex-col items-center px-4 pb-4 text-center text-sm text-tertiary-foreground">
         <p>
-          Logged in as{' '}
+          {t('workspaces.loggedInAs')}{' '}
           <span className="font-medium text-primary-foreground">
             {fullName || user?.email}
           </span>
         </p>
         <p>
-          Wrong account?{' '}
+          {t('workspaces.wrongAccount')}{' '}
           <button
             type="button"
             onClick={() => navigate({ to: '/auth/logout' })}
             className="cursor-pointer underline underline-offset-4 hover:text-primary-foreground"
           >
-            Log out
+            {t('workspaces.logOut')}
           </button>
         </p>
       </div>
 
       <CreateWorkspaceDialog isOpen={createOpen} onClose={() => setCreateOpen(false)} />
-      <WorkspaceSwitchOverlay active={isPending} />
     </PageContainer>
   )
 }
@@ -133,15 +139,16 @@ function Card({ className, children }: { className?: string; children: React.Rea
 
 function WorkspaceCard({
   workspace,
+  active,
   busy,
   onSelect,
 }: {
   workspace: WorkspaceChoice
+  active: boolean
   busy: boolean
   onSelect: () => void
 }) {
   const { t } = useTranslation()
-  const { is_active: active } = workspace
 
   return (
     <button
@@ -162,17 +169,16 @@ function WorkspaceCard({
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-regular">{workspace.name}</span>
         <span className="truncate text-xs text-tertiary-foreground">
-          {t(ROLE_LABEL_KEYS[workspace.role])} · {workspace.member_count}{' '}
-          {workspace.member_count === 1 ? 'member' : 'members'}
+          {t(ROLE_LABEL_KEYS[workspace.role])} ·{' '}
+          {t('workspaces.memberCount', { count: workspace.member_count })}
         </span>
       </span>
-      {/* The current workspace is marked, not styled differently: the row it
-          sits in stays identical to every other one. Nothing marks the row
-          being switched to — the overlay has the whole screen by then. */}
+      {/* The tab's own workspace is marked, not styled differently: the row it
+          sits in stays identical to every other one. */}
       {active ? (
         <span className="flex shrink-0 items-center gap-1 text-xs text-primary-foreground">
           <CheckCircleIcon weight="fill" className="size-3.5 text-positive" />
-          Current
+          {t('workspaces.current')}
         </span>
       ) : null}
     </button>

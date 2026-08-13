@@ -184,6 +184,16 @@ export const en = {
         'Invitations expire after seven days, and each one can only be used once',
       brokenBody:
         'Ask whoever invited you to send another. If you already accepted, <login>log in</login> instead.',
+      /** Already signed in as the invited address: nothing to create, one thing to confirm. */
+      joinBody: "You're signed in as {{email}}, which is who this invitation is for. Accepting adds this workspace to your account.",
+      joinSubmit: 'ACCEPT INVITATION',
+      /** Signed in as somebody else — no form on this page can fix that. */
+      wrongAccountBody:
+        'This invitation is for {{invited}}, but you are signed in as {{current}}. Log out and open the link again to accept it.',
+      logOutLink: 'Log out',
+      /** The server's answer when the invited address already has an account. */
+      existingAccountBody:
+        '{{email}} already has an Ogen account. Log in as that account and this invitation will be waiting.',
     },
     logout: {
       pendingTitle: 'Logging Out...',
@@ -238,6 +248,21 @@ export const en = {
       owner: 'Can invite people, change roles, connect accounts and rename the workspace.',
       member: 'Can plan, write and publish content, but not manage the workspace or its people.',
     },
+  },
+
+  /** The chooser at `/workspaces` — one login, several workspaces (CON-147). */
+  workspaces: {
+    title: 'Your workspaces',
+    loadFailed: 'Failed to load your workspaces.',
+    create: 'NEW WORKSPACE',
+    /** Marks the workspace *this tab* is in — another tab may be somewhere else. */
+    current: 'Current',
+    memberCount_one: '{{count}} member',
+    memberCount_other: '{{count}} members',
+    loggedInAs: 'Logged in as',
+    wrongAccount: 'Wrong account?',
+    logOut: 'Log out',
+    switchFailed: 'Unable to switch workspace',
   },
 
   profile: {
