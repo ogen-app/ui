@@ -57,6 +57,19 @@ function parseCardFields(raw: unknown): CardFields {
 }
 
 /**
+ * Repaired on the same principle as the card fields: `setDayVisible` can't
+ * hide the seventh day, but a hand-edited blob can, and a calendar with zero
+ * visible days has no grid to offer the switches that would fix it.
+ */
+function parseHiddenDays(raw: unknown): number[] {
+  if (!Array.isArray(raw)) return DEFAULTS.hiddenDays
+  const hidden = [
+    ...new Set(raw.filter((d): d is number => typeof d === 'number' && d >= 0 && d <= 6)),
+  ]
+  return hidden.length >= 7 ? DEFAULTS.hiddenDays : hidden
+}
+
+/**
  * Reads the stored blob back into settings, ignoring anything malformed — a
  * hand-edited or half-written value must not take the calendar down, and the
  * next change overwrites it anyway.
@@ -72,9 +85,7 @@ function parse(raw: string | null): CalendarSettings {
         typeof firstDayOfWeek === 'number' && firstDayOfWeek >= 0 && firstDayOfWeek <= 6
           ? firstDayOfWeek
           : DEFAULTS.firstDayOfWeek,
-      hiddenDays: Array.isArray(hiddenDays)
-        ? hiddenDays.filter((d): d is number => typeof d === 'number' && d >= 0 && d <= 6)
-        : DEFAULTS.hiddenDays,
+      hiddenDays: parseHiddenDays(hiddenDays),
       card: parseCardFields(card),
     }
   } catch {
@@ -101,7 +112,7 @@ export function useCalendarSettings(campaignId: string) {
   // `isLoading`, not `isPending`: the latter stays true forever on a disabled
   // query, and without a user there is nothing to fetch — the defaults are
   // the answer, not a placeholder for one.
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey,
     queryFn: async () => parse(await getSetting(storageKey)),
     enabled: !!userId && !!campaignId,
@@ -133,13 +144,19 @@ export function useCalendarSettings(campaignId: string) {
 
   const write = useCallback(
     (next: CalendarSettings) => {
+      // Only a loaded preference may be edited. `settings` falls back to the
+      // defaults while the read is pending or failed, so a write here would
+      // be built on those defaults and would overwrite whatever the user
+      // actually saved — the callers' controls are skeletoned meanwhile, and
+      // this is what makes that gate load-bearing rather than cosmetic.
+      if (data === undefined) return
       qc.setQueryData(queryKey, next)
       if (!userId || !campaignId) return
       pending.current = { key: storageKey, value: next }
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(flush, SAVE_DEBOUNCE_MS)
     },
-    [qc, queryKey, storageKey, userId, campaignId, flush],
+    [qc, queryKey, storageKey, userId, campaignId, flush, data],
   )
 
   const setFirstDayOfWeek = useCallback(
@@ -183,9 +200,12 @@ export function useCalendarSettings(campaignId: string) {
      * True until the stored preference has been read. The values above are
      * the defaults meanwhile, and a caller that would lay out differently
      * for a different answer — the week's first column, which days show —
-     * has to wait rather than draw one and take it back.
+     * has to wait rather than draw one and take it back. A failed read
+     * counts too: the defaults are then a stand-in, not an answer, and the
+     * controls must not present them as the user's own choices (the query
+     * retries on the next window focus).
      */
-    isPending: isLoading,
+    isPending: isLoading || isError,
     setFirstDayOfWeek,
     setDayVisible,
     setCardField,

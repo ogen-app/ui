@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
 import { useAddPost } from '@/hooks/usePosts'
@@ -44,8 +44,12 @@ type Column = {
   overflows: boolean
 }
 
-/** The ADD POST button holds its space even at `opacity-0`: `h-9` plus `gap-2`. */
-const ADD_BUTTON_SPACE = 44
+/**
+ * The ADD POST button holds its space even at `opacity-0`: `h-9` (36px) plus
+ * the lane's `gap-0.5` (2px) above it. (Its `gap-2` is the horizontal gap
+ * between icon and label — nothing vertical.)
+ */
+const ADD_BUTTON_SPACE = 38
 
 /** Whole days strictly before today — today itself still accepts posts. */
 function isPastDay(day: Date): boolean {
@@ -102,16 +106,21 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
    * `observe`, so this is also the first measurement; until it lands, cards
    * draw at the roomiest rung.
    */
-  const laneRef = useRef<HTMLDivElement | null>(null)
   const [laneHeight, setLaneHeight] = useState<number | null>(null)
-  useEffect(() => {
-    const lane = laneRef.current
+  const laneObserver = useRef<ResizeObserver | null>(null)
+  // A callback ref, not an effect: the columns are keyed by day, so paging to
+  // another week replaces the measured node — an observer bound once on mount
+  // would keep watching the detached lane and the ladder would go blind to
+  // every resize after the first navigation.
+  const laneRef = useCallback((lane: HTMLDivElement | null) => {
+    laneObserver.current?.disconnect()
+    laneObserver.current = null
     if (!lane) return
     const observer = new ResizeObserver(([entry]) => {
       setLaneHeight(entry.contentRect.height)
     })
     observer.observe(lane)
-    return () => observer.disconnect()
+    laneObserver.current = observer
   }, [])
 
   const columns = useMemo<Column[]>(
@@ -138,7 +147,10 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
                 post.social_account,
               ),
             ),
-          hasImage: post.media_urls.length > 0,
+          // Truthiness, exactly as the card decides whether to draw the band
+          // (`media_urls[0]` there too) — `length > 0` would charge a 100px
+          // band for a post whose first URL is the empty string.
+          hasImage: Boolean(post.media_urls[0]),
         }))
         const rung =
           laneHeight === null ? WEEK_RUNGS[0] : pickWeekRung(facts, available, fields)

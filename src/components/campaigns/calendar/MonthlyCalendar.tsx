@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
 import { useAddPost } from '@/hooks/usePosts'
@@ -7,6 +7,7 @@ import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { MonthDensity } from './MonthDensity'
 import { MonthPostCard } from './MonthPostCard'
 import { pickMonthRung } from './cardRungs'
+import { comparePostOrder } from '@/lib/postOrder'
 import {
   isSameDay,
   isSameMonth,
@@ -78,13 +79,11 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
       if (bucket) bucket.push(post)
       else map.set(key, [post])
     }
-    // Within a day, earliest first — the cards carry a time, so any other
-    // order reads as a mistake.
+    // Within a day, the order the arrow keys walk (time, then id) — the same
+    // rule as the week column, so the two views and ←/→ never disagree, and
+    // an unparseable date can't NaN its way to the front.
     for (const bucket of map.values()) {
-      bucket.sort(
-        (a, b) =>
-          new Date(a.scheduled_at!).getTime() - new Date(b.scheduled_at!).getTime(),
-      )
+      bucket.sort(comparePostOrder)
     }
     return map
   }, [posts])
@@ -94,16 +93,21 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
    * depends on the viewport and on whether this month spans four rows or six.
    * One lane is enough — every cell in the grid is the same height.
    */
-  const laneRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    const lane = laneRef.current
+  const laneObserver = useRef<ResizeObserver | null>(null)
+  // A callback ref, not an effect: cells are keyed by day, so paging to
+  // another month replaces the measured node — and adjacent months usually
+  // share a row count, so an effect keyed on `weeks.length` kept watching the
+  // detached lane and the ladder went blind to every later resize.
+  const laneRef = useCallback((lane: HTMLDivElement | null) => {
+    laneObserver.current?.disconnect()
+    laneObserver.current = null
     if (!lane) return
     const observer = new ResizeObserver(([entry]) => {
       setLaneHeight(entry.contentRect.height)
     })
     observer.observe(lane)
-    return () => observer.disconnect()
-  }, [weeks.length])
+    laneObserver.current = observer
+  }, [])
 
   const cellMouseOver = useCallback((key: string, e: React.MouseEvent) => {
     // Same rule as the week column: the add affordance is off while the
