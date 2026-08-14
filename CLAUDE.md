@@ -183,6 +183,21 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   Colors only via semantic tokens (`bg-primary`, `text-tertiary-foreground` —
   never `bg-white`, palette steps, or raw hex/oklch): see
   [`docs/colors.md`](./docs/colors.md).
+- **Screen corners have fixed jobs — top is about the object, bottom is about
+  the work** (CON-178). Top-left: where you are and how you get back.
+  Top-right: **views only** — anything that opens or switches a representation,
+  never anything that changes the document. Top-centre (`PageHeader`'s `center`
+  slot): passive status, in practice just `SaveStatus`, non-interactive by
+  rule. Bottom-centre: the commit, on `PageActionBar`. Bottom-right: the
+  assistant trigger. Bottom-left stays empty. A bar belongs to **editor**
+  screens only (post, asset, brief, settings) — a list has creation, not
+  commit, so `ADD CAMPAIGN` stays top-right. The bar must anchor to the
+  *content column*, not the scroller (it would scroll away) and not the
+  viewport (it would drift off the column when the right rail opens); pages
+  using one leave `PAGE_ACTION_BAR_INSET` at the bottom of their content. `h-12`
+  and `bottom-4` are shared with the assistant trigger so the bottom edge is one
+  line; the trigger's `right-4` against the 24px content gutter is the one
+  deliberate break-out.
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
 - **Destructive-action labels are written in literal capitals** — `DELETE

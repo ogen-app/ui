@@ -15,11 +15,6 @@ const CAMPAIGNS_KEY = ["campaigns"] as const;
 // Exported so the assistant store can invalidate it from outside React. The
 // campaign's post list nests under this key, so invalidating it covers both.
 export const campaignKey = (id: string) => ["campaigns", id] as const;
-// Nests under `campaignKey`, like the post list does — anything that
-// invalidates the campaign refreshes this too. Exported for the post
-// mutations, which invalidate the *sibling* posts key and so don't.
-export const campaignOverviewKey = (id: string) =>
-  ["campaigns", id, "overview"] as const;
 /**
  * The batched Campaigns-list payload (CON-152). Nests under `CAMPAIGNS_KEY`,
  * so anything invalidating the campaigns list refreshes it too; post mutations

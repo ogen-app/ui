@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
+import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
+import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -9,7 +11,7 @@ import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
-import { PostStatusHeaderActions } from '@/components/posts/PostStatusHeaderActions'
+import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
@@ -17,6 +19,8 @@ import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettin
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
 import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
+import { PinnedPostNotes } from '@/components/posts/notes/PinnedPostNotes'
+import { PostNotesCard } from '@/components/posts/notes/PostNotesCard'
 import {
   POST_PREVIEW_PORTAL_ID,
   POST_QUALITY_PORTAL_ID,
@@ -35,13 +39,18 @@ import {
 } from '@/hooks/usePost'
 import { usePostAssessment } from '@/hooks/usePostAssessment'
 import { usePostMedia } from '@/hooks/usePostMedia'
+import { usePostNotes } from '@/hooks/usePostNotes'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
+import { usePostArrowNavigation } from '@/hooks/usePostNavigation'
+import { usePublishStatus } from '@/hooks/usePublishStatus'
 import { cn } from '@/lib'
 import { resolvePublishMethod } from '@/lib/autoPublish'
+import { isNotePinned, splitNotesByPin } from '@/lib/postNotes'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
+import type { PostNote } from '@/services/api/postNotes'
 import type { Post, PostStatus } from '@/types/posts'
 
 export const Route = createFileRoute(
@@ -83,6 +92,14 @@ function PostPage() {
 
   return (
     <PostEditorSurface
+      // A different post is a different document, not new props for this one.
+      // The surface holds page-local state that only makes sense against the
+      // post it was opened on — the title draft, the auto/manual choice, the
+      // blocked-action flash — and until the arrow keys (`usePostArrowNavigation`)
+      // there was no way to reach one post from another without the loader
+      // unmounting it in between. Arriving on a post already in cache skips
+      // that loader entirely, so the identity has to be stated.
+      key={postId}
       doc={doc}
       changeDoc={changeDoc}
       transitionStatus={transitionStatus}
@@ -174,6 +191,12 @@ function PostEditorSurface({
     publishMethod: effectivePublishMethod,
     context: { account },
   })
+  // Null unless something really is going to publish the post — see
+  // `publishTiming` for which statuses those are.
+  const publishStatus = usePublishStatus(doc)
+  // ← / → step to the neighbouring post, unless the keypress belongs to a
+  // field the user is typing in.
+  usePostArrowNavigation(campaignId, doc.id)
   // The allowlist decides whether SCHEDULE lands on auto or manual, so the
   // status actions wait for it too — scheduling a post the wrong way is not
   // something the user can see happening, let alone undo.
@@ -191,6 +214,14 @@ function PostEditorSurface({
   const previewOpen = activePanel === 'postPreview'
   const qualityOpen = activePanel === 'postQuality'
   const versionsOpen = activePanel === 'postVersions'
+  // Lazy, then sticky: the sidebar keeps every layer mounted for the
+  // crossfade, but the versions panel fetches its history on mount — portalled
+  // eagerly, merely opening a post costs a GET /versions nobody asked for.
+  // First open mounts it; after that it stays for the fade.
+  const [versionsWarm, setVersionsWarm] = useState(false)
+  useEffect(() => {
+    if (versionsOpen) setVersionsWarm(true)
+  }, [versionsOpen])
   const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
   const openRightPanel = useSettingsStore((s) => s.openRightPanel)
   const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
@@ -206,6 +237,31 @@ function PostEditorSurface({
   // can now do both, and a link that says "see the full breakdown" must not
   // also spend a model call.
   const openQuality = useCallback(() => openRightPanel('postQuality'), [openRightPanel])
+  // Notes (CON-188). Where a note renders is a device-local preference, so the
+  // pin map comes from the settings store rather than the record — the API has
+  // no `pinned` column, and `lib/postNotes` supplies the default.
+  const notes = usePostNotes(doc.id)
+  const notePins = useSettingsStore((s) => s.notePins)
+  const setNotePin = useSettingsStore((s) => s.setNotePin)
+  const isPinned = useCallback(
+    (note: PostNote) => isNotePinned(note, notePins),
+    [notePins],
+  )
+  const togglePin = useCallback(
+    (note: PostNote) => setNotePin(note.id, !isNotePinned(note, notePins)),
+    [notePins, setNotePin],
+  )
+  const { pinned: pinnedNotes, rest: unpinnedNotes } = splitNotesByPin(
+    notes.notes,
+    notePins,
+  )
+  const { edit: editNote } = notes
+  const saveNote = useCallback(
+    (note: PostNote, patch: { title: string; body: string }) =>
+      editNote(note.id, patch),
+    [editNote],
+  )
+
   const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
   const [previewHost, setPreviewHost] = useState<HTMLElement | null>(null)
   const [qualityHost, setQualityHost] = useState<HTMLElement | null>(null)
@@ -285,7 +341,11 @@ function PostEditorSurface({
 
   return (
     <PageContainer variant="fullFlex">
-      <div className="flex flex-1 min-h-0">
+      {/* `relative` so the action bar anchors to the content column rather
+          than the window: the right rail is a sibling of this container, so
+          the bar recentres when a panel opens instead of drifting off the
+          post it acts on. */}
+      <div className="relative flex flex-1 min-h-0">
         <ScrollArea className="flex-1 min-h-0" type="scroll" scrollHideDelay={350}>
           <PostDetailsHeader
             campaignId={campaignId}
@@ -300,16 +360,13 @@ function PostEditorSurface({
             onToggleVersions={() => toggleRightPanel('postVersions')}
             onDownloadMarkdown={handleDownloadMarkdown}
             onDeletePost={() => setDeleteOpen(true)}
-            actions={
-              <PostStatusHeaderActions
-                buttons={buttons}
-                back={back}
-                pending={statusBusy}
-                onBlocked={flashBlockers}
-              />
-            }
           />
-          <div className="flex flex-col items-center gap-3 relative z-0 pb-8">
+          <div
+            className={cn(
+              'flex flex-col items-center gap-3 relative z-0',
+              PAGE_ACTION_BAR_INSET,
+            )}
+          >
             <div className="w-content">
               <PostQuickSettingsBar
                 doc={doc}
@@ -332,6 +389,12 @@ function PostEditorSurface({
                 onOpenQuality={openQuality}
               />
             </div>
+            <PinnedPostNotes
+              notes={pinnedNotes}
+              onTogglePin={togglePin}
+              onSave={saveNote}
+              onDelete={notes.remove}
+            />
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
                 <div className="mb-4 flex flex-col">
@@ -371,8 +434,46 @@ function PostEditorSurface({
                 reorder={media.reorder}
               />
             </div>
+            <div className="w-content">
+              <PostNotesCard
+                notes={unpinnedNotes}
+                loading={notes.loading}
+                error={notes.error !== null}
+                isPinned={isPinned}
+                onTogglePin={togglePin}
+                onAdd={notes.add}
+                onSave={saveNote}
+                onDelete={notes.remove}
+              />
+            </div>
+
+            {/* Scroll past the end. `PAGE_ACTION_BAR_INSET` above is only
+                clearance — the minimum that keeps the bar off the last card —
+                and it leaves the notes pinned against the bottom edge with
+                nowhere to go. This is the travel that lets the end of the post
+                come up to the middle of the screen, where you can read it. A
+                spacer rather than more padding: the two have different jobs,
+                and `cn` would merge one `pb-*` over the other and silently
+                drop the clearance. */}
+            <div className="h-40 shrink-0" aria-hidden />
           </div>
         </ScrollArea>
+
+        {/* The header's fade, mirrored: the post dissolves into the page on
+            its way under the action bar rather than being sliced off by the
+            bottom edge. Sibling of the scroll area, before the bar, so it
+            covers the document and nothing else. */}
+        <PageBottomFader />
+
+        {/* Outside the ScrollArea on purpose — inside it the bar would scroll
+            away with the post. Renders nothing once the post is terminal. */}
+        <PostStatusActionBar
+          buttons={buttons}
+          back={back}
+          pending={statusBusy}
+          onBlocked={flashBlockers}
+          status={publishStatus}
+        />
 
         {settingsHost &&
           createPortal(
@@ -422,7 +523,8 @@ function PostEditorSurface({
             qualityHost,
           )}
 
-        {versionsHost &&
+        {versionsWarm &&
+          versionsHost &&
           createPortal(
             /* The live document, so the list can tell whether the newest
                snapshot still *is* the post's text or has been edited past.

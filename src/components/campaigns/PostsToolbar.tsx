@@ -3,14 +3,20 @@ import { CaretLeftIcon, CaretRightIcon, PlusIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { addDays, formatAnchor, startOfWeek } from '@/components/campaigns/calendar/date'
+import {
+  addDays,
+  addMonths,
+  formatAnchor,
+  monthLabel,
+  startOfWeek,
+} from '@/components/campaigns/calendar/date'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useAddPost } from '@/hooks/usePosts'
 
 type PostsToolbarProps = {
   campaignId: string
-  view: 'week' | 'list'
-  /** Present only on the calendar; drives the range label and day nav. */
+  view: 'week' | 'month' | 'list'
+  /** Present only on the calendar; drives the range label and date nav. */
   anchor?: Date
   onAnchorChange?: (anchor: Date) => void
   /**
@@ -37,7 +43,7 @@ function formatWeekRange(weekStart: Date): string {
 
 /**
  * Toolbar shared by the posts views: date range (calendar only), the
- * WEEK / MONTH / LIST switch, week navigation, and ADD POST.
+ * WEEK / MONTH / LIST switch, date navigation, and ADD POST.
  */
 export function PostsToolbar({
   campaignId,
@@ -49,16 +55,20 @@ export function PostsToolbar({
   const navigate = useNavigate()
   const addPost = useAddPost(campaignId)
   const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings(campaignId)
+  const isCalendar = view === 'week' || view === 'month'
 
   const handleViewSelect = (next: string) => {
     if (next === view) return
-    if (next === 'week') {
+    if (next === 'week' || next === 'month') {
+      // The anchor is granularity-free by design (see `calendar/date.ts`), so
+      // switching views keeps the day you were looking at and only re-derives
+      // the range around it.
       navigate({
         to: '/campaigns/$campaignId/calendar/$anchor/$view',
         params: {
           campaignId,
           anchor: formatAnchor(anchor ?? new Date()),
-          view: 'week',
+          view: next,
         },
       })
     } else if (next === 'list') {
@@ -66,33 +76,46 @@ export function PostsToolbar({
     }
   }
 
+  /** One step of whatever the current view shows — a week, or a month. */
+  const step = (direction: 1 | -1) => {
+    if (!anchor || !onAnchorChange) return
+    onAnchorChange(
+      view === 'month' ? addMonths(anchor, direction) : addDays(anchor, direction * 7),
+    )
+  }
+
   return (
     <div className="flex items-center justify-between gap-4 py-2 shrink-0 flex-wrap">
-      {/* The range starts on the user's first day of the week, so it can't be
-          written until that setting is known — a Monday–Sunday label that
-          turns into Sunday–Saturday is worse than a beat of nothing.
+      {/* The week's range starts on the user's first day of the week, so it
+          can't be written until that setting is known — a Monday–Sunday label
+          that turns into Sunday–Saturday is worse than a beat of nothing. The
+          month's label doesn't depend on it and needs no such wait.
           The list has no range to show, so the slot carries what the view is
           showing instead of standing empty. */}
       <span className="flex h-6 items-center text-[18px] font-medium">
-        {anchor ? (
-          settingsPending ? (
-            <Skeleton className="h-4 w-56" />
-          ) : (
-            formatWeekRange(startOfWeek(anchor, firstDayOfWeek))
-          )
-        ) : (
+        {!anchor ? (
           subheading
+        ) : view === 'month' ? (
+          monthLabel(anchor)
+        ) : settingsPending ? (
+          <Skeleton className="h-4 w-56" />
+        ) : (
+          formatWeekRange(startOfWeek(anchor, firstDayOfWeek))
         )}
       </span>
 
       <div className="flex items-center gap-3">
-        {view === 'week' && anchor && onAnchorChange && (
+        {isCalendar && anchor && onAnchorChange && (
           <div className="flex items-center gap-0.5">
             <Button
               variant="default"
               size="defaultIcon"
-              onClick={() => onAnchorChange(addDays(anchor, -7))}
-              aria-label="Previous week"
+              onClick={() => step(-1)}
+              aria-label={view === 'month' ? 'Previous month' : 'Previous week'}
+              // The calendar binds the arrow keys to these two buttons; saying
+              // so here is what puts the shortcut in front of a screen-reader
+              // user, who has nothing else to discover it from.
+              aria-keyshortcuts="ArrowLeft"
             >
               <CaretLeftIcon />
             </Button>
@@ -106,17 +129,17 @@ export function PostsToolbar({
             <Button
               variant="default"
               size="defaultIcon"
-              onClick={() => onAnchorChange(addDays(anchor, 7))}
-              aria-label="Next week"
+              onClick={() => step(1)}
+              aria-label={view === 'month' ? 'Next month' : 'Next week'}
+              aria-keyshortcuts="ArrowRight"
             >
               <CaretRightIcon />
             </Button>
           </div>
         )}
 
-        {/* The view switch stays beside ADD POST; the week navigator sits to
-            their left rather than between them. MONTH is hidden until the
-            month view exists. */}
+        {/* The view switch stays beside ADD POST; the date navigator sits to
+            their left rather than between them. */}
         <div className="flex items-center gap-2">
           <Tabs value={view}>
             <TabsList variant="segmented" size="excluded">
@@ -126,6 +149,13 @@ export function PostsToolbar({
                 onClick={() => handleViewSelect('week')}
               >
                 WEEK
+              </TabsTrigger>
+              <TabsTrigger
+                variant="segmented"
+                value="month"
+                onClick={() => handleViewSelect('month')}
+              >
+                MONTH
               </TabsTrigger>
               <TabsTrigger
                 variant="segmented"

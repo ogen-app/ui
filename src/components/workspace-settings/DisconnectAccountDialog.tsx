@@ -107,7 +107,12 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
               </p>
             </>
           )}
-          {error && !forcing && (
+          {/* Everything except the guard error, which *is* the force screen —
+              re-stating it as an error would say the same thing twice. A
+              failure of the forced attempt itself (rate limit, degraded
+              integration) must still show, or the confirm button just returns
+              from its spinner over silence. */}
+          {error && !isScheduleGuard(error) && (
             <p className="text-destructive">{disconnectErrorMessage(error, t)}</p>
           )}
         </div>
@@ -131,6 +136,11 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
       </div>
     </ModalContainer>
   )
+}
+
+/** The 409 that turns into the force screen rather than an error line. */
+function isScheduleGuard(err: unknown): boolean {
+  return err instanceof ZernioError && err.code === 'account_has_scheduled_posts'
 }
 
 /**
@@ -159,5 +169,9 @@ function disconnectErrorMessage(err: unknown, t: TFunction): string {
         return err.message
     }
   }
-  return err instanceof Error ? err.message : t('common.somethingWentWrong')
+  // A non-Zernio failure is transport or client-side — "Failed to fetch" is
+  // developer text, not something to show a user in any language. The Zernio
+  // default above is different: that's the server's own prose for a code we
+  // don't model, which beats replacing a specific reason with a generic one.
+  return t('common.somethingWentWrong')
 }

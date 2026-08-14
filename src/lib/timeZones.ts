@@ -17,7 +17,10 @@ function offsetLabel(timeZone: string): string {
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone,
       timeZoneName: 'short',
-    }).formatToParts(new Date(0))
+      // Now, not epoch: the label promises the *current* offset, and a zone
+      // with daylight saving (or one that moved since 1970) formats epoch time
+      // with an offset it no longer keeps.
+    }).formatToParts(new Date())
     return parts.find((p) => p.type === 'timeZoneName')?.value ?? ''
   } catch {
     return ''

@@ -3,15 +3,15 @@ import { PlusIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import folderEmptyImage from '@/assets/illustrations/folder-empty.webp'
-import { addDays, isSameDay, startOfWeek } from './calendar/date'
+import { addDays, isSameDay, monthWeeks, startOfWeek } from './calendar/date'
 import { cn } from '@/lib'
 
 type Props = {
   /** Which surface is empty — decides the backdrop sketch, copy and scale. */
-  variant: 'week' | 'list' | 'panel'
-  /** Whose calendar preferences shape the week sketch. */
+  variant: 'week' | 'month' | 'list' | 'panel'
+  /** Whose calendar preferences shape the calendar sketch. */
   campaignId: string
-  /** Week to sketch behind the prompt. Defaults to the current week. */
+  /** Range to sketch behind the prompt. Defaults to the current week/month. */
   anchor?: Date
   onAddPost: () => void
   pending?: boolean
@@ -19,6 +19,13 @@ type Props = {
 
 const COPY = {
   week: {
+    title: 'Your calendar is empty',
+    subtitle: 'Add your first post and it will show up here, ready to schedule.',
+  },
+  // Deliberately the same words as the week: it is the same empty calendar,
+  // and a user switching granularity on an empty campaign should not be told
+  // two different things about it.
+  month: {
     title: 'Your calendar is empty',
     subtitle: 'Add your first post and it will show up here, ready to schedule.',
   },
@@ -67,6 +74,14 @@ export function PostsEmptyState({
       }))
   }, [anchor, firstDayOfWeek, hiddenDays])
 
+  const monthGrid = useMemo(
+    () =>
+      variant === 'month'
+        ? monthWeeks(anchor ?? new Date(), firstDayOfWeek, hiddenDays)
+        : null,
+    [variant, anchor, firstDayOfWeek, hiddenDays],
+  )
+
   return (
     <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
       {/* Backdrop sketch — decorative only. The rail panel is too narrow for
@@ -79,6 +94,7 @@ export function PostsEmptyState({
         )}
       >
         {variant === 'list' && <ListSketch />}
+        {monthGrid && <MonthSketch weeks={monthGrid} />}
         {variant === 'week' &&
           columns.map((col) => (
             <div key={col.key} className="flex flex-col min-w-[150px] flex-1 gap-0.5">
@@ -167,6 +183,39 @@ export function PostsEmptyState({
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * Grid-shaped twin of the week sketch, for the month view. Draws the real
+ * month's shape — the row count is what makes a month look like that month —
+ * with a scattering of ghost cards, so the empty state reads as the same
+ * surface the posts will land on.
+ */
+function MonthSketch({ weeks }: { weeks: Date[][] }) {
+  return (
+    <>
+      {weeks.map((week, weekIndex) => (
+        <div key={weekIndex} className="flex flex-1 gap-0.5">
+          {week.map((day, dayIndex) => (
+            <div
+              key={dayIndex}
+              className="flex flex-1 min-w-0 flex-col gap-1 overflow-hidden bg-secondary p-1"
+            >
+              <span className="text-xs leading-4 tabular-nums text-tertiary-foreground">
+                {day.getDate()}
+              </span>
+              {Array.from(
+                { length: GHOSTS_PER_DAY[(weekIndex + dayIndex) % GHOSTS_PER_DAY.length] },
+                (_, i) => (
+                  <div key={i} className="h-5 shrink-0 border-2 border-dashed border-border" />
+                ),
+              )}
+            </div>
+          ))}
+        </div>
+      ))}
+    </>
   )
 }
 

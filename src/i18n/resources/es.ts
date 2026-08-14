@@ -85,8 +85,7 @@ export const es: Translation = {
       emailPlaceholder: 'Introduce tu correo electrónico',
       passwordLabel: 'Contraseña',
       passwordPlaceholder: 'Introduce la contraseña',
-      forgotPrompt: '¿Has olvidado tu contraseña?',
-      forgotAction: 'Restablécela aquí',
+      forgot: '¿Has olvidado tu contraseña? <resetLink>Restablécela aquí</resetLink>.',
       noAccount: '¿Aún no tienes cuenta?',
       signUpLink: 'Regístrate',
     },
@@ -328,6 +327,14 @@ export const es: Translation = {
     sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
   },
 
+  posts: {
+    publishStatus: {
+      auto: 'Publicación automática {{when}}',
+      manual: 'Recordatorio {{when}}',
+      compactNow: 'ahora',
+      compactLate: '{{amount}} de retraso',
+    },
+  },
   errors: {
     notFound: {
       code: '404',

@@ -284,7 +284,12 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   // walk it rather than re-deriving it per cell.
   const leafHeaders = table.getHeaderGroups()[0]?.headers ?? []
 
-  const hasData = rows.length > 0
+  // `!loading` is part of it: with a controlled sort the rows can already be
+  // in hand while the stored order is still being read, and rendering them
+  // under the skeleton would paint the default order only to re-sort a moment
+  // later. Loading means skeleton only — no body, no footer, and (via the
+  // header's pointer-events guard) no sort clicks racing the read.
+  const hasData = !loading && rows.length > 0
   const hasFooter =
     showFooter &&
     table

@@ -48,8 +48,8 @@ function ComingSoon({ campaignId }: { campaignId: string }) {
       link={{ target: "analytics", campaignId, label: "See what's coming" }}
     >
       <p className="text-sm text-secondary-foreground">
-        Once this campaign's posts start being measured, what they earned shows
-        up here.
+        When this view switches on, what the campaign's posts earned shows up
+        here.
       </p>
     </OverviewCard>
   );
@@ -101,7 +101,7 @@ export function AnalyticsModuleView({
         <p className="text-sm text-secondary-foreground">
           {data.coverage.published === 0
             ? "Once this campaign starts publishing, what each post earns shows up here."
-            : "The platforms haven't reported on this campaign's posts yet — this usually takes a few hours."}
+            : "The platforms haven't reported on this campaign's posts yet — numbers show up here once they do."}
         </p>
       </OverviewCard>
     );

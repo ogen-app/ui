@@ -99,7 +99,14 @@ export function PostVersionsPanel({ doc, onClose }: Props) {
         onBack={() => setViewing(null)}
         onRestore={
           viewing.kind === 'saved'
-            ? () => restore(viewing.version.version_number).then(() => setViewing(null))
+            ? // `.catch` because the mutations rethrow after their own error
+              // toast — the chain only sequences the success side (leave the
+              // reader once the restore is in), and a failure should keep the
+              // reader open, not surface as an unhandled rejection.
+              () =>
+                void restore(viewing.version.version_number)
+                  .then(() => setViewing(null))
+                  .catch(() => {})
             : undefined
         }
         restoring={restoring}
@@ -136,11 +143,15 @@ export function PostVersionsPanel({ doc, onClose }: Props) {
               onView={() => setViewing(entry)}
               onRestore={
                 entry.kind === 'saved'
-                  ? () => restore(entry.version.version_number)
+                  ? () => void restore(entry.version.version_number).catch(() => {})
                   : undefined
               }
               restoring={restoring}
-              onDelete={entry.kind === 'saved' ? () => remove(entry.version) : undefined}
+              onDelete={
+                entry.kind === 'saved'
+                  ? () => void remove(entry.version).catch(() => {})
+                  : undefined
+              }
               canDelete={canDelete}
               removing={removing}
             />
@@ -449,7 +460,11 @@ function SaveVersionForm({
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (saving) return
-    void onSave(note.trim()).then(close)
+    // A failed save keeps the note in the field for a retry; the mutation
+    // already toasts the failure, so the rejection is deliberately swallowed.
+    void onSave(note.trim())
+      .then(close)
+      .catch(() => {})
   }
 
   return (

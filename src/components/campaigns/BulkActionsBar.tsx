@@ -17,8 +17,10 @@ type Props = {
   /** The selected posts themselves, not their ids — every action reads status. */
   posts: Post[]
   onClear: () => void
-  onApply: (plan: BulkPlan) => void
-  onDelete: (posts: Post[]) => void
+  /** Resolves with the number of changes that failed, for honest reporting. */
+  onApply: (plan: BulkPlan) => Promise<number>
+  /** Resolves with the number of deletions that failed. */
+  onDelete: (posts: Post[]) => Promise<number>
   busy?: boolean
 }
 
@@ -34,14 +36,22 @@ type Props = {
 export function BulkActionsBar({ posts, onClear, onApply, onDelete, busy = false }: Props) {
   const [action, setAction] = useState<BulkAction | null>(null)
 
+  // Success is claimed only for what succeeded, and only once it has: the
+  // requests fan out and any of them can fail. Failures raise their own error
+  // toasts through the mutations, so the count here just stays truthful.
   const applyPlan = (plan: BulkPlan) => {
-    onApply(plan)
-    toast.success(describeResult(plan.changes.length, plan.skipped))
+    void onApply(plan).then((failed) => {
+      const applied = plan.changes.length - failed
+      if (applied > 0) toast.success(describeResult(applied, plan.skipped))
+    })
   }
 
   const deletePosts = (targets: Post[]) => {
-    onDelete(targets)
-    toast.success(`${targets.length} ${targets.length === 1 ? 'post' : 'posts'} deleted`)
+    void onDelete(targets).then((failed) => {
+      const deleted = targets.length - failed
+      if (deleted > 0)
+        toast.success(`${deleted} ${deleted === 1 ? 'post' : 'posts'} deleted`)
+    })
   }
 
   return (
