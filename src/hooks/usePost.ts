@@ -10,6 +10,7 @@ import {
   type CancelTarget,
 } from '@/services/api/posts'
 import { registerPendingSave } from '@/lib/pendingSaves'
+import { landSavedPost } from '@/lib/postCache'
 import type { Post, PostStatus } from '@/types/posts'
 
 const SAVE_DEBOUNCE_MS = 600
@@ -19,6 +20,16 @@ const SAVE_DEBOUNCE_MS = 600
 // landing an unschedule), so we poll to surface those without a reload.
 const SCHEDULED_POLL_MS = 5_000
 
+/**
+ * The editor's copy of a post, and only the editor's.
+ *
+ * The calendar and the list read the same post from a different namespace
+ * (`campaignPostsKey`), and neither key invalidates the other. So every write
+ * in this hook lands twice: `setQueryData` here, `landSavedPost` there. Skip
+ * the second and the post keeps its old title everywhere outside the editor
+ * for the next 30 seconds — the `staleTime` — which is longer than it takes to
+ * rename a post and press Back.
+ */
 export const postKey = (id: string) => ['post', id] as const
 
 export type TransitionStatusResult =
@@ -134,6 +145,10 @@ export function usePost(postId: string): UsePostResult {
       const saved = await saveDoc({ id: postId, next })
       if (genRef.current === genAtFlush) {
         qc.setQueryData(postKey(postId), saved)
+        // The same row, in the list the calendar reads. Gen-guarded with the
+        // write above so two overlapping flushes can't land out of order —
+        // the newer one follows within a debounce either way.
+        landSavedPost(qc, saved)
       }
     } catch {
       // Toasted by the mutation-cache default under the `errorTitle` above.
@@ -223,6 +238,10 @@ export function usePost(postId: string): UsePostResult {
         if (genRef.current === genAtStart) {
           qc.setQueryData(postKey(postId), saved)
         }
+        // Unguarded, unlike the cache write: the gen counter is about whose
+        // *words* are newer, and a status is not something the user can have
+        // typed past. The list must show the status the server just confirmed.
+        landSavedPost(qc, saved)
         return { ok: true, post: saved }
       } catch (err) {
         // The server refused the move, so any edit stamped with the requested
@@ -271,6 +290,7 @@ export function usePost(postId: string): UsePostResult {
       }
       const result = await schedulePost(postId, base.scheduled_at)
       qc.setQueryData(postKey(postId), result.post)
+      landSavedPost(qc, result.post)
       // The user clicked "Schedule" expecting auto-publish, but the
       // allowlist routed the post to manual publishing. The badge flips
       // silently, so attach a notice explaining what happened.
@@ -310,6 +330,7 @@ export function usePost(postId: string): UsePostResult {
         await cancelPost(postId, target)
         const fresh = await getPost(postId)
         qc.setQueryData(postKey(postId), fresh)
+        landSavedPost(qc, fresh)
         // Stay `cancelling`: fresh is still `scheduled` and the worker
         // hasn't landed the transition yet. The effect below clears it
         // once the status actually changes.
@@ -352,6 +373,7 @@ export function usePost(postId: string): UsePostResult {
         // refetch rather than being reconstructed here.
         const fresh = await getPost(postId)
         qc.setQueryData(postKey(postId), fresh)
+        landSavedPost(qc, fresh)
         return { ok: true, post: fresh }
       } catch (err) {
         qc.invalidateQueries({ queryKey: postKey(postId) })
