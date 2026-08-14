@@ -220,6 +220,18 @@ export const es: Translation = {
     wrongAccount: '¿Cuenta equivocada?',
     logOut: 'Cerrar sesión',
     switchFailed: 'No se ha podido cambiar de espacio',
+    createDialog: {
+      title: 'Nuevo espacio',
+      body: 'Un espacio tiene sus propias campañas, contenido y cuentas conectadas — incluidas sus propias cuentas sociales, así que un segundo espacio es la forma de llevar otra página de LinkedIn o Facebook junto a esta.',
+      nameLabel: 'Nombre',
+      namePlaceholder: 'Cliente Northwind',
+      cancel: 'Cancelar',
+      createOnly: 'Solo crear',
+      createAndSwitch: 'Crear y cambiar',
+      created: '{{name}} creado',
+      createdNote: 'Cambia a él desde el menú de espacios cuando lo necesites.',
+      createFailed: 'No se ha podido crear el espacio',
+    },
   },
 
   profile: {
@@ -245,18 +257,18 @@ export const es: Translation = {
     },
     dangerZone: {
       title: 'Zona de peligro',
-      body: 'Eliminar tu cuenta también elimina las campañas, publicaciones y recursos que hayas creado en este espacio de trabajo. Esto no se puede deshacer.',
-      action: 'ELIMINAR CUENTA',
+      body: 'Salir de este espacio te quita el acceso y elimina todo lo que creaste en él — para todos. Tu cuenta de acceso y tus otros espacios no se tocan. Esto no se puede deshacer.',
+      action: 'SALIR DE ESTE ESPACIO',
     },
-    delete: {
-      title: '¿Eliminar tu cuenta?',
-      body: 'Esto elimina permanentemente <strong>{{email}}</strong> y todo lo que hayas creado en este espacio de trabajo: tus campañas, sus publicaciones, los recursos que has subido y las etiquetas. No se puede deshacer.',
+    leave: {
+      title: '¿Salir de {{workspace}}?',
+      body: 'Esto elimina a <strong>{{email}}</strong> del espacio y borra todo lo que creaste en él — tus campañas, sus publicaciones, los recursos que subiste y las etiquetas — para todos los miembros. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
       shared:
-        'Si alguien más usa <strong>{{workspace}}</strong>, ese contenido también desaparece para esa persona. El espacio de trabajo en sí no se elimina.',
-      thisWorkspace: 'este espacio de trabajo',
+        'Tu cuenta de acceso sigue funcionando: cualquier otro espacio al que pertenezcas no se toca, y <strong>{{workspace}}</strong> continúa sin ti. Si eres su único propietario, nombra antes a otro propietario — un espacio no puede quedarse sin propietario.',
+      thisWorkspace: 'este espacio',
       confirmLabel: 'Escribe <email>{{email}}</email> para confirmar',
-      keep: 'CONSERVAR MI CUENTA',
-      confirm: 'ELIMINAR MI CUENTA',
+      keep: 'QUEDARME EN ESTE ESPACIO',
+      confirm: 'SALIR DE ESTE ESPACIO',
     },
   },
 
@@ -310,10 +322,24 @@ export const es: Translation = {
       revokeFailed: 'No se ha podido revocar',
       removeTitle: '¿Eliminar a {{name}}?',
       removeBody:
-        'Esto elimina la cuenta de {{name}} y todo lo que creó en este espacio — sus campañas, las publicaciones de esas campañas y los archivos que subió — para todo el mundo. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
+        'Esto elimina a {{name}} del espacio y borra todo lo que creó en él — sus campañas, las publicaciones de esas campañas y los archivos que subió — para todo el mundo. Su cuenta de acceso y sus otros espacios no se tocan. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
       removeConfirmLabel: 'Escribe su correo electrónico para confirmar',
       removeDismiss: 'MANTENERLA',
-      removeConfirm: 'ELIMINAR A ESTA PERSONA',
+      removeConfirm: 'ELIMINAR DE ESTE ESPACIO',
+    },
+    dangerZone: {
+      title: 'Zona de peligro',
+      body: 'Eliminar este espacio elimina sus campañas, publicaciones, recursos y cuentas sociales conectadas, y todos los miembros pierden el acceso. Las publicaciones ya enviadas siguen activas en las redes sociales. No puedes deshacerlo tú mismo — recuperar un espacio eliminado es una solicitud manual a soporte.',
+      lastWorkspace: 'Este es tu único espacio. Eliminarlo te deja sin ningún sitio donde trabajar — crea otro primero.',
+      action: 'ELIMINAR ESPACIO',
+      confirmTitle: '¿Eliminar {{name}}?',
+      confirmBody: 'Todo lo que hay en este espacio se elimina, para todos los miembros, y no puedes restaurarlo tú mismo. Escribe <strong>{{name}}</strong> para confirmar.',
+      confirmLabel: 'Nombre del espacio',
+      keep: 'MANTENER ESPACIO',
+      confirm: 'ELIMINAR ESPACIO',
+      onlyWorkspace: 'Este es tu único espacio',
+      onlyWorkspaceNote: 'Crea otro espacio antes de eliminar este.',
+      deleteFailed: 'No se ha podido eliminar el espacio',
     },
     platforms: {
       title: 'Ajustes de plataformas',

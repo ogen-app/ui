@@ -232,15 +232,23 @@ The differences that changed the UI, rather than just its URLs:
   400s anything else. `admin` and `viewer` are gone from the client — CON-147
   inserts `admin` when the server does. `canActOnMember` / `canGrantRole` /
   `canManageWorkspace` survive as the seam that will re-acquire nuance then.
-- **Removing a member deletes their account.** There is no membership row to
-  detach: one user, one tenant, so the server hard-deletes `users` and the
-  schema cascades from `users.id` into `sessions`, `tags`, `campaigns`,
-  `assets`, `posts` and `post_attachments` via `created_by ON DELETE CASCADE`.
-  Everything that person made is destroyed, for everyone. The People card
-  therefore asks for their email to be typed and says what goes, in those
-  words — the same confirmation shape as deleting a workspace. **Leaving** is
-  not offered here at all: it is the same call on your own id, i.e. deleting
-  your account, which already has its screen on Profile.
+- **Removing a member detaches one membership — from this workspace only.**
+  Since ogen#109 split accounts from memberships, `DELETE /api/users/:id`
+  removes the membership row (`RemoveMemberGuarded`, scoped to the active
+  tenant, ≥1-owner invariant → `409`), and the cascade from `created_by`
+  destroys what that membership created *here*: their campaigns, those
+  campaigns' posts, their assets and tags, for everyone in this workspace.
+  Their account and their other workspaces survive. The People card asks for
+  their email to be typed and says both halves in those words. **Leaving** is
+  the same call on your own id and lives on Profile as "leave this workspace"
+  — there is **no account deletion on the API**, and the sole owner of a
+  workspace can't leave it (the same `409`).
+- **A `users.id` is a per-workspace membership id.** The header-free
+  `GET /api/current_user` answers with the *default* workspace's membership,
+  so a tab pinned elsewhere must not use that id for identity: `requireSelf`
+  compares against the *active* membership (Profile's self-PUT goes header-free
+  for exactly this reason), and "is this row me" is decided by email — the
+  account's, denormalised identically onto every membership (`listMembers`).
 - **`POST /api/invitations` is idempotent per email** (CON-147 §7.3,
   `CreateReplacingPendingTx`): a pending invite for the address — live or
   expired — is replaced with a fresh token, expiry, role and email (`200`); a

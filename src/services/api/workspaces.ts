@@ -37,10 +37,10 @@ import { apiJson, apiVoid } from './http'
 import type { RawUser } from './users'
 
 /**
- * `GET /api/tenants/current` — the workspace the session is bound to.
+ * `GET /api/tenants/current` — the workspace this tab's header names.
  *
  * Carries no role: the tenant row knows nothing about the caller. The role
- * comes off `GET /api/current_user`, and `useWorkspace` puts the two together.
+ * comes off `GET /api/workspaces`, and `useWorkspace` puts the two together.
  */
 export function getWorkspace(): Promise<Tenant> {
   return apiJson<Tenant>('/api/tenants/current', 'Unable to load the workspace')
@@ -67,18 +67,23 @@ export function updateWorkspace(
  * `GET /api/users` — everyone in the workspace, oldest first.
  *
  * Readable by any member: knowing who you work with is not an owner's
- * privilege. `is_self` is stamped here from the caller's id, since the server
- * doesn't mark the row.
+ * privilege. `is_self` is stamped here **by email**, not id: since CON-147 a
+ * `users.id` is a per-workspace membership id, and the caller's id from the
+ * header-free `GET /api/current_user` names their membership of the *default*
+ * workspace — the wrong one in any tab that switched. The email is the
+ * account's, denormalised identically onto every membership, so it is the one
+ * field that identifies the same person across workspaces.
  */
-export async function listMembers(callerId: string): Promise<WorkspaceMember[]> {
+export async function listMembers(callerEmail: string): Promise<WorkspaceMember[]> {
   const raw = await apiJson<RawUser[]>('/api/users', 'Unable to load members')
+  const self = callerEmail.toLowerCase()
   return raw.map((u) => ({
     id: u.id,
     name: u.name,
     email: u.email,
     role: u.role ?? 'member',
     joined_at: u.created_at,
-    is_self: u.id === callerId,
+    is_self: u.email.toLowerCase() === self,
   }))
 }
 
@@ -92,7 +97,7 @@ export async function listMembers(callerId: string): Promise<WorkspaceMember[]> 
 export async function updateMemberRole(
   userId: string,
   role: WorkspaceRole,
-  callerId: string,
+  callerEmail: string,
 ): Promise<WorkspaceMember> {
   const u = await apiJson<RawUser>(
     `/api/users/${userId}/role`,
@@ -105,25 +110,25 @@ export async function updateMemberRole(
     email: u.email,
     role: u.role,
     joined_at: u.created_at,
-    is_self: u.id === callerId,
+    // By email, same as `listMembers` — the caller's id names the default
+    // workspace's membership, not necessarily this one.
+    is_self: u.email.toLowerCase() === callerEmail.toLowerCase(),
   }
 }
 
 /**
- * `DELETE /api/users/:id` — **deletes the person, not a membership.**
+ * `DELETE /api/users/:id` — removes a membership from **this** workspace.
  *
- * There is no membership row to detach: one user belongs to one tenant, so the
- * server hard-deletes the `users` row, and the schema cascades from `users.id`
- * into `sessions`, `tags`, `campaigns`, `assets`, `posts` and
- * `post_attachments` via `ON DELETE CASCADE` on `created_by`. Removing a
- * teammate therefore destroys everything they ever made, for everybody.
+ * Since CON-147 memberships are split from accounts, and this detaches one:
+ * the person's account survives, as do their other workspaces. What does not
+ * survive is what they created *here* — the schema cascades from the
+ * membership id through `created_by` into their campaigns, posts, assets and
+ * tags in this workspace, for everybody. Callers must say that in the
+ * confirmation, in those terms.
  *
- * Callers must say that in the confirmation, in those terms. When CON-147
- * splits memberships from users this becomes the detach it currently pretends
- * to be — until then the copy carries the difference.
- *
- * Owner-gated for anyone else's id; a member may pass their own (which is
- * account deletion, and lives on Profile). The last owner cannot go, 409.
+ * Owner-gated for anyone else's id; a member may pass their own (leaving the
+ * workspace, which lives on Profile). The last owner cannot go — the server
+ * guards the ≥1-owner invariant in the same transaction, 409.
  */
 export function removeMember(userId: string): Promise<void> {
   return apiVoid(`/api/users/${userId}`, 'Unable to remove the member', {

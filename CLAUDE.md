@@ -183,9 +183,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `/api/workspaces` routes (list/create/switch/delete, CON-147) are the one
   place a workspace is a resource of its own. The two roles it deals in are
   the server's: `owner | member`, nothing else.
-  **`DELETE /api/users/:id` is not "remove from workspace"** — it deletes the
-  user row and cascades from `created_by` into their campaigns, posts and
-  assets, so every caller confirms it in those words. See
+  **`DELETE /api/users/:id` removes a membership, and only from the active
+  workspace** — the account and its other workspaces survive, but the cascade
+  from `created_by` destroys the campaigns, posts and assets that membership
+  created *here*, so every caller confirms both halves in those words. The
+  server guards the ≥1-owner invariant (409). There is **no account deletion
+  on the API** — Profile's Danger Zone is "leave this workspace". And a
+  `users.id` is a **per-workspace membership id**: `current_user`'s id names
+  the *default* workspace's membership, so identity checks across workspaces
+  go by email (`listMembers`' `is_self`), never by id. See
   [`docs/workspace-api.md`](./docs/workspace-api.md) §4a.
 - **Which workspace a request acts in is named per request, not per session**
   (CON-147). The tab's workspace lives in `lib/activeWorkspace.ts` —

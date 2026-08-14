@@ -7,6 +7,14 @@ type ApiRequestOptions = {
   method?: string;
   /** Serialized as a JSON body; also sets the `Content-Type` header. */
   body?: unknown;
+  /**
+   * Skip the `X-Workspace-Id` header for this one call, making it act in the
+   * session's *default* workspace regardless of the tab's pin. For requests
+   * whose identity comes from the header-free `GET /api/current_user` — the
+   * Profile self-edit — where a scoped call would name a different membership
+   * than the id in the path and 403. Not for anything workspace-scoped.
+   */
+  unscoped?: boolean;
 };
 
 async function send(
@@ -16,7 +24,7 @@ async function send(
 ): Promise<Response> {
   // Which workspace this request acts in, when the path is one that acts in a
   // workspace at all — see `workspaceHeader`.
-  const scope = workspaceHeader(path);
+  const scope = options.unscoped ? {} : workspaceHeader(path);
   const init: RequestInit = {
     method: options.method ?? "GET",
     credentials: "include",

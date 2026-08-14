@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,6 +20,7 @@ type Props = {
  * down the one you're working in.
  */
 export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
+  const { t } = useTranslation()
   const [name, setName] = useState('')
   const { mutate: create, isPending } = useCreateWorkspace()
   const { mutate: switchTo, isPending: switching } = useSwitchWorkspace()
@@ -37,14 +39,14 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
             switchTo(workspace.id)
             return
           }
-          toast.success(`${workspace.name} created`, {
-            description: 'Switch to it from the workspace menu when you need it.',
+          toast.success(t('workspaces.createDialog.created', { name: workspace.name }), {
+            description: t('workspaces.createDialog.createdNote'),
           })
           setName('')
           onClose()
         },
         onError: (err) => {
-          toast.error('Unable to create the workspace', {
+          toast.error(t('workspaces.createDialog.createFailed'), {
             description: err instanceof Error ? err.message : undefined,
           })
         },
@@ -57,7 +59,7 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
       <ModalContainer
         isOpen={isOpen}
         onClose={busy ? () => {} : onClose}
-        title="New workspace"
+        title={t('workspaces.createDialog.title')}
         size="default"
         closeOnBackdropClick={!busy}
         closeOnEscape={!busy}
@@ -70,18 +72,16 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
           }}
         >
           <p className="text-sm text-tertiary-foreground">
-            A workspace has its own campaigns, content and connected accounts — and
-            its own set of social accounts, so a second workspace is how you run a
-            second LinkedIn or Facebook page alongside this one.
+            {t('workspaces.createDialog.body')}
           </p>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="workspace-name">Name</Label>
+            <Label htmlFor="workspace-name">{t('workspaces.createDialog.nameLabel')}</Label>
             <Input
               id="workspace-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Northwind Client"
+              placeholder={t('workspaces.createDialog.namePlaceholder')}
               autoFocus
               disabled={busy}
             />
@@ -89,7 +89,7 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
-              Cancel
+              {t('workspaces.createDialog.cancel')}
             </Button>
             <Button
               type="button"
@@ -97,10 +97,10 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
               onClick={() => submit(false)}
               disabled={!trimmed || busy}
             >
-              Create only
+              {t('workspaces.createDialog.createOnly')}
             </Button>
             <Button type="submit" disabled={!trimmed || busy} loading={busy}>
-              Create and switch
+              {t('workspaces.createDialog.createAndSwitch')}
             </Button>
           </div>
         </form>

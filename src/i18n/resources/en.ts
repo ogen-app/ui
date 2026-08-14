@@ -229,9 +229,8 @@ export const en = {
 
   /**
    * The workspace a user is in, as opposed to the settings screen for it
-   * (`workspaceSettings` below). Two roles, because that is what the server
-   * recognises (CON-26); the /workspaces chooser is still hard-coded English
-   * and is flag-off besides (CON-174, CON-147).
+   * (`workspaceSettings` below) and the /workspaces chooser (`workspaces`
+   * below). Two roles, because that is what the server recognises (CON-26).
    */
   workspace: {
     role: {
@@ -263,6 +262,19 @@ export const en = {
     wrongAccount: 'Wrong account?',
     logOut: 'Log out',
     switchFailed: 'Unable to switch workspace',
+    createDialog: {
+      title: 'New workspace',
+      /** Why you'd want one — the second-accounts case is the feature's point. */
+      body: 'A workspace has its own campaigns, content and connected accounts — and its own set of social accounts, so a second workspace is how you run a second LinkedIn or Facebook page alongside this one.',
+      nameLabel: 'Name',
+      namePlaceholder: 'Northwind Client',
+      cancel: 'Cancel',
+      createOnly: 'Create only',
+      createAndSwitch: 'Create and switch',
+      created: '{{name}} created',
+      createdNote: 'Switch to it from the workspace menu when you need it.',
+      createFailed: 'Unable to create the workspace',
+    },
   },
 
   profile: {
@@ -292,18 +304,21 @@ export const en = {
     },
     dangerZone: {
       title: 'Danger Zone',
-      body: 'Deleting your account also deletes the campaigns, posts and assets you created in this workspace. This cannot be undone.',
-      action: 'DELETE ACCOUNT',
+      /** Leave-workspace, not account deletion: CON-147 split memberships from
+       *  accounts and the API offers no account delete — the copy must not
+       *  promise one. */
+      body: 'Leaving this workspace removes your access and deletes everything you created in it — for everyone. Your login and your other workspaces are untouched. This cannot be undone.',
+      action: 'LEAVE THIS WORKSPACE',
     },
-    delete: {
-      title: 'Delete your account?',
-      body: 'This permanently deletes <strong>{{email}}</strong> and everything you created in this workspace — your campaigns, their posts, your uploaded assets and tags. It cannot be undone.',
+    leave: {
+      title: 'Leave {{workspace}}?',
+      body: 'This removes <strong>{{email}}</strong> from the workspace and deletes everything you created in it — your campaigns, their posts, your uploaded assets and tags — for every member. Posts that already went out stay live on the social networks. It cannot be undone.',
       shared:
-        'If anyone else uses <strong>{{workspace}}</strong>, that content disappears for them too. The workspace itself is not deleted.',
+        'Your login keeps working: any other workspace you belong to is untouched, and <strong>{{workspace}}</strong> itself carries on without you. If you are its only owner, appoint another owner first — a workspace can’t be left ownerless.',
       thisWorkspace: 'this workspace',
       confirmLabel: 'Type <email>{{email}}</email> to confirm',
-      keep: 'KEEP MY ACCOUNT',
-      confirm: 'DELETE MY ACCOUNT',
+      keep: 'STAY IN THIS WORKSPACE',
+      confirm: 'LEAVE THIS WORKSPACE',
     },
   },
 
@@ -358,13 +373,31 @@ export const en = {
       invitationRevoked: 'Invitation revoked',
       revokeFailed: 'Unable to revoke',
       removeTitle: 'Remove {{name}}?',
-      /** The API deletes the user row and the schema cascades from it — the
-       *  copy has to carry that, because the button says "remove". */
+      /** The API detaches the membership and cascades into what it created
+       *  here — their account and other workspaces survive. The copy carries
+       *  both halves: what goes, and what doesn't (CON-147). */
       removeBody:
-        'This deletes {{name}}’s account and everything they created in this workspace — their campaigns, those campaigns’ posts, and their uploaded assets — for everyone. Posts that already went out stay live on the social networks. It cannot be undone.',
+        'This removes {{name}} from the workspace and deletes everything they created in it — their campaigns, those campaigns’ posts, and their uploaded assets — for everyone. Their login and their other workspaces are untouched. Posts that already went out stay live on the social networks. It cannot be undone.',
       removeConfirmLabel: 'Type their email address to confirm',
       removeDismiss: 'KEEP THEM',
-      removeConfirm: 'DELETE THIS PERSON',
+      removeConfirm: 'REMOVE FROM WORKSPACE',
+    },
+    dangerZone: {
+      title: 'Danger Zone',
+      /** Soft-delete server-side, but the copy must not offer that as an undo —
+       *  recovery is a manual support request (CON-147). */
+      body: 'Deleting this workspace removes its campaigns, posts, assets and connected social accounts, and every member loses access. Already-published posts stay live on the social networks. You can’t undo this yourself — recovering a deleted workspace is a manual support request.',
+      lastWorkspace: 'This is your only workspace. Deleting it leaves you with nowhere to work — create another one first.',
+      action: 'DELETE WORKSPACE',
+      confirmTitle: 'Delete {{name}}?',
+      confirmBody: 'Everything in this workspace is deleted, for every member, and you can’t restore it yourself. Type <strong>{{name}}</strong> to confirm.',
+      confirmLabel: 'Workspace name',
+      keep: 'KEEP WORKSPACE',
+      confirm: 'DELETE WORKSPACE',
+      /** The server's own last-workspace guard, arriving from another tab's race. */
+      onlyWorkspace: 'This is your only workspace',
+      onlyWorkspaceNote: 'Create another workspace before deleting this one.',
+      deleteFailed: 'Unable to delete the workspace',
     },
     platforms: {
       title: 'Platform Settings',

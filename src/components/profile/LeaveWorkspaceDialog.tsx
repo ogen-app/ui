@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
 import { Trans, useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
-import { useDeleteAccount } from '@/hooks/useAuth'
+import { useLeaveWorkspace } from '@/hooks/useAuth'
 import type { User } from '@/types/user'
 
 type Props = {
@@ -16,23 +15,25 @@ type Props = {
 }
 
 /**
- * Deleting your own account.
+ * Leaving the workspace this tab is in.
  *
  * The confirmation asks the user to type their email rather than offering a
- * plain confirm button, because the blast radius is much larger than "the
- * account": `users.id` cascades into campaigns, posts, assets, tags and post
- * attachments through `created_by`, so everything this person made is
- * destroyed with them — including out from under their colleagues in a shared
- * workspace. Typing the address is the only step that makes that deliberate.
+ * plain confirm button, because the blast radius is much larger than "leaving"
+ * suggests: the membership cascades through `created_by` into the campaigns,
+ * posts, assets and tags this person made here, so everything they created in
+ * the workspace is destroyed with them — including out from under their
+ * colleagues. Typing the address is the only step that makes that deliberate.
  *
- * The copy states the consequences instead of gesturing at them. "This cannot
- * be undone" is true of deleting a draft too; it doesn't tell anyone that the
- * campaigns their team is working from are about to disappear.
+ * What survives is the other half of the copy's job: the login, and any other
+ * workspace. There is no account deletion on the API since CON-147 — this is
+ * the whole of what the server offers, and the copy must not promise more.
+ *
+ * A sole owner can't leave (the server guards the ≥1-owner invariant, 409);
+ * that message renders inline, where the retry is.
  */
-export function DeleteAccountDialog({ user, isOpen, onClose }: Props) {
-  const navigate = useNavigate()
+export function LeaveWorkspaceDialog({ user, isOpen, onClose }: Props) {
   const { t } = useTranslation()
-  const { mutate: deleteAccount, isPending, error, reset } = useDeleteAccount()
+  const { mutate: leave, isPending, error, reset } = useLeaveWorkspace()
   const [typed, setTyped] = useState('')
 
   // Reopening after a cancel or a failure must not present a pre-armed
@@ -45,22 +46,13 @@ export function DeleteAccountDialog({ user, isOpen, onClose }: Props) {
   }, [isOpen, reset])
 
   const confirmed = typed.trim().toLowerCase() === user.email.toLowerCase()
-
-  const handleDelete = () => {
-    if (!confirmed) return
-    deleteAccount(user.id, {
-      // The session died with the account, so there is nothing to log out of;
-      // the local teardown already ran in the hook. Login is the only screen
-      // left that will render for them.
-      onSuccess: () => void navigate({ to: '/auth/login' }),
-    })
-  }
+  const workspace = user.tenant?.name ?? t('profile.leave.thisWorkspace')
 
   return (
     <ModalContainer
       isOpen={isOpen}
       onClose={isPending ? () => {} : onClose}
-      title={t('profile.delete.title')}
+      title={t('profile.leave.title', { workspace })}
       size="small"
       closeOnBackdropClick={!isPending}
       closeOnEscape={!isPending}
@@ -69,17 +61,15 @@ export function DeleteAccountDialog({ user, isOpen, onClose }: Props) {
         <div className="flex flex-col gap-2 text-sm text-secondary-foreground">
           <p>
             <Trans
-              i18nKey="profile.delete.body"
+              i18nKey="profile.leave.body"
               values={{ email: user.email }}
               components={{ strong: <strong /> }}
             />
           </p>
           <p>
             <Trans
-              i18nKey="profile.delete.shared"
-              values={{
-                workspace: user.tenant?.name ?? t('profile.delete.thisWorkspace'),
-              }}
+              i18nKey="profile.leave.shared"
+              values={{ workspace }}
               components={{ strong: <strong /> }}
             />
           </p>
@@ -88,7 +78,7 @@ export function DeleteAccountDialog({ user, isOpen, onClose }: Props) {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="confirmEmail">
             <Trans
-              i18nKey="profile.delete.confirmLabel"
+              i18nKey="profile.leave.confirmLabel"
               values={{ email: user.email }}
               components={{ email: <span className="font-medium" /> }}
             />
@@ -106,18 +96,21 @@ export function DeleteAccountDialog({ user, isOpen, onClose }: Props) {
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
-            {t('profile.delete.keep')}
+            {t('profile.leave.keep')}
           </Button>
           <Button
             type="button"
             variant="destructiveInverted"
-            onClick={handleDelete}
+            // On success the hook does a full load of `/` — the cache and the
+            // pin belong to the workspace just left — so there is no onSuccess
+            // navigation here.
+            onClick={() => confirmed && leave()}
             disabled={!confirmed || isPending}
             loading={isPending}
           >
             {/* Literal caps in the catalogue, not an `uppercase` class — see
                 CLAUDE.md on destructive labels. Every translation keeps them. */}
-            <span>{t('profile.delete.confirm')}</span>
+            <span>{t('profile.leave.confirm')}</span>
           </Button>
         </div>
       </div>

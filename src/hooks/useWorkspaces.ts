@@ -15,6 +15,7 @@ import {
   updateWorkspace,
 } from '@/services/api/workspaces'
 import { invalidateSession } from '@/services/api/sessions'
+import { flushAllPendingSaves } from '@/lib/pendingSaves'
 import { queryClient } from '@/lib/queryClient'
 import { getActiveWorkspaceId, setActiveWorkspaceId } from '@/lib/activeWorkspace'
 import { reconnectEvents } from '@/stores/eventStreamStore'
@@ -74,16 +75,19 @@ export function useUpdateWorkspace(id: string) {
 }
 
 /**
- * Everyone in the workspace. Keyed without the workspace id: a session is
- * bound to one workspace, and the server answers for that one — an id in the
- * key would suggest a choice the request doesn't have.
+ * Everyone in the workspace. Keyed without the workspace id: the request is
+ * scoped by this tab's `X-Workspace-Id` header, and a switch clears the whole
+ * tab cache (`useSwitchWorkspace`) — which is what keeps an unkeyed entry
+ * from ever surviving into another workspace.
  */
 export function useWorkspaceMembers() {
-  const callerId = useAuthStore((s) => s.user?.id)
+  // The email, not the id: the id names the default workspace's membership
+  // and is wrong in a switched tab — see `listMembers`.
+  const callerEmail = useAuthStore((s) => s.user?.email)
   return useQuery({
     queryKey: WORKSPACE_MEMBERS_KEY,
-    queryFn: () => listMembers(callerId as string),
-    enabled: Boolean(callerId),
+    queryFn: () => listMembers(callerEmail as string),
+    enabled: Boolean(callerEmail),
     staleTime: 30_000,
   })
 }
@@ -109,18 +113,20 @@ export function useWorkspaceInvitations(enabled: boolean) {
  */
 export function useUpdateMemberRole() {
   const qc = useQueryClient()
-  const callerId = useAuthStore((s) => s.user?.id)
+  const callerEmail = useAuthStore((s) => s.user?.email)
   return useMutation({
     mutationFn: ({ userId, role }: { userId: string; role: WorkspaceRole }) =>
-      updateMemberRole(userId, role, callerId ?? ''),
-    onSuccess: (_member, { userId }) => {
+      updateMemberRole(userId, role, callerEmail ?? ''),
+    onSuccess: (member) => {
       qc.invalidateQueries({ queryKey: WORKSPACE_MEMBERS_KEY })
       // Demoting yourself changes what the app is allowed to show you, and the
       // role lives on the signed-in user rather than in a query — so the
       // session is re-probed and the page reloaded into the new authority
       // instead of leaving owner-only controls on screen until the next
-      // navigation happens to re-run the root guard.
-      if (userId === callerId) {
+      // navigation happens to re-run the root guard. Detected off the
+      // response's `is_self` (matched by email), not the caller's id — the id
+      // names the default workspace's membership, not this one's.
+      if (member.is_self) {
         invalidateSession()
         window.location.reload()
       }
@@ -129,9 +135,10 @@ export function useUpdateMemberRole() {
 }
 
 /**
- * Removes a member — which deletes their account and everything they created
- * (see `removeMember` in the service). Invitations are refreshed alongside: the
- * address is free to invite again the moment the account is gone.
+ * Removes a member from this workspace — their account survives, everything
+ * they created *here* does not (see `removeMember` in the service).
+ * Invitations are refreshed alongside: the address is free to invite again
+ * the moment the membership is gone.
  */
 export function useRemoveMember() {
   const qc = useQueryClient()
@@ -211,6 +218,12 @@ export function useSwitchWorkspace() {
   const navigate = useNavigate()
   return useMutation({
     mutationFn: async (id: string) => {
+      // A debounced edit still waiting in an editor belongs to the workspace
+      // being left. Flush it before the re-pin, or its PUT goes out carrying
+      // the *new* workspace's header, 404s against tenant scoping, and the
+      // user's last keystrokes are dropped with a misdirected error toast.
+      // (Same rule as the event stream's reconcile.)
+      await flushAllPendingSaves()
       setActiveWorkspaceId(id)
       queryClient.clear()
       // The event stream is a long-lived connection whose workspace was fixed

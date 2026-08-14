@@ -82,7 +82,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
     // Refresh the persisted auth store from the probe on every page load —
     // this also heals stale localStorage copies (e.g. a renamed workspace).
+    // The probe answering "nobody" clears the store for the same reason: on
+    // an exempt route (/invite, /auth/*) an expired session would otherwise
+    // leave a persisted user that the accept screen reads as "signed in as X"
+    // and branches wrong on.
     if (user) useAuthStore.getState().setUser(user);
+    else useAuthStore.getState().clearUser();
 
     if (user) await seedActiveWorkspace();
 

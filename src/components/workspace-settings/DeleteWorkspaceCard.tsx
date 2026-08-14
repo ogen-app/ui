@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 import { TrashIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,6 +37,7 @@ import { toast } from '@/stores/toastStore'
  * different act and lives on Profile, where it always has.
  */
 export function DeleteWorkspaceCard() {
+  const { t } = useTranslation()
   const workspace = useWorkspace()
   const [open, setOpen] = useState(false)
   const [typed, setTyped] = useState('')
@@ -68,31 +70,32 @@ export function DeleteWorkspaceCard() {
         // deleted the workspace this count was drawn from). It reads as a fact
         // about the account, not a failure of the click.
         const only = err instanceof ApiError && err.status === 409
-        toast.error(only ? 'This is your only workspace' : 'Unable to delete the workspace', {
-          description: only
-            ? 'Create another workspace before deleting this one.'
-            : err instanceof Error
-              ? err.message
-              : undefined,
-        })
+        toast.error(
+          only
+            ? t('workspaceSettings.dangerZone.onlyWorkspace')
+            : t('workspaceSettings.dangerZone.deleteFailed'),
+          {
+            description: only
+              ? t('workspaceSettings.dangerZone.onlyWorkspaceNote')
+              : err instanceof Error
+                ? err.message
+                : undefined,
+          },
+        )
       },
     })
   }
 
   return (
     <>
-      <SettingsCard title="Danger Zone">
+      <SettingsCard title={t('workspaceSettings.dangerZone.title')}>
         <div className="flex flex-col gap-3 items-start">
           <p className="max-w-150 text-sm text-tertiary-foreground">
-            Deleting this workspace removes its campaigns, posts, assets and connected
-            social accounts, and every member loses access. Already-published posts stay
-            live on the social networks. You can’t undo this yourself — recovering a
-            deleted workspace is a manual support request.
+            {t('workspaceSettings.dangerZone.body')}
           </p>
           {isLast && (
             <p className="max-w-150 text-sm text-warning">
-              This is your only workspace. Deleting it leaves you with nowhere to work —
-              create another one first.
+              {t('workspaceSettings.dangerZone.lastWorkspace')}
             </p>
           )}
           <Button
@@ -102,8 +105,8 @@ export function DeleteWorkspaceCard() {
             disabled={isLast}
           >
             <TrashIcon />
-            {/* Literal caps, not `uppercase` — see CLAUDE.md on destructive labels. */}
-            <span>DELETE WORKSPACE</span>
+            {/* Literal caps in every language — see CLAUDE.md on destructive labels. */}
+            <span>{t('workspaceSettings.dangerZone.action')}</span>
           </Button>
         </div>
       </SettingsCard>
@@ -111,7 +114,7 @@ export function DeleteWorkspaceCard() {
       <ModalContainer
         isOpen={open}
         onClose={close}
-        title={`Delete ${workspace.name}?`}
+        title={t('workspaceSettings.dangerZone.confirmTitle', { name: workspace.name })}
         size="default"
         closeOnBackdropClick={!isPending}
         closeOnEscape={!isPending}
@@ -124,13 +127,18 @@ export function DeleteWorkspaceCard() {
           }}
         >
           <p className="text-sm text-secondary-foreground">
-            Everything in this workspace is deleted, for every member, and you can’t
-            restore it yourself. Type{' '}
-            <strong className="text-primary-foreground">{workspace.name}</strong> to
-            confirm.
+            {/* One sentence, one key: the name sits mid-sentence, so `<Trans>`
+                places the <strong> — translations may move it. */}
+            <Trans
+              i18nKey="workspaceSettings.dangerZone.confirmBody"
+              values={{ name: workspace.name }}
+              components={{ strong: <strong className="text-primary-foreground" /> }}
+            />
           </p>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="confirm-workspace-name">Workspace name</Label>
+            <Label htmlFor="confirm-workspace-name">
+              {t('workspaceSettings.dangerZone.confirmLabel')}
+            </Label>
             <Input
               id="confirm-workspace-name"
               value={typed}
@@ -142,7 +150,7 @@ export function DeleteWorkspaceCard() {
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={close} disabled={isPending}>
-              KEEP WORKSPACE
+              {t('workspaceSettings.dangerZone.keep')}
             </Button>
             <Button
               type="submit"
@@ -150,7 +158,7 @@ export function DeleteWorkspaceCard() {
               disabled={!matches || isPending}
               loading={isPending}
             >
-              <span>DELETE WORKSPACE</span>
+              <span>{t('workspaceSettings.dangerZone.confirm')}</span>
             </Button>
           </div>
         </form>
