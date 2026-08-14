@@ -9,7 +9,7 @@
  * `userScopedKey`. Don't put anything secret behind it.
  */
 
-import { apiUrl } from "./base";
+import { scopedFetch } from "./base";
 import { errorMessage } from "./errors";
 
 export type Setting = { key: string; value: string };
@@ -34,9 +34,7 @@ export function userScopedKey(
  * so it resolves rather than throwing; everything else still throws.
  */
 export async function getSetting(key: string): Promise<string | null> {
-  const res = await fetch(apiUrl(`/api/settings/${encodeURIComponent(key)}`), {
-    credentials: "include",
-  });
+  const res = await scopedFetch(`/api/settings/${encodeURIComponent(key)}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(await errorMessage(res, "Unable to load settings"));
   const setting = (await res.json()) as Setting;
@@ -45,9 +43,8 @@ export async function getSetting(key: string): Promise<string | null> {
 
 /** `PUT /api/settings/:key` — creates or overwrites the value. */
 export async function putSetting(key: string, value: string): Promise<void> {
-  const res = await fetch(apiUrl(`/api/settings/${encodeURIComponent(key)}`), {
+  const res = await scopedFetch(`/api/settings/${encodeURIComponent(key)}`, {
     method: "PUT",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ value }),
   });

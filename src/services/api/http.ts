@@ -1,5 +1,6 @@
 import { handleUnauthorized } from "@/lib/sessionExpiry";
-import { apiUrl } from "./base";
+import { handleForbidden } from "@/lib/staleWorkspace";
+import { apiUrl, workspaceHeader } from "./base";
 import { ApiError, errorMessage } from "./errors";
 
 type ApiRequestOptions = {
@@ -13,12 +14,16 @@ async function send(
   fallbackError: string,
   options: ApiRequestOptions
 ): Promise<Response> {
+  // Which workspace this request acts in, when the path is one that acts in a
+  // workspace at all — see `workspaceHeader`.
+  const scope = workspaceHeader(path);
   const init: RequestInit = {
     method: options.method ?? "GET",
     credentials: "include",
+    headers: { ...scope },
   };
   if (options.body !== undefined) {
-    init.headers = { "Content-Type": "application/json" };
+    init.headers = { ...scope, "Content-Type": "application/json" };
     init.body = JSON.stringify(options.body);
   }
   const res = await fetch(apiUrl(path), init);
@@ -29,6 +34,11 @@ async function send(
     // throw still happens so the caller's own error path stays intact while
     // the reload is in flight. See `lib/sessionExpiry.ts`.
     if (res.status === 401) handleUnauthorized();
+    // A 403 on a request that named a workspace *may* mean this tab is pinned
+    // to one it no longer belongs to. `handleForbidden` checks before it acts,
+    // because 403 is also the ordinary answer to a member calling an
+    // owner-only route. See `lib/staleWorkspace.ts`.
+    if (res.status === 403 && "X-Workspace-Id" in scope) handleForbidden();
     throw new ApiError(res.status, await errorMessage(res, fallbackError));
   }
   return res;

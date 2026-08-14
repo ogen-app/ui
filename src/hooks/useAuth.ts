@@ -6,8 +6,11 @@ import {
   resetPassword as resetPasswordRequest,
 } from "@/services/api/passwordReset";
 import { signup as signupRequest } from "@/services/api/tenants";
+import { acceptInvitation } from "@/services/api/invitations";
 import { deleteUser, updateUser } from "@/services/api/users";
 import { clearAllApplicationData } from "@/lib/cache-utils";
+import { setActiveWorkspaceId } from "@/lib/activeWorkspace";
+import { queryClient } from "@/lib/queryClient";
 import type { LoginPayload, Session } from "@/types/session";
 import type { SignupPayload } from "@/types/tenant";
 import type { User } from "@/types/user";
@@ -84,6 +87,36 @@ export function useResetPassword() {
     // out of an expired token — which a toast would drop.
     meta: { errorToast: false },
     mutationFn: ({ token, password }) => resetPasswordRequest(token, password),
+  });
+}
+
+/**
+ * Accepting an invitation (CON-26/CON-147).
+ *
+ * With a payload it creates the account and signs it in — the server opens the
+ * session and sets the cookie as part of accepting, so there is nothing to log
+ * in with afterwards. Without one it adds a workspace to the account already
+ * signed in, and no session changes hands. See `acceptInvitation`.
+ *
+ * Either way the tab is moved into the workspace just joined: landing anywhere
+ * else after accepting an invitation would be answering a question nobody
+ * asked. The cache goes with it, since it belongs to wherever this tab was.
+ */
+export function useAcceptInvitation(token: string) {
+  const setUser = useAuthStore((s) => s.setUser);
+  return useMutation<User, Error, { name: string; password: string } | undefined>({
+    // The form renders `error` beside the fields, and for a dead token beside
+    // the way out of it — which a toast would drop.
+    meta: { errorToast: false },
+    mutationFn: (payload) => acceptInvitation(token, payload),
+    onSuccess: (user) => {
+      invalidateSession();
+      setUser(user);
+      if (user.tenant?.id) {
+        setActiveWorkspaceId(user.tenant.id);
+        queryClient.clear();
+      }
+    },
   });
 }
 

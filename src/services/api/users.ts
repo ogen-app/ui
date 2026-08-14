@@ -12,6 +12,7 @@
 
 import type { User, RegisterPayload } from "@/types/user";
 import type { Tenant } from "@/types/tenant";
+import type { WorkspaceRole } from "@/types/workspace";
 import { apiJson, apiVoid } from "./http";
 
 /** Wire shape of a user as the backend sends it (single `name` field). */
@@ -19,6 +20,8 @@ export type RawUser = {
   id: string;
   name: string;
   email: string;
+  /** CON-26. Backfilled to `owner` for every user that predates it. */
+  role: WorkspaceRole;
   created_at: string;
   updated_at: string;
   /** Embedded only by `GET /api/current_user` (CON-97 §7.4) and signup. */
@@ -33,6 +36,10 @@ export function rawUserToUser(raw: RawUser): User {
     firstName,
     lastName: rest.join(" "),
     email: raw.email,
+    // Signup answers before the column matters and older payloads predate it;
+    // `member` is the safe default because it hides controls rather than
+    // offering ones the server would refuse.
+    role: raw.role ?? "member",
     created_at: raw.created_at,
     updated_at: raw.updated_at,
     tenant: raw.tenant,
