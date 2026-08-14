@@ -17,7 +17,6 @@ import {
 import { invalidateSession } from '@/services/api/sessions'
 import { queryClient } from '@/lib/queryClient'
 import { getActiveWorkspaceId, setActiveWorkspaceId } from '@/lib/activeWorkspace'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { reconnectEvents } from '@/stores/eventStreamStore'
 import { useAuthStore } from '@/stores/authStore'
 import type {
@@ -31,7 +30,7 @@ import type {
 export const WORKSPACE_KEY = ['workspace'] as const
 export const WORKSPACE_MEMBERS_KEY = ['workspace', 'members'] as const
 export const WORKSPACE_INVITATIONS_KEY = ['workspace', 'invitations'] as const
-/** Multi-workspace only (CON-147, flagged) — the list of workspaces to choose between. */
+/** The account's workspaces — the list the chooser chooses between (CON-147). */
 export const WORKSPACES_KEY = ['workspaces'] as const
 
 /**
@@ -45,23 +44,21 @@ export const WORKSPACES_KEY = ['workspaces'] as const
  * `GET /api/current_user` is account-level and deliberately sends no workspace
  * header (see `services/api/base.ts`), so once one account can hold several
  * workspaces `user.role` is the role in the *default* one — wrong for any tab
- * that has moved. `GET /api/workspaces` carries a role per workspace, so with
- * the flag on the role is read from there and matched on the tenant the tab
- * actually got. The auth store stays the answer with the flag off, where an
- * account has exactly one workspace and the two can't disagree.
+ * that has moved. `GET /api/workspaces` carries a role per workspace, so the
+ * role is read from there and matched on the tenant the tab actually got; the
+ * auth store is only the stopgap while that list is in flight.
  *
  * Undefined until the tenant answers: callers show their loading state rather
  * than guess a role, since the role is what decides which controls exist.
  */
 export function useWorkspace(): Workspace | undefined {
   const user = useAuthStore((s) => s.user)
-  const multi = useFeatureFlag('multi-workspace')
   const { data: tenant } = useQuery({
     queryKey: WORKSPACE_KEY,
     queryFn: getWorkspace,
     staleTime: 30_000,
   })
-  const { data: workspaces } = useWorkspaces({ enabled: multi })
+  const { data: workspaces } = useWorkspaces()
   if (!tenant) return undefined
   const listed = workspaces?.find((w) => w.id === tenant.id)
   return { ...tenant, role: listed?.role ?? user?.role ?? 'member' }
@@ -170,23 +167,18 @@ export function useRevokeInvitation() {
 }
 
 /* ------------------------------------------------------------------------ *
- * Multi-workspace (CON-147), behind the `multi-workspace` flag. Nothing
- * outside the flag may call these.
+ * Multi-workspace (CON-147): the account's workspaces and moving between them.
  * ------------------------------------------------------------------------ */
 
 /**
  * Every workspace the caller belongs to. Account-level: the request carries no
  * `X-Workspace-Id`, which is what keeps it answerable from a tab whose own
  * workspace has just become unreachable.
- *
- * Takes `enabled` because a component rendering nothing behind the flag must
- * not fire the request anyway.
  */
-export function useWorkspaces({ enabled = true }: { enabled?: boolean } = {}) {
+export function useWorkspaces() {
   return useQuery({
     queryKey: WORKSPACES_KEY,
     queryFn: listWorkspaces,
-    enabled,
     staleTime: 30_000,
   })
 }

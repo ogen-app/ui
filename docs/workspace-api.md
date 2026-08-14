@@ -1,13 +1,13 @@
 # Workspaces — the API, and how the UI sits on it
 
-**Status: all of it is written, and all of it is deployed.** CON-26 shipped
+**Status: all of it is written, deployed, and unflagged.** CON-26 shipped
 people, roles and invitations *inside* one workspace — §4a maps them. CON-147
 shipped the rest (accounts split from memberships, per-request workspace
 resolution, `/api/workspaces`) in
 [ogen#109](https://github.com/ogen-app/ogen/pull/109), merged to the server's
 `main` on 2026-08-14. The client was re-tested against that build and the
-`multi-workspace` flag (`config/featureFlags.ts`) is **on**; the flag and its
-off-branch stay until the feature has baked in production (§8).
+`multi-workspace` flag was then deleted with its off-branch (§8) — the feature
+is simply how the app works now.
 
 This document is no longer a proposal. Where it once argued for a design that
 CON-147 decided differently — the session-bound active workspace of §3 is the
@@ -478,30 +478,25 @@ argument went, and why.
 | Delete | soft-delete, no self-serve restore | same, `+ 409` when it's your only workspace | Adopted, copy unchanged: recovery is a manual support request, not an undo button. |
 | `timezone` | absent | absent | Adopted. UTC everywhere; the settings page shows it as read-only text. |
 
-## 8. Turning it on
+## 8. How it went live
 
-**The stubs are gone.** `src/mocks/` existed to answer the four routes nobody
-had written; ogen#109 wrote them, and a stub that now encodes the *wrong*
-contract — session-bound switching, `is_active` — is worse than no stub. MSW is
-off the dependency list with it.
+All three steps happened on 2026-08-14:
 
-What is left is the flag. `multi-workspace` in `src/config/featureFlags.ts`
-gates the chooser, "Create or switch", the SWITCH button, the workspace Danger
-Zone **and** the `X-Workspace-Id` header itself: with it off,
-`services/api/base.ts` sends no workspace header on any request, so the app is
-byte-for-byte the single-workspace app it was before this work.
-
-Turning it on, in order — steps 1 and 2 happened on 2026-08-14:
-
-1. ~~ogen#109 merges and deploys~~ — merged to the server's `main`; the local
-   image answers every §4 route.
-2. ~~Flip the flag and exercise it against the deployed API~~ — done against
-   the ogen#109 build: list/create/switch/delete (including the last-workspace
-   `409`), the idempotent re-invite (`200` vs `201`) and the `has_account`
-   preview. The two-tab walkthrough in a browser is part of the release
-   check.
-3. **Open:** decide the flag's fate. Deleting it, with its off-branch, is a
-   deliberate step once the feature has baked in production.
+1. **The stubs went first.** `src/mocks/` existed to answer the four routes
+   nobody had written; ogen#109 wrote them, and a stub that encoded the
+   *wrong* contract — session-bound switching, `is_active` — was worse than no
+   stub. MSW left the dependency list with it.
+2. **Then the contract re-test.** Exercised against the deployed ogen#109
+   build: list/create/switch/delete (including the last-workspace `409`), the
+   idempotent re-invite (`200` vs `201`), the bogus-header `403`, the dead-token
+   `410` and the `has_account` preview. The two-tab walkthrough in a browser is
+   part of the release check on `develop`.
+3. **Then the `multi-workspace` flag was deleted, off-branch and all** — the
+   feature tests on `develop` as it will ship, with the `X-Workspace-Id`
+   header on every scoped request. The flag had existed for "the API isn't
+   there yet", and the API is there; keeping it as a kill switch would have
+   meant an off-branch nothing exercises, rotting under the code it claimed to
+   protect.
 
 One thing to re-check at step 2 rather than assume: **REMOVE's copy.** Against
 today's API `DELETE /api/users/:id` destroys the person and cascades into

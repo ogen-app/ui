@@ -7,9 +7,8 @@
  * from `GET /api/users`, and "remove from workspace" is `DELETE /api/users/:id`
  * with everything that implies (see `removeMember`).
  *
- * Holding several workspaces and switching between them is CON-147 and has no
- * API. The screens written for it stay behind the `multi-workspace` flag
- * (`config/featureFlags.ts`); `WorkspaceChoice` below is theirs.
+ * Holding several workspaces and switching between them is CON-147;
+ * `WorkspaceChoice` below is what `GET /api/workspaces` lists per membership.
  */
 
 /**
@@ -153,8 +152,8 @@ export type UpdateWorkspacePayload = {
 }
 
 /* ------------------------------------------------------------------------ *
- * Below: the multi-workspace model (CON-147), behind the `multi-workspace`
- * flag until ogen#109 is deployed. Nothing outside the flag may read these.
+ * Below: the multi-workspace model (CON-147) — the account's workspaces as
+ * the chooser and switcher see them.
  * ------------------------------------------------------------------------ */
 
 /**

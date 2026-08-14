@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
 
@@ -13,19 +13,12 @@ import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
  *   version of that bug that reaches the outside world;
  * - an account-level call going out *with* one is unrecoverable: those are
  *   exactly the calls a tab makes when its own workspace has stopped answering.
- *
- * The flag is stubbed rather than read, so these assertions describe the
- * feature's behaviour whichever way `multi-workspace` happens to be set today.
  */
-const isEnabled = vi.hoisted(() => vi.fn(() => true))
-vi.mock('@/config/featureFlags', () => ({ isFeatureEnabled: isEnabled }))
-
 const { workspaceHeader } = await import('./base')
 
 const HEADER = 'X-Workspace-Id'
 
 beforeEach(() => {
-  isEnabled.mockReturnValue(true)
   setActiveWorkspaceId('ws-b')
 })
 
@@ -74,11 +67,6 @@ describe('workspaceHeader', () => {
 
   it('sends nothing when the tab has no workspace pinned', () => {
     setActiveWorkspaceId(null)
-    expect(workspaceHeader('/api/campaigns')).toEqual({})
-  })
-
-  it('sends nothing at all while the feature is off', () => {
-    isEnabled.mockReturnValue(false)
     expect(workspaceHeader('/api/campaigns')).toEqual({})
   })
 })

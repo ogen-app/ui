@@ -40,7 +40,6 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { useWorkspace } from '@/hooks/useWorkspaces'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib'
@@ -93,7 +92,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate()
   const { data: campaigns, isPending: campaignsPending } = useCampaigns()
   const workspace = useWorkspace()
-  const canSwitchWorkspace = useFeatureFlag('multi-workspace')
 
   const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
 
@@ -373,18 +371,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   onSelect={() => navigate({ to: '/workspace-settings' })}
                 />
 
-                {/* Only worth a row when there is somewhere to go: a session
-                    is bound to one workspace until CON-147 lands. */}
-                {canSwitchWorkspace && (
-                  <DropdownMenuItem
-                    size="lg"
-                    className="px-2"
-                    onSelect={() => navigate({ to: '/workspaces' })}
-                  >
-                    <ArrowsLeftRightIcon weight="bold" />
-                    <span>{t('nav.switchWorkspace')}</span>
-                  </DropdownMenuItem>
-                )}
+                <DropdownMenuItem
+                  size="lg"
+                  className="px-2"
+                  onSelect={() => navigate({ to: '/workspaces' })}
+                >
+                  <ArrowsLeftRightIcon weight="bold" />
+                  <span>{t('nav.switchWorkspace')}</span>
+                </DropdownMenuItem>
 
                 <DropdownMenuSeparator className="my-2" />
 

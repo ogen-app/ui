@@ -11,7 +11,6 @@ import { deleteUser, updateUser } from "@/services/api/users";
 import { clearAllApplicationData } from "@/lib/cache-utils";
 import { setActiveWorkspaceId } from "@/lib/activeWorkspace";
 import { queryClient } from "@/lib/queryClient";
-import { isFeatureEnabled } from "@/config/featureFlags";
 import type { LoginPayload, Session } from "@/types/session";
 import type { SignupPayload } from "@/types/tenant";
 import type { User } from "@/types/user";
@@ -113,7 +112,7 @@ export function useAcceptInvitation(token: string) {
     onSuccess: (user) => {
       invalidateSession();
       setUser(user);
-      if (isFeatureEnabled("multi-workspace") && user.tenant?.id) {
+      if (user.tenant?.id) {
         setActiveWorkspaceId(user.tenant.id);
         queryClient.clear();
       }

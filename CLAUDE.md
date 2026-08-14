@@ -201,8 +201,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   more consequences: `user.role` from `/api/current_user` is the role in the
   *default* workspace, so read the active one through `useWorkspace()`; and a
   403 is not proof of a stale pin (owner-only routes answer 403 too), which is
-  why `lib/staleWorkspace.ts` verifies before it acts. All of it is inert while
-  `multi-workspace` is off — no header is sent at all.
+  why `lib/staleWorkspace.ts` verifies before it acts.
 - **Switching workspace is client-side.** `useSwitchWorkspace` re-pins the tab,
   clears *this tab's* Query cache and navigates; it does not reload, does not
   rebind the session and must not touch another tab. `POST …/:id/switch` is
@@ -259,10 +258,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 Inviting teammates is live end to end (People, in Workspace Settings; the
 emailed link lands on `/invite?token=…`, which is public, and accepting either
 creates the account or adds the workspace to one that already exists) ·
-**multi-workspace is live** — [ogen#109](https://github.com/ogen-app/ogen/pull/109)
-merged 2026-08-14 and the `multi-workspace` flag is on; the flag itself (and
-its off-branch) stays until the feature has baked in production, then gets
-deleted (CON-147) ·
+**multi-workspace is live, unflagged** — [ogen#109](https://github.com/ogen-app/ogen/pull/109)
+merged 2026-08-14; the `multi-workspace` flag and its off-branch were deleted
+once the client was re-tested against the shipped API (CON-147) ·
 dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
 have no committed config in this repo · **i18n covers the auth screens, sidebar,

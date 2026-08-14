@@ -19,7 +19,6 @@
  * only acts when this tab's workspace is genuinely not on it.
  */
 
-import { isFeatureEnabled } from "@/config/featureFlags";
 import { apiUrl } from "@/services/api/base";
 import { getActiveWorkspaceId, setActiveWorkspaceId } from "./activeWorkspace";
 
@@ -33,7 +32,6 @@ let checking = false;
  */
 export function handleForbidden(): void {
   if (handled || checking) return;
-  if (!isFeatureEnabled("multi-workspace")) return;
   const active = getActiveWorkspaceId();
   if (!active) return;
 

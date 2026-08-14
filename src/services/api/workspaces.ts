@@ -175,8 +175,7 @@ export function revokeInvitation(invitationId: string): Promise<void> {
 /* ------------------------------------------------------------------------ *
  * Multi-workspace (CON-147). These four are **account-level**: they carry no
  * `X-Workspace-Id`, which is what keeps them answerable from a tab whose own
- * workspace has just been deleted or revoked. Behind the `multi-workspace`
- * flag until ogen#109 ships — see `docs/workspace-api.md`.
+ * workspace has just been deleted or revoked. See `docs/workspace-api.md`.
  * ------------------------------------------------------------------------ */
 
 const CHOICES = '/api/workspaces'

@@ -106,22 +106,6 @@ const FEATURE_FLAGS = {
   'email-preferences': false,
 
   /**
-   * Holding several workspaces and working in several at once — one per browser
-   * tab (CON-147): the `/workspaces` chooser, "Create or switch" in the
-   * sidebar, the SWITCH button in Workspace Settings, the Danger Zone that
-   * deletes a workspace, and the `X-Workspace-Id` header that scopes every
-   * request to the tab's own workspace.
-   *
-   * **On since 2026-08-14:** ogen#109 merged to the server's `main` and the
-   * client was re-tested against that build — list/create/switch/delete, the
-   * idempotent re-invite (200 vs 201) and the `has_account` preview all answer
-   * as `docs/workspace-api.md` §4a maps them. The off-branch still works
-   * (`services/api/base.ts` sends no header while false) and is kept until the
-   * feature has baked in production; deleting the flag is the follow-up step.
-   */
-  'multi-workspace': true,
-
-  /**
    * Deleting one saved version of a post, from the version-history panel
    * (CON-168). Off until the API grows `DELETE /api/posts/:id/versions/
    * :versionId` — `handlers/posts.go` registers `GET`/`POST` on `/versions`

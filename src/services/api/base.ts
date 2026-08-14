@@ -9,7 +9,6 @@
  * the API must then allow that origin via CORS with credentials
  * (`CORS_ALLOWED_ORIGINS`).
  */
-import { isFeatureEnabled } from "@/config/featureFlags";
 import { getActiveWorkspaceId } from "@/lib/activeWorkspace";
 
 const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
@@ -54,13 +53,10 @@ function isAccountScoped(path: string): boolean {
  * The workspace header for a request, or nothing.
  *
  * Returns an empty object — so callers can spread it unconditionally — when the
- * path is account-scoped, when this tab has no pinned workspace (the server
- * then falls back to the account's default), or when `multi-workspace` is off.
- * That last case is what keeps the flag honest: with the feature off not a
- * single request differs from before it existed.
+ * path is account-scoped, or when this tab has no pinned workspace (the server
+ * then falls back to the account's default).
  */
 export function workspaceHeader(path: string): Record<string, string> {
-  if (!isFeatureEnabled("multi-workspace")) return {};
   if (isAccountScoped(path)) return {};
   const id = getActiveWorkspaceId();
   return id ? { "X-Workspace-Id": id } : {};

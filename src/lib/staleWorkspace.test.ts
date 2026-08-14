@@ -9,9 +9,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
  * down over a permission error would be worse than the bug this fixes. So the
  * whole design is "verify, then act" — and that is what these assert.
  */
-const isEnabled = vi.hoisted(() => vi.fn(() => true))
-vi.mock('@/config/featureFlags', () => ({ isFeatureEnabled: isEnabled }))
-
 const assign = vi.fn()
 
 /** Fresh module state per test: the recovery latches itself after it fires. */
@@ -30,7 +27,6 @@ function respondWith(workspaces: unknown, ok = true) {
 }
 
 beforeEach(() => {
-  isEnabled.mockReturnValue(true)
   assign.mockClear()
   Object.defineProperty(window, 'location', {
     configurable: true,
@@ -80,14 +76,11 @@ describe('handleForbidden', () => {
     expect(assign).not.toHaveBeenCalled()
   })
 
-  it('does not ask when the tab has nothing pinned, or while the feature is off', async () => {
-    const { setActiveWorkspaceId, handleForbidden } = await load()
+  it('does not ask when the tab has nothing pinned', async () => {
+    const { handleForbidden } = await load()
     respondWith([])
 
-    handleForbidden() // nothing pinned
-    setActiveWorkspaceId('ws-a')
-    isEnabled.mockReturnValue(false)
-    handleForbidden() // flag off
+    handleForbidden()
 
     expect(fetch).not.toHaveBeenCalled()
   })

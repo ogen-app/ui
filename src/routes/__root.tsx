@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next";
 import { PageContainer } from "../components/page-primitives/PageContainer";
 import { PageError } from "../components/page-primitives/PageError";
 import { Button } from "../components/ui/button";
-import { isFeatureEnabled } from "../config/featureFlags";
 import { getActiveWorkspaceId, setActiveWorkspaceId } from "../lib/activeWorkspace";
 import { ServerUnavailableError } from "../services/api/errors";
 import { checkSession } from "../services/api/sessions";
@@ -108,7 +107,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
  * default — so a hiccup here must not stand between the user and the app.
  */
 async function seedActiveWorkspace(): Promise<void> {
-  if (!isFeatureEnabled("multi-workspace")) return;
   if (getActiveWorkspaceId()) return;
   try {
     const workspaces = await listWorkspaces();

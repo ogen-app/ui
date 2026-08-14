@@ -15,8 +15,7 @@ async function send(
   options: ApiRequestOptions
 ): Promise<Response> {
   // Which workspace this request acts in, when the path is one that acts in a
-  // workspace at all. Empty unless `multi-workspace` is on — see
-  // `workspaceHeader`.
+  // workspace at all — see `workspaceHeader`.
   const scope = workspaceHeader(path);
   const init: RequestInit = {
     method: options.method ?? "GET",
