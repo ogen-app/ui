@@ -47,7 +47,14 @@ export function invalidateCampaignPosts(qc: QueryClient, campaignId: string): vo
  * fetch, and a new post arrives through the create path, which invalidates.
  */
 export function landSavedPost(qc: QueryClient, post: Post): void {
-  qc.setQueryData<Post[]>(campaignPostsKey(post.campaign_id), (prev) =>
+  const key = campaignPostsKey(post.campaign_id)
+  // A list refetch already in flight — a teammate's broadcast invalidating
+  // the key just before this save landed — was dispatched before the write
+  // committed, so its response can resolve *after* this patch and put the
+  // old row back for the full staleTime. Cancel it; the query stays marked
+  // stale and refetches on the next mount or focus with the fresh row.
+  void qc.cancelQueries({ queryKey: key })
+  qc.setQueryData<Post[]>(key, (prev) =>
     prev?.map((p) => (p.id === post.id ? post : p)),
   )
   qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })

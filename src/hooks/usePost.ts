@@ -97,6 +97,11 @@ export function usePost(postId: string): UsePostResult {
   const pendingRef = useRef<Post | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const genRef = useRef(0)
+  // The post the editor is on *now*, readable from a flush that outlived a
+  // post switch — `postId` in that closure is the post the flush was armed
+  // for, which is exactly the comparison `flush` needs to make.
+  const postIdRef = useRef(postId)
+  postIdRef.current = postId
   /**
    * The status a transition has asked the server for, while the answer is in
    * flight. An edit made during that window clones the cache, which still
@@ -148,6 +153,13 @@ export function usePost(postId: string): UsePostResult {
         // The same row, in the list the calendar reads. Gen-guarded with the
         // write above so two overlapping flushes can't land out of order —
         // the newer one follows within a debounce either way.
+        landSavedPost(qc, saved)
+      } else if (postId !== postIdRef.current) {
+        // The gen counter moved because the editor switched posts and typing
+        // resumed — a *different* post's words, so the ordering concern above
+        // doesn't apply, and no later flush for this post is coming. The row
+        // is keyed by its own id, so land it; only the editor-key write is
+        // skipped (that cache already holds this optimistic copy).
         landSavedPost(qc, saved)
       }
     } catch {
@@ -406,6 +418,18 @@ export function usePost(postId: string): UsePostResult {
       setCancelling(false)
     }
   }, [cancelling, status])
+
+  // Worker-driven flips arrive through the poll, not through any write in
+  // this hook — the one path "land every post write" would otherwise miss.
+  // Keyed on the two fields a worker can change, so an unschedule the user
+  // watched complete doesn't leave the calendar showing `scheduled` for the
+  // list's staleTime. Every hook-side write already lands itself; landing
+  // again on those changes is an idempotent re-patch of the same row.
+  const polled = query.data
+  const scheduledAt = polled?.scheduled_at
+  useEffect(() => {
+    if (polled) landSavedPost(qc, polled)
+  }, [qc, status, scheduledAt]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     return () => {
