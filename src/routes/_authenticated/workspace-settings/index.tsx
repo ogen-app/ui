@@ -12,8 +12,10 @@ import {
 import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
 import { cn } from '@/lib'
 import { WorkspaceSection } from '@/components/workspace-settings/WorkspaceSection'
+import { PeopleSection } from '@/components/workspace-settings/PeopleSection'
 import { PlatformsSection } from '@/components/workspace-settings/PlatformsSection'
 import { ConnectPlatformsSection } from '@/components/workspace-settings/ConnectPlatformsSection'
+import { DeleteWorkspaceCard } from '@/components/workspace-settings/DeleteWorkspaceCard'
 
 export const Route = createFileRoute('/_authenticated/workspace-settings/')({
   component: WorkspaceSettings,
@@ -54,9 +56,14 @@ function WorkspaceSettings() {
                 PAGE_ACTION_BAR_INSET,
               )}
             >
+              {/* This page is about the workspace you're in; the list of all
+                  of them lives at /workspaces, one click from the Switch
+                  button in the card below. */}
               <WorkspaceSection />
+              <PeopleSection />
               <PlatformsSection />
               <ConnectPlatformsSection />
+              <DeleteWorkspaceCard />
             </div>
           </div>
           <SettingsSaveBar />

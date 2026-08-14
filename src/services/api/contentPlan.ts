@@ -2,7 +2,7 @@ import type { DraftPlanStreamHandlers } from "@/types/contentPlan";
 import { readSSEStream } from "@/lib/sse";
 import { beginLocalRun } from "@/lib/localRuns";
 import { errorMessage } from "./errors";
-import { apiUrl } from "./base";
+import { scopedFetch } from "./base";
 
 const FALLBACK_ERROR = "Unable to generate a content plan";
 
@@ -29,9 +29,8 @@ export async function streamDraftPlan(
   handlers: DraftPlanStreamHandlers,
   signal?: AbortSignal
 ): Promise<void> {
-  const res = await fetch(apiUrl(`/api/campaigns/${campaignId}/generate-draft`), {
+  const res = await scopedFetch(`/api/campaigns/${campaignId}/generate-draft`, {
     method: "POST",
-    credentials: "include",
     signal,
   });
   if (!res.ok || !res.body) {

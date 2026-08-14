@@ -1,45 +1,74 @@
 import { memo, useCallback, useId, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import type { Tenant } from '@/types/tenant'
+import { ArrowsLeftRightIcon } from '@phosphor-icons/react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useCurrentTenant, useRenameTenant } from '@/hooks/useTenant'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
+import { useWorkspace, useUpdateWorkspace } from '@/hooks/useWorkspaces'
+import { canManageWorkspace, type Workspace } from '@/types/workspace'
 import { ReadOnlyField, SettingsRow } from './SettingsRow'
 
 /**
- * The tenant (organization) settings — CON-97. The name is edited inline;
- * the change is applied by the page header's Save button once dirty. The
- * slug is assigned at signup and stable across renames, so it is never
- * editable.
+ * The current workspace's own settings: name, slug, time zone.
+ *
+ * The name registers with the page-level save context rather than submitting
+ * itself, so one Save button covers the card — the same arrangement the
+ * campaign settings use.
  */
 function WorkspaceSectionComponent() {
   const { t } = useTranslation()
-  const { data: tenant, isLoading, isError } = useCurrentTenant()
+  const workspace = useWorkspace()
+  const navigate = useNavigate()
 
   return (
     <SettingsCard>
-      {isLoading ? (
+      {!workspace ? (
         <p className="text-sm text-tertiary-foreground">{t('common.loading')}</p>
-      ) : isError || !tenant ? (
-        <p className="text-sm text-destructive">
-          {t('workspaceSettings.workspace.loadFailed')}
-        </p>
       ) : (
         <ul className="flex flex-col">
           {/* No card h2 here — the row title doubles as the section heading,
               e.g. "BN Digital Workspace". The whole phrase is one key: the
               name does not sit in the same place in every language. */}
-          <SettingsRow title={t('workspaceSettings.workspace.rowTitle', { name: tenant.name })}>
-            {/* Same two-column body as the platform rows, so the fields line
-                up and stretch across the card. */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-              <NameField tenant={tenant} />
-              <ReadOnlyField
-                label={t('workspaceSettings.workspace.slugLabel')}
-                value={tenant.slug}
-              />
+          <SettingsRow
+            title={t('workspaceSettings.workspace.rowTitle', { name: workspace.name })}
+            actions={
+              // The way out of this card: everything in it describes one
+              // workspace, so the other ones belong behind a single move.
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate({ to: '/workspaces' })}
+              >
+                <ArrowsLeftRightIcon />
+                <span>{t('workspaceSettings.workspace.switch')}</span>
+              </Button>
+            }
+          >
+            <div className="flex flex-col gap-5">
+              {/* Same two-column body as the platform rows, so the fields line
+                  up and stretch across the card. */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
+                <NameField workspace={workspace} />
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+                <ReadOnlyField
+                  label={t('workspaceSettings.workspace.slugLabel')}
+                  value={workspace.slug}
+                  description={t('workspaceSettings.workspace.slugNote')}
+                />
+                {/* Not a control yet, and shown rather than hidden because
+                    "what time zone am I scheduling in" is a question the
+                    calendar makes people ask. */}
+                <ReadOnlyField
+                  label={t('workspaceSettings.workspace.timeZoneLabel')}
+                  value="UTC"
+                  description={t('workspaceSettings.workspace.timeZoneNote')}
+                />
+              </div>
             </div>
           </SettingsRow>
         </ul>
@@ -48,25 +77,22 @@ function WorkspaceSectionComponent() {
   )
 }
 
-/**
- * Inline-editable organization name. No per-field submit — edits register as
- * dirty with the page-level save context and are persisted by the header's
- * Save button.
- */
-function NameField({ tenant }: { tenant: Tenant }) {
+/** Inline-editable name. Edits mark the page dirty; the page's Save persists them. */
+function NameField({ workspace }: { workspace: Workspace }) {
   const { t } = useTranslation()
   const id = useId()
-  // null = pristine; reseeds from the freshest tenant after every save.
+  // null = pristine; reseeds from the freshest workspace after every save.
   const [draft, setDraft] = useState<string | null>(null)
-  const value = draft ?? tenant.name
+  const value = draft ?? workspace.name
   const trimmed = value.trim()
   const invalid = trimmed.length === 0
-  const dirty = !invalid && trimmed !== tenant.name
+  const dirty = !invalid && trimmed !== workspace.name
+  const readOnly = !canManageWorkspace(workspace.role)
 
-  const { mutateAsync: rename } = useRenameTenant()
+  const { mutateAsync: update } = useUpdateWorkspace(workspace.id)
   const save = useCallback(
-    () => rename({ id: tenant.id, name: trimmed }).then(() => setDraft(null)),
-    [rename, tenant.id, trimmed]
+    () => update({ name: trimmed }).then(() => setDraft(null)),
+    [update, trimmed],
   )
   useRegisterSettingsSave('workspace-name', dirty, save)
 
@@ -78,6 +104,7 @@ function NameField({ tenant }: { tenant: Tenant }) {
         value={value}
         onChange={(e) => setDraft(e.target.value)}
         aria-invalid={invalid}
+        disabled={readOnly}
       />
       {invalid && (
         <p className="text-xs text-destructive">

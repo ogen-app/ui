@@ -2,7 +2,7 @@ import type {
   AttachmentListResponse,
   PostAttachmentWithValidation,
 } from '@/types/attachments'
-import { apiUrl } from './base'
+import { apiUrl, workspaceHeader } from './base'
 import { apiJson, apiVoid } from './http'
 
 const base = (postId: string) => `/api/posts/${postId}/attachments`
@@ -35,6 +35,11 @@ export function uploadAttachment(
     xhr.open('POST', apiUrl(base(postId)), true)
     xhr.withCredentials = true
     xhr.responseType = 'json'
+    // Same workspace as the post it attaches to (CON-147). After `open`,
+    // which is the only place `setRequestHeader` may be called.
+    for (const [key, value] of Object.entries(workspaceHeader(base(postId)))) {
+      xhr.setRequestHeader(key, value)
+    }
     // A stalled connection fires none of onload/onerror/onabort, and an
     // unsettled promise leaves the pending tile stuck forever. Generous on
     // purpose: this bounds the whole request, and a legitimate large upload

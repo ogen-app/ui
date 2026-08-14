@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 
 import {
+  acceptInviteSchema,
   forgotPasswordSchema,
   loginSchema,
   passwordRules,
@@ -30,6 +31,7 @@ export const useLoginSchema = () => useSchema(loginSchema)
 export const useSignupSchema = () => useSchema(signupSchema)
 export const useForgotPasswordSchema = () => useSchema(forgotPasswordSchema)
 export const useResetPasswordSchema = () => useSchema(resetPasswordSchema)
+export const useAcceptInviteSchema = () => useSchema(acceptInviteSchema)
 export const useProfileSchema = () => useSchema(profileSchema)
 
 /** The live checklist under a new-password field. See `PasswordRules`. */

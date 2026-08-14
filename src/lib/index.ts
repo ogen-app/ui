@@ -7,6 +7,7 @@ export {
   signupSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  acceptInviteSchema,
   profileSchema,
   passwordRules,
   type FieldErrors,

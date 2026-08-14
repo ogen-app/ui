@@ -136,11 +136,16 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         // body nor the history. Listed unconditionally because the broadcast
         // carries no record of which tools fired.
         case 'assistant_completed':
-          return [post, versions, notes]
+          // The list comes along because the turn may have rewritten the
+          // title, and a calendar showing the old one has no other way to
+          // find out — there is no `post_updated` in the catalogue. Same rule
+          // as everywhere here: if the post is stale, the rows are too.
+          return [post, versions, notes, CAMPAIGN_POST_LISTS]
         case 'assistant_failed':
           // Notes are written by the tool as it goes, not at the end, so a
-          // failed turn can still have left some behind.
-          return [post, notes]
+          // failed turn can still have left some behind — and a turn that
+          // failed part-way can have written the body first.
+          return [post, notes, CAMPAIGN_POST_LISTS]
         case 'assessment_completed':
         case 'assessment_failed':
           // Its own namespace, deliberately not nested under the post — see

@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  CARD_FIELDS,
+  DEFAULT_CARD_FIELDS,
+  canHideField,
+  type CardField,
+  type CardFields,
+} from '@/components/campaigns/calendar/cardFields'
 import { getSetting, putSetting, userScopedKey } from '@/services/api/settings'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from '@/stores/toastStore'
@@ -11,11 +18,14 @@ import { toast } from '@/stores/toastStore'
 export type CalendarSettings = {
   firstDayOfWeek: number
   hiddenDays: number[]
+  /** Which rows the week card is allowed to draw — see `calendar/cardFields`. */
+  card: CardFields
 }
 
 const DEFAULTS: CalendarSettings = {
   firstDayOfWeek: 1,
   hiddenDays: [],
+  card: DEFAULT_CARD_FIELDS,
 }
 
 /** Namespace of the settings key these are stored under. */
@@ -28,6 +38,38 @@ export const calendarSettingsKey = (userId: string, campaignId: string) =>
   ['settings', NAMESPACE, userId, campaignId] as const
 
 /**
+ * Field by field, so a blob written before this setting existed comes back with
+ * the defaults for the rest — and so does one written by a later version that
+ * knows a field this one doesn't.
+ *
+ * The all-off case is repaired rather than rejected: the panel can't produce it,
+ * but a hand-edited value can, and a calendar of blank strips is the one state
+ * a user cannot get themselves out of with the switches in front of them.
+ */
+function parseCardFields(raw: unknown): CardFields {
+  if (!raw || typeof raw !== 'object') return DEFAULT_CARD_FIELDS
+  const stored = raw as Partial<Record<CardField, unknown>>
+  const fields = { ...DEFAULT_CARD_FIELDS }
+  for (const field of CARD_FIELDS) {
+    if (typeof stored[field] === 'boolean') fields[field] = stored[field]
+  }
+  return CARD_FIELDS.some((field) => fields[field]) ? fields : DEFAULT_CARD_FIELDS
+}
+
+/**
+ * Repaired on the same principle as the card fields: `setDayVisible` can't
+ * hide the seventh day, but a hand-edited blob can, and a calendar with zero
+ * visible days has no grid to offer the switches that would fix it.
+ */
+function parseHiddenDays(raw: unknown): number[] {
+  if (!Array.isArray(raw)) return DEFAULTS.hiddenDays
+  const hidden = [
+    ...new Set(raw.filter((d): d is number => typeof d === 'number' && d >= 0 && d <= 6)),
+  ]
+  return hidden.length >= 7 ? DEFAULTS.hiddenDays : hidden
+}
+
+/**
  * Reads the stored blob back into settings, ignoring anything malformed — a
  * hand-edited or half-written value must not take the calendar down, and the
  * next change overwrites it anyway.
@@ -37,15 +79,14 @@ function parse(raw: string | null): CalendarSettings {
   try {
     const parsed: unknown = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return DEFAULTS
-    const { firstDayOfWeek, hiddenDays } = parsed as Partial<CalendarSettings>
+    const { firstDayOfWeek, hiddenDays, card } = parsed as Partial<CalendarSettings>
     return {
       firstDayOfWeek:
         typeof firstDayOfWeek === 'number' && firstDayOfWeek >= 0 && firstDayOfWeek <= 6
           ? firstDayOfWeek
           : DEFAULTS.firstDayOfWeek,
-      hiddenDays: Array.isArray(hiddenDays)
-        ? hiddenDays.filter((d): d is number => typeof d === 'number' && d >= 0 && d <= 6)
-        : DEFAULTS.hiddenDays,
+      hiddenDays: parseHiddenDays(hiddenDays),
+      card: parseCardFields(card),
     }
   } catch {
     return DEFAULTS
@@ -71,7 +112,7 @@ export function useCalendarSettings(campaignId: string) {
   // `isLoading`, not `isPending`: the latter stays true forever on a disabled
   // query, and without a user there is nothing to fetch — the defaults are
   // the answer, not a placeholder for one.
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey,
     queryFn: async () => parse(await getSetting(storageKey)),
     enabled: !!userId && !!campaignId,
@@ -103,13 +144,19 @@ export function useCalendarSettings(campaignId: string) {
 
   const write = useCallback(
     (next: CalendarSettings) => {
+      // Only a loaded preference may be edited. `settings` falls back to the
+      // defaults while the read is pending or failed, so a write here would
+      // be built on those defaults and would overwrite whatever the user
+      // actually saved — the callers' controls are skeletoned meanwhile, and
+      // this is what makes that gate load-bearing rather than cosmetic.
+      if (data === undefined) return
       qc.setQueryData(queryKey, next)
       if (!userId || !campaignId) return
       pending.current = { key: storageKey, value: next }
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(flush, SAVE_DEBOUNCE_MS)
     },
-    [qc, queryKey, storageKey, userId, campaignId, flush],
+    [qc, queryKey, storageKey, userId, campaignId, flush, data],
   )
 
   const setFirstDayOfWeek = useCallback(
@@ -134,17 +181,33 @@ export function useCalendarSettings(campaignId: string) {
     [settings, write],
   )
 
+  const setCardField = useCallback(
+    (field: CardField, visible: boolean) => {
+      // The floor is one field, not zero. Enforced here rather than only in the
+      // panel: the panel disables the last switch so the rule is visible, and
+      // this is what makes it true regardless of who calls.
+      if (!visible && !canHideField(settings.card, field)) return
+      write({ ...settings, card: { ...settings.card, [field]: visible } })
+    },
+    [settings, write],
+  )
+
   return {
     firstDayOfWeek: settings.firstDayOfWeek,
     hiddenDays: settings.hiddenDays,
+    card: settings.card,
     /**
      * True until the stored preference has been read. The values above are
      * the defaults meanwhile, and a caller that would lay out differently
      * for a different answer — the week's first column, which days show —
-     * has to wait rather than draw one and take it back.
+     * has to wait rather than draw one and take it back. A failed read
+     * counts too: the defaults are then a stand-in, not an answer, and the
+     * controls must not present them as the user's own choices (the query
+     * retries on the next window focus).
      */
-    isPending: isLoading,
+    isPending: isLoading || isError,
     setFirstDayOfWeek,
     setDayVisible,
+    setCardField,
   }
 }

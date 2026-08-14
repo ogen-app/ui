@@ -1,4 +1,5 @@
 import type { PublisherAccount } from '@/types/campaigns'
+import { connectedAccounts, type PlatformView } from '@/lib/platformDictionary'
 
 /**
  * Who a post publishes as, once the platform's connected accounts and the
@@ -66,6 +67,26 @@ export function resolvePublishingAccount(
     ambiguous: accounts.length >= 2,
     mismatched: false,
   }
+}
+
+/**
+ * The same resolution, starting from the whole platform list rather than one
+ * platform's accounts — the shape a caller has when it holds `usePlatformViews()`
+ * and needs an answer for many posts at once.
+ *
+ * `usePublishingAccount` is the hook form of this and calls it. A list that has
+ * to resolve a screenful of posts cannot call a hook per row, so it calls this
+ * instead; going through one function is what stops the two paths from drifting
+ * into two different ideas of who a post publishes as.
+ */
+export function resolveForPlatform(
+  views: PlatformView[],
+  platformId: string,
+  selectedId = '',
+  hydrated?: PublisherAccount | null,
+): PublishingAccountResolution {
+  const view = views.find((v) => v.platform.id === platformId)
+  return resolvePublishingAccount(view ? connectedAccounts(view) : [], selectedId, hydrated)
 }
 
 /** The label a platform would show on the post, for a resolved account. */

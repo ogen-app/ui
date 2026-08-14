@@ -1,5 +1,5 @@
 /**
- * Tenants API — self-service signup and workspace management (CON-97).
+ * Tenants API — self-service signup (CON-97).
  *
  * `POST /api/tenants` is public: it atomically creates an organization
  * (tenant) and its first admin user, then opens a session. The backend sets
@@ -8,8 +8,10 @@
  * `{ tenant: { name }, user: { name, email, password } }` — the form collects
  * first/last name separately, so we join them into a single `name` here.
  *
- * The read/update surface is caller's-own-tenant only: any other id returns
- * 404 (CON-97 §12.3). The slug is stable across renames.
+ * Reading and renaming the tenant moved to `workspaces.ts`: a tenant *is* a
+ * workspace, and the workspace endpoints carry the timezone and the caller's
+ * role as well. Signup stays here because it is the one route that runs before
+ * a session exists.
  */
 
 import type { User } from "@/types/user";
@@ -37,17 +39,4 @@ export async function signup(payload: SignupPayload): Promise<User> {
     },
   });
   return rawUserToUser({ ...body.user, tenant: body.tenant });
-}
-
-/** `GET /api/tenants/current` — the caller's own tenant. */
-export async function getCurrentTenant(): Promise<Tenant> {
-  return apiJson<Tenant>("/api/tenants/current", "Unable to load workspace");
-}
-
-/** `PUT /api/tenants/:id` — rename the caller's own tenant. */
-export async function renameTenant(id: string, name: string): Promise<Tenant> {
-  return apiJson<Tenant>(`/api/tenants/${id}`, "Unable to rename workspace", {
-    method: "PUT",
-    body: { name },
-  });
 }

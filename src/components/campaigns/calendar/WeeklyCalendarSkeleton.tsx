@@ -69,7 +69,10 @@ export function WeeklyCalendarSkeleton({ anchor, firstDayOfWeek, hiddenDays = []
               )}
             </div>
 
-            <div className="flex-1 min-h-0 bg-secondary p-1 flex flex-col gap-2">
+            {/* `px-1` to match the real lane, which keeps 4px for the hovered
+                card's shadow — without it the placeholders are 8px wider than
+                the cards that replace them. */}
+            <div className="flex-1 min-h-0 bg-secondary flex flex-col gap-0.5 px-1">
               {Array.from(
                 { length: CARDS_PER_COLUMN[colIndex % CARDS_PER_COLUMN.length] },
                 (_, i) => (

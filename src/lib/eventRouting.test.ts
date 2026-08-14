@@ -52,6 +52,17 @@ describe('invalidationsFor', () => {
     expect(hitsPostLists(e)).toBe(true)
   })
 
+  it("refreshes every calendar after someone else's assistant turn", () => {
+    // The turn can have rewritten the title, and there is no `post_updated`
+    // in the catalogue — this event is the only notice a teammate's tab gets.
+    // A failed turn counts: it can have written the body before it gave up.
+    for (const type of ['assistant_completed', 'assistant_failed']) {
+      const e = event('entity:post:p1', type)
+      expect(keys(e)).toContainEqual(['post', 'p1'])
+      expect(hitsPostLists(e)).toBe(true)
+    }
+  })
+
   it('sends an assessment result to its own namespace, not the post', () => {
     // Nesting it under the post would drag it into every autosave refetch.
     expect(keys(event('entity:post:p1', 'assessment_completed'))).toEqual([

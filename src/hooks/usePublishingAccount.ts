@@ -1,9 +1,8 @@
 import { useMemo } from 'react'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
-import { connectedAccounts } from '@/lib/platformDictionary'
 import {
   accountLabel,
-  resolvePublishingAccount,
+  resolveForPlatform,
   type PublishingAccountResolution,
 } from '@/lib/publishingAccount'
 import type { PublisherAccount } from '@/types/campaigns'
@@ -42,14 +41,12 @@ export function usePublishingAccount(
   const views = usePlatformViews()
 
   return useMemo(() => {
-    const view = views.find((v) => v.platform.id === platformId)
-    // Deliberately NOT filtered by `is_active`. These rows come from
-    // `ListActive` (`deleted_at IS NULL`) — the same set the server counts
-    // when it decides whether a choice is required. `is_active` is a
-    // separate flag mirrored from Zernio, and narrowing by it here would
-    // let the UI see one account where the schedule endpoint sees two.
-    const accounts = view ? connectedAccounts(view) : []
-    const resolved = resolvePublishingAccount(accounts, selectedAccountId, hydrated)
+    // Accounts are deliberately NOT filtered by `is_active` — see
+    // `resolveForPlatform`. These rows come from `ListActive`
+    // (`deleted_at IS NULL`), the same set the server counts when it decides
+    // whether a choice is required; narrowing by `is_active` here would let
+    // the UI see one account where the schedule endpoint sees two.
+    const resolved = resolveForPlatform(views, platformId, selectedAccountId, hydrated)
 
     return {
       ...resolved,
@@ -60,7 +57,7 @@ export function usePublishingAccount(
       name: resolved.account ? accountLabel(resolved.account) : null,
       username: resolved.account?.username || null,
       avatarUrl: resolved.account?.avatar_url || null,
-      connected: accounts.length > 0,
+      connected: resolved.accounts.length > 0,
     }
   }, [views, platformId, selectedAccountId, hydrated])
 }

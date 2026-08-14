@@ -6,6 +6,7 @@
 import { useSettingsStore } from '@/stores/settingsStore'
 import { queryClient } from '@/lib/queryClient'
 import { resetPrefetchLatch } from '@/lib/prefetch'
+import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
 
 /**
  * Result of a storage clearing operation
@@ -91,8 +92,14 @@ export async function clearAllApplicationData(): Promise<void> {
     results.push({ type: 'queryCache', success: false, error: error as Error })
   }
 
-  // Clear sessionStorage
+  // Clear sessionStorage. The tab's active workspace is unpinned through its
+  // own setter rather than left to `clear()`: that value is mirrored in a
+  // module variable so the request layer can read it synchronously, and wiping
+  // the storage behind it would leave the mirror holding the workspace of the
+  // account that just logged out — which the next login on this tab would then
+  // name in its headers (CON-147).
   try {
+    setActiveWorkspaceId(null)
     sessionStorage.clear()
     results.push({ type: 'sessionStorage', success: true })
   } catch (error) {

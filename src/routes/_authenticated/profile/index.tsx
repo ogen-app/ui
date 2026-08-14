@@ -17,7 +17,7 @@ import { cn } from '@/lib'
 import { ProfileIdentitySection } from '@/components/profile/ProfileIdentitySection'
 import { PasswordSection } from '@/components/profile/PasswordSection'
 import { EmailPreferencesSection } from '@/components/profile/EmailPreferencesSection'
-import { DeleteAccountDialog } from '@/components/profile/DeleteAccountDialog'
+import { LeaveWorkspaceDialog } from '@/components/profile/LeaveWorkspaceDialog'
 import { useAuthStore } from '@/stores/authStore'
 import { useFeatureFlag } from '@/config/featureFlags'
 
@@ -95,7 +95,7 @@ function ProfilePage() {
           <SettingsSaveBar />
         </div>
       </SettingsSaveProvider>
-      <DeleteAccountDialog
+      <LeaveWorkspaceDialog
         user={user}
         isOpen={deleteOpen}
         onClose={() => setDeleteOpen(false)}
