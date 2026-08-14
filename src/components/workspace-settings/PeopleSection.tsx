@@ -360,10 +360,11 @@ function InvitationRow({
 }) {
   const { t } = useTranslation()
   const { mutate: revoke, isPending: revoking } = useRevokeInvitation()
-  // Re-inviting is only offered once the invitation has expired: that is the
-  // one case the server replaces in place (`CreateReplacingExpiredTx`). While
-  // it is still live the same request answers 409, so there is nothing to
-  // press — cancel it and invite again if the address was wrong.
+  // RESEND is the invite endpoint again: creating is idempotent per email
+  // (CON-147 §7.3), so any pending row — live or expired — is replaced with a
+  // fresh token, expiry and email. That's why the button isn't gated on
+  // `expired`: re-sending a live invitation is the "they can't find the email"
+  // case, and it costs the old link its validity, nothing else.
   const { mutate: resend, isPending: resending } = useInviteMember()
   const days = Math.abs(daysUntil(invitation.expires_at))
 
@@ -412,34 +413,32 @@ function InvitationRow({
       </div>
 
       <div className={ACTION_COL}>
-        {expired && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              resend(
-                { email: invitation.email, role: invitation.role },
-                {
-                  onSuccess: () =>
-                    toast.success(
-                      t('workspaceSettings.people.invitationSent', {
-                        email: invitation.email,
-                      }),
-                    ),
-                  onError: (err) =>
-                    toast.error(t('workspaceSettings.people.resendFailed'), {
-                      description: err instanceof Error ? err.message : undefined,
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            resend(
+              { email: invitation.email, role: invitation.role },
+              {
+                onSuccess: () =>
+                  toast.success(
+                    t('workspaceSettings.people.invitationSent', {
+                      email: invitation.email,
                     }),
-                },
-              )
-            }
-            disabled={resending}
-            loading={resending}
-          >
-            {t('workspaceSettings.people.resend')}
-          </Button>
-        )}
+                  ),
+                onError: (err) =>
+                  toast.error(t('workspaceSettings.people.resendFailed'), {
+                    description: err instanceof Error ? err.message : undefined,
+                  }),
+              },
+            )
+          }
+          disabled={resending}
+          loading={resending}
+        >
+          {t('workspaceSettings.people.resend')}
+        </Button>
         <Button
           type="button"
           variant="outline"

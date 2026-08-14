@@ -92,7 +92,13 @@ function InvitePage() {
         inviter: preview.inviter_name,
         workspace: preview.workspace_name,
       })}
-      form={<AuthAcceptInviteForm token={token} email={preview.email} />}
+      form={
+        <AuthAcceptInviteForm
+          token={token}
+          email={preview.email}
+          hasAccount={preview.has_account}
+        />
+      }
       bottomNav={bottomNav}
     />
   )

@@ -148,9 +148,10 @@ export function useRemoveMember() {
 }
 
 /**
- * Sends an invitation. Not a resend — the endpoint refuses an address that
- * already has a live one (409) — so the row's own re-invite is only offered
- * once the invitation has expired, which is the case the server replaces.
+ * Sends an invitation — and re-sends one. The endpoint is idempotent per email
+ * (CON-147 §7.3): a pending invite for the address, live or expired, is
+ * replaced with a fresh token, expiry and email, so the row's RESEND is this
+ * same mutation and there is no separate resend endpoint.
  */
 export function useInviteMember() {
   const qc = useQueryClient()

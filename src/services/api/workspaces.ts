@@ -146,12 +146,14 @@ export function listInvitations(): Promise<WorkspaceInvitation[]> {
 /**
  * `POST /api/invitations` — invites by email and sends the mail. Owner only.
  *
- * **Not idempotent, and not a resend.** A live pending invitation for the same
- * address answers 409; only one whose expiry has passed is replaced (the server
- * clears it inside the minting transaction). An address that already has an
- * Ogen account anywhere is 409 as well — `users.email` is globally unique, so
- * there is no second row to create until CON-147. Rate-limited per workspace
- * and per IP: 429 carries `Retry-After`.
+ * **Idempotent per email, which makes it the resend too** (CON-147 §7.3): a
+ * pending invitation for the address — live or expired — is replaced in the
+ * minting transaction with a fresh token, expiry, role and email (200); a
+ * brand-new one answers 201. There is no separate resend endpoint. An address
+ * that already holds an Ogen account may still be invited — accepting attaches
+ * the workspace to that account — and the one refusal is 409 for an address
+ * already a member of *this* workspace. Rate-limited per workspace and per IP:
+ * 429 carries `Retry-After`.
  *
  * The UI shows the server's message rather than pre-checking against a list
  * that can be stale.

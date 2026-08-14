@@ -19,29 +19,25 @@ type Props = {
   token: string
   /** The address the invitation was sent to — shown, never edited. */
   email: string
+  /** From the preview: whether the address already holds an Ogen account. */
+  hasAccount: boolean
 }
 
 /**
- * The last step of an invitation, which is one of two different steps
- * depending on something the page cannot see.
+ * The last step of an invitation, which is one of two different steps: create
+ * the account and sign in, or add the workspace to an account that already
+ * exists. The preview's `has_account` says which, so the branch is taken
+ * before anything is typed — nobody writes a password into a form the server
+ * was always going to refuse.
  *
- * An invited address either has an Ogen account or it doesn't, and accepting
- * means different things in each case: create the account and sign in, or add
- * the workspace to an account that already exists. The preview endpoint returns
- * the address but not whether it is taken, so this screen cannot decide up
- * front — and guessing wrong in the direction of "log in first" would be a wall
- * in front of the common case.
+ * When someone is already signed in there is nothing to decide: either they
+ * are the invitee, and one button finishes it, or they are not, and no form on
+ * this page can help until they leave the account they're in.
  *
- * So it asks in the order that is right for most people, and lets the server
- * correct it: name and password by default, and a 403 from accept means the
- * address is taken and the invitation is waiting for them to sign in as it. The
- * invitation survives that refusal, so the round trip costs nothing.
- *
- * When someone is already signed in there is nothing to guess: either they are
- * the invitee, and one button finishes it, or they are not, and no form on this
- * page can help until they leave the account they're in.
+ * The signed-out taken-address case sends them to log in and come back — the
+ * redirect carries this page, and the invitation is untouched until accept.
  */
-export function AuthAcceptInviteForm({ token, email }: Props) {
+export function AuthAcceptInviteForm({ token, email, hasAccount }: Props) {
   const { t } = useTranslation()
   const signedInAs = useAuthStore((s) => s.user?.email)
 
@@ -60,7 +56,29 @@ export function AuthAcceptInviteForm({ token, email }: Props) {
       />
     )
   }
+  if (hasAccount) {
+    return <ExistingAccount email={email} />
+  }
   return <CreateAccount token={token} email={email} />
+}
+
+/** Signed out, address taken: the invitation waits while they sign in as it. */
+function ExistingAccount({ email }: { email: string }) {
+  const { t } = useTranslation()
+  return (
+    <Panel
+      body={t('auth.invite.existingAccountBody', { email })}
+      action={
+        <Link
+          to="/auth/login"
+          search={{ redirect: window.location.pathname + window.location.search }}
+          className="text-primary-foreground text-[13px] font-medium"
+        >
+          {t('auth.invite.logInLink')}
+        </Link>
+      }
+    />
+  )
 }
 
 /** Signed in as the invited address: one button, no body on the request. */
@@ -93,7 +111,7 @@ function AcceptAsSelf({ token, email }: { token: string; email: string }) {
   )
 }
 
-/** Nobody signed in: the common case, and the one the server can correct. */
+/** Nobody signed in, address free at preview time: name + password. */
 function CreateAccount({ token, email }: { token: string; email: string }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -102,9 +120,10 @@ function CreateAccount({ token, email }: { token: string; email: string }) {
     useAcceptInviteSchema(),
     { firstName: '', lastName: '', password: '' },
   )
-  // Latched rather than derived from `error`: typing in a field clears the
-  // error to un-block the form, and this answer must outlive that — the
-  // address doesn't stop being taken because someone edited their name.
+  // The preview said the address was free, but an account can appear between
+  // preview and accept — the server answers that race with a 403. Latched
+  // rather than derived from `error`: typing in a field clears the error to
+  // un-block the form, and this answer must outlive that.
   const [taken, setTaken] = useState(false)
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -132,20 +151,7 @@ function CreateAccount({ token, email }: { token: string; email: string }) {
   }
 
   if (taken) {
-    return (
-      <Panel
-        body={t('auth.invite.existingAccountBody', { email })}
-        action={
-          <Link
-            to="/auth/login"
-            search={{ redirect: window.location.pathname + window.location.search }}
-            className="text-primary-foreground text-[13px] font-medium"
-          >
-            {t('auth.invite.logInLink')}
-          </Link>
-        }
-      />
-    )
+    return <ExistingAccount email={email} />
   }
 
   return (

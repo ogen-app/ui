@@ -1,14 +1,13 @@
 # Workspaces — the API, and how the UI sits on it
 
-**Status: all of it is written; half of it is deployed.** CON-26 shipped people,
-roles and invitations *inside* one workspace, and the UI talks to those
-endpoints in production — §4a maps them. CON-147 shipped the rest on the API
-side (accounts split from memberships, per-request workspace resolution,
-`/api/workspaces`), but it lives on `feature/con-147-workspaces` /
-[ogen#109](https://github.com/ogen-app/ogen/pull/109) and is not on `main` yet.
-The client for it is built and complete, behind the `multi-workspace` flag
-(`config/featureFlags.ts`), which is **off** until that PR deploys and the
-feature has been re-tested against it.
+**Status: all of it is written, and all of it is deployed.** CON-26 shipped
+people, roles and invitations *inside* one workspace — §4a maps them. CON-147
+shipped the rest (accounts split from memberships, per-request workspace
+resolution, `/api/workspaces`) in
+[ogen#109](https://github.com/ogen-app/ogen/pull/109), merged to the server's
+`main` on 2026-08-14. The client was re-tested against that build and the
+`multi-workspace` flag (`config/featureFlags.ts`) is **on**; the flag and its
+off-branch stay until the feature has baked in production (§8).
 
 This document is no longer a proposal. Where it once argued for a design that
 CON-147 decided differently — the session-bound active workspace of §3 is the
@@ -242,12 +241,15 @@ The differences that changed the UI, rather than just its URLs:
   words — the same confirmation shape as deleting a workspace. **Leaving** is
   not offered here at all: it is the same call on your own id, i.e. deleting
   your account, which already has its screen on Profile.
-- **`POST /api/invitations` is not idempotent.** A live pending invite for the
-  same address is `409`; only an *expired* one is replaced in place
-  (`CreateReplacingExpiredTx`). So "resend" is offered on expired rows only —
-  a live one is cancelled and re-sent. An address that already has an Ogen
-  account anywhere is also `409`, because `users.email` is globally unique.
-  Rate-limited per workspace and per IP; `429` carries `Retry-After`.
+- **`POST /api/invitations` is idempotent per email** (CON-147 §7.3,
+  `CreateReplacingPendingTx`): a pending invite for the address — live or
+  expired — is replaced with a fresh token, expiry, role and email (`200`); a
+  brand-new one is `201`. There is no separate resend route, so RESEND on any
+  pending row is this same call. An address that already holds an Ogen account
+  may be invited into another workspace; the one `409` is an address that is
+  already a member of *this* workspace (or the loser of two simultaneous
+  invites racing the replace — retrying re-issues cleanly). Rate-limited per
+  workspace and per IP; `429` carries `Retry-After`.
 - **`invited_by` is a user id**, not a display name. The People card resolves
   it against the member list it already has, and drops the clause when the
   inviter's account is gone.
@@ -263,12 +265,14 @@ The differences that changed the UI, rather than just its URLs:
   that already exists (no body at all → `200`, no new cookie, and the caller
   must already be signed in as that address, else `403`).
 
-  The preview cannot say which applies — it returns the address, not whether
-  the address is taken — so `/invite` asks for a password by default and treats
-  the `403` as the branch. The invitation survives that refusal, which is what
-  makes the round trip safe to use as a decision. When someone is already signed
-  in there is nothing to guess: they are either the invitee (one button) or they
-  are not (no form on that page can help until they log out).
+  The preview says which applies: `has_account` is true when the invited
+  address already holds an Ogen account, so `/invite` branches before anything
+  is typed — password form for a fresh address, "sign in as it" for a taken
+  one. The `403` remains as the backstop for the race where the account
+  appears between preview and accept; the invitation survives every refusal.
+  When someone is already signed in there is nothing to decide: they are
+  either the invitee (one button) or they are not (no form on that page can
+  help until they log out).
 
 ---
 
@@ -467,7 +471,7 @@ argument went, and why.
 |---|---|---|---|
 | Active workspace | session-bound `/switch` + full reload | **per-request `X-Workspace-Id`**, per-tab | **Prototype overridden.** Multi-tab is the requirement; a session-bound value forbids it. Rewritten — §3. |
 | Roles | `owner \| admin \| member \| viewer` | **`owner \| member`** | **Prototype overridden**, inherited unchanged from CON-26. `viewer` remains a real case (a client who watches the plan without touching it) and is deliberately unbuilt. |
-| Resend | `POST` idempotent per email, no resend route | **CON-26: not idempotent** — a live pending invite `409`s, only an expired one is replaced | **Prototype lost, for now.** RESEND is offered on expired rows only. CON-147 §7.3 makes it idempotent, so this flips back when ogen#109 lands. |
+| Resend | `POST` idempotent per email, no resend route | **CON-147 §7.3: idempotent** — any pending invite, live or expired, is re-issued (`200`; new ones `201`) | **Prototype won.** CON-26 first shipped 409-on-live, and RESEND was gated to expired rows; ogen#109's final commits made create idempotent, and RESEND now sits on every pending row. |
 | Accept | one mode: name + password | **two modes**, branched on whether the address already has an account | **Prototype was half.** Built out — §4a. |
 | List shape | `+ member_count, is_active` | `+ member_count, is_default` | **Half adopted.** `member_count` yes; `is_active` can't exist server-side, and "Current" is a client-side comparison. |
 | Owners | ≥1, multiple allowed | same | Adopted. The UI counts owners and locks the last one; the server answers `409`. |
@@ -487,17 +491,17 @@ Zone **and** the `X-Workspace-Id` header itself: with it off,
 `services/api/base.ts` sends no workspace header on any request, so the app is
 byte-for-byte the single-workspace app it was before this work.
 
-Turning it on, in order:
+Turning it on, in order — steps 1 and 2 happened on 2026-08-14:
 
-1. ogen#109 merges and deploys — until then `/api/workspaces` 404s and the
-   chooser has nothing to list.
-2. Flip the flag locally and exercise it against the deployed API: two tabs in
-   two workspaces at once (the acceptance case), a switch, a create, an invite
-   accepted by a brand-new address *and* by one that already has an account, a
-   delete, and a member removed while another tab is open in that workspace —
-   which is the 403 recovery path.
-3. Then decide the flag's fate. Deleting it, with its off-branch, is a
-   deliberate step and not a side effect of the endpoints appearing.
+1. ~~ogen#109 merges and deploys~~ — merged to the server's `main`; the local
+   image answers every §4 route.
+2. ~~Flip the flag and exercise it against the deployed API~~ — done against
+   the ogen#109 build: list/create/switch/delete (including the last-workspace
+   `409`), the idempotent re-invite (`200` vs `201`) and the `has_account`
+   preview. The two-tab walkthrough in a browser is part of the release
+   check.
+3. **Open:** decide the flag's fate. Deleting it, with its off-branch, is a
+   deliberate step once the feature has baked in production.
 
 One thing to re-check at step 2 rather than assume: **REMOVE's copy.** Against
 today's API `DELETE /api/users/:id` destroys the person and cascades into

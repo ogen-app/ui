@@ -112,20 +112,14 @@ const FEATURE_FLAGS = {
    * deletes a workspace, and the `X-Workspace-Id` header that scopes every
    * request to the tab's own workspace.
    *
-   * **Waiting on:** ogen#109 to merge and deploy. The server side is written
-   * (accounts split from memberships, `ResolveWorkspace` middleware,
-   * `GET/POST /api/workspaces`, `DELETE`, `POST …/switch`) but lives on
-   * `feature/con-147-workspaces` — against `main` today `/api/workspaces` 404s.
-   * The client is built to the shipped contract, mapped route by route in
-   * `docs/workspace-api.md` §4a.
-   *
-   * Off is load-bearing beyond hiding screens: `services/api/base.ts` sends no
-   * workspace header at all while this is false, so every request is
-   * byte-identical to before the feature existed and the app is
-   * single-workspace throughout. Turning it on is a deliberate step after
-   * re-testing against the deployed API — not a side effect of the PR landing.
+   * **On since 2026-08-14:** ogen#109 merged to the server's `main` and the
+   * client was re-tested against that build — list/create/switch/delete, the
+   * idempotent re-invite (200 vs 201) and the `has_account` preview all answer
+   * as `docs/workspace-api.md` §4a maps them. The off-branch still works
+   * (`services/api/base.ts` sends no header while false) and is kept until the
+   * feature has baked in production; deleting the flag is the follow-up step.
    */
-  'multi-workspace': false,
+  'multi-workspace': true,
 
   /**
    * Deleting one saved version of a post, from the version-history panel

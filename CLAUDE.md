@@ -177,10 +177,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
-- **A workspace is the tenant and a member is a user** — there is no workspace
-  resource on the API. `services/api/workspaces.ts` is a façade over
-  `/api/tenants/current`, `/api/users` and `/api/invitations` (CON-26), and the
-  two roles it deals in are the server's: `owner | member`, nothing else.
+- **A workspace is the tenant and a member is a user.** Inside a workspace,
+  `services/api/workspaces.ts` is a façade over `/api/tenants/current`,
+  `/api/users` and `/api/invitations` (CON-26); the account-level
+  `/api/workspaces` routes (list/create/switch/delete, CON-147) are the one
+  place a workspace is a resource of its own. The two roles it deals in are
+  the server's: `owner | member`, nothing else.
   **`DELETE /api/users/:id` is not "remove from workspace"** — it deletes the
   user row and cascades from `created_by` into their campaigns, posts and
   assets, so every caller confirms it in those words. See
@@ -257,10 +259,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 Inviting teammates is live end to end (People, in Workspace Settings; the
 emailed link lands on `/invite?token=…`, which is public, and accepting either
 creates the account or adds the workspace to one that already exists) ·
-**multi-workspace is built and flagged off**: the chooser, "Create or switch",
-the workspace Danger Zone and the per-tab `X-Workspace-Id` scoping all wait on
-[ogen#109](https://github.com/ogen-app/ogen/pull/109) deploying — the server
-side is written but not on `main`, so `/api/workspaces` still 404s (CON-147) ·
+**multi-workspace is live** — [ogen#109](https://github.com/ogen-app/ogen/pull/109)
+merged 2026-08-14 and the `multi-workspace` flag is on; the flag itself (and
+its off-branch) stays until the feature has baked in production, then gets
+deleted (CON-147) ·
 dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
 have no committed config in this repo · **i18n covers the auth screens, sidebar,

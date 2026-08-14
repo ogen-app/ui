@@ -22,6 +22,13 @@ export type InvitationPreview = {
   /** The address the invitation was sent to. The account is created with it, so it is not editable. */
   email: string
   role: WorkspaceRole
+  /**
+   * Whether the invited address already holds an Ogen account — which of the
+   * two accept modes applies, told up front so the screen never collects a
+   * password the server would refuse. The invitee holds the token and is
+   * looking at their own address, so this discloses nothing to anyone else.
+   */
+  has_account: boolean
   expires_at: string
 }
 
@@ -44,14 +51,13 @@ export function previewInvitation(token: string): Promise<InvitationPreview> {
  *   caller to *be* that account already and adds the membership to it — no
  *   second set of credentials, no new cookie. `200`.
  *
- * Which one applies is not something the preview can tell the UI (it returns
- * the address, not whether that address is taken), so the credentials path is
- * the default and a `403` is the server saying "this is the other one, sign in
- * as them first". The invitation stays pending through that refusal, which is
- * what makes the round trip safe to use as the branch.
- *
- * The password is validated before the token is spent, so a rejected one also
- * leaves the invitation usable.
+ * The server picks the path itself, from whether the address has an account —
+ * the body does not choose (credentials sent to the existing-account path are
+ * ignored). The preview's `has_account` says which applies, so the screen
+ * branches before anything is typed; a `403` remains the backstop for the race
+ * where the account appears between preview and accept ("sign in as them
+ * first"). The invitation stays pending through every refusal — a rejected
+ * password or a signed-out accept leaves it usable.
  */
 export async function acceptInvitation(
   token: string,
@@ -60,8 +66,8 @@ export async function acceptInvitation(
   const body = await apiJson<{ user: RawUser; tenant?: User['tenant'] }>(
     `/api/invitations/accept/${encodeURIComponent(token)}`,
     'Unable to accept the invitation',
-    // No body at all for the existing-account path: the server reads a present
-    // body as "create an account" and would answer 409 for one that exists.
+    // The existing-account path sends no body — the server would ignore one,
+    // but not sending credentials that cannot matter is the honest request.
     payload ? { method: 'POST', body: payload } : { method: 'POST' },
   )
   return rawUserToUser({ ...body.user, tenant: body.tenant })
