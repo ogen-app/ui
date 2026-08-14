@@ -48,8 +48,8 @@ function ComingSoon({ campaignId }: { campaignId: string }) {
       link={{ target: "analytics", campaignId, label: "See what's coming" }}
     >
       <p className="text-sm text-secondary-foreground">
-        Once this campaign's posts start being measured, what they earned shows
-        up here.
+        When this view switches on, what the campaign's posts earned shows up
+        here.
       </p>
     </OverviewCard>
   );

@@ -67,9 +67,9 @@ function ComingSoon() {
         status={<StatusBadge tone="neutral" label="Coming soon" />}
       >
         <p className="text-sm text-secondary-foreground">
-          How this campaign's posts did once they went out. Nothing is being
-          measured yet — the rest of the campaign is unaffected, and the numbers
-          will fill in here on their own once it is.
+          How this campaign's posts did once they went out. This view isn't
+          switched on yet — the rest of the campaign is unaffected, and the
+          numbers will fill in here on their own once it is.
         </p>
         <FeatureList items={PLANNED} />
       </OverviewCard>

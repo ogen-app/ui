@@ -145,6 +145,8 @@ export function formatEngagementRate(rate: number): string {
 /** Thousands separators, and `12.3K` / `4.5M` once a raw count stops being readable. */
 export function formatMetric(value: number): string {
   if (value < 10_000) return value.toLocaleString();
-  if (value < 1_000_000) return `${(value / 1_000).toFixed(1)}K`;
+  // The K branch ends where its own rounding would print `1000.0K`: 999,950
+  // and up already round to a million, so they say `1.0M`.
+  if (value < 999_950) return `${(value / 1_000).toFixed(1)}K`;
   return `${(value / 1_000_000).toFixed(1)}M`;
 }
