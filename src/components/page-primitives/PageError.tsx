@@ -35,7 +35,11 @@ export function PageError({
             <span className="text-[2rem] leading-[46px] font-medium font-display tracking-tight">
               {header}
             </span>
-            <p className="text-[14px] leading-6 text-tertiary-foreground">{message}</p>
+            {/* A step up from the 14px/tertiary we use for asides elsewhere.
+                On a page with nothing else to read, this sentence is the whole
+                explanation, and at that size and weight it was closer to a
+                watermark than to copy. */}
+            <p className="text-[16px] leading-7 text-secondary-foreground">{message}</p>
             {action && <div className="mt-4">{action}</div>}
           </div>
         )}

@@ -4,7 +4,7 @@ import { queryClient } from '@/lib/queryClient'
 import { postKey } from '@/hooks/usePost'
 import { postNotesKey, postVersionsKey } from '@/lib/queryKeys'
 import { campaignKey } from '@/hooks/useCampaigns'
-import { describeTool, humanizeStep } from '@/lib/assistantTools'
+import { describeTool, humanizeStep, threadName } from '@/lib/assistantTools'
 import { flushPendingSave } from '@/lib/pendingSaves'
 import { invalidateCampaignPosts } from '@/lib/postCache'
 import { beginLocalRun } from '@/lib/localRuns'
@@ -18,6 +18,8 @@ import {
   type AssistantStreamEvent,
 } from '@/services/api/assistant'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
+import { toast } from '@/stores/toastStore'
+import { i18next } from '@/i18n'
 import type {
   AssistantStep,
   AssistantThread,
@@ -305,8 +307,17 @@ export const useAssistantStore = create<AssistantState>()(
           const endLocalRun = beginLocalRun('assistant', saveKeyFor(subject))
 
           // A turn that lands while the user is elsewhere is "unread" — the
-          // sidebar trigger carries the dot until they come back to it.
-          const finish = (status: AssistantThread['status']) => {
+          // sidebar trigger carries the dot until they come back to it — and it
+          // says so once, as it happens. The dot is a state and survives a
+          // navigation; the toast is the event, and is the only thing that
+          // reports *which* thread finished while the user was in another one.
+          //
+          // Nothing is raised for a cancelled turn: stopping is done from the
+          // composer, so the person it would inform is the person who did it.
+          const finish = (
+            status: AssistantThread['status'],
+            outcome: 'answered' | 'failed' | 'cancelled',
+          ) => {
             // The *resolved* panel, not the remembered one: the assistant can
             // be remembered as open while a post panel covers it, and nobody
             // reading a quality report is watching a turn finish.
@@ -314,7 +325,22 @@ export const useAssistantStore = create<AssistantState>()(
               selectActivePanel(useSettingsStore.getState()) === 'assistant' &&
               get().activeThreadId === threadId
             patchThread(threadId, { status, runStartedAt: null, unread: !watching })
+
+            if (watching || outcome === 'cancelled') return
+            const thread = get().threads[threadId]
+            if (!thread) return
+            const description = threadName(thread)
+            if (outcome === 'answered') {
+              toast.info(i18next.t('assistant.finished'), { description })
+            } else {
+              toast.error(i18next.t('assistant.failed'), { description })
+            }
           }
+
+          // An application-level `error` event ends the turn but not the
+          // stream — it closes normally afterwards, which would otherwise
+          // report the turn as answered.
+          let sawErrorEvent = false
 
           // Deltas arrive as the whole document so far, so the last one wins.
           let streamedContent = ''
@@ -436,6 +462,7 @@ export const useAssistantStore = create<AssistantState>()(
                 break
 
               case 'error':
+                sawErrorEvent = true
                 patchLastTurn(threadId, (t) => ({
                   ...t,
                   content: event.message,
@@ -458,7 +485,7 @@ export const useAssistantStore = create<AssistantState>()(
             // The server writes the result itself — the payload describes what
             // it already saved. Never write it back; just refresh.
             await refreshSubject(subject, get().threads[threadId], streamedContent)
-            finish('idle')
+            finish('idle', sawErrorEvent ? 'failed' : 'answered')
           } catch (err) {
             const aborted = err instanceof DOMException && err.name === 'AbortError'
             patchLastTurn(threadId, (t) => ({
@@ -476,7 +503,7 @@ export const useAssistantStore = create<AssistantState>()(
             // here those already-saved posts vanish from the calendar until
             // an unrelated refetch.
             await refreshSubject(subject, get().threads[threadId], streamedContent)
-            finish(aborted ? 'idle' : 'error')
+            finish(aborted ? 'idle' : 'error', aborted ? 'cancelled' : 'failed')
           } finally {
             runners.delete(threadId)
             endLocalRun()

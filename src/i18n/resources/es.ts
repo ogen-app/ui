@@ -188,12 +188,45 @@ export const es: Translation = {
     untitledCampaign: 'Campaña sin título',
     campaign: {
       overview: 'Resumen',
-      posts: 'Publicaciones',
+      posts: 'Calendario de publicaciones',
       analytics: 'Analíticas',
       brief: 'Briefing',
       assets: 'Recursos',
       settings: 'Ajustes',
     },
+  },
+
+  campaignOverview: {
+    openOverview: 'ABRIR RESUMEN',
+    openPosts: 'ABRIR CALENDARIO',
+    openAnalytics: 'ABRIR ANALÍTICAS',
+    openBrief: 'ABRIR BRIEFING',
+    openAssets: 'ABRIR RECURSOS',
+    openSettings: 'ABRIR AJUSTES',
+    noDate: 'Sin fecha',
+  },
+
+  calendar: {
+    unscheduled: 'SIN PROGRAMAR',
+    unscheduledPosts: 'Publicaciones sin programar',
+    settings: 'Ajustes del calendario',
+    imagePreviews: 'Mostrar las tarjetas con vista previa de la imagen',
+    imagePreviewsNote: 'Solo las publicaciones que tienen imagen, y solo en la semana — una celda del mes es demasiado pequeña para mostrarla',
+    weekCard: 'TARJETA DE SEMANA',
+    monthCard: 'TARJETA DE MES',
+  },
+
+  assistant: {
+    activeThreads_one: '{{count}} conversación activa',
+    activeThreads_other: '{{count}} conversaciones activas',
+    pendingThreads_one: '{{count}} pendiente',
+    pendingThreads_other: '{{count}} pendientes',
+
+    untitledCampaign: 'Campaña sin título',
+    untitledPost: 'Publicación sin título',
+
+    finished: 'El estratega ha terminado',
+    failed: 'El estratega no ha podido terminar',
   },
 
   workspace: {

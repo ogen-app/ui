@@ -216,7 +216,7 @@ function GenerateBriefAction({ campaign }: { campaign: Campaign }) {
   }
 
   return (
-    <Button type="button" variant="outline" onClick={ask}>
+    <Button type="button" variant="ghost" onClick={ask}>
       <SparkleIcon />
       <span>{posture.state === 'complete' ? 'IMPROVE BRIEF' : 'GENERATE BRIEF'}</span>
     </Button>

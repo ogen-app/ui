@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Collapse } from '@/components/ui/collapse'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -31,6 +32,12 @@ const FIRST_DAY_OPTIONS = WEEK_DAYS.map((day) => ({
   displayValue: DAY_LABELS[day],
 }))
 
+/** The views that draw cards, in the order the view switcher offers them. */
+const CARD_VIEWS = [
+  { view: 'week', titleKey: 'calendar.weekCard' },
+  { view: 'month', titleKey: 'calendar.monthCard' },
+] as const
+
 /**
  * "Calendar Settings" content for the right sidebar. The sidebar is
  * non-blocking, so the calendar behind it reflects preference changes live.
@@ -46,14 +53,17 @@ export function CalendarSettingsPanel({
   campaignId: string
   onClose?: () => void
 }) {
+  const { t } = useTranslation()
   const {
     firstDayOfWeek,
     hiddenDays,
+    imagePreviews,
     card,
     isPending,
     setFirstDayOfWeek,
     setDayVisible,
     setCardField,
+    setImagePreviews,
   } = useCalendarSettings(campaignId)
   // The campaign's publishing days, so the panel can say which of these rows
   // the campaign will never put anything on. Shares the cached campaign the
@@ -82,6 +92,30 @@ export function CalendarSettingsPanel({
               elements={FIRST_DAY_OPTIONS}
             />
           )}
+
+          {/* One answer, which is why it is here and not a sixth switch on
+              each card list: it is the most expensive thing a card can carry,
+              and turning it off is a decision about what the calendar is for
+              rather than about what a week card needs. In practice it reaches
+              the week only — the month never draws pictures, because the band
+              is the whole cell (see `useCalendarSettings`). */}
+          <div className="mt-2 flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2">
+            <span className="flex min-w-0 flex-col">
+              <span className="text-sm">{t('calendar.imagePreviews')}</span>
+              <span className="text-xs text-tertiary-foreground">
+                {t('calendar.imagePreviewsNote')}
+              </span>
+            </span>
+            {isPending ? (
+              <Skeleton className="h-5 w-9" />
+            ) : (
+              <Switch
+                checked={imagePreviews}
+                onCheckedChange={setImagePreviews}
+                aria-label={t('calendar.imagePreviews')}
+              />
+            )}
+          </div>
         </div>
       </Collapse>
 
@@ -120,45 +154,54 @@ export function CalendarSettingsPanel({
         </div>
       </Collapse>
 
-      {/* The week card only. The month card is a single 20px line carrying two
-          of these six, and switching four things that aren't there for a view
-          they can't affect would be a worse control than none. */}
-      <Collapse title="WEEK CARD" defaultOpen className="border-b border-border pb-6">
-        <div className="flex flex-col gap-1 pt-2">
-          {CARD_FIELDS.map((field) => {
-            // The rule, said by the control rather than about it: the last
-            // switch left on won't turn off, and it looks like it won't.
-            const locked = !canHideField(card, field)
-            const note = CARD_FIELD_NOTES[field]
-            return (
-              <div
-                key={field}
-                className="flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2"
-              >
-                <span className="flex min-w-0 flex-col">
-                  <span className="text-sm">{CARD_FIELD_LABELS[field]}</span>
-                  {note && <span className="text-xs text-tertiary-foreground">{note}</span>}
-                </span>
-                {isPending ? (
-                  <Skeleton className="h-5 w-9" />
-                ) : (
-                  <Switch
-                    checked={card[field]}
-                    disabled={locked}
-                    onCheckedChange={(checked) => setCardField(field, checked)}
-                    aria-label={`Show ${CARD_FIELD_LABELS[field].toLowerCase()} on the week card`}
-                  />
-                )}
-              </div>
-            )
-          })}
-          {/* State, not teaching — it names the thing the switches above can't
-              reach, so it can't live in a note the user is able to close. */}
-          <p className="px-4 pt-1 text-xs text-tertiary-foreground">
-            The status colour down the card&apos;s left edge is always shown.
-          </p>
-        </div>
-      </Collapse>
+      {/* One section per view, and they are independent on purpose: it is the
+          same card in both now, but a week column is most of a screen tall and
+          a month cell is a hundred pixels, so what fits on one is not what fits
+          on the other. The month starts with less switched on for exactly that
+          reason — see `DEFAULT_MONTH_FIELDS`. */}
+      {CARD_VIEWS.map(({ view, titleKey }) => (
+        <Collapse
+          key={view}
+          title={t(titleKey)}
+          defaultOpen
+          className="border-b border-border pb-6"
+        >
+          <div className="flex flex-col gap-1 pt-2">
+            {CARD_FIELDS.map((field) => {
+              // The rule, said by the control rather than about it: the last
+              // switch left on won't turn off, and it looks like it won't.
+              const locked = !canHideField(card[view], field)
+              const note = CARD_FIELD_NOTES[field]
+              return (
+                <div
+                  key={field}
+                  className="flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2"
+                >
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-sm">{CARD_FIELD_LABELS[field]}</span>
+                    {note && <span className="text-xs text-tertiary-foreground">{note}</span>}
+                  </span>
+                  {isPending ? (
+                    <Skeleton className="h-5 w-9" />
+                  ) : (
+                    <Switch
+                      checked={card[view][field]}
+                      disabled={locked}
+                      onCheckedChange={(checked) => setCardField(view, field, checked)}
+                      aria-label={`Show ${CARD_FIELD_LABELS[field].toLowerCase()} on the ${view} card`}
+                    />
+                  )}
+                </div>
+              )
+            })}
+            {/* State, not teaching — it names the thing the switches above can't
+                reach, so it can't live in a note the user is able to close. */}
+            <p className="px-4 pt-1 text-xs text-tertiary-foreground">
+              The status colour down the card&apos;s left edge is always shown.
+            </p>
+          </div>
+        </Collapse>
+      ))}
     </RailPanel>
   )
 }

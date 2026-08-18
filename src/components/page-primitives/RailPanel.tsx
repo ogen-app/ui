@@ -16,6 +16,18 @@ type RailPanelProps = {
   /** A second row inside the sticky header (context bar, breadcrumb). */
   subheader?: ReactNode
   /**
+   * A mark to the left of the title, as tall as the title and `subheader`
+   * together — the panel's own square, the way the rail's trigger is the
+   * assistant's. Setting it moves `subheader` into the block beside the mark,
+   * so the two lines read as one heading rather than as a row with a caption
+   * under it.
+   *
+   * It sits inside the title's button when `onTitleClick` is set, so it must
+   * not be interactive itself. To answer the hover it can style off
+   * `group-hover/title:`.
+   */
+  leading?: ReactNode
+  /**
    * Sits on the title's baseline, after it — a count or a badge. Must stay
    * non-interactive: with `onTitleClick` set, the whole title row (adornment
    * included) renders inside one button, and a control in here would nest
@@ -43,6 +55,7 @@ export function RailPanel({
   bodyClassName,
   scrollRef,
   subheader,
+  leading,
   titleAdornment,
   onTitleClick,
   titleLabel,
@@ -58,17 +71,24 @@ export function RailPanel({
           style={{ zIndex: ZIndex.pageHeader }}
         >
           <div className="bg-primary pt-6 px-3 lg:px-6 flex flex-col gap-0">
-            <div className="flex items-center justify-between gap-3">
-              {/* The whole title row is the affordance when it has somewhere
-                  to go — the adornment is part of the target, not a control
-                  sitting next to one. */}
-              <TitleRow onClick={onTitleClick} label={titleLabel}>
-                <h2 className="shrink-0 text-lg font-medium font-display tracking-tight text-foreground">
-                  {title}
-                </h2>
-                {titleAdornment}
-              </TitleRow>
-              <div className="flex items-center gap-2">
+            <div className="flex items-stretch justify-between gap-3">
+              {/* The whole block is the affordance when it has somewhere to go
+                  — mark, title, adornment and, where there is a mark, the
+                  second line too. They describe one thing, so they are one
+                  target rather than a link with decoration around it. */}
+              <TitleBlock onClick={onTitleClick} label={titleLabel} leading={leading}>
+                <div className="flex min-w-0 items-baseline gap-2">
+                  <h2 className="shrink-0 text-lg font-medium font-display tracking-tight text-foreground">
+                    {title}
+                  </h2>
+                  {titleAdornment}
+                </div>
+                {leading && subheader}
+              </TitleBlock>
+              {/* Fixed to the title's own line height rather than centred on
+                  the block: with a two-line header, centring drops the close
+                  button half a line and it stops reading as the panel's. */}
+              <div className="flex h-7 shrink-0 items-center gap-2">
                 {actions}
                 {onClose && (
                   <button
@@ -82,7 +102,12 @@ export function RailPanel({
                 )}
               </div>
             </div>
-            {subheader}
+            {/* Without a mark the second line is the header's own full-width
+                row and runs under the actions, which is what a breadcrumb or a
+                metadata line wants. A mark makes the header a block, and the
+                line belongs inside it — indented to the title, ending where
+                the title ends. */}
+            {!leading && subheader}
           </div>
           <div
             className="h-6 shrink-0 bg-gradient-to-b from-primary to-transparent"
@@ -111,20 +136,34 @@ export function RailPanel({
   )
 }
 
-function TitleRow({
+function TitleBlock({
   onClick,
   label,
+  leading,
   children,
 }: {
   onClick?: () => void
   label?: string
+  leading?: ReactNode
   children: ReactNode
 }) {
-  const className = 'flex min-w-0 items-baseline gap-2 text-left'
-  if (!onClick) return <div className={className}>{children}</div>
+  const className = 'flex min-w-0 flex-1 items-stretch gap-3 text-left'
+  const inner = (
+    <>
+      {leading}
+      <div className="flex min-w-0 flex-1 flex-col justify-center">{children}</div>
+    </>
+  )
+  if (!onClick) return <div className={className}>{inner}</div>
   return (
-    <button type="button" onClick={onClick} aria-label={label} className={cn(className, 'cursor-pointer')}>
-      {children}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      // Named, because the mark hangs its hover state off it — see `leading`.
+      className={cn(className, 'group/title cursor-pointer')}
+    >
+      {inner}
     </button>
   )
 }

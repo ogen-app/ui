@@ -26,10 +26,9 @@ export function SetupModule({
     ].join(", ");
     return (
       <CollapsedCard
-        title="Setup"
+        section="settings"
         target="settings"
         campaignId={campaign.id}
-        label="Open campaign settings"
         status={<StatusBadge tone="positive" label="Settings are good" />}
       >
         <span className="min-w-0 flex-1 truncate">{summary}</span>
@@ -41,15 +40,11 @@ export function SetupModule({
 
   return (
     <OverviewCard
-      title="Setup"
+      section="settings"
       status={
         <StatusBadge tone="progress" label={`${done} of ${checks.length} done`} />
       }
-      link={{
-        target: "settings",
-        campaignId: campaign.id,
-        label: "Open campaign settings",
-      }}
+      link={{ target: "settings", campaignId: campaign.id }}
     >
       <ul className="flex flex-col">
         {checks.map((check) => (

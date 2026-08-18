@@ -219,12 +219,103 @@ export const en = {
     untitledCampaign: 'Untitled campaign',
     campaign: {
       overview: 'Overview',
-      posts: 'Posts',
+      // Named for where it goes, not for what it holds: this row opens the
+      // calendar, and "Posts" alone read like a list.
+      posts: 'Posts calendar',
       analytics: 'Analytics',
       brief: 'Brief',
       assets: 'Assets',
       settings: 'Settings',
     },
+  },
+
+  /**
+   * The campaign Overview's cards. Their titles are the nav's own
+   * `nav.campaign.*` strings — one section, one name — so only what is unique
+   * to the screen lives here.
+   */
+  campaignOverview: {
+    /**
+     * The ghost button in a card's header: open the section this card
+     * summarises. Written out per section rather than composed from a verb and
+     * a name — the article and word order are not the same in every language.
+     * Capitals are the copy, as with every other button in the app.
+     */
+    openOverview: 'OPEN OVERVIEW',
+    openPosts: 'OPEN CALENDAR',
+    openAnalytics: 'OPEN ANALYTICS',
+    openBrief: 'OPEN BRIEF',
+    openAssets: 'OPEN ASSETS',
+    openSettings: 'OPEN SETTINGS',
+
+    /**
+     * Stands in the time column of a post row that has no timestamp. A post
+     * really can be published without one — see the note at the call site —
+     * and a blank cell reads as a bug rather than as the fact it is.
+     */
+    noDate: 'No date',
+  },
+
+  calendar: {
+    /**
+     * The header's counter button: the posts that have no date on them yet.
+     * `unscheduled` is the visible label beside the glyph and is a button, so
+     * it is capitalised like every other; `unscheduledPosts` is its accessible
+     * name, and starts with the same word so voice control can reach it.
+     */
+    unscheduled: 'UNSCHEDULED',
+    unscheduledPosts: 'Unscheduled posts',
+    settings: 'Calendar settings',
+
+    /**
+     * Calendar Settings. One picture switch for the whole calendar, then one
+     * section of row switches per view. The note is state rather than teaching
+     * — a post with no picture has nothing to preview, and a user who turns
+     * this on and sees half their cards unchanged is owed the reason.
+     */
+    imagePreviews: 'Show cards as image previews',
+    imagePreviewsNote: 'Only posts that have a picture, and only on the week — a month cell is too small for one',
+    weekCard: 'WEEK CARD',
+    monthCard: 'MONTH CARD',
+  },
+
+  assistant: {
+    /**
+     * The status line under the panel's title.
+     *
+     * Two states get a number and one deliberately does not. *Active* is every
+     * thread open in the rail — the rail is where a thread lives, so opening
+     * one is what makes it active and closing it is what ends it. *Pending* is
+     * the subset waiting on the user: a turn that landed while they were
+     * looking somewhere else. A thread that is *working* is not counted, because
+     * the mark's animation already says so and a figure that changes every few
+     * seconds reads as something to act on rather than as a state.
+     *
+     * Two phrases rather than one sentence with two counts: i18next inflects
+     * around a single `count`, the pending clause is dropped entirely when it
+     * is zero, and only one of the two is ever tinted.
+     */
+    activeThreads_one: '{{count}} active thread',
+    activeThreads_other: '{{count}} active threads',
+    pendingThreads_one: '{{count}} pending',
+    pendingThreads_other: '{{count}} pending',
+
+    /**
+     * What a thread is called when its subject has no name yet — the assistant
+     * names threads after what they are attached to, and an unnamed post is
+     * ordinary while it is being drafted.
+     */
+    untitledCampaign: 'Untitled campaign',
+    untitledPost: 'Untitled post',
+
+    /**
+     * Fired when a turn ends while the user is somewhere else. The dot on the
+     * trigger says a thread is waiting; this says which one, once, at the
+     * moment it happens — threads run on across navigation, so without it the
+     * only report of a finished run is a mark in the corner.
+     */
+    finished: 'The strategist finished',
+    failed: 'The strategist could not finish',
   },
 
   /**

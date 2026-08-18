@@ -14,10 +14,9 @@ export function AssetsModule({ campaign }: { campaign: Campaign }) {
   if (mode === "campaign") {
     return (
       <CollapsedCard
-        title="Assets"
+        section="assets"
         target="assets"
         campaignId={campaign.id}
-        label="Open campaign assets"
       >
         <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
           Content Bank assets aren't used in this campaign.
@@ -29,10 +28,9 @@ export function AssetsModule({ campaign }: { campaign: Campaign }) {
   if (mode === "all") {
     return (
       <CollapsedCard
-        title="Assets"
+        section="assets"
         target="assets"
         campaignId={campaign.id}
-        label="Open campaign assets"
         status={<StatusBadge tone="positive" label="All assets" />}
       >
         <span className="min-w-0 flex-1 truncate">
@@ -47,10 +45,9 @@ export function AssetsModule({ campaign }: { campaign: Campaign }) {
 
   return (
     <CollapsedCard
-      title="Assets"
+      section="assets"
       target="assets"
       campaignId={campaign.id}
-      label="Open campaign assets"
       status={
         <StatusBadge
           tone="positive"

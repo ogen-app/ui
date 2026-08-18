@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { PlusIcon, SparkleIcon } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
+import { CircleDashedIcon, PlusIcon, SparkleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button.tsx";
 import { StatusBadge } from "@/components/ui/status-badge.tsx";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { PostStatusBadge } from "@/components/posts/PostStatusBadge.tsx";
 import { useAddPost } from "@/hooks/usePosts.ts";
-import { formatTitle } from "@/lib";
+import { cn, formatTitle } from "@/lib";
 import { contentSnapshot } from "@/lib/campaignReadiness.ts";
 import { getPlatformInfo } from "@/lib/platformDictionary.ts";
 import { relativeTime } from "@/lib/relativeTime.ts";
@@ -50,7 +51,7 @@ export function ContentModule({
   if (posts.length === 0) {
     return (
       <OverviewCard
-        title="Content"
+        section="posts"
         status={<StatusBadge tone="warn" label="No posts yet" />}
       >
         <CallToAction
@@ -97,8 +98,10 @@ export function ContentModule({
 
   return (
     <OverviewCard
-      title="Content"
-      link={{ target: "posts", campaignId, label: "Open all posts" }}
+      section="posts"
+      // The calendar, not the list: this card is about work in flight, and
+      // where that work sits in the week is the thing it can't show.
+      link={{ target: "calendar", campaignId }}
     >
       {channels.length > 1 && (
         <Tabs value={platformId} onValueChange={setPlatformId}>
@@ -178,13 +181,27 @@ export function ContentModule({
   );
 }
 
-/** The platform's mark in a LineItem's 16px slot — shared by every list here. */
-function platformIndicator(platformId: string): LineItemIndicator | undefined {
+/**
+ * The platform's mark in a LineItem's 16px slot — shared by every list here.
+ *
+ * Drawn exactly as the calendar draws it: filled, in the platform's own brand
+ * colour, and falling back to a neutral dashed circle where no platform is
+ * assigned. Same post, same mark, whichever screen it is seen on. The one
+ * difference is the size, which is fixed here rather than sized to the card —
+ * these rows are a list, not a column of cards that get narrower.
+ */
+function platformIndicator(platformId: string): LineItemIndicator {
   const info = getPlatformInfo(platformId);
-  if (!info) return undefined;
+  const Mark = info?.icon ?? CircleDashedIcon;
   return {
     kind: "custom",
-    node: <info.icon className="size-4" style={{ color: info.color }} />,
+    node: (
+      <Mark
+        weight="fill"
+        className={cn("size-4", !info && "text-tertiary-foreground")}
+        style={info ? { color: info.color } : undefined}
+      />
+    ),
   };
 }
 
@@ -199,6 +216,7 @@ function PostList({
   campaignId: string;
   timeOf: (post: Post) => string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-1">
       <h3 className="text-xs text-tertiary-foreground">{heading}</h3>
@@ -214,14 +232,20 @@ function PostList({
                 trailing={
                   <>
                     <PostStatusBadge status={post.status} />
-                    {time && (
-                      <span
-                        className="w-24 text-right"
-                        title={new Date(time).toLocaleString()}
-                      >
-                        {relativeTime(time)}
-                      </span>
-                    )}
+                    {/* The slot is always filled, because an empty one is
+                        read as a rendering fault rather than as a fact. A
+                        post can genuinely be published with no date on it:
+                        marking a manual publish without verifying the link
+                        flips the status and writes no timestamp, so the
+                        record has none to show. Saying so is the honest
+                        answer — and it is the only way the user finds out
+                        the date is missing rather than merely late. */}
+                    <span
+                      className="w-24 text-right"
+                      title={time ? new Date(time).toLocaleString() : undefined}
+                    >
+                      {time ? relativeTime(time) : t("campaignOverview.noDate")}
+                    </span>
                   </>
                 }
               >
