@@ -1,6 +1,7 @@
 import {
   ZernioError,
   type ConnectLinkResponse,
+  type PendingConnection,
   type ZernioAccountsResponse,
   type ZernioErrorCode,
   type ZernioHealth,
@@ -40,6 +41,41 @@ export async function createConnectLink(platform: string): Promise<ConnectLinkRe
 }
 
 /**
+ * The targets awaiting a choice on a pending connect (CON-217).
+ *
+ * Reached only by following the backend's redirect after an OAuth that turned
+ * out to have more than one publishable destination. A 404 covers every way
+ * this can be over — expired, already used, someone else's — and is the normal
+ * end of an abandoned connect, not an exceptional failure.
+ */
+export async function getPendingConnection(id: string): Promise<PendingConnection> {
+  const res = await scopedFetch(`${BASE}/connect/pending/${encodeURIComponent(id)}`);
+  if (!res.ok) {
+    throw await zernioError(res, "Unable to load the pending connection");
+  }
+  return (await res.json()) as PendingConnection;
+}
+
+/**
+ * Finalizes a pending connect by attaching the chosen target (CON-217).
+ *
+ * The account itself doesn't come back in the response: the server hands the
+ * selection to Zernio and nudges its sync worker, and the account appears in
+ * the platform list a few seconds later. Callers wait for that rather than for
+ * this promise.
+ */
+export async function selectPendingTarget(id: string, targetId: string): Promise<void> {
+  const res = await scopedFetch(`${BASE}/connect/pending/${encodeURIComponent(id)}/select`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ targetId }),
+  });
+  if (!res.ok) {
+    throw await zernioError(res, "Unable to finish connecting the account");
+  }
+}
+
+/**
  * Disconnects one social account (CON-133): removed upstream on Zernio, then
  * soft-deleted locally so the next sync doesn't revive it.
  *
@@ -75,6 +111,8 @@ const KNOWN_CODES: ReadonlySet<ZernioErrorCode> = new Set<ZernioErrorCode>([
   "invalid_platform",
   "account_not_found",
   "account_has_scheduled_posts",
+  "connection_not_found",
+  "invalid_target",
 ]);
 
 /**

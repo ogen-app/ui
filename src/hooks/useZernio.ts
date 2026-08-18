@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createConnectLink,
   disconnectZernioAccount,
+  getPendingConnection,
   getZernioHealth,
   listZernioAccounts,
+  selectPendingTarget,
   triggerZernioSync,
 } from "@/services/api/zernio";
 import { PLATFORMS_KEY } from "@/hooks/usePlatforms";
@@ -41,6 +43,54 @@ export function useCreateConnectLink() {
     // generic toast couldn't.
     meta: { errorToast: false },
     mutationFn: (platform: string) => createConnectLink(platform),
+  });
+}
+
+export const pendingConnectionKey = (id: string) =>
+  ["zernio", "pending", id] as const;
+
+/**
+ * The targets awaiting a choice on a pending connect (CON-217).
+ *
+ * `retry: false` because the failure that matters here is a 404, and a 404 is
+ * terminal: the session expired, or was already spent. Retrying it would only
+ * delay telling the user to start again.
+ *
+ * Not cached either. This is a single-use capability — keeping the answer
+ * around after the choice is made would mean a Back button that shows a list
+ * of options which no longer exist.
+ */
+export function usePendingConnection(id: string) {
+  return useQuery({
+    queryKey: pendingConnectionKey(id),
+    queryFn: () => getPendingConnection(id),
+    retry: false,
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+/**
+ * Attaches the chosen target, finishing a connect that needed a decision
+ * (CON-217).
+ *
+ * Invalidates the platform list rather than reading the response: the server
+ * hands the pick to Zernio and nudges its sync worker, so the account arrives
+ * a few seconds later through the same path every other connect uses. The
+ * caller navigates to the accounts page, which waits for it there.
+ */
+export function useSelectPendingTarget(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    // The picker renders its own failure inline, next to the choice the user
+    // is still looking at — a toast would talk over it.
+    meta: { errorToast: false },
+    mutationFn: (targetId: string) => selectPendingTarget(id, targetId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: PLATFORMS_KEY });
+      qc.invalidateQueries({ queryKey: ZERNIO_ACCOUNTS_KEY });
+      qc.invalidateQueries({ queryKey: ZERNIO_HEALTH_KEY });
+    },
   });
 }
 
