@@ -15,3 +15,19 @@ afterEach(cleanup)
 // jsdom has no layout, so it logs "Not implemented: Window's scrollTo()" every
 // time the router navigates. It is noise from a method we never assert on.
 window.scrollTo = () => {}
+
+// Nor does it have media queries, and `useIsMobile` — which every page reaches
+// through the sidebar — calls `matchMedia` in an effect. Always "not mobile":
+// jsdom's window is 1024px wide, so that is the truthful answer, and no test
+// asserts on the breakpoint.
+window.matchMedia = (query: string) =>
+  ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  }) as MediaQueryList
