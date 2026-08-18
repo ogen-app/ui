@@ -2348,6 +2348,17 @@ export const es: Translation = {
     dropInto: 'Añadir a {{scope}}',
   },
 
+  help: {
+    title: 'Ayuda',
+    back: 'Atrás',
+    related: 'Relacionado',
+    notFound: 'Todavía no hemos escrito este artículo.',
+    resize: 'Cambiar el ancho del panel de ayuda',
+    trigger: {
+      label: '¿Qué es esto?',
+    },
+  },
+
   errors: {
     notFound: {
       code: '404',

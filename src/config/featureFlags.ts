@@ -655,6 +655,23 @@ const FEATURE_FLAGS = {
    * the feature on.
    */
   'workspace-tiers': false,
+
+  /**
+   * The contextual help centre (CON-173) — the drawer, its triggers and the
+   * `#help/<key>` deep link. **Off — waiting on content, not on an endpoint.**
+   *
+   * There is no API to wait for: articles live in the Sanity project
+   * `getogen.com` already runs, and the app reads them from the public
+   * `production` dataset. What is missing is the reading itself —
+   * `services/help` serves fixtures today, because the starter articles were
+   * bootstrapped into the private `staging` dataset that a browser cannot
+   * authenticate against. Switching on means seeding `production`, registering
+   * the app's origins for CORS (without credentials — it only ever reads), and
+   * replacing the two functions in `services/help/index.ts` with the GROQ
+   * query. Delete the flag once the drawer has been exercised against the real
+   * dataset.
+   */
+  'help-center': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

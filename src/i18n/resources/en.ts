@@ -3147,6 +3147,25 @@ export const en = {
     dropInto: 'Add these to {{scope}}',
   },
 
+  /**
+   * The help drawer's own chrome (CON-173) — and only that.
+   *
+   * Article titles and prose are **content**, not catalogue entries: they live
+   * in the CMS, are translated there, and arrive already in the reader's
+   * language. Putting them here would mean a deploy to fix a typo and a
+   * catalogue the size of a manual.
+   */
+  help: {
+    title: 'Help',
+    back: 'Back',
+    related: 'Related',
+    notFound: "We haven't written this one yet.",
+    resize: 'Resize the help panel',
+    trigger: {
+      label: 'What is this?',
+    },
+  },
+
   errors: {
     notFound: {
       code: '404',

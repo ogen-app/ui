@@ -630,6 +630,27 @@ the post, so five images spread over three posts still warns "platform allows
 up to 4". That message is passed through as written because until the publisher
 splits it is right. See `docs/technical-decisions.md#thread-sequence`.
 
+**The help centre waits on content, not on an endpoint** (`help-center`,
+CON-173). The drawer, its triggers and the `#help/<key>` deep link are built;
+`services/help` serves fixtures. There is no API in the way — articles live in
+the Sanity project `getogen.com` already runs, and the app reads the **public
+`production` dataset** — so switching on is: seed `production`, register the
+app's origins for CORS (**without** credentials; it only ever reads), and
+replace the two functions in `services/help/index.ts` with the GROQ query. The
+starter articles were bootstrapped into the private `staging` dataset, which a
+browser cannot authenticate against, and that is the whole of why the flag is
+off. Three things to keep hold of when it lands. Help content must **never** go
+through `services/api/http.ts` — every request in there carries
+`credentials: 'include'`, and Sanity is a third party. An article is identified
+by a language-independent `key` and cross-linked by reference rather than by
+title, so a translation cannot break a link; the catalogue holds only the
+drawer's own chrome (`help.*`), because prose is content and belongs in the
+CMS. And the trigger is the feature's only presence on ordinary screens, so it
+reads the flag and passes it to `useHelpTopicMap({ enabled })` — an
+unconditional read would open a cross-origin request from the post editor for a
+drawer that cannot be opened, which fixtures hide right up until the deploy
+that swaps them out.
+
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's
 token-gated unsubscribe pages, not a session-authenticated one, so
