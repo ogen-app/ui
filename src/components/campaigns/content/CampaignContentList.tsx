@@ -10,7 +10,6 @@ import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptySt
 import { AssetsTable } from '@/components/tables/docsTable'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { UPLOAD_LIMITS_LABEL } from '@/lib/assetStatus'
 import { poolStats } from '@/lib/campaignSources'
 import { cn } from '@/lib'
 import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
@@ -135,7 +134,10 @@ export function CampaignContentList({
  * adding *does*: this campaign reads it, and no other campaign does.
  *
  * Two actions rather than one dropdown, because writing a note and uploading a
- * file are different intents and the old single ADD ASSET caret hid both.
+ * file are different intents and the old single ADD ASSET caret hid both. It
+ * does not advertise the page-wide drop target underneath them: the two
+ * buttons are the answer to "what do I do here", and a third line explaining a
+ * third way in makes the emptiest screen in the product the wordiest.
  */
 function EmptyBank({ onWrite, onUpload }: { onWrite: () => void; onUpload: () => void }) {
   return (
@@ -143,20 +145,15 @@ function EmptyBank({ onWrite, onUpload }: { onWrite: () => void; onUpload: () =>
       title="This campaign writes from its brief alone"
       subtitle="Add the documents it should also read — positioning, transcripts, a tone of voice, last quarter's report."
       actions={
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Button variant="defaultInverted" onClick={onWrite}>
-              <FileTextIcon />
-              <span>WRITE A NOTE</span>
-            </Button>
-            <Button variant="outline" onClick={onUpload}>
-              <UploadSimpleIcon />
-              <span>UPLOAD FILES</span>
-            </Button>
-          </div>
-          <p className="text-xs text-tertiary-foreground">
-            …or drop files anywhere on this page. {UPLOAD_LIMITS_LABEL}
-          </p>
+        <div className="flex items-center gap-2">
+          <Button variant="defaultInverted" onClick={onWrite}>
+            <FileTextIcon />
+            <span>WRITE A NOTE</span>
+          </Button>
+          <Button variant="outline" onClick={onUpload}>
+            <UploadSimpleIcon />
+            <span>UPLOAD FILES</span>
+          </Button>
         </div>
       }
     />
