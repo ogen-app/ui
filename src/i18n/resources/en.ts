@@ -551,14 +551,38 @@ export const en = {
       connectedCount_other: '{{count}} connected',
       modalTitle: 'Connect {{platform}}',
       preparing: 'Preparing your connect link…',
-      authorize:
-        'Authorize your {{platform}} account in the tab that just opened. If nothing opened, use the button below.',
-      openConnectPage: 'Open the {{platform}} connect page',
-      expiry:
-        'The link expires at {{time}}. Once you finish, the account appears here automatically — this can take a minute.',
-      expirySoon: 'soon',
-      checkNow: 'Check now',
+      redirecting: 'Taking you to {{platform}}…',
       success: '{{platform}} is connected. You’ll find it under Platform Settings.',
+      settling: 'Finishing setup — the account appears here in a moment.',
+      errors: {
+        expired: 'That connection link expired. Please start the connection again.',
+        mismatch: 'Something went wrong connecting your account. Please try again.',
+        upstream: 'We couldn’t reach the platform. Please try again in a moment.',
+        noTargets:
+          'This account doesn’t have any pages or profiles we can publish to.',
+        generic: 'We couldn’t connect your account. Please try again.',
+      },
+      picker: {
+        title: 'Choose what to connect',
+        body: 'Your {{platform}} account manages more than one profile. Pick the one Ogen should publish to.',
+        legend: 'Available {{platform}} profiles',
+        submit: 'CONNECT {{platform}}',
+        cancel: 'CANCEL',
+        // Sentence case on purpose: this one is only ever read aloud, as the
+        // label of the header's icon button.
+        back: 'Back to Workspace Settings',
+        backToAccounts: 'BACK TO WORKSPACE SETTINGS',
+        expired:
+          'This connection expired or was already used. Start the connection again from Workspace Settings.',
+        empty: 'There’s nothing on this account we can publish to.',
+        invalidTarget:
+          'That option is no longer available. Reload the page and pick again.',
+        kind: {
+          organization: 'Company page',
+          page: 'Page',
+          personal: 'Personal profile',
+        },
+      },
     },
     disconnect: {
       title: 'Disconnect {{name}}?',

@@ -32,6 +32,7 @@ import { Route as AuthenticatedContentBankFilesRouteImport } from './routes/_aut
 import { Route as AuthenticatedContentBankAllRouteImport } from './routes/_authenticated/content-bank/all'
 import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
+import { Route as AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport } from './routes/_authenticated/workspace-settings/connect.$connectionId'
 import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
 import { Route as AuthenticatedCampaignsCampaignIdOverviewRouteImport } from './routes/_authenticated/campaigns/$campaignId/overview'
 import { Route as AuthenticatedCampaignsCampaignIdListRouteImport } from './routes/_authenticated/campaigns/$campaignId/list'
@@ -168,6 +169,12 @@ const AuthenticatedCampaignsCampaignIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
+const AuthenticatedWorkspaceSettingsConnectConnectionIdRoute =
+  AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport.update({
+    id: '/workspace-settings/connect/$connectionId',
+    path: '/workspace-settings/connect/$connectionId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCampaignsCampaignIdSettingsRoute =
   AuthenticatedCampaignsCampaignIdSettingsRouteImport.update({
     id: '/settings',
@@ -251,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
   '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
+  '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -282,6 +290,7 @@ export interface FileRoutesByTo {
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
   '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
+  '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdIndexRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -317,6 +326,7 @@ export interface FileRoutesById {
   '/_authenticated/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/_authenticated/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
   '/_authenticated/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
+  '/_authenticated/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/_authenticated/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
   '/_authenticated/campaigns/$campaignId_/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/_authenticated/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -352,6 +362,7 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId/list'
     | '/campaigns/$campaignId/overview'
     | '/campaigns/$campaignId/settings'
+    | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId/'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar/'
@@ -383,6 +394,7 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId/list'
     | '/campaigns/$campaignId/overview'
     | '/campaigns/$campaignId/settings'
+    | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar'
@@ -417,6 +429,7 @@ export interface FileRouteTypes {
     | '/_authenticated/campaigns/$campaignId/list'
     | '/_authenticated/campaigns/$campaignId/overview'
     | '/_authenticated/campaigns/$campaignId/settings'
+    | '/_authenticated/workspace-settings/connect/$connectionId'
     | '/_authenticated/campaigns/$campaignId/'
     | '/_authenticated/campaigns/$campaignId_/posts/$postId'
     | '/_authenticated/campaigns/$campaignId/calendar/'
@@ -599,6 +612,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdIndexRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
+    '/_authenticated/workspace-settings/connect/$connectionId': {
+      id: '/_authenticated/workspace-settings/connect/$connectionId'
+      path: '/workspace-settings/connect/$connectionId'
+      fullPath: '/workspace-settings/connect/$connectionId'
+      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/campaigns/$campaignId/settings': {
       id: '/_authenticated/campaigns/$campaignId/settings'
       path: '/settings'
@@ -734,6 +754,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCampaignsIndexRoute: typeof AuthenticatedCampaignsIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
   AuthenticatedWorkspaceSettingsIndexRoute: typeof AuthenticatedWorkspaceSettingsIndexRoute
+  AuthenticatedWorkspaceSettingsConnectConnectionIdRoute: typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   AuthenticatedCampaignsCampaignIdPostsPostIdRoute: typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
 }
 
@@ -747,6 +768,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
   AuthenticatedWorkspaceSettingsIndexRoute:
     AuthenticatedWorkspaceSettingsIndexRoute,
+  AuthenticatedWorkspaceSettingsConnectConnectionIdRoute:
+    AuthenticatedWorkspaceSettingsConnectConnectionIdRoute,
   AuthenticatedCampaignsCampaignIdPostsPostIdRoute:
     AuthenticatedCampaignsCampaignIdPostsPostIdRoute,
 }

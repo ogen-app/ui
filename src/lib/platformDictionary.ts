@@ -136,6 +136,23 @@ export function getPlatformInfo(id: string): PlatformInfo | undefined {
   return BY_ID.get(id);
 }
 
+const BY_ZERNIO_ID: Map<string, PlatformInfo> = new Map(
+  PLATFORMS.map((p) => [p.zernioId, p]),
+);
+
+/**
+ * The platform behind one of Zernio's wire ids (`twitter`, `linkedin`, …).
+ *
+ * The connect flow speaks Zernio's vocabulary end to end — it is what
+ * `connect-links` takes, what the backend redirects back with, and what the
+ * pending connection reports — so the surfaces that meet it need a way home to
+ * our own name and mark. Undefined for a platform Zernio supports and we don't
+ * yet name, which callers should render as the raw id rather than nothing.
+ */
+export function getPlatformByZernioId(zernioId: string): PlatformInfo | undefined {
+  return BY_ZERNIO_ID.get(zernioId);
+}
+
 export function unionSupportedSlugs(
   publishers: { supported_post_types: string[] }[],
 ): Set<string> {
