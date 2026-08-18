@@ -292,6 +292,15 @@ describe('fitRung', () => {
     expect(fitRung([TEXT], CELL, MONTH)?.id).toBe('comfortable')
   })
 
+  it('never charges the month for a picture', () => {
+    // The month's `image` is always false — `useCalendarSettings` stamps the
+    // calendar-wide preview preference over the week only, because the 100px
+    // band is the whole 112px cell: charged for it, one backed post has no
+    // rung and the day collapses into a density summary.
+    expect(fitRung([BACKED], CELL, MONTH)?.id).toBe('comfortable')
+    expect(fitRung([BACKED], CELL, { ...MONTH, image: true })).toBeNull()
+  })
+
   it('costs the month a rung when it is given the week fields', () => {
     // The whole reason the two views keep separate fields. The same two posts
     // in the same cell: the month's card keeps its time, the week's card has

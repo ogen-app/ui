@@ -17,8 +17,9 @@ type PostCardProps = {
   post: Post
   /**
    * How much of itself to show. Chosen per day by `WeeklyCalendar` from the
-   * space the column has, so every card in a Tuesday matches. Defaults to the
-   * roomiest for callers with space to spare.
+   * column's space and by `MonthlyCalendar` from the cell's, so every card in
+   * one day matches. Defaults to the roomiest for callers with space to
+   * spare, like `NotScheduledPanel`.
    */
   rung?: CardRung
   /**

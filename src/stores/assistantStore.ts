@@ -337,6 +337,11 @@ export const useAssistantStore = create<AssistantState>()(
             }
           }
 
+          // An application-level `error` event ends the turn but not the
+          // stream — it closes normally afterwards, which would otherwise
+          // report the turn as answered.
+          let sawErrorEvent = false
+
           // Deltas arrive as the whole document so far, so the last one wins.
           let streamedContent = ''
 
@@ -457,6 +462,7 @@ export const useAssistantStore = create<AssistantState>()(
                 break
 
               case 'error':
+                sawErrorEvent = true
                 patchLastTurn(threadId, (t) => ({
                   ...t,
                   content: event.message,
@@ -479,7 +485,7 @@ export const useAssistantStore = create<AssistantState>()(
             // The server writes the result itself — the payload describes what
             // it already saved. Never write it back; just refresh.
             await refreshSubject(subject, get().threads[threadId], streamedContent)
-            finish('idle', 'answered')
+            finish('idle', sawErrorEvent ? 'failed' : 'answered')
           } catch (err) {
             const aborted = err instanceof DOMException && err.name === 'AbortError'
             patchLastTurn(threadId, (t) => ({

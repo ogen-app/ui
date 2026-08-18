@@ -54,6 +54,12 @@ function CampaignOverviewScreen() {
   // a stack of grey blocks that is then replaced wholesale.
   const postsPending = postsQuery.isPending;
 
+  // A failed fetch is not an empty campaign: `data ?? []` after an error would
+  // put "You're all set" and "No posts yet" on screen as if they were facts.
+  // Cached data from an earlier success still counts — only the fetch that
+  // never produced anything gets the error strip.
+  const postsFailed = postsQuery.isError && postsQuery.data === undefined;
+
   // Several attention rules are time-based (overdue slots, the next 24h, pace),
   // so they are recomputed on every render against the current clock rather
   // than memoized against a frozen `now`.
@@ -70,12 +76,17 @@ function CampaignOverviewScreen() {
     <div className="flex flex-col gap-3 pb-10">
       {/* Never the all-clear before the posts have been counted — "You're all
           set" off an empty list is the one wrong thing this screen could say. */}
-      {postsPending ? (
+      {postsFailed ? (
+        <p className="w-full max-w-content mx-auto text-sm text-tertiary-foreground">
+          Couldn’t load this campaign’s posts — the attention summary and
+          content will appear once they’re reachable again.
+        </p>
+      ) : postsPending ? (
         <Skeleton className="h-40 w-full max-w-content mx-auto" />
       ) : (
         <AttentionRail items={items} campaignId={campaignId} />
       )}
-      {postsPending ? (
+      {postsFailed ? null : postsPending ? (
         <Skeleton className="h-64 w-full max-w-content mx-auto" />
       ) : (
         <ContentModule campaign={campaign} posts={posts} />

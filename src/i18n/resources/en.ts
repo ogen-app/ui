@@ -274,7 +274,7 @@ export const en = {
      * this on and sees half their cards unchanged is owed the reason.
      */
     imagePreviews: 'Show cards as image previews',
-    imagePreviewsNote: 'Only posts that have a picture',
+    imagePreviewsNote: 'Only posts that have a picture, and only on the week — a month cell is too small for one',
     weekCard: 'WEEK CARD',
     monthCard: 'MONTH CARD',
   },

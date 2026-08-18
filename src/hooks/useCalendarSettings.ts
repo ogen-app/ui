@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   CARD_FIELDS,
@@ -229,12 +229,22 @@ export function useCalendarSettings(campaignId: string) {
   )
 
   // The stored per-view blobs carry an `image` of their own only because they
-  // are typed as whole `CardFields`; the calendar-wide preference is what
-  // decides it, and it is stamped in here so no card has to know that.
-  const card: Record<CalendarView, CardFields> = {
-    week: { ...settings.card.week, image: settings.imagePreviews },
-    month: { ...settings.card.month, image: settings.imagePreviews },
-  }
+  // are typed as whole `CardFields`; the preference is stamped in here so no
+  // card has to know where it comes from. Only the week takes it: the month's
+  // answer is always no, because a 100px band is the whole cell — one backed
+  // post would tip every such day into a density summary (see
+  // `DEFAULT_MONTH_FIELDS`).
+  //
+  // Memoized because the identity is load-bearing: `card.week` is a `useMemo`
+  // dependency in `WeeklyCalendar` and a `memo` prop on every `PostCard`, so a
+  // fresh object each render re-measures the grid and re-renders every card.
+  const card = useMemo<Record<CalendarView, CardFields>>(
+    () => ({
+      week: { ...settings.card.week, image: settings.imagePreviews },
+      month: { ...settings.card.month, image: false },
+    }),
+    [settings.card.week, settings.card.month, settings.imagePreviews],
+  )
 
   return {
     firstDayOfWeek: settings.firstDayOfWeek,

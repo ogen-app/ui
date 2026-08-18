@@ -93,10 +93,12 @@ export function CalendarSettingsPanel({
             />
           )}
 
-          {/* One answer for the whole calendar, which is why it is here and not
-              a sixth switch on each card list: it is the most expensive thing a
-              card can carry, and turning it off is a decision about what the
-              calendar is for rather than about what a week card needs. */}
+          {/* One answer, which is why it is here and not a sixth switch on
+              each card list: it is the most expensive thing a card can carry,
+              and turning it off is a decision about what the calendar is for
+              rather than about what a week card needs. In practice it reaches
+              the week only — the month never draws pictures, because the band
+              is the whole cell (see `useCalendarSettings`). */}
           <div className="mt-2 flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2">
             <span className="flex min-w-0 flex-col">
               <span className="text-sm">{t('calendar.imagePreviews')}</span>

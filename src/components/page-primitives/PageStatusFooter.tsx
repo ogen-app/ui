@@ -14,7 +14,11 @@ const WORD =
 
 export function PageStatusFooter({ message = 'ERROR' }: PageStatusFooterProps) {
   return (
+    // `aria-hidden`: the band is a watermark — the page has already said what
+    // happened in its own copy, and three decorative repeats of the same word
+    // are noise to a screen reader, not information.
     <div
+      aria-hidden="true"
       className={
         'relative flex-shrink-0 h-[140px] bottom-0 left-0 right-0 flex flex-col gap-0 overflow-hidden'
       }

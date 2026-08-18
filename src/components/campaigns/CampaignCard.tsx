@@ -86,7 +86,11 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
     platformCount === 0
       ? 'No platforms connected'
       : `${platformCount} platform${platformCount === 1 ? '' : 's'}`
-  const stage = currentStage(campaign, posts)
+  // Gated like the tiles: the stage is read off the posts, and an empty list
+  // — which is what loading and failure both look like here — reads as every
+  // phase finished, so the card would claim the final stage while the query
+  // is still out.
+  const stage = settled ? currentStage(campaign, posts) : null
   const advanced = advancedSummary(campaign)
   // Same construction and separator as `properties` above, because it is the
   // same kind of line: facts about how the campaign is set up, not its

@@ -211,7 +211,7 @@ export const es: Translation = {
     unscheduledPosts: 'Publicaciones sin programar',
     settings: 'Ajustes del calendario',
     imagePreviews: 'Mostrar las tarjetas con vista previa de la imagen',
-    imagePreviewsNote: 'Solo las publicaciones que tienen imagen',
+    imagePreviewsNote: 'Solo las publicaciones que tienen imagen, y solo en la semana — una celda del mes es demasiado pequeña para mostrarla',
     weekCard: 'TARJETA DE SEMANA',
     monthCard: 'TARJETA DE MES',
   },
