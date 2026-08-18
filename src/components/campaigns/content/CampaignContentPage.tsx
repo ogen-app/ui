@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import {
   CaretDownIcon,
   FileTextIcon,
-  LinkSimpleIcon,
+  GlobeSimpleIcon,
   UploadSimpleIcon,
 } from '@phosphor-icons/react'
 import { PageError } from '@/components/page-primitives/PageError'
@@ -22,7 +22,10 @@ import { UPLOAD_LIMITS_LABEL } from '@/lib/assetStatus'
 import { addToCampaign, removeFromCampaign, seedFromWholeBank } from '@/lib/campaignMembership'
 import { campaignAssets, seedsWholeBank } from '@/lib/campaignSources'
 import { useUploadStore } from '@/stores/uploadStore'
+import { toast } from '@/stores/toastStore'
 import type { Campaign } from '@/types/campaigns'
+import type { Asset } from '@/types/content'
+import { AddWebPageModal } from './AddWebPageModal'
 import { CampaignContentList } from './CampaignContentList'
 
 /**
@@ -37,8 +40,9 @@ import { CampaignContentList } from './CampaignContentList'
  * Deliberately absent: any path into the workspace pool. No "add existing", no
  * browse-the-bank drawer. Reaching into the pile is what made it a pile, and a
  * campaign that can browse everything has not stopped being workspace-wide.
- * Documents get in here by being written or uploaded here, which is why those
- * two are the whole ADD CONTENT menu.
+ * Documents get in here by being written, uploaded or read off the web *here*,
+ * which is the whole ADD CONTENT menu — three ways to put something in, none of
+ * them a way to go looking through what already exists.
  */
 export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
   const navigate = useNavigate()
@@ -49,6 +53,15 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
   const enqueueUploads = useUploadStore((s) => s.enqueue)
   const uploadItems = useUploadStore((s) => s.items)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
+  const [webPageModalOpen, setWebPageModalOpen] = useState(false)
+  /*
+   * Radix hands focus back to the menu trigger as the menu closes, and it does
+   * so after the modal beneath has mounted — so the modal's field is focused and
+   * then quietly un-focused, and the user types into nothing. Prevented only for
+   * the item that opens a field: every other close should still return focus to
+   * the button that was chosen, which is what keyboard users expect from Escape.
+   */
+  const openingWebPage = useRef(false)
   const [isDragging, setIsDragging] = useState(false)
   const dragDepth = useRef(0)
 
@@ -133,6 +146,30 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
     )
   }
 
+  /**
+   * A page the backend has accepted for scraping, joining this campaign.
+   *
+   * Attaching is the same gesture as for a note or an upload, but the asset it
+   * attaches may not be new: the backend dedupes URLs per *workspace*, so a
+   * page another campaign already saved comes back as that campaign's document,
+   * now shared with this one and re-read for both. That is the honest reading of
+   * one workspace-wide row referenced by many campaigns (CON-210 phase 1) — and
+   * a second copy of the same page would be worse.
+   */
+  const handleWebPage = (asset: Asset) => {
+    const alreadyHere = mine.some((a) => a.id === asset.id)
+    void addToCampaign(campaign.id, [asset.id])
+    if (alreadyHere) {
+      toast.info('Re-reading that page', {
+        description: "Its content will be replaced with the page's current version.",
+      })
+    } else {
+      toast.info('Reading that page', {
+        description: 'It appears in the list below and fills in when the read finishes.',
+      })
+    }
+  }
+
   const handleDelete = (id: string) => {
     deleteAsset.mutate(id, {
       onSuccess: () => void removeFromCampaign(campaign.id, [id]),
@@ -169,7 +206,15 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
                 <CaretDownIcon weight="bold" className="size-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={4}>
+            <DropdownMenuContent
+              align="end"
+              sideOffset={4}
+              onCloseAutoFocus={(e) => {
+                if (!openingWebPage.current) return
+                openingWebPage.current = false
+                e.preventDefault()
+              }}
+            >
               <DropdownMenuItem size="lg" onClick={handleCreate}>
                 <FileTextIcon />
                 <span>Write a note</span>
@@ -178,12 +223,15 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
                 <UploadSimpleIcon />
                 <span>Upload file</span>
               </DropdownMenuItem>
-              <DropdownMenuItem size="lg" disabled>
-                <LinkSimpleIcon />
-                <div className="flex flex-col gap-1">
-                  <span>Extract from link</span>
-                  <span className="text-xs text-tertiary-foreground">coming soon</span>
-                </div>
+              <DropdownMenuItem
+                size="lg"
+                onClick={() => {
+                  openingWebPage.current = true
+                  setWebPageModalOpen(true)
+                }}
+              >
+                <GlobeSimpleIcon />
+                <span>Add a web page</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -205,6 +253,7 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
             onDelete={handleDelete}
             onWrite={handleCreate}
             onUpload={() => setUploadModalOpen(true)}
+            onAddWebPage={() => setWebPageModalOpen(true)}
           />
         )}
       </div>
@@ -225,6 +274,12 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
         isOpen={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
         campaignId={campaign.id}
+      />
+
+      <AddWebPageModal
+        isOpen={webPageModalOpen}
+        onClose={() => setWebPageModalOpen(false)}
+        onSubmitted={handleWebPage}
       />
     </div>
   )

@@ -8,9 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { AssetDetailsHeader } from '@/components/campaigns/content/AssetDetailsHeader'
 import { AssetEditor } from '@/components/campaigns/content/AssetEditor'
 import { DeleteAssetDialog } from '@/components/campaigns/content/DeleteAssetDialog'
-import { useAsset, useUpdateAsset } from '@/hooks/useContent'
+import { ScrapeState } from '@/components/campaigns/content/ScrapeState'
+import { useAsset, useCreateUrlAsset, useUpdateAsset } from '@/hooks/useContent'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { downloadMarkdown } from '@/lib/downloadMarkdown'
+import { isTerminalStatus } from '@/lib/assetStatus'
+import { readPageErrorMessage } from '@/lib/scrapeErrors'
+import { toast } from '@/stores/toastStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 
 export const Route = createFileRoute(
@@ -26,6 +30,11 @@ export const Route = createFileRoute(
  * positioned column holding a scroller, the document on its own surface in the
  * middle, the header fading in at the top and its mirror at the bottom.
  *
+ * A document scraped from a web page (CON-222) shows its progress here instead
+ * of its body until it has one — see `ScrapeState`. Everything else about the
+ * screen is the same: once the text exists, a read page is a document like any
+ * other, editable and autosaving.
+ *
  * What it does *not* borrow is the commit bar. A post has one because it has
  * somewhere to go — draft, scheduled, published — and the bar is where that
  * happens. A document has no such move: it saves as you type, and the only
@@ -37,6 +46,7 @@ function AssetPage() {
   const { data: campaign } = useCampaign(campaignId)
   const { data: asset, isLoading, isError } = useAsset(assetId)
   const updateAsset = useUpdateAsset()
+  const rescrape = useCreateUrlAsset()
   const [title, setTitle] = useState<string | null>(null)
   const editVersionRef = useRef(0)
   const [editVersion, setEditVersion] = useState(0)
@@ -102,6 +112,30 @@ function AssetPage() {
     [asset, assetId, title, updateAsset],
   )
 
+  /**
+   * Read the source again.
+   *
+   * The same endpoint that created it: submitting a URL this workspace already
+   * has refreshes that asset in place rather than making a second one, so
+   * there is no separate refresh route to call. The status drops back to
+   * `pending`, which puts `ScrapeState` back on screen.
+   */
+  const sourceUrl = asset?.source_url ?? null
+  const handleRefreshSource = useCallback(() => {
+    if (!sourceUrl) return
+    rescrape.mutate(sourceUrl, {
+      onSuccess: () => {
+        toast.info('Reading the page again', {
+          description: "Its text will be replaced with the page's current version.",
+        })
+      },
+      onError: (err) =>
+        toast.error("Couldn't read that page again", {
+          description: readPageErrorMessage(err),
+        }),
+    })
+  }, [sourceUrl, rescrape])
+
   const handleDownloadMarkdown = useCallback(() => {
     if (!asset) return
     downloadMarkdown(title ?? asset.title, asset.content)
@@ -123,6 +157,16 @@ function AssetPage() {
     )
   }
 
+  // A page the worker hasn't finished with has no body to edit, and a failed one
+  // never will — both stand in for the editor rather than sitting above it. The
+  // URL doubles as the condition so the panel can be handed one that exists.
+  const readingFrom =
+    asset.type === 'URL' &&
+    sourceUrl !== null &&
+    (!isTerminalStatus(asset.status) || asset.status === 'failed')
+      ? sourceUrl
+      : null
+
   return (
     <PageContainer variant="fullFlex">
       {/* `relative` so the fader anchors to the content column rather than
@@ -133,19 +177,30 @@ function AssetPage() {
           <AssetDetailsHeader
             campaignId={campaignId}
             saving={isDirty}
+            sourceUrl={sourceUrl}
+            onRefreshSource={sourceUrl ? handleRefreshSource : undefined}
             onDownloadMarkdown={handleDownloadMarkdown}
             onDelete={() => setDeleteOpen(true)}
           />
           <div className="flex flex-col items-center gap-3 relative z-0">
-            <div className="w-content bg-primary px-10 py-8">
-              <AssetEditor
-                initialTitle={asset.title}
-                initialContent={asset.content}
-                onTitleChange={handleTitleChange}
-                onContentChange={handleContentChange}
-                onDirty={markDirty}
+            {readingFrom !== null ? (
+              <ScrapeState
+                sourceUrl={readingFrom}
+                failed={asset.status === 'failed'}
+                onRetry={handleRefreshSource}
+                retrying={rescrape.isPending}
               />
-            </div>
+            ) : (
+              <div className="w-content bg-primary px-10 py-8">
+                <AssetEditor
+                  initialTitle={asset.title}
+                  initialContent={asset.content}
+                  onTitleChange={handleTitleChange}
+                  onContentChange={handleContentChange}
+                  onDirty={markDirty}
+                />
+              </div>
+            )}
             {/* Scroll past the end, as on a post: without it the last line
                 sits pinned against the bottom edge with nowhere to go. This is
                 the travel that lets the end of what you are writing come up to

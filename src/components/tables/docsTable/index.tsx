@@ -1,6 +1,12 @@
 import { memo, useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
-import { FilePdfIcon, ImageSquareIcon, NoteIcon, TrashIcon } from '@phosphor-icons/react'
+import {
+  FilePdfIcon,
+  GlobeSimpleIcon,
+  ImageSquareIcon,
+  NoteIcon,
+  TrashIcon,
+} from '@phosphor-icons/react'
 import { VirtualTable } from '../VirtualTable'
 import type { ColumnConfig } from '../types'
 import type { Asset, Tag } from '@/types/content'
@@ -9,6 +15,7 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { statusToBadge } from '@/lib/assetStatus'
 import { assetCategory } from '@/lib/assetCategory'
 import { extentLabel } from '@/lib/assetExtent'
+import { pageUrlLabel } from '@/lib/webPageUrl'
 import { relativeTime } from '@/lib/relativeTime'
 import { cn, formatTitle } from '@/lib'
 
@@ -19,6 +26,11 @@ import { cn, formatTitle } from '@/lib'
  * own header comment said it was deliberately identical to it. With the
  * workspace bank gone there is one place assets are listed, so there is one
  * component that lists them (CON-210).
+ *
+ * A row also carries where a document came from, when that is a question with
+ * an answer: a scraped web page shows its address under its title (CON-222).
+ * Nothing else has provenance worth a line — a note was written here, and an
+ * upload's filename is already its title.
  *
  * Two lines rather than six columns. The old row was built for a
  * workspace-wide file list, where the job is finding one document among
@@ -60,8 +72,17 @@ function stamp(iso: string): string {
 /** 32px container, 24px glyph, pale border — kind at a glance, before the title. */
 function AssetIcon({ asset }: { asset: Asset }) {
   const category = assetCategory(asset)
+  // A scraped page is text as far as the categories go, but where it came from
+  // is the one thing about it a reader can't infer from the title, so it gets
+  // its own glyph rather than the note's (CON-222).
   const Icon =
-    category === 'files' ? FilePdfIcon : category === 'imagery' ? ImageSquareIcon : NoteIcon
+    asset.type === 'URL'
+      ? GlobeSimpleIcon
+      : category === 'files'
+        ? FilePdfIcon
+        : category === 'imagery'
+          ? ImageSquareIcon
+          : NoteIcon
   return (
     <span className="flex size-8 shrink-0 items-center justify-center border border-quaternary">
       <Icon className="size-6 text-tertiary-foreground" />
@@ -110,6 +131,12 @@ function AssetsTableComponent({
         isAutoSize: true,
         cell: (_value, row) => {
           const badge = statusToBadge(row.status)
+          // A page keeps its URL as a stand-in title until the scrape reads the
+          // real one, and showing the raw address twice — once as the title,
+          // once as provenance — states nothing twice. So while it is still
+          // provisional the address *is* the title, tidied.
+          const provisional = row.type === 'URL' && row.source_url === row.title
+          const source = provisional ? null : row.source_url
           return (
             <Link
               to="/campaigns/$campaignId/content/$assetId"
@@ -119,12 +146,13 @@ function AssetsTableComponent({
               <AssetIcon asset={row} />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="table-text truncate hover:underline">
-                  {formatTitle(row.title)}
+                  {provisional ? pageUrlLabel(row.title) : formatTitle(row.title)}
                 </span>
                 {/* How much of it there is, then whether the campaign can read
                     it. Both are properties of the thing named above, which is
                     why they sit under it rather than in columns of their own. */}
                 <span className="flex items-center gap-2 text-xs text-tertiary-foreground">
+                  {source && <span className="truncate">{pageUrlLabel(source)}</span>}
                   <span className="shrink-0 tabular-nums">{extentLabel(row)}</span>
                   <StatusBadge tone={badge.tone} label={badge.label} />
                 </span>

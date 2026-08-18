@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   ArrowsClockwiseIcon,
   FileTextIcon,
+  GlobeSimpleIcon,
   MagnifyingGlassIcon,
   UploadSimpleIcon,
   XIcon,
@@ -26,6 +27,7 @@ type Props = {
   onDelete: (id: string) => void
   onWrite: () => void
   onUpload: () => void
+  onAddWebPage: () => void
 }
 
 /**
@@ -45,6 +47,7 @@ export function CampaignContentList({
   onDelete,
   onWrite,
   onUpload,
+  onAddWebPage,
 }: Props) {
   const [query, setQuery] = useState('')
 
@@ -54,7 +57,9 @@ export function CampaignContentList({
   }, [assets, query])
 
   if (assets.length === 0 && uploads.length === 0) {
-    return <EmptyBank onWrite={onWrite} onUpload={onUpload} />
+    return (
+      <EmptyBank onWrite={onWrite} onUpload={onUpload} onAddWebPage={onAddWebPage} />
+    )
   }
 
   return (
@@ -109,13 +114,25 @@ export function CampaignContentList({
  * people filled with everything and then stopped trusting. This one says what
  * adding *does*: this campaign reads it, and no other campaign does.
  *
- * Two actions rather than one dropdown, because writing a note and uploading a
- * file are different intents and the old single ADD ASSET caret hid both. It
- * does not advertise the page-wide drop target underneath them: the two
- * buttons are the answer to "what do I do here", and a third line explaining a
- * third way in makes the emptiest screen in the product the wordiest.
+ * Three buttons rather than one dropdown, because writing a note, uploading a
+ * file and pointing at a page are different intents and the old single ADD
+ * ASSET caret hid all of them. Only the first is filled: writing is the one
+ * that needs nothing the user hasn't got, while the other two wait on a file or
+ * a link they have to go and find.
+ *
+ * It does not advertise the page-wide drop target underneath them: the buttons
+ * are the answer to "what do I do here", and a line explaining a further way in
+ * makes the emptiest screen in the product the wordiest.
  */
-function EmptyBank({ onWrite, onUpload }: { onWrite: () => void; onUpload: () => void }) {
+function EmptyBank({
+  onWrite,
+  onUpload,
+  onAddWebPage,
+}: {
+  onWrite: () => void
+  onUpload: () => void
+  onAddWebPage: () => void
+}) {
   return (
     <PageGridEmptyState
       title="This campaign writes from its brief alone"
@@ -129,6 +146,10 @@ function EmptyBank({ onWrite, onUpload }: { onWrite: () => void; onUpload: () =>
           <Button variant="outline" onClick={onUpload}>
             <UploadSimpleIcon />
             <span>UPLOAD FILES</span>
+          </Button>
+          <Button variant="outline" onClick={onAddWebPage}>
+            <GlobeSimpleIcon />
+            <span>ADD A WEB PAGE</span>
           </Button>
         </div>
       }
