@@ -178,6 +178,7 @@ export const es: Translation = {
   nav: {
     modules: 'Módulos',
     campaigns: 'Campañas',
+    contentBank: 'Banco de contenido',
     workspaceSettings: 'Ajustes del espacio',
     profile: 'Perfil',
     help: 'Ayuda y soporte',

@@ -108,8 +108,11 @@ function TagPill({ tag }: { tag: Tag }) {
 
 type AssetsTableProps = {
   assets: Asset[]
-  /** The campaign whose page this is — rows open its copy of the editor. */
-  campaignId: string
+  /**
+   * The campaign whose page this is — rows open its copy of the editor. Null in
+   * the workspace bank, where a document is opened without one.
+   */
+  campaignId: string | null
   onDelete: (id: string) => void
   emptyStateMessage?: string
 }
@@ -137,12 +140,16 @@ function AssetsTableComponent({
           // provisional the address *is* the title, tidied.
           const provisional = row.type === 'URL' && row.source_url === row.title
           const source = provisional ? null : row.source_url
+          // Same row, two editors: the campaign's copy keeps the campaign in
+          // the URL so its back caret and its delete know where they are.
+          const open = campaignId
+            ? ({
+                to: '/campaigns/$campaignId/content/$assetId',
+                params: { campaignId, assetId: row.id },
+              } as const)
+            : ({ to: '/content-bank/$assetId', params: { assetId: row.id } } as const)
           return (
-            <Link
-              to="/campaigns/$campaignId/content/$assetId"
-              params={{ campaignId, assetId: row.id }}
-              className={cn(CELL, 'gap-3')}
-            >
+            <Link {...open} className={cn(CELL, 'gap-3')}>
               <AssetIcon asset={row} />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="table-text truncate hover:underline">

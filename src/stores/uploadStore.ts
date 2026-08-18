@@ -21,11 +21,11 @@ export type UploadPhase =
 export type UploadItem = {
   id: string;
   /**
-   * The campaign the file was added to. Every upload now happens inside one
-   * (CON-210), and the attach happens here rather than on the page so that
+   * The campaign the file was added to, or null when it was added to the
+   * workspace bank. The attach happens here rather than on the page so that
    * walking away mid-upload cannot leave the asset belonging to nothing.
    */
-  campaignId: string;
+  campaignId: string | null;
   file: File;
   filename: string;
   sizeBytes: number;
@@ -39,7 +39,7 @@ export type UploadItem = {
 type UploadState = {
   items: UploadItem[];
   /** Validate and begin uploading each file; invalid files appear as failed. */
-  enqueue: (files: File[] | FileList, campaignId: string) => void;
+  enqueue: (files: File[] | FileList, campaignId: string | null) => void;
   /** Re-run a failed upload from its original File. */
   retry: (id: string) => void;
   /** Sync a polled backend asset status into the tracked item. */
@@ -69,7 +69,7 @@ export const useUploadStore = create<UploadState>()(
           ),
         }));
 
-      const start = (id: string, file: File, campaignId: string) => {
+      const start = (id: string, file: File, campaignId: string | null) => {
         patch(id, { phase: "uploading", progress: 0, error: undefined });
         uploadAssetFile(file, { onProgress: (p) => patch(id, { progress: p }) })
           .then((result) => {
@@ -89,9 +89,11 @@ export const useUploadStore = create<UploadState>()(
             });
             // The asset exists now, so the campaign it was dropped on gets it
             // and the list it belongs in refetches. Both are deliberately not
-            // conditional on anyone still looking at that page.
+            // conditional on anyone still looking at that page. A file dropped
+            // on the workspace bank has no campaign to join — it is already
+            // where it was put.
             if (result.asset_id) {
-              void addToCampaign(campaignId, [result.asset_id]);
+              if (campaignId) void addToCampaign(campaignId, [result.asset_id]);
               queryClient.invalidateQueries({ queryKey: ["assets"] });
             }
           })

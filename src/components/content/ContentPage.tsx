@@ -26,25 +26,35 @@ import { toast } from '@/stores/toastStore'
 import type { Campaign } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
 import { AddWebPageModal } from './AddWebPageModal'
-import { CampaignContentList } from './CampaignContentList'
+import { ContentList } from './ContentList'
 
 /**
- * A campaign's Content page: the Content Bank, moved inside the campaign that
- * uses it (CON-210).
+ * Documents, in the scope that holds them.
  *
- * It owns its own header and drop target rather than taking the campaign
- * layout's, because both say something specific here — the header's one action
- * is *add to this campaign*, and a file dropped anywhere on the page joins
- * this campaign rather than a workspace pile.
+ * Two screens, one component: a campaign's Content page (CON-210), and the
+ * workspace-wide Content Bank behind it. They are the same page because they
+ * are the same job — see what is here, put something in, open it, delete it —
+ * and the only honest difference is what "here" means. `campaign === null` is
+ * the workspace, and every place that matters says so out loud rather than
+ * quietly reusing the campaign's words.
  *
- * Deliberately absent: any path into the workspace pool. No "add existing", no
- * browse-the-bank drawer. Reaching into the pile is what made it a pile, and a
- * campaign that can browse everything has not stopped being workspace-wide.
- * Documents get in here by being written, uploaded or read off the web *here*,
- * which is the whole ADD CONTENT menu — three ways to put something in, none of
- * them a way to go looking through what already exists.
+ * The page owns its header and its drop target rather than taking the layout's,
+ * because both name a destination: a file dropped anywhere on it joins *this*
+ * scope.
+ *
+ * Deliberately absent from the campaign: any path into the workspace pool. No
+ * "add existing", no browse-the-bank drawer. Reaching into the pile is what
+ * made it a pile, and a campaign that can browse everything has not stopped
+ * being workspace-wide. Documents get in there by being written, uploaded or
+ * read off the web *there*, which is the whole ADD CONTENT menu — three ways to
+ * put something in, none of them a way to go looking through what exists.
+ *
+ * The consequence, stated so it isn't discovered: a document added in the
+ * workspace bank belongs to no campaign and cannot be moved into one. The bank
+ * is where such documents are visible — which is the reason it is switched back
+ * on — not a staging area they travel out of.
  */
-export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
+export function ContentPage({ campaign }: { campaign: Campaign | null }) {
   const navigate = useNavigate()
   const { data: assets, isLoading, isError } = useAssets()
   const createAsset = useCreateAsset()
@@ -65,22 +75,24 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
   const [isDragging, setIsDragging] = useState(false)
   const dragDepth = useRef(0)
 
-  const mine = useMemo(
-    () => campaignAssets(assets ?? [], campaign),
+  /** The campaign's documents, or — in the bank — every document there is. */
+  const shown = useMemo(
+    () => (campaign ? campaignAssets(assets ?? [], campaign) : (assets ?? [])),
     [assets, campaign],
   )
 
   // In transit, or refused on the way in. Anything the server has already
   // accepted is an asset by now, and shows in the list as a `processing` row
   // rather than twice.
+  const campaignId = campaign?.id ?? null
   const uploads = useMemo(
     () =>
       uploadItems.filter(
         (item) =>
-          item.campaignId === campaign.id &&
+          item.campaignId === campaignId &&
           (item.phase === 'uploading' || item.phase === 'failed'),
       ),
-    [uploadItems, campaign.id],
+    [uploadItems, campaignId],
   )
 
   /*
@@ -96,7 +108,8 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
    */
   const seeded = useRef<string | null>(null)
   useEffect(() => {
-    if (!assets || !seedsWholeBank(campaign) || seeded.current === campaign.id) return
+    if (!assets || !campaign || !seedsWholeBank(campaign) || seeded.current === campaign.id)
+      return
     seeded.current = campaign.id
     void seedFromWholeBank(
       campaign.id,
@@ -125,40 +138,44 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
     dragDepth.current = 0
     setIsDragging(false)
     const files = Array.from(e.dataTransfer.files)
-    if (files.length) enqueueUploads(files, campaign.id)
+    if (files.length) enqueueUploads(files, campaignId)
   }
 
-  /** A new note, in this campaign, opened for writing. */
+  /** A new note, in this scope, opened for writing. */
   const handleCreate = () => {
     createAsset.mutate(
       { title: ' ', content: ' ' },
       {
         onSuccess: (asset) => {
-          // Attaching is not a second action the user has to remember, and it
-          // is not conditional on this page surviving the navigation below.
-          void addToCampaign(campaign.id, [asset.id])
-          navigate({
-            to: '/campaigns/$campaignId/content/$assetId',
-            params: { campaignId: campaign.id, assetId: asset.id },
-          })
+          if (campaign) {
+            // Attaching is not a second action the user has to remember, and it
+            // is not conditional on this page surviving the navigation below.
+            void addToCampaign(campaign.id, [asset.id])
+            navigate({
+              to: '/campaigns/$campaignId/content/$assetId',
+              params: { campaignId: campaign.id, assetId: asset.id },
+            })
+            return
+          }
+          navigate({ to: '/content-bank/$assetId', params: { assetId: asset.id } })
         },
       },
     )
   }
 
   /**
-   * A page the backend has accepted for scraping, joining this campaign.
+   * A page the backend has accepted for scraping, joining this scope.
    *
-   * Attaching is the same gesture as for a note or an upload, but the asset it
-   * attaches may not be new: the backend dedupes URLs per *workspace*, so a
-   * page another campaign already saved comes back as that campaign's document,
-   * now shared with this one and re-read for both. That is the honest reading of
-   * one workspace-wide row referenced by many campaigns (CON-210 phase 1) — and
-   * a second copy of the same page would be worse.
+   * In a campaign, attaching is the same gesture as for a note or an upload —
+   * but the asset it attaches may not be new: the backend dedupes URLs per
+   * *workspace*, so a page another campaign already saved comes back as that
+   * campaign's document, now shared with this one and re-read for both. That is
+   * the honest reading of one workspace-wide row referenced by many campaigns
+   * (CON-210 phase 1), and a second copy of the same page would be worse.
    */
   const handleWebPage = (asset: Asset) => {
-    const alreadyHere = mine.some((a) => a.id === asset.id)
-    void addToCampaign(campaign.id, [asset.id])
+    const alreadyHere = shown.some((a) => a.id === asset.id)
+    if (campaign) void addToCampaign(campaign.id, [asset.id])
     if (alreadyHere) {
       toast.info('Re-reading that page', {
         description: "Its content will be replaced with the page's current version.",
@@ -170,13 +187,26 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
     }
   }
 
+  /*
+   * Deleting the row deletes the document, everywhere.
+   *
+   * The detach only names the campaign whose page this is, because that is the
+   * only membership list this page can see. Other campaigns keep the id, which
+   * is harmless — `campaignAssets` matches ids against documents that exist, so
+   * an id with nothing behind it simply doesn't appear — and it stops being a
+   * question at all once the backend scopes assets properly (CON-210 phase 2).
+   */
   const handleDelete = (id: string) => {
     deleteAsset.mutate(id, {
-      onSuccess: () => void removeFromCampaign(campaign.id, [id]),
+      onSuccess: () => {
+        if (campaign) void removeFromCampaign(campaign.id, [id])
+      },
     })
   }
 
-  const displayName = campaign.name.trim() || 'Untitled campaign'
+  const scopeName = campaign
+    ? campaign.name.trim() || 'Untitled campaign'
+    : 'the content bank'
 
   return (
     <div
@@ -189,11 +219,12 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
       onDrop={handleDrop}
     >
       <PageHeader
-        // Same shape the campaign layout builds for every other section:
+        // In a campaign, the shape the layout builds for every other section:
         // `${campaign} ${section}`. The section is Content rather than Assets —
         // "assets" is the workspace pile's word for things filed away
-        // centrally, and what a campaign holds is just its content.
-        title={`${displayName} Content`}
+        // centrally, and what a campaign holds is just its content. The pile
+        // keeps its own name, because that is what it is.
+        title={campaign ? `${scopeName} Content` : 'Content Bank'}
         actions={
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -244,11 +275,15 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
         {isLoading ? (
           <PageLoader />
         ) : isError ? (
-          <PageError header="Unable to load this campaign's content" />
+          <PageError
+            header={
+              campaign ? "Unable to load this campaign's content" : 'Unable to load the content bank'
+            }
+          />
         ) : (
-          <CampaignContentList
-            campaignId={campaign.id}
-            assets={mine}
+          <ContentList
+            campaignId={campaignId}
+            assets={shown}
             uploads={uploads}
             onDelete={handleDelete}
             onWrite={handleCreate}
@@ -264,7 +299,7 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
             <UploadSimpleIcon className="size-8 text-foreground" />
             {/* The destination is the entire point of the change, and this is
                 the one moment the UI can name it without being asked. */}
-            <p className="text-sm text-foreground">Add these to {displayName}</p>
+            <p className="text-sm text-foreground">Add these to {scopeName}</p>
             <p className="text-xs text-tertiary-foreground">{UPLOAD_LIMITS_LABEL}</p>
           </div>
         </div>
@@ -273,7 +308,7 @@ export function CampaignContentPage({ campaign }: { campaign: Campaign }) {
       <UploadModal
         isOpen={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
-        campaignId={campaign.id}
+        campaignId={campaignId}
       />
 
       <AddWebPageModal

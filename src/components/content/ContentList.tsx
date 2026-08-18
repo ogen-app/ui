@@ -19,10 +19,10 @@ import type { Asset } from '@/types/content'
 const SEARCH_THRESHOLD = 8
 
 type Props = {
-  campaignId: string
-  /** The campaign's own documents — never the workspace's. */
+  /** The campaign whose documents these are, or null for the whole workspace. */
+  campaignId: string | null
   assets: Asset[]
-  /** Files still in transit to this campaign, or refused on the way. */
+  /** Files still in transit to this scope, or refused on the way. */
   uploads: UploadItem[]
   onDelete: (id: string) => void
   onWrite: () => void
@@ -31,7 +31,8 @@ type Props = {
 }
 
 /**
- * What a campaign writes from, as a list.
+ * What a campaign writes from — or, in the bank, everything there is — as a
+ * list.
  *
  * The three-tile source picker that used to sit above this is gone (CON-210),
  * and nothing replaces it: the campaign's sources are the documents on the
@@ -39,8 +40,13 @@ type Props = {
  * a sentence restating what the list already shows was the same claim twice.
  * Per-document facts (how much text, whether it can be read) stay where they
  * are true, on the row.
+ *
+ * Only the empty state and the search field's own words change with scope. The
+ * table doesn't: a document is the same object wherever it is listed, and a
+ * second row design for the same rows is how this screen came to have two
+ * tables that their own comments admitted were identical.
  */
-export function CampaignContentList({
+export function ContentList({
   campaignId,
   assets,
   uploads,
@@ -58,7 +64,12 @@ export function CampaignContentList({
 
   if (assets.length === 0 && uploads.length === 0) {
     return (
-      <EmptyBank onWrite={onWrite} onUpload={onUpload} onAddWebPage={onAddWebPage} />
+      <EmptyBank
+        campaignId={campaignId}
+        onWrite={onWrite}
+        onUpload={onUpload}
+        onAddWebPage={onAddWebPage}
+      />
     )
   }
 
@@ -73,7 +84,9 @@ export function CampaignContentList({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Search ${assets.length} documents`}
-            aria-label="Search this campaign's content"
+            aria-label={
+              campaignId ? "Search this campaign's content" : 'Search the content bank'
+            }
             className="px-0"
           />
           {query !== '' && (
@@ -97,7 +110,11 @@ export function CampaignContentList({
           campaignId={campaignId}
           onDelete={onDelete}
           emptyStateMessage={
-            query === '' ? 'Nothing in this campaign yet' : 'No documents match that'
+            query !== ''
+              ? 'No documents match that'
+              : campaignId
+                ? 'Nothing in this campaign yet'
+                : 'Nothing in the content bank yet'
           }
         />
       </div>
@@ -106,7 +123,7 @@ export function CampaignContentList({
 }
 
 /**
- * The first thing a new campaign shows, and the state the whole change is
+ * The first thing an empty scope shows, and the state the whole change is
  * judged on.
  *
  * The workspace bank said "create your first asset to start building your
@@ -125,18 +142,31 @@ export function CampaignContentList({
  * makes the emptiest screen in the product the wordiest.
  */
 function EmptyBank({
+  campaignId,
   onWrite,
   onUpload,
   onAddWebPage,
 }: {
+  campaignId: string | null
   onWrite: () => void
   onUpload: () => void
   onAddWebPage: () => void
 }) {
   return (
     <PageGridEmptyState
-      title="This campaign writes from its brief alone"
-      subtitle="Add the documents it should also read — positioning, transcripts, a tone of voice, last quarter's report."
+      title={
+        campaignId
+          ? 'This campaign writes from its brief alone'
+          : 'Nothing is filed outside a campaign'
+      }
+      subtitle={
+        campaignId
+          ? "Add the documents it should also read — positioning, transcripts, a tone of voice, last quarter's report."
+          : // The bank's job is showing what campaigns don't: a document lands
+            // here when it was added here, or when the campaign that held it
+            // was deleted. Nothing added here reaches a campaign by itself.
+            'Documents added here belong to no campaign — a campaign reads only what is on its own Content page.'
+      }
       actions={
         <div className="flex items-center gap-2">
           <Button variant="defaultInverted" onClick={onWrite}>

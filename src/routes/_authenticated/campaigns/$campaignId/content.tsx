@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CampaignContentPage } from "@/components/campaigns/content/CampaignContentPage.tsx";
+import { ContentPage } from "@/components/content/ContentPage";
 import { useCampaign } from "@/hooks/useCampaigns.ts";
 
 export const Route = createFileRoute(
@@ -14,5 +14,5 @@ function CampaignContent() {
   // The layout above has already handled loading and failure for this
   // campaign; this only renders once it is here.
   if (!campaign) return null;
-  return <CampaignContentPage key={campaign.id} campaign={campaign} />;
+  return <ContentPage key={campaign.id} campaign={campaign} />;
 }

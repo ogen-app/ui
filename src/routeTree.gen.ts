@@ -22,7 +22,9 @@ import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
 import { Route as AuthForgotIndexRouteImport } from './routes/auth/forgot/index'
 import { Route as AuthenticatedWorkspaceSettingsIndexRouteImport } from './routes/_authenticated/workspace-settings/index'
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
+import { Route as AuthenticatedContentBankIndexRouteImport } from './routes/_authenticated/content-bank/index'
 import { Route as AuthenticatedCampaignsIndexRouteImport } from './routes/_authenticated/campaigns/index'
+import { Route as AuthenticatedContentBankAssetIdRouteImport } from './routes/_authenticated/content-bank/$assetId'
 import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
 import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
@@ -102,10 +104,22 @@ const AuthenticatedProfileIndexRoute =
     path: '/profile/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedContentBankIndexRoute =
+  AuthenticatedContentBankIndexRouteImport.update({
+    id: '/content-bank/',
+    path: '/content-bank/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCampaignsIndexRoute =
   AuthenticatedCampaignsIndexRouteImport.update({
     id: '/campaigns/',
     path: '/campaigns/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContentBankAssetIdRoute =
+  AuthenticatedContentBankAssetIdRouteImport.update({
+    id: '/content-bank/$assetId',
+    path: '/content-bank/$assetId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdRoute =
@@ -188,7 +202,9 @@ export interface FileRoutesByFullPath {
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
+  '/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
   '/campaigns/': typeof AuthenticatedCampaignsIndexRoute
+  '/content-bank/': typeof AuthenticatedContentBankIndexRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
   '/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot/': typeof AuthForgotIndexRoute
@@ -214,7 +230,9 @@ export interface FileRoutesByTo {
   '/invite': typeof InviteIndexRoute
   '/server-unavailable': typeof ServerUnavailableIndexRoute
   '/workspaces': typeof WorkspacesIndexRoute
+  '/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
   '/campaigns': typeof AuthenticatedCampaignsIndexRoute
+  '/content-bank': typeof AuthenticatedContentBankIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
   '/workspace-settings': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot': typeof AuthForgotIndexRoute
@@ -243,7 +261,9 @@ export interface FileRoutesById {
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
   '/_authenticated/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
+  '/_authenticated/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
   '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexRoute
+  '/_authenticated/content-bank/': typeof AuthenticatedContentBankIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
   '/_authenticated/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot/': typeof AuthForgotIndexRoute
@@ -272,7 +292,9 @@ export interface FileRouteTypes {
     | '/server-unavailable/'
     | '/workspaces/'
     | '/campaigns/$campaignId'
+    | '/content-bank/$assetId'
     | '/campaigns/'
+    | '/content-bank/'
     | '/profile/'
     | '/workspace-settings/'
     | '/auth/forgot/'
@@ -298,7 +320,9 @@ export interface FileRouteTypes {
     | '/invite'
     | '/server-unavailable'
     | '/workspaces'
+    | '/content-bank/$assetId'
     | '/campaigns'
+    | '/content-bank'
     | '/profile'
     | '/workspace-settings'
     | '/auth/forgot'
@@ -326,7 +350,9 @@ export interface FileRouteTypes {
     | '/server-unavailable/'
     | '/workspaces/'
     | '/_authenticated/campaigns/$campaignId'
+    | '/_authenticated/content-bank/$assetId'
     | '/_authenticated/campaigns/'
+    | '/_authenticated/content-bank/'
     | '/_authenticated/profile/'
     | '/_authenticated/workspace-settings/'
     | '/auth/forgot/'
@@ -453,11 +479,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/content-bank/': {
+      id: '/_authenticated/content-bank/'
+      path: '/content-bank'
+      fullPath: '/content-bank/'
+      preLoaderRoute: typeof AuthenticatedContentBankIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/campaigns/': {
       id: '/_authenticated/campaigns/'
       path: '/campaigns'
       fullPath: '/campaigns/'
       preLoaderRoute: typeof AuthenticatedCampaignsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/content-bank/$assetId': {
+      id: '/_authenticated/content-bank/$assetId'
+      path: '/content-bank/$assetId'
+      fullPath: '/content-bank/$assetId'
+      preLoaderRoute: typeof AuthenticatedContentBankAssetIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/campaigns/$campaignId': {
@@ -589,7 +629,9 @@ const AuthenticatedCampaignsCampaignIdRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCampaignsCampaignIdRoute: typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
+  AuthenticatedContentBankAssetIdRoute: typeof AuthenticatedContentBankAssetIdRoute
   AuthenticatedCampaignsIndexRoute: typeof AuthenticatedCampaignsIndexRoute
+  AuthenticatedContentBankIndexRoute: typeof AuthenticatedContentBankIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
   AuthenticatedWorkspaceSettingsIndexRoute: typeof AuthenticatedWorkspaceSettingsIndexRoute
   AuthenticatedCampaignsCampaignIdContentAssetIdRoute: typeof AuthenticatedCampaignsCampaignIdContentAssetIdRoute
@@ -600,7 +642,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCampaignsCampaignIdRoute:
     AuthenticatedCampaignsCampaignIdRouteWithChildren,
+  AuthenticatedContentBankAssetIdRoute: AuthenticatedContentBankAssetIdRoute,
   AuthenticatedCampaignsIndexRoute: AuthenticatedCampaignsIndexRoute,
+  AuthenticatedContentBankIndexRoute: AuthenticatedContentBankIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
   AuthenticatedWorkspaceSettingsIndexRoute:
     AuthenticatedWorkspaceSettingsIndexRoute,

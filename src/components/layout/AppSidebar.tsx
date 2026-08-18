@@ -5,6 +5,7 @@ import {
   ArrowSquareOutIcon,
   ArrowsLeftRightIcon,
   CalendarDotsIcon,
+  CardsThreeIcon,
   CaretDoubleLeftIcon,
   ChartLineUpIcon,
   GearSixIcon,
@@ -187,6 +188,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               text={t('nav.campaigns')}
               isActive={location.pathname === '/campaigns'}
               to="/campaigns"
+            />
+            <AppSidebarButtonMenu
+              icon={<CardsThreeIcon weight="regular" className="size-5 flex-none" />}
+              text={t('nav.contentBank')}
+              isActive={location.pathname.startsWith('/content-bank')}
+              to="/content-bank"
             />
 
             {/* The nav is the same on every page, so an empty group here is

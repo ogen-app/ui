@@ -13,8 +13,8 @@ import {
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  /** The campaign the files join — uploads no longer land anywhere else. */
-  campaignId: string;
+  /** The campaign the files join, or null to upload to the workspace bank. */
+  campaignId: string | null;
 };
 
 /**
@@ -49,7 +49,7 @@ export function UploadModal({ isOpen, onClose, campaignId }: Props) {
     <ModalContainer
       isOpen={isOpen}
       onClose={close}
-      title="Add to this campaign"
+      title={campaignId ? "Add to this campaign" : "Add to the content bank"}
       size="large"
     >
       <div className="flex flex-col gap-4">

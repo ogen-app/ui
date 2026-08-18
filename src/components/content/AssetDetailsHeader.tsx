@@ -20,8 +20,11 @@ import { SaveStatus } from '@/components/page-primitives/SaveStatus'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 
 type Props = {
-  /** The campaign this document belongs to — where the back caret goes. */
-  campaignId: string
+  /**
+   * The campaign this was opened from — where the back caret goes. Null means it
+   * was opened in the workspace bank, which is then where it returns to.
+   */
+  campaignId: string | null
   /** Autosave in flight — shows the pulsing cloud instead of nothing. */
   saving: boolean
   /** The page this was scraped from, for a URL document (CON-222). */
@@ -37,6 +40,11 @@ type Props = {
  * list on the left, the save state centred, the overflow on the right. Both
  * are documents you are inside, and a reader who has just come from a post
  * should not have to re-learn where the chrome went.
+ *
+ * The back caret returns to whichever list the document was opened from. A
+ * document in the bank may also be in a campaign — membership is a set of ids,
+ * not a home — so "back" can only mean where you came from, and the URL is the
+ * only record of that.
  *
  * The title is deliberately absent here, as on a post: it is the first field
  * of the document below, and printing it twice makes the editable one look
@@ -69,11 +77,17 @@ export function AssetDetailsHeader({
           variant="headerIcon"
           size="excluded"
           asChild
-          aria-label="Back to this campaign's content"
+          aria-label={campaignId ? "Back to this campaign's content" : 'Back to the content bank'}
         >
-          <Link to="/campaigns/$campaignId/content" params={{ campaignId }}>
-            <CaretLeftIcon className="size-5" />
-          </Link>
+          {campaignId ? (
+            <Link to="/campaigns/$campaignId/content" params={{ campaignId }}>
+              <CaretLeftIcon className="size-5" />
+            </Link>
+          ) : (
+            <Link to="/content-bank">
+              <CaretLeftIcon className="size-5" />
+            </Link>
+          )}
         </Button>
       }
       center={<SaveStatus saving={saving} />}
