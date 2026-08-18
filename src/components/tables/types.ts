@@ -19,7 +19,7 @@ export type ColumnConfig<T> = {
   maxSize?: number
   minSize?: number
   isAutoSize?: boolean
-  alignment?: 'left' | 'right'
+  alignment?: 'left' | 'right' | 'center'
   borderSide?: 'left' | 'right' | 'both'
   cell?: (value: unknown, row: T) => ReactNode
   sortable?: boolean
