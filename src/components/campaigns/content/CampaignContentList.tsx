@@ -10,7 +10,6 @@ import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptySt
 import { AssetsTable } from '@/components/tables/docsTable'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { poolStats } from '@/lib/campaignSources'
 import { cn } from '@/lib'
 import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
 import type { Asset } from '@/types/content'
@@ -32,10 +31,12 @@ type Props = {
 /**
  * What a campaign writes from, as a list.
  *
- * The three-tile source picker that used to sit above this is gone (CON-210).
- * What replaces it is the first line below: the campaign's sources are a fact
- * about what is on the page, not a mode you set. There is nothing to choose,
- * so there is nothing to misunderstand.
+ * The three-tile source picker that used to sit above this is gone (CON-210),
+ * and nothing replaces it: the campaign's sources are the documents on the
+ * page. There is nothing to choose, so there is nothing to misunderstand — and
+ * a sentence restating what the list already shows was the same claim twice.
+ * Per-document facts (how much text, whether it can be read) stay where they
+ * are true, on the row.
  */
 export function CampaignContentList({
   campaignId,
@@ -47,7 +48,6 @@ export function CampaignContentList({
 }: Props) {
   const [query, setQuery] = useState('')
 
-  const stats = useMemo(() => poolStats(assets), [assets])
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     return q === '' ? assets : assets.filter((a) => a.title.toLowerCase().includes(q))
@@ -59,30 +59,6 @@ export function CampaignContentList({
 
   return (
     <div className="flex min-h-0 flex-col gap-3 py-4">
-      {/*
-       * The count is of the campaign, not of what search has left on screen:
-       * it describes what the campaign writes from, and narrowing what you are
-       * looking at does not change that. A number that fell to 3 while you
-       * typed would be saying the campaign had forgotten twenty-one documents.
-       */}
-      <p className="shrink-0 text-sm text-secondary-foreground">
-        Written from this campaign's brief and the {stats.total}{' '}
-        {stats.total === 1 ? 'document' : 'documents'} below.
-        {stats.waiting > 0 && (
-          <span className="text-tertiary-foreground"> {stats.waiting} still processing.</span>
-        )}
-        {/* `partial` and `failed` are permanently inert — the server skips
-            both (CON-118 §10). The sentence above has just claimed the
-            campaign writes from every document here, so the page contradicts
-            itself out loud rather than leaving the user to notice. */}
-        {stats.inert > 0 && (
-          <span className="text-destructive">
-            {' '}
-            {stats.inert} couldn't be read.
-          </span>
-        )}
-      </p>
-
       {assets.length > SEARCH_THRESHOLD && (
         <div className="flex h-10 shrink-0 items-center gap-2 border-b-2 border-quaternary bg-input-secondary px-3 sm:max-w-80">
           <MagnifyingGlassIcon className="size-4 shrink-0 text-secondary-foreground" />

@@ -2,13 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   campaignAssets,
   membershipPayload,
-  poolStats,
   retrievability,
   seedsWholeBank,
 } from "./campaignSources";
-import type { Asset, AssetStatus } from "@/types/content";
-
-const asset = (id: string, status: AssetStatus) => ({ id, status });
+import type { Asset } from "@/types/content";
 
 const doc = (id: string): Asset => ({
   id,
@@ -85,20 +82,3 @@ describe("retrievability", () => {
   });
 });
 
-describe("poolStats", () => {
-  it("buckets a mixed bank", () => {
-    expect(
-      poolStats([
-        asset("a", "ready"),
-        asset("b", "ready"),
-        asset("c", "processing"),
-        asset("d", "failed"),
-        asset("e", "partial"),
-      ]),
-    ).toEqual({ total: 5, ready: 2, waiting: 1, inert: 2 });
-  });
-
-  it("is all zeroes for an empty bank", () => {
-    expect(poolStats([])).toEqual({ total: 0, ready: 0, waiting: 0, inert: 0 });
-  });
-});

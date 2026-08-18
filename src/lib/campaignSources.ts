@@ -87,32 +87,3 @@ export function retrievability(status: AssetStatus): Retrievability {
       return "never";
   }
 }
-
-export type PoolStats = {
-  total: number;
-  /** Assets retrieval can use right now. */
-  ready: number;
-  /** Assets still processing — usable once they finish. */
-  waiting: number;
-  /** Assets retrieval will never use. */
-  inert: number;
-};
-
-export function poolStats(assets: Pick<Asset, "status">[]): PoolStats {
-  const stats: PoolStats = { total: 0, ready: 0, waiting: 0, inert: 0 };
-  for (const asset of assets) {
-    stats.total += 1;
-    switch (retrievability(asset.status)) {
-      case "ready":
-        stats.ready += 1;
-        break;
-      case "waiting":
-        stats.waiting += 1;
-        break;
-      case "never":
-        stats.inert += 1;
-        break;
-    }
-  }
-  return stats;
-}
