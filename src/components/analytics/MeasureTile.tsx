@@ -1,6 +1,6 @@
 import { ArrowDownRightIcon, ArrowRightIcon, ArrowUpRightIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
-import { Sparkline } from './charts'
+import { Sparkbars, Sparkline } from './charts'
 import { FigureTile } from './shell'
 import {
   delta,
@@ -10,8 +10,9 @@ import {
   verdict,
   verdictIsGood,
   type Delta,
+  type Verdict,
 } from './format'
-import type { MeasureReading } from './types'
+import type { MeasureId, MeasureReading, PostMetric } from './types'
 
 /**
  * One measure, with both halves of the temporal axis.
@@ -42,9 +43,16 @@ export function MeasureTile({
 
   return (
     <FigureTile selected={selected} onSelect={onSelect} className={className}>
-      {/* The label names the number — it is read, not skimmed past. */}
-      <span className="text-xs text-secondary-foreground truncate" title={meta.hint}>
-        {meta.label}
+      {/*
+        The label names the number — it is read, not skimmed past — and it names
+        it the way this card is showing it. "Reach" and "Followers" in the same
+        row invite both to be read as period totals; "Cumulative reach" beside
+        "Current followers" costs a word and says which is which.
+      */}
+      {/* Wraps rather than truncates. The label is what makes the figure
+          readable, and "Cumulative intera…" costs more than a second line. */}
+      <span className="text-xs text-secondary-foreground" title={meta.hint}>
+        {meta.periodLabel}
       </span>
 
       {/*
@@ -71,36 +79,27 @@ export function MeasureTile({
         )}
       </div>
 
-      {v && (
-        // Short, because the sentence it summarises is already under the chart:
-        // "184.9K so far, against the 120K–165K this workspace normally
-        // reaches". Here it only has to say which side of usual this is on.
-        <span
-          className={cn(
-            'text-xs',
-            v === 'within'
-              ? 'text-tertiary-foreground'
-              : verdictIsGood(reading.measure, v)
-                ? 'text-positive'
-                : 'text-negative',
-          )}
-        >
-          {v === 'within' ? 'Normal for you' : v === 'above' ? 'Above usual' : 'Below usual'}
-        </span>
-      )}
+      <VerdictLine measure={reading.measure} verdict={v} />
 
       {/*
         Every tile, not just the headline. A number with no shape behind it is
         a number someone has to take on trust: interactions at 9,310 could be
         one good day or four steady weeks, and those call for different work.
       */}
-      {reading.series.length > 1 && (
-        <Sparkline
-          points={reading.series}
-          direction={d?.direction ?? 'neutral'}
-          className="mt-auto pt-2"
-        />
-      )}
+      {reading.series.length > 1 &&
+        (meta.chart === 'columns' ? (
+          <Sparkbars
+            points={reading.series}
+            direction={d?.direction ?? 'neutral'}
+            className="mt-auto pt-2"
+          />
+        ) : (
+          <Sparkline
+            points={reading.series}
+            direction={d?.direction ?? 'neutral'}
+            className="mt-auto pt-2"
+          />
+        ))}
     </FigureTile>
   )
 }
@@ -137,6 +136,110 @@ export function DeltaChip({
     >
       <Icon className="size-3 shrink-0" weight="bold" aria-hidden />
       {formatDelta(d)}
+    </span>
+  )
+}
+
+/**
+ * The same tile, on a single post.
+ *
+ * Deliberately the same anatomy as {@link MeasureTile} — label, figure,
+ * comparison, which side of usual — because the post card is the campaign card
+ * asked about one post, and two visual languages for one idea is two things to
+ * learn. Only what is compared differs: a period has a *previous period*, a post
+ * has *a typical post of yours*, and neither is the other.
+ *
+ * The plain label, not the period one. "Cumulative reach" names a total earned
+ * across a window; on one post the number is just its reach, and borrowing the
+ * period word would imply a window that isn't there.
+ *
+ * Not selectable, unlike the period tile. On the campaign card selection is
+ * what lets five figures share one chart; on a post every measure already has a
+ * card of its own with its own history under it, so a tile that could be pressed
+ * would be a second way to reach something already on screen.
+ */
+export function PostMeasureTile({
+  metric,
+  ageCorrected,
+  className,
+}: {
+  metric: PostMetric
+  /**
+   * Whether `typical` is what a typical post had earned *by this age* rather
+   * than what one finishes on. It changes only the tooltip, but it is the
+   * difference between an honest comparison and the age lie.
+   */
+  ageCorrected: boolean
+  className?: string
+}) {
+  const meta = measureMeta(metric.measure)
+  const d = delta(metric.measure, metric.value, metric.typical ?? null)
+  const v = verdict(metric.value, metric.expected ?? null)
+
+  return (
+    <FigureTile className={className}>
+      <span className="text-xs text-secondary-foreground" title={meta.hint}>
+        {meta.label}
+      </span>
+
+      <span className="font-display text-2xl font-medium leading-none truncate">
+        {formatMeasure(metric.measure, metric.value)}
+      </span>
+
+      <div className="flex items-center gap-2">
+        {d ? (
+          <DeltaChip
+            delta={d}
+            title={
+              ageCorrected
+                ? 'vs a typical post of yours at the same age'
+                : 'vs a typical post of yours'
+            }
+          />
+        ) : (
+          // Not "nothing to compare": on a post the thing missing is a history
+          // to compare *against*, and saying so is the difference between a
+          // young workspace and a broken card.
+          <span className="text-xs text-tertiary-foreground">no typical yet</span>
+        )}
+      </div>
+
+      <VerdictLine measure={metric.measure} verdict={v} />
+    </FigureTile>
+  )
+}
+
+/**
+ * Which side of usual a figure falls on — the one line both tiles share.
+ *
+ * Short, because the range it summarises is drawn behind the chart on the
+ * campaign card and named in the note on the post card. Here it only has to say
+ * which side of usual this is on, and colour it the way the measure runs.
+ *
+ * Exported because the post's measure cards carry the same line beside a figure
+ * that is too big to sit in a tile — one sentence, one wording, one place it can
+ * be argued with.
+ */
+export function VerdictLine({
+  measure,
+  verdict: v,
+}: {
+  measure: MeasureId
+  verdict: Verdict | null
+}) {
+  if (!v) return null
+  return (
+    <span
+      className={cn(
+        'text-xs',
+        v === 'within'
+          ? 'text-tertiary-foreground'
+          : verdictIsGood(measure, v)
+            ? 'text-positive'
+            : 'text-negative',
+      )}
+    >
+      {v === 'within' ? 'Normal for you' : v === 'above' ? 'Above usual' : 'Below usual'}
     </span>
   )
 }

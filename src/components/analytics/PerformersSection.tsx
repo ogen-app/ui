@@ -1,332 +1,334 @@
 import { useState } from 'react'
-import { cn } from '@/lib'
-import { PaceBar } from './charts'
+import { AccountAvatar } from '@/components/ui/account-avatar'
+import { resolvePlatformInfo } from '@/lib/platformDictionary'
+import { PaceBar, RankBar } from './charts'
 import { InsightLine } from './ComparisonSections'
-import { Basis, FigureGrid, FigureTile, NotYet, SectionCard } from './shell'
-import { formatMeasure, measureMeta } from './format'
-import type { MeasureId, PacePlacement, PerformersView, RankedPost } from './types'
+import { Picker } from './ComparisonBar'
+import {
+  availableCriteria,
+  criterionLabel,
+  placeAgainstTypical,
+  type Criterion,
+} from './criteria'
+import { Basis, NotYet, SectionCard } from './shell'
+import { formatCount, periodPhrase } from './format'
+import type { PerformerCriterionId, PerformersView, RankedPost } from './types'
 
 /**
- * Performers and outliers — both ends of the period, age-corrected.
+ * Performers and outliers — both ends of the period, by whichever question is
+ * being asked.
  *
  * The section exists because the headline provokes exactly one question —
  * *which posts did this?* — and answering it naively produces a list sorted by
- * age. A post published this morning has earned a fraction of what it will;
- * one from three weeks ago has finished. Rank them together and the top of the
- * list is simply the oldest posts. Exclude the young ones and the section can
- * say nothing about the work done this week, which is the week people are
- * actually asking about.
+ * age. A post published this morning has earned a fraction of what it will; one
+ * from three weeks ago has finished. Rank them together and the top of the list
+ * is simply the oldest posts.
  *
- * So nothing here is compared raw. Every post is read against this workspace's
- * own maturation curve first (see `RankedPost`), which yields two independent
- * answers, and the section is built around keeping them apart:
+ * Two ends rather than a "top posts" list, because the pair is the finding. Ten
+ * posts within a whisker of each other is a different month from three carrying
+ * everything and five doing nothing, and only seeing both ends at once says
+ * which one this was. Neither list is a leaderboard: the point of the worst
+ * five is that they are yours, published on purpose, and the reason usually
+ * shows up in the second line of the row rather than in the number.
  *
- * - **Where it lands** — the projection. Ranks the list, so "most impactful"
- *   still means impact rather than seniority.
- * - **Against typical at the same age** — the pace. Decides which band a post
- *   falls in, and it needs no projection to be fair.
- *
- * The bands are the key figures, which is what makes this one card instead of
- * a "top posts" card and a separate "underperformers" card: the interesting
- * reading is usually the *shape* — three posts carrying a third of the period
- * and seven doing nothing is a different month from ten ordinary ones, and the
- * counts say that before any row is read.
+ * What is ranked is the reader's choice, and the choices are not
+ * interchangeable — a post can be the biggest thing in the period and the worst
+ * at turning attention into anything (see `criteria.ts`). Every figure sits
+ * against this workspace's own typical, drawn from the centre out, because 5.0%
+ * is a good engagement rate or a poor one depending entirely on that.
  */
 export function PerformersSection({ view }: { view: PerformersView }) {
-  const meta = measureMeta(view.measure)
-  const [picked, setPicked] = useState<BandId | null>(null)
+  const [picked, setPicked] = useState<PerformerCriterionId | null>(null)
+  const criteria = availableCriteria(view)
+  const corrected = view.curve !== null
 
-  if (view.posts.length === 0) {
+  if (view.posts.length === 0 || criteria.length === 0) {
     return (
-      <SectionCard title="Performers and outliers" scope="lens">
-        <NotYet title="Nothing published in this period">
-          Once posts go out, the ones carrying the period — and the ones falling
-          behind what you normally do — show up here.
+      <SectionCard
+        title="Performers and outliers"
+        qualifier={periodPhrase(view.period)}
+        scope="lens"
+      >
+        <NotYet title="Nothing to rank in this period">
+          {view.posts.length === 0
+            ? 'Once posts go out, the ones carrying the period — and the ones falling behind what you normally do — show up here.'
+            : 'The posts in this period have not reported enough for any of the rankings to mean anything yet. Platforms usually take a few hours.'}
         </NotYet>
       </SectionCard>
     )
   }
 
-  // No curve, no correction, so no bands: with nothing to say what a typical
-  // post had earned by this age, "ahead of usual" has no *usual* in it. The
-  // card degrades to one ranked list and says why, rather than placing posts
-  // against a curve built from four of them.
-  if (!view.curve) {
-    const posts = [...view.posts].sort((a, b) => b.value - a.value)
-    return (
-      <SectionCard
-        title="Performers and outliers"
-        scope="lens"
-        status={
-          <span className="text-xs text-secondary-foreground">By {meta.label.toLowerCase()}</span>
-        }
-      >
-        <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium">Ranked by {meta.label.toLowerCase()} so far</h3>
-          <ul className="flex flex-col">
-            <Header measure={meta.label} paced={false} />
-            {posts.map((post) => (
-              <PostRow key={post.id} post={post} measure={view.measure} paced={false} />
-            ))}
-          </ul>
-          <Basis className="text-[13px] text-foreground">
-            These are raw figures, ranked as they stand. Not enough of your posts
-            have finished earning for us to know how yours mature, so a post from
-            this morning is being listed beside one from three weeks ago with no
-            correction — read the dates before you read the order.
-          </Basis>
-        </div>
+  // Falls back rather than resetting: switching period or platform can retire a
+  // criterion, and a card that empties itself because of that is worse than one
+  // that quietly returns to the first question.
+  const criterion = criteria.find((c) => c.id === picked) ?? criteria[0]
+  const typical = view.typical[criterion.id]
 
-        {view.insight && <InsightLine insight={view.insight} />}
+  const ranked = view.posts
+    .map((post) => ({ post, value: criterion.value(post, corrected) }))
+    .filter((row): row is { post: RankedPost; value: number } => row.value !== null)
+    .sort((a, b) => b.value - a.value)
 
-        <Basis confidence="low">
-          Age correction switches on once around fifteen of your posts have
-          settled. Until then nothing here is comparable across ages, and nothing
-          is called ahead or behind.
-        </Basis>
-      </SectionCard>
-    )
-  }
+  const heldOut = view.posts.length - ranked.length
+  const leader = ranked[0]?.value ?? 0
 
-  const curve = view.curve
-
-  const bands = BANDS.map((band) => {
-    const posts = view.posts
-      .filter((p) => (band.id === 'early' ? p.placement === null : p.placement === band.id))
-      // By where it lands, not by what has arrived: sorting a projection list
-      // on the raw figure would put the age back in through the side door.
-      .sort((a, b) => (b.projected ?? b.value) - (a.projected ?? a.value))
-    return {
-      ...band,
-      posts,
-      share: posts.reduce((sum, p) => sum + p.share, 0),
-    }
-  })
-
-  // Falls back to the first band that has anything rather than showing an empty
-  // list: which bands are populated changes with the period, and a card that
-  // empties itself because of that is worse than one that picks up the slack.
-  const selected =
-    bands.find((b) => b.id === picked && b.posts.length > 0) ??
-    bands.find((b) => b.posts.length > 0) ??
-    bands[0]
+  /*
+    Never the same post twice. Best five and worst five out of nine would put a
+    post in both lists, which reads as a bug and destroys the only thing the
+    pair is for — a post cannot be both ends of its own period. So the best end
+    is filled first and the worst end takes what is left, which is why the two
+    lists can be different lengths and why each heading counts itself. Under
+    four ranked posts there are no two ends at all, and the card says so.
+  */
+  const split = ranked.length >= 4
+  const best = Math.min(5, Math.ceil(ranked.length / 2))
+  const worst = Math.min(5, ranked.length - best)
 
   return (
     <SectionCard
       title="Performers and outliers"
+      qualifier={periodPhrase(view.period)}
       scope="lens"
       status={
-        <span className="text-xs text-secondary-foreground">
-          By {meta.label.toLowerCase()}, corrected for age
-        </span>
+        <Picker
+          label="By"
+          value={criterionLabel(criterion, corrected)}
+          options={criteria.map((c) => ({
+            value: c.id,
+            label: criterionLabel(c, corrected),
+          }))}
+          onChange={(v) => setPicked(v as PerformerCriterionId)}
+        />
       }
     >
-      <FigureGrid>
-        {bands.map((band) => (
-          <FigureTile
-            key={band.id}
-            selected={band.id === selected.id}
-            onSelect={band.posts.length > 0 ? () => setPicked(band.id) : undefined}
-          >
-            <span className="truncate text-xs text-secondary-foreground">{band.label}</span>
-            <span
-              className={cn(
-                'font-display text-2xl font-medium leading-none',
-                band.posts.length === 0 && 'text-tertiary-foreground',
-              )}
-            >
-              {band.posts.length}
-            </span>
-            <span className="text-xs text-tertiary-foreground">
-              {band.posts.length === 0
-                ? 'none'
-                : `${Math.round(band.share * 100)}% of the period`}
-            </span>
-          </FigureTile>
-        ))}
-      </FigureGrid>
+      {split ? (
+        <>
+          <PostList
+            heading={`Best ${best}`}
+            rows={ranked.slice(0, best)}
+            criterion={criterion}
+            corrected={corrected}
+            typical={typical}
+            leader={leader}
+          />
+          <PostList
+            heading={`Worst ${worst}`}
+            rows={ranked.slice(-worst).reverse()}
+            criterion={criterion}
+            corrected={corrected}
+            typical={typical}
+            leader={leader}
+          />
+        </>
+      ) : (
+        <PostList
+          heading={`All ${ranked.length}`}
+          rows={ranked}
+          criterion={criterion}
+          corrected={corrected}
+          typical={typical}
+          leader={leader}
+          note="Too few posts to have two ends — this is all of them, best first."
+        />
+      )}
 
-      <div className="mt-2 flex flex-col gap-2">
-        <h3 className="text-sm font-medium">{selected.heading(meta.label.toLowerCase())}</h3>
-
-        <ul className="flex flex-col">
-          <Header measure={meta.label} paced />
-          {selected.posts.map((post) => (
-            <PostRow key={post.id} post={post} measure={view.measure} paced />
+      {view.insights.length > 0 && (
+        <ul className="mt-1 flex flex-col gap-2">
+          {view.insights.map((i) => (
+            <li key={i.id}>
+              <InsightLine insight={i} />
+            </li>
           ))}
         </ul>
+      )}
 
-        {/*
-          The sentence the correction is for. Everything above it is only
-          defensible if the reader knows the figures have been age-adjusted, so
-          this is set in the primary colour a step above the supporting text —
-          not tucked into a footnote where the honest version reads as a caveat.
-        */}
-        <Basis className="text-[13px] text-foreground">
-          {selected.explain(selected.posts.length, curve.floor)}
-        </Basis>
-      </div>
+      {/*
+        One note, not a stack of them.
 
-      {view.insight && <InsightLine insight={view.insight} />}
-
-      <Basis confidence={curve.confidence}>
-        Corrected against how {curve.sample} finished posts of yours matured —
-        your own curve, not an industry average. Posts under {curve.floor} old
-        aren't placed at all: nothing has landed yet to correct. Posts published
-        before this period keep earning inside it, which is why the shares here
-        don't add up to the whole.
+        Everything the ranking is only defensible with belongs here — what the
+        bar's centre is, what was left out and why, and whether ages have been
+        corrected at all — but as three paragraphs it out-weighed the list it
+        was qualifying. Held out is never silently dropped, though: a reader who
+        can't find this morning's post has to be told it is missing on purpose.
+      */}
+      <Basis>
+        {typical === undefined &&
+          'No typical to hold these against yet, so the bars run against the best in the list. '}
+        {heldOut > 0 && `${criterion.heldOut(heldOut)} `}
+        {view.curve
+          ? `Aged against how ${view.curve.sample} finished posts of yours matured — your own curve, not an industry average.`
+          : 'Not enough of your posts have finished earning for us to know how yours mature, so nothing here is age-corrected — a rate is the ranking that holds up meanwhile.'}
       </Basis>
     </SectionCard>
   )
 }
 
-type BandId = PacePlacement | 'early'
-
 /**
- * The four readings a post can get, in the order someone scans them: the ones
- * that beat expectation, the ones that met it, the ones that missed, and the
- * ones it is too early to say anything about.
+ * One end of the period.
  *
- * "Too early to say" is a band rather than a footnote on purpose. It is where
- * everything published in the last day or two lives, which is precisely what a
- * founder opening this screen wants to look at — showing the count and then
- * refusing to rank them is honest; hiding them is how a screen loses trust.
+ * The heading and the column labels share a line. Two rows of chrome above a
+ * five-row list is most of a list, and the labels are only read on the way in —
+ * the reader who comes back for the second list already knows what the columns
+ * are.
  */
-const BANDS: {
-  id: BandId
-  label: string
-  heading: (measure: string) => string
-  explain: (count: number, floor: string | null) => string
-}[] = [
-  {
-    id: 'ahead',
-    label: 'Ahead of usual',
-    heading: () => 'Ahead of usual, biggest first',
-    explain: (n) =>
-      `${n === 1 ? 'This post has' : `These ${n} have`} earned more by this point than a typical post of yours had at the same age. Ranked by where each one lands once it finishes, so a post from this morning and one from three weeks ago can honestly sit in the same list.`,
-  },
-  {
-    id: 'usual',
-    label: 'About usual',
-    heading: () => 'About usual, biggest first',
-    explain: (n) =>
-      `${n === 1 ? 'This post is' : `These ${n} are`} tracking where your posts normally are by this age. Nothing to explain — this is the shape a normal period has.`,
-  },
-  {
-    id: 'behind',
-    label: 'Behind usual',
-    heading: () => 'Behind usual, biggest first',
-    explain: (n) =>
-      `${n === 1 ? 'This post has' : `These ${n} have`} earned less by this point than a typical post of yours had at the same age. The ones not yet settled can still move, which is the window in which a re-share or a reply changes where they land.`,
-  },
-  {
-    id: 'early',
-    label: 'Too early to say',
-    heading: (measure) => `Too early to place — ${measure} so far`,
-    explain: (n, floor) =>
-      `${n === 1 ? 'One post is' : `${n} posts are`} younger than ${floor ?? 'the correction can carry'}, so almost nothing has landed and correcting for that would amplify noise into a verdict. What they have earned so far is real; where they land is not knowable yet.`,
-  },
-]
-
-/**
- * `paced` is off when there is no curve, and it takes the whole "vs typical"
- * column with it. A column of dashes is worse than no column: it reads as data
- * we failed to fetch rather than a comparison that doesn't exist yet.
- */
-function Header({ measure, paced }: { measure: string; paced: boolean }) {
+function PostList({
+  heading,
+  rows,
+  criterion,
+  corrected,
+  typical,
+  leader,
+  note,
+}: {
+  heading: string
+  rows: { post: RankedPost; value: number }[]
+  criterion: Criterion
+  /** Whether a maturation curve exists — it changes what the column is called. */
+  corrected: boolean
+  typical: number | undefined
+  /** The best figure in the whole ranking — the bar's scale without a typical. */
+  leader: number
+  note?: string
+}) {
   return (
-    <li className="flex items-center gap-3 border-b border-border pb-1.5 text-xs text-tertiary-foreground">
-      <span className="flex-1">Post</span>
-      <span className="w-20 text-right">{measure} so far</span>
-      <span className="w-24 text-right">Where it lands</span>
-      {paced && <span className="w-16 text-right">vs typical</span>}
-    </li>
+    <div className="flex flex-col">
+      <div className="flex items-end gap-3 border-b border-border pb-1.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <h3 className="text-sm font-medium">{heading}</h3>
+          {note && <p className="text-xs text-tertiary-foreground">{note}</p>}
+        </div>
+        {/* What the bar is measured from used to be spelled out here. It said
+            the same thing on every row of every list, and the bar draws its own
+            centre — the note at the foot is where the method belongs. */}
+        <span className="w-36 shrink-0 text-right text-xs leading-tight text-tertiary-foreground">
+          {criterionLabel(criterion, corrected)}
+          {criterion.suffix && <> {criterion.suffix}</>}
+        </span>
+        <span className="w-28 shrink-0 text-right text-xs text-tertiary-foreground">
+          Published
+        </span>
+      </div>
+
+      <ul className="flex flex-col">
+        {rows.map(({ post, value }) => (
+          <PostRow
+            key={post.id}
+            post={post}
+            value={value}
+            criterion={criterion}
+            typical={typical}
+            leader={leader}
+          />
+        ))}
+      </ul>
+    </div>
   )
 }
 
 function PostRow({
   post,
-  measure,
-  paced,
+  value,
+  criterion,
+  typical,
+  leader,
 }: {
   post: RankedPost
-  measure: MeasureId
-  paced: boolean
+  value: number
+  criterion: Criterion
+  typical: number | undefined
+  leader: number
 }) {
+  const ratio = typical !== undefined && typical > 0 ? value / typical : null
+  const platform = resolvePlatformInfo(post.account.platform)
+
+  /*
+    Top-aligned, not centred. The three things a reader compares down the list —
+    the title, the figure and the date — are each the first line of their
+    column, and centring a two-line column against a three-line one puts the
+    figure half a line below the title it belongs to.
+  */
   return (
-    <li className="flex items-center gap-3 border-b border-border py-2.5 last:border-0">
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+    <li className="flex items-start gap-3 border-b border-border py-2.5 last:border-0">
+      {/* The picture first, and spanning both lines, because the account is how
+          a workspace with four Instagram profiles reads its own list. */}
+      <AccountAvatar
+        src={post.account.avatarUrl}
+        name={post.account.name}
+        platform={platform}
+        className="shrink-0"
+      />
+
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <button
           type="button"
           className="min-w-0 truncate text-left text-sm hover:underline underline-offset-2"
         >
           {post.title}
         </button>
-        <div className="flex items-center gap-3">
-          <span className="min-w-0 flex-1 truncate text-xs text-tertiary-foreground">
-            {post.sleeve.label} · {post.age}
-            {/* The anomaly check, per row. One post at a quarter of a period is
-                a different month from four at six percent each, and no total
-                above can tell those two apart. */}
-            {post.share >= 0.05 && ` · ${Math.round(post.share * 100)}% of the period`}
-          </span>
-          {/*
-            Fixed width and pinned to the right of the column, so every bar in
-            the list shares one centre line. A diverging bar whose zero moves
-            from row to row is just a bar.
-          */}
-          {post.placement && post.pace !== null && (
-            <PaceBar pace={post.pace} placement={post.placement} className="w-40 shrink-0" />
-          )}
-        </div>
+        {/* The account in words as well as in the picture: four Instagram
+            profiles wear the same badge, and the name is the only thing telling
+            them apart. The platform itself is not repeated in words — the badge
+            already says it, and the room is worth more to the denominator. */}
+        <span className="truncate text-xs text-tertiary-foreground">
+          {post.account.name}
+          {' · '}
+          {qualify(post, criterion)}
+        </span>
       </div>
 
-      <span className="w-20 text-right text-sm tabular-nums">
-        {formatMeasure(measure, post.value)}
-      </span>
-
-      {/*
-        Settled is checked before unplaced, because a post can be unplaced for
-        two different reasons — too young to correct, or no curve to correct
-        against — and calling a three-week-old post "too early" because the
-        workspace has no curve yet would be the wrong answer to the right test.
-      */}
-      <span className="w-24 text-right">
-        {post.matured >= 1 ? (
-          <span className="text-xs text-tertiary-foreground">settled</span>
-        ) : post.placement === null || post.projected === null ? (
-          <span className="text-xs text-tertiary-foreground">too early</span>
+      <div className="flex w-36 shrink-0 flex-col items-end gap-1.5">
+        <span className="text-sm tabular-nums">{criterion.format(value)}</span>
+        {/*
+          The comparison, in the column it qualifies. A separate "vs typical"
+          column made the reader carry a number three columns to the left in
+          their head; drawn under the figure it belongs to, the pair reads as
+          one statement.
+        */}
+        {ratio !== null ? (
+          <PaceBar
+            pace={ratio}
+            placement={placeAgainstTypical(ratio)}
+            className="w-full"
+            title={`${ratio.toFixed(1)}× your typical`}
+          />
         ) : (
-          <>
-            <span className="block text-sm tabular-nums">
-              ≈{formatMeasure(measure, post.projected)}
-            </span>
-            <span className="block text-xs text-tertiary-foreground">
-              {Math.round(post.matured * 100)}% in
-            </span>
-          </>
+          <RankBar
+            fraction={leader === 0 ? 0 : value / leader}
+            className="w-full"
+          />
         )}
-      </span>
+      </div>
 
-      {paced && (
-        <span className="w-16 text-right text-sm tabular-nums">
-          {post.pace === null ? (
-            <span className="text-xs text-tertiary-foreground">—</span>
-          ) : (
-            <span
-              className={cn(
-                post.placement === 'ahead'
-                  ? 'text-positive'
-                  : post.placement === 'behind'
-                    ? 'text-negative'
-                    : 'text-secondary-foreground',
-              )}
-            >
-              {post.pace.toFixed(1)}×
-            </span>
-          )}
-        </span>
-      )}
+      <div className="flex w-28 shrink-0 flex-col items-end gap-1">
+        <span className="text-sm">{post.publishedAt}</span>
+        {/* How long it has been earning. Whether it has finished earning is said
+            beside the figure that is still moving instead — a post is not still
+            counting *in general*, its numbers are. */}
+        <span className="text-xs text-tertiary-foreground">{post.age}</span>
+      </div>
     </li>
   )
+}
+
+/**
+ * What the row's figure is over.
+ *
+ * Reach on every row, always, because it is the denominator of every rate here
+ * — 7% of forty people is not a finding, and the only way to see that is to be
+ * shown the forty. It also carries the *and counting*: what is unfinished about
+ * a young post is the number, not the post, so the caveat sits on the reach
+ * rather than on the date beside it.
+ *
+ * A post carrying a real slice of the period says so as well, and only then:
+ * that is the anomaly check, and one post at a quarter of the month is the
+ * difference between a good month and one lucky afternoon, while "0.4% of the
+ * period" is a fact about arithmetic.
+ */
+function qualify(post: RankedPost, criterion: Criterion): string {
+  const reached = `${formatCount(post.metrics.reach ?? 0)} reached${
+    post.matured >= 1 ? '' : ' and counting'
+  }`
+  return criterion.qualifier === 'share' && post.share >= 0.05
+    ? `${reached} · ${Math.round(post.share * 100)}% of the period`
+    : reached
 }

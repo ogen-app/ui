@@ -1,5 +1,5 @@
 import { cn } from '@/lib'
-import { extent, type Direction } from './format'
+import { extent, formatDay, formatHours, type Direction } from './format'
 import type { Point } from './types'
 
 /**
@@ -70,6 +70,65 @@ export function Sparkline({
 }
 
 /**
+ * A `Sparkline` for a measure that is drawn as columns.
+ *
+ * The tile has to preview the chart it opens. A line inside the engagement-rate
+ * tile above a column chart is the same quantity drawn two ways on one card,
+ * and the reader has to work out that they are the same thing before they can
+ * read either.
+ */
+export function Sparkbars({
+  points,
+  direction = 'flat',
+  className,
+}: {
+  points: Point[]
+  direction?: Direction | 'neutral'
+  className?: string
+}) {
+  const W = 100
+  const H = 24
+  const { max } = extent([points, [{ date: '', value: 0 }]])
+  const top = max * 1.06 || 1
+  const slot = W / Math.max(points.length, 1)
+  const barWidth = Math.max(0.5, slot * 0.62)
+  const fill =
+    direction === 'up'
+      ? 'fill-positive'
+      : direction === 'down'
+        ? 'fill-negative'
+        : 'fill-tertiary-foreground'
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      // Held back to roughly the ink of the sparklines beside it. Twenty-eight
+      // filled bars carry far more colour than a 1.5px stroke, so at full
+      // strength the one tile drawn as columns shouts across a row where every
+      // tile is meant to be equally readable.
+      opacity={0.55}
+      className={cn('h-6 w-full', className)}
+      aria-hidden
+    >
+      {points.map((point, i) => {
+        const height = Math.max(0.5, (point.value / top) * H)
+        return (
+          <rect
+            key={point.date || i}
+            x={i * slot + (slot - barWidth) / 2}
+            y={H - height}
+            width={barWidth}
+            height={height}
+            className={fill}
+          />
+        )
+      })}
+    </svg>
+  )
+}
+
+/**
  * The temporal axis, drawn as **progress**: the running total from the start of
  * the window to today, the same stretch a window ago ghosted behind it, and the
  * range we expected to land in.
@@ -91,7 +150,8 @@ export function TrendChart({
   band,
   bandShape = 'cone',
   target,
-  axis,
+  endLabel,
+  tickCount,
   className,
 }: {
   /** Cumulative for a flow measure; the daily level for a level measure. */
@@ -109,8 +169,14 @@ export function TrendChart({
   bandShape?: 'cone' | 'flat'
   /** A line the series is aiming at, e.g. a goal's target. */
   target?: number
-  /** The two ends of the window, spelled out under the plot. */
-  axis?: { left: string; right: string }
+  /**
+   * What the last tick is called. The rest are dates read off the series —
+   * "Today" is the one label a date can't carry, because a screenshot of it
+   * taken next week would still say today.
+   */
+  endLabel?: string
+  /** Roughly how many date ticks to draw. 0 turns the row off entirely. */
+  tickCount?: number
   className?: string
 }) {
   const W = 640
@@ -132,6 +198,7 @@ export function TrendChart({
   const { min, max } = extent(all)
   const span = max - min
   const y = (value: number) => H - PAD - ((value - min) / span) * (H - PAD * 2)
+  const ticks = dateTicks(series, tickCount, endLabel)
 
   return (
     <div className={cn('relative w-full', className)}>
@@ -142,6 +209,25 @@ export function TrendChart({
         role="img"
         aria-label="Running total across the selected period"
       >
+        {/*
+          Drawn first, so the band, the target and the line all pass over them.
+          A gridline that competes with the data is worse than no gridline —
+          these exist only so a bend in the line can be given a date without
+          counting pixels from the left edge.
+        */}
+        {ticks.slice(1, -1).map((tick) => (
+          <line
+            key={tick.index}
+            x1={tick.fraction * W}
+            x2={tick.fraction * W}
+            y1={0}
+            y2={H}
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+            className="stroke-quaternary"
+          />
+        ))}
+
         {band &&
           (bandShape === 'cone' ? (
             <path
@@ -195,14 +281,212 @@ export function TrendChart({
         />
       </svg>
 
-      {axis && (
-        <div className="flex justify-between text-xs text-tertiary-foreground">
-          <span>{axis.left}</span>
-          <span>{axis.right}</span>
-        </div>
-      )}
+      <TickRow ticks={ticks} />
     </div>
   )
+}
+
+/**
+ * A day at a time, each column standing on its own.
+ *
+ * For a quantity that is re-derived every day rather than carried forward: an
+ * engagement rate on Tuesday and one on Wednesday are two separate answers to
+ * the same question, and a line between them draws a continuity that isn't
+ * there. Columns also make the gaps visible — a day with nothing published has
+ * no rate, and a line would happily bridge straight over it.
+ *
+ * The baseline is zero and not negotiable. A column is read by its area, so a
+ * cropped axis exaggerates every difference on the chart; that is what the
+ * usual-range band is for instead.
+ */
+export function ColumnChart({
+  series,
+  band,
+  endLabel,
+  tickCount,
+  className,
+}: {
+  /** The level on each day, not a running total. */
+  series: Point[]
+  /** Where this measure normally sits, day to day. */
+  band?: { low: number; high: number }
+  endLabel?: string
+  tickCount?: number
+  className?: string
+}) {
+  const W = 640
+  const H = 180
+  const all: Point[][] = [series, [{ date: '', value: 0 }]]
+  if (band) {
+    all.push([
+      { date: '', value: band.low },
+      { date: '', value: band.high },
+    ])
+  }
+  const { max } = extent(all)
+  // Headroom, so the tallest column doesn't end flush against the top edge and
+  // read as clipped.
+  const top = max * 1.06
+  const y = (value: number) => H - PAD - (value / top) * (H - PAD * 2)
+  const slot = W / Math.max(series.length, 1)
+  // Capped as well as proportional. A two-day window with no cap draws two
+  // slabs a third of the chart wide, which reads as a diagram of something
+  // rather than as two days of a rate.
+  const barWidth = Math.max(1, Math.min(slot * 0.68, 40))
+  // Labels sit over the middle of their column, not over the edge of the slot
+  // it stands in — a column *is* a day, where a point on a line only marks one.
+  const ticks = dateTicks(series, tickCount, endLabel).map((tick) => ({
+    ...tick,
+    fraction: (tick.index + 0.5) / series.length,
+  }))
+
+  return (
+    <div className={cn('relative w-full', className)}>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className="h-44 w-full"
+        role="img"
+        aria-label="Each day of the selected period"
+      >
+        {band && (
+          <rect
+            x={0}
+            y={y(band.high)}
+            width={W}
+            height={Math.max(1, y(band.low) - y(band.high))}
+            className="fill-quaternary"
+            opacity={0.55}
+          />
+        )}
+
+        {series.map((point, i) => {
+          const height = Math.max(0, y(0) - y(point.value))
+          return (
+            <rect
+              key={point.date || i}
+              x={i * slot + (slot - barWidth) / 2}
+              y={y(point.value)}
+              width={barWidth}
+              height={height}
+              // Beige, not ink. Twenty-eight columns at full contrast make the
+              // chart the loudest thing on the card, when what it is there to
+              // support is the figure above it — and the band edges have to
+              // stay readable *over* the bars.
+              className="fill-quaternary-foreground"
+            />
+          )
+        })}
+
+        {/*
+          The edges of the band, drawn over the columns. The filled band behind
+          them is hidden wherever a column stands in front of it, which is
+          everywhere that matters — and "is today's rate inside the range" is
+          the entire question this chart is asked.
+        */}
+        {band &&
+          [band.low, band.high].map((value) => (
+            <line
+              key={value}
+              x1={0}
+              x2={W}
+              y1={y(value)}
+              y2={y(value)}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+              vectorEffect="non-scaling-stroke"
+              className="stroke-quinary-foreground"
+            />
+          ))}
+      </svg>
+
+      <TickRow ticks={ticks} />
+    </div>
+  )
+}
+
+/**
+ * The chart's frame with nothing in it.
+ *
+ * Holds the space a chart will occupy so the card keeps its shape while the
+ * platforms are still reporting — the alternative is a card that grows a chart
+ * under the reader an hour later, which reads as the page having changed its
+ * mind. Dashed and empty rather than an axis with a flat line across it: a line
+ * along the floor is a picture of *nothing happened*, and what is true is
+ * *nothing has come back yet*.
+ */
+export function EmptyChart({
+  label = 'Data will appear here',
+  className,
+}: {
+  label?: string
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'flex h-44 w-full items-center justify-center rounded-md border border-dashed border-quinary',
+        className,
+      )}
+    >
+      <span className="text-xs text-tertiary-foreground">{label}</span>
+    </div>
+  )
+}
+
+/** The dated labels under a chart. Shared, so both charts date the same way. */
+function TickRow({ ticks }: { ticks: { index: number; fraction: number; label: string }[] }) {
+  if (ticks.length === 0) return null
+  return (
+    <div className="relative h-4">
+      {ticks.map((tick) => (
+        <span
+          key={tick.index}
+          className="absolute top-0 whitespace-nowrap text-xs text-tertiary-foreground"
+          // Anchored by position rather than by being first or last: a label
+          // that sits on the edge would hang off the chart, and one that sits
+          // a quarter in — which is where the last column of a two-day window
+          // is — has to stay over the thing it names.
+          style={
+            tick.fraction <= 0.02
+              ? { left: 0 }
+              : tick.fraction >= 0.98
+                ? { right: 0 }
+                : { left: `${tick.fraction * 100}%`, transform: 'translateX(-50%)' }
+          }
+        >
+          {tick.label}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Evenly spaced ticks, labelled with the dates they actually fall on.
+ *
+ * Named days rather than "the period before" or a bare index — the same rule
+ * the comparison header follows. Someone will screenshot this into a client
+ * deck, and a chart whose x-axis reads "start" to "today" is undateable the
+ * moment it leaves the screen.
+ */
+function dateTicks(
+  series: Point[],
+  count = 5,
+  endLabel?: string,
+): { index: number; fraction: number; label: string }[] {
+  if (count < 2 || series.length < 2) return []
+  const n = Math.min(count, series.length)
+  const step = (series.length - 1) / (n - 1)
+  return Array.from({ length: n }, (_, i) => {
+    const index = Math.round(i * step)
+    const point = series[index]
+    return {
+      index,
+      fraction: index / (series.length - 1),
+      label: i === n - 1 && endLabel ? endLabel : formatDay(point.date),
+    }
+  })
 }
 
 const STROKE_TONE: Record<1 | 2 | 3 | 4 | 5, string> = {
@@ -309,20 +593,234 @@ export function Heatmap({
 }
 
 /**
+ * One measure on one post, over the time since it was published.
+ *
+ * Two shapes for one series, because the two questions are different. A
+ * **cumulative** line answers *what has it earned* and ends on the figure in
+ * the tile above it — the correspondence is the point, so it is drawn filled
+ * from the floor, which a running total can honestly do. **Interval** columns
+ * answer *when did it earn it*: each bucket stands on its own, a quiet hour is
+ * a gap rather than a dip in a line, and a line joining hour 3 to hour 4 would
+ * claim a continuity between two separately-counted quantities.
+ *
+ * The x-axis is elapsed time, not dates. A post's history is read against its
+ * own publication — "most of it landed in the first three hours" — and the
+ * absolute date is already in the card's header. Day buckets are the exception
+ * and get real dates, because by then the reader is thinking in days of the week.
+ *
+ * No expectation band, unlike the campaign's chart. A per-post band would need
+ * the shape of every other post at every hour, which is a second thing to
+ * build; the tiles above already carry the comparison.
+ *
+ * Nothing is written inside the plot, including the scale. A running total
+ * peaks in the top-right corner by construction, which is exactly where a
+ * corner label goes — so the one number the chart could usefully carry would
+ * sit on top of the line it describes. The card puts it under the plot instead,
+ * and only for the readings whose scale isn't already the figure above.
+ */
+export function PostSeriesChart({
+  points,
+  mode,
+  interval,
+  showTicks = true,
+  className,
+}: {
+  /** Already bucketed to `interval`, and already accumulated when cumulative. */
+  points: { hour: number; at: string; value: number }[]
+  mode: 'cumulative' | 'interval'
+  interval: 'hour' | 'day'
+  /** Off for every chart in a stack but the last — they share one x-axis. */
+  showTicks?: boolean
+  className?: string
+}) {
+  const W = 640
+  const H = 90
+  // Headroom, or the peak ends flush against the top edge and reads as clipped.
+  const top = Math.max(...points.map((p) => p.value), 0) * 1.08 || 1
+  const y = (value: number) => H - PAD - (value / top) * (H - PAD * 2)
+  // A column *is* a bucket, where a point on a line only marks one — so a
+  // column chart's labels sit over the middle of the slot their bucket stands
+  // in, and a line's sit on the point itself.
+  const ticks = elapsedTicks(points, interval).map((tick) =>
+    mode === 'interval'
+      ? { ...tick, fraction: (tick.index + 0.5) / points.length }
+      : tick,
+  )
+
+  return (
+    <div className={cn('relative w-full', className)}>
+      {/*
+        Twice the height it started at. `preserveAspectRatio="none"` means this
+        is a pure vertical stretch of the same viewBox — no re-projection, no
+        change to what is drawn — and it buys the one thing these charts were
+        short of: a second wave, an overnight lull and a flattening tail are
+        separations of a few pixels at 64px and legible at 128.
+      */}
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className="h-32 w-full"
+        role="img"
+        aria-label={
+          mode === 'cumulative'
+            ? 'Running total since the post was published'
+            : `What the post earned in each ${interval} since it was published`
+        }
+      >
+        {/*
+          Only under the line. A column chart's gridlines land in the middle of
+          the columns they are meant to date and draw a stripe up through them;
+          the columns are their own structure, and the labels underneath are
+          enough to find a date by.
+        */}
+        {mode === 'cumulative' &&
+          ticks.slice(1, -1).map((tick) => (
+            <line
+              key={tick.index}
+              x1={tick.fraction * W}
+              x2={tick.fraction * W}
+              y1={0}
+              y2={H}
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+              className="stroke-quaternary"
+            />
+          ))}
+
+        {mode === 'cumulative' ? (
+          <CumulativePath points={points} y={y} w={W} h={H} />
+        ) : (
+          <IntervalColumns points={points} y={y} w={W} h={H} />
+        )}
+      </svg>
+
+      {showTicks && <TickRow ticks={ticks} />}
+    </div>
+  )
+}
+
+function CumulativePath({
+  points,
+  y,
+  w,
+  h,
+}: {
+  points: { value: number }[]
+  y: (value: number) => number
+  w: number
+  h: number
+}) {
+  const step = points.length === 1 ? 0 : w / (points.length - 1)
+  const d = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'}${(i * step).toFixed(2)},${y(p.value).toFixed(2)}`)
+    .join(' ')
+  return (
+    <>
+      <path d={`${d} L${w},${h} L0,${h} Z`} className="fill-quaternary" opacity={0.5} />
+      <path
+        d={d}
+        fill="none"
+        strokeWidth={2}
+        vectorEffect="non-scaling-stroke"
+        className="stroke-foreground"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </>
+  )
+}
+
+function IntervalColumns({
+  points,
+  y,
+  w,
+  h,
+}: {
+  points: { hour: number; value: number }[]
+  y: (value: number) => number
+  w: number
+  h: number
+}) {
+  const slot = w / Math.max(points.length, 1)
+  // A three-week-old post has five hundred hourly buckets. At that width the
+  // gap between columns is what disappears, not the columns — so the bar takes
+  // the whole slot once it gets thin enough for a gap to be a lie about how
+  // many there are.
+  const barWidth = slot > 2 ? Math.max(1, Math.min(slot * 0.7, 18)) : slot
+  return (
+    <>
+      {points.map((point, i) => {
+        const height = Math.max(point.value > 0 ? 0.75 : 0, y(0) - y(point.value))
+        return (
+          <rect
+            key={point.hour}
+            x={i * slot + (slot - barWidth) / 2}
+            y={h - PAD - height}
+            width={barWidth}
+            height={height}
+            className="fill-quaternary-foreground"
+          />
+        )
+      })}
+    </>
+  )
+}
+
+/**
+ * Ticks along a post's own timeline. `+3h` while the buckets are hours, real
+ * dates once they are days — the switch is the point at which the reader stops
+ * thinking "since I posted it" and starts thinking "last Tuesday".
+ */
+function elapsedTicks(
+  points: { hour: number; at: string }[],
+  interval: 'hour' | 'day',
+  count = 5,
+): { index: number; fraction: number; label: string }[] {
+  // One bucket still gets dated. It only happens per day, on a post younger than
+  // a day, and an undated column is the one case where the axis says less than
+  // the header — `fraction` is fixed up by the caller, which knows a column is
+  // labelled at its middle and a line at its point.
+  if (points.length === 1) {
+    const [point] = points
+    return [
+      {
+        index: 0,
+        fraction: 0,
+        label:
+          interval === 'day'
+            ? formatDay(point.at.slice(0, 10))
+            : `+${formatHours(point.hour)}`,
+      },
+    ]
+  }
+  const n = Math.min(count, points.length)
+  const step = (points.length - 1) / (n - 1)
+  return Array.from({ length: n }, (_, i) => {
+    const index = Math.round(i * step)
+    const point = points[index]
+    return {
+      index,
+      fraction: index / (points.length - 1),
+      label:
+        interval === 'day'
+          ? formatDay(point.at.slice(0, 10))
+          : `+${formatHours(point.hour)}`,
+    }
+  })
+}
+
+/**
  * How a post's engagement accumulates after publishing. Read once, it tells
  * you a post's shelf life; read against a post's age it tells you whether the
  * numbers on screen are final or still moving.
  */
 export function DecayCurve({
   points,
-  markerHour,
   milestones = [],
   height = 'sm',
   className,
 }: {
   points: { hour: number; share: number }[]
-  /** Where this post currently sits on the curve. */
-  markerHour?: number
   /** Shares worth calling out — 50/75/95%, drawn as guides down to the axis. */
   milestones?: { share: number; hour: number }[]
   height?: 'sm' | 'md'
@@ -382,18 +880,6 @@ export function DecayCurve({
         className="stroke-foreground"
         strokeLinejoin="round"
       />
-
-      {markerHour !== undefined && (
-        <line
-          x1={x(markerHour)}
-          x2={x(markerHour)}
-          y1={0}
-          y2={H}
-          strokeWidth={1.5}
-          vectorEffect="non-scaling-stroke"
-          className="stroke-accent"
-        />
-      )}
     </svg>
   )
 }
@@ -415,10 +901,10 @@ export function RankBar({
   className?: string
 }) {
   return (
-    <div className={cn('h-1.5 w-full overflow-hidden rounded-full bg-quaternary', className)}>
+    <div className={cn('h-1.5 w-full overflow-hidden bg-quaternary', className)}>
       <div
         className={cn(
-          'h-full rounded-full',
+          'h-full',
           tone === 'neutral' ? 'bg-tertiary-foreground' : FILL_TONE[tone],
         )}
         style={{ width: `${Math.max(2, fraction * 100)}%` }}
@@ -447,21 +933,24 @@ export function PaceBar({
   pace,
   placement,
   className,
+  title,
 }: {
   /** 1 is exactly typical for this workspace at this post's age. */
   pace: number
   placement: 'ahead' | 'usual' | 'behind'
   className?: string
+  /** The multiple in words, for the reader who wants the number off the bar. */
+  title?: string
 }) {
   const t = Math.max(-1, Math.min(1, Math.log2(Math.max(pace, 0.01)) / 2))
   const width = Math.max(1.5, Math.abs(t) * 50)
   const left = t < 0 ? 50 - width : 50
 
   return (
-    <div className={cn('relative h-1.5 w-full rounded-full bg-quaternary', className)}>
+    <div title={title} className={cn('relative h-1.5 w-full bg-quaternary', className)}>
       <div
         className={cn(
-          'absolute inset-y-0 rounded-full',
+          'absolute inset-y-0',
           placement === 'ahead'
             ? 'bg-positive'
             : placement === 'behind'

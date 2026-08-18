@@ -181,7 +181,7 @@ function GoalDetail({ goal }: { goal: Goal }) {
         <TrendChart
           series={accumulate(goal.series, value)}
           target={goal.target?.value}
-          axis={{ left: 'Start of the period', right: 'Today' }}
+          endLabel="Today"
         />
       )}
 

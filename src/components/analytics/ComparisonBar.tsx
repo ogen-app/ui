@@ -96,7 +96,23 @@ export function ComparisonBar({
   )
 }
 
-function Segmented<T extends string>({
+/*
+ * There is no `PeriodBar` any more. The campaign surface ships with one axis —
+ * this sleeve against its own past — so the axis switch had nothing to switch
+ * to, and what was left was a row holding a single picker. That picker now
+ * rides in the platform bar, where the rest of the scope already lived. When
+ * "Side by side" comes into scope the switch comes back and {@link
+ * ComparisonBar} is what it comes back into.
+ */
+
+/**
+ * A one-of-N switch, for a choice small enough that every option can be on
+ * screen at once. Exported because a card can own one — the post card decides
+ * whether its charts show a running total or what arrived in each bucket — and
+ * a mode switch inside a card should be the same control as a mode switch above
+ * the page.
+ */
+export function Segmented<T extends string>({
   value,
   onChange,
   options,
@@ -130,8 +146,12 @@ function Segmented<T extends string>({
 /**
  * A native select wearing the app's clothes. A real implementation would reach
  * for `ui/select`; here the point is the shape of the control, not the menu.
+ *
+ * Exported because a card can own a picker of its own — the performers card
+ * chooses what "best" means — and two controls that decide what a list shows
+ * should not look like two different kinds of control.
  */
-function Picker({
+export function Picker({
   label,
   value,
   options,

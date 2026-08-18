@@ -1,11 +1,34 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib'
-import type { Confidence } from './types'
 
 /**
- * The furniture the analytics sections sit in.
+ * The furniture the analytics sections sit in — and the contract every card on
+ * these surfaces keeps.
  *
- * `SectionCard` carries one thing the campaign Overview's card does not: a
+ * A card is a fixed run of beats, in the order the question arrives. Each one
+ * owns something, and owns it alone; the moment two beats can both carry a
+ * fact, the card starts saying it twice in different clothes.
+ *
+ * | Beat | Component | Owns | Never |
+ * |---|---|---|---|
+ * | Header | `SectionCard` | the name, the window it covers, and at most one control | a figure, a finding |
+ * | Figures | `FigureGrid` / `FigureTile` | the numbers, their deltas, and which side of usual they fall on | anything the reader can't select or compare |
+ * | Detail | the section's own chart or list | the shape behind the selected figure — drawn, not narrated | a restatement of the figure above it |
+ * | Insight | `InsightLine` | what the picture can't say: where it came from, what moved it. **The only beat with a tone mark** | method, sample size, caveats |
+ * | Actions | `Todos`, the next-action list | what to do about it, and how urgently | a finding restated as a chore |
+ * | Notes | `Basis` | provenance, method, coverage, what was excluded | a status mark, a colour, an emphasis |
+ *
+ * The actions beat is kept deliberately apart from the insight beat: an insight
+ * is a finding, an action is an unfinished step the reader owns. Mixing them
+ * makes the findings look like chores and the chores look optional.
+ *
+ * The line the beats are policed on is **status**. A coloured mark means "this
+ * is a claim, and here is which way it cuts" — so it lives where a claim lives:
+ * an insight's tone, a figure's delta, an action's urgency. Nowhere else. A note
+ * carrying one is claiming to be a finding while looking like a footnote, which
+ * is how the foot of a card ends up out-weighing the list it was qualifying.
+ *
+ * `SectionCard` also carries one thing the campaign Overview's card does not: a
  * **scope note** saying whether the section obeys the date lens at the top of
  * the page. That distinction is the whole reason these surfaces aren't called
  * Performance — "your posts land on Tuesday evenings" is not a fact about the
@@ -22,12 +45,23 @@ const SCOPE_NOTE: Record<SectionScope, string | null> = {
 
 export function SectionCard({
   title,
+  qualifier,
   scope = 'lens',
   status,
   children,
   className,
 }: {
   title: string
+  /**
+   * The rest of the title, set back a shade — usually the window the card is
+   * describing.
+   *
+   * Part of the heading rather than a note beside it: "What happened" and "over
+   * last 28 days" are one phrase, and splitting them across the header put the
+   * window in the far corner where it read as a control someone could change.
+   * Faded because the reader needs it once, on the way in.
+   */
+  qualifier?: ReactNode
   scope?: SectionScope
   status?: ReactNode
   children: ReactNode
@@ -43,7 +77,12 @@ export function SectionCard({
     >
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="flex flex-col gap-0.5">
-          <h2 className="font-display text-lg font-medium leading-6">{title}</h2>
+          <h2 className="font-display text-lg font-medium leading-6">
+            {title}
+            {qualifier && (
+              <span className="font-normal text-tertiary-foreground"> {qualifier}</span>
+            )}
+          </h2>
           {note && <p className="text-xs text-tertiary-foreground">{note}</p>}
         </div>
         {status}
@@ -54,34 +93,47 @@ export function SectionCard({
 }
 
 /**
- * The shape of every card on these surfaces, in the order the question
- * arrives:
- *
- * 1. **Key figures** — one or more, selectable when there is more than one.
- * 2. **The detail behind the selected figure** — its trend, or its breakdown.
- * 3. **What we make of it**, and anything to do about it.
- * 4. **Notes** — provenance, coverage, caveats — last, where the people who
- *    don't need them can skip them and the people who do can still screenshot
- *    them.
+ * The figures beat: the numbers the rest of the card is about.
  *
  * Selection is what lets one card carry five figures without becoming five
  * cards: the figures stay comparable at a glance, and the expensive space
  * underneath belongs to whichever one is being asked about.
+ *
+ * The beat is figures only when figures are the answer. A row of tiles that
+ * tallies the list beneath it — three posts ahead, five behind — spends the top
+ * of the card restating something the list says by existing; there the beat is
+ * the control that decides what the list means instead.
  */
 export function FigureGrid({
   children,
   min = '8rem',
+  columns,
 }: {
   children: ReactNode
   /** Narrowest a tile may get before the row wraps. */
   min?: string
+  /**
+   * A fixed number of columns, for a row that has to break in a particular
+   * place.
+   *
+   * Auto-fit is the right default — the number of figures differs by scope, and
+   * a fixed count leaves a hole beside the odd one out. It is the wrong answer
+   * when the count is known and large: seven tiles auto-fitted onto one line are
+   * seven slivers, and what the card wants is four and three. Asking for the
+   * columns gives the caller that without a breakpoint ladder, at the cost of
+   * the tiles going narrower than `min` on a phone — acceptable here, where
+   * these surfaces live in a desktop content column.
+   */
+  columns?: number
 }) {
   return (
     <div
       className="grid gap-2"
-      // Auto-fit rather than a breakpoint ladder: the number of figures differs
-      // by scope, and a fixed column count leaves a hole beside the odd one out.
-      style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${min}, 1fr))` }}
+      style={{
+        gridTemplateColumns: columns
+          ? `repeat(${columns}, minmax(0, 1fr))`
+          : `repeat(auto-fit, minmax(${min}, 1fr))`,
+      }}
     >
       {children}
     </div>
@@ -154,9 +206,19 @@ export function Todos({
 }
 
 /**
- * Where a claim comes from. Always rendered next to a claim strong enough to
- * act on — someone will screenshot this into a client deck, and the sample
- * size needs to travel with it.
+ * The last beat: where the numbers above came from, and what they exclude.
+ *
+ * **A note is never a finding.** Anything the card is willing to say out loud
+ * goes in an insight, in a box, with the tone mark that says which way it cuts;
+ * a note is the method behind it — sample, window, what was left out — and it
+ * carries no status of its own. That is the whole distinction between the two
+ * beats, and it only survives if notes look uniformly like notes: one size, one
+ * colour, no marks, no emphasis, however important the sentence feels.
+ *
+ * A confidence dot used to sit here. It read as a verdict on the note, when
+ * every note it appeared on already named the sample it was derived from — the
+ * dot was a colour restating the number two words to its right, and it made the
+ * foot of the card compete with the insight boxes above it.
  *
  * Tertiary, not quaternary: this is supporting text, but it is text people are
  * expected to read before they act. Quaternary is for the parts nobody has to
@@ -164,31 +226,12 @@ export function Todos({
  */
 export function Basis({
   children,
-  confidence,
   className,
 }: {
   children: ReactNode
-  confidence?: Confidence
   className?: string
 }) {
-  return (
-    <p className={cn('text-xs text-tertiary-foreground', className)}>
-      {confidence && (
-        <span
-          className={cn(
-            'mr-1.5 inline-block align-middle size-1.5 rounded-full',
-            confidence === 'high'
-              ? 'bg-positive'
-              : confidence === 'medium'
-                ? 'bg-warning'
-                : 'bg-quinary-foreground',
-          )}
-          aria-hidden
-        />
-      )}
-      {children}
-    </p>
-  )
+  return <p className={cn('text-xs text-tertiary-foreground', className)}>{children}</p>
 }
 
 /**

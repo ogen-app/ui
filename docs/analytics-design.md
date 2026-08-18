@@ -4,7 +4,14 @@ The thinking behind the analytics surfaces, the decisions that came out of it,
 and the scope deliberately left for later. Written before any of it was wired
 to an API, so that the API shape would not quietly become the product spec.
 
-Harnesses: `design/analytics` branch, at `/design/analytics`.
+Harnesses: `design/analytics` branch, at `/design/analytics` — one surface (the
+campaign), plus `/design/analytics/widgets`, where each card is shown against
+every state it has to survive. The two answer different questions. A surface asks
+"does the page hold together"; a widget page asks "does this card survive the
+data it will actually be handed" — no comparison yet, no expectation to judge
+against, half the posts unreported, nothing worth saying. On a surface those
+states are invisible, because only one of them can be on screen at a time and it
+is always the flattering one.
 
 ## Who it is for
 
@@ -60,30 +67,49 @@ This is why the surface is called **Analytics** and not Performance —
 
 The last two say so on themselves, so the lens visibly does not reach them.
 
-## Section order
+## Section order, and what is actually in scope
 
-Same on the workspace and campaign surfaces, because they ask the same question
-of different amounts of data:
+The full order, most-asked to least — which is also the order a monthly digest
+would follow, so one layout defines both:
 
 1. **What happened** — measures, deltas, expectation band, trend, insight
 2. **Outcomes** — goals, at whatever rung they are measured at
-3. **Performers and outliers** — both ends of the period, age-corrected, and the way out to a post
+3. **Performers and outliers** — both ends of the period, by whichever question is being asked, and the way out to a post
 4. **Side by side** — sleeve ranking with a per-post column, and an allocation call
 5. **What we've learned** — best times, shelf life, what works, what's fading
 6. **What's next** — pacing, then actions
 
-Most-asked to least, which is also the order a monthly digest would follow — so
-one layout defines both.
+**The campaign surface ships with 1 and 3.** The other four are built, argued
+over and rendered — at the foot of the campaign harness, under a dashed line
+headed *Not in scope*. Two of them have no data path at all: Outcomes needs a
+goal the API has no field for, and What we've learned needs Zernio's
+add-on-gated insight endpoints, which answer `available: false` for a tenant
+without the add-on. The other two are decisions nobody has made.
+
+They are parked rather than deleted because the argument each card makes is the
+expensive part and the code is cheap to keep compiling. What they may not do is
+sit on the real surface: **a card on a screen is a promise that the number in it
+is maintained**, and a half-backed card costs more than a missing one.
+
+One control went with them. With Side by side out of scope the axis switch has
+nothing to switch to — a two-way control that only ever reports the state it is
+already in — so the surface carries the period lens alone, and with the axis
+gone there was no bar left for it to sit in. It moved into the platform row,
+where the rest of the scope already lived. The switch comes back with the
+section.
 
 ## The card
 
-Every card on these surfaces has the same four beats, in the order the question
+Every card on these surfaces has the same beats, in the order the question
 arrives:
 
-1. **Key figures** — one or more, selectable when there is more than one.
-2. **The detail behind the selected figure** — its trend, or its breakdown.
-3. **What we make of it**, and the to-dos it leaves.
-4. **Notes** — provenance, coverage, caveats — last.
+1. **Header** — what this is, the window it covers, and at most one control.
+2. **Key figures** — one or more, selectable when there is more than one.
+3. **The detail behind the selected figure** — its trend, or its breakdown.
+4. **What we make of it** — in a box, with the tone mark that says which way it
+   cuts.
+5. **What to do about it** — the to-dos and actions it leaves.
+6. **Notes** — provenance, coverage, caveats — last, and plain.
 
 Selection is what lets one card carry five figures without becoming five cards:
 the figures stay comparable at a glance, and the expensive space underneath
@@ -92,17 +118,233 @@ duplicate a card per metric — the failure mode where a dashboard grows a
 *Likes per platform* card beside a *Posts per platform* card beside a *Likes
 over time* card, and the reader has to hold the comparison in their head.
 
+**Beat one is figures only when figures are the answer.** Performers and
+outliers had four of them — how many posts landed ahead of usual, about usual,
+behind, and too early to say — and they were a tally of the rows underneath.
+Nobody opens that card to learn that three posts were ahead; they open it to
+learn *which three*, and the counts were spending the top of the card
+restating an answer the list gives by existing. What replaced them is the
+control that decides what the list means: a picker for the criterion. The beat
+is still "the thing the rest of the card is about", it just isn't always a
+number.
+
 To-dos are kept distinct from insights. An insight is a finding; a to-do is an
 unfinished setup step the reader owns ("no target set", "connect a source").
 Mixing them makes the findings look like chores and the chores look optional.
+
+**Each fact is stated once, in the beat that owns it.** Density on these
+surfaces does not come from too many numbers, it comes from the same number
+arriving three times in different clothes. Campaign · What happened was saying
+"this is unusual" on the tile, again in a sentence under the chart, and again as
+a per-post insight; and "eleven posts are behind this" in the coverage line and
+again as the insight's basis — six lines carrying three facts. The rule that
+fixes it:
+
+| Beat | Owns | Never |
+|---|---|---|
+| Header | the name, the window it covers, and at most one control | a figure, a finding |
+| Figures | the number, its delta, and which side of usual it falls on | anything the reader can't select or compare |
+| Detail | the shape behind that figure, and the band it is held against — drawn, not narrated | a restatement of the figure above it |
+| Insight | what neither of those can say: *where* it came from, *what* moved it | method, sample size, caveats |
+| Actions | what to do about it, and how urgently | a finding restated as a chore |
+| Notes | provenance, method, coverage, what was left out, when the numbers last moved | a status mark, a colour, an emphasis |
+
+**A note is not a finding, and it may not dress as one.** The line the beats are
+policed on is *status*: a coloured mark says "this is a claim, and here is which
+way it cuts", so it belongs where a claim lives — an insight's tone, a figure's
+delta, an action's urgency — and nowhere else. The performers card had a
+confidence dot on the sentence naming its maturation curve: a footnote wearing a
+verdict's clothes, and a colour restating the sample size printed two words to
+its right. Notes are one size, one colour, no marks, however important the
+sentence feels; anything that has earned a mark has earned a box.
+
+The corollary is that a card's foot is one note, not a stack of them. Three
+short paragraphs of method out-weigh the list they qualify, and the reader who
+came for the ranking reads a wall to find out that two posts were held back.
+
+The casualty of the rule was the paragraph under the chart. It was the best
+sentence on the card — "184.9K so far, against the 120K–165K this workspace
+normally reaches" — and it was still the third telling of a fact the tile states
+in two words and the band draws in one shape. An insight that opens by restating
+the comparison spends its first line saying nothing; a basis that restates the
+coverage line puts the sample somewhere the reader has already learned not to
+look for it.
+
+Two consequences worth naming, because both look like deletions of honesty and
+aren't:
+
+- **The window moved into the title.** "What happened" and "over last 28 days"
+  are one phrase, and the corner of a card is where controls live — a window
+  sitting there reads as something to change. Only a stretch takes *over*: the
+  card says "What happened today" when the period is today.
+- **Coverage stopped being a caption and became a switch.** How many posts have
+  reported is no longer a line at the foot of the card; at zero it is the whole
+  card, and above zero the figures are what they are. What survives at the foot
+  is freshness, which is the one fact that applies to every number above it at
+  once.
 
 ## Where each surface lives
 
 | Surface | Lives | Entered from |
 |---|---|---|
-| **Post** | A section *under the notes and content*, collapsed until it has something to say | The post itself; drilled into from both the campaign and workspace surfaces |
+| **Post** | A section on the post — which post it is, an overview card, a card per measure | The post itself; drilled into from the campaign surface |
 | **Campaign** | A section within the campaign | Campaign sidebar, Overview card, drill-down |
-| **Workspace** | Top-level sidebar item | Sidebar, the assistant, drill-up from a campaign |
+| **Workspace** | *Withdrawn for now.* Same composition over a wider set; nothing about it was wrong, there was simply no reason to review two arrangements of one set of cards | — |
+
+**The post is a surface of its own**, and it is a stack of cards rather than
+one: which post this is, an overview, then a card per measure. That was a card
+until it had four charts in it — see below.
+
+| Card | Holds |
+|---|---|
+| **The post** | Platform, account, format, when it went out, the way through to the real thing. No figure, no finding |
+| **Performance overview** | Every figure the platform reported, how long they cover, the rank, the notes. No chart |
+| One per measure | The figure, its comparison, its history, and a switch for how to read it |
+
+**The identity card comes first, above the figures.** Everything below it is a
+claim about a post — "better than 94% of yours", "+34% on a typical post", a line
+climbing for twelve days — and none of it can be read, sent to anyone or argued
+with until the reader knows *which* post, where it went and when. On a screen
+reached from a list of eleven similar-looking rows, that is not something to
+leave to the browser tab. It carries no figure and no finding, which is what
+keeps it from competing with the overview: it is the caption on the surface
+rather than the first of its cards. The date is carried twice on purpose —
+absolute because that is the half that survives a screenshot, relative because
+"4 hours ago" is the difference between a floor and a result — and it is the one
+card that never withdraws, which is why it can hold the top.
+
+**The overview holds every figure that came back**, in the order the cards below
+it stack. It is the index of the surface: the whole answer without scrolling, and
+a way to know before scrolling that the card for a given measure is down there.
+It carries no chart, because a shape there would compete with the card below
+carrying the same shape larger and would stop the tiles being comparable with
+each other, which is the one thing they are for. It is also the card that
+survives when no measure card can: a draft, or a post the platform has said
+nothing about, is the overview alone saying which of the two it is.
+
+It held reach and impressions alone first. Two figures are a headline and a
+headline is right for a card; they are wrong for the top of a stack of seven,
+where the reader's next question is always *which of these is worth scrolling
+to*.
+
+**The header says how long the figures cover** — "over its first 26 hours" — in
+the same slot the campaign uses for "over last 28 days". Every figure on the card
+is a total since publishing, and 7,210 reach is a different post at four hours
+than at three weeks; the span is what makes the row readable rather than merely
+true. It is not the same fact as the publication date on the card above: one is
+when it went out, the other is how long it has been earning, and they come apart
+the moment a platform stops reporting on a post that is still live. On the post
+nothing has come back for, the span is most of the answer — forty minutes is
+*why* the card is empty, and without it an empty card reads as a fault.
+
+**The tiles break onto two lines** once there are five or more. Seven across a
+content column are ninety pixels each: every label wraps, "Engagement rate" takes
+three lines of its own, and the row reads as a strip of fragments. Split in half
+— four and three — each tile is wide enough for its label and its figure to sit
+on one line, which is the only thing that makes a tile worth being a tile. Below
+five it stays one line, because 2×2 would be a card with more padding than
+numbers.
+
+Everything else the platform reported gets its own card, in the order reach,
+impressions, interactions, engagement rate, saves, clicks, views. **A card
+appears because its measure was reported** — an image post has no views, a post
+with no link has no clicks — which is the same rule the campaign surface is built
+on: a card is a promise that its number is maintained, and a measure that came
+back empty is silent rather than zero.
+
+This replaced a single card carrying four stacked charts under one switch. Two
+things were wrong with it. The switch was a page control wearing a card control's
+clothes, and it pinned every measure to one reading — but a running total is the
+right opening picture for reach and the wrong one for saves, which arrive in a
+handful of bursts and say nothing as a smooth climb. And the four measures were
+fixed at four, so saves, clicks and views had nowhere to go.
+
+The figure tiles and the comparison are the campaign's, on purpose. Only what is
+compared differs — a period has a previous period, a post has *a typical post of
+yours* — and that difference is carried on the chip, not in a second visual
+language.
+
+**Three readings, one switch, in each card's top-right corner.**
+
+| | Answers | Notes |
+|---|---|---|
+| **Running total** | What has it earned | Default. Its last point is the figure at the top of the card — that correspondence is the reason it leads |
+| **1H** | When did it earn it | Almost everything a post earns arrives in its first day, so this is the granularity the question is actually asked at |
+| **1D** | The same, coarser | For the three-week-old post whose hourly reading is five hundred buckets and a flat tail |
+
+One switch of three rather than a mode and a bucket on two controls. The pair was
+honest and unusable: the bucket had no effect on a running total, so it had to
+appear and disappear, and a control that comes and goes is a control people stop
+trusting.
+
+**The engagement rate is never a series.** It is interactions ÷ reach,
+recomputed at whatever bucketing is on screen — the rate so far when the totals
+are running, the rate it was earning at when they are not. A rate cannot be
+summed into a day or accumulated into a total; that is the "cumulative engagement
+rate" the flow/level distinction exists to forbid. Deriving it also makes it
+impossible for the rate card to disagree with the reach and interactions cards,
+because it is made out of them. Per bucket it carries a floor — fifty people
+reached, or a fiftieth of the biggest bucket, whichever is larger — because one
+interaction on one person reached is a 100% engagement rate and the quiet tail of
+a post is full of them, enough to own the scale of the chart and press every hour
+that mattered flat against the floor. A post small enough that no bucket clears
+the floor says so in place of the chart, and points at the two readings that do
+have enough behind them to divide by.
+
+**This is the one thing on the post surface the API cannot yet answer.** The rows
+are there — Zernio is swept every thirty minutes and the snapshots are kept for
+ninety days, finer than the hour this is bucketed to — but no endpoint hands back
+the history, only the latest figures. The ask is
+`GET /api/analytics/posts/:id/series` with a granularity, over the snapshot
+table. Until it lands every card degrades to its figure alone, which is a state
+the harness carries (*Totals, but no history*) rather than an accident.
+
+The other rules the cards hold to:
+
+- **A young post is compared with young posts.** While it is still counting,
+  "typical" means what a typical post had earned *by the same age*, read off this
+  workspace's own maturation curve. A rate is the exception — an engagement rate
+  is roughly itself from the first hour, so scaling it down would invent the
+  mistake the correction exists to prevent.
+- **A figure with nothing behind it is unreadable.** 18,420 is a career best or a
+  slow Tuesday depending entirely on what yours normally are, so every figure
+  carries both halves: how it compares with a typical post, and whether it is
+  outside the usual range at all.
+- **Silence is not zero.** A published post the platform hasn't reported on says
+  so. A grid of zeroes there is a picture of a failed post rather than of a slow
+  API.
+- **The rank is a claim, so it lives in a box.** "Better than 94% of your posts"
+  carries a tone mark and sits with the findings. The maturity — still counting,
+  settling, final — is method, so it sits in the note at the foot with no colour
+  at all, on the same line as the timestamp: both are provenance, and stacked
+  they read as small print that grows every time something is added to it.
+- **A chart is worth its height.** These are 128px rather than 64. Nothing about
+  what is drawn changed — the viewBox is stretched, not re-projected — but a
+  second wave, an overnight lull and a flattening tail are separations of a few
+  pixels at the smaller size and legible at the larger. A chart nobody can read a
+  bend off is a decoration.
+- **Each card is on its own scale.** Impressions run an order of magnitude above
+  interactions; one shared scale would press most of them flat. Per bucket the
+  peak is printed beside the chart, so nobody reads two cards' heights against
+  each other. On a running total it isn't, because the figure at the top of the
+  card already anchors it.
+
+What the post surface does **not** carry:
+
+- **A per-account breakdown.** This screen is one post. A post that went out on
+  four accounts is four rows on the performers card, where a row is already one
+  post on one account — and adding a LinkedIn impression to an Instagram reach
+  produces a quantity neither platform defines.
+- **The workspace's maturation curve.** It was here as a stand-in for the series
+  above, with a marker for where this post had got to. On a finished post there
+  was no marker, so it was the same picture every time and said nothing about the
+  post it was on. The curve is still the right chart for *What we've learned*,
+  where it is a claim about the workspace; on a post it has been replaced by the
+  post's own history. The age correction still reads off it — that never needed
+  drawing.
+
+It is reviewed at `/design/analytics/post` (the assembled stack) and
+`/design/analytics/widgets/post` (each card against all eight states).
 
 Movement rules:
 
@@ -132,8 +374,23 @@ produces a screen someone acts on and shouldn't.
 - **Maturity is carried on the post**, not inferred at the call site. Ranking a
   four-hour-old post against a three-week-old one is the most common lie in
   social analytics. Immature posts get no percentile.
-- **State coverage on every aggregate.** Someone will screenshot it into a
-  client deck.
+- **State the sample under a claim, not under a number.** Someone will
+  screenshot a finding into a client deck, and "five placed posts — a lead, not
+  a finding" has to travel with it. A raw figure is not a claim and does not
+  need the sentence; repeating it there is how the sample ends up in the one
+  place readers have learned to skip.
+- **Nothing reported is not zero.** A period whose posts haven't come back from
+  the platforms yet keeps its chart frame with an empty plot — *Data will appear
+  here*, and under it *No data yet*, with how many posts are waiting. Never a
+  line along the floor of an axis: that is a picture of *no reach*, and what is
+  true is *no numbers*. The frame stays for a second reason — it holds the space
+  the chart will take, so the card doesn't grow one under the reader an hour
+  later, which reads as the page changing its mind.
+- **Name the quantity in the label.** "Reach" and "Followers" side by side
+  invite both to be read as period totals, and one of them is where the number
+  stands today. The tabs say **Cumulative reach**, **Cumulative interactions**,
+  **Daily engagement rate** and **Current followers** — a word each, and the
+  ambiguity is gone everywhere the name appears.
 - **Never sum across platforms into one headline.** A LinkedIn impression, a
   TikTok view and an Instagram reach are three different events. Small
   multiples, or dimensionless rates.
@@ -144,7 +401,34 @@ produces a screen someone acts on and shouldn't.
   totals purely because it received three times as many posts.
 - **Name the days.** "The 28 days before" makes the reader do arithmetic to
   find out what they are looking at, and any screenshot of it is undateable.
-  The comparison says *Today vs 15 Jul*, computed from the period.
+  The comparison says *Today vs 15 Jul*, computed from the period — and the
+  charts carry the same rule on their x-axis: dated ticks read off the series,
+  with faint verticals so a bend in the line can be given a date without
+  counting pixels from the left edge. Only the last tick is a word, because
+  *Today* is the one label a date cannot carry.
+- **A filter that changes the numbers has to show it.** The platform filter
+  reaches every figure on the page, and a filtered dashboard that looks
+  identical to an unfiltered one is how two platforms end up in a board pack as
+  the quarter's reach. It carries that in the marks rather than in prose: the
+  platform logos used everywhere else in the app, brand-coloured while counted
+  and greyed while not, each with its connected-account count on it, because
+  "Instagram" means something different at one account than at four — and a
+  platform with none is drawn as an empty seat rather than a switch, since a
+  control that can only be used wrongly reads as broken. No heading and no
+  running total above it: a row of platform logos does not need to be told it is
+  a row of platforms, and the counts that matter are the ones on the marks, read
+  at the same moment as the platform they qualify. One `SELECT ALL` /
+  `DESELECT ALL` control stands at the end of the marks, beside what it acts on
+  — it flips rather than sitting beside a twin, because at "everything counted"
+  the only useful move is to clear and once anything is off the only useful move
+  is to restore.
+- **Scope is one line, not two.** The platforms decide what is in the numbers
+  and the period decides how far back they reach; nobody reads one without the
+  other, so they share a row — marks on the left, period on the right. On its
+  own row the period read as page furniture rather than as half of what every
+  figure below it means. The row never withdraws: a workspace with one connected
+  platform loses its marks, because every state of that filter shows everything
+  or nothing, but the period stays and the page keeps its shape.
 - **A chart and the number above it must be in the same unit.** The expectation
   band is a period *total*; drawn against a per-day line it is out by a factor
   of the number of days, which pins the line to the floor and reads as an empty
@@ -153,35 +437,77 @@ produces a screen someone acts on and shouldn't.
 - **A flow accumulates; a level does not.** Reach, interactions and clicks are
   earned day by day and total over a period — running total, cone-shaped
   expectation. Followers and engagement rate simply *are* a number on a given
-  day; summing them produces a quantity that does not exist, so they are drawn
-  as the daily level against a flat band. The measure carries which it is
-  (`MeasureMeta.kind`) rather than the chart guessing, because the moment the
-  figures became selectable, one wrong default would have drawn "cumulative
-  engagement rate".
-- **Correct a post for its age before comparing it to anything.** A
+  day; summing them produces a quantity that does not exist. The measure carries
+  which it is (`MeasureMeta.kind`) rather than the chart guessing, because the
+  moment the figures became selectable, one wrong default would have drawn
+  "cumulative engagement rate".
+- **A rate carries nothing over from yesterday, so it gets columns.** Three
+  chart forms, chosen by the measure (`MeasureMeta.chart`): a **running** total
+  for a flow, a **level** line for followers — today's figure *is* yesterday's,
+  plus or minus — and **columns** for a daily rate, which is re-derived every
+  day and is seven separate answers to the same question across a week. A line
+  through them claims a continuity that does not exist, and bridges straight
+  over a day that published nothing and therefore has no rate. Columns stand on
+  zero and are not negotiable about it: a column is read by its area, so a
+  cropped baseline exaggerates every difference on the chart. The usual-range
+  band does that job instead, drawn as two dashed edges *over* the columns —
+  behind them it is hidden by the very bars it is there to qualify.
+- **Correct a post for its age, or ask a question age doesn't change.** A
   four-hour-old post beside a settled one is a comparison of ages wearing the
   clothes of a comparison of quality. Excluding the young ones is the safe
   answer and the wrong one — the posts someone most wants to ask about are the
-  ones from this week. So every reading is first divided through the
-  workspace's own maturation curve, which produces two independent numbers, and
-  they answer different questions: **where it lands** (`value ÷ share matured`)
-  says how big, and **pace** (`value` against what a typical post had earned *at
-  the same age*) says how good. Ranking is on the projection, so "most
-  impactful" keeps meaning impact rather than seniority; the bands — ahead of
-  usual, about usual, behind usual — come off the pace, which needs no
-  extrapolation to be fair.
-- **Under the curve's floor, refuse.** Below a few hours almost nothing has
-  landed, and dividing by 0.04 turns a rounding error into a verdict. Those
-  posts get their own band, showing what they have actually earned and no
-  placement at all — visible, counted, unranked.
-- **No curve, no bands.** The correction is read off this workspace's own
-  finished posts, and until there are ~15 of them there is no *usual* for
-  "ahead of usual" to mean. The section degrades to one raw ranked list that
-  says the figures are uncorrected, rather than placing posts against a curve
-  built from four of them.
-- **Each row carries its share of the period.** One post at 24% of the month is
-  the difference between a good month and one lucky afternoon, and no total
-  above the list can tell those two apart.
+  ones from this week. Two ways out, and the performers card uses both. **Divide
+  through the curve**: `value ÷ share matured` is where a total lands once the
+  post finishes, so "biggest" keeps meaning impact rather than seniority. Or
+  **rank on a ratio** — interactions per person reached, saves per thousand —
+  which is roughly the same at hour six as at week three, because both halves of
+  it arrive together. `pace` is the same trick on a total: this post against
+  what a typical post had earned *at the same age*, dimensionless, so it needs
+  no extrapolation to be fair.
+- **"Best" is a question, not a fact.** So the card asks it: one picker,
+  changing what the two lists are ranked on, and the order genuinely moves. A
+  post can be the biggest thing in the period and the worst in it at turning
+  attention into anything, and a single ranking hides whichever of those the
+  reader came for. Clicks are deliberately not among the criteria — a click is
+  only meaningful against the place it went, which is the Outcomes card's job.
+- **Refuse, never rank last.** A post whose platform reports no saves, or one
+  seen by too few people for a rate to mean anything (three interactions from
+  forty is 7.5%), leaves the ranking and is counted at the foot of the card.
+  Ranking it last would blame the post for a gap in the data, and it is the
+  bottom of a list that gets screenshotted.
+- **Under the curve's floor, refuse — but only the criteria that need it.**
+  Below a few hours almost nothing has landed, and dividing by 0.04 turns a
+  rounding error into a verdict, so reach and pace decline to place those posts.
+  A rate reads fine at that age, which is why this morning's post is still
+  present and rankable on one.
+- **No curve, no correction — and the ratios carry the card.** The correction is
+  read off this workspace's own finished posts, and until there are ~15 of them
+  there is no *usual*. Pace leaves the picker entirely, the reach column renames
+  itself *reach so far*, the bars lose their centre and fall back to the best in
+  the list — which the note at the foot says — and the card still works, because
+  the question a ratio asks never needed the curve.
+- **Every figure against your own typical, under the figure it qualifies.**
+  5.0% is a good engagement rate or a poor one depending entirely on what yours
+  normally is. The comparison is a diverging bar on the row's second line rather
+  than a *vs typical* column three columns to the left: as a column it made the
+  reader carry a number across the row in their head, and under the figure the
+  pair reads as one statement. It is also what stops "Worst 5" being read as
+  *bad* — in a strong period the bottom five can all sit on the right of the
+  centre line, and the bars say so before the heading does.
+- **A rate carries its denominator; a total carries its share.** Every row shows
+  how many people it was seen by, because that is what every rate here is over —
+  and *and counting* rides on that reach rather than on the date, because what
+  is unfinished about a young post is the number, not the post.
+  A post carrying a real slice of the period says that too, and only then: one
+  post at 24% of the month is the difference between a good month and one lucky
+  afternoon, while "0.4% of the period" is a fact about arithmetic.
+- **One row, one account, one platform.** A workspace running four Instagram
+  profiles asks *which one* long before it asks which platform, which is why the
+  row leads with the account picture and names the account beside the title —
+  four profiles wear the same badge. The same post sent to four accounts is four
+  rows, never one: totalling them would add a LinkedIn impression to an
+  Instagram reach, a quantity neither platform defines, and it would bury the
+  finding, which is that the same words worked on one account and nowhere else.
 - **One scale per comparison.** Sleeves share a pair of axes rather than
   getting a sparkline each; separately normalised lines draw a sleeve earning a
   third as much at the same height, which is the section's job done backwards.
@@ -245,8 +571,8 @@ closest thing to a control we have. What it does that we took:
 - **A named best slot** under the heatmap, with the number of posts behind it.
 - **Top performing posts** — the rung we were missing entirely between a
   workspace total and a single post. Ours is both ends rather than the top, and
-  age-corrected rather than raw: a straight "top posts" list is ranked by
-  publication date with extra steps.
+  either age-corrected or ranked on a ratio rather than raw: a straight "top
+  posts" list is ranked by publication date with extra steps.
 - **Sync state**, last and next. Cheap, and it turns a stale-looking screen
   into a scheduled one.
 - **Export**, which we have deferred into the reports work below.
@@ -282,6 +608,24 @@ agency and owner journeys.
 with its own membership, sitting above workspaces, rather than a cross-workspace
 strip that would cut against tenant isolation. Workspace is the top level for
 now; nothing in the current design should assume it is the ceiling.
+
+**A charting library.** Reconsidered when the x-axis needed dated ticks, and
+declined again. `@tanstack/react-charts` is real but pre-1.0 — 26 versions in
+its first fortnight, and it has already turned itself into a compatibility shim
+for `@tanstack/charts/react`. Every chart here is a polyline, a band or a grid
+of rectangles drawn on semantic tokens; the ticks cost about thirty lines. Worth
+revisiting if these surfaces ever need brushing, zoom or tooltips at a point,
+which is the work a library actually saves.
+
+**Links out of a finding.** "See those two posts", "see the period without it",
+"write another like these" — every one of them needs a destination that doesn't
+exist yet: a filtered post list, a period recomputed with a post excluded, an
+assistant briefed with a set of attributes. Removed rather than stubbed, because
+a dead link under a finding costs more trust than the link would have bought.
+The wording of each is worth keeping when the destinations land — they are the
+list of drill-downs this design actually wants. Note that to-dos are unaffected:
+an unfinished setup step ("connect a source") points at a page that already
+exists.
 
 **Also not building:** a pivot/report builder · competitor tracking ·
 real-time streaming · sentiment beyond a crude positive/negative ratio ·

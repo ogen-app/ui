@@ -1,62 +1,50 @@
 import { Skeleton } from '@/components/ui/skeleton'
-import { ComparisonBar, type ComparisonAxis } from './ComparisonBar'
-import { NowSection, SideBySideSection } from './ComparisonSections'
-import { OutcomesSection } from './OutcomesSection'
+import { NowSection } from './ComparisonSections'
 import { PerformersSection } from './PerformersSection'
-import { NextSection, PatternsSection } from './StandingSections'
+import { PlatformFilter } from './PlatformFilter'
 import { NotYet, SectionCard } from './shell'
-import type {
-  AnalyticsScope,
-  AnalyticsSurfaceState,
-  MeasureId,
-  Period,
-  SleeveDimension,
-} from './types'
+import type { AnalyticsScope, AnalyticsSurfaceState, Period } from './types'
 
 /**
- * The workspace and campaign surfaces are the same composition.
+ * The campaign analytics surface: the cards that are actually built, in the
+ * order the question arrives.
  *
- * They ask the same question of different amounts of data, so making them two
- * screens would mean maintaining two answers. The scope changes the title, the
- * sleeves that make sense to compare, and whether pacing has a finish line —
- * nothing structural.
+ * **What happened → which posts carried it and which dragged.** Two cards, both
+ * under one period lens, both reviewable on their own in
+ * `/design/analytics/widgets`. The order runs from most-asked to least, so an
+ * operator who opens this weekly reads the top and leaves.
  *
- * The order is the argument: **what happened → did it do anything → which
- * posts carried it and which dragged → where to spend the next hour → what we
- * know → what's next.**
- * It runs from the most
- * frequently asked to the least, so the operator who opens this weekly reads
- * the top and leaves, while the owner who opens it twice a year reads the
- * whole thing top to bottom — and that same order is what a monthly digest
- * would follow, so one layout defines both.
+ * Deliberately shorter than the composition this started as. Outcomes, Side by
+ * side, What we've learned and What's next were designed alongside these and are
+ * out of scope for now — they are parked on the harness under "Not in scope"
+ * rather than half-rendered here, because a card on a real surface is a promise
+ * that the number in it is being maintained. The sections themselves still
+ * compile and still have their fixtures; bringing one back is adding a line
+ * here.
  *
- * Only the first three sections obey the period lens. The last two say so on
- * themselves.
+ * With Side by side out, the axis switch goes with it: a two-way control with
+ * one destination is a control that only reports the state it is already in. The
+ * period lens stays, because both remaining cards obey it — but it has moved
+ * into the platform bar rather than holding a row of its own. One line above the
+ * cards now carries the whole scope: these platforms, this window.
  */
 export function AnalyticsSurface({
   scope,
   state,
-  axis,
-  onAxisChange,
   period,
   periods,
   onPeriodChange,
-  dimension,
-  onDimensionChange,
-  measure,
-  onMeasureChange,
+  selectedPlatforms,
+  onPlatformsChange,
 }: {
   scope: AnalyticsScope
   state: AnalyticsSurfaceState
-  axis: ComparisonAxis
-  onAxisChange: (axis: ComparisonAxis) => void
   period: Period
   periods: Period[]
   onPeriodChange: (period: Period) => void
-  dimension: SleeveDimension
-  onDimensionChange: (dimension: SleeveDimension) => void
-  measure: MeasureId
-  onMeasureChange: (measure: MeasureId) => void
+  /** Platform ids every figure below is counted over. */
+  selectedPlatforms: string[]
+  onPlatformsChange: (selected: string[]) => void
 }) {
   if (state.isPending) return <SurfaceSkeleton />
 
@@ -89,15 +77,29 @@ export function AnalyticsSurface({
     )
   }
 
-  const { now, outcomes, performers, sideBySide, patterns, next } = state.data
+  const { platforms, now, performers } = state.data
 
-  // A cold surface still has a plan, and a plan is knowable on day one. So
-  // "what's next" renders while everything retrospective is honestly absent —
-  // the screen is useful before it has a single measured post, which is the
-  // window in which people decide whether it was worth setting up.
+  // One scope line, not two. The platforms decide what is in the numbers and
+  // the period decides how far back they reach; nobody reads one without the
+  // other, and on its own row the period looked like page furniture.
+  const scopeBar = (
+    <PlatformFilter
+      platforms={platforms}
+      selected={selectedPlatforms}
+      onChange={onPlatformsChange}
+      period={period}
+      periods={periods}
+      onPeriodChange={onPeriodChange}
+    />
+  )
+
   if (state.isCold) {
     return (
       <Wrapper>
+        {/* The bar stays even with nothing to draw. It is a statement of what
+            would be counted, and a scope line that appears only once figures
+            arrive is one nobody knows they can change. */}
+        {scopeBar}
         <SectionCard title="What happened" scope="lens">
           <NotYet title="Nothing measured yet">
             {now.coverage.published === 0
@@ -105,36 +107,15 @@ export function AnalyticsSurface({
               : `${now.coverage.published} ${now.coverage.published === 1 ? 'post has' : 'posts have'} gone out, and the platforms haven't reported on them yet. This usually takes a few hours.`}
           </NotYet>
         </SectionCard>
-        <OutcomesSection view={outcomes} />
-        <NextSection view={next} />
       </Wrapper>
     )
   }
 
   return (
     <Wrapper>
-      <ComparisonBar
-        axis={axis}
-        onAxisChange={onAxisChange}
-        period={period}
-        periods={periods}
-        onPeriodChange={onPeriodChange}
-        dimension={dimension}
-        onDimensionChange={onDimensionChange}
-        measure={measure}
-        onMeasureChange={onMeasureChange}
-      />
-
-      {axis === 'time' ? (
-        <NowSection view={now} />
-      ) : (
-        <SideBySideSection view={sideBySide} />
-      )}
-
-      <OutcomesSection view={outcomes} />
+      {scopeBar}
+      <NowSection view={now} />
       <PerformersSection view={performers} />
-      <PatternsSection view={patterns} />
-      <NextSection view={next} />
     </Wrapper>
   )
 }
@@ -146,9 +127,10 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 function SurfaceSkeleton() {
   return (
     <Wrapper>
-      <Skeleton className="h-9 w-full max-w-content mx-auto" />
+      {/* The scope bar's own height, so the cards don't jump up the page when
+          the marks arrive. */}
+      <Skeleton className="h-[4.5rem] w-full max-w-content mx-auto" />
       <Skeleton className="h-72 w-full max-w-content mx-auto" />
-      <Skeleton className="h-40 w-full max-w-content mx-auto" />
       <Skeleton className="h-56 w-full max-w-content mx-auto" />
     </Wrapper>
   )

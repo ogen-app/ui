@@ -1,4 +1,12 @@
-import { MEASURES, type MeasureId, type MeasureMeta, type Point } from './types'
+import {
+  MEASURES,
+  type MeasureId,
+  type MeasureMeta,
+  type Period,
+  type Point,
+  type PostInterval,
+  type PostSeriesPoint,
+} from './types'
 
 /**
  * Formatting and delta arithmetic for the analytics surfaces. Pure, so the
@@ -27,6 +35,20 @@ export function formatDay(iso: string): string {
     month: 'short',
     timeZone: 'UTC',
   })
+}
+
+/**
+ * The window as it reads inside a card's title — `over last 28 days`, `today`.
+ *
+ * The period belongs to the heading rather than to the corner: "What happened"
+ * and "over last 28 days" are one phrase, and a window sitting in the corner
+ * reads as a control someone could change. Only a stretch takes *over* —
+ * "What happened over today" is not a sentence, and a period picker hands us
+ * both kinds of label.
+ */
+export function periodPhrase(period: Period): string {
+  const label = period.label.toLowerCase()
+  return /^last\b/i.test(period.label) ? `over ${label}` : label
 }
 
 /** `19h` · `3d 10h`. Hours stop being readable somewhere around two days. */
@@ -139,6 +161,102 @@ export function accumulate(points: Point[], total: number): Point[] {
   if (end === 0) return summed
   const factor = total / end
   return summed.map((p) => ({ date: p.date, value: Math.round(p.value * factor) }))
+}
+
+/* ---------------------------------------------------------- post history -- */
+
+/**
+ * Hourly buckets summed into days.
+ *
+ * A partial last day keeps its real elapsed hour and its real timestamp rather
+ * than being rounded up to the next midnight — the axis under a day chart is
+ * dated, and a post that went out this morning must not get a column labelled
+ * tomorrow.
+ */
+export function bucketSeries(
+  points: PostSeriesPoint[],
+  interval: PostInterval,
+): PostSeriesPoint[] {
+  if (interval === 'hour') return points
+  const out: PostSeriesPoint[] = []
+  let currentDay = 0
+  for (const point of points) {
+    const day = Math.max(1, Math.ceil(point.hour / 24))
+    if (day === currentDay) {
+      const last = out[out.length - 1]
+      out[out.length - 1] = {
+        at: point.at,
+        hour: point.hour,
+        value: last.value + point.value,
+      }
+    } else {
+      out.push({ ...point })
+      currentDay = day
+    }
+  }
+  return out
+}
+
+/**
+ * Buckets turned into the running total.
+ *
+ * Unlike {@link accumulate} there is nothing to scale to: a post's series is
+ * the whole of its life, so the last point *is* the total and the figure in the
+ * tile above. The campaign chart has to scale because its window is a slice of
+ * a longer history.
+ */
+export function runningTotal(points: PostSeriesPoint[]): PostSeriesPoint[] {
+  let running = 0
+  return points.map((p) => {
+    running += p.value
+    return { at: p.at, hour: p.hour, value: running }
+  })
+}
+
+/**
+ * A rate, recomputed at whatever bucketing is on screen.
+ *
+ * The only honest way to draw an engagement rate over time: it cannot be summed
+ * into a day or accumulated into a running total — that is the "cumulative
+ * engagement rate" `MeasureMeta.kind` exists to forbid — so it is divided fresh
+ * from two flows that *can* be. Feed it the accumulated pair and it is the rate
+ * so far; feed it the raw buckets and it is the rate that hour.
+ *
+ * **A rate needs a denominator before it means anything.** One interaction on
+ * one person reached is a 100% engagement rate, and in the long quiet tail of a
+ * post there are dozens of them — enough to own the scale of the chart and press
+ * every hour that mattered flat against the floor. Buckets under `floor` are
+ * left out rather than divided, so a gap on a rate means *too quiet to say* as
+ * well as *nothing happened*; the card states that where the chart is legended.
+ *
+ * A running total needs no floor and is passed none: its denominator is the
+ * post's whole reach so far, and zeroing its opening point would draw a post
+ * that started at 0% and jumped.
+ */
+export function ratioSeries(
+  numerator: PostSeriesPoint[],
+  denominator: PostSeriesPoint[],
+  floor = 0,
+): PostSeriesPoint[] {
+  return numerator.map((n, i) => {
+    const d = denominator[i]?.value ?? 0
+    return { at: n.at, hour: n.hour, value: d >= floor && d > 0 ? n.value / d : 0 }
+  })
+}
+
+/**
+ * How much has to have arrived in a bucket before a rate drawn from it is worth
+ * looking at: fifty people, or a fiftieth of the biggest bucket, whichever is
+ * larger.
+ *
+ * Both halves are load-bearing. The absolute floor is what stops a post that
+ * only ever reached six hundred people producing an hour of 1-in-1; the relative
+ * one is what stops a post that reached two hundred thousand from treating an
+ * hour of ninety as signal. Blunt on purpose, and the same species of number as
+ * the sample gates — see `supports`.
+ */
+export function rateFloor(denominator: PostSeriesPoint[]): number {
+  return Math.max(50, Math.max(...denominator.map((p) => p.value), 0) * 0.02)
 }
 
 /** Min and max of a set of series, so several can share one scale. */

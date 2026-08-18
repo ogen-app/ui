@@ -57,7 +57,7 @@ export function PatternsSection({ view }: { view: PatternsView }) {
                 {view.bestTimes.best.sample === 1 ? 'post' : 'posts'}.
               </p>
             )}
-            <Basis confidence={view.bestTimes.confidence}>
+            <Basis>
               From {view.bestTimes.sample} measured posts across every hour you have
               published in. Darker is better.
             </Basis>
@@ -158,7 +158,7 @@ function MaturityCurve({ shelfLife }: { shelfLife: ShelfLife }) {
         ))}
       </ul>
 
-      <Basis confidence={shelfLife.confidence}>
+      <Basis>
         From {shelfLife.sample} posts that have run their course. The gap between
         the first and last mark is your window to act on a post — after it, its
         number is settled. It is also why a post younger than a day is shown as
@@ -200,7 +200,13 @@ function PatternColumn({
             <li key={p.id} className="flex flex-col gap-0.5">
               <span className="text-sm">{p.title}</span>
               <span className="text-xs text-secondary-foreground">{p.detail}</span>
-              <Basis confidence={p.confidence}>{p.sample} posts</Basis>
+              {/* How far to trust it, in words rather than a coloured mark. The
+                  dot that used to sit here graded the sample it was printed
+                  beside, and a colour is a verdict — this is a note. */}
+              <Basis>
+                {p.sample} posts
+                {p.confidence === 'low' && ' — too few to lean on'}
+              </Basis>
             </li>
           ))}
         </ul>

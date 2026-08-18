@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { cn } from '@/lib'
-import { MultiSeriesChart, RankBar, ToneDot, TrendChart } from './charts'
+import {
+  ColumnChart,
+  EmptyChart,
+  MultiSeriesChart,
+  RankBar,
+  ToneDot,
+  TrendChart,
+} from './charts'
 import { DeltaChip, MeasureTile } from './MeasureTile'
 import { Basis, FigureGrid, NotYet, SectionCard } from './shell'
 import {
@@ -9,6 +16,7 @@ import {
   formatDay,
   formatMeasure,
   measureMeta,
+  periodPhrase,
   supports,
 } from './format'
 import {
@@ -34,9 +42,41 @@ import {
  * rate slipped while reach rose" is a sentence the reader should be able to
  * check rather than take from us.
  */
-export function NowSection({ view }: { view: NowView }) {
+export function NowSection({
+  view,
+  initialMeasure,
+}: {
+  view: NowView
+  /** Which tab opens. Omit for the headline measure. */
+  initialMeasure?: MeasureId
+}) {
   const headline = view.readings[0]
-  const [selectedMeasure, setSelectedMeasure] = useState<MeasureId | null>(null)
+  const [selectedMeasure, setSelectedMeasure] = useState<MeasureId | null>(
+    initialMeasure ?? null,
+  )
+
+  const window = periodPhrase(view.period)
+
+  // Nothing has reported. The frame stays and the plot is empty — a flat line
+  // along the floor of an axis is a picture of *no reach*, and what is true is
+  // *no numbers yet*. Keeping the frame also keeps the card the size it will be
+  // once the figures land, rather than growing a chart under the reader an hour
+  // later.
+  if (view.coverage.measured === 0) {
+    return (
+      <SectionCard title="What happened" qualifier={window} scope="lens">
+        <EmptyChart />
+        <p className="text-[13px] text-secondary-foreground">
+          No data yet —{' '}
+          {view.coverage.published === 0
+            ? 'nothing has gone out in this window, so there is nothing to measure.'
+            : `${view.coverage.published} ${view.coverage.published === 1 ? 'post has' : 'posts have'} gone out and none of them have reported numbers yet. Platforms usually take a few hours.`}
+        </p>
+        <Freshness at={view.coverage.lastRefreshedAt} />
+      </SectionCard>
+    )
+  }
+
   if (!headline) return null
 
   // Named days, not "the period before". The reader should never have to do
@@ -54,25 +94,22 @@ export function NowSection({ view }: { view: NowView }) {
   // is already the number on the day, and summing it would invent a quantity
   // that doesn't exist. See `MeasureMeta.kind`.
   const flow = meta.kind === 'flow'
+  const columns = meta.chart === 'columns'
   const series = flow ? accumulate(reading.series, reading.value) : reading.series
-  const previousSeries = !reading.previousSeries
-    ? undefined
-    : flow
-      ? reading.previous !== null
-        ? accumulate(reading.previousSeries, reading.previous)
-        : undefined
-      : reading.previousSeries
+  // A ghost of the previous stretch works behind a line and not behind columns
+  // — two sets of bars at the same dates read as a comparison of two things on
+  // the same day, which is the one thing they are not.
+  const previousSeries =
+    columns || !reading.previousSeries
+      ? undefined
+      : flow
+        ? reading.previous !== null
+          ? accumulate(reading.previousSeries, reading.previous)
+          : undefined
+        : reading.previousSeries
 
   return (
-    <SectionCard
-      title="What happened"
-      scope="lens"
-      status={
-        <span className="text-xs text-secondary-foreground">
-          {anchor ? `Today vs ${anchor}` : view.period.label}
-        </span>
-      }
-    >
+    <SectionCard title="What happened" qualifier={window} scope="lens">
       <FigureGrid>
         {view.readings.map((r) => (
           <MeasureTile
@@ -87,42 +124,43 @@ export function NowSection({ view }: { view: NowView }) {
 
       <div className="mt-2 flex flex-col gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-medium">
-            {flow
-              ? `${meta.label} ${anchor ? `since ${anchor}` : `over ${view.period.label.toLowerCase()}`}`
-              : `${meta.label} day by day`}
-          </h3>
+          {/*
+            The chart's own name, a step up in size, because it is the answer to
+            "which of those tiles am I looking at" — a question the reader asks
+            after every switch. The window is not repeated here: it is in the
+            title, and the dates are on the axis.
+          */}
+          <h3 className="font-display text-base font-medium">{meta.periodLabel}</h3>
           <Legend
+            columns={columns}
             hasPrevious={Boolean(previousSeries)}
             hasBand={Boolean(reading.expected)}
             anchor={anchor}
           />
         </div>
-        <TrendChart
-          series={series}
-          previousSeries={previousSeries}
-          band={reading.expected ?? undefined}
-          bandShape={flow ? 'cone' : 'flat'}
-          axis={{ left: anchor ?? view.period.label, right: 'Today' }}
-        />
-        {reading.expected && (
-          // Not a footnote. This is the sentence that turns the headline number
-          // into a judgement — "184.9K" on its own is unreadable, "184.9K
-          // against the 120K–165K we usually reach" is the finding — so it is
-          // set in the primary colour and a step above the supporting text.
-          <Basis className="text-[13px] text-foreground">
-            {formatMeasure(reading.measure, reading.value)}{' '}
-            {flow ? 'so far' : 'today'}, against the{' '}
-            {formatMeasure(reading.measure, reading.expected.low)}–
-            {formatMeasure(reading.measure, reading.expected.high)} this workspace
-            normally {flow ? `reaches across ${view.period.days} days` : 'sits at'}.{' '}
-            {flow
-              ? 'The line is a running total, so it ends on the figure above it.'
-              : 'The line is where it stood each day, so it does not add up — it settles.'}
-          </Basis>
+        {columns ? (
+          <ColumnChart
+            series={reading.series}
+            band={reading.expected ?? undefined}
+            endLabel="Today"
+          />
+        ) : (
+          <TrendChart
+            series={series}
+            previousSeries={previousSeries}
+            band={reading.expected ?? undefined}
+            bandShape={flow ? 'cone' : 'flat'}
+            endLabel="Today"
+          />
         )}
       </div>
 
+      {/*
+        No prose under the chart. The tile above already says which side of
+        usual this is on, the band draws the range it is being held against,
+        and a paragraph restating both in words was the third telling of one
+        fact. What is left here is what the chart cannot say for itself.
+      */}
       {view.insights.length > 0 && (
         <ul className="mt-1 flex flex-col gap-2">
           {view.insights.map((i) => (
@@ -133,24 +171,32 @@ export function NowSection({ view }: { view: NowView }) {
         </ul>
       )}
 
-      <Basis>
-        {view.coverage.measured === view.coverage.published
-          ? `All ${view.coverage.published} published posts in this period are measured`
-          : `${view.coverage.measured} of ${view.coverage.published} published posts are measured — the rest haven't reported yet`}
-        {view.coverage.lastRefreshedAt && ` · updated ${view.coverage.lastRefreshedAt}`}
-        {/* Saying when it comes back is what turns a stale-looking screen into
-            a scheduled one. */}
-        {view.coverage.nextRefreshIn && `, next ${view.coverage.nextRefreshIn}`}
-      </Basis>
+      <Freshness at={view.coverage.lastRefreshedAt} />
     </SectionCard>
   )
 }
 
+/**
+ * When these numbers last moved.
+ *
+ * The whole of the card's footnote. Everything a reader has to be told about a
+ * figure belongs beside the figure — the tile says whether it is unusual, the
+ * empty state says when there is nothing — which leaves the foot of the card
+ * for the one fact that applies to all of it at once.
+ */
+function Freshness({ at }: { at?: string }) {
+  if (!at) return null
+  return <Basis>Updated {at}</Basis>
+}
+
 function Legend({
+  columns = false,
   hasPrevious,
   hasBand,
   anchor,
 }: {
+  /** Whether the chart is drawn as columns — the key has to match the ink. */
+  columns?: boolean
   hasPrevious: boolean
   hasBand: boolean
   anchor: string | null
@@ -158,8 +204,12 @@ function Legend({
   return (
     <ul className="flex flex-wrap items-center gap-3 text-xs text-tertiary-foreground">
       <li className="flex items-center gap-1.5">
-        <span className="h-0.5 w-4 rounded-full bg-foreground" aria-hidden />
-        this stretch
+        {columns ? (
+          <span className="h-2.5 w-1.5 rounded-[1px] bg-quaternary-foreground" aria-hidden />
+        ) : (
+          <span className="h-0.5 w-4 rounded-full bg-foreground" aria-hidden />
+        )}
+        {columns ? 'each day' : 'this stretch'}
       </li>
       {hasPrevious && (
         <li className="flex items-center gap-1.5">
@@ -199,18 +249,16 @@ export function InsightLine({ insight }: { insight: Insight }) {
         )}
         aria-hidden
       />
+      {/*
+        A finding and nothing else. The "see those two posts" links that used to
+        sit here were writing cheques the app can't cash yet — every one of them
+        needs a filtered destination that doesn't exist, and a dead link under a
+        finding costs more trust than the link would have saved.
+      */}
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="text-sm">{insight.text}</p>
         {insight.basis && (
           <p className="text-xs text-tertiary-foreground">{insight.basis}</p>
-        )}
-        {insight.action && (
-          <button
-            type="button"
-            className="mt-0.5 self-start text-xs font-medium text-foreground underline underline-offset-2"
-          >
-            {insight.action.label}
-          </button>
         )}
       </div>
     </div>
@@ -333,7 +381,7 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
       )}
 
       {thin.length > 0 && (
-        <Basis confidence="low">
+        <Basis>
           {thin.map((r) => r.sleeve.label).join(', ')}{' '}
           {thin.length === 1 ? 'has' : 'have'} fewer than five measured posts —
           shown, but not ranked against the rest.

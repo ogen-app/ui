@@ -23,12 +23,25 @@ export type MeasureId =
   | 'engagement_rate'
   | 'saves'
   | 'clicks'
+  | 'views'
   | 'followers'
   | 'published'
 
 export interface MeasureMeta {
   id: MeasureId
   label: string
+  /**
+   * What the measure is called once it is being shown *over a period* — the
+   * name on its tab and on the chart drawn out underneath.
+   *
+   * "Reach" and "Followers" are the same word for two different quantities:
+   * one is everything earned across the window and the other is where the
+   * number stands today. A tab that says "Reach 184.9K" beside a tab that says
+   * "Followers 14.2K" invites the reader to treat both as period totals, and
+   * one of them isn't. Naming them "Cumulative reach" and "Current followers"
+   * costs a word and removes the ambiguity everywhere the name appears.
+   */
+  periodLabel: string
   format: 'count' | 'percent'
   /**
    * Whether the measure accumulates or stands at a level.
@@ -42,6 +55,18 @@ export interface MeasureMeta {
    */
   kind: 'flow' | 'level'
   /**
+   * How the detail chart draws it.
+   *
+   * A **running** total climbs from nothing to the headline figure. A **level**
+   * is a line through where the number stood each day. **Columns** are for a
+   * quantity that is re-derived every day and doesn't carry over — a daily rate
+   * is seven separate answers to the same question, and joining them with a
+   * line claims a continuity between Tuesday's rate and Wednesday's that does
+   * not exist. Followers stay a line for the opposite reason: today's figure
+   * *is* yesterday's, plus or minus.
+   */
+  chart: 'running' | 'level' | 'columns'
+  /**
    * Which direction is good news. Held per measure rather than assumed,
    * because the moment unfollows or hides arrive the assumption breaks.
    */
@@ -54,63 +79,89 @@ export const MEASURES: Record<MeasureId, MeasureMeta> = {
   reach: {
     id: 'reach',
     label: 'Reach',
+    periodLabel: 'Cumulative reach',
     format: 'count',
     kind: 'flow',
+    chart: 'running',
     better: 'up',
     hint: 'Distinct accounts that saw a post',
   },
   impressions: {
     id: 'impressions',
     label: 'Impressions',
+    periodLabel: 'Cumulative impressions',
     format: 'count',
     kind: 'flow',
+    chart: 'running',
     better: 'up',
     hint: 'Times a post was shown, the same person counted more than once',
   },
   interactions: {
     id: 'interactions',
     label: 'Interactions',
+    periodLabel: 'Cumulative interactions',
     format: 'count',
     kind: 'flow',
+    chart: 'running',
     better: 'up',
     hint: 'Likes, comments, shares and saves together',
   },
   engagement_rate: {
     id: 'engagement_rate',
     label: 'Engagement rate',
+    periodLabel: 'Daily engagement rate',
     format: 'percent',
     kind: 'level',
+    chart: 'columns',
     better: 'up',
     hint: 'Interactions as a share of reach',
   },
   saves: {
     id: 'saves',
     label: 'Saves',
+    periodLabel: 'Cumulative saves',
     format: 'count',
     kind: 'flow',
+    chart: 'running',
     better: 'up',
     hint: 'People keeping a post to come back to',
   },
   clicks: {
     id: 'clicks',
     label: 'Clicks',
+    periodLabel: 'Cumulative clicks',
     format: 'count',
     kind: 'flow',
+    chart: 'running',
     better: 'up',
     hint: 'Taps on a link out of the post',
+  },
+  views: {
+    id: 'views',
+    label: 'Views',
+    periodLabel: 'Cumulative views',
+    format: 'count',
+    kind: 'flow',
+    chart: 'running',
+    better: 'up',
+    hint: 'Video plays, counted the way each platform counts one',
   },
   followers: {
     id: 'followers',
     label: 'Followers',
+    periodLabel: 'Current followers',
     format: 'count',
     kind: 'level',
+    chart: 'level',
     better: 'up',
   },
   published: {
     id: 'published',
     label: 'Posts published',
+    periodLabel: 'Posts published',
     format: 'count',
     kind: 'flow',
+    chart: 'running',
     better: 'up',
   },
 }
@@ -201,11 +252,16 @@ export interface Insight {
   tone: 'positive' | 'negative' | 'neutral'
   /** What it is derived from — sample size, method, caveat. */
   basis?: string
-  /** Where the user would go to act on it. */
-  action?: { label: string }
 }
 
-/** How much of the campaign or workspace the numbers actually describe. */
+/**
+ * How much of the campaign or workspace the numbers actually describe.
+ *
+ * `measured` is load-bearing rather than decorative: at zero there is nothing
+ * to draw, and the card says *no data yet* instead of charting a flat line
+ * through a period that hasn't reported. The counts are the switch, not a
+ * caption — what the reader sees at the foot of the card is the freshness.
+ */
 export interface Coverage {
   measured: number
   published: number
@@ -418,14 +474,43 @@ export interface OutcomesView {
 /* ---------------------------------------------- performers and outliers -- */
 
 /**
- * Where a post sits against what this workspace normally does **at the same
- * age**, once its numbers have been age-corrected. `null` while it is too young
- * for the correction to say anything.
+ * Where a post sits against what this workspace normally does. `null` while it
+ * is too young — or too thinly seen — for the comparison to say anything.
  */
 export type PacePlacement = 'ahead' | 'usual' | 'behind'
 
 /**
- * One post, corrected for how old it is.
+ * What "best" and "worst" are being measured by. The rules behind each one live
+ * in `criteria.ts`; the ids are here because the view carries a typical value
+ * keyed by them.
+ */
+export type PerformerCriterionId =
+  | 'pace'
+  | 'reach'
+  | 'engagement_rate'
+  | 'save_rate'
+  | 'follow_rate'
+
+/**
+ * The connected account a post went out on.
+ *
+ * Carried rather than flattened into a platform label because the row leads
+ * with the picture: a workspace running four Instagram accounts asks *which
+ * one* long before it asks which platform, and the account is also the only
+ * thing on the row that says why the same words earned twice as much twice.
+ */
+export interface PostAccount {
+  id: string
+  /** The account's own name — `Ogen Dental`, `@ogen`. */
+  name: string
+  /** Profile picture. Absent falls back to an initial — see `AccountAvatar`. */
+  avatarUrl?: string
+  /** Our platform id, or the wire slug — see `resolvePlatformInfo`. */
+  platform: string
+}
+
+/**
+ * One post, and everything it has earned so far.
  *
  * This is the rung between a workspace total and a single post — the headline
  * says 184.9K and the only honest follow-up is *from what?* But a straight
@@ -435,65 +520,109 @@ export type PacePlacement = 'ahead' | 'usual' | 'behind'
  * the young ones and the section can't answer anything about the work done this
  * week.
  *
- * So every reading here is corrected against the workspace's own maturation
- * curve (`ShelfLife`) before anything is compared:
+ * There are two ways out of that, and the card uses both (see `criteria.ts`):
  *
- * - `matured` — what share of its lifetime earning has already landed, read off
- *   the curve at this post's age.
- * - `projected` — `value / matured`. Where it lands once it finishes. This is
- *   what the list is **ranked** by, so "most impactful" keeps meaning impact
- *   rather than seniority.
- * - `pace` — `value` against what a typical post of this workspace had earned
- *   *by the same age*. A dimensionless multiple, so it needs no projection to
- *   be fair, and it is what decides `placement`.
+ * - **Correct for age.** `matured` is the share of its lifetime earning that
+ *   has already landed, read off this workspace's own curve; a total divided
+ *   through it is where the post lands once it finishes.
+ * - **Ask a question age doesn't change.** A ratio — interactions per person
+ *   reached, saves per thousand — settles long before a total does, because
+ *   both halves of it arrive together. `pace` is the same trick applied to a
+ *   total: this post against what a typical post of this workspace had earned
+ *   *by the same age*.
  *
- * The two answer different questions and both are on the row: projection says
- * how big, pace says how good. A modest post at 3× pace and a huge post at 1.1×
- * are both worth knowing about, and neither number finds the other one.
+ * Which is why the metrics are held as a bag rather than one `value`: the
+ * criterion the reader picks decides which of them is being ranked, and a rate
+ * needs both its numerator and its denominator on hand.
  */
 export interface RankedPost {
   id: string
   title: string
-  /** Human, not ISO — `4 Aug`. */
+  /**
+   * Human, not ISO — `4 Aug 26`. The year is carried even inside a 28-day
+   * window: every one of these lists gets screenshotted eventually, and a date
+   * with no year is undateable the moment it leaves the screen.
+   */
   publishedAt: string
   /** How long it has been earning — `6 hours`, `13 days`. */
   age: string
-  /** Where it went out. Labelled, because per-platform numbers don't sum. */
-  sleeve: Sleeve
+  /**
+   * Where it went out — one account, on one platform.
+   *
+   * A post sent to four accounts is four rows here, not one. Totalling them
+   * would add a LinkedIn impression to an Instagram reach, and the sum is a
+   * quantity neither platform defines; worse, it hides the finding, which is
+   * that the same words did well on one account and nothing on another.
+   */
+  account: PostAccount
   maturity: PostMaturity
-  /** What it has earned so far, in the measure's unit. */
-  value: number
+  /**
+   * What it has earned so far, per measure. Absent means *not reported* rather
+   * than zero — a platform that doesn't hand back saves must not rank last on
+   * saves.
+   *
+   * `followers` on a post is follows *gained*, not a standing count: the
+   * measure is a level everywhere else, and per post it is the only reading
+   * that makes sense.
+   */
+  metrics: Partial<Record<MeasureId, number>>
   /** Share of its lifetime earning already in, 0–1. `1` once settled. */
   matured: number
-  /** Where the correction says it lands. `null` once settled — `value` is it. */
-  projected: number | null
   /** Against a typical post at the same age: `1` is typical, `2` is twice. */
   pace: number | null
-  placement: PacePlacement | null
   /**
-   * Share of the period's total for this measure, 0–1, on what has actually
-   * been earned rather than the projection. The anomaly check: one post at a
-   * quarter of the month is the difference between a good month and one lucky
-   * afternoon.
+   * Share of the period's reach, 0–1, on what has actually been earned rather
+   * than any projection. The anomaly check: one post at a quarter of the month
+   * is the difference between a good month and one lucky afternoon.
    */
   share: number
 }
 
 export interface PerformersView {
-  measure: MeasureId
-  /** Every post in the period, placed or not. The bands are counted from these. */
+  /** The window the posts are drawn from — the card names it in its title. */
+  period: Period
+  /** Every post in the period. Which of them can be ranked is per criterion. */
   posts: RankedPost[]
   /**
-   * The maturation curve the correction is read off — this workspace's own, not
-   * an industry benchmark.
+   * The maturation curve the age correction is read off — this workspace's own,
+   * not an industry benchmark.
    *
    * `null` when there aren't enough finished posts to build one, and that is a
-   * real state rather than a missing field: with no curve there is nothing to
-   * correct against, so nothing young can be placed and the section falls back
-   * to ranking what has already settled.
+   * real state rather than a missing field: with no curve nothing young can be
+   * corrected, so the criteria that lean on it withdraw and the ratios — which
+   * never needed it — carry the card.
    */
   curve: { sample: number; confidence: Confidence; floor: string } | null
-  insight?: Insight
+  /**
+   * What this workspace normally does, per criterion. The centre line of every
+   * bar on the card, and the reason a figure means anything: 5.0% is a good
+   * engagement rate or a poor one depending entirely on this.
+   *
+   * A criterion missing from here still ranks — it just loses its bar, and the
+   * column says so rather than drawing a comparison against nothing.
+   */
+  typical: Partial<Record<PerformerCriterionId, number>>
+  insights: Insight[]
+}
+
+/* ------------------------------------------------------- platform filter -- */
+
+/**
+ * One platform the workspace can publish to, with how much of it is actually
+ * wired up.
+ *
+ * The account count is not decoration. "Instagram" in a filter means something
+ * different when it is one account and when it is four, and a workspace whose
+ * Facebook figure looks thin usually has one page connected out of three. The
+ * number is the difference between "Facebook is not working" and "we are only
+ * looking at a third of Facebook".
+ */
+export interface PlatformOption {
+  /** Our platform id, or the wire slug — see `resolvePlatformInfo`. */
+  id: string
+  label: string
+  /** Connected accounts. `0` means the platform is offered but not wired up. */
+  accounts: number
 }
 
 /** Which surface a composition is rendering. */
@@ -503,6 +632,12 @@ export type AnalyticsScope =
 
 /** Everything a workspace or campaign surface renders, once settled. */
 export interface AnalyticsData {
+  /**
+   * Everything the surface *could* be counting. Which of them it is actually
+   * counting is UI state, held above the surface — the filter is overarching,
+   * so it cannot belong to any one section's view.
+   */
+  platforms: PlatformOption[]
   now: NowView
   outcomes: OutcomesView
   performers: PerformersView
@@ -528,23 +663,232 @@ export interface AnalyticsSurfaceState {
  * How far along a post's numbers are. Ranking a six-hour-old post against a
  * six-week-old one is the single most common lie in social analytics, so
  * maturity is carried on the post rather than inferred at the call site.
+ *
+ * It is also what decides *what a figure is held against*: a post that is still
+ * counting is compared with what a typical post had earned **by the same age**,
+ * never with the range finished posts land in. See `PostMetric.typical`.
  */
 export type PostMaturity = 'unpublished' | 'counting' | 'settling' | 'final'
 
+/**
+ * One measure on one post, with the two things that make the number readable.
+ *
+ * A bare "18,420" is unreadable — the reader has no idea whether that is a good
+ * afternoon or a career best. `typical` answers *how does this compare with what
+ * we normally do*, `expected` answers *is it outside our usual range at all*;
+ * they are the same pair the campaign card's tiles carry, so the two cards read
+ * identically. Both are optional because a workspace three weeks old has neither.
+ */
 export interface PostMetric {
   measure: MeasureId
   value: number
+  /**
+   * What a typical post of this workspace has on the same measure.
+   *
+   * **Age-corrected while the post is still counting** — a four-hour-old post
+   * held against the totals of finished posts is the age lie with extra steps,
+   * so for `counting` and `settling` this is what a typical post had earned by
+   * the same age (the workspace's own maturation curve, applied to its typical
+   * final figure). Rates are the exception: an engagement rate is roughly itself
+   * from the first hour, so it is compared with the plain typical throughout.
+   */
+  typical?: number
+  /** The range this workspace's posts normally land in, on the same basis. */
+  expected?: { low: number; high: number }
 }
 
-export interface PostStatsData {
+/**
+ * How a post's own history is read — the one control a measure card carries.
+ *
+ * Three answers on one switch rather than a mode and a bucket on two, because
+ * the reader is picking a **picture**, not composing one out of two settings.
+ * The pair was honest and unusable: the bucket had no effect on a running total,
+ * so it had to appear and disappear, and a control that comes and goes is a
+ * control people stop trusting.
+ *
+ * - `total` — the running total since publishing. Answers *what has it earned*,
+ *   and its last point is the figure above the chart. That correspondence is
+ *   why it is the default.
+ * - `hour` — what arrived in each hour. Answers *when did it earn it*, which is
+ *   the reading that shows a post still moving, the hour it peaked, and the
+ *   re-share on day three. Almost everything a post earns arrives in its first
+ *   day, so this is the granularity the question is actually asked at.
+ * - `day` — the same, for the other end: a post three weeks old has five hundred
+ *   hourly buckets and a flat tail, and nobody reads that.
+ */
+export type PostSeriesReading = 'total' | 'hour' | 'day'
+
+/** The bucket a reading is summed into. Derived from it, never chosen apart. */
+export type PostInterval = 'hour' | 'day'
+
+/**
+ * Whether a chart shows the running total or what arrived in each bucket.
+ *
+ * The two answer different questions and neither substitutes for the other,
+ * which is why the switch above offers both rather than picking one: a running
+ * total that flattens and an hourly reading that has gone quiet are the same
+ * fact, and only one of them is legible at a glance.
+ */
+export type PostSeriesMode = 'cumulative' | 'interval'
+
+/** The mode and bucket a reading resolves to. */
+export function readingShape(reading: PostSeriesReading): {
+  mode: PostSeriesMode
+  interval: PostInterval
+} {
+  return {
+    mode: reading === 'total' ? 'cumulative' : 'interval',
+    // A running total is drawn from hourly buckets: the bucket only decides how
+    // many points the line is made of, and the finer one draws the smoother line.
+    interval: reading === 'day' ? 'day' : 'hour',
+  }
+}
+
+export interface PostSeriesPoint {
+  /** ISO timestamp at the **end** of the bucket. */
+  at: string
+  /** Hours since publishing at the end of the bucket. */
+  hour: number
+  /**
+   * What arrived **in this bucket** — never a running total.
+   *
+   * Held as the interval value in one direction only: a running total can be
+   * derived from buckets, buckets cannot be recovered from a running total
+   * without knowing it was never revised, and platforms do revise. The raw
+   * thing is what gets carried; everything else on screen is computed from it.
+   */
+  value: number
+}
+
+/**
+ * One measure's history on one post, in hourly buckets since publishing.
+ *
+ * **Flows only.** A rate has no bucket value that can be summed or accumulated —
+ * "cumulative engagement rate" is the mistake `MeasureMeta.kind` exists to
+ * prevent — so the rate chart is recomputed from interactions and reach at
+ * whatever bucketing is on screen rather than carried as a series of its own.
+ * That also makes it impossible for the rate chart to disagree with the two
+ * charts above it.
+ *
+ * **Nothing exposes this yet.** The rows are there — Zernio is swept every
+ * thirty minutes and the snapshots are kept for ninety days, which is finer than
+ * the hour this is bucketed to — but no endpoint hands back the history, only
+ * the latest figures. This shape is the ask: `GET /api/analytics/posts/:id/series`
+ * with a granularity, over the snapshot table.
+ */
+export interface PostSeries {
+  measure: MeasureId
+  points: PostSeriesPoint[]
+}
+
+/**
+ * A post's own numbers — everything the post surface is built from.
+ *
+ * One view behind several cards rather than one card: which post this is, then
+ * an overview carrying every figure it reported and what we make of them, then a
+ * card per measure with its own history and its own switch for how to read it.
+ * They are cards for the same reason the campaign's sections are — a card is a
+ * promise that its number is maintained, and a measure the platform never
+ * reported simply has no card rather than a gap inside one.
+ *
+ * The tiles, the insight boxes and the note at the foot are the campaign's, on
+ * purpose: a post is a campaign of one, and giving the smallest surface its own
+ * visual language meant two things to learn and two places for the copy to
+ * drift apart. Only what is compared differs — a post has no previous period, so
+ * every figure is held against a typical post of yours instead.
+ *
+ * What it does *not* carry is a per-account breakdown. This screen is one post,
+ * and a post that went to four accounts is four rows on the campaign's
+ * performers card, where a row is already one post on one account — see
+ * `RankedPost.account`.
+ */
+export interface PostPerformanceView {
   maturity: PostMaturity
-  publishedAt?: string
-  /** Rank against this workspace's own history, 0–100. `null` under sample. */
+  /** Which post this is. The first card, and the only one that never withdraws. */
+  post: PostIdentity
+  /**
+   * How long the figures cover — `4 hours`, `26 hours`, `12 days`.
+   *
+   * The post's age, said as a span rather than as a date, because that is the
+   * question the figures raise: 7,210 reach is a different post at four hours
+   * than at three weeks. It sits in the card's header, which is the beat that
+   * owns *the window this card is describing* — the same slot the campaign uses
+   * for "over last 28 days".
+   *
+   * Distinct from `post.publishedAgo`, which reads the same and answers
+   * something else: one is when it went out, the other is how long it has been
+   * earning. They are the same number today and stop being it the moment a
+   * platform stops reporting on a post that is still live.
+   */
+  measuredOver?: string
+  /**
+   * Rank against this workspace's own history, 0–100. `null` under sample, and
+   * `null` while the post is still counting — a rank against finished posts is
+   * the one comparison age correction cannot rescue.
+   */
   percentile: number | null
   metrics: PostMetric[]
-  /** One row per account when the same post went to several. */
-  perAccount: { sleeve: Sleeve; metrics: PostMetric[] }[]
-  /** Share of eventual engagement earned by each hour since publishing. */
-  decay: { hour: number; share: number }[] | null
+  /** How many measured posts the comparisons are read off. */
+  sample?: number
+  /**
+   * This post's own history, one entry per measure it was reported on.
+   *
+   * Empty is a real state and not an error: a post published before the sweep
+   * started, or one whose platform only ever hands back a current total, has
+   * figures and no history. The card drops the charts and says so rather than
+   * drawing a line through two points.
+   *
+   * What used to sit here was the *workspace's* maturation curve with a marker
+   * for this post — a stand-in for a series nothing exposed. It was the same
+   * picture on every finished post, so it said nothing about the post it was on.
+   */
+  series: PostSeries[]
+  /** Why it did what it did. The percentile line is derived, not carried. */
   insight: Insight | null
+  /** When these numbers last moved — the note at the foot, as on every card. */
+  lastRefreshedAt?: string
+}
+
+/**
+ * Which post this is — the answer to the question every figure below it is
+ * useless without.
+ *
+ * It gets a card, first, above the overview. A percentile and a delta are
+ * claims about *a* post, and a screen that opens on "Better than 94% of your
+ * posts" without saying which post, where it went, or when, is a screen that
+ * cannot be screenshotted, sent to anyone, or argued with. The analytics cards
+ * are all conditional — they withdraw when there is no history, no sample,
+ * nothing reported — and this one never is: it is true the moment the post
+ * exists, which is why it can hold the top of the surface.
+ *
+ * Every field here is display-ready. The formatting lives wherever the post is
+ * loaded, so this stays the same shape whether it came from the post editor's
+ * document or from an analytics response.
+ */
+export interface PostIdentity {
+  /** The post's own title, or the first line of its caption. */
+  title: string
+  /** Platform slug or sqid — anything `resolvePlatformInfo` answers to. */
+  platform: string
+  /** The handle it actually went out as. "Instagram" is not an account. */
+  account: string
+  /** Reel, Single image, Carousel — what the platform received. */
+  format: string
+  /**
+   * Absolute and local — `14 Aug 2026, 09:15`.
+   *
+   * Carried beside the relative age rather than instead of it, because they
+   * answer different questions: "4 hours ago" is how much of this post's life
+   * is still ahead of it, and the date is the only part that survives a
+   * screenshot.
+   */
+  publishedOn?: string
+  /** Human, never ISO — `12 days ago`, `4 hours ago`. */
+  publishedAgo?: string
+  /** For a post that hasn't gone yet. Absent means not scheduled either. */
+  scheduledFor?: string
+  /** The campaign it belongs to, named rather than linked-to-and-unnamed. */
+  campaign?: string
+  /** Where it lives on the platform, for the reader who wants the real thing. */
+  permalink?: string
 }
