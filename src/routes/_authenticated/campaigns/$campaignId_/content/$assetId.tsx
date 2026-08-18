@@ -1,12 +1,10 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
-import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
 import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { AssetActionBar } from '@/components/campaigns/content/AssetActionBar'
 import { AssetDetailsHeader } from '@/components/campaigns/content/AssetDetailsHeader'
 import { AssetEditor } from '@/components/campaigns/content/AssetEditor'
 import { DeleteAssetDialog } from '@/components/campaigns/content/DeleteAssetDialog'
@@ -14,7 +12,6 @@ import { useAsset, useUpdateAsset } from '@/hooks/useContent'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { downloadMarkdown } from '@/lib/downloadMarkdown'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
-import { cn } from '@/lib'
 
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId_/content/$assetId',
@@ -25,15 +22,18 @@ export const Route = createFileRoute(
 /**
  * One of a campaign's documents, open for writing.
  *
- * Framed exactly like the post editor, because it is the same kind of screen:
- * a positioned column holding a scroller, the document on its own surface in
- * the middle, the header fading in at the top and its mirror at the bottom,
- * and the commit bar floating clear of both. What differs is only what those
- * slots can honestly hold — see `AssetDetailsHeader` and `AssetActionBar`.
+ * Framed like the post editor, because it is the same kind of screen: a
+ * positioned column holding a scroller, the document on its own surface in the
+ * middle, the header fading in at the top and its mirror at the bottom.
+ *
+ * What it does *not* borrow is the commit bar. A post has one because it has
+ * somewhere to go — draft, scheduled, published — and the bar is where that
+ * happens. A document has no such move: it saves as you type, and the only
+ * thing left to do is leave, which the back caret already does. A bar whose
+ * one button is a second way out is furniture.
  */
 function AssetPage() {
   const { campaignId, assetId } = Route.useParams()
-  const navigate = useNavigate()
   const { data: campaign } = useCampaign(campaignId)
   const { data: asset, isLoading, isError } = useAsset(assetId)
   const updateAsset = useUpdateAsset()
@@ -107,10 +107,6 @@ function AssetPage() {
     downloadMarkdown(title ?? asset.title, asset.content)
   }, [asset, title])
 
-  const handleDone = useCallback(() => {
-    void navigate({ to: '/campaigns/$campaignId/content', params: { campaignId } })
-  }, [navigate, campaignId])
-
   if (isLoading) {
     return (
       <PageContainer>
@@ -129,10 +125,9 @@ function AssetPage() {
 
   return (
     <PageContainer variant="fullFlex">
-      {/* `relative` so the bar and the fader anchor to the content column
-          rather than the window: the right rail is a sibling of this
-          container, so both recentre when a panel opens instead of drifting
-          off the document they belong to. */}
+      {/* `relative` so the fader anchors to the content column rather than
+          the window: the right rail is a sibling of this container, so it
+          recedes when a panel opens instead of spanning the whole app. */}
       <div className="relative flex flex-1 min-h-0">
         <ScrollArea className="flex-1 min-h-0" type="scroll" scrollHideDelay={350}>
           <AssetDetailsHeader
@@ -141,12 +136,7 @@ function AssetPage() {
             onDownloadMarkdown={handleDownloadMarkdown}
             onDelete={() => setDeleteOpen(true)}
           />
-          <div
-            className={cn(
-              'flex flex-col items-center gap-3 relative z-0',
-              PAGE_ACTION_BAR_INSET,
-            )}
-          >
+          <div className="flex flex-col items-center gap-3 relative z-0">
             <div className="w-content bg-primary px-10 py-8">
               <AssetEditor
                 initialTitle={asset.title}
@@ -156,21 +146,18 @@ function AssetPage() {
                 onDirty={markDirty}
               />
             </div>
-            {/* Scroll past the end, as on a post: the inset above is only the
-                clearance that keeps the bar off the document, and it leaves
-                the last line pinned against the bottom edge. This is the
-                travel that lets the end of what you are writing come up to the
-                middle of the screen. */}
+            {/* Scroll past the end, as on a post: without it the last line
+                sits pinned against the bottom edge with nowhere to go. This is
+                the travel that lets the end of what you are writing come up to
+                the middle of the screen — and it keeps the assistant's mark in
+                the corner off the document. */}
             <div className="h-40 shrink-0" aria-hidden />
           </div>
         </ScrollArea>
 
-        {/* The header's fade, mirrored — the document dissolves on its way
-            under the bar instead of being sliced off by the bottom edge. */}
+        {/* The header's fade, mirrored — the document dissolves into the page
+            on its way out instead of being sliced off by the bottom edge. */}
         <PageBottomFader />
-
-        {/* Outside the ScrollArea: inside it the bar would scroll away. */}
-        <AssetActionBar asset={asset} onDone={handleDone} />
       </div>
 
       <DeleteAssetDialog
