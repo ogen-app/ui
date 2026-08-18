@@ -6,8 +6,8 @@ import { AssetSection } from '../shared/AssetSection'
 import type { Asset } from '@/types/content'
 import type { Post } from '@/types/posts'
 import { useAssets } from '@/hooks/useContent'
-import { useCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
-import { campaignToPayload } from '../campaignBriefForm/shared'
+import { useCampaign } from '@/hooks/useCampaigns'
+import { campaignAssets } from '@/lib/campaignSources'
 
 type Props = {
   doc: Post
@@ -15,20 +15,26 @@ type Props = {
   onClose?: () => void
 }
 
+/**
+ * Which of the campaign's documents this post was written from.
+ *
+ * It used to offer the whole workspace bank in a third section, and adding
+ * from it quietly attached the asset to the campaign as a side effect. Both
+ * are gone (CON-210): a campaign shows what it holds and nothing else, and
+ * documents get into a campaign on its own Content page.
+ */
 export function PostContentUsageForm({ doc, changeDoc, onClose }: Props) {
   const assetIds = doc.used_asset_ids
   const { data: assets, isPending: assetsPending } = useAssets()
   const { data: campaign, isLoading: campaignPending } = useCampaign(doc.campaign_id)
-  // The campaign decides which of the bank's assets are the shortlist, so a
-  // list split before it lands would move rows between the two sections.
+  // The campaign decides which assets exist here at all, so a list split
+  // before it lands would move rows between the two sections.
   const loading = assetsPending || campaignPending
-  const { mutate: updateCampaign } = useUpdateCampaign()
 
-  const { selected, availableInCampaign, available } = useMemo(() => {
-    const all = assets ?? []
+  const { selected, available } = useMemo(() => {
+    const held = campaign ? campaignAssets(assets ?? [], campaign) : []
     const selectedSet = new Set(assetIds)
-    const campaignSet = new Set(campaign?.asset_ids ?? [])
-    const byId = new Map(all.map((a) => [a.id, a]))
+    const byId = new Map(held.map((a) => [a.id, a]))
 
     const selected: Asset[] = []
     for (const id of assetIds) {
@@ -36,14 +42,10 @@ export function PostContentUsageForm({ doc, changeDoc, onClose }: Props) {
       if (a) selected.push(a)
     }
 
-    const availableInCampaign: Asset[] = []
-    const available: Asset[] = []
-    for (const a of all) {
-      if (selectedSet.has(a.id)) continue
-      if (campaignSet.has(a.id)) availableInCampaign.push(a)
-      else available.push(a)
+    return {
+      selected,
+      available: held.filter((a) => !selectedSet.has(a.id)),
     }
-    return { selected, availableInCampaign, available }
   }, [assets, assetIds, campaign])
 
   const addAsset = (id: string) => {
@@ -51,16 +53,6 @@ export function PostContentUsageForm({ doc, changeDoc, onClose }: Props) {
       if (d.used_asset_ids.includes(id)) return
       d.used_asset_ids.push(id)
     })
-    if (campaign && !campaign.asset_ids.includes(id)) {
-      const nextIds = [...campaign.asset_ids, id]
-      updateCampaign({
-        id: campaign.id,
-        payload: campaignToPayload(campaign, {
-          asset_ids: nextIds,
-          use_assets: true,
-        }),
-      })
-    }
   }
 
   const removeAsset = (id: string) => {
@@ -75,7 +67,7 @@ export function PostContentUsageForm({ doc, changeDoc, onClose }: Props) {
       <AssetSection
         title="SELECTED"
         assets={selected}
-        emptyLabel="No assets used"
+        emptyLabel="No documents used"
         actionIcon={XIcon}
         actionAriaLabel={(a) => `Remove ${a.title || 'Untitled'}`}
         onAction={(a) => removeAsset(a.id)}
@@ -83,18 +75,9 @@ export function PostContentUsageForm({ doc, changeDoc, onClose }: Props) {
         loading={loading}
       />
       <AssetSection
-        title="AVAILABLE IN CAMPAIGN"
-        assets={availableInCampaign}
-        emptyLabel="No campaign shortlist assets"
-        actionIcon={PlusIcon}
-        actionAriaLabel={(a) => `Add ${a.title || 'Untitled'}`}
-        onAction={(a) => addAsset(a.id)}
-        loading={loading}
-      />
-      <AssetSection
-        title="AVAILABLE"
+        title="IN THIS CAMPAIGN"
         assets={available}
-        emptyLabel="No other assets"
+        emptyLabel="Add documents on the campaign's Content page"
         actionIcon={PlusIcon}
         actionAriaLabel={(a) => `Add ${a.title || 'Untitled'}`}
         onAction={(a) => addAsset(a.id)}

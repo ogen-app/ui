@@ -4,16 +4,18 @@ import { PageLoader } from "@/components/page-primitives/PageLoader.tsx";
 import { PageError } from "@/components/page-primitives/PageError.tsx";
 import { useAsset, useUpdateAsset } from "@/hooks/useContent.ts";
 import { useCallback, useRef, useState } from "react";
-import { AssetEditor } from "@/components/content-bank/AssetEditor.tsx";
+import { AssetEditor } from "@/components/campaigns/content/AssetEditor.tsx";
 import {EditPageHeader} from "@/components/page-primitives/EditPageHeader.tsx";
 import { ScrollArea } from "@/components/ui/scroll-area.tsx";
+import { useCampaign } from "@/hooks/useCampaigns.ts";
 
-export const Route = createFileRoute("/_authenticated/content-bank_/$assetId")({
+export const Route = createFileRoute("/_authenticated/campaigns/$campaignId_/content/$assetId")({
   component: AssetPage,
 });
 
 function AssetPage() {
-  const { assetId } = Route.useParams();
+  const { campaignId, assetId } = Route.useParams();
+  const { data: campaign } = useCampaign(campaignId);
   const { data: asset, isLoading, isError } = useAsset(assetId);
   const updateAsset = useUpdateAsset();
   const [title, setTitle] = useState<string | null>(null);
@@ -89,7 +91,14 @@ function AssetPage() {
       <ScrollArea className={'flex-1 min-h-0 lg:px-6'} type={'scroll'} scrollHideDelay={350}>
           <EditPageHeader
             title={((title ?? asset.title).trim() === '' ? 'untitled' : (title ?? asset.title))}
-            breadcrumbs={[{ label: 'Content Bank', to: '/content-bank' }]}
+            breadcrumbs={[
+              {
+                // Back to the campaign that holds this document, not to a
+                // workspace-wide bank — there isn't one any more (CON-210).
+                label: `${campaign?.name.trim() || 'Campaign'} Content`,
+                to: `/campaigns/${campaignId}/content`,
+              },
+            ]}
             unsaved={isDirty}
           />
           <div className={'flex flex-col items-center gap-0 relative z-0'}>

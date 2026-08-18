@@ -116,9 +116,9 @@ export function SectionLink({
           {children}
         </Link>
       );
-    case "assets":
+    case "content":
       return (
-        <Link to="/campaigns/$campaignId/assets" params={params} className={className}>
+        <Link to="/campaigns/$campaignId/content" params={params} className={className}>
           {children}
         </Link>
       );

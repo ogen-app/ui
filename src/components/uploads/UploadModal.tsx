@@ -13,6 +13,8 @@ import {
 type Props = {
   isOpen: boolean;
   onClose: () => void;
+  /** The campaign the files join — uploads no longer land anywhere else. */
+  campaignId: string;
 };
 
 /**
@@ -20,7 +22,7 @@ type Props = {
  * file list the user reviews before clicking Upload. Progress then continues
  * non-blocking in the UploadTracker, so the modal closes on submit.
  */
-export function UploadModal({ isOpen, onClose }: Props) {
+export function UploadModal({ isOpen, onClose, campaignId }: Props) {
   const enqueue = useUploadStore((s) => s.enqueue);
   const [staged, setStaged] = useState<File[]>([]);
 
@@ -39,7 +41,7 @@ export function UploadModal({ isOpen, onClose }: Props) {
 
   const handleUpload = () => {
     if (staged.length === 0) return;
-    enqueue(staged);
+    enqueue(staged, campaignId);
     close();
   };
 
@@ -47,7 +49,7 @@ export function UploadModal({ isOpen, onClose }: Props) {
     <ModalContainer
       isOpen={isOpen}
       onClose={close}
-      title="Upload to content bank"
+      title="Add to this campaign"
       size="large"
     >
       <div className="flex flex-col gap-4">

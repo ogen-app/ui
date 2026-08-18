@@ -21,8 +21,7 @@ type AssetSectionProps = {
 }
 
 /**
- * A collapsible list of content-bank assets with a per-row action button.
- * Shared by the campaign- and post-level content usage panels.
+ * A collapsible list of a campaign's documents with a per-row action button.
  */
 export function AssetSection({
   title,

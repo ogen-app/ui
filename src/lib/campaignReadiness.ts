@@ -64,7 +64,7 @@ export type FixTarget =
   | "settings"
   | "workspace-settings"
   | "posts"
-  | "assets"
+  | "content"
   // No attention rule points here — analytics reports, it never asks for a
   // fix. It is a target so the Overview's Analytics card can use the same
   // header link as every other module.
@@ -742,10 +742,10 @@ export function attentionItems(
     });
   }
 
-  // There is deliberately no rule about `use_assets` with an empty `asset_ids`.
-  // That pair is not a half-finished setup — it is the "All assets" mode, where
-  // an empty list means *every* ready asset (CON-118, `lib/campaignSources.ts`).
-  // Flagging it would nag every campaign that picked the broadest option.
+  // There is deliberately no rule about a campaign holding no documents. A
+  // campaign writing from its brief alone is a finished setup, not a gap —
+  // that is what most of them are, and nagging about it would make the
+  // Overview ask for something the interviews never asked for (CON-210).
 
   // --- Content --------------------------------------------------------------
   // An empty campaign gets one row, not six: `no-posts` suppresses every other

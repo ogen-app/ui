@@ -5,7 +5,6 @@ import {
   ArrowSquareOutIcon,
   ArrowsLeftRightIcon,
   CalendarDotsIcon,
-  CardsThreeIcon,
   CaretDoubleLeftIcon,
   ChartLineUpIcon,
   GearSixIcon,
@@ -76,7 +75,7 @@ const CAMPAIGN_SUB_ITEMS = [
   { id: 'posts', labelKey: 'nav.campaign.posts', icon: CalendarDotsIcon },
   { id: 'analytics', labelKey: 'nav.campaign.analytics', icon: ChartLineUpIcon },
   { id: 'brief', labelKey: 'nav.campaign.brief', icon: NotepadIcon },
-  { id: 'assets', labelKey: 'nav.campaign.assets', icon: ScanIcon },
+  { id: 'content', labelKey: 'nav.campaign.content', icon: ScanIcon },
   { id: 'settings', labelKey: 'nav.campaign.settings', icon: GearSixIcon },
 ] as const
 
@@ -115,8 +114,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ? 'analytics'
         : location.pathname.includes('/brief')
           ? 'brief'
-          : location.pathname.includes('/assets')
-            ? 'assets'
+          : location.pathname.includes('/content')
+            ? 'content'
             : location.pathname.includes('/settings')
               ? 'settings'
               : 'posts'
@@ -188,14 +187,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               text={t('nav.campaigns')}
               isActive={location.pathname === '/campaigns'}
               to="/campaigns"
-            />
-            <AppSidebarButtonMenu
-              icon={
-                <CardsThreeIcon weight="regular" className="size-5 flex-none" />
-              }
-              text={t('nav.contentBank')}
-              isActive={location.pathname.startsWith('/content-bank')}
-              to="/content-bank"
             />
 
             {/* The nav is the same on every page, so an empty group here is

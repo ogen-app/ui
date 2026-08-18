@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { uploadAssetFile } from "@/services/api/uploads";
 import { validateUploadFile, type UploadKind } from "@/lib/assetStatus";
+import { addToCampaign } from "@/lib/campaignMembership";
+import { queryClient } from "@/lib/queryClient";
 import type { AssetStatus } from "@/types/content";
 
 /**
@@ -18,6 +20,12 @@ export type UploadPhase =
 
 export type UploadItem = {
   id: string;
+  /**
+   * The campaign the file was added to. Every upload now happens inside one
+   * (CON-210), and the attach happens here rather than on the page so that
+   * walking away mid-upload cannot leave the asset belonging to nothing.
+   */
+  campaignId: string;
   file: File;
   filename: string;
   sizeBytes: number;
@@ -31,7 +39,7 @@ export type UploadItem = {
 type UploadState = {
   items: UploadItem[];
   /** Validate and begin uploading each file; invalid files appear as failed. */
-  enqueue: (files: File[] | FileList) => void;
+  enqueue: (files: File[] | FileList, campaignId: string) => void;
   /** Re-run a failed upload from its original File. */
   retry: (id: string) => void;
   /** Sync a polled backend asset status into the tracked item. */
@@ -61,7 +69,7 @@ export const useUploadStore = create<UploadState>()(
           ),
         }));
 
-      const start = (id: string, file: File) => {
+      const start = (id: string, file: File, campaignId: string) => {
         patch(id, { phase: "uploading", progress: 0, error: undefined });
         uploadAssetFile(file, { onProgress: (p) => patch(id, { progress: p }) })
           .then((result) => {
@@ -79,6 +87,13 @@ export const useUploadStore = create<UploadState>()(
                 ? statusToPhase(result.asset.status)
                 : "processing",
             });
+            // The asset exists now, so the campaign it was dropped on gets it
+            // and the list it belongs in refetches. Both are deliberately not
+            // conditional on anyone still looking at that page.
+            if (result.asset_id) {
+              void addToCampaign(campaignId, [result.asset_id]);
+              queryClient.invalidateQueries({ queryKey: ["assets"] });
+            }
           })
           .catch((err: unknown) => {
             patch(id, {
@@ -91,11 +106,12 @@ export const useUploadStore = create<UploadState>()(
       return {
         items: [],
 
-        enqueue: (files) => {
+        enqueue: (files, campaignId) => {
           const items: UploadItem[] = Array.from(files).map((file) => {
             const validation = validateUploadFile(file);
             const base = {
               id: newId(),
+              campaignId,
               file,
               filename: file.name,
               sizeBytes: file.size,
@@ -114,7 +130,7 @@ export const useUploadStore = create<UploadState>()(
 
           set((state) => ({ items: [...state.items, ...items] }));
           for (const item of items) {
-            if (item.phase === "uploading") start(item.id, item.file);
+            if (item.phase === "uploading") start(item.id, item.file, item.campaignId);
           }
         },
 
@@ -126,7 +142,7 @@ export const useUploadStore = create<UploadState>()(
             patch(id, { phase: "failed", error: validation.error });
             return;
           }
-          start(id, item.file);
+          start(id, item.file, item.campaignId);
         },
 
         setStatus: (id, status) => patch(id, { phase: statusToPhase(status) }),

@@ -208,7 +208,6 @@ export const en = {
   nav: {
     modules: 'Modules',
     campaigns: 'Campaigns',
-    contentBank: 'Content Bank',
     workspaceSettings: 'Workspace Settings',
     profile: 'Profile',
     help: 'Help and support',
@@ -222,7 +221,7 @@ export const en = {
       posts: 'Posts',
       analytics: 'Analytics',
       brief: 'Brief',
-      assets: 'Assets',
+      content: 'Content',
       settings: 'Settings',
     },
   },

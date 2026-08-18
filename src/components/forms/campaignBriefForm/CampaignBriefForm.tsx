@@ -27,7 +27,7 @@ import {
   threadIdFor,
   useAssistantStore,
 } from '@/stores/assistantStore.ts'
-import { campaignToPayload } from './shared.ts'
+import { campaignToPayload } from '@/lib/campaignPayload'
 import { SettingsCard } from '@/components/settings/SettingsCard.tsx'
 
 const briefSchema = z.object({

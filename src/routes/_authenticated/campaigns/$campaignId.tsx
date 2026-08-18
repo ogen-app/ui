@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/campaigns/$campaignId")({
 const SECTIONS = [
   { slug: "/list", label: "List" },
   { slug: "/brief", label: "Brief" },
-  { slug: "/assets", label: "Assets" },
+  { slug: "/content", label: "Content" },
   { slug: "/settings", label: "Settings" },
   { slug: "/overview", label: "Overview" },
   { slug: "/analytics", label: "Analytics" },
@@ -102,6 +102,17 @@ function CampaignLayout() {
             <SettingsSaveBar />
           </div>
         </SettingsSaveProvider>
+      </PageContainer>
+    );
+  }
+
+  // Content owns its whole page: its header carries an action that only means
+  // something there (add *to this campaign*), and the page is one big drop
+  // target, which a shared header sitting outside it could not be.
+  if (section === "Content") {
+    return (
+      <PageContainer variant={"fullFlex"}>
+        <Outlet />
       </PageContainer>
     );
   }

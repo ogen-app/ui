@@ -34,7 +34,8 @@ import type {
   CampaignPlatform,
   CampaignType,
 } from '@/types/campaigns'
-import { campaignToPayload, toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
+import { toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
+import { campaignToPayload } from '@/lib/campaignPayload'
 import { AccountsControl } from './AccountsControl'
 import { PlatformsControl } from './PlatformsControl'
 import { useFeatureFlag } from '@/config/featureFlags'
