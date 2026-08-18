@@ -6,8 +6,11 @@ import {
   resetPassword as resetPasswordRequest,
 } from "@/services/api/passwordReset";
 import { signup as signupRequest } from "@/services/api/tenants";
-import { deleteUser, updateUser } from "@/services/api/users";
-import { clearAllApplicationData } from "@/lib/cache-utils";
+import { acceptInvitation } from "@/services/api/invitations";
+import { updateUser } from "@/services/api/users";
+import { listMembers, removeMember } from "@/services/api/workspaces";
+import { setActiveWorkspaceId } from "@/lib/activeWorkspace";
+import { queryClient } from "@/lib/queryClient";
 import type { LoginPayload, Session } from "@/types/session";
 import type { SignupPayload } from "@/types/tenant";
 import type { User } from "@/types/user";
@@ -26,6 +29,15 @@ export function useLogin() {
     meta: { errorToast: false },
     mutationFn: loginRequest,
     onSuccess: async () => {
+      // A login is a fresh identity, but not necessarily a fresh tab: session
+      // expiry and direct navigation reach this screen without passing the
+      // logout teardown, leaving the previous user's workspace pin and warm
+      // query cache behind. Carrying either across accounts is wrong in both
+      // directions — a pinned workspace the new account can't reach 403s
+      // everything, and one it *can* reach silently lands them in the other
+      // user's chosen workspace. Drop both; the root guard re-seeds the pin.
+      setActiveWorkspaceId(null);
+      queryClient.clear();
       // Re-probe through the same cached path the root guard uses: one
       // GET /api/current_user resolves the user + tenant and primes the cache.
       invalidateSession();
@@ -88,6 +100,36 @@ export function useResetPassword() {
 }
 
 /**
+ * Accepting an invitation (CON-26/CON-147).
+ *
+ * With a payload it creates the account and signs it in — the server opens the
+ * session and sets the cookie as part of accepting, so there is nothing to log
+ * in with afterwards. Without one it adds a workspace to the account already
+ * signed in, and no session changes hands. See `acceptInvitation`.
+ *
+ * Either way the tab is moved into the workspace just joined: landing anywhere
+ * else after accepting an invitation would be answering a question nobody
+ * asked. The cache goes with it, since it belongs to wherever this tab was.
+ */
+export function useAcceptInvitation(token: string) {
+  const setUser = useAuthStore((s) => s.setUser);
+  return useMutation<User, Error, { name: string; password: string } | undefined>({
+    // The form renders `error` beside the fields, and for a dead token beside
+    // the way out of it — which a toast would drop.
+    meta: { errorToast: false },
+    mutationFn: (payload) => acceptInvitation(token, payload),
+    onSuccess: (user) => {
+      invalidateSession();
+      setUser(user);
+      if (user.tenant?.id) {
+        setActiveWorkspaceId(user.tenant.id);
+        queryClient.clear();
+      }
+    },
+  });
+}
+
+/**
  * Edits the signed-in user's own name and email.
  *
  * The store is the source of truth for the screen, so it's updated from the
@@ -128,33 +170,37 @@ export function useUpdateProfile() {
  */
 
 /**
- * Deletes the signed-in user's own account, then tears down every local trace
- * of them.
+ * Leaves the workspace **this tab** is in — there is no account deletion on
+ * the API since CON-147 split memberships from accounts; `DELETE
+ * /api/users/:id` detaches one membership and cascades into what that
+ * membership created there, and the login survives.
  *
- * The local teardown is deliberately unconditional and best-effort, the same
- * rule the logout screen follows: once the server has destroyed the account,
- * a persisted user and a warm query cache on this device are stale at best and
- * misleading at worst, so a storage API refusing us must not leave them behind.
+ * The membership id is resolved from the scoped member list at call time, by
+ * email: the id in the auth store names the *default* workspace's membership,
+ * which is the wrong row in any tab that switched. The server's ≥1-owner
+ * guard answers 409 for a sole owner — the dialog renders that message where
+ * the user is looking.
  *
- * What the server does is far larger than "the account" suggests — see
- * `deleteUser` in `services/api/users.ts`. The caller is responsible for
- * saying so before it gets here.
+ * On success the tab does a full load of `/`: the cache and the pin both
+ * belong to the workspace just left, and the root guard re-seeds from the
+ * account's default (falling back to any surviving workspace server-side).
+ * With no workspace left, that load lands on login via the ordinary 401 path.
  */
-export function useDeleteAccount() {
-  const clearUser = useAuthStore((s) => s.clearUser);
-  return useMutation<void, Error, string>({
-    // `DeleteAccountDialog` renders `error.message` inside itself, which is
-    // where the user is looking and where the retry is.
+export function useLeaveWorkspace() {
+  const email = useAuthStore((s) => s.user?.email);
+  return useMutation<void, Error, void>({
+    // The dialog renders `error.message` inside itself, which is where the
+    // user is looking and where the retry is.
     meta: { errorToast: false },
-    mutationFn: deleteUser,
-    onSuccess: async () => {
+    mutationFn: async () => {
+      const me = (await listMembers(email ?? "")).find((m) => m.is_self);
+      if (!me) throw new Error("Unable to resolve your membership");
+      await removeMember(me.id);
+    },
+    onSuccess: () => {
       invalidateSession();
-      clearUser();
-      try {
-        await clearAllApplicationData();
-      } catch {
-        // Best-effort — the account is already gone server-side.
-      }
+      setActiveWorkspaceId(null);
+      window.location.assign("/");
     },
   });
 }

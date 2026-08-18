@@ -1,5 +1,5 @@
 import type { Asset } from "@/types/content";
-import { apiUrl } from "./base";
+import { apiUrl, workspaceHeader } from "./base";
 
 const UPLOAD_URL = "/api/content-bank/assets/upload";
 
@@ -35,6 +35,12 @@ export function uploadAssetFile(
     xhr.open("POST", apiUrl(UPLOAD_URL), true);
     xhr.withCredentials = true;
     xhr.responseType = "json";
+    // The upload takes a different transport but lands in the same workspace
+    // as everything else this tab does (CON-147). `setRequestHeader` has to
+    // come after `open`, which is why it isn't part of the options above.
+    for (const [key, value] of Object.entries(workspaceHeader(UPLOAD_URL))) {
+      xhr.setRequestHeader(key, value);
+    }
 
     if (opts.onProgress) {
       xhr.upload.onprogress = (e) => {

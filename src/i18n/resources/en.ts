@@ -166,6 +166,35 @@ export const en = {
         'It looks incomplete — mail clients sometimes cut long links in half',
       brokenBody: 'Open the link straight from the email, or <request>request a new one</request>.',
     },
+    /** The emailed invitation's landing page (CON-26). */
+    invite: {
+      title: 'Join the workspace',
+      /** Who invited you and where — the two facts that decide whether this link was meant for you. */
+      subtitle: '{{inviter}} invited you to {{workspace}}',
+      emailLabel: 'Your email',
+      firstNameLabel: 'First name',
+      lastNameLabel: 'Last name',
+      passwordLabel: 'Password',
+      passwordPlaceholder: 'Choose a password',
+      submit: 'JOIN THE WORKSPACE',
+      haveAccount: 'Already have an Ogen account?',
+      logInLink: 'Log in',
+      brokenTitle: 'This invitation link no longer works',
+      brokenSubtitle:
+        'Invitations expire after seven days, and each one can only be used once',
+      brokenBody:
+        'Ask whoever invited you to send another. If you already accepted, <login>log in</login> instead.',
+      /** Already signed in as the invited address: nothing to create, one thing to confirm. */
+      joinBody: "You're signed in as {{email}}, which is who this invitation is for. Accepting adds this workspace to your account.",
+      joinSubmit: 'ACCEPT INVITATION',
+      /** Signed in as somebody else — no form on this page can fix that. */
+      wrongAccountBody:
+        'This invitation is for {{invited}}, but you are signed in as {{current}}. Log out and open the link again to accept it.',
+      logOutLink: 'Log out',
+      /** The server's answer when the invited address already has an account. */
+      existingAccountBody:
+        '{{email}} already has an Ogen account. Log in as that account and this invitation will be waiting.',
+    },
     logout: {
       pendingTitle: 'Logging Out...',
       pendingMessage: 'This may take a few seconds',
@@ -185,6 +214,8 @@ export const en = {
     help: 'Help and support',
     logOut: 'Log out',
     closeSidebar: 'Close sidebar',
+    /** Both halves of what the /workspaces page offers, in one row. */
+    switchWorkspace: 'Create or switch',
     untitledCampaign: 'Untitled campaign',
     campaign: {
       overview: 'Overview',
@@ -287,6 +318,56 @@ export const en = {
     failed: 'The strategist could not finish',
   },
 
+  /**
+   * The workspace a user is in, as opposed to the settings screen for it
+   * (`workspaceSettings` below) and the /workspaces chooser (`workspaces`
+   * below). Two roles, because that is what the server recognises (CON-26).
+   */
+  workspace: {
+    role: {
+      owner: 'Owner',
+      member: 'Member',
+    },
+    /**
+     * What each role can do — whole sentences that stand on their own beside
+     * the role picker, with no carrier phrase naming the invitee: the address
+     * is in the field alongside. Kept to within a few characters of each other
+     * on purpose, since they swap in place as the select changes.
+     */
+    ability: {
+      owner: 'Can invite people, change roles, connect accounts and rename the workspace.',
+      member: 'Can plan, write and publish content, but not manage the workspace or its people.',
+    },
+  },
+
+  /** The chooser at `/workspaces` — one login, several workspaces (CON-147). */
+  workspaces: {
+    title: 'Your workspaces',
+    loadFailed: 'Failed to load your workspaces.',
+    create: 'NEW WORKSPACE',
+    /** Marks the workspace *this tab* is in — another tab may be somewhere else. */
+    current: 'Current',
+    memberCount_one: '{{count}} member',
+    memberCount_other: '{{count}} members',
+    loggedInAs: 'Logged in as',
+    wrongAccount: 'Wrong account?',
+    logOut: 'Log out',
+    switchFailed: 'Unable to switch workspace',
+    createDialog: {
+      title: 'New workspace',
+      /** Why you'd want one — the second-accounts case is the feature's point. */
+      body: 'A workspace has its own campaigns, content and connected accounts — and its own set of social accounts, so a second workspace is how you run a second LinkedIn or Facebook page alongside this one.',
+      nameLabel: 'Name',
+      namePlaceholder: 'Northwind Client',
+      cancel: 'Cancel',
+      createOnly: 'Create only',
+      createAndSwitch: 'Create and switch',
+      created: '{{name}} created',
+      createdNote: 'Switch to it from the workspace menu when you need it.',
+      createFailed: 'Unable to create the workspace',
+    },
+  },
+
   profile: {
     title: 'Profile',
     account: {
@@ -314,18 +395,21 @@ export const en = {
     },
     dangerZone: {
       title: 'Danger Zone',
-      body: 'Deleting your account also deletes the campaigns, posts and assets you created in this workspace. This cannot be undone.',
-      action: 'DELETE ACCOUNT',
+      /** Leave-workspace, not account deletion: CON-147 split memberships from
+       *  accounts and the API offers no account delete — the copy must not
+       *  promise one. */
+      body: 'Leaving this workspace removes your access and deletes everything you created in it — for everyone. Your login and your other workspaces are untouched. This cannot be undone.',
+      action: 'LEAVE THIS WORKSPACE',
     },
-    delete: {
-      title: 'Delete your account?',
-      body: 'This permanently deletes <strong>{{email}}</strong> and everything you created in this workspace — your campaigns, their posts, your uploaded assets and tags. It cannot be undone.',
+    leave: {
+      title: 'Leave {{workspace}}?',
+      body: 'This removes <strong>{{email}}</strong> from the workspace and deletes everything you created in it — your campaigns, their posts, your uploaded assets and tags — for every member. Posts that already went out stay live on the social networks. It cannot be undone.',
       shared:
-        'If anyone else uses <strong>{{workspace}}</strong>, that content disappears for them too. The workspace itself is not deleted.',
+        'Your login keeps working: any other workspace you belong to is untouched, and <strong>{{workspace}}</strong> itself carries on without you. If you are its only owner, appoint another owner first — a workspace can’t be left ownerless.',
       thisWorkspace: 'this workspace',
       confirmLabel: 'Type <email>{{email}}</email> to confirm',
-      keep: 'KEEP MY ACCOUNT',
-      confirm: 'DELETE MY ACCOUNT',
+      keep: 'STAY IN THIS WORKSPACE',
+      confirm: 'LEAVE THIS WORKSPACE',
     },
   },
 
@@ -336,9 +420,75 @@ export const en = {
       /** The row title doubles as the section heading, e.g. "BN Digital Workspace". */
       rowTitle: '{{name}} Workspace',
       loadFailed: 'Failed to load the workspace.',
-      nameLabel: 'Organization name',
+      nameLabel: 'Workspace name',
       nameEmpty: 'Name can’t be empty',
       slugLabel: 'Slug',
+      slugNote: "Set from the name at creation; renaming the workspace won't change it.",
+      /** The way out of this card — every field in it describes one workspace. */
+      switch: 'SWITCH',
+      timeZoneLabel: 'Time zone',
+      timeZoneNote:
+        'Everything is scheduled in UTC for now; per-workspace time zones land with CON-94.',
+    },
+    people: {
+      title: 'People',
+      membersHeading: 'Workspace members',
+      pendingHeading: 'Pending invitations',
+      inviteHeading: 'Invite someone',
+      you: '(that’s you)',
+      /** Reading the invitation list is owner-only server-side, so a member sees neither it nor the form. */
+      memberNote: 'Only the workspace owner can invite people or change roles.',
+      emailLabel: 'Email',
+      emailPlaceholder: 'name@company.com',
+      roleLabel: 'Role',
+      invite: 'INVITE',
+      remove: 'REMOVE',
+      resend: 'RESEND',
+      cancel: 'CANCEL',
+      cancelInvitation: 'Cancel the invitation to {{email}}',
+      invitedBy: 'invited by {{name}}',
+      /** Nought days is neither "in 0 days" nor "0 days ago", so it gets its own line. */
+      expiresToday: 'expires today',
+      expiresIn_one: 'expires tomorrow',
+      expiresIn_other: 'expires in {{count}} days',
+      expiredToday: 'expired today',
+      expiredAgo_one: 'expired yesterday',
+      expiredAgo_other: 'expired {{count}} days ago',
+      roleChanged: 'Role updated for {{name}}',
+      roleChangeFailed: 'Unable to change the role',
+      removed: '{{name}} removed',
+      removeFailed: 'Unable to remove',
+      invitationSent: 'Invitation sent to {{email}}',
+      inviteFailed: 'Unable to send the invitation',
+      resendFailed: 'Unable to send it again',
+      invitationRevoked: 'Invitation revoked',
+      revokeFailed: 'Unable to revoke',
+      removeTitle: 'Remove {{name}}?',
+      /** The API detaches the membership and cascades into what it created
+       *  here — their account and other workspaces survive. The copy carries
+       *  both halves: what goes, and what doesn't (CON-147). */
+      removeBody:
+        'This removes {{name}} from the workspace and deletes everything they created in it — their campaigns, those campaigns’ posts, and their uploaded assets — for everyone. Their login and their other workspaces are untouched. Posts that already went out stay live on the social networks. It cannot be undone.',
+      removeConfirmLabel: 'Type their email address to confirm',
+      removeDismiss: 'KEEP THEM',
+      removeConfirm: 'REMOVE FROM WORKSPACE',
+    },
+    dangerZone: {
+      title: 'Danger Zone',
+      /** Soft-delete server-side, but the copy must not offer that as an undo —
+       *  recovery is a manual support request (CON-147). */
+      body: 'Deleting this workspace removes its campaigns, posts, assets and connected social accounts, and every member loses access. Already-published posts stay live on the social networks. You can’t undo this yourself — recovering a deleted workspace is a manual support request.',
+      lastWorkspace: 'This is your only workspace. Deleting it leaves you with nowhere to work — create another one first.',
+      action: 'DELETE WORKSPACE',
+      confirmTitle: 'Delete {{name}}?',
+      confirmBody: 'Everything in this workspace is deleted, for every member, and you can’t restore it yourself. Type <strong>{{name}}</strong> to confirm.',
+      confirmLabel: 'Workspace name',
+      keep: 'KEEP WORKSPACE',
+      confirm: 'DELETE WORKSPACE',
+      /** The server's own last-workspace guard, arriving from another tab's race. */
+      onlyWorkspace: 'This is your only workspace',
+      onlyWorkspaceNote: 'Create another workspace before deleting this one.',
+      deleteFailed: 'Unable to delete the workspace',
     },
     platforms: {
       title: 'Platform Settings',

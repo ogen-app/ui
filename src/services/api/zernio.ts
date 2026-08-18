@@ -5,13 +5,14 @@ import {
   type ZernioErrorCode,
   type ZernioHealth,
 } from "@/types/integrations";
-import { apiUrl } from "./base";
+import { scopedFetch } from "./base";
 import { errorMessage } from "./errors";
 
-const BASE = apiUrl("/api/integrations/zernio");
+/** Path, not URL: `scopedFetch` resolves the origin and names the workspace. */
+const BASE = "/api/integrations/zernio";
 
 export async function getZernioHealth(): Promise<ZernioHealth> {
-  const res = await fetch(`${BASE}/health`, { method: "GET", credentials: "include" });
+  const res = await scopedFetch(`${BASE}/health`);
   if (!res.ok) {
     throw new Error(await errorMessage(res, "Unable to fetch Zernio health"));
   }
@@ -19,7 +20,7 @@ export async function getZernioHealth(): Promise<ZernioHealth> {
 }
 
 export async function listZernioAccounts(): Promise<ZernioAccountsResponse> {
-  const res = await fetch(`${BASE}/accounts`, { method: "GET", credentials: "include" });
+  const res = await scopedFetch(`${BASE}/accounts`);
   if (!res.ok) {
     throw await zernioError(res, "Unable to fetch Zernio accounts");
   }
@@ -27,9 +28,8 @@ export async function listZernioAccounts(): Promise<ZernioAccountsResponse> {
 }
 
 export async function createConnectLink(platform: string): Promise<ConnectLinkResponse> {
-  const res = await fetch(`${BASE}/connect-links`, {
+  const res = await scopedFetch(`${BASE}/connect-links`, {
     method: "POST",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ platform }),
   });
@@ -53,9 +53,8 @@ export async function createConnectLink(platform: string): Promise<ConnectLinkRe
  */
 export async function disconnectZernioAccount(id: string, force = false): Promise<void> {
   const query = force ? "?force=true" : "";
-  const res = await fetch(`${BASE}/accounts/${encodeURIComponent(id)}${query}`, {
+  const res = await scopedFetch(`${BASE}/accounts/${encodeURIComponent(id)}${query}`, {
     method: "DELETE",
-    credentials: "include",
   });
   if (!res.ok) {
     throw await zernioError(res, "Unable to disconnect the account");
@@ -63,7 +62,7 @@ export async function disconnectZernioAccount(id: string, force = false): Promis
 }
 
 export async function triggerZernioSync(): Promise<void> {
-  const res = await fetch(`${BASE}/sync`, { method: "POST", credentials: "include" });
+  const res = await scopedFetch(`${BASE}/sync`, { method: "POST" });
   if (!res.ok && res.status !== 202) {
     throw await zernioError(res, "Unable to trigger sync");
   }

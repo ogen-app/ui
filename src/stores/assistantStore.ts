@@ -6,6 +6,7 @@ import { postNotesKey, postVersionsKey } from '@/lib/queryKeys'
 import { campaignKey } from '@/hooks/useCampaigns'
 import { describeTool, humanizeStep, threadName } from '@/lib/assistantTools'
 import { flushPendingSave } from '@/lib/pendingSaves'
+import { invalidateCampaignPosts } from '@/lib/postCache'
 import { beginLocalRun } from '@/lib/localRuns'
 import {
   listCampaignMessages,
@@ -543,6 +544,12 @@ async function refreshSubject(
       await queryClient.invalidateQueries({
         queryKey: postVersionsKey(subject.postId),
       })
+      // The turn rewrote the post server-side, so unlike every write in
+      // `usePost` there is no saved row here to land — only the two keys to
+      // mark stale. Without this the calendar and the list keep the
+      // pre-turn title for as long as they stay mounted: the suppressed
+      // broadcast means nothing else is coming.
+      invalidateCampaignPosts(queryClient, subject.campaignId)
     }
     return
   }

@@ -140,6 +140,31 @@ export const es: Translation = {
       brokenBody:
         'Abre el enlace directamente desde el correo o <request>pide uno nuevo</request>.',
     },
+    invite: {
+      title: 'Únete al espacio',
+      subtitle: '{{inviter}} te ha invitado a {{workspace}}',
+      emailLabel: 'Tu correo electrónico',
+      firstNameLabel: 'Nombre',
+      lastNameLabel: 'Apellidos',
+      passwordLabel: 'Contraseña',
+      passwordPlaceholder: 'Elige una contraseña',
+      submit: 'UNIRME AL ESPACIO',
+      haveAccount: '¿Ya tienes una cuenta de Ogen?',
+      logInLink: 'Inicia sesión',
+      brokenTitle: 'Este enlace de invitación ya no funciona',
+      brokenSubtitle:
+        'Las invitaciones caducan a los siete días y solo pueden usarse una vez',
+      brokenBody:
+        'Pide a quien te invitó que te envíe otra. Si ya la aceptaste, <login>inicia sesión</login>.',
+      joinBody:
+        'Has iniciado sesión como {{email}}, que es a quien va dirigida esta invitación. Al aceptarla, este espacio se añade a tu cuenta.',
+      joinSubmit: 'ACEPTAR INVITACIÓN',
+      wrongAccountBody:
+        'Esta invitación es para {{invited}}, pero has iniciado sesión como {{current}}. Cierra sesión y vuelve a abrir el enlace para aceptarla.',
+      logOutLink: 'Cerrar sesión',
+      existingAccountBody:
+        '{{email}} ya tiene una cuenta de Ogen. Inicia sesión con esa cuenta y la invitación te estará esperando.',
+    },
     logout: {
       pendingTitle: 'Cerrando sesión...',
       pendingMessage: 'Esto puede tardar unos segundos',
@@ -159,6 +184,7 @@ export const es: Translation = {
     help: 'Ayuda y soporte',
     logOut: 'Cerrar sesión',
     closeSidebar: 'Cerrar la barra lateral',
+    switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
     campaign: {
       overview: 'Resumen',
@@ -203,6 +229,44 @@ export const es: Translation = {
     failed: 'El estratega no ha podido terminar',
   },
 
+  workspace: {
+    role: {
+      owner: 'Propietario',
+      member: 'Miembro',
+    },
+    ability: {
+      owner:
+        'Puede invitar personas, cambiar roles, conectar cuentas y renombrar el espacio.',
+      member:
+        'Puede planificar, escribir y publicar contenido, pero no gestionar el espacio ni a su gente.',
+    },
+  },
+
+  workspaces: {
+    title: 'Tus espacios',
+    loadFailed: 'No se han podido cargar tus espacios.',
+    create: 'NUEVO ESPACIO',
+    current: 'Actual',
+    memberCount_one: '{{count}} miembro',
+    memberCount_other: '{{count}} miembros',
+    loggedInAs: 'Sesión iniciada como',
+    wrongAccount: '¿Cuenta equivocada?',
+    logOut: 'Cerrar sesión',
+    switchFailed: 'No se ha podido cambiar de espacio',
+    createDialog: {
+      title: 'Nuevo espacio',
+      body: 'Un espacio tiene sus propias campañas, contenido y cuentas conectadas — incluidas sus propias cuentas sociales, así que un segundo espacio es la forma de llevar otra página de LinkedIn o Facebook junto a esta.',
+      nameLabel: 'Nombre',
+      namePlaceholder: 'Cliente Northwind',
+      cancel: 'Cancelar',
+      createOnly: 'Solo crear',
+      createAndSwitch: 'Crear y cambiar',
+      created: '{{name}} creado',
+      createdNote: 'Cambia a él desde el menú de espacios cuando lo necesites.',
+      createFailed: 'No se ha podido crear el espacio',
+    },
+  },
+
   profile: {
     title: 'Perfil',
     account: {
@@ -226,18 +290,18 @@ export const es: Translation = {
     },
     dangerZone: {
       title: 'Zona de peligro',
-      body: 'Eliminar tu cuenta también elimina las campañas, publicaciones y recursos que hayas creado en este espacio de trabajo. Esto no se puede deshacer.',
-      action: 'ELIMINAR CUENTA',
+      body: 'Salir de este espacio te quita el acceso y elimina todo lo que creaste en él — para todos. Tu cuenta de acceso y tus otros espacios no se tocan. Esto no se puede deshacer.',
+      action: 'SALIR DE ESTE ESPACIO',
     },
-    delete: {
-      title: '¿Eliminar tu cuenta?',
-      body: 'Esto elimina permanentemente <strong>{{email}}</strong> y todo lo que hayas creado en este espacio de trabajo: tus campañas, sus publicaciones, los recursos que has subido y las etiquetas. No se puede deshacer.',
+    leave: {
+      title: '¿Salir de {{workspace}}?',
+      body: 'Esto elimina a <strong>{{email}}</strong> del espacio y borra todo lo que creaste en él — tus campañas, sus publicaciones, los recursos que subiste y las etiquetas — para todos los miembros. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
       shared:
-        'Si alguien más usa <strong>{{workspace}}</strong>, ese contenido también desaparece para esa persona. El espacio de trabajo en sí no se elimina.',
-      thisWorkspace: 'este espacio de trabajo',
+        'Tu cuenta de acceso sigue funcionando: cualquier otro espacio al que pertenezcas no se toca, y <strong>{{workspace}}</strong> continúa sin ti. Si eres su único propietario, nombra antes a otro propietario — un espacio no puede quedarse sin propietario.',
+      thisWorkspace: 'este espacio',
       confirmLabel: 'Escribe <email>{{email}}</email> para confirmar',
-      keep: 'CONSERVAR MI CUENTA',
-      confirm: 'ELIMINAR MI CUENTA',
+      keep: 'QUEDARME EN ESTE ESPACIO',
+      confirm: 'SALIR DE ESTE ESPACIO',
     },
   },
 
@@ -247,9 +311,68 @@ export const es: Translation = {
     workspace: {
       rowTitle: 'Espacio de {{name}}',
       loadFailed: 'No se ha podido cargar el espacio de trabajo.',
-      nameLabel: 'Nombre de la organización',
+      nameLabel: 'Nombre del espacio',
       nameEmpty: 'El nombre no puede estar vacío',
       slugLabel: 'Identificador',
+      slugNote:
+        'Se genera a partir del nombre al crearlo; cambiar el nombre del espacio no lo modifica.',
+      switch: 'CAMBIAR',
+      timeZoneLabel: 'Zona horaria',
+      timeZoneNote:
+        'Por ahora todo se programa en UTC; las zonas horarias por espacio llegan con CON-94.',
+    },
+    people: {
+      title: 'Personas',
+      membersHeading: 'Miembros del espacio',
+      pendingHeading: 'Invitaciones pendientes',
+      inviteHeading: 'Invitar a alguien',
+      you: '(eres tú)',
+      memberNote:
+        'Solo el propietario del espacio puede invitar personas o cambiar roles.',
+      emailLabel: 'Correo electrónico',
+      emailPlaceholder: 'nombre@empresa.com',
+      roleLabel: 'Rol',
+      invite: 'INVITAR',
+      remove: 'ELIMINAR',
+      resend: 'REENVIAR',
+      cancel: 'CANCELAR',
+      cancelInvitation: 'Cancelar la invitación a {{email}}',
+      invitedBy: 'invitada por {{name}}',
+      expiresToday: 'caduca hoy',
+      expiresIn_one: 'caduca mañana',
+      expiresIn_other: 'caduca en {{count}} días',
+      expiredToday: 'caducó hoy',
+      expiredAgo_one: 'caducó ayer',
+      expiredAgo_other: 'caducó hace {{count}} días',
+      roleChanged: 'Rol actualizado para {{name}}',
+      roleChangeFailed: 'No se ha podido cambiar el rol',
+      removed: '{{name}} eliminada',
+      removeFailed: 'No se ha podido eliminar',
+      invitationSent: 'Invitación enviada a {{email}}',
+      inviteFailed: 'No se ha podido enviar la invitación',
+      resendFailed: 'No se ha podido volver a enviar',
+      invitationRevoked: 'Invitación revocada',
+      revokeFailed: 'No se ha podido revocar',
+      removeTitle: '¿Eliminar a {{name}}?',
+      removeBody:
+        'Esto elimina a {{name}} del espacio y borra todo lo que creó en él — sus campañas, las publicaciones de esas campañas y los archivos que subió — para todo el mundo. Su cuenta de acceso y sus otros espacios no se tocan. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
+      removeConfirmLabel: 'Escribe su correo electrónico para confirmar',
+      removeDismiss: 'MANTENERLA',
+      removeConfirm: 'ELIMINAR DE ESTE ESPACIO',
+    },
+    dangerZone: {
+      title: 'Zona de peligro',
+      body: 'Eliminar este espacio elimina sus campañas, publicaciones, recursos y cuentas sociales conectadas, y todos los miembros pierden el acceso. Las publicaciones ya enviadas siguen activas en las redes sociales. No puedes deshacerlo tú mismo — recuperar un espacio eliminado es una solicitud manual a soporte.',
+      lastWorkspace: 'Este es tu único espacio. Eliminarlo te deja sin ningún sitio donde trabajar — crea otro primero.',
+      action: 'ELIMINAR ESPACIO',
+      confirmTitle: '¿Eliminar {{name}}?',
+      confirmBody: 'Todo lo que hay en este espacio se elimina, para todos los miembros, y no puedes restaurarlo tú mismo. Escribe <strong>{{name}}</strong> para confirmar.',
+      confirmLabel: 'Nombre del espacio',
+      keep: 'MANTENER ESPACIO',
+      confirm: 'ELIMINAR ESPACIO',
+      onlyWorkspace: 'Este es tu único espacio',
+      onlyWorkspaceNote: 'Crea otro espacio antes de eliminar este.',
+      deleteFailed: 'No se ha podido eliminar el espacio',
     },
     platforms: {
       title: 'Ajustes de plataformas',

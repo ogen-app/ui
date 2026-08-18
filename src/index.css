@@ -196,14 +196,14 @@
   --color-chart-other: var(--chart-other);
   --color-chart-neutral: var(--chart-neutral);
   --color-chart-neutral-secondary: var(--chart-neutral-secondary);
-  /* Campaign identity */
-  --color-campaign-1: var(--campaign-1);
-  --color-campaign-2: var(--campaign-2);
-  --color-campaign-3: var(--campaign-3);
-  --color-campaign-4: var(--campaign-4);
-  --color-campaign-5: var(--campaign-5);
-  --color-campaign-6: var(--campaign-6);
-  --color-campaign-7: var(--campaign-7);
+  /* Campaign / workspace identity */
+  --color-identity-1: var(--identity-1);
+  --color-identity-2: var(--identity-2);
+  --color-identity-3: var(--identity-3);
+  --color-identity-4: var(--identity-4);
+  --color-identity-5: var(--identity-5);
+  --color-identity-6: var(--identity-6);
+  --color-identity-7: var(--identity-7);
   /* No `--color-nav-*` here: the nav tones are read as CSS values in
      AppSidebar (they colour a glyph *and* mix a background tint), never as
      utility classes, so registering them would only generate dead ones. */
@@ -307,25 +307,26 @@
   --chart-neutral: var(--gray-50);
   --chart-neutral-secondary: var(--gray-100);
 
-  /* Campaign identity palette — a categorical scale, like `--chart-*`: seven
-     hues assigned to a campaign by hashing its id (src/lib/campaignColor.ts),
-     so the same campaign keeps its colour without the backend storing one.
+  /* Identity palette — a categorical scale, like `--chart-*`: seven hues
+     assigned to a campaign or a workspace by hashing its id
+     (src/lib/identity.ts), so the same thing keeps its colour without the
+     backend storing one.
      Held to one lightness (L≈0.53) with the chroma pushed as far as each hue
      carries it: telling seven of them apart at 20px is the whole job, and a
      muted first cut failed at it. Still dark enough to read as ink on the
      sidebar and to knock white letters out of when filled. */
-  --campaign-1: oklch(0.52 0.13 258); /* blue */
+  --identity-1: oklch(0.52 0.13 258); /* blue */
   /* Pushed from hue 200 to 214. At 200 it sat 9° off the new teal accent, and
-     campaign icons render in the sidebar right beside selected-state teal —
+     identity marks render in the sidebar right beside selected-state teal —
      one campaign would have looked permanently selected. 214 keeps the gaps to
      its neighbours (blue 258, green 150) wide enough to still tell seven
      apart. */
-  --campaign-2: oklch(0.54 0.11 214); /* cyan */
-  --campaign-3: oklch(0.52 0.13 150); /* green */
-  --campaign-4: oklch(0.55 0.12 108); /* olive */
-  --campaign-5: oklch(0.55 0.14 55); /* amber */
-  --campaign-6: oklch(0.52 0.16 20); /* red */
-  --campaign-7: oklch(0.5 0.16 320); /* magenta */
+  --identity-2: oklch(0.54 0.11 214); /* cyan */
+  --identity-3: oklch(0.52 0.13 150); /* green */
+  --identity-4: oklch(0.55 0.12 108); /* olive */
+  --identity-5: oklch(0.55 0.14 55); /* amber */
+  --identity-6: oklch(0.52 0.16 20); /* red */
+  --identity-7: oklch(0.5 0.16 320); /* magenta */
 
   /* Nav destination colours — the five sections a campaign has. Each keeps one
      hue for the life of the app, so the sub-menu is scanned by colour before

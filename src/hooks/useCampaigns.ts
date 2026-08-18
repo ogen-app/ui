@@ -10,18 +10,12 @@ import {
 } from "@/services/api/campaigns";
 import type { Campaign, CreateCampaignPayload, UpdateCampaignPayload } from "@/types/campaigns";
 import type { MutationErrorMeta } from "@/lib/queryClient";
+import { CAMPAIGN_SUMMARIES_KEY } from "@/lib/queryKeys";
 
 const CAMPAIGNS_KEY = ["campaigns"] as const;
 // Exported so the assistant store can invalidate it from outside React. The
 // campaign's post list nests under this key, so invalidating it covers both.
 export const campaignKey = (id: string) => ["campaigns", id] as const;
-/**
- * The batched Campaigns-list payload (CON-152). Nests under `CAMPAIGNS_KEY`,
- * so anything invalidating the campaigns list refreshes it too; post mutations
- * invalidate it explicitly (`invalidateCampaignPosts`) because they touch a
- * sibling key.
- */
-export const CAMPAIGN_SUMMARIES_KEY = ["campaigns", "summaries"] as const;
 export const CAMPAIGN_TYPES_KEY = ["campaign-types"] as const;
 
 export function useCampaigns() {

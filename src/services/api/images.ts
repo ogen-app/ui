@@ -1,4 +1,4 @@
-import { apiUrl } from "./base";
+import { scopedFetch } from "./base";
 import { errorMessage } from "./errors";
 
 const ALLOWED_IMAGE_MIMES = new Set([
@@ -20,9 +20,8 @@ export async function uploadImage(file: File): Promise<string> {
   const form = new FormData();
   form.append("file", file);
 
-  const res = await fetch(apiUrl("/api/images"), {
+  const res = await scopedFetch("/api/images", {
     method: "POST",
-    credentials: "include",
     body: form,
   });
 

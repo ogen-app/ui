@@ -177,6 +177,42 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
+- **A workspace is the tenant and a member is a user.** Inside a workspace,
+  `services/api/workspaces.ts` is a façade over `/api/tenants/current`,
+  `/api/users` and `/api/invitations` (CON-26); the account-level
+  `/api/workspaces` routes (list/create/switch/delete, CON-147) are the one
+  place a workspace is a resource of its own. The two roles it deals in are
+  the server's: `owner | member`, nothing else.
+  **`DELETE /api/users/:id` removes a membership, and only from the active
+  workspace** — the account and its other workspaces survive, but the cascade
+  from `created_by` destroys the campaigns, posts and assets that membership
+  created *here*, so every caller confirms both halves in those words. The
+  server guards the ≥1-owner invariant (409). There is **no account deletion
+  on the API** — Profile's Danger Zone is "leave this workspace". And a
+  `users.id` is a **per-workspace membership id**: `current_user`'s id names
+  the *default* workspace's membership, so identity checks across workspaces
+  go by email (`listMembers`' `is_self`), never by id. See
+  [`docs/workspace-api.md`](./docs/workspace-api.md) §4a.
+- **Which workspace a request acts in is named per request, not per session**
+  (CON-147). The tab's workspace lives in `lib/activeWorkspace.ts` —
+  **`sessionStorage`, never `localStorage`**, or two tabs could not sit in two
+  workspaces, which is the whole feature — and `services/api/base.ts` attaches
+  it as `X-Workspace-Id`. Anything that reaches the API with a bare `fetch`
+  goes through **`scopedFetch`** so a scoped call can't quietly land in
+  whichever workspace the account defaults to; XHR paths call
+  `workspaceHeader()` after `open()`. Account-level routes
+  (`/api/workspaces…`, `/api/current_user`, `/api/sessions`, the public
+  `/api/invitations/accept/:token`) deliberately send **no** header — they are
+  the calls a tab makes to recover when its own workspace stops answering. Two
+  more consequences: `user.role` from `/api/current_user` is the role in the
+  *default* workspace, so read the active one through `useWorkspace()`; and a
+  403 is not proof of a stale pin (owner-only routes answer 403 too), which is
+  why `lib/staleWorkspace.ts` verifies before it acts.
+- **Switching workspace is client-side.** `useSwitchWorkspace` re-pins the tab,
+  clears *this tab's* Query cache and navigates; it does not reload, does not
+  rebind the session and must not touch another tab. `POST …/:id/switch` is
+  fire-and-forget — it only sets the account's default for the next fresh tab.
+  See `docs/workspace-api.md` §3.
 - **Styling is CSS-first:** the theme and tokens live in `src/index.css`; there
   is no `tailwind.config.js`. Use `cn()` from `lib/styles.ts`. Apply z-index
   from `config/zIndex.ts` via inline `style={{ zIndex }}`, not `z-[…]` classes.
@@ -225,7 +261,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 
 ## Known stubs / gaps
 
-No invite-teammate UI yet (`users.register()` is the ready building block) ·
+Inviting teammates is live end to end (People, in Workspace Settings; the
+emailed link lands on `/invite?token=…`, which is public, and accepting either
+creates the account or adds the workspace to one that already exists) ·
+**multi-workspace is live, unflagged** — [ogen#109](https://github.com/ogen-app/ogen/pull/109)
+merged 2026-08-14; the `multi-workspace` flag and its off-branch were deleted
+once the client was re-tested against the shipped API (CON-147) ·
 dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
 have no committed config in this repo · **i18n covers the auth screens, sidebar,

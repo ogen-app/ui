@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowSquareOutIcon,
+  ArrowsLeftRightIcon,
   CardsThreeIcon,
   CaretDoubleLeftIcon,
   GearSixIcon,
@@ -33,14 +34,19 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/authStore'
 import { useCampaigns } from '@/hooks/useCampaigns'
+import { useWorkspace } from '@/hooks/useWorkspaces'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
-import { CampaignIcon, campaignAbbr } from '@/components/layout/CampaignIcon.tsx'
+import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
+import { WorkspaceMark } from '@/components/layout/WorkspaceMark.tsx'
 import { LiveStatus } from '@/components/layout/LiveStatus'
-import { campaignColorVar } from '@/lib/campaignColor.ts'
 import { CAMPAIGN_SECTIONS, type CampaignSectionId } from '@/lib/campaignSections.ts'
+// One categorical scale for campaigns and workspaces alike — the mark is how
+// you recognise a thing, so it can't be per-entity (see lib/identity.ts).
+import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
+import { ROLE_LABEL_KEYS, type Workspace } from '@/types/workspace'
 
 /** TODO: placeholder — no help site exists yet. Point at the real one when it does. */
 const HELP_URL = 'https://getogen.com/help'
@@ -80,6 +86,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const { data: campaigns, isPending: campaignsPending } = useCampaigns()
+  const workspace = useWorkspace()
 
   const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
 
@@ -221,9 +228,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <AppSidebarButtonMenu
                     icon={
                       <CampaignIcon
-                        abbr={campaignAbbr(name)}
+                        abbr={identityAbbr(name)}
                         active={isActive}
-                        color={campaignColorVar(campaign.id)}
+                        color={identityColorVar(campaign.id)}
                         className="size-5 flex-none"
                       />
                     }
@@ -321,16 +328,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   tabIndex={0}
                   className={cn('flex w-full items-center justify-start gap-6 p-0 cursor-pointer select-none overflow-hidden')}
                 >
-                  <div className="relative shrink-0">
-                    <Avatar className="size-10">
+                  {/* The workspace's mark, not the user's portrait. The
+                      sidebar belongs to one workspace at a time — every item
+                      above it is that workspace's — and this is the one slot
+                      that survives the collapsed rail, so it should carry the
+                      fact that changes rather than the one that never does.
+                      Who you are is in the menu behind it. */}
+                  {workspace ? (
+                    <WorkspaceMark
+                      id={workspace.id}
+                      name={workspace.name}
+                      className="size-10 text-sm"
+                    />
+                  ) : (
+                    <Avatar className="size-10 shrink-0">
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
-
-                  </div>
+                  )}
                   <div className="flex w-[168px] shrink-0 flex-col items-start transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
                     <p className="w-full text-sm font-regular truncate text-left">{fullName}</p>
+                    {/* The workspace, not the email: the email never changes
+                        and is one click away in the menu, while the workspace
+                        changes what every other screen is showing. */}
                     <p className="w-full text-xs text-tertiary-foreground truncate text-left">
-                      {user?.email}
+                      {workspace?.name ?? user?.email}
                     </p>
                   </div>
                 </div>
@@ -354,12 +375,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Avatar>
                     <div className="flex min-w-0 flex-col">
                       <p className="truncate text-sm text-primary-foreground">{fullName}</p>
+                      {/* Just the account here. Which workspace you are in is
+                          its own row below, with the role that comes with it. */}
                       <p className="truncate text-xs text-tertiary-foreground">{user?.email}</p>
-                      {user?.tenant && (
-                        <p className="truncate text-xs text-tertiary-foreground">
-                          {user.tenant.name}
-                        </p>
-                      )}
                     </div>
                   </div>
                 </DropdownMenuLabel>
@@ -391,6 +409,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                 <DropdownMenuSeparator className="my-2" />
 
+                <CurrentWorkspaceRow
+                  workspace={workspace}
+                  onSelect={() => navigate({ to: '/workspace-settings' })}
+                />
+
+                <DropdownMenuItem
+                  size="lg"
+                  className="px-2"
+                  onSelect={() => navigate({ to: '/workspaces' })}
+                >
+                  <ArrowsLeftRightIcon weight="bold" />
+                  <span>{t('nav.switchWorkspace')}</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-2" />
+
                 <DropdownMenuItem onClick={handleLogout} size="lg" className="px-2">
                   <SignOutIcon weight="bold" />
                   <span>{t('nav.logOut')}</span>
@@ -403,5 +437,37 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </Sidebar>
 
     </>
+  )
+}
+
+/**
+ * Where you are and what you are there — and the way into that workspace's
+ * settings, which is what the name and the role are both about.
+ *
+ * Not the switcher: that is its own row below, and it leads to a page rather
+ * than a submenu because switching tears the app down (cleared cache, full
+ * reload). The role sits here because it is the thing that changes between
+ * workspaces and silently explains why a control was missing in one of them.
+ */
+function CurrentWorkspaceRow({
+  workspace,
+  onSelect,
+}: {
+  workspace: Workspace | undefined
+  onSelect: () => void
+}) {
+  const { t } = useTranslation()
+  if (!workspace) return null
+
+  return (
+    <DropdownMenuItem className="gap-3 px-2 py-2" onSelect={onSelect}>
+      <WorkspaceMark id={workspace.id} name={workspace.name} className="size-10 text-sm" />
+      <div className="flex min-w-0 flex-col">
+        <p className="truncate text-sm">{workspace.name}</p>
+        <p className="truncate text-xs text-tertiary-foreground">
+          {t(ROLE_LABEL_KEYS[workspace.role])}
+        </p>
+      </div>
+    </DropdownMenuItem>
   )
 }

@@ -2,11 +2,11 @@ import { Link } from '@tanstack/react-router'
 import { CaretRightIcon } from '@phosphor-icons/react'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge.tsx'
-import { CampaignIcon, campaignAbbr } from '@/components/layout/CampaignIcon.tsx'
+import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
 import { StatTile } from '@/components/campaigns/overview/StatTile.tsx'
 import { useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
-import { campaignColorVar } from '@/lib/campaignColor.ts'
+import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
 import { campaignTypeInfo } from '@/lib/campaignTypeDictionary.ts'
 import {
   attentionItems,
@@ -113,8 +113,8 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
         {/* 40px of mark against 40px of text — the two lines below set the
             height, and the icon spans both rather than hanging off the title. */}
         <CampaignIcon
-          abbr={campaignAbbr(title)}
-          color={campaignColorVar(campaign.id)}
+          abbr={identityAbbr(title)}
+          color={identityColorVar(campaign.id)}
           className="size-10 shrink-0"
         />
         <span className="flex min-w-0 flex-1 flex-col">
