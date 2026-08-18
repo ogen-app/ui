@@ -46,6 +46,7 @@ import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import { usePostArrowNavigation } from '@/hooks/usePostNavigation'
 import { usePublishStatus } from '@/hooks/usePublishStatus'
 import { cn } from '@/lib'
+import { downloadMarkdown } from '@/lib/downloadMarkdown'
 import { resolvePublishMethod } from '@/lib/autoPublish'
 import { isNotePinned, splitNotesByPin } from '@/lib/postNotes'
 import type { PublishMethod } from '@/lib/postStatusMachine'
@@ -327,17 +328,10 @@ function PostEditorSurface({
     [changeDoc],
   )
 
-  const handleDownloadMarkdown = useCallback(() => {
-    const title = doc.title.trim()
-    const markdown = title ? `# ${title}\n\n${doc.content}` : doc.content
-    const blob = new Blob([markdown], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${slugify(title) || 'post'}.md`
-    a.click()
-    URL.revokeObjectURL(url)
-  }, [doc.title, doc.content])
+  const handleDownloadMarkdown = useCallback(
+    () => downloadMarkdown(doc.title, doc.content, 'post'),
+    [doc.title, doc.content],
+  )
 
   return (
     <PageContainer variant="fullFlex">
@@ -585,12 +579,4 @@ function TitleCounter({
       {length} / {limit}
     </span>
   )
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60)
 }
