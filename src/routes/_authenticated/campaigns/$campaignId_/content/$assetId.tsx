@@ -30,19 +30,12 @@ function AssetPage() {
   }, []);
 
   const handleTitleChange = useCallback(
-    async (nextTitle: string) => {
+    (nextTitle: string) => {
       setTitle(nextTitle);
       if (!asset) return;
       const v = editVersionRef.current;
-      const payload = { title: nextTitle, content: asset.content };
-      const contentHash = Array.from(
-        new Uint8Array(
-          await crypto.subtle.digest("SHA-256", new TextEncoder().encode(asset.content ?? ""))
-        )
-      ).map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 12);
-      console.log(`[handleTitleChange] content hash: ${contentHash} | length: ${asset.content?.length ?? 0}`);
       updateAsset.mutate(
-        { id: assetId, payload },
+        { id: assetId, payload: { title: nextTitle, content: asset.content } },
         { onSuccess: () => setSavedVersion(v) },
       );
     },
@@ -50,15 +43,9 @@ function AssetPage() {
   );
 
   const handleContentChange = useCallback(
-    async (content: string) => {
+    (content: string) => {
       if (!asset) return;
       const v = editVersionRef.current;
-      const contentHash = Array.from(
-        new Uint8Array(
-          await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content ?? ""))
-        )
-      ).map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 12);
-      console.log(`[handleContentChange] content hash: ${contentHash} | length: ${content?.length ?? 0}`);
       updateAsset.mutate(
         {
           id: assetId,
