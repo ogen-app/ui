@@ -64,6 +64,11 @@ function WorkspaceSettings() {
   if (isError) {
     return (
       <PageContainer>
+        {/* The connect callback still has to be consumed here — this page is
+            where the flow returns, and the failed platforms request above has
+            nothing to do with the outcome in the URL. Without it the
+            parameters survive to re-announce themselves on every reload. */}
+        <ConnectLanding connected={connected} connectError={connectError} />
         <PageError header={t('workspaceSettings.loadFailed')} />
       </PageContainer>
     )

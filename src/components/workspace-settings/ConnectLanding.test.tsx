@@ -9,8 +9,19 @@ vi.mock('@/stores/toastStore', () => ({
   toast: { success: (...a: unknown[]) => success(...a), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
 }))
 
-const render = (props: { connected?: string; connectError?: string }) =>
-  renderWithProviders(<ConnectLanding {...props} />, { path: '/workspace-settings' })
+// The URL carries the same parameters the props do — the clearing assertions
+// are about the router stripping them, so they must be there to strip.
+const render = (props: { connected?: string; connectError?: string }) => {
+  const search = props.connected
+    ? `?connected=${encodeURIComponent(props.connected)}`
+    : props.connectError
+      ? `?connect_error=${encodeURIComponent(props.connectError)}`
+      : ''
+  return renderWithProviders(<ConnectLanding {...props} />, {
+    path: '/workspace-settings',
+    search,
+  })
+}
 
 beforeEach(() => {
   success.mockReset()
