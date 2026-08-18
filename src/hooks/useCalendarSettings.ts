@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   CARD_FIELDS,
-  DEFAULT_CARD_FIELDS,
+  DEFAULT_MONTH_FIELDS,
+  DEFAULT_WEEK_FIELDS,
   canHideField,
   type CardField,
   type CardFields,
@@ -18,14 +19,26 @@ import { toast } from '@/stores/toastStore'
 export type CalendarSettings = {
   firstDayOfWeek: number
   hiddenDays: number[]
-  /** Which rows the week card is allowed to draw — see `calendar/cardFields`. */
-  card: CardFields
+  /**
+   * Whether a post's picture backs its card, in every view at once. One answer
+   * for the calendar rather than a row on each view's list: it is the most
+   * expensive thing a card can carry by an order of magnitude, and "do I want
+   * to see my calendar as pictures" is a different kind of question from "does
+   * this view need the account".
+   */
+  imagePreviews: boolean
+  /** Which rows each view's card may draw — see `calendar/cardFields`. */
+  card: Record<CalendarView, CardFields>
 }
+
+/** The two views that draw cards, and so the two that have card settings. */
+export type CalendarView = 'week' | 'month'
 
 const DEFAULTS: CalendarSettings = {
   firstDayOfWeek: 1,
   hiddenDays: [],
-  card: DEFAULT_CARD_FIELDS,
+  imagePreviews: true,
+  card: { week: DEFAULT_WEEK_FIELDS, month: DEFAULT_MONTH_FIELDS },
 }
 
 /** Namespace of the settings key these are stored under. */
@@ -46,14 +59,14 @@ export const calendarSettingsKey = (userId: string, campaignId: string) =>
  * but a hand-edited value can, and a calendar of blank strips is the one state
  * a user cannot get themselves out of with the switches in front of them.
  */
-function parseCardFields(raw: unknown): CardFields {
-  if (!raw || typeof raw !== 'object') return DEFAULT_CARD_FIELDS
+function parseCardFields(raw: unknown, defaults: CardFields): CardFields {
+  if (!raw || typeof raw !== 'object') return defaults
   const stored = raw as Partial<Record<CardField, unknown>>
-  const fields = { ...DEFAULT_CARD_FIELDS }
+  const fields = { ...defaults }
   for (const field of CARD_FIELDS) {
     if (typeof stored[field] === 'boolean') fields[field] = stored[field]
   }
-  return CARD_FIELDS.some((field) => fields[field]) ? fields : DEFAULT_CARD_FIELDS
+  return CARD_FIELDS.some((field) => fields[field]) ? fields : defaults
 }
 
 /**
@@ -79,14 +92,26 @@ function parse(raw: string | null): CalendarSettings {
   try {
     const parsed: unknown = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return DEFAULTS
-    const { firstDayOfWeek, hiddenDays, card } = parsed as Partial<CalendarSettings>
+    const { firstDayOfWeek, hiddenDays, imagePreviews, card } =
+      parsed as Partial<CalendarSettings>
+    // A blob written before the views had separate cards has `card` as one flat
+    // set of fields, which is neither view's shape — so it reads as absent and
+    // both views start from their defaults. Nothing is migrated: this is a
+    // display preference, and re-flipping a switch is cheaper than the code to
+    // guess which view the old answer was about.
+    const perView = (card ?? {}) as Partial<Record<CalendarView, unknown>>
     return {
       firstDayOfWeek:
         typeof firstDayOfWeek === 'number' && firstDayOfWeek >= 0 && firstDayOfWeek <= 6
           ? firstDayOfWeek
           : DEFAULTS.firstDayOfWeek,
       hiddenDays: parseHiddenDays(hiddenDays),
-      card: parseCardFields(card),
+      imagePreviews:
+        typeof imagePreviews === 'boolean' ? imagePreviews : DEFAULTS.imagePreviews,
+      card: {
+        week: parseCardFields(perView.week, DEFAULT_WEEK_FIELDS),
+        month: parseCardFields(perView.month, DEFAULT_MONTH_FIELDS),
+      },
     }
   } catch {
     return DEFAULTS
@@ -182,20 +207,40 @@ export function useCalendarSettings(campaignId: string) {
   )
 
   const setCardField = useCallback(
-    (field: CardField, visible: boolean) => {
-      // The floor is one field, not zero. Enforced here rather than only in the
-      // panel: the panel disables the last switch so the rule is visible, and
-      // this is what makes it true regardless of who calls.
-      if (!visible && !canHideField(settings.card, field)) return
-      write({ ...settings, card: { ...settings.card, [field]: visible } })
+    (view: CalendarView, field: CardField, visible: boolean) => {
+      // The floor is one field, not zero, and it is per view — the month being
+      // stripped to a title says nothing about the week. Enforced here rather
+      // than only in the panel: the panel disables the last switch so the rule
+      // is visible, and this is what makes it true regardless of who calls.
+      if (!visible && !canHideField(settings.card[view], field)) return
+      write({
+        ...settings,
+        card: { ...settings.card, [view]: { ...settings.card[view], [field]: visible } },
+      })
     },
     [settings, write],
   )
 
+  const setImagePreviews = useCallback(
+    (on: boolean) => {
+      write({ ...settings, imagePreviews: on })
+    },
+    [settings, write],
+  )
+
+  // The stored per-view blobs carry an `image` of their own only because they
+  // are typed as whole `CardFields`; the calendar-wide preference is what
+  // decides it, and it is stamped in here so no card has to know that.
+  const card: Record<CalendarView, CardFields> = {
+    week: { ...settings.card.week, image: settings.imagePreviews },
+    month: { ...settings.card.month, image: settings.imagePreviews },
+  }
+
   return {
     firstDayOfWeek: settings.firstDayOfWeek,
     hiddenDays: settings.hiddenDays,
-    card: settings.card,
+    imagePreviews: settings.imagePreviews,
+    card,
     /**
      * True until the stored preference has been read. The values above are
      * the defaults meanwhile, and a caller that would lay out differently
@@ -209,5 +254,6 @@ export function useCalendarSettings(campaignId: string) {
     setFirstDayOfWeek,
     setDayVisible,
     setCardField,
+    setImagePreviews,
   }
 }

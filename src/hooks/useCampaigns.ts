@@ -8,7 +8,7 @@ import {
   deleteCampaign,
   listCampaignTypes,
 } from "@/services/api/campaigns";
-import type { CreateCampaignPayload, UpdateCampaignPayload } from "@/types/campaigns";
+import type { Campaign, CreateCampaignPayload, UpdateCampaignPayload } from "@/types/campaigns";
 import type { MutationErrorMeta } from "@/lib/queryClient";
 
 const CAMPAIGNS_KEY = ["campaigns"] as const;
@@ -31,11 +31,30 @@ export function useCampaigns() {
   });
 }
 
+/**
+ * One campaign, seeded from the campaigns list while its own fetch runs.
+ *
+ * The list is already in cache on every authenticated screen — the sidebar
+ * mounts `useCampaigns()` — and `GET /api/campaigns` hydrates the same tags,
+ * platforms and campaign type that `GET /api/campaigns/:id` does, so the entry
+ * in it is the whole campaign, not a summary of one. Without the seed, opening
+ * a campaign showed a full-screen spinner for as long as the round trip took,
+ * even though the app already had the record in hand: three layouts in a row
+ * — spinner, then skeletons, then the page — where one was warranted.
+ *
+ * `initialDataUpdatedAt` hands over the list's own timestamp so the seed ages
+ * like the data it came from: it goes stale on the normal 30s clock and
+ * refetches, rather than being taken for a fresh read of this campaign.
+ */
 export function useCampaign(id: string) {
+  const qc = useQueryClient();
   return useQuery({
     queryKey: campaignKey(id),
     queryFn: () => getCampaign(id),
     enabled: !!id,
+    initialData: () =>
+      qc.getQueryData<Campaign[]>(CAMPAIGNS_KEY)?.find((c) => c.id === id),
+    initialDataUpdatedAt: () => qc.getQueryState(CAMPAIGNS_KEY)?.dataUpdatedAt,
   });
 }
 

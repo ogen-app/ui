@@ -24,35 +24,22 @@ import { OverviewCard } from "./OverviewCard.tsx";
  * Four numbers and a link, deliberately: the card exists to say whether it is
  * worth opening the section, not to be the section.
  *
- * While `campaign-analytics` is off the card still stands where it will stand,
- * saying what it will hold and pointing at the section — the two components
- * keep the fetch unmounted until there is something to fetch for.
+ * With `campaign-analytics` off there is no card at all. It used to hold its
+ * place with a "coming soon" preview, which put a permanent apology in the
+ * middle of a screen the user opens to find out what to do next — and the
+ * flag's whole promise is that the app behaves exactly as it did before the
+ * feature existed. Returning early also keeps the fetch unmounted, so nothing
+ * is requested for a section that isn't there.
  */
 export function AnalyticsModule({ campaignId }: { campaignId: string }) {
   const enabled = useFeatureFlag("campaign-analytics");
-  if (!enabled) return <ComingSoon campaignId={campaignId} />;
+  if (!enabled) return null;
   return <AnalyticsModuleLive campaignId={campaignId} />;
 }
 
 function AnalyticsModuleLive({ campaignId }: { campaignId: string }) {
   const result = useCampaignAnalytics(campaignId);
   return <AnalyticsModuleView campaignId={campaignId} {...result} />;
-}
-
-/** The card's place held, with no numbers in it — real or invented. */
-function ComingSoon({ campaignId }: { campaignId: string }) {
-  return (
-    <OverviewCard
-      title="Analytics"
-      status={<StatusBadge tone="neutral" label="Coming soon" />}
-      link={{ target: "analytics", campaignId, label: "See what's coming" }}
-    >
-      <p className="text-sm text-secondary-foreground">
-        When this view switches on, what the campaign's posts earned shows up
-        here.
-      </p>
-    </OverviewCard>
-  );
 }
 
 /** The card as pure rendering — see `CampaignAnalyticsView` for why. */
@@ -69,7 +56,7 @@ export function AnalyticsModuleView({
 
   if (isPending) {
     return (
-      <OverviewCard title="Analytics">
+      <OverviewCard section="analytics">
         <Skeleton className="h-20 w-full" />
       </OverviewCard>
     );
@@ -77,7 +64,7 @@ export function AnalyticsModuleView({
 
   if (isError || !data) {
     return (
-      <OverviewCard title="Analytics">
+      <OverviewCard section="analytics">
         <p className="text-sm text-tertiary-foreground">
           Couldn't load analytics.
         </p>
@@ -85,16 +72,12 @@ export function AnalyticsModuleView({
     );
   }
 
-  const link = {
-    target: "analytics" as const,
-    campaignId,
-    label: "Open analytics",
-  };
+  const link = { target: "analytics" as const, campaignId };
 
   if (data.measured === 0) {
     return (
       <OverviewCard
-        title="Analytics"
+        section="analytics"
         status={<StatusBadge tone="neutral" label="Nothing measured yet" />}
         link={link}
       >
@@ -110,7 +93,7 @@ export function AnalyticsModuleView({
   const { totals } = data;
 
   return (
-    <OverviewCard title="Analytics" link={link}>
+    <OverviewCard section="analytics" link={link}>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <MetricTile
           value={formatMetric(totals.impressions)}

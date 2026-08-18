@@ -4,9 +4,13 @@ import type { Post } from '@/types/posts'
 import { useAddPost } from '@/hooks/usePosts'
 import { useCalendarDrop } from '@/hooks/useCalendarDrop'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
+import { usePlatformViews } from '@/hooks/usePlatforms'
+import { resolveForPlatform } from '@/lib/publishingAccount'
+import { hasVisibleProblem } from '@/lib/postValidation'
 import { MonthDensity } from './MonthDensity'
-import { MonthPostCard } from './MonthPostCard'
-import { pickMonthRung } from './cardRungs'
+import { PostCard } from './PostCard'
+import { isDateLocked } from './LockMark'
+import { fitRung } from './cardRungs'
 import { comparePostOrder } from '@/lib/postOrder'
 import {
   isSameDay,
@@ -44,11 +48,19 @@ function isPastDay(day: Date): boolean {
  * across, and no scrolling anywhere in the grid.
  *
  * That last constraint is what shapes everything else. A month row on a normal
- * screen is around 110px, so a cell holds three or four of the 20px cards and
- * no more — and because the row count varies between four and six, how many it
- * holds is not a number this component can hard-code. It measures one lane and
- * derives the capacity, then each day either lists its posts or, if there are
- * more than fit, collapses into `MonthDensity`. Nothing is ever half-shown.
+ * screen is around 110px, and because the row count varies between four and
+ * six, how much a cell holds is not a number this component can hard-code. It
+ * measures one lane and asks `fitRung` what fits, then each day either lists
+ * its posts or, if no rung holds them all, collapses into `MonthDensity`.
+ * Nothing is ever half-shown.
+ *
+ * The cards are the week's cards — the same component, the same ladder, the
+ * user's month settings. There is no separate month card any more: two
+ * components drawing the same object drifted, and the thing that actually
+ * differs between the views is the room and the preferences, both of which are
+ * arguments rather than a second implementation. A month cell holds fewer
+ * posts than it did as a result, which is what `DEFAULT_MONTH_FIELDS` starting
+ * with the platform switched off is there to pay for.
  */
 function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendarProps) {
   /** Cell whose empty space the pointer is on — see the cell's onMouseOver. */
@@ -56,8 +68,12 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
   const [laneHeight, setLaneHeight] = useState(ASSUMED_LANE_HEIGHT)
   const today = useMemo(() => new Date(), [])
   const addPost = useAddPost(campaignId)
-  const { firstDayOfWeek, hiddenDays } = useCalendarSettings(campaignId)
+  const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings(campaignId)
+  const fields = card.month
   const { dragOverKey, laneHandlers } = useCalendarDrop(campaignId, posts)
+  // One read of the cached platform list for the whole grid, as in the week —
+  // the cards call the hook form for themselves and get the same answer.
+  const platformViews = usePlatformViews()
 
   const weeks = useMemo(
     () => monthWeeks(anchor, firstDayOfWeek, hiddenDays),
@@ -140,8 +156,29 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
               const key = day.toDateString()
               const dayPosts = postsByDay.get(key) ?? []
               const outside = !isSameMonth(day, anchor)
-              // `null` means no card size fits this many — draw the summary.
-              const rung = pickMonthRung(dayPosts.length, laneHeight)
+              // The same facts the week column feeds the ladder — a card's
+              // height depends on what the post has, not only on how many of
+              // them there are. Resolved from one platform-list read rather
+              // than a hook per row.
+              const facts = dayPosts.map((post) => ({
+                hasTime: Boolean(post.scheduled_at ?? post.published_at),
+                hasFlag:
+                  isDateLocked(post.status) ||
+                  hasVisibleProblem(
+                    post,
+                    resolveForPlatform(
+                      platformViews,
+                      post.platform_id,
+                      post.social_account_id,
+                      post.social_account,
+                    ),
+                  ),
+                hasImage: Boolean(post.media_urls[0]),
+              }))
+              // `null` means no rung fits this many — draw the summary. A cell
+              // cannot scroll the way a week column can, so this is where the
+              // two views' answers to a full lane part company.
+              const rung = fitRung(facts, laneHeight, fields)
               return (
                 <div
                   key={key}
@@ -152,7 +189,16 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
                     // No padding — same reasoning as the week lane, and more
                     // acute here: in a cell this narrow the inset was a tenth
                     // of the title's width.
-                    'flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden bg-secondary transition-colors',
+                    //
+                    // And nothing clips: a hovered card's shadow reaches a few
+                    // pixels past it on every side, and a cell that clipped
+                    // sheared it off flush with the card's own edge — which
+                    // reads as a rendering fault rather than as elevation. The
+                    // ladder is what keeps that safe: a cell only ever draws a
+                    // stack it has measured as fitting, or a density instead,
+                    // so there is nothing here that needed clipping to be
+                    // contained.
+                    'flex flex-1 min-w-0 min-h-0 flex-col bg-secondary transition-colors',
                     // Spill days are real days — droppable, clickable, just
                     // quieter, so the eye lands on the month being read.
                     outside && 'bg-secondary/50',
@@ -161,14 +207,17 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
                 >
                   {/* Date row — number on the left, add on the right.
                       The cell has no padding of its own (a 132px column can't
-                      spare any on the side the titles run along), so the 2px
-                      of top and right inset is here: the date sat in the
-                      corner of the fill with nothing between it and the cell
-                      above, which read as the number belonging to the grid
-                      rather than to this day. 22px rather than 20 so the inset
-                      is taken off the cell and not off the lane below — the
-                      lane's height is what decides which card the day gets. */}
-                  <div className="flex h-[22px] shrink-0 items-center justify-between gap-1 pt-0.5 pr-0.5">
+                      spare any on the side the titles run along), so the inset
+                      is here: the date sat in the corner of the fill with
+                      nothing between it and the cell above, which read as the
+                      number belonging to the grid rather than to this day. 4px
+                      on the left, where it is the number against the cell's
+                      edge and a hairline is not enough; 2px top and right,
+                      which is all a corner needs. 22px rather than 20 so the
+                      inset is taken off the cell and not off the lane below —
+                      the lane's height is what decides which card the day
+                      gets. */}
+                  <div className="flex h-[22px] shrink-0 items-center justify-between gap-1 pt-0.5 pr-0.5 pl-1">
                     <span
                       className={cn(
                         'text-xs leading-4 tabular-nums',
@@ -212,13 +261,13 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
                       every cell is the same height, so one is the whole grid. */}
                   <div
                     ref={weekIndex === 0 && dayIndex === 0 ? laneRef : undefined}
-                    className="flex flex-1 min-h-0 flex-col gap-0.5 overflow-hidden"
+                    className="flex flex-1 min-h-0 flex-col gap-0.5"
                   >
                     {rung === null ? (
                       <MonthDensity campaignId={campaignId} day={day} posts={dayPosts} />
                     ) : (
                       dayPosts.map((post) => (
-                        <MonthPostCard key={post.id} post={post} rung={rung} />
+                        <PostCard key={post.id} post={post} rung={rung} fields={fields} />
                       ))
                     )}
                   </div>

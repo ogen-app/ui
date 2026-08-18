@@ -156,7 +156,11 @@ export function RightSidebar() {
         )}
       >
         <Logo variant="mark" className="size-8" loading={isBusy} />
-        {hasUnread && !assistantActive && (
+        {/* Shown whenever a thread is waiting, including while the panel is
+            open: with the rail on the thread list, or on another thread, the
+            corner is still the only thing saying something landed elsewhere.
+            Reading a thread is what clears it, not opening the rail. */}
+        {hasUnread && (
           <span
             aria-label="The assistant has finished"
             className="absolute top-2 right-2 size-2 rounded-full bg-accent"

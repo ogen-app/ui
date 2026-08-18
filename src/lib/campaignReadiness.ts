@@ -312,8 +312,15 @@ export type AttentionItem = {
   fix: FixTarget;
 };
 
-/** Rows the rail shows before collapsing the rest behind "+N more". */
-export const MAX_ATTENTION_ITEMS = 6;
+/**
+ * Rows the rail shows before collapsing the rest behind "+N more".
+ *
+ * Three, because the rail is the top of a screen with five cards under it and
+ * a to-do list long enough to scroll is one the user reads as a wall rather
+ * than as a shortlist. Items arrive sorted by severity, so the three that show
+ * are always the three that matter most.
+ */
+export const MAX_ATTENTION_ITEMS = 3;
 
 const SEVERITY_RANK: Record<AttentionSeverity, number> = {
   alert: 0,

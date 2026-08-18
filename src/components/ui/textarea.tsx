@@ -4,7 +4,13 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib'
 
 const textareaVariants = cva(
-  'text-[14px] font-medium ' +
+  // Regular, not the 500 the single-line `Input` carries. A textarea holds
+  // prose — a brief's audience and tone run to paragraphs — and a paragraph
+  // set at 500 reads as emphasis applied to everything, which is a wall. The
+  // weight difference between the two controls is not an inconsistency: an
+  // input's value is a short label the eye picks out of a form, a textarea's
+  // is text the user actually reads.
+  'text-[14px] font-normal ' +
     'placeholder:text-tertiary-foreground selection:bg-selection/20 border-input flex w-full min-w-0 bg-transparent ' +
     'transition-[color,border-color,box-shadow] duration-300 outline-none resize-none overflow-hidden ' +
     'disabled:pointer-events-none disabled:cursor-not-allowed ' +

@@ -4,20 +4,27 @@
  * Both views draw a fixed box and put an unknown number of posts in it, so
  * "what does a card look like" has no single answer — it depends on how many
  * siblings it is sharing a day with. Rather than let the card overflow, or
- * shrink it uniformly until the type is unreadable, each view walks a short
+ * shrink it uniformly until the type is unreadable, the card walks a short
  * ladder of *sub-types*: named, discrete steps that each drop one thing.
  *
- * The ladders are ordered roomiest-first, and the pickers below return the
- * first rung whose whole column fits. That "whole column" matters: the rung is
- * chosen for a day, not for a card, so the posts on a Tuesday all look alike
- * and only Tuesday gets tighter when Tuesday gets busy.
+ * One ladder, not one per view. There used to be a second card for the month —
+ * its own component, its own four rungs, its own idea of what a post looks
+ * like — and the two drifted, because nothing made them agree. The month draws
+ * the same card as the week now; what differs is the room it has and what the
+ * user has left switched on for it (`cardFields`), which is exactly what this
+ * ladder is a function of.
+ *
+ * It is ordered roomiest-first, and the pickers below return the first rung
+ * whose whole stack fits. That "whole stack" matters: the rung is chosen for a
+ * day, not for a card, so the posts on a Tuesday all look alike and only
+ * Tuesday gets tighter when Tuesday gets busy.
  */
 
-import { DEFAULT_CARD_FIELDS, cardIsBare, type CardFields } from './cardFields'
+import { DEFAULT_WEEK_FIELDS, cardIsBare, type CardFields } from './cardFields'
 
-/* ------------------------------------------------------------------ week */
+/* ------------------------------------------------------------------ card */
 
-export type WeekRung = {
+export type CardRung = {
   id: 'comfortable' | 'regular' | 'tight' | 'minimal'
   /** How many lines the title may take before it clamps. */
   titleLines: 1 | 2 | 3
@@ -41,7 +48,7 @@ export type WeekRung = {
  * does today. The ladder buys back a screenful before that happens, it doesn't
  * pretend to make a day of thirty posts fit.
  */
-export const WEEK_RUNGS: WeekRung[] = [
+export const CARD_RUNGS: CardRung[] = [
   { id: 'comfortable', titleLines: 3, time: true },
   { id: 'regular', titleLines: 2, time: true },
   { id: 'tight', titleLines: 1, time: true },
@@ -82,7 +89,7 @@ const TITLE_LINE = 17 // 14px at leading-[1.2], rounded up so the ceiling holds
 const MEDIA_BAND = 100
 
 /** Vertical gap between cards in a week column — `gap-0.5`. */
-export const WEEK_CARD_GAP = 2
+export const CARD_GAP = 2
 
 /**
  * What one card would measure at this rung, given what the user allows it to
@@ -93,10 +100,10 @@ export const WEEK_CARD_GAP = 2
  * Independent of the card's width; the only variable rows are text, and the
  * picture's band is a constant.
  */
-export function weekCardHeight(
-  rung: WeekRung,
+export function cardHeight(
+  rung: CardRung,
   facts: CardFacts,
-  fields: CardFields = DEFAULT_CARD_FIELDS,
+  fields: CardFields = DEFAULT_WEEK_FIELDS,
 ): number {
   const rows: number[] = []
   const showTime = fields.time && facts.hasTime && rung.time
@@ -127,158 +134,52 @@ export function weekCardHeight(
 }
 
 /** What a whole column of these cards would measure at this rung. */
-export function weekColumnHeight(
-  rung: WeekRung,
+export function stackHeight(
+  rung: CardRung,
   cards: CardFacts[],
-  fields: CardFields = DEFAULT_CARD_FIELDS,
+  fields: CardFields = DEFAULT_WEEK_FIELDS,
 ): number {
   if (cards.length === 0) return 0
   return (
-    cards.reduce((sum, facts) => sum + weekCardHeight(rung, facts, fields), 0) +
-    (cards.length - 1) * WEEK_CARD_GAP
+    cards.reduce((sum, facts) => sum + cardHeight(rung, facts, fields), 0) +
+    (cards.length - 1) * CARD_GAP
   )
 }
 
 /**
- * The roomiest rung whose whole column fits the space, or the tightest rung
- * if none does — at which point the lane scrolls and the ladder has done all
- * it can.
+ * The roomiest rung whose whole stack fits the space, or `null` when even the
+ * tightest doesn't.
  *
  * `available` is the lane's content height minus anything else living in it
- * (the ADD POST button holds its space even while invisible).
+ * (in the week, the ADD POST button holds its space even while invisible).
+ *
+ * The two views take the `null` differently, which is the only place they still
+ * differ: a week column scrolls, because a column is tall enough that scrolling
+ * it is a normal thing to do. A month cell can't — the whole grid is one
+ * screen by construction — so it draws `MonthDensity` instead and the day's
+ * titles move one click away. Hence two entry points over one ladder.
  */
-export function pickWeekRung(
+export function fitRung(
   cards: CardFacts[],
   available: number,
-  fields: CardFields = DEFAULT_CARD_FIELDS,
-): WeekRung {
-  if (cards.length === 0) return WEEK_RUNGS[0]
-  for (const rung of WEEK_RUNGS) {
-    if (weekColumnHeight(rung, cards, fields) <= available) return rung
-  }
-  return WEEK_RUNGS[WEEK_RUNGS.length - 1]
-}
-
-/* ----------------------------------------------------------------- month */
-
-export type MonthRung = {
-  id: 'generous' | 'roomy' | 'regular' | 'compact'
-  /** Row height in px, and the `h-*` class the card draws it with. */
-  height: number
-  heightClass: string
-  /** Type for the card as a whole — on one line, that is the whole card. */
-  textClass: string
-  /** Type for the title, where it is set larger than the time above it. */
-  titleClass?: string
-  /**
-   * How many lines the card lays itself out on. Two puts the time on a line of
-   * its own above the title; one is the single-line card the month has always
-   * drawn.
-   */
-  lines: 1 | 2
-  /** How many lines the title itself may take before it clamps. */
-  titleLines: 1 | 2
-}
-
-/** The gap between a two-line card's own lines — `gap-0.5`. */
-export const MONTH_LINE_GAP = 2
-
-/**
- * The month's ladder: two rungs above the single-line card and one below it,
- * then a density.
- *
- * `regular` is the card the month was designed around, and the ladder grows in
- * both directions from it. Down, a shorter line — the only thing a one-line
- * card has left to give. Up, a *second line*, which is not a bigger version of
- * the same card but a different one: the time moves off the title's line and
- * stops competing with it for width. That is what the two-line card buys, and
- * it is worth buying, because the month's two questions are *when* and *what*
- * and the single-line card can only ever answer both by making them share.
- *
- * Up again from there, the title stops being a line and becomes a *paragraph*:
- * two lines at 13px, which is the first size in this view a title is comfortably
- * read at rather than recognised at. Only a day with one or two posts can afford
- * it, so it is the quiet-day card and nothing else — but a quiet day is most of
- * a month, and a cell with 50px of unused space under a truncated title was
- * banking room it had no use for.
- *
- * Reachability, in the ~112px a real cell leaves: one or two posts get
- * `generous` (2 × 52 + 2 = 106), three get `roomy` (3 × 34 + 4 = 106), four or
- * five get `regular`, six get `compact`, and seven is a density. Every step is
- * a real one and every one of those numbers is arithmetic on the heights below
- * — change a height and re-do it.
- *
- * Two-line heights are exact sums of their parts and have no padding to absorb
- * a mistake: 16 + 2 + 16 for `roomy`, 16 + 2 + 2 × 17 for `generous`. A change
- * to the type scale has to move the rung's height with it.
- *
- * The 2px between a card's own lines is the same 2px that separates one card
- * from the next, which sounds like it should be ambiguous and isn't: a card is
- * a filled block on the lane's own fill, so what reads as the boundary is the
- * break in the fill, not the distance. (Flush lines were the earlier answer,
- * from reading the spacing alone. The fill is the stronger cue and it was
- * already there.)
- *
- * Note what is *not* here: dropping the time. That buys horizontal space, not
- * vertical, so it can't be a rung on this ladder — the single-line card decides
- * it for itself from its own width (see `MonthPostCard`'s container query), and
- * the two-line cards never have to, which is the point of them. A narrow column
- * loses the time; a short cell loses a line and then some leading.
- */
-export const MONTH_RUNGS: MonthRung[] = [
-  {
-    id: 'generous',
-    height: 52,
-    heightClass: 'h-13',
-    textClass: 'text-[11px]/4',
-    titleClass: 'text-[13px]/[17px]',
-    lines: 2,
-    titleLines: 2,
-  },
-  {
-    id: 'roomy',
-    height: 34,
-    heightClass: 'h-[34px]',
-    textClass: 'text-[11px]/4',
-    lines: 2,
-    titleLines: 1,
-  },
-  {
-    id: 'regular',
-    height: 20,
-    heightClass: 'h-5',
-    textClass: 'text-[11px]/4',
-    lines: 1,
-    titleLines: 1,
-  },
-  {
-    id: 'compact',
-    height: 16,
-    heightClass: 'h-4',
-    textClass: 'text-[10px]/[12px]',
-    lines: 1,
-    titleLines: 1,
-  },
-]
-
-/** Vertical gap between cards in a month cell — `gap-0.5`. */
-export const MONTH_CARD_GAP = 2
-
-/**
- * The roomiest rung that fits every post in the cell, or `null` when even the
- * tightest doesn't — which is the signal to draw `MonthDensity` instead.
- *
- * This replaced a single measured capacity. A capacity answered "how many
- * 20px cards fit"; this asks the better question, "is there a card size that
- * fits them all", and so tries the other sizes before giving up on titles
- * altogether. A cell that used to collapse at five posts now shows five — and
- * one that holds a post or two spends the room it has left on lines and on
- * type, rather than banking it.
- */
-export function pickMonthRung(count: number, available: number): MonthRung | null {
-  if (count === 0) return MONTH_RUNGS[0]
-  for (const rung of MONTH_RUNGS) {
-    if (count * rung.height + (count - 1) * MONTH_CARD_GAP <= available) return rung
+  fields: CardFields = DEFAULT_WEEK_FIELDS,
+): CardRung | null {
+  if (cards.length === 0) return CARD_RUNGS[0]
+  for (const rung of CARD_RUNGS) {
+    if (stackHeight(rung, cards, fields) <= available) return rung
   }
   return null
 }
+
+/**
+ * `fitRung` for a lane that can scroll: the tightest rung stands in for "none
+ * of them fit", and the ladder has done all it can.
+ */
+export function pickRung(
+  cards: CardFacts[],
+  available: number,
+  fields: CardFields = DEFAULT_WEEK_FIELDS,
+): CardRung {
+  return fitRung(cards, available, fields) ?? CARD_RUNGS[CARD_RUNGS.length - 1]
+}
+

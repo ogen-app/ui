@@ -204,6 +204,9 @@
   --color-campaign-5: var(--campaign-5);
   --color-campaign-6: var(--campaign-6);
   --color-campaign-7: var(--campaign-7);
+  /* No `--color-nav-*` here: the nav tones are read as CSS values in
+     AppSidebar (they colour a glyph *and* mix a background tint), never as
+     utility classes, so registering them would only generate dead ones. */
   /* Sidebar */
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
@@ -285,7 +288,7 @@
      Why not the brand hex #40A9A4: that value scores 2.83:1 on white — under
      AA and under AA-Large — and `text-accent` is real text in ~14 places (the
      assistant thread list runs it at 10px, where it drops to 2.50:1 on the
-     app canvas), plus white text sits *on* `bg-accent` in ThreadCount. This
+     app canvas), and `bg-accent` is a fill that text can land on. This
      is the same hue and chroma at 4.60:1; only lightness moved. If the brand
      value ever has to come back, the text sites need their own `--accent-ink`
      first. */
@@ -323,6 +326,35 @@
   --campaign-5: oklch(0.55 0.14 55); /* amber */
   --campaign-6: oklch(0.52 0.16 20); /* red */
   --campaign-7: oklch(0.5 0.16 320); /* magenta */
+
+  /* Nav destination colours — the five sections a campaign has. Each keeps one
+     hue for the life of the app, so the sub-menu is scanned by colour before
+     the labels are read; the hue is the same idle or selected.
+
+     Only the sub-menu gets them. It is five near-identical line glyphs stacked
+     together, which is the case colour actually solves — the module rows above
+     are a pair with unmistakable icons, and a campaign already carries its own
+     colour in its card. Settings is out too: it is where you go to change a
+     thing, not one of the things, so both gears stay in the text colour.
+
+     Same register as `--campaign-*` above (L≈0.53, chroma as far as the hue
+     carries it) because they sit in the same rail and must read as the same
+     kind of ink — but their own values, not aliases: these name five fixed
+     places, while `--campaign-*` is a categorical scale handed out by hash, and
+     retuning one should not silently retune the other. Some hues do coincide
+     with a campaign's, which is harmless: a campaign icon is a lettered card
+     and a nav icon is a line glyph, so nothing reads as the wrong kind of
+     thing.
+
+     Two hues are missing on purpose. Red (~25°) is the destructive/negative
+     voice and must not appear on a nav row, and ~191° is the teal accent, so
+     nothing here comes within 20° of it. Neighbours in the list are kept ≥120°
+     apart, since telling two adjacent rows apart at 16px is the whole job. */
+  --nav-overview: oklch(0.54 0.11 214); /* cyan */
+  --nav-posts: oklch(0.52 0.15 342); /* pink */
+  --nav-analytics: oklch(0.52 0.13 150); /* green */
+  --nav-brief: oklch(0.55 0.14 66); /* amber */
+  --nav-assets: oklch(0.5 0.16 300); /* violet */
 
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -382,15 +414,6 @@
   .font-mono {
     font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: 'zero' 0; /* Disable slashed zero */
-  }
-
-  .background-fader-1 {
-    background: linear-gradient(
-      to right,
-      var(--color-background) 5%,
-      transparent 50%,
-      var(--color-background) 95%
-    );
   }
 
   .background-fader-2 {
@@ -623,6 +646,61 @@
        ones land (`transition-transform`). Snap to the new position instead. */
     .toast-motion {
       transition: none;
+    }
+  }
+
+  /* The auth screens arriving: the photograph fades up over the blurred
+     stand-in that was painted on the first frame, and the card follows it in.
+
+     Keyframes rather than JS-flipped transitions, for the reason the toast
+     rules give above — a transition needs a start value the browser has
+     actually painted, and here it never gets one. Both of these are switched on
+     by React the moment the photograph reports itself loaded, and a cached
+     photograph reports that *during the first commit*, before any paint. The
+     hidden state would never reach the screen, so a transition would find no
+     start value and snap. An animation carries its own start value in its
+     keyframes and plays either way.
+
+     The card's `translate`, not `transform`: Tailwind v4 spends `translate-y-*`
+     on the standalone property, and mixing the two here would mean the utility
+     classes and these keyframes fight over the same box.
+
+     Both fill `both`: the card's 100ms delay is the photograph's fade, and
+     without the backwards fill the card would sit at full opacity through it
+     before dropping to 0 to animate. */
+  @keyframes auth-photo-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes auth-card-in {
+    from {
+      opacity: 0;
+      translate: 0 24px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  .auth-photo-motion {
+    animation: auth-photo-in 100ms ease-out both;
+  }
+
+  .auth-card-motion {
+    animation: auth-card-in 500ms 100ms ease-out both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Keep the fades — they are what says "this has loaded" — and drop the
+       travel, so nothing slides. */
+    .auth-card-motion {
+      animation: auth-photo-in 200ms 100ms ease-out both;
     }
   }
 
