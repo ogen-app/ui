@@ -98,7 +98,11 @@ function ContentBankLayout() {
   };
 
   return (
-    <PageContainer variant="fullFlex">
+    // The shell fades in once, on arrival. Deliberately not keyed by tab the
+    // way the campaign sections are: those are six different documents, while
+    // these four are one list filtered four ways — refading it on every tab
+    // would put a wait in front of what is otherwise instant.
+    <PageContainer variant="fullFlex" className="page-content-motion">
       <div
         className="relative flex flex-col h-full min-h-0"
         onDragEnter={handleDragEnter}

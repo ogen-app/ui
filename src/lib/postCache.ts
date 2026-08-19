@@ -46,6 +46,39 @@ export function invalidateCampaignPosts(qc: QueryClient, campaignId: string): vo
  * A post the list doesn't have yet is left alone — an unfetched list will
  * fetch, and a new post arrives through the create path, which invalidates.
  */
+/**
+ * The campaign list's copy of a post, for opening the editor on it without a
+ * fetch first.
+ *
+ * The same identity `landSavedPost` relies on, read the other way round: the
+ * list's rows come from the endpoint that hydrates `GET /posts/:id`, and every
+ * editor write lands in both namespaces — so a row this finds *is* what the
+ * detail fetch would return. Seeding from it is what makes stepping to a
+ * neighbouring post instant instead of unmounting the editor onto a loader.
+ *
+ * `dataUpdatedAt` travels with the row so Query can judge the seed's age
+ * itself: a list fetched moments ago opens the post with no request at all, an
+ * older one paints immediately and refetches behind it.
+ *
+ * Searched across every campaign rather than taking an id, because the editor
+ * hook has only the post's. There is one such list cached in practice — the one
+ * the calendar, the table and the arrow keys share.
+ */
+export function cachedPostFromList(
+  qc: QueryClient,
+  postId: string,
+): { post: Post; updatedAt: number } | undefined {
+  for (const query of qc.getQueryCache().findAll({ queryKey: ['campaigns'] })) {
+    // Prefix matching also lands on the campaigns list and on the summaries
+    // roll-up, neither of which holds `Post` rows.
+    const key = query.queryKey
+    if (key.length !== 3 || key[2] !== 'posts') continue
+    const post = (query.state.data as Post[] | undefined)?.find((p) => p.id === postId)
+    if (post) return { post, updatedAt: query.state.dataUpdatedAt }
+  }
+  return undefined
+}
+
 export function landSavedPost(qc: QueryClient, post: Post): void {
   const key = campaignPostsKey(post.campaign_id)
   // A list refetch already in flight — a teammate's broadcast invalidating

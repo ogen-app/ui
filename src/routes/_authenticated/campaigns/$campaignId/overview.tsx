@@ -84,12 +84,20 @@ function CampaignOverviewScreen() {
       ) : postsPending ? (
         <Skeleton className="h-40 w-full max-w-content mx-auto" />
       ) : (
-        <AttentionRail items={items} campaignId={campaignId} />
+        // The two modules that wait on the posts fade in over the grey block
+        // that held their place, so the page settles rather than snapping. The
+        // four below need no fade — they have the campaign from the start and
+        // are already on screen when these arrive.
+        <div className="page-content-motion">
+          <AttentionRail items={items} campaignId={campaignId} />
+        </div>
       )}
       {postsFailed ? null : postsPending ? (
         <Skeleton className="h-64 w-full max-w-content mx-auto" />
       ) : (
-        <ContentModule campaign={campaign} posts={posts} />
+        <div className="page-content-motion">
+          <ContentModule campaign={campaign} posts={posts} />
+        </div>
       )}
       {/* Directly under Content: the same posts, seen by what they earned
           rather than by where they are in the pipeline. The card reads its own

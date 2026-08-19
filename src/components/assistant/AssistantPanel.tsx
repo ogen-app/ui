@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ListBulletsIcon } from '@phosphor-icons/react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Logo } from '@/components/Logo'
@@ -75,9 +75,15 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
 
   // Pin to the newest turn. Streaming grows the last turn rather than adding
   // one, so this tracks its length too.
+  //
+  // Layout, not passive: a thread's history arrives all at once, and a passive
+  // effect runs *after* the browser has painted it — so the panel showed the
+  // top of the conversation for a frame and then snapped to the bottom. Moving
+  // the write before paint means the newest turn is simply where the panel
+  // opens.
   const turns = thread?.turns
   const streamLength = turns && turns.length > 0 ? turns[turns.length - 1].content.length : 0
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [activeId, turns?.length, streamLength])
