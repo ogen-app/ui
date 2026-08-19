@@ -41,6 +41,13 @@ async function probe<T>(
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ location }) => {
+    // TEMPORARY — design harnesses render from fixtures with no session and no
+    // API. This exemption is why `routes/design/` may never sit on `develop`.
+    // See CLAUDE.md.
+    if (location.pathname.startsWith("/design")) {
+      return { auth: { isAuthenticated: false } };
+    }
+
     const isAuthRoute = location.pathname === "/auth" || location.pathname.startsWith("/auth/");
     const isServerDownRoute = location.pathname === SERVER_DOWN_PATH;
 

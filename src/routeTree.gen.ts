@@ -14,6 +14,7 @@ import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unav
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedContentBankRouteImport } from './routes/_authenticated/content-bank'
+import { Route as DesignAnalyticsIndexRouteImport } from './routes/design/analytics/index'
 import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
@@ -29,6 +30,9 @@ import { Route as AuthenticatedContentBankImageryRouteImport } from './routes/_a
 import { Route as AuthenticatedContentBankFilesRouteImport } from './routes/_authenticated/content-bank/files'
 import { Route as AuthenticatedContentBankAllRouteImport } from './routes/_authenticated/content-bank/all'
 import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
+import { Route as DesignAnalyticsWidgetsIndexRouteImport } from './routes/design/analytics/widgets/index'
+import { Route as DesignAnalyticsPostIndexRouteImport } from './routes/design/analytics/post/index'
+import { Route as DesignAnalyticsCampaignIndexRouteImport } from './routes/design/analytics/campaign/index'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
 import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
 import { Route as AuthenticatedCampaignsCampaignIdOverviewRouteImport } from './routes/_authenticated/campaigns/$campaignId/overview'
@@ -36,8 +40,19 @@ import { Route as AuthenticatedCampaignsCampaignIdListRouteImport } from './rout
 import { Route as AuthenticatedCampaignsCampaignIdBriefRouteImport } from './routes/_authenticated/campaigns/$campaignId/brief'
 import { Route as AuthenticatedCampaignsCampaignIdAssetsRouteImport } from './routes/_authenticated/campaigns/$campaignId/assets'
 import { Route as AuthenticatedCampaignsCampaignIdAnalyticsRouteImport } from './routes/_authenticated/campaigns/$campaignId/analytics'
+import { Route as DesignAnalyticsWidgetsQualityIndexRouteImport } from './routes/design/analytics/widgets/quality/index'
+import { Route as DesignAnalyticsWidgetsPostIndexRouteImport } from './routes/design/analytics/widgets/post/index'
+import { Route as DesignAnalyticsWidgetsPlatformFilterIndexRouteImport } from './routes/design/analytics/widgets/platform-filter/index'
+import { Route as DesignAnalyticsWidgetsPerformersIndexRouteImport } from './routes/design/analytics/widgets/performers/index'
+import { Route as DesignAnalyticsWidgetsDailyEngagementRateIndexRouteImport } from './routes/design/analytics/widgets/daily-engagement-rate/index'
+import { Route as DesignAnalyticsWidgetsCurrentFollowersIndexRouteImport } from './routes/design/analytics/widgets/current-followers/index'
+import { Route as DesignAnalyticsWidgetsCumulativeReachIndexRouteImport } from './routes/design/analytics/widgets/cumulative-reach/index'
+import { Route as DesignAnalyticsWidgetsCumulativeInteractionsIndexRouteImport } from './routes/design/analytics/widgets/cumulative-interactions/index'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/index'
 import { Route as AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/posts/$postId'
+import { Route as DesignAnalyticsWidgetsPostOverviewIndexRouteImport } from './routes/design/analytics/widgets/post/overview/index'
+import { Route as DesignAnalyticsWidgetsPostIdentityIndexRouteImport } from './routes/design/analytics/widgets/post/identity/index'
+import { Route as DesignAnalyticsWidgetsPostMeasureIndexRouteImport } from './routes/design/analytics/widgets/post/$measure/index'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarAnchorViewRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/$anchor/$view'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -65,6 +80,11 @@ const AuthenticatedContentBankRoute =
     path: '/content-bank',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const DesignAnalyticsIndexRoute = DesignAnalyticsIndexRouteImport.update({
+  id: '/design/analytics/',
+  path: '/design/analytics/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthResetIndexRoute = AuthResetIndexRouteImport.update({
   id: '/auth/reset/',
   path: '/auth/reset/',
@@ -150,6 +170,24 @@ const AuthenticatedCampaignsCampaignIdRoute =
     path: '/campaigns/$campaignId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const DesignAnalyticsWidgetsIndexRoute =
+  DesignAnalyticsWidgetsIndexRouteImport.update({
+    id: '/design/analytics/widgets/',
+    path: '/design/analytics/widgets/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsPostIndexRoute =
+  DesignAnalyticsPostIndexRouteImport.update({
+    id: '/design/analytics/post/',
+    path: '/design/analytics/post/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsCampaignIndexRoute =
+  DesignAnalyticsCampaignIndexRouteImport.update({
+    id: '/design/analytics/campaign/',
+    path: '/design/analytics/campaign/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedCampaignsCampaignIdIndexRoute =
   AuthenticatedCampaignsCampaignIdIndexRouteImport.update({
     id: '/',
@@ -192,6 +230,54 @@ const AuthenticatedCampaignsCampaignIdAnalyticsRoute =
     path: '/analytics',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
+const DesignAnalyticsWidgetsQualityIndexRoute =
+  DesignAnalyticsWidgetsQualityIndexRouteImport.update({
+    id: '/design/analytics/widgets/quality/',
+    path: '/design/analytics/widgets/quality/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsWidgetsPostIndexRoute =
+  DesignAnalyticsWidgetsPostIndexRouteImport.update({
+    id: '/design/analytics/widgets/post/',
+    path: '/design/analytics/widgets/post/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsWidgetsPlatformFilterIndexRoute =
+  DesignAnalyticsWidgetsPlatformFilterIndexRouteImport.update({
+    id: '/design/analytics/widgets/platform-filter/',
+    path: '/design/analytics/widgets/platform-filter/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsWidgetsPerformersIndexRoute =
+  DesignAnalyticsWidgetsPerformersIndexRouteImport.update({
+    id: '/design/analytics/widgets/performers/',
+    path: '/design/analytics/widgets/performers/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsWidgetsDailyEngagementRateIndexRoute =
+  DesignAnalyticsWidgetsDailyEngagementRateIndexRouteImport.update({
+    id: '/design/analytics/widgets/daily-engagement-rate/',
+    path: '/design/analytics/widgets/daily-engagement-rate/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsWidgetsCurrentFollowersIndexRoute =
+  DesignAnalyticsWidgetsCurrentFollowersIndexRouteImport.update({
+    id: '/design/analytics/widgets/current-followers/',
+    path: '/design/analytics/widgets/current-followers/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsWidgetsCumulativeReachIndexRoute =
+  DesignAnalyticsWidgetsCumulativeReachIndexRouteImport.update({
+    id: '/design/analytics/widgets/cumulative-reach/',
+    path: '/design/analytics/widgets/cumulative-reach/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsWidgetsCumulativeInteractionsIndexRoute =
+  DesignAnalyticsWidgetsCumulativeInteractionsIndexRouteImport.update({
+    id: '/design/analytics/widgets/cumulative-interactions/',
+    path: '/design/analytics/widgets/cumulative-interactions/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedCampaignsCampaignIdCalendarIndexRoute =
   AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport.update({
     id: '/calendar/',
@@ -203,6 +289,24 @@ const AuthenticatedCampaignsCampaignIdPostsPostIdRoute =
     id: '/campaigns/$campaignId_/posts/$postId',
     path: '/campaigns/$campaignId/posts/$postId',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const DesignAnalyticsWidgetsPostOverviewIndexRoute =
+  DesignAnalyticsWidgetsPostOverviewIndexRouteImport.update({
+    id: '/design/analytics/widgets/post/overview/',
+    path: '/design/analytics/widgets/post/overview/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsWidgetsPostIdentityIndexRoute =
+  DesignAnalyticsWidgetsPostIdentityIndexRouteImport.update({
+    id: '/design/analytics/widgets/post/identity/',
+    path: '/design/analytics/widgets/post/identity/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DesignAnalyticsWidgetsPostMeasureIndexRoute =
+  DesignAnalyticsWidgetsPostMeasureIndexRouteImport.update({
+    id: '/design/analytics/widgets/post/$measure/',
+    path: '/design/analytics/widgets/post/$measure/',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute =
   AuthenticatedCampaignsCampaignIdCalendarAnchorViewRouteImport.update({
@@ -231,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
+  '/design/analytics/': typeof DesignAnalyticsIndexRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
@@ -238,9 +343,23 @@ export interface FileRoutesByFullPath {
   '/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
   '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/design/analytics/campaign/': typeof DesignAnalyticsCampaignIndexRoute
+  '/design/analytics/post/': typeof DesignAnalyticsPostIndexRoute
+  '/design/analytics/widgets/': typeof DesignAnalyticsWidgetsIndexRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
+  '/design/analytics/widgets/cumulative-interactions/': typeof DesignAnalyticsWidgetsCumulativeInteractionsIndexRoute
+  '/design/analytics/widgets/cumulative-reach/': typeof DesignAnalyticsWidgetsCumulativeReachIndexRoute
+  '/design/analytics/widgets/current-followers/': typeof DesignAnalyticsWidgetsCurrentFollowersIndexRoute
+  '/design/analytics/widgets/daily-engagement-rate/': typeof DesignAnalyticsWidgetsDailyEngagementRateIndexRoute
+  '/design/analytics/widgets/performers/': typeof DesignAnalyticsWidgetsPerformersIndexRoute
+  '/design/analytics/widgets/platform-filter/': typeof DesignAnalyticsWidgetsPlatformFilterIndexRoute
+  '/design/analytics/widgets/post/': typeof DesignAnalyticsWidgetsPostIndexRoute
+  '/design/analytics/widgets/quality/': typeof DesignAnalyticsWidgetsQualityIndexRoute
   '/campaigns/$campaignId/calendar/$anchor/$view': typeof AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute
+  '/design/analytics/widgets/post/$measure/': typeof DesignAnalyticsWidgetsPostMeasureIndexRoute
+  '/design/analytics/widgets/post/identity/': typeof DesignAnalyticsWidgetsPostIdentityIndexRoute
+  '/design/analytics/widgets/post/overview/': typeof DesignAnalyticsWidgetsPostOverviewIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
@@ -260,6 +379,7 @@ export interface FileRoutesByTo {
   '/auth/logout': typeof AuthLogoutIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
   '/auth/reset': typeof AuthResetIndexRoute
+  '/design/analytics': typeof DesignAnalyticsIndexRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
@@ -267,9 +387,23 @@ export interface FileRoutesByTo {
   '/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
   '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/design/analytics/campaign': typeof DesignAnalyticsCampaignIndexRoute
+  '/design/analytics/post': typeof DesignAnalyticsPostIndexRoute
+  '/design/analytics/widgets': typeof DesignAnalyticsWidgetsIndexRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
+  '/design/analytics/widgets/cumulative-interactions': typeof DesignAnalyticsWidgetsCumulativeInteractionsIndexRoute
+  '/design/analytics/widgets/cumulative-reach': typeof DesignAnalyticsWidgetsCumulativeReachIndexRoute
+  '/design/analytics/widgets/current-followers': typeof DesignAnalyticsWidgetsCurrentFollowersIndexRoute
+  '/design/analytics/widgets/daily-engagement-rate': typeof DesignAnalyticsWidgetsDailyEngagementRateIndexRoute
+  '/design/analytics/widgets/performers': typeof DesignAnalyticsWidgetsPerformersIndexRoute
+  '/design/analytics/widgets/platform-filter': typeof DesignAnalyticsWidgetsPlatformFilterIndexRoute
+  '/design/analytics/widgets/post': typeof DesignAnalyticsWidgetsPostIndexRoute
+  '/design/analytics/widgets/quality': typeof DesignAnalyticsWidgetsQualityIndexRoute
   '/campaigns/$campaignId/calendar/$anchor/$view': typeof AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute
+  '/design/analytics/widgets/post/$measure': typeof DesignAnalyticsWidgetsPostMeasureIndexRoute
+  '/design/analytics/widgets/post/identity': typeof DesignAnalyticsWidgetsPostIdentityIndexRoute
+  '/design/analytics/widgets/post/overview': typeof DesignAnalyticsWidgetsPostOverviewIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -293,6 +427,7 @@ export interface FileRoutesById {
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
+  '/design/analytics/': typeof DesignAnalyticsIndexRoute
   '/_authenticated/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/_authenticated/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
   '/_authenticated/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
@@ -300,9 +435,23 @@ export interface FileRoutesById {
   '/_authenticated/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
   '/_authenticated/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/_authenticated/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/design/analytics/campaign/': typeof DesignAnalyticsCampaignIndexRoute
+  '/design/analytics/post/': typeof DesignAnalyticsPostIndexRoute
+  '/design/analytics/widgets/': typeof DesignAnalyticsWidgetsIndexRoute
   '/_authenticated/campaigns/$campaignId_/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/_authenticated/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
+  '/design/analytics/widgets/cumulative-interactions/': typeof DesignAnalyticsWidgetsCumulativeInteractionsIndexRoute
+  '/design/analytics/widgets/cumulative-reach/': typeof DesignAnalyticsWidgetsCumulativeReachIndexRoute
+  '/design/analytics/widgets/current-followers/': typeof DesignAnalyticsWidgetsCurrentFollowersIndexRoute
+  '/design/analytics/widgets/daily-engagement-rate/': typeof DesignAnalyticsWidgetsDailyEngagementRateIndexRoute
+  '/design/analytics/widgets/performers/': typeof DesignAnalyticsWidgetsPerformersIndexRoute
+  '/design/analytics/widgets/platform-filter/': typeof DesignAnalyticsWidgetsPlatformFilterIndexRoute
+  '/design/analytics/widgets/post/': typeof DesignAnalyticsWidgetsPostIndexRoute
+  '/design/analytics/widgets/quality/': typeof DesignAnalyticsWidgetsQualityIndexRoute
   '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view': typeof AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute
+  '/design/analytics/widgets/post/$measure/': typeof DesignAnalyticsWidgetsPostMeasureIndexRoute
+  '/design/analytics/widgets/post/identity/': typeof DesignAnalyticsWidgetsPostIdentityIndexRoute
+  '/design/analytics/widgets/post/overview/': typeof DesignAnalyticsWidgetsPostOverviewIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -326,6 +475,7 @@ export interface FileRouteTypes {
     | '/auth/logout/'
     | '/auth/register/'
     | '/auth/reset/'
+    | '/design/analytics/'
     | '/campaigns/$campaignId/analytics'
     | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
@@ -333,9 +483,23 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId/overview'
     | '/campaigns/$campaignId/settings'
     | '/campaigns/$campaignId/'
+    | '/design/analytics/campaign/'
+    | '/design/analytics/post/'
+    | '/design/analytics/widgets/'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar/'
+    | '/design/analytics/widgets/cumulative-interactions/'
+    | '/design/analytics/widgets/cumulative-reach/'
+    | '/design/analytics/widgets/current-followers/'
+    | '/design/analytics/widgets/daily-engagement-rate/'
+    | '/design/analytics/widgets/performers/'
+    | '/design/analytics/widgets/platform-filter/'
+    | '/design/analytics/widgets/post/'
+    | '/design/analytics/widgets/quality/'
     | '/campaigns/$campaignId/calendar/$anchor/$view'
+    | '/design/analytics/widgets/post/$measure/'
+    | '/design/analytics/widgets/post/identity/'
+    | '/design/analytics/widgets/post/overview/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -355,6 +519,7 @@ export interface FileRouteTypes {
     | '/auth/logout'
     | '/auth/register'
     | '/auth/reset'
+    | '/design/analytics'
     | '/campaigns/$campaignId/analytics'
     | '/campaigns/$campaignId/assets'
     | '/campaigns/$campaignId/brief'
@@ -362,9 +527,23 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId/overview'
     | '/campaigns/$campaignId/settings'
     | '/campaigns/$campaignId'
+    | '/design/analytics/campaign'
+    | '/design/analytics/post'
+    | '/design/analytics/widgets'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar'
+    | '/design/analytics/widgets/cumulative-interactions'
+    | '/design/analytics/widgets/cumulative-reach'
+    | '/design/analytics/widgets/current-followers'
+    | '/design/analytics/widgets/daily-engagement-rate'
+    | '/design/analytics/widgets/performers'
+    | '/design/analytics/widgets/platform-filter'
+    | '/design/analytics/widgets/post'
+    | '/design/analytics/widgets/quality'
     | '/campaigns/$campaignId/calendar/$anchor/$view'
+    | '/design/analytics/widgets/post/$measure'
+    | '/design/analytics/widgets/post/identity'
+    | '/design/analytics/widgets/post/overview'
   id:
     | '__root__'
     | '/_authenticated'
@@ -387,6 +566,7 @@ export interface FileRouteTypes {
     | '/auth/logout/'
     | '/auth/register/'
     | '/auth/reset/'
+    | '/design/analytics/'
     | '/_authenticated/campaigns/$campaignId/analytics'
     | '/_authenticated/campaigns/$campaignId/assets'
     | '/_authenticated/campaigns/$campaignId/brief'
@@ -394,9 +574,23 @@ export interface FileRouteTypes {
     | '/_authenticated/campaigns/$campaignId/overview'
     | '/_authenticated/campaigns/$campaignId/settings'
     | '/_authenticated/campaigns/$campaignId/'
+    | '/design/analytics/campaign/'
+    | '/design/analytics/post/'
+    | '/design/analytics/widgets/'
     | '/_authenticated/campaigns/$campaignId_/posts/$postId'
     | '/_authenticated/campaigns/$campaignId/calendar/'
+    | '/design/analytics/widgets/cumulative-interactions/'
+    | '/design/analytics/widgets/cumulative-reach/'
+    | '/design/analytics/widgets/current-followers/'
+    | '/design/analytics/widgets/daily-engagement-rate/'
+    | '/design/analytics/widgets/performers/'
+    | '/design/analytics/widgets/platform-filter/'
+    | '/design/analytics/widgets/post/'
+    | '/design/analytics/widgets/quality/'
     | '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view'
+    | '/design/analytics/widgets/post/$measure/'
+    | '/design/analytics/widgets/post/identity/'
+    | '/design/analytics/widgets/post/overview/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -408,6 +602,21 @@ export interface RootRouteChildren {
   AuthLogoutIndexRoute: typeof AuthLogoutIndexRoute
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
   AuthResetIndexRoute: typeof AuthResetIndexRoute
+  DesignAnalyticsIndexRoute: typeof DesignAnalyticsIndexRoute
+  DesignAnalyticsCampaignIndexRoute: typeof DesignAnalyticsCampaignIndexRoute
+  DesignAnalyticsPostIndexRoute: typeof DesignAnalyticsPostIndexRoute
+  DesignAnalyticsWidgetsIndexRoute: typeof DesignAnalyticsWidgetsIndexRoute
+  DesignAnalyticsWidgetsCumulativeInteractionsIndexRoute: typeof DesignAnalyticsWidgetsCumulativeInteractionsIndexRoute
+  DesignAnalyticsWidgetsCumulativeReachIndexRoute: typeof DesignAnalyticsWidgetsCumulativeReachIndexRoute
+  DesignAnalyticsWidgetsCurrentFollowersIndexRoute: typeof DesignAnalyticsWidgetsCurrentFollowersIndexRoute
+  DesignAnalyticsWidgetsDailyEngagementRateIndexRoute: typeof DesignAnalyticsWidgetsDailyEngagementRateIndexRoute
+  DesignAnalyticsWidgetsPerformersIndexRoute: typeof DesignAnalyticsWidgetsPerformersIndexRoute
+  DesignAnalyticsWidgetsPlatformFilterIndexRoute: typeof DesignAnalyticsWidgetsPlatformFilterIndexRoute
+  DesignAnalyticsWidgetsPostIndexRoute: typeof DesignAnalyticsWidgetsPostIndexRoute
+  DesignAnalyticsWidgetsQualityIndexRoute: typeof DesignAnalyticsWidgetsQualityIndexRoute
+  DesignAnalyticsWidgetsPostMeasureIndexRoute: typeof DesignAnalyticsWidgetsPostMeasureIndexRoute
+  DesignAnalyticsWidgetsPostIdentityIndexRoute: typeof DesignAnalyticsWidgetsPostIdentityIndexRoute
+  DesignAnalyticsWidgetsPostOverviewIndexRoute: typeof DesignAnalyticsWidgetsPostOverviewIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -446,6 +655,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/content-bank'
       preLoaderRoute: typeof AuthenticatedContentBankRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/design/analytics/': {
+      id: '/design/analytics/'
+      path: '/design/analytics'
+      fullPath: '/design/analytics/'
+      preLoaderRoute: typeof DesignAnalyticsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/reset/': {
       id: '/auth/reset/'
@@ -552,6 +768,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/design/analytics/widgets/': {
+      id: '/design/analytics/widgets/'
+      path: '/design/analytics/widgets'
+      fullPath: '/design/analytics/widgets/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/post/': {
+      id: '/design/analytics/post/'
+      path: '/design/analytics/post'
+      fullPath: '/design/analytics/post/'
+      preLoaderRoute: typeof DesignAnalyticsPostIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/campaign/': {
+      id: '/design/analytics/campaign/'
+      path: '/design/analytics/campaign'
+      fullPath: '/design/analytics/campaign/'
+      preLoaderRoute: typeof DesignAnalyticsCampaignIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/campaigns/$campaignId/': {
       id: '/_authenticated/campaigns/$campaignId/'
       path: '/'
@@ -601,6 +838,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdAnalyticsRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
+    '/design/analytics/widgets/quality/': {
+      id: '/design/analytics/widgets/quality/'
+      path: '/design/analytics/widgets/quality'
+      fullPath: '/design/analytics/widgets/quality/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsQualityIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/widgets/post/': {
+      id: '/design/analytics/widgets/post/'
+      path: '/design/analytics/widgets/post'
+      fullPath: '/design/analytics/widgets/post/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsPostIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/widgets/platform-filter/': {
+      id: '/design/analytics/widgets/platform-filter/'
+      path: '/design/analytics/widgets/platform-filter'
+      fullPath: '/design/analytics/widgets/platform-filter/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsPlatformFilterIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/widgets/performers/': {
+      id: '/design/analytics/widgets/performers/'
+      path: '/design/analytics/widgets/performers'
+      fullPath: '/design/analytics/widgets/performers/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsPerformersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/widgets/daily-engagement-rate/': {
+      id: '/design/analytics/widgets/daily-engagement-rate/'
+      path: '/design/analytics/widgets/daily-engagement-rate'
+      fullPath: '/design/analytics/widgets/daily-engagement-rate/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsDailyEngagementRateIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/widgets/current-followers/': {
+      id: '/design/analytics/widgets/current-followers/'
+      path: '/design/analytics/widgets/current-followers'
+      fullPath: '/design/analytics/widgets/current-followers/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsCurrentFollowersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/widgets/cumulative-reach/': {
+      id: '/design/analytics/widgets/cumulative-reach/'
+      path: '/design/analytics/widgets/cumulative-reach'
+      fullPath: '/design/analytics/widgets/cumulative-reach/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsCumulativeReachIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/widgets/cumulative-interactions/': {
+      id: '/design/analytics/widgets/cumulative-interactions/'
+      path: '/design/analytics/widgets/cumulative-interactions'
+      fullPath: '/design/analytics/widgets/cumulative-interactions/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsCumulativeInteractionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/campaigns/$campaignId/calendar/': {
       id: '/_authenticated/campaigns/$campaignId/calendar/'
       path: '/calendar'
@@ -614,6 +907,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/campaigns/$campaignId/posts/$postId'
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/design/analytics/widgets/post/overview/': {
+      id: '/design/analytics/widgets/post/overview/'
+      path: '/design/analytics/widgets/post/overview'
+      fullPath: '/design/analytics/widgets/post/overview/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsPostOverviewIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/widgets/post/identity/': {
+      id: '/design/analytics/widgets/post/identity/'
+      path: '/design/analytics/widgets/post/identity'
+      fullPath: '/design/analytics/widgets/post/identity/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsPostIdentityIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/analytics/widgets/post/$measure/': {
+      id: '/design/analytics/widgets/post/$measure/'
+      path: '/design/analytics/widgets/post/$measure'
+      fullPath: '/design/analytics/widgets/post/$measure/'
+      preLoaderRoute: typeof DesignAnalyticsWidgetsPostMeasureIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view': {
       id: '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view'
@@ -724,6 +1038,31 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLogoutIndexRoute: AuthLogoutIndexRoute,
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,
   AuthResetIndexRoute: AuthResetIndexRoute,
+  DesignAnalyticsIndexRoute: DesignAnalyticsIndexRoute,
+  DesignAnalyticsCampaignIndexRoute: DesignAnalyticsCampaignIndexRoute,
+  DesignAnalyticsPostIndexRoute: DesignAnalyticsPostIndexRoute,
+  DesignAnalyticsWidgetsIndexRoute: DesignAnalyticsWidgetsIndexRoute,
+  DesignAnalyticsWidgetsCumulativeInteractionsIndexRoute:
+    DesignAnalyticsWidgetsCumulativeInteractionsIndexRoute,
+  DesignAnalyticsWidgetsCumulativeReachIndexRoute:
+    DesignAnalyticsWidgetsCumulativeReachIndexRoute,
+  DesignAnalyticsWidgetsCurrentFollowersIndexRoute:
+    DesignAnalyticsWidgetsCurrentFollowersIndexRoute,
+  DesignAnalyticsWidgetsDailyEngagementRateIndexRoute:
+    DesignAnalyticsWidgetsDailyEngagementRateIndexRoute,
+  DesignAnalyticsWidgetsPerformersIndexRoute:
+    DesignAnalyticsWidgetsPerformersIndexRoute,
+  DesignAnalyticsWidgetsPlatformFilterIndexRoute:
+    DesignAnalyticsWidgetsPlatformFilterIndexRoute,
+  DesignAnalyticsWidgetsPostIndexRoute: DesignAnalyticsWidgetsPostIndexRoute,
+  DesignAnalyticsWidgetsQualityIndexRoute:
+    DesignAnalyticsWidgetsQualityIndexRoute,
+  DesignAnalyticsWidgetsPostMeasureIndexRoute:
+    DesignAnalyticsWidgetsPostMeasureIndexRoute,
+  DesignAnalyticsWidgetsPostIdentityIndexRoute:
+    DesignAnalyticsWidgetsPostIdentityIndexRoute,
+  DesignAnalyticsWidgetsPostOverviewIndexRoute:
+    DesignAnalyticsWidgetsPostOverviewIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
