@@ -4,15 +4,10 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowSquareOutIcon,
   ArrowsLeftRightIcon,
-  CalendarDotsIcon,
   CardsThreeIcon,
   CaretDoubleLeftIcon,
-  ChartLineUpIcon,
   GearSixIcon,
   LifebuoyIcon,
-  NotepadIcon,
-  ScanIcon,
-  SidebarIcon,
   SignOutIcon,
   ToolboxIcon,
   UserIcon,
@@ -47,6 +42,7 @@ import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
 import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
 import { WorkspaceMark } from '@/components/layout/WorkspaceMark.tsx'
 import { LiveStatus } from '@/components/layout/LiveStatus'
+import { CAMPAIGN_SECTIONS, type CampaignSectionId } from '@/lib/campaignSections.ts'
 // One categorical scale for campaigns and workspaces alike — the mark is how
 // you recognise a thing, so it can't be per-entity (see lib/identity.ts).
 import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
@@ -55,11 +51,21 @@ import { ROLE_LABEL_KEYS, type Workspace } from '@/types/workspace'
 /** TODO: placeholder — no help site exists yet. Point at the real one when it does. */
 const HELP_URL = 'https://getogen.com/help'
 
+/**
+ * `font-mono`, not the `font-grotesk` label voice the rows below use. These
+ * headings and the rows they head are both uppercase and both small, so on the
+ * old shared face the only thing separating them was a tone step — and the
+ * headings kept reading as one more nav item. Geist Mono is genuinely a
+ * different face, so the split now survives at a glance.
+ *
+ * It is the only place in the sidebar that gets it: mono is otherwise the
+ * figure voice, and spending it on the rows too would put it back to one face.
+ */
 function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; isCollapsed: boolean }) {
   return (
     <div
       className={cn(
-        'px-1.5 lg:px-2.5 pt-5 pb-1 w-[232px] shrink-0 font-grotesk text-xs/4 font-medium uppercase text-sidebar-secondary-foreground transition-opacity duration-200',
+        'px-1.5 lg:px-2.5 pt-5 pb-1 w-[232px] shrink-0 font-mono text-xs/4 font-medium uppercase text-sidebar-secondary-foreground transition-opacity duration-200',
         isCollapsed && 'opacity-0'
       )}
     >
@@ -68,19 +74,8 @@ function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; is
   )
 }
 
-// Module scope, so the label is a key rather than a string — `t` is only
-// available inside the component, and a constant built at import time would
-// freeze whichever language was loaded first.
-const CAMPAIGN_SUB_ITEMS = [
-  { id: 'overview', labelKey: 'nav.campaign.overview', icon: SidebarIcon },
-  { id: 'posts', labelKey: 'nav.campaign.posts', icon: CalendarDotsIcon },
-  { id: 'analytics', labelKey: 'nav.campaign.analytics', icon: ChartLineUpIcon },
-  { id: 'brief', labelKey: 'nav.campaign.brief', icon: NotepadIcon },
-  { id: 'content', labelKey: 'nav.campaign.content', icon: ScanIcon },
-  { id: 'settings', labelKey: 'nav.campaign.settings', icon: GearSixIcon },
-] as const
-
-type CampaignSubItemId = (typeof CAMPAIGN_SUB_ITEMS)[number]['id']
+// The rows and the Overview's cards read one table — see `lib/campaignSections`.
+type CampaignSubItemId = CampaignSectionId
 
 /** The app's main navigation sidebar, including the user/workspace menu. */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -136,7 +131,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <>
-      <Sidebar collapsible="icon" className={'select-none'} {...props}>
+      {/* The 1px `border` rule is the right panel's divider mirrored: the two
+          rails frame the work area, so they are edged the same way and in the
+          same tone. Desktop only — `className` never reaches the mobile sheet,
+          which floats over the content and needs no seam.
+
+          It has to be written with the same `group-data-[side=left]` prefix the
+          primitive uses to zero the border out: a plain `border-r` is a weaker
+          selector *and* a different key to `twMerge`, so it would lose on both
+          counts instead of replacing it. */}
+      <Sidebar
+        collapsible="icon"
+        className={'select-none group-data-[side=left]:border-r border-border'}
+        {...props}
+      >
         <SidebarHeader>
           <div className="flex items-center justify-between">
             {isMobile ? (
@@ -181,10 +189,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             className={cn('flex flex-col gap-1 px-3 py-0 lg:px-6', isCollapsed && 'items-center')}
           >
             <SectionLabel isCollapsed={isCollapsed}>{t('nav.modules')}</SectionLabel>
+            {/* The two module rows stay in the text colour. Colour here is for
+                telling near-identical siblings apart, and these two are a pair
+                with unmistakable glyphs — tinting them would only make the rail
+                louder. */}
             <AppSidebarButtonMenu
-              icon={
-                <ToolboxIcon weight="regular" className="size-5 flex-none" />
-              }
+              icon={<ToolboxIcon weight="regular" className="size-5 flex-none" />}
               text={t('nav.campaigns')}
               isActive={location.pathname === '/campaigns'}
               to="/campaigns"
@@ -224,19 +234,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         className="size-5 flex-none"
                       />
                     }
+                    // No `tone`: the campaign already carries its colour in the
+                    // icon, and washing the row in it too made the selection
+                    // about the campaign rather than about where you are.
                     text={name}
                     isActive={isActive}
                     to="/campaigns/$campaignId"
                     params={{ campaignId: campaign.id }}
                   />
                   {isActive && (
-                    // Sub-items sit flush against each other; the 12px pad
-                    // plus the nav's 4px gap makes 16px before the next
-                    // campaign. The 2px rule closes the sub-menu, so the
-                    // campaign that follows doesn't read as one more of
+                    // The 12px pad plus the nav's 4px gap makes 16px before
+                    // the next campaign. The 2px rule closes the sub-menu, so
+                    // the campaign that follows doesn't read as one more of
                     // its sections.
-                    <div className="flex w-full flex-col gap-0 pb-3 border-b-2 border-quaternary">
-                      {CAMPAIGN_SUB_ITEMS.map((item) => {
+                    //
+                    // The group itself is flush with the rail: the indent is
+                    // inside each row, so a row's hover and selected tint still
+                    // runs the full width of the nav like every other row —
+                    // an indented block of narrower buttons would read as a
+                    // second, inset menu.
+                    <div className="flex w-full flex-col gap-1 pb-3 border-b-2 border-quaternary">
+                      {CAMPAIGN_SECTIONS.map((item) => {
                         const subActive = activeSubItem === item.id
                         const link = subItemLink(campaign.id, item.id)
                         return (
@@ -245,7 +263,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             icon={
                               // Same 20px icon slot as top-level items so the labels
                               // line up; only the glyph inside is smaller.
-                              <span className="flex size-5 flex-none items-center justify-center">
+                              <span
+                                className="flex size-5 flex-none items-center justify-center"
+                                style={{ color: item.tone }}
+                              >
                                 <item.icon className="size-4" />
                               </span>
                             }
@@ -253,7 +274,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             isActive={subActive}
                             to={link.to}
                             params={link.params}
-                            className="lg:h-8 text-xs"
+                            // One step lighter than the grey a top-level row
+                            // takes (gray-50 against gray-100), on hover as
+                            // well as selected, so the campaign heading them
+                            // stays the stronger mark and the group reads as
+                            // one thing rather than seven equal rows.
+                            //
+                            // The indent is what says these rows belong to the
+                            // campaign above, and it exists only while there
+                            // are labels to line up: collapsed, the rail is
+                            // one column of icons and an offset row would just
+                            // look misaligned, so it falls back to the
+                            // variant's own 10px. It runs on the same 200ms
+                            // linear curve as the sidebar's width, so the rows
+                            // slide in with the labels rather than snapping
+                            // once they arrive.
+                            //
+                            // `lg:pl-3` has to be written out: the variant
+                            // sets `lg:px-2.5`, and a plain `pl-*` is neither
+                            // a `twMerge` conflict nor a match for a media
+                            // query, so it would lose on the desktop rail.
+                            className={cn(
+                              'lg:h-8 text-xs hover:bg-secondary data-[active=true]:bg-secondary',
+                              'duration-200 ease-linear',
+                              !isCollapsed && 'pl-10 lg:pl-3'
+                            )}
                           />
                         )
                       })}

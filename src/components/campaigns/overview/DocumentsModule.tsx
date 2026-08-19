@@ -10,8 +10,11 @@ import { CollapsedCard } from "./OverviewCard.tsx";
  * no modes any more (CON-210) — a campaign owns a set of documents, and the
  * only thing worth saying here is how big it is.
  *
- * Titled "Documents" rather than "Content" because the card above it already
- * owns that word for the posts themselves.
+ * Titled from the section table rather than by hand (`lib/campaignSections`),
+ * so this card, the sidebar row and the link all say one word. It used to say
+ * "Documents" to stay out of the way of the card above, which was headed
+ * "Content" while it was about posts; that card is titled from the table too
+ * now, and says Posts.
  */
 export function DocumentsModule({ campaign }: { campaign: Campaign }) {
   // Counted from the campaign alone, not against the asset list: the Overview
@@ -22,12 +25,7 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
 
   if (count === 0) {
     return (
-      <CollapsedCard
-        title="Documents"
-        target="content"
-        campaignId={campaign.id}
-        label="Open this campaign's content"
-      >
+      <CollapsedCard section="content" target="content" campaignId={campaign.id}>
         <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
           This campaign writes from its brief alone.
         </span>
@@ -37,10 +35,9 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
 
   return (
     <CollapsedCard
-      title="Documents"
+      section="content"
       target="content"
       campaignId={campaign.id}
-      label="Open this campaign's content"
       status={
         <StatusBadge
           tone="positive"

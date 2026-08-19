@@ -8,8 +8,8 @@ import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { hasVisibleProblem } from '@/lib/postValidation'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
-import { DEFAULT_CARD_FIELDS, cardIsBare, type CardFields } from './cardFields'
-import { WEEK_RUNGS, type WeekRung } from './cardRungs'
+import { DEFAULT_WEEK_FIELDS, cardIsBare, type CardFields } from './cardFields'
+import { CARD_RUNGS, type CardRung } from './cardRungs'
 import { LockMark, isDateLocked } from './LockMark'
 import { STATUS_ACCENT_COLOR, STATUS_ICON, STATUS_TEXT_COLOR } from './status'
 
@@ -17,10 +17,11 @@ type PostCardProps = {
   post: Post
   /**
    * How much of itself to show. Chosen per day by `WeeklyCalendar` from the
-   * space the column has, so every card in a Tuesday matches. Defaults to the
-   * roomiest for callers with space to spare.
+   * column's space and by `MonthlyCalendar` from the cell's, so every card in
+   * one day matches. Defaults to the roomiest for callers with space to
+   * spare, like `NotScheduledPanel`.
    */
-  rung?: WeekRung
+  rung?: CardRung
   /**
    * Which rows the user allows at all — their calendar settings. The rung can
    * only take away from what this leaves; see `cardFields` for why the two are
@@ -164,8 +165,8 @@ function titleSize(title: string): string {
 
 function PostCardComponent({
   post,
-  rung = WEEK_RUNGS[0],
-  fields = DEFAULT_CARD_FIELDS,
+  rung = CARD_RUNGS[0],
+  fields = DEFAULT_WEEK_FIELDS,
 }: PostCardProps) {
   const title = formatTitle(post.title)
   const platformInfo = getPlatformInfo(post.platform_id)

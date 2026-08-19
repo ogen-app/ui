@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { ListBulletsIcon } from '@phosphor-icons/react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Logo } from '@/components/Logo'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/styles'
 import { useAssistantStore } from '@/stores/assistantStore'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { AssistantComposer } from './AssistantComposer'
 import { AssistantReply } from './AssistantReply'
 import { StarterChips } from './StarterChips'
-import { ThreadCount } from './ThreadCount'
+import { ThreadStatusSummary } from './ThreadStatusSummary'
 import { ThreadEmptyState } from './ThreadEmptyState'
 import { ThreadList } from './ThreadList'
 import { UserMessage } from './UserMessage'
@@ -47,6 +49,20 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
     if (activeId) void loadHistory(activeId)
   }, [activeId, loadHistory])
 
+  // Looking at a thread is what marks it read — not opening the rail, and not
+  // being the thread that happens to be selected. The panel stays mounted
+  // behind every other panel and keeps its thread selected across navigation,
+  // so without the resolved-panel check a turn could finish "read" while a
+  // quality report covered it. This is also the only path in: reopening the
+  // rail onto the thread you were already in never goes through `selectThread`,
+  // which is where the other half of the marking lives.
+  const panelShowing = useSettingsStore(selectActivePanel) === 'assistant'
+  const markRead = useAssistantStore((s) => s.markRead)
+  const unread = thread?.unread
+  useEffect(() => {
+    if (panelShowing && activeId && unread) markRead(activeId)
+  }, [panelShowing, activeId, unread, markRead])
+
   // A draft asked for from elsewhere in the app (an overview CTA) lands in the
   // composer exactly like a starter chip — filled in, never sent.
   const prefillRequest = useAssistantStore((s) => s.prefillRequest)
@@ -83,7 +99,27 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
       className="h-full"
       bodyClassName="flex-1 gap-6"
       scrollRef={scrollRef}
-      titleAdornment={<ThreadCount />}
+      subheader={<ThreadStatusSummary />}
+      // The panel's square, and the one place the rail says what the two lines
+      // beside it are: a list of conversations. Exactly a row's square — 40px
+      // and the same 20px glyph — rather than stretched to the two lines it
+      // stands against, which came to 46 and read as a different object next to
+      // the list it heads. It centres on the pair instead, so the 3px of slack
+      // is split rather than hanging off one end.
+      leading={
+        <span
+          aria-hidden
+          className={cn(
+            'flex size-10 shrink-0 items-center justify-center self-center',
+            'border border-border text-tertiary-foreground transition-colors',
+            // Only lights up when the block is a way back to the list — on the
+            // list itself there is nowhere to go and it is just the mark.
+            'group-hover/title:border-foreground group-hover/title:text-foreground',
+          )}
+        >
+          <ListBulletsIcon className="size-5" />
+        </span>
+      }
       // Only inside a thread does the header have somewhere to go; on the list
       // itself it is just a heading.
       onTitleClick={thread ? () => selectThread(null) : undefined}

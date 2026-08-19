@@ -29,10 +29,9 @@ export function BriefModule({ campaign }: { campaign: Campaign }) {
   if (posture.state === "complete") {
     return (
       <CollapsedCard
-        title="Brief"
+        section="brief"
         target="brief"
         campaignId={campaign.id}
-        label="Edit the brief"
         status={<StatusBadge tone="positive" label="Brief is in good shape" />}
       >
         <span
@@ -49,13 +48,9 @@ export function BriefModule({ campaign }: { campaign: Campaign }) {
   if (posture.state === "partial") {
     return (
       <OverviewCard
-        title="Brief"
+        section="brief"
         status={<StatusBadge tone="warn" label="Brief is incomplete" />}
-        link={{
-          target: "brief",
-          campaignId: campaign.id,
-          label: "Edit the brief",
-        }}
+        link={{ target: "brief", campaignId: campaign.id }}
       >
         <CallToAction
           headline={WHY_THE_BRIEF_MATTERS}
@@ -82,7 +77,7 @@ export function BriefModule({ campaign }: { campaign: Campaign }) {
 
   return (
     <OverviewCard
-      title="Brief"
+      section="brief"
       status={<StatusBadge tone="warn" label="Brief is empty" />}
     >
       <CallToAction

@@ -51,8 +51,12 @@ export function AppSidebarButtonMenu({
       <div className="transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
         {/* The container is wider than the button so labels never reflow while
             the sidebar collapses; the label itself is capped at the visible
-            width so a long name ellipses on-screen instead of past the clip. */}
-        <span className="block w-[212px] truncate text-left lg:w-[180px]">{text}</span>
+            width so a long name ellipses on-screen instead of past the clip.
+            The 2% tracking is for the uppercase: caps set solid read as a block,
+            and these labels are scanned rather than read. */}
+        <span className="block w-[212px] truncate text-left tracking-[0.02em] lg:w-[180px]">
+          {text}
+        </span>
       </div>
     </>
   )

@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
-  ArrowSquareOutIcon,
+  SignInIcon,
   BriefcaseIcon,
   FileTextIcon,
   XIcon,
@@ -10,7 +10,7 @@ import { Logo } from '@/components/Logo'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { useTick } from '@/hooks/useTick'
 import { cn } from '@/lib/styles'
-import { formatDuration } from '@/lib/assistantTools'
+import { formatDuration, threadName } from '@/lib/assistantTools'
 import type { AssistantAction, AssistantThread } from '@/types/assistant'
 
 /**
@@ -53,7 +53,7 @@ export function ThreadList() {
         return (
           <li
             key={thread.id}
-            className="group relative border-b border-border last:border-b-0 hover:bg-secondary"
+            className="group relative border-b border-border last:border-b-0"
           >
             <button
               type="button"
@@ -63,28 +63,41 @@ export function ThreadList() {
               className="flex w-full min-w-0 items-center gap-3 py-3 text-left cursor-pointer"
             >
               {/* The mark rides the icon box's corner rather than the title
-                  line, so it can't push the name around. It is the row's whole
-                  activity signal: unread when it holds still, running when it
-                  pulses. On hover the box steps up a shade so it doesn't
-                  dissolve into the row's own fill. */}
+                  line, so it can't push the name around. It means one thing
+                  here and everywhere else in the app — this thread is waiting
+                  on you — which is why a running thread does not get one: the
+                  status line below shimmers and counts up, and the trigger's
+                  mark animates, so work in progress is already spoken for. A
+                  dot that meant either would make the one in the corner of the
+                  screen unreadable.
+
+                  The square is the panel's own mark from the header, one step
+                  down: same 40px box, same border, same 20px glyph. The
+                  header's is unfilled and its glyph is a shade darker, because
+                  it is the place these rows live in; a row is one of them, and
+                  the name is what should be read first. */}
               <span
-                className="relative flex size-10 shrink-0 items-center justify-center bg-secondary group-hover:bg-tertiary"
+                className={cn(
+                  'relative flex size-10 shrink-0 items-center justify-center',
+                  'border border-border bg-secondary transition-colors',
+                  // The row's answer to the pointer, and the only one it has:
+                  // with the hover fill gone, the square is what says which row
+                  // is under the cursor. Same gesture as the header's mark —
+                  // border and glyph to full contrast — so the two squares
+                  // behave alike as well as match.
+                  'group-hover:border-foreground',
+                )}
                 aria-hidden
               >
-                <Icon className="size-8 text-tertiary-foreground" />
-                {(thread.unread || thread.status === 'running') && (
-                  <span
-                    className={cn(
-                      'absolute -top-1 -right-1 size-2 rounded-full bg-accent',
-                      thread.status === 'running' && 'animate-pulse',
-                    )}
-                  />
+                <Icon className="size-5 text-quaternary-foreground transition-colors group-hover:text-foreground" />
+                {thread.unread && (
+                  <span className="absolute -top-1 -right-1 size-2 rounded-full bg-accent" />
                 )}
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="flex items-center gap-2">
                   <span className="min-w-0 truncate text-xs text-secondary-foreground">
-                    {name(thread)}
+                    {threadName(thread)}
                   </span>
                   {thread.id === currentThreadId && (
                     <span className="shrink-0 bg-accent/10 px-[3px] py-[2px] text-[10px] font-semibold tracking-[0.08em] text-accent">
@@ -100,13 +113,14 @@ export function ThreadList() {
                 long line run under the icons and fade out rather than being
                 truncated short for a column that is usually empty. */}
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100">
-              {/* Fades into the row's hover fill — the overlay only ever shows
-                  while the row is hovered, so that is the colour to match. */}
+              {/* Fades into the panel's own background: the row no longer
+                  fills on hover, so this is the colour behind the text it
+                  covers. Matching the old hover grey would band the row. */}
               <span
-                className="h-full w-10 bg-gradient-to-r from-transparent to-secondary"
+                className="h-full w-10 bg-gradient-to-r from-transparent to-primary"
                 aria-hidden
               />
-              <span className="flex h-full items-center gap-1 bg-secondary">
+              <span className="flex h-full items-center gap-1 bg-primary">
                 {/* Goes to the subject and leaves the rail exactly as it is.
                     Jumping to a post is not a request to put the assistant
                     away — you usually want it there when you arrive. */}
@@ -117,10 +131,17 @@ export function ThreadList() {
                   }
                   className="flex size-6 shrink-0 items-center justify-center text-secondary-foreground hover:text-foreground"
                 >
-                  {/* Bold at this size: these two only appear over the row's
-                      hover fill, and at regular weight they barely register
-                      against it. */}
-                  <ArrowSquareOutIcon weight="bold" className="size-5" />
+                  {/* Enter, not open-out: the arrow-out-of-a-square is the
+                      convention for leaving the app in a new tab, and this
+                      goes to a page in this window. The in-facing variant of
+                      that icon is no better — at 20px the two are the same
+                      drawing with the arrow moved. This one is an arrow going
+                      through a doorway, which nothing else in the app means.
+
+                      Regular weight and 20px, which is the panel's close X —
+                      these sit a few pixels from it on the same white and any
+                      other stroke reads as a different set of controls. */}
+                  <SignInIcon className="size-5" />
                 </Link>
                 <button
                   type="button"
@@ -128,7 +149,7 @@ export function ThreadList() {
                   aria-label="Close this conversation"
                   className="flex size-6 shrink-0 items-center justify-center text-secondary-foreground hover:text-foreground cursor-pointer"
                 >
-                  <XIcon weight="bold" className="size-5" />
+                  <XIcon className="size-5" />
                 </button>
               </span>
             </div>
@@ -152,14 +173,6 @@ function order(list: AssistantThread[], current: AssistantThread | undefined): A
     ...list.filter((t) => t.id !== current.id && t.subject.campaignId === campaignId),
     ...list.filter((t) => t.id !== current.id && t.subject.campaignId !== campaignId),
   ]
-}
-
-/** What the thread is attached to. The icon already says which kind it is. */
-function name(thread: AssistantThread): string {
-  if (thread.subject.kind === 'campaign') {
-    return thread.campaignTitle.trim() || 'Untitled campaign'
-  }
-  return thread.title.trim() || 'Untitled post'
 }
 
 /**

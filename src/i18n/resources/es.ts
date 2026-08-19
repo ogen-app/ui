@@ -188,12 +188,45 @@ export const es: Translation = {
     untitledCampaign: 'Campaña sin título',
     campaign: {
       overview: 'Resumen',
-      posts: 'Publicaciones',
+      posts: 'Calendario de publicaciones',
       analytics: 'Analíticas',
       brief: 'Briefing',
       content: 'Contenido',
       settings: 'Ajustes',
     },
+  },
+
+  campaignOverview: {
+    openOverview: 'ABRIR RESUMEN',
+    openPosts: 'ABRIR CALENDARIO',
+    openAnalytics: 'ABRIR ANALÍTICAS',
+    openBrief: 'ABRIR BRIEFING',
+    openContent: 'ABRIR CONTENIDO',
+    openSettings: 'ABRIR AJUSTES',
+    noDate: 'Sin fecha',
+  },
+
+  calendar: {
+    unscheduled: 'SIN PROGRAMAR',
+    unscheduledPosts: 'Publicaciones sin programar',
+    settings: 'Ajustes del calendario',
+    imagePreviews: 'Mostrar las tarjetas con vista previa de la imagen',
+    imagePreviewsNote: 'Solo las publicaciones que tienen imagen, y solo en la semana — una celda del mes es demasiado pequeña para mostrarla',
+    weekCard: 'TARJETA DE SEMANA',
+    monthCard: 'TARJETA DE MES',
+  },
+
+  assistant: {
+    activeThreads_one: '{{count}} conversación activa',
+    activeThreads_other: '{{count}} conversaciones activas',
+    pendingThreads_one: '{{count}} pendiente',
+    pendingThreads_other: '{{count}} pendientes',
+
+    untitledCampaign: 'Campaña sin título',
+    untitledPost: 'Publicación sin título',
+
+    finished: 'El estratega ha terminado',
+    failed: 'El estratega no ha podido terminar',
   },
 
   workspace: {
@@ -403,14 +436,35 @@ export const es: Translation = {
       connectedCount_other: '{{count}} conectadas',
       modalTitle: 'Conectar {{platform}}',
       preparing: 'Preparando tu enlace de conexión…',
-      authorize:
-        'Autoriza tu cuenta de {{platform}} en la pestaña que se acaba de abrir. Si no se ha abierto nada, usa el botón de abajo.',
-      openConnectPage: 'Abrir la página de conexión de {{platform}}',
-      expiry:
-        'El enlace caduca a las {{time}}. Cuando termines, la cuenta aparecerá aquí automáticamente — puede tardar un minuto.',
-      expirySoon: 'pronto',
-      checkNow: 'Comprobar ahora',
+      redirecting: 'Te llevamos a {{platform}}…',
       success: '{{platform}} está conectada. La encontrarás en Ajustes de plataformas.',
+      settling: 'Terminando la configuración — la cuenta aparecerá aquí en un momento.',
+      errors: {
+        expired: 'Ese enlace de conexión ha caducado. Vuelve a empezar la conexión.',
+        mismatch: 'Algo ha fallado al conectar tu cuenta. Inténtalo de nuevo.',
+        upstream: 'No hemos podido contactar con la plataforma. Inténtalo dentro de un momento.',
+        noTargets: 'Esta cuenta no tiene páginas ni perfiles en los que podamos publicar.',
+        generic: 'No hemos podido conectar tu cuenta. Inténtalo de nuevo.',
+      },
+      picker: {
+        title: 'Elige qué conectar',
+        body: 'Tu cuenta de {{platform}} gestiona más de un perfil. Elige en cuál debe publicar Ogen.',
+        legend: 'Perfiles de {{platform}} disponibles',
+        submit: 'CONECTAR {{platform}}',
+        cancel: 'CANCELAR',
+        back: 'Volver a Ajustes del espacio',
+        backToAccounts: 'VOLVER A AJUSTES DEL ESPACIO',
+        expired:
+          'Esta conexión ha caducado o ya se ha usado. Vuelve a empezar desde Ajustes del espacio.',
+        empty: 'No hay nada en esta cuenta en lo que podamos publicar.',
+        invalidTarget:
+          'Esa opción ya no está disponible. Recarga la página y vuelve a elegir.',
+        kind: {
+          organization: 'Página de empresa',
+          page: 'Página',
+          personal: 'Perfil personal',
+        },
+      },
     },
     disconnect: {
       title: '¿Desconectar {{name}}?',
