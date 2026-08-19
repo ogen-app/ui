@@ -4,6 +4,7 @@ import {
   ColumnChart,
   EmptyChart,
   MultiSeriesChart,
+  publicationsWithin,
   RankBar,
   ToneDot,
   TrendChart,
@@ -99,6 +100,9 @@ export function NowSection({
   // A ghost of the previous stretch works behind a line and not behind columns
   // — two sets of bars at the same dates read as a comparison of two things on
   // the same day, which is the one thing they are not.
+  // Decided once, on the dates the chart is actually drawn over, so the legend
+  // and the rail can never disagree about whether anything went out.
+  const publications = publicationsWithin(reading.series, view.publications)
   const previousSeries =
     columns || !reading.previousSeries
       ? undefined
@@ -135,6 +139,7 @@ export function NowSection({
             columns={columns}
             hasPrevious={Boolean(previousSeries)}
             hasBand={Boolean(reading.expected)}
+            hasPublications={publications.length > 0}
             anchor={anchor}
           />
         </div>
@@ -142,6 +147,7 @@ export function NowSection({
           <ColumnChart
             series={reading.series}
             band={reading.expected ?? undefined}
+            publications={publications}
             endLabel="Today"
           />
         ) : (
@@ -150,6 +156,7 @@ export function NowSection({
             previousSeries={previousSeries}
             band={reading.expected ?? undefined}
             bandShape={flow ? 'cone' : 'flat'}
+            publications={publications}
             endLabel="Today"
           />
         )}
@@ -193,12 +200,15 @@ function Legend({
   columns = false,
   hasPrevious,
   hasBand,
+  hasPublications,
   anchor,
 }: {
   /** Whether the chart is drawn as columns — the key has to match the ink. */
   columns?: boolean
   hasPrevious: boolean
   hasBand: boolean
+  /** Whether the rail of publication marks is under the plot. */
+  hasPublications: boolean
   anchor: string | null
 }) {
   return (
@@ -228,6 +238,14 @@ function Legend({
         <li className="flex items-center gap-1.5">
           <span className="h-2.5 w-4 rounded-[2px] bg-quaternary" aria-hidden />
           usual range
+        </li>
+      )}
+      {hasPublications && (
+        <li className="flex items-center gap-1.5">
+          {/* The mark itself, at its own size. A key that redraws a hairline as
+              a swatch teaches the reader to look for the wrong ink. */}
+          <span className="h-2.5 w-[1.5px] bg-tertiary-foreground" aria-hidden />
+          a post went out
         </li>
       )}
     </ul>

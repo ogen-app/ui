@@ -2,6 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { NowSection } from './ComparisonSections'
 import { PerformersSection } from './PerformersSection'
 import { PlatformFilter } from './PlatformFilter'
+import { QualitySection } from './QualitySection'
 import { NotYet, SectionCard } from './shell'
 import type { AnalyticsScope, AnalyticsSurfaceState, Period } from './types'
 
@@ -9,10 +10,16 @@ import type { AnalyticsScope, AnalyticsSurfaceState, Period } from './types'
  * The campaign analytics surface: the cards that are actually built, in the
  * order the question arrives.
  *
- * **What happened → which posts carried it and which dragged.** Two cards, both
- * under one period lens, both reviewable on their own in
+ * **What happened → which posts carried it and which dragged → was the score we
+ * gave them worth anything.** Three cards, each reviewable on its own in
  * `/design/analytics/widgets`. The order runs from most-asked to least, so an
  * operator who opens this weekly reads the top and leaves.
+ *
+ * Only the first two are under the period lens. Quality against results sits
+ * outside it and says so on itself: whether an element of the score predicts
+ * anything is a property of this campaign's content rather than of the last 28
+ * days, and the sample settles it — three bands need more posts than a
+ * four-week window holds.
  *
  * Deliberately shorter than the composition this started as. Outcomes, Side by
  * side, What we've learned and What's next were designed alongside these and are
@@ -24,9 +31,10 @@ import type { AnalyticsScope, AnalyticsSurfaceState, Period } from './types'
  *
  * With Side by side out, the axis switch goes with it: a two-way control with
  * one destination is a control that only reports the state it is already in. The
- * period lens stays, because both remaining cards obey it — but it has moved
- * into the platform bar rather than holding a row of its own. One line above the
- * cards now carries the whole scope: these platforms, this window.
+ * period lens stays — the two cards it governs are the two most read — but it
+ * has moved into the platform bar rather than holding a row of its own. One line
+ * above the cards now carries the whole scope: these platforms, this window, and
+ * a card that steps outside it says so in its own header.
  */
 export function AnalyticsSurface({
   scope,
@@ -77,7 +85,7 @@ export function AnalyticsSurface({
     )
   }
 
-  const { platforms, now, performers } = state.data
+  const { platforms, now, performers, quality } = state.data
 
   // One scope line, not two. The platforms decide what is in the numbers and
   // the period decides how far back they reach; nobody reads one without the
@@ -116,6 +124,7 @@ export function AnalyticsSurface({
       {scopeBar}
       <NowSection view={now} />
       <PerformersSection view={performers} />
+      <QualitySection view={quality} />
     </Wrapper>
   )
 }
@@ -132,6 +141,7 @@ function SurfaceSkeleton() {
       <Skeleton className="h-[4.5rem] w-full max-w-content mx-auto" />
       <Skeleton className="h-72 w-full max-w-content mx-auto" />
       <Skeleton className="h-56 w-full max-w-content mx-auto" />
+      <Skeleton className="h-48 w-full max-w-content mx-auto" />
     </Wrapper>
   )
 }

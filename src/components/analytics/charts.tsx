@@ -1,6 +1,6 @@
 import { cn } from '@/lib'
 import { extent, formatDay, formatHours, type Direction } from './format'
-import type { Point } from './types'
+import type { Point, Publication } from './types'
 
 /**
  * The charts, hand-rolled in SVG.
@@ -152,6 +152,7 @@ export function TrendChart({
   target,
   endLabel,
   tickCount,
+  publications,
   className,
 }: {
   /** Cumulative for a flow measure; the daily level for a level measure. */
@@ -177,6 +178,8 @@ export function TrendChart({
   endLabel?: string
   /** Roughly how many date ticks to draw. 0 turns the row off entirely. */
   tickCount?: number
+  /** When posts went out. Drawn between the plot and the dates. */
+  publications?: Publication[]
   className?: string
 }) {
   const W = 640
@@ -281,6 +284,7 @@ export function TrendChart({
         />
       </svg>
 
+      <PublicationRail series={series} publications={publications} align="point" />
       <TickRow ticks={ticks} />
     </div>
   )
@@ -304,6 +308,7 @@ export function ColumnChart({
   band,
   endLabel,
   tickCount,
+  publications,
   className,
 }: {
   /** The level on each day, not a running total. */
@@ -312,6 +317,8 @@ export function ColumnChart({
   band?: { low: number; high: number }
   endLabel?: string
   tickCount?: number
+  /** When posts went out. Drawn between the plot and the dates. */
+  publications?: Publication[]
   className?: string
 }) {
   const W = 640
@@ -400,6 +407,7 @@ export function ColumnChart({
           ))}
       </svg>
 
+      <PublicationRail series={series} publications={publications} align="slot" />
       <TickRow ticks={ticks} />
     </div>
   )
@@ -430,6 +438,115 @@ export function EmptyChart({
       )}
     >
       <span className="text-xs text-tertiary-foreground">{label}</span>
+    </div>
+  )
+}
+
+/**
+ * The publications the rail will actually draw, given the window a chart covers.
+ *
+ * Exported because the legend has to be decided on the same set: a key reading
+ * "a post went out" above a chart whose window contains none is a small lie, and
+ * it is told exactly when the reader has narrowed the period to look closely.
+ *
+ * Outside the window is dropped rather than clamped to an edge — a mark on the
+ * first day that means "some time before this" is a wrong answer wearing a
+ * precise one's clothes.
+ */
+export function publicationsWithin(
+  series: Point[],
+  publications?: Publication[],
+): Publication[] {
+  if (!publications || series.length < 2) return []
+  const dates = new Set(series.map((point) => point.date))
+  return publications.filter((publication) => dates.has(publication.date))
+}
+
+/**
+ * When posts went out, on the same timeline the chart above was drawn on.
+ *
+ * The chart says *something moved on the 6th*. Only this says *because two posts
+ * went out on the 5th* — and without it every bend is equally likely to be a
+ * post, a re-share, or a platform recounting yesterday. It is the x-axis
+ * annotated rather than a second picture, which is why it sits inside the chart
+ * between the plot and the dates instead of being a card of its own: a mark here
+ * means nothing except against the line it is under.
+ *
+ * **One mark per post, not per day.** A day that published three posts and a day
+ * that published one are the difference between a burst and a routine, and
+ * flattening them into one identical mark would hide the thing most likely to
+ * explain the bend. They spread across the day's own slot, so three marks
+ * clustered still read as one day.
+ *
+ * **No colour and no height.** A mark is a fact — this went out — and every
+ * status mark on these surfaces is a claim. Sizing the marks by what the posts
+ * earned would turn the rail into a second chart competing with the one above
+ * it, drawn on a scale nothing declares.
+ */
+export function PublicationRail({
+  series,
+  publications,
+  align,
+  className,
+}: {
+  /** The series the chart above was drawn from — the rail borrows its dates. */
+  series: Point[]
+  publications?: Publication[]
+  /**
+   * How the chart above places a day. A line puts its points *on* the edges,
+   * so day `i` sits at `i / (n - 1)`; columns own a slot, so day `i` sits at its
+   * middle. A rail that used one rule for both would drift half a day out at one
+   * end of the chart, which is exactly the kind of quiet wrongness that makes
+   * someone attribute a bend to the wrong post.
+   */
+  align: 'point' | 'slot'
+  className?: string
+}) {
+  if (!publications || publications.length === 0 || series.length < 2) return null
+
+  const index = new Map(series.map((point, i) => [point.date, i]))
+  const days = new Map<number, Publication[]>()
+  for (const publication of publications) {
+    const i = index.get(publication.date)
+    if (i === undefined) continue
+    days.set(i, [...(days.get(i) ?? []), publication])
+  }
+  if (days.size === 0) return null
+
+  const slot = 100 / series.length
+  const total = [...days.values()].reduce((sum, posts) => sum + posts.length, 0)
+
+  return (
+    <div
+      className={cn('relative h-3', className)}
+      role="img"
+      aria-label={`${total} ${total === 1 ? 'post' : 'posts'} published in this period`}
+    >
+      {[...days.entries()].map(([i, posts]) => {
+        const centre =
+          align === 'slot'
+            ? (i + 0.5) * slot
+            : (i / (series.length - 1)) * 100
+        return posts.map((publication, k) => {
+          // Spread around the day's centre, so a day with three posts reads as a
+          // cluster on that day rather than as three days.
+          const offset = (k - (posts.length - 1) / 2) * Math.min(slot * 0.5, 1.4)
+          return (
+            <span
+              key={publication.id}
+              title={
+                publication.account
+                  ? `${publication.title} — ${publication.account}`
+                  : publication.title
+              }
+              className="absolute top-0 h-2.5 w-[1.5px] bg-tertiary-foreground"
+              style={{
+                left: `${Math.max(0, Math.min(100, centre + offset))}%`,
+              }}
+            />
+          )
+        })
+      })}
     </div>
   )
 }

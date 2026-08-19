@@ -1,3 +1,5 @@
+import type { QualityDimensionKey } from '@/types/quality'
+
 /**
  * The vocabulary of the analytics surfaces.
  *
@@ -176,6 +178,22 @@ export type SleeveDimension =
   /** How the post came to exist: generated, generated-then-edited, written. */
   | 'origin'
   | 'weekday'
+  /**
+   * The band the post's own quality assessment put it in (CON-85).
+   *
+   * A sleeve like any other — a named subset of the posts — and the only one
+   * cut on something we knew *before* publishing. That is what makes it worth
+   * having: every other dimension describes the post, this one describes the
+   * judgement we made about it, so holding it against results asks whether the
+   * judgement was worth anything.
+   *
+   * It has a card of its own (`QualitySection`) rather than waiting for Side by
+   * side, because it is the one sleeve where the interesting cut is *within* the
+   * dimension — four elements, each banded — and a single row per sleeve can't
+   * show that. When Side by side arrives this dimension works there too, at the
+   * coarser overall band.
+   */
+  | 'quality'
 
 export const SLEEVE_DIMENSIONS: Record<SleeveDimension, string> = {
   platform: 'Platform',
@@ -185,6 +203,7 @@ export const SLEEVE_DIMENSIONS: Record<SleeveDimension, string> = {
   theme: 'Theme',
   origin: 'How it was written',
   weekday: 'Day of week',
+  quality: 'Quality band',
 }
 
 /** A named subset of the data. */
@@ -276,6 +295,29 @@ export interface Coverage {
   nextRefreshIn?: string
 }
 
+/**
+ * A post going out, placed on the same timeline the chart is drawn on.
+ *
+ * Carried apart from `RankedPost` on purpose. The performers card holds the
+ * posts it can *rank*, which is a filtered set — a post the platform never
+ * reported on, or one too young to place, is missing from it and is exactly the
+ * post the reader is trying to account for when a line bends. This is every post
+ * that went out, ranked or not, measured or not.
+ *
+ * ISO rather than the display date `RankedPost` carries: the mark has to line up
+ * with a point in a series, which means it has to be the same kind of thing as
+ * that point's `date`, not a string a human formatted.
+ */
+export interface Publication {
+  id: string
+  /** ISO date, `YYYY-MM-DD`. */
+  date: string
+  /** What went out — the mark's tooltip, and the reason a mark is worth a hover. */
+  title: string
+  /** The account it went out on. Absent on a workspace that has only one. */
+  account?: string
+}
+
 /** The temporal axis: this sleeve, now versus before. */
 export interface NowView {
   period: Period
@@ -290,6 +332,19 @@ export interface NowView {
    */
   comparedToDate: string | null
   readings: MeasureReading[]
+  /**
+   * When posts actually went out, drawn as a rail under the chart.
+   *
+   * The chart says *something moved on the 6th*; only this says *because two
+   * posts went out on the 5th*. Without it the reader has to hold the campaign's
+   * publishing schedule in their head to read the shape at all, and every bend
+   * is equally likely to be a post, a re-share or the platform recounting.
+   *
+   * It belongs on the temporal view rather than in a card of its own because it
+   * is the x-axis of that view annotated, not a second picture: a mark here is
+   * only meaningful *against* the line above it.
+   */
+  publications?: Publication[]
   insights: Insight[]
   coverage: Coverage
 }
@@ -605,6 +660,81 @@ export interface PerformersView {
   insights: Insight[]
 }
 
+/* --------------------------------------------------------------- quality -- */
+
+/**
+ * What the pre-publish quality check made of a post (CON-85), reduced to what
+ * analytics needs.
+ *
+ * The assessment is a *prediction*, made from the words alone before anything
+ * was published, which is why it can never be a `MeasureId`: nothing about it
+ * is measured, and putting it in a row of tiles beside reach would invite it to
+ * be read as an outcome. It is a property of the post — a sleeve — and the only
+ * honest question to ask of it is whether it agreed with what happened next.
+ *
+ * `overall` is the backend's weighted roll-up and is never recomputed here: the
+ * weights are keyed by the post's type and live on the server (see
+ * `types/quality.ts`).
+ */
+export interface PostQuality {
+  /** 0–100. The weighted overall, as stored. */
+  overall: number
+  /** 0–10 per element, as the model scored them. */
+  scores: Record<QualityDimensionKey, number>
+  /**
+   * The post was edited after it was scored, so the score describes a draft
+   * that is not what went out.
+   *
+   * Carried rather than filtered upstream because the card has to *say* it: a
+   * post silently dropped from a comparison is a post the reader goes looking
+   * for. Excluded from every figure, counted in the note at the foot.
+   */
+  stale?: boolean
+}
+
+/** A ranked post that also carries what we thought of it before it went out. */
+export type ScoredPost = RankedPost & { quality: PostQuality }
+
+/**
+ * Quality against results — did the score predict anything?
+ *
+ * **Outside the date lens, unlike every other card built on posts.** Whether a
+ * scoring element earns its keep is a property of this campaign's content, not
+ * of the last 28 days; and the sample makes the point on its own, because a
+ * 28-day window on a campaign holds six to fourteen posts and this card needs
+ * several in each of three bands before it may say anything at all. Windowing
+ * it would produce a card that is permanently too thin and occasionally, on a
+ * busy month, confidently wrong.
+ *
+ * The two counts beside `posts` are states the card has to distinguish, and
+ * neither is zero: never scored and scored-but-nothing-back-yet are different
+ * reasons for a post to be absent from the comparison, and each sends the
+ * reader somewhere different. The third reason — scored against words that have
+ * since changed — stays *in* `posts`, flagged, because a post silently dropped
+ * is a post the reader goes looking for.
+ */
+export interface QualityView {
+  /**
+   * Every post of this campaign that was scored *and* has reported figures —
+   * the only posts that can be in the comparison at all.
+   */
+  posts: ScoredPost[]
+  /** Scored, published, and the platforms have not reported yet. */
+  awaiting: number
+  /** Published and never scored. */
+  unscored: number
+  /**
+   * The maturation curve, on the same terms as `PerformersView.curve`. The
+   * bands hold posts of wildly different ages by construction, so what they are
+   * compared on has to survive that: `null` retires the criteria that need
+   * correcting and leaves the ratios, exactly as it does on the performers card.
+   */
+  curve: { sample: number; confidence: Confidence; floor: string } | null
+  /** What this workspace normally does, per criterion. */
+  typical: Partial<Record<PerformerCriterionId, number>>
+  insights: Insight[]
+}
+
 /* ------------------------------------------------------- platform filter -- */
 
 /**
@@ -641,6 +771,7 @@ export interface AnalyticsData {
   now: NowView
   outcomes: OutcomesView
   performers: PerformersView
+  quality: QualityView
   sideBySide: SideBySideView
   patterns: PatternsView
   next: NextView

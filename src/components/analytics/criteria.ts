@@ -137,6 +137,17 @@ export const CRITERIA: Criterion[] = [
 ]
 
 /**
+ * The least a view has to carry to be ranked: the posts, and whether there is a
+ * maturation curve to correct their ages against.
+ *
+ * Structural rather than `PerformersView` itself, because the performers card is
+ * no longer the only one asking "which of these posts did better" — the quality
+ * card asks it of three bands at once, on the same criteria, and a second
+ * vocabulary of *performed well* on one surface would be one too many.
+ */
+export type RankableView = Pick<PerformersView, 'posts' | 'curve'>
+
+/**
  * The criteria this view can actually be ranked by.
  *
  * A criterion that would rank nothing is not offered. Pace withdraws with the
@@ -144,7 +155,7 @@ export const CRITERIA: Criterion[] = [
  * option that opens onto an empty list is worse than an option that isn't
  * there, because the reader spends the click finding that out.
  */
-export function availableCriteria(view: PerformersView): Criterion[] {
+export function availableCriteria(view: RankableView): Criterion[] {
   const corrected = view.curve !== null
   return CRITERIA.filter(
     (c) =>

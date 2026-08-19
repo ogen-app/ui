@@ -72,14 +72,15 @@ The last two say so on themselves, so the lens visibly does not reach them.
 The full order, most-asked to least — which is also the order a monthly digest
 would follow, so one layout defines both:
 
-1. **What happened** — measures, deltas, expectation band, trend, insight
+1. **What happened** — measures, deltas, expectation band, trend, when posts went out, insight
 2. **Outcomes** — goals, at whatever rung they are measured at
 3. **Performers and outliers** — both ends of the period, by whichever question is being asked, and the way out to a post
-4. **Side by side** — sleeve ranking with a per-post column, and an allocation call
-5. **What we've learned** — best times, shelf life, what works, what's fading
-6. **What's next** — pacing, then actions
+4. **Quality against results** — the score we gave a post before publishing, held against what it earned, element by element
+5. **Side by side** — sleeve ranking with a per-post column, and an allocation call
+6. **What we've learned** — best times, shelf life, what works, what's fading
+7. **What's next** — pacing, then actions
 
-**The campaign surface ships with 1 and 3.** The other four are built, argued
+**The campaign surface ships with 1, 3 and 4.** The other four are built, argued
 over and rendered — at the foot of the campaign harness, under a dashed line
 headed *Not in scope*. Two of them have no data path at all: Outcomes needs a
 goal the API has no field for, and What we've learned needs Zernio's
@@ -361,6 +362,126 @@ Movement rules:
    action attached* ("write another like this" hands the winning attributes to
    the assistant).
 
+## When posts went out
+
+The chart says *something moved on the 6th*. Only the rail under it says
+*because two posts went out on the 5th* — and without that, every bend is
+equally likely to be a post, a re-share, or a platform recounting yesterday.
+Reading the shape at all otherwise requires holding the campaign's publishing
+schedule in your head.
+
+It is drawn **inside** the *What happened* card, between the plot and the dates,
+rather than as a card of its own. That placement is the argument: a publication
+mark means nothing except against the line above it, and the same marks in a
+separate section would be a picture of publishing cadence — a different question,
+already answered by the `published` measure and by pacing in *What's next*.
+
+- **One mark per post, not per day.** A day that published three and a day that
+  published one are the difference between a burst and a routine, and that is
+  usually the thing explaining the bend. Marks on the same day spread across that
+  day's own slot, so a cluster still reads as one day.
+- **The alignment follows the chart's own geometry.** A line puts its points on
+  the edges (`i / (n − 1)`); columns own a slot and sit in the middle of it. Using
+  one rule for both would drift half a day out at one end — precisely the quiet
+  wrongness that gets a bend attributed to the wrong post.
+- **Outside the window is dropped, never clamped.** A post pinned to the first
+  day meaning "some time before this" is a wrong answer wearing a precise one's
+  clothes.
+- **No colour, no height.** A mark is a fact — this went out. Every status mark
+  on these surfaces is a claim, and sizing marks by what the posts earned would
+  make a second chart, on a scale nothing declares, competing with the one it
+  sits under.
+
+The posts come from their own list on the view rather than from the performers
+card's, because that list is filtered to what can be *ranked*: a post nothing was
+reported for is missing from it, and that is exactly the post someone is trying
+to account for. On the API side this is the one field the rail needs that the
+existing shape does not carry — publication timestamps for every post in the
+window, ranked or not.
+
+## Quality against results
+
+Every post can be scored before it goes out (CON-85): four elements —
+correctness, clarity, engagement, delivery — each 0–10 against an anchored
+rubric, rolled up by the server into one weighted percentage. It is the only
+thing this workspace knows about a post *in advance*, and until this card
+nothing ever checked it against what the post then did.
+
+**Quality is a sleeve, not a measure.** Nothing about the score is measured: it
+is a judgement made from the words alone, before a single impression existed. A
+`MeasureId` sitting in a row of tiles beside reach would be read as an outcome
+within a week. What it is instead is another way to cut the posts — the same
+kind of thing as platform, format or weekday, and the only one of them that
+describes the *decision* rather than the post. `quality` is in
+`SLEEVE_DIMENSIONS` accordingly, and Side by side will take it at the coarse
+overall band when that section comes back.
+
+**It gets its own card anyway, ahead of Side by side**, because the interesting
+cut is *inside* the dimension. Delivery and Engagement can point in opposite
+directions, and one row per sleeve cannot show that — a single "Quality band"
+row would average away the only finding on the card. So the figures beat is the
+five elements, each carrying what a better score on it actually bought, and the
+detail is the selected element's three bands.
+
+**The card is built to be able to say no.** This is the whole design constraint.
+A card that could only find agreement between the score and the result would be
+worthless as evidence for keeping the scoring — so a flat element reads as flat
+and an inverted one reads as inverted, in the same clothes as the one that
+works, and the tile's tone mark says which. The fixture is deliberately a
+workspace where the overall score predicts nothing: Delivery is worth 2.2×
+against typical, Engagement runs backwards at 0.5×, and rolling the two into one
+number cancels both. That is the case for reading the elements rather than the
+score, made by the card about itself.
+
+The rules that make the comparison defensible:
+
+- **Bands, not a coefficient.** Thirteen posts do not support a correlation and
+  nobody can read one anyway. Three bands — the app's own Good / Workable / Weak,
+  the same thresholds the post editor's panel bands on — turn it into "these
+  posts against those posts", which is a claim the reader can check by opening
+  two of them.
+- **Compared on the performers card's criteria.** The bands hold posts of every
+  age by construction, so ranking them on a raw total would rank them by
+  seniority — the age lie the rest of this surface is built to avoid. `criteria.ts`
+  already solved it, and reusing it means *did better* means one thing across the
+  surface rather than two. The picker is the card's one control, and switching it
+  genuinely moves the finding: on this workspace Delivery buys reach and
+  Engagement buys interaction rate, and the two elements swap ends when the
+  question changes.
+- **Medians, not means.** One post at a quarter of the campaign lands in whichever
+  band it lands in and would drag that band's average wherever it liked; the
+  card's finding would then be an artefact of a single post, which is the exact
+  failure the anomaly rule elsewhere exists to name.
+- **No variance is not no sample.** An element every post clears is a floor, not
+  a lever, and the tile says so rather than folding it in with "too few posts" —
+  the advice the two deserve is opposite, and "publish more posts" is exactly
+  wrong for the first.
+- **Every band is drawn, including the empty ones.** A band that disappears when
+  nothing scored into it turns *we never write anything weak* into a card that
+  merely looks like it has two bands, with nothing on screen saying which.
+- **Scored-then-edited is excluded and counted.** The score describes words that
+  never went out. Dropping those posts silently would leave a coverage line the
+  reader cannot reconcile with the campaign they are looking at.
+
+**It sits outside the date lens**, alone among the cards built on posts, and says
+so in its own header. Whether an element predicts anything is a property of the
+content rather than of the last 28 days — the same argument that keeps best-times
+out of the lens — and the sample settles it: three bands need more posts than a
+four-week window on one campaign will ever hold. Under six comparable posts the
+bands are not drawn at all.
+
+**What the API cannot answer yet.** `GET /api/posts/:id/assessment` returns one
+post's stored evaluation, and there is no bulk path — so this card is a design
+against an assumed contract. The ask is the score alongside the post rows the
+analytics response already carries (`overall_pct`, the four element scores, and
+the assessment's timestamp so *edited since scoring* can be decided server-side),
+or a `GET /api/analytics/quality` if it is cheaper to compute there. Until then
+the card renders from fixtures only.
+
+Reviewed at `/design/analytics/widgets/quality`, against seven states: the
+ordinary case, every post scored the same, too few scored, no maturation curve,
+every score out of date, scored-but-nothing-back, and nothing scored at all.
+
 ## Honesty rules
 
 These are correctness features, not polish. Each exists because breaking it
@@ -369,8 +490,14 @@ produces a screen someone acts on and shouldn't.
 - **Never render a 0 that means "unknown."** Distinguish not-supported-on-this-
   platform, not-yet-collected, and genuinely zero.
 - **Sample gates.** Ranking needs ~5 measured posts, a pattern ~15, a
-  best-time grid ~30. A grid drawn from nine posts looks identical to one drawn
-  from nine hundred.
+  best-time grid ~30, a quality band ~3 before it carries a figure. A grid drawn
+  from nine posts looks identical to one drawn from nine hundred.
+- **A card that can only agree is not evidence.** Anything holding one of our own
+  judgements against a result — the quality score today, the assistant's
+  suggestions later — has to be able to report that the judgement was worthless,
+  in the same clothes it reports success. Otherwise it is a screen that confirms
+  whatever it is shown, and the first person to notice stops believing the rest
+  of the surface too.
 - **Maturity is carried on the post**, not inferred at the call site. Ranking a
   four-hour-old post against a three-week-old one is the most common lie in
   social analytics. Immature posts get no percentile.
