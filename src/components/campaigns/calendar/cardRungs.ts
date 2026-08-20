@@ -37,12 +37,17 @@ export type CardRung = {
  * the time goes.
  *
  * The picture is not on the ladder, and that is now a deliberate cost rather
- * than a free lunch: since it grew a 100px band of its own it is far and away
- * the most expensive thing on the card, and a rung that dropped it would buy
- * back more than the whole rest of the ladder put together. It stays off
- * because *whether a calendar shows pictures* is a preference and not a
- * measurement — see `cardFields`. The user has a switch for it; the ladder
- * doesn't get to flip that switch for them on a busy Tuesday.
+ * than a free lunch: since it grew a band of its own it is far and away the
+ * most expensive thing on the card, and a rung that dropped it would buy back
+ * more than the whole rest of the ladder put together. It stays off because
+ * *whether a calendar shows pictures* is a preference and not a measurement —
+ * see `cardFields`. The user has a switch for it; the ladder doesn't get to
+ * flip that switch for them on a busy Tuesday.
+ *
+ * The month is the one place a picture is dropped by measurement, and it is
+ * kept off the ladder even there — see `fitMonthCell`, which asks the ladder
+ * twice rather than adding a step to it. The distinction is not pedantry: a
+ * rung applies to both views, and the week has no reason for one.
  *
  * Below `minimal` there is no further rung: the lane scrolls, exactly as it
  * does today. The ladder buys back a screenful before that happens, it doesn't
@@ -78,15 +83,24 @@ const TEXT_ROW = 16 // text-[12px]/[16px] — status, time, platform, account
 const TITLE_LINE = 17 // 14px at leading-[1.2], rounded up so the ceiling holds
 
 /**
- * The band above the rows on a backed card — `pt-[108px]` against the card's
- * own 8px, so a hundred pixels of it are picture before any text starts. The
- * image covers the whole card and the fade only begins 24px up from here
- * (`FADE_START`), so what the band is exactly is "the part the rows are kept
- * off" rather than "the part that is clear" — the two stopped being the same
- * number when the fade got its run-up. This is the one of them that costs
- * height.
+ * The band above the rows on a backed card: the part the rows are kept off,
+ * rather than the part that is clear. The image covers the whole card and the
+ * fade begins a run-up above where the rows start (`PostCard`'s `FADE_RUNUP`),
+ * so those two stopped being the same number — this is the one of them that
+ * costs height.
+ *
+ * Two sizes, because a card is drawn in two rooms. `full` is the week's, where
+ * a column is most of a screen and a hundred pixels of photograph is what makes
+ * a post findable without reading it. `compact` is the month's, and it is
+ * sized off the one measurement that matters there: a real month cell leaves
+ * about 112px for cards, and a card with a time and a title on one line is 55
+ * of them — so 56 is the largest band under which a quiet day still shows the
+ * picture *and* what the post is. Bigger and the month would only ever be able
+ * to draw a photograph with nothing said about it; smaller and it is a stamp.
  */
-const MEDIA_BAND = 100
+export const CARD_BANDS = { full: 100, compact: 56 } as const
+
+export type CardBand = keyof typeof CARD_BANDS
 
 /** Vertical gap between cards in a week column — `gap-0.5`. */
 export const CARD_GAP = 2
@@ -104,6 +118,7 @@ export function cardHeight(
   rung: CardRung,
   facts: CardFacts,
   fields: CardFields = DEFAULT_WEEK_FIELDS,
+  band: CardBand = 'full',
 ): number {
   const rows: number[] = []
   const showTime = fields.time && facts.hasTime && rung.time
@@ -122,7 +137,7 @@ export function cardHeight(
   if (fields.title) rows.push(rung.titleLines * TITLE_LINE)
   if (fields.platform) rows.push(TEXT_ROW)
   if (fields.account) rows.push(TEXT_ROW)
-  const band = fields.image && facts.hasImage ? MEDIA_BAND : 0
+  const media = fields.image && facts.hasImage ? CARD_BANDS[band] : 0
   const stack =
     rows.length === 0
       ? // Everything the user left on happens to be missing from this post.
@@ -130,7 +145,7 @@ export function cardHeight(
         // to be big enough to see and to click.
         TEXT_ROW
       : rows.reduce((a, b) => a + b, 0) + (rows.length - 1) * CARD_ROW_GAP
-  return CARD_PADDING + band + stack
+  return CARD_PADDING + media + stack
 }
 
 /** What a whole column of these cards would measure at this rung. */
@@ -138,10 +153,11 @@ export function stackHeight(
   rung: CardRung,
   cards: CardFacts[],
   fields: CardFields = DEFAULT_WEEK_FIELDS,
+  band: CardBand = 'full',
 ): number {
   if (cards.length === 0) return 0
   return (
-    cards.reduce((sum, facts) => sum + cardHeight(rung, facts, fields), 0) +
+    cards.reduce((sum, facts) => sum + cardHeight(rung, facts, fields, band), 0) +
     (cards.length - 1) * CARD_GAP
   )
 }
@@ -163,12 +179,45 @@ export function fitRung(
   cards: CardFacts[],
   available: number,
   fields: CardFields = DEFAULT_WEEK_FIELDS,
+  band: CardBand = 'full',
 ): CardRung | null {
   if (cards.length === 0) return CARD_RUNGS[0]
   for (const rung of CARD_RUNGS) {
-    if (stackHeight(rung, cards, fields) <= available) return rung
+    if (stackHeight(rung, cards, fields, band) <= available) return rung
   }
   return null
+}
+
+/**
+ * What a month cell draws: a rung, and whether the day's pictures are part of
+ * it.
+ *
+ * This is the one place the picture is decided by measurement rather than by
+ * preference, and it is not a rung — the ladder still has no step that drops
+ * one, for the reason given above. The month needs the question asked anyway
+ * because of what its "nothing fits" is: a week column that runs out scrolls,
+ * so the user keeps their pictures *and* their posts. A month cell can't
+ * scroll, so running out means `MonthDensity` — a count, with every title one
+ * click away. Between a photograph and knowing what is on the day, the day
+ * wins; the picture is what goes.
+ *
+ * So: the day as the user asked for it, and only if no rung holds that, the
+ * same day without its pictures. A quiet day keeps them, a busy one spends
+ * them to stay readable, and the density is what is left when neither works.
+ * `image: false` in the answer means the caller should draw with the picture
+ * field off — it passes its own `CardFields` for that rather than one made
+ * here, since the object's identity is a `memo` prop on every card.
+ */
+export function fitMonthCell(
+  cards: CardFacts[],
+  available: number,
+  fields: CardFields,
+): { rung: CardRung; image: boolean } | null {
+  const asked = fitRung(cards, available, fields, 'compact')
+  if (asked) return { rung: asked, image: fields.image }
+  if (!fields.image) return null
+  const stripped = fitRung(cards, available, { ...fields, image: false }, 'compact')
+  return stripped ? { rung: stripped, image: false } : null
 }
 
 /**

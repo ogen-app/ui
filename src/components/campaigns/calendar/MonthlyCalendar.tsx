@@ -10,7 +10,7 @@ import { hasVisibleProblem } from '@/lib/postValidation'
 import { MonthDensity } from './MonthDensity'
 import { PostCard } from './PostCard'
 import { isDateLocked } from './LockMark'
-import { fitRung } from './cardRungs'
+import { fitMonthCell } from './cardRungs'
 import { comparePostOrder } from '@/lib/postOrder'
 import {
   isSameDay,
@@ -70,6 +70,11 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
   const addPost = useAddPost(campaignId)
   const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings(campaignId)
   const fields = card.month
+  // The same fields with the pictures off, for the days that can't afford
+  // them (see `fitMonthCell`). Built once rather than per cell: the object's
+  // identity is a `memo` prop on every card, so a fresh one each render would
+  // re-render the whole grid on every pointer move.
+  const fieldsUnbacked = useMemo(() => ({ ...fields, image: false }), [fields])
   const { dragOverKey, laneHandlers } = useCalendarDrop(campaignId, posts)
   // One read of the cached platform list for the whole grid, as in the week —
   // the cards call the hook form for themselves and get the same answer.
@@ -175,10 +180,14 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
                   ),
                 hasImage: Boolean(post.media_urls[0]),
               }))
-              // `null` means no rung fits this many — draw the summary. A cell
-              // cannot scroll the way a week column can, so this is where the
-              // two views' answers to a full lane part company.
-              const rung = fitRung(facts, laneHeight, fields)
+              // `null` means the day fits at no rung, with or without its
+              // pictures — draw the summary. A cell cannot scroll the way a
+              // week column can, so this is where the two views' answers to a
+              // full lane part company.
+              const fit = fitMonthCell(facts, laneHeight, fields)
+              // A day that had to give up its pictures draws the same cards
+              // with the field off, so nothing below has to know why.
+              const cellFields = fit?.image === false ? fieldsUnbacked : fields
               return (
                 <div
                   key={key}
@@ -263,11 +272,17 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
                     ref={weekIndex === 0 && dayIndex === 0 ? laneRef : undefined}
                     className="flex flex-1 min-h-0 flex-col gap-0.5"
                   >
-                    {rung === null ? (
+                    {fit === null ? (
                       <MonthDensity campaignId={campaignId} day={day} posts={dayPosts} />
                     ) : (
                       dayPosts.map((post) => (
-                        <PostCard key={post.id} post={post} rung={rung} fields={fields} />
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          rung={fit.rung}
+                          fields={cellFields}
+                          band="compact"
+                        />
                       ))
                     )}
                   </div>
