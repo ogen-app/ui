@@ -426,6 +426,10 @@
     );
   }
 
+  /* Panel edges are `components/page-primitives/SurfaceFader` — a stack, not a
+     class, because the blur has to taper along the ramp and `backdrop-filter`
+     takes one radius. */
+
   @keyframes spinner-line {
     0% {
       transform: scaleX(0);
