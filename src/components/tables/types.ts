@@ -63,8 +63,11 @@ export type VirtualTableProps<TData extends Record<string, unknown>> = {
   onEmptyStateAction?: () => void
   /**
    * Rows haven't arrived yet. The header and its column widths are the real
-   * ones, so the table doesn't move when they do — and the empty state is
-   * held back, since "no rows yet" and "no rows" are different answers.
+   * ones, so the table doesn't move when they do; the body simply stays empty
+   * until they land. Nothing is drawn in their place — a block of grey bars
+   * says there is something there to read, and there isn't yet. The empty
+   * state is held back too, since "no rows yet" and "no rows" are different
+   * answers.
    */
   loading?: boolean
 }

@@ -7,9 +7,7 @@ import {
 import { PostsEmptyState } from "@/components/campaigns/PostsEmptyState";
 import { PostsToolbar } from "@/components/campaigns/PostsToolbar";
 import { MonthlyCalendar } from "@/components/campaigns/calendar/MonthlyCalendar";
-import { MonthlyCalendarSkeleton } from "@/components/campaigns/calendar/MonthlyCalendarSkeleton";
 import { WeeklyCalendar } from "@/components/campaigns/calendar/WeeklyCalendar";
-import { WeeklyCalendarSkeleton } from "@/components/campaigns/calendar/WeeklyCalendarSkeleton";
 import {
   addDays,
   addMonths,
@@ -19,6 +17,10 @@ import {
 import { useAddPost, useCampaignPosts } from "@/hooks/usePosts.ts";
 import { useCalendarSettings } from "@/hooks/useCalendarSettings";
 import { useHotkeys } from "@/hooks/useHotkeys";
+import type { Post } from "@/types/posts";
+
+/** Stable identity for a grid with nothing in it yet. */
+const NO_POSTS: Post[] = [];
 
 /** The granularities the calendar can be read at. */
 const VIEWS = ["week", "month"] as const;
@@ -52,11 +54,10 @@ function CalendarView() {
   const { campaignId, anchor, view } = Route.useParams();
   const navigate = useNavigate();
   const { data: posts, isLoading: postsPending } = useCampaignPosts(campaignId);
-  const {
-    firstDayOfWeek,
-    hiddenDays,
-    isPending: settingsPending,
-  } = useCalendarSettings(campaignId);
+  const rows = posts ?? NO_POSTS;
+  // The grid reads the settings itself; the route only needs to know whether
+  // they have arrived.
+  const { isPending: settingsPending } = useCalendarSettings(campaignId);
   const addPost = useAddPost(campaignId);
   // `beforeLoad` has already rejected anything else; this narrows the param
   // for the branches below rather than re-deciding it.
@@ -65,10 +66,14 @@ function CalendarView() {
   // off: a fresh Date each render would rebuild the whole grid each render.
   const anchorDate = useMemo(() => parseAnchor(anchor) ?? new Date(), [anchor]);
 
-  // Both queries decide what the grid looks like: the posts fill it, the
-  // settings say which columns it has and where it starts. Either one missing
-  // means anything we draw would be redrawn.
-  const loading = postsPending || settingsPending;
+  // Only the settings hold the grid back. Which day starts the week — and
+  // which days are shown at all — is a stored preference, and a Monday that
+  // turns into a Sunday under the reader is worse than a beat of nothing.
+  //
+  // The posts don't: the anchor draws the whole grid on its own, so it goes up
+  // real and the cards land into the cells they belong in. Sketching cards
+  // first only means watching them be replaced by different cards a cell or
+  // two along.
 
   const handleAnchorChange = (d: Date) =>
     navigate({
@@ -76,8 +81,6 @@ function CalendarView() {
       params: { campaignId, anchor: formatAnchor(d), view: granularity },
     });
 
-  const Skeleton =
-    granularity === "month" ? MonthlyCalendarSkeleton : WeeklyCalendarSkeleton;
   const Calendar = granularity === "month" ? MonthlyCalendar : WeeklyCalendar;
 
   // The same step the toolbar's arrows take, on the arrow keys. Unbounded in
@@ -107,13 +110,10 @@ function CalendarView() {
         anchor={anchorDate}
         onAnchorChange={handleAnchorChange}
       />
-      {loading ? (
-        <Skeleton
-          anchor={anchorDate}
-          firstDayOfWeek={settingsPending ? null : firstDayOfWeek}
-          hiddenDays={hiddenDays}
-        />
-      ) : !posts || posts.length === 0 ? (
+      {settingsPending ? null : !postsPending && rows.length === 0 ? (
+        // Only once the query has answered: the invitation to add the first
+        // post is a claim about the campaign, and an empty grid is the honest
+        // way to wait for it.
         <PostsEmptyState
           variant={granularity}
           campaignId={campaignId}
@@ -121,7 +121,7 @@ function CalendarView() {
           onAddPost={addPost}
         />
       ) : (
-        <Calendar campaignId={campaignId} posts={posts} anchor={anchorDate} />
+        <Calendar campaignId={campaignId} posts={rows} anchor={anchorDate} />
       )}
     </div>
   );
