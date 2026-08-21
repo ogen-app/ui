@@ -138,7 +138,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     dragDepth.current = 0
     setIsDragging(false)
     const files = Array.from(e.dataTransfer.files)
-    if (files.length) enqueueUploads(files, campaignId)
+    if (files.length) enqueueUploads(files, { campaignId, postId: null })
   }
 
   /** A new note, in this scope, opened for writing. */
@@ -314,6 +314,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
       <AddWebPageModal
         isOpen={webPageModalOpen}
         onClose={() => setWebPageModalOpen(false)}
+        destination={campaign ? 'campaign' : 'bank'}
         onSubmitted={handleWebPage}
       />
     </div>

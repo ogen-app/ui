@@ -12,6 +12,7 @@ import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
+import { PostSourcesCard } from '@/components/posts/sources/PostSourcesCard'
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
@@ -416,6 +417,9 @@ function PostEditorSurface({
                   readOnly={assistantRunning}
                 />
               </div>
+            </div>
+            <div className="w-content">
+              <PostSourcesCard post={doc} changeDoc={changeDoc} />
             </div>
             <div className="w-content empty:hidden">
               <PostMediaCard

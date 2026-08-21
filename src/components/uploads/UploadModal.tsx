@@ -15,6 +15,11 @@ type Props = {
   onClose: () => void;
   /** The campaign the files join, or null to upload to the workspace bank. */
   campaignId: string | null;
+  /**
+   * The post that should read from them, when the upload started on one. The
+   * files still join the campaign — a post is inside one.
+   */
+  postId?: string | null;
 };
 
 /**
@@ -22,7 +27,7 @@ type Props = {
  * file list the user reviews before clicking Upload. Progress then continues
  * non-blocking in the UploadTracker, so the modal closes on submit.
  */
-export function UploadModal({ isOpen, onClose, campaignId }: Props) {
+export function UploadModal({ isOpen, onClose, campaignId, postId = null }: Props) {
   const enqueue = useUploadStore((s) => s.enqueue);
   const [staged, setStaged] = useState<File[]>([]);
 
@@ -41,7 +46,7 @@ export function UploadModal({ isOpen, onClose, campaignId }: Props) {
 
   const handleUpload = () => {
     if (staged.length === 0) return;
-    enqueue(staged, campaignId);
+    enqueue(staged, { campaignId, postId });
     close();
   };
 
@@ -49,7 +54,13 @@ export function UploadModal({ isOpen, onClose, campaignId }: Props) {
     <ModalContainer
       isOpen={isOpen}
       onClose={close}
-      title={campaignId ? "Add to this campaign" : "Add to the content bank"}
+      title={
+        postId
+          ? "Add to this post"
+          : campaignId
+            ? "Add to this campaign"
+            : "Add to the content bank"
+      }
       size="large"
     >
       <div className="flex flex-col gap-4">

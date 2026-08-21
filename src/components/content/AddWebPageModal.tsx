@@ -8,9 +8,20 @@ import { readPageErrorMessage } from '@/lib/scrapeErrors'
 import { checkPageUrl } from '@/lib/webPageUrl'
 import type { Asset } from '@/types/content'
 
+/** Which thing is about to read the page — it is the one line of copy that changes. */
+export type WebPageDestination = 'campaign' | 'bank' | 'post'
+
+const DESTINATION_COPY: Record<WebPageDestination, string> = {
+  campaign: 'this campaign can write from it',
+  bank: 'it is filed with your other documents',
+  post: 'this post can write from it',
+}
+
 type Props = {
   isOpen: boolean
   onClose: () => void
+  /** Where the document is going, which is all the description has to say. */
+  destination: WebPageDestination
   /**
    * The asset the backend created (or re-queued), before it has any content.
    * The page decides what happens next — attaching it to the campaign, and
@@ -32,7 +43,12 @@ type Props = {
  * it is a modal that stops the user doing the next thing; the row in the list
  * behind it already reports progress, and the broadcast stream keeps it honest.
  */
-export function AddWebPageModal({ isOpen, onClose, onSubmitted }: Props) {
+export function AddWebPageModal({
+  isOpen,
+  onClose,
+  destination,
+  onSubmitted,
+}: Props) {
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -75,8 +91,8 @@ export function AddWebPageModal({ isOpen, onClose, onSubmitted }: Props) {
     <ModalContainer isOpen={isOpen} onClose={onClose} title="Add a web page">
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <p className="text-sm text-tertiary-foreground">
-          We read the page and save its text and images here as a document, so
-          this campaign can write from it. Submitting a page you already saved
+          We read the page and save its text and images here as a document, so{' '}
+          {DESTINATION_COPY[destination]}. Submitting a page you already saved
           replaces it with the current version.
         </p>
 
