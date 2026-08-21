@@ -177,6 +177,9 @@ export const es: Translation = {
 
   nav: {
     modules: 'Módulos',
+    activity: 'Actividad',
+    activityUnread_one: '{{count}} entrada sin leer',
+    activityUnread_other: '{{count}} entradas sin leer',
     campaigns: 'Campañas',
     contentBank: 'Banco de contenido',
     workspaceSettings: 'Ajustes del espacio',
@@ -193,6 +196,47 @@ export const es: Translation = {
       brief: 'Briefing',
       content: 'Contenido',
       settings: 'Ajustes',
+    },
+  },
+
+  activity: {
+    title: 'Actividad',
+    markAllRead: 'MARCAR TODO COMO LEÍDO',
+    markReadFailed: 'No se pudo guardar por dónde ibas en la actividad.',
+    loadFailed: 'No se pudo cargar la actividad',
+    empty: {
+      title: 'Todavía no ha pasado nada',
+      subtitle:
+        'Aquí aparecerán las publicaciones que salgan, las que fallen y un informe de cada día.',
+    },
+    unread: 'Sin leer',
+    today: 'Hoy',
+    yesterday: 'Ayer',
+    entry: {
+      failed: 'No se pudo publicar una publicación de {{channel}}',
+      notPublished: 'Una publicación de {{channel}} nunca se publicó',
+      reportTitle: 'Informe diario',
+    },
+    report: {
+      label: {
+        published: 'Publicadas',
+        failed: 'Fallidas',
+        notPublished: 'Nunca publicadas',
+        created: 'Creadas',
+      },
+      published_one: '{{count}} publicación publicada',
+      published_other: '{{count}} publicaciones publicadas',
+      failed_one: '{{count}} publicación no se pudo publicar',
+      failed_other: '{{count}} publicaciones no se pudieron publicar',
+      notPublished_one: '{{count}} publicación nunca se publicó',
+      notPublished_other: '{{count}} publicaciones nunca se publicaron',
+      created_one: '{{count}} publicación creada',
+      created_other: '{{count}} publicaciones creadas',
+      byChannel: 'Publicado por canal',
+      byCampaign: 'Por campaña',
+      nothing: 'Ese día no pasó nada.',
+      coverage:
+        'Calculado a partir de las publicaciones de este espacio, según tu día natural local.',
     },
   },
 

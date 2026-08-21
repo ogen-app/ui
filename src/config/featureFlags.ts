@@ -27,6 +27,29 @@
  */
 const FEATURE_FLAGS = {
   /**
+   * Activity (CON-225): the sidebar item, the feed, and the daily report — the
+   * workspace's answer to "what happened since I last looked?".
+   *
+   * **Waiting on:** the notifications subsystem, CON-224. Nothing persists a
+   * thing that happened today: `/api/events` is an invalidation bus with
+   * at-most-once delivery and no event log (`docs/sse.md`), which is
+   * disqualifying for a feature whose premise is that you were not looking. So
+   * Phase 1 *derives* its entries from the batched campaign summaries instead
+   * — which means only post outcomes can appear, and an entry disappears if
+   * the post behind it changes. The two things the feed is most wanted for,
+   * "your long run finished" and "this connection expired", leave no trace in
+   * that projection and are missing until the table exists.
+   *
+   * The daily report is the half that is not a stand-in: it is a count over
+   * posts, correct as computed, and it stays when CON-224 lands.
+   *
+   * Switch this on once `GET /api/notifications` answers and the feed has been
+   * re-tested against recorded events rather than derived ones. See
+   * `docs/activity.md`.
+   */
+  activity: false,
+
+  /**
    * The Goals card in campaign settings: the post rate the campaign is planned
    * against. On — CON-182 landed `goal_cadence` beside `estimated_post_count`
    * and the content-plan flow generates against the pair. Delete this flag once

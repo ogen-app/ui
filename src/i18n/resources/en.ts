@@ -207,6 +207,10 @@ export const en = {
 
   nav: {
     modules: 'Modules',
+    activity: 'Activity',
+    /** The count beside the Activity row, read out rather than seen. */
+    activityUnread_one: '{{count}} unread entry',
+    activityUnread_other: '{{count}} unread entries',
     campaigns: 'Campaigns',
     contentBank: 'Content Bank',
     workspaceSettings: 'Workspace Settings',
@@ -226,6 +230,67 @@ export const en = {
       brief: 'Brief',
       content: 'Content',
       settings: 'Settings',
+    },
+  },
+
+  /**
+   * Activity (CON-225): the feed of what happened, and the daily report it
+   * opens. Counts are written out whole in each plural form — "1 post
+   * published" and "6 posts published" are one key each, never a number glued
+   * to a noun.
+   */
+  activity: {
+    title: 'Activity',
+    /** Capitals are the copy, as on every other list's header action. */
+    markAllRead: 'MARK ALL READ',
+    markReadFailed: 'Could not save your place in the feed.',
+    loadFailed: 'Unable to load activity',
+    empty: {
+      title: 'Nothing has happened yet',
+      subtitle:
+        'Posts going out, posts failing, and a report of each day land here as they happen.',
+    },
+    /** The dot's accessible name — the only thing that says what it means. */
+    unread: 'Unread',
+    /** Relative day names, used instead of a date for the two recent ones. */
+    today: 'Today',
+    yesterday: 'Yesterday',
+    /** A section's heading inside a day's card. Each one stands alone. */
+    entry: {
+      failed: 'A {{channel}} post failed to publish',
+      notPublished: 'A {{channel}} post was never published',
+      reportTitle: 'Daily report',
+    },
+    report: {
+      /**
+       * The tiles' labels: a noun beside a figure, where the sentence forms
+       * below are what a line of prose uses. Two sets on purpose — "3" over
+       * "3 posts published" reads as thirty-three.
+       */
+      label: {
+        published: 'Published',
+        failed: 'Failed',
+        notPublished: 'Never published',
+        created: 'Created',
+      },
+      published_one: '{{count}} post published',
+      published_other: '{{count}} posts published',
+      failed_one: '{{count}} post failed to publish',
+      failed_other: '{{count}} posts failed to publish',
+      notPublished_one: '{{count}} post was never published',
+      notPublished_other: '{{count}} posts were never published',
+      created_one: '{{count}} post created',
+      created_other: '{{count}} posts created',
+      byChannel: 'Published by channel',
+      byCampaign: 'By campaign',
+      nothing: 'Nothing happened on this day.',
+      /**
+       * What the report counted and what it could not — it is computed from
+       * the workspace's posts, so it knows nothing about the AI runs, uploads
+       * or connection health that the feed will carry once the server records
+       * them.
+       */
+      coverage: 'Counted from this workspace’s posts, by your local calendar day.',
     },
   },
 

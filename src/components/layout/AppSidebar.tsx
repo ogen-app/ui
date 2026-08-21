@@ -42,6 +42,8 @@ import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
 import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
 import { WorkspaceMark } from '@/components/layout/WorkspaceMark.tsx'
 import { LiveStatus } from '@/components/layout/LiveStatus'
+import { ActivitySidebarItem } from '@/components/activity/ActivitySidebarItem'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { CAMPAIGN_SECTIONS, type CampaignSectionId } from '@/lib/campaignSections.ts'
 // One categorical scale for campaigns and workspaces alike — the mark is how
 // you recognise a thing, so it can't be per-entity (see lib/identity.ts).
@@ -87,6 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate()
   const { data: campaigns, isPending: campaignsPending } = useCampaigns()
   const workspace = useWorkspace()
+  const activityEnabled = useFeatureFlag('activity')
 
   const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
 
@@ -189,6 +192,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             className={cn('flex flex-col gap-1 px-3 py-0 lg:px-6', isCollapsed && 'items-center')}
           >
             <SectionLabel isCollapsed={isCollapsed}>{t('nav.modules')}</SectionLabel>
+            {/* First in the section, and first for a reason: it answers "what
+                happened while I was away", which is the question you arrive
+                with. Rendered only when the flag is on so the feature's own
+                queries mount with it (CON-225). */}
+            {activityEnabled && (
+              <ActivitySidebarItem isActive={location.pathname.startsWith('/activity')} />
+            )}
             {/* The two module rows stay in the text colour. Colour here is for
                 telling near-identical siblings apart, and these two are a pair
                 with unmistakable glyphs — tinting them would only make the rail
