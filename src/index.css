@@ -357,6 +357,24 @@
   --nav-brief: oklch(0.55 0.14 66); /* amber */
   --nav-assets: oklch(0.5 0.16 300); /* violet */
 
+  /* Brand's five sections, on the same footing as `--nav-*` above: five fixed
+     places, one permanent hue each, so five otherwise-identical line glyphs are
+     told apart by colour rather than by reading their labels.
+
+     Their own values rather than aliases of `--nav-*` for the same reason those
+     are not aliases of `--campaign-*`: the campaign rail and the Brand tabs are
+     different sets of places, and retuning one must not silently retune the
+     other. A hue coinciding is harmless — the two never appear in the same
+     list.
+
+     Same exclusions: nothing near red (~25°, the destructive voice) and nothing
+     within 20° of the teal accent (~191°). */
+  --brand-voices: oklch(0.52 0.15 268); /* blue-violet */
+  --brand-audiences: oklch(0.52 0.13 150); /* green */
+  --brand-guardrails: oklch(0.52 0.15 342); /* pink */
+  --brand-look: oklch(0.55 0.14 66); /* amber */
+  --brand-templates: oklch(0.54 0.11 214); /* cyan */
+
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-secondary: var(--tertiary);

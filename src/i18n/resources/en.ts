@@ -209,6 +209,8 @@ export const en = {
     modules: 'Modules',
     campaigns: 'Campaigns',
     contentBank: 'Content Bank',
+    /** CON-227. Behind the `brand-materials` flag — hidden while it is off. */
+    brand: 'Brand',
     workspaceSettings: 'Workspace Settings',
     profile: 'Profile',
     help: 'Help and support',

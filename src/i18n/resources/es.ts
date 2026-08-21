@@ -179,6 +179,7 @@ export const es: Translation = {
     modules: 'Módulos',
     campaigns: 'Campañas',
     contentBank: 'Banco de contenido',
+    brand: 'Marca',
     workspaceSettings: 'Ajustes del espacio',
     profile: 'Perfil',
     help: 'Ayuda y soporte',

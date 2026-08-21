@@ -8,6 +8,7 @@ import {
   CaretDoubleLeftIcon,
   GearSixIcon,
   LifebuoyIcon,
+  PaletteIcon,
   SignOutIcon,
   ToolboxIcon,
   UserIcon,
@@ -46,6 +47,7 @@ import { CAMPAIGN_SECTIONS, type CampaignSectionId } from '@/lib/campaignSection
 // One categorical scale for campaigns and workspaces alike — the mark is how
 // you recognise a thing, so it can't be per-entity (see lib/identity.ts).
 import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { ROLE_LABEL_KEYS, type Workspace } from '@/types/workspace'
 
 /** TODO: placeholder — no help site exists yet. Point at the real one when it does. */
@@ -87,6 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate()
   const { data: campaigns, isPending: campaignsPending } = useCampaigns()
   const workspace = useWorkspace()
+  const brandEnabled = useFeatureFlag('brand-materials')
 
   const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
 
@@ -205,6 +208,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               isActive={location.pathname.startsWith('/content-bank')}
               to="/content-bank"
             />
+            {/* CON-227. Below Content Bank rather than above it because it is
+                the newer of the two and the one that has to earn its place —
+                and because CON-210 is about to vacate that slot, at which point
+                Brand is what stays. Gated here as well as on the route: with
+                the flag off the app must have no Brand at all. */}
+            {brandEnabled && (
+              <AppSidebarButtonMenu
+                icon={<PaletteIcon weight="regular" className="size-5 flex-none" />}
+                text={t('nav.brand')}
+                isActive={location.pathname.startsWith('/brand')}
+                to="/brand"
+              />
+            )}
 
             {/* The nav is the same on every page, so an empty group here is
                 the first thing you see on a cold load. Three rows hold the

@@ -2,7 +2,7 @@ import { StatusBadge } from "@/components/ui/status-badge.tsx";
 import { channelReadiness, setupChecks } from "@/lib/campaignReadiness.ts";
 import type { PlatformView } from "@/lib/platformDictionary";
 import type { Campaign } from "@/types/campaigns";
-import { LineItem } from "./LineItem.tsx";
+import { LineItem } from "@/components/ui/line-item";
 import { CollapsedCard, OverviewCard, SectionLink } from "./OverviewCard.tsx";
 
 export function SetupModule({

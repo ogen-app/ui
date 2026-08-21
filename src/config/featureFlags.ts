@@ -93,6 +93,35 @@ const FEATURE_FLAGS = {
   'campaign-analytics': false,
 
   /**
+   * **Brand** — the workspace-level material every campaign writes from
+   * (CON-226/227): voices, audiences, guardrails, look, overlays. Off, and
+   * further from the API than anything else here: there is no endpoint, no
+   * table and no column. The whole module is fixtures.
+   *
+   * The flag gates the nav row *and* the route, so with it off the app has no
+   * Brand at all — which is also the state `develop` ships in while the shape
+   * is still being argued in `/design/brand`.
+   *
+   * **Waiting on:** everything in CON-228. In outline — Brand entities per
+   * workspace, tenant-scoped and fail-closed; one fetch that returns **every
+   * slot including the empty ones**, because an omitted key and an empty slot
+   * are different things on this screen; a voice reference plus a local delta
+   * on the post (replacing free-prose `toneNotes`) and on the campaign
+   * (replacing `tone_guidelines`); the generation flows reading guardrails
+   * always, the assigned voice per post, the audience per campaign; and binary
+   * handling for logos and overlays, where SVG is the open question (CON-132
+   * §10.4).
+   *
+   * Nothing outside this flag may read any of it. CON-226's shape is still
+   * moving, and per the global rule a half-defined field read by another
+   * screen is worse than a missing one — which is exactly what happened when
+   * `campaignReadiness` read `estimated_post_count` mid-redefinition.
+   *
+   * The argument this is built from: `docs/brand-materials.md`.
+   */
+  'brand-materials': false,
+
+  /**
    * The marketing-email switch on Profile (CON-155). **Off — waiting on the
    * back end.** CON-154/CON-155 shipped the suppression engine, but every
    * endpoint it exposes is public and token-gated: it verifies a signature
