@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams } from '@tanstack/react-router'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -21,6 +22,7 @@ type NotScheduledPanelProps = {
  * a scheduled post onto the panel body unschedules it.
  */
 export function NotScheduledPanel({ campaignId, onClose }: NotScheduledPanelProps) {
+  const { t } = useTranslation()
   const [dragOver, setDragOver] = useState(false)
   const { data: posts, isLoading } = useCampaignPosts(campaignId)
   const { mutate: updatePost } = useUpdatePost(campaignId)
@@ -66,7 +68,7 @@ export function NotScheduledPanel({ campaignId, onClose }: NotScheduledPanelProp
 
   return (
     <RailPanel
-      title="Not Scheduled Posts"
+      title={t('calendar.notScheduled')}
       onClose={onClose}
       className="h-full"
       bodyClassName="flex-1"

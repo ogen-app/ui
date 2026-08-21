@@ -83,24 +83,6 @@ export const DEFAULT_MONTH_FIELDS: CardFields = {
   image: true,
 }
 
-export const CARD_FIELD_LABELS: Record<CardField, string> = {
-  status: 'Status label',
-  time: 'Time',
-  title: 'Title',
-  platform: 'Platform',
-  account: 'Account',
-}
-
-/**
- * What each switch is actually for, where the label doesn't carry it. The
- * status row is the one that needs saying: turning it on doesn't add the status
- * — the card already has it, in colour — it spends a line writing it out, and
- * pushes the time onto its own line to make room.
- */
-export const CARD_FIELD_NOTES: Partial<Record<CardField, string>> = {
-  status: 'Writes the status out, and gives the time its own line',
-}
-
 export function visibleFieldCount(fields: CardFields): number {
   return CARD_FIELDS.filter((field) => fields[field]).length
 }

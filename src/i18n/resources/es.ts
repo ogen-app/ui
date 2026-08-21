@@ -213,6 +213,30 @@ export const es: Translation = {
     viewWeek: 'Semana',
     viewMonth: 'Mes',
     viewList: 'Lista',
+
+    previousWeek: 'Semana anterior',
+    nextWeek: 'Semana siguiente',
+    previousMonth: 'Mes anterior',
+    nextMonth: 'Mes siguiente',
+    preferences: 'PREFERENCIAS',
+    daysVisibility: 'VISIBILIDAD DE LOS DÍAS',
+    firstDayOfWeek: 'Primer día de la semana',
+    statusColourAlways:
+      'El color de estado del borde izquierdo de la tarjeta siempre se muestra.',
+    notAPublishingDay: 'No es un día de publicación',
+    showDay: 'Mostrar {{day}}',
+
+    field: {
+      status: 'Etiqueta de estado',
+      time: 'Hora',
+      title: 'Título',
+      platform: 'Plataforma',
+      account: 'Cuenta',
+    },
+    fieldNoteStatus: 'Escribe el estado y da a la hora su propia línea',
+    showFieldOnWeek: 'Mostrar {{field}} en la tarjeta de semana',
+    showFieldOnMonth: 'Mostrar {{field}} en la tarjeta de mes',
+
     imagePreviews: 'Mostrar las tarjetas con vista previa de la imagen',
     imagePreviewsNote: 'Solo las publicaciones que tienen imagen y, en el mes, solo en los días con espacio para una',
     weekCard: 'TARJETA DE SEMANA',
@@ -220,6 +244,21 @@ export const es: Translation = {
     addPostOn: 'Añadir una publicación el {{date}}',
     density_one: '{{count}} publicación el {{date}} — abrir esta semana',
     density_other: '{{count}} publicaciones el {{date}} — abrir esta semana',
+
+    notScheduled: 'Publicaciones sin programar',
+    addPost: 'AÑADIR PUBLICACIÓN',
+    dateLocked: 'La fecha de esta publicación está bloqueada',
+
+    empty: {
+      calendarTitle: 'Tu calendario está vacío',
+      calendarSubtitle:
+        'Añade tu primera publicación y aparecerá aquí, lista para programar.',
+      listTitle: 'Aún no hay publicaciones',
+      listSubtitle: 'Añade tu primera publicación para empezar a construir esta campaña.',
+      panelTitle: 'Nada sin programar',
+      panelSubtitle:
+        'Las publicaciones sin fecha esperan aquí — arrastra una fuera del calendario o añade una nueva.',
+    },
   },
 
   assistant: {
@@ -508,6 +547,28 @@ export const es: Translation = {
 
   postsTable: {
     sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
+
+    columnTitle: 'Título',
+    columnStatus: 'Estado',
+    columnPlatform: 'Plataforma',
+    columnPublishDate: 'Fecha de publicación',
+    columnWhen: 'Cuándo',
+
+    notSet: 'Sin definir',
+
+    noPosts: 'No hay publicaciones',
+
+    selectAll: 'Seleccionar todas las publicaciones',
+    clearSelection: 'Borrar la selección',
+    selectPost: 'Seleccionar {{title}}',
+
+    today: 'Hoy',
+    tomorrow: 'Mañana',
+    yesterday: 'Ayer',
+    inDays_one: 'Dentro de {{count}} día',
+    inDays_other: 'Dentro de {{count}} días',
+    daysAgo_one: 'Hace {{count}} día',
+    daysAgo_other: 'Hace {{count}} días',
   },
 
   posts: {
@@ -517,6 +578,21 @@ export const es: Translation = {
       compactNow: 'ahora',
       compactLate: '{{amount}} de retraso',
     },
+
+    status: {
+      draft: 'Borrador',
+      ready_for_publish: 'Lista para publicar',
+      scheduled: 'Publicación automática',
+      scheduled_for_manual_publishing: 'Publicación manual',
+      failed: 'Fallida',
+      published: 'Publicada',
+      not_published: 'No publicada',
+    },
+
+    noPlatform: 'Sin plataforma',
+    noAccount: 'Sin cuenta',
+
+    hasProblem: 'Esta publicación tiene un problema',
   },
   errors: {
     notFound: {

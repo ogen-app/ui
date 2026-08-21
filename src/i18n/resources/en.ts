@@ -281,6 +281,16 @@ export const en = {
     viewList: 'List',
 
     /**
+     * The two arrows either side of the range. They name the unit they move by,
+     * which changes with the view — the same pair of glyphs steps a week in one
+     * and a month in the other, and only the accessible name says which.
+     */
+    previousWeek: 'Previous week',
+    nextWeek: 'Next week',
+    previousMonth: 'Previous month',
+    nextMonth: 'Next month',
+
+    /**
      * Calendar Settings. One picture switch for the whole calendar, then one
      * section of row switches per view. The note is state rather than teaching
      * — a post with no picture has nothing to preview, and a user who turns
@@ -289,6 +299,34 @@ export const en = {
      * back to plain cards, which is the calendar overruling the switch and so
      * the one thing here that must not read as a bug.
      */
+    /**
+     * Calendar Settings' section headings, and the two rows that are state
+     * rather than teaching — neither can move into an `<Explainer>`, because
+     * both say something a user still needs after closing the note.
+     */
+    preferences: 'PREFERENCES',
+    daysVisibility: 'DAYS VISIBILITY',
+    firstDayOfWeek: 'First Day of Week',
+    statusColourAlways: "The status colour down the card's left edge is always shown.",
+    notAPublishingDay: 'Not a publishing day',
+    showDay: 'Show {{day}}',
+
+    /**
+     * The card switches. `fieldNoteStatus` is the one label that can't carry
+     * itself: turning the status on doesn't add it — the card already has it,
+     * in colour — it spends a line writing it out.
+     */
+    field: {
+      status: 'Status label',
+      time: 'Time',
+      title: 'Title',
+      platform: 'Platform',
+      account: 'Account',
+    },
+    fieldNoteStatus: 'Writes the status out, and gives the time its own line',
+    showFieldOnWeek: 'Show {{field}} on the week card',
+    showFieldOnMonth: 'Show {{field}} on the month card',
+
     imagePreviews: 'Show cards as image previews',
     imagePreviewsNote: 'Only posts that have a picture, and in the month only on the days with room for one',
     weekCard: 'WEEK CARD',
@@ -306,6 +344,39 @@ export const en = {
     addPostOn: 'Add a post on {{date}}',
     density_one: '{{count}} post on {{date}} — open this week',
     density_other: '{{count}} posts on {{date}} — open this week',
+
+    /** The right rail's holding pen for posts with no date yet. */
+    notScheduled: 'Not Scheduled Posts',
+
+    /**
+     * The one control a day offers, in both grids. Capitalised like every
+     * other action; the month's is icon-only and takes `addPostOn` above as
+     * its title instead.
+     */
+    addPost: 'ADD POST',
+
+    /**
+     * A post whose date can no longer be moved by dragging it. The mark is the
+     * only thing saying so, so its accessible name is the explanation.
+     */
+    dateLocked: "This post's date is locked",
+
+    /**
+     * The empty states, one per surface. Week and month deliberately share
+     * their words: it is the same empty calendar, and a user switching
+     * granularity on an empty campaign should not be told two different things
+     * about it.
+     */
+    empty: {
+      calendarTitle: 'Your calendar is empty',
+      calendarSubtitle:
+        'Add your first post and it will show up here, ready to schedule.',
+      listTitle: 'No posts yet',
+      listSubtitle: 'Add your first post to start building this campaign.',
+      panelTitle: 'Nothing unscheduled',
+      panelSubtitle:
+        'Posts without a date wait here — drag one off the calendar, or add a new one.',
+    },
   },
 
   assistant: {
@@ -652,9 +723,78 @@ export const en = {
 
   postsTable: {
     sortSaveFailed: "Couldn't save the order you sorted by",
+
+    /**
+     * The column headers, also drawn in the empty state's sketch of the table
+     * — one set of words for both, so the sketch is of *this* table.
+     */
+    columnTitle: 'Title',
+    columnStatus: 'Status',
+    columnPlatform: 'Platform',
+    columnPublishDate: 'Publish date',
+    columnWhen: 'When',
+
+    /** A post with no publish date, in either date column. */
+    notSet: 'Not set',
+
+    /** The table with no rows in it — the campaign has posts, this filter doesn't. */
+    noPosts: 'No posts',
+
+    /**
+     * The select column. The header's name changes with what pressing it will
+     * do, because a tick box that both selects all and clears all cannot say
+     * which from its state alone.
+     */
+    selectAll: 'Select all posts',
+    clearSelection: 'Clear selection',
+    selectPost: 'Select {{title}}',
+
+    /**
+     * The `When` column, which says the same date as `Publish date` in the
+     * terms a person would use out loud. The three named days come first
+     * because they are the ones worth recognising without arithmetic; beyond
+     * that it counts.
+     */
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    yesterday: 'Yesterday',
+    inDays_one: 'In {{count}} day',
+    inDays_other: 'In {{count}} days',
+    daysAgo_one: '{{count}} day ago',
+    daysAgo_other: '{{count}} days ago',
   },
 
   posts: {
+    /**
+     * The post statuses, as the app names them. Not the server's words: these
+     * are read on a card at a glance, so `scheduled` is written as the thing
+     * that will happen to the post ("Auto-publish") rather than as the state
+     * it is sitting in.
+     */
+    status: {
+      draft: 'Draft',
+      ready_for_publish: 'Ready for Publish',
+      scheduled: 'Auto-publish',
+      scheduled_for_manual_publishing: 'Manual publish',
+      failed: 'Failed',
+      published: 'Published',
+      not_published: 'Not Published',
+    },
+
+    /**
+     * The two absences a calendar card can carry. Both are shown in place of a
+     * name, so each has to read as a fact about the post rather than as a
+     * missing value.
+     */
+    noPlatform: 'No platform',
+    noAccount: 'No account',
+
+    /**
+     * The card's warning mark. What is wrong is in the post itself — the mark
+     * only says to go and look — so this is deliberately the whole of it.
+     */
+    hasProblem: 'This post has a problem',
+
     /**
      * The bottom bar's read-only publish status (CON-195). `when` arrives
      * already localised from `Intl.RelativeTimeFormat` ("in 2 days", "2 days

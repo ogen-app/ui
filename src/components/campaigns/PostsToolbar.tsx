@@ -133,7 +133,7 @@ export function PostsToolbar({
               variant="default"
               size="defaultIcon"
               onClick={() => step(-1)}
-              aria-label={view === 'month' ? 'Previous month' : 'Previous week'}
+              aria-label={t(view === 'month' ? 'calendar.previousMonth' : 'calendar.previousWeek')}
               // The calendar binds the arrow keys to these two buttons; saying
               // so here is what puts the shortcut in front of a screen-reader
               // user, who has nothing else to discover it from.
@@ -152,7 +152,7 @@ export function PostsToolbar({
               variant="default"
               size="defaultIcon"
               onClick={() => step(1)}
-              aria-label={view === 'month' ? 'Next month' : 'Next week'}
+              aria-label={t(view === 'month' ? 'calendar.nextMonth' : 'calendar.nextWeek')}
               aria-keyshortcuts="ArrowRight"
             >
               <CaretRightIcon />
@@ -202,7 +202,7 @@ export function PostsToolbar({
 
           <Button variant="default" onClick={() => addPost()}>
             <PlusIcon />
-            <span>ADD POST</span>
+            <span>{t('calendar.addPost')}</span>
           </Button>
         </div>
       </div>
