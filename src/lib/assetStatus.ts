@@ -6,7 +6,7 @@ export type UploadKind = "md" | "pdf";
 const MB = 1 << 20;
 
 /** Per-extension upload limits, mirroring the Go backend (assets.go). */
-export const UPLOAD_LIMITS: Record<UploadKind, number> = {
+const UPLOAD_LIMITS: Record<UploadKind, number> = {
   md: 10 * MB,
   pdf: 50 * MB,
 };
@@ -18,7 +18,7 @@ export const UPLOAD_LIMITS_LABEL =
   "Markdown (.md) up to 10 MB · PDF (.pdf) up to 50 MB";
 
 /** Maps a filename extension to an upload kind, or null if unsupported. */
-export function detectUploadKind(filename: string): UploadKind | null {
+function detectUploadKind(filename: string): UploadKind | null {
   const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
   if (ext === ".md") return "md";
   if (ext === ".pdf") return "pdf";

@@ -2,20 +2,10 @@
  * Cache and storage utilities for the application
  */
 
-// import { useAuthStore } from '@/stores/authStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { queryClient } from '@/lib/queryClient'
 import { resetPrefetchLatch } from '@/lib/prefetch'
 import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
-
-/**
- * Result of a storage clearing operation
- */
-export type ClearResult = {
-  type: string
-  success: boolean
-  error?: Error
-}
 
 /**
  * Helper to delete a single IndexedDB database with timeout protection
@@ -39,15 +29,6 @@ function deleteIndexedDatabase(dbName: string): Promise<void> {
       setTimeout(() => reject(new Error(`Timeout deleting database ${dbName}`)), 2000)
     ),
   ])
-}
-
-/**
- * Clears non-auth data stores without touching auth state.
- * Used during login/register to remove stale guest data before loading the new user's data.
- * Clears: portfolios, reference data caches, and user-specific settings.
- */
-export function clearNonAuthData(): void {
-
 }
 
 /**

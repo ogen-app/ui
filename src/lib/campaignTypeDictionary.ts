@@ -26,7 +26,7 @@ export type CampaignTypeInfo = {
   icon: Icon;
 };
 
-export const CAMPAIGN_TYPES: Record<string, CampaignTypeInfo> = {
+const CAMPAIGN_TYPES: Record<string, CampaignTypeInfo> = {
   evergreen: {
     label: "Evergreen",
     description:
