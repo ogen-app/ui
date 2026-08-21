@@ -53,8 +53,18 @@ export const Route = createFileRoute(
 function CalendarView() {
   const { campaignId, anchor, view } = Route.useParams();
   const navigate = useNavigate();
-  const { data: posts, isLoading: postsPending } = useCampaignPosts(campaignId);
+  const {
+    data: posts,
+    isLoading: postsPending,
+    isError: postsError,
+  } = useCampaignPosts(campaignId);
   const rows = posts ?? NO_POSTS;
+  // A failed fetch is not an empty campaign: without this, an error left
+  // `rows` empty with `postsPending` false, and the screen invited the user to
+  // add their first post to a campaign that may hold dozens. Cached rows from
+  // an earlier success still draw — only a fetch that never answered is a
+  // failure here.
+  const postsFailed = postsError && posts === undefined;
   // The grid reads the settings itself; the route only needs to know whether
   // they have arrived.
   const { isPending: settingsPending } = useCalendarSettings(campaignId);
@@ -110,7 +120,12 @@ function CalendarView() {
         anchor={anchorDate}
         onAnchorChange={handleAnchorChange}
       />
-      {settingsPending ? null : !postsPending && rows.length === 0 ? (
+      {settingsPending ? null : postsFailed ? (
+        <p className="px-6 py-8 text-sm text-tertiary-foreground">
+          Couldn’t load this campaign’s posts — the calendar will fill in once
+          they’re reachable again.
+        </p>
+      ) : !postsPending && rows.length === 0 ? (
         // Only once the query has answered: the invitation to add the first
         // post is a claim about the campaign, and an empty grid is the honest
         // way to wait for it.

@@ -29,24 +29,6 @@ export function invalidateCampaignPosts(qc: QueryClient, campaignId: string): vo
 }
 
 /**
- * Writes a just-saved post into its campaign's list.
- *
- * A patch rather than an invalidation, for two reasons. It is exact — the
- * server hydrates its `PUT`/`GET` response through the same query the list
- * endpoint uses, so the row we hold *is* the row a refetch would return — and
- * it costs nothing, which matters because the editor's autosave calls this
- * every 600ms while someone types, with the list query mounted the whole time
- * (`usePostNeighbours`). Invalidating there would refetch the campaign's posts
- * on every typing burst.
- *
- * The summaries roll-up still gets invalidated: it is derived from post content
- * rather than copied from it, so there is nothing here to patch it with. It is
- * never mounted at the same time as the editor, so this only marks it stale.
- *
- * A post the list doesn't have yet is left alone — an unfetched list will
- * fetch, and a new post arrives through the create path, which invalidates.
- */
-/**
  * The campaign list's copy of a post, for opening the editor on it without a
  * fetch first.
  *
