@@ -75,7 +75,7 @@ function WorkspaceSettings() {
   }
 
   return (
-    <PageContainer variant="fullFlex">
+    <PageContainer variant="fullFlex" className="page-content-motion">
       <SettingsSaveProvider>
         {/* The scroller is nested inside a positioned wrapper so the save bar
             can anchor to the column without scrolling away with the cards. */}

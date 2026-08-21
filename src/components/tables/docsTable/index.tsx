@@ -19,6 +19,8 @@ type AssetsTableProps = {
   emptyStateMessage?: string
   emptyStateActionLabel?: string
   onEmptyStateAction?: () => void
+  /** Reaches the table's own root — it is the grid item its page sizes. */
+  className?: string
 }
 
 function formatDate(dateStr: string): string {
@@ -36,6 +38,7 @@ function AssetsTableComponent({
   emptyStateMessage = 'No content assets',
   emptyStateActionLabel,
   onEmptyStateAction,
+  className,
 }: AssetsTableProps) {
   const data = assets as AssetRow[]
 
@@ -169,6 +172,7 @@ function AssetsTableComponent({
       emptyStateMessage={emptyStateMessage}
       emptyStateActionLabel={emptyStateActionLabel}
       onEmptyStateAction={onEmptyStateAction}
+      className={className}
     />
   )
 }

@@ -85,7 +85,7 @@ function AssetPage() {
   }
 
   return (
-    <PageContainer variant={'fullFlex'}>
+    <PageContainer variant={'fullFlex'} className={'page-content-motion'}>
       <ScrollArea className={'flex-1 min-h-0 lg:px-6'} type={'scroll'} scrollHideDelay={350}>
           <EditPageHeader
             title={((title ?? asset.title).trim() === '' ? 'untitled' : (title ?? asset.title))}

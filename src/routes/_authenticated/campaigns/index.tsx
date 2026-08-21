@@ -42,7 +42,7 @@ function Campaigns() {
   // at it. The header itself does not fade: this is the list you steer from,
   // so "Campaigns" and ADD CAMPAIGN stay legible however far you scroll.
   return (
-    <PageContainer variant="fullFlex">
+    <PageContainer variant="fullFlex" className="page-content-motion">
       <div className="h-0 grow overflow-y-auto flex flex-col">
         <PageHeader
           title="Campaigns"

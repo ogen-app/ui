@@ -95,9 +95,11 @@ export function CampaignAnalyticsView({
   return (
     <div className="flex flex-col gap-3 pb-10">
       {isPending ? (
+        // Both stand for `OverviewCard`s, so they are drawn in the card's own
+        // white rather than in grey — see `ui/skeleton`.
         <>
-          <Skeleton className="h-40 w-full max-w-content mx-auto" />
-          <Skeleton className="h-64 w-full max-w-content mx-auto" />
+          <Skeleton variant="surface" className="h-40 w-full max-w-content mx-auto" />
+          <Skeleton variant="surface" className="h-64 w-full max-w-content mx-auto" />
         </>
       ) : isUnavailable ? (
         <OverviewCard title="Engagement">

@@ -61,6 +61,12 @@ export const Route = createFileRoute(
 
 function PostPage() {
   const { campaignId, postId } = Route.useParams()
+  // Declared by the route, not by the editor below it: being on a post is what
+  // makes the post panels resolvable, and that is true from the moment the URL
+  // is. Inside the editor it would drop for as long as the document takes to
+  // arrive — the rail would fall back to the assistant and animate its width
+  // twice on the way to a post nobody had opened before.
+  usePanelScope('post', campaignId)
   const {
     doc,
     changeDoc,
@@ -205,10 +211,9 @@ function PostEditorSurface({
 
   // The settings form renders in the shared right sidebar (one panel at a
   // time, alongside the AI assistant). The route owns the form because it
-  // owns the post's autosave pipeline; the sidebar only hosts the layer.
-  // Declaring the scope is what makes these four resolvable at all — off this
-  // screen they stay remembered but the rail falls back to the assistant.
-  usePanelScope('post', campaignId)
+  // owns the post's autosave pipeline; the sidebar only hosts the layer. What
+  // makes these four resolvable at all is the scope `PostPage` declares — off
+  // this screen they stay remembered but the rail falls back to the assistant.
   const activePanel = useSettingsStore(selectActivePanel)
   const settingsOpen = activePanel === 'postSettings'
   const previewOpen = activePanel === 'postPreview'
@@ -340,7 +345,11 @@ function PostEditorSurface({
   }, [doc.title, doc.content])
 
   return (
-    <PageContainer variant="fullFlex">
+    // Fades in rather than appearing whole. The document, the bars and the
+    // cards all become ready in the same commit, so without this the screen
+    // arrives as one hard cut — from a spinner, or from the post that was here
+    // a moment ago. Keyed by post above, so the fade plays on each one.
+    <PageContainer variant="fullFlex" className="page-content-motion">
       {/* `relative` so the action bar anchors to the content column rather
           than the window: the right rail is a sibling of this container, so
           the bar recentres when a panel opens instead of drifting off the

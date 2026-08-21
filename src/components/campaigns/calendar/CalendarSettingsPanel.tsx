@@ -96,9 +96,9 @@ export function CalendarSettingsPanel({
           {/* One answer, which is why it is here and not a sixth switch on
               each card list: it is the most expensive thing a card can carry,
               and turning it off is a decision about what the calendar is for
-              rather than about what a week card needs. In practice it reaches
-              the week only — the month never draws pictures, because the band
-              is the whole cell (see `useCalendarSettings`). */}
+              rather than about what a week card needs. It reaches both views —
+              the month on a shorter band, and only on the days that have room
+              for one (see `cardRungs`). */}
           <div className="mt-2 flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2">
             <span className="flex min-w-0 flex-col">
               <span className="text-sm">{t('calendar.imagePreviews')}</span>
@@ -116,41 +116,6 @@ export function CalendarSettingsPanel({
               />
             )}
           </div>
-        </div>
-      </Collapse>
-
-      <Collapse title="DAYS VISIBILITY" defaultOpen className="border-b border-border pb-6">
-        <div className="flex flex-col gap-1 pt-2">
-          {WEEK_DAYS.map((day) => {
-            // Why a hidden day may be safe to hide: the campaign never
-            // publishes on it. State, not teaching, so it sits in the row
-            // rather than in a note the user can close.
-            const unused = publishingDays !== null && !publishingDays.includes(day)
-            return (
-              <div
-                key={day}
-                className="flex h-10 items-center justify-between gap-3 bg-secondary px-4"
-              >
-                <span className="flex min-w-0 items-baseline gap-2">
-                  <span className="text-sm">{DAY_LABELS[day]}</span>
-                  {unused && (
-                    <span className="truncate text-xs text-tertiary-foreground">
-                      Not a publishing day
-                    </span>
-                  )}
-                </span>
-                {isPending ? (
-                  <Skeleton className="h-5 w-9" />
-                ) : (
-                  <Switch
-                    checked={!hiddenDays.includes(day)}
-                    onCheckedChange={(checked) => setDayVisible(day, checked)}
-                    aria-label={`Show ${DAY_LABELS[day]}`}
-                  />
-                )}
-              </div>
-            )
-          })}
         </div>
       </Collapse>
 
@@ -202,6 +167,49 @@ export function CalendarSettingsPanel({
           </div>
         </Collapse>
       ))}
+
+      {/* Last, and shut.
+          It is seven switches — the longest list in the panel — and it is the
+          one a user sets once, if ever: which days the grid has columns for is
+          a property of how they work, not something they come back to tune the
+          way they tune what a card shows. Open by default it pushed the two
+          card sections, the ones this panel is actually opened for, off the
+          bottom of the rail. Closed, it is a title they can find when they want
+          it and a line of chrome when they don't. */}
+      <Collapse title="DAYS VISIBILITY" className="border-b border-border pb-6">
+        <div className="flex flex-col gap-1 pt-2">
+          {WEEK_DAYS.map((day) => {
+            // Why a hidden day may be safe to hide: the campaign never
+            // publishes on it. State, not teaching, so it sits in the row
+            // rather than in a note the user can close.
+            const unused = publishingDays !== null && !publishingDays.includes(day)
+            return (
+              <div
+                key={day}
+                className="flex h-10 items-center justify-between gap-3 bg-secondary px-4"
+              >
+                <span className="flex min-w-0 items-baseline gap-2">
+                  <span className="text-sm">{DAY_LABELS[day]}</span>
+                  {unused && (
+                    <span className="truncate text-xs text-tertiary-foreground">
+                      Not a publishing day
+                    </span>
+                  )}
+                </span>
+                {isPending ? (
+                  <Skeleton className="h-5 w-9" />
+                ) : (
+                  <Switch
+                    checked={!hiddenDays.includes(day)}
+                    onCheckedChange={(checked) => setDayVisible(day, checked)}
+                    aria-label={`Show ${DAY_LABELS[day]}`}
+                  />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </Collapse>
     </RailPanel>
   )
 }

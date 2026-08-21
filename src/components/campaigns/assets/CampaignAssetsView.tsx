@@ -47,11 +47,15 @@ export function CampaignAssetsView({
   );
 
   return (
+    // The fade is this view's own arrival, not the section's: the assets are a
+    // real fetch, so the panel above it shows a loader first and the section's
+    // fade is long finished by the time the table lands.
+    //
     // `overflow-y-auto` only ever fires when the list is empty and its floor
     // out-grows a short window. With rows the table shrinks to fit and
     // scrolls itself, so the page scrollbar never appears and the two never
     // compete for a wheel gesture.
-    <div className="flex min-h-0 flex-col gap-4 overflow-y-auto py-4">
+    <div className="page-content-motion flex min-h-0 flex-col gap-4 overflow-y-auto py-4">
       <div className="shrink-0">
         <ContentSourcesCard
           mode={mode}

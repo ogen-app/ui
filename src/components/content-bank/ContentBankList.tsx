@@ -71,6 +71,11 @@ export function ContentBankList({ category }: { category: ContentBankTab }) {
       assets={filtered}
       onDelete={(id) => deleteAsset.mutate(id)}
       emptyStateMessage={EMPTY_MESSAGE[category]}
+      // The bank is a real fetch, so this arrives after a loader rather than
+      // with the page around it. On the class rather than a wrapper: the table
+      // is the grid item the layout sizes, and a div in between would take
+      // that role and leave the table to grow past the window.
+      className="page-content-motion"
     />
   );
 }

@@ -229,11 +229,14 @@ export function useCalendarSettings(campaignId: string) {
   )
 
   // The stored per-view blobs carry an `image` of their own only because they
-  // are typed as whole `CardFields`; the preference is stamped in here so no
-  // card has to know where it comes from. Only the week takes it: the month's
-  // answer is always no, because a 100px band is the whole cell — one backed
-  // post would tip every such day into a density summary (see
-  // `DEFAULT_MONTH_FIELDS`).
+  // are typed as whole `CardFields`; the preference is stamped over both here,
+  // so no card has to know where it comes from and one switch means one switch.
+  //
+  // The month takes it too, which it did not use to: it draws on a band a
+  // little over half the week's (`CARD_BANDS`), and where even that doesn't fit
+  // the day it gives the picture up rather than the day (`fitMonthCell`). So
+  // what this stamps on the month is permission, not a promise — a busy
+  // Tuesday still shows its titles.
   //
   // Memoized because the identity is load-bearing: `card.week` is a `useMemo`
   // dependency in `WeeklyCalendar` and a `memo` prop on every `PostCard`, so a
@@ -241,7 +244,7 @@ export function useCalendarSettings(campaignId: string) {
   const card = useMemo<Record<CalendarView, CardFields>>(
     () => ({
       week: { ...settings.card.week, image: settings.imagePreviews },
-      month: { ...settings.card.month, image: false },
+      month: { ...settings.card.month, image: settings.imagePreviews },
     }),
     [settings.card.week, settings.card.month, settings.imagePreviews],
   )
