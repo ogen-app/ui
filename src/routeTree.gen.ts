@@ -15,6 +15,7 @@ import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unav
 import { Route as InviteIndexRouteImport } from './routes/invite/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
@@ -69,6 +70,11 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
@@ -225,6 +231,7 @@ const AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/activity': typeof AuthenticatedActivityRouteWithChildren
+  '/tasks': typeof AuthenticatedTasksRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
@@ -256,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/campaigns/$campaignId/calendar/$anchor/$view': typeof AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute
 }
 export interface FileRoutesByTo {
+  '/tasks': typeof AuthenticatedTasksRoute
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
   '/invite': typeof InviteIndexRoute
@@ -290,6 +298,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_authenticated/activity': typeof AuthenticatedActivityRouteWithChildren
+  '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
@@ -326,6 +335,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activity'
+    | '/tasks'
     | '/auth/'
     | '/invite/'
     | '/server-unavailable/'
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId/calendar/$anchor/$view'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/tasks'
     | '/'
     | '/auth'
     | '/invite'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/_authenticated/activity'
+    | '/_authenticated/tasks'
     | '/_authenticated/'
     | '/auth/'
     | '/invite/'
@@ -477,6 +489,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tasks': {
+      id: '/_authenticated/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AuthenticatedTasksRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/activity': {
@@ -720,6 +739,7 @@ const AuthenticatedCampaignsCampaignIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRouteWithChildren
+  AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCampaignsCampaignIdRoute: typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   AuthenticatedContentBankAssetIdRoute: typeof AuthenticatedContentBankAssetIdRoute
@@ -734,6 +754,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedActivityRoute: AuthenticatedActivityRouteWithChildren,
+  AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCampaignsCampaignIdRoute:
     AuthenticatedCampaignsCampaignIdRouteWithChildren,

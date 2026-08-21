@@ -5,6 +5,7 @@ import { getSetting, putSetting, userScopedKey } from '@/services/api/settings'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from '@/stores/toastStore'
 import { useCampaignSummaries } from '@/hooks/useCampaigns'
+import { useTasks } from '@/hooks/useTasks'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { activityFeed, unreadCount, type ActivityEntry } from '@/lib/activityFeed'
 
@@ -87,14 +88,17 @@ export type ActivityFeedResult = {
 export function useActivityFeed(): ActivityFeedResult {
   const enabled = useFeatureFlag('activity')
   const { data, isLoading, isError, dataUpdatedAt } = useCampaignSummaries()
+  // Empty while the tasks flag is off, so the feed is exactly what it was
+  // before tasks existed.
+  const { tasks } = useTasks()
 
   // One `now` per delivery of the data rather than one per render: it feeds the
   // day grouping, the future-event guard and the unread rule, and a fresh clock
   // on every render would recompute the whole feed each time.
   const now = useMemo(() => new Date(), [dataUpdatedAt])
   const entries = useMemo(
-    () => (enabled && data ? activityFeed(data, now) : []),
-    [enabled, data, now],
+    () => (enabled && data ? activityFeed(data, now, tasks) : []),
+    [enabled, data, now, tasks],
   )
 
   return { entries, now, isLoading: enabled && isLoading, isError: enabled && isError }

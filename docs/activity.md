@@ -16,10 +16,10 @@ live feed is Phase 2 and waits on CON-224; until then the only post entries a
 reader sees are outcomes and the daily reports, and they are *derived* rather
 than recorded, which the flag's own comment spells out.
 
-**Tasks are a separate feature** (CON-234), a module of their own next door in
-the rail rather than a card on this screen. "Edges and levels" below is the
-distinction the two rest on, and it is the reason this one ships with read and
-unread as its only verbs.
+**Tasks are a separate feature** (CON-234, [`tasks.md`](./tasks.md)), a module
+of their own next door in the rail rather than a card on this screen. "Edges and
+levels" below is the distinction the two rest on, and it is the reason this one
+ships with read and unread as its only verbs.
 
 ## The gap
 
@@ -245,9 +245,10 @@ it is a date, nothing sensitive.
 read state moves server-side per entry, and the Phase 1 timestamp is deleted.
 
 Both phases sit behind one flag in `config/featureFlags.ts`; Phase 1 can flip on
-without Phase 2. **Tasks are a separate feature with a separate flag** (CON-234)
-on its own timetable: they are stored rather than derived, so they wait on a
-table rather than on CON-224, and either can ship without the other.
+without Phase 2. **Tasks are a separate feature with a separate flag** (CON-234,
+[`tasks.md`](./tasks.md)) on its own timetable: they are stored rather than
+derived, so they wait on a table rather than on CON-224, and either can ship
+without the other.
 
 ## Open dependencies
 

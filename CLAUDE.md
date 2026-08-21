@@ -27,6 +27,7 @@ Content-Bank AI images are secondary. See
 - **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
 - **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
 - **Activity feed & daily report — proposal:** [`docs/activity.md`](./docs/activity.md)
+- **Tasks — proposal:** [`docs/tasks.md`](./docs/tasks.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal

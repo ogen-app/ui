@@ -9,7 +9,10 @@ import {
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
+  ArrowCounterClockwiseIcon,
   CaretRightIcon,
+  CheckCircleIcon,
+  CheckSquareIcon,
   ChecksIcon,
   NotebookIcon,
   ProhibitIcon,
@@ -22,13 +25,19 @@ import { PageError } from '@/components/page-primitives/PageError'
 import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState'
 import { Button } from '@/components/ui/button'
 import { useActivityFeed, useActivityLastSeen } from '@/hooks/useActivity'
+import { useTaskReconciliation } from '@/hooks/useTasks'
 import { getPlatformInfo } from '@/lib/platformDictionary'
-import { dayKey, isUnread, type ActivityEntry } from '@/lib/activityFeed'
+import { dayKey, isTaskEntry, isUnread, type ActivityEntry } from '@/lib/activityFeed'
 import { cn } from '@/lib'
 import { useDayLabel, useTimeLabel } from '@/hooks/useActivityLabels'
 
 /**
  * The Activity page: everything that happened in this workspace, newest first.
+ *
+ * Tasks are the module next door (`components/tasks/TasksBoard`), not a card at
+ * the top of this one: what happened and what is owed are two objects, read at
+ * different times and for different reasons, and stacking them made the feed
+ * carry a permanent lid that had nothing to do with the feed.
  *
  * **A day is a card** — the same object the Campaigns list is built from, for
  * the same reason: these are the units you compare, and the page reads as a
@@ -46,6 +55,12 @@ export function ActivityFeed() {
   const { t } = useTranslation()
   const { entries, now, isLoading, isError } = useActivityFeed()
   const { lastSeen, isLoading: lastSeenLoading, markAllRead } = useActivityLastSeen()
+  // There is no server raising or resolving tasks, so a screen has to. Both
+  // this one and the Tasks board do — they are separate destinations and can
+  // never be mounted at once, so there is still only ever one writer, and a
+  // task's closure reaches the feed on whichever of the two you opened. See
+  // `useTaskReconciliation`.
+  useTaskReconciliation()
 
   const unread = useMemo(
     () => entries.filter((entry) => isUnread(entry, lastSeen, now)).length,
@@ -242,7 +257,7 @@ function EntrySection({ entry, unread }: { entry: ActivityEntry; unread: boolean
   const { t } = useTranslation()
   const timeLabel = useTimeLabel()
 
-  const heading = (icon: ReactNode, title: string) => (
+  const heading = (icon: ReactNode, title: string, linked = true) => (
     <div className="flex items-center gap-3 min-w-0">
       {icon}
       <span className="min-w-0 flex-1 truncate text-sm text-primary-foreground">{title}</span>
@@ -250,8 +265,8 @@ function EntrySection({ entry, unread }: { entry: ActivityEntry; unread: boolean
         {timeLabel(entry.at)}
       </span>
       {/* The dot is what "unread" means here — there is no other state, and
-          there deliberately won't be one. Dismissing and resolving are verbs
-          for a thing that is still owed, not for a record of what happened. */}
+          there deliberately won't be one until tasks arrive to own dismissing
+          and resolving. */}
       <span
         className={cn(
           'size-2 shrink-0 rounded-md',
@@ -259,13 +274,18 @@ function EntrySection({ entry, unread }: { entry: ActivityEntry; unread: boolean
         )}
         aria-label={unread ? t('activity.unread') : undefined}
       />
-      {/* A caret is a promise that there is somewhere to go, and every entry
-          here has exactly one destination — the place the thing happened. */}
-      <CaretRightIcon
-        className="size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-        weight="bold"
-        aria-hidden
-      />
+      {/* A caret is a promise that there is somewhere to go. What happened to
+          a task has no destination of its own — the task is upstairs on the
+          card — so that row keeps the space and drops the mark. */}
+      {linked ? (
+        <CaretRightIcon
+          className="size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
+          weight="bold"
+          aria-hidden
+        />
+      ) : (
+        <span className="size-4 shrink-0" aria-hidden />
+      )}
     </div>
   )
 
@@ -286,6 +306,27 @@ function EntrySection({ entry, unread }: { entry: ActivityEntry; unread: boolean
           t('activity.entry.reportTitle'),
         )}
       </Link>
+    )
+  }
+
+  if (isTaskEntry(entry)) {
+    return (
+      <div className={className}>
+        {heading(
+          entry.kind === 'task_completed' ? (
+            <CheckCircleIcon weight="regular" className="size-5 shrink-0 text-positive" />
+          ) : entry.kind === 'task_resolved' ? (
+            <ArrowCounterClockwiseIcon
+              weight="regular"
+              className="size-5 shrink-0 text-tertiary-foreground"
+            />
+          ) : (
+            <CheckSquareIcon weight="regular" className="size-5 shrink-0 text-tertiary-foreground" />
+          ),
+          t(`activity.entry.${entry.kind}`, { title: entry.title }),
+          false,
+        )}
+      </div>
     )
   }
 
