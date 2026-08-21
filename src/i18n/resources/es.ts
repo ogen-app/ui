@@ -515,6 +515,29 @@ export const es: Translation = {
       compactLate: '{{amount}} de retraso',
     },
   },
+  tiers: {
+    notInPlan: 'No está en tu plan',
+    notInPlanBody:
+      'Esto no forma parte del plan de tu espacio de trabajo. Al mejorarlo, se activa para todo el equipo.',
+
+    limitReached: 'Has alcanzado tu límite',
+    resets: 'Tu cuota vuelve a estar completa el {{when}}.',
+
+    usage: '{{used}} de {{limit}}',
+    usageDay: '{{used}} de {{limit}} hoy',
+    usageMonth: '{{used}} de {{limit}} este mes',
+    usagePost: '{{used}} de {{limit}} en esta publicación',
+    usagePublish: '{{used}} de {{limit}} para esta publicación',
+    unlimited: 'Sin límite',
+
+    upgrade: 'MEJORAR PLAN',
+
+    suspended: 'Solo lectura',
+    suspendedBody:
+      'Tu plan ha cambiado, así que esto es de solo lectura por ahora. No se ha eliminado nada: sigue todo aquí, y al mejorar el plan vuelve a ser editable.',
+    suspendedSince: 'De solo lectura desde el {{when}}.',
+  },
+
   errors: {
     notFound: {
       code: '404',

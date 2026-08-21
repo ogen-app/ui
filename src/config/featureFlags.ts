@@ -113,6 +113,44 @@ const FEATURE_FLAGS = {
    * CON-44; the client, the menu item and the confirm step are already written.
    */
   'post-version-delete': false,
+
+  /**
+   * Workspace tiers — what the plan a workspace is on allows, and how the app
+   * says so when it doesn't (CON-232). **Off — waiting on the back end.**
+   *
+   * Note what this flag is and isn't. A flag decides whether a feature is built
+   * yet; it is never who is allowed to see what. That is exactly why tiers get
+   * their own seam (`useEntitlement`) instead of entries in this file: the
+   * question "has anyone paid for this" is the server's, answered per
+   * workspace, and it would be wrong here even once the endpoint exists. This
+   * flag switches off *the asking*, not the answer.
+   *
+   * **Waiting on:** `GET /api/entitlements` — the resolved tier plus its
+   * allowances, contract written out in `services/api/entitlements.ts` and
+   * asserted by its test. CON-208 (tenant tiers and groups) and CON-86 (usage
+   * metering and per-tenant cost limits) are both done server-side, so the
+   * tiers and the counters exist; what is missing is a workspace-scoped REST
+   * read that puts them together. Three things it must carry that are easy to
+   * leave out:
+   *
+   * 1. **The resolved numbers, not a tier name.** Tiers are versioned and
+   *    configurable and a workspace keeps the version it bought, so the name is
+   *    a label two workspaces can share while holding different allowances.
+   * 2. **`scheduled_change`.** A downgrade lands at the next billing boundary,
+   *    so the workspace is on one tier while another is already bought. The
+   *    client cannot derive it and must not try.
+   * 3. **`used` beside every `limit`.** Without the counter the UI can only
+   *    apologise after the click instead of disabling the control.
+   *
+   * And one thing that belongs elsewhere: a downgrade suspends rather than
+   * deletes, and the server picks which campaign goes read-only — so the
+   * `suspended` flag has to ride on the resource. The client must never work it
+   * out by counting, or it picks a different victim than the server did.
+   *
+   * With this off nothing asks, nothing renders a lock, and every feature is
+   * available exactly as it was before tiers existed.
+   */
+  'workspace-tiers': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

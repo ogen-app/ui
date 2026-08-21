@@ -174,6 +174,30 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   from the `FEATURE_FLAGS` record directly: the hook is the seam where
   server-driven values will land, and going through it keeps every call site
   untouched when they do. A flag is not a permission.
+- **What the workspace's tier allows is `useEntitlement(key)`, never a flag**
+  (CON-232). A flag says whether a feature is *built*; a tier says whether this
+  workspace *bought* it — per workspace, and therefore the server's answer. Four
+  rules make the seam safe. **Unknown key allows**: a feature the tier settings
+  don't mention is one nobody decided to charge for, so it works the day it
+  ships instead of going dark until every tier is taught about it. **Unresolved
+  decides nothing** — `pending` is a state in the union, because rendering a
+  lock while the plan is in flight tells a paying customer they didn't pay.
+  **The client never maps a tier name to a number**: tiers are versioned and
+  configurable and a workspace keeps the version it bought, so two "Pro"s can
+  hold different allowances and only the server's resolved snapshot is true.
+  **Dates are display data** — never an input to a decision, or a wrong system
+  clock becomes a billing one. It is a hook rather than a `<Gate>` wrapper
+  because *hidden* is a legitimate answer and a wrapper can't remove the `<li>`
+  around it: the call site chooses hide / lock / lock-with-upgrade, and only the
+  renderings are shared (`components/entitlements`).
+- **A downgrade suspends; the server picks what.** Nothing is deleted, and the
+  new tier only lands at the next billing boundary. A workspace that drops to
+  one campaign and has two keeps both, with one flagged read-only *by the
+  server* — never worked out on the client by counting against a limit, which
+  would pick a different victim than the server did and a different one per tab.
+  So gating applies to **creating and choosing**, never to displaying what
+  exists: suspended things stay in their lists and still open, and every picker
+  has to tolerate a current value that is no longer among its options.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
@@ -282,6 +306,18 @@ token-gated unsubscribe pages, not a session-authenticated one, so
 contract is in `services/api/emailPreferences.ts` and asserted by its test.
 Flip the flag when the handler answers. See
 `docs/technical-decisions.md#email-preferences`.
+
+**Workspace tiers are a seam with no screens on it yet** (`workspace-tiers`,
+CON-232). `types/entitlements.ts`, `lib/entitlements.ts`, `useEntitlement` and
+the shared renderings in `components/entitlements` are written and tested; no
+feature is gated by them, so nothing changes on screen either way. **Waiting
+on** `GET /api/entitlements` — the contract is in `services/api/entitlements.ts`
+and asserted by its test. CON-208 (tenant tiers and groups) and CON-86 (usage
+metering) are done server-side, so the tiers and the counters exist; what is
+missing is a workspace-scoped REST read that puts them together, plus a
+`suspended` flag on the resources a downgrade makes read-only. Wire screens to
+the seam before flipping the flag — an entitlement nothing consults is the same
+as no entitlement.
 
 ## Global rules
 

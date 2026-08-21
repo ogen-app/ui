@@ -659,6 +659,61 @@ export const en = {
       compactLate: '{{amount}} late',
     },
   },
+  /**
+   * Workspace tiers (CON-232) — what the app says when the plan is the reason.
+   *
+   * Two vocabularies, and keeping them apart is the point. *Not in your plan*
+   * is a fact about what was bought and is only ever answered by buying more.
+   * *You've reached your limit* is a fact about this month, usually answered by
+   * waiting — so it never appears without the count and, where there is one,
+   * the date the allowance comes back. Collapsing the two into one "upgrade"
+   * message would turn "wait until Tuesday" into a sales pitch.
+   *
+   * Nothing here names a tier. Tiers are versioned and configurable, and two
+   * workspaces can both be on something called "Pro" while holding different
+   * allowances — so a sentence like "included in Pro" would be true on one
+   * screen and a lie on the next.
+   */
+  tiers: {
+    notInPlan: 'Not in your plan',
+    notInPlanBody:
+      "This isn't part of the plan your workspace is on. Upgrading turns it on for everyone here.",
+
+    /**
+     * The limit case. The headline carries no number on purpose — the count
+     * lives on the meter below it, where it can be a byte size or a tally
+     * without the sentence having to be rewritten for each.
+     */
+    limitReached: "You've reached your limit",
+    resets: 'Your allowance goes back to full on {{when}}.',
+
+    /**
+     * The meter. Each period is a whole sentence: where "this month" sits in
+     * the line is a different answer in every language, and gluing it onto a
+     * stem would decide that in English for everyone.
+     */
+    usage: '{{used}} of {{limit}}',
+    usageDay: '{{used}} of {{limit}} today',
+    usageMonth: '{{used}} of {{limit}} this month',
+    usagePost: '{{used}} of {{limit}} on this post',
+    usagePublish: '{{used}} of {{limit}} for this publish',
+    /** For the tier that paid to have no number here. */
+    unlimited: 'Unlimited',
+
+    /** Capitalised like every other action label in the app. */
+    upgrade: 'UPGRADE',
+
+    /**
+     * A downgrade suspends; it never deletes. The body's first job is that
+     * reassurance — a campaign that stops accepting edits reads as a campaign
+     * that has been taken away, and it hasn't been.
+     */
+    suspended: 'Read-only',
+    suspendedBody:
+      "Your plan changed, so this is read-only for now. Nothing has been deleted — it's all here, and upgrading makes it editable again.",
+    suspendedSince: 'Read-only since {{when}}.',
+  },
+
   errors: {
     notFound: {
       code: '404',
