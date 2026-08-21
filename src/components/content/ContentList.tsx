@@ -147,6 +147,12 @@ export function ContentList({
           selectedIds={ticked}
           onToggleRow={toggleRow}
           onToggleAll={toggleAll}
+          // The list is a real fetch, so it arrives after a loader rather
+          // than with the page around it. On the table's own class rather
+          // than a wrapper: it is the grid item the layout sizes, and a div
+          // in between would take that role and leave it to grow past the
+          // window.
+          className="page-content-motion"
           // The table is only ever empty here because the filter emptied it —
           // an empty scope shows `EmptyBank` instead — so the way out is to
           // undo the filter, which is what the shared empty state offers.

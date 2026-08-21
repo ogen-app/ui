@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   cancelPost,
@@ -10,7 +10,7 @@ import {
   type CancelTarget,
 } from '@/services/api/posts'
 import { registerPendingSave } from '@/lib/pendingSaves'
-import { landSavedPost } from '@/lib/postCache'
+import { cachedPostFromList, landSavedPost } from '@/lib/postCache'
 import type { Post, PostStatus } from '@/types/posts'
 
 const SAVE_DEBOUNCE_MS = 600
@@ -84,10 +84,21 @@ type UsePostResult = {
 
 export function usePost(postId: string): UsePostResult {
   const qc = useQueryClient()
+  // Opening a post the campaign list already holds costs no round trip and,
+  // more visibly, no loading state: the route unmounts the whole editor while
+  // `isLoading` is true, which takes the right sidebar's panel scope with it —
+  // so an uncached post used to slide the rail shut and open again on arrival,
+  // while a cached one didn't. Only consulted when `['post', id]` is empty;
+  // Query ignores `initialData` for a key it already has.
+  const seed = useMemo(() => cachedPostFromList(qc, postId), [qc, postId])
   const query = useQuery({
     queryKey: postKey(postId),
     queryFn: () => getPost(postId),
     enabled: !!postId,
+    initialData: seed?.post,
+    // The list's age, not this moment's — a seed older than the 30s staleTime
+    // refetches straight away instead of passing for fresh.
+    initialDataUpdatedAt: seed?.updatedAt,
     refetchInterval: (q) =>
       q.state.data?.status === 'scheduled' ? SCHEDULED_POLL_MS : false,
   })

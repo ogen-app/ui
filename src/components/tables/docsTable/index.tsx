@@ -100,6 +100,8 @@ type AssetsTableProps = {
   onToggleRow?: (id: string) => void
   /** Ticks every row on screen, or clears them if they all already are. */
   onToggleAll?: () => void
+  /** Reaches the table's own root — it is the grid item its page sizes. */
+  className?: string
 }
 
 function AssetsTableComponent({
@@ -110,6 +112,7 @@ function AssetsTableComponent({
   selectedIds,
   onToggleRow,
   onToggleAll,
+  className,
 }: AssetsTableProps) {
   const data = assets as AssetRow[]
 
@@ -282,6 +285,7 @@ function AssetsTableComponent({
       overscan={6}
       showFooter={false}
       fillHeight={false}
+      className={className}
       onEmptyStateAction={onEmptyStateAction}
     />
   )

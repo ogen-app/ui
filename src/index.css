@@ -426,6 +426,10 @@
     );
   }
 
+  /* Panel edges are `components/page-primitives/SurfaceFader` — a stack, not a
+     class, because the blur has to taper along the ramp and `backdrop-filter`
+     takes one radius. */
+
   @keyframes spinner-line {
     0% {
       transform: scaleX(0);
@@ -703,6 +707,42 @@
     .auth-card-motion {
       animation: auth-photo-in 200ms 100ms ease-out both;
     }
+  }
+
+  /* A screen arriving, and the loader that stands in for it until it does.
+
+     Two halves of one rule. The loader waits before it appears at all, so a
+     wait shorter than the delay shows no loader — the page simply fades in,
+     which is what a cached post or a warm list actually is. Only a wait long
+     enough to notice gets a spinner, and it fades up rather than appearing
+     mid-screen at full strength: a full-page spinner that flashes for two
+     frames reads as a fault, not as loading.
+
+     Keyframes rather than a JS timer, for the reason the toast rules give
+     above — an animation carries its own start value, so it plays whether or
+     not the hidden state was ever painted, and no timer is left to a
+     background tab to clamp. The backwards fill is what holds the loader
+     invisible through its delay; without it the spinner would sit at full
+     opacity for that time and then start fading in.
+
+     `both` on the content half for the same reason: the element is often
+     mounted in the same commit that replaces the loader, and the first frame
+     has to be the transparent one. */
+  @keyframes page-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .page-content-motion {
+    animation: page-fade-in 200ms ease-out both;
+  }
+
+  .page-loader-motion {
+    animation: page-fade-in 200ms 240ms ease-out both;
   }
 
   /* A highlight travelling along a line of text, for work still in progress.

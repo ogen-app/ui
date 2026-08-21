@@ -25,7 +25,10 @@ export function ThreadStatusSummary() {
   const pending = list.filter((thread) => thread.unread).length
 
   return (
-    <p className="pt-0.5 text-xs text-tertiary-foreground">
+    // No padding above it: the title's line box already leaves the pair enough
+    // air, and the 2px on top of that read as a gap between two things rather
+    // than as the second line of one heading.
+    <p className="text-xs text-tertiary-foreground">
       {t('assistant.activeThreads', { count: list.length })}
       {pending > 0 && (
         <>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ListBulletsIcon } from '@phosphor-icons/react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Logo } from '@/components/Logo'
@@ -75,9 +75,15 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
 
   // Pin to the newest turn. Streaming grows the last turn rather than adding
   // one, so this tracks its length too.
+  //
+  // Layout, not passive: a thread's history arrives all at once, and a passive
+  // effect runs *after* the browser has painted it — so the panel showed the
+  // top of the conversation for a frame and then snapped to the bottom. Moving
+  // the write before paint means the newest turn is simply where the panel
+  // opens.
   const turns = thread?.turns
   const streamLength = turns && turns.length > 0 ? turns[turns.length - 1].content.length : 0
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [activeId, turns?.length, streamLength])
@@ -111,7 +117,10 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
           aria-hidden
           className={cn(
             'flex size-10 shrink-0 items-center justify-center self-center',
-            'border border-border text-tertiary-foreground transition-colors',
+            // Its own fill, unlike the type beside it: the mark is an object,
+            // and a thread scrolling through the inside of a bordered square
+            // reads as a hole in the header rather than as translucency.
+            'bg-primary border border-border text-tertiary-foreground transition-colors',
             // Only lights up when the block is a way back to the list — on the
             // list itself there is nowhere to go and it is just the mark.
             'group-hover/title:border-foreground group-hover/title:text-foreground',
@@ -124,17 +133,25 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
       // itself it is just a heading.
       onTitleClick={thread ? () => selectThread(null) : undefined}
       titleLabel={thread ? 'Back to all conversations' : undefined}
-      // The chips are a block of their own: they want a little opaque margin
-      // above them and a longer run-out, where the bare composer reads better
-      // tight to the thread with just a short fade.
-      footerFade={chipsInFooter ? 32 : 12}
+      // Solid across the 24px below the composer only — the whole 56px row is on
+      // the ramp. That is what puts a trace of the thread at the height of the
+      // placeholder: the field's own fill covers the words, so what shows is the
+      // gaps around it and between the buttons, and the input reads as sitting
+      // *in* the panel rather than on a plate laid over it. The ramp then runs
+      // 40px clear of the row, which is where the fade is actually watched — a
+      // short one ends too close to the row and reads as a cut. Chips make the
+      // footer a block of a depth this doesn't know, so it falls back to
+      // covering all of it.
+      footerSolid={chipsInFooter ? undefined : 24}
+      footerFade={96}
       footer={
         thread && (
-          // Opaque: the thread scrolls under the footer, and the starters have
-          // to sit on something. Keyed by thread: openThread can swap the
-          // active thread without unmounting the panel, and the composer's
-          // local draft must not follow into the next conversation.
-          <div key={thread.id} className={cn('flex flex-col gap-2 bg-primary', chipsInFooter && 'pt-3')}>
+          // No fill of its own: the panel's ramp is what the thread scrolls
+          // behind, and a solid block here would put the composer back on the
+          // slab the ramp exists to get rid of. Keyed by thread: openThread can
+          // swap the active thread without unmounting the panel, and the
+          // composer's local draft must not follow into the next conversation.
+          <div key={thread.id} className={cn('flex flex-col gap-2', chipsInFooter && 'pt-3')}>
             {/* In an empty thread the chips are the body's, not the footer's. */}
             {chipsInFooter && (
               <StarterChips

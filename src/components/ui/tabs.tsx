@@ -69,6 +69,12 @@ const tabsTriggerVariants = cva(
       },
       size: {
         default: '',
+        /**
+         * Icon only: square rather than padded, so a row of them reads as one
+         * control instead of three buttons of different widths. The name goes
+         * on `aria-label` — and, for everyone else, in a tooltip.
+         */
+        icon: "w-8 px-0 [&_svg:not([class*='size-'])]:size-4",
       },
     },
     defaultVariants: {

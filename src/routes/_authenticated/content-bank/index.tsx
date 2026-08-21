@@ -20,9 +20,11 @@ export const Route = createFileRoute('/_authenticated/content-bank/')({
 function ContentBank() {
   // The same shell the campaign layout puts around its Content section: the
   // page owns its header and is one big drop target, so all it wants from
-  // outside is a full-height column that doesn't scroll.
+  // outside is a full-height column that doesn't scroll. The shell fades in
+  // once, on arrival — the list below plays its own fade when the fetch
+  // lands.
   return (
-    <PageContainer variant="fullFlex">
+    <PageContainer variant="fullFlex" className="page-content-motion">
       <ContentPage campaign={null} />
     </PageContainer>
   )

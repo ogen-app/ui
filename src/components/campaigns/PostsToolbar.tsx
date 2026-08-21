@@ -1,8 +1,16 @@
 import { useNavigate } from '@tanstack/react-router'
-import { CaretLeftIcon, CaretRightIcon, PlusIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
+import {
+  CalendarDotIcon,
+  CalendarDotsIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  ListDashesIcon,
+  PlusIcon,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   addDays,
   addMonths,
@@ -52,6 +60,7 @@ export function PostsToolbar({
   onAnchorChange,
   subheading,
 }: PostsToolbarProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const addPost = useAddPost(campaignId)
   const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings(campaignId)
@@ -76,6 +85,20 @@ export function PostsToolbar({
     }
   }
 
+  /**
+   * The three arrangements of the same posts. Two calendars that differ by
+   * how much they hold — one date marked, then many — and a list, which is
+   * the grouping that is actually there.
+   *
+   * Built per render rather than hoisted, so the names come from whichever
+   * language is loaded now; a module-level array would freeze the first one.
+   */
+  const views = [
+    { value: 'week', Icon: CalendarDotIcon, label: t('calendar.viewWeek') },
+    { value: 'month', Icon: CalendarDotsIcon, label: t('calendar.viewMonth') },
+    { value: 'list', Icon: ListDashesIcon, label: t('calendar.viewList') },
+  ]
+
   /** One step of whatever the current view shows — a week, or a month. */
   const step = (direction: 1 | -1) => {
     if (!anchor || !onAnchorChange) return
@@ -97,9 +120,7 @@ export function PostsToolbar({
           subheading
         ) : view === 'month' ? (
           monthLabel(anchor)
-        ) : settingsPending ? (
-          <Skeleton className="h-4 w-56" />
-        ) : (
+        ) : settingsPending ? null : (
           formatWeekRange(startOfWeek(anchor, firstDayOfWeek))
         )}
       </span>
@@ -143,27 +164,38 @@ export function PostsToolbar({
         <div className="flex items-center gap-2">
           <Tabs value={view}>
             <TabsList variant="segmented" size="excluded">
-              <TabsTrigger
-                variant="segmented"
-                value="week"
-                onClick={() => handleViewSelect('week')}
-              >
-                WEEK
-              </TabsTrigger>
-              <TabsTrigger
-                variant="segmented"
-                value="month"
-                onClick={() => handleViewSelect('month')}
-              >
-                MONTH
-              </TabsTrigger>
-              <TabsTrigger
-                variant="segmented"
-                value="list"
-                onClick={() => handleViewSelect('list')}
-              >
-                LIST
-              </TabsTrigger>
+              {views.map(({ value, Icon, label }) => (
+                // The tooltip is what the label used to do for a sighted
+                // reader; `aria-label` keeps saying it to everyone else.
+                <Tooltip key={value}>
+                  {/* The span is the tooltip's trigger, not the tab. Both
+                      primitives write `data-state`, and merged onto one
+                      element the tooltip's wins — the selected segment loses
+                      its fill. The wrapper has to keep a box of its own (the
+                      tooltip is positioned against it, and `display: contents`
+                      leaves it nothing to measure), so it is hidden from the
+                      accessibility tree instead: `presentation` is what keeps
+                      the tab a child of the tablist. The tooltip still answers
+                      the keyboard — focus bubbles to it from the button. */}
+                  <TooltipTrigger asChild>
+                    <span role="presentation" className="inline-flex">
+                      <TabsTrigger
+                        variant="segmented"
+                        size="icon"
+                        value={value}
+                        aria-label={label}
+                        onClick={() => handleViewSelect(value)}
+                      >
+                        {/* Bold: at 16px the regular weight goes spindly
+                            against the type beside it, and the dots that tell
+                            the two calendars apart stop reading. */}
+                        <Icon weight="bold" />
+                      </TabsTrigger>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{label}</TooltipContent>
+                </Tooltip>
+              ))}
             </TabsList>
           </Tabs>
 
