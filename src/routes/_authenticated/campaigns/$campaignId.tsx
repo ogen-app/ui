@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/campaigns/$campaignId")({
 const SECTIONS = [
   { slug: "/list", label: "List" },
   { slug: "/brief", label: "Brief" },
-  { slug: "/assets", label: "Assets" },
+  { slug: "/content", label: "Content" },
   { slug: "/settings", label: "Settings" },
   { slug: "/overview", label: "Overview" },
   { slug: "/analytics", label: "Analytics" },
@@ -81,6 +81,13 @@ function CampaignLayout() {
   const displayName = campaign.name.trim();
   const title = `${displayName === "" ? "Untitled campaign" : displayName} ${section}`;
 
+  // Each shell fades its section in (`page-content-motion`), keyed by the
+  // section so the fade replays on the way from one to the next rather than
+  // once per campaign. Sections are a swap of the whole column — six different
+  // documents behind one header — and switching between them without it is a
+  // hard cut. Keyed by section rather than by route, so paging through the
+  // calendar's weeks stays instant: the anchor changes, the section doesn't.
+  //
   // Brief and Settings edit inline and commit through the bottom save bar, so
   // they get the settings-page shell: one scroll container owning the sticky
   // header, whose title fades out on scroll, inside a positioned wrapper the
@@ -95,13 +102,30 @@ function CampaignLayout() {
               {/* pt-4 is the shared 16px breath between a page header and its
                   first card — see the same value on Overview and Workspace
                   Settings. */}
-              <div className={cn("px-3 lg:px-6 pt-4", PAGE_ACTION_BAR_INSET)}>
+              <div
+                key={section}
+                className={cn(
+                  "page-content-motion px-3 lg:px-6 pt-4",
+                  PAGE_ACTION_BAR_INSET,
+                )}
+              >
                 <Outlet />
               </div>
             </div>
             <SettingsSaveBar />
           </div>
         </SettingsSaveProvider>
+      </PageContainer>
+    );
+  }
+
+  // Content owns its whole page: its header carries an action that only means
+  // something there (add *to this campaign*), and the page is one big drop
+  // target, which a shared header sitting outside it could not be.
+  if (section === "Content") {
+    return (
+      <PageContainer variant={"fullFlex"}>
+        <Outlet />
       </PageContainer>
     );
   }
@@ -113,7 +137,7 @@ function CampaignLayout() {
       <PageContainer variant={"fullFlex"}>
         <div className={"h-0 grow overflow-y-auto flex flex-col"}>
           <PageHeader title={title} fadeOnScroll />
-          <div className={"px-3 lg:px-6 pt-4"}>
+          <div key={section} className={"page-content-motion px-3 lg:px-6 pt-4"}>
             <Outlet />
           </div>
         </div>
@@ -132,7 +156,10 @@ function CampaignLayout() {
             ) : undefined
           }
         />
-        <div className={"grid overflow-hidden h-full px-3 lg:px-6"}>
+        <div
+          key={section}
+          className={"page-content-motion grid overflow-hidden h-full px-3 lg:px-6"}
+        >
           <Outlet />
         </div>
       </div>

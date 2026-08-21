@@ -8,9 +8,16 @@ export type PageStatusFooterProps = {
  * sentence case elsewhere) and why it sits at half opacity on top of the
  * already-quiet senary token. It should read as a watermark behind the page,
  * never as something to look at.
+ *
+ * `whitespace-nowrap` and `shrink-0` are load-bearing, not tidying: the band is
+ * one line tall by construction (140px of type in a 140px box), so a message
+ * with a space in it — `NOT FOUND` — wrapped to two lines and had its second
+ * one sliced off by the row's `overflow-hidden`. The copies are meant to run
+ * off both edges under the fader; letting them shrink to fit is what turned an
+ * overflowing band into a broken one.
  */
 const WORD =
-  'font-display font-black uppercase tracking-[0.05em] opacity-50 text-senary-foreground text-center text-[140px] leading-none pt-2'
+  'font-display font-black uppercase tracking-[0.05em] opacity-50 text-senary-foreground text-center text-[140px] leading-none pt-2 whitespace-nowrap shrink-0'
 
 export function PageStatusFooter({ message = 'ERROR' }: PageStatusFooterProps) {
   return (

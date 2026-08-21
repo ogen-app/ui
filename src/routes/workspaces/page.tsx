@@ -78,7 +78,7 @@ export default function WorkspacesPage() {
               {t('workspaces.loadFailed')}
             </Card>
           ) : (
-            <ul className="mt-8 flex flex-col gap-2">
+            <ul className="page-content-motion mt-8 flex flex-col gap-2">
               {workspaces.map((w) => (
                 <li key={w.id}>
                   <WorkspaceCard

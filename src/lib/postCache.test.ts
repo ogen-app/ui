@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { invalidateCampaignPosts, landSavedPost } from './postCache'
+import { cachedPostFromList, invalidateCampaignPosts, landSavedPost } from './postCache'
 import { CAMPAIGN_SUMMARIES_KEY, campaignPostsKey } from './queryKeys'
 import type { Post } from '@/types/posts'
 
@@ -75,6 +75,39 @@ describe('landSavedPost', () => {
 
     expect(titles()).toEqual(['old'])
     expect(qc.getQueryData<Post[]>(other)?.map((p) => p.title)).toEqual(['renamed'])
+  })
+})
+
+describe('cachedPostFromList', () => {
+  it('finds the post in whichever campaign list holds it', () => {
+    qc.setQueryData<Post[]>(campaignPostsKey('c2'), [post('p9', 'neighbour', 'c2')])
+
+    expect(cachedPostFromList(qc, 'p9')?.post.title).toBe('neighbour')
+  })
+
+  it("carries the list's fetch time, so a stale seed still refetches", () => {
+    qc.setQueryData<Post[]>(LIST, [post('p1', 'old')])
+
+    // Query judges the seed's age by this, not by when the editor opened —
+    // seeding with `now` would let a list from an hour ago pass for fresh.
+    expect(cachedPostFromList(qc, 'p1')?.updatedAt).toBe(
+      qc.getQueryState(LIST)?.dataUpdatedAt,
+    )
+  })
+
+  it('has nothing for a post no list has been fetched for', () => {
+    qc.setQueryData<Post[]>(LIST, [post('p1', 'old')])
+
+    expect(cachedPostFromList(qc, 'p2')).toBeUndefined()
+  })
+
+  it('ignores the campaigns keys that do not hold posts', () => {
+    // Both sit under the `['campaigns']` prefix this searches, and neither
+    // holds `Post` rows — the roll-up's entries only look like they do.
+    qc.setQueryData(CAMPAIGN_SUMMARIES_KEY, [{ id: 'p1', posts: [] }])
+    qc.setQueryData(['campaigns'], [{ id: 'c1', name: 'Launch' }])
+
+    expect(cachedPostFromList(qc, 'p1')).toBeUndefined()
   })
 })
 

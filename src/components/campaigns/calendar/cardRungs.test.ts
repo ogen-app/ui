@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CARD_BANDS,
   CARD_GAP,
   CARD_RUNGS,
+  fitMonthCell,
   fitRung,
   pickRung,
   cardHeight,
@@ -21,8 +23,14 @@ const TEXT: CardFacts = { hasTime: true }
 const NO_TIME: CardFacts = { hasTime: false }
 const BACKED: CardFacts = { hasTime: true, hasImage: true }
 
-/** The month's own fields, which is what a month cell is measured against. */
+/**
+ * The month's own fields, which is what a month cell is measured against —
+ * pictures included, since the month may draw one where the day has room.
+ */
 const MONTH = DEFAULT_MONTH_FIELDS
+
+/** The same, on a day that has to spend its pictures to stay readable. */
+const MONTH_UNBACKED: CardFields = { ...DEFAULT_MONTH_FIELDS, image: false }
 
 const fields = (overrides: Partial<CardFields> = {}): CardFields => ({
   ...DEFAULT_WEEK_FIELDS,
@@ -206,6 +214,58 @@ describe('pickRung', () => {
   })
 })
 
+describe('fitMonthCell', () => {
+  it('keeps the picture on a day that has room for it', () => {
+    expect(fitMonthCell([BACKED], CELL, MONTH)).toEqual({
+      rung: CARD_RUNGS[2],
+      image: true,
+    })
+  })
+
+  it('spends the pictures rather than the day', () => {
+    // Two backed posts fit at no rung; the same two without their pictures fit
+    // at `tight`, which is 112px exactly. Between a photograph and knowing
+    // what is on the day, the day wins.
+    expect(fitRung([BACKED, BACKED], CELL, MONTH, 'compact')).toBeNull()
+    expect(fitMonthCell([BACKED, BACKED], CELL, MONTH)).toEqual({
+      rung: CARD_RUNGS[2],
+      image: false,
+    })
+    expect(stackHeight(CARD_RUNGS[2], [BACKED, BACKED], MONTH_UNBACKED, 'compact')).toBe(
+      CELL,
+    )
+  })
+
+  it('gives up only once the plain cards have failed too', () => {
+    // Four posts is past every rung with or without pictures — this is the
+    // density, and it has to stay reachable or a busy day silently overflows.
+    const four = Array.from({ length: 4 }, () => BACKED)
+    expect(fitMonthCell(four, CELL, MONTH)).toBeNull()
+  })
+
+  it('does not report a picture the user has switched off', () => {
+    // With previews off there is nothing to give up, so the answer is the
+    // plain fit and the caller keeps passing its own fields.
+    expect(fitMonthCell([BACKED], CELL, MONTH_UNBACKED)).toEqual({
+      // And with the band off the day is roomy again, which is the point of
+      // the switch.
+      rung: CARD_RUNGS[0],
+      image: false,
+    })
+  })
+
+  it('is never worse than the ladder alone', () => {
+    // The retry may only ever add days that draw cards — a day the ladder
+    // could fit as asked must come back with its pictures intact.
+    for (const day of [[TEXT], [BACKED], [TEXT, TEXT], [BACKED, TEXT]]) {
+      const asked = fitRung(day, CELL, MONTH, 'compact')
+      const fit = fitMonthCell(day, CELL, MONTH)
+      if (asked) expect(fit).toEqual({ rung: asked, image: true })
+      else expect(fit === null || fit.image === false).toBe(true)
+    }
+  })
+})
+
 describe('stackHeight', () => {
   it('is what the lane has to hold — cards plus the gaps between them', () => {
     expect(stackHeight(CARD_RUNGS[0], [])).toBe(0)
@@ -292,13 +352,19 @@ describe('fitRung', () => {
     expect(fitRung([TEXT], CELL, MONTH)?.id).toBe('comfortable')
   })
 
-  it('never charges the month for a picture', () => {
-    // The month's `image` is always false — `useCalendarSettings` stamps the
-    // calendar-wide preview preference over the week only, because the 100px
-    // band is the whole 112px cell: charged for it, one backed post has no
-    // rung and the day collapses into a density summary.
-    expect(fitRung([BACKED], CELL, MONTH)?.id).toBe('comfortable')
-    expect(fitRung([BACKED], CELL, { ...MONTH, image: true })).toBeNull()
+  it('charges the month a band it can afford, which the week’s is not', () => {
+    // Why the month has a band of its own. At the week's, one backed post has
+    // no rung at all in a 112px cell — the band alone is 100 of them — so a
+    // month that took the week's number would answer "if space allows" with
+    // "it never does", and every day with a picture on it would collapse into
+    // a density summary.
+    expect(fitRung([BACKED], CELL, MONTH)).toBeNull()
+    // At the month's, a quiet day shows the picture *and* what the post is.
+    expect(fitRung([BACKED], CELL, MONTH, 'compact')?.id).toBe('tight')
+    // A post with no picture pays for neither band.
+    expect(fitRung([TEXT], CELL, MONTH, 'compact')?.id).toBe(
+      fitRung([TEXT], CELL, MONTH)?.id,
+    )
   })
 
   it('costs the month a rung when it is given the week fields', () => {
@@ -313,6 +379,16 @@ describe('fitRung', () => {
     // No cards to draw, so the value is only ever a non-null — what matters is
     // that a day with nothing in it never reads as a day too full to show.
     expect(fitRung([], 0, MONTH)).not.toBeNull()
+  })
+
+  it('sizes the month band so a quiet day fits at all', () => {
+    // The number `CARD_BANDS.compact` is chosen from: a card with a time and a
+    // title on one line is 55px, so the band is the largest that leaves a
+    // single backed post inside a real cell. One pixel of slack, deliberately
+    // — the arithmetic is pessimistic about the title line, and the rung below
+    // still draws the picture if a shorter cell takes even that away.
+    expect(cardHeight(CARD_RUNGS[2], BACKED, MONTH, 'compact')).toBe(CELL - 1)
+    expect(CARD_BANDS.compact).toBeLessThanOrEqual(CELL - 55)
   })
 
   it('is monotonic in the height it is given', () => {

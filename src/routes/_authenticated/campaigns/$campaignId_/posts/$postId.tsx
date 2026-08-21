@@ -12,6 +12,7 @@ import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
+import { PostSourcesCard } from '@/components/posts/sources/PostSourcesCard'
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
@@ -46,6 +47,7 @@ import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import { usePostArrowNavigation } from '@/hooks/usePostNavigation'
 import { usePublishStatus } from '@/hooks/usePublishStatus'
 import { cn } from '@/lib'
+import { downloadMarkdown } from '@/lib/downloadMarkdown'
 import { resolvePublishMethod } from '@/lib/autoPublish'
 import { isNotePinned, splitNotesByPin } from '@/lib/postNotes'
 import type { PublishMethod } from '@/lib/postStatusMachine'
@@ -61,6 +63,12 @@ export const Route = createFileRoute(
 
 function PostPage() {
   const { campaignId, postId } = Route.useParams()
+  // Declared by the route, not by the editor below it: being on a post is what
+  // makes the post panels resolvable, and that is true from the moment the URL
+  // is. Inside the editor it would drop for as long as the document takes to
+  // arrive — the rail would fall back to the assistant and animate its width
+  // twice on the way to a post nobody had opened before.
+  usePanelScope('post', campaignId)
   const {
     doc,
     changeDoc,
@@ -205,10 +213,9 @@ function PostEditorSurface({
 
   // The settings form renders in the shared right sidebar (one panel at a
   // time, alongside the AI assistant). The route owns the form because it
-  // owns the post's autosave pipeline; the sidebar only hosts the layer.
-  // Declaring the scope is what makes these four resolvable at all — off this
-  // screen they stay remembered but the rail falls back to the assistant.
-  usePanelScope('post', campaignId)
+  // owns the post's autosave pipeline; the sidebar only hosts the layer. What
+  // makes these four resolvable at all is the scope `PostPage` declares — off
+  // this screen they stay remembered but the rail falls back to the assistant.
   const activePanel = useSettingsStore(selectActivePanel)
   const settingsOpen = activePanel === 'postSettings'
   const previewOpen = activePanel === 'postPreview'
@@ -327,20 +334,17 @@ function PostEditorSurface({
     [changeDoc],
   )
 
-  const handleDownloadMarkdown = useCallback(() => {
-    const title = doc.title.trim()
-    const markdown = title ? `# ${title}\n\n${doc.content}` : doc.content
-    const blob = new Blob([markdown], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${slugify(title) || 'post'}.md`
-    a.click()
-    URL.revokeObjectURL(url)
-  }, [doc.title, doc.content])
+  const handleDownloadMarkdown = useCallback(
+    () => downloadMarkdown(doc.title, doc.content, 'post'),
+    [doc.title, doc.content],
+  )
 
   return (
-    <PageContainer variant="fullFlex">
+    // Fades in rather than appearing whole. The document, the bars and the
+    // cards all become ready in the same commit, so without this the screen
+    // arrives as one hard cut — from a spinner, or from the post that was here
+    // a moment ago. Keyed by post above, so the fade plays on each one.
+    <PageContainer variant="fullFlex" className="page-content-motion">
       {/* `relative` so the action bar anchors to the content column rather
           than the window: the right rail is a sibling of this container, so
           the bar recentres when a panel opens instead of drifting off the
@@ -422,6 +426,9 @@ function PostEditorSurface({
                   readOnly={assistantRunning}
                 />
               </div>
+            </div>
+            <div className="w-content">
+              <PostSourcesCard post={doc} changeDoc={changeDoc} />
             </div>
             <div className="w-content empty:hidden">
               <PostMediaCard
@@ -585,12 +592,4 @@ function TitleCounter({
       {length} / {limit}
     </span>
   )
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60)
 }

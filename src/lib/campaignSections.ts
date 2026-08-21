@@ -57,11 +57,11 @@ export const CAMPAIGN_SECTIONS = [
     tone: 'var(--nav-brief)',
   },
   {
-    id: 'assets',
-    labelKey: 'nav.campaign.assets',
-    openKey: 'campaignOverview.openAssets',
+    id: 'content',
+    labelKey: 'nav.campaign.content',
+    openKey: 'campaignOverview.openContent',
     icon: ScanIcon,
-    tone: 'var(--nav-assets)',
+    tone: 'var(--nav-content)',
   },
   {
     id: 'settings',

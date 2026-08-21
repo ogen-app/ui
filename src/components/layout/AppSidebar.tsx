@@ -113,8 +113,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ? 'analytics'
         : location.pathname.includes('/brief')
           ? 'brief'
-          : location.pathname.includes('/assets')
-            ? 'assets'
+          : location.pathname.includes('/content')
+            ? 'content'
             : location.pathname.includes('/settings')
               ? 'settings'
               : 'posts'
@@ -206,7 +206,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               icon={<CardsThreeIcon weight="regular" className="size-5 flex-none" />}
               text={t('nav.contentBank')}
               isActive={location.pathname.startsWith('/content-bank')}
-              to="/content-bank"
+              // The tab, not the redirect that picks it — same reason as the
+              // campaign rows above, minus the visible symptom: the tab bar
+              // falls back to All anyway, so this only spares the second
+              // router pass.
+              to="/content-bank/all"
             />
             {/* CON-227. Below Content Bank rather than above it because it is
                 the newer of the two and the one that has to earn its place —
@@ -255,7 +259,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     // about the campaign rather than about where you are.
                     text={name}
                     isActive={isActive}
-                    to="/campaigns/$campaignId"
+                    // Straight to the section, not to `/campaigns/:id` and its
+                    // redirect. That hop costs a second router pass, and for
+                    // its duration the URL names no section at all — so the
+                    // fallback below lit POSTS up before OVERVIEW took over,
+                    // one visible beat later. The redirect stays for links
+                    // arriving from outside; this is the one that has a
+                    // sub-menu watching it.
+                    to="/campaigns/$campaignId/overview"
                     params={{ campaignId: campaign.id }}
                   />
                   {isActive && (

@@ -226,7 +226,7 @@ export const en = {
       posts: 'Posts calendar',
       analytics: 'Analytics',
       brief: 'Brief',
-      assets: 'Assets',
+      content: 'Content',
       settings: 'Settings',
     },
   },
@@ -247,7 +247,7 @@ export const en = {
     openPosts: 'OPEN CALENDAR',
     openAnalytics: 'OPEN ANALYTICS',
     openBrief: 'OPEN BRIEF',
-    openAssets: 'OPEN ASSETS',
+    openContent: 'OPEN CONTENT',
     openSettings: 'OPEN SETTINGS',
 
     /**
@@ -270,13 +270,29 @@ export const en = {
     settings: 'Calendar settings',
 
     /**
+     * The view switch, which draws each arrangement rather than naming it.
+     * These are the names it stopped showing: each one is its segment's
+     * accessible name *and* the tooltip, so what a pointer user reads and what
+     * a screen reader announces are the same word.
+     *
+     * Not capitalised like the buttons around them — a tooltip is a label, not
+     * an action.
+     */
+    viewWeek: 'Week',
+    viewMonth: 'Month',
+    viewList: 'List',
+
+    /**
      * Calendar Settings. One picture switch for the whole calendar, then one
      * section of row switches per view. The note is state rather than teaching
      * — a post with no picture has nothing to preview, and a user who turns
-     * this on and sees half their cards unchanged is owed the reason.
+     * this on and sees half their cards unchanged is owed the reason. Both
+     * halves of it are that: the second says why a busy day in the month goes
+     * back to plain cards, which is the calendar overruling the switch and so
+     * the one thing here that must not read as a bug.
      */
     imagePreviews: 'Show cards as image previews',
-    imagePreviewsNote: 'Only posts that have a picture, and only on the week — a month cell is too small for one',
+    imagePreviewsNote: 'Only posts that have a picture, and in the month only on the days with room for one',
     weekCard: 'WEEK CARD',
     monthCard: 'MONTH CARD',
   },

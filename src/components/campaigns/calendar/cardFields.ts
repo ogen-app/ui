@@ -65,9 +65,14 @@ export const DEFAULT_WEEK_FIELDS: CardFields = {
  *
  * Only *when* and *what* — the two questions a month is read for. The platform
  * comes off because the cell can hold three or four cards with it and five or
- * six without, and a month that shows fewer days' work in full is a worse
- * trade than a month that doesn't name the channel. The picture is off for the
- * same reason, an order of magnitude more so: a 100px band is the whole cell.
+ * six without, and a month that shows fewer days' work in full is a worse trade
+ * than a month that doesn't name the channel.
+ *
+ * The picture stays on, on the same terms as the week's: it is the calendar's
+ * one answer, and `useCalendarSettings` stamps it over this either way. What
+ * differs is that the month draws it on a shorter band and drops it on a day
+ * with no room — see `CARD_BANDS` and `fitMonthCell`. So this `true` is the
+ * default for a direct caller, and for the month itself it is never read.
  */
 export const DEFAULT_MONTH_FIELDS: CardFields = {
   status: false,
@@ -75,7 +80,7 @@ export const DEFAULT_MONTH_FIELDS: CardFields = {
   title: true,
   platform: false,
   account: false,
-  image: false,
+  image: true,
 }
 
 export const CARD_FIELD_LABELS: Record<CardField, string> = {
