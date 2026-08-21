@@ -1,19 +1,14 @@
 import { memo, useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
-import {
-  FilePdfIcon,
-  GlobeSimpleIcon,
-  ImageSquareIcon,
-  NoteIcon,
-  TrashIcon,
-} from '@phosphor-icons/react'
+import { TrashIcon } from '@phosphor-icons/react'
 import { VirtualTable } from '../VirtualTable'
 import type { ColumnConfig } from '../types'
 import type { Asset, Tag } from '@/types/content'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { statusToBadge } from '@/lib/assetStatus'
-import { assetCategory } from '@/lib/assetCategory'
+import { AssetGlyph } from '@/components/content/AssetGlyph'
 import { extentLabel } from '@/lib/assetExtent'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 import { relativeTime } from '@/lib/relativeTime'
@@ -69,27 +64,6 @@ function stamp(iso: string): string {
   })
 }
 
-/** 32px container, 24px glyph, pale border — kind at a glance, before the title. */
-function AssetIcon({ asset }: { asset: Asset }) {
-  const category = assetCategory(asset)
-  // A scraped page is text as far as the categories go, but where it came from
-  // is the one thing about it a reader can't infer from the title, so it gets
-  // its own glyph rather than the note's (CON-222).
-  const Icon =
-    asset.type === 'URL'
-      ? GlobeSimpleIcon
-      : category === 'files'
-        ? FilePdfIcon
-        : category === 'imagery'
-          ? ImageSquareIcon
-          : NoteIcon
-  return (
-    <span className="flex size-8 shrink-0 items-center justify-center border border-quaternary">
-      <Icon className="size-6 text-tertiary-foreground" />
-    </span>
-  )
-}
-
 /**
  * A tag on a row, in the row's own voice.
  *
@@ -114,19 +88,74 @@ type AssetsTableProps = {
    */
   campaignId: string | null
   onDelete: (id: string) => void
-  emptyStateMessage?: string
+  /**
+   * Offered by the shared empty state as RESET FILTERS. There is no
+   * `emptyStateMessage` here on purpose: `TableEmptyState` draws its own
+   * words, and this table is only ever empty because a filter emptied it —
+   * the scope's own empty state is a different screen entirely.
+   */
+  onEmptyStateAction?: () => void
+  /** Ids currently ticked. Omitted entirely turns the select column off. */
+  selectedIds?: Set<string>
+  onToggleRow?: (id: string) => void
+  /** Ticks every row on screen, or clears them if they all already are. */
+  onToggleAll?: () => void
 }
 
 function AssetsTableComponent({
   assets,
   campaignId,
   onDelete,
-  emptyStateMessage = 'Nothing in this campaign yet',
+  onEmptyStateAction,
+  selectedIds,
+  onToggleRow,
+  onToggleAll,
 }: AssetsTableProps) {
   const data = assets as AssetRow[]
 
+  const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
+  // Against the rows on screen, not the whole selection: while a filter is
+  // narrowing the list the header answers "is everything here ticked?", and
+  // ids ticked before the filter must not make it claim otherwise.
+  const visibleSelected = useMemo(
+    () => (selectedIds ? assets.filter((a) => selectedIds.has(a.id)).length : 0),
+    [assets, selectedIds],
+  )
+  const allVisibleSelected = assets.length > 0 && visibleSelected === assets.length
+
   const columnConfigs = useMemo<ColumnConfig<AssetRow>[]>(
     () => [
+      ...(selectable
+        ? [
+            {
+              id: 'select',
+              header: () => (
+                <div className="flex h-full items-center justify-center">
+                  <Checkbox
+                    checked={
+                      visibleSelected === 0 ? false : allVisibleSelected ? true : 'indeterminate'
+                    }
+                    onCheckedChange={onToggleAll}
+                    aria-label={allVisibleSelected ? 'Clear selection' : 'Select all documents'}
+                  />
+                </div>
+              ),
+              size: 44,
+              minSize: 44,
+              sortable: false,
+              isControl: true,
+              cell: (_value: unknown, row: AssetRow) => (
+                <div className={cn(CELL, 'justify-center')}>
+                  <Checkbox
+                    checked={selectedIds!.has(row.id)}
+                    onCheckedChange={() => onToggleRow!(row.id)}
+                    aria-label={`Select ${formatTitle(row.title)}`}
+                  />
+                </div>
+              ),
+            } satisfies ColumnConfig<AssetRow>,
+          ]
+        : []),
       {
         id: 'title',
         accessorKey: 'title',
@@ -150,7 +179,7 @@ function AssetsTableComponent({
             : ({ to: '/content-bank/$assetId', params: { assetId: row.id } } as const)
           return (
             <Link {...open} className={cn(CELL, 'gap-3')}>
-              <AssetIcon asset={row} />
+              <AssetGlyph asset={row} />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="table-text truncate hover:underline">
                   {provisional ? pageUrlLabel(row.title) : formatTitle(row.title)}
@@ -226,10 +255,22 @@ function AssetsTableComponent({
         ),
       },
     ],
-    [campaignId, onDelete],
+    [
+      campaignId,
+      onDelete,
+      selectable,
+      selectedIds,
+      onToggleRow,
+      onToggleAll,
+      visibleSelected,
+      allVisibleSelected,
+    ],
   )
 
-  const activeColumns = useMemo(() => ['title', 'updated_at', 'tags', 'actions'], [])
+  const activeColumns = useMemo(
+    () => [...(selectable ? ['select'] : []), 'title', 'updated_at', 'tags', 'actions'],
+    [selectable],
+  )
 
   return (
     <VirtualTable
@@ -241,7 +282,7 @@ function AssetsTableComponent({
       overscan={6}
       showFooter={false}
       fillHeight={false}
-      emptyStateMessage={emptyStateMessage}
+      onEmptyStateAction={onEmptyStateAction}
     />
   )
 }

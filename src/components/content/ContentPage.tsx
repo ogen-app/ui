@@ -204,6 +204,26 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     })
   }
 
+  /**
+   * The same delete, over a selection.
+   *
+   * The requests fan out and any of them can fail, so the detach and the toast
+   * are built from what actually succeeded: `allSettled`, then one membership
+   * write for the ids that are really gone. One write rather than one per
+   * document because membership is a single field on a whole-campaign PUT —
+   * five parallel saves would each store the set they read.
+   *
+   * Failures raise their own toasts through the mutation cache, so nothing is
+   * said about them here beyond leaving them out of the count.
+   */
+  const handleDeleteMany = async (ids: string[]) => {
+    const results = await Promise.allSettled(ids.map((id) => deleteAsset.mutateAsync(id)))
+    const gone = ids.filter((_, i) => results[i].status === 'fulfilled')
+    if (gone.length === 0) return
+    if (campaign) void removeFromCampaign(campaign.id, gone)
+    toast.success(`${gone.length} ${gone.length === 1 ? 'document' : 'documents'} deleted`)
+  }
+
   const scopeName = campaign
     ? campaign.name.trim() || 'Untitled campaign'
     : 'the content bank'
@@ -286,6 +306,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             assets={shown}
             uploads={uploads}
             onDelete={handleDelete}
+            onDeleteMany={handleDeleteMany}
             onWrite={handleCreate}
             onUpload={() => setUploadModalOpen(true)}
             onAddWebPage={() => setWebPageModalOpen(true)}

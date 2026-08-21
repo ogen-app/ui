@@ -1,22 +1,27 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowsClockwiseIcon,
   FileTextIcon,
   GlobeSimpleIcon,
-  MagnifyingGlassIcon,
+  TrashIcon,
   UploadSimpleIcon,
   XIcon,
 } from '@phosphor-icons/react'
 import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState'
 import { AssetsTable } from '@/components/tables/docsTable'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib'
+import { ZIndex } from '@/config/zIndex'
 import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
 import type { Asset } from '@/types/content'
-
-/** Below this the list is short enough to read, and a search field is furniture. */
-const SEARCH_THRESHOLD = 8
+import {
+  EMPTY_FILTER,
+  filterAssets,
+  isFilterActive,
+  type ContentFilter as Filter,
+} from '@/lib/contentFilter'
+import { ContentFilter } from './ContentFilter'
+import { DeleteDocumentsDialog } from './DeleteDocumentsDialog'
 
 type Props = {
   /** The campaign whose documents these are, or null for the whole workspace. */
@@ -25,6 +30,8 @@ type Props = {
   /** Files still in transit to this scope, or refused on the way. */
   uploads: UploadItem[]
   onDelete: (id: string) => void
+  /** Deletes a whole selection, and resolves once every one has settled. */
+  onDeleteMany: (ids: string[]) => Promise<void>
   onWrite: () => void
   onUpload: () => void
   onAddWebPage: () => void
@@ -41,7 +48,7 @@ type Props = {
  * Per-document facts (how much text, whether it can be read) stay where they
  * are true, on the row.
  *
- * Only the empty state and the search field's own words change with scope. The
+ * Only the empty state and the filter's own words change with scope. The
  * table doesn't: a document is the same object wherever it is listed, and a
  * second row design for the same rows is how this screen came to have two
  * tables that their own comments admitted were identical.
@@ -51,16 +58,64 @@ export function ContentList({
   assets,
   uploads,
   onDelete,
+  onDeleteMany,
   onWrite,
   onUpload,
   onAddWebPage,
 }: Props) {
-  const [query, setQuery] = useState('')
+  const [filter, setFilter] = useState<Filter>(EMPTY_FILTER)
+  const [ticked, setTicked] = useState<Set<string>>(new Set())
+  const [confirming, setConfirming] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return q === '' ? assets : assets.filter((a) => a.title.toLowerCase().includes(q))
-  }, [assets, query])
+  const visible = useMemo(() => filterAssets(assets, filter), [assets, filter])
+  const narrowed = isFilterActive(filter)
+
+  // The selection is ids, and the documents behind them can go: deleted here,
+  // deleted in another tab, or left behind by switching scope. Resolving it
+  // against what is actually in this scope is what keeps "3 selected" from
+  // counting rows that no longer exist — and from carrying a campaign's
+  // selection into the bank.
+  const selected = useMemo(() => assets.filter((a) => ticked.has(a.id)), [assets, ticked])
+
+  // Not merely cosmetic: a stale id would still be handed to the delete.
+  useEffect(() => {
+    setTicked((prev) => {
+      if (prev.size === 0) return prev
+      const live = new Set(assets.map((a) => a.id))
+      const next = new Set([...prev].filter((id) => live.has(id)))
+      return next.size === prev.size ? prev : next
+    })
+  }, [assets])
+
+  const toggleRow = (id: string) =>
+    setTicked((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  // Over the rows the filter has left on screen, matching what the header
+  // checkbox claims: "select all" cannot mean documents the user filtered out.
+  const toggleAll = () =>
+    setTicked((prev) => {
+      const next = new Set(prev)
+      const all = visible.length > 0 && visible.every((a) => next.has(a.id))
+      for (const asset of visible) {
+        if (all) next.delete(asset.id)
+        else next.add(asset.id)
+      }
+      return next
+    })
+
+  const handleDeleteSelected = async () => {
+    setDeleting(true)
+    await onDeleteMany(selected.map((a) => a.id))
+    setDeleting(false)
+    setConfirming(false)
+    setTicked(new Set())
+  }
 
   if (assets.length === 0 && uploads.length === 0) {
     return (
@@ -74,33 +129,13 @@ export function ContentList({
   }
 
   return (
-    <div className="flex min-h-0 flex-col gap-3 py-4">
-      {assets.length > SEARCH_THRESHOLD && (
-        <div className="flex h-10 shrink-0 items-center gap-2 border-b-2 border-quaternary bg-input-secondary px-3 sm:max-w-80">
-          <MagnifyingGlassIcon className="size-4 shrink-0 text-secondary-foreground" />
-          <Input
-            variant="search"
-            inputSize="default"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${assets.length} documents`}
-            aria-label={
-              campaignId ? "Search this campaign's content" : 'Search the content bank'
-            }
-            className="px-0"
-          />
-          {query !== '' && (
-            <Button
-              variant="ghost"
-              size="xsIcon"
-              aria-label="Clear search"
-              onClick={() => setQuery('')}
-            >
-              <XIcon />
-            </Button>
-          )}
-        </div>
-      )}
+    <div className="relative flex min-h-0 flex-col gap-3 py-4">
+      <ContentFilter
+        assets={assets}
+        value={filter}
+        onChange={setFilter}
+        scopeLabel={campaignId ? "this campaign's content" : 'the content bank'}
+      />
 
       {uploads.length > 0 && <UploadingRows uploads={uploads} />}
 
@@ -109,14 +144,104 @@ export function ContentList({
           assets={visible}
           campaignId={campaignId}
           onDelete={onDelete}
-          emptyStateMessage={
-            query !== ''
-              ? 'No documents match that'
-              : campaignId
-                ? 'Nothing in this campaign yet'
-                : 'Nothing in the content bank yet'
-          }
+          selectedIds={ticked}
+          onToggleRow={toggleRow}
+          onToggleAll={toggleAll}
+          // The table is only ever empty here because the filter emptied it —
+          // an empty scope shows `EmptyBank` instead — so the way out is to
+          // undo the filter, which is what the shared empty state offers.
+          onEmptyStateAction={narrowed ? () => setFilter(EMPTY_FILTER) : undefined}
         />
+      </div>
+
+      {selected.length > 0 && (
+        <SelectionBar
+          count={selected.length}
+          busy={deleting}
+          onClear={() => setTicked(new Set())}
+          onDelete={() => setConfirming(true)}
+        />
+      )}
+
+      <DeleteDocumentsDialog
+        count={selected.length}
+        campaignId={campaignId}
+        isOpen={confirming}
+        onClose={() => setConfirming(false)}
+        onConfirm={() => void handleDeleteSelected()}
+        deleting={deleting}
+      />
+    </div>
+  )
+}
+
+/**
+ * What is ticked, and the one thing that can be done to it.
+ *
+ * Deleting is the only action a document row has, so it is the only action a
+ * selection has: a bar offering a menu of bulk edits would be promising
+ * operations — retag, move, re-read — that do not exist on a single row
+ * either.
+ *
+ * It floats over the foot of the list rather than opening a band above it,
+ * which is where the posts list puts the same idea. An inline bar would appear
+ * from nowhere on the first tick and push every row down 40px — putting the
+ * second row you meant to tick under the pointer aimed at the first. Floating
+ * also keeps the filter in place, which is how the next document to tick gets
+ * found.
+ *
+ * The count is in tabular figures and a fixed box, so the buttons beside it
+ * hold still while rows are ticked.
+ */
+function SelectionBar({
+  count,
+  busy,
+  onClear,
+  onDelete,
+}: {
+  count: number
+  busy: boolean
+  onClear: () => void
+  onDelete: () => void
+}) {
+  return (
+    // The track is full width and takes no clicks, so the bar can centre on the
+    // list without covering it; `bottom-4` and `h-12` are the assistant
+    // trigger's own, which is what puts all three surfaces — trigger, commit
+    // bar, this — on one line along the bottom of the app.
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center"
+      style={{ zIndex: ZIndex.pageActionBar }}
+    >
+      <div className="pointer-events-auto flex h-12 items-center gap-3 bg-primary px-4 shadow-lg">
+        <span className="shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap">
+          {count} selected
+        </span>
+        <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
+        {/* Ghost, like every button on the app's bottom bar, and not the
+            destructive red: the dialog behind it is where the warning belongs,
+            and a button that shouts on every selection teaches people to click
+            past the one screen that is actually asking. Weight carries the
+            hierarchy — the action at full strength, the way out dimmed. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-primary-foreground"
+          onClick={onDelete}
+          disabled={busy}
+        >
+          <TrashIcon />
+          <span>DELETE</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-tertiary-foreground"
+          onClick={onClear}
+          disabled={busy}
+        >
+          CLEAR
+        </Button>
       </div>
     </div>
   )

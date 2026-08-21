@@ -113,7 +113,7 @@ export const ZIndex = {
   /**
    * Floating page action bar
    * Used for: PageActionBar — the bottom-centre bar carrying a page's commit
-   * actions. Deliberately the same level as `navigation`, because it shares the
+   * actions — and the content list's selection bar, which shares its line. Deliberately the same level as `navigation`, because it shares the
    * bottom edge of the screen with the assistant trigger and the two must read
    * as one plane rather than one floating over the other.
    */
