@@ -38,6 +38,7 @@ import {
   type PublishMethod,
 } from '@/lib/postStatusMachine'
 import { fromLocalParts, toLocalParts } from '@/lib/postSchedule'
+import { formatDate as formatLocaleDate } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { Post } from '@/types/posts'
 
@@ -630,23 +631,22 @@ function QuickBarTrigger({
   )
 }
 
-const SCHEDULED_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
+const SCHEDULED_DATE_FORMAT: Intl.DateTimeFormatOptions = {
   weekday: 'short',
   month: 'short',
   day: 'numeric',
   hour: 'numeric',
   minute: '2-digit',
-})
+}
 
-const DAY_FORMAT = new Intl.DateTimeFormat(undefined, {
+const DAY_FORMAT: Intl.DateTimeFormatOptions = {
   weekday: 'short',
   month: 'short',
   day: 'numeric',
-})
+}
 
 function formatDate(iso: string): string | null {
-  const d = new Date(iso)
-  return isNaN(d.getTime()) ? null : SCHEDULED_DATE_FORMAT.format(d)
+  return formatLocaleDate(iso, SCHEDULED_DATE_FORMAT)
 }
 
 function SchedulingDetails({
@@ -754,7 +754,7 @@ function ScheduleEditor({
             aria-label="Set publish date"
             className="gap-1.5 text-sm font-normal text-primary-foreground shrink-0"
           >
-            {valid ? DAY_FORMAT.format(selected) : 'Select publish date'}
+            {valid ? formatLocaleDate(selected, DAY_FORMAT) : 'Select publish date'}
             <CaretDownIcon className="size-3 text-tertiary-foreground" />
           </Button>
         </DropdownMenuTrigger>

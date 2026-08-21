@@ -1,3 +1,5 @@
+import { formatDate } from '@/lib/intl'
+
 // Date helpers for the campaign calendar.
 //
 // The calendar URL carries a single `anchor` date (YYYY-MM-DD). The visible
@@ -37,13 +39,13 @@ export function visibleWeekDays(
 }
 
 /** Column header, line 1 — e.g. "Monday". */
-export function weekdayLabel(day: Date): string {
-  return day.toLocaleDateString(undefined, { weekday: 'long' })
+export function weekdayLabel(day: Date, locale?: string): string {
+  return formatDate(day, { weekday: 'long' }, locale)
 }
 
 /** Column header for the month grid, where there is no room for "Wednesday". */
-export function weekdayShortLabel(day: Date): string {
-  return day.toLocaleDateString(undefined, { weekday: 'short' })
+export function weekdayShortLabel(day: Date, locale?: string): string {
+  return formatDate(day, { weekday: 'short' }, locale)
 }
 
 /**
@@ -112,13 +114,13 @@ export function monthColumnDays(firstDay: number, hiddenDays: number[] = []): Da
 }
 
 /** The toolbar's heading in month view — e.g. "August 2026". */
-export function monthLabel(day: Date): string {
-  return `${day.toLocaleDateString(undefined, { month: 'long' })} ${day.getFullYear()}`
+export function monthLabel(day: Date, locale?: string): string {
+  return `${formatDate(day, { month: 'long' }, locale)} ${day.getFullYear()}`
 }
 
 /** Column header, line 2 — e.g. "20 July 2026". */
-export function dayLabel(day: Date): string {
-  return `${day.getDate()} ${day.toLocaleDateString(undefined, { month: 'long' })} ${day.getFullYear()}`
+export function dayLabel(day: Date, locale?: string): string {
+  return `${day.getDate()} ${formatDate(day, { month: 'long' }, locale)} ${day.getFullYear()}`
 }
 
 export function isSameDay(a: Date, b: Date): boolean {

@@ -10,6 +10,8 @@ import { assetCategory, categoryLabel } from "@/lib/assetCategory";
 import { statusToBadge } from "@/lib/assetStatus";
 import { retrievability } from "@/lib/campaignSources";
 import { cn, formatTitle } from "@/lib";
+import { formatDate as formatLocaleDate } from "@/lib/intl";
+import { useLocale } from "@/hooks/useLocale";
 import type { Asset } from "@/types/content";
 
 type AssetRow = Asset & Record<string, unknown>;
@@ -23,13 +25,10 @@ type Props = {
   emptyStateMessage?: string;
 };
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+function formatDate(dateStr: string, locale: string): string {
+  return (
+    formatLocaleDate(dateStr, { year: "numeric", month: "short", day: "numeric" }, locale) ?? ""
+  );
 }
 
 /** The Content Bank's cell shell: same height, same hairline, same padding. */
@@ -59,6 +58,9 @@ function AssetPoolTableComponent({
 }: Props) {
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
   const data = assets as AssetRow[];
+  // The two date columns format without reading the catalogue, so this is
+  // what re-renders them when the language changes.
+  const locale = useLocale();
 
   const columnConfigs = useMemo<ColumnConfig<AssetRow>[]>(
     () => [
@@ -140,7 +142,7 @@ function AssetPoolTableComponent({
         minSize: 120,
         cell: (_value, row) => (
           <div className={CELL}>
-            <TextCell value={formatDate(row.created_at)} />
+            <TextCell value={formatDate(row.created_at, locale)} />
           </div>
         ),
       },
@@ -152,7 +154,7 @@ function AssetPoolTableComponent({
         minSize: 120,
         cell: (_value, row) => (
           <div className={CELL}>
-            <TextCell value={formatDate(row.updated_at)} />
+            <TextCell value={formatDate(row.updated_at, locale)} />
           </div>
         ),
       },
@@ -181,7 +183,7 @@ function AssetPoolTableComponent({
         ),
       },
     ],
-    [onToggle, selectable, selected],
+    [onToggle, selectable, selected, locale],
   );
 
   const activeColumns = useMemo(

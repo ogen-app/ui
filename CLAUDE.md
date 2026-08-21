@@ -143,6 +143,20 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   the deploy that releases it. The gate sits on those entry points, not on
   `setLocale`, so the switching machinery stays exercised by its tests while
   nothing but English is released. Spanish is complete and gated today.
+- **Dates, times and numbers go through `lib/intl.ts`** — `formatDate`,
+  `formatNumber`, `formatRelative` — never `toLocaleDateString(undefined, …)`
+  or a bare `new Intl.DateTimeFormat`. The bare forms mean the *browser's*
+  language, and the app's is a separate choice the user makes in Workspace
+  Settings; a Spanish UI printing "Aug 20" is the same bug as an English one
+  printing "20 ago". These helpers read the active language at call time and
+  cache the formatter per locale, so nothing is hoisted to module scope where
+  it would freeze the first language loaded. Two deliberate exceptions:
+  `lib/timeZones.ts` pins `en-US` because it *parses* `formatToParts` rather
+  than showing it, and `PostCard`'s clock pins `hour12: false` because the
+  card gives the time one fixed-width slot. Formatting without reading `t()`
+  means nothing re-renders the component on a switch — the overlay covers the
+  app but doesn't remount it — so subscribe with `useLocale()` (or take
+  `i18n.language` off a `useTranslation()` you already have) and pass it in.
 - **The language switch is covered by a 2-second full-screen loader**, and
   `?lang=es` forces one for a page load then persists it. The waiting screen's
   own copy is the one string that must *not* come from the catalogue — it lives

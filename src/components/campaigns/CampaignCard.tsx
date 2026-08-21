@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge.tsx'
 import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
 import { StatTile } from '@/components/campaigns/overview/StatTile.tsx'
+import { formatNumber } from '@/lib/intl'
 import { useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
@@ -237,7 +238,7 @@ function advancedSummary(campaign: Campaign): string | null {
   const parts: string[] = []
   if (campaign.budget != null && campaign.budget > 0) {
     parts.push(
-      `Budget ${campaign.budget.toLocaleString()} ${campaign.currency}`.trim(),
+      `Budget ${formatNumber(campaign.budget)} ${campaign.currency}`.trim(),
     )
   }
   const language = campaign.language.trim()

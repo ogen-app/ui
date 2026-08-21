@@ -9,6 +9,8 @@
  */
 
 /** Time of day given to a post whose date was picked without one. */
+import { offsetLabel } from '@/lib/timeZones'
+
 export const DEFAULT_HOUR = 9
 export const DEFAULT_MINUTE = 0
 
@@ -48,13 +50,18 @@ export function atDefaultTime(day: Date): string {
   return local.toISOString()
 }
 
-/** Short zone name for the current locale, e.g. "GMT+3". */
+/**
+ * Short name for this browser's own zone, e.g. "GMT+3".
+ *
+ * Deliberately the same `offsetLabel` the zone *picker* renders with, rather
+ * than a second near-identical formatter: the two describe the same zone in
+ * the same screen, and one of them reading "GMT+3" while the other read
+ * "GMT+03:00" was a difference with no meaning behind it. That helper pins
+ * `en-US` because the label it produces is parsed out of `formatToParts`.
+ */
 export function getLocalTimezoneLabel(): string {
   try {
-    const parts = new Intl.DateTimeFormat(undefined, {
-      timeZoneName: 'short',
-    }).formatToParts(new Date())
-    return parts.find((p) => p.type === 'timeZoneName')?.value ?? 'local time'
+    return offsetLabel(Intl.DateTimeFormat().resolvedOptions().timeZone) || 'local time'
   } catch {
     return 'local time'
   }

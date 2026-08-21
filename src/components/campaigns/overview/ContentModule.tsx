@@ -11,6 +11,7 @@ import { cn, formatTitle } from "@/lib";
 import { contentSnapshot } from "@/lib/campaignReadiness.ts";
 import { getPlatformInfo } from "@/lib/platformDictionary.ts";
 import { relativeTime } from "@/lib/relativeTime.ts";
+import { formatDate } from "@/lib/intl";
 import { threadIdFor, useAssistantStore } from "@/stores/assistantStore.ts";
 import { useSettingsStore } from "@/stores/settingsStore.ts";
 import type { Campaign } from "@/types/campaigns";
@@ -216,7 +217,7 @@ function PostList({
   campaignId: string;
   timeOf: (post: Post) => string | null;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <div className="flex flex-col gap-1">
       <h3 className="text-xs text-tertiary-foreground">{heading}</h3>
@@ -242,7 +243,13 @@ function PostList({
                         the date is missing rather than merely late. */}
                     <span
                       className="w-24 text-right"
-                      title={time ? new Date(time).toLocaleString() : undefined}
+                      title={
+                        formatDate(
+                          time,
+                          { dateStyle: "long", timeStyle: "short" },
+                          i18n.language,
+                        ) ?? undefined
+                      }
                     >
                       {time ? relativeTime(time) : t("campaignOverview.noDate")}
                     </span>

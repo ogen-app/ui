@@ -217,6 +217,9 @@ export const es: Translation = {
     imagePreviewsNote: 'Solo las publicaciones que tienen imagen y, en el mes, solo en los días con espacio para una',
     weekCard: 'TARJETA DE SEMANA',
     monthCard: 'TARJETA DE MES',
+    addPostOn: 'Añadir una publicación el {{date}}',
+    density_one: '{{count}} publicación el {{date}} — abrir esta semana',
+    density_other: '{{count}} publicaciones el {{date}} — abrir esta semana',
   },
 
   assistant: {

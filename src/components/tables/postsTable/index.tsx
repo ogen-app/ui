@@ -11,6 +11,8 @@ import { POST_STATUS_LABELS, DELETABLE_STATUSES } from '@/types/posts'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { formatTitle } from '@/lib'
+import { formatDate as formatLocaleDate } from '@/lib/intl'
+import { useLocale } from '@/hooks/useLocale'
 
 type PostRow = Post & Record<string, unknown>
 
@@ -36,14 +38,11 @@ type PostsTableProps = {
   onSortingChange?: (next: SortingState) => void
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return 'Not set'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+function formatDate(dateStr: string | null, locale: string): string {
+  return (
+    formatLocaleDate(dateStr, { year: 'numeric', month: 'short', day: 'numeric' }, locale) ??
+    'Not set'
+  )
 }
 
 function formatRelativeDate(dateStr: string | null): string {
@@ -76,6 +75,9 @@ function PostsTableComponent({
   onSortingChange,
 }: PostsTableProps) {
   const data = posts as PostRow[]
+  // The two date columns format without reading the catalogue, so this is
+  // what re-renders them when the language changes.
+  const locale = useLocale()
 
   const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
   // Against the rows on screen, not against the whole selection: the header
@@ -185,7 +187,7 @@ function PostsTableComponent({
         minSize: 130,
         cell: (_value, row) => (
           <div className="h-[34px] border-b-2 border-background px-3 leading-8">
-            <TextCell value={formatDate(row.scheduled_at)} />
+            <TextCell value={formatDate(row.scheduled_at, locale)} />
           </div>
         ),
       },
@@ -229,7 +231,7 @@ function PostsTableComponent({
         },
       },
     ],
-    [campaignId, onDelete, selectable, selectedIds, onToggleRow, onToggleAll, posts, visibleSelected],
+    [campaignId, onDelete, selectable, selectedIds, onToggleRow, onToggleAll, posts, visibleSelected, locale],
   )
 
   const activeColumns = useMemo(

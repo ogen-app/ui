@@ -6,6 +6,7 @@
 import type { Campaign } from "@/types/campaigns";
 import type { Post, PostStatus, PostSummary } from "@/types/posts";
 import { campaignTypeInfo } from "@/lib/campaignTypeDictionary";
+import { formatDate } from "@/lib/intl";
 import { getPlatformInfo, type PlatformView } from "@/lib/platformDictionary";
 
 /**
@@ -83,14 +84,14 @@ export type SetupCheck = {
   fix: FixTarget;
 };
 
-const dateFormat = new Intl.DateTimeFormat(undefined, {
+const DATE_RANGE_FORMAT: Intl.DateTimeFormatOptions = {
   month: "short",
   day: "numeric",
   year: "numeric",
-});
+};
 
 function formatDateRange(start: string, end: string): string {
-  return `${dateFormat.format(new Date(start))} – ${dateFormat.format(new Date(end))}`;
+  return `${formatDate(start, DATE_RANGE_FORMAT)} – ${formatDate(end, DATE_RANGE_FORMAT)}`;
 }
 
 export type ChannelReadiness = {

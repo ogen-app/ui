@@ -3,7 +3,9 @@ import { PlusIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import folderEmptyImage from '@/assets/illustrations/folder-empty.webp'
-import { addDays, isSameDay, monthWeeks, startOfWeek } from './calendar/date'
+import { addDays, isSameDay, monthWeeks, startOfWeek, weekdayLabel } from './calendar/date'
+import { formatDate } from '@/lib/intl'
+import { useLocale } from '@/hooks/useLocale'
 import { cn } from '@/lib'
 
 type Props = {
@@ -59,6 +61,9 @@ export function PostsEmptyState({
 }: Props) {
   const { firstDayOfWeek, hiddenDays } = useCalendarSettings(campaignId)
   const compact = variant === 'panel'
+  // The ghost week's column headers are formatted dates and nothing here
+  // reads the catalogue, so this is what re-renders them on a switch.
+  const locale = useLocale()
 
   const columns = useMemo(() => {
     const today = new Date()
@@ -67,12 +72,12 @@ export function PostsEmptyState({
       .filter((day) => !hiddenDays.includes(day.getDay()))
       .map((day, i) => ({
         key: day.toDateString(),
-        label: day.toLocaleDateString(undefined, { weekday: 'long' }),
-        dateLabel: `${day.getDate()} ${day.toLocaleDateString(undefined, { month: 'long' })}`,
+        label: weekdayLabel(day, locale),
+        dateLabel: `${day.getDate()} ${formatDate(day, { month: 'long' }, locale)}`,
         isToday: isSameDay(day, today),
         ghosts: GHOSTS_PER_DAY[i % GHOSTS_PER_DAY.length],
       }))
-  }, [anchor, firstDayOfWeek, hiddenDays])
+  }, [anchor, firstDayOfWeek, hiddenDays, locale])
 
   const monthGrid = useMemo(
     () =>

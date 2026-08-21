@@ -4,6 +4,7 @@ import { CircleDashedIcon, UserCircleIcon, WarningIcon } from '@phosphor-icons/r
 import type { Post } from '@/types/posts'
 import { POST_STATUS_LABELS } from '@/types/posts'
 import { cn, formatTitle } from '@/lib'
+import { formatDate } from '@/lib/intl'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { hasVisibleProblem } from '@/lib/postValidation'
@@ -214,13 +215,13 @@ function PostCardComponent({
   // The calendar lays posts out by scheduled_at; show that time (or the
   // publish time once published). Unscheduled posts have neither — omit it.
   const timeSource = post.scheduled_at ?? post.published_at
-  const time = timeSource
-    ? new Date(timeSource).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    : null
+  const time = formatDate(timeSource, {
+    hour: '2-digit',
+    minute: '2-digit',
+    // Pinned rather than left to the locale: the card gives the time one
+    // fixed-width slot, and a 12-hour rendering adds "AM"/"PM" to it.
+    hour12: false,
+  })
 
   // Only what the list payload already carries — `media_urls`. The editor's
   // uploads land in `post_attachments`, whose thumbnails are hydrated per

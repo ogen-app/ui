@@ -293,6 +293,19 @@ export const en = {
     imagePreviewsNote: 'Only posts that have a picture, and in the month only on the days with room for one',
     weekCard: 'WEEK CARD',
     monthCard: 'MONTH CARD',
+
+    /**
+     * The month grid's two hover titles. Both name the day they are on, which
+     * is the only thing distinguishing one cell's control from the next — the
+     * add button is an icon, and the density is a count.
+     *
+     * `density` says "open this week" rather than "open the day": the month
+     * has no day view to go to, and the week is where those posts become
+     * readable again.
+     */
+    addPostOn: 'Add a post on {{date}}',
+    density_one: '{{count}} post on {{date}} — open this week',
+    density_other: '{{count}} posts on {{date}} — open this week',
   },
 
   assistant: {
