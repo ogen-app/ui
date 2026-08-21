@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { AnalyticsModule } from "@/components/campaigns/overview/AnalyticsModule.tsx";
-import { AssetsModule } from "@/components/campaigns/overview/AssetsModule.tsx";
+import { DocumentsModule } from "@/components/campaigns/overview/DocumentsModule.tsx";
 import { AttentionRail } from "@/components/campaigns/overview/AttentionRail.tsx";
 import { BriefModule } from "@/components/campaigns/overview/BriefModule.tsx";
 import { ContentModule } from "@/components/campaigns/overview/ContentModule.tsx";
@@ -144,7 +144,7 @@ function CampaignOverviewScreen() {
           flag and renders nothing while `campaign-analytics` is off. */}
       <AnalyticsModule campaignId={campaignId} />
       <BriefModule campaign={campaign} />
-      <AssetsModule campaign={campaign} />
+      <DocumentsModule campaign={campaign} />
       <SetupModule campaign={campaign} platformViews={platformViews} />
     </div>
   );

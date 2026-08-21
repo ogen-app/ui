@@ -355,7 +355,7 @@
   --nav-posts: oklch(0.52 0.15 342); /* pink */
   --nav-analytics: oklch(0.52 0.13 150); /* green */
   --nav-brief: oklch(0.55 0.14 66); /* amber */
-  --nav-assets: oklch(0.5 0.16 300); /* violet */
+  --nav-content: oklch(0.5 0.16 300); /* violet */
 
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);

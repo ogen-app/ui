@@ -224,7 +224,7 @@ export const en = {
       posts: 'Posts calendar',
       analytics: 'Analytics',
       brief: 'Brief',
-      assets: 'Assets',
+      content: 'Content',
       settings: 'Settings',
     },
   },
@@ -245,7 +245,7 @@ export const en = {
     openPosts: 'OPEN CALENDAR',
     openAnalytics: 'OPEN ANALYTICS',
     openBrief: 'OPEN BRIEF',
-    openAssets: 'OPEN ASSETS',
+    openContent: 'OPEN CONTENT',
     openSettings: 'OPEN SETTINGS',
 
     /**

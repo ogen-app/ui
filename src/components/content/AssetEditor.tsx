@@ -35,6 +35,9 @@ export function AssetEditor({
   const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleRef = useRef<HTMLTextAreaElement | null>(null);
   const readyRef = useRef(false);
+  // The markdown the editor last held on our behalf: what we loaded into it,
+  // or what we last sent up. Anything equal to this is not an edit.
+  const lastMarkdownRef = useRef("");
 
   const editor = useCreateBlockNote({
     initialContent: DEFAULT_CONTENT,
@@ -45,6 +48,7 @@ export function AssetEditor({
     const blocks = editor.tryParseMarkdownToBlocks(initialContent ?? "");
     const next = blocks.length > 0 ? blocks : DEFAULT_CONTENT;
     editor.replaceBlocks(editor.document, next);
+    lastMarkdownRef.current = editor.blocksToMarkdownLossy();
     readyRef.current = true;
   }, [editor]);
 
@@ -111,10 +115,19 @@ export function AssetEditor({
 
   const handleContentChange = useCallback(() => {
     if (!readyRef.current) return;
+    // Loading a document is not editing it. The editor fires a change once the
+    // view has attached to what we just put in it, and saving that back is at
+    // best a pointless write — and on a note created seconds ago it is an
+    // empty body, which the API refuses with "content is required".
+    const markdown = editor.blocksToMarkdownLossy();
+    if (markdown === lastMarkdownRef.current) return;
+    lastMarkdownRef.current = markdown;
     onDirty?.();
     if (contentTimerRef.current) clearTimeout(contentTimerRef.current);
     contentTimerRef.current = setTimeout(() => {
-      onContentChange(editor.blocksToMarkdownLossy());
+      // A document emptied on purpose still has to be saved, and the API has
+      // no way to say "no body" — same single space the title falls back to.
+      onContentChange(markdown === "" ? " " : markdown);
     }, 500);
   }, [editor, onContentChange, onDirty]);
 

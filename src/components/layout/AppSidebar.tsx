@@ -110,8 +110,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ? 'analytics'
         : location.pathname.includes('/brief')
           ? 'brief'
-          : location.pathname.includes('/assets')
-            ? 'assets'
+          : location.pathname.includes('/content')
+            ? 'content'
             : location.pathname.includes('/settings')
               ? 'settings'
               : 'posts'
