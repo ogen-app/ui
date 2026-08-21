@@ -73,32 +73,58 @@ function enqueue(postId: string, run: () => Promise<void>): Promise<void> {
   return next;
 }
 
+/**
+ * Bounded, because the loop below re-runs only when a keystroke lands in the
+ * exact window of an in-flight PUT — twice in a row is already vanishingly
+ * rare, and past this many attempts the next natural autosave settles it.
+ */
+const MAX_WRITE_ATTEMPTS = 4;
+
 async function write(
   postId: string,
   nextIds: (post: Post) => string[],
 ): Promise<void> {
-  // The editor holds the *whole* post in a 600ms debounce, so a PUT from here
-  // would be overwritten wholesale by the flush that follows it — the pending
-  // copy still carries the id list as it was before this ran. Landing that
-  // debounce first is the same thing the assistant does before writing a post
-  // server-side, and for the same reason.
-  await flushPendingSave(postId);
-  const post = await getPost(postId);
-  const ids = nextIds(post);
-  if (
-    ids.length === post.used_asset_ids.length &&
-    ids.every((id, i) => id === post.used_asset_ids[i])
-  ) {
-    return;
+  for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS; attempt++) {
+    // The editor holds the *whole* post in a 600ms debounce, so a PUT from
+    // here would be overwritten wholesale by the flush that follows it — the
+    // pending copy still carries the id list as it was before this ran.
+    // Landing that debounce first is the same thing the assistant does before
+    // writing a post server-side, and for the same reason.
+    await flushPendingSave(postId);
+    const post = await getPost(postId);
+    const ids = nextIds(post);
+    if (
+      ids.length === post.used_asset_ids.length &&
+      ids.every((id, i) => id === post.used_asset_ids[i])
+    ) {
+      return;
+    }
+    const saved = await updatePost(postId, {
+      ...postToPayload(post),
+      used_asset_ids: ids,
+    });
+    // Only the source fields land in the editor's cache. The user may have
+    // typed since the flush above, and `changeDoc` has already painted those
+    // keystrokes — replacing the whole document with `saved` would snap the
+    // text (and the cursor) back one round-trip. The response is hydrated, so
+    // `used_assets` comes along and the editor's card can name the new
+    // document without fetching anything.
+    queryClient.setQueryData<Post>(postKey(postId), (prev) =>
+      prev
+        ? {
+            ...prev,
+            used_asset_ids: saved.used_asset_ids,
+            used_assets: saved.used_assets,
+          }
+        : saved,
+    );
+    landSavedPost(queryClient, saved);
+    // Not done yet: a keystroke that arrived *while the PUT was in flight*
+    // cloned the pre-write document into the editor's debounce, and its flush
+    // will put the old id list straight back. Going round again flushes that
+    // straggler and re-asserts; the first quiet pass reads its own ids back
+    // and returns above.
   }
-  const saved = await updatePost(postId, {
-    ...postToPayload(post),
-    used_asset_ids: ids,
-  });
-  // The response is hydrated, so this also refreshes `used_assets` — the
-  // editor's card can name the new document without fetching anything.
-  queryClient.setQueryData(postKey(postId), saved);
-  landSavedPost(queryClient, saved);
 }
 
 /**

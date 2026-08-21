@@ -39,11 +39,24 @@ export function useAssets() {
   });
 }
 
+/**
+ * One document, watching itself while it is still being read.
+ *
+ * The same self-poll as the list, for the same deployment state: the
+ * `asset.updated` broadcast is the normal way a scrape or extraction reports
+ * done, but with the event stream down an open document would say "Reading…"
+ * forever — the list isn't mounted here to backstop it, and window-focus
+ * refetches are off app-wide.
+ */
 export function useAsset(id: string) {
   return useQuery({
     queryKey: assetKey(id),
     queryFn: () => getAsset(id),
     enabled: !!id,
+    refetchInterval: (query) =>
+      query.state.data && retrievability(query.state.data.status) === "waiting"
+        ? PROCESSING_POLL_MS
+        : false,
   });
 }
 

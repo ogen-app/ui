@@ -104,18 +104,17 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
    * would silently stop writing from everything it had, and nothing on screen
    * would differ. Pinning it to the bank as it stands right now preserves what
    * generation sees; the ref is because the campaign refetch that clears the
-   * condition lands after this effect could run again.
+   * condition lands after this effect could run again. The membership write
+   * path expands the legacy state itself (see `lib/campaignMembership`), so
+   * this effect is the eager pin, not the only defence — and it needn't wait
+   * for the asset list, which the write reads server-side.
    */
   const seeded = useRef<string | null>(null)
   useEffect(() => {
-    if (!assets || !campaign || !seedsWholeBank(campaign) || seeded.current === campaign.id)
-      return
+    if (!campaign || !seedsWholeBank(campaign) || seeded.current === campaign.id) return
     seeded.current = campaign.id
-    void seedFromWholeBank(
-      campaign.id,
-      assets.map((asset) => asset.id),
-    )
-  }, [assets, campaign])
+    void seedFromWholeBank(campaign.id)
+  }, [campaign])
 
   const hasFiles = (e: React.DragEvent) => e.dataTransfer.types.includes('Files')
 

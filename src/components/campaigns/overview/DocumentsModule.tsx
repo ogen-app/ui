@@ -1,4 +1,5 @@
 import { StatusBadge } from "@/components/ui/status-badge.tsx";
+import { seedsWholeBank } from "@/lib/campaignSources";
 import type { Campaign } from "@/types/campaigns";
 import { CollapsedCard } from "./OverviewCard.tsx";
 
@@ -22,6 +23,20 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
   // whose asset has since been deleted therefore still counts here, and stops
   // counting the moment anyone opens the page below.
   const count = campaign.asset_ids.length;
+
+  // A campaign nobody has opened since the whole-bank mode was retired still
+  // generates from every document in the workspace — "brief alone" would be
+  // the opposite of the truth. Opening the page below pins it to a real set.
+  if (seedsWholeBank(campaign)) {
+    return (
+      <CollapsedCard section="content" target="content" campaignId={campaign.id}>
+        <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
+          This campaign still draws on the whole content bank — open Content to
+          see its documents.
+        </span>
+      </CollapsedCard>
+    );
+  }
 
   if (count === 0) {
     return (
