@@ -26,8 +26,9 @@ export function ActivitySidebarItem({ isActive }: { isActive: boolean }) {
       text={t('nav.activity')}
       isActive={isActive}
       to="/activity"
-      // Unread entries, and nothing else: a count here says how much happened
-      // you have not seen, never how much of it matters.
+      // Unread entries — things that happened, where the Tasks row below counts
+      // things being asked of someone. Drawn alike all the same: the difference
+      // is what the two rows are, and the rail says that with their names.
       counts={[{ value: unread }]}
       countLabel={unread > 0 ? t('nav.activityUnread', { count: unread }) : undefined}
     />

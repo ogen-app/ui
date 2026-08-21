@@ -27,6 +27,7 @@
 // that stops being true when it is fixed. See `docs/activity.md`.
 
 import type { PostSummary } from '@/types/posts'
+import type { Task } from '@/lib/tasks'
 
 /**
  * What can happen to a post that a person would want to read about later.
@@ -85,6 +86,28 @@ export type ActivityEntry =
       campaignId: string
       platformId: string
     }
+  // What happened *to a task*, never the task itself. A task is a level — it
+  // sits in the card above until it is finished — but a task being written,
+  // finished or resolving itself is a fact with a time on it, and this is
+  // where facts with times live.
+  | {
+      kind: ActivityTaskKind
+      id: string
+      at: string
+      taskId: string
+      title: string
+      campaignId: string | null
+    }
+
+const TASK_KINDS = ['task_created', 'task_completed', 'task_resolved'] as const
+export type ActivityTaskKind = (typeof TASK_KINDS)[number]
+
+/** Narrows an entry to the task ones — the union has three shapes now. */
+export function isTaskEntry(
+  entry: ActivityEntry,
+): entry is Extract<ActivityEntry, { kind: ActivityTaskKind }> {
+  return (TASK_KINDS as readonly string[]).includes(entry.kind)
+}
 
 /** Narrows to a post exception, the only entries with a post behind them. */
 export function isExceptionEntry(
@@ -274,7 +297,48 @@ export function reportForDay(
 }
 
 /**
- * The feed: exceptions as they happened, plus one report entry per day.
+ * Everything that happened to the tasks, as entries.
+ *
+ * Three moments, and deliberately not a fourth: a task the *system* raised is
+ * not news — the task itself is the notification, and logging "the computer
+ * noticed something" beside it says the same thing twice. What a person did
+ * (wrote it, finished it) and what the system did without being asked
+ * (resolved it) are both worth a line.
+ */
+export function taskEntries(tasks: Task[]): ActivityEntry[] {
+  const entries: ActivityEntry[] = []
+
+  for (const task of tasks) {
+    if (task.source.kind === 'manual') {
+      entries.push({
+        kind: 'task_created',
+        id: `task_created:${task.id}`,
+        at: task.createdAt,
+        taskId: task.id,
+        title: task.title,
+        campaignId: task.campaignId,
+      })
+    }
+
+    if (task.status === 'done' && task.closedAt) {
+      const kind = task.closedReason === 'auto' ? 'task_resolved' : 'task_completed'
+      entries.push({
+        kind,
+        id: `${kind}:${task.id}`,
+        at: task.closedAt,
+        taskId: task.id,
+        title: task.title,
+        campaignId: task.campaignId,
+      })
+    }
+  }
+
+  return entries
+}
+
+/**
+ * The feed: exceptions as they happened, what happened to the tasks, plus one
+ * report entry per day.
  *
  * The classes are the whole design. An exception is something that went wrong
  * or now needs a person, and it appears at the moment it happened. Everything
@@ -284,8 +348,14 @@ export function reportForDay(
 export function activityFeed(
   summaries: Record<string, PostSummary[]>,
   now: Date = new Date(),
+  tasks: Task[] = [],
 ): ActivityEntry[] {
   const entries: ActivityEntry[] = []
+
+  for (const entry of taskEntries(tasks)) {
+    if (Date.parse(entry.at) > now.getTime()) continue
+    entries.push(entry)
+  }
 
   for (const event of activityEvents(summaries)) {
     if (event.at.getTime() > now.getTime()) continue

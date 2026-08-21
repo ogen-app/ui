@@ -322,7 +322,12 @@ export type AttentionItem = {
  */
 export const MAX_ATTENTION_ITEMS = 3;
 
-const SEVERITY_RANK: Record<AttentionSeverity, number> = {
+/**
+ * Worst first. Exported because a list that merges several campaigns' items
+ * has to order them by the same scale the rail does, and a second copy of this
+ * map is a second opinion waiting to drift.
+ */
+export const ATTENTION_SEVERITY_RANK: Record<AttentionSeverity, number> = {
   alert: 0,
   risk: 1,
   todo: 2,
@@ -862,7 +867,10 @@ export function attentionItems(
   }
 
   // Stable sort: severity decides, catalogue order breaks ties.
-  return items.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
+  return items.sort(
+    (a, b) =>
+      ATTENTION_SEVERITY_RANK[a.severity] - ATTENTION_SEVERITY_RANK[b.severity],
+  );
 }
 
 /**

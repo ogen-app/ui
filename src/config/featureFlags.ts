@@ -50,6 +50,42 @@ const FEATURE_FLAGS = {
   activity: false,
 
   /**
+   * Tasks (CON-234): the workspace's open work, its own module directly under
+   * Activity in the rail.
+   *
+   * Separate from `activity` because they are different objects and will land
+   * at different times. A task is a **level** — a condition that stops being
+   * true when it is fixed — where a feed entry is an **edge**, a timestamped
+   * fact that stays true forever (`docs/tasks.md`). Keeping them apart is
+   * what stops the feed filling with stale rows nobody can clear.
+   *
+   * **Waiting on:** a tasks table. A task is a record — it is written by a
+   * person or raised by the system from a warning, it carries an assignee and
+   * a done state, and it outlives the condition behind it. None of that is
+   * derivable, so the prototype stores the whole list as JSON in one tenant
+   * key/value row (`tasks`), the same stand-in `campaign-accounts` uses while
+   * waiting for its column. What that cannot do, and the table must:
+   *   · **row-level writes** — every change here rewrites the entire list, so
+   *     two people editing different tasks in the same second means the later
+   *     write wins for both;
+   *   · **server-side reconciliation** — raising and auto-resolving happens on
+   *     the client, so it only runs while somebody has one of the two screens
+   *     open, and exactly one may do it (`useTaskReconciliation`);
+   *   · **telling the assignee** — assignment writes a membership id and
+   *     nothing else happens; there is no channel to notify them on until
+   *     CON-224.
+   *
+   * `assigned_to` does not exist on any model today, which is the column this
+   * starts from. The row is also workspace-wide and readable by every member,
+   * which is right for shared work and wrong for work assigned to a person.
+   *
+   * Switch this on once tasks are rows, migrate the key onto them, and re-test
+   * — the intent is that the rule set keeps raising tasks alongside the
+   * hand-written ones, not that it is replaced.
+   */
+  tasks: false,
+
+  /**
    * The Goals card in campaign settings: the post rate the campaign is planned
    * against. On — CON-182 landed `goal_cadence` beside `estimated_post_count`
    * and the content-plan flow generates against the pair. Delete this flag once
