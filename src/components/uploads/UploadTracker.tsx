@@ -1,3 +1,4 @@
+import { useLocation } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ZIndex } from "@/config/zIndex";
 import { useUploadStore } from "@/stores/uploadStore";
@@ -7,10 +8,28 @@ import { UploadRow } from "./UploadRow";
  * App-level, non-blocking upload panel docked bottom-right. Renders nothing when
  * idle. Mounted once in the authenticated layout so it persists across
  * navigation while PDFs finish processing in the background.
+ *
+ * It stays out of the way of the page the file was dropped on: a campaign's
+ * Content page — and the workspace bank behind it — shows its own uploads in
+ * the list they are joining, so this panel would be the same three files
+ * reported twice, in two places, in two shapes. What it is left with is exactly
+ * what those pages cannot show — the uploads still running somewhere you are no
+ * longer looking.
  */
 export function UploadTracker() {
-  const items = useUploadStore((s) => s.items);
+  const all = useUploadStore((s) => s.items);
   const clearFinished = useUploadStore((s) => s.clearFinished);
+  const pathname = useLocation({ select: (l) => l.pathname });
+
+  // Which list is on screen, and therefore already reporting its own uploads:
+  // a campaign's Content page, or the workspace bank (whose uploads carry no
+  // campaign at all).
+  const openCampaign = pathname.match(/^\/campaigns\/([^/]+)\/content$/)?.[1] ?? null;
+  const bankOpen = pathname === "/content-bank";
+  const items =
+    openCampaign !== null || bankOpen
+      ? all.filter((it) => it.campaignId !== openCampaign)
+      : all;
 
   if (items.length === 0) return null;
 

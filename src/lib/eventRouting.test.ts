@@ -23,6 +23,7 @@ describe('parseTopic', () => {
   it('reads the entity topics', () => {
     expect(parseTopic('entity:post:p1')).toEqual({ kind: 'post', id: 'p1' })
     expect(parseTopic('entity:campaign:c1')).toEqual({ kind: 'campaign', id: 'c1' })
+    expect(parseTopic('entity:asset:a1')).toEqual({ kind: 'asset', id: 'a1' })
     expect(parseTopic('entity:zernio_account:z1')).toEqual({ kind: 'zernioAccount', id: 'z1' })
   })
 
@@ -75,6 +76,18 @@ describe('invalidationsFor', () => {
     expect(keys(event('entity:campaign:c1', 'content_plan_completed'))).toEqual([
       ['campaigns', 'c1'],
     ])
+  })
+
+  it('refreshes the documents when a background read finishes', () => {
+    // A scraped page (CON-222) arrives empty and fills in from a worker, so
+    // this event is the only notice any tab gets. One filter covers the
+    // campaign's list and the open document — the latter nests under it.
+    const e = event('entity:asset:a1', 'asset.updated', { status: 'ready' })
+    expect(keys(e)).toEqual([['assets']])
+  })
+
+  it('ignores an asset event it does not know', () => {
+    expect(invalidationsFor(event('entity:asset:a1', 'asset.deleted'))).toEqual([])
   })
 
   it('refreshes the publishing surfaces when an account changes', () => {

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { AnalyticsModule } from "@/components/campaigns/overview/AnalyticsModule.tsx";
-import { AssetsModule } from "@/components/campaigns/overview/AssetsModule.tsx";
+import { DocumentsModule } from "@/components/campaigns/overview/DocumentsModule.tsx";
 import { AttentionRail } from "@/components/campaigns/overview/AttentionRail.tsx";
 import { BriefModule } from "@/components/campaigns/overview/BriefModule.tsx";
 import { ContentModule } from "@/components/campaigns/overview/ContentModule.tsx";
@@ -86,11 +86,18 @@ function CampaignOverviewScreen() {
   // Absence is an answer here, not a gap: the server omits campaigns with no
   // posts, so once the summaries have settled, no entry means none. Only both
   // queries being unsettled leaves the rail with nothing to say.
-  const railPosts: PostSummary[] | null = postsQuery.isSuccess
-    ? posts
-    : summariesQuery.isSuccess
-      ? (summariesQuery.data[campaignId] ?? [])
-      : null;
+  //
+  // Presence of data, not `isSuccess`: a refetch that fails leaves the query
+  // in error state while the earlier answer is still in hand, and that answer
+  // is exactly what the rail should keep showing. On `isSuccess` this fell
+  // through to the summaries — and when those were erring too, a rail that had
+  // been rendering real items was replaced by a skeleton that never resolved.
+  const railPosts: PostSummary[] | null =
+    postsQuery.data !== undefined
+      ? posts
+      : summariesQuery.data !== undefined
+        ? (summariesQuery.data[campaignId] ?? [])
+        : null;
 
   // Several attention rules are time-based (overdue slots, the next 24h, pace),
   // so they are recomputed on every render against the current clock rather
@@ -137,7 +144,7 @@ function CampaignOverviewScreen() {
           flag and renders nothing while `campaign-analytics` is off. */}
       <AnalyticsModule campaignId={campaignId} />
       <BriefModule campaign={campaign} />
-      <AssetsModule campaign={campaign} />
+      <DocumentsModule campaign={campaign} />
       <SetupModule campaign={campaign} platformViews={platformViews} />
     </div>
   );
