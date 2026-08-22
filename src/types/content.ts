@@ -42,6 +42,23 @@ export type AssetImage = {
   alt?: string | null;
 };
 
+/**
+ * The stored file behind an uploaded asset — PDFs, today (CON-103).
+ *
+ * `thumbnail_url` is the first page rendered to PNG when the upload was
+ * ingested, and it is minted per response from the file's storage key: a URL
+ * to draw right now, not an id worth keeping. Absent when the render failed,
+ * which is why nothing may assume a file implies a picture.
+ */
+export type AssetFile = {
+  id: string;
+  original_name: string;
+  mime_type: string;
+  size_bytes: number;
+  page_count?: number | null;
+  thumbnail_url?: string | null;
+};
+
 export type Asset = {
   id: string;
   title: string;
@@ -52,6 +69,8 @@ export type Asset = {
   source_url?: string | null;
   /** Mirrored page images. Absent until a scrape has stored some. */
   images?: AssetImage[];
+  /** The upload behind this document. Absent for notes and scraped pages. */
+  file?: AssetFile | null;
   tag_ids: string[];
   tags: Tag[];
   created_by: string;
