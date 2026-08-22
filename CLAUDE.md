@@ -156,10 +156,14 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   Settings; a Spanish UI printing "Aug 20" is the same bug as an English one
   printing "20 ago". These helpers read the active language at call time and
   cache the formatter per locale, so nothing is hoisted to module scope where
-  it would freeze the first language loaded. Two deliberate exceptions:
+  it would freeze the first language loaded. Three deliberate exceptions:
   `lib/timeZones.ts` pins `en-US` because it *parses* `formatToParts` rather
-  than showing it, and `PostCard`'s clock pins `hour12: false` because the
-  card gives the time one fixed-width slot. Formatting without reading `t()`
+  than showing it, `PostCard`'s clock pins `hour12: false` because the card
+  gives the time one fixed-width slot, and `docsTable`'s `stamp()` pins
+  `en-GB` because day-first `01 Aug 26` is the format that column was asked
+  for. That last one is the only exception that is a *display* choice rather
+  than a mechanical one, so it is the one to revisit first — the app now has
+  the date convention its comment says it was waiting for. Formatting without reading `t()`
   means nothing re-renders the component on a switch — the overlay covers the
   app but doesn't remount it — so subscribe with `useLocale()` (or take
   `i18n.language` off a `useTranslation()` you already have) and pass it in.
