@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, memo, type JSX } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, memo, type JSX } from 'react'
 import {
   type Column,
   type ColumnDef,
@@ -304,8 +304,16 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
       .getFooterGroups()
       .some((group) => group.headers.some((header) => header.column.columnDef.footer))
 
-  // Calculate spacer height when fillHeight is enabled and check if content fits
-  useEffect(() => {
+  // Calculate spacer height when fillHeight is enabled and check if content fits.
+  //
+  // Before paint, not after: `contentFitsInSpace` starts false, and false is
+  // the full-height branch below. Measuring in a passive effect meant a short
+  // list mounted as a page-tall slab of table surface and collapsed to its six
+  // rows a frame later — which is what switching to this section looked like,
+  // a flash of the whole column going white. The measurement reads the parent,
+  // the header and the virtualiser's total, none of which depend on the height
+  // being decided here, so there is no second pass to wait for.
+  useLayoutEffect(() => {
     if (!containerRef.current || !viewportRef.current) return
 
     const updateMeasurements = () => {
@@ -364,7 +372,13 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
       <ScrollAreaPrimitive.Root className={cn('relative flex-1 min-h-0 overflow-hidden')}>
         <ScrollAreaPrimitive.Viewport
           ref={viewportRef}
-          className={'h-full w-full rounded-[inherit]'}
+          // `overscroll-none` turns off the elastic bounce macOS gives an inner
+          // scroller. The bounce translates the scrolled box as a whole, and a
+          // header held in place by `sticky top-0` has nothing to hold on to
+          // once the scroll position goes past its own top — so pulling down at
+          // the top of the list dragged the column headings along with the
+          // rows, which is not something a table header does.
+          className={'h-full w-full overscroll-none rounded-[inherit]'}
         >
           {/* Header - sticky top */}
           <div

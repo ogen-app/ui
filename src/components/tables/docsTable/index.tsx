@@ -8,7 +8,16 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { statusToBadge } from '@/lib/assetStatus'
+import {
+  campaignsLabel,
+  elsewhereLabel,
+  postsLabel,
+  NO_USAGE,
+  type AssetUsage,
+} from '@/lib/assetUsage'
+import { useAssetUsage } from '@/hooks/useAssetUsage'
 import { AssetGlyph } from '@/components/content/AssetGlyph'
+import { AssetPreview } from '@/components/content/AssetPreview'
 import { extentLabel } from '@/lib/assetExtent'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 import { relativeTime } from '@/lib/relativeTime'
@@ -80,6 +89,53 @@ function TagPill({ tag }: { tag: Tag }) {
   )
 }
 
+/**
+ * Who is using this document — the column that answers *is any of this doing
+ * anything*, which a bank of files otherwise cannot be asked.
+ *
+ * It reads differently in the two scopes, because the question does. In the
+ * bank the document could be anywhere, so the first line places it: the
+ * campaign that holds it, or how many hold it. On a campaign's own page that
+ * line would say "this campaign" on every row, so the first line is what the
+ * campaign got out of it — the posts here that wrote from it — and the second
+ * says whether anyone else is reading it too.
+ *
+ * Unused says so in words, greyed rather than dashed. A dash is a hole in the
+ * table for the reader to interpret, and the two holes here mean different
+ * things: nothing holds this document at all, or a campaign holds it and no
+ * post has written from it yet. The second is the more useful sentence on the
+ * screen — it is a document that was filed and then never read — so it is
+ * worth spelling out rather than leaving as a mark.
+ */
+function UsedIn({ usage, scoped }: { usage: AssetUsage; scoped: boolean }) {
+  if (scoped) {
+    // Held by this campaign by definition — the page is its membership list —
+    // so the only question left is whether anything wrote from it.
+    return (
+      <Lines
+        lead={usage.postsHere > 0 ? postsLabel(usage.postsHere) : 'Not used in posts'}
+        faded={usage.postsHere === 0}
+        under={elsewhereLabel(usage, true)}
+      />
+    )
+  }
+
+  const campaigns = campaignsLabel(usage)
+  if (!campaigns) return <Lines lead="Not used" faded />
+  return <Lines lead={campaigns} under={usage.posts > 0 ? postsLabel(usage.posts) : 'Not used in posts'} />
+}
+
+/** The column's two lines: the fact, and the smaller one qualifying it. */
+function Lines({ lead, faded, under }: { lead: string; faded?: boolean; under?: string | null }) {
+  return (
+    <span className="flex min-w-0 flex-col gap-0.5">
+      <span className={cn('table-text truncate', faded && 'text-tertiary-foreground')}>{lead}</span>
+      {under && <span className="truncate text-xs text-tertiary-foreground">{under}</span>}
+    </span>
+  )
+}
+
+
 type AssetsTableProps = {
   assets: Asset[]
   /**
@@ -115,6 +171,11 @@ function AssetsTableComponent({
   className,
 }: AssetsTableProps) {
   const data = assets as AssetRow[]
+
+  // Usage spans the whole workspace either way — a document on a campaign's
+  // page may be read by posts in another one, and the bank has no scope of
+  // its own to count within.
+  const { usage, ready: usageReady } = useAssetUsage(campaignId)
 
   const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
   // Against the rows on screen, not the whole selection: while a filter is
@@ -201,6 +262,21 @@ function AssetsTableComponent({
         },
       },
       {
+        // Neither sortable nor filterable, and not because it was left out of
+        // either: there is no order to put pictures in, and nothing to type
+        // that would name one. The column is here to be looked at.
+        id: 'preview',
+        header: 'Preview',
+        size: 76,
+        minSize: 76,
+        sortable: false,
+        cell: (_value, row) => (
+          <div className={cn(CELL, 'justify-center')}>
+            <AssetPreview asset={row} />
+          </div>
+        ),
+      },
+      {
         id: 'updated_at',
         accessorKey: 'updated_at',
         header: 'Updated',
@@ -220,6 +296,29 @@ function AssetsTableComponent({
         ),
       },
       {
+        // Sorted by the number on its first line — campaigns in the bank, posts
+        // in a campaign — which is the one thing in it that has an order. It
+        // means the ties among "1 campaign" rows fall wherever the previous
+        // sort left them, and that is better than ordering the column by a
+        // campaign name the reader did not ask about.
+        id: 'used_in',
+        header: 'Used in',
+        size: 170,
+        minSize: 140,
+        accessorFn: (row) => {
+          const used = usage.get(row.id) ?? NO_USAGE
+          return campaignId ? used.postsHere : used.campaigns.length
+        },
+        cell: (_value, row) => (
+          <div className={CELL}>
+            {/* Blank until the counts land, rather than a dash: "nothing uses
+                this" is a claim about the document, and a table that makes it
+                a beat early is a table that lies for one frame. */}
+            {usageReady && <UsedIn usage={usage.get(row.id) ?? NO_USAGE} scoped={!!campaignId} />}
+          </div>
+        ),
+      },
+      {
         id: 'tags',
         header: 'Tags',
         size: 200,
@@ -228,7 +327,7 @@ function AssetsTableComponent({
         cell: (_value, row) => (
           <div className={cn(CELL, 'justify-start gap-1.5')}>
             {row.tags.length === 0 ? (
-              <span className="text-xs text-tertiary-foreground">—</span>
+              <span className="table-text text-tertiary-foreground">No tags</span>
             ) : (
               row.tags.slice(0, 2).map((tag) => <TagPill key={tag.id} tag={tag} />)
             )}
@@ -260,6 +359,8 @@ function AssetsTableComponent({
     ],
     [
       campaignId,
+      usage,
+      usageReady,
       onDelete,
       selectable,
       selectedIds,
@@ -271,7 +372,15 @@ function AssetsTableComponent({
   )
 
   const activeColumns = useMemo(
-    () => [...(selectable ? ['select'] : []), 'title', 'updated_at', 'tags', 'actions'],
+    () => [
+      ...(selectable ? ['select'] : []),
+      'title',
+      'preview',
+      'updated_at',
+      'used_in',
+      'tags',
+      'actions',
+    ],
     [selectable],
   )
 

@@ -13,6 +13,7 @@ import { useConvertToManualPublish } from '@/hooks/useConvertToManualPublish'
 import { cn } from '@/lib'
 import type { PlatformView } from '@/lib/platformDictionary'
 import { listPosts } from '@/services/api/posts'
+import { WORKSPACE_POSTS_KEY } from '@/lib/queryKeys'
 import { toast } from '@/stores/toastStore'
 import type { Post } from '@/types/posts'
 
@@ -70,9 +71,13 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
     try {
       // Fetched rather than read from a cache: this spans every campaign, and
       // the per-campaign post queries only cover whatever the user has opened.
+      // `staleTime: 0` because the key is shared with `useAssetUsage`, which
+      // keeps it warm — a safety check over what will auto-publish must not
+      // run on a list up to 30 seconds old.
       const posts = await queryClient.fetchQuery({
-        queryKey: ['posts'],
+        queryKey: WORKSPACE_POSTS_KEY,
         queryFn: listPosts,
+        staleTime: 0,
       })
       const pending = pendingAutoPosts(posts, platform.id, Date.now())
       if (pending.length === 0) {
