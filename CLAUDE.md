@@ -177,6 +177,17 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
+- **A feature waiting on the back end is stubbed with a JSON seed, never with
+  MSW.** When a flagged feature needs data the server cannot answer for yet,
+  write the normal `services/api/<thing>.ts` with the signatures the endpoint
+  will have, and back them with a `.seed.json` plus `localStorage` and a small
+  delay — `services/api/brand.ts` is the pattern. A service worker buys wire
+  fidelity for a contract nobody has agreed, and the mock ends up inventing the
+  API; a plain module is one readable file, and swapping each body for an
+  `apiJson` call leaves the hook, the routes and the components untouched. Rules
+  that make it safe: the stub is reached only through its hook, its doc comment
+  names what it is, and it stays behind the feature's flag like everything else
+  the API can't back.
 - **A workspace is the tenant and a member is a user.** Inside a workspace,
   `services/api/workspaces.ts` is a façade over `/api/tenants/current`,
   `/api/users` and `/api/invitations` (CON-26); the account-level

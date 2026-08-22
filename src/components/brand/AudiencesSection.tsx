@@ -10,7 +10,6 @@ import {
   AddEntryCard,
   BrandLibrary,
   LibraryCard,
-  LibraryIntro,
   OriginLine,
   PlainActionCard,
   StarterCard,
@@ -58,7 +57,6 @@ export function AudiencesSection({
 
   return (
     <BrandLibrary
-      readBy={brandSection('audiences').readBy}
       add={
         empty ? (
           <PlainActionCard label="DESCRIBE ONE YOURSELF" onClick={onAdd} />
@@ -113,32 +111,25 @@ const STARTERS: { id: string; icon: Icon; title: string; body: string }[] = [
   },
 ]
 
+/** Two cards, not three — the page's intro card states the absence. */
 function AudiencesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
-  const { icon, tone } = brandSection('audiences')
+  const { tone } = brandSection('audiences')
   return (
-    <>
-      <LibraryIntro
-        icon={icon}
-        tone={tone}
-        title="Nobody in particular is being written to"
-        body="Every campaign will keep asking who this is for, and keep getting the answer typed in a hurry — which is how posts end up addressed to everyone and read by nobody. An audience earns its place here by saying what follows from it: where they read, what makes them scroll past, and what they need before they believe a number."
-      />
-      <StarterGroup
-        title="Start from a template"
-        body="Three every business has, so none of them needs inventing. Pick one and fill in what follows from it."
-      >
-        {STARTERS.map((starter) => (
-          <StarterCard
-            key={starter.id}
-            icon={starter.icon}
-            tone={tone}
-            title={starter.title}
-            body={starter.body}
-            onClick={onStart ? () => onStart(starter.id) : undefined}
-          />
-        ))}
-      </StarterGroup>
-    </>
+    <StarterGroup
+      title="Start from a template"
+      body="Three every business has, so none of them needs inventing. Pick one and fill in what follows from it."
+    >
+      {STARTERS.map((starter) => (
+        <StarterCard
+          key={starter.id}
+          icon={starter.icon}
+          tone={tone}
+          title={starter.title}
+          body={starter.body}
+          onClick={onStart ? () => onStart(starter.id) : undefined}
+        />
+      ))}
+    </StarterGroup>
   )
 }
 

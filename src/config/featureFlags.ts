@@ -94,13 +94,21 @@ const FEATURE_FLAGS = {
 
   /**
    * **Brand** — the workspace-level material every campaign writes from
-   * (CON-226/227): voices, audiences, guardrails, look, overlays. Off, and
-   * further from the API than anything else here: there is no endpoint, no
-   * table and no column. The whole module is fixtures.
+   * (CON-226/227): voices, audiences, guardrails, look, overlays. Further from
+   * the API than anything else here: there is no endpoint, no table and no
+   * column, and `services/api/brand.ts` is a **stub** — a JSON seed and
+   * `localStorage` standing in for a server so the screens can be used rather
+   * than only looked at.
    *
    * The flag gates the nav row *and* the route, so with it off the app has no
-   * Brand at all — which is also the state `develop` ships in while the shape
-   * is still being argued in `/design/brand`.
+   * Brand at all — which is the state `develop` ships in while the shape is
+   * still being argued in `/design/brand`.
+   *
+   * **Currently `true` for local iteration, and it must go back to `false`
+   * before this branch merges.** Nothing in here is backed by a server: a
+   * workspace's voices would live in one browser, on one machine, and vanish
+   * with its site data. Switching it on for anyone but the person working on
+   * it would be shipping a feature that quietly forgets.
    *
    * **Waiting on:** everything in CON-228. In outline — Brand entities per
    * workspace, tenant-scoped and fail-closed; one fetch that returns **every
@@ -119,7 +127,7 @@ const FEATURE_FLAGS = {
    *
    * The argument this is built from: `docs/brand-materials.md`.
    */
-  'brand-materials': false,
+  'brand-materials': true,
 
   /**
    * The marketing-email switch on Profile (CON-155). **Off — waiting on the

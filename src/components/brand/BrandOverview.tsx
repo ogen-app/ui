@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Button } from '@/components/ui/button'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { LineItem } from '@/components/ui/line-item'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -12,15 +12,21 @@ import { EXPECTED_RATIOS } from './TemplatesSection'
 import { isBrandEmpty, MIN_VOICE_SAMPLES, type BrandData } from './types'
 
 /**
- * Brand's landing tab: what is in each section, and a way into it.
+ * Brand's main screen: what is in each section, and the way into it.
  *
  * **This is an index, not the work surface** — the distinction the first cut got
  * wrong. The five sections used to be stacked here in full, which made one page
  * responsible both for showing what your brand is and for being where you
  * change it. It could not be both: a picture template is platform × ratio ×
  * customisation and will never fit in a tile, so the page either grew until it
- * was unusable or the sections stayed too shallow to work in. Each section now
- * owns a tab; this one answers *what is in there, and what is missing*.
+ * was unusable or the sections stayed too shallow to work in. Each section is
+ * now a screen you open from here; this one answers *what is in there, and what
+ * is missing*.
+ *
+ * Being the hub is also what settles the shape of a card. Five cards that only
+ * *report* would leave the screen with nothing to do, and the tab bar that used
+ * to do the going has gone — so each card opens its section, and the rows exist
+ * to tell you which one to open.
  *
  * Three rules, and they came out of being told the first version was off-style:
  *
@@ -113,6 +119,21 @@ type BrandRow = {
   trailing?: string
 }
 
+/**
+ * One section, and the way into it.
+ *
+ * **The whole card opens the section.** It was a card with an `OPEN VOICES`
+ * button in the corner while the tab bar existed, which was fine when the bar
+ * was the real way in and the button a shortcut. With the bar gone the card is
+ * the only door, and a door the size of a card should not have a handle the
+ * size of a word — the target is now the card, which is also the thing the eye
+ * is already on when it finishes reading the rows.
+ *
+ * It is deliberately the same gesture as a `LibraryCard` one level down: a
+ * white block that lifts on hover, with a caret where the row of content ends.
+ * Two levels of this screen open things the same way, so learning it once is
+ * enough. Hover lifts rather than tints, for the reason `LibraryCard` gives.
+ */
 function SectionCard({
   section,
   rows,
@@ -123,53 +144,94 @@ function SectionCard({
   onOpen?: (id: BrandSectionId) => void
 }) {
   const Icon = section.icon
+  const open = onOpen ? () => onOpen(section.id) : undefined
 
   return (
-    <SettingsCard
-      title={
-        <>
-          {/* The section's permanent hue, and the only colour on the card.
-              Five grey line glyphs down one page are five identical marks; the
-              hue is what makes the card you are looking for findable without
-              reading the headings. Same device as the campaign rail. */}
-          <Icon className="size-5 shrink-0" style={{ color: section.tone }} aria-hidden />
-          <span className="truncate">{section.label}</span>
-          {/* The honesty rule (CON-226 §9) at index length. The section's own
-              tab still says it in a sentence; here it is three words, because
-              five sentences down one page is the noise that made this screen
-              read as an essay. */}
-          {section.readBy.length === 0 && (
-            <StatusBadge tone="neutral" label="Nothing reads this yet" />
-          )}
-        </>
-      }
-      actions={
-        onOpen && (
-          <Button variant="ghost" size="sm" onClick={() => onOpen(section.id)}>
-            {section.openLabel}
-          </Button>
-        )
-      }
+    <Opens onOpen={open}>
+      <SettingsCard
+        title={
+          <>
+            {/* The section's permanent hue, and the only colour on the card.
+                Five grey line glyphs down one page are five identical marks;
+                the hue is what makes the card you are looking for findable
+                without reading the headings. Same device as the campaign rail,
+                and the same glyph that titles the screen this card opens. */}
+            <Icon className="size-5 shrink-0" style={{ color: section.tone }} aria-hidden />
+            <span className="truncate">{section.label}</span>
+            {/* The honesty rule (CON-226 §9) at index length. The section's own
+                screen still says it in a sentence; here it is three words,
+                because five sentences down one page is the noise that made this
+                screen read as an essay. */}
+            {section.readBy.length === 0 && (
+              <StatusBadge tone="neutral" label="Nothing reads this yet" />
+            )}
+          </>
+        }
+        actions={
+          open && (
+            <CaretRightIcon
+              className="size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
+              weight="bold"
+              aria-hidden
+            />
+          )
+        }
+      >
+        {rows.length === 0 ? (
+          <p className="text-sm text-secondary-foreground">{section.whenEmpty}</p>
+        ) : (
+          <ul className="flex flex-col">
+            {rows.map((row) => (
+              <li key={row.key}>
+                <LineItem
+                  variant={row.meta ? 'entry' : 'task'}
+                  indicator={{ kind: 'task', done: row.done }}
+                  label={row.label}
+                  details={row.details}
+                  meta={row.meta}
+                  trailing={row.trailing}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </SettingsCard>
+    </Opens>
+  )
+}
+
+/**
+ * The card's clickability, wrapped around it rather than built into
+ * `SettingsCard`.
+ *
+ * `SettingsCard` is the app's form furniture — it is what Workspace Settings
+ * and Campaign Settings are made of — and a settings card that can be clicked
+ * as a whole is not a thing this app has. Adding an `onClick` there would make
+ * every one of those cards one prop away from becoming a link. So the gesture
+ * lives here, in the one place that needs it.
+ *
+ * Renders the card unwrapped when there is nowhere to go: the harness draws
+ * this screen with no navigation, and a `role="button"` that does nothing is a
+ * lie told to a screen reader.
+ */
+function Opens({ onOpen, children }: { onOpen?: () => void; children: ReactNode }) {
+  if (!onOpen) return <>{children}</>
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onOpen()
+        }
+      }}
+      className="group mx-auto w-full max-w-content cursor-pointer transition-shadow duration-150 hover:shadow-lg"
     >
-      {rows.length === 0 ? (
-        <p className="text-sm text-secondary-foreground">{section.whenEmpty}</p>
-      ) : (
-        <ul className="flex flex-col">
-          {rows.map((row) => (
-            <li key={row.key}>
-              <LineItem
-                variant={row.meta ? 'entry' : 'task'}
-                indicator={{ kind: 'task', done: row.done }}
-                label={row.label}
-                details={row.details}
-                meta={row.meta}
-                trailing={row.trailing}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-    </SettingsCard>
+      {children}
+    </div>
   )
 }
 
@@ -343,12 +405,14 @@ function missingSectionNames(data: BrandData): string[] {
   return missing
 }
 
+/**
+ * The stack, and **not a scroller**. The page owns the scrolling so that the
+ * header can sit inside it and the cards can dissolve under its gradient
+ * instead of being cut off by it — see `BrandDetail`. A component that scrolls
+ * itself cannot be put under a sticky header, which is why this one stopped.
+ */
 function Wrapper({ children }: { children: ReactNode }) {
-  return (
-    <div className="h-full overflow-y-auto">
-      <div className="flex flex-col gap-3 pt-4 pb-10">{children}</div>
-    </div>
-  )
+  return <div className="flex flex-col gap-3">{children}</div>
 }
 
 function OverviewSkeleton() {

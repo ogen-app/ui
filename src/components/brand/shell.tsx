@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import {
+  CaretRightIcon,
   FileArrowUpIcon,
   GlobeIcon,
   PencilSimpleIcon,
@@ -39,7 +40,6 @@ import type { BrandConsumer, BrandOrigin } from './types'
  * for (the reader line and the gap), and sharing the component would have meant
  * adding both to a card whose whole job elsewhere is a form.
  */
-
 export function BrandSection({
   title,
   /** The rest of the heading, set back — usually a count. */
@@ -62,18 +62,18 @@ export function BrandSection({
   className?: string
   /**
    * `card` — one of several sections stacked on the Overview.
-   * `page` — the section *is* the screen, on its own tab.
+   * `page` — the section *is* the screen, opened from the Overview.
    *
-   * The page variant drops the card chrome and the heading, because the tab bar
-   * above already says which section this is and a card drawn on an otherwise
-   * empty page is a card pretending to be a screen. The reader line and the
-   * action survive: those are the section's, not the card's.
+   * The page variant drops the card chrome, the heading and the reader line,
+   * because the section's intro card says all three above it and a card drawn
+   * on an otherwise empty page is a card pretending to be a screen. Only the
+   * action survives: that one is the section's, not the card's.
    *
-   * The measure is deliberately unchanged between the two. Giving a section its
-   * own tab is a navigation decision, and widening what it reads at is a
-   * separate one that has not been made — keeping `max-w-content` here means
-   * the move to tabs changes where things live without quietly changing how
-   * they look.
+   * The measure is deliberately unchanged between the two. Giving a section a
+   * screen of its own is a navigation decision, and widening what it reads at
+   * is a separate one that has not been made — keeping `max-w-content` here
+   * means the move changes where things live without quietly changing how they
+   * look.
    */
   variant?: 'card' | 'page'
 }) {
@@ -87,53 +87,59 @@ export function BrandSection({
         className,
       )}
     >
-      <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-        <div className="flex flex-col gap-1">
-          {!isPage && (
-            <h2 className="font-display text-lg font-medium leading-6">
-              {title}
-              {qualifier != null && (
-                <span className="font-normal text-tertiary-foreground"> {qualifier}</span>
-              )}
-            </h2>
-          )}
-          <ReadBy consumers={readBy} />
-        </div>
-        {action}
-      </header>
+      {/* Nothing left to draw on a page-variant section with no action: the
+          intro card at the top of the screen carries both the heading and the
+          honesty line, and an empty header still spends the stack's `gap`. */}
+      {(!isPage || action) && (
+        <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+          <div className="flex flex-col gap-1">
+            {!isPage && (
+              <>
+                <h2 className="font-display text-lg font-medium leading-6">
+                  {title}
+                  {qualifier != null && (
+                    <span className="font-normal text-tertiary-foreground"> {qualifier}</span>
+                  )}
+                </h2>
+                <ReadBy consumers={readBy} />
+              </>
+            )}
+          </div>
+          {action}
+        </header>
+      )}
       {children}
     </section>
   )
-}
-
-const CONSUMER_PHRASE: Record<BrandConsumer, string> = {
-  plan: 'when a content plan is generated',
-  post: 'when a post is written',
-  images: 'when an image is branded',
 }
 
 /**
  * The honesty line. Written as a sentence rather than a row of badges because a
  * badge saying "unused" is decoration, and this has to be legible enough to
  * embarrass us into wiring the section up.
+ *
+ * **It only appears when the answer is "nothing".** It used to run on every
+ * section, and on a wired one it said "Read when a content plan is generated
+ * and when a post is written" — a caption above the library stating that the
+ * feature works, which is what the user should be able to assume. That is the
+ * difference between honesty and narration: a section nothing reads is a fact
+ * the screen is otherwise hiding, and a section that behaves as advertised has
+ * nothing to disclose. Three of the five sections still show this line today,
+ * which is the point of keeping it.
+ *
+ * The list stays on the signature rather than collapsing to a boolean: the
+ * caller's answer is *which* parts read it, and the day one is partly wired
+ * this component is where that sentence gets written.
  */
 export function ReadBy({ consumers }: { consumers: BrandConsumer[] }) {
-  if (consumers.length === 0) {
-    return (
-      <p className="text-xs text-tertiary-foreground">
-        Nothing reads this yet — you can fill it in, but it won't change what
-        comes out.
-      </p>
-    )
-  }
+  if (consumers.length > 0) return null
 
-  const phrases = consumers.map((c) => CONSUMER_PHRASE[c])
-  const sentence =
-    phrases.length === 1
-      ? phrases[0]
-      : `${phrases.slice(0, -1).join(', ')} and ${phrases[phrases.length - 1]}`
-
-  return <p className="text-xs text-tertiary-foreground">Read {sentence}.</p>
+  return (
+    <p className="text-xs text-tertiary-foreground">
+      Nothing reads this yet — you can fill it in, but it won't change what
+      comes out.
+    </p>
+  )
 }
 
 /**
@@ -322,11 +328,10 @@ function joinList(items: string[]): string {
 }
 
 /**
- * The measure every Brand screen is set to. The tab bar and the Overview's
- * cards already sit on it; a section that is its own screen has to as well, or
- * moving between tabs shifts the column under you — and so does an editor one
- * level down, or opening an entry would shift the column the entry was just
- * sitting on.
+ * The measure every Brand screen is set to. The Overview's cards sit on it, so
+ * a section opened from one of them has to as well — otherwise going in shifts
+ * the column under you, and so does the editor a level below that: opening an
+ * entry would move the column the entry was just sitting on.
  */
 export const COLUMN = 'mx-auto w-full max-w-content'
 
@@ -348,20 +353,15 @@ export const COLUMN = 'mx-auto w-full max-w-content'
  * the job.
  */
 export function BrandLibrary({
-  readBy,
   children,
   add,
 }: {
-  readBy: BrandConsumer[]
   children: ReactNode
   /** The add card. Omitted when there is nothing to add to — see `LibraryEmpty`. */
   add?: ReactNode
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className={cn(COLUMN, 'px-1')}>
-        <ReadBy consumers={readBy} />
-      </div>
       {children}
       {add}
     </div>
@@ -375,6 +375,19 @@ export function BrandLibrary({
  * Distinct from `EntryCard`, which is the tile a *summary* uses. Same module,
  * two jobs: one is a thing in a list of things, the other is a thing you are
  * about to work on.
+ *
+ * **Hover lifts the card; it does not tint it.** The first version darkened the
+ * surface by 3%, which is the wrong signal twice over: on a white card in a
+ * column of white cards a wash that faint is nearly invisible, and where it
+ * *is* visible it reads as selection — the app tints a surface when something
+ * is chosen, not when the pointer is passing over it. A shadow says the card
+ * can be picked up without claiming it has been. It is also what `CampaignCard`
+ * already does, and these two are the same gesture: a full-width card in a
+ * column that opens a screen.
+ *
+ * The caret comes from the same place, and earns its keep on a card that is
+ * otherwise four blocks of text: nothing else on it looks clickable, and the
+ * `role="button"` that makes it so is invisible to everyone using a mouse.
  */
 export function LibraryCard({
   children,
@@ -402,24 +415,45 @@ export function LibraryCard({
       }
       className={cn(
         COLUMN,
-        'flex flex-col gap-4 bg-primary px-6 py-6 text-left',
-        onClick && 'cursor-pointer transition-colors hover:bg-primary-foreground/[0.03]',
+        'group flex gap-4 bg-primary px-6 py-6 text-left',
+        onClick && 'cursor-pointer transition-shadow duration-150 hover:shadow-lg',
         className,
       )}
     >
-      {children}
+      <div className="flex min-w-0 flex-1 flex-col gap-4">{children}</div>
+      {onClick && (
+        // Aligned to the title's line rather than to the middle of the card:
+        // the cards are different heights, and a vertically-centred caret would
+        // sit at a different point on each one down the column.
+        <CaretRightIcon
+          className="mt-1 size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
+          weight="bold"
+          aria-hidden
+        />
+      )}
     </article>
   )
 }
 
 /**
- * The add card that closes a library. Dashed rather than filled: it is an
- * outline of an entry that does not exist yet, and it must not compete with the
- * real ones above it for the eye.
+ * The add card that closes a library.
  *
- * Only on a library that already has entries. The empty library's blank form is
- * a `PlainActionCard` instead — dashed means "an entry that isn't there yet",
- * which is the wrong thing to say on a screen where none of them are.
+ * **On the same white surface as the entries above it.** It was a dashed
+ * outline on the page background for a while, on the argument that it is an
+ * entry which does not exist yet — true, and it made the last row of the
+ * library read as a dropzone rather than as a card, because a dashed rectangle
+ * on a bare canvas is what every upload target in this app looks like. It is
+ * not a placeholder for a thing; it is the control that makes one, and a
+ * control is as solid as the things it sits with.
+ *
+ * What keeps it from competing with the real entries is not the surface but the
+ * weight: the plus tile, one line of label, one line of hint, and none of the
+ * material that gives an entry card its height. It is visibly the shortest
+ * thing in the column, which is exactly where the eye goes after reading a list
+ * and finding nothing that does the job.
+ *
+ * Only on a library that already has entries — the empty library's blank form
+ * is a `PlainActionCard` instead.
  */
 export function AddEntryCard({
   label,
@@ -440,7 +474,8 @@ export function AddEntryCard({
       onClick={onClick}
       className={cn(
         COLUMN,
-        'group flex items-center gap-3 border border-dashed border-quaternary px-6 py-5 text-left transition-colors hover:border-foreground hover:bg-primary',
+        'group flex cursor-pointer items-center gap-3 bg-primary px-6 py-5 text-left',
+        'transition-shadow duration-150 hover:shadow-lg',
       )}
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary transition-colors group-hover:bg-foreground group-hover:text-background">
@@ -455,19 +490,28 @@ export function AddEntryCard({
 }
 
 /**
- * An empty library is **three cards, not one**: what is missing, the ones we
- * offer, and the blank form. `LibraryIntro` is the first.
+ * The card a section opens with, and **the page's title** — not an
+ * introduction to one.
  *
- * The single card that did all three ran the explanation, a sub-list and an
- * escape hatch together in one block, so the page had one entry point and you
- * read it top to bottom or not at all. Split, each card is one decision, and
- * the stack matches the *filled* screen — which is also a column of white
- * cards, one per thing. That is the real gain: the empty state stops being a
- * different kind of screen that resolves into a list later, and is instead the
- * same screen with different cards in it.
+ * The section screens carry no heading in the page header: the header is a back
+ * caret and nothing else, the way the post editor's is. That is not a saving of
+ * chrome, it is where the name went. A page header states a name in a line; this
+ * states it in the one card that can also say what the thing is, which on a
+ * section somebody has opened once and not since is the more useful half.
  *
- * This one holds only the description, and on a filled library it is not shown
- * at all — its slot is where the entries go.
+ * Same anatomy as `WholeBrandOffer` — the glyph in the section's hue, a display
+ * heading, and the sentences under it — because they are the same kind of
+ * object: a white card at the top of the column that explains rather than
+ * lists. Both were arrived at separately and looked it, which is the usual sign
+ * that one of them is a copy of the other with different padding.
+ *
+ * It began as the first of the **three cards an empty library is** (what is
+ * missing, the ones we offer, the blank form) and was shown only while the
+ * section had nothing in it. Promoting it to always-on cost nothing and settled
+ * two things at once: the page got its name back, and the empty state stopped
+ * being a different kind of screen that resolves into a list later. It is now
+ * the same screen with the same first card, which gains one line while the
+ * section is empty and loses it when the section is not.
  *
  * Deliberately **no faded body copy**. The old empty state set its explanation
  * in tertiary, which is the tone the app uses for asides, and an aside is
@@ -475,30 +519,61 @@ export function AddEntryCard({
  * content of the screen, and setting the only thing on the page in the quietest
  * colour available reads as the screen apologising for itself.
  */
-export function LibraryIntro({
+export function BrandIntro({
   icon: Glyph,
   tone,
   title,
   body,
+  missing,
+  readBy,
+  wide,
 }: {
   icon: Icon
   /** The section's hue (`BrandSectionInfo.tone`) — see `brandSections`. */
   tone?: string
   title: string
   body: string
+  /**
+   * The cost of the section being empty, given only while it is. Set below the
+   * description rather than in place of it: what a voice is does not stop being
+   * worth saying once there is one.
+   */
+  missing?: string
+  /** The honesty line's answer — see `ReadBy`. */
+  readBy: BrandConsumer[]
+  /**
+   * Span the panel instead of the column.
+   *
+   * The card takes the measure of whatever is under it, and one section's
+   * content is not on the column: Templates is a platform rail beside a detail
+   * panel, edge to edge. A `max-w-content` card floating above that reads as a
+   * card belonging to some other screen.
+   */
+  wide?: boolean
 }) {
   return (
-    <div className={cn(COLUMN, 'flex flex-col gap-3 bg-primary px-6 py-6')}>
+    <div
+      className={cn(
+        wide ? 'w-full' : COLUMN,
+        'flex flex-col gap-3 bg-primary px-6 py-6',
+      )}
+    >
       <span className="flex size-10 items-center justify-center rounded-md bg-secondary">
         <Glyph className="size-6" style={{ color: tone }} />
       </span>
-      {/* The measure is on the text, never on the card: the three cards share
-          one column edge, and a card that stops short of it reads as a
+      {/* The measure is on the text, never on the card: every card in the
+          column shares one edge, and one that stops short of it reads as a
           different kind of card rather than as a shorter one. */}
-      <h2 className="max-w-2xl font-display text-2xl font-medium leading-8 tracking-tight">
+      <h1 className="max-w-2xl font-display text-2xl font-medium leading-8 tracking-tight">
         {title}
-      </h2>
+      </h1>
       <p className="max-w-2xl text-sm leading-5">{body}</p>
+      {missing && (
+        <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">{missing}</p>
+      )}
+      {/* Renders nothing on a wired section, and costs no gap when it does:
+          `ReadBy` returns null rather than an empty node. */}
+      <ReadBy consumers={readBy} />
     </div>
   )
 }
@@ -546,9 +621,10 @@ export function StarterGroup({
  * beyond what it is, and a sentence underneath would be a sentence written to
  * fill the space.
  *
- * White rather than dashed, unlike `AddEntryCard`. Dashed means "an entry that
- * is not there yet", which is the wrong claim on a screen where none of them
- * are — there it reads as another gap rather than as the way out of one.
+ * Distinguished from `AddEntryCard` by what it leaves out, not by its surface:
+ * both are white cards closing a library, and this one has no hint line under
+ * the label because on an empty screen the two cards above it have already said
+ * everything a hint would.
  */
 export function PlainActionCard({
   label,
@@ -566,7 +642,8 @@ export function PlainActionCard({
       onClick={onClick}
       className={cn(
         COLUMN,
-        'group flex items-center gap-3 bg-primary px-6 py-5 text-left transition-colors hover:bg-secondary',
+        'group flex cursor-pointer items-center gap-3 bg-primary px-6 py-5 text-left',
+        'transition-shadow duration-150 hover:shadow-lg',
       )}
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary transition-colors group-hover:bg-foreground group-hover:text-background">

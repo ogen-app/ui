@@ -744,3 +744,284 @@ top-level nav entry. The harness can show that it is not blank; it cannot show
 whether someone arriving at it goes on to fill anything in. That is the one
 finding this prototype is structurally unable to produce, and it is worth saying
 so rather than counting the decision as made.
+
+## 17. Running it for real, against a stub
+
+The harness answered everything a screenshot can answer and nothing else. A
+fixture rendered straight into a route cannot show what *saving* a voice feels
+like, whether the library is where you expect it when you come back, or whether
+the tab counts move — and those are the questions left. So the five tabs and the
+voice editor now run on the live routes, against a data layer that behaves like
+one.
+
+**The fake is a plain module at the API boundary, not a mock network.**
+`services/api/brand.ts` exports `getBrand`, `saveVoice`, `deleteVoice` and
+`resetBrand`; each returns a promise after a visible delay, reads a JSON seed
+(`brand.seed.json`) and writes to `localStorage`, keyed per workspace because
+the real thing will be tenant-scoped. `hooks/useBrand.ts` is a normal TanStack
+Query hook over it — one query for the whole object, mutations that write
+through and invalidate. Nothing above the service knows it is a fake, which is
+the point: when CON-228 lands, each body becomes an `apiJson` call and the hook,
+the routes and the components are untouched.
+
+**Not MSW.** A service worker intercepting `fetch` buys fidelity we have no use
+for — status codes, headers, a wire envelope — for a contract nobody has agreed
+yet. §13 will be written *from* what this prototype settles, so pinning a JSON
+envelope now would be inventing the API by accident, in the mock. A plain module
+is also readable: the whole fake is one file you can see the end of.
+
+**The harness stays, and the two now share one workspace.** They answer
+different questions and neither replaces the other: `/design/brand/*` holds
+every state at a glance and cannot be broken by using it; the live tab holds one
+state that answers back. What they must not do is drift, so the harness fixtures
+are derived from the same `brand.seed.json` the live tab opens on — the file
+carries the data, `-fixtures.ts` carries which entry is which and why it is
+there. The harness also carries the one control a stub needs and a real API must
+never have: **reset**, which throws the workspace away and seeds it again. It
+lives there because a design branch never reaches `develop`, so a dev-only
+button cannot escape onto a real screen.
+
+**What running it produced, which drawing it did not:**
+
+- **A section must not draw an empty library while it is still loading.** Every
+  Brand screen has a real and carefully written empty state, and showing it to
+  somebody whose material is merely in flight is the one lie the module is built
+  to avoid. `BrandDetail` — `BrandTab` when this was written — is a render prop
+  rather than a wrapper taking `data`, so the body cannot run without it: the
+  mistake is unavailable rather than discouraged.
+- **An unknown voice id is not a new voice.** `/brand/voices/:id` treats `new`
+  as an id, and the first wiring resolved every other unknown id the same way,
+  which answered a wrong URL with a create form — and the first thing typed into
+  it would have been saved under whatever the address bar happened to say. Not
+  found is now its own answer.
+- **Deleting takes two steps now that it deletes.** With no API behind it the
+  Danger Zone's button was a toast, and one click for it read as fine. It is the
+  only gesture on the editor with no undo — everything else on the screen is
+  recoverable by not saving — so it gets the confirmation the document and post
+  editors already give, with the same sentence about what it costs. A list may
+  delete a row on one click; a thing that fills the screen and may have just
+  been written gets asked about.
+- **The flag is on for iteration and has to go back off.** `brand-materials` is
+  `true` on this branch only. Nothing here is backed by a server: a workspace's
+  voices would live in one browser, on one machine, and vanish with its site
+  data. Switching it on for anyone but the person working on it would be
+  shipping a feature that quietly forgets.
+
+## 18. What using it changed about the chrome
+
+Four changes, all of them from moving around the section rather than looking at
+a screenshot of one.
+
+**The tab bar moved onto the header line.** Brand copied Content Bank's shape —
+a title row, then a full-width underlined bar beneath it. Content Bank earns
+that bar: its tabs sit over a grid, the underline is the top edge of the thing
+being filtered, and the bar spans the content it belongs to. Brand's tabs sit
+over a single narrow column of cards, so the rule ran the width of the window to
+underline a 640px column, and the screen spent two 40px rows and a horizontal
+line before the first card. Inline, the header reads as one sentence — `Brand │
+OVERVIEW VOICES 4 …` — which is what it is: the title names the section, the
+tabs name the part of it you are in. Pills rather than the underline variant,
+because an underline needs a baseline to sit on and deleting that baseline was
+the point.
+
+**The reader line only appears when nothing reads the section.** `ReadBy` ran on
+all five, and on a wired one it said *Read when a content plan is generated and
+when a post is written* — a caption above the library announcing that the
+feature works. That is narration, not honesty. A section nothing reads is a fact
+the screen would otherwise hide; a section that behaves as advertised has
+nothing to disclose. Three of the five still carry the line, which is the point
+of keeping it (§9).
+
+**A voice can be the default, and the library says which.** The picture
+templates already had *applies by default, fine-tune, sometimes cherry-pick*
+(`BrandTemplate.isDefault`); voices were described in those terms and did not
+have it, which left a four-voice workspace facing a four-way choice on every
+post when the answer is the same one nine times in ten. It is a dot and a
+lower-case word beside the name — not a badge, because being the default is the
+most ordinary fact on the card and a filled pill in the corner would make it
+look like the most urgent one. The invariant belongs to whoever owns the
+collection: `saveVoice` demotes the others in the same write, and `deleteVoice`
+hands the flag on rather than leaving the library with none. The editor only
+*promotes* — switching a default off would leave a workspace with no default and
+no way to repair it, since nothing else sets the flag.
+
+**Hover lifts a card; it does not tint it.** The library card darkened its
+surface by 3% on hover, which is wrong twice: on a white card in a column of
+white cards it is nearly invisible, and where it is visible it reads as
+selection — this app tints a surface when something is *chosen*, not when a
+pointer passes over. A shadow says the card can be picked up without claiming it
+has been, and it is what `CampaignCard` already does for the same gesture. The
+caret came along for the same reason: nothing else on a card of four text blocks
+looks clickable, and `role="button"` is invisible to a mouse.
+
+**The add card sits on white with the entries.** It was a dashed outline on the
+page background, on the argument that it is an entry which does not exist yet —
+true, and it made the last row of every library read as a dropzone, because a
+dashed rectangle on bare canvas is what every upload target in this app looks
+like. It is not a placeholder for a thing; it is the control that makes one. What
+keeps it from competing with the real entries is weight, not surface: a plus, a
+label, a hint, and none of the material that gives an entry card its height.
+
+## 19. Tabs, and then no tabs
+
+The tab bar did not survive being used. §18 moved it onto the header line, which
+fixed how much room it took and left the thing itself intact; a week of walking
+around the section is what settled that the thing itself was wrong.
+
+**A tab bar is lateral navigation between peers you switch between all day.**
+That is what it is for, and it is a fair description of Content Bank — you are
+looking for an asset and you do not yet know which kind it is, so you sweep the
+bar. It is not a description of Brand. Nobody flicks between Guardrails and
+Look. You go and write one, and you come back. Everything that follows is a
+consequence of that mismatch:
+
+- The bar spent chrome on all five at once on the screen that has the most to
+  say, which is the Overview. Five section cards, each already naming its
+  section, sitting under a row that names all five again.
+- It put four sideways exits along the top edge of a screen you were working
+  in. From inside the voice library, `LOOK` is a click away, and it does not
+  ask what you were doing.
+- It made "where am I" and "where can I go" the same row, so neither could be
+  read quickly.
+
+So Brand is a **hub and five drilldowns**:
+
+```
+/brand                     the Overview — the hub, and what the sidebar points at
+/brand/voices              a section, opened from its card
+/brand/voices/:voiceId     a voice, opened from its card
+```
+
+Three levels, one gesture each way. Going in is clicking the card; coming back
+is the caret at top-left, and there is exactly one of them, so the way out is
+never a choice.
+
+**Shaped like the post details screen**, because that is what the app's other
+drilldowns look like: a caret at top-left, one centred column under it, and the
+same arrival fade. The caret in that corner is this app's promise that there is
+something above where you are, and a screen that reaches the same depth by other
+means has to keep the promise. The voice editor takes no title at all, again
+like the post: its name is the first field of the document, and a header titled
+by a name you are halfway through typing flickers as you type it. §20 is where
+the *section* screens lost their titles too.
+
+**The Overview's cards became doors.** With the bar gone they are the only way
+in, and a door the size of a card should not have a handle the size of a word —
+so the `OPEN VOICES` button is gone and the whole card opens the section: white
+block, lifts on hover, caret where the content ends. That is deliberately the
+same gesture a `LibraryCard` makes one level down, so the hub and the library
+open things the same way and learning it once is enough.
+
+What this cost: the tab bar's counts (`VOICES 4`) are gone. They were the one
+thing the bar said that a label could not, and the Overview says it better — a
+card lists what is in the section, one row each, ticked when there is something
+behind it. A number in a bar tells you how many; the rows tell you which.
+
+## 20. A section's name is a card, not a header
+
+The section screens arrived with the label beside the caret, which is the
+ordinary arrangement and was not wrong — it was just the least the screen could
+say. A page header states a name. It cannot say what the thing is, and on a
+section somebody opened once a fortnight ago that is the half worth having.
+
+So the header on a section screen is now **a caret and nothing else**, and the
+first card in the column carries the name:
+
+- the section's glyph, in its permanent hue, in the same 40px tile the rest of
+  Brand's explaining cards use;
+- the label as a display heading — the page's `h1`, in 24px rather than 15px;
+- two sentences saying what the section is *for*, from `BRAND_SECTIONS`;
+- one more sentence while the section is empty, which is the same `whenEmpty`
+  line the Overview card shows;
+- and the honesty line ("Nothing reads this yet") where the reader can see what
+  it is qualifying.
+
+The anatomy is `WholeBrandOffer`'s — the "read the rest off your website" card —
+because they are the same kind of object: a white card at the top of a column
+that explains rather than lists. Naming the place twice, once in the header and
+once at the top of the column, is the version where one of them is redundant, so
+the smaller one went.
+
+**Where it came from.** This card already existed as `LibraryIntro`, the first
+of the *three cards an empty library is* (what is missing, the ones we offer,
+the blank form) — shown only while the section had nothing in it. Promoting it
+to always-on cost one line of layout and settled two things at once. The page
+got its name back, and the empty state stopped being a different kind of screen
+that resolves into a list later: it is the same screen with the same first card,
+which gains a line while the section is empty and loses it when it is not.
+
+**What it cost.** Roughly 180px at the top of every section, permanently,
+including Templates — where the platform rail is pinned to the panel height and
+the card genuinely takes space from the work. That is the trade: a section you
+live in pays for a section you visit twice. It is worth watching, and the honest
+place to revisit it is Templates rather than the text sections.
+
+**The voice editor takes the same card**, headed `“Dry British” voice` — the
+name first, then the kind. It reads the *saved* name rather than the field two
+inches below it, so the heading does not spell itself out letter by letter as a
+new voice is typed; a voice that has never been saved is `A new voice`.
+
+## 21. The header goes inside the scroller
+
+The first build hung the header above the scroll container as a sibling. Every
+Brand screen therefore ended at a hard horizontal edge: cards slid under a cut
+rather than dissolving, which is not what any other scrolling screen in this app
+does. Post details, Profile and Workspace Settings all wrap the header in the
+scroller and let `PageHeader`'s gradient do the fading, and the fade is the
+visible half of a structural decision — a sticky header can only dissolve
+content that passes *underneath* it.
+
+So:
+
+- The five section screens and the voice editor use the **post-details**
+  arrangement — `ScrollArea`, header inside it, static gradient. They have no
+  title, so there is nothing up there to collide with the column.
+- `/brand` uses the **Profile** arrangement — same structure, plus
+  `fadeOnScroll`, because it *does* have a title and a title that stayed put
+  would sit on top of the rows for the whole length of the page.
+- Templates keeps its header above the frame. Its platform rail is pinned to the
+  panel height and nothing scrolls past the top edge, so there is nothing to
+  fade.
+
+The consequence worth knowing: **a Brand component no longer scrolls itself.**
+`BrandOverview` and the section columns render a plain stack, and the page owns
+the scroller. A component that scrolls internally cannot be put under a sticky
+header, which is the whole reason the old arrangement looked the way it did.
+
+## 22. A sample is a page, and the corner says so
+
+The samples grid draws each one with its **top-right corner cut and folded
+back** — a `clip-path` on the card, and a triangle the colour of the border
+sitting exactly in the cut, so the diagonal reads as an edge of the card rather
+than as a mark on it. One number (`FOLD`) drives both, because a cut and a fold
+of different sizes show a seam.
+
+It is not decoration. A sample is somebody else's post, pasted in whole, and the
+card shows three lines of it; the dog-ear is the one part of the shape that says
+*there is more of this below the fold* without spending a line of copy or a
+"read more". It also stops the block scanning as four buttons: what the eye
+should see is a small pile of paper, because the question the grid exists to
+answer is whether these all sound like one person.
+
+**Adding is the last cell, not a button under the grid.** The gesture stays in
+one place whether the voice has no samples or six, and an empty voice opens on
+the outline of the thing it is missing rather than on a paragraph about it —
+with nothing in the grid that cell also carries the consequence (a voice saved
+like this generates what no voice at all would), which is the last moment saying
+so still changes what anybody does.
+
+**Paste-several is gone from the card.** It was a second textarea flow living
+permanently in the block, splitting on blank lines by a rule you had to be told.
+It sits in the card's overflow menu as the thing it actually is — *Bulk upload,
+coming soon* — beside *Reset samples*, which restores whatever the screen opened
+with. Both belong in a menu for the same reason: neither earns a permanent
+control, and a screen that has thought about a feature and not built it should
+say so where somebody would go looking.
+
+**What the card stopped saying.** The count went (`4 samples` over four visible
+cards is the screen counting to itself), and the reading came up from the bottom
+into the sub-heading, where the description used to be: `Reads as …`, the label
+in the foreground colour. Once there are samples, our reading of *this* voice is
+worth more than a definition of what a sample is — so the definition stays only
+while the set is short of the floor of three, which is exactly when somebody
+still needs it.

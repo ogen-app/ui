@@ -9,7 +9,6 @@ import {
   BrandLibrary,
   ChipList,
   LibraryCard,
-  LibraryIntro,
   PlainActionCard,
   StarterCard,
   StarterGroup,
@@ -57,7 +56,6 @@ export function GuardrailsSection({
 
   return (
     <BrandLibrary
-      readBy={brandSection('guardrails').readBy}
       add={
         empty ? (
           <PlainActionCard label="WRITE THE RULES YOURSELF" onClick={onEdit} />
@@ -104,32 +102,25 @@ const STARTERS: { id: string; icon: Icon; title: string; body: string }[] = [
   },
 ]
 
+/** Two cards, not three — the page's intro card states the absence. */
 function GuardrailsEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
-  const { icon, tone } = brandSection('guardrails')
+  const { tone } = brandSection('guardrails')
   return (
-    <>
-      <LibraryIntro
-        icon={icon}
-        tone={tone}
-        title="Nothing is off limits yet"
-        body="Every voice in this workspace is currently free to invent a number, promise a return, or describe a product feature that does not exist — and the more convincing the voice, the more convincing the invention. These are the rules nobody gets to opt out of: they apply to every generated post regardless of which voice wrote it."
-      />
-      <StarterGroup
-        title="Start from a template"
-        body="Three shapes the rules take, rather than thirty industries. Pick the closest — every sentence in it is meant to be read and edited, because this is the one section people will trust."
-      >
-        {STARTERS.map((starter) => (
-          <StarterCard
-            key={starter.id}
-            icon={starter.icon}
-            tone={tone}
-            title={starter.title}
-            body={starter.body}
-            onClick={onStart ? () => onStart(starter.id) : undefined}
-          />
-        ))}
-      </StarterGroup>
-    </>
+    <StarterGroup
+      title="Start from a template"
+      body="Three shapes the rules take, rather than thirty industries. Pick the closest — every sentence in it is meant to be read and edited, because this is the one section people will trust."
+    >
+      {STARTERS.map((starter) => (
+        <StarterCard
+          key={starter.id}
+          icon={starter.icon}
+          tone={tone}
+          title={starter.title}
+          body={starter.body}
+          onClick={onStart ? () => onStart(starter.id) : undefined}
+        />
+      ))}
+    </StarterGroup>
   )
 }
 

@@ -8,13 +8,13 @@ import { EXPECTED_RATIOS } from './TemplatesSection'
 import type { BrandTemplate } from './types'
 
 /**
- * Templates — the tab that made Brand a section rather than a page.
+ * Templates — the section that made Brand a place rather than a page.
  *
  * Everything else here could survive as a card. This could not: what a template
  * set needs is *platform × ratio*, for platforms the workspace has not
  * connected yet, and no tile in a stack holds a two-dimensional question. Once
- * this screen exists the others get tabs too, because a screen you reach by
- * scrolling past four cards is not a place — it is a region.
+ * this screen exists the other four become screens too, because a screen you
+ * reach by scrolling past four cards is not a place — it is a region.
  *
  * ## The rail is platforms, not templates
  *
@@ -50,7 +50,7 @@ export function TemplatesScreen({
 
   if (templates.length === 0) {
     return (
-      <div className="h-full overflow-y-auto pt-4 pb-10">
+      <div className="h-full overflow-y-auto pb-10">
         <div className="mx-auto w-full max-w-content">
           <Gap
             what="Images go out bare. Nothing marks a picture as yours once it has left the app — and nothing here is per-platform yet, so there is no Instagram story frame and no LinkedIn lockup."
@@ -65,7 +65,7 @@ export function TemplatesScreen({
   }
 
   return (
-    <div className="flex h-full min-h-0 gap-4 pt-4 pb-4">
+    <div className="flex h-full min-h-0 gap-4 pb-4">
       <PlatformRail templates={templates} selected={selected} onSelect={setSelected} />
       <div className="h-full min-w-0 flex-1 overflow-y-auto">
         <Detail

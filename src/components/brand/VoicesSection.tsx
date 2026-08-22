@@ -10,7 +10,6 @@ import {
   AddEntryCard,
   BrandLibrary,
   LibraryCard,
-  LibraryIntro,
   OriginLine,
   PlainActionCard,
   StarterCard,
@@ -60,7 +59,6 @@ export function VoicesSection({
 
   return (
     <BrandLibrary
-      readBy={brandSection('voices').readBy}
       add={
         empty ? (
           // The blank form, and it keeps the same slot the add card has when
@@ -134,6 +132,7 @@ export const VOICE_STARTERS: VoiceStarter[] = [
         hashtags: 'never',
         length: 'short',
         opening: 'States the point in the first sentence.',
+        closing: 'Stops. No sign-off, no question.',
       },
     },
   },
@@ -152,6 +151,7 @@ export const VOICE_STARTERS: VoiceStarter[] = [
         hashtags: 'few',
         length: 'medium',
         opening: 'Opens with something that actually happened.',
+        closing: 'Ends on a question worth answering.',
       },
     },
   },
@@ -170,6 +170,7 @@ export const VOICE_STARTERS: VoiceStarter[] = [
         hashtags: 'few',
         length: 'medium',
         opening: 'Opens with the claim, then earns it.',
+        closing: 'Ends on the sharpest line, not on a summary.',
       },
     },
   },
@@ -180,32 +181,30 @@ export function voiceStarter(id: string | undefined): VoiceStarter | null {
   return VOICE_STARTERS.find((s) => s.id === id) ?? null
 }
 
+/**
+ * What an empty section offers, which is no longer *three* cards but two: the
+ * page's own intro card states the absence above this, so the old "Nothing here
+ * sounds like you yet" card would have been the second heading in a row saying
+ * roughly one thing.
+ */
 function VoicesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
-  const { icon, tone } = brandSection('voices')
+  const { tone } = brandSection('voices')
   return (
-    <>
-      <LibraryIntro
-        icon={icon}
-        tone={tone}
-        title="Nothing here sounds like you yet"
-        body="Everything generated in this workspace currently reads like everything else generated anywhere. A voice is three to eight real posts you would be happy to have written, and the app writes from those rather than from an adjective."
-      />
-      <StarterGroup
-        title="Start from a template"
-        body="Yours the moment you pick it — a copy, not a link, so ours changing never changes yours. The samples you add afterwards are what stop it sounding like a template."
-      >
-        {VOICE_STARTERS.map((starter) => (
-          <StarterCard
-            key={starter.id}
-            icon={starter.icon}
-            tone={tone}
-            title={starter.title}
-            body={starter.body}
-            onClick={onStart ? () => onStart(starter.id) : undefined}
-          />
-        ))}
-      </StarterGroup>
-    </>
+    <StarterGroup
+      title="Start from a template"
+      body="Yours the moment you pick it — a copy, not a link, so ours changing never changes yours. The samples you add afterwards are what stop it sounding like a template."
+    >
+      {VOICE_STARTERS.map((starter) => (
+        <StarterCard
+          key={starter.id}
+          icon={starter.icon}
+          tone={tone}
+          title={starter.title}
+          body={starter.body}
+          onClick={onStart ? () => onStart(starter.id) : undefined}
+        />
+      ))}
+    </StarterGroup>
   )
 }
 
@@ -268,9 +267,12 @@ function VoiceCard({
   return (
     <LibraryCard onClick={onOpen ? () => onOpen(voice.id) : undefined}>
       <header className="flex min-w-0 flex-col gap-1">
-        <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
-          {voice.name}
-        </h3>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
+            {voice.name}
+          </h3>
+          {voice.isDefault && <DefaultMark />}
+        </div>
         <p className="text-sm leading-5 text-secondary-foreground">
           {voice.whenToUse}
         </p>
@@ -307,6 +309,33 @@ function VoiceCard({
         </ul>
       </footer>
     </LibraryCard>
+  )
+}
+
+/**
+ * Which voice a post starts in — a dot and a word, beside the name.
+ *
+ * **Not a badge, and deliberately the quietest mark on the card.** The app's
+ * `StatusBadge` says something has happened or needs attention; being the
+ * default is neither, it is the ordinary resting state of one of four voices.
+ * A filled pill in the corner would make the most normal fact on the screen
+ * look like the most urgent one.
+ *
+ * Positive green rather than the section's own hue: the hue means "voices" —
+ * it is the same colour on the page header, the Overview card and the empty state — and
+ * a second meaning on the same colour breaks both readings. Green here is the
+ * app's word for *this is fine and working*, which is exactly the claim.
+ *
+ * Lower case against the `text-xl` display name it sits beside, because it is
+ * not a second title. The dot carries the emphasis; the word only says what the
+ * dot means.
+ */
+function DefaultMark() {
+  return (
+    <span className="flex shrink-0 items-center gap-1.5 text-sm leading-5 text-secondary-foreground">
+      <span aria-hidden className="size-1.5 rounded-full bg-positive" />
+      default
+    </span>
   )
 }
 

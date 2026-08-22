@@ -1,6 +1,7 @@
 /**
- * The Brand module's shapes (CON-226/227). Fixtures only — there is no
- * endpoint, and nothing outside the `brand-materials` flag may read any of it.
+ * The Brand module's shapes (CON-226/227). There is no endpoint — what answers
+ * to these today is a stub (`services/api/brand.ts`) — and nothing outside the
+ * `brand-materials` flag may read any of it.
  *
  * These live beside the components rather than in `src/types/` on purpose. A
  * type in `src/types/` is a claim about what the server sends; none of this is
@@ -91,6 +92,16 @@ export type VoiceRules = {
   length: 'short' | 'medium' | 'long'
   /** How a post opens — the single most recognisable habit a voice has. */
   opening: string
+  /**
+   * How a post ends.
+   *
+   * The second most recognisable habit, and the one people notice when it is
+   * wrong: a question, a call to action, or nothing at all. Kept apart from
+   * `opening` rather than folded into one "structure" field, because a voice
+   * can be unmistakable at the top and generic at the bottom, which is exactly
+   * the failure a single field would hide.
+   */
+  closing: string
 }
 
 export type BrandVoice = {
@@ -111,6 +122,23 @@ export type BrandVoice = {
    * rendering of a voice with nothing behind it.
    */
   summary: string
+  /**
+   * The one a post starts in when nothing has said otherwise.
+   *
+   * **Exactly one voice is the default, and the library says which.** The
+   * alternative — no default, pick every time — sounds neutral and is not: a
+   * workspace with four voices would face a four-way choice on every post, and
+   * the answer is the same one nine times out of ten. This is the *applies by
+   * default, fine-tune, sometimes cherry-pick* shape the picture templates
+   * already use (`BrandTemplate.isDefault`), and it is the reason a voice
+   * library can grow past two without making the app slower to use.
+   *
+   * The invariant is the writer's, not the reader's: whoever stores a voice
+   * clears the flag on the others (`services/api/brand.ts` today, CON-228
+   * later). A screen may assume at most one is set and must survive none being
+   * set — which is what an empty library is.
+   */
+  isDefault: boolean
   /** What has actually been written in it. See `BrandUsage`. */
   usage: BrandUsage
   /**
@@ -294,22 +322,3 @@ export function isBrandEmpty(data: BrandData): boolean {
  * is the one place in this module where more input is straightforwardly better.
  */
 export const MIN_VOICE_SAMPLES = 3
-
-/**
- * What every workspace has today: every slot present, every one empty.
- *
- * There is no endpoint, no table and no column — CON-228 has not been written —
- * and per the standing rule nothing outside the flag may read this data. So the
- * screens render against this, which lands the Overview on its first-run state:
- * the one state that is genuinely correct for every workspace right now, and
- * the one the whole nav-entry decision rests on. Populated states live in the
- * harness, where fixtures belong. When CON-228 lands this constant goes away
- * and the routes grow a `useBrand()`.
- */
-export const EMPTY_BRAND: BrandData = {
-  voices: [],
-  audiences: [],
-  guardrails: null,
-  look: null,
-  templates: [],
-}
