@@ -1,4 +1,5 @@
 import { apiJson } from './http'
+import { STUBBED, stubWorkspacePlan } from './tiers.stub'
 import { usagePeriod } from '@/lib/entitlements'
 import type {
   RawEntitlement,
@@ -96,7 +97,7 @@ type ScheduledChangeBody = {
   direction: 'upgrade' | 'downgrade'
 }
 
-type EntitlementBody = {
+export type EntitlementBody = {
   allowed?: boolean
   limit?: number | null
   used?: number
@@ -104,7 +105,7 @@ type EntitlementBody = {
   resets_at?: string | null
 }
 
-type PlanBody = {
+export type PlanBody = {
   tier: {
     id: string
     name: string
@@ -140,7 +141,7 @@ function tierFromWire(body: PlanBody['tier']): TierSnapshot {
  * an unmetered one — while `limit: null` is unlimited. Defaulting either to a
  * value here would erase the difference before `resolveEntitlement` sees it.
  */
-function entitlementFromWire(body: EntitlementBody): RawEntitlement {
+export function entitlementFromWire(body: EntitlementBody): RawEntitlement {
   const entry: RawEntitlement = {}
   if (body.allowed !== undefined) entry.allowed = body.allowed
   if (body.limit !== undefined) entry.limit = body.limit
@@ -158,8 +159,24 @@ export function planFromWire(body: PlanBody): WorkspacePlan {
   return { tier: tierFromWire(body.tier), entitlements }
 }
 
+/**
+ * The request itself, kept as its own function so the contract above stays
+ * asserted while the stub is standing in for it (`entitlements.test.ts` drives
+ * this one). Without the split, switching the app onto the stub would quietly
+ * stop testing the shape we are asking the back end for — which is the one
+ * thing this file exists to hold still.
+ */
+export function fetchWorkspacePlan(): Promise<WorkspacePlan> {
+  return apiJson<PlanBody>('/api/entitlements', 'Unable to read your plan').then(planFromWire)
+}
+
+/**
+ * The `STUBBED` branch is scaffolding: `tiers.stub.ts` answers this off a JSON
+ * seed and `localStorage` so the plan screen can drive the gating before the
+ * endpoint exists. It returns the same wire body and goes through the same
+ * parser, so the only thing the real endpoint changes is which branch runs.
+ * See `tiers.stub.ts`.
+ */
 export function getWorkspacePlan(): Promise<WorkspacePlan> {
-  return apiJson<PlanBody>('/api/entitlements', 'Unable to read your plan').then(
-    planFromWire,
-  )
+  return STUBBED ? stubWorkspacePlan().then(planFromWire) : fetchWorkspacePlan()
 }

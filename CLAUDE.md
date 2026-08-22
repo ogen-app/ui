@@ -332,17 +332,33 @@ contract is in `services/api/emailPreferences.ts` and asserted by its test.
 Flip the flag when the handler answers. See
 `docs/technical-decisions.md#email-preferences`.
 
-**Workspace tiers are a seam with no screens on it yet** (`workspace-tiers`,
-CON-232). `types/entitlements.ts`, `lib/entitlements.ts`, `useEntitlement` and
-the shared renderings in `components/entitlements` are written and tested; no
-feature is gated by them, so nothing changes on screen either way. **Waiting
-on** `GET /api/entitlements` — the contract is in `services/api/entitlements.ts`
-and asserted by its test. CON-208 (tenant tiers and groups) and CON-86 (usage
-metering) are done server-side, so the tiers and the counters exist; what is
-missing is a workspace-scoped REST read that puts them together, plus a
-`suspended` flag on the resources a downgrade makes read-only. Wire screens to
-the seam before flipping the flag — an entitlement nothing consults is the same
-as no entitlement.
+**Workspace tiers run on a local stub** (`workspace-tiers`, CON-232). The seam
+— `types/entitlements.ts`, `lib/entitlements.ts`, `useEntitlement`, the shared
+renderings in `components/entitlements` — is written and tested, and
+`/workspace-settings/plan` is the one screen that talks *about* the plan rather
+than being gated by it. Choosing a tier there re-answers every
+`useEntitlement` in the app, which is how the gating gets looked at before the
+API exists. **Waiting on** `GET /api/entitlements`, `GET /api/tiers` and
+`POST /api/workspace/plan` — contracts in `services/api/entitlements.ts` and
+`services/api/tiers.ts`, both asserted by their tests, and both tested against
+the *wire* path (`fetchWorkspacePlan`) so the stub can't make the contract go
+dark. CON-208 (tenant tiers and groups) and CON-86 (usage metering) are done
+server-side, so the tiers and the counters exist; what is missing is a
+workspace-scoped REST read that puts them together, plus a `suspended` flag on
+the resources a downgrade makes read-only.
+
+The stub is `services/api/tiers.stub.ts` — a JSON seed of the decided tier
+matrix plus `localStorage`, with `STUBBED` switching the two call sites. It
+does two things the client is forbidden to do, and says so: it **ranks** tiers
+(to decide upgrade from downgrade, hence `direction` on the wire) and it
+**reads the clock** (to date the next billing boundary). Neither may leak out —
+`rank` is stripped before anything leaves the file, and its test asserts that.
+
+No feature is gated yet. Which of hide / lock / lock-with-upgrade each key gets
+is decided and recorded on `EntitlementKey` in `types/entitlements.ts`; wiring
+the call sites is the remaining half. An entitlement nothing consults is the
+same as no entitlement — but note the flag now also switches on a screen, so it
+stays **off** on `develop` until the endpoints answer.
 
 ## Global rules
 

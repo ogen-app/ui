@@ -1016,6 +1016,89 @@ export const en = {
     suspendedBody:
       "Your plan changed, so this is read-only for now. Nothing has been deleted — it's all here, and upgrading makes it editable again.",
     suspendedSince: 'Read-only since {{when}}.',
+
+    /**
+     * The plan screen. Note what is *not* here: the names and taglines of the
+     * tiers themselves. The tier list is editorial data the server owns, so its
+     * copy arrives in one language and cannot be put in a catalogue — see
+     * `services/api/tiers.ts`. Everything the app says *about* a tier is here.
+     */
+    planTitle: 'Plan',
+    planIntro: 'What this workspace can do, and what the other plans would change.',
+    /**
+     * Not an Explainer, and not dismissible. Someone looking at a page of plans
+     * with a button on each is entitled to know that the button does not buy
+     * anything — hiding that behind a note they may have closed months ago is
+     * exactly the case the Explainer rule exists to keep out.
+     */
+    planMock: 'Plans are not connected to billing yet. Choosing one only changes what this workspace is allowed to do.',
+    planLoadFailed: 'The plans could not be loaded.',
+    planBack: 'Back to workspace settings',
+    viewPlans: 'VIEW PLANS',
+
+    currentPlan: 'Current plan',
+    currentBadge: 'Current',
+    /** The tier a change has already been made to, waiting on its date. */
+    scheduledBadge: 'Scheduled',
+    /** A tier version that is still held but can no longer be bought. */
+    retired: 'No longer offered',
+    since: 'On this plan since {{when}}.',
+
+    choose: 'CHOOSE',
+    /** For the button's accessible name, where "CHOOSE" alone says too little. */
+    chooseNamed: 'Choose {{name}}',
+    /** Undoing a scheduled downgrade — the only way back from one. */
+    cancelChange: 'CANCEL CHANGE',
+
+    /**
+     * A change that has been made but has not happened yet. Both directions are
+     * worded, because "Max starts on the 1st" and "you drop to Trial on the
+     * 1st" want opposite tones, and only the server knows which one it is.
+     */
+    changeScheduled: 'You move to {{name}} on {{when}}.',
+    changeScheduledUp: '{{name}} starts on {{when}}.',
+    /**
+     * The reassurance leads, because a plan change reads as a threat to the
+     * work already in the workspace and it isn't one.
+     */
+    changeScheduledBody:
+      "Nothing will be deleted. If you're over the new plan's limits, some things become read-only until you move back up.",
+    changeFailed: 'Your plan could not be changed.',
+    changedNow: "You're now on {{name}}.",
+    changeCancelled: 'That change has been called off.',
+
+    /** How a tier states an allowance, as opposed to how a meter spends one. */
+    limitFlat: '{{value}}',
+    limitDay: '{{value}} per day',
+    limitMonth: '{{value}} per month',
+    limitPost: '{{value}} per post',
+    limitPublish: '{{value}} per publish',
+    included: 'Included',
+    excluded: 'Not included',
+
+    price: '{{price}} per month',
+    priceYear: '{{price}} per year',
+    priceFree: 'Free',
+
+    /**
+     * The name each entitlement key goes by on screen. Keyed by the key rather
+     * than assembled anywhere, so a feature is called the same thing on the
+     * price list and on the lock that mentions it.
+     */
+    features: {
+      seats: 'Team members',
+      social_accounts: 'Connected accounts',
+      multiple_accounts_per_platform: 'Several accounts on one platform',
+      campaigns: 'Campaigns',
+      custom_campaign_types: 'Custom campaign types',
+      content_plan_runs: 'Content plan runs',
+      post_assistant: 'Post Assistant',
+      post_quality_reviews: 'Post quality reviews',
+      post_versions: 'Version history',
+      brand_personas: 'Brand personas',
+      brand_voices: 'Brand voices',
+      media_storage_bytes: 'Media storage',
+    },
   },
 
   errors: {

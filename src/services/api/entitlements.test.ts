@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { getWorkspacePlan } from './entitlements'
+import { fetchWorkspacePlan } from './entitlements'
 
 /**
  * `GET /api/entitlements` does not exist yet. Until it does, this file is the
@@ -12,6 +12,11 @@ import { getWorkspacePlan } from './entitlements'
  * uses three different kinds of it: a missing key means ungated, a missing
  * `limit` means unmetered, and `limit: null` means unlimited. A handler that
  * flattens any two of those into one breaks a rule the client cannot recover.
+ *
+ * Deliberately against `fetchWorkspacePlan` rather than `getWorkspacePlan`:
+ * the latter is currently answered by a local stub so the plan screen can be
+ * driven, and a contract test that went dark the moment the app stopped making
+ * the request would be no contract at all.
  */
 
 function stubFetch(res: Response) {
@@ -37,13 +42,13 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('getWorkspacePlan', () => {
+describe('fetchWorkspacePlan', () => {
   it('reads one flat, workspace-scoped route', async () => {
     // No workspace id in the path: like `/api/tenants/current` and `/api/users`
     // it answers for whichever workspace this tab's `X-Workspace-Id` names.
     const fetchMock = stubFetch(jsonResponse(200, { tier: TIER, entitlements: {} }))
 
-    await getWorkspacePlan()
+    await fetchWorkspacePlan()
 
     expect(fetchMock.mock.calls[0][0]).toBe('/api/entitlements')
     expect(fetchMock.mock.calls[0][1].method).toBe('GET')
@@ -52,7 +57,7 @@ describe('getWorkspacePlan', () => {
   it('unwraps the tier as a snapshot, keeping the version id opaque', async () => {
     stubFetch(jsonResponse(200, { tier: TIER, entitlements: {} }))
 
-    const plan = await getWorkspacePlan()
+    const plan = await fetchWorkspacePlan()
 
     expect(plan.tier).toEqual({
       id: 'tier_pro_2026_01_01',
@@ -82,7 +87,7 @@ describe('getWorkspacePlan', () => {
       }),
     )
 
-    const plan = await getWorkspacePlan()
+    const plan = await fetchWorkspacePlan()
 
     expect(plan.tier.scheduled).toEqual({
       id: 'tier_trial_2026_09_01',
@@ -109,7 +114,7 @@ describe('getWorkspacePlan', () => {
       }),
     )
 
-    const plan = await getWorkspacePlan()
+    const plan = await fetchWorkspacePlan()
 
     expect(plan.entitlements.content_plan_runs).toEqual({
       limit: 10,
@@ -130,7 +135,7 @@ describe('getWorkspacePlan', () => {
       }),
     )
 
-    const plan = await getWorkspacePlan()
+    const plan = await fetchWorkspacePlan()
 
     // Stated and unlimited.
     expect(plan.entitlements.seats).toEqual({ limit: null, used: 4 })
@@ -150,7 +155,7 @@ describe('getWorkspacePlan', () => {
       }),
     )
 
-    const plan = await getWorkspacePlan()
+    const plan = await fetchWorkspacePlan()
 
     expect(plan.entitlements.content_plan_runs).toEqual({
       limit: 3,
@@ -164,7 +169,7 @@ describe('getWorkspacePlan', () => {
     // entitled to omit the key rather than send `{}`.
     stubFetch(jsonResponse(200, { tier: TIER }))
 
-    await expect(getWorkspacePlan()).resolves.toEqual({
+    await expect(fetchWorkspacePlan()).resolves.toEqual({
       tier: {
         id: TIER.id,
         name: TIER.name,
@@ -178,6 +183,6 @@ describe('getWorkspacePlan', () => {
   it("surfaces the server's message rather than a generic failure", async () => {
     stubFetch(jsonResponse(403, { error: 'no workspace on this request' }))
 
-    await expect(getWorkspacePlan()).rejects.toThrow('no workspace on this request')
+    await expect(fetchWorkspacePlan()).rejects.toThrow('no workspace on this request')
   })
 })

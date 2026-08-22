@@ -208,8 +208,13 @@ const FEATURE_FLAGS = {
    *
    * With this off nothing asks, nothing renders a lock, and every feature is
    * available exactly as it was before tiers existed.
+   *
+   * **On, on this branch only, and it must go back to `false` before merge.**
+   * The plan screen is driven by a `localStorage` stub
+   * (`services/api/tiers.stub.ts`) so the tier differentiation can be built and
+   * looked at; a stub is not a reason to ship the feature on.
    */
-  'workspace-tiers': false,
+  'workspace-tiers': true,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

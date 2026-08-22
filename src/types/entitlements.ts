@@ -73,6 +73,36 @@ export type EntitlementKey =
   | 'multiple_accounts_per_platform'
 
 /**
+ * How each key answers a denial — the product decision, recorded (2026-08-22).
+ *
+ * It is a comment rather than a table because the choice is not a value the
+ * seam can apply: hiding a feature means removing the `<li>` around it, the
+ * separator beside it and rewording the empty state below, and only the call
+ * site can reach any of that. This is where the decision was made; the call
+ * sites are where it is kept.
+ *
+ * - **Sell** (lock with an upgrade, at the moment of intent) — `campaigns`,
+ *   `seats`, `social_accounts`, `content_plan_runs`, `post_quality_reviews`,
+ *   `media_storage_bytes`, `post_assistant`, `brand_personas`, `brand_voices`.
+ *   These are the ones somebody is *already reaching for* when they are
+ *   stopped: they clicked add, invite, connect, run, review, upload, or opened
+ *   the assistant. The upgrade answers a question they had rather than
+ *   interrupting with one.
+ * - **Lock, no call to action** — `post_versions`,
+ *   `multiple_accounts_per_platform`. History shows what it has and locks the
+ *   older reach; the second is an affordance that would otherwise vanish
+ *   without explanation, and a workspace that has never had two accounts on one
+ *   platform would never learn the capability exists.
+ * - **Hide** — `custom_campaign_types`. An enumeration: a locked row in a list
+ *   of options is noise while somebody is choosing, and the type picker has
+ *   nothing to teach from.
+ *
+ * Note that none of the three is a property of the *key*: the same entitlement
+ * can hide in a dropdown and sell on a button. Where a key appears in two
+ * places, this is the disposition for its primary one.
+ */
+
+/**
  * What an allowance is counted over, when the client knows how to say it.
  *
  * The server owns this word and may send one this build has never heard of, so

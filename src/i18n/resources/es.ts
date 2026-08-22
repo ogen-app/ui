@@ -722,6 +722,59 @@ export const es: Translation = {
     suspendedBody:
       'Tu plan ha cambiado, así que esto es de solo lectura por ahora. No se ha eliminado nada: sigue todo aquí, y al mejorar el plan vuelve a ser editable.',
     suspendedSince: 'De solo lectura desde el {{when}}.',
+
+    planTitle: 'Plan',
+    planIntro: 'Lo que puede hacer este espacio y lo que cambiarían los demás planes.',
+    planMock:
+      'Los planes todavía no están conectados a la facturación. Elegir uno solo cambia lo que este espacio puede hacer.',
+    planLoadFailed: 'No se han podido cargar los planes.',
+    planBack: 'Volver a la configuración del espacio',
+    viewPlans: 'VER PLANES',
+
+    currentPlan: 'Plan actual',
+    currentBadge: 'Actual',
+    scheduledBadge: 'Programado',
+    retired: 'Ya no se ofrece',
+    since: 'En este plan desde el {{when}}.',
+
+    choose: 'ELEGIR',
+    chooseNamed: 'Elegir {{name}}',
+    cancelChange: 'CANCELAR EL CAMBIO',
+
+    changeScheduled: 'Pasarás a {{name}} el {{when}}.',
+    changeScheduledUp: '{{name}} empieza el {{when}}.',
+    changeScheduledBody:
+      'No se borrará nada. Si superas los límites del nuevo plan, algunas cosas pasarán a ser de solo lectura hasta que vuelvas a subir.',
+    changeFailed: 'No se ha podido cambiar tu plan.',
+    changedNow: 'Ya estás en {{name}}.',
+    changeCancelled: 'Se ha anulado ese cambio.',
+
+    limitFlat: '{{value}}',
+    limitDay: '{{value}} al día',
+    limitMonth: '{{value}} al mes',
+    limitPost: '{{value}} por publicación',
+    limitPublish: '{{value}} por publicación programada',
+    included: 'Incluido',
+    excluded: 'No incluido',
+
+    price: '{{price}} al mes',
+    priceYear: '{{price}} al año',
+    priceFree: 'Gratis',
+
+    features: {
+      seats: 'Miembros del equipo',
+      social_accounts: 'Cuentas conectadas',
+      multiple_accounts_per_platform: 'Varias cuentas en una misma plataforma',
+      campaigns: 'Campañas',
+      custom_campaign_types: 'Tipos de campaña personalizados',
+      content_plan_runs: 'Ejecuciones del plan de contenido',
+      post_assistant: 'Asistente de publicaciones',
+      post_quality_reviews: 'Revisiones de calidad',
+      post_versions: 'Historial de versiones',
+      brand_personas: 'Perfiles de marca',
+      brand_voices: 'Voces de marca',
+      media_storage_bytes: 'Almacenamiento multimedia',
+    },
   },
 
   errors: {
