@@ -62,6 +62,20 @@ describe('UpgradeCallout', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
+  it('groups a large count in the app language by default', () => {
+    render(
+      <UpgradeCallout
+        entitlement={denied({
+          state: 'denied',
+          reason: 'limit',
+          usage: { limit: 12_000, used: 12_000, period: null, resetsAt: null },
+        })}
+      />,
+    )
+
+    expect(screen.getByText('12,000 of 12,000')).toBeInTheDocument()
+  })
+
   it('lets the call site say what the numbers mean', () => {
     // `media_storage_bytes` in raw bytes is a true sentence nobody can use.
     const format = vi.fn((value: number) => `${value / 1_000_000} MB`)

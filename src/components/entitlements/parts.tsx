@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { formatDate } from '@/lib/intl'
 import { cn } from '@/lib'
 
 /**
@@ -14,16 +15,19 @@ import { cn } from '@/lib'
 /**
  * A date, in the language the app is set to.
  *
- * Built per call rather than hoisted: a module-level `Intl.DateTimeFormat`
- * freezes whichever language happened to load first, and the language is a
- * choice the user makes in Workspace Settings rather than a property of their
- * browser — so `undefined` as the locale would be the same bug spelled
- * differently.
+ * Through `lib/intl` rather than a formatter of its own: the language is a
+ * choice the user makes in Workspace Settings, not a property of their browser,
+ * and the helper caches one formatter per (locale, options) pair so nothing has
+ * to be hoisted to module scope — where it would freeze whichever language
+ * loaded first. The locale is threaded in from the caller's `useTranslation`,
+ * because that is also what re-renders it on a switch.
+ *
+ * Falls back to the raw string on an unparseable date. These are server
+ * timestamps, so that should not happen — but a billing date is the wrong place
+ * to render "Invalid Date".
  */
 export function formatDay(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long' }).format(
-    new Date(iso),
-  )
+  return formatDate(iso, { day: 'numeric', month: 'long' }, locale) ?? iso
 }
 
 type NoticeShellProps = {

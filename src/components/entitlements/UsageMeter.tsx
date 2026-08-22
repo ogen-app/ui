@@ -1,17 +1,19 @@
 import { useTranslation } from 'react-i18next'
 
+import { formatNumber } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { Usage, UsagePeriod } from '@/types/entitlements'
 
 type Props = {
   usage: Usage
   /**
-   * How to write the two numbers.
+   * How to write the two numbers. Defaults to the app's own number formatting.
    *
-   * Counts read fine as they are, but `media_storage_bytes` does not —
-   * "402653184 of 1073741824" is a true sentence nobody can use. The call site
-   * knows what its numbers mean, so it brings the formatter rather than this
-   * component keeping a table of which keys are bytes.
+   * An override exists because `media_storage_bytes` is not a count —
+   * "402653184 of 1073741824" is a true sentence nobody can use, and grouping
+   * the digits does not rescue it. The call site knows what its numbers mean,
+   * so it brings the formatter rather than this component keeping a table of
+   * which keys are bytes.
    */
   format?: (value: number) => string
   className?: string
@@ -29,15 +31,19 @@ type Props = {
  * onto a stem, because where "this month" lands in the sentence is a different
  * answer in every language.
  */
-export function UsageMeter({ usage, format = String, className }: Props) {
-  const { t } = useTranslation()
+export function UsageMeter({ usage, format, className }: Props) {
+  const { t, i18n } = useTranslation()
+  // The language comes off the `useTranslation` this already holds, so the
+  // number and the sentence around it are read from the same one — and the
+  // `t()` above it is what re-renders this on a switch.
+  const write = format ?? ((value: number) => formatNumber(value, {}, i18n.language))
 
   const text =
     usage.limit === null
       ? t('tiers.unlimited')
       : t(usageKey(usage.period), {
-          used: format(usage.used),
-          limit: format(usage.limit),
+          used: write(usage.used),
+          limit: write(usage.limit),
         })
 
   return <span className={cn('text-[13px] text-tertiary-foreground', className)}>{text}</span>
