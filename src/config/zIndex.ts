@@ -222,7 +222,8 @@ export const ZIndex = {
 
   /**
    * Staging flag-override marker
-   * Used for: OverrideMarker — the bottom-left "n flags overridden" badge.
+   * Used for: OverrideMarker — the "n flags overridden" badge above the
+   * assistant trigger.
    * Above everything, including the boot loader, because what it says is true
    * of whatever is on screen and is most worth knowing when something looks
    * wrong. Only exists in dev and staging builds; a production bundle drops

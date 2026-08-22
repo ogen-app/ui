@@ -122,7 +122,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   hidden text. Editing a screen that still holds hard-coded English? Move the
   strings you touch into the catalogue rather than adding a literal beside them.
   Genuinely exempt: developer-facing text (`console.*`, thrown `Error` messages,
-  test fixtures), and `i18n/bootMessages.ts` — see the next bullet.
+  test fixtures), `src/devtools/` (staging-only screens that a production build
+  compiles out — see `docs/technical-decisions.md#staging-flag-overrides`), and
+  `i18n/bootMessages.ts` — see the next bullet.
 - **How the catalogues work.** English is bundled and is the fallback; `en.ts`
   is the shape everything else is typed against, so a key missing from `es.ts`
   is a compile error (a key missing from `en.ts` is a compile error at the call

@@ -582,7 +582,9 @@ Four things follow, and each was a wrong answer first:
   localStorage key by hand does nothing. An unlisted URL is not a security
   boundary and is not asked to be one — the protection on staging is that seeing
   unfinished work requires deliberately switching it on.
-- **Overrides announce themselves.** `OverrideMarker` sits bottom-left whenever
+- **Overrides announce themselves.** `OverrideMarker` sits above the assistant
+  trigger (the CON-178 bottom-left corner is only empty in the content column —
+  a viewport-fixed badge there lands on the sidebar's account row) whenever
   any flag is forced. Without it, an override left on weeks ago becomes a bug
   report nobody else can reproduce.
 

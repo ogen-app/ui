@@ -2,8 +2,8 @@ import { readFlagOverrides } from '@/config/flagOverrides'
 import { ZIndex } from '@/config/zIndex'
 
 /**
- * A standing marker, bottom-left, whenever this browser is not seeing the
- * build's own flags.
+ * A standing marker, above the assistant trigger, whenever this browser is
+ * not seeing the build's own flags.
  *
  * Without it the failure mode is obvious in hindsight: an override left on
  * weeks ago makes staging behave differently for one person, and it gets
