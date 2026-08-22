@@ -30,7 +30,7 @@ export function postAnalyticsKey(query: PostAnalyticsQuery) {
  */
 export const ANALYTICS_PAGE_LIMIT = 100;
 
-export function usePostAnalytics(query: PostAnalyticsQuery = {}) {
+function usePostAnalytics(query: PostAnalyticsQuery = {}) {
   return useQuery({
     queryKey: postAnalyticsKey(query),
     queryFn: () => listPostAnalytics(query),

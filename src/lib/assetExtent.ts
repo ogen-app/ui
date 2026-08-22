@@ -1,4 +1,5 @@
 import { retrievability } from "@/lib/campaignSources";
+import { formatNumber } from "@/lib/intl";
 import type { Asset } from "@/types/content";
 
 /**
@@ -19,10 +20,19 @@ export function wordCount(asset: Pick<Asset, "content">): number {
   return text === "" ? 0 : text.split(/\s+/).length;
 }
 
-/** "1,240 words" — or why there aren't any. */
+/**
+ * "1,240 words" — or why there aren't any.
+ *
+ * The digits group in the app's language rather than the browser's; the noun
+ * beside them is still hard-coded English, because this screen has not been
+ * through the catalogue yet (CON-174). Half-right on the number is not an
+ * improvement worth arguing about on its own — it is that a `toLocaleString()`
+ * left here is the exact call the rest of the app just stopped making, and it
+ * would read as permission to make it again.
+ */
 export function extentLabel(asset: Pick<Asset, "content" | "status">): string {
   const count = wordCount(asset);
-  if (count > 0) return `${count.toLocaleString()} ${count === 1 ? "word" : "words"}`;
+  if (count > 0) return `${formatNumber(count)} ${count === 1 ? "word" : "words"}`;
   // Empty while the server is still working on it is a wait, not a verdict.
   return retrievability(asset.status) === "waiting"
     ? "Not read yet"

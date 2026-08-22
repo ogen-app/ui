@@ -23,7 +23,7 @@ const BOLD = /\*\*(.+?)\*\*/g
  * Splits `**bold**` runs out of a line. An unterminated `**` stays literal,
  * which is what a streaming reply looks like halfway through emphasis.
  */
-export function parseInline(text: string): InlineSpan[] {
+function parseInline(text: string): InlineSpan[] {
   const spans: InlineSpan[] = []
   let last = 0
   for (const match of text.matchAll(BOLD)) {

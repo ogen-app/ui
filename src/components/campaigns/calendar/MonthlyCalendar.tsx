@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
 import { useAddPost } from '@/hooks/usePosts'
@@ -12,6 +13,7 @@ import { PostCard } from './PostCard'
 import { isDateLocked } from './LockMark'
 import { fitMonthCell } from './cardRungs'
 import { comparePostOrder } from '@/lib/postOrder'
+import { formatDate } from '@/lib/intl'
 import {
   isSameDay,
   isSameMonth,
@@ -66,6 +68,7 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
   /** Cell whose empty space the pointer is on — see the cell's onMouseOver. */
   const [hoverKey, setHoverKey] = useState<string | null>(null)
   const [laneHeight, setLaneHeight] = useState(ASSUMED_LANE_HEIGHT)
+  const { t, i18n } = useTranslation()
   const today = useMemo(() => new Date(), [])
   const addPost = useAddPost(campaignId)
   const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings(campaignId)
@@ -147,7 +150,7 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
             key={day.getDay()}
             className="flex-1 min-w-0 bg-secondary px-2 py-1.5 text-center text-xs font-medium leading-4"
           >
-            {weekdayShortLabel(day)}
+            {weekdayShortLabel(day, i18n.language)}
           </div>
         ))}
       </div>
@@ -252,7 +255,9 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
                       <button
                         type="button"
                         onClick={() => addPost(day)}
-                        title={`Add a post on ${day.toLocaleDateString()}`}
+                        title={t('calendar.addPostOn', {
+                          date: formatDate(day, { dateStyle: 'long' }, i18n.language),
+                        })}
                         className={cn(
                           'flex size-5 shrink-0 items-center justify-center cursor-pointer',
                           'text-tertiary-foreground transition-[opacity,background-color,color]',

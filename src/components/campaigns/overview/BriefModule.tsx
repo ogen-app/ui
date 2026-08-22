@@ -10,6 +10,7 @@ import {
   briefPosture,
 } from "@/lib/campaignReadiness.ts";
 import { relativeTime } from "@/lib/relativeTime.ts";
+import { formatDate } from "@/lib/intl";
 import type { Campaign } from "@/types/campaigns";
 import { CallToAction } from "./CallToAction.tsx";
 import { CollapsedCard, OverviewCard } from "./OverviewCard.tsx";
@@ -36,7 +37,12 @@ export function BriefModule({ campaign }: { campaign: Campaign }) {
       >
         <span
           className="min-w-0 flex-1 truncate"
-          title={new Date(campaign.updated_at).toLocaleString()}
+          title={
+            formatDate(campaign.updated_at, {
+              dateStyle: "long",
+              timeStyle: "short",
+            }) ?? undefined
+          }
         >
           {formatTitle(campaign.name, "Untitled campaign")}, updated{" "}
           {relativeTime(campaign.updated_at)}

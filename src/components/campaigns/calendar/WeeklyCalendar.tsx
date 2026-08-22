@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
 import { useAddPost } from '@/hooks/usePosts'
@@ -61,6 +62,7 @@ function isPastDay(day: Date): boolean {
 function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarProps) {
   /** Column whose empty space the pointer is on — see the column's onMouseOver. */
   const [hoverKey, setHoverKey] = useState<string | null>(null)
+  const { t, i18n } = useTranslation()
   const today = useMemo(() => new Date(), [])
   const addPost = useAddPost(campaignId)
   const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings(campaignId)
@@ -157,8 +159,8 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
           laneHeight === null ? CARD_RUNGS[0] : pickRung(facts, available, fields)
         return {
           key: day.toDateString(),
-          label: weekdayLabel(day),
-          dateLabel: dayLabel(day),
+          label: weekdayLabel(day, i18n.language),
+          dateLabel: dayLabel(day, i18n.language),
           day,
           isToday: isSameDay(day, today),
           posts: dayPosts,
@@ -171,7 +173,7 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
           overflows: laneHeight !== null && stackHeight(rung, facts, fields) > available,
         }
       }),
-    [days, today, postsByDay, laneHeight, platformViews, fields],
+    [days, today, postsByDay, laneHeight, platformViews, fields, i18n.language],
   )
 
   return (
@@ -276,7 +278,7 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
                 <button
                   type="button"
                   onClick={() => addPost(col.day)}
-                  title={`Add a post on ${col.dateLabel}`}
+                  title={t('calendar.addPostOn', { date: col.dateLabel })}
                   className={cn(
                     'shrink-0 flex h-9 items-center justify-center gap-2 cursor-pointer',
                     // Typography lifted from the toolbar's ADD POST (the
@@ -293,7 +295,7 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
                   )}
                 >
                   <PlusIcon weight="bold" className="size-4 shrink-0" />
-                  <span>ADD POST</span>
+                  <span>{t('calendar.addPost')}</span>
                 </button>
               )}
             </div>

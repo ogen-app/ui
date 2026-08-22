@@ -149,24 +149,12 @@ export function getPlatformByZernioId(zernioId: string): PlatformInfo | undefine
   return BY_ZERNIO_ID.get(zernioId);
 }
 
-export function unionSupportedSlugs(
+function unionSupportedSlugs(
   publishers: { supported_post_types: string[] }[],
 ): Set<string> {
   const out = new Set<string>();
   for (const p of publishers) for (const slug of p.supported_post_types) out.add(slug);
   return out;
-}
-
-export function partitionPostTypesBySupport(
-  postTypes: PlatformPostType[],
-  supportedSlugs: Set<string>,
-): { supported: PlatformPostType[]; unsupported: PlatformPostType[] } {
-  const supported: PlatformPostType[] = [];
-  const unsupported: PlatformPostType[] = [];
-  for (const pt of postTypes) {
-    (supportedSlugs.has(pt.slug) ? supported : unsupported).push(pt);
-  }
-  return { supported, unsupported };
 }
 
 // A resolved view of a platform: the dictionary metadata joined with the

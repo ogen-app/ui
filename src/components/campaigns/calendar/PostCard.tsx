@@ -1,9 +1,11 @@
 import { memo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import { CircleDashedIcon, UserCircleIcon, WarningIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
-import { POST_STATUS_LABELS } from '@/types/posts'
 import { cn, formatTitle } from '@/lib'
+import { formatDate } from '@/lib/intl'
+import { postStatusLabel } from '@/lib/postStatusLabel'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { hasVisibleProblem } from '@/lib/postValidation'
@@ -201,6 +203,7 @@ function PostCardComponent({
   fields = DEFAULT_WEEK_FIELDS,
   band = 'full',
 }: PostCardProps) {
+  const { t, i18n } = useTranslation()
   const title = formatTitle(post.title)
   const platformInfo = getPlatformInfo(post.platform_id)
   // Fall back to a neutral, "undefined"-feeling dashed circle (in the muted
@@ -208,19 +211,23 @@ function PostCardComponent({
   const PlatformIcon = platformInfo?.icon ?? CircleDashedIcon
   const label = platformInfo
     ? getPostTypeLabel(post.platform_id, post.platform_post_type)
-    : 'No platform'
-  const statusLabel = POST_STATUS_LABELS[post.status] ?? post.status
+    : t('posts.noPlatform')
+  const statusLabel = postStatusLabel(t, post.status)
   const borderColor = STATUS_ACCENT_COLOR[post.status] ?? 'border-l-border'
   // The calendar lays posts out by scheduled_at; show that time (or the
   // publish time once published). Unscheduled posts have neither — omit it.
   const timeSource = post.scheduled_at ?? post.published_at
-  const time = timeSource
-    ? new Date(timeSource).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    : null
+  const time = formatDate(
+    timeSource,
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+      // Pinned rather than left to the locale: the card gives the time one
+      // fixed-width slot, and a 12-hour rendering adds "AM"/"PM" to it.
+      hour12: false,
+    },
+    i18n.language,
+  )
 
   // Only what the list payload already carries — `media_urls`. The editor's
   // uploads land in `post_attachments`, whose thumbnails are hydrated per
@@ -427,7 +434,7 @@ function PostCardComponent({
               // label beside this, or the `sr-only` one below — so the glyph
               // would only repeat it.
               aria-hidden={!problem}
-              aria-label={problem ? 'This post has a problem' : undefined}
+              aria-label={problem ? t('posts.hasProblem') : undefined}
             />
             {/* Plain `tabular-nums` in the body face, which under Geist is
                 both aligned and clean. Not `font-mono`: Geist Mono draws a
@@ -510,7 +517,7 @@ function PostCardComponent({
         {fields.account && (
           <div className="flex items-center gap-1 text-[12px]/[16px] text-tertiary-foreground min-w-0">
             <UserCircleIcon className="size-3.5 shrink-0" />
-            <span className="truncate">{account.name ?? 'No account'}</span>
+            <span className="truncate">{account.name ?? t('posts.noAccount')}</span>
           </div>
         )}
       </div>

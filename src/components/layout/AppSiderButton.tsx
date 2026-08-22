@@ -1,28 +1,7 @@
-import { MagnifyingGlassIcon } from '@phosphor-icons/react'
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button.tsx'
 import { Link } from '@tanstack/react-router'
 import { cn } from '@/lib'
-
-type AppSidebarButtonSearchProps = {
-  onClick?: () => void
-}
-
-export function AppSidebarButtonSearch({ onClick }: AppSidebarButtonSearchProps) {
-  return (
-    <Button variant="searchBar" size={'excluded'} onClick={onClick}>
-      <div>
-        <MagnifyingGlassIcon className="size-5 flex-none" />
-        <div className="flex-none text-left w-[108px]">
-          <span className="font-grotesk font-medium uppercase">Search</span>
-        </div>
-        <div className="hidden lg:block w-16 flex-none">
-          <span className="text-right font-grotesk font-medium uppercase">CMD + F</span>
-        </div>
-      </div>
-    </Button>
-  )
-}
 
 type AppSidebarButtonMenuProps = {
   /** Fully rendered icon element (Phosphor icon or a custom node). */

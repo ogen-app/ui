@@ -18,6 +18,7 @@ import {
   monthLabel,
   startOfWeek,
 } from '@/components/campaigns/calendar/date'
+import { formatDate } from '@/lib/intl'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useAddPost } from '@/hooks/usePosts'
 
@@ -35,10 +36,10 @@ type PostsToolbarProps = {
   subheading?: string
 }
 
-function formatWeekRange(weekStart: Date): string {
+function formatWeekRange(weekStart: Date, locale: string): string {
   const weekEnd = addDays(weekStart, 6)
-  const startMonth = weekStart.toLocaleDateString(undefined, { month: 'long' })
-  const endMonth = weekEnd.toLocaleDateString(undefined, { month: 'long' })
+  const startMonth = formatDate(weekStart, { month: 'long' }, locale)
+  const endMonth = formatDate(weekEnd, { month: 'long' }, locale)
   const sameMonth = startMonth === endMonth && weekStart.getFullYear() === weekEnd.getFullYear()
   // En dash (–) for the date range, per typographic convention.
   if (sameMonth) {
@@ -60,7 +61,7 @@ export function PostsToolbar({
   onAnchorChange,
   subheading,
 }: PostsToolbarProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const addPost = useAddPost(campaignId)
   const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings(campaignId)
@@ -119,9 +120,9 @@ export function PostsToolbar({
         {!anchor ? (
           subheading
         ) : view === 'month' ? (
-          monthLabel(anchor)
+          monthLabel(anchor, i18n.language)
         ) : settingsPending ? null : (
-          formatWeekRange(startOfWeek(anchor, firstDayOfWeek))
+          formatWeekRange(startOfWeek(anchor, firstDayOfWeek), i18n.language)
         )}
       </span>
 
@@ -132,7 +133,7 @@ export function PostsToolbar({
               variant="default"
               size="defaultIcon"
               onClick={() => step(-1)}
-              aria-label={view === 'month' ? 'Previous month' : 'Previous week'}
+              aria-label={t(view === 'month' ? 'calendar.previousMonth' : 'calendar.previousWeek')}
               // The calendar binds the arrow keys to these two buttons; saying
               // so here is what puts the shortcut in front of a screen-reader
               // user, who has nothing else to discover it from.
@@ -151,7 +152,7 @@ export function PostsToolbar({
               variant="default"
               size="defaultIcon"
               onClick={() => step(1)}
-              aria-label={view === 'month' ? 'Next month' : 'Next week'}
+              aria-label={t(view === 'month' ? 'calendar.nextMonth' : 'calendar.nextWeek')}
               aria-keyshortcuts="ArrowRight"
             >
               <CaretRightIcon />
@@ -201,7 +202,7 @@ export function PostsToolbar({
 
           <Button variant="default" onClick={() => addPost()}>
             <PlusIcon />
-            <span>ADD POST</span>
+            <span>{t('calendar.addPost')}</span>
           </Button>
         </div>
       </div>

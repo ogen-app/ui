@@ -3,6 +3,7 @@ import { CaretDownIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/re
 import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker'
 
 import { cn } from '@/lib'
+import { formatDate } from '@/lib/intl'
 import { Button, buttonVariants } from '@/components/ui/button'
 
 function Calendar({
@@ -58,7 +59,7 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) => date.toLocaleString('default', { month: 'short' }),
+        formatMonthDropdown: (date) => formatDate(date, { month: 'short' }),
         ...formatters,
       }}
       classNames={{
