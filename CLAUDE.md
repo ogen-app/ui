@@ -334,10 +334,10 @@ Flip the flag when the handler answers. See
 
 **Workspace tiers run on a local stub** (`workspace-tiers`, CON-232). The seam
 — `types/entitlements.ts`, `lib/entitlements.ts`, `useEntitlement`, the shared
-renderings in `components/entitlements` — is written and tested, and three
-screens talk *about* the plan rather than being gated by it: the **Plan &
-billing card** in Workspace Settings (two sentences and a MANAGE button),
-**`/workspace-settings/billing`** behind it, and **`/plans`**. Choosing a tier
+renderings in `components/entitlements` — is written and tested, and two
+surfaces talk *about* the plan rather than being gated by it: the **Plan &
+billing card** in Workspace Settings (`components/workspace-settings/
+PlanSection`) and **`/plans`** behind its CHANGE PLAN. Choosing a tier
 re-answers every `useEntitlement` in the app, which is how the gating gets
 looked at before the API exists. **Waiting on** `GET /api/entitlements`,
 `GET /api/tiers`, `POST /api/workspace/plan`, `GET /api/billing` and
@@ -360,9 +360,13 @@ reference caches warm again on the way back.
 billing fields.** Lemon Squeezy is the legal seller: it takes the card, holds
 the billing address and tax id, works out and remits VAT/GST, and issues the
 invoice. Every editable billing field therefore already has a hosted, PCI-scoped
-form we neither write nor answer for — so `/workspace-settings/billing` is a
-*report and a door*. No address, no tax id, no card, no cancel endpoint; a
-second copy here is one that can disagree with the invoice. The door is
+form we neither write nor answer for — so our side is a *report and a door*. No
+address, no tax id, no card, no cancel endpoint; a second copy here is one that
+can disagree with the invoice. **And no billing screen**: once the provider has
+taken everything editable, what is left to state is a plan, a card's last four
+and one sentence naming where the rest lives, which is a card in Workspace
+Settings rather than a page — a page of that is white space with two buttons on
+it. The door is
 `POST /api/billing/portal`, which mints a **signed link that expires within the
 day** — never cache, store or put it in a `href` at render time, and open the
 tab synchronously on the click (a `window.open` after an `await` is blocked).

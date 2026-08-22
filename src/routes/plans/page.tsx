@@ -29,8 +29,8 @@ import type { Tier } from '@/types/tiers'
  *
  * It reads as a modal — one X, top right, nothing else — because that is what
  * it is: a detour that every entry point returns from. Which is why the X goes
- * *back* rather than to a fixed address; people arrive here from the billing
- * screen today and from a lock on a button tomorrow.
+ * *back* rather than to a fixed address; people arrive here from the Plan &
+ * billing card today and from a lock on a button tomorrow.
  *
  * **Nothing here charges anyone.** The tier list and the plan both come off a
  * local stub (`services/api/tiers.stub.ts`); choosing changes what the
@@ -129,15 +129,16 @@ function PlansFrame({ children }: { children: React.ReactNode }) {
   const canGoBack = useCanGoBack()
 
   /**
-   * Back where they came from, or to billing.
+   * Back where they came from, or to Workspace Settings.
    *
    * The fallback matters more than it looks: this URL is shareable and will be
    * linked from upgrade prompts, so "close" has to mean something for someone
-   * whose history starts here. Billing is the screen this one belongs to.
+   * whose history starts here. Workspace Settings holds the Plan & billing
+   * card, which is the only other place the plan is spoken about.
    */
   const close = () => {
     if (canGoBack) router.history.back()
-    else void navigate({ to: '/workspace-settings/billing' })
+    else void navigate({ to: '/workspace-settings' })
   }
 
   return (

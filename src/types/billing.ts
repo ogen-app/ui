@@ -16,8 +16,11 @@
  * both a compliance surface we do not want and something this codebase is not
  * going to do.
  *
+ * It is also why there is no billing *screen*: what is left to state after the
+ * provider has taken everything editable is a plan, a card's last four and one
+ * sentence naming where the rest lives, and that is a card rather than a page.
  * See `services/api/billing.ts` for the endpoints and
- * `routes/_authenticated/workspace-settings/billing` for the screen.
+ * `components/workspace-settings/PlanSection` for the card.
  */
 
 /**

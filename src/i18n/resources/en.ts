@@ -1023,7 +1023,6 @@ export const en = {
      * copy arrives in one language and cannot be put in a catalogue — see
      * `services/api/tiers.ts`. Everything the app says *about* a tier is here.
      */
-    planTitle: 'Plan',
     plansTitle: 'Plans',
     planIntro: 'What this workspace can do, and what the other plans would change.',
     /**
@@ -1034,23 +1033,22 @@ export const en = {
      */
     planMock: 'Plans are not connected to billing yet. Choosing one only changes what this workspace is allowed to do.',
     planLoadFailed: 'The plans could not be loaded.',
-    planBack: 'Back to workspace settings',
     plansClose: 'Close plans',
     changePlan: 'CHANGE PLAN',
 
     /**
-     * Plan & billing — the card in Workspace Settings and the screen behind it.
+     * Plan & billing — one card in Workspace Settings, with no screen behind
+     * it. The provider is the merchant of record and holds everything a
+     * customer could edit, so what is left to say fits on the card.
      *
      * "Plan & billing" rather than "Plan": the card is the answer to "where do
      * I change my card", and somebody looking for that scans headings for the
      * word billing.
      */
     billingTitle: 'Plan & billing',
-    manage: 'MANAGE',
     /** Same standing as `planMock`, and for the same reason — see below. */
     billingMock:
       "Billing isn't connected yet. Nothing here charges anyone, and no payment details are held.",
-    billingSectionTitle: 'Billing',
     paymentMethod: 'Payment method',
     /** The brand is printed beside this; the catalogue carries only the tail. */
     cardEnding: 'ending {{last4}}',
@@ -1063,13 +1061,11 @@ export const en = {
      * The one place the provider is named, and it has to be named: Lemon
      * Squeezy is the seller of record, so it is the name on the customer's
      * statement and on the invoice. The sentence exists to answer the question
-     * this screen will be asked — where do I change my VAT number — whose
-     * answer is a place rather than a field.
+     * this card will be asked — where do I change my VAT number — whose answer
+     * is a place rather than a field.
      */
-    handledByProvider: 'Billing details',
     providerHolds:
       'Your payment method, billing address, tax ID, invoices and cancellation are handled by Lemon Squeezy, which sells Ogen as merchant of record.',
-    portalMissing: "There's nothing to open yet — this arrives with billing.",
     managePortal: 'MANAGE BILLING',
     portalFailed: 'The billing portal could not be opened.',
 

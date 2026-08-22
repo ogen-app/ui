@@ -31,7 +31,6 @@ import { Route as AuthenticatedActivityIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedContentBankAssetIdRouteImport } from './routes/_authenticated/content-bank/$assetId'
 import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
 import { Route as AuthenticatedActivityDateRouteImport } from './routes/_authenticated/activity/$date'
-import { Route as AuthenticatedWorkspaceSettingsBillingIndexRouteImport } from './routes/_authenticated/workspace-settings/billing/index'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
 import { Route as AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport } from './routes/_authenticated/workspace-settings/connect.$connectionId'
 import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
@@ -162,12 +161,6 @@ const AuthenticatedActivityDateRoute =
     path: '/$date',
     getParentRoute: () => AuthenticatedActivityRoute,
   } as any)
-const AuthenticatedWorkspaceSettingsBillingIndexRoute =
-  AuthenticatedWorkspaceSettingsBillingIndexRouteImport.update({
-    id: '/workspace-settings/billing/',
-    path: '/workspace-settings/billing/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedCampaignsCampaignIdIndexRoute =
   AuthenticatedCampaignsCampaignIdIndexRouteImport.update({
     id: '/',
@@ -271,7 +264,6 @@ export interface FileRoutesByFullPath {
   '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
-  '/workspace-settings/billing/': typeof AuthenticatedWorkspaceSettingsBillingIndexRoute
   '/campaigns/$campaignId/content/$assetId': typeof AuthenticatedCampaignsCampaignIdContentAssetIdRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -305,7 +297,6 @@ export interface FileRoutesByTo {
   '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdIndexRoute
-  '/workspace-settings/billing': typeof AuthenticatedWorkspaceSettingsBillingIndexRoute
   '/campaigns/$campaignId/content/$assetId': typeof AuthenticatedCampaignsCampaignIdContentAssetIdRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -343,7 +334,6 @@ export interface FileRoutesById {
   '/_authenticated/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/_authenticated/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/_authenticated/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
-  '/_authenticated/workspace-settings/billing/': typeof AuthenticatedWorkspaceSettingsBillingIndexRoute
   '/_authenticated/campaigns/$campaignId_/content/$assetId': typeof AuthenticatedCampaignsCampaignIdContentAssetIdRoute
   '/_authenticated/campaigns/$campaignId_/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/_authenticated/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -381,7 +371,6 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId/settings'
     | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId/'
-    | '/workspace-settings/billing/'
     | '/campaigns/$campaignId/content/$assetId'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar/'
@@ -415,7 +404,6 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId/settings'
     | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId'
-    | '/workspace-settings/billing'
     | '/campaigns/$campaignId/content/$assetId'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar'
@@ -452,7 +440,6 @@ export interface FileRouteTypes {
     | '/_authenticated/campaigns/$campaignId/settings'
     | '/_authenticated/workspace-settings/connect/$connectionId'
     | '/_authenticated/campaigns/$campaignId/'
-    | '/_authenticated/workspace-settings/billing/'
     | '/_authenticated/campaigns/$campaignId_/content/$assetId'
     | '/_authenticated/campaigns/$campaignId_/posts/$postId'
     | '/_authenticated/campaigns/$campaignId/calendar/'
@@ -629,13 +616,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActivityDateRouteImport
       parentRoute: typeof AuthenticatedActivityRoute
     }
-    '/_authenticated/workspace-settings/billing/': {
-      id: '/_authenticated/workspace-settings/billing/'
-      path: '/workspace-settings/billing'
-      fullPath: '/workspace-settings/billing/'
-      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsBillingIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/campaigns/$campaignId/': {
       id: '/_authenticated/campaigns/$campaignId/'
       path: '/'
@@ -788,7 +768,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
   AuthenticatedWorkspaceSettingsIndexRoute: typeof AuthenticatedWorkspaceSettingsIndexRoute
   AuthenticatedWorkspaceSettingsConnectConnectionIdRoute: typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
-  AuthenticatedWorkspaceSettingsBillingIndexRoute: typeof AuthenticatedWorkspaceSettingsBillingIndexRoute
   AuthenticatedCampaignsCampaignIdContentAssetIdRoute: typeof AuthenticatedCampaignsCampaignIdContentAssetIdRoute
   AuthenticatedCampaignsCampaignIdPostsPostIdRoute: typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
 }
@@ -807,8 +786,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedWorkspaceSettingsIndexRoute,
   AuthenticatedWorkspaceSettingsConnectConnectionIdRoute:
     AuthenticatedWorkspaceSettingsConnectConnectionIdRoute,
-  AuthenticatedWorkspaceSettingsBillingIndexRoute:
-    AuthenticatedWorkspaceSettingsBillingIndexRoute,
   AuthenticatedCampaignsCampaignIdContentAssetIdRoute:
     AuthenticatedCampaignsCampaignIdContentAssetIdRoute,
   AuthenticatedCampaignsCampaignIdPostsPostIdRoute:

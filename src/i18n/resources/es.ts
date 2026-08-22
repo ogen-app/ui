@@ -723,21 +723,17 @@ export const es: Translation = {
       'Tu plan ha cambiado, así que esto es de solo lectura por ahora. No se ha eliminado nada: sigue todo aquí, y al mejorar el plan vuelve a ser editable.',
     suspendedSince: 'De solo lectura desde el {{when}}.',
 
-    planTitle: 'Plan',
     plansTitle: 'Planes',
     planIntro: 'Lo que puede hacer este espacio y lo que cambiarían los demás planes.',
     planMock:
       'Los planes todavía no están conectados a la facturación. Elegir uno solo cambia lo que este espacio puede hacer.',
     planLoadFailed: 'No se han podido cargar los planes.',
-    planBack: 'Volver a la configuración del espacio',
     plansClose: 'Cerrar los planes',
     changePlan: 'CAMBIAR DE PLAN',
 
     billingTitle: 'Plan y facturación',
-    manage: 'GESTIONAR',
     billingMock:
       'La facturación todavía no está conectada. Aquí no se cobra nada y no se guarda ningún dato de pago.',
-    billingSectionTitle: 'Facturación',
     paymentMethod: 'Método de pago',
     cardEnding: 'terminada en {{last4}}',
     noCard: 'No hay ningún método de pago guardado.',
@@ -745,10 +741,8 @@ export const es: Translation = {
     accessEnds: 'El acceso termina el {{when}}.',
     ownersOnly: 'Solo los propietarios del espacio pueden ver los datos de facturación.',
 
-    handledByProvider: 'Datos de facturación',
     providerHolds:
       'Tu método de pago, tu dirección de facturación, tu NIF/CIF, tus facturas y la cancelación los gestiona Lemon Squeezy, que vende Ogen como comerciante registrado.',
-    portalMissing: 'Todavía no hay nada que abrir: llegará con la facturación.',
     managePortal: 'GESTIONAR LA FACTURACIÓN',
     portalFailed: 'No se ha podido abrir el portal de facturación.',
 
