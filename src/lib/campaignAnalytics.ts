@@ -20,6 +20,7 @@
 
 import type { AnalyticsMetrics, PostAnalyticsItem } from "@/types/analytics";
 import type { PostSummary } from "@/types/posts";
+import { formatNumber } from "@/lib/intl";
 
 /** The metric keys that sum. `engagement_rate` averages instead. */
 const SUMMED = [
@@ -144,7 +145,7 @@ export function formatEngagementRate(rate: number): string {
 
 /** Thousands separators, and `12.3K` / `4.5M` once a raw count stops being readable. */
 export function formatMetric(value: number): string {
-  if (value < 10_000) return value.toLocaleString();
+  if (value < 10_000) return formatNumber(value);
   // The K branch ends where its own rounding would print `1000.0K`: 999,950
   // and up already round to a million, so they say `1.0M`.
   if (value < 999_950) return `${(value / 1_000).toFixed(1)}K`;

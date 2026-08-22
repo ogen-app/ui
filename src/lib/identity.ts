@@ -19,7 +19,7 @@
 export const IDENTITY_COLOR_COUNT = 7
 
 /** 1-based slot in the identity palette, stable for a given id. */
-export function identityColorIndex(id: string): number {
+function identityColorIndex(id: string): number {
   // FNV-1a. Ids are UUIDs, which share long structural prefixes and a fixed
   // length — a naive sum or char-shift hash clusters badly on those, while FNV
   // avalanches the low bits we actually take the modulo of.

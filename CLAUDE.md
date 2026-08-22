@@ -26,6 +26,8 @@ Content-Bank AI images are secondary. See
 - **Onboarding, auth & tenancy flow:** [`docs/onboarding.md`](./docs/onboarding.md)
 - **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
 - **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
+- **Activity feed & daily report — proposal:** [`docs/activity.md`](./docs/activity.md)
+- **Tasks — proposal:** [`docs/tasks.md`](./docs/tasks.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
@@ -132,10 +134,14 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   at construction takes `t` and is built per render instead: Zod schemas are
   `(t) => schema` factories (`hooks/useAuthSchemas.ts`), and the same goes for
   label maps and `const` option arrays — a module-level constant freezes
-  whichever language loaded first. Only the auth screens, sidebar, Profile and
-  Workspace Settings are converted so far (CON-174); the rest is still
-  hard-coded English and renders fine — that is legacy to be converted, not a
-  precedent to copy. See `docs/technical-decisions.md#i18n`.
+  whichever language loaded first. Where a table of *keys* is the natural
+  shape, keep the table and translate at the point of use
+  (`PostsEmptyState`'s `COPY`); where the values are something `Intl` already
+  knows, drop the table (Calendar Settings' weekday names). The auth screens,
+  sidebar, Profile, Workspace Settings and the campaign calendar are converted
+  (CON-174); the rest is still hard-coded English and renders fine — that is
+  legacy to be converted, not a precedent to copy. See
+  `docs/technical-decisions.md#i18n`.
 - **A language is released by one boolean.** `LOCALES` in `i18n/config.ts`
   carries `enabled` per locale; only enabled ones are offered in the picker,
   accepted from `?lang=` or restored from a previous visit — and a stored
@@ -143,6 +149,24 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   the deploy that releases it. The gate sits on those entry points, not on
   `setLocale`, so the switching machinery stays exercised by its tests while
   nothing but English is released. Spanish is complete and gated today.
+- **Dates, times and numbers go through `lib/intl.ts`** — `formatDate`,
+  `formatNumber`, `formatRelative` — never `toLocaleDateString(undefined, …)`
+  or a bare `new Intl.DateTimeFormat`. The bare forms mean the *browser's*
+  language, and the app's is a separate choice the user makes in Workspace
+  Settings; a Spanish UI printing "Aug 20" is the same bug as an English one
+  printing "20 ago". These helpers read the active language at call time and
+  cache the formatter per locale, so nothing is hoisted to module scope where
+  it would freeze the first language loaded. Three deliberate exceptions:
+  `lib/timeZones.ts` pins `en-US` because it *parses* `formatToParts` rather
+  than showing it, `PostCard`'s clock pins `hour12: false` because the card
+  gives the time one fixed-width slot, and `docsTable`'s `stamp()` pins
+  `en-GB` because day-first `01 Aug 26` is the format that column was asked
+  for. That last one is the only exception that is a *display* choice rather
+  than a mechanical one, so it is the one to revisit first — the app now has
+  the date convention its comment says it was waiting for. Formatting without reading `t()`
+  means nothing re-renders the component on a switch — the overlay covers the
+  app but doesn't remount it — so subscribe with `useLocale()` (or take
+  `i18n.language` off a `useTranslation()` you already have) and pass it in.
 - **The language switch is covered by a 2-second full-screen loader**, and
   `?lang=es` forces one for a page load then persists it. The waiting screen's
   own copy is the one string that must *not* come from the catalogue — it lives
@@ -294,8 +318,9 @@ once the client was re-tested against the shipped API (CON-147) ·
 dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
 have no committed config in this repo · **i18n covers the auth screens, sidebar,
-Profile and Workspace Settings only** — everything else is still hard-coded
-English (CON-174) · **English is the only released language**: Spanish is
+Profile, Workspace Settings and the campaign calendar** (its week, month and
+list views, the cards, both rail panels and the posts table) — everything else
+is still hard-coded English (CON-174) · **English is the only released language**: Spanish is
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
 

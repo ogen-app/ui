@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
+import { formatDate } from '@/lib/intl'
 import { useDeletePost } from '@/hooks/usePosts'
 import { toast } from '@/stores/toastStore'
 import type { Post, PostStatus } from '@/types/posts'
@@ -18,13 +19,7 @@ type Props = {
 }
 
 function formatWhen(iso: string | null): string | null {
-  if (!iso) return null
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return null
-  return d.toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
+  return formatDate(iso, { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 /**

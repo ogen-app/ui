@@ -1,9 +1,19 @@
 import * as React from 'react'
 import { CaretDownIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
 import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker'
+import { enUS, es } from 'react-day-picker/locale'
 
 import { cn } from '@/lib'
+import { formatDate } from '@/lib/intl'
+import { useLocale } from '@/hooks/useLocale'
+import type { Locale } from '@/i18n/config'
 import { Button, buttonVariants } from '@/components/ui/button'
+
+// The library draws the weekday row and caption itself, so the app's language
+// has to be handed to it as one of its own locale objects — `formatMonthDropdown`
+// below only covers the dropdown. Typed against `Locale` so releasing a
+// language without teaching the date picker its weekdays is a compile error.
+const DAY_PICKER_LOCALES: Record<Locale, typeof enUS> = { en: enUS, es }
 
 function Calendar({
   className,
@@ -21,9 +31,11 @@ function Calendar({
   onClear?: () => void
 }) {
   const defaultClassNames = getDefaultClassNames()
+  const locale = useLocale()
 
   return (
     <DayPicker
+      locale={DAY_PICKER_LOCALES[locale]}
       showOutsideDays={showOutsideDays}
       footer={
         <div className="flex w-full items-center border-t border-t-border">
@@ -58,7 +70,7 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) => date.toLocaleString('default', { month: 'short' }),
+        formatMonthDropdown: (date) => formatDate(date, { month: 'short' }),
         ...formatters,
       }}
       classNames={{

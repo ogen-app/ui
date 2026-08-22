@@ -177,6 +177,10 @@ export const es: Translation = {
 
   nav: {
     modules: 'Módulos',
+    activity: 'Actividad',
+    tasks: 'Tareas',
+    activityUnread_one: '{{count}} entrada sin leer',
+    activityUnread_other: '{{count}} entradas sin leer',
     campaigns: 'Campañas',
     contentBank: 'Banco de contenido',
     workspaceSettings: 'Ajustes del espacio',
@@ -193,6 +197,109 @@ export const es: Translation = {
       brief: 'Briefing',
       content: 'Contenido',
       settings: 'Ajustes',
+    },
+  },
+
+  tasks: {
+    title: 'Tareas',
+    add: 'AÑADIR TAREA',
+    newTask: 'Nueva tarea',
+    create: 'CREAR TAREA',
+    cancel: 'Cancelar',
+    complete: 'Marcar esta tarea como hecha',
+    reopen: 'Reabrir esta tarea',
+    delete: 'ELIMINAR TAREA',
+    unassigned: 'Sin asignar',
+    assignedTo: 'Asignada a {{name}}: cambiar',
+    assign: 'Asignar esta tarea',
+    createdBySystem: 'Creada automáticamente el {{at}}',
+    createdBy: 'Escrita por {{name}} el {{at}}',
+    closedBy: 'Marcada por {{name}} el {{at}}',
+    autoResolved: 'Se resolvió sola: el aviso que la originó ya no existe',
+    noDescription: 'Sin descripción',
+    saveFailed: 'No se pudo guardar el cambio en tus tareas.',
+    loadFailed: 'No se pudieron cargar las tareas',
+    empty: {
+      title: 'Nada que hacer',
+      subtitle:
+        'Aquí aparecerán las tareas que escribas y todo aquello que las campañas necesiten que se haga.',
+    },
+    rule: {
+      failedPosts:
+        'El publicador lo intentó y el canal lo rechazó. Abre las publicaciones, mira qué respondió (una cuenta desconectada, una imagen rechazada, un texto que el canal no admite), corrígelo y vuelve a publicar.',
+      manualPublishDue:
+        'Estas están configuradas para publicarse a mano y les ha llegado la hora. No saldrá nada hasta que alguien abra cada publicación y la publique.',
+      autoPublishOverdue:
+        'La hora ya pasó y el publicador no las ha enviado. Comprueba que el canal sigue conectado antes de reprogramarlas.',
+      notPublished:
+        'La ventana se cerró con estas todavía en espera, así que nunca se enviaron. Decide en cada caso si aún merece la pena publicarla o si se descarta.',
+      plannedTodayUnscheduled:
+        'Hay publicaciones con fecha para el próximo día que siguen siendo borradores. Una fecha es un plan, no una orden: mientras no estén programadas, nadie las enviará.',
+      pipelineGap:
+        'No hay nada programado para la próxima semana. Escribe y programa publicaciones ahora o la campaña se quedará en silencio.',
+      accountsMissingBlocking:
+        'Un canal en el que publica esta campaña no tiene ninguna cuenta conectada, así que sus publicaciones no pueden salir. Conecta la cuenta o quita el canal de la campaña.',
+      accountInactive:
+        'Una cuenta conectada ha dejado de autorizar, normalmente por un token caducado. Vuelve a conectarla en los ajustes del espacio de trabajo antes de su próxima hora.',
+      channelDroppedScheduled:
+        'Se quitó un canal de la campaña mientras aún había publicaciones programadas para él. Esas publicaciones no tienen dónde publicarse.',
+      behindPace:
+        'Han salido menos publicaciones de las que implica el objetivo de la campaña para el tiempo transcurrido. Programa más o ajusta el objetivo a lo que la campaña está haciendo de verdad.',
+    },
+    field: {
+      title: 'Qué hay que hacer',
+      titlePlaceholder: 'Escribe la tarea como la dirías',
+      description: 'Descripción',
+      descriptionPlaceholder: 'En qué consiste el trabajo y lo que la siguiente persona deba saber',
+      campaign: 'Campaña',
+      noCampaign: 'Sin campaña',
+      assignee: 'Asignada a',
+    },
+    openCount_one: '{{count}} tarea abierta',
+    openCount_other: '{{count}} tareas abiertas',
+  },
+
+  activity: {
+    title: 'Actividad',
+    markAllRead: 'MARCAR TODO COMO LEÍDO',
+    markReadFailed: 'No se pudo guardar por dónde ibas en la actividad.',
+    loadFailed: 'No se pudo cargar la actividad',
+    empty: {
+      title: 'Todavía no ha pasado nada',
+      subtitle:
+        'Aquí aparecerán las publicaciones que salgan, las que fallen y un informe de cada día.',
+    },
+    unread: 'Sin leer',
+    today: 'Hoy',
+    yesterday: 'Ayer',
+    entry: {
+      failed: 'No se pudo publicar una publicación de {{channel}}',
+      notPublished: 'Una publicación de {{channel}} nunca se publicó',
+      reportTitle: 'Informe diario',
+      task_created: 'Tarea añadida — «{{title}}»',
+      task_completed: 'Tarea hecha — «{{title}}»',
+      task_resolved: 'Tarea resuelta sola — «{{title}}»',
+    },
+    report: {
+      label: {
+        published: 'Publicadas',
+        failed: 'Fallidas',
+        notPublished: 'Nunca publicadas',
+        created: 'Creadas',
+      },
+      published_one: '{{count}} publicación publicada',
+      published_other: '{{count}} publicaciones publicadas',
+      failed_one: '{{count}} publicación no se pudo publicar',
+      failed_other: '{{count}} publicaciones no se pudieron publicar',
+      notPublished_one: '{{count}} publicación nunca se publicó',
+      notPublished_other: '{{count}} publicaciones nunca se publicaron',
+      created_one: '{{count}} publicación creada',
+      created_other: '{{count}} publicaciones creadas',
+      byChannel: 'Publicado por canal',
+      byCampaign: 'Por campaña',
+      nothing: 'Ese día no pasó nada.',
+      coverage:
+        'Calculado a partir de las publicaciones de este espacio, según tu día natural local.',
     },
   },
 
@@ -213,10 +320,52 @@ export const es: Translation = {
     viewWeek: 'Semana',
     viewMonth: 'Mes',
     viewList: 'Lista',
+
+    previousWeek: 'Semana anterior',
+    nextWeek: 'Semana siguiente',
+    previousMonth: 'Mes anterior',
+    nextMonth: 'Mes siguiente',
+    preferences: 'PREFERENCIAS',
+    daysVisibility: 'VISIBILIDAD DE LOS DÍAS',
+    firstDayOfWeek: 'Primer día de la semana',
+    statusColourAlways:
+      'El color de estado del borde izquierdo de la tarjeta siempre se muestra.',
+    notAPublishingDay: 'No es un día de publicación',
+    showDay: 'Mostrar {{day}}',
+
+    field: {
+      status: 'Etiqueta de estado',
+      time: 'Hora',
+      title: 'Título',
+      platform: 'Plataforma',
+      account: 'Cuenta',
+    },
+    fieldNoteStatus: 'Escribe el estado y da a la hora su propia línea',
+    showFieldOnWeek: 'Mostrar {{field}} en la tarjeta de semana',
+    showFieldOnMonth: 'Mostrar {{field}} en la tarjeta de mes',
+
     imagePreviews: 'Mostrar las tarjetas con vista previa de la imagen',
     imagePreviewsNote: 'Solo las publicaciones que tienen imagen y, en el mes, solo en los días con espacio para una',
     weekCard: 'TARJETA DE SEMANA',
     monthCard: 'TARJETA DE MES',
+    addPostOn: 'Añadir una publicación el {{date}}',
+    density_one: '{{count}} publicación el {{date}} — abrir esta semana',
+    density_other: '{{count}} publicaciones el {{date}} — abrir esta semana',
+
+    notScheduled: 'Publicaciones sin programar',
+    addPost: 'AÑADIR PUBLICACIÓN',
+    dateLocked: 'La fecha de esta publicación está bloqueada',
+
+    empty: {
+      calendarTitle: 'Tu calendario está vacío',
+      calendarSubtitle:
+        'Añade tu primera publicación y aparecerá aquí, lista para programar.',
+      listTitle: 'Aún no hay publicaciones',
+      listSubtitle: 'Añade tu primera publicación para empezar a construir esta campaña.',
+      panelTitle: 'Nada sin programar',
+      panelSubtitle:
+        'Las publicaciones sin fecha esperan aquí — arrastra una fuera del calendario o añade una nueva.',
+    },
   },
 
   assistant: {
@@ -505,6 +654,28 @@ export const es: Translation = {
 
   postsTable: {
     sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
+
+    columnTitle: 'Título',
+    columnStatus: 'Estado',
+    columnPlatform: 'Plataforma',
+    columnPublishDate: 'Fecha de publicación',
+    columnWhen: 'Cuándo',
+
+    notSet: 'Sin definir',
+
+    noPosts: 'No hay publicaciones',
+
+    selectAll: 'Seleccionar todas las publicaciones',
+    clearSelection: 'Borrar la selección',
+    selectPost: 'Seleccionar {{title}}',
+
+    today: 'Hoy',
+    tomorrow: 'Mañana',
+    yesterday: 'Ayer',
+    inDays_one: 'Dentro de {{count}} día',
+    inDays_other: 'Dentro de {{count}} días',
+    daysAgo_one: 'Hace {{count}} día',
+    daysAgo_other: 'Hace {{count}} días',
   },
 
   posts: {
@@ -514,6 +685,21 @@ export const es: Translation = {
       compactNow: 'ahora',
       compactLate: '{{amount}} de retraso',
     },
+
+    status: {
+      draft: 'Borrador',
+      ready_for_publish: 'Lista para publicar',
+      scheduled: 'Publicación automática',
+      scheduled_for_manual_publishing: 'Publicación manual',
+      failed: 'Fallida',
+      published: 'Publicada',
+      not_published: 'No publicada',
+    },
+
+    noPlatform: 'Sin plataforma',
+    noAccount: 'Sin cuenta',
+
+    hasProblem: 'Esta publicación tiene un problema',
   },
   tiers: {
     notInPlan: 'No está en tu plan',

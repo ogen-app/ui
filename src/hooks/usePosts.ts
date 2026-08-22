@@ -60,7 +60,7 @@ function draftPost(streamed: StreamedPost, campaignId: string): Post {
   }
 }
 
-export function useCreatePost(campaignId: string) {
+function useCreatePost(campaignId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: PostPayload) => createPost(payload),

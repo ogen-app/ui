@@ -15,6 +15,8 @@ import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unav
 import { Route as InviteIndexRouteImport } from './routes/invite/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
+import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
@@ -24,8 +26,10 @@ import { Route as AuthenticatedWorkspaceSettingsIndexRouteImport } from './route
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
 import { Route as AuthenticatedContentBankIndexRouteImport } from './routes/_authenticated/content-bank/index'
 import { Route as AuthenticatedCampaignsIndexRouteImport } from './routes/_authenticated/campaigns/index'
+import { Route as AuthenticatedActivityIndexRouteImport } from './routes/_authenticated/activity/index'
 import { Route as AuthenticatedContentBankAssetIdRouteImport } from './routes/_authenticated/content-bank/$assetId'
 import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
+import { Route as AuthenticatedActivityDateRouteImport } from './routes/_authenticated/activity/$date'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
 import { Route as AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport } from './routes/_authenticated/workspace-settings/connect.$connectionId'
 import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
@@ -66,6 +70,16 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthResetIndexRoute = AuthResetIndexRouteImport.update({
@@ -117,6 +131,12 @@ const AuthenticatedCampaignsIndexRoute =
     path: '/campaigns/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedActivityIndexRoute =
+  AuthenticatedActivityIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedActivityRoute,
+  } as any)
 const AuthenticatedContentBankAssetIdRoute =
   AuthenticatedContentBankAssetIdRouteImport.update({
     id: '/content-bank/$assetId',
@@ -128,6 +148,12 @@ const AuthenticatedCampaignsCampaignIdRoute =
     id: '/campaigns/$campaignId',
     path: '/campaigns/$campaignId',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedActivityDateRoute =
+  AuthenticatedActivityDateRouteImport.update({
+    id: '/$date',
+    path: '/$date',
+    getParentRoute: () => AuthenticatedActivityRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdIndexRoute =
   AuthenticatedCampaignsCampaignIdIndexRouteImport.update({
@@ -204,12 +230,16 @@ const AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/activity': typeof AuthenticatedActivityRouteWithChildren
+  '/tasks': typeof AuthenticatedTasksRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
+  '/activity/$date': typeof AuthenticatedActivityDateRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   '/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
+  '/activity/': typeof AuthenticatedActivityIndexRoute
   '/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/content-bank/': typeof AuthenticatedContentBankIndexRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
@@ -233,12 +263,15 @@ export interface FileRoutesByFullPath {
   '/campaigns/$campaignId/calendar/$anchor/$view': typeof AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute
 }
 export interface FileRoutesByTo {
+  '/tasks': typeof AuthenticatedTasksRoute
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
   '/invite': typeof InviteIndexRoute
   '/server-unavailable': typeof ServerUnavailableIndexRoute
   '/workspaces': typeof WorkspacesIndexRoute
+  '/activity/$date': typeof AuthenticatedActivityDateRoute
   '/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
+  '/activity': typeof AuthenticatedActivityIndexRoute
   '/campaigns': typeof AuthenticatedCampaignsIndexRoute
   '/content-bank': typeof AuthenticatedContentBankIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
@@ -264,13 +297,17 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/_authenticated/activity': typeof AuthenticatedActivityRouteWithChildren
+  '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
+  '/_authenticated/activity/$date': typeof AuthenticatedActivityDateRoute
   '/_authenticated/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   '/_authenticated/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
+  '/_authenticated/activity/': typeof AuthenticatedActivityIndexRoute
   '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/_authenticated/content-bank/': typeof AuthenticatedContentBankIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
@@ -297,12 +334,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/activity'
+    | '/tasks'
     | '/auth/'
     | '/invite/'
     | '/server-unavailable/'
     | '/workspaces/'
+    | '/activity/$date'
     | '/campaigns/$campaignId'
     | '/content-bank/$assetId'
+    | '/activity/'
     | '/campaigns/'
     | '/content-bank/'
     | '/profile/'
@@ -326,12 +367,15 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId/calendar/$anchor/$view'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/tasks'
     | '/'
     | '/auth'
     | '/invite'
     | '/server-unavailable'
     | '/workspaces'
+    | '/activity/$date'
     | '/content-bank/$assetId'
+    | '/activity'
     | '/campaigns'
     | '/content-bank'
     | '/profile'
@@ -356,13 +400,17 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/_authenticated/activity'
+    | '/_authenticated/tasks'
     | '/_authenticated/'
     | '/auth/'
     | '/invite/'
     | '/server-unavailable/'
     | '/workspaces/'
+    | '/_authenticated/activity/$date'
     | '/_authenticated/campaigns/$campaignId'
     | '/_authenticated/content-bank/$assetId'
+    | '/_authenticated/activity/'
     | '/_authenticated/campaigns/'
     | '/_authenticated/content-bank/'
     | '/_authenticated/profile/'
@@ -443,6 +491,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/tasks': {
+      id: '/_authenticated/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AuthenticatedTasksRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/activity': {
+      id: '/_authenticated/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AuthenticatedActivityRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/auth/reset/': {
       id: '/auth/reset/'
       path: '/auth/reset'
@@ -506,6 +568,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/activity/': {
+      id: '/_authenticated/activity/'
+      path: '/'
+      fullPath: '/activity/'
+      preLoaderRoute: typeof AuthenticatedActivityIndexRouteImport
+      parentRoute: typeof AuthenticatedActivityRoute
+    }
     '/_authenticated/content-bank/$assetId': {
       id: '/_authenticated/content-bank/$assetId'
       path: '/content-bank/$assetId'
@@ -519,6 +588,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/campaigns/$campaignId'
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/activity/$date': {
+      id: '/_authenticated/activity/$date'
+      path: '/$date'
+      fullPath: '/activity/$date'
+      preLoaderRoute: typeof AuthenticatedActivityDateRouteImport
+      parentRoute: typeof AuthenticatedActivityRoute
     }
     '/_authenticated/campaigns/$campaignId/': {
       id: '/_authenticated/campaigns/$campaignId/'
@@ -607,6 +683,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedActivityRouteChildren {
+  AuthenticatedActivityDateRoute: typeof AuthenticatedActivityDateRoute
+  AuthenticatedActivityIndexRoute: typeof AuthenticatedActivityIndexRoute
+}
+
+const AuthenticatedActivityRouteChildren: AuthenticatedActivityRouteChildren = {
+  AuthenticatedActivityDateRoute: AuthenticatedActivityDateRoute,
+  AuthenticatedActivityIndexRoute: AuthenticatedActivityIndexRoute,
+}
+
+const AuthenticatedActivityRouteWithChildren =
+  AuthenticatedActivityRoute._addFileChildren(
+    AuthenticatedActivityRouteChildren,
+  )
+
 interface AuthenticatedCampaignsCampaignIdRouteChildren {
   AuthenticatedCampaignsCampaignIdAnalyticsRoute: typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   AuthenticatedCampaignsCampaignIdBriefRoute: typeof AuthenticatedCampaignsCampaignIdBriefRoute
@@ -647,6 +738,8 @@ const AuthenticatedCampaignsCampaignIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedActivityRoute: typeof AuthenticatedActivityRouteWithChildren
+  AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCampaignsCampaignIdRoute: typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   AuthenticatedContentBankAssetIdRoute: typeof AuthenticatedContentBankAssetIdRoute
@@ -660,6 +753,8 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedActivityRoute: AuthenticatedActivityRouteWithChildren,
+  AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCampaignsCampaignIdRoute:
     AuthenticatedCampaignsCampaignIdRouteWithChildren,

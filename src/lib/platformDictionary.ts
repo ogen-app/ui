@@ -2,6 +2,20 @@
 // display info. The API is queried for IDs, publishers, cadence, and
 // constraints, but display names and post-type labels live here so we
 // fully control the wording the user sees.
+//
+// `postTypes` lists only the slugs a publisher can actually send. The
+// platforms table seeds a far wider vocabulary — 46 slugs, including polls,
+// events, live video, Spaces, Guides — and none of them can leave Ogen: no
+// publisher implements them, so `buildPlatformView` filtered every one out of
+// `allowed` and they reached the user only as the editor's "N other post
+// types" line, advertising formats nothing can publish.
+//
+// So the dictionary is the set we can *render and publish*, not the set the
+// platform's API has. `allowed` still does the real filtering — it is what
+// varies by deployment and by which publishers are configured — and this list
+// bounds it to the slugs that have a label, a preview and a server-side rule.
+// Adding a format back means adding it in all three places, which is the work
+// it actually takes.
 
 import type { Icon } from "@phosphor-icons/react";
 import { FacebookLogoIcon, InstagramLogoIcon, LinkedinLogoIcon, ThreadsLogoIcon, XLogoIcon, YoutubeLogoIcon } from "@phosphor-icons/react";
@@ -37,13 +51,11 @@ export const PLATFORMS: PlatformInfo[] = [
     postTypes: [
       { slug: "text-post", label: "Text post" },
       { slug: "image-post", label: "Image post" },
+      // LinkedIn's carousel is a PDF document, not a run of images — the one
+      // place the slug means something different from Instagram and Threads.
       { slug: "carousel", label: "Carousel" },
       { slug: "video", label: "Video" },
       { slug: "article", label: "Article" },
-      { slug: "poll", label: "Poll" },
-      { slug: "newsletter", label: "Newsletter" },
-      { slug: "event", label: "Event" },
-      { slug: "live-video", label: "Live video" },
     ],
   },
   {
@@ -55,10 +67,6 @@ export const PLATFORMS: PlatformInfo[] = [
     postTypes: [
       { slug: "video", label: "Video" },
       { slug: "short", label: "Short" },
-      { slug: "live-stream", label: "Live stream" },
-      { slug: "premiere", label: "Premiere" },
-      { slug: "community-post", label: "Community post" },
-      { slug: "podcast", label: "Podcast" },
     ],
   },
   {
@@ -72,11 +80,6 @@ export const PLATFORMS: PlatformInfo[] = [
       { slug: "image-post", label: "Image post" },
       { slug: "video", label: "Video" },
       { slug: "reel", label: "Reel" },
-      { slug: "story", label: "Story" },
-      { slug: "live-video", label: "Live video" },
-      { slug: "carousel", label: "Carousel" },
-      { slug: "poll", label: "Poll" },
-      { slug: "event", label: "Event" },
       { slug: "link-post", label: "Link post" },
     ],
   },
@@ -90,9 +93,6 @@ export const PLATFORMS: PlatformInfo[] = [
       { slug: "text-post", label: "Text post" },
       { slug: "image-post", label: "Image post" },
       { slug: "video", label: "Video" },
-      { slug: "long-form-post", label: "Long-form post" },
-      { slug: "poll", label: "Poll" },
-      { slug: "space", label: "Space" },
       { slug: "thread", label: "Thread" },
     ],
   },
@@ -107,8 +107,6 @@ export const PLATFORMS: PlatformInfo[] = [
       { slug: "image-post", label: "Image post" },
       { slug: "carousel", label: "Carousel" },
       { slug: "video", label: "Video" },
-      { slug: "poll", label: "Poll" },
-      { slug: "gif-post", label: "GIF post" },
     ],
   },
   {
@@ -118,14 +116,12 @@ export const PLATFORMS: PlatformInfo[] = [
     color: "#E4405F",
     zernioId: "instagram",
     postTypes: [
+      // No text-post: Instagram publishes nothing without media, and the
+      // platforms table has never seeded the slug for it.
       { slug: "image-post", label: "Image post" },
       { slug: "carousel", label: "Carousel" },
       { slug: "reel", label: "Reel" },
       { slug: "story", label: "Story" },
-      { slug: "live-video", label: "Live video" },
-      { slug: "broadcast-channel", label: "Broadcast channel" },
-      { slug: "collaborative-post", label: "Collaborative post" },
-      { slug: "guide", label: "Guide" },
     ],
   },
 ];
@@ -153,24 +149,12 @@ export function getPlatformByZernioId(zernioId: string): PlatformInfo | undefine
   return BY_ZERNIO_ID.get(zernioId);
 }
 
-export function unionSupportedSlugs(
+function unionSupportedSlugs(
   publishers: { supported_post_types: string[] }[],
 ): Set<string> {
   const out = new Set<string>();
   for (const p of publishers) for (const slug of p.supported_post_types) out.add(slug);
   return out;
-}
-
-export function partitionPostTypesBySupport(
-  postTypes: PlatformPostType[],
-  supportedSlugs: Set<string>,
-): { supported: PlatformPostType[]; unsupported: PlatformPostType[] } {
-  const supported: PlatformPostType[] = [];
-  const unsupported: PlatformPostType[] = [];
-  for (const pt of postTypes) {
-    (supportedSlugs.has(pt.slug) ? supported : unsupported).push(pt);
-  }
-  return { supported, unsupported };
 }
 
 // A resolved view of a platform: the dictionary metadata joined with the

@@ -62,8 +62,12 @@ export function CampaignPostTypeSelect({
         const camp = campaignMap.get(view.platform.id)
         if (camp && camp.size > 0) anySelected = true
 
-        // Not `info.postTypes`: the video formats are never offered, and
-        // counting them into "N other post types" would advertise them.
+        // The dictionary, not `view.allowed`: "N other post types not added to
+        // this campaign" is about what the *campaign* leaves out, so a type no
+        // publisher is connected for still belongs in the count — it is one
+        // switch in campaign settings away from being usable. The dictionary
+        // itself is now bounded to publishable slugs, so this can no longer
+        // advertise a format nothing can send.
         for (const pt of view.info.postTypes) {
           const id = joinId(view.platform.id, pt.slug)
           const item: Item = {

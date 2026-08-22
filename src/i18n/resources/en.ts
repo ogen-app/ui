@@ -207,6 +207,11 @@ export const en = {
 
   nav: {
     modules: 'Modules',
+    activity: 'Activity',
+    tasks: 'Tasks',
+    /** The count beside the Activity row, read out rather than seen. */
+    activityUnread_one: '{{count}} unread entry',
+    activityUnread_other: '{{count}} unread entries',
     campaigns: 'Campaigns',
     contentBank: 'Content Bank',
     workspaceSettings: 'Workspace Settings',
@@ -226,6 +231,152 @@ export const en = {
       brief: 'Brief',
       content: 'Content',
       settings: 'Settings',
+    },
+  },
+
+  /**
+   * Tasks (CON-225): the workspace's open work, its own module next to the
+   * feed. The titles themselves still speak the rule set's own English
+   * (`campaignReadiness`), which is legacy to convert, not a precedent — only
+   * the screen's own copy lives here.
+   */
+  tasks: {
+    title: 'Tasks',
+    add: 'ADD TASK',
+    newTask: 'New task',
+    create: 'CREATE TASK',
+    cancel: 'Cancel',
+    complete: 'Mark this task done',
+    reopen: 'Reopen this task',
+    delete: 'DELETE TASK',
+    unassigned: 'Unassigned',
+    /**
+     * The assignee's picture is a button, and these name it: initials read out
+     * as letters, so the name has to be said rather than shown.
+     */
+    assignedTo: 'Assigned to {{name}} — change',
+    assign: 'Assign this task',
+    /** Who made the task, and when — one sentence, never a name glued to a date. */
+    createdBySystem: 'Raised automatically on {{at}}',
+    createdBy: 'Written by {{name}} on {{at}}',
+    closedBy: 'Ticked by {{name}} on {{at}}',
+    /** Said on the task itself, where the work went without anyone ticking it. */
+    autoResolved: 'Resolved on its own — the warning behind it cleared',
+    /** Stands in the description's place, on the row and in the section. */
+    noDescription: 'No description',
+    saveFailed: 'Could not save the change to your tasks.',
+    loadFailed: 'Unable to load tasks',
+    empty: {
+      title: 'Nothing to do',
+      subtitle:
+        'Tasks you write land here, and so does anything the campaigns need doing about them.',
+    },
+    /**
+     * What a task raised from a warning is about — one paragraph per rule, in
+     * the imperative: the title already says what is wrong.
+     */
+    rule: {
+      failedPosts:
+        'The publisher tried and the channel refused. Open the posts, read what came back — a disconnected account, a rejected image, a caption the channel would not take — fix it and publish again.',
+      manualPublishDue:
+        'These are set to be published by hand and their time has come. Nothing goes out until someone opens each post and publishes it.',
+      autoPublishOverdue:
+        'The slot has passed and the publisher has not sent these. Check the channel is still connected before rescheduling them.',
+      notPublished:
+        'The window closed with these still waiting, so they were never sent. Decide for each one whether it is still worth publishing or should be dropped.',
+      plannedTodayUnscheduled:
+        'Posts dated for the next day are still drafts. A date on a post is a plan, not an instruction — until they are scheduled, nothing will send them.',
+      pipelineGap:
+        'Nothing is scheduled for the next week. Write and schedule posts now, or the campaign goes quiet.',
+      accountsMissingBlocking:
+        'A channel this campaign publishes to has no connected account, so its posts cannot go out. Connect the account, or take the channel off the campaign.',
+      accountInactive:
+        'A connected account has stopped authorising, usually an expired token. Reconnect it in Workspace Settings before its next slot.',
+      channelDroppedScheduled:
+        'A channel was taken off the campaign while posts were still scheduled to go out on it. Those posts have nowhere to publish.',
+      behindPace:
+        'Fewer posts have gone out than the campaign’s goal implies for the time elapsed. Schedule more, or revise the goal to what the campaign is actually doing.',
+    },
+    field: {
+      title: 'What needs doing',
+      titlePlaceholder: 'Write the task as you would say it',
+      description: 'Description',
+      descriptionPlaceholder: 'What the work is, and anything the next person needs to know',
+      campaign: 'Campaign',
+      noCampaign: 'No campaign',
+      assignee: 'Assigned to',
+    },
+    /** The figure on the sidebar's Tasks row, read out rather than seen. */
+    openCount_one: '{{count}} open task',
+    openCount_other: '{{count}} open tasks',
+  },
+
+  /**
+   * Activity (CON-225): the feed of what happened, and the daily report it
+   * opens. Counts are written out whole in each plural form — "1 post
+   * published" and "6 posts published" are one key each, never a number glued
+   * to a noun.
+   */
+  activity: {
+    title: 'Activity',
+    /** Capitals are the copy, as on every other list's header action. */
+    markAllRead: 'MARK ALL READ',
+    markReadFailed: 'Could not save your place in the feed.',
+    loadFailed: 'Unable to load activity',
+    empty: {
+      title: 'Nothing has happened yet',
+      subtitle:
+        'Posts going out, posts failing, and a report of each day land here as they happen.',
+    },
+    /** The dot's accessible name — the only thing that says what it means. */
+    unread: 'Unread',
+    /** Relative day names, used instead of a date for the two recent ones. */
+    today: 'Today',
+    yesterday: 'Yesterday',
+    /** A section's heading inside a day's card. Each one stands alone. */
+    entry: {
+      failed: 'A {{channel}} post failed to publish',
+      notPublished: 'A {{channel}} post was never published',
+      reportTitle: 'Daily report',
+      /**
+       * What happened to a task. The title is quoted because it is somebody's
+       * sentence, not ours — a task called "Fix the thing" reads as a typo
+       * without the quotes.
+       */
+      task_created: 'Task added — “{{title}}”',
+      task_completed: 'Task done — “{{title}}”',
+      task_resolved: 'Task resolved on its own — “{{title}}”',
+    },
+    report: {
+      /**
+       * The tiles' labels: a noun beside a figure, where the sentence forms
+       * below are what a line of prose uses. Two sets on purpose — "3" over
+       * "3 posts published" reads as thirty-three.
+       */
+      label: {
+        published: 'Published',
+        failed: 'Failed',
+        notPublished: 'Never published',
+        created: 'Created',
+      },
+      published_one: '{{count}} post published',
+      published_other: '{{count}} posts published',
+      failed_one: '{{count}} post failed to publish',
+      failed_other: '{{count}} posts failed to publish',
+      notPublished_one: '{{count}} post was never published',
+      notPublished_other: '{{count}} posts were never published',
+      created_one: '{{count}} post created',
+      created_other: '{{count}} posts created',
+      byChannel: 'Published by channel',
+      byCampaign: 'By campaign',
+      nothing: 'Nothing happened on this day.',
+      /**
+       * What the report counted and what it could not — it is computed from
+       * the workspace's posts, so it knows nothing about the AI runs, uploads
+       * or connection health that the feed will carry once the server records
+       * them.
+       */
+      coverage: 'Counted from this workspace’s posts, by your local calendar day.',
     },
   },
 
@@ -281,6 +432,16 @@ export const en = {
     viewList: 'List',
 
     /**
+     * The two arrows either side of the range. They name the unit they move by,
+     * which changes with the view — the same pair of glyphs steps a week in one
+     * and a month in the other, and only the accessible name says which.
+     */
+    previousWeek: 'Previous week',
+    nextWeek: 'Next week',
+    previousMonth: 'Previous month',
+    nextMonth: 'Next month',
+
+    /**
      * Calendar Settings. One picture switch for the whole calendar, then one
      * section of row switches per view. The note is state rather than teaching
      * — a post with no picture has nothing to preview, and a user who turns
@@ -289,10 +450,84 @@ export const en = {
      * back to plain cards, which is the calendar overruling the switch and so
      * the one thing here that must not read as a bug.
      */
+    /**
+     * Calendar Settings' section headings, and the two rows that are state
+     * rather than teaching — neither can move into an `<Explainer>`, because
+     * both say something a user still needs after closing the note.
+     */
+    preferences: 'PREFERENCES',
+    daysVisibility: 'DAYS VISIBILITY',
+    firstDayOfWeek: 'First Day of Week',
+    statusColourAlways: "The status colour down the card's left edge is always shown.",
+    notAPublishingDay: 'Not a publishing day',
+    showDay: 'Show {{day}}',
+
+    /**
+     * The card switches. `fieldNoteStatus` is the one label that can't carry
+     * itself: turning the status on doesn't add it — the card already has it,
+     * in colour — it spends a line writing it out.
+     */
+    field: {
+      status: 'Status label',
+      time: 'Time',
+      title: 'Title',
+      platform: 'Platform',
+      account: 'Account',
+    },
+    fieldNoteStatus: 'Writes the status out, and gives the time its own line',
+    showFieldOnWeek: 'Show {{field}} on the week card',
+    showFieldOnMonth: 'Show {{field}} on the month card',
+
     imagePreviews: 'Show cards as image previews',
     imagePreviewsNote: 'Only posts that have a picture, and in the month only on the days with room for one',
     weekCard: 'WEEK CARD',
     monthCard: 'MONTH CARD',
+
+    /**
+     * The month grid's two hover titles. Both name the day they are on, which
+     * is the only thing distinguishing one cell's control from the next — the
+     * add button is an icon, and the density is a count.
+     *
+     * `density` says "open this week" rather than "open the day": the month
+     * has no day view to go to, and the week is where those posts become
+     * readable again.
+     */
+    addPostOn: 'Add a post on {{date}}',
+    density_one: '{{count}} post on {{date}} — open this week',
+    density_other: '{{count}} posts on {{date}} — open this week',
+
+    /** The right rail's holding pen for posts with no date yet. */
+    notScheduled: 'Not Scheduled Posts',
+
+    /**
+     * The one control a day offers, in both grids. Capitalised like every
+     * other action; the month's is icon-only and takes `addPostOn` above as
+     * its title instead.
+     */
+    addPost: 'ADD POST',
+
+    /**
+     * A post whose date can no longer be moved by dragging it. The mark is the
+     * only thing saying so, so its accessible name is the explanation.
+     */
+    dateLocked: "This post's date is locked",
+
+    /**
+     * The empty states, one per surface. Week and month deliberately share
+     * their words: it is the same empty calendar, and a user switching
+     * granularity on an empty campaign should not be told two different things
+     * about it.
+     */
+    empty: {
+      calendarTitle: 'Your calendar is empty',
+      calendarSubtitle:
+        'Add your first post and it will show up here, ready to schedule.',
+      listTitle: 'No posts yet',
+      listSubtitle: 'Add your first post to start building this campaign.',
+      panelTitle: 'Nothing unscheduled',
+      panelSubtitle:
+        'Posts without a date wait here — drag one off the calendar, or add a new one.',
+    },
   },
 
   assistant: {
@@ -639,9 +874,78 @@ export const en = {
 
   postsTable: {
     sortSaveFailed: "Couldn't save the order you sorted by",
+
+    /**
+     * The column headers, also drawn in the empty state's sketch of the table
+     * — one set of words for both, so the sketch is of *this* table.
+     */
+    columnTitle: 'Title',
+    columnStatus: 'Status',
+    columnPlatform: 'Platform',
+    columnPublishDate: 'Publish date',
+    columnWhen: 'When',
+
+    /** A post with no publish date, in either date column. */
+    notSet: 'Not set',
+
+    /** The table with no rows in it — the campaign has posts, this filter doesn't. */
+    noPosts: 'No posts',
+
+    /**
+     * The select column. The header's name changes with what pressing it will
+     * do, because a tick box that both selects all and clears all cannot say
+     * which from its state alone.
+     */
+    selectAll: 'Select all posts',
+    clearSelection: 'Clear selection',
+    selectPost: 'Select {{title}}',
+
+    /**
+     * The `When` column, which says the same date as `Publish date` in the
+     * terms a person would use out loud. The three named days come first
+     * because they are the ones worth recognising without arithmetic; beyond
+     * that it counts.
+     */
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    yesterday: 'Yesterday',
+    inDays_one: 'In {{count}} day',
+    inDays_other: 'In {{count}} days',
+    daysAgo_one: '{{count}} day ago',
+    daysAgo_other: '{{count}} days ago',
   },
 
   posts: {
+    /**
+     * The post statuses, as the app names them. Not the server's words: these
+     * are read on a card at a glance, so `scheduled` is written as the thing
+     * that will happen to the post ("Auto-publish") rather than as the state
+     * it is sitting in.
+     */
+    status: {
+      draft: 'Draft',
+      ready_for_publish: 'Ready for Publish',
+      scheduled: 'Auto-publish',
+      scheduled_for_manual_publishing: 'Manual publish',
+      failed: 'Failed',
+      published: 'Published',
+      not_published: 'Not Published',
+    },
+
+    /**
+     * The two absences a calendar card can carry. Both are shown in place of a
+     * name, so each has to read as a fact about the post rather than as a
+     * missing value.
+     */
+    noPlatform: 'No platform',
+    noAccount: 'No account',
+
+    /**
+     * The card's warning mark. What is wrong is in the post itself — the mark
+     * only says to go and look — so this is deliberately the whole of it.
+     */
+    hasProblem: 'This post has a problem',
+
     /**
      * The bottom bar's read-only publish status (CON-195). `when` arrives
      * already localised from `Intl.RelativeTimeFormat` ("in 2 days", "2 days

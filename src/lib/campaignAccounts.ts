@@ -40,7 +40,7 @@ export type CampaignAccountTarget = {
 }
 
 /** Identifies a row across both kinds, since a platform can hold several. */
-export function targetKey(platformId: string, accountId: string): string {
+function targetKey(platformId: string, accountId: string): string {
   return `${platformId}:${accountId}`
 }
 
