@@ -39,7 +39,8 @@ src/
   stores/          Zustand stores (assistant, auth, eventStream, settings, toast, upload).
   lib/             Framework-free domain logic (post status machine, platforms, asset rules).
   types/           Domain types, mirroring the Go models.
-  config/          overlayRegistry, zIndex.
+  config/          overlayRegistry, zIndex, featureFlags + flagOverrides.
+  devtools/        Staging-only: the /flags panel and its marker. Not in a production build.
   index.css        Tailwind theme + tokens (single source of styling truth).
 ```
 
@@ -273,6 +274,11 @@ without a round-trip. **These mirror specific Go files and must be kept in sync*
   (type-check gates the build); `preview`; `lint` = `eslint . --ext ts,tsx`.
 - **`tsconfig.json`** — strict, `noUnusedLocals/Parameters`,
   `allowImportingTsExtensions` (imports use explicit `.ts`/`.tsx`), `@/*` alias.
+- **`VITE_DEV_TOOLS`** — the one build-time *behaviour* switch. `"1"` compiles
+  in the staging feature-flag overrides and `src/devtools/`; anything else, and
+  the constant folds to `false`, the reader collapses and the panel's chunk is
+  never emitted. Set it on the staging deploy only. See
+  [technical-decisions](./technical-decisions.md#staging-flag-overrides).
 
 > **Tooling gap:** `eslint`, `prettier`, and `stylelint` are installed but no
 > config files are committed to this repo, so `pnpm lint` has no resolvable

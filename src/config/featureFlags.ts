@@ -17,6 +17,12 @@
  * why components read the hook rather than the record. Nothing else may read
  * `FEATURE_FLAGS` directly.
  *
+ * It is already the seam for one thing: on staging and in local dev a flag can
+ * be forced per browser, so one person can exercise a half-built feature while
+ * everyone else keeps testing the app as it ships (`flagOverrides.ts`). That
+ * layer folds away to nothing in a production build, so the two functions below
+ * are the record and only the record there.
+ *
  * A flag is not a permission: it decides whether a feature is built yet, never
  * whether someone is allowed to use it. That stays server-side either way.
  *
@@ -25,6 +31,8 @@
  * feature has settled should be deleted along with the `off` branch of the
  * code, not left switched on forever.
  */
+import { readFlagOverrides } from './flagOverrides'
+
 const FEATURE_FLAGS = {
   /**
    * Activity (CON-225): the sidebar item, the feed, and the daily report — the
@@ -176,12 +184,36 @@ const FEATURE_FLAGS = {
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS
 
+/** Every flag this build declares — what the dev-tools panel enumerates. */
+export const FLAG_IDS = Object.keys(FEATURE_FLAGS) as FeatureFlag[]
+
+/**
+ * The value in force: the build's, unless this browser has been told otherwise
+ * on staging or in dev. `readFlagOverrides()` is `{}` in production, where this
+ * is a property lookup and nothing else.
+ */
+function resolve(flag: FeatureFlag): boolean {
+  return readFlagOverrides()[flag] ?? FEATURE_FLAGS[flag]
+}
+
+/**
+ * What this *build* says, ignoring any override.
+ *
+ * For the staging flag panel alone, which has to show both answers to be worth
+ * opening — hence a named accessor rather than exporting the record, which
+ * stays private for the reason above. Anything deciding whether to render a
+ * feature wants `useFeatureFlag`.
+ */
+export function buildFlagValue(flag: FeatureFlag): boolean {
+  return FEATURE_FLAGS[flag]
+}
+
 /** Whether a feature is built and shown. */
 export function useFeatureFlag(flag: FeatureFlag): boolean {
-  return FEATURE_FLAGS[flag]
+  return resolve(flag)
 }
 
 /** The same answer outside React — for loaders, guards and plain functions. */
 export function isFeatureEnabled(flag: FeatureFlag): boolean {
-  return FEATURE_FLAGS[flag]
+  return resolve(flag)
 }

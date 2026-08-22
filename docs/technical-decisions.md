@@ -550,6 +550,53 @@ full for those surfaces and gated: with the app only part-converted, choosing
 it today would yield a half-Spanish UI, and the copy has had no native review.
 Releasing it is `enabled: true`.
 
+## A flag can be forced per browser, on staging only {#staging-flag-overrides}
+
+**Decision.** `useFeatureFlag`/`isFeatureEnabled` resolve
+`readFlagOverrides()[flag] ?? FEATURE_FLAGS[flag]`. The override set lives in
+**localStorage**, is set by a bookmarkable `?ff=tasks,-activity` link or the
+unlisted `/flags` panel, and the whole layer is compiled out of any build that
+was not made with `VITE_DEV_TOOLS=1`.
+
+**Why.** On a shared staging deploy the two audiences want opposite things: the
+back end needs to exercise a half-built feature, and the copy team needs the app
+to look like the app — a copywriter seeing unfinished work costs a round of
+feedback about a decision nobody has made yet. Before this, the only way to give
+one person a different answer was a branch and a deploy of their own, which is
+exactly the tedium that stops people testing.
+
+Four things follow, and each was a wrong answer first:
+
+- **localStorage, not `/api/settings`.** That row is tenant-scoped and readable
+  by the whole workspace ([user-scoped settings](#user-scoped-settings)), so a
+  flag stored there would turn the feature on for the very people it is being
+  kept from. Per-browser is the grain the problem has.
+- **The link is the feature; the panel is for undoing.** `?ff=` is modelled on
+  `?lang=` ([i18n](#i18n)) down to the `replaceState` strip and its position in
+  `main.tsx` — read before `createRouter`, because route guards consult flags in
+  `beforeLoad`. One bookmark per feature, and they compose.
+- **A production build does not contain it.** `DEV_TOOLS` is a build-time
+  constant, so the reader folds to `{}`, the panel's `import()` becomes
+  unreachable and its chunk is never emitted. Verified by grepping `dist/` both
+  ways. This is what makes the promise real: in production, writing the
+  localStorage key by hand does nothing. An unlisted URL is not a security
+  boundary and is not asked to be one — the protection on staging is that seeing
+  unfinished work requires deliberately switching it on.
+- **Overrides announce themselves.** `OverrideMarker` sits above the assistant
+  trigger (the CON-178 bottom-left corner is only empty in the content column —
+  a viewport-fixed badge there lands on the sidebar's account row) whenever
+  any flag is forced. Without it, an override left on weeks ago becomes a bug
+  report nobody else can reproduce.
+
+**Caveat worth knowing.** A flag hides UI, not data. Tasks writes its list into
+the tenant settings row, so a teammate switching it on and creating tasks on
+staging puts that data in the shared workspace — others just have no screen for
+it. Same rule as always: a flag is not a permission.
+
+**Where.** `config/flagOverrides.ts` (+ its test), the resolver in
+`config/featureFlags.ts`, `devtools/FlagsPanel.tsx`, `devtools/OverrideMarker.tsx`,
+`routes/flags.tsx`, the `VITE_DEV_TOOLS` build arg in the `Dockerfile`.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain
