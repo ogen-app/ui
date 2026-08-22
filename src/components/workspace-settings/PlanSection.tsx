@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
-import { ArrowSquareOutIcon } from '@phosphor-icons/react'
+import { ArrowSquareOutIcon, SealCheckIcon } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
@@ -80,47 +80,64 @@ export function PlanSection() {
   const subscription = billing.data?.subscription ?? null
 
   return (
-    <SettingsCard
-      title={t('tiers.billingTitle')}
-      actions={
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/plans">{t('tiers.changePlan')}</Link>
-        </Button>
-      }
-    >
+    <SettingsCard title={t('tiers.billingTitle')}>
       <ul className="flex flex-col divide-y divide-border">
-        <SettingsRow
-          title={headline ?? '—'}
-          badges={
-            <>
-              {plan.data?.tier.scheduled && <Chip variant="muted">{t('tiers.scheduledBadge')}</Chip>}
-              {subscription && <StatusChip status={subscription.status} />}
-            </>
-          }
-          description={
-            <>
-              {timing && <p>{timing}</p>}
-              {plan.isError && <p>{t('tiers.planLoadFailed')}</p>}
-              {subscription?.endsAt && (
-                <p>{t('tiers.accessEnds', { when: formatDay(subscription.endsAt, i18n.language) })}</p>
-              )}
-            </>
-          }
-        />
+        <SettingsRow>
+          {/* The same framed card a campaign's type gets, and for the same
+              reason: this is a chosen thing rather than a field, so it is drawn
+              as the choice with the way to change it inside the frame. See
+              `CampaignTypeCard` — if a third of these appears, the two should
+              become one component. */}
+          <div className="flex items-center gap-3 rounded-md border border-quaternary px-4 py-4 min-w-0">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary">
+              <SealCheckIcon className="size-6" />
+            </span>
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="flex items-center gap-3 min-w-0">
+                <span className="text-base font-medium">{headline ?? '—'}</span>
+                {plan.data?.tier.scheduled && (
+                  <Chip variant="muted">{t('tiers.scheduledBadge')}</Chip>
+                )}
+                {subscription && <StatusChip status={subscription.status} />}
+              </span>
+              <span className="text-sm text-secondary-foreground">
+                {timing}
+                {plan.isError && t('tiers.planLoadFailed')}
+                {subscription?.endsAt &&
+                  ` ${t('tiers.accessEnds', { when: formatDay(subscription.endsAt, i18n.language) })}`}
+              </span>
+            </span>
+            <div className="ml-auto shrink-0 pl-3">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/plans">{t('tiers.changePlan')}</Link>
+              </Button>
+            </div>
+          </div>
+        </SettingsRow>
 
         {mayManage ? (
           <SettingsRow
             title={t('tiers.paymentMethod')}
             actions={
-              billing.data?.portal && (
-                <Button variant="ghost" size="sm" onClick={openPortal} loading={portal.isPending}>
-                  {t('tiers.managePortal')}
-                  <ArrowSquareOutIcon />
-                </Button>
-              )
+              // Present and dead rather than absent while billing is unwired:
+              // the row is about a thing that has a management screen, and
+              // hiding the button until the endpoint lands would make its
+              // arrival look like a new feature rather than a connected one.
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={openPortal}
+                disabled={!billing.data?.portal}
+                loading={portal.isPending}
+              >
+                {t('tiers.managePortal')}
+                <ArrowSquareOutIcon />
+              </Button>
             }
             description={
               <>
+                {/* The state of the thing the row is named after, so it is read
+                    at full strength; everything under it is explanation. */}
                 <PaymentLine subscription={subscription} />
                 {/* The answer to "where do I change my VAT number" — a question
                     this card will be asked, and whose answer is a place rather
@@ -129,9 +146,9 @@ export function PlanSection() {
                 {/* Permanent, not an Explainer: a card headed "Plan & billing"
                     that cannot bill implies a payment relationship that does
                     not exist, and that is not something to hide behind a note
-                    somebody may have dismissed months ago. It goes when the
-                    portal arrives, which is the same day the claim stops being
-                    true. */}
+                    somebody may have dismissed months ago. It also says what
+                    the dead button above is waiting for, and both go on the
+                    same day — the one the claim stops being true. */}
                 {!billing.data?.portal && <p>{t('tiers.billingMock')}</p>}
               </>
             }
@@ -144,14 +161,20 @@ export function PlanSection() {
   )
 }
 
-/** The card on file, or the fact that there isn't one. */
+/**
+ * The card on file, or the fact that there isn't one.
+ *
+ * At full strength rather than in the row's grey, because it is the answer to
+ * the question the row asks; the sentences under it are context for it.
+ */
 function PaymentLine({ subscription }: { subscription: BillingSubscription | null }) {
   const { t } = useTranslation()
+  const tone = 'text-primary-foreground'
 
-  if (!subscription) return <p>{t('tiers.noSubscription')}</p>
-  if (!subscription.card) return <p>{t('tiers.noCard')}</p>
+  if (!subscription) return <p className={tone}>{t('tiers.noSubscription')}</p>
+  if (!subscription.card) return <p className={tone}>{t('tiers.noCard')}</p>
   return (
-    <p>
+    <p className={tone}>
       {/* The brand is the provider's own lowercase token ("visa"), so the
           capital is a display choice and stays out of the string. */}
       <span className="capitalize">{subscription.card.brand}</span>{' '}

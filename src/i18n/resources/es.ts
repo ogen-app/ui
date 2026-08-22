@@ -729,12 +729,12 @@ export const es: Translation = {
       'Los planes todavía no están conectados a la facturación. Elegir uno solo cambia lo que este espacio puede hacer.',
     planLoadFailed: 'No se han podido cargar los planes.',
     plansClose: 'Cerrar los planes',
-    changePlan: 'CAMBIAR DE PLAN',
+    changePlan: 'CAMBIAR',
 
     billingTitle: 'Plan y facturación',
     billingMock:
       'La facturación todavía no está conectada. Aquí no se cobra nada y no se guarda ningún dato de pago.',
-    paymentMethod: 'Método de pago',
+    paymentMethod: 'Método de pago y datos de facturación',
     cardEnding: 'terminada en {{last4}}',
     noCard: 'No hay ningún método de pago guardado.',
     noSubscription: 'No se está cobrando nada por este espacio.',
@@ -743,7 +743,7 @@ export const es: Translation = {
 
     providerHolds:
       'Tu método de pago, tu dirección de facturación, tu NIF/CIF, tus facturas y la cancelación los gestiona Lemon Squeezy, que vende Ogen como comerciante registrado.',
-    managePortal: 'GESTIONAR LA FACTURACIÓN',
+    managePortal: 'GESTIONAR',
     portalFailed: 'No se ha podido abrir el portal de facturación.',
 
     statusPastDue: 'Pago fallido',

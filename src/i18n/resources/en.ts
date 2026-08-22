@@ -1034,7 +1034,11 @@ export const en = {
     planMock: 'Plans are not connected to billing yet. Choosing one only changes what this workspace is allowed to do.',
     planLoadFailed: 'The plans could not be loaded.',
     plansClose: 'Close plans',
-    changePlan: 'CHANGE PLAN',
+    /**
+     * Inside the plan's own card, where the card names what is being changed —
+     * the same shape, and the same word, as a campaign's type.
+     */
+    changePlan: 'CHANGE',
 
     /**
      * Plan & billing — one card in Workspace Settings, with no screen behind
@@ -1049,7 +1053,12 @@ export const en = {
     /** Same standing as `planMock`, and for the same reason — see below. */
     billingMock:
       "Billing isn't connected yet. Nothing here charges anyone, and no payment details are held.",
-    paymentMethod: 'Payment method',
+    /**
+     * "& details" because the button beside it opens all of them — the address,
+     * the tax id, the invoices — and a row called "Payment method" would make
+     * that door look like it led to a card form.
+     */
+    paymentMethod: 'Payment Method & Details',
     /** The brand is printed beside this; the catalogue carries only the tail. */
     cardEnding: 'ending {{last4}}',
     noCard: 'No payment method on file.',
@@ -1066,7 +1075,8 @@ export const en = {
      */
     providerHolds:
       'Your payment method, billing address, tax ID, invoices and cancellation are handled by Lemon Squeezy, which sells Ogen as merchant of record.',
-    managePortal: 'MANAGE BILLING',
+    /** The row title says what is managed, the way SWITCH sits under a name. */
+    managePortal: 'MANAGE',
     portalFailed: 'The billing portal could not be opened.',
 
     /**
