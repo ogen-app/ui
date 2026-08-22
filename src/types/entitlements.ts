@@ -184,6 +184,25 @@ export type TierSnapshot = {
   name: string
   /** When this version came into force for this workspace. Display only. */
   effectiveFrom: string
+  /**
+   * How often the workspace is charged for it — `null` for a tier nobody pays
+   * for, which is why it is not folded into the name.
+   *
+   * Here rather than on the billing payload because it is half of what the plan
+   * is *called*: "Max, billed monthly" is the answer to "what am I on", and
+   * every member is entitled to it. The card's last four digits are not, and
+   * that is the line `/api/billing` sits on the other side of.
+   */
+  billingPeriod: 'month' | 'year' | null
+  /**
+   * End of the current billing cycle — when it renews, if it renews.
+   *
+   * `null` for a free tier and for a subscription that has been cancelled: a
+   * cancelled one has an end date instead, and that lives on the billing
+   * payload where the difference can be stated properly. Display only, like
+   * every other date here.
+   */
+  renewsAt: string | null
   /** Null when nothing is scheduled — the common case. */
   scheduled: ScheduledTierChange | null
 }

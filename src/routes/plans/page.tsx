@@ -1,35 +1,43 @@
 import { useTranslation } from 'react-i18next'
-import { Link } from '@tanstack/react-router'
-import { CaretLeftIcon } from '@phosphor-icons/react'
+import { useCanGoBack, useNavigate, useRouter } from '@tanstack/react-router'
+import { XIcon } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
-import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { formatDay } from '@/components/entitlements/parts'
 import { PlanSummary } from '@/components/tiers/PlanSummary'
 import { TierCard } from '@/components/tiers/TierCard'
+import { ZIndex } from '@/config/zIndex'
 import { useWorkspacePlan } from '@/hooks/useEntitlements'
 import { useSelectTier, useTiers } from '@/hooks/useTiers'
 import { toast } from '@/stores/toastStore'
 import type { Tier } from '@/types/tiers'
 
 /**
- * `/workspace-settings/plan` — what this workspace is on, and what else there
- * is (CON-232).
+ * `/plans` — every plan there is, over the whole screen (CON-232).
  *
- * Its own screen rather than a card in Workspace Settings: it is the one place
- * in the app that talks *about* the plan rather than being gated by it, it is
- * read a few times a year, and it wants the width to put the tiers side by
- * side. Workspace Settings links to it.
+ * **Deliberately outside `_authenticated`**, like `/workspaces`: choosing a
+ * plan is a decision about the workspace rather than work inside it, and the
+ * sidebar's every item — campaigns, content bank, settings — is a distraction
+ * from a comparison that wants the width. Auth is still guarded once, in
+ * `__root.tsx`. Two consequences of living out here are worth knowing: the
+ * broadcast stream (`useEventStream`) is closed while this is open, and the
+ * reference caches warm again on the way back. Both are fine for a screen
+ * somebody reads a few times a year and leaves.
+ *
+ * It reads as a modal — one X, top right, nothing else — because that is what
+ * it is: a detour that every entry point returns from. Which is why the X goes
+ * *back* rather than to a fixed address; people arrive here from the billing
+ * screen today and from a lock on a button tomorrow.
  *
  * **Nothing here charges anyone.** The tier list and the plan both come off a
- * local stub (`services/api/tiers.stub.ts`), and choosing a plan changes what
- * the workspace is allowed to do and nothing else. The screen says so, in a
- * line that cannot be dismissed, for as long as that is true.
+ * local stub (`services/api/tiers.stub.ts`); choosing changes what the
+ * workspace is allowed to do and nothing else. The screen says so, in a line
+ * that cannot be dismissed, for as long as that is true.
  */
-export function PlanPage() {
+export function PlansPage() {
   const { t, i18n } = useTranslation()
   const plan = useWorkspacePlan()
   const tiers = useTiers()
@@ -68,17 +76,17 @@ export function PlanPage() {
 
   if (plan.isLoading || tiers.isLoading) {
     return (
-      <PlanFrame>
+      <PlansFrame>
         <PageLoader />
-      </PlanFrame>
+      </PlansFrame>
     )
   }
 
   if (plan.isError || tiers.isError || !plan.data || !tiers.data) {
     return (
-      <PlanFrame>
+      <PlansFrame>
         <PageError header={t('tiers.planLoadFailed')} />
-      </PlanFrame>
+      </PlansFrame>
     )
   }
 
@@ -90,7 +98,7 @@ export function PlanPage() {
   const retired = !offered.some((tier) => tier.id === held.id)
 
   return (
-    <PlanFrame>
+    <PlansFrame>
       <PlanSummary
         tier={held}
         retired={retired}
@@ -110,33 +118,50 @@ export function PlanPage() {
           />
         ))}
       </div>
-    </PlanFrame>
+    </PlansFrame>
   )
 }
 
-function PlanFrame({ children }: { children: React.ReactNode }) {
+function PlansFrame({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation()
+  const router = useRouter()
+  const navigate = useNavigate()
+  const canGoBack = useCanGoBack()
+
+  /**
+   * Back where they came from, or to billing.
+   *
+   * The fallback matters more than it looks: this URL is shareable and will be
+   * linked from upgrade prompts, so "close" has to mean something for someone
+   * whose history starts here. Billing is the screen this one belongs to.
+   */
+  const close = () => {
+    if (canGoBack) router.history.back()
+    else void navigate({ to: '/workspace-settings/billing' })
+  }
+
   return (
     <PageContainer variant="fullFlex">
+      {/* Fixed rather than sticky: this route owns the viewport, so the one
+          control on it should stay exactly where it was when the page scrolls
+          — the way a dialog's close button does. */}
+      <Button
+        variant="ghost"
+        size="defaultIcon"
+        onClick={close}
+        aria-label={t('tiers.plansClose')}
+        className="fixed right-4 top-4"
+        style={{ zIndex: ZIndex.pageHeader }}
+      >
+        <XIcon className="size-5" />
+      </Button>
+
       <div className="flex h-0 grow flex-col overflow-y-auto">
-        <PageHeader
-          title={t('tiers.planTitle')}
-          fadeOnScroll
-          back={
-            <Button
-              variant="headerIcon"
-              size="excluded"
-              asChild
-              aria-label={t('tiers.planBack')}
-            >
-              <Link to="/workspace-settings">
-                <CaretLeftIcon className="size-5" />
-              </Link>
-            </Button>
-          }
-        />
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-3 pb-10 pt-4 lg:px-6">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 pb-16 pt-16 lg:px-6">
           <div className="flex flex-col gap-2">
+            <h1 className="font-display text-3xl font-medium tracking-tight">
+              {t('tiers.plansTitle')}
+            </h1>
             <p className="text-sm text-tertiary-foreground">{t('tiers.planIntro')}</p>
             <p className="text-[13px] text-tertiary-foreground">{t('tiers.planMock')}</p>
           </div>

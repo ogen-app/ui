@@ -49,7 +49,7 @@ describe('UpgradeCallout', () => {
     // Month first, because the app's language is `en` — the same formatter
     // reads "1 de septiembre" under `es` below, which is the point of it.
     expect(
-      screen.getByText('Your allowance goes back to full on September 1.'),
+      screen.getByText('Your allowance goes back to full on September 1, 2026.'),
     ).toBeInTheDocument()
   })
 
@@ -104,7 +104,7 @@ describe('UpgradeCallout', () => {
     // The date is formatted in the app's language, not the browser's — the
     // whole point of not hoisting the formatter.
     expect(
-      screen.getByText('Tu cuota vuelve a estar completa el 1 de septiembre.'),
+      screen.getByText('Tu cuota vuelve a estar completa el 1 de septiembre de 2026.'),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'MEJORAR PLAN' })).toBeInTheDocument()
   })

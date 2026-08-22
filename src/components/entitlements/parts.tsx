@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { formatDate } from '@/lib/intl'
+import { formatDate, formatRelative } from '@/lib/intl'
 import { cn } from '@/lib'
 
 /**
@@ -27,7 +27,30 @@ import { cn } from '@/lib'
  * to render "Invalid Date".
  */
 export function formatDay(iso: string, locale: string): string {
-  return formatDate(iso, { day: 'numeric', month: 'long' }, locale) ?? iso
+  return formatDate(iso, { day: 'numeric', month: 'long', year: 'numeric' }, locale) ?? iso
+}
+
+/**
+ * "in 29 days", "tomorrow", "today" — the distance to a billing date, in the
+ * language the app is set to.
+ *
+ * `Intl.RelativeTimeFormat` with `numeric: 'auto'` rather than a count in the
+ * catalogue: it already knows every language's plural rules *and* its own words
+ * for the near days, so the catalogue carries only the sentence around this.
+ * Same pattern as `usePublishStatus`.
+ *
+ * Counted between local midnights, so the answer matches the calendar the
+ * reader is looking at: a renewal at 01:00 tomorrow is "tomorrow" and not "in
+ * 0 days". Null on a date that won't parse, which is the caller's signal to say
+ * the same thing without the phrase — never to print a distance it guessed.
+ */
+export function relativeDay(iso: string, locale: string, now: Date = new Date()): string | null {
+  const target = new Date(iso)
+  if (Number.isNaN(target.getTime())) return null
+  const midnight = (date: Date) =>
+    new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  const days = Math.round((midnight(target) - midnight(now)) / 86_400_000)
+  return formatRelative(days, 'day', locale)
 }
 
 type NoticeShellProps = {

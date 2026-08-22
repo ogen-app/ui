@@ -19,6 +19,8 @@ function plan(entitlements: WorkspacePlan['entitlements']): WorkspacePlan {
       id: 'tier_pro_2026_01_01',
       name: 'Pro',
       effectiveFrom: '2026-01-01T00:00:00Z',
+      billingPeriod: 'month',
+      renewsAt: '2026-09-22T00:00:00Z',
       scheduled: null,
     },
     entitlements,

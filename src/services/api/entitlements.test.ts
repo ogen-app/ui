@@ -36,6 +36,8 @@ const TIER = {
   id: 'tier_pro_2026_01_01',
   name: 'Pro',
   effective_from: '2026-01-01T00:00:00Z',
+  billing_period: 'month' as const,
+  renews_at: '2026-09-22T00:00:00Z',
 }
 
 afterEach(() => {
@@ -63,8 +65,26 @@ describe('fetchWorkspacePlan', () => {
       id: 'tier_pro_2026_01_01',
       name: 'Pro',
       effectiveFrom: '2026-01-01T00:00:00Z',
+      billingPeriod: 'month',
+      renewsAt: '2026-09-22T00:00:00Z',
       scheduled: null,
     })
+  })
+
+  it('leaves the billing fields unsaid for a tier nobody pays for', async () => {
+    // A free tier has no cadence and no renewal, and inventing either would put
+    // "auto-renews on the 1st" under a plan that will never be invoiced.
+    stubFetch(
+      jsonResponse(200, {
+        tier: { id: 'tier_trial', name: 'Trial', effective_from: '2026-08-01T00:00:00Z' },
+        entitlements: {},
+      }),
+    )
+
+    const plan = await fetchWorkspacePlan()
+
+    expect(plan.tier.billingPeriod).toBeNull()
+    expect(plan.tier.renewsAt).toBeNull()
   })
 
   it('carries a scheduled change, with the direction the server decided', async () => {
@@ -174,6 +194,8 @@ describe('fetchWorkspacePlan', () => {
         id: TIER.id,
         name: TIER.name,
         effectiveFrom: TIER.effective_from,
+        billingPeriod: TIER.billing_period,
+        renewsAt: TIER.renews_at,
         scheduled: null,
       },
       entitlements: {},

@@ -334,25 +334,47 @@ Flip the flag when the handler answers. See
 
 **Workspace tiers run on a local stub** (`workspace-tiers`, CON-232). The seam
 — `types/entitlements.ts`, `lib/entitlements.ts`, `useEntitlement`, the shared
-renderings in `components/entitlements` — is written and tested, and
-`/workspace-settings/plan` is the one screen that talks *about* the plan rather
-than being gated by it. Choosing a tier there re-answers every
-`useEntitlement` in the app, which is how the gating gets looked at before the
-API exists. **Waiting on** `GET /api/entitlements`, `GET /api/tiers` and
-`POST /api/workspace/plan` — contracts in `services/api/entitlements.ts` and
-`services/api/tiers.ts`, both asserted by their tests, and both tested against
-the *wire* path (`fetchWorkspacePlan`) so the stub can't make the contract go
-dark. CON-208 (tenant tiers and groups) and CON-86 (usage metering) are done
-server-side, so the tiers and the counters exist; what is missing is a
-workspace-scoped REST read that puts them together, plus a `suspended` flag on
-the resources a downgrade makes read-only.
+renderings in `components/entitlements` — is written and tested, and three
+screens talk *about* the plan rather than being gated by it: the **Plan &
+billing card** in Workspace Settings (two sentences and a MANAGE button),
+**`/workspace-settings/billing`** behind it, and **`/plans`**. Choosing a tier
+re-answers every `useEntitlement` in the app, which is how the gating gets
+looked at before the API exists. **Waiting on** `GET /api/entitlements`,
+`GET /api/tiers`, `POST /api/workspace/plan`, `GET /api/billing` and
+`POST /api/billing/portal` — contracts in `services/api/entitlements.ts`,
+`tiers.ts` and `billing.ts`, all asserted by their tests, and all tested
+against the *wire* path (`fetchWorkspacePlan`, `fetchBilling`) so the stub
+can't make a contract go dark. CON-208 (tenant tiers and groups) and CON-86
+(usage metering) are done server-side, so the tiers and the counters exist;
+what is missing is a workspace-scoped REST read that puts them together, plus a
+`suspended` flag on the resources a downgrade makes read-only.
+
+**`/plans` deliberately sits outside `_authenticated`**, like `/workspaces`: it
+reads as a full-screen modal — one X, top right — because it is a detour every
+entry point returns from, and the sidebar's items belong to the work it is a
+detour from. The X goes *back* rather than to a fixed address. Two consequences
+of living out there: the broadcast stream closes while it is open, and the
+reference caches warm again on the way back.
+
+**Ogen sells through Lemon Squeezy as merchant of record, so the app holds no
+billing fields.** Lemon Squeezy is the legal seller: it takes the card, holds
+the billing address and tax id, works out and remits VAT/GST, and issues the
+invoice. Every editable billing field therefore already has a hosted, PCI-scoped
+form we neither write nor answer for — so `/workspace-settings/billing` is a
+*report and a door*. No address, no tax id, no card, no cancel endpoint; a
+second copy here is one that can disagree with the invoice. The door is
+`POST /api/billing/portal`, which mints a **signed link that expires within the
+day** — never cache, store or put it in a `href` at render time, and open the
+tab synchronously on the click (a `window.open` after an `await` is blocked).
 
 The stub is `services/api/tiers.stub.ts` — a JSON seed of the decided tier
-matrix plus `localStorage`, with `STUBBED` switching the two call sites. It
-does two things the client is forbidden to do, and says so: it **ranks** tiers
-(to decide upgrade from downgrade, hence `direction` on the wire) and it
-**reads the clock** (to date the next billing boundary). Neither may leak out —
-`rank` is stripped before anything leaves the file, and its test asserts that.
+matrix plus `localStorage`, with `STUBBED` switching the call sites, and it
+answers the billing read too (no provider is connected, so: a subscription, no
+card, no portal). It does two things the client is forbidden to do, and says so:
+it **ranks** tiers (to decide upgrade from downgrade, hence `direction` on the
+wire) and it **reads the clock** (to date the renewal, which is also the
+boundary a downgrade lands on). Neither may leak out — `rank` is stripped before
+anything leaves the file, and its test asserts that.
 
 No feature is gated yet. Which of hide / lock / lock-with-upgrade each key gets
 is decided and recorded on `EntitlementKey` in `types/entitlements.ts`; wiring

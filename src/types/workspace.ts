@@ -53,6 +53,19 @@ export function canManageWorkspace(actor: WorkspaceRole): boolean {
 }
 
 /**
+ * Whether `actor` may see and change what the workspace pays (CON-232).
+ *
+ * Separate from `canManageWorkspace` even though it answers the same today,
+ * because it is a different question with a different answer coming: an admin
+ * who runs the workspace is not automatically someone who should see the card
+ * on file. The server draws the same line — `/api/billing` is owner-only — and
+ * this is the mirror that keeps a member off a screen that would 403.
+ */
+export function canManageBilling(actor: WorkspaceRole): boolean {
+  return actor === 'owner'
+}
+
+/**
  * What the server will not do whatever the roles say: leave a workspace with
  * no owner. It answers 409; the UI counts owners to grey the control out
  * first. Not expressible in the predicates above — it depends on the whole

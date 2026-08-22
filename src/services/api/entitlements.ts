@@ -31,6 +31,8 @@ import type {
  *         "id": "tier_pro_2026_01_01",
  *         "name": "Pro",
  *         "effective_from": "2026-01-01T00:00:00Z",
+ *         "billing_period": "month",
+ *         "renews_at": "2026-09-22T00:00:00Z",
  *         "scheduled_change": {
  *           "id": "tier_trial_2026_09_01",
  *           "name": "Trial",
@@ -57,6 +59,16 @@ import type {
  * different allowances. The client must never map a name to a number, which
  * means the server has to send the numbers. `id` names the *version*; the
  * client treats it as opaque.
+ *
+ * **`billing_period` and `renews_at` are here, and the card is not.** They are
+ * half of what the plan is *called* — "Max, billed monthly, renews on the 22nd"
+ * — and every member is entitled to that. What a member is not entitled to is
+ * the price, the card and the invoices, which is why those sit behind the
+ * owner-only `/api/billing` instead (see `billing.ts`). Both are `null` on a
+ * tier nobody pays for, and `renews_at` is `null` again once a subscription is
+ * cancelled: it then has an *end* date, which is the billing payload's to
+ * report because "renews on the 22nd" and "ends on the 22nd" must not be the
+ * same sentence.
  *
  * **`scheduled_change` is required, not derivable.** A downgrade takes effect
  * at the next billing boundary rather than on the click, so two tiers are live
@@ -110,6 +122,8 @@ export type PlanBody = {
     id: string
     name: string
     effective_from: string
+    billing_period?: 'month' | 'year' | null
+    renews_at?: string | null
     scheduled_change?: ScheduledChangeBody | null
   }
   entitlements?: Record<string, EntitlementBody> | null
@@ -129,6 +143,11 @@ function tierFromWire(body: PlanBody['tier']): TierSnapshot {
     id: body.id,
     name: body.name,
     effectiveFrom: body.effective_from,
+    // Both absent on a free tier, and absent is the answer rather than a
+    // default: there is no such thing as a neutral billing period, and a
+    // renewal date invented for a plan nobody pays for would be printed.
+    billingPeriod: body.billing_period ?? null,
+    renewsAt: body.renews_at ?? null,
     scheduled: body.scheduled_change ? scheduledFromWire(body.scheduled_change) : null,
   }
 }

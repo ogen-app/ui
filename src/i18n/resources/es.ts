@@ -724,12 +724,39 @@ export const es: Translation = {
     suspendedSince: 'De solo lectura desde el {{when}}.',
 
     planTitle: 'Plan',
+    plansTitle: 'Planes',
     planIntro: 'Lo que puede hacer este espacio y lo que cambiarían los demás planes.',
     planMock:
       'Los planes todavía no están conectados a la facturación. Elegir uno solo cambia lo que este espacio puede hacer.',
     planLoadFailed: 'No se han podido cargar los planes.',
     planBack: 'Volver a la configuración del espacio',
-    viewPlans: 'VER PLANES',
+    plansClose: 'Cerrar los planes',
+    changePlan: 'CAMBIAR DE PLAN',
+
+    billingTitle: 'Plan y facturación',
+    manage: 'GESTIONAR',
+    billingMock:
+      'La facturación todavía no está conectada. Aquí no se cobra nada y no se guarda ningún dato de pago.',
+    billingSectionTitle: 'Facturación',
+    paymentMethod: 'Método de pago',
+    cardEnding: 'terminada en {{last4}}',
+    noCard: 'No hay ningún método de pago guardado.',
+    noSubscription: 'No se está cobrando nada por este espacio.',
+    accessEnds: 'El acceso termina el {{when}}.',
+    ownersOnly: 'Solo los propietarios del espacio pueden ver los datos de facturación.',
+
+    handledByProvider: 'Datos de facturación',
+    providerHolds:
+      'Tu método de pago, tu dirección de facturación, tu NIF/CIF, tus facturas y la cancelación los gestiona Lemon Squeezy, que vende Ogen como comerciante registrado.',
+    portalMissing: 'Todavía no hay nada que abrir: llegará con la facturación.',
+    managePortal: 'GESTIONAR LA FACTURACIÓN',
+    portalFailed: 'No se ha podido abrir el portal de facturación.',
+
+    statusPastDue: 'Pago fallido',
+    statusCancelled: 'Cancelado',
+    statusPaused: 'En pausa',
+    statusExpired: 'Caducado',
+    statusUnpaid: 'Sin pagar',
 
     currentPlan: 'Plan actual',
     currentBadge: 'Actual',
@@ -737,12 +764,21 @@ export const es: Translation = {
     retired: 'Ya no se ofrece',
     since: 'En este plan desde el {{when}}.',
 
+    onPlan: 'Estás en el plan {{name}}.',
+    onPlanMonthly: 'Estás en el plan {{name}}, con facturación mensual.',
+    onPlanYearly: 'Estás en el plan {{name}}, con facturación anual.',
+
+    autoRenews: 'Se renueva automáticamente el {{when}}.',
+    autoRenewsIn: 'Se renueva automáticamente {{relative}}, el {{when}}.',
+
     choose: 'ELEGIR',
     chooseNamed: 'Elegir {{name}}',
     cancelChange: 'CANCELAR EL CAMBIO',
 
     changeScheduled: 'Pasarás a {{name}} el {{when}}.',
     changeScheduledUp: '{{name}} empieza el {{when}}.',
+    changeScheduledIn: 'Pasarás a {{name}} {{relative}}, el {{when}}.',
+    changeScheduledUpIn: '{{name}} empieza {{relative}}, el {{when}}.',
     changeScheduledBody:
       'No se borrará nada. Si superas los límites del nuevo plan, algunas cosas pasarán a ser de solo lectura hasta que vuelvas a subir.',
     changeFailed: 'No se ha podido cambiar tu plan.',

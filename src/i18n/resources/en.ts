@@ -1024,6 +1024,7 @@ export const en = {
      * `services/api/tiers.ts`. Everything the app says *about* a tier is here.
      */
     planTitle: 'Plan',
+    plansTitle: 'Plans',
     planIntro: 'What this workspace can do, and what the other plans would change.',
     /**
      * Not an Explainer, and not dismissible. Someone looking at a page of plans
@@ -1034,7 +1035,53 @@ export const en = {
     planMock: 'Plans are not connected to billing yet. Choosing one only changes what this workspace is allowed to do.',
     planLoadFailed: 'The plans could not be loaded.',
     planBack: 'Back to workspace settings',
-    viewPlans: 'VIEW PLANS',
+    plansClose: 'Close plans',
+    changePlan: 'CHANGE PLAN',
+
+    /**
+     * Plan & billing — the card in Workspace Settings and the screen behind it.
+     *
+     * "Plan & billing" rather than "Plan": the card is the answer to "where do
+     * I change my card", and somebody looking for that scans headings for the
+     * word billing.
+     */
+    billingTitle: 'Plan & billing',
+    manage: 'MANAGE',
+    /** Same standing as `planMock`, and for the same reason — see below. */
+    billingMock:
+      "Billing isn't connected yet. Nothing here charges anyone, and no payment details are held.",
+    billingSectionTitle: 'Billing',
+    paymentMethod: 'Payment method',
+    /** The brand is printed beside this; the catalogue carries only the tail. */
+    cardEnding: 'ending {{last4}}',
+    noCard: 'No payment method on file.',
+    noSubscription: 'Nothing is being charged for this workspace.',
+    accessEnds: 'Access ends on {{when}}.',
+    ownersOnly: 'Only workspace owners can see billing details.',
+
+    /**
+     * The one place the provider is named, and it has to be named: Lemon
+     * Squeezy is the seller of record, so it is the name on the customer's
+     * statement and on the invoice. The sentence exists to answer the question
+     * this screen will be asked — where do I change my VAT number — whose
+     * answer is a place rather than a field.
+     */
+    handledByProvider: 'Billing details',
+    providerHolds:
+      'Your payment method, billing address, tax ID, invoices and cancellation are handled by Lemon Squeezy, which sells Ogen as merchant of record.',
+    portalMissing: "There's nothing to open yet — this arrives with billing.",
+    managePortal: 'MANAGE BILLING',
+    portalFailed: 'The billing portal could not be opened.',
+
+    /**
+     * Only the states worth interrupting for. "Active" beside "auto-renews on
+     * the 22nd" is noise; a failed payment is not.
+     */
+    statusPastDue: 'Payment failed',
+    statusCancelled: 'Cancelled',
+    statusPaused: 'Paused',
+    statusExpired: 'Expired',
+    statusUnpaid: 'Unpaid',
 
     currentPlan: 'Current plan',
     currentBadge: 'Current',
@@ -1043,6 +1090,29 @@ export const en = {
     /** A tier version that is still held but can no longer be bought. */
     retired: 'No longer offered',
     since: 'On this plan since {{when}}.',
+
+    /**
+     * What the workspace is on. Three whole sentences rather than a stem plus
+     * "monthly", because where the cadence sits in the line is a different
+     * answer in every language — and a tier nobody pays for has no cadence to
+     * put anywhere.
+     */
+    onPlan: "You're on the {{name}} plan.",
+    onPlanMonthly: "You're on the {{name}} plan, billed monthly.",
+    onPlanYearly: "You're on the {{name}} plan, billed yearly.",
+
+    /**
+     * When it renews. Both dates are given — the distance because that is what
+     * anyone actually wants ("is it soon?"), the date because that is what they
+     * will check against a calendar or a statement.
+     *
+     * `{{relative}}` is `Intl.RelativeTimeFormat`'s work, not the catalogue's:
+     * it knows every language's plural rules and its own words for tomorrow and
+     * today, so no `_one`/`_other` pair belongs here. The plain form is the
+     * fallback for a date that would not parse.
+     */
+    autoRenews: 'It auto-renews on {{when}}.',
+    autoRenewsIn: 'It auto-renews {{relative}}, on {{when}}.',
 
     choose: 'CHOOSE',
     /** For the button's accessible name, where "CHOOSE" alone says too little. */
@@ -1057,6 +1127,14 @@ export const en = {
      */
     changeScheduled: 'You move to {{name}} on {{when}}.',
     changeScheduledUp: '{{name}} starts on {{when}}.',
+    /**
+     * The same two with the distance in them, for the screens that are read at
+     * a glance rather than during the decision. A pending change outranks the
+     * renewal line: telling a workspace its plan auto-renews when it is about
+     * to drop a tier is the opposite of what happens next.
+     */
+    changeScheduledIn: 'You move to {{name}} {{relative}}, on {{when}}.',
+    changeScheduledUpIn: '{{name}} starts {{relative}}, on {{when}}.',
     /**
      * The reassurance leads, because a plan change reads as a threat to the
      * work already in the workspace and it isn't one.

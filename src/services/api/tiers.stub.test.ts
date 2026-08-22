@@ -96,7 +96,10 @@ describe('choosing a tier', () => {
     expect(plan.tier.scheduled_change).toMatchObject({
       id: TRIAL,
       direction: 'downgrade',
-      effective_from: '2026-09-01T00:00:00.000Z',
+      // A month on from the day Max was chosen: the boundary is the renewal,
+      // because the downgrade lands on the invoice that would have charged for
+      // the tier being left.
+      effective_from: '2026-09-22T12:00:00.000Z',
     })
   })
 

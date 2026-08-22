@@ -1,3 +1,4 @@
+import type { BillingBody } from './billing'
 import type { EntitlementBody, PlanBody } from './entitlements'
 import type { TierBody } from './tiers'
 
@@ -22,9 +23,13 @@ import type { TierBody } from './tiers'
  *    boundary. That is the server's judgement — tiers are configurable, so only
  *    the thing that owns the list can order it — and it is why `direction`
  *    arrives on the wire. `rank` is stripped before anything leaves this file.
- * 2. **It reads the clock to make a decision.** The boundary date is computed
- *    here. On the real thing it comes off the subscription; the client only
- *    ever displays it.
+ * 2. **It reads the clock to make a decision.** The renewal date, and the
+ *    boundary a downgrade lands on, are computed here. On the real thing both
+ *    come off the subscription; the client only ever displays them.
+ *
+ * It also answers `GET /api/billing` (see `stubBilling`), which is a smaller
+ * job than it sounds: no payment provider is connected, so the truthful answer
+ * is a subscription with no card and no portal.
  */
 
 /** Flip to false to point the same call sites at the real API. */
@@ -44,13 +49,26 @@ const GB = 1024 * MB
  * key left out entirely would be ungated. Nothing here is left out — a tier
  * list that is silent about a feature is a decision nobody made.
  */
-type SeedTier = TierBody & { rank: number }
+type SeedTier = TierBody & {
+  rank: number
+  /**
+   * How often this tier bills — `null` for the free one.
+   *
+   * Stub-only, like `rank`, and stripped by `toBody` for the same reason: the
+   * *tier list* says what a tier costs, while how often a given workspace is
+   * charged is a property of its subscription. On the real thing this comes off
+   * the subscription, which is why it is reported on the plan
+   * (`billing_period`) rather than on the catalogue entry.
+   */
+  billingPeriod: 'month' | 'year' | null
+}
 
 const TIERS: readonly SeedTier[] = [
   {
     rank: 0,
+    billingPeriod: null,
     id: 'tier_trial_2026_08_01',
-    name: 'Trial',
+    name: 'Ogen Trial',
     tagline: 'Enough to see whether Ogen works for you.',
     effective_from: '2026-08-01T00:00:00Z',
     price: null,
@@ -72,8 +90,9 @@ const TIERS: readonly SeedTier[] = [
   },
   {
     rank: 1,
+    billingPeriod: 'month',
     id: 'tier_pro_2026_08_01',
-    name: 'Pro',
+    name: 'Ogen Pro',
     tagline: 'One brand, run properly, with a couple of people on it.',
     effective_from: '2026-08-01T00:00:00Z',
     price: null,
@@ -95,8 +114,9 @@ const TIERS: readonly SeedTier[] = [
   },
   {
     rank: 2,
+    billingPeriod: 'month',
     id: 'tier_max_2026_08_01',
-    name: 'Max',
+    name: 'Ogen Max',
     tagline: 'Every part of it, at the size an agency works at.',
     effective_from: '2026-08-01T00:00:00Z',
     price: null,
@@ -123,8 +143,9 @@ const TIERS: readonly SeedTier[] = [
      * not among the ones on offer. Ranked with the Pro that replaced it.
      */
     rank: 1,
+    billingPeriod: 'month',
     id: 'tier_pro_2026_01_01',
-    name: 'Pro',
+    name: 'Ogen Pro',
     tagline: 'One brand, run properly, with a couple of people on it.',
     effective_from: '2026-01-01T00:00:00Z',
     price: null,
@@ -214,20 +235,35 @@ function write(selection: Selection): Selection {
 }
 
 /**
- * The first of next month, UTC — standing in for the next billing boundary.
+ * The next monthly anniversary of the day the workspace joined this tier —
+ * standing in for the end of the current billing cycle.
  *
- * The real one comes off the subscription and can be any day of the month. It
- * is a date the server supplies for exactly this reason.
+ * One function for the renewal date *and* the boundary a downgrade lands on,
+ * because on the real thing they are one date: a subscription's cycle ends,
+ * the invoice is issued, and the tier that was scheduled is the one that gets
+ * billed. Two clocks here would have let the plan screen and the billing screen
+ * disagree about the same day.
+ *
+ * Anniversary arithmetic overflows the way `Date` does — a cycle that started
+ * on the 31st lands on the 3rd in a short month. The real date comes off the
+ * subscription, which is the reason it is a field on the wire and not something
+ * the client works out.
  */
-function nextBoundary(now: Date): string {
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0),
-  ).toISOString()
+function nextRenewal(since: string, now: Date): string {
+  const start = new Date(since)
+  if (Number.isNaN(start.getTime())) return nextRenewal(seed().since, now)
+  const next = new Date(start)
+  while (next.getTime() <= now.getTime()) {
+    next.setUTCMonth(next.getUTCMonth() + 1)
+  }
+  return next.toISOString()
 }
 
 function toBody(tier: SeedTier): TierBody {
-  // `rank` never leaves this file — the client is not allowed to order tiers.
-  const { rank: _rank, ...body } = tier
+  // Neither leaves this file. `rank` because the client is not allowed to order
+  // tiers, `billingPeriod` because it belongs to a subscription rather than to
+  // the price list.
+  const { rank: _rank, billingPeriod: _billingPeriod, ...body } = tier
   return body
 }
 
@@ -260,7 +296,12 @@ export function stubSelectTier(tierId: string, now: Date = new Date()): Promise<
       ? { tierId: target.id, since: now.toISOString(), scheduled: null }
       : {
           ...current,
-          scheduled: { tierId: target.id, effectiveFrom: nextBoundary(now) },
+          scheduled: {
+            tierId: target.id,
+            // The boundary *is* the renewal date — the downgrade takes effect
+            // on the invoice that would otherwise have charged for this tier.
+            effectiveFrom: nextRenewal(current.since, now),
+          },
         }
 
   return Promise.resolve(stubPlanFrom(write(next)))
@@ -307,13 +348,17 @@ function withUsage(
 function stubPlanFrom(selection: Selection, now: Date = new Date()): PlanBody {
   const tier = tierById(selection.tierId) ?? TIERS[0]
   const scheduledTier = selection.scheduled ? tierById(selection.scheduled.tierId) : undefined
-  const resetsAt = nextBoundary(now)
+  const renewsAt = nextRenewal(selection.since, now)
 
   return {
     tier: {
       id: tier.id,
       name: tier.name,
       effective_from: selection.since,
+      billing_period: tier.billingPeriod,
+      // Nothing renews on a tier nobody pays for, and a date here would be
+      // printed as though something did.
+      renews_at: tier.billingPeriod ? renewsAt : null,
       scheduled_change:
         selection.scheduled && scheduledTier
           ? {
@@ -325,6 +370,49 @@ function stubPlanFrom(selection: Selection, now: Date = new Date()): PlanBody {
             }
           : null,
     },
-    entitlements: withUsage(tier.entitlements ?? {}, resetsAt),
+    entitlements: withUsage(tier.entitlements ?? {}, renewsAt),
   }
+}
+
+/**
+ * The billing side, with nothing behind it — because there *is* nothing behind
+ * it. No payment provider is connected, so this reports the only honest thing:
+ * a subscription on the paid tiers, no card on file, and no portal to open.
+ *
+ * It deliberately does not invent a card or a price. A fake "visa •••• 4242" on
+ * a screen somebody is reviewing is a claim that a payment method exists, and
+ * the state worth being able to see right now is the empty one — the screen has
+ * to read correctly for a workspace that has never bought anything, which is
+ * every workspace today.
+ */
+export function stubBilling(now: Date = new Date()): Promise<BillingBody> {
+  const selection = read()
+  const tier = tierById(selection.tierId)
+
+  // A free tier has no subscription at all — not an empty one.
+  if (!tier?.billingPeriod) return Promise.resolve({ subscription: null, portal: false })
+
+  return Promise.resolve({
+    subscription: {
+      status: 'active',
+      renews_at: nextRenewal(selection.since, now),
+      ends_at: null,
+      card: null,
+      price: null,
+    },
+    portal: false,
+  })
+}
+
+/**
+ * There is no portal, so this rejects rather than resolving to a dead URL.
+ *
+ * Unreachable through the UI — `portal: false` is what keeps the button off the
+ * screen — and it stays here so that wiring the provider is one file's worth of
+ * change rather than a new call site. Developer-facing, hence a bare `Error`.
+ */
+export function stubBillingPortal(): Promise<{ url: string; expires_at?: string | null }> {
+  return Promise.reject(
+    new Error('No payment provider is connected: services/api/tiers.stub.ts is standing in.'),
+  )
 }

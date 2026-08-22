@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as WorkspacesIndexRouteImport } from './routes/workspaces/index'
 import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unavailable/index'
+import { Route as PlansIndexRouteImport } from './routes/plans/index'
 import { Route as InviteIndexRouteImport } from './routes/invite/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
@@ -30,7 +31,7 @@ import { Route as AuthenticatedActivityIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedContentBankAssetIdRouteImport } from './routes/_authenticated/content-bank/$assetId'
 import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
 import { Route as AuthenticatedActivityDateRouteImport } from './routes/_authenticated/activity/$date'
-import { Route as AuthenticatedWorkspaceSettingsPlanIndexRouteImport } from './routes/_authenticated/workspace-settings/plan/index'
+import { Route as AuthenticatedWorkspaceSettingsBillingIndexRouteImport } from './routes/_authenticated/workspace-settings/billing/index'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
 import { Route as AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport } from './routes/_authenticated/workspace-settings/connect.$connectionId'
 import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
@@ -56,6 +57,11 @@ const WorkspacesIndexRoute = WorkspacesIndexRouteImport.update({
 const ServerUnavailableIndexRoute = ServerUnavailableIndexRouteImport.update({
   id: '/server-unavailable/',
   path: '/server-unavailable/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlansIndexRoute = PlansIndexRouteImport.update({
+  id: '/plans/',
+  path: '/plans/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteIndexRoute = InviteIndexRouteImport.update({
@@ -156,10 +162,10 @@ const AuthenticatedActivityDateRoute =
     path: '/$date',
     getParentRoute: () => AuthenticatedActivityRoute,
   } as any)
-const AuthenticatedWorkspaceSettingsPlanIndexRoute =
-  AuthenticatedWorkspaceSettingsPlanIndexRouteImport.update({
-    id: '/workspace-settings/plan/',
-    path: '/workspace-settings/plan/',
+const AuthenticatedWorkspaceSettingsBillingIndexRoute =
+  AuthenticatedWorkspaceSettingsBillingIndexRouteImport.update({
+    id: '/workspace-settings/billing/',
+    path: '/workspace-settings/billing/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdIndexRoute =
@@ -241,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthenticatedTasksRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
+  '/plans/': typeof PlansIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
   '/activity/$date': typeof AuthenticatedActivityDateRoute
@@ -264,7 +271,7 @@ export interface FileRoutesByFullPath {
   '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
-  '/workspace-settings/plan/': typeof AuthenticatedWorkspaceSettingsPlanIndexRoute
+  '/workspace-settings/billing/': typeof AuthenticatedWorkspaceSettingsBillingIndexRoute
   '/campaigns/$campaignId/content/$assetId': typeof AuthenticatedCampaignsCampaignIdContentAssetIdRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
   '/invite': typeof InviteIndexRoute
+  '/plans': typeof PlansIndexRoute
   '/server-unavailable': typeof ServerUnavailableIndexRoute
   '/workspaces': typeof WorkspacesIndexRoute
   '/activity/$date': typeof AuthenticatedActivityDateRoute
@@ -297,7 +305,7 @@ export interface FileRoutesByTo {
   '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdIndexRoute
-  '/workspace-settings/plan': typeof AuthenticatedWorkspaceSettingsPlanIndexRoute
+  '/workspace-settings/billing': typeof AuthenticatedWorkspaceSettingsBillingIndexRoute
   '/campaigns/$campaignId/content/$assetId': typeof AuthenticatedCampaignsCampaignIdContentAssetIdRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -311,6 +319,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
+  '/plans/': typeof PlansIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
   '/_authenticated/activity/$date': typeof AuthenticatedActivityDateRoute
@@ -334,7 +343,7 @@ export interface FileRoutesById {
   '/_authenticated/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
   '/_authenticated/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/_authenticated/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
-  '/_authenticated/workspace-settings/plan/': typeof AuthenticatedWorkspaceSettingsPlanIndexRoute
+  '/_authenticated/workspace-settings/billing/': typeof AuthenticatedWorkspaceSettingsBillingIndexRoute
   '/_authenticated/campaigns/$campaignId_/content/$assetId': typeof AuthenticatedCampaignsCampaignIdContentAssetIdRoute
   '/_authenticated/campaigns/$campaignId_/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/_authenticated/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -348,6 +357,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/auth/'
     | '/invite/'
+    | '/plans/'
     | '/server-unavailable/'
     | '/workspaces/'
     | '/activity/$date'
@@ -371,7 +381,7 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId/settings'
     | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId/'
-    | '/workspace-settings/plan/'
+    | '/workspace-settings/billing/'
     | '/campaigns/$campaignId/content/$assetId'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar/'
@@ -382,6 +392,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/invite'
+    | '/plans'
     | '/server-unavailable'
     | '/workspaces'
     | '/activity/$date'
@@ -404,7 +415,7 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId/settings'
     | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId'
-    | '/workspace-settings/plan'
+    | '/workspace-settings/billing'
     | '/campaigns/$campaignId/content/$assetId'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar'
@@ -417,6 +428,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/auth/'
     | '/invite/'
+    | '/plans/'
     | '/server-unavailable/'
     | '/workspaces/'
     | '/_authenticated/activity/$date'
@@ -440,7 +452,7 @@ export interface FileRouteTypes {
     | '/_authenticated/campaigns/$campaignId/settings'
     | '/_authenticated/workspace-settings/connect/$connectionId'
     | '/_authenticated/campaigns/$campaignId/'
-    | '/_authenticated/workspace-settings/plan/'
+    | '/_authenticated/workspace-settings/billing/'
     | '/_authenticated/campaigns/$campaignId_/content/$assetId'
     | '/_authenticated/campaigns/$campaignId_/posts/$postId'
     | '/_authenticated/campaigns/$campaignId/calendar/'
@@ -451,6 +463,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthIndexRoute: typeof AuthIndexRoute
   InviteIndexRoute: typeof InviteIndexRoute
+  PlansIndexRoute: typeof PlansIndexRoute
   ServerUnavailableIndexRoute: typeof ServerUnavailableIndexRoute
   WorkspacesIndexRoute: typeof WorkspacesIndexRoute
   AuthForgotIndexRoute: typeof AuthForgotIndexRoute
@@ -481,6 +494,13 @@ declare module '@tanstack/react-router' {
       path: '/server-unavailable'
       fullPath: '/server-unavailable/'
       preLoaderRoute: typeof ServerUnavailableIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plans/': {
+      id: '/plans/'
+      path: '/plans'
+      fullPath: '/plans/'
+      preLoaderRoute: typeof PlansIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/': {
@@ -609,11 +629,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActivityDateRouteImport
       parentRoute: typeof AuthenticatedActivityRoute
     }
-    '/_authenticated/workspace-settings/plan/': {
-      id: '/_authenticated/workspace-settings/plan/'
-      path: '/workspace-settings/plan'
-      fullPath: '/workspace-settings/plan/'
-      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsPlanIndexRouteImport
+    '/_authenticated/workspace-settings/billing/': {
+      id: '/_authenticated/workspace-settings/billing/'
+      path: '/workspace-settings/billing'
+      fullPath: '/workspace-settings/billing/'
+      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsBillingIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/campaigns/$campaignId/': {
@@ -768,7 +788,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
   AuthenticatedWorkspaceSettingsIndexRoute: typeof AuthenticatedWorkspaceSettingsIndexRoute
   AuthenticatedWorkspaceSettingsConnectConnectionIdRoute: typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
-  AuthenticatedWorkspaceSettingsPlanIndexRoute: typeof AuthenticatedWorkspaceSettingsPlanIndexRoute
+  AuthenticatedWorkspaceSettingsBillingIndexRoute: typeof AuthenticatedWorkspaceSettingsBillingIndexRoute
   AuthenticatedCampaignsCampaignIdContentAssetIdRoute: typeof AuthenticatedCampaignsCampaignIdContentAssetIdRoute
   AuthenticatedCampaignsCampaignIdPostsPostIdRoute: typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
 }
@@ -787,8 +807,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedWorkspaceSettingsIndexRoute,
   AuthenticatedWorkspaceSettingsConnectConnectionIdRoute:
     AuthenticatedWorkspaceSettingsConnectConnectionIdRoute,
-  AuthenticatedWorkspaceSettingsPlanIndexRoute:
-    AuthenticatedWorkspaceSettingsPlanIndexRoute,
+  AuthenticatedWorkspaceSettingsBillingIndexRoute:
+    AuthenticatedWorkspaceSettingsBillingIndexRoute,
   AuthenticatedCampaignsCampaignIdContentAssetIdRoute:
     AuthenticatedCampaignsCampaignIdContentAssetIdRoute,
   AuthenticatedCampaignsCampaignIdPostsPostIdRoute:
@@ -803,6 +823,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
   InviteIndexRoute: InviteIndexRoute,
+  PlansIndexRoute: PlansIndexRoute,
   ServerUnavailableIndexRoute: ServerUnavailableIndexRoute,
   WorkspacesIndexRoute: WorkspacesIndexRoute,
   AuthForgotIndexRoute: AuthForgotIndexRoute,
