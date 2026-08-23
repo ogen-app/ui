@@ -94,6 +94,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`MAX_VIDEO_UPLOAD_BYTES`) is ours, and always wins over the seeded ceiling.
   A probed-but-zero `duration_ms` means video-service was down, not a
   zero-length file. See `docs/technical-decisions.md#video-ingest`.
+- **An asset only opens in the editor if `opensAsDocument` says it is one.**
+  `AssetDocument`'s editor is the last branch, never the fallback: `null | MD |
+  PDF | URL` are documents, and anything else — a `type` the build predates —
+  gets the read-only `UnsupportedAsset`. Never restore "everything else gets
+  `AssetEditor`". It seeds BlockNote from `content` and autosaves it back, so
+  the first type whose `content` isn't a document is overwritten by anyone who
+  opens it and types (CON-235; `IMG`'s `content` is its description). PDF *is*
+  a document — its extracted text is what the embeddings are built from. See
+  `docs/technical-decisions.md#asset-opening`.
 - **A campaign update is a whole-resource PUT, and the server defaults every
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of
@@ -302,8 +311,12 @@ creates the account or adds the workspace to one that already exists) ·
 **multi-workspace is live, unflagged** — [ogen#109](https://github.com/ogen-app/ogen/pull/109)
 merged 2026-08-14; the `multi-workspace` flag and its off-branch were deleted
 once the client was re-tested against the shipped API (CON-147) ·
-dark mode is scaffolded but empty · the
-Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
+dark mode is scaffolded but empty · **an image cannot be a Content-Bank asset**
+— `assets.type` is `MD | PDF | URL` and the upload endpoint takes `.md` and
+`.pdf` only, so `IMG` is declared client-side and unproducible; the upload
+surface offers images behind `content-bank-images` (off) and the image asset's
+own screen is deliberately unwritten until the DTO carries a URL for the
+original (CON-16) · eslint/prettier/stylelint
 have no committed config in this repo · **i18n covers the auth screens, sidebar,
 Profile, Workspace Settings and the campaign calendar** (its week, month and
 list views, the cards, both rail panels and the posts table) — everything else

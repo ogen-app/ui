@@ -175,15 +175,21 @@ in progress; the UI (CON-61) is not built** — only the "Coming Soon" panel exi
 ### Content Bank (Assets) ✅
 
 Reusable source material generation draws on (`src/types/content.ts`). An **Asset**
-is either Markdown **text** (`MD`) written in-app or an uploaded **PDF** file (or
-multiple `.md` files uploaded at once — CON-46). Uploads process asynchronously
+is Markdown **text** (`MD`) written in-app, an uploaded **PDF** file (or
+multiple `.md` files uploaded at once — CON-46), or a **web page** the backend
+scraped to Markdown (`URL`, CON-222). Uploads process asynchronously
 (`pending → processing → ready | partial | failed`); the backend extracts text,
 splits it into page-aware chunks (CON-47), and embeds the chunks (Gemini) so
-campaigns retrieve relevant passages by meaning. Assets are tagged and browsed
-under tabs **All / Text / Files / Imagery**. _Further development will let the
-Content Bank **generate and store AI images** (the **Imagery** tab + imagery asset
-type, CON-88/105/83) — a desirable extension but **not a main goal**; the tab
-renders empty today (`src/lib/assetCategory.ts`)._ Historical note: assets were
+campaigns retrieve relevant passages by meaning. Assets are tagged and filtered
+in one table — the old **All / Text / Files / Imagery** tabs went with the
+workspace bank's previous layout (CON-210/211) and did not come back; the
+distinction survives as a glyph on the row (`src/lib/assetCategory.ts`).
+
+_Images as assets are specced (CON-16) and not built: the server takes only
+`.md` and `.pdf`, and `assets.type` is `MD | PDF | URL`. The front end declares
+`IMG` and accepts image uploads behind the `content-bank-images` flag, which is
+off. **Generating** them (Google "Nano Banana" / Gemini) is CON-105/88/83 — a
+desirable extension, **not a main goal**._ Historical note: assets were
 originally called **"Pieces"** (renamed in CON-48).
 
 ### Platforms & Publishing
@@ -275,9 +281,10 @@ backlog, from Linear (status as of this writing):
 
 **Secondary — desirable, not a main goal**
 
-- **Content-Bank AI image generation & storage** — Google "Nano Banana" / Gemini
-  image models, an Imagery asset type, and a Sanity-style media library
-  (CON-105, CON-88, CON-83).
+- **Content-Bank images** — uploading them (CON-16), then generating them with
+  Google "Nano Banana" / Gemini image models, and a Sanity-style media library
+  (CON-105, CON-88, CON-83). Blocked on the server: no `IMG` asset type, and
+  the upload endpoint takes `.md` and `.pdf` only.
 
 **Later**
 

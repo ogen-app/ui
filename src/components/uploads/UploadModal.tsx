@@ -5,10 +5,11 @@ import { XIcon } from "@phosphor-icons/react";
 import { Dropzone } from "./Dropzone";
 import { useUploadStore } from "@/stores/uploadStore";
 import {
-  UPLOAD_LIMITS_LABEL,
   formatBytes,
+  uploadLimitsLabel,
   validateUploadFile,
 } from "@/lib/assetStatus";
+import { useUploadOptions } from "@/hooks/useUploadOptions";
 
 type Props = {
   isOpen: boolean;
@@ -30,6 +31,7 @@ type Props = {
 export function UploadModal({ isOpen, onClose, campaignId, postId = null }: Props) {
   const enqueue = useUploadStore((s) => s.enqueue);
   const [staged, setStaged] = useState<File[]>([]);
+  const options = useUploadOptions();
 
   const reset = () => setStaged([]);
 
@@ -65,8 +67,11 @@ export function UploadModal({ isOpen, onClose, campaignId, postId = null }: Prop
     >
       <div className="flex flex-col gap-4">
         <p className="text-sm text-tertiary-foreground">
-          Upload Markdown or PDF files. {UPLOAD_LIMITS_LABEL}. PDFs are processed
-          in the background after upload.
+          {options.images
+            ? "Upload Markdown, PDF or image files."
+            : "Upload Markdown or PDF files."}{" "}
+          {uploadLimitsLabel(options)}. PDFs are processed in the background
+          after upload.
         </p>
 
         <Dropzone onFiles={addFiles} />
@@ -74,7 +79,7 @@ export function UploadModal({ isOpen, onClose, campaignId, postId = null }: Prop
         {staged.length > 0 && (
           <ul className="flex flex-col gap-1">
             {staged.map((file, index) => {
-              const validation = validateUploadFile(file);
+              const validation = validateUploadFile(file, options);
               return (
                 <li
                   key={`${file.name}-${index}`}

@@ -1,17 +1,22 @@
 import { useRef, useState } from "react";
 import { UploadSimpleIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib";
-import { UPLOAD_ACCEPT, UPLOAD_LIMITS_LABEL } from "@/lib/assetStatus";
+import { uploadAccept, uploadLimitsLabel } from "@/lib/assetStatus";
+import { useUploadOptions } from "@/hooks/useUploadOptions";
 
 type Props = {
   onFiles: (files: File[]) => void;
   className?: string;
 };
 
-/** Click-to-browse + native drag-and-drop target for .md / .pdf files. */
+/**
+ * Click-to-browse + native drag-and-drop target for the file types the bank
+ * currently takes — .md / .pdf, and images with `content-bank-images` on.
+ */
 export function Dropzone({ onFiles, className }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const options = useUploadOptions();
 
   const open = () => inputRef.current?.click();
 
@@ -45,11 +50,13 @@ export function Dropzone({ onFiles, className }: Props) {
     >
       <UploadSimpleIcon className="size-6 text-tertiary-foreground" />
       <p className="text-sm text-foreground">Drop files here or click to browse</p>
-      <p className="text-xs text-tertiary-foreground">{UPLOAD_LIMITS_LABEL}</p>
+      <p className="text-xs text-tertiary-foreground">
+        {uploadLimitsLabel(options)}
+      </p>
       <input
         ref={inputRef}
         type="file"
-        accept={UPLOAD_ACCEPT}
+        accept={uploadAccept(options)}
         multiple
         hidden
         onChange={(e) => {

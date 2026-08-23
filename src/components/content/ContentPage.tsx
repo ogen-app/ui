@@ -18,7 +18,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { UploadModal } from '@/components/uploads/UploadModal'
 import { useAssets, useCreateAsset, useDeleteAsset } from '@/hooks/useContent'
-import { UPLOAD_LIMITS_LABEL } from '@/lib/assetStatus'
+import { uploadLimitsLabel } from '@/lib/assetStatus'
+import { useUploadOptions } from '@/hooks/useUploadOptions'
 import { addToCampaign, removeFromCampaign, seedFromWholeBank } from '@/lib/campaignMembership'
 import { campaignAssets, seedsWholeBank } from '@/lib/campaignSources'
 import { useUploadStore } from '@/stores/uploadStore'
@@ -62,6 +63,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
 
   const enqueueUploads = useUploadStore((s) => s.enqueue)
   const uploadItems = useUploadStore((s) => s.items)
+  const uploadOptions = useUploadOptions()
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [webPageModalOpen, setWebPageModalOpen] = useState(false)
   /*
@@ -320,7 +322,9 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             {/* The destination is the entire point of the change, and this is
                 the one moment the UI can name it without being asked. */}
             <p className="text-sm text-foreground">Add these to {scopeName}</p>
-            <p className="text-xs text-tertiary-foreground">{UPLOAD_LIMITS_LABEL}</p>
+            <p className="text-xs text-tertiary-foreground">
+              {uploadLimitsLabel(uploadOptions)}
+            </p>
           </div>
         </div>
       )}
