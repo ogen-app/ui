@@ -376,32 +376,22 @@ function stubPlanFrom(selection: Selection, now: Date = new Date()): PlanBody {
 
 /**
  * The billing side, with nothing behind it — because there *is* nothing behind
- * it. No payment provider is connected, so this reports the only honest thing:
- * a subscription on the paid tiers, no card on file, and no portal to open.
+ * it. No payment provider is connected, so there is no subscription and no
+ * portal, whichever tier the stub has been told the workspace is on.
  *
- * It deliberately does not invent a card or a price. A fake "visa •••• 4242" on
- * a screen somebody is reviewing is a claim that a payment method exists, and
- * the state worth being able to see right now is the empty one — the screen has
- * to read correctly for a workspace that has never bought anything, which is
- * every workspace today.
+ * It reported a subscription on the paid tiers once, and that was a lie with a
+ * visible consequence: the card said "Your payment method is held by Lemon
+ * Squeezy" directly above "Billing isn't connected yet… no payment details are
+ * held." Choosing a tier here changes what the workspace is *allowed to do*; it
+ * does not buy anything, and nothing downstream should pretend it did.
+ *
+ * It also does not invent a card or a price. A fake "visa •••• 4242" on a screen
+ * somebody is reviewing is a claim that a payment method exists. The states that
+ * do involve one are worth seeing, but they belong on `/design/plan-billing`,
+ * where nobody can mistake them for this workspace's.
  */
-export function stubBilling(now: Date = new Date()): Promise<BillingBody> {
-  const selection = read()
-  const tier = tierById(selection.tierId)
-
-  // A free tier has no subscription at all — not an empty one.
-  if (!tier?.billingPeriod) return Promise.resolve({ subscription: null, portal: false })
-
-  return Promise.resolve({
-    subscription: {
-      status: 'active',
-      renews_at: nextRenewal(selection.since, now),
-      ends_at: null,
-      card: null,
-      price: null,
-    },
-    portal: false,
-  })
+export function stubBilling(): Promise<BillingBody> {
+  return Promise.resolve({ subscription: null, portal: false })
 }
 
 /**
