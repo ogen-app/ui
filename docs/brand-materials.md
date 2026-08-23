@@ -136,8 +136,8 @@ built as one:
 
 ## 7. Guardrails
 
-Facts, claims we may make, claims we may **never** make, banned words,
-boilerplate. Applied to every generation regardless of which voice is chosen —
+Facts, claims we may make, claims we may **never** make, banned words, and the
+disclaimer every post has to carry. Applied to every generation regardless of which voice is chosen —
 never selected, never overridden.
 
 This is the part with real weight rather than decoration. A sarcastic post and a
@@ -198,7 +198,7 @@ Three ways a voice arrives, best first:
 
 1. **From the website.** CON-222 already scrapes a URL to Markdown with images.
    Point it at the customer's site and propose an entire Brand in one step:
-   voice samples from the copy, boilerplate, product facts, palette, logo. This
+   voice samples from the copy, the disclaimer, product facts, palette, logo. This
    is assembly of machinery that exists, and it is a better first run than any
    picker.
 2. **From posts already published.** "Here's the voice you already have, fix
@@ -1025,3 +1025,204 @@ in the foreground colour. Once there are samples, our reading of *this* voice is
 worth more than a definition of what a sample is — so the definition stays only
 while the set is short of the floor of three, which is exactly when somebody
 still needs it.
+
+## 23. The second editor, and what it made shared
+
+Audiences now has the level Voices has: a section screen that lists and adds,
+and `/brand/audiences/:id` under it. The two routes are the same file with
+different nouns — `new` is an id like any other, so writing one, forking a
+starter and opening an existing entry are one screen with three openings; the
+flag is re-checked because escaping the layout escapes its `beforeLoad`; an
+unknown id answers "no such audience" rather than falling through to a blank
+form that would save under whatever the address bar said.
+
+**Two of a thing is when it moves.** The frame (the scroller with the header
+inside it, the column, the commit bar), the intro card, `EditorCard`, `Field`,
+the fork note and the danger zone are `components/brand/editor.tsx`. One editor
+could keep its furniture; two copies of it are two headers that fade
+differently and two columns spaced differently a year from now — the drift the
+sections avoided by sharing `shell.tsx` from the start. What stayed put is
+anything about one *kind* of entry: samples and the rules controls are still
+`VoiceEditor`'s, because a shared component with a `kind` prop and two branches
+in every function is worse than two components.
+
+One thing the extraction settled rather than moved: **`blocker` now both
+explains and enforces.** The frame disables its commit when there is a blocker,
+so the sentence in the bar and the reason the button is dead cannot disagree —
+they were two statements of one rule, and the version where a screen says why
+you cannot save and then lets you save is worse than either half alone.
+
+**What an audience editor is.** The section exists because of one failure: left
+to a blank box, people describe a fantasy, and the seed carries one on purpose
+— "wealthy, successful, generous people looking for somewhere to put their
+money", which validates, saves, and changes nothing about a single post. The
+editor cannot refuse that and does not try. It gives it nowhere to go instead:
+the three consequence lines (where they read, what loses them, what they need
+before they believe a number) get the card the screen is built around, and an
+audience nobody has looked at has nothing to put in them. Three visible gaps
+are a better argument than a validator, because they are the reader's own —
+they can see the answer is missing rather than being told that it is wrong.
+
+That is the same position samples take one section over, so the card behaves
+the same way: the reading (`Reads as …`) sits in the sub-heading in the
+foreground colour, the definition under it survives only while the lines are
+incomplete, and a blank set says out loud what saving it would cost.
+
+**Audience starters hand over a name and nothing else.** Voices' starters carry
+a set of rules, because a register can be described without knowing whose it
+is. Nothing here is like that — where somebody reads and what loses them are
+facts about actual people, and a prefilled guess is the fantasy this section
+was built to prevent, arriving with our name on it. The fork note says so on
+the way in.
+
+## 24. The guardrails editor, and three words that were wrong
+
+The third editor, and the first whose material is *lists*. A voice is written
+by pasting posts and an audience by answering three questions; guardrails are
+four lists and a line, they run long, and — this is the part that decides the
+design — **they already exist.** In a compliance email, in a legal annexe, in
+the founder's head. The screen's job is not to ask for them, it is to take
+them.
+
+So the list controls are the feature:
+
+- **A list behaves like a list, not like a form.** Enter ends this statement and
+  starts the next one, focused. Backspace on an empty row deletes it and puts
+  the caret at the end of the row above. Nobody should reach for the mouse
+  between two sentences they are typing in sequence — that is the difference
+  between entering the nine rules that matter and entering three and giving up.
+- **Pasting is the bulk import.** A multi-line paste becomes one statement per
+  line, leading bullets and numbering stripped and nothing else touched (it is
+  compliance text; a parser that tidied it would be editing it). There is no
+  importer, no CSV and no wizard, because the format everybody already has these
+  in is *a list in a document*, and the clipboard is a working parser for it.
+- **Words are tokens, not sentences.** Banned words get a chip field where
+  Enter, a comma, a pasted comma-list and leaving the field all commit, and a
+  repeat is dropped case-insensitively. Five words typed into a textarea are
+  five words nobody can count or delete one of.
+- **Rows are sentences, so rows are textareas.** A rule that runs past the end
+  of an input is a rule nobody proof-reads. Blank rows are the cursor's
+  workspace while typing and are dropped on save — a list that removed a row the
+  moment it went empty would remove the row you are standing in.
+
+**A template can say what you may never claim. It cannot say what is true.**
+The three starters hand over `neverClaim` and `bannedWords` filled and `facts`
+empty, and the fork note says so on the way in. "No result may be promised" is a
+rule about a *kind* of business and holds for every firm in it; the fee, the
+licence number and the settlement time are facts about one company that nobody
+outside it can guess. A plausible invented fact is the worst thing this module
+could ship — it reads exactly like a checked one, in the section people stop
+re-reading. (Same split as the audience starters, arrived at from the other
+side: there, nothing could be handed over at all.)
+
+The blocker is *everything cleared on a record that exists*, because a
+guardrails record with nothing in it is the same as none — and the way back to
+genuinely none is the danger zone, which puts the section to `null` and the
+screen back to its three starters. An empty save and a deliberate delete must
+not be the same gesture: "we have not written these yet" and "we wrote them and
+they say nothing" are the two states this section exists to keep apart. (On an
+empty section the same emptiness needs no sentence: there is nothing to save,
+so the commit is simply not live.)
+
+### Three words that were wrong
+
+**`NEVER CLAIM` lost its capitals.** They were literal — copy, not CSS, on the
+destructive-label argument that emphasis in the words survives copy/paste,
+screen readers and any restyle. That argument holds for a button you are about
+to press and not for a heading you are reading: a word in caps in running text
+is the page raising its voice, and a page that raises its voice about its own
+compliance section sounds less serious rather than more. The red rule down the
+left of those statements was already saying it.
+
+**The small-caps labels went with them, on the guardrails screens only.** Stack
+five of them down one card — FACTS, MAY CLAIM, NEVER CLAIM, BANNED WORDS — and
+the app's ordinary micro-label convention stops reading as a mark and starts
+reading as shouting at somebody about their own legal text. The hierarchy it
+was buying is bought instead by weight and colour, with the label a step darker
+than the hint beside it. Action labels keep their capitals everywhere,
+including here: an action shouts, a heading does not, and that line is easier
+to hold than "sentence case except in the Danger Zone".
+
+**`boilerplate` is now `disclaimer`,** field and label both. The word describes
+where the thing came from — a print shop's reusable slug — rather than what it
+does, and what it does is plain enough to say. The hint says the rest: carried
+by every post, added exactly as written and never reworded.
+
+
+## 25. A singleton cannot have a drilldown
+
+The guardrails editor above was built as a level below `/brand/guardrails`,
+matching voices and audiences. That was wrong, and the reason is worth keeping
+because it applies again to Look.
+
+**Voices and audiences are libraries; guardrails is one document.** A library
+earns its two screens: the list is a choice between things, and going into one
+of them is the choice being made. There is exactly one set of guardrails per
+workspace, so the same arrangement produced a page whose whole content was a
+card of the one document, and a click on that card which showed the same
+document in fields. Nothing was chosen on the way through. What the extra
+screen actually added was a place where the rules can be read but not
+corrected — you find the wrong sentence, and then you go somewhere else to fix
+it.
+
+So `/brand/guardrails` **is** the editor and there is nothing under it. The
+Overview's card is the way in, the caret goes back to the Overview, and
+everything the section card used to draw is drawn around the fields it
+describes:
+
+- the intro card, now carrying the section's `whenEmpty` line while the section
+  is empty — the one thing an editor opened on a row of a list never has to say,
+  because such an editor is never the whole section;
+- the three starters, in the screen rather than behind a `?from=` on the way to
+  it. Better anyway: the fields are visible while you choose, so the offer reads
+  as filling in the form in front of you rather than as picking which form you
+  get. They are withdrawn by the first keystroke — a card that overwrites the
+  sentence you just wrote is a trap, not an offer;
+- and *not* the "write the rules yourself" card, which does not survive the
+  merge. The blank fields are already on screen; the card offered a click for
+  nothing.
+
+**Two things the drilldown was quietly paying for.** `CANCEL` had somewhere to
+go and now does not, so the ghost is `DISCARD CHANGES` and puts the draft back
+where it was. And saving an untouched screen would be a lie: this is a page
+people land on to *read* as often as to edit, so the commit is live only once
+something differs from what is stored, and the bar says which state that is
+(`Unsaved changes` / `Saved`). Otherwise a visit that changed nothing stamps a
+new `updatedAt` on the rules — in the one section where "when was this last
+checked" is a question somebody will actually ask.
+
+`BrandEditorFrame` grew `dirty`, `status` and `cancelLabel` for it, all
+defaulted so the two library editors are untouched. It also grew a disabled ink
+for the commit: the ghost variant has none of its own, and a strong
+`text-primary-foreground` on a dead button is exactly what makes it look live.
+
+**What this predicts.** Look is the other singleton (`data.look`), and its
+editor is unbuilt — build it as this screen, not as a level below a card.
+Templates is already the shape from the other direction: a screen that is not a
+column of cards under a section intro. That leaves voices and audiences as the
+only two Brand sections with something below them, which is the same list as
+`BrandBackButton`'s `to` union — and that union no longer compiles if a fourth
+one is invented.
+
+### One heading style, and one type scale
+
+Two corrections that arrived together, both versions of the same complaint: a
+screen should not invent a new text style to say a new kind of thing.
+
+**A card holds one list.** The editor had three cards — facts, then *claims*
+and *wording*, each holding two lists under a sub-heading. Grouping them bought
+a sentence of kinship ("same subject, two sides") and cost a second heading
+style, which then has to be given a size, a weight and a colour, and defended
+against the first one every time either moves. The two claim lists say their
+kinship perfectly well by sitting next to each other. So: five cards — facts,
+may claim, never claim, banned words, disclaimer — and the rule that anything
+which would need a label inside a card *is* a card. It costs a little vertical
+space and leaves exactly one thing on the screen that looks like a heading,
+which is what makes a long form scannable at all.
+
+**The honesty line is not a caption.** `ReadBy`'s "Nothing reads this yet" was
+set in 12px, and small type is how a screen says *detail, skip this* — the
+opposite of what that sentence is for. It reads at the card's own measure now,
+one colour step dimmer than the description above it. The intro card's three
+paragraphs (what this is, what its absence costs, what reads it) are separated
+by colour rather than by size, and step in the order you would read them.

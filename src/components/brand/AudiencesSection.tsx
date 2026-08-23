@@ -90,26 +90,51 @@ export function AudiencesSection({
  * starter is a *relationship* instead: everyone has these three, they are
  * answerable without inventing anything, and each one narrows on its own.
  */
-const STARTERS: { id: string; icon: Icon; title: string; body: string }[] = [
+export type AudienceStarter = {
+  id: string
+  icon: Icon
+  title: string
+  body: string
+  /**
+   * What picking it puts in the editor, which is **a name and nothing else**.
+   *
+   * Voices' starters hand over a set of rules as well, because a register can
+   * be described without knowing whose it is. Nothing equivalent exists here:
+   * where somebody reads and what loses them are facts about actual people, and
+   * a prefilled guess at them is the fantasy this section was built to prevent,
+   * arriving with our name on it. The editor says so out loud when it opens.
+   */
+  draft: Pick<BrandAudience, 'name'>
+}
+
+export const AUDIENCE_STARTERS: AudienceStarter[] = [
   {
     id: 'customers',
     icon: HandshakeIcon,
     title: 'The people who already buy from you',
     body: 'Described as they actually are, not as the deck describes them. The easiest one to get right and the one most often skipped.',
+    draft: { name: 'People who already buy from us' },
   },
   {
     id: 'nearly',
     icon: ArrowUUpLeftIcon,
     title: 'The people who nearly bought',
     body: 'They know the category, they looked at you, and they chose somebody else. What they needed and did not get is the whole brief.',
+    draft: { name: 'People who nearly bought' },
   },
   {
     id: 'advisers',
     icon: MegaphoneIcon,
     title: 'The people who recommend you',
     body: 'They never buy anything. They pass your name on, and they need something quotable to pass on with it.',
+    draft: { name: 'People who recommend us' },
   },
 ]
+
+/** The starter a `?from=` on the editor route names, if it names one at all. */
+export function audienceStarter(id: string | undefined): AudienceStarter | null {
+  return AUDIENCE_STARTERS.find((s) => s.id === id) ?? null
+}
 
 /** Two cards, not three — the page's intro card states the absence. */
 function AudiencesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
@@ -119,7 +144,7 @@ function AudiencesEmpty({ onStart }: { onStart?: (starterId: string) => void }) 
       title="Start from a template"
       body="Three every business has, so none of them needs inventing. Pick one and fill in what follows from it."
     >
-      {STARTERS.map((starter) => (
+      {AUDIENCE_STARTERS.map((starter) => (
         <StarterCard
           key={starter.id}
           icon={starter.icon}

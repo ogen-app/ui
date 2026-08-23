@@ -71,7 +71,7 @@ export function FirstRun({
         <Offer
           icon={<GlobeIcon />}
           title="Read it off your website"
-          body="Point us at your site and we propose the whole thing in one step — voice samples from your own copy, boilerplate, product facts, colours and logo."
+          body="Point us at your site and we propose the whole thing in one step — voice samples from your own copy, the disclaimer you already run, product facts, colours and logo."
           recommended
           onClick={onFromWebsite}
         />

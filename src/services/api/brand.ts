@@ -1,4 +1,9 @@
-import type { BrandData, BrandVoice } from '@/components/brand/types'
+import type {
+  BrandAudience,
+  BrandData,
+  BrandGuardrails,
+  BrandVoice,
+} from '@/components/brand/types'
 import { getActiveWorkspaceId } from '@/lib/activeWorkspace'
 import seed from './brand.seed.json'
 
@@ -172,6 +177,67 @@ export function deleteVoice(id: string): Promise<void> {
   }
 
   write({ ...data, voices })
+  return settle(undefined)
+}
+
+/**
+ * Create or replace one audience — the same whole-resource write `saveVoice` is,
+ * and simpler, because audiences have no invariant across the collection. There
+ * is no default audience: a post is written *to* one because a campaign says so,
+ * not because the library elected one.
+ */
+export function saveAudience(audience: BrandAudience): Promise<BrandAudience> {
+  const data = read()
+  const at = data.audiences.findIndex((a) => a.id === audience.id)
+  const audiences =
+    at === -1
+      ? [...data.audiences, audience]
+      : data.audiences.map((a) => (a.id === audience.id ? audience : a))
+
+  write({ ...data, audiences })
+  return settle(audience)
+}
+
+/**
+ * Nothing is handed on. Deleting the last audience leaves a workspace with
+ * none, which is a state the section already draws and the generator already
+ * survives — unlike voices, where the flag had to land somewhere.
+ */
+export function deleteAudience(id: string): Promise<void> {
+  const data = read()
+  write({ ...data, audiences: data.audiences.filter((a) => a.id !== id) })
+  return settle(undefined)
+}
+
+/**
+ * Write the guardrails.
+ *
+ * The one write with no collection under it: there is a single set per
+ * workspace, so this is a replace and never an insert, and the editor hands
+ * back the whole thing rather than a patch. `null` — the section empty — is a
+ * state you reach through `deleteGuardrails`, not by saving nothing: an empty
+ * save would make "we have not written these yet" and "we wrote them and they
+ * say nothing" the same value, and those are the two states this whole section
+ * exists to keep apart.
+ */
+export function saveGuardrails(
+  guardrails: BrandGuardrails,
+): Promise<BrandGuardrails> {
+  const data = read()
+  write({ ...data, guardrails })
+  return settle(guardrails)
+}
+
+/**
+ * Put the section back to empty.
+ *
+ * Nothing is handed on and nothing cascades — a post already published keeps
+ * its text, because the rules were an input to writing it rather than a filter
+ * over it. What changes is every generation after this one.
+ */
+export function deleteGuardrails(): Promise<void> {
+  const data = read()
+  write({ ...data, guardrails: null })
   return settle(undefined)
 }
 

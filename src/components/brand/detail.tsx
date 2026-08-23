@@ -142,14 +142,19 @@ export function BrandPage({ children }: { children: ReactNode }) {
  * Icon-only, with the destination in the `aria-label` alone — again the post
  * editor's arrangement. Nothing else in the header names it, and nothing needs
  * to: a caret in that corner means *up*, and the screen under it says where you
- * are. Exported because the voice editor sits one level below this and takes
- * the same control pointed at `/brand/voices`.
+ * are. Exported because the editors sit one level below this and take the same
+ * control pointed at the section they came from.
+ *
+ * The `to` union is the list of screens that have something below them, and it
+ * is a union rather than a `string` so that adding an editor without adding its
+ * section here does not compile. Guardrails is not in it: it is a singleton, so
+ * its screen *is* its editor and there is no level below it to come back from.
  */
 export function BrandBackButton({
   to = '/brand',
   label = 'Back to Brand',
 }: {
-  to?: '/brand' | '/brand/voices'
+  to?: '/brand' | '/brand/voices' | '/brand/audiences'
   label?: string
 }) {
   return (

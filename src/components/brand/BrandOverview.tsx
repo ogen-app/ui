@@ -295,12 +295,9 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
           trailing: statedCount(g.mayClaim.length),
         },
         {
-          // Literal capitals — copy, not CSS, same rule as the
-          // destructive-action labels. This is the row where getting it wrong
-          // is a regulator's problem rather than a design one.
           key: 'never',
           done: g.neverClaim.length > 0,
-          label: 'NEVER CLAIM',
+          label: 'Never claim',
           details:
             g.neverClaim.length === 0
               ? 'Nothing is off limits. Every voice here may promise anything, in any words.'
@@ -314,11 +311,11 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
           trailing: g.bannedWords.length > 0 ? `${g.bannedWords.length} words` : 'none',
         },
         {
-          key: 'boilerplate',
-          done: g.boilerplate.trim().length > 0,
-          label: 'Boilerplate',
-          details: g.boilerplate.trim() || undefined,
-          trailing: g.boilerplate.trim() ? 'written' : 'none',
+          key: 'disclaimer',
+          done: g.disclaimer.trim().length > 0,
+          label: 'Disclaimer',
+          details: g.disclaimer.trim() || undefined,
+          trailing: g.disclaimer.trim() ? 'written' : 'none',
         },
       ]
     }

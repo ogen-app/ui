@@ -209,10 +209,20 @@ export type BrandAudience = {
 export type BrandGuardrails = {
   facts: string[]
   mayClaim: string[]
-  /** The capitals in the UI label are copy, not CSS: these are the ones that bite. */
+  /** The ones that bite. Carries the screen's one tone step rather than capitals. */
   neverClaim: string[]
   bannedWords: string[]
-  boilerplate: string
+  /**
+   * The line every post has to carry, added as written — a risk warning, a
+   * licence number, an ad disclosure.
+   *
+   * Called `boilerplate` until somebody who had not written this file read the
+   * label and asked what it meant, which is the whole test a name has to pass.
+   * The trade's word for it describes where it came from (a print shop's
+   * reusable slug) rather than what it does, and the thing it does here is
+   * plain enough to say: it is the disclaimer.
+   */
+  disclaimer: string
   updatedAt: string
 }
 

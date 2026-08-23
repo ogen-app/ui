@@ -1,6 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteVoice, getBrand, resetBrand, saveVoice } from '@/services/api/brand'
-import type { BrandData, BrandVoice } from '@/components/brand/types'
+import {
+  deleteAudience,
+  deleteGuardrails,
+  deleteVoice,
+  getBrand,
+  resetBrand,
+  saveAudience,
+  saveGuardrails,
+  saveVoice,
+} from '@/services/api/brand'
+import type {
+  BrandAudience,
+  BrandData,
+  BrandGuardrails,
+  BrandVoice,
+} from '@/components/brand/types'
 
 /**
  * The workspace's Brand material, as one query.
@@ -95,6 +109,85 @@ export function useDeleteVoice() {
         }
         return { ...current, voices }
       })
+      qc.invalidateQueries({ queryKey: BRAND_KEY })
+    },
+  })
+}
+
+/**
+ * Create or replace an audience.
+ *
+ * The voice mutation's shape without the demotion: the editor hands back a
+ * whole audience, and there is no flag on the collection to keep. The direct
+ * cache write is here for the same reason it is there — the editor navigates
+ * back to the library the instant this resolves, and without it the list paints
+ * one frame of its pre-save self, which reads as "it didn't save".
+ */
+export function useSaveAudience() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (audience: BrandAudience) => saveAudience(audience),
+    onSuccess: (saved) => {
+      qc.setQueryData<BrandData>(BRAND_KEY, (current) => {
+        if (!current) return current
+        return {
+          ...current,
+          audiences: current.audiences.some((a) => a.id === saved.id)
+            ? current.audiences.map((a) => (a.id === saved.id ? saved : a))
+            : [...current.audiences, saved],
+        }
+      })
+      qc.invalidateQueries({ queryKey: BRAND_KEY })
+    },
+  })
+}
+
+export function useDeleteAudience() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteAudience(id),
+    onSuccess: (_void, id) => {
+      qc.setQueryData<BrandData>(BRAND_KEY, (current) =>
+        current
+          ? { ...current, audiences: current.audiences.filter((a) => a.id !== id) }
+          : current,
+      )
+      qc.invalidateQueries({ queryKey: BRAND_KEY })
+    },
+  })
+}
+
+/**
+ * Write the guardrails.
+ *
+ * A singleton, so there is no merge to do and no id to match on — the editor
+ * hands back the whole set and it replaces the whole set. The direct cache
+ * write is here for the reason it is on the other two: the editor navigates
+ * back to the section the instant this resolves, and without it the section
+ * paints one frame of its pre-save self, which reads as "it didn't save".
+ */
+export function useSaveGuardrails() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (guardrails: BrandGuardrails) => saveGuardrails(guardrails),
+    onSuccess: (saved) => {
+      qc.setQueryData<BrandData>(BRAND_KEY, (current) =>
+        current ? { ...current, guardrails: saved } : current,
+      )
+      qc.invalidateQueries({ queryKey: BRAND_KEY })
+    },
+  })
+}
+
+/** Back to `null` — the section empty, which is a state it draws. */
+export function useDeleteGuardrails() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: deleteGuardrails,
+    onSuccess: () => {
+      qc.setQueryData<BrandData>(BRAND_KEY, (current) =>
+        current ? { ...current, guardrails: null } : current,
+      )
       qc.invalidateQueries({ queryKey: BRAND_KEY })
     },
   })

@@ -134,8 +134,12 @@ export function BrandSection({
 export function ReadBy({ consumers }: { consumers: BrandConsumer[] }) {
   if (consumers.length > 0) return null
 
+  // Set at the card's own measure rather than in micro-type. It was 12px, and
+  // a sentence saying the section does not work yet is not a caption — small
+  // type is how a screen signals "detail, skip this", which is the opposite of
+  // what this line is for. Dimmer than the description above it, same size.
   return (
-    <p className="text-xs text-tertiary-foreground">
+    <p className="max-w-2xl text-sm leading-5 text-tertiary-foreground">
       Nothing reads this yet — you can fill it in, but it won't change what
       comes out.
     </p>

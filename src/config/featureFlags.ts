@@ -104,11 +104,13 @@ const FEATURE_FLAGS = {
    * Brand at all — which is the state `develop` ships in while the shape is
    * still being argued in `/design/brand`.
    *
-   * **Currently `true` for local iteration, and it must go back to `false`
-   * before this branch merges.** Nothing in here is backed by a server: a
-   * workspace's voices would live in one browser, on one machine, and vanish
-   * with its site data. Switching it on for anyone but the person working on
-   * it would be shipping a feature that quietly forgets.
+   * **Off, and it stays off until CON-228 lands.** Nothing in here is backed
+   * by a server: a workspace's voices would live in one browser, on one
+   * machine, and vanish with its site data. Switching it on before the
+   * endpoints exist would ship a feature that quietly forgets — and a
+   * workspace's brand rules are the last material anyone would expect to
+   * retype. Turn it on locally to work on the screens; turn it back before you
+   * push.
    *
    * **Waiting on:** everything in CON-228. In outline — Brand entities per
    * workspace, tenant-scoped and fail-closed; one fetch that returns **every
@@ -127,7 +129,7 @@ const FEATURE_FLAGS = {
    *
    * The argument this is built from: `docs/brand-materials.md`.
    */
-  'brand-materials': true,
+  'brand-materials': false,
 
   /**
    * The marketing-email switch on Profile (CON-155). **Off — waiting on the

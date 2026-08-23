@@ -16,8 +16,10 @@ import { isFeatureEnabled } from '@/config/featureFlags'
  * which is what the standing rule requires — not a blank page, and not five
  * child routes each repeating the same guard and each one edit away from
  * forgetting it. The nav row is gated separately in `AppSidebar`, because
- * "every entry point" means the sidebar too. The voice editor repeats the guard
- * because it escapes this layout (`brand_/…`) and so escapes this `beforeLoad`.
+ * "every entry point" means the sidebar too. The voice and audience editors
+ * repeat the guard because they escape this layout (`brand_/…`) and so escape
+ * this `beforeLoad`; the guardrails editor does not have to, because it *is*
+ * the section's own route and sits under here with the rest.
  */
 export const Route = createFileRoute('/_authenticated/brand')({
   beforeLoad: () => {
