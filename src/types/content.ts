@@ -18,8 +18,16 @@ export type AssetStatus =
  * notes and was never backfilled. `"URL"` is a web page the backend scraped to
  * Markdown on our behalf (CON-222); it reads like any other document from here,
  * and only differs in having somewhere it came from.
+ *
+ * `"IMG"` is an image (CON-16). It is the first member that is **not** a
+ * document: its `content` is a description of the picture rather than the
+ * thing itself, which is why `opensAsDocument` exists. Listed here ahead of the
+ * server — the CHECK constraint still reads `MD | PDF | URL` and CON-105's
+ * branch adds `IMG` — so that every screen that switches on a type has to say
+ * what it does with one. Nothing outside the `content-bank-images` flag may
+ * assume an image asset can be *created*; the type is only how one is read.
  */
-export type AssetType = "MD" | "PDF" | "URL" | null;
+export type AssetType = "MD" | "PDF" | "URL" | "IMG" | null;
 
 /**
  * One image from a scraped page, copied into our own storage (CON-222).

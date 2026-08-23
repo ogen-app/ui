@@ -963,6 +963,28 @@ export const en = {
       compactLate: '{{amount}} late',
     },
   },
+
+  /**
+   * The Content Bank. Still largely hard-coded English (CON-174) — these are
+   * the strings converted so far, not the screen's full copy.
+   */
+  content: {
+    /**
+     * Shown in place of the editor for an asset this build can't open — in
+     * practice, one whose `type` the server added after this version shipped
+     * (CON-16 R32). It has to explain itself without naming the kind, because
+     * not knowing the kind is the entire situation.
+     *
+     * The second sentence is the load-bearing one: someone who opened a thing
+     * they uploaded and found no editor needs to be told the asset is intact,
+     * or the reasonable next move is to delete and re-upload it.
+     */
+    unsupported: {
+      title: "This isn't a document",
+      body: 'This app version has no way to show this kind of asset. Nothing has been changed — it is still here, and a newer version will open it.',
+    },
+  },
+
   errors: {
     notFound: {
       code: '404',
