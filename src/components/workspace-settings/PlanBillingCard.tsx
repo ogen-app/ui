@@ -3,7 +3,6 @@ import { Link } from '@tanstack/react-router'
 import { ArrowSquareOutIcon, SealCheckIcon } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
-import { Chip } from '@/components/ui/chip'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { SettingsRow } from '@/components/workspace-settings/SettingsRow'
 import { formatDay } from '@/components/entitlements/parts'
@@ -165,12 +164,16 @@ export function PlanBanner({
       <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary">
         <SealCheckIcon className="size-6" />
       </span>
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="flex items-center gap-3 min-w-0">
-          <span className="truncate text-base font-medium">{headline ?? '—'}</span>
-          {subscription && <StatusChip status={subscription.status} />}
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="truncate text-base font-medium">{headline ?? '—'}</span>
+        {/* `items-baseline`, not `items-center`: the tag and the sentence are
+            one line of prose with a box drawn round part of it, and centring a
+            padded box against text sits it a pixel or two high — the kind of
+            misalignment you see without being able to name. */}
+        <span className="flex flex-wrap items-baseline gap-2 text-sm text-secondary-foreground">
+          {subscription && <StatusTag status={subscription.status} />}
+          <span>{secondLine}</span>
         </span>
-        <span className="text-sm text-secondary-foreground">{secondLine}</span>
       </span>
       <div className="ml-auto shrink-0 pl-3">
         <Button variant="ghost" size="sm" asChild>
@@ -208,13 +211,23 @@ function PaymentLine({ subscription }: { subscription: BillingSubscription | nul
   )
 }
 
-function StatusChip({ status }: { status: BillingStatus }) {
+/**
+ * What the provider says about the subscription, when that is worth saying.
+ *
+ * The Content Bank's row tag rather than `Chip` — a chip is a control-sized
+ * pill and this is data, sitting inside a sentence. It takes the second line's
+ * type so the two read as one line, and only the surface (two steps of the grey
+ * ramp, a hairline, barely any radius) marks it off. Its text is a step
+ * stronger than the sentence around it: a bordered box in exactly the
+ * surrounding grey reads as a rendering accident.
+ */
+function StatusTag({ status }: { status: BillingStatus }) {
   const { t } = useTranslation()
 
   // Built per render, not at module scope: a `const` map holding translated
   // copy freezes whichever language loaded first. Nothing is said about the
   // healthy states — "Active" beside "auto-renews on the 22nd" is noise, and
-  // the chip is worth the room only when something is wrong.
+  // the tag is worth the room only when something is wrong.
   const keys = {
     past_due: 'tiers.statusPastDue',
     cancelled: 'tiers.statusCancelled',
@@ -225,5 +238,9 @@ function StatusChip({ status }: { status: BillingStatus }) {
 
   const key = status in keys ? keys[status as keyof typeof keys] : null
   if (!key) return null
-  return <Chip variant="muted">{t(key)}</Chip>
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-[2px] border border-tertiary bg-secondary px-1.5 py-1 text-primary-foreground">
+      {t(key)}
+    </span>
+  )
 }
