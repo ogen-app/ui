@@ -1061,7 +1061,14 @@ export const en = {
     paymentMethod: 'Payment Method & Details',
     /** The brand is printed beside this; the catalogue carries only the tail. */
     cardEnding: 'ending {{last4}}',
-    noCard: 'No payment method on file.',
+    /**
+     * A subscription with no card *in our copy of it* — never phrased as a
+     * missing payment method. A live subscription has one by definition, so
+     * "none on file" under a plan somebody is paying for reads as *we lost your
+     * card*: alarming, and untrue. It is held, elsewhere, by the seller.
+     */
+    cardWithProvider: 'Your payment method is held by Lemon Squeezy.',
+    /** The free-tier line: a statement about money, not about a missing card. */
     noSubscription: 'Nothing is being charged for this workspace.',
     accessEnds: 'Access ends on {{when}}.',
     ownersOnly: 'Only workspace owners can see billing details.',

@@ -736,7 +736,7 @@ export const es: Translation = {
       'La facturación todavía no está conectada. Aquí no se cobra nada y no se guarda ningún dato de pago.',
     paymentMethod: 'Método de pago y datos de facturación',
     cardEnding: 'terminada en {{last4}}',
-    noCard: 'No hay ningún método de pago guardado.',
+    cardWithProvider: 'Tu método de pago lo guarda Lemon Squeezy.',
     noSubscription: 'No se está cobrando nada por este espacio.',
     accessEnds: 'El acceso termina el {{when}}.',
     ownersOnly: 'Solo los propietarios del espacio pueden ver los datos de facturación.',
