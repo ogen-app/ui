@@ -55,41 +55,14 @@ export function PlanBillingCard({
   onManage,
   managing = false,
 }: Props) {
-  const { t, i18n } = useTranslation()
-  const { headline, timing } = usePlanStatement(tier)
+  const { t } = useTranslation()
   const subscription = billing?.subscription ?? null
 
   return (
     <SettingsCard title={t('tiers.billingTitle')}>
       <ul className="flex flex-col divide-y divide-border">
         <SettingsRow>
-          {/* The same framed card a campaign's type gets, and for the same
-              reason: this is a chosen thing rather than a field, so it is drawn
-              as the choice with the way to change it inside the frame. See
-              `CampaignTypeCard` — if a third of these appears, the two should
-              become one component. */}
-          <div className="flex items-center gap-3 rounded-md border border-quaternary px-4 py-4 min-w-0">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary">
-              <SealCheckIcon className="size-6" />
-            </span>
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="flex items-center gap-3 min-w-0">
-                <span className="text-base font-medium">{headline ?? '—'}</span>
-                {subscription && <StatusChip status={subscription.status} />}
-              </span>
-              <span className="text-sm text-secondary-foreground">
-                {timing}
-                {planFailed && t('tiers.planLoadFailed')}
-                {subscription?.endsAt &&
-                  ` ${t('tiers.accessEnds', { when: formatDay(subscription.endsAt, i18n.language) })}`}
-              </span>
-            </span>
-            <div className="ml-auto shrink-0 pl-3">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/plans">{t('tiers.changePlan')}</Link>
-              </Button>
-            </div>
-          </div>
+          <PlanBanner tier={tier} subscription={subscription} planFailed={planFailed} />
         </SettingsRow>
 
         {mayManage ? (
@@ -135,6 +108,76 @@ export function PlanBillingCard({
         )}
       </ul>
     </SettingsCard>
+  )
+}
+
+/**
+ * The plan itself: what the workspace is on, what happens to it next, and the
+ * way to change it.
+ *
+ * The same framed card a campaign's type gets, and for the same reason — this
+ * is a chosen thing rather than a field, so it is drawn as the choice with the
+ * way to change it inside the frame. See `CampaignTypeCard`; if a third of
+ * these appears, the two should become one component.
+ *
+ * Exported for `/design/plan-billing`, which varies this alone across a dozen
+ * plans and provider states without redrawing the payment row each time.
+ */
+export function PlanBanner({
+  tier,
+  subscription,
+  planFailed = false,
+}: {
+  tier: TierSnapshot | undefined
+  subscription: BillingSubscription | null
+  planFailed?: boolean
+}) {
+  const { t, i18n } = useTranslation()
+  const { headline, timing } = usePlanStatement(tier)
+
+  /**
+   * One second line, chosen in order of what happens next.
+   *
+   * **A subscription that is ending outranks the plan's renewal date**, and
+   * they are usually the *same day*: a cancelled subscription keeps `renewsAt`
+   * on the tier — it is still the boundary — while the provider has already
+   * said there will be no invoice. Printing both gave "It auto-renews in 8
+   * days, on August 31. Access ends on August 31.", which promises a renewal
+   * that is not coming and then contradicts it in the same breath.
+   *
+   * A scheduled tier change still outranks both: it is a decision the user
+   * made, and it says what they will be on afterwards.
+   *
+   * The tense comes off the provider's status, never off comparing the date to
+   * the clock — a wrong system clock must not be able to reword this.
+   */
+  const ending = subscription?.endsAt ?? null
+  const secondLine = planFailed
+    ? t('tiers.planLoadFailed')
+    : tier?.scheduled || !ending
+      ? timing
+      : t(subscription?.status === 'expired' ? 'tiers.accessEnded' : 'tiers.accessEnds', {
+          when: formatDay(ending, i18n.language),
+        })
+
+  return (
+    <div className="flex items-center gap-3 rounded-md border border-quaternary px-4 py-4 min-w-0">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary">
+        <SealCheckIcon className="size-6" />
+      </span>
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="flex items-center gap-3 min-w-0">
+          <span className="truncate text-base font-medium">{headline ?? '—'}</span>
+          {subscription && <StatusChip status={subscription.status} />}
+        </span>
+        <span className="text-sm text-secondary-foreground">{secondLine}</span>
+      </span>
+      <div className="ml-auto shrink-0 pl-3">
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/plans">{t('tiers.changePlan')}</Link>
+        </Button>
+      </div>
+    </div>
   )
 }
 

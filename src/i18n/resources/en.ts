@@ -1070,7 +1070,13 @@ export const en = {
     cardWithProvider: 'Your payment method is held by Lemon Squeezy.',
     /** The free-tier line: a statement about money, not about a missing card. */
     noSubscription: 'Nothing is being charged for this workspace.',
+    /**
+     * Both tenses written out, chosen by the provider's status rather than by
+     * comparing the date to the clock. `cancelled` is paid up and still
+     * running; `expired` is over. Nothing derives that from `when`.
+     */
     accessEnds: 'Access ends on {{when}}.',
+    accessEnded: 'Access ended on {{when}}.',
     ownersOnly: 'Only workspace owners can see billing details.',
 
     /**

@@ -739,6 +739,7 @@ export const es: Translation = {
     cardWithProvider: 'Tu método de pago lo guarda Lemon Squeezy.',
     noSubscription: 'No se está cobrando nada por este espacio.',
     accessEnds: 'El acceso termina el {{when}}.',
+    accessEnded: 'El acceso terminó el {{when}}.',
     ownersOnly: 'Solo los propietarios del espacio pueden ver los datos de facturación.',
 
     providerHolds:
