@@ -1,4 +1,5 @@
 import type { Campaign, PublisherAccount } from '@/types/campaigns'
+import type { Asset } from '@/types/content'
 
 export type PostStatus =
   | 'draft'
@@ -31,6 +32,12 @@ export type Post = {
   cta_type: PostCTAType
   cta_url: string
   target_audience_notes: string
+  /**
+   * The documents this post writes from — and the post assistant's entire
+   * reading list, not a label (see `lib/postSources`). Generated posts arrive
+   * with the subset of retrieved assets the model drew on (CON-118); the
+   * Sources card is where a person changes it.
+   */
   used_asset_ids: string[]
   campaign_type_phase_id: string | null
   /**
@@ -56,7 +63,12 @@ export type Post = {
    * account left the platform's connected list.
    */
   social_account?: PublisherAccount | null
-  used_assets: unknown[]
+  /**
+   * `used_asset_ids`, hydrated by the server on every read and write. Free
+   * detail: the editor names what it reads from without fetching the asset
+   * list, which carries every document's full markdown.
+   */
+  used_assets: Asset[]
   campaign_type_phase: unknown | null
 }
 
@@ -100,16 +112,6 @@ export type CampaignPostSummary = {
 export type CampaignSummariesResponse = {
   summaries: CampaignPostSummary[]
   generated_at: string
-}
-
-export const POST_STATUS_LABELS: Record<PostStatus, string> = {
-  draft: 'Draft',
-  ready_for_publish: 'Ready for Publish',
-  scheduled: 'Auto-publish',
-  scheduled_for_manual_publishing: 'Manual publish',
-  failed: 'Failed',
-  published: 'Published',
-  not_published: 'Not Published',
 }
 
 export const DELETABLE_STATUSES: PostStatus[] = [

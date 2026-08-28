@@ -15,7 +15,7 @@
 
 export type GoalCadence = 'week' | 'month'
 
-export const GOAL_CADENCES: readonly GoalCadence[] = ['week', 'month']
+const GOAL_CADENCES: readonly GoalCadence[] = ['week', 'month']
 
 /** What the server applies to a campaign that leaves the cadence unset. */
 export const DEFAULT_GOAL_CADENCE: GoalCadence = 'month'
@@ -23,7 +23,7 @@ export const DEFAULT_GOAL_CADENCE: GoalCadence = 'month'
 const DAY_MS = 24 * 60 * 60 * 1000
 
 /** How one period is named in a sentence, singular. */
-export const CADENCE_UNIT: Record<GoalCadence, string> = {
+const CADENCE_UNIT: Record<GoalCadence, string> = {
   week: 'week',
   month: 'month',
 }

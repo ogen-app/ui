@@ -12,7 +12,7 @@ import type { Post, PostStatus } from '@/types/posts'
 //   - → ready_for_publish / → draft are user-requested cancellations that
 //     go through POST /api/posts/:id/cancel (which cancels the Zernio job),
 //     not a plain status PUT — the worker lands the status change later.
-export const POST_STATUS_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
+const POST_STATUS_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
   draft: ['ready_for_publish'],
   ready_for_publish: ['scheduled', 'scheduled_for_manual_publishing', 'draft'],
   scheduled: ['failed', 'published', 'ready_for_publish', 'draft'],
@@ -24,11 +24,6 @@ export const POST_STATUS_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
 
 export function getAllowedNextStatuses(current: PostStatus): PostStatus[] {
   return POST_STATUS_TRANSITIONS[current] ?? []
-}
-
-export function canTransition(from: PostStatus, to: PostStatus): boolean {
-  if (from === to) return true
-  return getAllowedNextStatuses(from).includes(to)
 }
 
 export function isTerminalStatus(status: PostStatus): boolean {

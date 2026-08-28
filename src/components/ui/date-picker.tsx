@@ -2,6 +2,8 @@ import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib'
+import { formatDate } from '@/lib/intl'
+import { useLocale } from '@/hooks/useLocale'
 import { CalendarDotsIcon } from '@phosphor-icons/react'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -58,12 +60,8 @@ function toISODate(d: Date): string {
   return `${year}-${month}-${day}`
 }
 
-function formatDisplay(d: Date): string {
-  return d.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+function formatDisplay(d: Date, locale: string): string {
+  return formatDate(d, { year: 'numeric', month: 'short', day: 'numeric' }, locale)
 }
 
 function DatePicker({
@@ -78,6 +76,9 @@ function DatePicker({
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
   const selected = toDate(value)
+  // The trigger's label is a formatted date and nothing else here reads the
+  // catalogue, so this is what re-renders it when the language changes.
+  const locale = useLocale()
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -92,7 +93,7 @@ function DatePicker({
             selected ? 'text-foreground' : 'text-tertiary-foreground'
           )}
         >
-          {selected ? formatDisplay(selected) : placeholder}
+          {selected ? formatDisplay(selected, locale) : placeholder}
         </span>
         <CalendarDotsIcon className="size-4 text-tertiary-foreground" />
       </DropdownMenuTrigger>

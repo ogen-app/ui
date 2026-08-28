@@ -6,6 +6,7 @@
 import type { Campaign } from "@/types/campaigns";
 import type { Post, PostStatus, PostSummary } from "@/types/posts";
 import { campaignTypeInfo } from "@/lib/campaignTypeDictionary";
+import { formatDate } from "@/lib/intl";
 import { getPlatformInfo, type PlatformView } from "@/lib/platformDictionary";
 
 /**
@@ -64,7 +65,7 @@ export type FixTarget =
   | "settings"
   | "workspace-settings"
   | "posts"
-  | "assets"
+  | "content"
   // No attention rule points here — analytics reports, it never asks for a
   // fix. It is a target so the Overview's Analytics card can use the same
   // header link as every other module.
@@ -83,14 +84,14 @@ export type SetupCheck = {
   fix: FixTarget;
 };
 
-const dateFormat = new Intl.DateTimeFormat(undefined, {
+const DATE_RANGE_FORMAT: Intl.DateTimeFormatOptions = {
   month: "short",
   day: "numeric",
   year: "numeric",
-});
+};
 
 function formatDateRange(start: string, end: string): string {
-  return `${dateFormat.format(new Date(start))} – ${dateFormat.format(new Date(end))}`;
+  return `${formatDate(start, DATE_RANGE_FORMAT)} – ${formatDate(end, DATE_RANGE_FORMAT)}`;
 }
 
 export type ChannelReadiness = {
@@ -312,10 +313,22 @@ export type AttentionItem = {
   fix: FixTarget;
 };
 
-/** Rows the rail shows before collapsing the rest behind "+N more". */
-export const MAX_ATTENTION_ITEMS = 6;
+/**
+ * Rows the rail shows before collapsing the rest behind "+N more".
+ *
+ * Three, because the rail is the top of a screen with five cards under it and
+ * a to-do list long enough to scroll is one the user reads as a wall rather
+ * than as a shortlist. Items arrive sorted by severity, so the three that show
+ * are always the three that matter most.
+ */
+export const MAX_ATTENTION_ITEMS = 3;
 
-const SEVERITY_RANK: Record<AttentionSeverity, number> = {
+/**
+ * Worst first. Exported because a list that merges several campaigns' items
+ * has to order them by the same scale the rail does, and a second copy of this
+ * map is a second opinion waiting to drift.
+ */
+export const ATTENTION_SEVERITY_RANK: Record<AttentionSeverity, number> = {
   alert: 0,
   risk: 1,
   todo: 2,
@@ -742,10 +755,10 @@ export function attentionItems(
     });
   }
 
-  // There is deliberately no rule about `use_assets` with an empty `asset_ids`.
-  // That pair is not a half-finished setup — it is the "All assets" mode, where
-  // an empty list means *every* ready asset (CON-118, `lib/campaignSources.ts`).
-  // Flagging it would nag every campaign that picked the broadest option.
+  // There is deliberately no rule about a campaign holding no documents. A
+  // campaign writing from its brief alone is a finished setup, not a gap —
+  // that is what most of them are, and nagging about it would make the
+  // Overview ask for something the interviews never asked for (CON-210).
 
   // --- Content --------------------------------------------------------------
   // An empty campaign gets one row, not six: `no-posts` suppresses every other
@@ -855,7 +868,10 @@ export function attentionItems(
   }
 
   // Stable sort: severity decides, catalogue order breaks ties.
-  return items.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
+  return items.sort(
+    (a, b) =>
+      ATTENTION_SEVERITY_RANK[a.severity] - ATTENTION_SEVERITY_RANK[b.severity],
+  );
 }
 
 /**

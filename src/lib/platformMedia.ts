@@ -49,7 +49,7 @@ export type PlatformMediaConstraints = {
 
 const MB = 1024 * 1024
 
-export const PLATFORM_MEDIA: Record<string, PlatformMediaConstraints> = {
+const PLATFORM_MEDIA: Record<string, PlatformMediaConstraints> = {
   // LinkedIn — up to 20 images per post; the carousel format is a PDF
   // document, not a multi-image post.
   AXqWG7U2qnpt: {

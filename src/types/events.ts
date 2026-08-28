@@ -35,6 +35,7 @@ export type AppEvent = {
 export type EventSubject =
   | { kind: 'post'; id: string }
   | { kind: 'campaign'; id: string }
+  | { kind: 'asset'; id: string }
   | { kind: 'zernioAccount'; id: string }
   | { kind: 'zernioSync' }
   | { kind: 'unknown'; topic: string }

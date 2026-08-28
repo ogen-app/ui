@@ -1,4 +1,4 @@
-import { apiUrl } from './base'
+import { scopedFetch } from './base'
 import { errorMessage } from './errors'
 import { isRecord } from './json'
 import { readSSEStream } from '@/lib/sse'
@@ -24,9 +24,7 @@ export class QualityUnavailableError extends Error {
  * panel's "not assessed yet" prompt — so it resolves rather than throws.
  */
 export async function getPostAssessment(postId: string): Promise<PostEvaluation | null> {
-  const res = await fetch(apiUrl(`/api/posts/${postId}/assessment`), {
-    credentials: 'include',
-  })
+  const res = await scopedFetch(`/api/posts/${postId}/assessment`)
   if (res.status === 404) return null
   if (res.status === 503) throw new QualityUnavailableError()
   if (!res.ok) throw new Error(await errorMessage(res, 'Unable to load the assessment'))
@@ -60,9 +58,8 @@ export async function streamPostAssessment(
   onEvent: (event: AssessEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const res = await fetch(apiUrl(`/api/posts/${postId}/assess`), {
+  const res = await scopedFetch(`/api/posts/${postId}/assess`, {
     method: 'POST',
-    credentials: 'include',
     headers: { Accept: 'text/event-stream' },
     signal,
   })

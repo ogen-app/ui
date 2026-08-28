@@ -10,6 +10,7 @@ import {
   briefPosture,
 } from "@/lib/campaignReadiness.ts";
 import { relativeTime } from "@/lib/relativeTime.ts";
+import { formatDate } from "@/lib/intl";
 import type { Campaign } from "@/types/campaigns";
 import { CallToAction } from "./CallToAction.tsx";
 import { CollapsedCard, OverviewCard } from "./OverviewCard.tsx";
@@ -29,15 +30,19 @@ export function BriefModule({ campaign }: { campaign: Campaign }) {
   if (posture.state === "complete") {
     return (
       <CollapsedCard
-        title="Brief"
+        section="brief"
         target="brief"
         campaignId={campaign.id}
-        label="Edit the brief"
         status={<StatusBadge tone="positive" label="Brief is in good shape" />}
       >
         <span
           className="min-w-0 flex-1 truncate"
-          title={new Date(campaign.updated_at).toLocaleString()}
+          title={
+            formatDate(campaign.updated_at, {
+              dateStyle: "long",
+              timeStyle: "short",
+            }) ?? undefined
+          }
         >
           {formatTitle(campaign.name, "Untitled campaign")}, updated{" "}
           {relativeTime(campaign.updated_at)}
@@ -49,13 +54,9 @@ export function BriefModule({ campaign }: { campaign: Campaign }) {
   if (posture.state === "partial") {
     return (
       <OverviewCard
-        title="Brief"
+        section="brief"
         status={<StatusBadge tone="warn" label="Brief is incomplete" />}
-        link={{
-          target: "brief",
-          campaignId: campaign.id,
-          label: "Edit the brief",
-        }}
+        link={{ target: "brief", campaignId: campaign.id }}
       >
         <CallToAction
           headline={WHY_THE_BRIEF_MATTERS}
@@ -82,7 +83,7 @@ export function BriefModule({ campaign }: { campaign: Campaign }) {
 
   return (
     <OverviewCard
-      title="Brief"
+      section="brief"
       status={<StatusBadge tone="warn" label="Brief is empty" />}
     >
       <CallToAction

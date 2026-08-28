@@ -1,42 +1,26 @@
 import type { Asset } from "@/types/content";
 
-/** Content Bank tabs. "all" shows everything; the rest filter by content category. */
-export type ContentBankTab = "all" | "text" | "imagery" | "files";
-
-/** Derived content category for an asset, used by the tabs and the Type column. */
-export type AssetCategory = Exclude<ContentBankTab, "all">;
-
-export const CONTENT_BANK_TABS: { id: ContentBankTab; label: string }[] = [
-  { id: "all", label: "ALL" },
-  { id: "text", label: "TEXT" },
-  { id: "imagery", label: "IMAGERY" },
-  { id: "files", label: "FILES" },
-];
-
-const CATEGORY_LABEL: Record<AssetCategory, string> = {
-  text: "Text",
-  imagery: "Imagery",
-  files: "Files",
-};
+/** What kind of thing an asset is, for the glyph the row shows before its title. */
+export type AssetCategory = "text" | "imagery" | "files";
 
 /**
- * Maps a backend asset `type` to a Content Bank category.
+ * Maps a backend asset `type` to a category.
  *
- * The backend currently only distinguishes `MD` (markdown) and `PDF`; assets
- * created in-app have a null type and are markdown text. There is no imagery
- * asset type yet (tracked separately), so nothing maps to "imagery" today and
- * the Imagery tab stays empty until the backend exposes one.
+ * The tabs this used to feed — ALL / TEXT / IMAGERY / FILES — went with the
+ * workspace bank's old layout and did not come back with it (CON-211): nothing
+ * has ever mapped to imagery, so two of the four were a filter over everything
+ * and a filter over nothing. What is left is the distinction a reader actually
+ * uses, and it is drawn on the row rather than above the list.
+ *
+ * `null` is an asset written in the app, which is markdown text. `URL` is
+ * handled by the row itself — it is text too, but where it came from is worth
+ * its own glyph.
  */
 export function assetCategory(asset: Pick<Asset, "type">): AssetCategory {
   switch (asset.type) {
     case "PDF":
       return "files";
-    case "MD":
     default:
       return "text";
   }
-}
-
-export function categoryLabel(category: AssetCategory): string {
-  return CATEGORY_LABEL[category];
 }

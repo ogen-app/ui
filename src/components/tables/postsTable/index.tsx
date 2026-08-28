@@ -1,4 +1,6 @@
 import { memo, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { Link } from '@tanstack/react-router'
 import type { SortingState } from '@tanstack/react-table'
 import { TrashIcon } from '@phosphor-icons/react'
@@ -7,10 +9,12 @@ import { VirtualTable } from '../VirtualTable'
 import { TextCell } from '../TableCells'
 import type { ColumnConfig } from '../types'
 import type { Post } from '@/types/posts'
-import { POST_STATUS_LABELS, DELETABLE_STATUSES } from '@/types/posts'
+import { DELETABLE_STATUSES } from '@/types/posts'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { formatTitle } from '@/lib'
+import { formatDate as formatLocaleDate } from '@/lib/intl'
+import { postStatusLabel } from '@/lib/postStatusLabel'
 
 type PostRow = Post & Record<string, unknown>
 
@@ -36,36 +40,38 @@ type PostsTableProps = {
   onSortingChange?: (next: SortingState) => void
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return 'Not set'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+function formatDate(dateStr: string | null, t: TFunction, locale: string): string {
+  return (
+    formatLocaleDate(dateStr, { year: 'numeric', month: 'short', day: 'numeric' }, locale) ??
+    t('postsTable.notSet')
+  )
 }
 
-function formatRelativeDate(dateStr: string | null): string {
-  if (!dateStr) return 'Not set'
+/**
+ * The same date as the column beside it, in the terms a person would use out
+ * loud. Whole days apart, not hours: "Tomorrow" has to mean the next calendar
+ * day whether the post goes out at 00:30 or 23:30.
+ */
+function formatRelativeDate(dateStr: string | null, t: TFunction): string {
+  if (!dateStr) return t('postsTable.notSet')
   const now = new Date()
   const date = new Date(dateStr)
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate())
   const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24))
 
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Tomorrow'
-  if (diffDays === -1) return 'Yesterday'
-  if (diffDays > 1) return `In ${diffDays} days`
-  return `${Math.abs(diffDays)} days ago`
+  if (diffDays === 0) return t('postsTable.today')
+  if (diffDays === 1) return t('postsTable.tomorrow')
+  if (diffDays === -1) return t('postsTable.yesterday')
+  if (diffDays > 1) return t('postsTable.inDays', { count: diffDays })
+  return t('postsTable.daysAgo', { count: Math.abs(diffDays) })
 }
 
 function PostsTableComponent({
   posts,
   campaignId,
   onDelete,
-  emptyStateMessage = 'No posts',
+  emptyStateMessage,
   emptyStateActionLabel,
   onEmptyStateAction,
   loading = false,
@@ -76,6 +82,8 @@ function PostsTableComponent({
   onSortingChange,
 }: PostsTableProps) {
   const data = posts as PostRow[]
+  const { t, i18n } = useTranslation()
+  const locale = i18n.language
 
   const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
   // Against the rows on screen, not against the whole selection: the header
@@ -104,7 +112,9 @@ function PostsTableComponent({
                     }
                     onCheckedChange={onToggleAll}
                     aria-label={
-                      visibleSelected === posts.length ? 'Clear selection' : 'Select all posts'
+                      visibleSelected === posts.length
+                        ? t('postsTable.clearSelection')
+                        : t('postsTable.selectAll')
                     }
                   />
                 </div>
@@ -118,7 +128,9 @@ function PostsTableComponent({
                   <Checkbox
                     checked={selectedIds!.has(row.id)}
                     onCheckedChange={() => onToggleRow!(row.id)}
-                    aria-label={`Select ${formatTitle(row.title)}`}
+                    aria-label={t('postsTable.selectPost', {
+                      title: formatTitle(row.title),
+                    })}
                   />
                 </div>
               ),
@@ -128,7 +140,7 @@ function PostsTableComponent({
       {
         id: 'title',
         accessorKey: 'title',
-        header: 'Title',
+        header: t('postsTable.columnTitle'),
         isAutoSize: true,
         cell: (_value, row) => {
           const displayTitle = formatTitle(row.title)
@@ -146,19 +158,19 @@ function PostsTableComponent({
       {
         id: 'status',
         accessorKey: 'status',
-        header: 'Status',
+        header: t('postsTable.columnStatus'),
         size: 180,
         minSize: 140,
         cell: (_value, row) => (
           <div className="h-[34px] border-b-2 border-background px-3 leading-8">
-            <TextCell value={POST_STATUS_LABELS[row.status] ?? row.status} />
+            <TextCell value={postStatusLabel(t, row.status)} />
           </div>
         ),
       },
       {
         id: 'platform',
-        accessorFn: (row) => row.platform?.name ?? 'No platform',
-        header: 'Platform',
+        accessorFn: (row) => row.platform?.name ?? t('posts.noPlatform'),
+        header: t('postsTable.columnPlatform'),
         size: 150,
         minSize: 120,
         cell: (_value, row) =>
@@ -168,7 +180,9 @@ function PostsTableComponent({
             </div>
           ) : (
             <div className="h-[34px] border-b-2 border-background px-3 leading-8">
-              <span className="table-text text-tertiary-foreground">No platform</span>
+              <span className="table-text text-tertiary-foreground">
+                {t('posts.noPlatform')}
+              </span>
             </div>
           ),
       },
@@ -180,12 +194,12 @@ function PostsTableComponent({
         // otherwise compare as.
         accessorFn: (row) => row.scheduled_at ?? undefined,
         sortUndefined: 'last',
-        header: 'Scheduled Date',
+        header: t('postsTable.columnPublishDate'),
         size: 160,
         minSize: 130,
         cell: (_value, row) => (
           <div className="h-[34px] border-b-2 border-background px-3 leading-8">
-            <TextCell value={formatDate(row.scheduled_at)} />
+            <TextCell value={formatDate(row.scheduled_at, t, locale)} />
           </div>
         ),
       },
@@ -193,12 +207,12 @@ function PostsTableComponent({
         id: 'relative_time',
         accessorFn: (row) => row.scheduled_at ?? undefined,
         sortUndefined: 'last',
-        header: 'When',
+        header: t('postsTable.columnWhen'),
         size: 140,
         minSize: 110,
         cell: (_value, row) => (
           <div className="h-[34px] border-b-2 border-background px-3 leading-8">
-            <TextCell value={formatRelativeDate(row.scheduled_at)} />
+            <TextCell value={formatRelativeDate(row.scheduled_at, t)} />
           </div>
         ),
       },
@@ -229,7 +243,7 @@ function PostsTableComponent({
         },
       },
     ],
-    [campaignId, onDelete, selectable, selectedIds, onToggleRow, onToggleAll, posts, visibleSelected],
+    [campaignId, onDelete, selectable, selectedIds, onToggleRow, onToggleAll, posts, visibleSelected, locale, t],
   )
 
   const activeColumns = useMemo(
@@ -257,7 +271,7 @@ function PostsTableComponent({
       overscan={5}
       showFooter={false}
       fillHeight={false}
-      emptyStateMessage={emptyStateMessage}
+      emptyStateMessage={emptyStateMessage ?? t('postsTable.noPosts')}
       emptyStateActionLabel={emptyStateActionLabel}
       onEmptyStateAction={onEmptyStateAction}
       loading={loading}

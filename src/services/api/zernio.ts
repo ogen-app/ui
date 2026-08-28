@@ -1,17 +1,19 @@
 import {
   ZernioError,
   type ConnectLinkResponse,
+  type PendingConnection,
   type ZernioAccountsResponse,
   type ZernioErrorCode,
   type ZernioHealth,
 } from "@/types/integrations";
-import { apiUrl } from "./base";
+import { scopedFetch } from "./base";
 import { errorMessage } from "./errors";
 
-const BASE = apiUrl("/api/integrations/zernio");
+/** Path, not URL: `scopedFetch` resolves the origin and names the workspace. */
+const BASE = "/api/integrations/zernio";
 
 export async function getZernioHealth(): Promise<ZernioHealth> {
-  const res = await fetch(`${BASE}/health`, { method: "GET", credentials: "include" });
+  const res = await scopedFetch(`${BASE}/health`);
   if (!res.ok) {
     throw new Error(await errorMessage(res, "Unable to fetch Zernio health"));
   }
@@ -19,7 +21,7 @@ export async function getZernioHealth(): Promise<ZernioHealth> {
 }
 
 export async function listZernioAccounts(): Promise<ZernioAccountsResponse> {
-  const res = await fetch(`${BASE}/accounts`, { method: "GET", credentials: "include" });
+  const res = await scopedFetch(`${BASE}/accounts`);
   if (!res.ok) {
     throw await zernioError(res, "Unable to fetch Zernio accounts");
   }
@@ -27,9 +29,8 @@ export async function listZernioAccounts(): Promise<ZernioAccountsResponse> {
 }
 
 export async function createConnectLink(platform: string): Promise<ConnectLinkResponse> {
-  const res = await fetch(`${BASE}/connect-links`, {
+  const res = await scopedFetch(`${BASE}/connect-links`, {
     method: "POST",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ platform }),
   });
@@ -37,6 +38,41 @@ export async function createConnectLink(platform: string): Promise<ConnectLinkRe
     throw await zernioError(res, "Unable to create connect link");
   }
   return (await res.json()) as ConnectLinkResponse;
+}
+
+/**
+ * The targets awaiting a choice on a pending connect (CON-217).
+ *
+ * Reached only by following the backend's redirect after an OAuth that turned
+ * out to have more than one publishable destination. A 404 covers every way
+ * this can be over — expired, already used, someone else's — and is the normal
+ * end of an abandoned connect, not an exceptional failure.
+ */
+export async function getPendingConnection(id: string): Promise<PendingConnection> {
+  const res = await scopedFetch(`${BASE}/connect/pending/${encodeURIComponent(id)}`);
+  if (!res.ok) {
+    throw await zernioError(res, "Unable to load the pending connection");
+  }
+  return (await res.json()) as PendingConnection;
+}
+
+/**
+ * Finalizes a pending connect by attaching the chosen target (CON-217).
+ *
+ * The account itself doesn't come back in the response: the server hands the
+ * selection to Zernio and nudges its sync worker, and the account appears in
+ * the platform list a few seconds later. Callers wait for that rather than for
+ * this promise.
+ */
+export async function selectPendingTarget(id: string, targetId: string): Promise<void> {
+  const res = await scopedFetch(`${BASE}/connect/pending/${encodeURIComponent(id)}/select`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ targetId }),
+  });
+  if (!res.ok) {
+    throw await zernioError(res, "Unable to finish connecting the account");
+  }
 }
 
 /**
@@ -53,9 +89,8 @@ export async function createConnectLink(platform: string): Promise<ConnectLinkRe
  */
 export async function disconnectZernioAccount(id: string, force = false): Promise<void> {
   const query = force ? "?force=true" : "";
-  const res = await fetch(`${BASE}/accounts/${encodeURIComponent(id)}${query}`, {
+  const res = await scopedFetch(`${BASE}/accounts/${encodeURIComponent(id)}${query}`, {
     method: "DELETE",
-    credentials: "include",
   });
   if (!res.ok) {
     throw await zernioError(res, "Unable to disconnect the account");
@@ -63,7 +98,7 @@ export async function disconnectZernioAccount(id: string, force = false): Promis
 }
 
 export async function triggerZernioSync(): Promise<void> {
-  const res = await fetch(`${BASE}/sync`, { method: "POST", credentials: "include" });
+  const res = await scopedFetch(`${BASE}/sync`, { method: "POST" });
   if (!res.ok && res.status !== 202) {
     throw await zernioError(res, "Unable to trigger sync");
   }
@@ -76,6 +111,8 @@ const KNOWN_CODES: ReadonlySet<ZernioErrorCode> = new Set<ZernioErrorCode>([
   "invalid_platform",
   "account_not_found",
   "account_has_scheduled_posts",
+  "connection_not_found",
+  "invalid_target",
 ]);
 
 /**

@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
 import { useAddPost } from '@/hooks/usePosts'
@@ -14,7 +15,7 @@ import { resolveForPlatform } from '@/lib/publishingAccount'
 import { hasVisibleProblem } from '@/lib/postValidation'
 import { isDateLocked } from './LockMark'
 import { PostCard } from './PostCard'
-import { WEEK_RUNGS, pickWeekRung, weekColumnHeight, type WeekRung } from './cardRungs'
+import { CARD_RUNGS, pickRung, stackHeight, type CardRung } from './cardRungs'
 import { dayLabel, isSameDay, visibleWeekDays, weekdayLabel } from './date'
 import { cn } from '@/lib'
 
@@ -35,7 +36,7 @@ type Column = {
   isToday: boolean
   posts: Post[]
   /** How much of itself every card in this column shows — see `cardRungs`. */
-  rung: WeekRung
+  rung: CardRung
   /**
    * Whether the cards, at that rung, still add up to more than the lane holds.
    * Decides whether the lane scrolls — and scrolling is what clips a hovered
@@ -61,9 +62,11 @@ function isPastDay(day: Date): boolean {
 function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarProps) {
   /** Column whose empty space the pointer is on — see the column's onMouseOver. */
   const [hoverKey, setHoverKey] = useState<string | null>(null)
+  const { t, i18n } = useTranslation()
   const today = useMemo(() => new Date(), [])
   const addPost = useAddPost(campaignId)
-  const { firstDayOfWeek, hiddenDays, card: fields } = useCalendarSettings(campaignId)
+  const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings(campaignId)
+  const fields = card.week
   const { dragOverKey, laneHandlers } = useCalendarDrop(campaignId, posts)
   // One read of the cached platform list for the whole grid; the cards call
   // the hook form for themselves and get the same answer.
@@ -153,31 +156,37 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
           hasImage: Boolean(post.media_urls[0]),
         }))
         const rung =
-          laneHeight === null ? WEEK_RUNGS[0] : pickWeekRung(facts, available, fields)
+          laneHeight === null ? CARD_RUNGS[0] : pickRung(facts, available, fields)
         return {
           key: day.toDateString(),
-          label: weekdayLabel(day),
-          dateLabel: dayLabel(day),
+          label: weekdayLabel(day, i18n.language),
+          dateLabel: dayLabel(day, i18n.language),
           day,
           isToday: isSameDay(day, today),
           posts: dayPosts,
           rung,
           // The same arithmetic the rung was picked with, asked one more
-          // question. It errs high — `weekCardHeight` rounds a title line up —
+          // question. It errs high — `cardHeight` rounds a title line up —
           // so the answer is "scrolls" in the borderline case, which is the
           // safe direction: a clipped shadow beats a lane that can't reach its
           // last card.
-          overflows: laneHeight !== null && weekColumnHeight(rung, facts, fields) > available,
+          overflows: laneHeight !== null && stackHeight(rung, facts, fields) > available,
         }
       }),
-    [days, today, postsByDay, laneHeight, platformViews, fields],
+    [days, today, postsByDay, laneHeight, platformViews, fields, i18n.language],
   )
 
   return (
     // min-w-0 lets the calendar shrink to its grid cell so the day columns
     // scroll inside the wrapper below instead of pushing the whole component
     // past the viewport edge.
-    <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-x-auto">
+    //
+    // `-mx-1 px-1` is the scroller's own doing and cancels out: a scroll
+    // container clips at its padding box, so without the 4px the first and last
+    // columns would shear the side off a hovered card's shadow (`--shadow-md`
+    // reaches 4px). The negative margin gives those 4px back to the layout, so
+    // the grid still starts and ends exactly where the toolbar above it does.
+    <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-x-auto -mx-1 px-1">
       {/* gap-0.5 = the 2px gutters between columns; the page background
           shows through as the divider. */}
       <div className="flex h-full gap-0.5">
@@ -224,26 +233,23 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
               ref={col.key === columns[0]?.key ? laneRef : undefined}
               {...laneHandlers(col.key, col.day)}
               className={cn(
-                // 4px of side padding and none anywhere else, with 2px between
-                // cards. The lane is a container, not a frame: every pixel it
-                // keeps for itself is a pixel off the card, and at a 150px
-                // column the inset it used to carry was the difference between
-                // a title fitting and clamping. What separates a card from the
-                // lane's fill is the gap, not a frame.
+                // No padding at all, with 2px between cards — the same as the
+                // month's cells. The lane is a container, not a frame: every
+                // pixel it keeps for itself is a pixel off the card, and at a
+                // 150px column that is the difference between a title fitting
+                // and clamping. What separates a card from the lane's fill is
+                // the gap, not a frame.
                 //
-                // The 4px that stayed is the shadow's, and it is the width it
-                // is because of what this theme makes `shadow-md`:
-                // `--shadow-md` in `index.css` is `0 5px 10px -1px`, so it
-                // reaches 10/2 − 1 = 4px past the card sideways. (Tailwind's
-                // stock `shadow-md` would only need 2 — read the token, not
-                // the utility.) Anything that clips this lane — itself when it
-                // scrolls, the grid's own `overflow-x-auto` at the first and
-                // last column — clips at the padding box, so those four pixels
-                // are the difference between a hovered card that casts and one
-                // sheared off flush with its own edge. They cannot come out of
-                // the gutter instead: the gutter is outside every one of those
-                // clip boxes.
-                'flex-1 min-h-0 bg-secondary flex flex-col gap-0.5 items-stretch px-1 transition-colors',
+                // It used to hold 4px each side for the hovered card's shadow:
+                // `--shadow-md` here is `0 5px 10px -1px`, so it reaches 4px
+                // past the card sideways, and every box that clips this lane —
+                // itself when it scrolls, the grid's `overflow-x-auto` at the
+                // first and last column — clips at the padding box. That inset
+                // is gone, so in those two cases the side of the shadow is
+                // sheared off flush with the card. The cost is only visible
+                // while hovering; the inset was visible always, on every card
+                // and on the dashed ADD POST below them.
+                'flex-1 min-h-0 bg-secondary flex flex-col gap-0.5 items-stretch transition-colors',
                 // And the lane only scrolls when it has to, because a scroll
                 // container clips on *both* axes however little scrolling it is
                 // doing — so `overflow-y-auto` on a lane with room to spare was
@@ -272,7 +278,7 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
                 <button
                   type="button"
                   onClick={() => addPost(col.day)}
-                  title={`Add a post on ${col.dateLabel}`}
+                  title={t('calendar.addPostOn', { date: col.dateLabel })}
                   className={cn(
                     'shrink-0 flex h-9 items-center justify-center gap-2 cursor-pointer',
                     // Typography lifted from the toolbar's ADD POST (the
@@ -289,7 +295,7 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
                   )}
                 >
                   <PlusIcon weight="bold" className="size-4 shrink-0" />
-                  <span>ADD POST</span>
+                  <span>{t('calendar.addPost')}</span>
                 </button>
               )}
             </div>

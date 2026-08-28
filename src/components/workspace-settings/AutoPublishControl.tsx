@@ -10,9 +10,11 @@ import {
   useToggleAutoPublish,
 } from '@/hooks/useAutoPublishAllowlist'
 import { useConvertToManualPublish } from '@/hooks/useConvertToManualPublish'
+import { formatDate } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { PlatformView } from '@/lib/platformDictionary'
 import { listPosts } from '@/services/api/posts'
+import { WORKSPACE_POSTS_KEY } from '@/lib/queryKeys'
 import { toast } from '@/stores/toastStore'
 import type { Post } from '@/types/posts'
 
@@ -70,9 +72,13 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
     try {
       // Fetched rather than read from a cache: this spans every campaign, and
       // the per-campaign post queries only cover whatever the user has opened.
+      // `staleTime: 0` because the key is shared with `useAssetUsage`, which
+      // keeps it warm — a safety check over what will auto-publish must not
+      // run on a list up to 30 seconds old.
       const posts = await queryClient.fetchQuery({
-        queryKey: ['posts'],
+        queryKey: WORKSPACE_POSTS_KEY,
         queryFn: listPosts,
+        staleTime: 0,
       })
       const pending = pendingAutoPosts(posts, platform.id, Date.now())
       if (pending.length === 0) {
@@ -241,12 +247,11 @@ function PendingPostsDialog({
                 {' · '}
                 {/* The active language, not the browser's: the rest of the
                     line is translated, so the date should agree with it. */}
-                {p.scheduled_at
-                  ? new Date(p.scheduled_at).toLocaleString(i18n.language, {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    })
-                  : t('workspaceSettings.autoPublish.pending.noDate')}
+                {formatDate(
+                  p.scheduled_at,
+                  { dateStyle: 'medium', timeStyle: 'short' },
+                  i18n.language,
+                ) ?? t('workspaceSettings.autoPublish.pending.noDate')}
               </span>
             </li>
           ))}

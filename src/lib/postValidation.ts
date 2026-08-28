@@ -7,6 +7,7 @@ import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import { mediaNoun, strandedAttachments, type MediaPolicy } from '@/lib/postMedia'
 import type { PublishingAccountResolution } from '@/lib/publishingAccount'
 import { charCount, markdownToSocialText } from '@/lib/socialText'
+import { formatNumber } from '@/lib/intl'
 
 /**
  * `fail` blocks publishing (the server would reject it), `warn` is
@@ -137,7 +138,7 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
       id: 'char-limit',
       label: 'Length',
       status: 'pass',
-      detail: `${length.toLocaleString()} characters — no limit on this platform`,
+      detail: `${formatNumber(length)} characters — no limit on this platform`,
     })
   } else {
     const over = length > maxContentChars
@@ -146,8 +147,8 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
       label: 'Length',
       status: over ? 'fail' : 'pass',
       detail: over
-        ? `${length.toLocaleString()} / ${maxContentChars.toLocaleString()} characters — ${(length - maxContentChars).toLocaleString()} over`
-        : `${length.toLocaleString()} / ${maxContentChars.toLocaleString()} characters`,
+        ? `${formatNumber(length)} / ${formatNumber(maxContentChars)} characters — ${formatNumber(length - maxContentChars)} over`
+        : `${formatNumber(length)} / ${formatNumber(maxContentChars)} characters`,
     })
   }
 

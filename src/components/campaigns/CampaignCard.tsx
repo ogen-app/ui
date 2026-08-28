@@ -2,11 +2,12 @@ import { Link } from '@tanstack/react-router'
 import { CaretRightIcon } from '@phosphor-icons/react'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge.tsx'
-import { CampaignIcon, campaignAbbr } from '@/components/layout/CampaignIcon.tsx'
+import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
 import { StatTile } from '@/components/campaigns/overview/StatTile.tsx'
+import { formatNumber } from '@/lib/intl'
 import { useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
-import { campaignColorVar } from '@/lib/campaignColor.ts'
+import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
 import { campaignTypeInfo } from '@/lib/campaignTypeDictionary.ts'
 import {
   attentionItems,
@@ -86,21 +87,39 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
     platformCount === 0
       ? 'No platforms connected'
       : `${platformCount} platform${platformCount === 1 ? '' : 's'}`
-  const stage = currentStage(campaign, posts)
+  // Gated like the tiles: the stage is read off the posts, and an empty list
+  // — which is what loading and failure both look like here — reads as every
+  // phase finished, so the card would claim the final stage while the query
+  // is still out.
+  const stage = settled ? currentStage(campaign, posts) : null
   const advanced = advancedSummary(campaign)
+  // Same construction and separator as `properties` above, because it is the
+  // same kind of line: facts about how the campaign is set up, not its
+  // progress.
+  const facts = [platformSummary, stage].filter(Boolean).join(' · ')
 
   return (
-    <section className="w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0">
-      <Link
-        to="/campaigns/$campaignId"
-        params={{ campaignId: campaign.id }}
-        className="group -mx-2 -my-1 flex items-center gap-3 rounded-md px-2 py-1 hover:bg-secondary min-w-0"
-      >
+    // The whole card is the link — there is nothing else to click on it, so a
+    // hit area smaller than the card was only ever a target to miss. The lift
+    // on hover is the affordance that replaces the header's tint: it says the
+    // card as a whole is the thing that responds. `group` is on the card too,
+    // so the caret answers to a hover anywhere on it.
+    //
+    // `aria-label` names the link "Open <campaign>" instead of letting it read
+    // out as its own contents — every count, badge and stage name, in one
+    // breath. The contents are still there to browse; this is just the name.
+    <Link
+      to="/campaigns/$campaignId"
+      params={{ campaignId: campaign.id }}
+      aria-label={`Open ${title}`}
+      className="group w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0 cursor-pointer transition-shadow duration-150 hover:shadow-lg"
+    >
+      <div className="flex items-center gap-3 min-w-0">
         {/* 40px of mark against 40px of text — the two lines below set the
             height, and the icon spans both rather than hanging off the title. */}
         <CampaignIcon
-          abbr={campaignAbbr(title)}
-          color={campaignColorVar(campaign.id)}
+          abbr={identityAbbr(title)}
+          color={identityColorVar(campaign.id)}
           className="size-10 shrink-0"
         />
         <span className="flex min-w-0 flex-1 flex-col">
@@ -123,13 +142,12 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
               className="shrink-0"
             />
           ))}
-        <span className="sr-only">Open {title}</span>
         <CaretRightIcon
           className="size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
           weight="bold"
           aria-hidden
         />
-      </Link>
+      </div>
 
       {failed ? (
         <p className="text-sm text-tertiary-foreground">
@@ -155,26 +173,18 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
         <Skeleton className="h-16 w-full" />
       )}
 
-      <div className="flex flex-col gap-1.5 min-w-0">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-secondary-foreground">
-          <span>{platformSummary}</span>
-          {stage && (
-            <>
-              <span className="text-tertiary-foreground" aria-hidden>
-                ·
-              </span>
-              <span className="text-tertiary-foreground">{stage}</span>
-            </>
-          )}
-        </div>
+      {/* One voice for everything that describes the setup — these lines and
+          the properties line under the title are the same kind of statement, so
+          they are the same size and colour rather than three shades of quiet.
+          What separates them is position, not styling. */}
+      <div className="flex flex-col gap-1.5 min-w-0 text-xs/4 text-tertiary-foreground">
+        <div className="truncate">{facts}</div>
         {/* Advanced settings take their own line: they are the exception, so
             they must not push the channels — which every campaign has — off
             the end of theirs. */}
-        {advanced && (
-          <div className="text-xs text-tertiary-foreground">{advanced}</div>
-        )}
+        {advanced && <div className="truncate">{advanced}</div>}
       </div>
-    </section>
+    </Link>
   )
 }
 
@@ -228,7 +238,7 @@ function advancedSummary(campaign: Campaign): string | null {
   const parts: string[] = []
   if (campaign.budget != null && campaign.budget > 0) {
     parts.push(
-      `Budget ${campaign.budget.toLocaleString()} ${campaign.currency}`.trim(),
+      `Budget ${formatNumber(campaign.budget)} ${campaign.currency}`.trim(),
     )
   }
   const language = campaign.language.trim()

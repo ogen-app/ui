@@ -4,6 +4,7 @@ import { usePublishingAccount } from '@/hooks/usePublishingAccount.ts'
 import { getPlatformInfo } from '@/lib/platformDictionary.ts'
 import { getPlatformMedia } from '@/lib/platformMedia.ts'
 import { relativeTime } from '@/lib/relativeTime.ts'
+import { formatNumber } from '@/lib/intl'
 import { useCharLimit } from '@/hooks/useCharLimit'
 import { charCount, markdownToSocialText, threadSegments } from '@/lib/socialText.ts'
 import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments'
@@ -515,7 +516,7 @@ function Notes({
   if (!thread && max !== null && charCount(text) > max) {
     notes.push(
       <span className="text-destructive">
-        The text is past {platformName}'s limit of {max.toLocaleString()} characters and will
+        The text is past {platformName}'s limit of {formatNumber(max)} characters and will
         be rejected.
       </span>,
     )

@@ -8,8 +8,8 @@ import {
   type PostVersion,
 } from '@/services/api/posts'
 import { postKey } from '@/hooks/usePost'
-import { invalidateCampaignPosts } from '@/hooks/usePosts'
 import { flushPendingSave } from '@/lib/pendingSaves'
+import { landSavedPost } from '@/lib/postCache'
 import { postVersionsKey } from '@/lib/queryKeys'
 import { toast } from '@/stores/toastStore'
 
@@ -77,9 +77,10 @@ export function usePostVersions(postId: string): UsePostVersionsResult {
       // The restore itself added a version, and auto-saved one before it if
       // there were unsnapshotted edits — so the list is two behind, not one.
       void qc.invalidateQueries({ queryKey: postVersionsKey(postId) })
-      // New content is new readiness: the calendar, the overview roll-up and
-      // the Campaigns-list summaries are all computed from it.
-      invalidateCampaignPosts(qc, post.campaign_id)
+      // We hold the restored row, so land it rather than invalidate — the
+      // list shows the restored title immediately instead of flashing the
+      // pre-restore one through a refetch (postCache's own rule).
+      landSavedPost(qc, post)
     },
   })
 

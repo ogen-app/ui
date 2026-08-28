@@ -1,15 +1,17 @@
 import { memo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import { CircleDashedIcon, UserCircleIcon, WarningIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
-import { POST_STATUS_LABELS } from '@/types/posts'
 import { cn, formatTitle } from '@/lib'
+import { formatDate } from '@/lib/intl'
+import { postStatusLabel } from '@/lib/postStatusLabel'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { hasVisibleProblem } from '@/lib/postValidation'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
-import { DEFAULT_CARD_FIELDS, cardIsBare, type CardFields } from './cardFields'
-import { WEEK_RUNGS, type WeekRung } from './cardRungs'
+import { DEFAULT_WEEK_FIELDS, cardIsBare, type CardFields } from './cardFields'
+import { CARD_BANDS, CARD_RUNGS, type CardBand, type CardRung } from './cardRungs'
 import { LockMark, isDateLocked } from './LockMark'
 import { STATUS_ACCENT_COLOR, STATUS_ICON, STATUS_TEXT_COLOR } from './status'
 
@@ -17,16 +19,24 @@ type PostCardProps = {
   post: Post
   /**
    * How much of itself to show. Chosen per day by `WeeklyCalendar` from the
-   * space the column has, so every card in a Tuesday matches. Defaults to the
-   * roomiest for callers with space to spare.
+   * column's space and by `MonthlyCalendar` from the cell's, so every card in
+   * one day matches. Defaults to the roomiest for callers with space to
+   * spare, like `NotScheduledPanel`.
    */
-  rung?: WeekRung
+  rung?: CardRung
   /**
    * Which rows the user allows at all — their calendar settings. The rung can
    * only take away from what this leaves; see `cardFields` for why the two are
    * separate decisions.
    */
   fields?: CardFields
+  /**
+   * How tall the picture's band is, where there is a picture — the room the
+   * view has for one, which is not the same question as whether to draw it
+   * (`fields.image`) or how many rows fit beside it (`rung`). The week's is the
+   * default; the month asks for `compact`. See `CARD_BANDS`.
+   */
+  band?: CardBand
 }
 
 /** `line-clamp-N` as static strings, so Tailwind can see them. */
@@ -36,18 +46,35 @@ const TITLE_CLAMP: Record<number, string> = {
   3: 'line-clamp-3',
 }
 
+/** The card's own inset, `p-2`. The band sits on top of it. */
+const CARD_PADDING = 8
+
 /**
- * Where the picture stops being only a picture.
+ * How far above the rows the picture starts giving way.
  *
- * Deliberately *not* the 108px the rows are pushed down by — 24px above it. The
- * two used to be the same number, on the reasoning that the band should be
- * whole picture and the fade should start where the rows do. What that actually
- * bought was a first row sitting on the one part of the ramp the curve leaves
- * near-clear, which on a pale photograph is 12px of grey on a highlight. Giving
- * the fade a 24px run-up costs the band nothing anyone can see and hands the
- * first row the same footing every other row has.
+ * Deliberately *not* where the rows start. The two used to be the same number,
+ * on the reasoning that the band should be whole picture and the fade should
+ * start where the rows do. What that actually bought was a first row sitting on
+ * the one part of the ramp the curve leaves near-clear, which on a pale
+ * photograph is 12px of grey on a highlight. Giving the fade a 24px run-up
+ * costs the band nothing anyone can see and hands the first row the same
+ * footing every other row has.
+ *
+ * A run-up rather than a fixed start, so it holds for both band sizes: the
+ * month's is a little over half the week's, and a ramp that began at the same
+ * absolute pixel there would be most of the way through the picture before the
+ * card had drawn any of it.
  */
-const FADE_START = 84
+const FADE_RUNUP = 24
+
+/**
+ * Where the rows begin, per band — the card's padding plus the picture's. As
+ * static class strings, since Tailwind has to see them written out.
+ */
+const BAND_PADDING: Record<CardBand, string> = {
+  full: 'pt-[108px]',
+  compact: 'pt-[64px]',
+}
 
 /**
  * How opaque the fade ever gets. Short of 1 on purpose: the card's own fill
@@ -62,11 +89,12 @@ const FADE_MAX = 0.97
 /**
  * The halo behind the first row on a card that has a picture under it.
  *
- * That row is the one place the fade cannot help. It starts at 108px, and the
- * ramp is at its steepest between 84 and roughly 130 — so a 16px row sitting
- * there has its top half on something like half-strength fill however the curve
- * is drawn. Moving the ramp up far enough to finish before it would cost the
- * band its whole point, so the row is given its own footing instead.
+ * That row is the one place the fade cannot help. It starts where the ramp is
+ * at its steepest — the run-up above it is the whole of the ramp's clear part —
+ * so a 16px row sitting there has its top half on something like half-strength
+ * fill however the curve is drawn. Moving the ramp up far enough to finish
+ * before it would cost the band its whole point, so the row is given its own
+ * footing instead.
  *
  * `drop-shadow` rather than `text-shadow` because the row is not only text: the
  * status mark and the padlock are SVG, and a text shadow goes straight past
@@ -86,10 +114,10 @@ const ROW_HALO = [2, 3, 5]
 
 /**
  * The fade's shape, as (how far down the ramp, how far through the fade it is
- * there) — a normalised curve, `FADE_MAX` scales it. Position 0 is
- * `FADE_START`, position 1 is the card's bottom edge, so this is a curve over
+ * there) — a normalised curve, `FADE_MAX` scales it. Position 0 is where the
+ * ramp starts, position 1 is the card's bottom edge, so this is a curve over
  * the ramp rather than over the card: the ramp's length varies with the card's
- * height and the curve doesn't.
+ * height and with which band it has, and the curve doesn't.
  *
  * Not a straight line, which is what this was. A linear ramp spreads the fade
  * evenly over a stretch the rows sit on from end to end, so every row gets some
@@ -126,20 +154,27 @@ const fill = (alpha: number) =>
   `color-mix(in srgb, var(--color-primary) ${Math.round(alpha * FADE_MAX * 100)}%, transparent)`
 
 /**
- * The curve as one `linear-gradient`, built once.
+ * The curve as one `linear-gradient`, per band — two strings, both built once.
  *
  * Two things make it expressible in CSS at all. Stop positions are
- * `calc(84px + (100% - 84px) × f)` — a percentage of what is left of the card
- * *after* the clear band, which no single unit can say. And the partial
- * opacities are `color-mix(… , transparent)` rather than a hard-coded rgba, so
- * the ramp is made of the card's own fill at every step: it has to end on
- * something that reads as the same surface, and a literal that merely looks
+ * `calc(<start>px + (100% - <start>px) × f)` — a percentage of what is left of
+ * the card *after* the clear band, which no single unit can say. And the
+ * partial opacities are `color-mix(… , transparent)` rather than a hard-coded
+ * rgba, so the ramp is made of the card's own fill at every step: it has to end
+ * on something that reads as the same surface, and a literal that merely looks
  * like it would come apart the day the theme moves.
  */
-const FADE_BACKGROUND = `linear-gradient(to bottom, transparent 0px, ${FADE_CURVE.map(
-  ([at, opacity]) =>
-    `${fill(opacity)} calc(${FADE_START}px + (100% - ${FADE_START}px) * ${at})`,
-).join(', ')}, ${fill(1)} 100%)`
+const FADE_BACKGROUNDS: Record<CardBand, string> = Object.fromEntries(
+  Object.entries(CARD_BANDS).map(([band, height]) => {
+    const start = CARD_PADDING + height - FADE_RUNUP
+    return [
+      band,
+      `linear-gradient(to bottom, transparent 0px, ${FADE_CURVE.map(
+        ([at, opacity]) => `${fill(opacity)} calc(${start}px + (100% - ${start}px) * ${at})`,
+      ).join(', ')}, ${fill(1)} 100%)`,
+    ]
+  }),
+) as Record<CardBand, string>
 
 /**
  * The title's type scale, between 12 and 14px, from the two things that
@@ -164,9 +199,11 @@ function titleSize(title: string): string {
 
 function PostCardComponent({
   post,
-  rung = WEEK_RUNGS[0],
-  fields = DEFAULT_CARD_FIELDS,
+  rung = CARD_RUNGS[0],
+  fields = DEFAULT_WEEK_FIELDS,
+  band = 'full',
 }: PostCardProps) {
+  const { t, i18n } = useTranslation()
   const title = formatTitle(post.title)
   const platformInfo = getPlatformInfo(post.platform_id)
   // Fall back to a neutral, "undefined"-feeling dashed circle (in the muted
@@ -174,19 +211,23 @@ function PostCardComponent({
   const PlatformIcon = platformInfo?.icon ?? CircleDashedIcon
   const label = platformInfo
     ? getPostTypeLabel(post.platform_id, post.platform_post_type)
-    : 'No platform'
-  const statusLabel = POST_STATUS_LABELS[post.status] ?? post.status
+    : t('posts.noPlatform')
+  const statusLabel = postStatusLabel(t, post.status)
   const borderColor = STATUS_ACCENT_COLOR[post.status] ?? 'border-l-border'
   // The calendar lays posts out by scheduled_at; show that time (or the
   // publish time once published). Unscheduled posts have neither — omit it.
   const timeSource = post.scheduled_at ?? post.published_at
-  const time = timeSource
-    ? new Date(timeSource).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    : null
+  const time = formatDate(
+    timeSource,
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+      // Pinned rather than left to the locale: the card gives the time one
+      // fixed-width slot, and a 12-hour rendering adds "AM"/"PM" to it.
+      hour12: false,
+    },
+    i18n.language,
+  )
 
   // Only what the list payload already carries — `media_urls`. The editor's
   // uploads land in `post_attachments`, whose thumbnails are hydrated per
@@ -258,10 +299,10 @@ function PostCardComponent({
         // ladder is how a column gets smaller; flexbox does not get a vote.
         'relative shrink-0 overflow-hidden bg-primary p-2 w-full border-l-2',
         borderColor,
-        // The picture's own band: a hundred pixels on top of the card's eight,
-        // so the rows start below it. See the image block for why the picture
-        // is still full-bleed behind them.
-        image && 'pt-[108px]',
+        // The picture's own band on top of the card's own 8px, so the rows
+        // start below it. See the image block for why the picture is still
+        // full-bleed behind them.
+        image && BAND_PADDING[band],
         // `@container` so the title can size itself off the card's own width
         // — the columns are flex-1 from a 150px floor, so the same card is
         // narrow on a seven-day week and roomy on a two-day one.
@@ -294,17 +335,20 @@ function PostCardComponent({
           any of them.
 
           Two things read as one here. The image is full-bleed — `inset-0`, not
-          a 100px strip — and the gradient over it is what decides how much of
-          it you see. It holds fully clear to `FADE_START`, so the top of the
-          card is the photograph and nothing else, and then runs to `FADE_MAX`
+          a strip the height of the band — and the gradient over it is what
+          decides how much of it you see. It holds fully clear until a run-up
+          short of where the rows start, so the top of the card is the
+          photograph and nothing else, and then runs to `FADE_MAX`
           at the card's very bottom. Which means the rows do not sit *below* the
           picture, they sit *on* it, on the stretch where it is giving way — and
           the last of them on a ground that is still a tenth photograph, because
           the ramp stops short of the card's own fill on purpose.
 
-          Doing it this way rather than clipping the image to 100px is what
+          Doing it this way rather than clipping the image to the band is what
           removes the seam: a hard-edged strip ends on whatever pixel the crop
           lands on, while a fade that never finishes has nothing left to end.
+          It is also what lets the month have a shorter band for the price of
+          one number — the picture is not resized, only more of it is covered.
           What decides whether the rows are readable on it is not where the ramp
           starts and finishes but its *shape* — see `FADE_CURVE`, which spends
           the transition in the first third and leaves the whole stack, the
@@ -333,7 +377,7 @@ function PostCardComponent({
           />
           <div
             className="pointer-events-none absolute inset-0"
-            style={{ background: FADE_BACKGROUND }}
+            style={{ background: FADE_BACKGROUNDS[band] }}
           />
         </>
       )}
@@ -390,7 +434,7 @@ function PostCardComponent({
               // label beside this, or the `sr-only` one below — so the glyph
               // would only repeat it.
               aria-hidden={!problem}
-              aria-label={problem ? 'This post has a problem' : undefined}
+              aria-label={problem ? t('posts.hasProblem') : undefined}
             />
             {/* Plain `tabular-nums` in the body face, which under Geist is
                 both aligned and clean. Not `font-mono`: Geist Mono draws a
@@ -473,7 +517,7 @@ function PostCardComponent({
         {fields.account && (
           <div className="flex items-center gap-1 text-[12px]/[16px] text-tertiary-foreground min-w-0">
             <UserCircleIcon className="size-3.5 shrink-0" />
-            <span className="truncate">{account.name ?? 'No account'}</span>
+            <span className="truncate">{account.name ?? t('posts.noAccount')}</span>
           </div>
         )}
       </div>

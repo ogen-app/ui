@@ -1,6 +1,6 @@
 /**
- * What a week card is *allowed* to show — the user's answer, as opposed to the
- * rung ladder's.
+ * What a calendar card is *allowed* to show — the user's answer, as opposed to
+ * the rung ladder's.
  *
  * Two different things decide what ends up on a card, and keeping them in
  * separate modules is what keeps either one arguable:
@@ -11,59 +11,76 @@
  * - **`cardRungs`** is space. Given what is allowed, how much of it fits in the
  *   column this Tuesday. It can only ever take away.
  *
- * So the picture is *not* on the rung ladder even though it now costs a hundred
- * pixels: hiding it is a decision about what a calendar is for, and the ladder
- * has no business making that one silently on a busy day.
+ * The fields are answered twice over, once for the week and once for the month:
+ * the same card is drawn in both views now, but a column that is most of a
+ * screen tall and a cell that is a hundred pixels are not the same amount of
+ * room, and a user who wants the account on the week almost never wants it on
+ * the month. `useCalendarSettings` keeps the two blobs; nothing else has to
+ * know which view it is drawing for beyond passing the right one down.
  *
- * One thing is deliberately not a field: the status accent down the card's left
- * edge. It costs no content width, it is the only thing the week and the month
- * card are guaranteed to agree on, and a calendar that can't say which posts are
- * drafts is not a calendar — so it is always drawn and there is no switch for it.
+ * The picture is deliberately *not* one of these fields. It is one answer for
+ * the whole calendar (`imagePreviews`) — see `CardFields.image`.
+ *
+ * One thing is not switchable at all: the status accent down the card's left
+ * edge. It costs no content width, and a calendar that can't say which posts
+ * are drafts is not a calendar — so it is always drawn and there is no switch
+ * for it.
  */
 
 /** In the order the card draws them, top to bottom — the panel lists them so. */
-export const CARD_FIELDS = ['image', 'status', 'time', 'title', 'platform', 'account'] as const
+export const CARD_FIELDS = ['status', 'time', 'title', 'platform', 'account'] as const
 
 export type CardField = (typeof CARD_FIELDS)[number]
 
-export type CardFields = Record<CardField, boolean>
+/**
+ * The switchable rows, plus the picture.
+ *
+ * `image` sits in the record because every card reads it the same way as the
+ * rest, but it is not a `CardField`: it has no switch of its own in either
+ * view, it does not count towards the "at least one row" floor, and its value
+ * is the calendar-wide `imagePreviews` preference copied in by
+ * `useCalendarSettings`. Turning previews on turns them on everywhere, which
+ * is what makes it a property of the calendar rather than of a card.
+ */
+export type CardFields = Record<CardField, boolean> & { image: boolean }
 
 /**
- * The card as it was before any of this was configurable, field for field: a
- * picture where there is one, the status as the icon's colour only, a time, a
- * title and a platform.
+ * The week card as it was before any of this was configurable: the status as
+ * the icon's colour only, a time, a title and a platform.
  *
- * `status` and `account` are the two new rows, and both start off. That is the
- * point of the defaults — a user who never opens the panel sees exactly the card
- * they saw yesterday, and neither new row silently changes what a column holds.
+ * `status` and `account` are the two rows that start off — a user who never
+ * opens the panel sees exactly the card they saw yesterday.
  */
-export const DEFAULT_CARD_FIELDS: CardFields = {
-  image: true,
+export const DEFAULT_WEEK_FIELDS: CardFields = {
   status: false,
   time: true,
   title: true,
   platform: true,
   account: false,
-}
-
-export const CARD_FIELD_LABELS: Record<CardField, string> = {
-  image: 'Image',
-  status: 'Status label',
-  time: 'Time',
-  title: 'Title',
-  platform: 'Platform',
-  account: 'Account',
+  image: true,
 }
 
 /**
- * What each switch is actually for, where the label doesn't carry it. The
- * status row is the one that needs saying: turning it on doesn't add the status
- * — the card already has it, in colour — it spends a line writing it out, and
- * pushes the time onto its own line to make room.
+ * The month card, which is the same card in a hundred-pixel cell.
+ *
+ * Only *when* and *what* — the two questions a month is read for. The platform
+ * comes off because the cell can hold three or four cards with it and five or
+ * six without, and a month that shows fewer days' work in full is a worse trade
+ * than a month that doesn't name the channel.
+ *
+ * The picture stays on, on the same terms as the week's: it is the calendar's
+ * one answer, and `useCalendarSettings` stamps it over this either way. What
+ * differs is that the month draws it on a shorter band and drops it on a day
+ * with no room — see `CARD_BANDS` and `fitMonthCell`. So this `true` is the
+ * default for a direct caller, and for the month itself it is never read.
  */
-export const CARD_FIELD_NOTES: Partial<Record<CardField, string>> = {
-  status: 'Writes the status out, and gives the time its own line',
-  image: 'Only posts that have one',
+export const DEFAULT_MONTH_FIELDS: CardFields = {
+  status: false,
+  time: true,
+  title: true,
+  platform: false,
+  account: false,
+  image: true,
 }
 
 export function visibleFieldCount(fields: CardFields): number {
@@ -74,15 +91,14 @@ export function visibleFieldCount(fields: CardFields): number {
  * Whether the switches have stripped the card back to one row of content — the
  * floor the panel will not let the user go below.
  *
- * It is a real place: `canHideField` stops at one switch, so "only the title",
- * "only the time" and "only the picture" are all states a user can arrive at,
- * and the last of those on a post with no picture is a blank rectangle. A card
- * that says nothing about what it is isn't a smaller card, it is a rendering
- * bug with a status colour down one side.
+ * It is a real place: `canHideField` stops at one switch, so "only the title"
+ * and "only the time" are both states a user can arrive at. A card that says
+ * nothing about what it is isn't a smaller card, it is a rendering bug with a
+ * status colour down one side.
  *
  * So at the floor the status stops being only a colour and says itself: the
  * mark, and the word beside it. That is what `PostCard` does with this, and
- * `weekCardHeight` has to agree — hence one function rather than the same
+ * `cardHeight` has to agree — hence one function rather than the same
  * condition written twice.
  *
  * Counted in *rows of content*, which is why the picture is not one of them: it

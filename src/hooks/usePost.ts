@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   cancelPost,
@@ -10,6 +10,7 @@ import {
   type CancelTarget,
 } from '@/services/api/posts'
 import { registerPendingSave } from '@/lib/pendingSaves'
+import { cachedPostFromList, landSavedPost } from '@/lib/postCache'
 import type { Post, PostStatus } from '@/types/posts'
 
 const SAVE_DEBOUNCE_MS = 600
@@ -19,6 +20,16 @@ const SAVE_DEBOUNCE_MS = 600
 // landing an unschedule), so we poll to surface those without a reload.
 const SCHEDULED_POLL_MS = 5_000
 
+/**
+ * The editor's copy of a post, and only the editor's.
+ *
+ * The calendar and the list read the same post from a different namespace
+ * (`campaignPostsKey`), and neither key invalidates the other. So every write
+ * in this hook lands twice: `setQueryData` here, `landSavedPost` there. Skip
+ * the second and the post keeps its old title everywhere outside the editor
+ * for the next 30 seconds — the `staleTime` — which is longer than it takes to
+ * rename a post and press Back.
+ */
 export const postKey = (id: string) => ['post', id] as const
 
 export type TransitionStatusResult =
@@ -73,10 +84,21 @@ type UsePostResult = {
 
 export function usePost(postId: string): UsePostResult {
   const qc = useQueryClient()
+  // Opening a post the campaign list already holds costs no round trip and,
+  // more visibly, no loading state: the route unmounts the whole editor while
+  // `isLoading` is true, which takes the right sidebar's panel scope with it —
+  // so an uncached post used to slide the rail shut and open again on arrival,
+  // while a cached one didn't. Only consulted when `['post', id]` is empty;
+  // Query ignores `initialData` for a key it already has.
+  const seed = useMemo(() => cachedPostFromList(qc, postId), [qc, postId])
   const query = useQuery({
     queryKey: postKey(postId),
     queryFn: () => getPost(postId),
     enabled: !!postId,
+    initialData: seed?.post,
+    // The list's age, not this moment's — a seed older than the 30s staleTime
+    // refetches straight away instead of passing for fresh.
+    initialDataUpdatedAt: seed?.updatedAt,
     refetchInterval: (q) =>
       q.state.data?.status === 'scheduled' ? SCHEDULED_POLL_MS : false,
   })
@@ -86,6 +108,11 @@ export function usePost(postId: string): UsePostResult {
   const pendingRef = useRef<Post | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const genRef = useRef(0)
+  // The post the editor is on *now*, readable from a flush that outlived a
+  // post switch — `postId` in that closure is the post the flush was armed
+  // for, which is exactly the comparison `flush` needs to make.
+  const postIdRef = useRef(postId)
+  postIdRef.current = postId
   /**
    * The status a transition has asked the server for, while the answer is in
    * flight. An edit made during that window clones the cache, which still
@@ -134,6 +161,17 @@ export function usePost(postId: string): UsePostResult {
       const saved = await saveDoc({ id: postId, next })
       if (genRef.current === genAtFlush) {
         qc.setQueryData(postKey(postId), saved)
+        // The same row, in the list the calendar reads. Gen-guarded with the
+        // write above so two overlapping flushes can't land out of order —
+        // the newer one follows within a debounce either way.
+        landSavedPost(qc, saved)
+      } else if (postId !== postIdRef.current) {
+        // The gen counter moved because the editor switched posts and typing
+        // resumed — a *different* post's words, so the ordering concern above
+        // doesn't apply, and no later flush for this post is coming. The row
+        // is keyed by its own id, so land it; only the editor-key write is
+        // skipped (that cache already holds this optimistic copy).
+        landSavedPost(qc, saved)
       }
     } catch {
       // Toasted by the mutation-cache default under the `errorTitle` above.
@@ -223,6 +261,10 @@ export function usePost(postId: string): UsePostResult {
         if (genRef.current === genAtStart) {
           qc.setQueryData(postKey(postId), saved)
         }
+        // Unguarded, unlike the cache write: the gen counter is about whose
+        // *words* are newer, and a status is not something the user can have
+        // typed past. The list must show the status the server just confirmed.
+        landSavedPost(qc, saved)
         return { ok: true, post: saved }
       } catch (err) {
         // The server refused the move, so any edit stamped with the requested
@@ -271,6 +313,7 @@ export function usePost(postId: string): UsePostResult {
       }
       const result = await schedulePost(postId, base.scheduled_at)
       qc.setQueryData(postKey(postId), result.post)
+      landSavedPost(qc, result.post)
       // The user clicked "Schedule" expecting auto-publish, but the
       // allowlist routed the post to manual publishing. The badge flips
       // silently, so attach a notice explaining what happened.
@@ -310,6 +353,7 @@ export function usePost(postId: string): UsePostResult {
         await cancelPost(postId, target)
         const fresh = await getPost(postId)
         qc.setQueryData(postKey(postId), fresh)
+        landSavedPost(qc, fresh)
         // Stay `cancelling`: fresh is still `scheduled` and the worker
         // hasn't landed the transition yet. The effect below clears it
         // once the status actually changes.
@@ -352,6 +396,7 @@ export function usePost(postId: string): UsePostResult {
         // refetch rather than being reconstructed here.
         const fresh = await getPost(postId)
         qc.setQueryData(postKey(postId), fresh)
+        landSavedPost(qc, fresh)
         return { ok: true, post: fresh }
       } catch (err) {
         qc.invalidateQueries({ queryKey: postKey(postId) })
@@ -384,6 +429,18 @@ export function usePost(postId: string): UsePostResult {
       setCancelling(false)
     }
   }, [cancelling, status])
+
+  // Worker-driven flips arrive through the poll, not through any write in
+  // this hook — the one path "land every post write" would otherwise miss.
+  // Keyed on the two fields a worker can change, so an unschedule the user
+  // watched complete doesn't leave the calendar showing `scheduled` for the
+  // list's staleTime. Every hook-side write already lands itself; landing
+  // again on those changes is an idempotent re-patch of the same row.
+  const polled = query.data
+  const scheduledAt = polled?.scheduled_at
+  useEffect(() => {
+    if (polled) landSavedPost(qc, polled)
+  }, [qc, status, scheduledAt]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     return () => {

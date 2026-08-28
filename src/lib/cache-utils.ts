@@ -2,19 +2,10 @@
  * Cache and storage utilities for the application
  */
 
-// import { useAuthStore } from '@/stores/authStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { queryClient } from '@/lib/queryClient'
 import { resetPrefetchLatch } from '@/lib/prefetch'
-
-/**
- * Result of a storage clearing operation
- */
-export type ClearResult = {
-  type: string
-  success: boolean
-  error?: Error
-}
+import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
 
 /**
  * Helper to delete a single IndexedDB database with timeout protection
@@ -38,15 +29,6 @@ function deleteIndexedDatabase(dbName: string): Promise<void> {
       setTimeout(() => reject(new Error(`Timeout deleting database ${dbName}`)), 2000)
     ),
   ])
-}
-
-/**
- * Clears non-auth data stores without touching auth state.
- * Used during login/register to remove stale guest data before loading the new user's data.
- * Clears: portfolios, reference data caches, and user-specific settings.
- */
-export function clearNonAuthData(): void {
-
 }
 
 /**
@@ -91,8 +73,14 @@ export async function clearAllApplicationData(): Promise<void> {
     results.push({ type: 'queryCache', success: false, error: error as Error })
   }
 
-  // Clear sessionStorage
+  // Clear sessionStorage. The tab's active workspace is unpinned through its
+  // own setter rather than left to `clear()`: that value is mirrored in a
+  // module variable so the request layer can read it synchronously, and wiping
+  // the storage behind it would leave the mirror holding the workspace of the
+  // account that just logged out — which the next login on this tab would then
+  // name in its headers (CON-147).
   try {
+    setActiveWorkspaceId(null)
     sessionStorage.clear()
     results.push({ type: 'sessionStorage', success: true })
   } catch (error) {

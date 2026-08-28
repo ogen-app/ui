@@ -2,6 +2,7 @@ import type { QueryFilters } from '@tanstack/react-query'
 import { postKey } from '@/hooks/usePost'
 import { postAssessmentKey } from '@/hooks/usePostAssessment'
 import { campaignKey } from '@/hooks/useCampaigns'
+import { ASSETS_KEY } from '@/hooks/useContent'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
@@ -52,6 +53,8 @@ export function parseTopic(topic: string): EventSubject {
         return { kind: 'post', id: parts[2] }
       case 'campaign':
         return { kind: 'campaign', id: parts[2] }
+      case 'asset':
+        return { kind: 'asset', id: parts[2] }
       case 'zernio_account':
         return { kind: 'zernioAccount', id: parts[2] }
     }
@@ -136,11 +139,16 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         // body nor the history. Listed unconditionally because the broadcast
         // carries no record of which tools fired.
         case 'assistant_completed':
-          return [post, versions, notes]
+          // The list comes along because the turn may have rewritten the
+          // title, and a calendar showing the old one has no other way to
+          // find out — there is no `post_updated` in the catalogue. Same rule
+          // as everywhere here: if the post is stale, the rows are too.
+          return [post, versions, notes, CAMPAIGN_POST_LISTS]
         case 'assistant_failed':
           // Notes are written by the tool as it goes, not at the end, so a
-          // failed turn can still have left some behind.
-          return [post, notes]
+          // failed turn can still have left some behind — and a turn that
+          // failed part-way can have written the body first.
+          return [post, notes, CAMPAIGN_POST_LISTS]
         case 'assessment_completed':
         case 'assessment_failed':
           // Its own namespace, deliberately not nested under the post — see
@@ -163,6 +171,17 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         default:
           return []
       }
+
+    case 'asset': {
+      // A document read in the background — a scraped page (CON-222), and the
+      // PDF pipeline once it publishes these too. The event carries the status
+      // and some counts, never the text, so the only thing to do with it is
+      // refetch: the row's word count and the open editor both read `content`.
+      if (event.type !== 'asset.updated') return []
+      // One filter, not two: an open document's key nests under the list's
+      // (`['assets', id]`), so this reaches the row and the editor both.
+      return [{ queryKey: ASSETS_KEY }]
+    }
 
     case 'zernioAccount':
       // All five (attached, attach_failed, updated, disconnected, revived)
@@ -194,6 +213,8 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
  */
 export const RECONCILE_FILTERS: QueryFilters[] = [
   { queryKey: ['post'] },
+  // Covers the list and every open document — `assetKey` nests under it.
+  { queryKey: ASSETS_KEY },
   { queryKey: ['postAssessment'] },
   { queryKey: ['campaigns'] },
   ...ZERNIO_SURFACES,

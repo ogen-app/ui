@@ -26,6 +26,8 @@ Content-Bank AI images are secondary. See
 - **Onboarding, auth & tenancy flow:** [`docs/onboarding.md`](./docs/onboarding.md)
 - **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
 - **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
+- **Activity feed & daily report — proposal:** [`docs/activity.md`](./docs/activity.md)
+- **Tasks — proposal:** [`docs/tasks.md`](./docs/tasks.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
@@ -120,7 +122,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   hidden text. Editing a screen that still holds hard-coded English? Move the
   strings you touch into the catalogue rather than adding a literal beside them.
   Genuinely exempt: developer-facing text (`console.*`, thrown `Error` messages,
-  test fixtures), and `i18n/bootMessages.ts` — see the next bullet.
+  test fixtures), `src/devtools/` (staging-only screens that a production build
+  compiles out — see `docs/technical-decisions.md#staging-flag-overrides`), and
+  `i18n/bootMessages.ts` — see the next bullet.
 - **How the catalogues work.** English is bundled and is the fallback; `en.ts`
   is the shape everything else is typed against, so a key missing from `es.ts`
   is a compile error (a key missing from `en.ts` is a compile error at the call
@@ -132,10 +136,14 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   at construction takes `t` and is built per render instead: Zod schemas are
   `(t) => schema` factories (`hooks/useAuthSchemas.ts`), and the same goes for
   label maps and `const` option arrays — a module-level constant freezes
-  whichever language loaded first. Only the auth screens, sidebar, Profile and
-  Workspace Settings are converted so far (CON-174); the rest is still
-  hard-coded English and renders fine — that is legacy to be converted, not a
-  precedent to copy. See `docs/technical-decisions.md#i18n`.
+  whichever language loaded first. Where a table of *keys* is the natural
+  shape, keep the table and translate at the point of use
+  (`PostsEmptyState`'s `COPY`); where the values are something `Intl` already
+  knows, drop the table (Calendar Settings' weekday names). The auth screens,
+  sidebar, Profile, Workspace Settings and the campaign calendar are converted
+  (CON-174); the rest is still hard-coded English and renders fine — that is
+  legacy to be converted, not a precedent to copy. See
+  `docs/technical-decisions.md#i18n`.
 - **A language is released by one boolean.** `LOCALES` in `i18n/config.ts`
   carries `enabled` per locale; only enabled ones are offered in the picker,
   accepted from `?lang=` or restored from a previous visit — and a stored
@@ -143,6 +151,24 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   the deploy that releases it. The gate sits on those entry points, not on
   `setLocale`, so the switching machinery stays exercised by its tests while
   nothing but English is released. Spanish is complete and gated today.
+- **Dates, times and numbers go through `lib/intl.ts`** — `formatDate`,
+  `formatNumber`, `formatRelative` — never `toLocaleDateString(undefined, …)`
+  or a bare `new Intl.DateTimeFormat`. The bare forms mean the *browser's*
+  language, and the app's is a separate choice the user makes in Workspace
+  Settings; a Spanish UI printing "Aug 20" is the same bug as an English one
+  printing "20 ago". These helpers read the active language at call time and
+  cache the formatter per locale, so nothing is hoisted to module scope where
+  it would freeze the first language loaded. Three deliberate exceptions:
+  `lib/timeZones.ts` pins `en-US` because it *parses* `formatToParts` rather
+  than showing it, `PostCard`'s clock pins `hour12: false` because the card
+  gives the time one fixed-width slot, and `docsTable`'s `stamp()` pins
+  `en-GB` because day-first `01 Aug 26` is the format that column was asked
+  for. That last one is the only exception that is a *display* choice rather
+  than a mechanical one, so it is the one to revisit first — the app now has
+  the date convention its comment says it was waiting for. Formatting without reading `t()`
+  means nothing re-renders the component on a switch — the overlay covers the
+  app but doesn't remount it — so subscribe with `useLocale()` (or take
+  `i18n.language` off a `useTranslation()` you already have) and pass it in.
 - **The language switch is covered by a 2-second full-screen loader**, and
   `?lang=es` forces one for a page load then persists it. The waiting screen's
   own copy is the one string that must *not* come from the catalogue — it lives
@@ -174,9 +200,54 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   from the `FEATURE_FLAGS` record directly: the hook is the seam where
   server-driven values will land, and going through it keeps every call site
   untouched when they do. A flag is not a permission.
+- **On staging and in dev, a flag can be forced for one browser.** A
+  `?ff=tasks,-activity` link or the unlisted `/flags` panel writes an override
+  to localStorage, so one teammate can exercise a half-built feature on the
+  shared deploy while everyone else sees the app as it ships. Deliberately
+  *not* in `/api/settings` — that row is workspace-wide, which is the opposite
+  of what this is for. The whole layer is compiled out unless the build sets
+  `VITE_DEV_TOOLS=1`, so in production the key is inert and the panel's chunk
+  does not exist; keep it that way, and never link `/flags` from the app. See
+  `docs/technical-decisions.md#staging-flag-overrides`.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
+- **A workspace is the tenant and a member is a user.** Inside a workspace,
+  `services/api/workspaces.ts` is a façade over `/api/tenants/current`,
+  `/api/users` and `/api/invitations` (CON-26); the account-level
+  `/api/workspaces` routes (list/create/switch/delete, CON-147) are the one
+  place a workspace is a resource of its own. The two roles it deals in are
+  the server's: `owner | member`, nothing else.
+  **`DELETE /api/users/:id` removes a membership, and only from the active
+  workspace** — the account and its other workspaces survive, but the cascade
+  from `created_by` destroys the campaigns, posts and assets that membership
+  created *here*, so every caller confirms both halves in those words. The
+  server guards the ≥1-owner invariant (409). There is **no account deletion
+  on the API** — Profile's Danger Zone is "leave this workspace". And a
+  `users.id` is a **per-workspace membership id**: `current_user`'s id names
+  the *default* workspace's membership, so identity checks across workspaces
+  go by email (`listMembers`' `is_self`), never by id. See
+  [`docs/workspace-api.md`](./docs/workspace-api.md) §4a.
+- **Which workspace a request acts in is named per request, not per session**
+  (CON-147). The tab's workspace lives in `lib/activeWorkspace.ts` —
+  **`sessionStorage`, never `localStorage`**, or two tabs could not sit in two
+  workspaces, which is the whole feature — and `services/api/base.ts` attaches
+  it as `X-Workspace-Id`. Anything that reaches the API with a bare `fetch`
+  goes through **`scopedFetch`** so a scoped call can't quietly land in
+  whichever workspace the account defaults to; XHR paths call
+  `workspaceHeader()` after `open()`. Account-level routes
+  (`/api/workspaces…`, `/api/current_user`, `/api/sessions`, the public
+  `/api/invitations/accept/:token`) deliberately send **no** header — they are
+  the calls a tab makes to recover when its own workspace stops answering. Two
+  more consequences: `user.role` from `/api/current_user` is the role in the
+  *default* workspace, so read the active one through `useWorkspace()`; and a
+  403 is not proof of a stale pin (owner-only routes answer 403 too), which is
+  why `lib/staleWorkspace.ts` verifies before it acts.
+- **Switching workspace is client-side.** `useSwitchWorkspace` re-pins the tab,
+  clears *this tab's* Query cache and navigates; it does not reload, does not
+  rebind the session and must not touch another tab. `POST …/:id/switch` is
+  fire-and-forget — it only sets the account's default for the next fresh tab.
+  See `docs/workspace-api.md` §3.
 - **Styling is CSS-first:** the theme and tokens live in `src/index.css`; there
   is no `tailwind.config.js`. Use `cn()` from `lib/styles.ts`. Apply z-index
   from `config/zIndex.ts` via inline `style={{ zIndex }}`, not `z-[…]` classes.
@@ -225,12 +296,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 
 ## Known stubs / gaps
 
-No invite-teammate UI yet (`users.register()` is the ready building block) ·
+Inviting teammates is live end to end (People, in Workspace Settings; the
+emailed link lands on `/invite?token=…`, which is public, and accepting either
+creates the account or adds the workspace to one that already exists) ·
+**multi-workspace is live, unflagged** — [ogen#109](https://github.com/ogen-app/ogen/pull/109)
+merged 2026-08-14; the `multi-workspace` flag and its off-branch were deleted
+once the client was re-tested against the shipped API (CON-147) ·
 dark mode is scaffolded but empty · the
 Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
 have no committed config in this repo · **i18n covers the auth screens, sidebar,
-Profile and Workspace Settings only** — everything else is still hard-coded
-English (CON-174) · **English is the only released language**: Spanish is
+Profile, Workspace Settings and the campaign calendar** (its week, month and
+list views, the cards, both rail panels and the posts table) — everything else
+is still hard-coded English (CON-174) · **English is the only released language**: Spanish is
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
 

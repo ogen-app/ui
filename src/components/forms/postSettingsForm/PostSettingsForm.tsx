@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/form'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
+import { PostSourcesSection } from '@/components/posts/sources/PostSourcesSection'
 import { cn } from '@/lib'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import {
@@ -213,6 +214,11 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
               />
             </div>
           </Collapse>
+
+          {/* Above ADVANCED because it is not one: what a post reads from
+              changes what the assistant writes, so it belongs with the post
+              type and the date rather than behind a fold. */}
+          <PostSourcesSection post={doc} changeDoc={changeDoc} />
 
           <Collapse title="ADVANCED">
             <div className="flex flex-col gap-4 pt-2 pb-4">

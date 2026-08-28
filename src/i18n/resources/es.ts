@@ -140,6 +140,31 @@ export const es: Translation = {
       brokenBody:
         'Abre el enlace directamente desde el correo o <request>pide uno nuevo</request>.',
     },
+    invite: {
+      title: 'Únete al espacio',
+      subtitle: '{{inviter}} te ha invitado a {{workspace}}',
+      emailLabel: 'Tu correo electrónico',
+      firstNameLabel: 'Nombre',
+      lastNameLabel: 'Apellidos',
+      passwordLabel: 'Contraseña',
+      passwordPlaceholder: 'Elige una contraseña',
+      submit: 'UNIRME AL ESPACIO',
+      haveAccount: '¿Ya tienes una cuenta de Ogen?',
+      logInLink: 'Inicia sesión',
+      brokenTitle: 'Este enlace de invitación ya no funciona',
+      brokenSubtitle:
+        'Las invitaciones caducan a los siete días y solo pueden usarse una vez',
+      brokenBody:
+        'Pide a quien te invitó que te envíe otra. Si ya la aceptaste, <login>inicia sesión</login>.',
+      joinBody:
+        'Has iniciado sesión como {{email}}, que es a quien va dirigida esta invitación. Al aceptarla, este espacio se añade a tu cuenta.',
+      joinSubmit: 'ACEPTAR INVITACIÓN',
+      wrongAccountBody:
+        'Esta invitación es para {{invited}}, pero has iniciado sesión como {{current}}. Cierra sesión y vuelve a abrir el enlace para aceptarla.',
+      logOutLink: 'Cerrar sesión',
+      existingAccountBody:
+        '{{email}} ya tiene una cuenta de Ogen. Inicia sesión con esa cuenta y la invitación te estará esperando.',
+    },
     logout: {
       pendingTitle: 'Cerrando sesión...',
       pendingMessage: 'Esto puede tardar unos segundos',
@@ -152,6 +177,10 @@ export const es: Translation = {
 
   nav: {
     modules: 'Módulos',
+    activity: 'Actividad',
+    tasks: 'Tareas',
+    activityUnread_one: '{{count}} entrada sin leer',
+    activityUnread_other: '{{count}} entradas sin leer',
     campaigns: 'Campañas',
     contentBank: 'Banco de contenido',
     workspaceSettings: 'Ajustes del espacio',
@@ -159,14 +188,234 @@ export const es: Translation = {
     help: 'Ayuda y soporte',
     logOut: 'Cerrar sesión',
     closeSidebar: 'Cerrar la barra lateral',
+    switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
     campaign: {
       overview: 'Resumen',
-      posts: 'Publicaciones',
+      posts: 'Calendario de publicaciones',
       analytics: 'Analíticas',
       brief: 'Briefing',
-      assets: 'Recursos',
+      content: 'Contenido',
       settings: 'Ajustes',
+    },
+  },
+
+  tasks: {
+    title: 'Tareas',
+    add: 'AÑADIR TAREA',
+    newTask: 'Nueva tarea',
+    create: 'CREAR TAREA',
+    cancel: 'Cancelar',
+    complete: 'Marcar esta tarea como hecha',
+    reopen: 'Reabrir esta tarea',
+    delete: 'ELIMINAR TAREA',
+    unassigned: 'Sin asignar',
+    assignedTo: 'Asignada a {{name}}: cambiar',
+    assign: 'Asignar esta tarea',
+    createdBySystem: 'Creada automáticamente el {{at}}',
+    createdBy: 'Escrita por {{name}} el {{at}}',
+    closedBy: 'Marcada por {{name}} el {{at}}',
+    autoResolved: 'Se resolvió sola: el aviso que la originó ya no existe',
+    noDescription: 'Sin descripción',
+    saveFailed: 'No se pudo guardar el cambio en tus tareas.',
+    loadFailed: 'No se pudieron cargar las tareas',
+    empty: {
+      title: 'Nada que hacer',
+      subtitle:
+        'Aquí aparecerán las tareas que escribas y todo aquello que las campañas necesiten que se haga.',
+    },
+    rule: {
+      failedPosts:
+        'El publicador lo intentó y el canal lo rechazó. Abre las publicaciones, mira qué respondió (una cuenta desconectada, una imagen rechazada, un texto que el canal no admite), corrígelo y vuelve a publicar.',
+      manualPublishDue:
+        'Estas están configuradas para publicarse a mano y les ha llegado la hora. No saldrá nada hasta que alguien abra cada publicación y la publique.',
+      autoPublishOverdue:
+        'La hora ya pasó y el publicador no las ha enviado. Comprueba que el canal sigue conectado antes de reprogramarlas.',
+      notPublished:
+        'La ventana se cerró con estas todavía en espera, así que nunca se enviaron. Decide en cada caso si aún merece la pena publicarla o si se descarta.',
+      plannedTodayUnscheduled:
+        'Hay publicaciones con fecha para el próximo día que siguen siendo borradores. Una fecha es un plan, no una orden: mientras no estén programadas, nadie las enviará.',
+      pipelineGap:
+        'No hay nada programado para la próxima semana. Escribe y programa publicaciones ahora o la campaña se quedará en silencio.',
+      accountsMissingBlocking:
+        'Un canal en el que publica esta campaña no tiene ninguna cuenta conectada, así que sus publicaciones no pueden salir. Conecta la cuenta o quita el canal de la campaña.',
+      accountInactive:
+        'Una cuenta conectada ha dejado de autorizar, normalmente por un token caducado. Vuelve a conectarla en los ajustes del espacio de trabajo antes de su próxima hora.',
+      channelDroppedScheduled:
+        'Se quitó un canal de la campaña mientras aún había publicaciones programadas para él. Esas publicaciones no tienen dónde publicarse.',
+      behindPace:
+        'Han salido menos publicaciones de las que implica el objetivo de la campaña para el tiempo transcurrido. Programa más o ajusta el objetivo a lo que la campaña está haciendo de verdad.',
+    },
+    field: {
+      title: 'Qué hay que hacer',
+      titlePlaceholder: 'Escribe la tarea como la dirías',
+      description: 'Descripción',
+      descriptionPlaceholder: 'En qué consiste el trabajo y lo que la siguiente persona deba saber',
+      campaign: 'Campaña',
+      noCampaign: 'Sin campaña',
+      assignee: 'Asignada a',
+    },
+    openCount_one: '{{count}} tarea abierta',
+    openCount_other: '{{count}} tareas abiertas',
+  },
+
+  activity: {
+    title: 'Actividad',
+    markAllRead: 'MARCAR TODO COMO LEÍDO',
+    markReadFailed: 'No se pudo guardar por dónde ibas en la actividad.',
+    loadFailed: 'No se pudo cargar la actividad',
+    empty: {
+      title: 'Todavía no ha pasado nada',
+      subtitle:
+        'Aquí aparecerán las publicaciones que salgan, las que fallen y un informe de cada día.',
+    },
+    unread: 'Sin leer',
+    today: 'Hoy',
+    yesterday: 'Ayer',
+    entry: {
+      failed: 'No se pudo publicar una publicación de {{channel}}',
+      notPublished: 'Una publicación de {{channel}} nunca se publicó',
+      reportTitle: 'Informe diario',
+      task_created: 'Tarea añadida — «{{title}}»',
+      task_completed: 'Tarea hecha — «{{title}}»',
+      task_resolved: 'Tarea resuelta sola — «{{title}}»',
+    },
+    report: {
+      label: {
+        published: 'Publicadas',
+        failed: 'Fallidas',
+        notPublished: 'Nunca publicadas',
+        created: 'Creadas',
+      },
+      published_one: '{{count}} publicación publicada',
+      published_other: '{{count}} publicaciones publicadas',
+      failed_one: '{{count}} publicación no se pudo publicar',
+      failed_other: '{{count}} publicaciones no se pudieron publicar',
+      notPublished_one: '{{count}} publicación nunca se publicó',
+      notPublished_other: '{{count}} publicaciones nunca se publicaron',
+      created_one: '{{count}} publicación creada',
+      created_other: '{{count}} publicaciones creadas',
+      byChannel: 'Publicado por canal',
+      byCampaign: 'Por campaña',
+      nothing: 'Ese día no pasó nada.',
+      coverage:
+        'Calculado a partir de las publicaciones de este espacio, según tu día natural local.',
+    },
+  },
+
+  campaignOverview: {
+    openOverview: 'ABRIR RESUMEN',
+    openPosts: 'ABRIR CALENDARIO',
+    openAnalytics: 'ABRIR ANALÍTICAS',
+    openBrief: 'ABRIR BRIEFING',
+    openContent: 'ABRIR CONTENIDO',
+    openSettings: 'ABRIR AJUSTES',
+    noDate: 'Sin fecha',
+  },
+
+  calendar: {
+    unscheduled: 'SIN PROGRAMAR',
+    unscheduledPosts: 'Publicaciones sin programar',
+    settings: 'Ajustes del calendario',
+    viewWeek: 'Semana',
+    viewMonth: 'Mes',
+    viewList: 'Lista',
+
+    previousWeek: 'Semana anterior',
+    nextWeek: 'Semana siguiente',
+    previousMonth: 'Mes anterior',
+    nextMonth: 'Mes siguiente',
+    preferences: 'PREFERENCIAS',
+    daysVisibility: 'VISIBILIDAD DE LOS DÍAS',
+    firstDayOfWeek: 'Primer día de la semana',
+    statusColourAlways:
+      'El color de estado del borde izquierdo de la tarjeta siempre se muestra.',
+    notAPublishingDay: 'No es un día de publicación',
+    showDay: 'Mostrar {{day}}',
+
+    field: {
+      status: 'Etiqueta de estado',
+      time: 'Hora',
+      title: 'Título',
+      platform: 'Plataforma',
+      account: 'Cuenta',
+    },
+    fieldNoteStatus: 'Escribe el estado y da a la hora su propia línea',
+    showFieldOnWeek: 'Mostrar {{field}} en la tarjeta de semana',
+    showFieldOnMonth: 'Mostrar {{field}} en la tarjeta de mes',
+
+    imagePreviews: 'Mostrar las tarjetas con vista previa de la imagen',
+    imagePreviewsNote: 'Solo las publicaciones que tienen imagen y, en el mes, solo en los días con espacio para una',
+    weekCard: 'TARJETA DE SEMANA',
+    monthCard: 'TARJETA DE MES',
+    addPostOn: 'Añadir una publicación el {{date}}',
+    density_one: '{{count}} publicación el {{date}} — abrir esta semana',
+    density_other: '{{count}} publicaciones el {{date}} — abrir esta semana',
+
+    notScheduled: 'Publicaciones sin programar',
+    addPost: 'AÑADIR PUBLICACIÓN',
+    dateLocked: 'La fecha de esta publicación está bloqueada',
+
+    empty: {
+      calendarTitle: 'Tu calendario está vacío',
+      calendarSubtitle:
+        'Añade tu primera publicación y aparecerá aquí, lista para programar.',
+      listTitle: 'Aún no hay publicaciones',
+      listSubtitle: 'Añade tu primera publicación para empezar a construir esta campaña.',
+      panelTitle: 'Nada sin programar',
+      panelSubtitle:
+        'Las publicaciones sin fecha esperan aquí — arrastra una fuera del calendario o añade una nueva.',
+    },
+  },
+
+  assistant: {
+    activeThreads_one: '{{count}} conversación activa',
+    activeThreads_other: '{{count}} conversaciones activas',
+    pendingThreads_one: '{{count}} pendiente',
+    pendingThreads_other: '{{count}} pendientes',
+
+    untitledCampaign: 'Campaña sin título',
+    untitledPost: 'Publicación sin título',
+
+    finished: 'El estratega ha terminado',
+    failed: 'El estratega no ha podido terminar',
+  },
+
+  workspace: {
+    role: {
+      owner: 'Propietario',
+      member: 'Miembro',
+    },
+    ability: {
+      owner:
+        'Puede invitar personas, cambiar roles, conectar cuentas y renombrar el espacio.',
+      member:
+        'Puede planificar, escribir y publicar contenido, pero no gestionar el espacio ni a su gente.',
+    },
+  },
+
+  workspaces: {
+    title: 'Tus espacios',
+    loadFailed: 'No se han podido cargar tus espacios.',
+    create: 'NUEVO ESPACIO',
+    current: 'Actual',
+    memberCount_one: '{{count}} miembro',
+    memberCount_other: '{{count}} miembros',
+    loggedInAs: 'Sesión iniciada como',
+    wrongAccount: '¿Cuenta equivocada?',
+    logOut: 'Cerrar sesión',
+    switchFailed: 'No se ha podido cambiar de espacio',
+    createDialog: {
+      title: 'Nuevo espacio',
+      body: 'Un espacio tiene sus propias campañas, contenido y cuentas conectadas — incluidas sus propias cuentas sociales, así que un segundo espacio es la forma de llevar otra página de LinkedIn o Facebook junto a esta.',
+      nameLabel: 'Nombre',
+      namePlaceholder: 'Cliente Northwind',
+      cancel: 'Cancelar',
+      createOnly: 'Solo crear',
+      createAndSwitch: 'Crear y cambiar',
+      created: '{{name}} creado',
+      createdNote: 'Cambia a él desde el menú de espacios cuando lo necesites.',
+      createFailed: 'No se ha podido crear el espacio',
     },
   },
 
@@ -193,18 +442,18 @@ export const es: Translation = {
     },
     dangerZone: {
       title: 'Zona de peligro',
-      body: 'Eliminar tu cuenta también elimina las campañas, publicaciones y recursos que hayas creado en este espacio de trabajo. Esto no se puede deshacer.',
-      action: 'ELIMINAR CUENTA',
+      body: 'Salir de este espacio te quita el acceso y elimina todo lo que creaste en él — para todos. Tu cuenta de acceso y tus otros espacios no se tocan. Esto no se puede deshacer.',
+      action: 'SALIR DE ESTE ESPACIO',
     },
-    delete: {
-      title: '¿Eliminar tu cuenta?',
-      body: 'Esto elimina permanentemente <strong>{{email}}</strong> y todo lo que hayas creado en este espacio de trabajo: tus campañas, sus publicaciones, los recursos que has subido y las etiquetas. No se puede deshacer.',
+    leave: {
+      title: '¿Salir de {{workspace}}?',
+      body: 'Esto elimina a <strong>{{email}}</strong> del espacio y borra todo lo que creaste en él — tus campañas, sus publicaciones, los recursos que subiste y las etiquetas — para todos los miembros. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
       shared:
-        'Si alguien más usa <strong>{{workspace}}</strong>, ese contenido también desaparece para esa persona. El espacio de trabajo en sí no se elimina.',
-      thisWorkspace: 'este espacio de trabajo',
+        'Tu cuenta de acceso sigue funcionando: cualquier otro espacio al que pertenezcas no se toca, y <strong>{{workspace}}</strong> continúa sin ti. Si eres su único propietario, nombra antes a otro propietario — un espacio no puede quedarse sin propietario.',
+      thisWorkspace: 'este espacio',
       confirmLabel: 'Escribe <email>{{email}}</email> para confirmar',
-      keep: 'CONSERVAR MI CUENTA',
-      confirm: 'ELIMINAR MI CUENTA',
+      keep: 'QUEDARME EN ESTE ESPACIO',
+      confirm: 'SALIR DE ESTE ESPACIO',
     },
   },
 
@@ -214,9 +463,68 @@ export const es: Translation = {
     workspace: {
       rowTitle: 'Espacio de {{name}}',
       loadFailed: 'No se ha podido cargar el espacio de trabajo.',
-      nameLabel: 'Nombre de la organización',
+      nameLabel: 'Nombre del espacio',
       nameEmpty: 'El nombre no puede estar vacío',
       slugLabel: 'Identificador',
+      slugNote:
+        'Se genera a partir del nombre al crearlo; cambiar el nombre del espacio no lo modifica.',
+      switch: 'CAMBIAR',
+      timeZoneLabel: 'Zona horaria',
+      timeZoneNote:
+        'Por ahora todo se programa en UTC; las zonas horarias por espacio llegan con CON-94.',
+    },
+    people: {
+      title: 'Personas',
+      membersHeading: 'Miembros del espacio',
+      pendingHeading: 'Invitaciones pendientes',
+      inviteHeading: 'Invitar a alguien',
+      you: '(eres tú)',
+      memberNote:
+        'Solo el propietario del espacio puede invitar personas o cambiar roles.',
+      emailLabel: 'Correo electrónico',
+      emailPlaceholder: 'nombre@empresa.com',
+      roleLabel: 'Rol',
+      invite: 'INVITAR',
+      remove: 'ELIMINAR',
+      resend: 'REENVIAR',
+      cancel: 'CANCELAR',
+      cancelInvitation: 'Cancelar la invitación a {{email}}',
+      invitedBy: 'invitada por {{name}}',
+      expiresToday: 'caduca hoy',
+      expiresIn_one: 'caduca mañana',
+      expiresIn_other: 'caduca en {{count}} días',
+      expiredToday: 'caducó hoy',
+      expiredAgo_one: 'caducó ayer',
+      expiredAgo_other: 'caducó hace {{count}} días',
+      roleChanged: 'Rol actualizado para {{name}}',
+      roleChangeFailed: 'No se ha podido cambiar el rol',
+      removed: '{{name}} eliminada',
+      removeFailed: 'No se ha podido eliminar',
+      invitationSent: 'Invitación enviada a {{email}}',
+      inviteFailed: 'No se ha podido enviar la invitación',
+      resendFailed: 'No se ha podido volver a enviar',
+      invitationRevoked: 'Invitación revocada',
+      revokeFailed: 'No se ha podido revocar',
+      removeTitle: '¿Eliminar a {{name}}?',
+      removeBody:
+        'Esto elimina a {{name}} del espacio y borra todo lo que creó en él — sus campañas, las publicaciones de esas campañas y los archivos que subió — para todo el mundo. Su cuenta de acceso y sus otros espacios no se tocan. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
+      removeConfirmLabel: 'Escribe su correo electrónico para confirmar',
+      removeDismiss: 'MANTENERLA',
+      removeConfirm: 'ELIMINAR DE ESTE ESPACIO',
+    },
+    dangerZone: {
+      title: 'Zona de peligro',
+      body: 'Eliminar este espacio elimina sus campañas, publicaciones, recursos y cuentas sociales conectadas, y todos los miembros pierden el acceso. Las publicaciones ya enviadas siguen activas en las redes sociales. No puedes deshacerlo tú mismo — recuperar un espacio eliminado es una solicitud manual a soporte.',
+      lastWorkspace: 'Este es tu único espacio. Eliminarlo te deja sin ningún sitio donde trabajar — crea otro primero.',
+      action: 'ELIMINAR ESPACIO',
+      confirmTitle: '¿Eliminar {{name}}?',
+      confirmBody: 'Todo lo que hay en este espacio se elimina, para todos los miembros, y no puedes restaurarlo tú mismo. Escribe <strong>{{name}}</strong> para confirmar.',
+      confirmLabel: 'Nombre del espacio',
+      keep: 'MANTENER ESPACIO',
+      confirm: 'ELIMINAR ESPACIO',
+      onlyWorkspace: 'Este es tu único espacio',
+      onlyWorkspaceNote: 'Crea otro espacio antes de eliminar este.',
+      deleteFailed: 'No se ha podido eliminar el espacio',
     },
     platforms: {
       title: 'Ajustes de plataformas',
@@ -280,14 +588,35 @@ export const es: Translation = {
       connectedCount_other: '{{count}} conectadas',
       modalTitle: 'Conectar {{platform}}',
       preparing: 'Preparando tu enlace de conexión…',
-      authorize:
-        'Autoriza tu cuenta de {{platform}} en la pestaña que se acaba de abrir. Si no se ha abierto nada, usa el botón de abajo.',
-      openConnectPage: 'Abrir la página de conexión de {{platform}}',
-      expiry:
-        'El enlace caduca a las {{time}}. Cuando termines, la cuenta aparecerá aquí automáticamente — puede tardar un minuto.',
-      expirySoon: 'pronto',
-      checkNow: 'Comprobar ahora',
+      redirecting: 'Te llevamos a {{platform}}…',
       success: '{{platform}} está conectada. La encontrarás en Ajustes de plataformas.',
+      settling: 'Terminando la configuración — la cuenta aparecerá aquí en un momento.',
+      errors: {
+        expired: 'Ese enlace de conexión ha caducado. Vuelve a empezar la conexión.',
+        mismatch: 'Algo ha fallado al conectar tu cuenta. Inténtalo de nuevo.',
+        upstream: 'No hemos podido contactar con la plataforma. Inténtalo dentro de un momento.',
+        noTargets: 'Esta cuenta no tiene páginas ni perfiles en los que podamos publicar.',
+        generic: 'No hemos podido conectar tu cuenta. Inténtalo de nuevo.',
+      },
+      picker: {
+        title: 'Elige qué conectar',
+        body: 'Tu cuenta de {{platform}} gestiona más de un perfil. Elige en cuál debe publicar Ogen.',
+        legend: 'Perfiles de {{platform}} disponibles',
+        submit: 'CONECTAR {{platform}}',
+        cancel: 'CANCELAR',
+        back: 'Volver a Ajustes del espacio',
+        backToAccounts: 'VOLVER A AJUSTES DEL ESPACIO',
+        expired:
+          'Esta conexión ha caducado o ya se ha usado. Vuelve a empezar desde Ajustes del espacio.',
+        empty: 'No hay nada en esta cuenta en lo que podamos publicar.',
+        invalidTarget:
+          'Esa opción ya no está disponible. Recarga la página y vuelve a elegir.',
+        kind: {
+          organization: 'Página de empresa',
+          page: 'Página',
+          personal: 'Perfil personal',
+        },
+      },
     },
     disconnect: {
       title: '¿Desconectar {{name}}?',
@@ -325,6 +654,28 @@ export const es: Translation = {
 
   postsTable: {
     sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
+
+    columnTitle: 'Título',
+    columnStatus: 'Estado',
+    columnPlatform: 'Plataforma',
+    columnPublishDate: 'Fecha de publicación',
+    columnWhen: 'Cuándo',
+
+    notSet: 'Sin definir',
+
+    noPosts: 'No hay publicaciones',
+
+    selectAll: 'Seleccionar todas las publicaciones',
+    clearSelection: 'Borrar la selección',
+    selectPost: 'Seleccionar {{title}}',
+
+    today: 'Hoy',
+    tomorrow: 'Mañana',
+    yesterday: 'Ayer',
+    inDays_one: 'Dentro de {{count}} día',
+    inDays_other: 'Dentro de {{count}} días',
+    daysAgo_one: 'Hace {{count}} día',
+    daysAgo_other: 'Hace {{count}} días',
   },
 
   posts: {
@@ -334,6 +685,21 @@ export const es: Translation = {
       compactNow: 'ahora',
       compactLate: '{{amount}} de retraso',
     },
+
+    status: {
+      draft: 'Borrador',
+      ready_for_publish: 'Lista para publicar',
+      scheduled: 'Publicación automática',
+      scheduled_for_manual_publishing: 'Publicación manual',
+      failed: 'Fallida',
+      published: 'Publicada',
+      not_published: 'No publicada',
+    },
+
+    noPlatform: 'Sin plataforma',
+    noAccount: 'Sin cuenta',
+
+    hasProblem: 'Esta publicación tiene un problema',
   },
   errors: {
     notFound: {

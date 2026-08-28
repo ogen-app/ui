@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { uploadAssetFile } from "@/services/api/uploads";
 import { validateUploadFile, type UploadKind } from "@/lib/assetStatus";
+import { addToCampaign } from "@/lib/campaignMembership";
+import { attachToPost } from "@/lib/postSources";
+import { queryClient } from "@/lib/queryClient";
 import type { AssetStatus } from "@/types/content";
 
 /**
@@ -16,7 +19,22 @@ export type UploadPhase =
   | "partial"
   | "failed";
 
-export type UploadItem = {
+/**
+ * Where an upload is going, beyond the content bank it always joins.
+ *
+ * Both attachments happen in this store rather than on the page that started
+ * the upload, so that walking away mid-upload cannot leave the asset belonging
+ * to nothing — or, worse, belonging to the campaign but not to the post it was
+ * dropped on.
+ */
+export type UploadTarget = {
+  /** The campaign the file joins, or null for the workspace bank. */
+  campaignId: string | null;
+  /** The post that should read from it, when it was added on one. */
+  postId: string | null;
+};
+
+export type UploadItem = UploadTarget & {
   id: string;
   file: File;
   filename: string;
@@ -31,7 +49,7 @@ export type UploadItem = {
 type UploadState = {
   items: UploadItem[];
   /** Validate and begin uploading each file; invalid files appear as failed. */
-  enqueue: (files: File[] | FileList) => void;
+  enqueue: (files: File[] | FileList, target: UploadTarget) => void;
   /** Re-run a failed upload from its original File. */
   retry: (id: string) => void;
   /** Sync a polled backend asset status into the tracked item. */
@@ -61,7 +79,7 @@ export const useUploadStore = create<UploadState>()(
           ),
         }));
 
-      const start = (id: string, file: File) => {
+      const start = (id: string, file: File, target: UploadTarget) => {
         patch(id, { phase: "uploading", progress: 0, error: undefined });
         uploadAssetFile(file, { onProgress: (p) => patch(id, { progress: p }) })
           .then((result) => {
@@ -79,6 +97,20 @@ export const useUploadStore = create<UploadState>()(
                 ? statusToPhase(result.asset.status)
                 : "processing",
             });
+            // The asset exists now, so whatever it was dropped on gets it and
+            // the list it belongs in refetches. Deliberately not conditional on
+            // anyone still looking at that page. A file dropped on the
+            // workspace bank has neither target — it is already where it was
+            // put; one dropped on a post has both, because a post reading from
+            // a document its campaign has never heard of is a disagreement
+            // between the two, and the campaign writes the next post.
+            if (result.asset_id) {
+              if (target.campaignId)
+                void addToCampaign(target.campaignId, [result.asset_id]);
+              if (target.postId)
+                void attachToPost(target.postId, [result.asset_id]);
+              queryClient.invalidateQueries({ queryKey: ["assets"] });
+            }
           })
           .catch((err: unknown) => {
             patch(id, {
@@ -91,11 +123,13 @@ export const useUploadStore = create<UploadState>()(
       return {
         items: [],
 
-        enqueue: (files) => {
+        enqueue: (files, target) => {
           const items: UploadItem[] = Array.from(files).map((file) => {
             const validation = validateUploadFile(file);
             const base = {
               id: newId(),
+              campaignId: target.campaignId,
+              postId: target.postId,
               file,
               filename: file.name,
               sizeBytes: file.size,
@@ -114,7 +148,11 @@ export const useUploadStore = create<UploadState>()(
 
           set((state) => ({ items: [...state.items, ...items] }));
           for (const item of items) {
-            if (item.phase === "uploading") start(item.id, item.file);
+            if (item.phase === "uploading")
+              start(item.id, item.file, {
+                campaignId: item.campaignId,
+                postId: item.postId,
+              });
           }
         },
 
@@ -126,7 +164,10 @@ export const useUploadStore = create<UploadState>()(
             patch(id, { phase: "failed", error: validation.error });
             return;
           }
-          start(id, item.file);
+          start(id, item.file, {
+            campaignId: item.campaignId,
+            postId: item.postId,
+          });
         },
 
         setStatus: (id, status) => patch(id, { phase: statusToPhase(status) }),
