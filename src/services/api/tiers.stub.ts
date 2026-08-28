@@ -29,7 +29,7 @@ import type { TierBody } from './tiers'
  *
  * It also answers `GET /api/billing` (see `stubBilling`), which is a smaller
  * job than it sounds: no payment provider is connected, so the truthful answer
- * is a subscription with no card and no portal.
+ * is no subscription and no portal.
  */
 
 /** Flip to false to point the same call sites at the real API. */
@@ -355,10 +355,13 @@ function stubPlanFrom(selection: Selection, now: Date = new Date()): PlanBody {
       id: tier.id,
       name: tier.name,
       effective_from: selection.since,
-      billing_period: tier.billingPeriod,
-      // Nothing renews on a tier nobody pays for, and a date here would be
-      // printed as though something did.
-      renews_at: tier.billingPeriod ? renewsAt : null,
+      // Nothing renews while no provider is connected — nobody is billed
+      // monthly and no invoice is coming, whatever the tier's price says. Same
+      // rule as `stubBilling`: reporting a period and a date here put "It
+      // auto-renews on…" on the card directly above "Nothing is being charged
+      // for this workspace." The billed states live on `/design/plan-billing`.
+      billing_period: null,
+      renews_at: null,
       scheduled_change:
         selection.scheduled && scheduledTier
           ? {

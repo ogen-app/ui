@@ -373,8 +373,8 @@ tab synchronously on the click (a `window.open` after an `await` is blocked).
 
 The stub is `services/api/tiers.stub.ts` — a JSON seed of the decided tier
 matrix plus `localStorage`, with `STUBBED` switching the call sites, and it
-answers the billing read too (no provider is connected, so: a subscription, no
-card, no portal). It does two things the client is forbidden to do, and says so:
+answers the billing read too (no provider is connected, so: no subscription and
+no portal). It does two things the client is forbidden to do, and says so:
 it **ranks** tiers (to decide upgrade from downgrade, hence `direction` on the
 wire) and it **reads the clock** (to date the renewal, which is also the
 boundary a downgrade lands on). Neither may leak out — `rank` is stripped before

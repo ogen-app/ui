@@ -7,10 +7,10 @@ import type { TierSnapshot } from '@/types/entitlements'
  * The two sentences that say what a workspace is on — what the plan is, and
  * what happens to it next (CON-232).
  *
- * A hook rather than a component because the two callers lay them out
- * differently: the Workspace Settings card puts them in a row's title and
- * description, the billing screen sets them as a heading and a line under it.
- * What must not differ is the wording, and that is what lives here.
+ * A hook rather than a component so the layout stays the caller's business —
+ * today that is `PlanBillingCard`, which puts them in a row's title and
+ * description. What must not vary between surfaces is the wording, and that
+ * is what lives here.
  *
  * **What happens next has three answers, in this order.** A scheduled change
  * outranks a renewal, because "you move to Trial on the 22nd" is the news, and
