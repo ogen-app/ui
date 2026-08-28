@@ -114,6 +114,27 @@ describe('PlanBillingCard', () => {
     expect(screen.queryByText(/Access ends/)).not.toBeInTheDocument()
   })
 
+  it('tells a failed payment apart from an exhausted one', async () => {
+    // The instruction is the whole point of the third line, and it is opposite
+    // in the two states: `past_due` is still being retried, so telling someone
+    // to re-enter a card the provider is about to charge is how a card gets
+    // changed for no reason.
+    at(NOW)
+    const retrying = await render({ billing: billed('past_due') })
+    expect(screen.getByText(/Lemon Squeezy will try it again/)).toBeInTheDocument()
+    retrying.unmount()
+
+    await render({ billing: billed('unpaid') })
+    expect(screen.getByText(/will not be retried/)).toBeInTheDocument()
+  })
+
+  it('keeps the third line off states that are decisions rather than failures', async () => {
+    at(NOW)
+    await render({ billing: billed('cancelled', BOUNDARY) })
+
+    expect(screen.queryByText(/payment failed/i)).not.toBeInTheDocument()
+  })
+
   it('never reports a live subscription as having no payment method', async () => {
     // "No payment method on file" under a plan somebody is paying for reads as
     // "we lost your card". A renewing subscription has one; we just have not

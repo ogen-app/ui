@@ -159,6 +159,29 @@ export function PlanBanner({
           when: formatDay(ending, i18n.language),
         })
 
+  /**
+   * A third line, for the two statuses that are a problem to be *solved* rather
+   * than a state to be known.
+   *
+   * The tag names what happened and the second line says what happens to the
+   * plan; neither says what to do about it, and for a failed payment that is
+   * the only part the reader wants. The other tagged states don't get one —
+   * cancelled, paused and expired are decisions somebody made, and the second
+   * line already gives them their date.
+   *
+   * The two are worded apart because the provider means different things by
+   * them: `past_due` is still being retried, so the honest instruction is to
+   * wait unless it keeps failing; `unpaid` has run out of retries, so it is on
+   * the customer now. Telling somebody to go and fix a card the provider is
+   * about to charge successfully is how a card gets changed for no reason.
+   */
+  const failureLine =
+    subscription?.status === 'past_due'
+      ? t('tiers.paymentRetrying')
+      : subscription?.status === 'unpaid'
+        ? t('tiers.paymentStopped')
+        : null
+
   return (
     <div className="flex items-center gap-3 rounded-md border border-quaternary px-4 py-4 min-w-0">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary">
@@ -174,6 +197,9 @@ export function PlanBanner({
           {subscription && <StatusTag status={subscription.status} />}
           <span>{secondLine}</span>
         </span>
+        {failureLine && (
+          <span className="text-sm text-secondary-foreground">{failureLine}</span>
+        )}
       </span>
       <div className="ml-auto shrink-0 pl-3">
         <Button variant="ghost" size="sm" asChild>

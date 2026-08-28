@@ -753,6 +753,10 @@ export const es: Translation = {
     statusExpired: 'Caducado',
     statusUnpaid: 'Sin pagar',
 
+    paymentRetrying: 'El último pago ha fallado y Lemon Squeezy volverá a intentarlo.',
+    paymentStopped:
+      'El último pago ha fallado y no se volverá a intentar: actualiza tu método de pago en Lemon Squeezy para conservar este plan.',
+
     currentPlan: 'Plan actual',
     currentBadge: 'Actual',
     scheduledBadge: 'Programado',

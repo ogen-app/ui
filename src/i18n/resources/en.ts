@@ -1102,6 +1102,24 @@ export const en = {
     statusExpired: 'Expired',
     statusUnpaid: 'Unpaid',
 
+    /**
+     * The third line on the plan, and only for the two states that are a
+     * problem to be solved. The tag says what happened and the line above says
+     * what happens to the plan; this one says whose move it is.
+     *
+     * Worded apart because the provider means different things by them.
+     * `past_due` is still inside the retry schedule, so the instruction is to
+     * wait — sending someone to re-enter a card the provider is about to charge
+     * successfully is how a card gets changed for no reason. `unpaid` has run
+     * out of retries, so nothing else will happen without them.
+     *
+     * The provider is named in both: the card is not held here, so "update your
+     * payment method" without saying where is an instruction with no address.
+     */
+    paymentRetrying: 'The last payment failed, and Lemon Squeezy will try it again.',
+    paymentStopped:
+      'The last payment failed and will not be retried — update your payment method with Lemon Squeezy to keep this plan.',
+
     currentPlan: 'Current plan',
     currentBadge: 'Current',
     /** The tier a change has already been made to, waiting on its date. */
