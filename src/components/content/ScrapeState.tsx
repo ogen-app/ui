@@ -1,6 +1,7 @@
 import { ArrowsClockwiseIcon, WarningIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
+import { AssetStateFrame as Frame } from '@/components/content/AssetStateFrame'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 
 type Props = {
@@ -64,13 +65,5 @@ export function ScrapeState({ sourceUrl, failed, onRetry, retrying }: Props) {
         own, and the campaign can use it as soon as it does.
       </p>
     </Frame>
-  )
-}
-
-function Frame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex w-content flex-col items-center gap-4 bg-primary px-10 py-16 text-center">
-      {children}
-    </div>
   )
 }

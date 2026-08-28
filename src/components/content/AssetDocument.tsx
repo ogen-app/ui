@@ -8,9 +8,11 @@ import { AssetDetailsHeader } from '@/components/content/AssetDetailsHeader'
 import { AssetEditor } from '@/components/content/AssetEditor'
 import { DeleteAssetDialog } from '@/components/content/DeleteAssetDialog'
 import { ScrapeState } from '@/components/content/ScrapeState'
+import { UnsupportedAsset } from '@/components/content/UnsupportedAsset'
 import { useAsset, useCreateUrlAsset, useUpdateAsset } from '@/hooks/useContent'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { downloadMarkdown } from '@/lib/downloadMarkdown'
+import { opensAsDocument } from '@/lib/assetCategory'
 import { isTerminalStatus } from '@/lib/assetStatus'
 import { readPageErrorMessage } from '@/lib/scrapeErrors'
 import { toast } from '@/stores/toastStore'
@@ -37,6 +39,13 @@ type Props = {
  * of its body until it has one — see `ScrapeState`. Everything else about the
  * screen is the same: once the text exists, a read page is a document like any
  * other, editable and autosaving.
+ *
+ * The editor is the last branch and never the fallback. An asset only reaches
+ * it once `opensAsDocument` says its body is text; anything else — an asset
+ * type this build predates — gets `UnsupportedAsset` instead. That ordering is
+ * the whole of CON-16 R32: the previous arrangement mounted an autosaving
+ * editor on whatever arrived, so the first type the server added that wasn't a
+ * document would have been quietly overwritten by anyone who opened it.
  *
  * What it does *not* borrow is the commit bar. A post has one because it has
  * somewhere to go — draft, scheduled, published — and the bar is where that
@@ -175,6 +184,12 @@ export function AssetDocument({ assetId, campaignId }: Props) {
       ? sourceUrl
       : null
 
+  // Whether there is a document here at all. Asked before the editor is
+  // reached, not after: falling through to it is what writes an empty body over
+  // an asset whose `content` was never a document (CON-16 R32). It also decides
+  // the Markdown download, which is the same field under another name.
+  const editable = opensAsDocument(asset)
+
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
       {/* `relative` so the fader anchors to the content column rather than
@@ -187,7 +202,7 @@ export function AssetDocument({ assetId, campaignId }: Props) {
             saving={isDirty}
             sourceUrl={sourceUrl}
             onRefreshSource={sourceUrl ? handleRefreshSource : undefined}
-            onDownloadMarkdown={handleDownloadMarkdown}
+            onDownloadMarkdown={editable ? handleDownloadMarkdown : undefined}
             onDelete={() => setDeleteOpen(true)}
           />
           <div className="flex flex-col items-center gap-3 relative z-0">
@@ -198,6 +213,8 @@ export function AssetDocument({ assetId, campaignId }: Props) {
                 onRetry={handleRefreshSource}
                 retrying={rescrape.isPending}
               />
+            ) : !editable ? (
+              <UnsupportedAsset />
             ) : (
               <div className="w-content bg-primary px-10 py-8">
                 <AssetEditor

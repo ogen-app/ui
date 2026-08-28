@@ -701,6 +701,14 @@ export const es: Translation = {
 
     hasProblem: 'Esta publicación tiene un problema',
   },
+
+  content: {
+    unsupported: {
+      title: 'Esto no es un documento',
+      body: 'Esta versión de la aplicación no sabe mostrar este tipo de recurso. No se ha cambiado nada: sigue aquí, y una versión más reciente lo abrirá.',
+    },
+  },
+
   errors: {
     notFound: {
       code: '404',

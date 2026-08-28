@@ -1,7 +1,7 @@
 import type { AssetStatus } from "@/types/content";
 import type { StatusTone } from "@/components/ui/status-badge";
 
-export type UploadKind = "md" | "pdf";
+export type UploadKind = "md" | "pdf" | "image";
 
 const MB = 1 << 20;
 
@@ -9,19 +9,52 @@ const MB = 1 << 20;
 const UPLOAD_LIMITS: Record<UploadKind, number> = {
   md: 10 * MB,
   pdf: 50 * MB,
+  // 10 MB is the number every image path the server already has agrees on —
+  // `POST /api/images` (`maxImageSize`) and post attachments both — and CON-16
+  // R11 keeps the asset upload on it rather than inventing a third.
+  image: 10 * MB,
 };
 
-export const UPLOAD_ACCEPT = ".md,.pdf";
+/**
+ * Whether the Content Bank takes images: the `content-bank-images` flag
+ * (CON-16), threaded in rather than read from the flag record in here. These
+ * functions mirror server rules and are worth testing in both states without
+ * reaching for global flag state.
+ */
+export type UploadOptions = { images: boolean };
+
+/**
+ * The extensions the file picker offers.
+ *
+ * Kept in step with `imageprobe.AllowedMIMEs` — JPEG, PNG, WebP, GIF (CON-16
+ * R9). `.jpeg` is listed beside `.jpg` because the picker matches the literal
+ * extension while the server sniffs the body, so leaving it out would reject a
+ * file the server would have taken.
+ */
+export function uploadAccept({ images }: UploadOptions): string {
+  return images ? ".md,.pdf,.jpg,.jpeg,.png,.webp,.gif" : ".md,.pdf";
+}
+
+const BASE_LIMITS_LABEL = "Markdown (.md) up to 10 MB · PDF (.pdf) up to 50 MB";
 
 /** Human-readable summary of the limits, shown in the upload modal. */
-export const UPLOAD_LIMITS_LABEL =
-  "Markdown (.md) up to 10 MB · PDF (.pdf) up to 50 MB";
+export function uploadLimitsLabel({ images }: UploadOptions): string {
+  return images
+    ? `${BASE_LIMITS_LABEL} · Images (JPEG, PNG, WebP, GIF) up to 10 MB`
+    : BASE_LIMITS_LABEL;
+}
+
+const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
 /** Maps a filename extension to an upload kind, or null if unsupported. */
-function detectUploadKind(filename: string): UploadKind | null {
+function detectUploadKind(
+  filename: string,
+  { images }: UploadOptions,
+): UploadKind | null {
   const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
   if (ext === ".md") return "md";
   if (ext === ".pdf") return "pdf";
+  if (images && IMAGE_EXTENSIONS.includes(ext)) return "image";
   return null;
 }
 
@@ -34,10 +67,18 @@ export type UploadValidation =
  * obviously-bad files fail instantly without a network round-trip. The error
  * strings match the messages the server returns for the same conditions.
  */
-export function validateUploadFile(file: File): UploadValidation {
-  const kind = detectUploadKind(file.name);
+export function validateUploadFile(
+  file: File,
+  options: UploadOptions,
+): UploadValidation {
+  const kind = detectUploadKind(file.name, options);
   if (!kind) {
-    return { ok: false, error: "only .md and .pdf files are accepted" };
+    return {
+      ok: false,
+      error: options.images
+        ? "only .md, .pdf and image files are accepted"
+        : "only .md and .pdf files are accepted",
+    };
   }
   const limit = UPLOAD_LIMITS[kind];
   if (file.size > limit) {
