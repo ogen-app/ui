@@ -111,12 +111,16 @@ assumptions. The table is what a mapper needs; the three rows with no wire
 source at all (`matured`, `curve`/`typical`, `save_rate`/`follow_rate`) are
 design decisions to revisit, not fields to request.
 
-### 2.3 The post surface has no endpoint
+### 2.3 The post surface has no *series* endpoint
 
-`PostSeries` in `components/analytics/types.ts` already says this, and it is
-still true: `post_analytics_snapshots` is written on every metric change and
+`PostSeries` in `components/analytics/types.ts` says this, and for the history it
+is true: `post_analytics_snapshots` is written on every metric change and
 retention-pruned, and **no handler reads it** — `models/post_analytics.go:209`
 says so outright. `GET /api/analytics/posts/:id/series` remains the ask.
+
+The post's *current* figures are a different matter, and an earlier draft of this
+report had it wrong: **`GET /api/posts/:id/analytics` exists** and always did
+(CON-93 FR4, `handlers/posts.go:715`). It is unread by this app. See §5.
 
 ### 2.4 400s carry machine codes, not prose
 
@@ -179,3 +183,97 @@ The two workspace-wide surfaces need none of (1) and could ship first.
   lands.
 - The real `delta_pct` when the previous window is empty: the server returns `0`
   rather than null, which reads as "flat" and not as "no comparison".
+
+## 5. The post surface, element by element
+
+The first of the design surfaces taken card by card against the API. Two
+directions at once: what the harness draws and cannot source, and what the
+server sends that nothing draws.
+
+### 5.1 The endpoint nobody calls
+
+`GET /api/posts/:id/analytics` (`handlers/posts.go:715`, shape in
+`handlers/analytics.go:21`) serves one post's latest engagement from the
+database — no publisher call on the request path. **No client exists for it in
+this repo**: `services/api/analytics.ts` has `/posts` and the three dashboard
+reads, and nothing else. It answers in three ways:
+
+- a full snapshot;
+- `{"status": "pending", "post_id": "…"}` at **200** when the refresh sweep has
+  not covered the post yet — explicitly so clients can poll (CON-93 §10);
+- **409** `{"code": "not_published_via_publisher", "error": "…"}` for a post
+  that never went out through Zernio.
+
+Plus **503** `post analytics is not available` — note the message differs from
+`/analytics/posts`'s `analytics is not available`, so `isAnalyticsUnavailable`
+does **not** match it. A client for this endpoint needs its own predicate or a
+widened one.
+
+### 5.2 What `PostPerformanceView` needs, and where it comes from
+
+| `components/analytics/types.ts` | Source | Note |
+| --- | --- | --- |
+| `post.title`, `post.format`, `post.campaign`, `post.scheduledFor` | the post document | Not analytics — the screen already has the post it is about |
+| `post.platform` | `platform_analytics[].platform` | See §5.3: the wire is a *list* |
+| `post.account` | `platform_analytics[].account_username` | **Newly sourced.** Was listed as unavailable |
+| `post.permalink` | `platform_analytics[].platform_post_url` | **Newly sourced** |
+| `post.publishedOn` / `publishedAgo` | the post document, or `published_at` on an `/analytics/posts` row | Formatting is ours |
+| `metrics[].value` | `analytics.{impressions,reach,likes,comments,shares,saves,clicks,views,engagement_rate}` | **All nine measures.** This is the only endpoint that serves the full `MeasureId` set — `/overview` has five, `/performers` five |
+| `lastRefreshedAt` | `last_refreshed_at` | Matches |
+| `maturity` | derivable | `published_at` + the server's own rule from `/performers` (`reach_still_accruing` = age < 3 days). The harness's four states are finer than the server's two |
+| `measuredOver` | derivable | now − `published_at` |
+| `metrics[].typical` | **no source** | Nothing serves a per-workspace typical per measure. `/performers`' `against_typical` is a ratio for ranked rows only, and only for reach/interactions |
+| `metrics[].expected` | **no source** | The overview's `band` is per bucket over a window, not per post |
+| `percentile` | **no source** | Would need a distribution the API does not expose |
+| `sample` | **no source** | `/learnings` `scope.measured_posts` is the nearest thing and is workspace-wide, all-time |
+| `insight` | **no source** | Insights are computed per workspace, never per post |
+| `series` | **no source** | §2.3 |
+
+So the identity card and the figures are fully serviceable today; the
+comparisons (`typical`, `expected`, `percentile`, `sample`) and the charts are
+not. That is the split a first cut should follow — `MeasureTile` already
+withdraws when `typical`/`expected` are absent, so the card degrades to bare
+numbers rather than breaking.
+
+### 5.3 Orphaned data — served, drawn by nothing
+
+| Wire field | Status |
+| --- | --- |
+| `platform_analytics[]` — the whole per-platform breakdown, each row with its own full metric block | **Deliberately unmodelled.** `types.ts:931` says the post surface carries no per-account breakdown, on the grounds that a post to four accounts is four rows on the campaign's performers card. The consequence is unstated: the figures the harness *does* show are the aggregate across platforms, so a post on LinkedIn and Instagram shows one summed reach with no way to see the split, on the one screen dedicated to that post |
+| `platform_analytics[].error_message` + `.reauthorize_url` | **The one that matters.** A platform connected before analytics scopes were granted reports its gap here rather than failing the response. This is *actionable* — the reader can reconnect — and there is no design for it anywhere in the harness. Highest-value gap in the whole comparison |
+| `platform_analytics[].sync_status`, and the post-level `sync_status` | No state in the harness. `measuredOver`'s own doc anticipates exactly this case ("a platform stops reporting on a post that is still live") and nothing reads the field that says so |
+| `metrics_last_updated` | The publisher's "numbers computed at", beside `last_refreshed_at`'s "we last looked". The model says the pair is what "expose[s] staleness"; the harness has one `Freshness` line and collapses them, so *stale numbers* and *a stale fetch* look identical |
+| `status: "pending"` | No per-post state. `AnalyticsSurfaceState` has `isCold` for a whole surface; a post awaiting its first sweep is a different thing and wants the poll the server built it for |
+| `publisher`, `publisher_post_id`, `post_id` | Internal identifiers; correctly unused |
+
+### 5.4 Orphaned endpoints
+
+Five analytics routes have no client in this repo. Beyond `/posts/:id/analytics`:
+
+- **`GET /api/analytics/followers`** — DB-served (no publisher call), takes
+  `account_id`, `from`, `to`, `granularity=daily|weekly|monthly`, and returns
+  `{accounts, series, granularity}` — a follower series **per connected
+  account**. The overview's `followers` metric is one workspace-wide number, so
+  this is strictly richer than anything wired, and cheap. The likeliest
+  first thing to adopt after the post surface.
+- **`GET /api/analytics/best-times`**, **`/content-decay`**,
+  **`/posting-frequency`** — CON-153 live read-through proxies to Zernio, gated
+  on the tenant's Analytics add-on (`addon_required`), returning Zernio's own
+  payload as opaque `data: any`.
+
+The last three raise a question for the back end rather than for us:
+`/learnings` now answers two of the same questions from **our own** snapshot
+database — `heatmap` against `best-times`, `lifespan` against `content-decay` —
+with a shape we control and no add-on gate. Which is authoritative should be
+settled before either is wired, or the app will show two answers to "when should
+we post" that disagree. `/posting-frequency` has no `/learnings` equivalent;
+cadence is not in there.
+
+### 5.5 One more asymmetry
+
+`/analytics/posts` and `/posts/:id/analytics` reject bad input with **prose** —
+`invalid sort_by`, `page must be a positive integer`, `granularity must be
+daily, weekly, or monthly`. The CON-237–239 endpoints answer with **machine
+codes** (§2.4). Both reach a toast through `errorMessage()` verbatim, so the old
+routes leak developer English and the new ones leak identifiers. Neither is
+showable; a client for either needs the `ACCOUNT_SELECTION_MESSAGES` treatment.
