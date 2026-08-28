@@ -214,6 +214,8 @@ export const en = {
     activityUnread_other: '{{count}} unread entries',
     campaigns: 'Campaigns',
     contentBank: 'Content Bank',
+    /** CON-227. Behind the `brand-materials` flag — hidden while it is off. */
+    brand: 'Brand',
     workspaceSettings: 'Workspace Settings',
     profile: 'Profile',
     help: 'Help and support',

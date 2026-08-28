@@ -3,7 +3,7 @@ import { ChartLineUpIcon } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { StatusBadge } from "@/components/ui/status-badge.tsx";
 import { OverviewCard } from "@/components/campaigns/overview/OverviewCard.tsx";
-import { LineItem } from "@/components/campaigns/overview/LineItem.tsx";
+import { LineItem } from "@/components/ui/line-item";
 import { MetricTile } from "./MetricTile.tsx";
 import {
   useCampaignAnalytics,

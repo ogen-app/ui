@@ -17,7 +17,7 @@ import { useSettingsStore } from "@/stores/settingsStore.ts";
 import type { Campaign } from "@/types/campaigns";
 import type { Post } from "@/types/posts";
 import { CallToAction } from "./CallToAction.tsx";
-import { LineItem, type LineItemIndicator } from "./LineItem.tsx";
+import { LineItem, type LineItemIndicator } from "@/components/ui/line-item";
 import { OverviewCard } from "./OverviewCard.tsx";
 import { StatTile } from "./StatTile.tsx";
 

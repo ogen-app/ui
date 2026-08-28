@@ -6,7 +6,7 @@ import {
   type AttentionItem,
   type AttentionSeverity,
 } from "@/lib/campaignReadiness.ts";
-import { LineItem, type LineItemTone } from "./LineItem.tsx";
+import { LineItem, type LineItemTone } from "@/components/ui/line-item";
 import { OverviewCard, SectionLink } from "./OverviewCard.tsx";
 
 /** Severity is carried by the dot alone — see docs/attention-rules.md. */
