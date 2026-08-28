@@ -218,6 +218,30 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `VITE_DEV_TOOLS=1`, so in production the key is inert and the panel's chunk
   does not exist; keep it that way, and never link `/flags` from the app. See
   `docs/technical-decisions.md#staging-flag-overrides`.
+- **What the workspace's tier allows is `useEntitlement(key)`, never a flag**
+  (CON-232). A flag says whether a feature is *built*; a tier says whether this
+  workspace *bought* it — per workspace, and therefore the server's answer. Four
+  rules make the seam safe. **Unknown key allows**: a feature the tier settings
+  don't mention is one nobody decided to charge for, so it works the day it
+  ships instead of going dark until every tier is taught about it. **Unresolved
+  decides nothing** — `pending` is a state in the union, because rendering a
+  lock while the plan is in flight tells a paying customer they didn't pay.
+  **The client never maps a tier name to a number**: tiers are versioned and
+  configurable and a workspace keeps the version it bought, so two "Pro"s can
+  hold different allowances and only the server's resolved snapshot is true.
+  **Dates are display data** — never an input to a decision, or a wrong system
+  clock becomes a billing one. It is a hook rather than a `<Gate>` wrapper
+  because *hidden* is a legitimate answer and a wrapper can't remove the `<li>`
+  around it: the call site chooses hide / lock / lock-with-upgrade, and only the
+  renderings are shared (`components/entitlements`).
+- **A downgrade suspends; the server picks what.** Nothing is deleted, and the
+  new tier only lands at the next billing boundary. A workspace that drops to
+  one campaign and has two keeps both, with one flagged read-only *by the
+  server* — never worked out on the client by counting against a limit, which
+  would pick a different victim than the server did and a different one per tab.
+  So gating applies to **creating and choosing**, never to displaying what
+  exists: suspended things stay in their lists and still open, and every picker
+  has to tolerate a current value that is no longer among its options.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
@@ -331,6 +355,60 @@ token-gated unsubscribe pages, not a session-authenticated one, so
 contract is in `services/api/emailPreferences.ts` and asserted by its test.
 Flip the flag when the handler answers. See
 `docs/technical-decisions.md#email-preferences`.
+
+**Workspace tiers run on a local stub** (`workspace-tiers`, CON-232). The seam
+— `types/entitlements.ts`, `lib/entitlements.ts`, `useEntitlement`, the shared
+renderings in `components/entitlements` — is written and tested, and two
+surfaces talk *about* the plan rather than being gated by it: the **Plan &
+billing card** in Workspace Settings (`components/workspace-settings/
+PlanSection`) and **`/plans`** behind its CHANGE PLAN. Choosing a tier
+re-answers every `useEntitlement` in the app, which is how the gating gets
+looked at before the API exists. **Waiting on** `GET /api/entitlements`,
+`GET /api/tiers`, `POST /api/workspace/plan`, `GET /api/billing` and
+`POST /api/billing/portal` — contracts in `services/api/entitlements.ts`,
+`tiers.ts` and `billing.ts`, all asserted by their tests, and all tested
+against the *wire* path (`fetchWorkspacePlan`, `fetchBilling`) so the stub
+can't make a contract go dark. CON-208 (tenant tiers and groups) and CON-86
+(usage metering) are done server-side, so the tiers and the counters exist;
+what is missing is a workspace-scoped REST read that puts them together, plus a
+`suspended` flag on the resources a downgrade makes read-only.
+
+**`/plans` deliberately sits outside `_authenticated`**, like `/workspaces`: it
+reads as a full-screen modal — one X, top right — because it is a detour every
+entry point returns from, and the sidebar's items belong to the work it is a
+detour from. The X goes *back* rather than to a fixed address. Two consequences
+of living out there: the broadcast stream closes while it is open, and the
+reference caches warm again on the way back.
+
+**Ogen sells through Lemon Squeezy as merchant of record, so the app holds no
+billing fields.** Lemon Squeezy is the legal seller: it takes the card, holds
+the billing address and tax id, works out and remits VAT/GST, and issues the
+invoice. Every editable billing field therefore already has a hosted, PCI-scoped
+form we neither write nor answer for — so our side is a *report and a door*. No
+address, no tax id, no card, no cancel endpoint; a second copy here is one that
+can disagree with the invoice. **And no billing screen**: once the provider has
+taken everything editable, what is left to state is a plan, a card's last four
+and one sentence naming where the rest lives, which is a card in Workspace
+Settings rather than a page — a page of that is white space with two buttons on
+it. The door is
+`POST /api/billing/portal`, which mints a **signed link that expires within the
+day** — never cache, store or put it in a `href` at render time, and open the
+tab synchronously on the click (a `window.open` after an `await` is blocked).
+
+The stub is `services/api/tiers.stub.ts` — a JSON seed of the decided tier
+matrix plus `localStorage`, with `STUBBED` switching the call sites, and it
+answers the billing read too (no provider is connected, so: no subscription and
+no portal). It does two things the client is forbidden to do, and says so:
+it **ranks** tiers (to decide upgrade from downgrade, hence `direction` on the
+wire) and it **reads the clock** (to date the renewal, which is also the
+boundary a downgrade lands on). Neither may leak out — `rank` is stripped before
+anything leaves the file, and its test asserts that.
+
+No feature is gated yet. Which of hide / lock / lock-with-upgrade each key gets
+is decided and recorded on `EntitlementKey` in `types/entitlements.ts`; wiring
+the call sites is the remaining half. An entitlement nothing consults is the
+same as no entitlement — but note the flag now also switches on a screen, so it
+stays **off** on `develop` until the endpoints answer.
 
 ## Global rules
 

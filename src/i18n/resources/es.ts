@@ -701,6 +701,116 @@ export const es: Translation = {
 
     hasProblem: 'Esta publicación tiene un problema',
   },
+  tiers: {
+    notInPlan: 'No está en tu plan',
+    notInPlanBody:
+      'Esto no forma parte del plan de tu espacio de trabajo. Al mejorarlo, se activa para todo el equipo.',
+
+    limitReached: 'Has alcanzado tu límite',
+    resets: 'Tu cuota vuelve a estar completa el {{when}}.',
+
+    usage: '{{used}} de {{limit}}',
+    usageDay: '{{used}} de {{limit}} hoy',
+    usageMonth: '{{used}} de {{limit}} este mes',
+    usagePost: '{{used}} de {{limit}} en esta publicación',
+    usagePublish: '{{used}} de {{limit}} para esta publicación',
+    unlimited: 'Sin límite',
+
+    upgrade: 'MEJORAR PLAN',
+
+    suspended: 'Solo lectura',
+    suspendedBody:
+      'Tu plan ha cambiado, así que esto es de solo lectura por ahora. No se ha eliminado nada: sigue todo aquí, y al mejorar el plan vuelve a ser editable.',
+    suspendedSince: 'De solo lectura desde el {{when}}.',
+
+    plansTitle: 'Planes',
+    planIntro: 'Lo que puede hacer este espacio y lo que cambiarían los demás planes.',
+    planMock:
+      'Los planes todavía no están conectados a la facturación. Elegir uno solo cambia lo que este espacio puede hacer.',
+    planLoadFailed: 'No se han podido cargar los planes.',
+    plansClose: 'Cerrar los planes',
+    changePlan: 'CAMBIAR',
+
+    billingTitle: 'Plan y facturación',
+    billingMock:
+      'La facturación todavía no está conectada. Aquí no se cobra nada y no se guarda ningún dato de pago.',
+    paymentMethod: 'Método de pago y datos de facturación',
+    cardEnding: 'terminada en {{last4}}',
+    cardWithProvider: 'Tu método de pago lo guarda Lemon Squeezy.',
+    noSubscription: 'No se está cobrando nada por este espacio.',
+    accessEnds: 'El acceso termina el {{when}}.',
+    accessEnded: 'El acceso terminó el {{when}}.',
+    ownersOnly: 'Solo los propietarios del espacio pueden ver los datos de facturación.',
+
+    providerHolds:
+      'Tu método de pago, tu dirección de facturación, tu NIF/CIF, tus facturas y la cancelación los gestiona Lemon Squeezy, que vende Ogen como comerciante registrado.',
+    managePortal: 'GESTIONAR',
+    portalFailed: 'No se ha podido abrir el portal de facturación.',
+
+    statusPastDue: 'Pago fallido',
+    statusCancelled: 'Cancelado',
+    statusPaused: 'En pausa',
+    statusExpired: 'Caducado',
+    statusUnpaid: 'Sin pagar',
+
+    paymentRetrying: 'El último pago ha fallado y Lemon Squeezy volverá a intentarlo.',
+    paymentStopped:
+      'El último pago ha fallado y no se volverá a intentar: actualiza tu método de pago en Lemon Squeezy para conservar este plan.',
+
+    currentPlan: 'Plan actual',
+    currentBadge: 'Actual',
+    scheduledBadge: 'Programado',
+    retired: 'Ya no se ofrece',
+    since: 'En este plan desde el {{when}}.',
+
+    onPlan: 'Estás en el plan {{name}}.',
+    onPlanMonthly: 'Estás en el plan {{name}}, con facturación mensual.',
+    onPlanYearly: 'Estás en el plan {{name}}, con facturación anual.',
+
+    autoRenews: 'Se renueva automáticamente el {{when}}.',
+    autoRenewsIn: 'Se renueva automáticamente {{relative}}, el {{when}}.',
+
+    choose: 'ELEGIR',
+    chooseNamed: 'Elegir {{name}}',
+    cancelChange: 'CANCELAR EL CAMBIO',
+
+    changeScheduled: 'Pasarás a {{name}} el {{when}}.',
+    changeScheduledUp: '{{name}} empieza el {{when}}.',
+    changeScheduledIn: 'Pasarás a {{name}} {{relative}}, el {{when}}.',
+    changeScheduledUpIn: '{{name}} empieza {{relative}}, el {{when}}.',
+    changeScheduledBody:
+      'No se borrará nada. Si superas los límites del nuevo plan, algunas cosas pasarán a ser de solo lectura hasta que vuelvas a subir.',
+    changeFailed: 'No se ha podido cambiar tu plan.',
+    changedNow: 'Ya estás en {{name}}.',
+    changeCancelled: 'Se ha anulado ese cambio.',
+
+    limitFlat: '{{value}}',
+    limitDay: '{{value}} al día',
+    limitMonth: '{{value}} al mes',
+    limitPost: '{{value}} por publicación',
+    limitPublish: '{{value}} por publicación programada',
+    included: 'Incluido',
+    excluded: 'No incluido',
+
+    price: '{{price}} al mes',
+    priceYear: '{{price}} al año',
+    priceFree: 'Gratis',
+
+    features: {
+      seats: 'Miembros del equipo',
+      social_accounts: 'Cuentas conectadas',
+      multiple_accounts_per_platform: 'Varias cuentas en una misma plataforma',
+      campaigns: 'Campañas',
+      custom_campaign_types: 'Tipos de campaña personalizados',
+      content_plan_runs: 'Ejecuciones del plan de contenido',
+      post_assistant: 'Asistente de publicaciones',
+      post_quality_reviews: 'Revisiones de calidad',
+      post_versions: 'Historial de versiones',
+      brand_personas: 'Perfiles de marca',
+      brand_voices: 'Voces de marca',
+      media_storage_bytes: 'Almacenamiento multimedia',
+    },
+  },
 
   content: {
     unsupported: {

@@ -963,6 +963,258 @@ export const en = {
       compactLate: '{{amount}} late',
     },
   },
+  /**
+   * Workspace tiers (CON-232) — what the app says when the plan is the reason.
+   *
+   * Two vocabularies, and keeping them apart is the point. *Not in your plan*
+   * is a fact about what was bought and is only ever answered by buying more.
+   * *You've reached your limit* is a fact about this month, usually answered by
+   * waiting — so it never appears without the count and, where there is one,
+   * the date the allowance comes back. Collapsing the two into one "upgrade"
+   * message would turn "wait until Tuesday" into a sales pitch.
+   *
+   * Nothing here names a tier. Tiers are versioned and configurable, and two
+   * workspaces can both be on something called "Pro" while holding different
+   * allowances — so a sentence like "included in Pro" would be true on one
+   * screen and a lie on the next.
+   */
+  tiers: {
+    notInPlan: 'Not in your plan',
+    notInPlanBody:
+      "This isn't part of the plan your workspace is on. Upgrading turns it on for everyone here.",
+
+    /**
+     * The limit case. The headline carries no number on purpose — the count
+     * lives on the meter below it, where it can be a byte size or a tally
+     * without the sentence having to be rewritten for each.
+     */
+    limitReached: "You've reached your limit",
+    resets: 'Your allowance goes back to full on {{when}}.',
+
+    /**
+     * The meter. Each period is a whole sentence: where "this month" sits in
+     * the line is a different answer in every language, and gluing it onto a
+     * stem would decide that in English for everyone.
+     */
+    usage: '{{used}} of {{limit}}',
+    usageDay: '{{used}} of {{limit}} today',
+    usageMonth: '{{used}} of {{limit}} this month',
+    usagePost: '{{used}} of {{limit}} on this post',
+    usagePublish: '{{used}} of {{limit}} for this publish',
+    /** For the tier that paid to have no number here. */
+    unlimited: 'Unlimited',
+
+    /** Capitalised like every other action label in the app. */
+    upgrade: 'UPGRADE',
+
+    /**
+     * A downgrade suspends; it never deletes. The body's first job is that
+     * reassurance — a campaign that stops accepting edits reads as a campaign
+     * that has been taken away, and it hasn't been.
+     */
+    suspended: 'Read-only',
+    suspendedBody:
+      "Your plan changed, so this is read-only for now. Nothing has been deleted — it's all here, and upgrading makes it editable again.",
+    suspendedSince: 'Read-only since {{when}}.',
+
+    /**
+     * The plan screen. Note what is *not* here: the names and taglines of the
+     * tiers themselves. The tier list is editorial data the server owns, so its
+     * copy arrives in one language and cannot be put in a catalogue — see
+     * `services/api/tiers.ts`. Everything the app says *about* a tier is here.
+     */
+    plansTitle: 'Plans',
+    planIntro: 'What this workspace can do, and what the other plans would change.',
+    /**
+     * Not an Explainer, and not dismissible. Someone looking at a page of plans
+     * with a button on each is entitled to know that the button does not buy
+     * anything — hiding that behind a note they may have closed months ago is
+     * exactly the case the Explainer rule exists to keep out.
+     */
+    planMock: 'Plans are not connected to billing yet. Choosing one only changes what this workspace is allowed to do.',
+    planLoadFailed: 'The plans could not be loaded.',
+    plansClose: 'Close plans',
+    /**
+     * Inside the plan's own card, where the card names what is being changed —
+     * the same shape, and the same word, as a campaign's type.
+     */
+    changePlan: 'CHANGE',
+
+    /**
+     * Plan & billing — one card in Workspace Settings, with no screen behind
+     * it. The provider is the merchant of record and holds everything a
+     * customer could edit, so what is left to say fits on the card.
+     *
+     * "Plan & billing" rather than "Plan": the card is the answer to "where do
+     * I change my card", and somebody looking for that scans headings for the
+     * word billing.
+     */
+    billingTitle: 'Plan & billing',
+    /** Same standing as `planMock`, and for the same reason — see below. */
+    billingMock:
+      "Billing isn't connected yet. Nothing here charges anyone, and no payment details are held.",
+    /**
+     * "& details" because the button beside it opens all of them — the address,
+     * the tax id, the invoices — and a row called "Payment method" would make
+     * that door look like it led to a card form.
+     */
+    paymentMethod: 'Payment Method & Details',
+    /** The brand is printed beside this; the catalogue carries only the tail. */
+    cardEnding: 'ending {{last4}}',
+    /**
+     * A subscription with no card *in our copy of it* — never phrased as a
+     * missing payment method. A live subscription has one by definition, so
+     * "none on file" under a plan somebody is paying for reads as *we lost your
+     * card*: alarming, and untrue. It is held, elsewhere, by the seller.
+     */
+    cardWithProvider: 'Your payment method is held by Lemon Squeezy.',
+    /** The free-tier line: a statement about money, not about a missing card. */
+    noSubscription: 'Nothing is being charged for this workspace.',
+    /**
+     * Both tenses written out, chosen by the provider's status rather than by
+     * comparing the date to the clock. `cancelled` is paid up and still
+     * running; `expired` is over. Nothing derives that from `when`.
+     */
+    accessEnds: 'Access ends on {{when}}.',
+    accessEnded: 'Access ended on {{when}}.',
+    ownersOnly: 'Only workspace owners can see billing details.',
+
+    /**
+     * The one place the provider is named, and it has to be named: Lemon
+     * Squeezy is the seller of record, so it is the name on the customer's
+     * statement and on the invoice. The sentence exists to answer the question
+     * this card will be asked — where do I change my VAT number — whose answer
+     * is a place rather than a field.
+     */
+    providerHolds:
+      'Your payment method, billing address, tax ID, invoices and cancellation are handled by Lemon Squeezy, which sells Ogen as merchant of record.',
+    /** The row title says what is managed, the way SWITCH sits under a name. */
+    managePortal: 'MANAGE',
+    portalFailed: 'The billing portal could not be opened.',
+
+    /**
+     * Only the states worth interrupting for. "Active" beside "auto-renews on
+     * the 22nd" is noise; a failed payment is not.
+     */
+    statusPastDue: 'Payment failed',
+    statusCancelled: 'Cancelled',
+    statusPaused: 'Paused',
+    statusExpired: 'Expired',
+    statusUnpaid: 'Unpaid',
+
+    /**
+     * The third line on the plan, and only for the two states that are a
+     * problem to be solved. The tag says what happened and the line above says
+     * what happens to the plan; this one says whose move it is.
+     *
+     * Worded apart because the provider means different things by them.
+     * `past_due` is still inside the retry schedule, so the instruction is to
+     * wait — sending someone to re-enter a card the provider is about to charge
+     * successfully is how a card gets changed for no reason. `unpaid` has run
+     * out of retries, so nothing else will happen without them.
+     *
+     * The provider is named in both: the card is not held here, so "update your
+     * payment method" without saying where is an instruction with no address.
+     */
+    paymentRetrying: 'The last payment failed, and Lemon Squeezy will try it again.',
+    paymentStopped:
+      'The last payment failed and will not be retried — update your payment method with Lemon Squeezy to keep this plan.',
+
+    currentPlan: 'Current plan',
+    currentBadge: 'Current',
+    /** The tier a change has already been made to, waiting on its date. */
+    scheduledBadge: 'Scheduled',
+    /** A tier version that is still held but can no longer be bought. */
+    retired: 'No longer offered',
+    since: 'On this plan since {{when}}.',
+
+    /**
+     * What the workspace is on. Three whole sentences rather than a stem plus
+     * "monthly", because where the cadence sits in the line is a different
+     * answer in every language — and a tier nobody pays for has no cadence to
+     * put anywhere.
+     */
+    onPlan: "You're on the {{name}} plan.",
+    onPlanMonthly: "You're on the {{name}} plan, billed monthly.",
+    onPlanYearly: "You're on the {{name}} plan, billed yearly.",
+
+    /**
+     * When it renews. Both dates are given — the distance because that is what
+     * anyone actually wants ("is it soon?"), the date because that is what they
+     * will check against a calendar or a statement.
+     *
+     * `{{relative}}` is `Intl.RelativeTimeFormat`'s work, not the catalogue's:
+     * it knows every language's plural rules and its own words for tomorrow and
+     * today, so no `_one`/`_other` pair belongs here. The plain form is the
+     * fallback for a date that would not parse.
+     */
+    autoRenews: 'It auto-renews on {{when}}.',
+    autoRenewsIn: 'It auto-renews {{relative}}, on {{when}}.',
+
+    choose: 'CHOOSE',
+    /** For the button's accessible name, where "CHOOSE" alone says too little. */
+    chooseNamed: 'Choose {{name}}',
+    /** Undoing a scheduled downgrade — the only way back from one. */
+    cancelChange: 'CANCEL CHANGE',
+
+    /**
+     * A change that has been made but has not happened yet. Both directions are
+     * worded, because "Max starts on the 1st" and "you drop to Trial on the
+     * 1st" want opposite tones, and only the server knows which one it is.
+     */
+    changeScheduled: 'You move to {{name}} on {{when}}.',
+    changeScheduledUp: '{{name}} starts on {{when}}.',
+    /**
+     * The same two with the distance in them, for the screens that are read at
+     * a glance rather than during the decision. A pending change outranks the
+     * renewal line: telling a workspace its plan auto-renews when it is about
+     * to drop a tier is the opposite of what happens next.
+     */
+    changeScheduledIn: 'You move to {{name}} {{relative}}, on {{when}}.',
+    changeScheduledUpIn: '{{name}} starts {{relative}}, on {{when}}.',
+    /**
+     * The reassurance leads, because a plan change reads as a threat to the
+     * work already in the workspace and it isn't one.
+     */
+    changeScheduledBody:
+      "Nothing will be deleted. If you're over the new plan's limits, some things become read-only until you move back up.",
+    changeFailed: 'Your plan could not be changed.',
+    changedNow: "You're now on {{name}}.",
+    changeCancelled: 'That change has been called off.',
+
+    /** How a tier states an allowance, as opposed to how a meter spends one. */
+    limitFlat: '{{value}}',
+    limitDay: '{{value}} per day',
+    limitMonth: '{{value}} per month',
+    limitPost: '{{value}} per post',
+    limitPublish: '{{value}} per publish',
+    included: 'Included',
+    excluded: 'Not included',
+
+    price: '{{price}} per month',
+    priceYear: '{{price}} per year',
+    priceFree: 'Free',
+
+    /**
+     * The name each entitlement key goes by on screen. Keyed by the key rather
+     * than assembled anywhere, so a feature is called the same thing on the
+     * price list and on the lock that mentions it.
+     */
+    features: {
+      seats: 'Team members',
+      social_accounts: 'Connected accounts',
+      multiple_accounts_per_platform: 'Several accounts on one platform',
+      campaigns: 'Campaigns',
+      custom_campaign_types: 'Custom campaign types',
+      content_plan_runs: 'Content plan runs',
+      post_assistant: 'Post Assistant',
+      post_quality_reviews: 'Post quality reviews',
+      post_versions: 'Version history',
+      brand_personas: 'Brand personas',
+      brand_voices: 'Brand voices',
+      media_storage_bytes: 'Media storage',
+    },
+  },
 
   /**
    * The Content Bank. Still largely hard-coded English (CON-174) — these are
