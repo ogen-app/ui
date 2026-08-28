@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
@@ -24,13 +24,17 @@ import { toast } from '@/stores/toastStore'
  * loading; this screen's fields *are* the workspace's one set, and an empty
  * form rendered on a guess is a form that saves over what is already there.
  *
- * **The editor is keyed on whether anything is stored**, so deleting rebuilds
- * it empty rather than leaving the deleted rules standing in the fields,
- * looking like unsaved work. Keyed on existence rather than on `updatedAt`,
- * which is the version that also remounts on every ordinary save: the draft
- * already equals what was just stored, and rebuilding it only throws the
+ * **The editor is keyed on how many times the document was deleted**, so
+ * deleting rebuilds it empty rather than leaving the deleted rules standing in
+ * the fields, looking like unsaved work. Keyed on that counter rather than on
+ * `updatedAt` or on whether anything is stored, because both of those also
+ * remount on a save (`updatedAt` on every save, existence on the first): the
+ * draft already equals what was just stored, and rebuilding it only throws the
  * scroll position back to the top of a long document the moment somebody
- * commits — on a screen they stay on, which is the whole point of it.
+ * commits — on a screen they stay on, which is the whole point of it. The bump
+ * sits in `onSuccess`, after the hook's own `onSuccess` has already written
+ * `guardrails: null` to the cache, so the remount and the emptied data land in
+ * the same render.
  */
 export const Route = createFileRoute('/_authenticated/brand/guardrails')({
   component: GuardrailsPage,
@@ -40,6 +44,7 @@ function GuardrailsPage() {
   const { data, isPending, isError } = useBrand()
   const save = useSaveGuardrails()
   const remove = useDeleteGuardrails()
+  const [deletions, setDeletions] = useState(0)
 
   const header = <PageHeader back={<BrandBackButton />} />
 
@@ -71,7 +76,7 @@ function GuardrailsPage() {
   return (
     <BrandPage>
       <GuardrailsEditor
-        key={guardrails ? 'set' : 'empty'}
+        key={deletions}
         header={header}
         guardrails={guardrails}
         onSave={(written) => {
@@ -86,6 +91,7 @@ function GuardrailsPage() {
         onDelete={() => {
           remove.mutate(undefined, {
             onSuccess: () => {
+              setDeletions((n) => n + 1)
               toast.success('The guardrails were deleted.')
             },
           })

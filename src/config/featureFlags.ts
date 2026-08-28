@@ -194,6 +194,13 @@ const FEATURE_FLAGS = {
    * screen is worse than a missing one — which is exactly what happened when
    * `campaignReadiness` read `estimated_post_count` mid-redefinition.
    *
+   * **The copy is deliberately not in the i18n catalogue yet** — the one
+   * exception to the new-UI rule, decided at merge (2026-08-28), not drifted
+   * into. The screens' wording is still being argued alongside their shape,
+   * and cataloguing it now means retranslating every catalogue on every copy
+   * iteration. The conversion happens with the CON-228 pass, before this flag
+   * flips — the same pass that re-tests the UI against the real endpoints.
+   *
    * The argument this is built from: `docs/brand-materials.md`.
    */
   'brand-materials': false,
