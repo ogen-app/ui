@@ -17,6 +17,12 @@
  * why components read the hook rather than the record. Nothing else may read
  * `FEATURE_FLAGS` directly.
  *
+ * It is already the seam for one thing: on staging and in local dev a flag can
+ * be forced per browser, so one person can exercise a half-built feature while
+ * everyone else keeps testing the app as it ships (`flagOverrides.ts`). That
+ * layer folds away to nothing in a production build, so the two functions below
+ * are the record and only the record there.
+ *
  * A flag is not a permission: it decides whether a feature is built yet, never
  * whether someone is allowed to use it. That stays server-side either way.
  *
@@ -25,6 +31,8 @@
  * feature has settled should be deleted along with the `off` branch of the
  * code, not left switched on forever.
  */
+import { readFlagOverrides } from './flagOverrides'
+
 const FEATURE_FLAGS = {
   /**
    * Activity (CON-225): the sidebar item, the feed, and the daily report — the
@@ -165,6 +173,38 @@ const FEATURE_FLAGS = {
   'email-preferences': false,
 
   /**
+   * Uploading images into the Content Bank (CON-16) — an asset that *is* a
+   * picture, rather than a picture pasted inside a document.
+   *
+   * **Waiting on:** the whole ingest path. `POST /api/content-bank/assets/
+   * upload` answers `"only .md and .pdf files are accepted"` (`assets.go`), and
+   * `assets_type_check` is `MD | PDF | URL`, so an image cannot be stored as an
+   * asset at all. CON-105's branch (PR #66, open since 2026-07-12) adds `IMG`
+   * plus `ai_generated`, `brand_style` and `generation`; CON-16 R1 adds the
+   * `width` / `height` / `is_animated` / `checksum_sha256` columns to
+   * `asset_files` that `post_attachments` already carries, and R3 adds
+   * `assets.alt_text`.
+   *
+   * With this on, the upload surface offers images and the server refuses
+   * them — which is the honest state of it, and why it is off.
+   *
+   * **The image asset's own screen is deliberately not built yet**, and this is
+   * the decision the back end has to make first: `AssetFile` exposes
+   * `thumbnail_url` and no URL for the original, so there is nothing to render
+   * an image *from*. CON-16 R5 puts the thumbnail at `assets/{id}/thumb.webp`
+   * and D2 the original at `assets/{id}/original.<ext>`, but neither the DTO
+   * field nor its name is settled. Until it is, an `IMG` asset opens on
+   * `UnsupportedAsset`, which is safe and says so. Guessing the field here
+   * would mean writing a viewer against a contract nobody has agreed to.
+   *
+   * Switch this on once the upload accepts images and the asset DTO carries the
+   * original's URL; re-test the whole path against the real thing — the sizes
+   * and MIME set in `lib/assetStatus.ts` mirror `imageprobe.AllowedMIMEs` and
+   * `maxImageSize`, and those are the server's to change.
+   */
+  'content-bank-images': false,
+
+  /**
    * Deleting one saved version of a post, from the version-history panel
    * (CON-168). Off until the API grows `DELETE /api/posts/:id/versions/
    * :versionId` — `handlers/posts.go` registers `GET`/`POST` on `/versions`
@@ -220,12 +260,36 @@ const FEATURE_FLAGS = {
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS
 
+/** Every flag this build declares — what the dev-tools panel enumerates. */
+export const FLAG_IDS = Object.keys(FEATURE_FLAGS) as FeatureFlag[]
+
+/**
+ * The value in force: the build's, unless this browser has been told otherwise
+ * on staging or in dev. `readFlagOverrides()` is `{}` in production, where this
+ * is a property lookup and nothing else.
+ */
+function resolve(flag: FeatureFlag): boolean {
+  return readFlagOverrides()[flag] ?? FEATURE_FLAGS[flag]
+}
+
+/**
+ * What this *build* says, ignoring any override.
+ *
+ * For the staging flag panel alone, which has to show both answers to be worth
+ * opening — hence a named accessor rather than exporting the record, which
+ * stays private for the reason above. Anything deciding whether to render a
+ * feature wants `useFeatureFlag`.
+ */
+export function buildFlagValue(flag: FeatureFlag): boolean {
+  return FEATURE_FLAGS[flag]
+}
+
 /** Whether a feature is built and shown. */
 export function useFeatureFlag(flag: FeatureFlag): boolean {
-  return FEATURE_FLAGS[flag]
+  return resolve(flag)
 }
 
 /** The same answer outside React — for loaders, guards and plain functions. */
 export function isFeatureEnabled(flag: FeatureFlag): boolean {
-  return FEATURE_FLAGS[flag]
+  return resolve(flag)
 }

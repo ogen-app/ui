@@ -94,6 +94,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`MAX_VIDEO_UPLOAD_BYTES`) is ours, and always wins over the seeded ceiling.
   A probed-but-zero `duration_ms` means video-service was down, not a
   zero-length file. See `docs/technical-decisions.md#video-ingest`.
+- **An asset only opens in the editor if `opensAsDocument` says it is one.**
+  `AssetDocument`'s editor is the last branch, never the fallback: `null | MD |
+  PDF | URL` are documents, and anything else — a `type` the build predates —
+  gets the read-only `UnsupportedAsset`. Never restore "everything else gets
+  `AssetEditor`". It seeds BlockNote from `content` and autosaves it back, so
+  the first type whose `content` isn't a document is overwritten by anyone who
+  opens it and types (CON-235; `IMG`'s `content` is its description). PDF *is*
+  a document — its extracted text is what the embeddings are built from. See
+  `docs/technical-decisions.md#asset-opening`.
 - **A campaign update is a whole-resource PUT, and the server defaults every
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of
@@ -122,7 +131,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   hidden text. Editing a screen that still holds hard-coded English? Move the
   strings you touch into the catalogue rather than adding a literal beside them.
   Genuinely exempt: developer-facing text (`console.*`, thrown `Error` messages,
-  test fixtures), and `i18n/bootMessages.ts` — see the next bullet.
+  test fixtures), `src/devtools/` (staging-only screens that a production build
+  compiles out — see `docs/technical-decisions.md#staging-flag-overrides`), and
+  `i18n/bootMessages.ts` — see the next bullet.
 - **How the catalogues work.** English is bundled and is the fallback; `en.ts`
   is the shape everything else is typed against, so a key missing from `es.ts`
   is a compile error (a key missing from `en.ts` is a compile error at the call
@@ -198,6 +209,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   from the `FEATURE_FLAGS` record directly: the hook is the seam where
   server-driven values will land, and going through it keeps every call site
   untouched when they do. A flag is not a permission.
+- **On staging and in dev, a flag can be forced for one browser.** A
+  `?ff=tasks,-activity` link or the unlisted `/flags` panel writes an override
+  to localStorage, so one teammate can exercise a half-built feature on the
+  shared deploy while everyone else sees the app as it ships. Deliberately
+  *not* in `/api/settings` — that row is workspace-wide, which is the opposite
+  of what this is for. The whole layer is compiled out unless the build sets
+  `VITE_DEV_TOOLS=1`, so in production the key is inert and the panel's chunk
+  does not exist; keep it that way, and never link `/flags` from the app. See
+  `docs/technical-decisions.md#staging-flag-overrides`.
 - **What the workspace's tier allows is `useEntitlement(key)`, never a flag**
   (CON-232). A flag says whether a feature is *built*; a tier says whether this
   workspace *bought* it — per workspace, and therefore the server's answer. Four
@@ -315,8 +335,12 @@ creates the account or adds the workspace to one that already exists) ·
 **multi-workspace is live, unflagged** — [ogen#109](https://github.com/ogen-app/ogen/pull/109)
 merged 2026-08-14; the `multi-workspace` flag and its off-branch were deleted
 once the client was re-tested against the shipped API (CON-147) ·
-dark mode is scaffolded but empty · the
-Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
+dark mode is scaffolded but empty · **an image cannot be a Content-Bank asset**
+— `assets.type` is `MD | PDF | URL` and the upload endpoint takes `.md` and
+`.pdf` only, so `IMG` is declared client-side and unproducible; the upload
+surface offers images behind `content-bank-images` (off) and the image asset's
+own screen is deliberately unwritten until the DTO carries a URL for the
+original (CON-16) · eslint/prettier/stylelint
 have no committed config in this repo · **i18n covers the auth screens, sidebar,
 Profile, Workspace Settings and the campaign calendar** (its week, month and
 list views, the cards, both rail panels and the posts table) — everything else
