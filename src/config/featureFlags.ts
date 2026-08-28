@@ -139,23 +139,41 @@ const FEATURE_FLAGS = {
    * measure nothing, and no analytics request is made. Turning it on swaps
    * that preview for the real totals in both places.
    *
-   * **Waiting on:** a campaign dimension on `GET /api/analytics/posts`. The
-   * endpoint filters by `platform` and nothing else (`handlers/analytics.go`),
-   * and its `overview` block totals the whole *workspace* — so a campaign
-   * screen cannot ask the server its own question. Until it takes a
-   * `campaign_id` (or the rows carry one), the page fetches one 100-row page,
-   * intersects it with the campaign's posts client-side, and sums the rows
-   * itself; the server's `overview` is deliberately ignored. Beyond ~100
-   * measured posts in a workspace that is no longer complete, which is why
-   * every surface states its coverage.
+   * **Still waiting on: a campaign dimension.** CON-236–239 landed the
+   * analytics dashboard API on 2026-08-27 — `/overview`, `/performers` and
+   * `/learnings`, typed against the real handlers in `types/analytics.ts` and
+   * pinned by `services/api/analytics.test.ts` — and every one of them is
+   * **tenant-scoped**. None takes a `campaign_id`; only `/performers` takes a
+   * `platform`. So the thing this flag was originally waiting for did not
+   * arrive: a campaign screen still cannot ask the server its own question.
    *
-   * The content is a first cut besides: only the stored post series is wired.
-   * `/followers`, `/best-times`, `/content-decay` and `/posting-frequency`
-   * exist and are typed but unused.
+   * Until it can, the page fetches one 100-row page of `/posts`, intersects it
+   * with the campaign's posts client-side, and sums the rows itself; the
+   * server's `overview` block is workspace-wide and deliberately ignored.
+   * Beyond ~100 measured posts in a workspace that stops being complete, which
+   * is why every surface states its coverage.
    *
-   * Switch this on once `GET /api/analytics/posts` can be asked about one
-   * campaign, re-test the totals against the real thing, and delete the flag
-   * once the section has been exercised against the deployed API.
+   * **Before this can be flipped**, in order:
+   *
+   * 1. A campaign dimension — `campaign_id` on the dashboard reads, or a
+   *    campaign column on the rows. Nothing else unblocks the campaign screen.
+   * 2. A per-post series. `post_analytics_snapshots` is written and retained,
+   *    and no endpoint reads it (`models/post_analytics.go` says so in as many
+   *    words), so a post's own history has no source — the ask is
+   *    `GET /api/analytics/posts/:id/series` with a granularity.
+   * 3. A live re-test. Everything typed here was read off the Go source, not
+   *    off a running server; the shapes with the least margin for a
+   *    misreading are the overview's `series.previous` (index-aligned to the
+   *    *current* window's buckets) and the learnings sections, each of which
+   *    withdraws on its own.
+   *
+   * The two workspace-wide surfaces (`components/analytics`) are further along
+   * than the campaign one and could ship first — they need no campaign
+   * dimension. What they still need is a mapper from these wire shapes onto
+   * their view models, and three of their fields have no wire source at all:
+   * per-post `matured`, the performers' `curve`/`typical`, and the `save_rate`
+   * and `follow_rate` criteria (`/performers` reports no saves or follows).
+   * See `docs/analytics-contract.md`.
    */
   'campaign-analytics': false,
 
