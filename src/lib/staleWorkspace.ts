@@ -47,6 +47,9 @@ async function verify(active: string): Promise<void> {
     // Deliberately a bare `fetch`, not `apiJson`: this module is imported from
     // the API layer's own response check, and routing the recovery back through
     // it would close an import cycle — and could re-enter this handler.
+    // Bare on purpose, per the comment above: the whole point is to stay
+    // outside the API layer.
+    // eslint-disable-next-line no-restricted-globals
     const res = await fetch(apiUrl("/api/workspaces"), {
       method: "GET",
       credentials: "include",

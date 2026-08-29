@@ -81,9 +81,9 @@ export async function renderWithProviders(
   // returns with an empty container and every query in the test misses.
   await router.load()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the memory
-  // router's generated types don't match the app's route tree, and nothing
-  // here depends on them.
+  // The memory router's generated types don't match the app's route tree, and
+  // nothing here depends on them.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = render(<RouterProvider router={router as any} />)
   await screen.findByTestId(MOUNTED)
 

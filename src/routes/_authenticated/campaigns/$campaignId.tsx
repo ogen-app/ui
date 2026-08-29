@@ -53,7 +53,6 @@ function CampaignLayout() {
     openThread({ kind: "campaign", campaignId }, "", "");
     // Only on arrival — the name is tracked separately so that renaming the
     // campaign doesn't yank the panel away from a thread the user is reading.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openThread, campaignId]);
 
   useEffect(() => {

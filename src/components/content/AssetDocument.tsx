@@ -89,7 +89,6 @@ export function AssetDocument({ assetId, campaignId }: Props) {
     openThread({ kind: 'campaign', campaignId }, '', '')
     // Only on arrival — the name is tracked separately, so renaming the
     // campaign can't yank the panel away from a thread being read.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openThread, campaignId])
   useEffect(() => {
     if (threadId && campaignName !== undefined)

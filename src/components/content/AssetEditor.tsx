@@ -50,6 +50,10 @@ export function AssetEditor({
     editor.replaceBlocks(editor.document, next);
     lastMarkdownRef.current = editor.blocksToMarkdownLossy();
     readyRef.current = true;
+    // Load-once on purpose. `initialContent` is the asset as it arrived;
+    // re-running this when it changes would replace the blocks under
+    // someone who is mid-edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
   const autosizeTitle = useCallback(() => {
