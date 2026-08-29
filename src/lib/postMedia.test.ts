@@ -267,6 +267,9 @@ describe('evaluatePost', () => {
     maxContentChars: 2200 as number | null | undefined,
     // Instagram publishes no title, which is the common case.
     maxTitleChars: null as number | null | undefined,
+    // Not a thread sequence — Instagram has none, and the length check these
+    // cases exercise is the one a sequence replaces (CON-196).
+    sequence: false,
   }
 
   it('fails the media check below the minimum', () => {

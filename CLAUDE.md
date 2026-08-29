@@ -359,6 +359,18 @@ is still hard-coded English (CON-174) · **English is the only released language
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
 
+**A thread publishes as one post, not as a thread** (CON-196,
+`thread-sequence`, off). X has offered a `thread` post type all along and the
+preview card has always drawn a chain, but `SubmitRequest` in the Go repo's
+`publishers/zernio/posts.go` carries no `platformSpecificData`, so nothing ever
+sent Zernio's `threadItems` — the whole body goes out as a single post. Behind
+the flag the post is composed as the list of posts it is, each with its own
+text and its own media, and Threads gains the type too (Zernio takes the same
+field on both). **Waiting on** that field in the submit path, a home on the
+post for the items (they sit in the tenant key/value store meanwhile), and
+`thread` added to `threads` in `publishers/zernio/platforms.go`. See
+`docs/technical-decisions.md#thread-sequence`.
+
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's
 token-gated unsubscribe pages, not a session-authenticated one, so

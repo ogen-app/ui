@@ -626,6 +626,74 @@ it. Same rule as always: a flag is not a permission.
 `config/featureFlags.ts`, `devtools/FlagsPanel.tsx`, `devtools/OverrideMarker.tsx`,
 `routes/flags.tsx`, the `VITE_DEV_TOOLS` build arg in the `Dockerfile`.
 
+## A thread is a list of posts, and the body becomes a summary {#thread-sequence}
+
+**Decision.** On X and Threads, a `thread` post is edited as an ordered list of
+posts — each with its own text and its own media — and the post's `content`
+column becomes a *derived* rejoin of them rather than the thing anyone types
+into. Behind the `thread-sequence` flag (CON-196).
+
+**Why.** Zernio publishes a chain from `platformSpecificData.threadItems` on
+both networks: "the first item is the root post and subsequent items become
+replies in order", and "when `threadItems` is provided, the top-level `content`
+field is used only for display and search purposes, it is **NOT** published"
+(docs.zernio.com/platforms/threads, /platforms/twitter). Once that is the wire
+format, two things follow that a single body cannot express:
+
+- **Every limit is per post.** 280 characters on X, 500 on Threads, four images
+  or ten, one video — all of them apply to each part of the chain. The editor
+  measured the whole body against one of them, which fails a thread that is
+  fine and stays silent about the one post that is not.
+- **Media belongs to a post, not to the thread.** There is no way to say "this
+  image rides the third one" with a flat attachment list and no item to hang it
+  on.
+
+**What it is not.** It is not the blank-line splitting the X preview card has
+always drawn. That was a guess about what the publisher would do, and the
+guess was wrong: nothing in the Go repo has ever sent `threadItems`, so a
+`thread` post publishes as one post with the whole body in it. The card's note
+said the publisher did the splitting; it never did, and that sentence is gone.
+
+**How.**
+
+- `lib/threadSequence.ts` owns the model and every rule. Pure, tested, and the
+  single source for "which post is too long" — the editor's per-row marks and
+  the preview's notes both read `evaluateSequence`.
+- **Attachments stay post-level rows.** An item names the ones it carries by
+  id, so `post_attachments` needs no column and no migration. The rule that
+  makes it safe: *an attachment no item names rides the root.* Uploading from
+  the media card, from the assistant, or from an older client needs to know
+  nothing about sequences and the file still publishes — and it matches what
+  the X card always drew, where the lead post carries the media.
+- **The items live in the tenant key/value store** under
+  `thread-sequence.<postId>` (`useThreadSequence`), the same stand-in
+  `campaign-accounts` uses while waiting for its column, with the same limits:
+  workspace-wide, whole-list writes, last write wins.
+- **`content` is written on every flush** from the items. Everything
+  downstream — the calendar, the posts table, search, the assistant — keeps
+  reading the field it already reads instead of finding the post empty. It is
+  also what a post is re-seeded from the first time its type becomes a
+  sequence, split at blank lines.
+- **The editor replaces the body rather than sitting beside it.** Two copies of
+  the same words, only one of which publishes, is not a screen worth building.
+  Its rows are plain textareas, not BlockNote: these networks take plain text,
+  so a rich editor would offer formatting that is dropped at publish and would
+  make Enter mean "new block" where the blocks are already the numbered rows.
+- **The post type is gated on its dictionary entry, not on the slug.**
+  `PlatformPostType.flag` withholds *Threads'* `thread`, which is new. X's is
+  untouched, because the app has always offered it and a flag may never change
+  what happens when it is off.
+
+**Waiting on** the back end: `SubmitRequest` (`publishers/zernio/posts.go`) has
+no `platformSpecificData` at all, so nothing sends the chain yet; somewhere on
+the post to keep the items; and `thread` added to Threads in
+`publishers/zernio/platforms.go`, which lists it for `twitter` only.
+
+**Where.** `lib/threadSequence.ts` (+ test), `hooks/useThreadSequence.ts`,
+`components/posts/sequence/`, the `sequence` branch in `lib/postValidation.ts`,
+`TwitterPreview` / `ThreadsPreview` / `PostPreviewPanel`, and the
+`thread-sequence` flag.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain

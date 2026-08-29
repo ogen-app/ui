@@ -30,6 +30,18 @@ export const postAttachmentsKey = (postId: string) =>
  */
 const PRESIGN_REFRESH_MS = 10 * 60 * 1000
 
+/**
+ * What an upload run produced. `ids` are the attachments the server created,
+ * in the order the files were sent — a thread sequence claims them for the
+ * post of the chain the upload was started from (`useThreadSequence`), which
+ * it cannot do from a count.
+ */
+export type UploadResult = {
+  uploaded: number
+  errors: string[]
+  ids: string[]
+}
+
 export type PendingUpload = {
   // Local id — the server one doesn't exist until the upload lands.
   key: string
@@ -60,9 +72,9 @@ export function usePostAttachments(postId: string) {
    * order the user picked the files in.
    */
   const upload = useCallback(
-    async (files: File[]): Promise<{ uploaded: number; errors: string[] }> => {
+    async (files: File[]): Promise<UploadResult> => {
       const errors: string[] = []
-      let uploaded = 0
+      const ids: string[] = []
       for (const [i, file] of files.entries()) {
         const key = `${Date.now()}-${i}-${file.name}`
         setPending((p) => [...p, { key, name: file.name, percent: 0 }])
@@ -72,11 +84,11 @@ export function usePostAttachments(postId: string) {
           // to the upload endpoint as before.
           const send =
             attachmentKind(file.type) === 'video' ? uploadVideoAttachment : uploadAttachment
-          await send(postId, file, {
+          const created = await send(postId, file, {
             onProgress: (percent) =>
               setPending((p) => p.map((u) => (u.key === key ? { ...u, percent } : u))),
           })
-          uploaded += 1
+          ids.push(created.id)
         } catch (err) {
           errors.push(err instanceof Error ? err.message : `Unable to upload ${file.name}`)
         } finally {
@@ -84,7 +96,7 @@ export function usePostAttachments(postId: string) {
         }
       }
       invalidate()
-      return { uploaded, errors }
+      return { uploaded: ids.length, errors, ids }
     },
     [postId, invalidate],
   )

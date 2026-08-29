@@ -27,6 +27,18 @@ export type PreviewMediaItem = {
 }
 
 /**
+ * One post of a thread sequence, as a card draws it (CON-196).
+ *
+ * Its own media, not the post's: on a chain each part carries its own files,
+ * which is the difference between this and the split-at-blank-lines guess the
+ * X card made before the sequence existed.
+ */
+export type PreviewSequenceItem = {
+  text: string
+  media: PreviewMediaItem[]
+}
+
+/**
  * Networks whose `story` post type is the fullscreen kind `StoryPreview` can
  * draw. One list feeds both the panel's membership check and the prop union,
  * so a new story network is one edit here rather than a set, a type and a
@@ -68,5 +80,15 @@ export type PreviewProps = {
    * same post fits.
    */
   charLimit?: number | null
+  /**
+   * The posts of a thread sequence, when the post is one (CON-196). Absent
+   * everywhere else, including on a `thread` post while the feature is off —
+   * the X card then falls back to splitting `text` at blank lines, which is
+   * the guess it has always made and matches what actually publishes today.
+   *
+   * A card that receives this draws exactly these posts and their media, and
+   * never the whole-body `text`.
+   */
+  sequence?: PreviewSequenceItem[]
 }
 

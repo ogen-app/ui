@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
@@ -8,6 +9,7 @@ import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
+import { PostSequenceEditor } from '@/components/posts/sequence/PostSequenceEditor'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
@@ -32,6 +34,11 @@ import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { usePanelScope } from '@/hooks/usePanelScope'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { charCount } from '@/lib/socialText'
+import { getPlatformInfo } from '@/lib/platformDictionary'
+import { evaluateSequence, isSequencePost } from '@/lib/threadSequence'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { useThreadSequence } from '@/hooks/useThreadSequence'
+import type { PostCheck } from '@/lib/postValidation'
 import { useCampaign } from '@/hooks/useCampaigns'
 import {
   usePost,
@@ -144,6 +151,9 @@ function PostEditorSurface({
   saving,
   campaignId,
 }: PostEditorSurfaceProps) {
+  // Only the thread-sequence copy reads this today — the rest of this screen
+  // is still hard-coded English awaiting the CON-174 pass.
+  const { t } = useTranslation()
   const [titleDraft, setTitleDraft] = useState(doc.title)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -171,10 +181,22 @@ function PostEditorSurface({
     doc.platform_id,
   )
 
+  // Thread sequences (CON-196) — a post that publishes as a chain rather than
+  // one post. The flag withdraws the type from every picker, so with it off
+  // this is false for every post, *including* one already saved as a `thread`:
+  // that post keeps rendering as the single body it was written in, which is
+  // exactly what it still publishes as until the submit path sends
+  // `threadItems`.
+  const sequenceEnabled = useFeatureFlag('thread-sequence')
+  const platformInfo = getPlatformInfo(doc.platform_id)
+  const isSequence =
+    sequenceEnabled &&
+    isSequencePost(platformInfo?.zernioId, doc.platform_post_type)
+
   // Attachments, the platform's post-type rules and the checks derived from
   // both. Called once here because the media card and the validations
   // section are two views of the same state (and share upload progress).
-  const media = usePostMedia(doc)
+  const media = usePostMedia(doc, isSequence)
 
   // Which of the platform's connected accounts this post publishes as
   // (CON-150). Resolved here because two consumers must agree: the
@@ -334,6 +356,63 @@ function PostEditorSurface({
     [changeDoc],
   )
 
+  // The posts of the thread, and the only place they are edited. The body is
+  // written back from them on every flush, so everything that reads
+  // `doc.content` — the calendar, the table, search, the assistant — keeps
+  // seeing the post's words rather than an empty post.
+  const sequence = useThreadSequence(doc.id, {
+    enabled: isSequence,
+    content: doc.content,
+    attachments: media.attachments,
+    onCommitContent: handleContentChange,
+  })
+
+  // Every ceiling here is per post of the chain, because each post of a chain
+  // *is* a post on the platform: the character limit the server resolved, and
+  // the platform's own per-post media caps.
+  const sequenceReports = useMemo(
+    () =>
+      isSequence
+        ? evaluateSequence({
+            items: sequence.items,
+            attachments: media.attachments,
+            charLimit: media.maxContentChars,
+            imageCap: media.policy.image?.maxPerPost,
+            videoCap: media.policy.video?.maxPerPost,
+          })
+        : [],
+    [
+      isSequence,
+      sequence.items,
+      media.attachments,
+      media.maxContentChars,
+      media.policy,
+    ],
+  )
+
+  // Appended here rather than inside `evaluatePost`, which is a pure module
+  // with no `t` — and this row is new copy, so it belongs in the catalogue
+  // (CLAUDE.md) rather than beside that file's legacy English.
+  const checks = useMemo<PostCheck[]>(() => {
+    if (!isSequence) return media.checks
+    const failing = sequenceReports.filter((r) => r.issues.length > 0)
+    return [
+      ...media.checks,
+      {
+        id: 'thread-sequence',
+        label: t('posts.sequence.check.label'),
+        status: failing.length > 0 ? 'fail' : 'pass',
+        detail:
+          failing.length > 0
+            ? t('posts.sequence.check.issues', {
+                count: failing.length,
+                positions: failing.map((r) => r.position).join(', '),
+              })
+            : t('posts.sequence.postCount', { count: sequenceReports.length }),
+      },
+    ]
+  }, [isSequence, media.checks, sequenceReports, t])
+
   const handleDownloadMarkdown = useCallback(
     () => downloadMarkdown(doc.title, doc.content, 'post'),
     [doc.title, doc.content],
@@ -384,7 +463,7 @@ function PostEditorSurface({
             </div>
             <div className="w-content">
               <PostValidationsSection
-                checks={media.checks}
+                checks={checks}
                 assessment={assessment}
                 postUpdatedAt={doc.updated_at}
                 qualityUnavailable={quality.unavailable}
@@ -420,11 +499,25 @@ function PostEditorSurface({
                       worse than showing how far over the title is. */}
                   <TitleCounter title={titleDraft} limit={media.maxTitleChars} />
                 </div>
-                <PostContentEditor
-                  content={doc.content}
-                  onContentChange={handleContentChange}
-                  readOnly={assistantRunning}
-                />
+                {isSequence ? (
+                  <PostSequenceEditor
+                    items={sequence.items}
+                    reports={sequenceReports}
+                    attachments={media.attachments}
+                    charLimit={media.maxContentChars}
+                    imageCap={media.policy.image?.maxPerPost}
+                    platformName={platformInfo?.name ?? ''}
+                    readOnly={assistantRunning}
+                    update={sequence.update}
+                    upload={media.upload}
+                  />
+                ) : (
+                  <PostContentEditor
+                    content={doc.content}
+                    onContentChange={handleContentChange}
+                    readOnly={assistantRunning}
+                  />
+                )}
               </div>
             </div>
             <div className="w-content">
@@ -503,6 +596,7 @@ function PostEditorSurface({
             <PostPreviewPanel
               doc={doc}
               attachments={media.attachments}
+              sequence={isSequence ? sequence.items : undefined}
               onClose={closeRightPanel}
             />,
             previewHost,

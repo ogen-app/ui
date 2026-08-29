@@ -168,10 +168,18 @@ export type ThreadSegment = {
  * exactly one answer.
  */
 export function threadSegments(text: string, limit: number | null): ThreadSegment[] {
-  return splitThread(text).map((segment) => {
-    const count = charCount(segment)
-    return { text: segment, count, over: limit !== null && count > limit }
-  })
+  return splitThread(text).map((segment) => measureSegment(segment, limit))
+}
+
+/**
+ * The same verdict for a post that is already its own post. A thread sequence
+ * arrives split (CON-196), so there is nothing left to guess at — but its
+ * posts still have to be measured the way `threadSegments` measures a guessed
+ * one, or the card and the notes could disagree.
+ */
+export function measureSegment(text: string, limit: number | null): ThreadSegment {
+  const count = charCount(text)
+  return { text, count, over: limit !== null && count > limit }
 }
 
 /** Splits text at the fold so a preview can render its own "see more". */

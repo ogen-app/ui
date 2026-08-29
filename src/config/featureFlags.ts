@@ -251,6 +251,54 @@ const FEATURE_FLAGS = {
   'content-bank-images': false,
 
   /**
+   * **Thread sequences** (CON-196) — a post on X or Threads that publishes as
+   * a chain of connected posts rather than one.
+   *
+   * Zernio takes one on both networks as
+   * `platformSpecificData.threadItems`: "the first item is the root post and
+   * subsequent items become replies in order", each item carrying its own text
+   * and its own media (docs.zernio.com/platforms/threads, /platforms/twitter).
+   * That is the format this is built against, and it is the whole reason the
+   * feature can exist at all.
+   *
+   * **Waiting on three things, all server-side.**
+   *
+   * 1. **The field.** `SubmitRequest` in `publishers/zernio/posts.go` has no
+   *    `platformSpecificData` at all, and nothing in the Go repo mentions
+   *    `threadItems` — so an X `thread` post today is submitted as one blob of
+   *    top-level `content` and publishes as a single post. The chain the
+   *    preview card draws has never been what goes out. This is the one that
+   *    makes the feature real; the rest is bookkeeping.
+   * 2. **Somewhere to keep the items.** The post has one `content` column, so
+   *    the sequence lives in the tenant key/value store under
+   *    `thread-sequence.<postId>` (`useThreadSequence`), the same stand-in
+   *    `campaign-accounts` uses while waiting for its column. What that cannot
+   *    do: two people editing different posts of the same chain in the same
+   *    second means the later write wins for both, and the row is
+   *    workspace-wide like every other settings key.
+   * 3. **The slug on Threads.** `supportedPlatforms` in
+   *    `publishers/zernio/platforms.go` lists `thread` for `twitter` only, so
+   *    Threads cannot offer the type until it is added there — `buildPlatformView`
+   *    intersects our dictionary with what a publisher reports, and correctly
+   *    drops it.
+   *
+   * With this off the post type is filtered out of the picker on both networks
+   * (`buildPlatformView`), the editor is the single body it has always been,
+   * and nothing reads the settings key — which also means an existing X
+   * `thread` post keeps behaving exactly as it did.
+   *
+   * The post's `content` is still written on every change, as the rejoined
+   * items, so everything downstream — calendar, posts table, search, the
+   * assistant — keeps reading the field it already reads instead of an empty
+   * post. Nothing outside the flag knows the sequence exists.
+   *
+   * Switch this on once the submit path sends `threadItems`, migrate the key
+   * onto whatever column holds them, and re-test the whole path against the
+   * real thing — per-item media is the half most likely to need a pass.
+   */
+  'thread-sequence': false,
+
+  /**
    * Deleting one saved version of a post, from the version-history panel
    * (CON-168). Off until the API grows `DELETE /api/posts/:id/versions/
    * :versionId` — `handlers/posts.go` registers `GET`/`POST` on `/versions`

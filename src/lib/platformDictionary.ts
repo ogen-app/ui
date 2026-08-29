@@ -20,11 +20,23 @@
 import type { Icon } from "@phosphor-icons/react";
 import { FacebookLogoIcon, InstagramLogoIcon, LinkedinLogoIcon, ThreadsLogoIcon, XLogoIcon, YoutubeLogoIcon } from "@phosphor-icons/react";
 
+import { isFeatureEnabled, type FeatureFlag } from "@/config/featureFlags";
 import type { Platform, PlatformPublisher, PublisherAccount } from "@/types/campaigns";
 
 export type PlatformPostType = {
   slug: string;
   label: string;
+  /**
+   * A post type this build has written but not released. `buildPlatformView`
+   * drops it while the flag is off, so it reaches no picker and no editor —
+   * the same gate every other half-built feature goes through, applied to the
+   * one thing a platform's vocabulary can be half-built in.
+   *
+   * Only for types that are *new*. A type the app already offered must not
+   * acquire one: withdrawing it would change how the app behaves with the flag
+   * off, which is the one thing a flag may never do.
+   */
+  flag?: FeatureFlag;
 };
 
 export type PlatformInfo = {
@@ -107,6 +119,18 @@ export const PLATFORMS: PlatformInfo[] = [
       { slug: "image-post", label: "Image post" },
       { slug: "carousel", label: "Carousel" },
       { slug: "video", label: "Video" },
+      // "Thread" and not "Sequence" on the network called Threads: a chain is
+      // what Meta's own app calls a thread ("add to thread"), the same word X
+      // uses, and one vocabulary across both beats one that reads better on a
+      // single screen. Zernio takes the identical `threadItems` on both
+      // (CON-196).
+      //
+      // Flagged where X's is not, because this one is new: X has offered
+      // `thread` all along and taking it away would be a change with the flag
+      // off. Doubly gated in practice — `supportedPlatforms` in the Go repo
+      // lists `thread` for `twitter` only, so no publisher reports it here
+      // yet either.
+      { slug: "thread", label: "Thread", flag: "thread-sequence" },
     ],
   },
   {
@@ -182,7 +206,12 @@ export function buildPlatformView(
   const connectedPublishers = publishers.filter((p) => p.connected);
   const allowedSlugs = unionSupportedSlugs(publishers);
   const availableSlugs = unionSupportedSlugs(connectedPublishers);
-  const allowed = info.postTypes.filter((pt) => allowedSlugs.has(pt.slug));
+  // Two gates, and they answer different questions. `allowedSlugs` is what a
+  // publisher can send — deployment and configuration. `pt.flag` is whether
+  // this build has released the type at all.
+  const allowed = info.postTypes.filter(
+    (pt) => allowedSlugs.has(pt.slug) && (!pt.flag || isFeatureEnabled(pt.flag)),
+  );
   const available = allowed.filter((pt) => availableSlugs.has(pt.slug));
   const unavailable = allowed.filter((pt) => !availableSlugs.has(pt.slug));
   return {

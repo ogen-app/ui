@@ -964,6 +964,93 @@ export const en = {
       compactNow: 'now',
       compactLate: '{{amount}} late',
     },
+
+    /**
+     * Thread sequences (CON-196) — a post on X or Threads that publishes as a
+     * chain of connected posts rather than one.
+     *
+     * The vocabulary is fixed here and everything follows it. The whole thing
+     * is a **thread**; each part of it is a **post**, numbered from 1, because
+     * that is what each one becomes on the platform — calling them "items" or
+     * "segments" would name the data structure rather than the thing the
+     * reader will scroll through. Both networks use "thread" for this in their
+     * own apps, so it needs no gloss on either.
+     *
+     * Every limit these sentences quote is per *post*, never for the thread,
+     * which is the one thing about the format that surprises people.
+     */
+    sequence: {
+      /**
+       * Teaching, and only teaching — it can be dismissed for good, so nothing
+       * a person needs while writing may live here (CLAUDE.md).
+       */
+      explainer:
+        'Each post below publishes on its own, replying to the one before it. The character limit applies to every post separately, and media rides the post it sits on.',
+
+      /** The row's accessible name. The number is what the gutter shows. */
+      postLabel: 'Post {{position}} of {{total}}',
+      placeholderFirst: 'Write the first post…',
+      placeholderNext: 'Continue the thread…',
+
+      addPost: 'Add post',
+      addPostAfter: 'Add a post after post {{position}}',
+      removePost: 'Remove post {{position}}',
+      moveUp: 'Move post {{position}} earlier',
+      moveDown: 'Move post {{position}} later',
+      /** Reached the editor's own ceiling, which no platform imposes. */
+      capReached: 'A thread here holds up to {{max}} posts.',
+
+      addMedia: 'Add media to post {{position}}',
+      /** On a thumbnail's menu: which post of the thread carries this file. */
+      mediaOn: 'On post {{position}}',
+      moveMediaTo: 'Move to post {{position}}',
+      uploadFailed: 'Some files were not uploaded.',
+      saveFailed: 'Could not save the thread.',
+
+      /**
+       * The per-post counter. `chars` and not `count` on purpose: `count` is
+       * i18next's plural variable, and this is a bare number beside another.
+       */
+      counter: '{{chars}}/{{limit}}',
+      postCount_one: '{{count}} post',
+      postCount_other: '{{count}} posts',
+
+      /**
+       * What is wrong with one post of the thread, said on that post. Each one
+       * names the platform, because the rule is the platform's rather than
+       * ours and the same thread is legal on the other network.
+       */
+      issue: {
+        empty: 'This post is empty, so the thread would break here.',
+        overLimit: 'Past {{limit}} characters — {{platform}} will reject this post.',
+        tooManyImages: '{{platform}} takes at most {{cap}} images on one post.',
+        tooManyVideos: 'A post can carry one video.',
+      },
+
+      /** The row this adds to the pre-publish bar. */
+      check: {
+        label: 'Thread',
+        issues_one: 'Post {{positions}} needs fixing',
+        issues_other: 'Posts {{positions}} need fixing',
+      },
+
+      /**
+       * The preview panel's note. It replaces a sentence that said the
+       * publisher does the splitting — it does not, and never did: without
+       * `threadItems` the whole body goes out as a single post.
+       */
+      previewNote:
+        'A thread: each post below goes out separately, replying to the one before it.',
+      /**
+       * The same panel, for a `thread` post left over from before the feature
+       * — the type is withdrawn from every picker while the flag is off, but a
+       * post already saved as one keeps it. What it says is the uncomfortable
+       * truth: the card has always drawn a chain, and the submit path has
+       * always sent one post.
+       */
+      previewNoteUnsplit:
+        'The card splits this at blank lines, but it publishes as a single post — Ogen does not send the thread yet.',
+    },
   },
   /**
    * Workspace tiers (CON-232) — what the app says when the plan is the reason.

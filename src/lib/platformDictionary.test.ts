@@ -14,6 +14,8 @@ import {
 const YOUTUBE = "8S8bWQTG6qD";
 const INSTAGRAM = "rzgpTkARLH0L";
 const LINKEDIN = "AXqWG7U2qnpt";
+const TWITTER = "81mUCmc2xsKd";
+const THREADS = "pQ4yxT3SuE57";
 
 function apiPlatform(id: string, supported: string[]): Platform {
   return makePlatform({
@@ -113,5 +115,26 @@ describe("connectedAccounts", () => {
     const stale = linkedInView([account("acc-1")]);
     stale.connectedPublishers = [];
     expect(connectedAccounts(stale)).toEqual([]);
+  });
+});
+
+// A post type this build has written but not released (CON-196). The gate is
+// on the entry rather than on the slug, which is the part worth pinning: X has
+// offered `thread` since long before sequences, and a flag that withdrew it
+// would change how the app behaves with the feature off.
+describe("flagged post types", () => {
+  it("withholds a flagged type even when a publisher supports it", () => {
+    const [view] = buildPlatformViews([
+      apiPlatform(THREADS, ["text-post", "image-post", "thread"]),
+    ]);
+    expect(view.allowed.map((pt) => pt.slug)).toEqual(["text-post", "image-post"]);
+    expect(view.available.map((pt) => pt.slug)).not.toContain("thread");
+  });
+
+  it("leaves an unflagged type of the same slug alone", () => {
+    const [view] = buildPlatformViews([
+      apiPlatform(TWITTER, ["text-post", "thread"]),
+    ]);
+    expect(view.allowed.map((pt) => pt.slug)).toEqual(["text-post", "thread"]);
   });
 });

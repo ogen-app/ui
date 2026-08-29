@@ -45,10 +45,17 @@ export type EvaluateInput = {
    * `undefined` while the platform row is in flight.
    */
   maxTitleChars: number | null | undefined
+  /**
+   * The post publishes as a chain rather than one post (CON-196). Only the
+   * length check cares: every ceiling this file measures is per published
+   * post, and for a sequence that is per item — measured in
+   * `lib/threadSequence` and reported by the row the route appends.
+   */
+  sequence: boolean
 }
 
 export function evaluatePost(input: EvaluateInput): PostCheck[] {
-  const { post, policy, requiresContent, maxContentChars, maxTitleChars } = input
+  const { post, policy, requiresContent, maxContentChars, maxTitleChars, sequence } = input
   const checks: PostCheck[] = []
 
   const platform = getPlatformInfo(post.platform_id)
@@ -128,28 +135,35 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
         : 'No copy yet',
   })
 
-  const length = charCount(published)
-  if (maxContentChars === undefined) {
-    checks.push({ id: 'char-limit', label: 'Length', status: 'pending', detail: 'Checking…' })
-  } else if (maxContentChars === null) {
-    // No ceiling on this platform — still worth showing the count, since the
-    // check disappearing entirely reads as "not checked".
-    checks.push({
-      id: 'char-limit',
-      label: 'Length',
-      status: 'pass',
-      detail: `${formatNumber(length)} characters — no limit on this platform`,
-    })
-  } else {
-    const over = length > maxContentChars
-    checks.push({
-      id: 'char-limit',
-      label: 'Length',
-      status: over ? 'fail' : 'pass',
-      detail: over
-        ? `${formatNumber(length)} / ${formatNumber(maxContentChars)} characters — ${formatNumber(length - maxContentChars)} over`
-        : `${formatNumber(length)} / ${formatNumber(maxContentChars)} characters`,
-    })
+  // A sequence has no single length to check: the ceiling is per post of the
+  // chain, so measuring the whole body against it is wrong in both directions
+  // — it fails a thread that is fine and says nothing about the one post that
+  // isn't. The per-post verdicts come from `evaluateSequence` instead, and the
+  // route appends their summary as its own row (CON-196).
+  if (!sequence) {
+    const length = charCount(published)
+    if (maxContentChars === undefined) {
+      checks.push({ id: 'char-limit', label: 'Length', status: 'pending', detail: 'Checking…' })
+    } else if (maxContentChars === null) {
+      // No ceiling on this platform — still worth showing the count, since the
+      // check disappearing entirely reads as "not checked".
+      checks.push({
+        id: 'char-limit',
+        label: 'Length',
+        status: 'pass',
+        detail: `${formatNumber(length)} characters — no limit on this platform`,
+      })
+    } else {
+      const over = length > maxContentChars
+      checks.push({
+        id: 'char-limit',
+        label: 'Length',
+        status: over ? 'fail' : 'pass',
+        detail: over
+          ? `${formatNumber(length)} / ${formatNumber(maxContentChars)} characters — ${formatNumber(length - maxContentChars)} over`
+          : `${formatNumber(length)} / ${formatNumber(maxContentChars)} characters`,
+      })
+    }
   }
 
   checks.push(...mediaChecks(input))

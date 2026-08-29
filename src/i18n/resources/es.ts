@@ -687,6 +687,51 @@ export const es: Translation = {
       compactLate: '{{amount}} de retraso',
     },
 
+    sequence: {
+      explainer:
+        'Cada publicación de abajo se publica por su cuenta, respondiendo a la anterior. El límite de caracteres se aplica a cada una por separado, y los archivos acompañan a la publicación en la que están.',
+
+      postLabel: 'Publicación {{position}} de {{total}}',
+      placeholderFirst: 'Escribe la primera publicación…',
+      placeholderNext: 'Continúa el hilo…',
+
+      addPost: 'Añadir publicación',
+      addPostAfter: 'Añadir una publicación después de la {{position}}',
+      removePost: 'Eliminar la publicación {{position}}',
+      moveUp: 'Mover la publicación {{position}} antes',
+      moveDown: 'Mover la publicación {{position}} después',
+      capReached: 'Un hilo admite aquí hasta {{max}} publicaciones.',
+
+      addMedia: 'Añadir archivos a la publicación {{position}}',
+      mediaOn: 'En la publicación {{position}}',
+      moveMediaTo: 'Mover a la publicación {{position}}',
+      uploadFailed: 'Algunos archivos no se subieron.',
+      saveFailed: 'No se pudo guardar el hilo.',
+
+      counter: '{{chars}}/{{limit}}',
+      postCount_one: '{{count}} publicación',
+      postCount_other: '{{count}} publicaciones',
+
+      issue: {
+        empty: 'Esta publicación está vacía, así que el hilo se rompería aquí.',
+        overLimit:
+          'Supera los {{limit}} caracteres: {{platform}} rechazará esta publicación.',
+        tooManyImages: '{{platform}} admite como máximo {{cap}} imágenes por publicación.',
+        tooManyVideos: 'Una publicación puede llevar un vídeo.',
+      },
+
+      check: {
+        label: 'Hilo',
+        issues_one: 'La publicación {{positions}} necesita atención',
+        issues_other: 'Las publicaciones {{positions}} necesitan atención',
+      },
+
+      previewNote:
+        'Un hilo: cada publicación de abajo sale por separado, respondiendo a la anterior.',
+      previewNoteUnsplit:
+        'La tarjeta divide esto en las líneas en blanco, pero se publica como una sola publicación: Ogen aún no envía el hilo.',
+    },
+
     status: {
       draft: 'Borrador',
       ready_for_publish: 'Lista para publicar',

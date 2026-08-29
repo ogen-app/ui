@@ -22,7 +22,7 @@ import {
   type MediaPolicy,
 } from '@/lib/postMedia.ts'
 import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments.ts'
-import type { PendingUpload } from '@/hooks/usePostAttachments.ts'
+import type { PendingUpload, UploadResult } from '@/hooks/usePostAttachments.ts'
 import type { Post } from '@/types/posts.ts'
 
 type Props = {
@@ -30,7 +30,7 @@ type Props = {
   attachments: PostAttachmentWithValidation[]
   pending: PendingUpload[]
   policy: MediaPolicy
-  upload: (files: File[]) => Promise<{ uploaded: number; errors: string[] }>
+  upload: (files: File[]) => Promise<UploadResult>
   remove: (attachmentId: string) => Promise<void>
   reorder: (ordered: PostAttachmentWithValidation[]) => void
   className?: string
