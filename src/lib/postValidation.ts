@@ -4,7 +4,11 @@ import type {
   PostAttachmentWithValidation,
 } from '@/types/attachments'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
-import { mediaNoun, strandedAttachments, type MediaPolicy } from '@/lib/postMedia'
+import {
+  mediaNoun,
+  strandedAttachments,
+  type MediaPolicy,
+} from '@/lib/postMedia'
 import type { PublishingAccountResolution } from '@/lib/publishingAccount'
 import { charCount, markdownToSocialText } from '@/lib/socialText'
 import { formatNumber } from '@/lib/intl'
@@ -48,7 +52,8 @@ export type EvaluateInput = {
 }
 
 export function evaluatePost(input: EvaluateInput): PostCheck[] {
-  const { post, policy, requiresContent, maxContentChars, maxTitleChars } = input
+  const { post, policy, requiresContent, maxContentChars, maxTitleChars } =
+    input
   const checks: PostCheck[] = []
 
   const platform = getPlatformInfo(post.platform_id)
@@ -65,7 +70,11 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
   checks.push({
     id: 'post-type',
     label: 'Post type',
-    status: !post.platform_post_type ? 'fail' : policy.videoUnsupported ? 'warn' : 'pass',
+    status: !post.platform_post_type
+      ? 'fail'
+      : policy.videoUnsupported
+        ? 'warn'
+        : 'pass',
     detail: !post.platform_post_type
       ? 'Pick a post type'
       : policy.videoUnsupported
@@ -90,7 +99,9 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
       id: 'video-title',
       label: 'Title',
       status: titled ? 'pass' : 'fail',
-      detail: titled ? undefined : `${platform?.name ?? 'This platform'} rejects a video with no title`,
+      detail: titled
+        ? undefined
+        : `${platform?.name ?? 'This platform'} rejects a video with no title`,
     })
   }
 
@@ -130,7 +141,12 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
 
   const length = charCount(published)
   if (maxContentChars === undefined) {
-    checks.push({ id: 'char-limit', label: 'Length', status: 'pending', detail: 'Checking…' })
+    checks.push({
+      id: 'char-limit',
+      label: 'Length',
+      status: 'pending',
+      detail: 'Checking…',
+    })
   } else if (maxContentChars === null) {
     // No ceiling on this platform — still worth showing the count, since the
     // check disappearing entirely reads as "not checked".
@@ -166,7 +182,14 @@ function mediaChecks({
   const checks: PostCheck[] = []
 
   if (!ready) {
-    return [{ id: 'media-count', label: 'Media', status: 'pending', detail: 'Checking…' }]
+    return [
+      {
+        id: 'media-count',
+        label: 'Media',
+        status: 'pending',
+        detail: 'Checking…',
+      },
+    ]
   }
 
   const count = attachments.length
@@ -211,7 +234,8 @@ function mediaChecks({
   const fileIssues = new Set<string>()
   for (const e of postValidation) if (e.message) fileIssues.add(e.message)
   for (const a of attachments) {
-    for (const e of a.platform_validation ?? []) if (e.message) fileIssues.add(e.message)
+    for (const e of a.platform_validation ?? [])
+      if (e.message) fileIssues.add(e.message)
   }
   for (const [i, message] of [...fileIssues].entries()) {
     checks.push({

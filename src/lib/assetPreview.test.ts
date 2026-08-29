@@ -22,13 +22,17 @@ const image = (url: string, idx = 0): AssetImage => ({
 
 describe('assetPreviewUrl', () => {
   it('shows the rendered first page of an upload', () => {
-    expect(assetPreviewUrl({ file: file('https://cdn/thumb.png') })).toBe('https://cdn/thumb.png')
+    expect(assetPreviewUrl({ file: file('https://cdn/thumb.png') })).toBe(
+      'https://cdn/thumb.png',
+    )
   })
 
   it('shows the first mirrored image of a scraped page', () => {
-    expect(assetPreviewUrl({ images: [image('https://cdn/a.png', 0), image('https://cdn/b.png', 1)] })).toBe(
-      'https://cdn/a.png',
-    )
+    expect(
+      assetPreviewUrl({
+        images: [image('https://cdn/a.png', 0), image('https://cdn/b.png', 1)],
+      }),
+    ).toBe('https://cdn/a.png')
   })
 
   it('has nothing to show for a note', () => {
@@ -42,16 +46,19 @@ describe('assetPreviewUrl', () => {
   })
 
   it('skips an image the storage never gave a URL', () => {
-    expect(assetPreviewUrl({ images: [image(''), image('https://cdn/b.png', 1)] })).toBe(
-      'https://cdn/b.png',
-    )
+    expect(
+      assetPreviewUrl({ images: [image(''), image('https://cdn/b.png', 1)] }),
+    ).toBe('https://cdn/b.png')
   })
 
   // Both at once is not a case the backend produces today, but the page is the
   // document itself where an image off it is only part of one.
   it('prefers the page to an image from it', () => {
     expect(
-      assetPreviewUrl({ file: file('https://cdn/thumb.png'), images: [image('https://cdn/a.png')] }),
+      assetPreviewUrl({
+        file: file('https://cdn/thumb.png'),
+        images: [image('https://cdn/a.png')],
+      }),
     ).toBe('https://cdn/thumb.png')
   })
 })

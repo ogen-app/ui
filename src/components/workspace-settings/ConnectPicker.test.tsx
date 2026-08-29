@@ -22,7 +22,12 @@ vi.mock('@/services/api/zernio', () => ({
 const PENDING = {
   platform: 'linkedin',
   options: [
-    { id: 'urn:org:1', name: 'Ogen', kind: 'organization' as const, username: 'ogen-app' },
+    {
+      id: 'urn:org:1',
+      name: 'Ogen',
+      kind: 'organization' as const,
+      username: 'ogen-app',
+    },
     { id: 'urn:org:2', name: 'BN Digital', kind: 'organization' as const },
   ],
 }
@@ -67,7 +72,9 @@ describe('ConnectPicker', () => {
     await render()
 
     await screen.findByRole('radio', { name: /Ogen/ })
-    expect(screen.getByRole('button', { name: /connect linkedin/i })).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: /connect linkedin/i }),
+    ).toBeDisabled()
     expect(selectPendingTarget).not.toHaveBeenCalled()
   })
 
@@ -80,7 +87,9 @@ describe('ConnectPicker', () => {
     )
     await render()
 
-    expect(await screen.findByText(/expired or was already used/i)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/expired or was already used/i),
+    ).toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
@@ -90,11 +99,17 @@ describe('ConnectPicker', () => {
     // the code is `unknown`. The user's connect timed out either way; the
     // router's plumbing is not their problem.
     getPendingConnection.mockRejectedValue(
-      new ZernioError('unknown', 404, 'Cannot GET /api/integrations/zernio/connect/pending/cn_1'),
+      new ZernioError(
+        'unknown',
+        404,
+        'Cannot GET /api/integrations/zernio/connect/pending/cn_1',
+      ),
     )
     await render()
 
-    expect(await screen.findByText(/expired or was already used/i)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/expired or was already used/i),
+    ).toBeInTheDocument()
     expect(screen.queryByText(/Cannot GET/)).not.toBeInTheDocument()
   })
 
@@ -113,6 +128,8 @@ describe('ConnectPicker', () => {
     // Still choosable, and still chosen: a retry shouldn't cost the user the
     // decision they already made.
     expect(screen.getByRole('radio', { name: /Ogen/ })).toBeChecked()
-    expect(screen.getByRole('button', { name: /connect linkedin/i })).toBeEnabled()
+    expect(
+      screen.getByRole('button', { name: /connect linkedin/i }),
+    ).toBeEnabled()
   })
 })

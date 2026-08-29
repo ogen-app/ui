@@ -38,7 +38,12 @@ const ANCHOR = new Date(2026, 0, 5)
 describe('PostsEmptyState', () => {
   it('reads from the catalogue in English', async () => {
     await renderWithProviders(
-      <PostsEmptyState variant="week" campaignId="c1" anchor={ANCHOR} onAddPost={() => {}} />,
+      <PostsEmptyState
+        variant="week"
+        campaignId="c1"
+        anchor={ANCHOR}
+        onAddPost={() => {}}
+      />,
     )
 
     expect(screen.getByText('Your calendar is empty')).toBeInTheDocument()
@@ -54,13 +59,20 @@ describe('PostsEmptyState', () => {
     await loadLocaleResources('es')
     await i18next.changeLanguage('es')
     await renderWithProviders(
-      <PostsEmptyState variant="week" campaignId="c1" anchor={ANCHOR} onAddPost={() => {}} />,
+      <PostsEmptyState
+        variant="week"
+        campaignId="c1"
+        anchor={ANCHOR}
+        onAddPost={() => {}}
+      />,
     )
 
     expect(screen.getByText('Tu calendario está vacío')).toBeInTheDocument()
     // Capitals survive translation — a destructive/action label's caps are the
     // copy, in every language.
-    expect(screen.getByRole('button', { name: 'AÑADIR PUBLICACIÓN' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'AÑADIR PUBLICACIÓN' }),
+    ).toBeInTheDocument()
     expect(screen.getByText('lunes')).toBeInTheDocument()
   })
 

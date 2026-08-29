@@ -49,7 +49,11 @@ export function workspaceWarnings(
   platformViews: PlatformView[],
   now: Date = new Date(),
 ): WorkspaceWarning[] {
-  const found: { warning: WorkspaceWarning; campaignIndex: number; index: number }[] = []
+  const found: {
+    warning: WorkspaceWarning
+    campaignIndex: number
+    index: number
+  }[] = []
 
   campaigns.forEach((campaign, campaignIndex) => {
     // The server omits campaigns with no posts, so a missing id means "none",
@@ -73,7 +77,8 @@ export function workspaceWarnings(
   return found
     .sort((a, b) => {
       const bySeverity =
-        ATTENTION_SEVERITY_RANK[a.warning.severity] - ATTENTION_SEVERITY_RANK[b.warning.severity]
+        ATTENTION_SEVERITY_RANK[a.warning.severity] -
+        ATTENTION_SEVERITY_RANK[b.warning.severity]
       if (bySeverity !== 0) return bySeverity
       const byCampaign = a.campaignIndex - b.campaignIndex
       if (byCampaign !== 0) return byCampaign

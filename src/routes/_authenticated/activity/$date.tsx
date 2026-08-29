@@ -13,6 +13,9 @@ function DailyReportRoute() {
   const { date } = Route.useParams()
   const navigate = useNavigate()
   return (
-    <DailyReportModal date={date} onClose={() => void navigate({ to: '/activity' })} />
+    <DailyReportModal
+      date={date}
+      onClose={() => void navigate({ to: '/activity' })}
+    />
   )
 }

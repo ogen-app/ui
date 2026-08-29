@@ -62,9 +62,15 @@ export function usePlanStatement(tier: TierSnapshot | undefined) {
     const when = formatDay(tier.renewsAt, locale)
     return {
       headline,
-      timing: t(relative ? 'tiers.autoRenewsIn' : 'tiers.autoRenews', { relative, when }),
+      timing: t(relative ? 'tiers.autoRenewsIn' : 'tiers.autoRenews', {
+        relative,
+        when,
+      }),
     }
   }
 
-  return { headline, timing: t('tiers.since', { when: formatDay(tier.effectiveFrom, locale) }) }
+  return {
+    headline,
+    timing: t('tiers.since', { when: formatDay(tier.effectiveFrom, locale) }),
+  }
 }

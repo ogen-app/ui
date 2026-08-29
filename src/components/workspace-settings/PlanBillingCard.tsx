@@ -7,7 +7,11 @@ import { SettingsCard } from '@/components/settings/SettingsCard'
 import { SettingsRow } from '@/components/workspace-settings/SettingsRow'
 import { formatDay } from '@/components/entitlements/parts'
 import { usePlanStatement } from '@/hooks/usePlanStatement'
-import type { BillingAccount, BillingStatus, BillingSubscription } from '@/types/billing'
+import type {
+  BillingAccount,
+  BillingStatus,
+  BillingSubscription,
+} from '@/types/billing'
 import type { TierSnapshot } from '@/types/entitlements'
 
 type Props = {
@@ -61,7 +65,11 @@ export function PlanBillingCard({
     <SettingsCard title={t('tiers.billingTitle')}>
       <ul className="flex flex-col divide-y divide-border">
         <SettingsRow>
-          <PlanBanner tier={tier} subscription={subscription} planFailed={planFailed} />
+          <PlanBanner
+            tier={tier}
+            subscription={subscription}
+            planFailed={planFailed}
+          />
         </SettingsRow>
 
         {mayManage ? (
@@ -103,7 +111,10 @@ export function PlanBillingCard({
             }
           />
         ) : (
-          <SettingsRow title={t('tiers.paymentMethod')} description={t('tiers.ownersOnly')} />
+          <SettingsRow
+            title={t('tiers.paymentMethod')}
+            description={t('tiers.ownersOnly')}
+          />
         )}
       </ul>
     </SettingsCard>
@@ -155,9 +166,14 @@ export function PlanBanner({
     ? t('tiers.planLoadFailed')
     : tier?.scheduled || !ending
       ? timing
-      : t(subscription?.status === 'expired' ? 'tiers.accessEnded' : 'tiers.accessEnds', {
-          when: formatDay(ending, i18n.language),
-        })
+      : t(
+          subscription?.status === 'expired'
+            ? 'tiers.accessEnded'
+            : 'tiers.accessEnds',
+          {
+            when: formatDay(ending, i18n.language),
+          },
+        )
 
   /**
    * A third line, for the two statuses that are a problem to be *solved* rather
@@ -188,7 +204,9 @@ export function PlanBanner({
         <SealCheckIcon className="size-6" />
       </span>
       <span className="flex min-w-0 flex-col gap-1">
-        <span className="truncate text-base font-medium">{headline ?? '—'}</span>
+        <span className="truncate text-base font-medium">
+          {headline ?? '—'}
+        </span>
         {/* `items-baseline`, not `items-center`: the tag and the sentence are
             one line of prose with a box drawn round part of it, and centring a
             padded box against text sits it a pixel or two high — the kind of
@@ -198,7 +216,9 @@ export function PlanBanner({
           <span>{secondLine}</span>
         </span>
         {failureLine && (
-          <span className="text-sm text-secondary-foreground">{failureLine}</span>
+          <span className="text-sm text-secondary-foreground">
+            {failureLine}
+          </span>
         )}
       </span>
       <div className="ml-auto shrink-0 pl-3">
@@ -221,12 +241,17 @@ export function PlanBanner({
  * plan somebody is paying for reads as *we lost your card*, which is both
  * alarming and untrue. What we actually don't have is a copy of it.
  */
-function PaymentLine({ subscription }: { subscription: BillingSubscription | null }) {
+function PaymentLine({
+  subscription,
+}: {
+  subscription: BillingSubscription | null
+}) {
   const { t } = useTranslation()
   const tone = 'text-primary-foreground'
 
   if (!subscription) return <p className={tone}>{t('tiers.noSubscription')}</p>
-  if (!subscription.card) return <p className={tone}>{t('tiers.cardWithProvider')}</p>
+  if (!subscription.card)
+    return <p className={tone}>{t('tiers.cardWithProvider')}</p>
   return (
     <p className={tone}>
       {/* The brand is the provider's own lowercase token ("visa"), so the

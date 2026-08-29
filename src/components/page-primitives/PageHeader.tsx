@@ -95,7 +95,12 @@ export function PageHeader({
         />
       )}
       <div className="relative flex h-10 items-center gap-3">
-        <div className={cn('md:hidden shrink-0', fadeOnScroll && 'pointer-events-auto')}>
+        <div
+          className={cn(
+            'md:hidden shrink-0',
+            fadeOnScroll && 'pointer-events-auto',
+          )}
+        >
           <Button
             variant={'default'}
             size={isMobile ? 'smIcon' : 'defaultIcon'}

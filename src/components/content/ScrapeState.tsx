@@ -41,8 +41,8 @@ export function ScrapeState({ sourceUrl, failed, onRetry, retrying }: Props) {
           We couldn't read this page
         </h2>
         <p className="text-sm text-tertiary-foreground">
-          {label} either isn't there any more or won't let a reader in. Try again,
-          or delete this and paste a different link.
+          {label} either isn't there any more or won't let a reader in. Try
+          again, or delete this and paste a different link.
         </p>
         <Button variant="outline" onClick={onRetry} loading={retrying}>
           <ArrowsClockwiseIcon />

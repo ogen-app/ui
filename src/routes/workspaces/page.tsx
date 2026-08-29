@@ -128,13 +128,26 @@ export default function WorkspacesPage() {
         </p>
       </div>
 
-      <CreateWorkspaceDialog isOpen={createOpen} onClose={() => setCreateOpen(false)} />
+      <CreateWorkspaceDialog
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
     </PageContainer>
   )
 }
 
-function Card({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <section className={cn('w-full bg-primary px-10 py-6', className)}>{children}</section>
+function Card({
+  className,
+  children,
+}: {
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className={cn('w-full bg-primary px-10 py-6', className)}>
+      {children}
+    </section>
+  )
 }
 
 function WorkspaceCard({

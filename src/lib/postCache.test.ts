@@ -1,6 +1,10 @@
 import { QueryClient } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { cachedPostFromList, invalidateCampaignPosts, landSavedPost } from './postCache'
+import {
+  cachedPostFromList,
+  invalidateCampaignPosts,
+  landSavedPost,
+} from './postCache'
 import { CAMPAIGN_SUMMARIES_KEY, campaignPostsKey } from './queryKeys'
 import type { Post } from '@/types/posts'
 
@@ -74,13 +78,17 @@ describe('landSavedPost', () => {
     landSavedPost(qc, post('p9', 'renamed', 'c2'))
 
     expect(titles()).toEqual(['old'])
-    expect(qc.getQueryData<Post[]>(other)?.map((p) => p.title)).toEqual(['renamed'])
+    expect(qc.getQueryData<Post[]>(other)?.map((p) => p.title)).toEqual([
+      'renamed',
+    ])
   })
 })
 
 describe('cachedPostFromList', () => {
   it('finds the post in whichever campaign list holds it', () => {
-    qc.setQueryData<Post[]>(campaignPostsKey('c2'), [post('p9', 'neighbour', 'c2')])
+    qc.setQueryData<Post[]>(campaignPostsKey('c2'), [
+      post('p9', 'neighbour', 'c2'),
+    ])
 
     expect(cachedPostFromList(qc, 'p9')?.post.title).toBe('neighbour')
   })

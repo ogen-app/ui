@@ -7,7 +7,11 @@ import { toast } from '@/stores/toastStore'
 import { useCampaignSummaries } from '@/hooks/useCampaigns'
 import { useTasks } from '@/hooks/useTasks'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { activityFeed, unreadCount, type ActivityEntry } from '@/lib/activityFeed'
+import {
+  activityFeed,
+  unreadCount,
+  type ActivityEntry,
+} from '@/lib/activityFeed'
 
 /**
  * Activity's data layer (CON-225, Phase 1).
@@ -104,7 +108,12 @@ export function useActivityFeed(): ActivityFeedResult {
     [enabled, data, now, tasks],
   )
 
-  return { entries, now, isLoading: enabled && isLoading, isError: enabled && isError }
+  return {
+    entries,
+    now,
+    isLoading: enabled && isLoading,
+    isError: enabled && isError,
+  }
 }
 
 /**

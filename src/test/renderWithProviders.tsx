@@ -60,7 +60,12 @@ export async function renderWithProviders(
   // submit lands somewhere real and `router.state.location` reads back as the
   // app would. `/workspace-settings` is where the connect flow returns
   // (CON-217) — both the picker's Cancel link and its success navigation.
-  for (const other of ['/', '/auth/login/', '/auth/forgot/', '/workspace-settings']) {
+  for (const other of [
+    '/',
+    '/auth/login/',
+    '/auth/forgot/',
+    '/workspace-settings',
+  ]) {
     if (other === path) continue
     routes.push(
       createRoute({

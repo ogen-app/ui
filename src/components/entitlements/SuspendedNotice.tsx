@@ -37,12 +37,20 @@ export function SuspendedNotice({ suspension, onUpgrade, className }: Props) {
     <NoticeShell
       icon={<ArchiveIcon size={16} />}
       title={t('tiers.suspended')}
-      action={onUpgrade ? { label: t('tiers.upgrade'), onClick: onUpgrade } : undefined}
+      action={
+        onUpgrade
+          ? { label: t('tiers.upgrade'), onClick: onUpgrade }
+          : undefined
+      }
       className={className}
     >
       <p>{t('tiers.suspendedBody')}</p>
       {suspension.since && (
-        <p>{t('tiers.suspendedSince', { when: formatDay(suspension.since, i18n.language) })}</p>
+        <p>
+          {t('tiers.suspendedSince', {
+            when: formatDay(suspension.since, i18n.language),
+          })}
+        </p>
       )}
     </NoticeShell>
   )

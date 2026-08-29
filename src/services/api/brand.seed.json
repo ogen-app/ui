@@ -282,10 +282,7 @@
         }
       ],
       "isDefault": false,
-      "platforms": [
-        "Instagram",
-        "YouTube"
-      ],
+      "platforms": ["Instagram", "YouTube"],
       "origin": {
         "kind": "promoted",
         "fromPost": "Quarterly results, 12 Aug"

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { UNGATED, remaining, resolveEntitlement, usagePeriod } from './entitlements'
+import {
+  UNGATED,
+  remaining,
+  resolveEntitlement,
+  usagePeriod,
+} from './entitlements'
 import type { WorkspacePlan } from '@/types/entitlements'
 
 /**
@@ -31,7 +36,9 @@ describe('resolveEntitlement', () => {
   it('is pending, not denied, before the plan arrives', () => {
     // The failure this prevents: an upgrade wall shown to a paying customer
     // because a request was in flight.
-    expect(resolveEntitlement('campaigns', undefined)).toEqual({ state: 'pending' })
+    expect(resolveEntitlement('campaigns', undefined)).toEqual({
+      state: 'pending',
+    })
   })
 
   it('allows a key the tier settings never mention', () => {
@@ -49,7 +56,10 @@ describe('resolveEntitlement', () => {
   })
 
   it('reports usage while there is room left', () => {
-    const result = resolveEntitlement('campaigns', plan({ campaigns: { limit: 5, used: 3 } }))
+    const result = resolveEntitlement(
+      'campaigns',
+      plan({ campaigns: { limit: 5, used: 3 } }),
+    )
     expect(result).toEqual({
       state: 'allowed',
       usage: { limit: 5, used: 3, period: null, resetsAt: null },
@@ -72,15 +82,24 @@ describe('resolveEntitlement', () => {
 
   it('refuses the sixth when five are held under a limit of five', () => {
     // `used >= limit`, because every call site is asking "may I add one more".
-    const atLimit = resolveEntitlement('campaigns', plan({ campaigns: { limit: 5, used: 5 } }))
+    const atLimit = resolveEntitlement(
+      'campaigns',
+      plan({ campaigns: { limit: 5, used: 5 } }),
+    )
     expect(atLimit.state).toBe('denied')
-    const belowLimit = resolveEntitlement('campaigns', plan({ campaigns: { limit: 5, used: 4 } }))
+    const belowLimit = resolveEntitlement(
+      'campaigns',
+      plan({ campaigns: { limit: 5, used: 4 } }),
+    )
     expect(belowLimit.state).toBe('allowed')
   })
 
   it('treats a null limit as unlimited, however much is used', () => {
     // And keeps the usage, so a Max workspace can still be shown its own size.
-    const result = resolveEntitlement('seats', plan({ seats: { limit: null, used: 400 } }))
+    const result = resolveEntitlement(
+      'seats',
+      plan({ seats: { limit: null, used: 400 } }),
+    )
     expect(result).toEqual({
       state: 'allowed',
       usage: { limit: null, used: 400, period: null, resetsAt: null },
@@ -91,7 +110,10 @@ describe('resolveEntitlement', () => {
     // Both allow, and they are not the same thing: one is a tier that paid to
     // have no ceiling, the other is a feature nobody priced. Only the first can
     // be shown the word "Unlimited".
-    const unlimited = resolveEntitlement('seats', plan({ seats: { limit: null, used: 1 } }))
+    const unlimited = resolveEntitlement(
+      'seats',
+      plan({ seats: { limit: null, used: 1 } }),
+    )
     const ungated = resolveEntitlement('seats', plan({}))
     expect(unlimited).not.toEqual(ungated)
     expect(ungated.state === 'allowed' && ungated.usage).toBeNull()
@@ -100,7 +122,10 @@ describe('resolveEntitlement', () => {
   it('reads a bare limit as metered rather than as a verdict', () => {
     // `allowed` absent means "no verdict stated", not "denied" — the entry is
     // stating a ceiling.
-    const result = resolveEntitlement('campaigns', plan({ campaigns: { limit: 1, used: 0 } }))
+    const result = resolveEntitlement(
+      'campaigns',
+      plan({ campaigns: { limit: 1, used: 0 } }),
+    )
     expect(result.state).toBe('allowed')
   })
 
@@ -108,12 +133,18 @@ describe('resolveEntitlement', () => {
     // The tier list is edited by hand and will grow keys before a deployed
     // client knows them. Asking about a key that is there answers normally;
     // the unknown one is simply not asked about.
-    const p = plan({ some_future_feature: { allowed: false }, campaigns: { limit: 2, used: 0 } })
+    const p = plan({
+      some_future_feature: { allowed: false },
+      campaigns: { limit: 2, used: 0 },
+    })
     expect(resolveEntitlement('campaigns', p).state).toBe('allowed')
   })
 
   it('does not put a meter on a plain yes/no', () => {
-    const result = resolveEntitlement('post_assistant', plan({ post_assistant: { allowed: true } }))
+    const result = resolveEntitlement(
+      'post_assistant',
+      plan({ post_assistant: { allowed: true } }),
+    )
     expect(result).toEqual(UNGATED)
   })
 })
@@ -135,13 +166,19 @@ describe('usagePeriod', () => {
 
 describe('remaining', () => {
   it('counts down to zero and stops there', () => {
-    expect(remaining({ limit: 5, used: 3, period: null, resetsAt: null })).toBe(2)
+    expect(remaining({ limit: 5, used: 3, period: null, resetsAt: null })).toBe(
+      2,
+    )
     // Over-limit is reachable without anyone cheating: a downgrade lands on a
     // workspace that is already past the new ceiling.
-    expect(remaining({ limit: 1, used: 4, period: null, resetsAt: null })).toBe(0)
+    expect(remaining({ limit: 1, used: 4, period: null, resetsAt: null })).toBe(
+      0,
+    )
   })
 
   it('has no answer for unlimited', () => {
-    expect(remaining({ limit: null, used: 3, period: null, resetsAt: null })).toBeNull()
+    expect(
+      remaining({ limit: null, used: 3, period: null, resetsAt: null }),
+    ).toBeNull()
   })
 })

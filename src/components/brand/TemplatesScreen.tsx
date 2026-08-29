@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { CheckIcon, PlugsConnectedIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import {
+  CheckIcon,
+  PlugsConnectedIcon,
+  WarningCircleIcon,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { PLATFORMS } from '@/lib/platformDictionary'
 import { cn } from '@/lib'
@@ -66,7 +70,11 @@ export function TemplatesScreen({
 
   return (
     <div className="flex h-full min-h-0 gap-4 pb-4">
-      <PlatformRail templates={templates} selected={selected} onSelect={setSelected} />
+      <PlatformRail
+        templates={templates}
+        selected={selected}
+        onSelect={setSelected}
+      />
       <div className="h-full min-w-0 flex-1 overflow-y-auto">
         <Detail
           selected={selected}
@@ -190,7 +198,13 @@ function PlatformRail({
   )
 }
 
-function RailGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function RailGroup({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
   return (
     <div className="flex flex-col gap-1">
       <p className="px-2 font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
@@ -230,13 +244,17 @@ function RailRow({
       <span className="flex min-w-0 flex-col">
         <span className="truncate text-sm leading-5">{label}</span>
         {detail && (
-          <span className="truncate text-xs text-tertiary-foreground">{detail}</span>
+          <span className="truncate text-xs text-tertiary-foreground">
+            {detail}
+          </span>
         )}
       </span>
       {/* The one mark on the rail, and it is spent on the failure: a platform
           whose set does not cover a ratio it posts in. Everything else the row
           could say is available one click away. */}
-      {warn && <WarningCircleIcon className="ml-auto size-4 shrink-0 text-destructive" />}
+      {warn && (
+        <WarningCircleIcon className="ml-auto size-4 shrink-0 text-destructive" />
+      )}
     </button>
   )
 }
@@ -309,8 +327,8 @@ function Detail({
           />
         ) : (
           <p className="text-sm text-secondary-foreground">
-            No default template. Every platform without one of its own sends pictures
-            bare.
+            No default template. Every platform without one of its own sends
+            pictures bare.
           </p>
         )}
       </DetailShell>
@@ -342,7 +360,9 @@ function Detail({
           // Stated flatly. Not a warning and not a call to connect: whether an
           // account exists has nothing to do with whether the artwork is right,
           // and nagging here would be nagging in the wrong place.
-          <span className="text-xs text-tertiary-foreground">not connected</span>
+          <span className="text-xs text-tertiary-foreground">
+            not connected
+          </span>
         )
       }
       action={
@@ -385,7 +405,9 @@ function DetailShell({
       <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex items-center gap-2">
-            <h2 className="font-display text-lg font-medium leading-6">{title}</h2>
+            <h2 className="font-display text-lg font-medium leading-6">
+              {title}
+            </h2>
             {badge}
           </div>
           <p className="text-xs text-tertiary-foreground">{subtitle}</p>
@@ -417,7 +439,9 @@ function SetPanel({
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <p className="font-grotesk text-sm font-medium">{template.name}</p>
         <p className="text-xs text-tertiary-foreground">
-          {template.role === 'foreground' ? 'drawn over the picture' : 'sits under the picture'}
+          {template.role === 'foreground'
+            ? 'drawn over the picture'
+            : 'sits under the picture'}
           {template.isDefault && ' · the default'}
         </p>
       </div>
@@ -437,14 +461,17 @@ function SetPanel({
         // chosen, and the sentence has to say so or the row looks like progress.
         <p className="flex items-start gap-1.5 text-sm text-secondary-foreground">
           <WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
-          <span>Covers none of {neededLabel}. Every picture here goes out bare.</span>
+          <span>
+            Covers none of {neededLabel}. Every picture here goes out bare.
+          </span>
         </p>
       ) : (
         <p className="flex items-start gap-1.5 text-sm text-secondary-foreground">
           <WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
           <span>
-            Missing {missing.join(', ')} — {missing.length === 1 ? 'that ratio goes' : 'those ratios go'} out bare against{' '}
-            {neededLabel}.
+            Missing {missing.join(', ')} —{' '}
+            {missing.length === 1 ? 'that ratio goes' : 'those ratios go'} out
+            bare against {neededLabel}.
           </span>
         </p>
       )}
@@ -456,7 +483,11 @@ function SetPanel({
       </div>
 
       <div>
-        <Button variant="outline" size="sm" onClick={onOpen ? () => onOpen(template.id) : undefined}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onOpen ? () => onOpen(template.id) : undefined}
+        >
           OPEN IN COMPOSITOR
         </Button>
       </div>
@@ -478,27 +509,35 @@ function RatioTile({ ratio, url }: { ratio: string; url?: string }) {
           different shapes by definition, and a 16:9 caption riding higher than
           the 9:16 next to it reads as misalignment rather than as aspect. */}
       <div className="flex h-20 items-center">
-      <div
-        className={cn(
-          'flex items-center justify-center overflow-hidden rounded',
-          RATIO_BOX[ratio] ?? 'h-20 w-20',
-          url ? 'border border-quaternary' : 'border border-dashed border-quaternary',
-        )}
-        style={
-          url
-            ? {
-                // Checkerboard, so transparency reads as transparency rather
-                // than as white artwork on a white card.
-                backgroundImage:
-                  'linear-gradient(45deg, var(--color-tertiary) 25%, transparent 25%), linear-gradient(-45deg, var(--color-tertiary) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--color-tertiary) 75%), linear-gradient(-45deg, transparent 75%, var(--color-tertiary) 75%)',
-                backgroundSize: '8px 8px',
-                backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0',
-              }
-            : undefined
-        }
-      >
-        {url && <img src={url} alt="" className="max-h-full max-w-full object-contain" />}
-      </div>
+        <div
+          className={cn(
+            'flex items-center justify-center overflow-hidden rounded',
+            RATIO_BOX[ratio] ?? 'h-20 w-20',
+            url
+              ? 'border border-quaternary'
+              : 'border border-dashed border-quaternary',
+          )}
+          style={
+            url
+              ? {
+                  // Checkerboard, so transparency reads as transparency rather
+                  // than as white artwork on a white card.
+                  backgroundImage:
+                    'linear-gradient(45deg, var(--color-tertiary) 25%, transparent 25%), linear-gradient(-45deg, var(--color-tertiary) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--color-tertiary) 75%), linear-gradient(-45deg, transparent 75%, var(--color-tertiary) 75%)',
+                  backgroundSize: '8px 8px',
+                  backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0',
+                }
+              : undefined
+          }
+        >
+          {url && (
+            <img
+              src={url}
+              alt=""
+              className="max-h-full max-w-full object-contain"
+            />
+          )}
+        </div>
       </div>
       <span
         className={cn(

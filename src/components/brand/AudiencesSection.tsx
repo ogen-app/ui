@@ -132,12 +132,18 @@ export const AUDIENCE_STARTERS: AudienceStarter[] = [
 ]
 
 /** The starter a `?from=` on the editor route names, if it names one at all. */
-export function audienceStarter(id: string | undefined): AudienceStarter | null {
+export function audienceStarter(
+  id: string | undefined,
+): AudienceStarter | null {
   return AUDIENCE_STARTERS.find((s) => s.id === id) ?? null
 }
 
 /** Two cards, not three — the page's intro card states the absence. */
-function AudiencesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
+function AudiencesEmpty({
+  onStart,
+}: {
+  onStart?: (starterId: string) => void
+}) {
   const { tone } = brandSection('audiences')
   return (
     <StarterGroup
@@ -171,7 +177,9 @@ function AudienceCard({
         <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
           {audience.name}
         </h3>
-        <p className="text-sm leading-5 text-secondary-foreground">{audience.who}</p>
+        <p className="text-sm leading-5 text-secondary-foreground">
+          {audience.who}
+        </p>
       </header>
 
       {/* The consequences, as a definition list rather than prose. The labels

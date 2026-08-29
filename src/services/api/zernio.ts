@@ -5,39 +5,41 @@ import {
   type ZernioAccountsResponse,
   type ZernioErrorCode,
   type ZernioHealth,
-} from "@/types/integrations";
-import { scopedFetch } from "./base";
-import { errorMessage } from "./errors";
+} from '@/types/integrations'
+import { scopedFetch } from './base'
+import { errorMessage } from './errors'
 
 /** Path, not URL: `scopedFetch` resolves the origin and names the workspace. */
-const BASE = "/api/integrations/zernio";
+const BASE = '/api/integrations/zernio'
 
 export async function getZernioHealth(): Promise<ZernioHealth> {
-  const res = await scopedFetch(`${BASE}/health`);
+  const res = await scopedFetch(`${BASE}/health`)
   if (!res.ok) {
-    throw new Error(await errorMessage(res, "Unable to fetch Zernio health"));
+    throw new Error(await errorMessage(res, 'Unable to fetch Zernio health'))
   }
-  return (await res.json()) as ZernioHealth;
+  return (await res.json()) as ZernioHealth
 }
 
 export async function listZernioAccounts(): Promise<ZernioAccountsResponse> {
-  const res = await scopedFetch(`${BASE}/accounts`);
+  const res = await scopedFetch(`${BASE}/accounts`)
   if (!res.ok) {
-    throw await zernioError(res, "Unable to fetch Zernio accounts");
+    throw await zernioError(res, 'Unable to fetch Zernio accounts')
   }
-  return (await res.json()) as ZernioAccountsResponse;
+  return (await res.json()) as ZernioAccountsResponse
 }
 
-export async function createConnectLink(platform: string): Promise<ConnectLinkResponse> {
+export async function createConnectLink(
+  platform: string,
+): Promise<ConnectLinkResponse> {
   const res = await scopedFetch(`${BASE}/connect-links`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ platform }),
-  });
+  })
   if (!res.ok) {
-    throw await zernioError(res, "Unable to create connect link");
+    throw await zernioError(res, 'Unable to create connect link')
   }
-  return (await res.json()) as ConnectLinkResponse;
+  return (await res.json()) as ConnectLinkResponse
 }
 
 /**
@@ -48,12 +50,16 @@ export async function createConnectLink(platform: string): Promise<ConnectLinkRe
  * this can be over — expired, already used, someone else's — and is the normal
  * end of an abandoned connect, not an exceptional failure.
  */
-export async function getPendingConnection(id: string): Promise<PendingConnection> {
-  const res = await scopedFetch(`${BASE}/connect/pending/${encodeURIComponent(id)}`);
+export async function getPendingConnection(
+  id: string,
+): Promise<PendingConnection> {
+  const res = await scopedFetch(
+    `${BASE}/connect/pending/${encodeURIComponent(id)}`,
+  )
   if (!res.ok) {
-    throw await zernioError(res, "Unable to load the pending connection");
+    throw await zernioError(res, 'Unable to load the pending connection')
   }
-  return (await res.json()) as PendingConnection;
+  return (await res.json()) as PendingConnection
 }
 
 /**
@@ -64,14 +70,20 @@ export async function getPendingConnection(id: string): Promise<PendingConnectio
  * the platform list a few seconds later. Callers wait for that rather than for
  * this promise.
  */
-export async function selectPendingTarget(id: string, targetId: string): Promise<void> {
-  const res = await scopedFetch(`${BASE}/connect/pending/${encodeURIComponent(id)}/select`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ targetId }),
-  });
+export async function selectPendingTarget(
+  id: string,
+  targetId: string,
+): Promise<void> {
+  const res = await scopedFetch(
+    `${BASE}/connect/pending/${encodeURIComponent(id)}/select`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetId }),
+    },
+  )
   if (!res.ok) {
-    throw await zernioError(res, "Unable to finish connecting the account");
+    throw await zernioError(res, 'Unable to finish connecting the account')
   }
 }
 
@@ -87,33 +99,39 @@ export async function selectPendingTarget(id: string, targetId: string): Promise
  * UI can know it, so the confirm dialog is deliberately a two-step: try, then
  * show what would break and offer to force.
  */
-export async function disconnectZernioAccount(id: string, force = false): Promise<void> {
-  const query = force ? "?force=true" : "";
-  const res = await scopedFetch(`${BASE}/accounts/${encodeURIComponent(id)}${query}`, {
-    method: "DELETE",
-  });
+export async function disconnectZernioAccount(
+  id: string,
+  force = false,
+): Promise<void> {
+  const query = force ? '?force=true' : ''
+  const res = await scopedFetch(
+    `${BASE}/accounts/${encodeURIComponent(id)}${query}`,
+    {
+      method: 'DELETE',
+    },
+  )
   if (!res.ok) {
-    throw await zernioError(res, "Unable to disconnect the account");
+    throw await zernioError(res, 'Unable to disconnect the account')
   }
 }
 
 export async function triggerZernioSync(): Promise<void> {
-  const res = await scopedFetch(`${BASE}/sync`, { method: "POST" });
+  const res = await scopedFetch(`${BASE}/sync`, { method: 'POST' })
   if (!res.ok && res.status !== 202) {
-    throw await zernioError(res, "Unable to trigger sync");
+    throw await zernioError(res, 'Unable to trigger sync')
   }
 }
 
 const KNOWN_CODES: ReadonlySet<ZernioErrorCode> = new Set<ZernioErrorCode>([
-  "integration_disabled",
-  "integration_degraded",
-  "rate_limited",
-  "invalid_platform",
-  "account_not_found",
-  "account_has_scheduled_posts",
-  "connection_not_found",
-  "invalid_target",
-]);
+  'integration_disabled',
+  'integration_degraded',
+  'rate_limited',
+  'invalid_platform',
+  'account_not_found',
+  'account_has_scheduled_posts',
+  'connection_not_found',
+  'invalid_target',
+])
 
 /**
  * The disconnect guard's 409 carries a count next to the code. Read from a
@@ -122,24 +140,32 @@ const KNOWN_CODES: ReadonlySet<ZernioErrorCode> = new Set<ZernioErrorCode>([
  */
 async function scheduledPostCount(res: Response): Promise<number | undefined> {
   try {
-    const body = (await res.clone().json()) as { scheduledPosts?: unknown };
-    return typeof body.scheduledPosts === "number" ? body.scheduledPosts : undefined;
+    const body = (await res.clone().json()) as { scheduledPosts?: unknown }
+    return typeof body.scheduledPosts === 'number'
+      ? body.scheduledPosts
+      : undefined
   } catch {
-    return undefined;
+    return undefined
   }
 }
 
-async function zernioError(res: Response, fallback: string): Promise<ZernioError> {
-  const scheduledPosts = await scheduledPostCount(res);
-  const msg = await errorMessage(res, fallback);
+async function zernioError(
+  res: Response,
+  fallback: string,
+): Promise<ZernioError> {
+  const scheduledPosts = await scheduledPostCount(res)
+  const msg = await errorMessage(res, fallback)
   const code: ZernioErrorCode = KNOWN_CODES.has(msg as ZernioErrorCode)
     ? (msg as ZernioErrorCode)
-    : "unknown";
-  let retryAfterSeconds: number | undefined;
-  const retryAfter = res.headers.get("Retry-After");
+    : 'unknown'
+  let retryAfterSeconds: number | undefined
+  const retryAfter = res.headers.get('Retry-After')
   if (retryAfter) {
-    const n = parseInt(retryAfter, 10);
-    if (Number.isFinite(n) && n > 0) retryAfterSeconds = n;
+    const n = parseInt(retryAfter, 10)
+    if (Number.isFinite(n) && n > 0) retryAfterSeconds = n
   }
-  return new ZernioError(code, res.status, msg, { retryAfterSeconds, scheduledPosts });
+  return new ZernioError(code, res.status, msg, {
+    retryAfterSeconds,
+    scheduledPosts,
+  })
 }

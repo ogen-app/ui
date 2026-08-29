@@ -25,13 +25,24 @@ import type { PreviewProps } from './types.ts'
  * a late fold — so the preview mostly earns its keep on media layout, which is
  * where Facebook does the most rearranging of what you gave it.
  */
-export function FacebookPreview({ text, media, postType, author, timeLabel }: PreviewProps) {
+export function FacebookPreview({
+  text,
+  media,
+  postType,
+  author,
+  timeLabel,
+}: PreviewProps) {
   const name = author.name ?? 'Your page'
 
   return (
     <PreviewSurface style={{ borderRadius: 8 }}>
       <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-        <PreviewAvatar src={author.avatarUrl} name={name} size={40} background={C.link} />
+        <PreviewAvatar
+          src={author.avatarUrl}
+          name={name}
+          size={40}
+          background={C.link}
+        />
         <div className="min-w-0 flex-1">
           <div
             className="truncate font-semibold"
@@ -48,7 +59,11 @@ export function FacebookPreview({ text, media, postType, author, timeLabel }: Pr
             <GlobeIcon className="size-3" weight="fill" aria-hidden />
           </div>
         </div>
-        <DotsThreeIcon className="size-6 shrink-0" style={{ color: C.muted }} aria-hidden />
+        <DotsThreeIcon
+          className="size-6 shrink-0"
+          style={{ color: C.muted }}
+          aria-hidden
+        />
       </div>
 
       <div className="px-3 pb-3">
@@ -64,12 +79,25 @@ export function FacebookPreview({ text, media, postType, author, timeLabel }: Pr
 
       {/* No default aspect: Facebook lets a single image keep its own shape.
           A Reel is the exception — that frame is always 9:16. */}
-      <PreviewMedia items={media} aspect={frameAspect(postType)} background={C.cardFill} />
+      <PreviewMedia
+        items={media}
+        aspect={frameAspect(postType)}
+        background={C.cardFill}
+      />
 
       <ActionRow color={C.action}>
-        <Action icon={<ThumbsUpIcon className="size-5" aria-hidden />} label="Like" />
-        <Action icon={<ChatCircleIcon className="size-5" aria-hidden />} label="Comment" />
-        <Action icon={<ArrowBendUpLeftIcon className="size-5" aria-hidden />} label="Share" />
+        <Action
+          icon={<ThumbsUpIcon className="size-5" aria-hidden />}
+          label="Like"
+        />
+        <Action
+          icon={<ChatCircleIcon className="size-5" aria-hidden />}
+          label="Comment"
+        />
+        <Action
+          icon={<ArrowBendUpLeftIcon className="size-5" aria-hidden />}
+          label="Share"
+        />
       </ActionRow>
     </PreviewSurface>
   )

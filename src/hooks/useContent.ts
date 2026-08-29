@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listAssets,
   getAsset,
@@ -6,15 +6,15 @@ import {
   createUrlAsset,
   updateAsset,
   deleteAsset,
-} from "@/services/api/content";
-import { retrievability } from "@/lib/campaignSources";
-import type { CreateAssetPayload, UpdateAssetPayload } from "@/types/content";
+} from '@/services/api/content'
+import { retrievability } from '@/lib/campaignSources'
+import type { CreateAssetPayload, UpdateAssetPayload } from '@/types/content'
 
-export const ASSETS_KEY = ["assets"] as const;
-export const assetKey = (id: string) => ["assets", id] as const;
+export const ASSETS_KEY = ['assets'] as const
+export const assetKey = (id: string) => ['assets', id] as const
 
 /** How often to look again while something in the list is still extracting. */
-const PROCESSING_POLL_MS = 3000;
+const PROCESSING_POLL_MS = 3000
 
 /**
  * The asset list, which watches itself while anything in it is processing.
@@ -32,11 +32,11 @@ export function useAssets() {
     queryFn: listAssets,
     refetchInterval: (query) =>
       query.state.data?.some(
-        (asset) => retrievability(asset.status) === "waiting",
+        (asset) => retrievability(asset.status) === 'waiting',
       )
         ? PROCESSING_POLL_MS
         : false,
-  });
+  })
 }
 
 /**
@@ -54,20 +54,20 @@ export function useAsset(id: string) {
     queryFn: () => getAsset(id),
     enabled: !!id,
     refetchInterval: (query) =>
-      query.state.data && retrievability(query.state.data.status) === "waiting"
+      query.state.data && retrievability(query.state.data.status) === 'waiting'
         ? PROCESSING_POLL_MS
         : false,
-  });
+  })
 }
 
 export function useCreateAsset() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateAssetPayload) => createAsset(payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ASSETS_KEY });
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
     },
-  });
+  })
 }
 
 /**
@@ -79,36 +79,41 @@ export function useCreateAsset() {
  * deployments where the stream is down.
  */
 export function useCreateUrlAsset() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: (url: string) => createUrlAsset(url),
     // Reported inline, beside the field the URL was typed into: a toast about
     // the value you are still looking at explains nothing the field can't.
     meta: { errorToast: false },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ASSETS_KEY });
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
     },
-  });
+  })
 }
 
 export function useUpdateAsset() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateAssetPayload }) =>
-      updateAsset(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: UpdateAssetPayload
+    }) => updateAsset(id, payload),
     onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: ASSETS_KEY });
-      qc.invalidateQueries({ queryKey: assetKey(id) });
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
+      qc.invalidateQueries({ queryKey: assetKey(id) })
     },
-  });
+  })
 }
 
 export function useDeleteAsset() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteAsset(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ASSETS_KEY });
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
     },
-  });
+  })
 }

@@ -106,7 +106,11 @@ export function BrandDetail({
   return (
     <BrandPage>
       <div className="relative flex min-h-0 flex-1">
-        <ScrollArea className="min-h-0 flex-1" type="scroll" scrollHideDelay={350}>
+        <ScrollArea
+          className="min-h-0 flex-1"
+          type="scroll"
+          scrollHideDelay={350}
+        >
           <PageHeader back={<BrandBackButton />} />
           <div className="px-3 pb-10 lg:px-6">
             <BrandDetailBody section={section}>{children}</BrandDetailBody>

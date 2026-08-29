@@ -1,5 +1,5 @@
-import type { Tag } from "@/types/content";
-import type { GoalCadence } from "@/lib/postGoal";
+import type { Tag } from '@/types/content'
+import type { GoalCadence } from '@/lib/postGoal'
 
 /**
  * Server-owned and no longer user-facing: `draft` and `active` both mean
@@ -8,30 +8,30 @@ import type { GoalCadence } from "@/lib/postGoal";
  * campaigns are created `active` server-side and the lifecycle moves to
  * soft-delete/archive (CON-156 §6), this and its pass-through come out.
  */
-export type CampaignStatus = "draft" | "active";
+export type CampaignStatus = 'draft' | 'active'
 
 export type CampaignPlatform = {
-  id: string;
-  post_types: string[];
-};
+  id: string
+  post_types: string[]
+}
 
 export type PublisherAccount = {
-  id: string;
-  username: string;
-  display_name: string;
-  avatar_url: string;
-  is_active: boolean;
-  connected_at: string;
-};
+  id: string
+  username: string
+  display_name: string
+  avatar_url: string
+  is_active: boolean
+  connected_at: string
+}
 
 export type PlatformPublisher = {
-  id: string;
-  name: string;
-  state: string;
-  connected: boolean;
-  supported_post_types: string[];
-  accounts: PublisherAccount[];
-};
+  id: string
+  name: string
+  state: string
+  connected: boolean
+  supported_post_types: string[]
+  accounts: PublisherAccount[]
+}
 
 /**
  * The platform's text ceilings, seeded server-side (CON-91). Sibling of the
@@ -42,11 +42,11 @@ export type PlatformPublisher = {
  * through `contentLimitFor()` rather than directly.
  */
 export type TextConstraints = {
-  max_content_chars: number;
-  max_title_chars: number;
+  max_content_chars: number
+  max_title_chars: number
   /** Per-post-type overrides of `max_content_chars`, keyed by slug. */
-  per_post_type?: Record<string, number>;
-};
+  per_post_type?: Record<string, number>
+}
 
 /**
  * The platform's video rule set, seeded server-side (CON-148). Mirrors
@@ -65,42 +65,42 @@ export type TextConstraints = {
  * ceiling is not the one we upload against.
  */
 export type VideoConstraints = {
-  max_file_size_bytes: number;
+  max_file_size_bytes: number
   /** Container names, not MIME types — `["mp4", "mov"]`. */
-  allowed_formats: string[];
-  max_duration_seconds: number;
+  allowed_formats: string[]
+  max_duration_seconds: number
   /** Reels and Shorts have a floor as well as a ceiling. */
-  min_duration_seconds: number;
+  min_duration_seconds: number
   /** `0` is unbounded, not "no pixels allowed". */
-  max_width: number;
-  max_height: number;
-  allowed_aspect_ratios: string[];
-  max_attachments_per_post: number;
+  max_width: number
+  max_height: number
+  allowed_aspect_ratios: string[]
+  max_attachments_per_post: number
   /** YouTube rejects an untitled upload; feed platforms derive one. */
-  requires_video_title: boolean;
-};
+  requires_video_title: boolean
+}
 
 export type Platform = {
-  id: string;
-  name: string;
-  post_types: Record<string, string>;
-  cadence: string;
+  id: string
+  name: string
+  post_types: Record<string, string>
+  cadence: string
   /** Prose, shown as-is in workspace settings. Not machine-readable. */
-  constraints: string;
-  text_constraints: TextConstraints;
-  video_constraints: VideoConstraints;
-  created_at: string;
-  updated_at: string;
-  publishers?: PlatformPublisher[];
-};
+  constraints: string
+  text_constraints: TextConstraints
+  video_constraints: VideoConstraints
+  created_at: string
+  updated_at: string
+  publishers?: PlatformPublisher[]
+}
 
 export type CampaignTypePhase = {
-  id: string;
-  campaign_type_id: string;
-  name: string;
-  purpose: string;
-  sequence: number;
-};
+  id: string
+  campaign_type_id: string
+  name: string
+  purpose: string
+  sequence: number
+}
 
 /**
  * `name` is the slug, and the only part of the row the UI reads for display —
@@ -109,34 +109,34 @@ export type CampaignTypePhase = {
  * off this type on purpose, so nobody wires seeded copy back into the UI.
  */
 export type CampaignType = {
-  id: string;
-  name: string;
-  is_system: boolean;
-  phases?: CampaignTypePhase[];
-};
+  id: string
+  name: string
+  is_system: boolean
+  phases?: CampaignTypePhase[]
+}
 
 export type Campaign = {
-  id: string;
-  name: string;
-  description: string;
-  target_persona: string;
-  key_messages: string;
-  tone_guidelines: string;
-  use_assets: boolean;
-  asset_ids: string[];
-  target_platforms: CampaignPlatform[];
-  campaign_type_id: string;
-  status: CampaignStatus;
-  start_date: string | null;
-  end_date: string | null;
+  id: string
+  name: string
+  description: string
+  target_persona: string
+  key_messages: string
+  tone_guidelines: string
+  use_assets: boolean
+  asset_ids: string[]
+  target_platforms: CampaignPlatform[]
+  campaign_type_id: string
+  status: CampaignStatus
+  start_date: string | null
+  end_date: string | null
   /**
    * The post goal's rate: posts per `goal_cadence` period, **not** a
    * whole-campaign total (CON-182 reinterpreted the column, and backfilled
    * every existing campaign to a monthly cadence). Read it through
    * `lib/postGoal`, never as a total.
    */
-  estimated_post_count: number | null;
-  goal_cadence: GoalCadence;
+  estimated_post_count: number | null
+  goal_cadence: GoalCadence
   /**
    * Scheduling settings (CON-181), which the content-plan flow places every
    * generated draft by. `publishing_time` is a zero-padded 24-hour "HH:MM" read
@@ -145,51 +145,51 @@ export type Campaign = {
    * tokens; `spread_minutes` is the ± jitter around the time. See
    * `lib/campaignScheduling`.
    */
-  publishing_time: string;
-  timezone: string;
-  publishing_days: string[];
-  spread_minutes: number;
-  language: string;
-  budget: number | null;
-  currency: string;
-  tag_ids: string[];
-  tags: Tag[];
-  platforms: Platform[];
-  campaign_type?: CampaignType | null;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-};
+  publishing_time: string
+  timezone: string
+  publishing_days: string[]
+  spread_minutes: number
+  language: string
+  budget: number | null
+  currency: string
+  tag_ids: string[]
+  tags: Tag[]
+  platforms: Platform[]
+  campaign_type?: CampaignType | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}
 
 export type CreateCampaignPayload = {
-  name: string;
-  campaign_type_id: string;
-  description?: string;
-  target_persona?: string;
-  key_messages?: string;
-  tone_guidelines?: string;
-  use_assets?: boolean;
-  asset_ids?: string[];
-  target_platforms?: CampaignPlatform[];
-  status?: CampaignStatus;
-  start_date?: string | null;
-  end_date?: string | null;
-  estimated_post_count?: number | null;
-  goal_cadence?: GoalCadence;
+  name: string
+  campaign_type_id: string
+  description?: string
+  target_persona?: string
+  key_messages?: string
+  tone_guidelines?: string
+  use_assets?: boolean
+  asset_ids?: string[]
+  target_platforms?: CampaignPlatform[]
+  status?: CampaignStatus
+  start_date?: string | null
+  end_date?: string | null
+  estimated_post_count?: number | null
+  goal_cadence?: GoalCadence
   /**
    * Omitting any of these does not leave the stored value alone — the server
    * normalizes an absent field to its default (09:00 / UTC / every day / ±15),
    * so a partial payload silently resets the campaign's schedule. Build every
    * update through `campaignToPayload`, which round-trips them.
    */
-  publishing_time?: string;
-  timezone?: string;
-  publishing_days?: string[];
-  spread_minutes?: number;
-  budget?: number | null;
-  currency?: string;
-  language?: string;
-  tag_ids?: string[];
-};
+  publishing_time?: string
+  timezone?: string
+  publishing_days?: string[]
+  spread_minutes?: number
+  budget?: number | null
+  currency?: string
+  language?: string
+  tag_ids?: string[]
+}
 
-export type UpdateCampaignPayload = CreateCampaignPayload;
+export type UpdateCampaignPayload = CreateCampaignPayload

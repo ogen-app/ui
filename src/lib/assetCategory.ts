@@ -1,7 +1,7 @@
-import type { Asset } from "@/types/content";
+import type { Asset } from '@/types/content'
 
 /** What kind of thing an asset is, for the glyph the row shows before its title. */
-export type AssetCategory = "text" | "imagery" | "files";
+export type AssetCategory = 'text' | 'imagery' | 'files'
 
 /**
  * Maps a backend asset `type` to a category.
@@ -21,14 +21,14 @@ export type AssetCategory = "text" | "imagery" | "files";
  * row draws: with no way to create an image asset yet, nothing reaches it, and
  * when one arrives it is labelled correctly rather than filed under text.
  */
-export function assetCategory(asset: Pick<Asset, "type">): AssetCategory {
+export function assetCategory(asset: Pick<Asset, 'type'>): AssetCategory {
   switch (asset.type) {
-    case "PDF":
-      return "files";
-    case "IMG":
-      return "imagery";
+    case 'PDF':
+      return 'files'
+    case 'IMG':
+      return 'imagery'
     default:
-      return "text";
+      return 'text'
   }
 }
 
@@ -49,14 +49,14 @@ export function assetCategory(asset: Pick<Asset, "type">): AssetCategory {
  * gained `URL` in CON-222 and gains `IMG` next), and the cost of guessing
  * wrong has to be a screen that declines to open, never silent data loss.
  */
-export function opensAsDocument(asset: Pick<Asset, "type">): boolean {
+export function opensAsDocument(asset: Pick<Asset, 'type'>): boolean {
   switch (asset.type) {
     case null:
-    case "MD":
-    case "PDF":
-    case "URL":
-      return true;
+    case 'MD':
+    case 'PDF':
+    case 'URL':
+      return true
     default:
-      return false;
+      return false
   }
 }

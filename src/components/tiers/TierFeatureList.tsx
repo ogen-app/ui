@@ -1,7 +1,12 @@
 import { useTranslation } from 'react-i18next'
 
 import { formatNumber } from '@/lib/intl'
-import { formatStorage, isByteKey, type TierFeature, type TierFeatureValue } from '@/lib/tierFeatures'
+import {
+  formatStorage,
+  isByteKey,
+  type TierFeature,
+  type TierFeatureValue,
+} from '@/lib/tierFeatures'
 import { cn } from '@/lib'
 import type { EntitlementKey, UsagePeriod } from '@/types/entitlements'
 
@@ -57,7 +62,9 @@ function FeatureValue({
   if (value.kind === 'unlimited') return <>{t('tiers.unlimited')}</>
 
   const write = (amount: number) => formatNumber(amount, {}, i18n.language)
-  const written = isByteKey(featureKey) ? formatStorage(value.limit, write) : write(value.limit)
+  const written = isByteKey(featureKey)
+    ? formatStorage(value.limit, write)
+    : write(value.limit)
   return <>{t(limitKey(value.period), { value: written })}</>
 }
 

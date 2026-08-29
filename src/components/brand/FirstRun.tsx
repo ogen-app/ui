@@ -91,8 +91,8 @@ export function FirstRun({
 
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-tertiary-foreground">
         <span>
-          A template gets you most of the way in one click. It is the samples you
-          add afterwards that make it yours — twelve workspaces on the same
+          A template gets you most of the way in one click. It is the samples
+          you add afterwards that make it yours — twelve workspaces on the same
           template sound like twelve workspaces on the same template.
         </span>
       </p>

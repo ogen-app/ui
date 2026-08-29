@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listCampaigns,
   listCampaignSummaries,
@@ -7,22 +7,26 @@ import {
   updateCampaign,
   deleteCampaign,
   listCampaignTypes,
-} from "@/services/api/campaigns";
-import type { Campaign, CreateCampaignPayload, UpdateCampaignPayload } from "@/types/campaigns";
-import type { MutationErrorMeta } from "@/lib/queryClient";
-import { CAMPAIGN_SUMMARIES_KEY } from "@/lib/queryKeys";
+} from '@/services/api/campaigns'
+import type {
+  Campaign,
+  CreateCampaignPayload,
+  UpdateCampaignPayload,
+} from '@/types/campaigns'
+import type { MutationErrorMeta } from '@/lib/queryClient'
+import { CAMPAIGN_SUMMARIES_KEY } from '@/lib/queryKeys'
 
-const CAMPAIGNS_KEY = ["campaigns"] as const;
+const CAMPAIGNS_KEY = ['campaigns'] as const
 // Exported so the assistant store can invalidate it from outside React. The
 // campaign's post list nests under this key, so invalidating it covers both.
-export const campaignKey = (id: string) => ["campaigns", id] as const;
-export const CAMPAIGN_TYPES_KEY = ["campaign-types"] as const;
+export const campaignKey = (id: string) => ['campaigns', id] as const
+export const CAMPAIGN_TYPES_KEY = ['campaign-types'] as const
 
 export function useCampaigns() {
   return useQuery({
     queryKey: CAMPAIGNS_KEY,
     queryFn: listCampaigns,
-  });
+  })
 }
 
 /**
@@ -41,7 +45,7 @@ export function useCampaigns() {
  * refetches, rather than being taken for a fresh read of this campaign.
  */
 export function useCampaign(id: string) {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useQuery({
     queryKey: campaignKey(id),
     queryFn: () => getCampaign(id),
@@ -49,7 +53,7 @@ export function useCampaign(id: string) {
     initialData: () =>
       qc.getQueryData<Campaign[]>(CAMPAIGNS_KEY)?.find((c) => c.id === id),
     initialDataUpdatedAt: () => qc.getQueryState(CAMPAIGNS_KEY)?.dataUpdatedAt,
-  });
+  })
 }
 
 /**
@@ -66,18 +70,18 @@ export function useCampaignSummaries() {
   return useQuery({
     queryKey: CAMPAIGN_SUMMARIES_KEY,
     queryFn: listCampaignSummaries,
-  });
+  })
 }
 
 export function useCreateCampaign() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
-    meta: { errorTitle: "Unable to create the campaign" },
+    meta: { errorTitle: 'Unable to create the campaign' },
     mutationFn: (payload: CreateCampaignPayload) => createCampaign(payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY });
+      qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY })
     },
-  });
+  })
 }
 
 /**
@@ -90,26 +94,31 @@ export function useCreateCampaign() {
  * per click, which no static `meta` can express. See `MutationErrorMeta`.
  */
 export function useUpdateCampaign(meta?: MutationErrorMeta) {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
     meta,
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateCampaignPayload }) =>
-      updateCampaign(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: UpdateCampaignPayload
+    }) => updateCampaign(id, payload),
     onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY });
-      qc.invalidateQueries({ queryKey: campaignKey(id) });
+      qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY })
+      qc.invalidateQueries({ queryKey: campaignKey(id) })
     },
-  });
+  })
 }
 
 export function useDeleteCampaign() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteCampaign(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY });
+      qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY })
     },
-  });
+  })
 }
 
 export function useCampaignTypes() {
@@ -117,5 +126,5 @@ export function useCampaignTypes() {
     queryKey: CAMPAIGN_TYPES_KEY,
     queryFn: listCampaignTypes,
     staleTime: Infinity,
-  });
+  })
 }

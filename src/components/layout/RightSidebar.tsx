@@ -49,7 +49,13 @@ export const POST_VERSIONS_PORTAL_ID = 'right-sidebar-post-versions'
  * and fade out (opacity only), so switching panels cross-fades and the AI
  * assistant keeps running invisibly.
  */
-function PanelLayer({ active, children }: { active: boolean; children: ReactNode }) {
+function PanelLayer({
+  active,
+  children,
+}: {
+  active: boolean
+  children: ReactNode
+}) {
   return (
     <div
       aria-hidden={!active}
@@ -111,7 +117,10 @@ export function RightSidebar() {
             {campaignId && (
               <>
                 <PanelLayer active={activePanel === 'calendarSettings'}>
-                  <CalendarSettingsPanel campaignId={campaignId} onClose={close} />
+                  <CalendarSettingsPanel
+                    campaignId={campaignId}
+                    onClose={close}
+                  />
                 </PanelLayer>
                 <PanelLayer active={activePanel === 'notScheduled'}>
                   <NotScheduledPanel campaignId={campaignId} onClose={close} />

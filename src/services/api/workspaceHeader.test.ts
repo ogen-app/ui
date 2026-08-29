@@ -58,7 +58,9 @@ describe('workspaceHeader', () => {
   it('leaves the public invite routes unscoped — the token names the workspace', () => {
     expect(workspaceHeader('/api/invitations/accept/tok-1')).toEqual({})
     // The owner-side invitation routes are a different thing and stay scoped.
-    expect(workspaceHeader('/api/invitations/inv-1')).toEqual({ [HEADER]: 'ws-b' })
+    expect(workspaceHeader('/api/invitations/inv-1')).toEqual({
+      [HEADER]: 'ws-b',
+    })
   })
 
   it('ignores the query string when deciding', () => {

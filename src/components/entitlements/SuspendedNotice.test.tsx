@@ -25,7 +25,9 @@ describe('SuspendedNotice', () => {
 
     expect(screen.getByText('Read-only')).toBeInTheDocument()
     expect(screen.getByText(/Nothing has been deleted/)).toBeInTheDocument()
-    expect(screen.getByText('Read-only since September 14, 2026.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Read-only since September 14, 2026.'),
+    ).toBeInTheDocument()
   })
 
   it('works without a date, which the server may not have kept', () => {

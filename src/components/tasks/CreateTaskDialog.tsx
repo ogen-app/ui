@@ -27,7 +27,13 @@ import { useWorkspaceMembers } from '@/hooks/useWorkspaces'
 /** The "not set" option's value — a Select cannot carry an empty string. */
 const NONE = 'none'
 
-export function CreateTaskDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function CreateTaskDialog({
+  open,
+  onClose,
+}: {
+  open: boolean
+  onClose: () => void
+}) {
   const { t } = useTranslation()
   const { createTask } = useTaskWriter()
   const { data: campaigns } = useCampaigns()
@@ -101,7 +107,9 @@ export function CreateTaskDialog({ open, onClose }: { open: boolean; onClose: ()
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="task-description">{t('tasks.field.description')}</Label>
+          <Label htmlFor="task-description">
+            {t('tasks.field.description')}
+          </Label>
           {/* Enter is a newline here, not a submit — the shortcut on the title
               would swallow the paragraph breaks this field exists for. */}
           <Textarea

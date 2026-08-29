@@ -45,7 +45,10 @@ export function SupersedeOffer({
         {accounts.length === 1 ? 'AVAILABLE ACCOUNT' : 'AVAILABLE ACCOUNTS'}
       </GroupLabel>
       {accounts.map((account) => (
-        <div key={account.id} className="flex items-center justify-between gap-3 py-1">
+        <div
+          key={account.id}
+          className="flex items-center justify-between gap-3 py-1"
+        >
           <AccountIdentity account={account} platform={platform} />
           <Button
             type="button"
@@ -88,12 +91,19 @@ function AccountIdentity({
   const name = accountLabel(account)
   return (
     <div className="min-w-0 flex items-center gap-3">
-      <AccountAvatar src={account.avatar_url} name={name} platform={platform} size="md" />
+      <AccountAvatar
+        src={account.avatar_url}
+        name={name}
+        platform={platform}
+        size="md"
+      />
       <div className="min-w-0 flex flex-col">
         <span className="truncate text-base font-semibold text-primary-foreground">
           {name}
         </span>
-        <span className="truncate text-xs text-tertiary-foreground">{platform.name}</span>
+        <span className="truncate text-xs text-tertiary-foreground">
+          {platform.name}
+        </span>
       </div>
     </div>
   )

@@ -9,7 +9,11 @@ import {
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button.tsx'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip.tsx'
 import { toast } from '@/stores/toastStore.ts'
 import { cn } from '@/lib'
 import { formatBytes } from '@/lib/platformMedia.ts'
@@ -21,7 +25,10 @@ import {
   mediaNoun,
   type MediaPolicy,
 } from '@/lib/postMedia.ts'
-import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments.ts'
+import {
+  attachmentKind,
+  type PostAttachmentWithValidation,
+} from '@/types/attachments.ts'
 import type { PendingUpload } from '@/hooks/usePostAttachments.ts'
 import type { Post } from '@/types/posts.ts'
 
@@ -66,9 +73,15 @@ export function PostMediaCard({
   // mutations with a 409), so the card becomes a read-only record.
   const frozen = post.status === 'published'
   const canAdd =
-    !frozen && policy.accepts && (policy.max === null || attachments.length < policy.max)
+    !frozen &&
+    policy.accepts &&
+    (policy.max === null || attachments.length < policy.max)
 
-  if (attachments.length === 0 && pending.length === 0 && (!policy.accepts || frozen)) {
+  if (
+    attachments.length === 0 &&
+    pending.length === 0 &&
+    (!policy.accepts || frozen)
+  ) {
     return null
   }
 
@@ -79,7 +92,10 @@ export function PostMediaCard({
   // something) and stays shut until asked. Once open it stays open: a card
   // that closed itself again would look like the upload had failed.
   const collapsed =
-    !post.platform_id && !revealed && attachments.length === 0 && pending.length === 0
+    !post.platform_id &&
+    !revealed &&
+    attachments.length === 0 &&
+    pending.length === 0
 
   const handleFiles = async (files: File[]) => {
     const accepted: File[] = []
@@ -92,7 +108,8 @@ export function PostMediaCard({
       }
     }
     if (accepted.length === 0) return
-    const room = policy.max === null ? accepted.length : policy.max - attachments.length
+    const room =
+      policy.max === null ? accepted.length : policy.max - attachments.length
     const within = accepted.slice(0, Math.max(0, room))
     if (within.length < accepted.length) {
       toast.warning(`Only ${policy.max} files fit on this post type`, {
@@ -115,7 +132,12 @@ export function PostMediaCard({
   }
 
   return (
-    <div className={cn('w-full bg-primary px-10 py-6 flex flex-col gap-3', className)}>
+    <div
+      className={cn(
+        'w-full bg-primary px-10 py-6 flex flex-col gap-3',
+        className,
+      )}
+    >
       {/* `SettingsCard`'s header, matched deliberately: title left, the one
           action opposite it. This is a card with a heading and a body like
           any settings section, and it was the only one drawing its own. */}
@@ -157,8 +179,8 @@ export function PostMediaCard({
 
       {!policy.accepts && attachments.length > 0 && (
         <Notice>
-          This post type publishes without media. These files stay attached — remove
-          them, or pick a post type that uses them.
+          This post type publishes without media. These files stay attached —
+          remove them, or pick a post type that uses them.
         </Notice>
       )}
       {policy.videoUnsupported && (
@@ -194,7 +216,9 @@ export function PostMediaCard({
             index={index}
             total={attachments.length}
             frozen={frozen}
-            dropTarget={overIndex === index && dragIndex !== null && dragIndex !== index}
+            dropTarget={
+              overIndex === index && dragIndex !== null && dragIndex !== index
+            }
             onDragStart={() => setDragIndex(index)}
             onDragEnter={() => dragIndex !== null && setOverIndex(index)}
             onDragEnd={() => {
@@ -391,7 +415,10 @@ function MediaTile({
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="absolute right-1 top-1 bg-primary/90 p-0.5">
-              <WarningCircleIcon weight="fill" className="size-4 text-warning" />
+              <WarningCircleIcon
+                weight="fill"
+                className="size-4 text-warning"
+              />
             </span>
           </TooltipTrigger>
           <TooltipContent>
@@ -435,7 +462,8 @@ function MediaTile({
  */
 function videoTileLabel(attachment: PostAttachmentWithValidation): string {
   const parts: string[] = []
-  if (attachment.duration_ms > 0) parts.push(formatTimecode(attachment.duration_ms))
+  if (attachment.duration_ms > 0)
+    parts.push(formatTimecode(attachment.duration_ms))
   if (attachment.width > 0 && attachment.height > 0) {
     parts.push(`${attachment.width}×${attachment.height}`)
   }

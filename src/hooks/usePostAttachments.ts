@@ -71,14 +71,22 @@ export function usePostAttachments(postId: string) {
           // direct PUT → finalize (CON-148). Everything else posts the bytes
           // to the upload endpoint as before.
           const send =
-            attachmentKind(file.type) === 'video' ? uploadVideoAttachment : uploadAttachment
+            attachmentKind(file.type) === 'video'
+              ? uploadVideoAttachment
+              : uploadAttachment
           await send(postId, file, {
             onProgress: (percent) =>
-              setPending((p) => p.map((u) => (u.key === key ? { ...u, percent } : u))),
+              setPending((p) =>
+                p.map((u) => (u.key === key ? { ...u, percent } : u)),
+              ),
           })
           uploaded += 1
         } catch (err) {
-          errors.push(err instanceof Error ? err.message : `Unable to upload ${file.name}`)
+          errors.push(
+            err instanceof Error
+              ? err.message
+              : `Unable to upload ${file.name}`,
+          )
         } finally {
           setPending((p) => p.filter((u) => u.key !== key))
         }
@@ -93,7 +101,8 @@ export function usePostAttachments(postId: string) {
     // The user's word for it, and for the thing on screen — the API calls
     // this deleting an attachment.
     meta: { errorTitle: 'Unable to remove file' },
-    mutationFn: (attachmentId: string) => deleteAttachment(postId, attachmentId),
+    mutationFn: (attachmentId: string) =>
+      deleteAttachment(postId, attachmentId),
     onSuccess: invalidate,
   })
 
@@ -126,14 +135,19 @@ export function usePostAttachments(postId: string) {
     },
     onMutate: async (ordered) => {
       await qc.cancelQueries({ queryKey: postAttachmentsKey(postId) })
-      const previous = qc.getQueryData<AttachmentListResponse>(postAttachmentsKey(postId))
+      const previous = qc.getQueryData<AttachmentListResponse>(
+        postAttachmentsKey(postId),
+      )
       if (previous) {
         // Mirror the numbering the mutation writes, so a second drag landing
         // before the refetch computes its block from the same base.
         const base = Math.max(-1, ...ordered.map((a) => a.position)) + 1
         qc.setQueryData<AttachmentListResponse>(postAttachmentsKey(postId), {
           ...previous,
-          attachments: ordered.map((a, index) => ({ ...a, position: base + index })),
+          attachments: ordered.map((a, index) => ({
+            ...a,
+            position: base + index,
+          })),
         })
       }
       return { previous }

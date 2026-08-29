@@ -23,7 +23,10 @@ import type { Post } from '@/types/posts'
  * assistant turn that rewrote the post server-side. If you *do* hold the saved
  * post, `landSavedPost` is cheaper and doesn't flash the old row first.
  */
-export function invalidateCampaignPosts(qc: QueryClient, campaignId: string): void {
+export function invalidateCampaignPosts(
+  qc: QueryClient,
+  campaignId: string,
+): void {
   qc.invalidateQueries({ queryKey: campaignPostsKey(campaignId) })
   qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })
 }
@@ -55,7 +58,9 @@ export function cachedPostFromList(
     // roll-up, neither of which holds `Post` rows.
     const key = query.queryKey
     if (key.length !== 3 || key[2] !== 'posts') continue
-    const post = (query.state.data as Post[] | undefined)?.find((p) => p.id === postId)
+    const post = (query.state.data as Post[] | undefined)?.find(
+      (p) => p.id === postId,
+    )
     if (post) return { post, updatedAt: query.state.dataUpdatedAt }
   }
   return undefined

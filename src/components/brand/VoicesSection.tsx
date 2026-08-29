@@ -143,7 +143,8 @@ export const VOICE_STARTERS: VoiceStarter[] = [
     body: 'One person talking to another. Contractions, the odd aside, first name terms.',
     draft: {
       name: 'Warm and conversational',
-      whenToUse: 'The posts that are meant to sound like a person, not a company',
+      whenToUse:
+        'The posts that are meant to sound like a person, not a company',
       rules: {
         formality: 'casual',
         person: 'i',
@@ -162,7 +163,8 @@ export const VOICE_STARTERS: VoiceStarter[] = [
     body: 'Takes a position in the opening line and defends it. Dry, a little arch, never neutral.',
     draft: {
       name: 'Sharp and opinionated',
-      whenToUse: 'Commentary, and anything the industry is already arguing about',
+      whenToUse:
+        'Commentary, and anything the industry is already arguing about',
       rules: {
         formality: 'neutral',
         person: 'i',
@@ -255,7 +257,8 @@ function VoiceCard({
   voice: BrandVoice
   onOpen?: (id: string) => void
 }) {
-  const thin = voice.samples.length > 0 && voice.samples.length < MIN_VOICE_SAMPLES
+  const thin =
+    voice.samples.length > 0 && voice.samples.length < MIN_VOICE_SAMPLES
   const sample = voice.samples[0]
 
   const facts = [sampleCount(voice.samples.length), usageLine(voice.usage)]

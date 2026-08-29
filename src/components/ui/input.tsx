@@ -36,7 +36,7 @@ const inputVariants = cva(
       variant: 'default',
       inputSize: 'default',
     },
-  }
+  },
 )
 
 const Input = React.forwardRef<

@@ -14,7 +14,12 @@ export function GroupLabel({
   className?: string
 }) {
   return (
-    <p className={cn('mb-1 text-xs font-medium text-tertiary-foreground', className)}>
+    <p
+      className={cn(
+        'mb-1 text-xs font-medium text-tertiary-foreground',
+        className,
+      )}
+    >
       {children}
     </p>
   )

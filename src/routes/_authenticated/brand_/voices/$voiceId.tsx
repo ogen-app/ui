@@ -83,7 +83,9 @@ function VoiceEditorPage() {
    * copy above a static frame.
    */
   const header = (
-    <PageHeader back={<BrandBackButton to="/brand/voices" label="Back to voices" />} />
+    <PageHeader
+      back={<BrandBackButton to="/brand/voices" label="Back to voices" />}
+    />
   )
 
   const body = () => {
@@ -111,21 +113,26 @@ function VoiceEditorPage() {
     // what a `?? null` here would do — would answer a wrong URL with a create
     // screen, and the first thing typed into it would be saved under whatever
     // the address bar happened to say.
-    if (isPending) return <Static header={header}><PageLoader /></Static>
+    if (isPending)
+      return (
+        <Static header={header}>
+          <PageLoader />
+        </Static>
+      )
     if (isError || !voice) {
       return (
         <Static header={header}>
-        <PageError
-          subHeader="NOT FOUND"
-          errorType="NOT FOUND"
-          header="No such voice"
-          message="It may have been deleted, or the link may be to another workspace."
-          action={
-            <Button variant="ghost" size="sm" onClick={back}>
-              <span className="uppercase">Back to voices</span>
-            </Button>
-          }
-        />
+          <PageError
+            subHeader="NOT FOUND"
+            errorType="NOT FOUND"
+            header="No such voice"
+            message="It may have been deleted, or the link may be to another workspace."
+            action={
+              <Button variant="ghost" size="sm" onClick={back}>
+                <span className="uppercase">Back to voices</span>
+              </Button>
+            }
+          />
         </Static>
       )
     }
@@ -163,7 +170,13 @@ function VoiceEditorPage() {
  * no-such-voice page. Nothing passes under the gradient in either, so there is
  * nothing to keep inside a scroller.
  */
-function Static({ header, children }: { header: ReactNode; children: ReactNode }) {
+function Static({
+  header,
+  children,
+}: {
+  header: ReactNode
+  children: ReactNode
+}) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {header}

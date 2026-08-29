@@ -148,7 +148,9 @@ function tierFromWire(body: PlanBody['tier']): TierSnapshot {
     // renewal date invented for a plan nobody pays for would be printed.
     billingPeriod: body.billing_period ?? null,
     renewsAt: body.renews_at ?? null,
-    scheduled: body.scheduled_change ? scheduledFromWire(body.scheduled_change) : null,
+    scheduled: body.scheduled_change
+      ? scheduledFromWire(body.scheduled_change)
+      : null,
   }
 }
 
@@ -186,7 +188,10 @@ export function planFromWire(body: PlanBody): WorkspacePlan {
  * thing this file exists to hold still.
  */
 export function fetchWorkspacePlan(): Promise<WorkspacePlan> {
-  return apiJson<PlanBody>('/api/entitlements', 'Unable to read your plan').then(planFromWire)
+  return apiJson<PlanBody>(
+    '/api/entitlements',
+    'Unable to read your plan',
+  ).then(planFromWire)
 }
 
 /**

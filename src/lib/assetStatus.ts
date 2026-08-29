@@ -1,9 +1,9 @@
-import type { AssetStatus } from "@/types/content";
-import type { StatusTone } from "@/components/ui/status-badge";
+import type { AssetStatus } from '@/types/content'
+import type { StatusTone } from '@/components/ui/status-badge'
 
-export type UploadKind = "md" | "pdf" | "image";
+export type UploadKind = 'md' | 'pdf' | 'image'
 
-const MB = 1 << 20;
+const MB = 1 << 20
 
 /** Per-extension upload limits, mirroring the Go backend (assets.go). */
 const UPLOAD_LIMITS: Record<UploadKind, number> = {
@@ -13,7 +13,7 @@ const UPLOAD_LIMITS: Record<UploadKind, number> = {
   // `POST /api/images` (`maxImageSize`) and post attachments both — and CON-16
   // R11 keeps the asset upload on it rather than inventing a third.
   image: 10 * MB,
-};
+}
 
 /**
  * Whether the Content Bank takes images: the `content-bank-images` flag
@@ -21,7 +21,7 @@ const UPLOAD_LIMITS: Record<UploadKind, number> = {
  * functions mirror server rules and are worth testing in both states without
  * reaching for global flag state.
  */
-export type UploadOptions = { images: boolean };
+export type UploadOptions = { images: boolean }
 
 /**
  * The extensions the file picker offers.
@@ -32,35 +32,35 @@ export type UploadOptions = { images: boolean };
  * file the server would have taken.
  */
 export function uploadAccept({ images }: UploadOptions): string {
-  return images ? ".md,.pdf,.jpg,.jpeg,.png,.webp,.gif" : ".md,.pdf";
+  return images ? '.md,.pdf,.jpg,.jpeg,.png,.webp,.gif' : '.md,.pdf'
 }
 
-const BASE_LIMITS_LABEL = "Markdown (.md) up to 10 MB · PDF (.pdf) up to 50 MB";
+const BASE_LIMITS_LABEL = 'Markdown (.md) up to 10 MB · PDF (.pdf) up to 50 MB'
 
 /** Human-readable summary of the limits, shown in the upload modal. */
 export function uploadLimitsLabel({ images }: UploadOptions): string {
   return images
     ? `${BASE_LIMITS_LABEL} · Images (JPEG, PNG, WebP, GIF) up to 10 MB`
-    : BASE_LIMITS_LABEL;
+    : BASE_LIMITS_LABEL
 }
 
-const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
 
 /** Maps a filename extension to an upload kind, or null if unsupported. */
 function detectUploadKind(
   filename: string,
   { images }: UploadOptions,
 ): UploadKind | null {
-  const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
-  if (ext === ".md") return "md";
-  if (ext === ".pdf") return "pdf";
-  if (images && IMAGE_EXTENSIONS.includes(ext)) return "image";
-  return null;
+  const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase()
+  if (ext === '.md') return 'md'
+  if (ext === '.pdf') return 'pdf'
+  if (images && IMAGE_EXTENSIONS.includes(ext)) return 'image'
+  return null
 }
 
 export type UploadValidation =
   | { ok: true; kind: UploadKind }
-  | { ok: false; error: string };
+  | { ok: false; error: string }
 
 /**
  * Client-side guard that mirrors the backend's accepted types and size caps so
@@ -71,50 +71,50 @@ export function validateUploadFile(
   file: File,
   options: UploadOptions,
 ): UploadValidation {
-  const kind = detectUploadKind(file.name, options);
+  const kind = detectUploadKind(file.name, options)
   if (!kind) {
     return {
       ok: false,
       error: options.images
-        ? "only .md, .pdf and image files are accepted"
-        : "only .md and .pdf files are accepted",
-    };
+        ? 'only .md, .pdf and image files are accepted'
+        : 'only .md and .pdf files are accepted',
+    }
   }
-  const limit = UPLOAD_LIMITS[kind];
+  const limit = UPLOAD_LIMITS[kind]
   if (file.size > limit) {
     return {
       ok: false,
       error: `file exceeds maximum size of ${Math.round(limit / MB)} MB`,
-    };
+    }
   }
-  return { ok: true, kind };
+  return { ok: true, kind }
 }
 
 /** Async statuses that will never change again. */
 export function isTerminalStatus(status: AssetStatus): boolean {
-  return status === "ready" || status === "partial" || status === "failed";
+  return status === 'ready' || status === 'partial' || status === 'failed'
 }
 
 const STATUS_BADGE: Record<AssetStatus, { tone: StatusTone; label: string }> = {
-  pending: { tone: "progress", label: "Pending" },
-  processing: { tone: "progress", label: "Processing" },
-  ready: { tone: "positive", label: "Ready" },
-  partial: { tone: "warn", label: "Partial" },
-  failed: { tone: "destructive", label: "Failed" },
-};
+  pending: { tone: 'progress', label: 'Pending' },
+  processing: { tone: 'progress', label: 'Processing' },
+  ready: { tone: 'positive', label: 'Ready' },
+  partial: { tone: 'warn', label: 'Partial' },
+  failed: { tone: 'destructive', label: 'Failed' },
+}
 
 /** Tone + label for rendering an asset status as a StatusBadge. */
 export function statusToBadge(status: AssetStatus): {
-  tone: StatusTone;
-  label: string;
+  tone: StatusTone
+  label: string
 } {
-  return STATUS_BADGE[status] ?? { tone: "neutral", label: status };
+  return STATUS_BADGE[status] ?? { tone: 'neutral', label: status }
 }
 
 /** Compact human-readable file size, e.g. "1.4 MB". */
 export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  const kb = bytes / 1024;
-  if (kb < 1024) return `${Math.round(kb)} KB`;
-  return `${(kb / 1024).toFixed(1)} MB`;
+  if (bytes < 1024) return `${bytes} B`
+  const kb = bytes / 1024
+  if (kb < 1024) return `${Math.round(kb)} KB`
+  return `${(kb / 1024).toFixed(1)} MB`
 }

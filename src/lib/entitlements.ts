@@ -25,12 +25,20 @@ import type {
  * keeps the flag's off-branch honest: with no plan in play every call site
  * takes the same path it took before this feature existed.
  */
-export const UNGATED: Entitlement = Object.freeze({ state: 'allowed', usage: null })
+export const UNGATED: Entitlement = Object.freeze({
+  state: 'allowed',
+  usage: null,
+})
 
 const PENDING: Entitlement = Object.freeze({ state: 'pending' })
 
 /** The periods this build knows how to name. Anything else is not guessed at. */
-const KNOWN_PERIODS: readonly UsagePeriod[] = ['day', 'month', 'post', 'publish']
+const KNOWN_PERIODS: readonly UsagePeriod[] = [
+  'day',
+  'month',
+  'post',
+  'publish',
+]
 
 /**
  * Narrows the server's period word, dropping one this build has never heard of.
@@ -40,7 +48,9 @@ const KNOWN_PERIODS: readonly UsagePeriod[] = ['day', 'month', 'post', 'publish'
  * the wrong one there is not.
  */
 export function usagePeriod(value: unknown): UsagePeriod | null {
-  return KNOWN_PERIODS.includes(value as UsagePeriod) ? (value as UsagePeriod) : null
+  return KNOWN_PERIODS.includes(value as UsagePeriod)
+    ? (value as UsagePeriod)
+    : null
 }
 
 /**

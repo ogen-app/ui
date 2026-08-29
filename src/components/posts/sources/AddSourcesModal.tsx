@@ -179,14 +179,18 @@ function AssetChoice({
 }) {
   const reach = retrievability(asset.status)
   const provisional = asset.type === 'URL' && asset.source_url === asset.title
-  const label = provisional ? pageUrlLabel(asset.title) : formatTitle(asset.title)
+  const label = provisional
+    ? pageUrlLabel(asset.title)
+    : formatTitle(asset.title)
 
   return (
     <li>
       <label
         className={cn(
           'flex items-center gap-3 border-b border-quaternary px-1 py-2.5',
-          attached ? 'cursor-default opacity-60' : 'cursor-pointer hover:bg-secondary',
+          attached
+            ? 'cursor-default opacity-60'
+            : 'cursor-pointer hover:bg-secondary',
         )}
       >
         <Checkbox
@@ -206,11 +210,15 @@ function AssetChoice({
           </span>
         </span>
         {attached ? (
-          <span className="shrink-0 text-xs text-tertiary-foreground">Already added</span>
+          <span className="shrink-0 text-xs text-tertiary-foreground">
+            Already added
+          </span>
         ) : reach === 'never' ? (
           <span className="shrink-0 text-xs text-warning">Can't be read</span>
         ) : reach === 'waiting' ? (
-          <span className="shrink-0 text-xs text-tertiary-foreground">Still reading</span>
+          <span className="shrink-0 text-xs text-tertiary-foreground">
+            Still reading
+          </span>
         ) : null}
       </label>
     </li>

@@ -20,7 +20,11 @@ import { UploadModal } from '@/components/uploads/UploadModal'
 import { useAssets, useCreateAsset, useDeleteAsset } from '@/hooks/useContent'
 import { uploadLimitsLabel } from '@/lib/assetStatus'
 import { useUploadOptions } from '@/hooks/useUploadOptions'
-import { addToCampaign, removeFromCampaign, seedFromWholeBank } from '@/lib/campaignMembership'
+import {
+  addToCampaign,
+  removeFromCampaign,
+  seedFromWholeBank,
+} from '@/lib/campaignMembership'
 import { campaignAssets, seedsWholeBank } from '@/lib/campaignSources'
 import { useUploadStore } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
@@ -113,12 +117,18 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
    */
   const seeded = useRef<string | null>(null)
   useEffect(() => {
-    if (!campaign || !seedsWholeBank(campaign) || seeded.current === campaign.id) return
+    if (
+      !campaign ||
+      !seedsWholeBank(campaign) ||
+      seeded.current === campaign.id
+    )
+      return
     seeded.current = campaign.id
     void seedFromWholeBank(campaign.id)
   }, [campaign])
 
-  const hasFiles = (e: React.DragEvent) => e.dataTransfer.types.includes('Files')
+  const hasFiles = (e: React.DragEvent) =>
+    e.dataTransfer.types.includes('Files')
 
   const handleDragEnter = (e: React.DragEvent) => {
     if (!hasFiles(e)) return
@@ -158,7 +168,10 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             })
             return
           }
-          navigate({ to: '/content-bank/$assetId', params: { assetId: asset.id } })
+          navigate({
+            to: '/content-bank/$assetId',
+            params: { assetId: asset.id },
+          })
         },
       },
     )
@@ -179,11 +192,13 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     if (campaign) void addToCampaign(campaign.id, [asset.id])
     if (alreadyHere) {
       toast.info('Re-reading that page', {
-        description: "Its content will be replaced with the page's current version.",
+        description:
+          "Its content will be replaced with the page's current version.",
       })
     } else {
       toast.info('Reading that page', {
-        description: 'It appears in the list below and fills in when the read finishes.',
+        description:
+          'It appears in the list below and fills in when the read finishes.',
       })
     }
   }
@@ -218,11 +233,15 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
    * said about them here beyond leaving them out of the count.
    */
   const handleDeleteMany = async (ids: string[]) => {
-    const results = await Promise.allSettled(ids.map((id) => deleteAsset.mutateAsync(id)))
+    const results = await Promise.allSettled(
+      ids.map((id) => deleteAsset.mutateAsync(id)),
+    )
     const gone = ids.filter((_, i) => results[i].status === 'fulfilled')
     if (gone.length === 0) return
     if (campaign) void removeFromCampaign(campaign.id, gone)
-    toast.success(`${gone.length} ${gone.length === 1 ? 'document' : 'documents'} deleted`)
+    toast.success(
+      `${gone.length} ${gone.length === 1 ? 'document' : 'documents'} deleted`,
+    )
   }
 
   const scopeName = campaign
@@ -271,7 +290,10 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
                 <FileTextIcon />
                 <span>Write a note</span>
               </DropdownMenuItem>
-              <DropdownMenuItem size="lg" onClick={() => setUploadModalOpen(true)}>
+              <DropdownMenuItem
+                size="lg"
+                onClick={() => setUploadModalOpen(true)}
+              >
                 <UploadSimpleIcon />
                 <span>Upload file</span>
               </DropdownMenuItem>
@@ -298,7 +320,9 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
         ) : isError ? (
           <PageError
             header={
-              campaign ? "Unable to load this campaign's content" : 'Unable to load the content bank'
+              campaign
+                ? "Unable to load this campaign's content"
+                : 'Unable to load the content bank'
             }
           />
         ) : (

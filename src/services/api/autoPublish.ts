@@ -14,9 +14,10 @@ const BASE = '/api/auto-publish-allowlist'
 type AllowlistBody = { platforms: string[] }
 
 export function getAutoPublishAllowlist(): Promise<string[]> {
-  return apiJson<AllowlistBody>(BASE, 'Unable to fetch the auto-publish allowlist').then(
-    (r) => r.platforms ?? [],
-  )
+  return apiJson<AllowlistBody>(
+    BASE,
+    'Unable to fetch the auto-publish allowlist',
+  ).then((r) => r.platforms ?? [])
 }
 
 /**
@@ -24,9 +25,15 @@ export function getAutoPublishAllowlist(): Promise<string[]> {
  * and an empty array clears the list. Callers must send the full desired set,
  * which is why the mutation reads the cached list rather than posting a delta.
  */
-export function setAutoPublishAllowlist(platforms: string[]): Promise<string[]> {
-  return apiJson<AllowlistBody>(BASE, 'Unable to update the auto-publish allowlist', {
-    method: 'PUT',
-    body: { platforms },
-  }).then((r) => r.platforms ?? [])
+export function setAutoPublishAllowlist(
+  platforms: string[],
+): Promise<string[]> {
+  return apiJson<AllowlistBody>(
+    BASE,
+    'Unable to update the auto-publish allowlist',
+    {
+      method: 'PUT',
+      body: { platforms },
+    },
+  ).then((r) => r.platforms ?? [])
 }

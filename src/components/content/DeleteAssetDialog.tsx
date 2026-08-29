@@ -32,7 +32,12 @@ type Props = {
  * and any other campaign keeps a dead id, which shows as nothing because
  * `campaignAssets` matches ids against documents that exist.
  */
-export function DeleteAssetDialog({ asset, campaignId, isOpen, onClose }: Props) {
+export function DeleteAssetDialog({
+  asset,
+  campaignId,
+  isOpen,
+  onClose,
+}: Props) {
   const navigate = useNavigate()
   const { mutate: deleteAsset, isPending: deleting } = useDeleteAsset()
 
@@ -46,7 +51,10 @@ export function DeleteAssetDialog({ asset, campaignId, isOpen, onClose }: Props)
         onClose()
         // This route would 404 on the deleted id, so leaving is not optional.
         void (campaignId
-          ? navigate({ to: '/campaigns/$campaignId/content', params: { campaignId } })
+          ? navigate({
+              to: '/campaigns/$campaignId/content',
+              params: { campaignId },
+            })
           : navigate({ to: '/content-bank' }))
       },
       // No onError: the mutation cache raises the API's own message.
@@ -69,7 +77,12 @@ export function DeleteAssetDialog({ asset, campaignId, isOpen, onClose }: Props)
             : 'This document will be permanently deleted, and any campaign using it will stop writing from it. This cannot be undone.'}
         </p>
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={deleting}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={deleting}
+          >
             KEEP DOCUMENT
           </Button>
           <Button

@@ -49,7 +49,8 @@ export function ThreadList() {
   return (
     <ul className="flex flex-col">
       {list.map((thread) => {
-        const Icon = thread.subject.kind === 'campaign' ? BriefcaseIcon : FileTextIcon
+        const Icon =
+          thread.subject.kind === 'campaign' ? BriefcaseIcon : FileTextIcon
         return (
           <li
             key={thread.id}
@@ -127,7 +128,9 @@ export function ThreadList() {
                 <Link
                   {...openLink(thread)}
                   aria-label={
-                    thread.subject.kind === 'campaign' ? 'Open the campaign' : 'Open the post'
+                    thread.subject.kind === 'campaign'
+                      ? 'Open the campaign'
+                      : 'Open the post'
                   }
                   className="flex size-6 shrink-0 items-center justify-center text-secondary-foreground hover:text-foreground"
                 >
@@ -165,13 +168,20 @@ export function ThreadList() {
  * the rest — so the list opens on the work in front of the user rather than on
  * whatever was registered first.
  */
-function order(list: AssistantThread[], current: AssistantThread | undefined): AssistantThread[] {
+function order(
+  list: AssistantThread[],
+  current: AssistantThread | undefined,
+): AssistantThread[] {
   if (!current) return list
   const campaignId = current.subject.campaignId
   return [
     current,
-    ...list.filter((t) => t.id !== current.id && t.subject.campaignId === campaignId),
-    ...list.filter((t) => t.id !== current.id && t.subject.campaignId !== campaignId),
+    ...list.filter(
+      (t) => t.id !== current.id && t.subject.campaignId === campaignId,
+    ),
+    ...list.filter(
+      (t) => t.id !== current.id && t.subject.campaignId !== campaignId,
+    ),
   ]
 }
 
@@ -197,7 +207,8 @@ const ACTION_LABELS: Record<AssistantAction, string> = {
 
 function idleStatus(thread: AssistantThread): string {
   const last = [...thread.turns].reverse().find((t) => t.role === 'assistant')
-  if (!last) return thread.turns.length > 0 ? 'Waiting for a reply' : 'Not started yet'
+  if (!last)
+    return thread.turns.length > 0 ? 'Waiting for a reply' : 'Not started yet'
   if (last.cancelled) return 'Stopped'
   if (last.failed) return 'Failed'
   return last.action ? ACTION_LABELS[last.action] : 'Answered'
@@ -208,7 +219,9 @@ function runningStatus(thread: AssistantThread): string {
   const steps = thread.turns[thread.turns.length - 1]?.steps ?? []
   const live = [...steps].reverse().find((s) => s.endedAt === null)
   if (live) return live.label
-  return thread.subject.kind === 'campaign' ? 'Working on the campaign' : 'Working on the post'
+  return thread.subject.kind === 'campaign'
+    ? 'Working on the campaign'
+    : 'Working on the post'
 }
 
 /** Where the jump-to arrow goes, per subject kind. */
@@ -249,9 +262,15 @@ function ThreadStatusLine({ thread }: { thread: AssistantThread }) {
     )
   }
   if (thread.status === 'error') {
-    return <span className="block w-full truncate text-sm text-destructive">Failed</span>
+    return (
+      <span className="block w-full truncate text-sm text-destructive">
+        Failed
+      </span>
+    )
   }
   return (
-    <span className="block w-full truncate text-sm text-foreground">{idleStatus(thread)}</span>
+    <span className="block w-full truncate text-sm text-foreground">
+      {idleStatus(thread)}
+    </span>
   )
 }

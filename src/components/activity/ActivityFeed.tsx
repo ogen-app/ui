@@ -27,7 +27,12 @@ import { Button } from '@/components/ui/button'
 import { useActivityFeed, useActivityLastSeen } from '@/hooks/useActivity'
 import { useTaskReconciliation } from '@/hooks/useTasks'
 import { getPlatformInfo } from '@/lib/platformDictionary'
-import { dayKey, isTaskEntry, isUnread, type ActivityEntry } from '@/lib/activityFeed'
+import {
+  dayKey,
+  isTaskEntry,
+  isUnread,
+  type ActivityEntry,
+} from '@/lib/activityFeed'
 import { cn } from '@/lib'
 import { useDayLabel, useTimeLabel } from '@/hooks/useActivityLabels'
 
@@ -54,7 +59,11 @@ import { useDayLabel, useTimeLabel } from '@/hooks/useActivityLabels'
 export function ActivityFeed() {
   const { t } = useTranslation()
   const { entries, now, isLoading, isError } = useActivityFeed()
-  const { lastSeen, isLoading: lastSeenLoading, markAllRead } = useActivityLastSeen()
+  const {
+    lastSeen,
+    isLoading: lastSeenLoading,
+    markAllRead,
+  } = useActivityLastSeen()
   // There is no server raising or resolving tasks, so a screen has to. Both
   // this one and the Tasks board do — they are separate destinations and can
   // never be mounted at once, so there is still only ever one writer, and a
@@ -204,7 +213,10 @@ function MarkAllReadButton({
     >
       <ChecksIcon weight="bold" className="size-4" />
       <span
-        className={cn('overflow-hidden', animate && 'transition-[width] duration-200 ease-linear')}
+        className={cn(
+          'overflow-hidden',
+          animate && 'transition-[width] duration-200 ease-linear',
+        )}
         style={{ width: hasUnread ? labelWidth : 0 }}
       >
         <span ref={labelRef} className="block w-max whitespace-nowrap pl-2">
@@ -236,11 +248,17 @@ function DayCard({
     <article className="w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0">
       {/* The day is the card's whole title. No second line: what happened is
           the sections' job, and a summary above them would say it twice. */}
-      <h2 className="font-display text-base/6 font-medium truncate">{dayLabel(date, now)}</h2>
+      <h2 className="font-display text-base/6 font-medium truncate">
+        {dayLabel(date, now)}
+      </h2>
 
       <div className="flex flex-col">
         {entries.map((entry) => (
-          <EntrySection key={entry.id} entry={entry} unread={isUnread(entry, lastSeen, now)} />
+          <EntrySection
+            key={entry.id}
+            entry={entry}
+            unread={isUnread(entry, lastSeen, now)}
+          />
         ))}
       </div>
     </article>
@@ -253,14 +271,22 @@ function DayCard({
  * half a feature — so the whole section is the target rather than a trailing
  * "view" affordance.
  */
-function EntrySection({ entry, unread }: { entry: ActivityEntry; unread: boolean }) {
+function EntrySection({
+  entry,
+  unread,
+}: {
+  entry: ActivityEntry
+  unread: boolean
+}) {
   const { t } = useTranslation()
   const timeLabel = useTimeLabel()
 
   const heading = (icon: ReactNode, title: string, linked = true) => (
     <div className="flex items-center gap-3 min-w-0">
       {icon}
-      <span className="min-w-0 flex-1 truncate text-sm text-primary-foreground">{title}</span>
+      <span className="min-w-0 flex-1 truncate text-sm text-primary-foreground">
+        {title}
+      </span>
       <span className="shrink-0 font-mono text-xs text-tertiary-foreground">
         {timeLabel(entry.at)}
       </span>
@@ -300,9 +326,16 @@ function EntrySection({ entry, unread }: { entry: ActivityEntry; unread: boolean
       // The counts stay in the report itself: a tile row per day turned the
       // page into a wall of mostly-zero figures, and the feed's job is to say
       // a day is worth opening, not to be the report.
-      <Link to="/activity/$date" params={{ date: entry.report.date }} className={className}>
+      <Link
+        to="/activity/$date"
+        params={{ date: entry.report.date }}
+        className={className}
+      >
         {heading(
-          <NotebookIcon weight="regular" className="size-5 shrink-0 text-tertiary-foreground" />,
+          <NotebookIcon
+            weight="regular"
+            className="size-5 shrink-0 text-tertiary-foreground"
+          />,
           t('activity.entry.reportTitle'),
         )}
       </Link>
@@ -314,14 +347,20 @@ function EntrySection({ entry, unread }: { entry: ActivityEntry; unread: boolean
       <div className={className}>
         {heading(
           entry.kind === 'task_completed' ? (
-            <CheckCircleIcon weight="regular" className="size-5 shrink-0 text-positive" />
+            <CheckCircleIcon
+              weight="regular"
+              className="size-5 shrink-0 text-positive"
+            />
           ) : entry.kind === 'task_resolved' ? (
             <ArrowCounterClockwiseIcon
               weight="regular"
               className="size-5 shrink-0 text-tertiary-foreground"
             />
           ) : (
-            <CheckSquareIcon weight="regular" className="size-5 shrink-0 text-tertiary-foreground" />
+            <CheckSquareIcon
+              weight="regular"
+              className="size-5 shrink-0 text-tertiary-foreground"
+            />
           ),
           t(`activity.entry.${entry.kind}`, { title: entry.title }),
           false,
@@ -338,13 +377,24 @@ function EntrySection({ entry, unread }: { entry: ActivityEntry; unread: boolean
     >
       {heading(
         entry.kind === 'failed' ? (
-          <WarningOctagonIcon weight="regular" className="size-5 shrink-0 text-negative" />
+          <WarningOctagonIcon
+            weight="regular"
+            className="size-5 shrink-0 text-negative"
+          />
         ) : (
-          <ProhibitIcon weight="regular" className="size-5 shrink-0 text-warning" />
+          <ProhibitIcon
+            weight="regular"
+            className="size-5 shrink-0 text-warning"
+          />
         ),
-        t(entry.kind === 'failed' ? 'activity.entry.failed' : 'activity.entry.notPublished', {
-          channel: channelName(entry.platformId),
-        }),
+        t(
+          entry.kind === 'failed'
+            ? 'activity.entry.failed'
+            : 'activity.entry.notPublished',
+          {
+            channel: channelName(entry.platformId),
+          },
+        ),
       )}
     </Link>
   )

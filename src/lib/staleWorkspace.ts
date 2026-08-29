@@ -19,11 +19,11 @@
  * only acts when this tab's workspace is genuinely not on it.
  */
 
-import { apiUrl } from "@/services/api/base";
-import { getActiveWorkspaceId, setActiveWorkspaceId } from "./activeWorkspace";
+import { apiUrl } from '@/services/api/base'
+import { getActiveWorkspaceId, setActiveWorkspaceId } from './activeWorkspace'
 
-let handled = false;
-let checking = false;
+let handled = false
+let checking = false
 
 /**
  * Called from the API layer for every 403 on a request that actually carried
@@ -31,18 +31,18 @@ let checking = false;
  * and runs to completion while the check is in flight.
  */
 export function handleForbidden(): void {
-  if (handled || checking) return;
-  const active = getActiveWorkspaceId();
-  if (!active) return;
+  if (handled || checking) return
+  const active = getActiveWorkspaceId()
+  if (!active) return
 
-  checking = true;
+  checking = true
   void verify(active).finally(() => {
-    checking = false;
-  });
+    checking = false
+  })
 }
 
 async function verify(active: string): Promise<void> {
-  let workspaces: Array<{ id?: string }>;
+  let workspaces: Array<{ id?: string }>
   try {
     // Deliberately a bare `fetch`, not `apiJson`: this module is imported from
     // the API layer's own response check, and routing the recovery back through
@@ -50,24 +50,24 @@ async function verify(active: string): Promise<void> {
     // Bare on purpose, per the comment above: the whole point is to stay
     // outside the API layer.
     // eslint-disable-next-line no-restricted-globals
-    const res = await fetch(apiUrl("/api/workspaces"), {
-      method: "GET",
-      credentials: "include",
-    });
-    if (!res.ok) return; // Can't tell — leave the tab alone.
-    workspaces = (await res.json()) as Array<{ id?: string }>;
+    const res = await fetch(apiUrl('/api/workspaces'), {
+      method: 'GET',
+      credentials: 'include',
+    })
+    if (!res.ok) return // Can't tell — leave the tab alone.
+    workspaces = (await res.json()) as Array<{ id?: string }>
   } catch {
     // Offline or the server went away. Neither means the workspace is gone.
-    return;
+    return
   }
 
-  if (!Array.isArray(workspaces)) return;
-  if (workspaces.some((w) => w.id === active)) return; // A permission error, not a stale tab.
+  if (!Array.isArray(workspaces)) return
+  if (workspaces.some((w) => w.id === active)) return // A permission error, not a stale tab.
 
-  handled = true;
+  handled = true
   // Drop the pin and reload. The root guard re-seeds this tab from the
   // account's default; if the account has no workspace left, it lands where a
   // session with nothing to show belongs.
-  setActiveWorkspaceId(null);
-  window.location.assign("/");
+  setActiveWorkspaceId(null)
+  window.location.assign('/')
 }

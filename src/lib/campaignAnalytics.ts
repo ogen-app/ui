@@ -18,44 +18,44 @@
  * moment the sweep ran, so a post renamed since would show its old name.
  */
 
-import type { AnalyticsMetrics, PostAnalyticsItem } from "@/types/analytics";
-import type { PostSummary } from "@/types/posts";
-import { formatNumber } from "@/lib/intl";
+import type { AnalyticsMetrics, PostAnalyticsItem } from '@/types/analytics'
+import type { PostSummary } from '@/types/posts'
+import { formatNumber } from '@/lib/intl'
 
 /** The metric keys that sum. `engagement_rate` averages instead. */
 const SUMMED = [
-  "impressions",
-  "reach",
-  "likes",
-  "comments",
-  "shares",
-  "saves",
-  "clicks",
-  "views",
-] as const;
+  'impressions',
+  'reach',
+  'likes',
+  'comments',
+  'shares',
+  'saves',
+  'clicks',
+  'views',
+] as const
 
-export type SummedMetric = (typeof SUMMED)[number];
+export type SummedMetric = (typeof SUMMED)[number]
 
 /** One of the campaign's posts, with the numbers the platforms reported for it. */
 export type MeasuredPost<T extends PostSummary> = {
-  post: T;
-  metrics: AnalyticsMetrics;
+  post: T
+  metrics: AnalyticsMetrics
   /** When Ogen last fetched these numbers. */
-  lastRefreshedAt: string;
-};
+  lastRefreshedAt: string
+}
 
 export type CampaignAnalytics<T extends PostSummary> = {
   /** How many of the campaign's posts have at least one snapshot. */
-  measured: number;
-  totals: Record<SummedMetric, number>;
+  measured: number
+  totals: Record<SummedMetric, number>
   /** Mean engagement rate over the measured posts, as a fraction (0.031 = 3.1%). */
-  engagementRate: number;
+  engagementRate: number
   /** The most recent fetch across the measured posts — how fresh this is. */
-  lastRefreshedAt: string | null;
+  lastRefreshedAt: string | null
   /** Measured posts, best engagement first. */
-  ranked: MeasuredPost<T>[];
-  coverage: AnalyticsCoverage;
-};
+  ranked: MeasuredPost<T>[]
+  coverage: AnalyticsCoverage
+}
 
 /**
  * How much of what the campaign published has actually been measured.
@@ -66,11 +66,11 @@ export type CampaignAnalytics<T extends PostSummary> = {
  * rather than presenting a partial total as the campaign's performance.
  */
 export type AnalyticsCoverage = {
-  measured: number;
-  published: number;
+  measured: number
+  published: number
   /** True when every published post has numbers — the totals are complete. */
-  complete: boolean;
-};
+  complete: boolean
+}
 
 function emptyTotals(): Record<SummedMetric, number> {
   return {
@@ -82,7 +82,7 @@ function emptyTotals(): Record<SummedMetric, number> {
     saves: 0,
     clicks: 0,
     views: 0,
-  };
+  }
 }
 
 /**
@@ -95,32 +95,32 @@ export function campaignAnalytics<T extends PostSummary>(
   items: readonly PostAnalyticsItem[],
   posts: readonly T[],
 ): CampaignAnalytics<T> {
-  const byId = new Map(posts.map((post) => [post.id, post]));
+  const byId = new Map(posts.map((post) => [post.id, post]))
 
-  const measured: MeasuredPost<T>[] = [];
+  const measured: MeasuredPost<T>[] = []
   for (const item of items) {
-    const post = byId.get(item.post_id);
-    if (!post) continue;
+    const post = byId.get(item.post_id)
+    if (!post) continue
     measured.push({
       post,
       metrics: item.analytics,
       lastRefreshedAt: item.last_refreshed_at,
-    });
+    })
   }
 
-  const totals = emptyTotals();
-  let rateSum = 0;
-  let lastRefreshedAt: string | null = null;
+  const totals = emptyTotals()
+  let rateSum = 0
+  let lastRefreshedAt: string | null = null
 
   for (const { metrics, lastRefreshedAt: at } of measured) {
-    for (const key of SUMMED) totals[key] += metrics[key];
-    rateSum += metrics.engagement_rate;
+    for (const key of SUMMED) totals[key] += metrics[key]
+    rateSum += metrics.engagement_rate
     // ISO-8601 in UTC compares correctly as a string, which is how every other
     // "latest" in this codebase is picked (see `contentSnapshot`).
-    if (lastRefreshedAt === null || at > lastRefreshedAt) lastRefreshedAt = at;
+    if (lastRefreshedAt === null || at > lastRefreshedAt) lastRefreshedAt = at
   }
 
-  const published = posts.filter((post) => post.status === "published").length;
+  const published = posts.filter((post) => post.status === 'published').length
 
   return {
     measured: measured.length,
@@ -135,19 +135,19 @@ export function campaignAnalytics<T extends PostSummary>(
       published,
       complete: measured.length >= published,
     },
-  };
+  }
 }
 
 /** `0.0312` → `"3.1%"`. The server sends a fraction; every screen shows a percent. */
 export function formatEngagementRate(rate: number): string {
-  return `${(rate * 100).toFixed(1)}%`;
+  return `${(rate * 100).toFixed(1)}%`
 }
 
 /** Thousands separators, and `12.3K` / `4.5M` once a raw count stops being readable. */
 export function formatMetric(value: number): string {
-  if (value < 10_000) return formatNumber(value);
+  if (value < 10_000) return formatNumber(value)
   // The K branch ends where its own rounding would print `1000.0K`: 999,950
   // and up already round to a million, so they say `1.0M`.
-  if (value < 999_950) return `${(value / 1_000).toFixed(1)}K`;
-  return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value < 999_950) return `${(value / 1_000).toFixed(1)}K`
+  return `${(value / 1_000_000).toFixed(1)}M`
 }

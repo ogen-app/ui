@@ -21,7 +21,12 @@ const DENIED_BY_TIER: Entitlement = { state: 'denied', reason: 'tier' }
 const DENIED_BY_LIMIT: Entitlement = {
   state: 'denied',
   reason: 'limit',
-  usage: { limit: 10, used: 10, period: 'month', resetsAt: '2026-09-01T00:00:00Z' },
+  usage: {
+    limit: 10,
+    used: 10,
+    period: 'month',
+    resetsAt: '2026-09-01T00:00:00Z',
+  },
 }
 
 function denied(entitlement: Entitlement) {
@@ -30,7 +35,12 @@ function denied(entitlement: Entitlement) {
 
 describe('UpgradeCallout', () => {
   it('says the plan does not include it, and offers nothing else', () => {
-    render(<UpgradeCallout entitlement={denied(DENIED_BY_TIER)} onUpgrade={() => {}} />)
+    render(
+      <UpgradeCallout
+        entitlement={denied(DENIED_BY_TIER)}
+        onUpgrade={() => {}}
+      />,
+    )
 
     expect(screen.getByText('Not in your plan')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'UPGRADE' })).toBeInTheDocument()
@@ -42,14 +52,21 @@ describe('UpgradeCallout', () => {
   it('answers a spent allowance with the count and the date it returns', () => {
     // The reason this is a separate rendering: waiting is a real answer here,
     // and a callout that only said "upgrade" would be hiding it.
-    render(<UpgradeCallout entitlement={denied(DENIED_BY_LIMIT)} onUpgrade={() => {}} />)
+    render(
+      <UpgradeCallout
+        entitlement={denied(DENIED_BY_LIMIT)}
+        onUpgrade={() => {}}
+      />,
+    )
 
     expect(screen.getByText("You've reached your limit")).toBeInTheDocument()
     expect(screen.getByText('10 of 10 this month')).toBeInTheDocument()
     // Month first, because the app's language is `en` — the same formatter
     // reads "1 de septiembre" under `es` below, which is the point of it.
     expect(
-      screen.getByText('Your allowance goes back to full on September 1, 2026.'),
+      screen.getByText(
+        'Your allowance goes back to full on September 1, 2026.',
+      ),
     ).toBeInTheDocument()
   })
 
@@ -84,7 +101,12 @@ describe('UpgradeCallout', () => {
         entitlement={denied({
           state: 'denied',
           reason: 'limit',
-          usage: { limit: 100_000_000, used: 100_000_000, period: null, resetsAt: null },
+          usage: {
+            limit: 100_000_000,
+            used: 100_000_000,
+            period: null,
+            resetsAt: null,
+          },
         })}
         format={format}
       />,
@@ -97,15 +119,24 @@ describe('UpgradeCallout', () => {
     // English is the only bundled catalogue; the rest are fetched on demand.
     await loadLocaleResources('es')
     await i18next.changeLanguage('es')
-    render(<UpgradeCallout entitlement={denied(DENIED_BY_LIMIT)} onUpgrade={() => {}} />)
+    render(
+      <UpgradeCallout
+        entitlement={denied(DENIED_BY_LIMIT)}
+        onUpgrade={() => {}}
+      />,
+    )
 
     expect(screen.getByText('Has alcanzado tu límite')).toBeInTheDocument()
     expect(screen.getByText('10 de 10 este mes')).toBeInTheDocument()
     // The date is formatted in the app's language, not the browser's — the
     // whole point of not hoisting the formatter.
     expect(
-      screen.getByText('Tu cuota vuelve a estar completa el 1 de septiembre de 2026.'),
+      screen.getByText(
+        'Tu cuota vuelve a estar completa el 1 de septiembre de 2026.',
+      ),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'MEJORAR PLAN' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'MEJORAR PLAN' }),
+    ).toBeInTheDocument()
   })
 })

@@ -39,7 +39,9 @@ afterEach(() => {
 
 describe('fetchBilling', () => {
   it('reads one flat, workspace-scoped route', async () => {
-    const fetchMock = stubFetch(jsonResponse(200, { subscription: null, portal: false }))
+    const fetchMock = stubFetch(
+      jsonResponse(200, { subscription: null, portal: false }),
+    )
 
     await fetchBilling()
 
@@ -80,7 +82,9 @@ describe('fetchBilling', () => {
     stubFetch(jsonResponse(200, { subscription: null, portal: false }))
     await expect(fetchBilling()).resolves.toMatchObject({ subscription: null })
 
-    stubFetch(jsonResponse(200, { subscription: { status: 'active' }, portal: false }))
+    stubFetch(
+      jsonResponse(200, { subscription: { status: 'active' }, portal: false }),
+    )
     const account = await fetchBilling()
     expect(account.subscription).toEqual({
       status: 'active',
@@ -115,7 +119,12 @@ describe('fetchBilling', () => {
   it('narrows an unrecognised status to unknown rather than to active', async () => {
     // The direction that matters: a state this build has not heard of must not
     // tell someone whose payment is failing that everything is fine.
-    stubFetch(jsonResponse(200, { subscription: { status: 'in_dunning' }, portal: true }))
+    stubFetch(
+      jsonResponse(200, {
+        subscription: { status: 'in_dunning' },
+        portal: true,
+      }),
+    )
 
     await expect(fetchBilling()).resolves.toMatchObject({
       subscription: { status: 'unknown' },
@@ -144,7 +153,10 @@ describe('fetchBillingPortalLink', () => {
     // signed and expires within the day: one that rode along on a cached GET
     // would be expired by the time anybody clicked it.
     const fetchMock = stubFetch(
-      jsonResponse(200, { url: 'https://portal.example/x', expires_at: '2026-08-23T09:00:00Z' }),
+      jsonResponse(200, {
+        url: 'https://portal.example/x',
+        expires_at: '2026-08-23T09:00:00Z',
+      }),
     )
 
     const link = await fetchBillingPortalLink()

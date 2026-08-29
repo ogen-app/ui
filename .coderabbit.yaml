@@ -2,7 +2,7 @@
 # itself reviewed in PRs. Docs: https://docs.coderabbit.ai/reference/yaml-template
 language: en
 reviews:
-  profile: chill            # or "assertive" for nittier reviews
+  profile: chill # or "assertive" for nittier reviews
   request_changes_workflow: false
   high_level_summary: true
   auto_review:
@@ -20,7 +20,7 @@ reviews:
       - coderabbit
     drafts: false
   path_filters:
-    - "!dist/**"
-    - "!pnpm-lock.yaml"
+    - '!dist/**'
+    - '!pnpm-lock.yaml'
 chat:
   auto_reply: true

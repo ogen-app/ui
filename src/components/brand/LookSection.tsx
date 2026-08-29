@@ -63,7 +63,10 @@ export function LookSection({
             ) : (
               <ul className="flex flex-wrap gap-3">
                 {look.logos.map((logo) => (
-                  <li key={logo.id} className="flex flex-col items-center gap-1.5">
+                  <li
+                    key={logo.id}
+                    className="flex flex-col items-center gap-1.5"
+                  >
                     <div className="flex size-16 items-center justify-center overflow-hidden rounded-md bg-secondary">
                       <img
                         src={logo.url}
@@ -99,7 +102,9 @@ export function LookSection({
                       style={{ backgroundColor: color.hex }}
                     />
                     <span className="flex flex-col leading-4">
-                      <span className="text-xs text-secondary-foreground">{color.role}</span>
+                      <span className="text-xs text-secondary-foreground">
+                        {color.role}
+                      </span>
                       <span className="font-mono text-[11px] text-tertiary-foreground">
                         {color.hex}
                       </span>

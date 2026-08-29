@@ -82,7 +82,9 @@ export function AssetDocument({ assetId, campaignId }: Props) {
    */
   const openThread = useAssistantStore((s) => s.openThread)
   const renameThread = useAssistantStore((s) => s.renameThread)
-  const threadId = campaignId ? threadIdFor({ kind: 'campaign', campaignId }) : null
+  const threadId = campaignId
+    ? threadIdFor({ kind: 'campaign', campaignId })
+    : null
   const campaignName = campaign?.name
   useEffect(() => {
     if (!campaignId) return
@@ -142,7 +144,8 @@ export function AssetDocument({ assetId, campaignId }: Props) {
     rescrape.mutate(sourceUrl, {
       onSuccess: () => {
         toast.info('Reading the page again', {
-          description: "Its text will be replaced with the page's current version.",
+          description:
+            "Its text will be replaced with the page's current version.",
         })
       },
       onError: (err) =>
@@ -195,7 +198,11 @@ export function AssetDocument({ assetId, campaignId }: Props) {
           the window: the right rail is a sibling of this container, so it
           recedes when a panel opens instead of spanning the whole app. */}
       <div className="relative flex flex-1 min-h-0">
-        <ScrollArea className="flex-1 min-h-0" type="scroll" scrollHideDelay={350}>
+        <ScrollArea
+          className="flex-1 min-h-0"
+          type="scroll"
+          scrollHideDelay={350}
+        >
           <AssetDetailsHeader
             campaignId={campaignId}
             saving={isDirty}

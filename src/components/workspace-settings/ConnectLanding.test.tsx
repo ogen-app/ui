@@ -6,7 +6,12 @@ import { ConnectLanding } from './ConnectLanding'
 const success = vi.fn()
 
 vi.mock('@/stores/toastStore', () => ({
-  toast: { success: (...a: unknown[]) => success(...a), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
+  toast: {
+    success: (...a: unknown[]) => success(...a),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  },
 }))
 
 // The URL carries the same parameters the props do — the clearing assertions
@@ -55,7 +60,9 @@ describe('ConnectLanding', () => {
     // A new `connect_error` shipped on the backend must not surface as jargon.
     await render({ connectError: 'some_future_code' })
 
-    expect(await screen.findByText(/couldn’t connect your account/i)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/couldn’t connect your account/i),
+    ).toBeInTheDocument()
     expect(screen.queryByText(/some_future_code/)).not.toBeInTheDocument()
   })
 

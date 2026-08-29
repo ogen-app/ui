@@ -2,7 +2,12 @@ import { describe, expect, it, afterEach } from 'vitest'
 
 import { i18next } from '@/i18n'
 import { DEFAULT_LOCALE } from '@/i18n/config'
-import { activeLocale, formatDate, formatNumber, formatRelative } from '@/lib/intl'
+import {
+  activeLocale,
+  formatDate,
+  formatNumber,
+  formatRelative,
+} from '@/lib/intl'
 
 /**
  * The point of this module is that the *app's* language wins over the
@@ -27,7 +32,10 @@ describe('activeLocale', () => {
 
 describe('formatDate', () => {
   it('formats in the active language, not the browser one', async () => {
-    const options: Intl.DateTimeFormatOptions = { month: 'long', timeZone: 'UTC' }
+    const options: Intl.DateTimeFormatOptions = {
+      month: 'long',
+      timeZone: 'UTC',
+    }
     expect(formatDate(JANUARY_FIFTH, options)).toBe('January')
 
     await i18next.changeLanguage('es')
@@ -35,14 +43,19 @@ describe('formatDate', () => {
   })
 
   it('takes an explicit locale over the active one', () => {
-    expect(formatDate(JANUARY_FIFTH, { month: 'long', timeZone: 'UTC' }, 'es')).toBe('enero')
+    expect(
+      formatDate(JANUARY_FIFTH, { month: 'long', timeZone: 'UTC' }, 'es'),
+    ).toBe('enero')
   })
 
   // The reason the formatter is built per call rather than hoisted: a module
   // that caches the *formatter* keeps working, one that caches the *language*
   // is frozen to whichever loaded first. This is the regression guard for it.
   it('does not freeze the language it first saw', async () => {
-    const options: Intl.DateTimeFormatOptions = { month: 'long', timeZone: 'UTC' }
+    const options: Intl.DateTimeFormatOptions = {
+      month: 'long',
+      timeZone: 'UTC',
+    }
     expect(formatDate(JANUARY_FIFTH, options)).toBe('January')
     await i18next.changeLanguage('es')
     expect(formatDate(JANUARY_FIFTH, options)).toBe('enero')
@@ -51,7 +64,10 @@ describe('formatDate', () => {
   })
 
   it('reads ISO strings, epoch numbers and Dates alike', () => {
-    const options: Intl.DateTimeFormatOptions = { year: 'numeric', timeZone: 'UTC' }
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      timeZone: 'UTC',
+    }
     const date = new Date(JANUARY_FIFTH)
     expect(formatDate(JANUARY_FIFTH, options)).toBe('2026')
     expect(formatDate(date.getTime(), options)).toBe('2026')
@@ -79,9 +95,13 @@ describe('formatNumber', () => {
   })
 
   it('carries options through — the compact countdown depends on it', () => {
-    expect(formatNumber(3, { style: 'unit', unit: 'day', unitDisplay: 'short' }, 'en')).toBe(
-      '3 days',
-    )
+    expect(
+      formatNumber(
+        3,
+        { style: 'unit', unit: 'day', unitDisplay: 'short' },
+        'en',
+      ),
+    ).toBe('3 days')
   })
 })
 
@@ -101,7 +121,7 @@ describe('formatRelative', () => {
    * and Spanish has one for two, and neither is anything a table of suffixes
    * would have produced.
    */
-  it('reaches for each language\'s own word before the number', async () => {
+  it("reaches for each language's own word before the number", async () => {
     expect(formatRelative(1, 'day', 'en')).toBe('tomorrow')
     expect(formatRelative(2, 'day', 'en')).toBe('in 2 days')
     expect(formatRelative(2, 'day', 'es')).toBe('pasado mañana')

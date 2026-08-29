@@ -1,11 +1,11 @@
-import { getPost, postToPayload, updatePost } from "@/services/api/posts";
-import { postKey } from "@/hooks/usePost";
-import { flushPendingSave } from "@/lib/pendingSaves";
-import { landSavedPost } from "@/lib/postCache";
-import { queryClient } from "@/lib/queryClient";
-import { toast } from "@/stores/toastStore";
-import type { Asset } from "@/types/content";
-import type { Post } from "@/types/posts";
+import { getPost, postToPayload, updatePost } from '@/services/api/posts'
+import { postKey } from '@/hooks/usePost'
+import { flushPendingSave } from '@/lib/pendingSaves'
+import { landSavedPost } from '@/lib/postCache'
+import { queryClient } from '@/lib/queryClient'
+import { toast } from '@/stores/toastStore'
+import type { Asset } from '@/types/content'
+import type { Post } from '@/types/posts'
 
 /**
  * A post's sources — the documents it writes from.
@@ -33,7 +33,7 @@ export function postAssets(
   ids: string[],
   known: Map<string, Asset>,
 ): { id: string; asset: Asset | null }[] {
-  return ids.map((id) => ({ id, asset: known.get(id) ?? null }));
+  return ids.map((id) => ({ id, asset: known.get(id) ?? null }))
 }
 
 /**
@@ -52,25 +52,25 @@ export function indexAssets(
   hydrated: Asset[],
   extra: Asset[] = [],
 ): Map<string, Asset> {
-  const map = new Map<string, Asset>();
-  for (const asset of extra) map.set(asset.id, asset);
-  for (const asset of hydrated) map.set(asset.id, asset);
-  return map;
+  const map = new Map<string, Asset>()
+  for (const asset of extra) map.set(asset.id, asset)
+  for (const asset of hydrated) map.set(asset.id, asset)
+  return map
 }
 
 /** One promise chain per post, so read-modify-write on the id list is serial. */
-const queues = new Map<string, Promise<unknown>>();
+const queues = new Map<string, Promise<unknown>>()
 
 function enqueue(postId: string, run: () => Promise<void>): Promise<void> {
-  const previous = queues.get(postId) ?? Promise.resolve();
+  const previous = queues.get(postId) ?? Promise.resolve()
   // `catch` on the tail, not on `run`: a failed write must not break the chain
   // for the next one, but its own rejection still has to reach the caller.
-  const next = previous.then(run, run);
+  const next = previous.then(run, run)
   queues.set(
     postId,
     next.catch(() => {}),
-  );
-  return next;
+  )
+  return next
 }
 
 /**
@@ -78,7 +78,7 @@ function enqueue(postId: string, run: () => Promise<void>): Promise<void> {
  * exact window of an in-flight PUT — twice in a row is already vanishingly
  * rare, and past this many attempts the next natural autosave settles it.
  */
-const MAX_WRITE_ATTEMPTS = 4;
+const MAX_WRITE_ATTEMPTS = 4
 
 async function write(
   postId: string,
@@ -90,19 +90,19 @@ async function write(
     // pending copy still carries the id list as it was before this ran.
     // Landing that debounce first is the same thing the assistant does before
     // writing a post server-side, and for the same reason.
-    await flushPendingSave(postId);
-    const post = await getPost(postId);
-    const ids = nextIds(post);
+    await flushPendingSave(postId)
+    const post = await getPost(postId)
+    const ids = nextIds(post)
     if (
       ids.length === post.used_asset_ids.length &&
       ids.every((id, i) => id === post.used_asset_ids[i])
     ) {
-      return;
+      return
     }
     const saved = await updatePost(postId, {
       ...postToPayload(post),
       used_asset_ids: ids,
-    });
+    })
     // Only the source fields land in the editor's cache. The user may have
     // typed since the flush above, and `changeDoc` has already painted those
     // keystrokes — replacing the whole document with `saved` would snap the
@@ -117,8 +117,8 @@ async function write(
             used_assets: saved.used_assets,
           }
         : saved,
-    );
-    landSavedPost(queryClient, saved);
+    )
+    landSavedPost(queryClient, saved)
     // Not done yet: a keystroke that arrived *while the PUT was in flight*
     // cloned the pre-write document into the editor's debounce, and its flush
     // will put the old id list straight back. Going round again flushes that
@@ -144,18 +144,15 @@ export function attachToPost(
 ): Promise<void> {
   return enqueue(postId, () =>
     write(postId, (post) => {
-      const held = new Set(post.used_asset_ids);
-      return [
-        ...post.used_asset_ids,
-        ...assetIds.filter((id) => !held.has(id)),
-      ];
+      const held = new Set(post.used_asset_ids)
+      return [...post.used_asset_ids, ...assetIds.filter((id) => !held.has(id))]
     }),
   ).catch((error: unknown) => {
-    toast.error("Unable to add this to the post", {
+    toast.error('Unable to add this to the post', {
       description:
         error instanceof Error
           ? error.message
-          : "The document was saved but the post is not reading from it.",
-    });
-  });
+          : 'The document was saved but the post is not reading from it.',
+    })
+  })
 }

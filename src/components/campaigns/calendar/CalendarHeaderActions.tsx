@@ -103,7 +103,10 @@ export function CalendarHeaderActions({ campaignId }: { campaignId: string }) {
             (`headerIcon` sets `gap-0`), so it is inside the measured width and
             collapses with the word instead of leaving a space behind. */}
         <span
-          className={cn('overflow-hidden', animate && 'transition-[width] duration-200 ease-linear')}
+          className={cn(
+            'overflow-hidden',
+            animate && 'transition-[width] duration-200 ease-linear',
+          )}
           style={{ width: hasUnscheduled ? labelWidth : 0 }}
         >
           <span
@@ -122,7 +125,10 @@ export function CalendarHeaderActions({ campaignId }: { campaignId: string }) {
         aria-label={t('calendar.settings')}
         aria-pressed={settingsActive}
       >
-        <GearSixIcon weight={settingsActive ? 'fill' : 'regular'} className="size-5" />
+        <GearSixIcon
+          weight={settingsActive ? 'fill' : 'regular'}
+          className="size-5"
+        />
       </Button>
     </div>
   )

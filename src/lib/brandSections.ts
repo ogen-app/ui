@@ -109,7 +109,8 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     tone: 'var(--brand-voices)',
     description:
       'A voice is three to eight real posts you would be happy to have written, and the app writes from those rather than from an adjective. Several is normal: sarcastic commentary and the company page are not two tones of one personality.',
-    whenEmpty: 'No voice of its own — everything generated here sounds generated.',
+    whenEmpty:
+      'No voice of its own — everything generated here sounds generated.',
     readBy: ['plan', 'post'],
   },
   {
@@ -150,7 +151,8 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     tone: 'var(--brand-templates)',
     description:
       'A full-canvas frame per platform and per ratio — not a layout engine, which is why nothing here reflows. A set that misses a ratio its platform posts in is unusable there, so the screen leads with platforms rather than with sets.',
-    whenEmpty: 'Pictures go out bare. Nothing marks one as yours once it has left the app.',
+    whenEmpty:
+      'Pictures go out bare. Nothing marks one as yours once it has left the app.',
     readBy: [],
   },
 ]

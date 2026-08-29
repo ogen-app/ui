@@ -37,7 +37,9 @@ export function TemplatesSection({
       qualifier={templates.length > 0 ? `· ${templates.length}` : undefined}
       readBy={[]}
       action={
-        templates.length > 0 ? <AddButton label="ADD TEMPLATE" onClick={onAdd} /> : undefined
+        templates.length > 0 ? (
+          <AddButton label="ADD TEMPLATE" onClick={onAdd} />
+        ) : undefined
       }
     >
       {templates.length === 0 ? (
@@ -51,7 +53,11 @@ export function TemplatesSection({
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {templates.map((template) => (
-            <TemplateCard key={template.id} template={template} onOpen={onOpen} />
+            <TemplateCard
+              key={template.id}
+              template={template}
+              onOpen={onOpen}
+            />
           ))}
         </div>
       )}

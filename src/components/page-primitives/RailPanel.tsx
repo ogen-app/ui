@@ -1,4 +1,10 @@
-import { useLayoutEffect, useRef, useState, type ReactNode, type Ref } from 'react'
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react'
 import { XIcon } from '@phosphor-icons/react'
 import { ZIndex } from '@/config/zIndex.ts'
 import { SurfaceFader } from '@/components/page-primitives/SurfaceFader'
@@ -123,7 +129,11 @@ export function RailPanel({
                   — mark, title, adornment and, where there is a mark, the
                   second line too. They describe one thing, so they are one
                   target rather than a link with decoration around it. */}
-              <TitleBlock onClick={onTitleClick} label={titleLabel} leading={leading}>
+              <TitleBlock
+                onClick={onTitleClick}
+                label={titleLabel}
+                leading={leading}
+              >
                 <div className="flex min-w-0 items-baseline gap-2">
                   <h2 className="shrink-0 text-lg font-medium font-display tracking-tight text-foreground">
                     {title}
@@ -173,7 +183,11 @@ export function RailPanel({
           {children}
         </div>
         {footer && (
-          <div style={{ height: footerHeight }} className="shrink-0" aria-hidden />
+          <div
+            style={{ height: footerHeight }}
+            className="shrink-0"
+            aria-hidden
+          />
         )}
       </div>
       {footer && (
@@ -226,7 +240,9 @@ function TitleBlock({
   const inner = (
     <>
       {leading}
-      <div className="flex min-w-0 flex-1 flex-col justify-center">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col justify-center">
+        {children}
+      </div>
     </>
   )
   if (!onClick) return <div className={className}>{inner}</div>

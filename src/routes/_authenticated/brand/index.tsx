@@ -38,7 +38,11 @@ function BrandOverviewPage() {
   return (
     <BrandPage>
       <div className="relative flex min-h-0 flex-1">
-        <ScrollArea className="min-h-0 flex-1" type="scroll" scrollHideDelay={350}>
+        <ScrollArea
+          className="min-h-0 flex-1"
+          type="scroll"
+          scrollHideDelay={350}
+        >
           {/* `fadeOnScroll` because this header has a title. The section
               screens keep the static gradient (post-details style) — they are
               a bare caret, so there is nothing up there to collide with the

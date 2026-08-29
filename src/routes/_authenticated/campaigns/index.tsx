@@ -1,32 +1,32 @@
-import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button.tsx";
-import { PageContainer } from "@/components/page-primitives/PageContainer.tsx";
-import { PageLoader } from "@/components/page-primitives/PageLoader.tsx";
-import { PageError } from "@/components/page-primitives/PageError.tsx";
-import { PageHeader } from "@/components/page-primitives/PageHeader.tsx";
-import { PageGridEmptyState } from "@/components/page-primitives/PageGridEmptyState.tsx";
-import { PlusIcon } from "@phosphor-icons/react";
-import { CampaignCard } from "@/components/campaigns/CampaignCard.tsx";
-import { CreateCampaignDialog } from "@/components/campaigns/CreateCampaignDialog.tsx";
-import { useCampaigns } from "@/hooks/useCampaigns.ts";
+import { useState } from 'react'
+import { createFileRoute } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button.tsx'
+import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
+import { PageLoader } from '@/components/page-primitives/PageLoader.tsx'
+import { PageError } from '@/components/page-primitives/PageError.tsx'
+import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
+import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState.tsx'
+import { PlusIcon } from '@phosphor-icons/react'
+import { CampaignCard } from '@/components/campaigns/CampaignCard.tsx'
+import { CreateCampaignDialog } from '@/components/campaigns/CreateCampaignDialog.tsx'
+import { useCampaigns } from '@/hooks/useCampaigns.ts'
 
-export const Route = createFileRoute("/_authenticated/campaigns/")({
+export const Route = createFileRoute('/_authenticated/campaigns/')({
   component: Campaigns,
-});
+})
 
 function Campaigns() {
-  const { data: campaigns, isLoading, isError } = useCampaigns();
-  const [creating, setCreating] = useState(false);
+  const { data: campaigns, isLoading, isError } = useCampaigns()
+  const [creating, setCreating] = useState(false)
 
-  const hasCampaigns = !!(campaigns && campaigns.length > 0);
+  const hasCampaigns = !!(campaigns && campaigns.length > 0)
 
   if (isLoading) {
     return (
       <PageContainer>
         <PageLoader />
       </PageContainer>
-    );
+    )
   }
 
   if (isError) {
@@ -34,7 +34,7 @@ function Campaigns() {
       <PageContainer>
         <PageError header="Failed to load campaigns" />
       </PageContainer>
-    );
+    )
   }
 
   // One scroll container owning the sticky header, the same shell as Overview
@@ -84,5 +84,5 @@ function Campaigns() {
         onClose={() => setCreating(false)}
       />
     </PageContainer>
-  );
+  )
 }
