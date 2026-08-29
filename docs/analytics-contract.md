@@ -269,7 +269,97 @@ settled before either is wired, or the app will show two answers to "when should
 we post" that disagree. `/posting-frequency` has no `/learnings` equivalent;
 cadence is not in there.
 
-### 5.5 One more asymmetry
+### 5.5 What `platform_analytics[]` is, and what it feeds
+
+**An Ogen post has one platform and one account.** `models/post.go:89,96` —
+`platform_id` and `social_account_id`, both singular; publishing the same idea
+to three platforms is three posts. So the array holds **one row** for any post
+this app asks about, and §5.3's worry about a hidden multi-platform split was
+misplaced: there is nothing to split.
+
+That makes the array a **sidecar of facts about the one publication**, not a
+dimension to break down by. It feeds exactly three things.
+
+**1. Identity.** `platform_post_url` → `PostIdentity.permalink`,
+`account_username` → `PostIdentity.account`. Nothing else on the wire carries
+either, which is the whole reason to read the array.
+
+**2. Publication health**, below.
+
+**3. A consistency check.** We aggregate nothing: `buildCurrent`
+(`refresh_zernio_analytics.go:442`) copies Zernio's top-level `analytics` block
+verbatim and `mapPlatformAnalytics` copies the row beside it. With one row the
+two describe the same publication and should be identical. They are not asserted
+to be — that is a §4 item, and a divergence is an alarm rather than something to
+render.
+
+Unused by design: `platform_post_id` and `account_id` are Zernio's identifiers,
+and `status`/`sync_status` are opaque strings whose vocabularies we have not
+seen. **Branch on `error_message` being non-empty**, which is unambiguous, and
+carry the status strings as display-only until a live server enumerates them.
+
+#### Health withdraws the figures
+
+A post whose platform reports an error has numbers nobody is maintaining, and a
+card is a promise that its number is maintained. So on a non-empty
+`error_message` the surface keeps the identity card, replaces the measures with
+an explanation, and offers the fix — the existing withdrawal vocabulary
+(`shell.tsx`'s `NotYet`), not a new one. The last-measured time comes from
+`last_refreshed_at`, and it is the honest thing to show in place of the figures.
+
+#### Reconnect stays inside the app
+
+`reauthorize_url` is a URL handed to us by an upstream vendor. It is read as a
+**signal that reconnection is needed and never rendered as a destination**: a
+vendor-supplied URL behind a primary button is a phishing-shaped surface we
+cannot validate. The link goes to our own connections UI, which already has the
+flow (`workspace-settings/PlatformsSection.tsx:227`).
+
+The route already takes the parameter: `reconnect` on
+`workspaceSettingsSearchSchema` (`routes/_authenticated/workspace-settings/index.tsx:42`),
+accepted for the CON-219 expiry emails and **deliberately not acted on yet** —
+its comment asks for an issue of its own. Wiring this surface makes that issue
+worth opening; until it is, the link lands on the right page without singling
+the account out.
+
+Pass the **post's** `social_account_id` (ours), never the row's `account_id`
+(Zernio's). They are different namespaces and the param means the former.
+
+#### A measure a platform never reports has no card
+
+`PostAnalyticsMetrics` is nine plain `int`s with no `omitempty`, so a platform
+that does not report saves sends `0` — indistinguishable from a post that earned
+none. The harness's rule ("a measure the platform never reported simply has no
+card rather than a gap inside one") is therefore unrepresentable on this wire.
+
+Resolved on our side, with a per-platform capability table in `src/lib/` beside
+`platformMedia.ts` and the other files that mirror platform rules: a measure not
+listed for a platform gets no card. The cost is a table that can drift from what
+the platforms actually return, which is why the BE ask is still worth making —
+nullable metrics would let the server answer this instead of us guessing. Until
+then the table is the only way to tell absence from zero.
+
+#### The shape this lands as
+
+```ts
+/** The publication facts for a post's one platform — `platform_analytics[0]`. */
+type PostPublication = {
+  platform: string
+  account: string | null   // account_username, omitted when empty
+  permalink: string | null // platform_post_url, omitted when empty
+  health: PublicationHealth
+}
+
+type PublicationHealth =
+  | { state: 'reporting' }
+  | { state: 'not_reporting'; message: string; reconnectAccountId: string | null }
+```
+
+`reconnectAccountId` is the post's `social_account_id`, `null` when the post
+carries none — in which case the banner explains and links to the connections
+page without a target.
+
+### 5.6 One more asymmetry
 
 `/analytics/posts` and `/posts/:id/analytics` reject bad input with **prose** —
 `invalid sort_by`, `page must be a positive integer`, `granularity must be
