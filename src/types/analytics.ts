@@ -131,6 +131,86 @@ export type InsightEnvelope<T> = {
   data: T | null
 }
 
+/* -------------------------------------------------- one post's own numbers -- */
+
+/**
+ * `GET /api/posts/:id/analytics` — the only endpoint that answers about a
+ * single post, and the only one that carries the full nine-measure block.
+ *
+ * It is **not** under `/api/analytics`: it hangs off the post
+ * (`handlers/posts.go`), which is why its unavailable message differs from the
+ * one `isAnalyticsUnavailable` matches — see `services/api/postAnalytics`.
+ *
+ * Five answers, and a caller has to tell all five apart:
+ *
+ * - **200** with a snapshot — {@link PostAnalyticsSnapshot}.
+ * - **200 `{status: "pending", post_id}`** — published through the publisher,
+ *   and the refresh sweep has not reached it yet. Built for polling (CON-93
+ *   §10), so it is a state to wait in, never an error.
+ * - **404** — no such post.
+ * - **409 `{code: "not_published_via_publisher"}`** — the post exists and was
+ *   never published through a publisher, so analytics is undefined for it
+ *   rather than missing. The normal answer for a draft.
+ * - **503** — this deployment has no analytics database.
+ */
+export type PlatformAnalyticsRow = {
+  /** The wire slug (`linkedin`). */
+  platform: string
+  /** Zernio's own per-row state. Opaque — never branched on. */
+  status?: string
+  platform_post_id?: string
+  /** **Zernio's** account id, not our `social_account_id`. */
+  account_id?: string
+  /** The handle it went out as. Omitted when empty. */
+  account_username?: string
+  /** Where it lives on the platform. Omitted when empty. */
+  platform_post_url?: string
+  /** Opaque — never branched on; `error_message` is the unambiguous signal. */
+  sync_status?: string
+  /**
+   * Why this platform is reporting nothing. Non-empty is the one branch worth
+   * taking: it means the numbers below are not a result, and the connection
+   * usually needs re-authorising.
+   */
+  error_message?: string
+  /** Zernio's own re-auth URL. We send people to our connections screen instead. */
+  reauthorize_url?: string
+  analytics: AnalyticsMetrics
+}
+
+/**
+ * One post's current figures.
+ *
+ * `platform_analytics` holds **one row**: an Ogen post has one platform and one
+ * account (`models/post.go`), so this is a sidecar of facts about that single
+ * publication rather than a breakdown. A post fanned out to three platforms is
+ * three posts.
+ *
+ * The top-level `analytics` block is Zernio's own headline, copied verbatim
+ * beside the row rather than summed from it — so headline and row agreeing is
+ * an assumption, not an invariant.
+ */
+export type PostAnalyticsSnapshot = {
+  post_id: string
+  publisher: string
+  publisher_post_id: string
+  sync_status: string
+  /** The publisher's "numbers computed at". `null` until it reports one. */
+  metrics_last_updated: string | null
+  /** When Ogen last *looked* — bumped every check, so it survives dedup. */
+  last_refreshed_at: string
+  analytics: AnalyticsMetrics
+  platform_analytics: PlatformAnalyticsRow[]
+}
+
+/** The other 200: measured nothing yet, come back later. */
+export type PostAnalyticsPending = {
+  status: 'pending'
+  post_id: string
+}
+
+export type PostAnalyticsAnswer = PostAnalyticsSnapshot | PostAnalyticsPending
+
 /* ------------------------------------------------ the dashboard endpoints -- */
 
 /**
