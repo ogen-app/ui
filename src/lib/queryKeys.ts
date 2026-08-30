@@ -17,7 +17,8 @@
  * history only changes when a snapshot is taken, a restore lands, or the
  * assistant saves one — all of which say so explicitly.
  */
-export const postVersionsKey = (postId: string) => ['postVersions', postId] as const
+export const postVersionsKey = (postId: string) =>
+  ['postVersions', postId] as const
 
 /**
  * A post's notes (CON-188).

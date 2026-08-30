@@ -33,12 +33,18 @@ export const WORKSPACE_ROLES: WorkspaceRole[] = ['owner', 'member']
  */
 
 /** Whether `actor` may change or remove a member holding `target`. */
-export function canActOnMember(actor: WorkspaceRole, _target: WorkspaceRole): boolean {
+export function canActOnMember(
+  actor: WorkspaceRole,
+  _target: WorkspaceRole,
+): boolean {
   return actor === 'owner'
 }
 
 /** Whether `actor` may hand out `role`. An owner may appoint a co-owner. */
-export function canGrantRole(actor: WorkspaceRole, _role: WorkspaceRole): boolean {
+export function canGrantRole(
+  actor: WorkspaceRole,
+  _role: WorkspaceRole,
+): boolean {
   return actor === 'owner'
 }
 

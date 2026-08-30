@@ -29,7 +29,10 @@ function AudiencesPage() {
             })
           }
           onOpen={(audienceId) =>
-            navigate({ to: '/brand/audiences/$audienceId', params: { audienceId } })
+            navigate({
+              to: '/brand/audiences/$audienceId',
+              params: { audienceId },
+            })
           }
           onStart={(from) =>
             navigate({

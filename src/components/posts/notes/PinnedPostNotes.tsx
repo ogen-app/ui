@@ -4,7 +4,10 @@ import type { PostNote } from '@/services/api/postNotes'
 type Props = {
   notes: PostNote[]
   onTogglePin: (note: PostNote) => void
-  onSave: (note: PostNote, patch: { title: string; body: string }) => Promise<void>
+  onSave: (
+    note: PostNote,
+    patch: { title: string; body: string },
+  ) => Promise<void>
   onDelete: (note: PostNote) => Promise<void>
 }
 
@@ -19,7 +22,12 @@ type Props = {
  * Renders nothing when nothing is pinned, so the gap closes rather than
  * leaving an empty band above the editor.
  */
-export function PinnedPostNotes({ notes, onTogglePin, onSave, onDelete }: Props) {
+export function PinnedPostNotes({
+  notes,
+  onTogglePin,
+  onSave,
+  onDelete,
+}: Props) {
   if (notes.length === 0) return null
 
   return (

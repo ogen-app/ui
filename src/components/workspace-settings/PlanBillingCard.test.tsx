@@ -30,7 +30,10 @@ const MONTHLY: TierSnapshot = {
   scheduled: null,
 }
 
-function billed(status: BillingStatus, endsAt: string | null = null): BillingAccount {
+function billed(
+  status: BillingStatus,
+  endsAt: string | null = null,
+): BillingAccount {
   return {
     subscription: {
       status,
@@ -73,14 +76,18 @@ describe('PlanBillingCard', () => {
     at(NOW)
     await render()
 
-    expect(screen.getByText('It auto-renews in 8 days, on August 31, 2026.')).toBeInTheDocument()
+    expect(
+      screen.getByText('It auto-renews in 8 days, on August 31, 2026.'),
+    ).toBeInTheDocument()
   })
 
   it('stops promising a renewal once the subscription is cancelled', async () => {
     at(NOW)
     await render({ billing: billed('cancelled', BOUNDARY) })
 
-    expect(screen.getByText('Access ends on August 31, 2026.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Access ends on August 31, 2026.'),
+    ).toBeInTheDocument()
     expect(screen.queryByText(/auto-renews/)).not.toBeInTheDocument()
   })
 
@@ -90,7 +97,9 @@ describe('PlanBillingCard', () => {
     at(NOW)
     await render({ billing: billed('expired', '2026-08-20T00:00:00Z') })
 
-    expect(screen.getByText('Access ended on August 20, 2026.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Access ended on August 20, 2026.'),
+    ).toBeInTheDocument()
   })
 
   it('lets a scheduled tier change outrank even an ending subscription', async () => {
@@ -121,7 +130,9 @@ describe('PlanBillingCard', () => {
     // changed for no reason.
     at(NOW)
     const retrying = await render({ billing: billed('past_due') })
-    expect(screen.getByText(/Lemon Squeezy will try it again/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Lemon Squeezy will try it again/),
+    ).toBeInTheDocument()
     retrying.unmount()
 
     await render({ billing: billed('unpaid') })
@@ -140,9 +151,16 @@ describe('PlanBillingCard', () => {
     // "we lost your card". A renewing subscription has one; we just have not
     // been sent it.
     at(NOW)
-    await render({ billing: { ...billed('active'), subscription: { ...billed('active').subscription!, card: null } } })
+    await render({
+      billing: {
+        ...billed('active'),
+        subscription: { ...billed('active').subscription!, card: null },
+      },
+    })
 
-    expect(screen.getByText('Your payment method is held by Lemon Squeezy.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Your payment method is held by Lemon Squeezy.'),
+    ).toBeInTheDocument()
     expect(screen.queryByText(/on file/)).not.toBeInTheDocument()
   })
 
@@ -159,7 +177,11 @@ describe('PlanBillingCard', () => {
     at(NOW)
     await render({ mayManage: false, billing: undefined })
 
-    expect(screen.getByText('Only workspace owners can see billing details.')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /MANAGE/ })).not.toBeInTheDocument()
+    expect(
+      screen.getByText('Only workspace owners can see billing details.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /MANAGE/ }),
+    ).not.toBeInTheDocument()
   })
 })

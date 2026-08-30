@@ -15,7 +15,10 @@ export const DEFAULT_HOUR = 9
 export const DEFAULT_MINUTE = 0
 
 /** Splits an ISO instant into the `<input type="date">` / `type="time"` pair. */
-export function toLocalParts(iso: string | null): { dateStr: string; timeStr: string } {
+export function toLocalParts(iso: string | null): {
+  dateStr: string
+  timeStr: string
+} {
   if (!iso) return { dateStr: '', timeStr: '' }
   const d = new Date(iso)
   if (isNaN(d.getTime())) return { dateStr: '', timeStr: '' }
@@ -28,10 +31,15 @@ export function toLocalParts(iso: string | null): { dateStr: string; timeStr: st
 }
 
 /** Recombines the pair into an ISO instant. No date means no schedule. */
-export function fromLocalParts(dateStr: string, timeStr: string): string | null {
+export function fromLocalParts(
+  dateStr: string,
+  timeStr: string,
+): string | null {
   if (!dateStr) return null
   const [y, m, d] = dateStr.split('-').map(Number)
-  const [hh, mm] = timeStr ? timeStr.split(':').map(Number) : [DEFAULT_HOUR, DEFAULT_MINUTE]
+  const [hh, mm] = timeStr
+    ? timeStr.split(':').map(Number)
+    : [DEFAULT_HOUR, DEFAULT_MINUTE]
   const local = new Date(y, m - 1, d, hh ?? 0, mm ?? 0, 0, 0)
   return isNaN(local.getTime()) ? null : local.toISOString()
 }
@@ -61,7 +69,10 @@ export function atDefaultTime(day: Date): string {
  */
 export function getLocalTimezoneLabel(): string {
   try {
-    return offsetLabel(Intl.DateTimeFormat().resolvedOptions().timeZone) || 'local time'
+    return (
+      offsetLabel(Intl.DateTimeFormat().resolvedOptions().timeZone) ||
+      'local time'
+    )
   } catch {
     return 'local time'
   }

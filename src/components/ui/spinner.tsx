@@ -26,7 +26,7 @@ export function Spinner({
         'relative w-6 h-[2px]',
         TONE[tone],
         "before:absolute before:content-['] before:inset-0 before:animate-[spinner-line_0.7s_cubic-bezier(0,0,0.03,0.9)_infinite]",
-        className
+        className,
       )}
     />
   )

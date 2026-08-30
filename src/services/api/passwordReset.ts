@@ -10,7 +10,7 @@
  * `docs/onboarding.md` → "Password reset".
  */
 
-import { apiVoid } from "./http";
+import { apiVoid } from './http'
 
 /**
  * `POST /api/password-reset` — sends the one-time link, if that address has an
@@ -30,10 +30,10 @@ import { apiVoid } from "./http";
  * enumeration hole the 202 closes.
  */
 export async function requestPasswordReset(email: string): Promise<void> {
-  await apiVoid("/api/password-reset", "Unable to send the reset link", {
-    method: "POST",
+  await apiVoid('/api/password-reset', 'Unable to send the reset link', {
+    method: 'POST',
     body: { email },
-  });
+  })
 }
 
 /**
@@ -41,9 +41,16 @@ export async function requestPasswordReset(email: string): Promise<void> {
  * password. The token is single-use and short-lived; a spent or expired one
  * comes back as a 400 whose message the caller shows as-is.
  */
-export async function resetPassword(token: string, password: string): Promise<void> {
-  await apiVoid("/api/password-reset/confirm", "Unable to reset your password", {
-    method: "POST",
-    body: { token, password },
-  });
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<void> {
+  await apiVoid(
+    '/api/password-reset/confirm',
+    'Unable to reset your password',
+    {
+      method: 'POST',
+      body: { token, password },
+    },
+  )
 }

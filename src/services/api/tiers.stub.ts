@@ -197,7 +197,11 @@ type Selection = {
 }
 
 function seed(): Selection {
-  return { tierId: DEFAULT_TIER_ID, since: '2026-08-01T00:00:00Z', scheduled: null }
+  return {
+    tierId: DEFAULT_TIER_ID,
+    since: '2026-08-01T00:00:00Z',
+    scheduled: null,
+  }
 }
 
 function tierById(id: string): SeedTier | undefined {
@@ -212,12 +216,15 @@ function read(): Selection {
     const parsed = JSON.parse(stored) as Partial<Selection>
     // A tier id from an older seed is not worth honouring — it would resolve to
     // no allowances at all, which reads as a bug rather than as a stale stub.
-    if (typeof parsed.tierId !== 'string' || !tierById(parsed.tierId)) return seed()
+    if (typeof parsed.tierId !== 'string' || !tierById(parsed.tierId))
+      return seed()
     return {
       tierId: parsed.tierId,
       since: typeof parsed.since === 'string' ? parsed.since : seed().since,
       scheduled:
-        parsed.scheduled && tierById(parsed.scheduled.tierId) ? parsed.scheduled : null,
+        parsed.scheduled && tierById(parsed.scheduled.tierId)
+          ? parsed.scheduled
+          : null,
     }
   } catch {
     return seed()
@@ -280,7 +287,10 @@ export function stubListTiers(): Promise<TierBody[]> {
  * There is no payment step, here or anywhere yet. Nothing in this flow charges
  * anyone.
  */
-export function stubSelectTier(tierId: string, now: Date = new Date()): Promise<PlanBody> {
+export function stubSelectTier(
+  tierId: string,
+  now: Date = new Date(),
+): Promise<PlanBody> {
   const target = tierById(tierId)
   const current = read()
   const held = tierById(current.tierId)
@@ -347,7 +357,9 @@ function withUsage(
 
 function stubPlanFrom(selection: Selection, now: Date = new Date()): PlanBody {
   const tier = tierById(selection.tierId) ?? TIERS[0]
-  const scheduledTier = selection.scheduled ? tierById(selection.scheduled.tierId) : undefined
+  const scheduledTier = selection.scheduled
+    ? tierById(selection.scheduled.tierId)
+    : undefined
   const renewsAt = nextRenewal(selection.since, now)
 
   return {
@@ -369,7 +381,8 @@ function stubPlanFrom(selection: Selection, now: Date = new Date()): PlanBody {
               name: scheduledTier.name,
               effective_from: selection.scheduled.effectiveFrom,
               // Ranked here because the server ranks it there.
-              direction: scheduledTier.rank > tier.rank ? 'upgrade' : 'downgrade',
+              direction:
+                scheduledTier.rank > tier.rank ? 'upgrade' : 'downgrade',
             }
           : null,
     },
@@ -404,8 +417,13 @@ export function stubBilling(): Promise<BillingBody> {
  * screen — and it stays here so that wiring the provider is one file's worth of
  * change rather than a new call site. Developer-facing, hence a bare `Error`.
  */
-export function stubBillingPortal(): Promise<{ url: string; expires_at?: string | null }> {
+export function stubBillingPortal(): Promise<{
+  url: string
+  expires_at?: string | null
+}> {
   return Promise.reject(
-    new Error('No payment provider is connected: services/api/tiers.stub.ts is standing in.'),
+    new Error(
+      'No payment provider is connected: services/api/tiers.stub.ts is standing in.',
+    ),
   )
 }

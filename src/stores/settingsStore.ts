@@ -50,7 +50,6 @@ export type LocalSettings = {
    * the same post sees the type-based default, not your arrangement.
    */
   notePins: Record<string, boolean>
-
 }
 
 /**
@@ -182,12 +181,14 @@ export const useSettingsStore = create<SettingsState>()(
           set((state) =>
             state.dismissedNotes.includes(id)
               ? state
-              : { dismissedNotes: [...state.dismissedNotes, id] }
+              : { dismissedNotes: [...state.dismissedNotes, id] },
           )
         },
 
         setNotePin: (noteId, pinned) => {
-          set((state) => ({ notePins: { ...state.notePins, [noteId]: pinned } }))
+          set((state) => ({
+            notePins: { ...state.notePins, [noteId]: pinned },
+          }))
         },
 
         clearNotePin: (noteId) => {
@@ -227,10 +228,10 @@ export const useSettingsStore = create<SettingsState>()(
             panelMemory: sanitizePanelMemory(saved.panelMemory),
           }
         },
-      }
+      },
     ),
     {
       name: SETTINGS_STORE_PERSIST_KEY,
-    }
-  )
+    },
+  ),
 )

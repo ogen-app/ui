@@ -53,10 +53,14 @@ export function PlatformPicker({
         {platforms.map((p) => (
           <DropdownMenuItem key={p.id} onSelect={() => onSelect(p.id)}>
             <p.icon size={16} weight="fill" color={p.color} />
-            <span className={cn(p.id === platform?.id && 'font-medium')}>{p.name}</span>
+            <span className={cn(p.id === platform?.id && 'font-medium')}>
+              {p.name}
+            </span>
           </DropdownMenuItem>
         ))}
-        {platforms.length === 0 && <InfoRow>No platforms on this campaign</InfoRow>}
+        {platforms.length === 0 && (
+          <InfoRow>No platforms on this campaign</InfoRow>
+        )}
         {platform && (
           <>
             <DropdownMenuSeparator />
@@ -107,7 +111,9 @@ export function PostTypePicker({
       <DropdownMenuContent align="start">
         {types.map((t) => (
           <DropdownMenuItem key={t.slug} onSelect={() => onSelect(t.slug)}>
-            <span className={cn(t.slug === selected && 'font-medium')}>{t.label}</span>
+            <span className={cn(t.slug === selected && 'font-medium')}>
+              {t.label}
+            </span>
             {/* Still offered: a campaign may plan for a type before the
                 account that publishes it is connected. The note is what keeps
                 that from looking like a working choice. */}
@@ -118,7 +124,9 @@ export function PostTypePicker({
             )}
           </DropdownMenuItem>
         ))}
-        {types.length === 0 && <InfoRow>No post types on this campaign</InfoRow>}
+        {types.length === 0 && (
+          <InfoRow>No post types on this campaign</InfoRow>
+        )}
         {selected && (
           <>
             <DropdownMenuSeparator />

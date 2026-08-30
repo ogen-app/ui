@@ -104,9 +104,18 @@ export function BrandEditorFrame({
 }) {
   return (
     <div className="relative flex h-full min-h-0 flex-col">
-      <ScrollArea className="min-h-0 flex-1" type="scroll" scrollHideDelay={350}>
+      <ScrollArea
+        className="min-h-0 flex-1"
+        type="scroll"
+        scrollHideDelay={350}
+      >
         {header}
-        <div className={cn('flex flex-col gap-3 px-3 lg:px-6', PAGE_ACTION_BAR_INSET)}>
+        <div
+          className={cn(
+            'flex flex-col gap-3 px-3 lg:px-6',
+            PAGE_ACTION_BAR_INSET,
+          )}
+        >
           {children}
         </div>
       </ScrollArea>
@@ -253,7 +262,11 @@ export function Field({
         {label}
       </span>
       {children}
-      {hint && <span className="max-w-2xl text-xs text-tertiary-foreground">{hint}</span>}
+      {hint && (
+        <span className="max-w-2xl text-xs text-tertiary-foreground">
+          {hint}
+        </span>
+      )}
     </label>
   )
 }
@@ -287,8 +300,9 @@ export function ForkedNote({
         <Glyph className="size-5" />
       </span>
       <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">
-        Started from <span className="text-foreground">{title}</span>, and copied
-        rather than linked — ours changing will never change yours. {children}
+        Started from <span className="text-foreground">{title}</span>, and
+        copied rather than linked — ours changing will never change yours.{' '}
+        {children}
       </p>
     </div>
   )
@@ -332,7 +346,11 @@ export function DangerCard({
   return (
     <EditorCard title="Danger zone" hint={cost}>
       <div>
-        <Button variant="destructive" size="sm" onClick={() => setConfirming(true)}>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setConfirming(true)}
+        >
           <TrashIcon />
           <span>DELETE {noun}</span>
         </Button>
@@ -349,10 +367,18 @@ export function DangerCard({
             {cost} This cannot be undone.
           </p>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setConfirming(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setConfirming(false)}
+            >
               KEEP {noun}
             </Button>
-            <Button type="button" variant="destructiveInverted" onClick={onDelete}>
+            <Button
+              type="button"
+              variant="destructiveInverted"
+              onClick={onDelete}
+            >
               DELETE {noun}
             </Button>
           </div>

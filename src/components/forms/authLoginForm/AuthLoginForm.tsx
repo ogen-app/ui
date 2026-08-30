@@ -23,10 +23,13 @@ export function AuthLoginForm() {
   // finished reset — is answered by the screen's subtitle, not by the form.
   const { redirect } = useSearch({ from: '/auth/login/' })
   const { mutate: login, isPending, error, reset } = useLogin()
-  const { values, setField, fieldErrors, validate } = useFormValidation(useLoginSchema(), {
-    email: '',
-    password: '',
-  })
+  const { values, setField, fieldErrors, validate } = useFormValidation(
+    useLoginSchema(),
+    {
+      email: '',
+      password: '',
+    },
+  )
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()

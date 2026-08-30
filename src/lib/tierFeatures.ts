@@ -1,4 +1,8 @@
-import type { EntitlementKey, RawEntitlement, UsagePeriod } from '@/types/entitlements'
+import type {
+  EntitlementKey,
+  RawEntitlement,
+  UsagePeriod,
+} from '@/types/entitlements'
 import type { Tier } from '@/types/tiers'
 
 /**
@@ -67,7 +71,9 @@ export type TierFeature = {
  * it has to be the same rule — a price list promising less than the app allows
  * is a worse bug than the reverse.
  */
-export function featureValue(entry: RawEntitlement | undefined): TierFeatureValue {
+export function featureValue(
+  entry: RawEntitlement | undefined,
+): TierFeatureValue {
   if (!entry) return { kind: 'included' }
   if (entry.allowed === false) return { kind: 'excluded' }
   // Allowed, with nothing metered against it: a plain yes.
@@ -91,7 +97,10 @@ export function tierFeatures(tier: Tier): TierFeature[] {
  * through the caller's formatter so they group in the app's language; the unit
  * does not, because MB and GB are not translated.
  */
-export function formatStorage(bytes: number, format: (value: number) => string): string {
+export function formatStorage(
+  bytes: number,
+  format: (value: number) => string,
+): string {
   const GB = 1024 * 1024 * 1024
   const MB = 1024 * 1024
   if (bytes >= GB) return `${format(round(bytes / GB))} GB`

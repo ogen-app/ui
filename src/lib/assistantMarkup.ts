@@ -57,7 +57,9 @@ export function parseAssistantMarkup(content: string): AssistantBlock[] {
         return {
           kind: 'list' as const,
           ordered: marker === ORDERED_ITEM,
-          items: lines.map((line) => parseInline(line.trim().replace(marker, ''))),
+          items: lines.map((line) =>
+            parseInline(line.trim().replace(marker, '')),
+          ),
         }
       }
 

@@ -111,11 +111,15 @@ function PeopleSectionComponent() {
   return (
     <SettingsCard title={t('workspaceSettings.people.title')}>
       {!workspace || membersLoading ? (
-        <p className="text-sm text-tertiary-foreground">{t('common.loading')}</p>
+        <p className="text-sm text-tertiary-foreground">
+          {t('common.loading')}
+        </p>
       ) : (
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-3">
-            <SubHeader>{t('workspaceSettings.people.membersHeading')}</SubHeader>
+            <SubHeader>
+              {t('workspaceSettings.people.membersHeading')}
+            </SubHeader>
             <ul className="flex flex-col divide-y divide-quaternary">
               {(members ?? []).map((m) => (
                 <MemberRow
@@ -130,7 +134,9 @@ function PeopleSectionComponent() {
 
           {pending.length > 0 && (
             <div className="flex flex-col gap-3 border-t border-quaternary pt-6">
-              <SubHeader>{t('workspaceSettings.people.pendingHeading')}</SubHeader>
+              <SubHeader>
+                {t('workspaceSettings.people.pendingHeading')}
+              </SubHeader>
               <ul className="flex flex-col divide-y divide-quaternary">
                 {pending.map(({ inv, state }) => (
                   <InvitationRow
@@ -178,7 +184,8 @@ function MemberRow({
   // Removing yourself here would be deleting your own account, which has its
   // own screen and its own confirmation on Profile. So this button is for
   // other people only.
-  const canRemove = !member.is_self && !lastOwner && canActOnMember(callerRole, member.role)
+  const canRemove =
+    !member.is_self && !lastOwner && canActOnMember(callerRole, member.role)
 
   const handleRole = (role: string) => {
     const next = role as WorkspaceRole
@@ -202,7 +209,9 @@ function MemberRow({
     <li className="py-4 first:pt-0 last:pb-0 flex items-center gap-2 min-w-0">
       <div className="flex flex-1 items-center gap-3 min-w-0">
         <Avatar className="size-9 shrink-0">
-          <AvatarFallback>{initialsOf(member.name, member.email)}</AvatarFallback>
+          <AvatarFallback>
+            {initialsOf(member.name, member.email)}
+          </AvatarFallback>
         </Avatar>
         <div className="flex flex-col min-w-0">
           <span className="text-sm truncate text-primary-foreground">
@@ -234,7 +243,10 @@ function MemberRow({
             disabled={savingRole}
             variant="inline"
             size="sm"
-            elements={roles.map((r) => ({ id: r, displayValue: t(ROLE_LABEL_KEYS[r]) }))}
+            elements={roles.map((r) => ({
+              id: r,
+              displayValue: t(ROLE_LABEL_KEYS[r]),
+            }))}
           />
         )}
       </div>
@@ -246,7 +258,9 @@ function MemberRow({
             variant="outline"
             size="sm"
             onClick={() => setConfirming(true)}
-            title={t('workspaceSettings.people.removeTitle', { name: member.name })}
+            title={t('workspaceSettings.people.removeTitle', {
+              name: member.name,
+            })}
           >
             {t('workspaceSettings.people.remove')}
           </Button>
@@ -254,7 +268,10 @@ function MemberRow({
       </div>
 
       {confirming && (
-        <RemoveMemberDialog member={member} onClose={() => setConfirming(false)} />
+        <RemoveMemberDialog
+          member={member}
+          onClose={() => setConfirming(false)}
+        />
       )}
     </li>
   )
@@ -288,7 +305,9 @@ function RemoveMemberDialog({
   const handleRemove = () => {
     remove(member.id, {
       onSuccess: () => {
-        toast.success(t('workspaceSettings.people.removed', { name: member.name }))
+        toast.success(
+          t('workspaceSettings.people.removed', { name: member.name }),
+        )
         onClose()
       },
       onError: (err) =>
@@ -331,7 +350,12 @@ function RemoveMemberDialog({
           />
         </div>
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={close} disabled={isPending}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={close}
+            disabled={isPending}
+          >
             {t('workspaceSettings.people.removeDismiss')}
           </Button>
           <Button
@@ -391,7 +415,10 @@ function InvitationRow({
             )}
           >
             {inviterName && (
-              <>{t('workspaceSettings.people.invitedBy', { name: inviterName })} · </>
+              <>
+                {t('workspaceSettings.people.invitedBy', { name: inviterName })}{' '}
+                ·{' '}
+              </>
             )}
             {expired
               ? days === 0
@@ -526,7 +553,9 @@ function InviteForm({ callerRole }: { callerRole: WorkspaceRole }) {
           />
         </div>
         <div className="flex flex-1 flex-col gap-1.5 min-w-0">
-          <Label htmlFor="invite-role">{t('workspaceSettings.people.roleLabel')}</Label>
+          <Label htmlFor="invite-role">
+            {t('workspaceSettings.people.roleLabel')}
+          </Label>
           <TextSelect
             id="invite-role"
             variant="default"
@@ -557,7 +586,9 @@ function InviteForm({ callerRole }: { callerRole: WorkspaceRole }) {
 
       {/* What the chosen role actually grants. It reads as a caption to the
           Role select, so it says only what changes with the select. */}
-      <p className="text-xs text-tertiary-foreground">{t(ROLE_ABILITY_KEYS[role])}</p>
+      <p className="text-xs text-tertiary-foreground">
+        {t(ROLE_ABILITY_KEYS[role])}
+      </p>
     </form>
   )
 }

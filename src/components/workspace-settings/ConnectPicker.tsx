@@ -95,12 +95,16 @@ export function ConnectPicker({ connectionId }: { connectionId: string }) {
             }}
           >
             <p className="text-sm text-foreground">
-              {t('workspaceSettings.connect.picker.body', { platform: platformName })}
+              {t('workspaceSettings.connect.picker.body', {
+                platform: platformName,
+              })}
             </p>
 
             <fieldset className="min-w-0" disabled={select.isPending}>
               <legend className="sr-only">
-                {t('workspaceSettings.connect.picker.legend', { platform: platformName })}
+                {t('workspaceSettings.connect.picker.legend', {
+                  platform: platformName,
+                })}
               </legend>
               <ul className="flex flex-col gap-2">
                 {data.options.map((option) => (
@@ -201,8 +205,12 @@ function TargetRow({
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-medium">{target.name}</span>
           <span className="flex min-w-0 items-center gap-2 text-xs text-tertiary-foreground">
-            {kind && <span className="shrink-0 bg-tertiary px-1.5 py-0.5">{kind}</span>}
-            {target.username && <span className="truncate">@{target.username}</span>}
+            {kind && (
+              <span className="shrink-0 bg-tertiary px-1.5 py-0.5">{kind}</span>
+            )}
+            {target.username && (
+              <span className="truncate">@{target.username}</span>
+            )}
           </span>
         </div>
         <span className="sr-only">{platformName}</span>
@@ -268,7 +276,13 @@ function Explanation({ body }: { body: string }) {
  * choice below it is centred too; a left-aligned title would be the only thing
  * on the page pulling to one side.
  */
-function PickerFrame({ title, children }: { title: string; children: React.ReactNode }) {
+function PickerFrame({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
   const { t } = useTranslation()
   return (
     <PageContainer variant="fullFlex">

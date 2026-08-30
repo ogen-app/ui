@@ -51,7 +51,9 @@ export function PasswordSection() {
             <Trans
               i18nKey="profile.password.sentBody"
               values={{ email: user.email }}
-              components={{ email: <span className="font-medium text-foreground" /> }}
+              components={{
+                email: <span className="font-medium text-foreground" />,
+              }}
             />
           </p>
         ) : (
@@ -62,7 +64,9 @@ export function PasswordSection() {
             <Trans
               i18nKey="profile.password.body"
               values={{ email: user.email }}
-              components={{ email: <span className="font-medium text-foreground" /> }}
+              components={{
+                email: <span className="font-medium text-foreground" />,
+              }}
             />
           </p>
         )}
@@ -87,7 +91,11 @@ export function PasswordSection() {
             error ? 'text-destructive' : 'text-tertiary-foreground',
           )}
         >
-          {error ? error.message : resent ? t('profile.password.resentNote') : ''}
+          {error
+            ? error.message
+            : resent
+              ? t('profile.password.resentNote')
+              : ''}
         </p>
       </div>
     </SettingsCard>

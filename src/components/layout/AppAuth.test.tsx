@@ -14,7 +14,11 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 async function shell() {
   const { AppAuth } = await import('./AppAuth')
   return renderWithProviders(
-    <AppAuth title="Log in" form={<button type="submit">LOG IN</button>} bottomNav={undefined} />,
+    <AppAuth
+      title="Log in"
+      form={<button type="submit">LOG IN</button>}
+      bottomNav={undefined}
+    />,
   )
 }
 
@@ -24,7 +28,8 @@ async function freshShell() {
 }
 
 const card = (c: HTMLElement) => c.querySelector('.bg-primary') as HTMLElement
-const photo = (c: HTMLElement) => c.querySelector('img[src$=".webp"]') as HTMLImageElement
+const photo = (c: HTMLElement) =>
+  c.querySelector('img[src$=".webp"]') as HTMLImageElement
 
 afterEach(() => {
   vi.useRealTimers()
@@ -75,7 +80,9 @@ describe('AppAuth', () => {
     act(() => {
       fireEvent.load(photo(first.container))
     })
-    expect(card(first.container).classList.contains('auth-card-motion')).toBe(true)
+    expect(card(first.container).classList.contains('auth-card-motion')).toBe(
+      true,
+    )
 
     // Navigating away tears this shell down and stands the next one up.
     first.unmount()

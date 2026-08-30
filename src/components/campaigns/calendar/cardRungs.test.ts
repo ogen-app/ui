@@ -55,9 +55,13 @@ describe('cardHeight', () => {
     const minimal = CARD_RUNGS[CARD_RUNGS.length - 1] // titleLines 1, time false
     const plain = { ...TEXT }
     const flagged = { ...TEXT, hasFlag: true }
-    expect(cardHeight(minimal, flagged)).toBeGreaterThan(cardHeight(minimal, plain))
+    expect(cardHeight(minimal, flagged)).toBeGreaterThan(
+      cardHeight(minimal, plain),
+    )
     // And it costs nothing where the row was being drawn anyway.
-    expect(cardHeight(CARD_RUNGS[0], flagged)).toBe(cardHeight(CARD_RUNGS[0], plain))
+    expect(cardHeight(CARD_RUNGS[0], flagged)).toBe(
+      cardHeight(CARD_RUNGS[0], plain),
+    )
   })
 
   it('charges the floor its status row, which the switches alone would not predict', () => {
@@ -127,14 +131,22 @@ describe('cardHeight', () => {
     // slot rather than pushing anything out of it. Which is the same 111px as
     // the ordinary card above — the status row and the time row are the same
     // row, and this post only ever needed one of them.
-    expect(cardHeight(CARD_RUNGS[0], NO_TIME, fields({ status: true }))).toBe(plain)
+    expect(cardHeight(CARD_RUNGS[0], NO_TIME, fields({ status: true }))).toBe(
+      plain,
+    )
   })
 
   it('drops the rows the user turned off', () => {
     const full = cardHeight(CARD_RUNGS[0], TEXT)
-    expect(cardHeight(CARD_RUNGS[0], TEXT, fields({ platform: false }))).toBe(full - 22)
-    expect(cardHeight(CARD_RUNGS[0], TEXT, fields({ time: false }))).toBe(full - 22)
-    expect(cardHeight(CARD_RUNGS[0], TEXT, fields({ account: true }))).toBe(full + 22)
+    expect(cardHeight(CARD_RUNGS[0], TEXT, fields({ platform: false }))).toBe(
+      full - 22,
+    )
+    expect(cardHeight(CARD_RUNGS[0], TEXT, fields({ time: false }))).toBe(
+      full - 22,
+    )
+    expect(cardHeight(CARD_RUNGS[0], TEXT, fields({ account: true }))).toBe(
+      full + 22,
+    )
   })
 
   it('keeps a card big enough to see when this post has none of what is left on', () => {
@@ -165,12 +177,18 @@ describe('pickRung', () => {
   it('steps down as the same column fills', () => {
     const lane = 460
     const ids = [1, 3, 5, 8].map(
-      (n) => pickRung(Array.from({ length: n }, () => TEXT), lane).id,
+      (n) =>
+        pickRung(
+          Array.from({ length: n }, () => TEXT),
+          lane,
+        ).id,
     )
     // Monotonic: never climbs back up as posts are added.
     const order = CARD_RUNGS.map((r) => r.id)
     for (let i = 1; i < ids.length; i++) {
-      expect(order.indexOf(ids[i])).toBeGreaterThanOrEqual(order.indexOf(ids[i - 1]))
+      expect(order.indexOf(ids[i])).toBeGreaterThanOrEqual(
+        order.indexOf(ids[i - 1]),
+      )
     }
     expect(ids[0]).toBe('comfortable')
   })
@@ -210,7 +228,9 @@ describe('pickRung', () => {
     const backed = Array.from({ length: 4 }, () => BACKED)
     expect(pickRung(backed, lane).id).toBe('minimal')
     // And turning the pictures off gives the roomy rung straight back.
-    expect(pickRung(backed, lane, fields({ image: false })).id).toBe('comfortable')
+    expect(pickRung(backed, lane, fields({ image: false })).id).toBe(
+      'comfortable',
+    )
   })
 })
 
@@ -231,9 +251,9 @@ describe('fitMonthCell', () => {
       rung: CARD_RUNGS[2],
       image: false,
     })
-    expect(stackHeight(CARD_RUNGS[2], [BACKED, BACKED], MONTH_UNBACKED, 'compact')).toBe(
-      CELL,
-    )
+    expect(
+      stackHeight(CARD_RUNGS[2], [BACKED, BACKED], MONTH_UNBACKED, 'compact'),
+    ).toBe(CELL)
   })
 
   it('gives up only once the plain cards have failed too', () => {
@@ -269,7 +289,9 @@ describe('fitMonthCell', () => {
 describe('stackHeight', () => {
   it('is what the lane has to hold — cards plus the gaps between them', () => {
     expect(stackHeight(CARD_RUNGS[0], [])).toBe(0)
-    expect(stackHeight(CARD_RUNGS[0], [TEXT])).toBe(cardHeight(CARD_RUNGS[0], TEXT))
+    expect(stackHeight(CARD_RUNGS[0], [TEXT])).toBe(
+      cardHeight(CARD_RUNGS[0], TEXT),
+    )
     expect(stackHeight(CARD_RUNGS[0], [TEXT, TEXT])).toBe(
       2 * cardHeight(CARD_RUNGS[0], TEXT) + CARD_GAP,
     )
@@ -318,7 +340,6 @@ describe('cardFields', () => {
     expect(canHideField(one, 'time')).toBe(true)
   })
 })
-
 
 /**
  * What a real month cell leaves for cards: a 134px row less the 22px date
@@ -400,7 +421,9 @@ describe('fitRung', () => {
       // Once a rung is affordable it stays affordable as the cell grows.
       if (prev) {
         expect(next).not.toBeNull()
-        expect(CARD_RUNGS.indexOf(next!)).toBeLessThanOrEqual(CARD_RUNGS.indexOf(prev))
+        expect(CARD_RUNGS.indexOf(next!)).toBeLessThanOrEqual(
+          CARD_RUNGS.indexOf(prev),
+        )
       }
     }
   })

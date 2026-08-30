@@ -69,4 +69,3 @@ export type PreviewProps = {
    */
   charLimit?: number | null
 }
-

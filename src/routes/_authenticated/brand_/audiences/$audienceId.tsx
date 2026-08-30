@@ -24,7 +24,9 @@ import { toast } from '@/stores/toastStore'
  * Two sections now have a third level, which is the point at which the parts
  * they share belong in one place — see `components/brand/editor.tsx`.
  */
-export const Route = createFileRoute('/_authenticated/brand_/audiences/$audienceId')({
+export const Route = createFileRoute(
+  '/_authenticated/brand_/audiences/$audienceId',
+)({
   beforeLoad: () => {
     if (!isFeatureEnabled('brand-materials')) {
       throw redirect({ to: '/campaigns' })
@@ -57,7 +59,9 @@ function AudienceEditorPage() {
    * scroller is in there.
    */
   const header = (
-    <PageHeader back={<BrandBackButton to="/brand/audiences" label="Back to audiences" />} />
+    <PageHeader
+      back={<BrandBackButton to="/brand/audiences" label="Back to audiences" />}
+    />
   )
 
   const body = () => {
@@ -137,7 +141,13 @@ function AudienceEditorPage() {
  * The header above something that does not scroll — the spinner, and the
  * no-such-audience page. Nothing passes under the gradient in either.
  */
-function Static({ header, children }: { header: ReactNode; children: ReactNode }) {
+function Static({
+  header,
+  children,
+}: {
+  header: ReactNode
+  children: ReactNode
+}) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {header}

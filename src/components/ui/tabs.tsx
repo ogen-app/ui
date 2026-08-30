@@ -31,12 +31,13 @@ const tabsListVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 )
 
 const TabsList = React.forwardRef<
   React.ComponentRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> &
+    VariantProps<typeof tabsListVariants>
 >(({ className, variant, size, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
@@ -81,7 +82,7 @@ const tabsTriggerVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 )
 
 const TabsTrigger = React.forwardRef<
@@ -103,7 +104,10 @@ const TabsContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}
-    className={cn('mt-2 ring-offset-background ring-inset focus-visible:outline-none', className)}
+    className={cn(
+      'mt-2 ring-offset-background ring-inset focus-visible:outline-none',
+      className,
+    )}
     {...props}
   />
 ))

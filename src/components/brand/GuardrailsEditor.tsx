@@ -352,7 +352,10 @@ function StatementList({
     if (focus !== undefined) setFocusAt(focus)
   }
 
-  const onKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>, at: number) => {
+  const onKeyDown = (
+    e: ReactKeyboardEvent<HTMLTextAreaElement>,
+    at: number,
+  ) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       put([...rows.slice(0, at + 1), '', ...rows.slice(at + 1)], at + 1)
@@ -374,7 +377,10 @@ function StatementList({
     if (lines.length < 2) return
     e.preventDefault()
     const here = rows[at].trim() ? [rows[at], ...lines] : lines
-    put([...rows.slice(0, at), ...here, ...rows.slice(at + 1)], at + here.length - 1)
+    put(
+      [...rows.slice(0, at), ...here, ...rows.slice(at + 1)],
+      at + here.length - 1,
+    )
   }
 
   return (
@@ -652,11 +658,17 @@ function barStatus(dirty: boolean, exists: boolean): BarStatus | undefined {
     }
   }
   if (!exists) return undefined
-  return { key: 'saved', full: <BarNote>Saved</BarNote>, compact: <BarNote>Saved</BarNote> }
+  return {
+    key: 'saved',
+    full: <BarNote>Saved</BarNote>,
+    compact: <BarNote>Saved</BarNote>,
+  }
 }
 
 function BarNote({ children }: { children: ReactNode }) {
-  return <span className="px-1 text-xs text-tertiary-foreground">{children}</span>
+  return (
+    <span className="px-1 text-xs text-tertiary-foreground">{children}</span>
+  )
 }
 
 /* -------------------------------------------------------------- the starters */
@@ -707,7 +719,13 @@ export const GUARDRAIL_STARTERS: GuardrailStarter[] = [
         'That a result is typical, protected, guaranteed or safe.',
         'A figure without the period it was measured over and where it came from.',
       ],
-      bannedWords: ['guaranteed', 'risk-free', 'safe', 'proven', 'passive income'],
+      bannedWords: [
+        'guaranteed',
+        'risk-free',
+        'safe',
+        'proven',
+        'passive income',
+      ],
     },
   },
   {
@@ -722,7 +740,13 @@ export const GUARDRAIL_STARTERS: GuardrailStarter[] = [
         'A number about speed, uptime or scale that we cannot point at a source for.',
         'That a competitor lacks something, unless it is checkable today and dated.',
       ],
-      bannedWords: ['seamless', 'effortless', 'unlimited', 'instantly', 'revolutionary'],
+      bannedWords: [
+        'seamless',
+        'effortless',
+        'unlimited',
+        'instantly',
+        'revolutionary',
+      ],
     },
   },
   {
@@ -737,7 +761,13 @@ export const GUARDRAIL_STARTERS: GuardrailStarter[] = [
         'A customer by name, or their results, without written permission.',
         'An endorsement nobody has given — including implying one with a logo.',
       ],
-      bannedWords: ['best-in-class', 'world-class', 'game-changing', 'unrivalled', 'no-brainer'],
+      bannedWords: [
+        'best-in-class',
+        'world-class',
+        'game-changing',
+        'unrivalled',
+        'no-brainer',
+      ],
     },
   },
 ]

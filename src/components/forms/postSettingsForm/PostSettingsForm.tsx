@@ -68,7 +68,9 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
     defaultValues: docToFormValues(doc),
   })
 
-  const { data: campaign, isLoading: campaignPending } = useCampaign(doc.campaign_id)
+  const { data: campaign, isLoading: campaignPending } = useCampaign(
+    doc.campaign_id,
+  )
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const platformId = form.watch('platform_id')
@@ -86,10 +88,12 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
         switch (info.name) {
           case 'platform_id':
             if (values.platform_id) d.platform_id = values.platform_id
-            if (values.platform_post_type) d.platform_post_type = values.platform_post_type
+            if (values.platform_post_type)
+              d.platform_post_type = values.platform_post_type
             break
           case 'platform_post_type':
-            if (values.platform_post_type) d.platform_post_type = values.platform_post_type
+            if (values.platform_post_type)
+              d.platform_post_type = values.platform_post_type
             break
           case 'scheduled_at':
             d.scheduled_at = values.scheduled_at ?? null
@@ -99,7 +103,8 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
             break
           case 'campaign_type_phase_id':
             d.campaign_type_phase_id =
-              values.campaign_type_phase_id === NO_PHASE || !values.campaign_type_phase_id
+              values.campaign_type_phase_id === NO_PHASE ||
+              !values.campaign_type_phase_id
                 ? null
                 : values.campaign_type_phase_id
             break
@@ -174,7 +179,9 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                           <DatePicker
                             value={dateStr ? `${dateStr}T00:00:00` : null}
                             onChange={(nextDate) =>
-                              field.onChange(fromLocalParts(nextDate ?? '', timeStr))
+                              field.onChange(
+                                fromLocalParts(nextDate ?? '', timeStr),
+                              )
                             }
                             disabled={scheduleLocked}
                           />
@@ -184,14 +191,16 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                             type="time"
                             value={timeStr}
                             onChange={(e) =>
-                              field.onChange(fromLocalParts(dateStr, e.target.value))
+                              field.onChange(
+                                fromLocalParts(dateStr, e.target.value),
+                              )
                             }
                             disabled={scheduleLocked || !dateStr}
                             data-empty={!timeStr}
                             className={cn(
                               'w-24 appearance-none',
                               '[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none',
-                              "data-[empty=true]:[&::-webkit-datetime-edit]:text-transparent",
+                              'data-[empty=true]:[&::-webkit-datetime-edit]:text-transparent',
                             )}
                           />
                           {!timeStr && (

@@ -77,7 +77,9 @@ export function PostStatusActionBar({
       status={
         status && {
           full: <PostPublishStatus text={status.full} />,
-          compact: <PostPublishStatus text={status.compact} title={status.full} />,
+          compact: (
+            <PostPublishStatus text={status.compact} title={status.full} />
+          ),
           key: status.full,
         }
       }
@@ -125,7 +127,8 @@ function ActionButton({
       size="sm"
       className={cn(
         destructive && 'text-destructive hover:text-destructive',
-        !destructive && (isPrimary ? 'text-primary-foreground' : 'text-tertiary-foreground')
+        !destructive &&
+          (isPrimary ? 'text-primary-foreground' : 'text-tertiary-foreground'),
       )}
       // Only in-flight work disables the button; blockers are handled on click.
       disabled={pending}

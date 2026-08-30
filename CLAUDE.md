@@ -37,11 +37,21 @@ name is "Content Control Center"). There is no PRD checked into this repo.
 
 ```bash
 pnpm install
-pnpm dev        # Vite dev server on http://localhost:9002, proxies /api → :9001
-pnpm build      # tsc (type-check) && vite build → dist/
-pnpm preview    # serve the production build
-pnpm lint       # eslint . --ext ts,tsx
+pnpm dev           # Vite dev server on http://localhost:9002, proxies /api → :9001
+pnpm build         # tsc (type-check) && vite build → dist/
+pnpm preview       # serve the production build
+
+pnpm typecheck     # tsc --noEmit
+pnpm lint          # eslint .            (--fix to repair what is mechanical)
+pnpm format        # prettier --write .  (format:check to only report)
+pnpm test          # vitest run
+pnpm knip          # unused files, exports and dependencies — a report, not a gate
 ```
+
+CI runs every one of those except `knip` on each PR into `develop`
+(`.github/workflows/ci.yml`). What each tool is for, and why some rules are
+warnings rather than errors:
+[`docs/quality-tooling.md`](./docs/quality-tooling.md).
 
 Run the API separately from the `ogen` repo (`make run`) or via
 `docker compose up`. See [`docs/architecture.md`](./docs/architecture.md#build--tooling).
@@ -351,8 +361,10 @@ dark mode is scaffolded but empty · **an image cannot be a Content-Bank asset**
 `.pdf` only, so `IMG` is declared client-side and unproducible; the upload
 surface offers images behind `content-bank-images` (off) and the image asset's
 own screen is deliberately unwritten until the DTO carries a URL for the
-original (CON-16) · eslint/prettier/stylelint
-have no committed config in this repo · **i18n covers the auth screens, sidebar,
+original (CON-16) · **the React Compiler lint rules are warnings, not errors** —
+`react-hooks` v7 reports 123 of them against code that predates it, and each is
+a judgement call about a component rather than a mechanical fix
+([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n covers the auth screens, sidebar,
 Profile, Workspace Settings and the campaign calendar** (its week, month and
 list views, the cards, both rail panels and the posts table) — everything else
 is still hard-coded English (CON-174) · **English is the only released language**: Spanish is

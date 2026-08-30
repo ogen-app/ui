@@ -27,7 +27,11 @@ import type { Post } from '@/types/posts'
  * flight. That is the whole reason this control asks before switching off:
  * without it, the setting would read "not allowed" while posts kept going out.
  */
-function pendingAutoPosts(posts: Post[], platformId: string, now: number): Post[] {
+function pendingAutoPosts(
+  posts: Post[],
+  platformId: string,
+  now: number,
+): Post[] {
   return posts
     .filter(
       (p) =>
@@ -38,7 +42,8 @@ function pendingAutoPosts(posts: Post[], platformId: string, now: number): Post[
     )
     .sort(
       (a, b) =>
-        new Date(a.scheduled_at ?? 0).getTime() - new Date(b.scheduled_at ?? 0).getTime(),
+        new Date(a.scheduled_at ?? 0).getTime() -
+        new Date(b.scheduled_at ?? 0).getTime(),
     )
 }
 
@@ -89,9 +94,12 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
       }
       setAffected(pending)
     } catch (e) {
-      toast.error(t('workspaceSettings.autoPublish.checkFailed', { platform: info.name }), {
-        description: e instanceof Error ? e.message : undefined,
-      })
+      toast.error(
+        t('workspaceSettings.autoPublish.checkFailed', { platform: info.name }),
+        {
+          description: e instanceof Error ? e.message : undefined,
+        },
+      )
     } finally {
       setChecking(false)
     }
@@ -99,7 +107,7 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
 
   return (
     <>
-    {/* Framed rather than stacked in with the row's other fields: this is the
+      {/* Framed rather than stacked in with the row's other fields: this is the
         one setting here that decides whether posts leave the workspace without
         a person present, and it used to read as another line of prose between
         the account list and the cadence. The border carries it — green only
@@ -112,59 +120,59 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
         sometimes flips back after a round trip would misreport the state it
         is supposed to show. The sentence states the state; the button
         changes it. */}
-    <div
-      className={cn(
-        'flex flex-wrap items-center justify-between gap-4 border-1 px-4 py-4',
-        allowed ? 'border-positive' : 'border-border',
-      )}
-    >
-      {state === 'unknown' ? (
-        <>
-          <Skeleton className="h-5 w-full max-w-lg" />
-          <Skeleton className="h-12 w-36" />
-        </>
-      ) : (
-        <>
-          <div className="flex min-w-0 items-center gap-3">
-            {allowed ? (
-              <LightningIcon className="size-5 shrink-0 text-positive" />
-            ) : (
-              <ProhibitIcon className="size-5 shrink-0 text-tertiary-foreground" />
-            )}
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <p className="text-sm font-medium text-primary-foreground">
-                {allowed
-                  ? t('workspaceSettings.autoPublish.allowedTitle')
-                  : t('workspaceSettings.autoPublish.blockedTitle')}
-              </p>
-              <p className="text-sm text-tertiary-foreground">
-                {allowed
-                  ? t('workspaceSettings.autoPublish.allowedBody')
-                  : t('workspaceSettings.autoPublish.blockedBody')}
-              </p>
+      <div
+        className={cn(
+          'flex flex-wrap items-center justify-between gap-4 border-1 px-4 py-4',
+          allowed ? 'border-positive' : 'border-border',
+        )}
+      >
+        {state === 'unknown' ? (
+          <>
+            <Skeleton className="h-5 w-full max-w-lg" />
+            <Skeleton className="h-12 w-36" />
+          </>
+        ) : (
+          <>
+            <div className="flex min-w-0 items-center gap-3">
+              {allowed ? (
+                <LightningIcon className="size-5 shrink-0 text-positive" />
+              ) : (
+                <ProhibitIcon className="size-5 shrink-0 text-tertiary-foreground" />
+              )}
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <p className="text-sm font-medium text-primary-foreground">
+                  {allowed
+                    ? t('workspaceSettings.autoPublish.allowedTitle')
+                    : t('workspaceSettings.autoPublish.blockedTitle')}
+                </p>
+                <p className="text-sm text-tertiary-foreground">
+                  {allowed
+                    ? t('workspaceSettings.autoPublish.allowedBody')
+                    : t('workspaceSettings.autoPublish.blockedBody')}
+                </p>
+              </div>
             </div>
-          </div>
-          {/* Only the switching-on direction carries an icon. DISALLOW is the
+            {/* Only the switching-on direction carries an icon. DISALLOW is the
               one that can queue work and open a dialog, so it stays the
               plainer of the two rather than being dressed up to match. */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="xl"
-            disabled={isPending || checking}
-            loading={checking}
-            onClick={() => handleChange(!allowed)}
-          >
-            {!allowed && <LightningIcon />}
-            <span>
-              {allowed
-                ? t('workspaceSettings.autoPublish.disallow')
-                : t('workspaceSettings.autoPublish.allow')}
-            </span>
-          </Button>
-        </>
-      )}
-    </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xl"
+              disabled={isPending || checking}
+              loading={checking}
+              onClick={() => handleChange(!allowed)}
+            >
+              {!allowed && <LightningIcon />}
+              <span>
+                {allowed
+                  ? t('workspaceSettings.autoPublish.disallow')
+                  : t('workspaceSettings.autoPublish.allow')}
+              </span>
+            </Button>
+          </>
+        )}
+      </div>
 
       {affected && (
         <PendingPostsDialog
@@ -216,13 +224,17 @@ function PendingPostsDialog({
           failed: result.failed.length,
         }),
         {
-          description: t('workspaceSettings.autoPublish.pending.convertFailedDetail'),
+          description: t(
+            'workspaceSettings.autoPublish.pending.convertFailedDetail',
+          ),
         },
       )
       return
     }
     await onConverted()
-    toast.success(t('workspaceSettings.autoPublish.pending.converted', { count }))
+    toast.success(
+      t('workspaceSettings.autoPublish.pending.converted', { count }),
+    )
   }
 
   return (
@@ -242,7 +254,8 @@ function PendingPostsDialog({
         <ul className="flex flex-col gap-1.5 max-h-60 overflow-y-auto">
           {posts.map((p) => (
             <li key={p.id} className="text-sm text-primary-foreground">
-              {p.title?.trim() || t('workspaceSettings.autoPublish.pending.untitledPost')}
+              {p.title?.trim() ||
+                t('workspaceSettings.autoPublish.pending.untitledPost')}
               <span className="text-tertiary-foreground">
                 {' · '}
                 {/* The active language, not the browser's: the rest of the

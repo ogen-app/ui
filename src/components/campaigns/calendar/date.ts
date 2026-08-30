@@ -55,7 +55,11 @@ export function weekdayShortLabel(day: Date, locale?: string): string {
  */
 export function addMonths(date: Date, months: number): Date {
   const target = new Date(date.getFullYear(), date.getMonth() + months, 1)
-  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate()
+  const lastDay = new Date(
+    target.getFullYear(),
+    target.getMonth() + 1,
+    0,
+  ).getDate()
   target.setDate(Math.min(date.getDate(), lastDay))
   target.setHours(0, 0, 0, 0)
   return target
@@ -104,7 +108,10 @@ export function monthWeeks(
  * The month grid's column days — one week's worth, in the user's order and
  * minus what they hide. Only the weekday matters; the dates are arbitrary.
  */
-export function monthColumnDays(firstDay: number, hiddenDays: number[] = []): Date[] {
+export function monthColumnDays(
+  firstDay: number,
+  hiddenDays: number[] = [],
+): Date[] {
   // Any week will do as a source of seven weekdays in order; the epoch's
   // first full week is stable and needs no clock read.
   const base = startOfWeek(new Date(2024, 0, 3), firstDay)

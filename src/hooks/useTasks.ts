@@ -169,7 +169,9 @@ export function useTaskWriter() {
       write(
         current().flatMap((task) => {
           if (task.id !== id) return [task]
-          return task.source.kind === 'manual' ? [] : [dismissTask(task, userId)]
+          return task.source.kind === 'manual'
+            ? []
+            : [dismissTask(task, userId)]
         }),
       ),
     [current, userId, write],

@@ -28,7 +28,9 @@ export function contentLimitFor(
   const override = postType ? constraints.per_post_type?.[postType] : undefined
   if (override !== undefined && override > 0) return override
 
-  return constraints.max_content_chars > 0 ? constraints.max_content_chars : null
+  return constraints.max_content_chars > 0
+    ? constraints.max_content_chars
+    : null
 }
 
 /**

@@ -13,7 +13,8 @@ import { SupersedeOffer } from './SupersedeOffer'
 // `pr-5` against `pl-3`: the right end carries a label and an icon rather than
 // a fixed control, and at the row's own padding they sat on the card's edge.
 // Everything inside the expanded region uses the same right inset.
-const ROW = 'group flex items-center justify-between gap-3 pl-3 pr-5 py-3 bg-secondary'
+const ROW =
+  'group flex items-center justify-between gap-3 pl-3 pr-5 py-3 bg-secondary'
 
 /**
  * One row, targeted or not.
@@ -73,7 +74,11 @@ export function AccountRow({
     <div className="flex flex-col bg-secondary">
       <RowShell
         onToggle={selected ? () => setExpanded((v) => !v) : activate}
-        label={selected ? `${name} — post types` : `Activate ${name} for this campaign`}
+        label={
+          selected
+            ? `${name} — post types`
+            : `Activate ${name} for this campaign`
+        }
         expanded={selected ? expanded : undefined}
       >
         <div className="flex-1 min-w-0">
@@ -140,8 +145,8 @@ export function AccountRow({
                 is not this. */}
             {selected && postTypes.length === 0 && (
               <p className="ml-3 mr-5 mb-2 border border-warning/40 px-3 py-2 text-sm text-warning">
-                No post types selected — this{' '}
-                {account ? 'account' : 'platform'} won’t publish anything.
+                No post types selected — this {account ? 'account' : 'platform'}{' '}
+                won’t publish anything.
               </p>
             )}
             {[...available, ...unavailable].map((pt) => (
@@ -225,7 +230,10 @@ function RowShell({
         e.preventDefault()
         onToggle()
       }}
-      className={cn(ROW, 'cursor-pointer focus-visible:outline-2 focus-visible:outline-ring')}
+      className={cn(
+        ROW,
+        'cursor-pointer focus-visible:outline-2 focus-visible:outline-ring',
+      )}
     >
       {children}
     </div>
@@ -265,7 +273,11 @@ function PostTypeSwitchRow({
       >
         {label}
       </span>
-      <Switch checked={checked} onCheckedChange={onToggle} aria-label={ariaLabel} />
+      <Switch
+        checked={checked}
+        onCheckedChange={onToggle}
+        aria-label={ariaLabel}
+      />
     </label>
   )
 }

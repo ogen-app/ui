@@ -98,7 +98,10 @@ export function BrandSection({
                 <h2 className="font-display text-lg font-medium leading-6">
                   {title}
                   {qualifier != null && (
-                    <span className="font-normal text-tertiary-foreground"> {qualifier}</span>
+                    <span className="font-normal text-tertiary-foreground">
+                      {' '}
+                      {qualifier}
+                    </span>
                   )}
                 </h2>
                 <ReadBy consumers={readBy} />
@@ -254,13 +257,20 @@ export function WholeBrandOffer({
   /** For one where it is not written down anywhere. */
   onAskOgen?: () => void
 }) {
-  const dismissed = useSettingsStore((s) => s.dismissedNotes.includes(OFFER_NOTE_ID))
+  const dismissed = useSettingsStore((s) =>
+    s.dismissedNotes.includes(OFFER_NOTE_ID),
+  )
   const dismissNote = useSettingsStore((s) => s.dismissNote)
 
   if (fills.length === 0 || dismissed) return null
 
   return (
-    <section className={cn(COLUMN, 'relative flex flex-col gap-5 bg-primary px-6 py-6')}>
+    <section
+      className={cn(
+        COLUMN,
+        'relative flex flex-col gap-5 bg-primary px-6 py-6',
+      )}
+    >
       {/* Parked in the corner rather than sharing the action row: closing the
           card is not one of the things it offers to do. */}
       <Button
@@ -420,7 +430,8 @@ export function LibraryCard({
       className={cn(
         COLUMN,
         'group flex gap-4 bg-primary px-6 py-6 text-left',
-        onClick && 'cursor-pointer transition-shadow duration-150 hover:shadow-lg',
+        onClick &&
+          'cursor-pointer transition-shadow duration-150 hover:shadow-lg',
         className,
       )}
     >
@@ -573,7 +584,9 @@ export function BrandIntro({
       </h1>
       <p className="max-w-2xl text-sm leading-5">{body}</p>
       {missing && (
-        <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">{missing}</p>
+        <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">
+          {missing}
+        </p>
       )}
       {/* Renders nothing on a wired section, and costs no gap when it does:
           `ReadBy` returns null rather than an empty node. */}
@@ -704,7 +717,13 @@ export function StarterCard({
 }
 
 /** The `ADD …` control a library section carries in its header. */
-export function AddButton({ label, onClick }: { label: string; onClick?: () => void }) {
+export function AddButton({
+  label,
+  onClick,
+}: {
+  label: string
+  onClick?: () => void
+}) {
   return (
     <Button variant="outline" size="sm" onClick={onClick}>
       <PlusIcon />
@@ -822,7 +841,13 @@ export function OriginLine({
  * Truncating rather than scrolling: this screen is an index, and the full list
  * belongs in the editor one level down.
  */
-export function ChipList({ items, max = 6 }: { items: string[]; max?: number }) {
+export function ChipList({
+  items,
+  max = 6,
+}: {
+  items: string[]
+  max?: number
+}) {
   const shown = items.slice(0, max)
   const rest = items.length - shown.length
   return (

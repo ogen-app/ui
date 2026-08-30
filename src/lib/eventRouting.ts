@@ -32,7 +32,8 @@ import type { AppEvent, EventSubject } from '@/types/events'
  * Only *mounted* lists refetch, which is at most the calendar the user is on.
  */
 const CAMPAIGN_POST_LISTS: QueryFilters = {
-  predicate: (query) => query.queryKey[0] === 'campaigns' && query.queryKey[2] === 'posts',
+  predicate: (query) =>
+    query.queryKey[0] === 'campaigns' && query.queryKey[2] === 'posts',
 }
 
 const ZERNIO_SURFACES: QueryFilters[] = [
@@ -81,10 +82,14 @@ export function localRunKeyFor(event: AppEvent): string | null {
       return null
     case 'assessment_completed':
     case 'assessment_failed':
-      return subject.kind === 'post' ? localRunKey('assessment', subject.id) : null
+      return subject.kind === 'post'
+        ? localRunKey('assessment', subject.id)
+        : null
     case 'content_plan_completed':
     case 'content_plan_failed':
-      return subject.kind === 'campaign' ? localRunKey('contentPlan', subject.id) : null
+      return subject.kind === 'campaign'
+        ? localRunKey('contentPlan', subject.id)
+        : null
     default:
       return null
   }
@@ -190,7 +195,10 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
 
     case 'zernioSync':
       if (event.type === 'zernio.sync.failed') return ZERNIO_SURFACES
-      if (event.type === 'zernio.sync.ok' && syncChangedAnything(event.payload)) {
+      if (
+        event.type === 'zernio.sync.ok' &&
+        syncChangedAnything(event.payload)
+      ) {
         return ZERNIO_SURFACES
       }
       return []

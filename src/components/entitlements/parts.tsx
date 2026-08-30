@@ -27,7 +27,13 @@ import { cn } from '@/lib'
  * to render "Invalid Date".
  */
 export function formatDay(iso: string, locale: string): string {
-  return formatDate(iso, { day: 'numeric', month: 'long', year: 'numeric' }, locale) ?? iso
+  return (
+    formatDate(
+      iso,
+      { day: 'numeric', month: 'long', year: 'numeric' },
+      locale,
+    ) ?? iso
+  )
 }
 
 /**
@@ -44,7 +50,11 @@ export function formatDay(iso: string, locale: string): string {
  * 0 days". Null on a date that won't parse, which is the caller's signal to say
  * the same thing without the phrase — never to print a distance it guessed.
  */
-export function relativeDay(iso: string, locale: string, now: Date = new Date()): string | null {
+export function relativeDay(
+  iso: string,
+  locale: string,
+  now: Date = new Date(),
+): string | null {
   const target = new Date(iso)
   if (Number.isNaN(target.getTime())) return null
   const midnight = (date: Date) =>

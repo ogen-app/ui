@@ -25,7 +25,11 @@ export function PageError({
   errorType = 'ERROR',
 }: PageErrorProps) {
   return (
-    <div className={'h-full w-full overflow-hidden flex flex-col items-stretch gap-0'}>
+    <div
+      className={
+        'h-full w-full overflow-hidden flex flex-col items-stretch gap-0'
+      }
+    >
       <div className="flex-1 flex h-0 items-center justify-center gap-4">
         {children ?? (
           <div className="flex flex-col gap-4 items-center justify-stretch max-w-xl px-4">
@@ -39,7 +43,9 @@ export function PageError({
                 On a page with nothing else to read, this sentence is the whole
                 explanation, and at that size and weight it was closer to a
                 watermark than to copy. */}
-            <p className="text-[16px] leading-7 text-secondary-foreground">{message}</p>
+            <p className="text-[16px] leading-7 text-secondary-foreground">
+              {message}
+            </p>
             {action && <div className="mt-4">{action}</div>}
           </div>
         )}

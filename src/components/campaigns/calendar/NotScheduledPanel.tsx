@@ -21,7 +21,10 @@ type NotScheduledPanelProps = {
  * non-blocking, so posts can be dragged out onto the calendar days; dropping
  * a scheduled post onto the panel body unschedules it.
  */
-export function NotScheduledPanel({ campaignId, onClose }: NotScheduledPanelProps) {
+export function NotScheduledPanel({
+  campaignId,
+  onClose,
+}: NotScheduledPanelProps) {
   const { t } = useTranslation()
   const [dragOver, setDragOver] = useState(false)
   const { data: posts, isLoading } = useCampaignPosts(campaignId)
@@ -88,7 +91,11 @@ export function NotScheduledPanel({ campaignId, onClose }: NotScheduledPanelProp
             <Skeleton className="h-20 w-full shrink-0" />
           </div>
         ) : unscheduled.length === 0 ? (
-          <PostsEmptyState variant="panel" campaignId={campaignId} onAddPost={addPost} />
+          <PostsEmptyState
+            variant="panel"
+            campaignId={campaignId}
+            onAddPost={addPost}
+          />
         ) : (
           unscheduled.map((post) => (
             <div key={post.id} className="border border-border shrink-0">

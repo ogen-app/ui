@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/button";
-import { ZIndex } from "@/config/zIndex";
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react'
+import { Button } from '@/components/ui/button'
+import { ZIndex } from '@/config/zIndex'
 import {
   EMPTY_FILTER,
   draftName,
@@ -15,18 +15,18 @@ import {
   type ContentFilter as Filter,
   type FilterChip,
   type Suggestion,
-} from "@/lib/contentFilter";
-import { cn } from "@/lib";
-import type { Asset } from "@/types/content";
+} from '@/lib/contentFilter'
+import { cn } from '@/lib'
+import type { Asset } from '@/types/content'
 
 type Props = {
   /** The documents in scope — where the suggestions come from. */
-  assets: Asset[];
-  value: Filter;
-  onChange: (next: Filter) => void;
+  assets: Asset[]
+  value: Filter
+  onChange: (next: Filter) => void
   /** Names what is being narrowed, for the box's accessible label. */
-  scopeLabel: string;
-};
+  scopeLabel: string
+}
 
 /**
  * One box that takes both halves of a filter: words, and modifiers.
@@ -53,125 +53,125 @@ type Props = {
  * is true of exclusion.
  */
 export function ContentFilter({ assets, value, onChange, scopeLabel }: Props) {
-  const [draft, setDraft] = useState("");
-  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState('')
+  const [open, setOpen] = useState(false)
   // -1 is nothing highlighted, and Enter then does nothing. Prose that happens
   // to name a status shouldn't turn into a chip because someone finished
   // typing — an item is only ever accepted after it has been aimed at.
-  const [active, setActive] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const [active, setActive] = useState(-1)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
 
-  const vocab = useMemo(() => vocabulary(assets), [assets]);
-  const chips = useMemo(() => filterChips(value, vocab), [value, vocab]);
+  const vocab = useMemo(() => vocabulary(assets), [assets])
+  const chips = useMemo(() => filterChips(value, vocab), [value, vocab])
   const suggestions = useMemo(
     () => suggest(draft, value, vocab),
     [draft, value, vocab],
-  );
-  const narrowed = isFilterActive(value) || draft !== "";
+  )
+  const narrowed = isFilterActive(value) || draft !== ''
 
   // The filter can also be cleared from outside — the list's empty state offers
   // RESET FILTERS — and the text in the box is ours to clear, not the parent's.
   // A half-typed modifier survives it: it is not part of the filter yet.
   useEffect(() => {
-    if (isFilterActive(value)) return;
-    setDraft((current) => (parseModifier(current) ? current : ""));
-  }, [value]);
+    if (isFilterActive(value)) return
+    setDraft((current) => (parseModifier(current) ? current : ''))
+  }, [value])
 
   // Keyboard travel has to bring the row with it, or the highlight walks off
   // the bottom of a long tag list and the list appears to stop responding.
   useEffect(() => {
-    if (active < 0) return;
-    listRef.current?.children[active]?.scrollIntoView({ block: "nearest" });
-  }, [active]);
+    if (active < 0) return
+    listRef.current?.children[active]?.scrollIntoView({ block: 'nearest' })
+  }, [active])
 
   const type = (next: string) => {
-    setDraft(next);
-    setOpen(true);
+    setDraft(next)
+    setOpen(true)
     // A begun modifier is already a commitment to pick one of its values, so
     // the first is aimed at from the start; prose is not.
-    setActive(parseModifier(next) ? 0 : -1);
-    onChange({ ...value, name: draftName(next) });
-  };
+    setActive(parseModifier(next) ? 0 : -1)
+    onChange({ ...value, name: draftName(next) })
+  }
 
   const accept = (suggestion: Suggestion) => {
-    const { negated } = suggestion;
-    if (suggestion.kind === "facet") {
+    const { negated } = suggestion
+    if (suggestion.kind === 'facet') {
       // Halfway, not all the way: the keyword lands in the box and its values
       // become the suggestions, so choosing the facet and choosing the value
       // are one continuous motion.
-      setDraft(`${negated ? "-" : ""}${suggestion.keyword}:`);
-      onChange({ ...value, name: "" });
-      setActive(0);
+      setDraft(`${negated ? '-' : ''}${suggestion.keyword}:`)
+      onChange({ ...value, name: '' })
+      setActive(0)
     } else {
-      setDraft("");
+      setDraft('')
       onChange(
         withClause(
-          { ...value, name: "" },
+          { ...value, name: '' },
           suggestion.facet,
           suggestion.id,
           negated,
         ),
-      );
-      setActive(-1);
+      )
+      setActive(-1)
     }
-    setOpen(true);
-    inputRef.current?.focus();
-  };
+    setOpen(true)
+    inputRef.current?.focus()
+  }
 
   const remove = (chip: FilterChip) => {
-    onChange(withoutClause(value, chip.facet, chip.id));
-    inputRef.current?.focus();
-  };
+    onChange(withoutClause(value, chip.facet, chip.id))
+    inputRef.current?.focus()
+  }
 
   // Wanted ⇄ unwanted, in place. The chip is where the value already is, so it
   // is where changing your mind about it belongs — the alternative is deleting
   // it and finding it again in a menu that no longer offers it.
   const flip = (chip: FilterChip) => {
-    onChange(withClause(value, chip.facet, chip.id, !chip.negated));
-    inputRef.current?.focus();
-  };
+    onChange(withClause(value, chip.facet, chip.id, !chip.negated))
+    inputRef.current?.focus()
+  }
 
   const clear = () => {
-    setDraft("");
-    setActive(-1);
-    onChange(EMPTY_FILTER);
-    inputRef.current?.focus();
-  };
+    setDraft('')
+    setActive(-1)
+    onChange(EMPTY_FILTER)
+    inputRef.current?.focus()
+  }
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     // Backspace eats the last chip, which is the one thing a chip field must
     // do: the alternative is aiming at a 12px ✕ to undo something typed.
-    if (event.key === "Backspace" && draft === "" && chips.length > 0) {
-      remove(chips[chips.length - 1]);
-      return;
+    if (event.key === 'Backspace' && draft === '' && chips.length > 0) {
+      remove(chips[chips.length - 1])
+      return
     }
-    if (event.key === "Escape") {
-      setOpen(false);
-      setActive(-1);
-      return;
+    if (event.key === 'Escape') {
+      setOpen(false)
+      setActive(-1)
+      return
     }
-    if (suggestions.length === 0) return;
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      if (!open) return setOpen(true);
-      setActive((i) => (i + 1) % suggestions.length);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActive((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
-    } else if (event.key === "Enter" && open && suggestions[active]) {
-      event.preventDefault();
-      accept(suggestions[active]);
+    if (suggestions.length === 0) return
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      if (!open) return setOpen(true)
+      setActive((i) => (i + 1) % suggestions.length)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActive((i) => (i <= 0 ? suggestions.length - 1 : i - 1))
+    } else if (event.key === 'Enter' && open && suggestions[active]) {
+      event.preventDefault()
+      accept(suggestions[active])
     }
-  };
+  }
 
   return (
     <div
       className="relative w-full shrink-0"
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) {
-          setOpen(false);
-          setActive(-1);
+          setOpen(false)
+          setActive(-1)
         }
       }}
     >
@@ -181,8 +181,8 @@ export function ContentFilter({ assets, value, onChange, scopeLabel }: Props) {
         className="flex w-full flex-wrap items-center gap-1.5 border-b-2 border-quaternary bg-input-secondary px-3 py-1.5 transition-colors focus-within:border-foreground"
         onMouseDown={(event) => {
           if (event.target === event.currentTarget) {
-            event.preventDefault();
-            inputRef.current?.focus();
+            event.preventDefault()
+            inputRef.current?.focus()
           }
         }}
       >
@@ -212,8 +212,8 @@ export function ContentFilter({ assets, value, onChange, scopeLabel }: Props) {
           onKeyDown={onKeyDown}
           placeholder={
             chips.length > 0
-              ? "Filter by name…"
-              : "Filter by name, or type status: or tag:"
+              ? 'Filter by name…'
+              : 'Filter by name, or type status: or tag:'
           }
           aria-label={`Filter ${scopeLabel}`}
           role="combobox"
@@ -232,7 +232,7 @@ export function ContentFilter({ assets, value, onChange, scopeLabel }: Props) {
         <Button
           variant="ghost"
           size="sm"
-          className={cn("shrink-0", !narrowed && "invisible")}
+          className={cn('shrink-0', !narrowed && 'invisible')}
           tabIndex={narrowed ? undefined : -1}
           aria-hidden={!narrowed}
           onClick={clear}
@@ -256,7 +256,7 @@ export function ContentFilter({ assets, value, onChange, scopeLabel }: Props) {
           {suggestions.map((suggestion, index) => (
             <li
               key={
-                suggestion.kind === "facet"
+                suggestion.kind === 'facet'
                   ? `facet:${suggestion.facet}:${suggestion.negated}`
                   : `${suggestion.facet}:${suggestion.id}:${suggestion.negated}`
               }
@@ -269,8 +269,8 @@ export function ContentFilter({ assets, value, onChange, scopeLabel }: Props) {
               onMouseEnter={() => setActive(index)}
               onClick={() => accept(suggestion)}
               className={cn(
-                "flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm select-none",
-                index === active && "bg-popover-hover",
+                'flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm select-none',
+                index === active && 'bg-popover-hover',
               )}
             >
               <Modifier
@@ -282,7 +282,7 @@ export function ContentFilter({ assets, value, onChange, scopeLabel }: Props) {
                     the question is "what would that get me", and three
                     examples answer it better than a sentence. */}
                 <span className="truncate text-secondary-foreground">
-                  {suggestion.kind === "facet"
+                  {suggestion.kind === 'facet'
                     ? suggestion.hint
                     : suggestion.label}
                 </span>
@@ -292,7 +292,7 @@ export function ContentFilter({ assets, value, onChange, scopeLabel }: Props) {
         </ul>
       )}
     </div>
-  );
+  )
 }
 
 /**
@@ -317,13 +317,13 @@ function Modifier({
   className,
   children,
 }: {
-  keyword: string;
-  negated: boolean;
-  className?: string;
-  children: React.ReactNode;
+  keyword: string
+  negated: boolean
+  className?: string
+  children: React.ReactNode
 }) {
   return (
-    <span className={cn("flex items-center gap-1", className)}>
+    <span className={cn('flex items-center gap-1', className)}>
       <span className="shrink-0">
         {/* Capitalised here rather than in the vocabulary: `status` is what
             gets typed, and the grammar should keep exactly one spelling. */}
@@ -332,7 +332,7 @@ function Modifier({
       </span>
       {children}
     </span>
-  );
+  )
 }
 
 /**
@@ -351,22 +351,22 @@ function ChipToken({
   onFlip,
   onRemove,
 }: {
-  chip: FilterChip;
-  onFlip: () => void;
-  onRemove: () => void;
+  chip: FilterChip
+  onFlip: () => void
+  onRemove: () => void
 }) {
   return (
     <span
       className={cn(
-        "inline-flex h-6 max-w-full shrink-0 items-center border border-tertiary bg-secondary text-[13px]/4",
-        chip.negated && "border-dashed",
+        'inline-flex h-6 max-w-full shrink-0 items-center border border-tertiary bg-secondary text-[13px]/4',
+        chip.negated && 'border-dashed',
       )}
     >
       <button
         type="button"
         onClick={onFlip}
-        aria-label={`${chip.negated ? "Include" : "Exclude"} ${chip.keyword} ${chip.label}`}
-        title={chip.negated ? "Include these instead" : "Exclude these instead"}
+        aria-label={`${chip.negated ? 'Include' : 'Exclude'} ${chip.keyword} ${chip.label}`}
+        title={chip.negated ? 'Include these instead' : 'Exclude these instead'}
         className="flex h-full min-w-0 items-center pl-1.5 hover:bg-tertiary"
       >
         <Modifier keyword={chip.keyword} negated={chip.negated}>
@@ -384,5 +384,5 @@ function ChipToken({
         <XIcon weight="bold" className="size-3" />
       </button>
     </span>
-  );
+  )
 }

@@ -46,7 +46,11 @@ export function TierCard({ tier, current, scheduled, onChoose, busy }: Props) {
         tier.price.amount / 100,
         // The currency comes off the tier; the client never picks one. Whole
         // units only — a price list showing "49.00" reads like an invoice.
-        { style: 'currency', currency: tier.price.currency, maximumFractionDigits: 0 },
+        {
+          style: 'currency',
+          currency: tier.price.currency,
+          maximumFractionDigits: 0,
+        },
         i18n.language,
       )
       price =
@@ -71,7 +75,9 @@ export function TierCard({ tier, current, scheduled, onChoose, busy }: Props) {
             {tier.name}
           </h3>
           {current && <Chip variant="muted">{t('tiers.currentBadge')}</Chip>}
-          {scheduled && <Chip variant="muted">{t('tiers.scheduledBadge')}</Chip>}
+          {scheduled && (
+            <Chip variant="muted">{t('tiers.scheduledBadge')}</Chip>
+          )}
         </div>
         {/* Omitted rather than faked while pricing is undecided: a plan card
             that says nothing about money is honest, and one that says "$0" is

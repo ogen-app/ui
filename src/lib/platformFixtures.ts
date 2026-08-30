@@ -9,7 +9,9 @@ import type { Platform, VideoConstraints } from '@/types/campaigns'
  * The all-zero rule set — with no overrides, exactly how "this platform takes
  * no video" reaches the client (the Go zero value, `IsZero` on the server).
  */
-export function videoConstraints(overrides: Partial<VideoConstraints> = {}): VideoConstraints {
+export function videoConstraints(
+  overrides: Partial<VideoConstraints> = {},
+): VideoConstraints {
   return {
     max_file_size_bytes: 0,
     allowed_formats: [],

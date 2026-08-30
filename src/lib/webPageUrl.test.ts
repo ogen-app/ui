@@ -29,7 +29,10 @@ describe('checkPageUrl', () => {
   })
 
   it('asks for something when the field is empty', () => {
-    expect(checkPageUrl('   ')).toEqual({ ok: false, error: 'Paste a link first.' })
+    expect(checkPageUrl('   ')).toEqual({
+      ok: false,
+      error: 'Paste a link first.',
+    })
   })
 
   it('refuses a scheme the scraper cannot fetch', () => {

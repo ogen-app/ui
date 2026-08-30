@@ -37,7 +37,11 @@ import type { Task } from '@/lib/tasks'
  * auto-publishing is the highest-volume thing that happens and the lowest-value
  * thing to list, which is the whole argument for having a report.
  */
-export type ActivityEventKind = 'published' | 'failed' | 'not_published' | 'created'
+export type ActivityEventKind =
+  | 'published'
+  | 'failed'
+  | 'not_published'
+  | 'created'
 
 /** The kinds that reach the feed on their own, as exceptions. */
 const EXCEPTION_KINDS = ['failed', 'not_published'] as const
@@ -183,10 +187,12 @@ export function postEvents(post: PostSummary, campaignId: string): PostEvent[] {
       break
     }
     case 'failed':
-      if (attempted) events.push({ kind: 'failed', at: attempted, campaignId, post })
+      if (attempted)
+        events.push({ kind: 'failed', at: attempted, campaignId, post })
       break
     case 'not_published':
-      if (attempted) events.push({ kind: 'not_published', at: attempted, campaignId, post })
+      if (attempted)
+        events.push({ kind: 'not_published', at: attempted, campaignId, post })
       break
     default:
       // draft / ready_for_publish / scheduled — nothing has happened to them
@@ -259,7 +265,10 @@ export function dailyReports(
 
     if (event.kind === 'published') {
       const platformId = event.post.platform_id
-      draft.byChannel.set(platformId, (draft.byChannel.get(platformId) ?? 0) + 1)
+      draft.byChannel.set(
+        platformId,
+        (draft.byChannel.get(platformId) ?? 0) + 1,
+      )
     }
 
     let campaign = draft.byCampaign.get(event.campaignId)
@@ -272,18 +281,26 @@ export function dailyReports(
   }
 
   return [...days.entries()]
-    .map(([date, draft]): DailyReport => ({
-      date,
-      lastEventAt: draft.lastEventAt.toISOString(),
-      counts: draft.counts,
-      total: draft.total,
-      publishedByChannel: [...draft.byChannel.entries()]
-        .map(([platformId, count]) => ({ platformId, count }))
-        .sort((a, b) => b.count - a.count || a.platformId.localeCompare(b.platformId)),
-      campaigns: [...draft.byCampaign.entries()]
-        .map(([campaignId, entry]) => ({ campaignId, ...entry }))
-        .sort((a, b) => b.total - a.total || a.campaignId.localeCompare(b.campaignId)),
-    }))
+    .map(
+      ([date, draft]): DailyReport => ({
+        date,
+        lastEventAt: draft.lastEventAt.toISOString(),
+        counts: draft.counts,
+        total: draft.total,
+        publishedByChannel: [...draft.byChannel.entries()]
+          .map(([platformId, count]) => ({ platformId, count }))
+          .sort(
+            (a, b) =>
+              b.count - a.count || a.platformId.localeCompare(b.platformId),
+          ),
+        campaigns: [...draft.byCampaign.entries()]
+          .map(([campaignId, entry]) => ({ campaignId, ...entry }))
+          .sort(
+            (a, b) =>
+              b.total - a.total || a.campaignId.localeCompare(b.campaignId),
+          ),
+      }),
+    )
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 
@@ -293,7 +310,9 @@ export function reportForDay(
   date: string,
   now: Date = new Date(),
 ): DailyReport | null {
-  return dailyReports(summaries, now).find((report) => report.date === date) ?? null
+  return (
+    dailyReports(summaries, now).find((report) => report.date === date) ?? null
+  )
 }
 
 /**
@@ -321,7 +340,8 @@ export function taskEntries(tasks: Task[]): ActivityEntry[] {
     }
 
     if (task.status === 'done' && task.closedAt) {
-      const kind = task.closedReason === 'auto' ? 'task_resolved' : 'task_completed'
+      const kind =
+        task.closedReason === 'auto' ? 'task_resolved' : 'task_completed'
       entries.push({
         kind,
         id: `${kind}:${task.id}`,

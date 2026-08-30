@@ -45,8 +45,10 @@ export const es: Translation = {
     },
     organizationName: {
       required: 'El nombre de la organización es obligatorio',
-      tooLong: 'El nombre de la organización no puede superar los 100 caracteres',
-      whitespace: 'El nombre de la organización no puede ser solo espacios en blanco',
+      tooLong:
+        'El nombre de la organización no puede superar los 100 caracteres',
+      whitespace:
+        'El nombre de la organización no puede ser solo espacios en blanco',
     },
     email: {
       required: 'El correo electrónico es obligatorio',
@@ -79,13 +81,15 @@ export const es: Translation = {
       title: 'Iniciar sesión',
       subtitle: 'Inicia sesión para seguir gestionando tu contenido',
       submit: 'INICIAR SESIÓN',
-      expired: 'Tu sesión ha caducado — inicia sesión de nuevo para continuar donde lo dejaste',
+      expired:
+        'Tu sesión ha caducado — inicia sesión de nuevo para continuar donde lo dejaste',
       afterReset: 'Tu contraseña se ha cambiado. Inicia sesión con la nueva',
       emailLabel: 'Correo electrónico',
       emailPlaceholder: 'Introduce tu correo electrónico',
       passwordLabel: 'Contraseña',
       passwordPlaceholder: 'Introduce la contraseña',
-      forgot: '¿Has olvidado tu contraseña? <resetLink>Restablécela aquí</resetLink>.',
+      forgot:
+        '¿Has olvidado tu contraseña? <resetLink>Restablécela aquí</resetLink>.',
       noAccount: '¿Aún no tienes cuenta?',
       signUpLink: 'Regístrate',
     },
@@ -119,7 +123,8 @@ export const es: Translation = {
         'Si <strong>{{email}}</strong> tiene una cuenta de Ogen, va camino un enlace para elegir una contraseña nueva. Caduca en una hora.',
       resend: 'ENVIAR DE NUEVO',
       resentNote: 'Enviado de nuevo — dale un minuto.',
-      emailHint: 'Usa la dirección con la que inicias sesión. El enlace deja de funcionar después de una hora.',
+      emailHint:
+        'Usa la dirección con la que inicias sesión. El enlace deja de funcionar después de una hora.',
       backToLogin: 'Volver al inicio de sesión',
     },
     reset: {
@@ -130,7 +135,8 @@ export const es: Translation = {
       passwordPlaceholder: 'Introduce una contraseña nueva',
       confirmLabel: 'Confirma la nueva contraseña',
       confirmPlaceholder: 'Introdúcela otra vez',
-      confirmHint: 'Escríbela otra vez — un error aquí te deja fuera de tu propia cuenta.',
+      confirmHint:
+        'Escríbela otra vez — un error aquí te deja fuera de tu propia cuenta.',
       requestNewLink: 'Pedir un enlace nuevo',
       knowPassword: '¿Recuerdas tu contraseña?',
       logInLink: 'Inicia sesión',
@@ -251,7 +257,8 @@ export const es: Translation = {
       title: 'Qué hay que hacer',
       titlePlaceholder: 'Escribe la tarea como la dirías',
       description: 'Descripción',
-      descriptionPlaceholder: 'En qué consiste el trabajo y lo que la siguiente persona deba saber',
+      descriptionPlaceholder:
+        'En qué consiste el trabajo y lo que la siguiente persona deba saber',
       campaign: 'Campaña',
       noCampaign: 'Sin campaña',
       assignee: 'Asignada a',
@@ -346,7 +353,8 @@ export const es: Translation = {
     showFieldOnMonth: 'Mostrar {{field}} en la tarjeta de mes',
 
     imagePreviews: 'Mostrar las tarjetas con vista previa de la imagen',
-    imagePreviewsNote: 'Solo las publicaciones que tienen imagen y, en el mes, solo en los días con espacio para una',
+    imagePreviewsNote:
+      'Solo las publicaciones que tienen imagen y, en el mes, solo en los días con espacio para una',
     weekCard: 'TARJETA DE SEMANA',
     monthCard: 'TARJETA DE MES',
     addPostOn: 'Añadir una publicación el {{date}}',
@@ -362,7 +370,8 @@ export const es: Translation = {
       calendarSubtitle:
         'Añade tu primera publicación y aparecerá aquí, lista para programar.',
       listTitle: 'Aún no hay publicaciones',
-      listSubtitle: 'Añade tu primera publicación para empezar a construir esta campaña.',
+      listSubtitle:
+        'Añade tu primera publicación para empezar a construir esta campaña.',
       panelTitle: 'Nada sin programar',
       panelSubtitle:
         'Las publicaciones sin fecha esperan aquí — arrastra una fuera del calendario o añade una nueva.',
@@ -516,10 +525,12 @@ export const es: Translation = {
     dangerZone: {
       title: 'Zona de peligro',
       body: 'Eliminar este espacio elimina sus campañas, publicaciones, recursos y cuentas sociales conectadas, y todos los miembros pierden el acceso. Las publicaciones ya enviadas siguen activas en las redes sociales. No puedes deshacerlo tú mismo — recuperar un espacio eliminado es una solicitud manual a soporte.',
-      lastWorkspace: 'Este es tu único espacio. Eliminarlo te deja sin ningún sitio donde trabajar — crea otro primero.',
+      lastWorkspace:
+        'Este es tu único espacio. Eliminarlo te deja sin ningún sitio donde trabajar — crea otro primero.',
       action: 'ELIMINAR ESPACIO',
       confirmTitle: '¿Eliminar {{name}}?',
-      confirmBody: 'Todo lo que hay en este espacio se elimina, para todos los miembros, y no puedes restaurarlo tú mismo. Escribe <strong>{{name}}</strong> para confirmar.',
+      confirmBody:
+        'Todo lo que hay en este espacio se elimina, para todos los miembros, y no puedes restaurarlo tú mismo. Escribe <strong>{{name}}</strong> para confirmar.',
       confirmLabel: 'Nombre del espacio',
       keep: 'MANTENER ESPACIO',
       confirm: 'ELIMINAR ESPACIO',
@@ -537,7 +548,8 @@ export const es: Translation = {
       comingSoon: 'Próximamente',
       contentTypes: 'Tipos de contenido disponibles',
       contentTypesEmpty: 'Ninguno',
-      accountInactive: 'Inactiva en {{platform}} — no puede recibir publicaciones',
+      accountInactive:
+        'Inactiva en {{platform}} — no puede recibir publicaciones',
       reconnect: 'Reconectar',
       disconnectAccount: 'Desconectar {{name}}',
       disconnectTooltip: 'Desconectar esta cuenta',
@@ -551,12 +563,15 @@ export const es: Translation = {
     },
     autoPublish: {
       allowedTitle: 'Publicación automática permitida',
-      allowedBody: 'Las publicaciones programadas salen solas, en todas las campañas.',
+      allowedBody:
+        'Las publicaciones programadas salen solas, en todas las campañas.',
       blockedTitle: 'Publicación automática no permitida',
-      blockedBody: 'Las publicaciones programadas esperan a que las publiques a mano.',
+      blockedBody:
+        'Las publicaciones programadas esperan a que las publiques a mano.',
       allow: 'PERMITIR',
       disallow: 'NO PERMITIR',
-      checkFailed: 'No se han podido consultar las publicaciones programadas de {{platform}}',
+      checkFailed:
+        'No se han podido consultar las publicaciones programadas de {{platform}}',
       pending: {
         title_one: '{{platform}} tiene {{count}} publicación en cola',
         title_other: '{{platform}} tiene {{count}} publicaciones en cola',
@@ -573,8 +588,10 @@ export const es: Translation = {
         convert_other: 'Pasar las {{count}} a manual',
         converted_one: '{{count}} publicación pasada a publicación manual',
         converted_other: '{{count}} publicaciones pasadas a publicación manual',
-        convertFailed_one: 'No se ha podido convertir {{failed}} de {{count}} publicación',
-        convertFailed_other: 'No se han podido convertir {{failed}} de {{count}} publicaciones',
+        convertFailed_one:
+          'No se ha podido convertir {{failed}} de {{count}} publicación',
+        convertFailed_other:
+          'No se han podido convertir {{failed}} de {{count}} publicaciones',
         convertFailedDetail:
           'Siguen programadas para publicarse solas. La publicación automática se ha dejado activada.',
       },
@@ -590,13 +607,18 @@ export const es: Translation = {
       modalTitle: 'Conectar {{platform}}',
       preparing: 'Preparando tu enlace de conexión…',
       redirecting: 'Te llevamos a {{platform}}…',
-      success: '{{platform}} está conectada. La encontrarás en Ajustes de plataformas.',
-      settling: 'Terminando la configuración — la cuenta aparecerá aquí en un momento.',
+      success:
+        '{{platform}} está conectada. La encontrarás en Ajustes de plataformas.',
+      settling:
+        'Terminando la configuración — la cuenta aparecerá aquí en un momento.',
       errors: {
-        expired: 'Ese enlace de conexión ha caducado. Vuelve a empezar la conexión.',
+        expired:
+          'Ese enlace de conexión ha caducado. Vuelve a empezar la conexión.',
         mismatch: 'Algo ha fallado al conectar tu cuenta. Inténtalo de nuevo.',
-        upstream: 'No hemos podido contactar con la plataforma. Inténtalo dentro de un momento.',
-        noTargets: 'Esta cuenta no tiene páginas ni perfiles en los que podamos publicar.',
+        upstream:
+          'No hemos podido contactar con la plataforma. Inténtalo dentro de un momento.',
+        noTargets:
+          'Esta cuenta no tiene páginas ni perfiles en los que podamos publicar.',
         generic: 'No hemos podido conectar tu cuenta. Inténtalo de nuevo.',
       },
       picker: {
@@ -644,8 +666,10 @@ export const es: Translation = {
 
   integration: {
     rateLimited: 'Demasiados intentos — vuelve a intentarlo en un momento.',
-    rateLimitedIn: 'Demasiados intentos — vuelve a intentarlo en {{seconds}} s.',
-    disabled: 'La integración de publicación no está configurada en este servidor.',
+    rateLimitedIn:
+      'Demasiados intentos — vuelve a intentarlo en {{seconds}} s.',
+    disabled:
+      'La integración de publicación no está configurada en este servidor.',
     degraded:
       'La integración de publicación no está disponible temporalmente. Inténtalo de nuevo en un momento.',
     alreadyDisconnected: 'Esta cuenta ya está desconectada.',
@@ -725,7 +749,8 @@ export const es: Translation = {
     suspendedSince: 'De solo lectura desde el {{when}}.',
 
     plansTitle: 'Planes',
-    planIntro: 'Lo que puede hacer este espacio y lo que cambiarían los demás planes.',
+    planIntro:
+      'Lo que puede hacer este espacio y lo que cambiarían los demás planes.',
     planMock:
       'Los planes todavía no están conectados a la facturación. Elegir uno solo cambia lo que este espacio puede hacer.',
     planLoadFailed: 'No se han podido cargar los planes.',
@@ -741,7 +766,8 @@ export const es: Translation = {
     noSubscription: 'No se está cobrando nada por este espacio.',
     accessEnds: 'El acceso termina el {{when}}.',
     accessEnded: 'El acceso terminó el {{when}}.',
-    ownersOnly: 'Solo los propietarios del espacio pueden ver los datos de facturación.',
+    ownersOnly:
+      'Solo los propietarios del espacio pueden ver los datos de facturación.',
 
     providerHolds:
       'Tu método de pago, tu dirección de facturación, tu NIF/CIF, tus facturas y la cancelación los gestiona Lemon Squeezy, que vende Ogen como comerciante registrado.',
@@ -754,7 +780,8 @@ export const es: Translation = {
     statusExpired: 'Caducado',
     statusUnpaid: 'Sin pagar',
 
-    paymentRetrying: 'El último pago ha fallado y Lemon Squeezy volverá a intentarlo.',
+    paymentRetrying:
+      'El último pago ha fallado y Lemon Squeezy volverá a intentarlo.',
     paymentStopped:
       'El último pago ha fallado y no se volverá a intentar: actualiza tu método de pago en Lemon Squeezy para conservar este plan.',
 
@@ -832,7 +859,8 @@ export const es: Translation = {
       code: '503',
       title: 'No se puede contactar con el servidor',
       message: 'La aplicación no puede conectarse al servidor ahora mismo.',
-      messageSecondLine: 'Puede que se esté reiniciando o que esté temporalmente sin servicio.',
+      messageSecondLine:
+        'Puede que se esté reiniciando o que esté temporalmente sin servicio.',
       type: 'SIN CONEXIÓN',
     },
   },

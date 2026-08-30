@@ -1,4 +1,4 @@
-import type { Asset } from "@/types/content";
+import type { Asset } from '@/types/content'
 
 /**
  * The picture of a document, when the backend has one.
@@ -15,10 +15,12 @@ import type { Asset } from "@/types/content";
  * in the system today is one, and pretending otherwise here would be a branch
  * nothing can reach.
  */
-export function assetPreviewUrl(asset: Pick<Asset, "file" | "images">): string | null {
-  const page = asset.file?.thumbnail_url;
-  if (page) return page;
+export function assetPreviewUrl(
+  asset: Pick<Asset, 'file' | 'images'>,
+): string | null {
+  const page = asset.file?.thumbnail_url
+  if (page) return page
   // The page's own order, which the scrape preserves — the first image in a
   // document is the one that stands for it far more often than any later one.
-  return asset.images?.find((image) => image.url)?.url ?? null;
+  return asset.images?.find((image) => image.url)?.url ?? null
 }

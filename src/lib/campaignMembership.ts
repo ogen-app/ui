@@ -1,12 +1,12 @@
-import { getCampaign, updateCampaign } from "@/services/api/campaigns";
-import { listAssets } from "@/services/api/content";
-import { campaignKey } from "@/hooks/useCampaigns";
-import { campaignToPayload } from "@/lib/campaignPayload";
-import { membershipPayload, seedsWholeBank } from "@/lib/campaignSources";
-import { flushPendingSave } from "@/lib/pendingSaves";
-import { queryClient } from "@/lib/queryClient";
-import type { Campaign } from "@/types/campaigns";
-import { toast } from "@/stores/toastStore";
+import { getCampaign, updateCampaign } from '@/services/api/campaigns'
+import { listAssets } from '@/services/api/content'
+import { campaignKey } from '@/hooks/useCampaigns'
+import { campaignToPayload } from '@/lib/campaignPayload'
+import { membershipPayload, seedsWholeBank } from '@/lib/campaignSources'
+import { flushPendingSave } from '@/lib/pendingSaves'
+import { queryClient } from '@/lib/queryClient'
+import type { Campaign } from '@/types/campaigns'
+import { toast } from '@/stores/toastStore'
 
 /**
  * Adding and removing a campaign's documents, from outside React.
@@ -28,18 +28,18 @@ import { toast } from "@/stores/toastStore";
  */
 
 /** One promise chain per campaign, so writes to it are serial. */
-const queues = new Map<string, Promise<unknown>>();
+const queues = new Map<string, Promise<unknown>>()
 
 function enqueue(campaignId: string, run: () => Promise<void>): Promise<void> {
-  const previous = queues.get(campaignId) ?? Promise.resolve();
+  const previous = queues.get(campaignId) ?? Promise.resolve()
   // `catch` on the tail, not on `run`: a failed write must not break the chain
   // for the next one, but its own rejection still has to reach the caller.
-  const next = previous.then(run, run);
+  const next = previous.then(run, run)
   queues.set(
     campaignId,
     next.catch(() => {}),
-  );
-  return next;
+  )
+  return next
 }
 
 async function write(
@@ -50,8 +50,8 @@ async function write(
   // own. Landing them first means the read below already contains what the
   // user just typed — otherwise their later flush, built from a pre-write
   // snapshot, would PUT the old membership straight back.
-  await flushPendingSave(campaignId);
-  const campaign = await getCampaign(campaignId);
+  await flushPendingSave(campaignId)
+  const campaign = await getCampaign(campaignId)
   // A campaign still in the old whole-bank state (`use_assets: true,
   // asset_ids: []`) has been generating from every asset in the workspace, so
   // *that* set — not the empty list the row stores — is what any change
@@ -61,8 +61,8 @@ async function write(
   // base of `[]` would collapse "everything" to just the ids being written.
   const base = seedsWholeBank(campaign)
     ? { ...campaign, asset_ids: (await listAssets()).map((a) => a.id) }
-    : campaign;
-  const ids = nextIds(base);
+    : campaign
+  const ids = nextIds(base)
   // Compared against the row as the server holds it, not the expanded base —
   // a legacy campaign whose expanded set differs from the stored `[]` must
   // write, because that write *is* the pin. (An empty bank expands to `[]`,
@@ -71,14 +71,14 @@ async function write(
     ids.length === campaign.asset_ids.length &&
     ids.every((id, i) => id === campaign.asset_ids[i])
   ) {
-    return;
+    return
   }
   await updateCampaign(
     campaignId,
     campaignToPayload(campaign, membershipPayload(ids)),
-  );
-  queryClient.invalidateQueries({ queryKey: campaignKey(campaignId) });
-  queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+  )
+  queryClient.invalidateQueries({ queryKey: campaignKey(campaignId) })
+  queryClient.invalidateQueries({ queryKey: ['campaigns'] })
 }
 
 /**
@@ -94,17 +94,17 @@ export function addToCampaign(
 ): Promise<void> {
   return enqueue(campaignId, () =>
     write(campaignId, (campaign) => {
-      const held = new Set(campaign.asset_ids);
-      return [...campaign.asset_ids, ...assetIds.filter((id) => !held.has(id))];
+      const held = new Set(campaign.asset_ids)
+      return [...campaign.asset_ids, ...assetIds.filter((id) => !held.has(id))]
     }),
   ).catch((error: unknown) => {
-    toast.error("Unable to add to this campaign", {
+    toast.error('Unable to add to this campaign', {
       description:
         error instanceof Error
           ? error.message
-          : "The document was saved but is not attached to the campaign.",
-    });
-  });
+          : 'The document was saved but is not attached to the campaign.',
+    })
+  })
 }
 
 /**
@@ -118,12 +118,12 @@ export function removeFromCampaign(
   campaignId: string,
   assetIds: string[],
 ): Promise<void> {
-  const dropped = new Set(assetIds);
+  const dropped = new Set(assetIds)
   return enqueue(campaignId, () =>
     write(campaignId, (campaign) =>
       campaign.asset_ids.filter((id) => !dropped.has(id)),
     ),
-  ).catch(() => {});
+  ).catch(() => {})
 }
 
 /**
@@ -144,5 +144,5 @@ export function seedFromWholeBank(campaignId: string): Promise<void> {
     // Silent: the user did not ask for this, and the page behind the toast
     // would be showing them an empty campaign either way. The next visit
     // tries again.
-  });
+  })
 }

@@ -1,22 +1,22 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { AnalyticsModule } from "@/components/campaigns/overview/AnalyticsModule.tsx";
-import { DocumentsModule } from "@/components/campaigns/overview/DocumentsModule.tsx";
-import { AttentionRail } from "@/components/campaigns/overview/AttentionRail.tsx";
-import { BriefModule } from "@/components/campaigns/overview/BriefModule.tsx";
-import { ContentModule } from "@/components/campaigns/overview/ContentModule.tsx";
-import { SetupModule } from "@/components/campaigns/overview/SetupModule.tsx";
-import { useCampaign, useCampaignSummaries } from "@/hooks/useCampaigns.ts";
-import { useCampaignPosts } from "@/hooks/usePosts.ts";
-import { usePlatformViews } from "@/hooks/usePlatforms.ts";
-import { attentionItems } from "@/lib/campaignReadiness.ts";
-import type { PostSummary } from "@/types/posts";
+import { createFileRoute } from '@tanstack/react-router'
+import { Skeleton } from '@/components/ui/skeleton.tsx'
+import { AnalyticsModule } from '@/components/campaigns/overview/AnalyticsModule.tsx'
+import { DocumentsModule } from '@/components/campaigns/overview/DocumentsModule.tsx'
+import { AttentionRail } from '@/components/campaigns/overview/AttentionRail.tsx'
+import { BriefModule } from '@/components/campaigns/overview/BriefModule.tsx'
+import { ContentModule } from '@/components/campaigns/overview/ContentModule.tsx'
+import { SetupModule } from '@/components/campaigns/overview/SetupModule.tsx'
+import { useCampaign, useCampaignSummaries } from '@/hooks/useCampaigns.ts'
+import { useCampaignPosts } from '@/hooks/usePosts.ts'
+import { usePlatformViews } from '@/hooks/usePlatforms.ts'
+import { attentionItems } from '@/lib/campaignReadiness.ts'
+import type { PostSummary } from '@/types/posts'
 
 export const Route = createFileRoute(
-  "/_authenticated/campaigns/$campaignId/overview",
+  '/_authenticated/campaigns/$campaignId/overview',
 )({
   component: CampaignOverviewScreen,
-});
+})
 
 /**
  * The campaign's control panel (CON-120): dashboard, control centre, and
@@ -25,15 +25,15 @@ export const Route = createFileRoute(
  * dashboard mid-campaign.
  */
 function CampaignOverviewScreen() {
-  const { campaignId } = Route.useParams();
-  const { data: campaign } = useCampaign(campaignId);
-  const postsQuery = useCampaignPosts(campaignId);
-  const summariesQuery = useCampaignSummaries();
-  const platformViews = usePlatformViews();
+  const { campaignId } = Route.useParams()
+  const { data: campaign } = useCampaign(campaignId)
+  const postsQuery = useCampaignPosts(campaignId)
+  const summariesQuery = useCampaignSummaries()
+  const platformViews = usePlatformViews()
 
   // The backend sends `null` for a campaign with no posts (Go nil slice), so
   // gate on the query settling, not on the data being truthy.
-  const posts = postsQuery.data ?? [];
+  const posts = postsQuery.data ?? []
 
   // The layout already handles campaign load errors. It also no longer waits
   // on the campaign to arrive — `useCampaign` seeds itself from the list the
@@ -45,12 +45,24 @@ function CampaignOverviewScreen() {
   if (!campaign) {
     return (
       <div className="flex flex-col gap-3 pb-10">
-        <Skeleton variant="surface" className="h-40 w-full max-w-content mx-auto" />
-        <Skeleton variant="surface" className="h-64 w-full max-w-content mx-auto" />
-        <Skeleton variant="surface" className="h-32 w-full max-w-content mx-auto" />
-        <Skeleton variant="surface" className="h-14 w-full max-w-content mx-auto" />
+        <Skeleton
+          variant="surface"
+          className="h-40 w-full max-w-content mx-auto"
+        />
+        <Skeleton
+          variant="surface"
+          className="h-64 w-full max-w-content mx-auto"
+        />
+        <Skeleton
+          variant="surface"
+          className="h-32 w-full max-w-content mx-auto"
+        />
+        <Skeleton
+          variant="surface"
+          className="h-14 w-full max-w-content mx-auto"
+        />
       </div>
-    );
+    )
   }
 
   // Only two modules are claims about the posts. The other four describe the
@@ -67,13 +79,13 @@ function CampaignOverviewScreen() {
   // settling. What covers the swap instead is the placeholder above: a
   // `surface` skeleton is the card's own white, so the content appears inside a
   // box that was already there.
-  const postsPending = postsQuery.isPending;
+  const postsPending = postsQuery.isPending
 
   // A failed fetch is not an empty campaign: `data ?? []` after an error would
   // put "You're all set" and "No posts yet" on screen as if they were facts.
   // Cached data from an earlier success still counts — only the fetch that
   // never produced anything gets the error strip.
-  const postsFailed = postsQuery.isError && postsQuery.data === undefined;
+  const postsFailed = postsQuery.isError && postsQuery.data === undefined
 
   // The rail does not wait for this campaign's posts. Its rules are typed
   // against `PostSummary` precisely so they can be fed a projection (see
@@ -97,14 +109,14 @@ function CampaignOverviewScreen() {
       ? posts
       : summariesQuery.data !== undefined
         ? (summariesQuery.data[campaignId] ?? [])
-        : null;
+        : null
 
   // Several attention rules are time-based (overdue slots, the next 24h, pace),
   // so they are recomputed on every render against the current clock rather
   // than memoized against a frozen `now`.
   const items = railPosts
     ? attentionItems(campaign, railPosts, platformViews, new Date())
-    : [];
+    : []
 
   // The cards run in the sidebar's order — posts, analytics, brief, assets,
   // settings — because they are the same six sections, and a screen that
@@ -123,7 +135,10 @@ function CampaignOverviewScreen() {
       {railPosts ? (
         <AttentionRail items={items} campaignId={campaignId} />
       ) : postsFailed ? null : (
-        <Skeleton variant="surface" className="h-40 w-full max-w-content mx-auto" />
+        <Skeleton
+          variant="surface"
+          className="h-40 w-full max-w-content mx-auto"
+        />
       )}
       {/* The failure strip stands in for Content, and for the rail too when the
           summaries can't cover it — so it names neither module. A posts fetch
@@ -135,7 +150,10 @@ function CampaignOverviewScreen() {
           reachable again.
         </p>
       ) : postsPending ? (
-        <Skeleton variant="surface" className="h-64 w-full max-w-content mx-auto" />
+        <Skeleton
+          variant="surface"
+          className="h-64 w-full max-w-content mx-auto"
+        />
       ) : (
         <ContentModule campaign={campaign} posts={posts} />
       )}
@@ -147,5 +165,5 @@ function CampaignOverviewScreen() {
       <DocumentsModule campaign={campaign} />
       <SetupModule campaign={campaign} platformViews={platformViews} />
     </div>
-  );
+  )
 }

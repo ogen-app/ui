@@ -1,8 +1,8 @@
-import { apiJson } from "./http";
-import { ApiError } from "./errors";
-import type { PostAnalyticsList, PostAnalyticsSort } from "@/types/analytics";
+import { apiJson } from './http'
+import { ApiError } from './errors'
+import type { PostAnalyticsList, PostAnalyticsSort } from '@/types/analytics'
 
-const BASE = "/api/analytics";
+const BASE = '/api/analytics'
 
 /**
  * Filters `GET /api/analytics/posts` accepts. Note what is *not* here: there
@@ -11,24 +11,24 @@ const BASE = "/api/analytics";
  * `lib/campaignAnalytics`.
  */
 export type PostAnalyticsQuery = {
-  page?: number;
+  page?: number
   /** Server caps this at 100 whatever we ask for. */
-  limit?: number;
-  sortBy?: PostAnalyticsSort;
-  order?: "asc" | "desc";
+  limit?: number
+  sortBy?: PostAnalyticsSort
+  order?: 'asc' | 'desc'
   /** Platform *name* (e.g. "instagram"), not the platform id. */
-  platform?: string;
-};
+  platform?: string
+}
 
 function queryString(query: PostAnalyticsQuery): string {
-  const params = new URLSearchParams();
-  if (query.page !== undefined) params.set("page", String(query.page));
-  if (query.limit !== undefined) params.set("limit", String(query.limit));
-  if (query.sortBy) params.set("sort_by", query.sortBy);
-  if (query.order) params.set("order", query.order);
-  if (query.platform) params.set("platform", query.platform);
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
+  const params = new URLSearchParams()
+  if (query.page !== undefined) params.set('page', String(query.page))
+  if (query.limit !== undefined) params.set('limit', String(query.limit))
+  if (query.sortBy) params.set('sort_by', query.sortBy)
+  if (query.order) params.set('order', query.order)
+  if (query.platform) params.set('platform', query.platform)
+  const qs = params.toString()
+  return qs ? `?${qs}` : ''
 }
 
 /**
@@ -46,8 +46,8 @@ export async function listPostAnalytics(
 ): Promise<PostAnalyticsList> {
   return apiJson<PostAnalyticsList>(
     `${BASE}/posts${queryString(query)}`,
-    "Unable to fetch analytics",
-  );
+    'Unable to fetch analytics',
+  )
 }
 
 /**
@@ -57,7 +57,7 @@ export async function listPostAnalytics(
  * a redeploy — and that body never parses to this message, so it falls
  * through to the request's fallback text.
  */
-const UNAVAILABLE_MESSAGE = "analytics is not available";
+const UNAVAILABLE_MESSAGE = 'analytics is not available'
 
 /**
  * Whether a failure means "this deployment has no analytics database" rather
@@ -74,5 +74,5 @@ export function isAnalyticsUnavailable(error: unknown): boolean {
     error instanceof ApiError &&
     error.status === 503 &&
     error.message === UNAVAILABLE_MESSAGE
-  );
+  )
 }

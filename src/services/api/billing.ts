@@ -132,7 +132,9 @@ function cardFromWire(body: CardBody | null | undefined): BillingCard | null {
   return { brand: body.brand, last4: body.last_four }
 }
 
-function priceFromWire(body: PriceBody | null | undefined): BillingPrice | null {
+function priceFromWire(
+  body: PriceBody | null | undefined,
+): BillingPrice | null {
   if (!body) return null
   return { amount: body.amount, currency: body.currency, period: body.period }
 }
@@ -149,7 +151,9 @@ function subscriptionFromWire(body: SubscriptionBody): BillingSubscription {
 
 export function billingFromWire(body: BillingBody): BillingAccount {
   return {
-    subscription: body.subscription ? subscriptionFromWire(body.subscription) : null,
+    subscription: body.subscription
+      ? subscriptionFromWire(body.subscription)
+      : null,
     portal: body.portal === true,
   }
 }
@@ -160,9 +164,10 @@ export function billingFromWire(body: BillingBody): BillingAccount {
  * `entitlements.ts`.
  */
 export function fetchBilling(): Promise<BillingAccount> {
-  return apiJson<BillingBody>('/api/billing', 'Unable to read your billing details').then(
-    billingFromWire,
-  )
+  return apiJson<BillingBody>(
+    '/api/billing',
+    'Unable to read your billing details',
+  ).then(billingFromWire)
 }
 
 export function getBilling(): Promise<BillingAccount> {
@@ -171,9 +176,13 @@ export function getBilling(): Promise<BillingAccount> {
 
 /** The request, split from the stub branch so its contract stays asserted. */
 export function fetchBillingPortalLink(): Promise<BillingPortalLink> {
-  return apiJson<PortalBody>('/api/billing/portal', 'Unable to open the billing portal', {
-    method: 'POST',
-  }).then((payload) => ({
+  return apiJson<PortalBody>(
+    '/api/billing/portal',
+    'Unable to open the billing portal',
+    {
+      method: 'POST',
+    },
+  ).then((payload) => ({
     url: payload.url,
     expiresAt: payload.expires_at ?? null,
   }))

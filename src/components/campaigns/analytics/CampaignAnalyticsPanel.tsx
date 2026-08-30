@@ -1,28 +1,28 @@
-import { Link } from "@tanstack/react-router";
-import { ChartLineUpIcon } from "@phosphor-icons/react";
-import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { StatusBadge } from "@/components/ui/status-badge.tsx";
-import { OverviewCard } from "@/components/campaigns/overview/OverviewCard.tsx";
-import { LineItem } from "@/components/ui/line-item";
-import { MetricTile } from "./MetricTile.tsx";
+import { Link } from '@tanstack/react-router'
+import { ChartLineUpIcon } from '@phosphor-icons/react'
+import { Skeleton } from '@/components/ui/skeleton.tsx'
+import { StatusBadge } from '@/components/ui/status-badge.tsx'
+import { OverviewCard } from '@/components/campaigns/overview/OverviewCard.tsx'
+import { LineItem } from '@/components/ui/line-item'
+import { MetricTile } from './MetricTile.tsx'
 import {
   useCampaignAnalytics,
   type CampaignAnalyticsResult,
-} from "@/hooks/useAnalytics.ts";
-import { useFeatureFlag } from "@/config/featureFlags.ts";
+} from '@/hooks/useAnalytics.ts'
+import { useFeatureFlag } from '@/config/featureFlags.ts'
 import {
   formatEngagementRate,
   formatMetric,
   type CampaignAnalytics,
   type MeasuredPost,
-} from "@/lib/campaignAnalytics.ts";
-import { formatTitle } from "@/lib";
-import { getPlatformInfo } from "@/lib/platformDictionary.ts";
-import { relativeTime } from "@/lib/relativeTime.ts";
-import type { Post } from "@/types/posts";
+} from '@/lib/campaignAnalytics.ts'
+import { formatTitle } from '@/lib'
+import { getPlatformInfo } from '@/lib/platformDictionary.ts'
+import { relativeTime } from '@/lib/relativeTime.ts'
+import type { Post } from '@/types/posts'
 
 /** How many measured posts the ranked list shows before it stops. */
-const RANKED_SHOWN = 10;
+const RANKED_SHOWN = 10
 
 /**
  * The campaign's Analytics section (CON-175) — a first cut.
@@ -44,14 +44,14 @@ const RANKED_SHOWN = 10;
  * the section is a preview — an off flag makes no request.
  */
 export function CampaignAnalyticsPanel({ campaignId }: { campaignId: string }) {
-  const enabled = useFeatureFlag("campaign-analytics");
-  if (!enabled) return <ComingSoon />;
-  return <CampaignAnalyticsLive campaignId={campaignId} />;
+  const enabled = useFeatureFlag('campaign-analytics')
+  if (!enabled) return <ComingSoon />
+  return <CampaignAnalyticsLive campaignId={campaignId} />
 }
 
 function CampaignAnalyticsLive({ campaignId }: { campaignId: string }) {
-  const result = useCampaignAnalytics(campaignId);
-  return <CampaignAnalyticsView campaignId={campaignId} {...result} />;
+  const result = useCampaignAnalytics(campaignId)
+  return <CampaignAnalyticsView campaignId={campaignId} {...result} />
 }
 
 /**
@@ -74,7 +74,7 @@ function ComingSoon() {
         <FeatureList items={PLANNED} />
       </OverviewCard>
     </div>
-  );
+  )
 }
 
 /**
@@ -98,8 +98,14 @@ export function CampaignAnalyticsView({
         // Both stand for `OverviewCard`s, so they are drawn in the card's own
         // white rather than in grey — see `ui/skeleton`.
         <>
-          <Skeleton variant="surface" className="h-40 w-full max-w-content mx-auto" />
-          <Skeleton variant="surface" className="h-64 w-full max-w-content mx-auto" />
+          <Skeleton
+            variant="surface"
+            className="h-40 w-full max-w-content mx-auto"
+          />
+          <Skeleton
+            variant="surface"
+            className="h-64 w-full max-w-content mx-auto"
+          />
         </>
       ) : isUnavailable ? (
         <OverviewCard title="Engagement">
@@ -126,7 +132,7 @@ export function CampaignAnalyticsView({
         </>
       )}
     </div>
-  );
+  )
 }
 
 function Engagement({ data }: { data: CampaignAnalytics<Post> }) {
@@ -135,14 +141,14 @@ function Engagement({ data }: { data: CampaignAnalytics<Post> }) {
       <OverviewCard title="Engagement">
         <p className="text-sm text-secondary-foreground">
           {data.coverage.published === 0
-            ? "Nothing has been published yet, so there is nothing to measure."
+            ? 'Nothing has been published yet, so there is nothing to measure.'
             : "None of this campaign's published posts have been measured yet. Numbers appear here once the platforms report back."}
         </p>
       </OverviewCard>
-    );
+    )
   }
 
-  const { totals } = data;
+  const { totals } = data
 
   return (
     <OverviewCard title="Engagement">
@@ -181,35 +187,36 @@ function Engagement({ data }: { data: CampaignAnalytics<Post> }) {
           to dismiss. */}
       <CoverageNote data={data} />
     </OverviewCard>
-  );
+  )
 }
 
 export function CoverageNote({ data }: { data: CampaignAnalytics<Post> }) {
-  const { measured, published, complete } = data.coverage;
+  const { measured, published, complete } = data.coverage
   return (
     <p className="text-xs text-tertiary-foreground">
       {complete
-        ? `Across all ${published} published ${published === 1 ? "post" : "posts"}`
+        ? `Across all ${published} published ${published === 1 ? 'post' : 'posts'}`
         : `Across ${measured} of ${published} published posts — the rest aren't counted here yet`}
-      {data.lastRefreshedAt && ` · updated ${relativeTime(data.lastRefreshedAt)}`}
+      {data.lastRefreshedAt &&
+        ` · updated ${relativeTime(data.lastRefreshedAt)}`}
     </p>
-  );
+  )
 }
 
 function RankedPosts({
   campaignId,
   posts,
 }: {
-  campaignId: string;
-  posts: MeasuredPost<Post>[];
+  campaignId: string
+  posts: MeasuredPost<Post>[]
 }) {
-  if (posts.length === 0) return null;
+  if (posts.length === 0) return null
 
   return (
     <OverviewCard title="Best performing">
       <ul className="flex flex-col">
         {posts.map(({ post, metrics }) => {
-          const info = getPlatformInfo(post.platform_id);
+          const info = getPlatformInfo(post.platform_id)
           return (
             <li key={post.id}>
               <LineItem
@@ -217,7 +224,7 @@ function RankedPosts({
                 indicator={
                   info
                     ? {
-                        kind: "custom",
+                        kind: 'custom',
                         node: (
                           <info.icon
                             className="size-4"
@@ -227,7 +234,7 @@ function RankedPosts({
                       }
                     : undefined
                 }
-                label={formatTitle(post.title, "Untitled post")}
+                label={formatTitle(post.title, 'Untitled post')}
                 trailing={
                   <>
                     <span className="w-20 text-right">
@@ -245,7 +252,7 @@ function RankedPosts({
                 />
               </LineItem>
             </li>
-          );
+          )
         })}
       </ul>
       {/* Column headings would need a table; one line under a ten-row list
@@ -254,7 +261,7 @@ function RankedPosts({
         Impressions · engagement rate
       </p>
     </OverviewCard>
-  );
+  )
 }
 
 /**
@@ -262,18 +269,18 @@ function RankedPosts({
  * that already answers — what's left is the screen, not the data.
  */
 const TO_COME: [string, string][] = [
-  ["Best times to post", "Which hours of the week actually land"],
-  ["Content decay", "How long a post keeps earning engagement"],
-  ["Posting frequency", "Whether posting more is helping or hurting"],
-  ["Follower growth", "The audience behind the numbers above"],
-];
+  ['Best times to post', 'Which hours of the week actually land'],
+  ['Content decay', 'How long a post keeps earning engagement'],
+  ['Posting frequency', 'Whether posting more is helping or hurting'],
+  ['Follower growth', 'The audience behind the numbers above'],
+]
 
 /** The same list from further back — before the totals exist either. */
 const PLANNED: [string, string][] = [
-  ["Engagement", "Impressions, reach and interactions across the campaign"],
-  ["Best performing posts", "Which of these posts earned the most, and where"],
+  ['Engagement', 'Impressions, reach and interactions across the campaign'],
+  ['Best performing posts', 'Which of these posts earned the most, and where'],
   ...TO_COME,
-];
+]
 
 function FeatureList({ items }: { items: [string, string][] }) {
   return (
@@ -291,7 +298,7 @@ function FeatureList({ items }: { items: [string, string][] }) {
         </li>
       ))}
     </ul>
-  );
+  )
 }
 
 function StillToCome() {
@@ -299,5 +306,5 @@ function StillToCome() {
     <OverviewCard title="Still to come">
       <FeatureList items={TO_COME} />
     </OverviewCard>
-  );
+  )
 }

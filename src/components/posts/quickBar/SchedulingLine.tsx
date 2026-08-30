@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
-import { CaretDownIcon, ClockIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import {
+  CaretDownIcon,
+  ClockIcon,
+  WarningCircleIcon,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -67,7 +71,10 @@ export function SchedulingDetails({
             it made the same pairing read two different ways on two lines. */}
         <span className="flex min-w-0 items-center gap-1.5">
           {warn ? (
-            <WarningCircleIcon weight="fill" className="size-4 shrink-0 text-warning" />
+            <WarningCircleIcon
+              weight="fill"
+              className="size-4 shrink-0 text-warning"
+            />
           ) : (
             <ClockIcon className="size-4 shrink-0" />
           )}
@@ -151,7 +158,11 @@ function ScheduleEditor({
                 if (d) {
                   // Keep the time already chosen; fromLocalParts falls back to
                   // the default hour when there isn't one yet.
-                  const [y, m, day] = [d.getFullYear(), d.getMonth() + 1, d.getDate()]
+                  const [y, m, day] = [
+                    d.getFullYear(),
+                    d.getMonth() + 1,
+                    d.getDate(),
+                  ]
                   const next = `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                   onChange(fromLocalParts(next, timeStr))
                 }
@@ -238,10 +249,15 @@ function schedulingDetails(
   const when = formatDate(post.scheduled_at, SCHEDULED_DATE_FORMAT)
   switch (post.status) {
     case 'scheduled':
-      return { text: when ? `Auto-publishes ${when}` : 'No publish date set', warn: false }
+      return {
+        text: when ? `Auto-publishes ${when}` : 'No publish date set',
+        warn: false,
+      }
     case 'scheduled_for_manual_publishing':
       return {
-        text: when ? `Manual publish — reminder ${when}` : 'No publish date set',
+        text: when
+          ? `Manual publish — reminder ${when}`
+          : 'No publish date set',
         warn: false,
       }
     case 'published': {
@@ -250,15 +266,22 @@ function schedulingDetails(
     }
     case 'failed':
       return {
-        text: when ? `Publish failed — was scheduled for ${when}` : 'Publish failed',
+        text: when
+          ? `Publish failed — was scheduled for ${when}`
+          : 'Publish failed',
         warn: false,
       }
     case 'not_published':
       return {
-        text: when ? `Not published — was planned for ${when}` : 'Not published',
+        text: when
+          ? `Not published — was planned for ${when}`
+          : 'Not published',
         warn: false,
       }
     default:
-      return { text: when ? `Planned for ${when}` : 'Not scheduled yet', warn: !when }
+      return {
+        text: when ? `Planned for ${when}` : 'Not scheduled yet',
+        warn: !when,
+      }
   }
 }

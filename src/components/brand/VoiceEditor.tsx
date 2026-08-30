@@ -17,7 +17,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { ModalContainer } from '@/components/ui/modal'
 import { Textarea } from '@/components/ui/textarea'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib'
 import {
   BrandEditorFrame,
@@ -266,8 +270,7 @@ export function VoiceEditor({
             more room than the samples. Any notes already written are kept
             and saved untouched; only the editing is parked. */}
         <p className="max-w-2xl text-sm leading-5 text-tertiary-foreground">
-          Not built yet. Every channel uses this voice exactly as written
-          above.
+          Not built yet. Every channel uses this voice exactly as written above.
         </p>
       </EditorCard>
 
@@ -301,7 +304,10 @@ const BLANK_RULES: VoiceRules = {
   closing: '',
 }
 
-function draftFrom(voice: BrandVoice | null, starter?: VoiceStarter | null): Draft {
+function draftFrom(
+  voice: BrandVoice | null,
+  starter?: VoiceStarter | null,
+): Draft {
   if (voice) {
     return {
       name: voice.name,
@@ -473,10 +479,13 @@ function SamplesCard({
         <>
           {summary ? (
             <span>
-              <span className="text-primary-foreground">Reads as</span> {summary}
+              <span className="text-primary-foreground">Reads as</span>{' '}
+              {summary}
             </span>
           ) : (
-            samples.length > 0 && <span>Read back off the samples once this is saved.</span>
+            samples.length > 0 && (
+              <span>Read back off the samples once this is saved.</span>
+            )
           )}
           {short && (
             <span>
@@ -487,7 +496,9 @@ function SamplesCard({
           )}
         </>
       }
-      action={<SamplesMenu canReset={changed} onReset={() => onChange(saved)} />}
+      action={
+        <SamplesMenu canReset={changed} onReset={() => onChange(saved)} />
+      }
     >
       <ul className="grid gap-3 sm:grid-cols-2">
         {samples.map((sample, i) => (
@@ -506,7 +517,11 @@ function SamplesCard({
           </li>
         ))}
         <li className="flex">
-          <SampleCard blank onClick={() => open(samples.length)} className="gap-3">
+          <SampleCard
+            blank
+            onClick={() => open(samples.length)}
+            className="gap-3"
+          >
             {samples.length === 0 && (
               <span className="text-sm leading-5 text-tertiary-foreground">
                 Nothing yet. Saved like this the voice has a name and nothing
@@ -549,7 +564,11 @@ function SamplesCard({
               )}
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditing(null)}
+              >
                 <span>CANCEL</span>
               </Button>
               <Button variant="outline" size="sm" onClick={commit}>
@@ -657,7 +676,13 @@ function SampleCard({
  * Listed and disabled rather than absent, because a screen that has thought
  * about a thing and not built it should say so where somebody would look.
  */
-function SamplesMenu({ canReset, onReset }: { canReset: boolean; onReset: () => void }) {
+function SamplesMenu({
+  canReset,
+  onReset,
+}: {
+  canReset: boolean
+  onReset: () => void
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -678,7 +703,9 @@ function SamplesMenu({ canReset, onReset }: { canReset: boolean; onReset: () => 
         <DropdownMenuItem disabled>
           <UploadSimpleIcon />
           <span>Bulk upload</span>
-          <span className="pl-6 text-xs text-tertiary-foreground">Coming soon</span>
+          <span className="pl-6 text-xs text-tertiary-foreground">
+            Coming soon
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -786,7 +813,11 @@ function DefaultControl({
             // anything, including itself.
             className="flex h-8 shrink-0 items-center gap-2 px-3 pt-1 text-[13px]/4 font-medium text-secondary-foreground"
           >
-            <StarIcon weight="fill" className="size-4 text-positive" aria-hidden />
+            <StarIcon
+              weight="fill"
+              className="size-4 text-positive"
+              aria-hidden
+            />
             Default
           </span>
         </TooltipTrigger>

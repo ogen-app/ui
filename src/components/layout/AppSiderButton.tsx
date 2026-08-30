@@ -100,7 +100,9 @@ export function AppSidebarButtonMenu({
             // is a chip that dissolves into exactly the row you are looking at.
             className={cn(
               'absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-md px-1.5 font-mono text-xs leading-5 text-tertiary-foreground',
-              isActive ? 'bg-quaternary' : 'bg-sidebar-secondary group-hover/row:bg-quaternary',
+              isActive
+                ? 'bg-quaternary'
+                : 'bg-sidebar-secondary group-hover/row:bg-quaternary',
             )}
             aria-label={countLabel}
           >
@@ -149,7 +151,11 @@ export function AppSidebarButtonMenu({
       variant="menu"
       size={'excluded'}
       active={isActive}
-      className={cn('group/row relative', className, isActive && 'text-sidebar-primary-foreground')}
+      className={cn(
+        'group/row relative',
+        className,
+        isActive && 'text-sidebar-primary-foreground',
+      )}
       onClick={onClick}
     >
       {content}

@@ -91,7 +91,10 @@ export function ConnectErrorNotice({ code }: { code: string }) {
       // rather than as chrome laid over it.
       className="mx-auto flex w-full max-w-content items-start gap-3 bg-secondary px-4 py-3 text-sm"
     >
-      <WarningCircleIcon className="size-5 shrink-0 text-destructive" weight="fill" />
+      <WarningCircleIcon
+        className="size-5 shrink-0 text-destructive"
+        weight="fill"
+      />
       <p>{connectErrorCopy(code, t)}</p>
     </div>
   )

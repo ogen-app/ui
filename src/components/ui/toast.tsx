@@ -98,19 +98,28 @@ function Toast({
  * "the app is telling you something", not as the in-flight status blue that
  * `docs/colors.md` reserves `--info` for.
  */
-const VARIANT_BADGE: Record<ToastVariant, { glyph: ReactNode; className: string }> = {
+const VARIANT_BADGE: Record<
+  ToastVariant,
+  { glyph: ReactNode; className: string }
+> = {
   // A bare letter, not Phosphor's `InfoIcon` — that one is a circled i, which
   // inside the square badge reads as a circle in a box rather than as a mark.
   info: {
     glyph: <span className="text-[11px] font-bold leading-none">i</span>,
     className: 'bg-foreground',
   },
-  success: { glyph: <CheckIcon weight="bold" className="size-3.5" />, className: 'bg-positive' },
+  success: {
+    glyph: <CheckIcon weight="bold" className="size-3.5" />,
+    className: 'bg-positive',
+  },
   warning: {
     glyph: <ExclamationMarkIcon weight="bold" className="size-3.5" />,
     className: 'bg-warning',
   },
-  error: { glyph: <XIcon weight="bold" className="size-3.5" />, className: 'bg-destructive' },
+  error: {
+    glyph: <XIcon weight="bold" className="size-3.5" />,
+    className: 'bg-destructive',
+  },
 }
 
 function ToastIcon({ variant }: { variant: ToastVariant }) {

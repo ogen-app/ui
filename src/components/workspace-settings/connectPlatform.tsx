@@ -96,7 +96,9 @@ function ConnectPlatformModal({
     >
       {error ? (
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-destructive">{connectErrorMessage(error, t)}</p>
+          <p className="text-sm text-destructive">
+            {connectErrorMessage(error, t)}
+          </p>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               {t('common.cancel')}
@@ -114,7 +116,9 @@ function ConnectPlatformModal({
           <Spinner tone="onSurface" className="w-10" />
           {isPending
             ? t('workspaceSettings.connect.preparing')
-            : t('workspaceSettings.connect.redirecting', { platform: info.name })}
+            : t('workspaceSettings.connect.redirecting', {
+                platform: info.name,
+              })}
         </div>
       )}
     </ModalContainer>

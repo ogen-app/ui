@@ -10,7 +10,11 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import {
   addDays,
   addMonths,
@@ -40,7 +44,8 @@ function formatWeekRange(weekStart: Date, locale: string): string {
   const weekEnd = addDays(weekStart, 6)
   const startMonth = formatDate(weekStart, { month: 'long' }, locale)
   const endMonth = formatDate(weekEnd, { month: 'long' }, locale)
-  const sameMonth = startMonth === endMonth && weekStart.getFullYear() === weekEnd.getFullYear()
+  const sameMonth =
+    startMonth === endMonth && weekStart.getFullYear() === weekEnd.getFullYear()
   // En dash (–) for the date range, per typographic convention.
   if (sameMonth) {
     return `${weekStart.getDate()}–${weekEnd.getDate()} ${endMonth} ${weekEnd.getFullYear()}`
@@ -64,7 +69,8 @@ export function PostsToolbar({
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const addPost = useAddPost(campaignId)
-  const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings(campaignId)
+  const { firstDayOfWeek, isPending: settingsPending } =
+    useCalendarSettings(campaignId)
   const isCalendar = view === 'week' || view === 'month'
 
   const handleViewSelect = (next: string) => {
@@ -104,7 +110,9 @@ export function PostsToolbar({
   const step = (direction: 1 | -1) => {
     if (!anchor || !onAnchorChange) return
     onAnchorChange(
-      view === 'month' ? addMonths(anchor, direction) : addDays(anchor, direction * 7),
+      view === 'month'
+        ? addMonths(anchor, direction)
+        : addDays(anchor, direction * 7),
     )
   }
 
@@ -117,13 +125,16 @@ export function PostsToolbar({
           The list has no range to show, so the slot carries what the view is
           showing instead of standing empty. */}
       <span className="flex h-6 items-center text-[18px] font-medium">
-        {!anchor ? (
-          subheading
-        ) : view === 'month' ? (
-          monthLabel(anchor, i18n.language)
-        ) : settingsPending ? null : (
-          formatWeekRange(startOfWeek(anchor, firstDayOfWeek), i18n.language)
-        )}
+        {!anchor
+          ? subheading
+          : view === 'month'
+            ? monthLabel(anchor, i18n.language)
+            : settingsPending
+              ? null
+              : formatWeekRange(
+                  startOfWeek(anchor, firstDayOfWeek),
+                  i18n.language,
+                )}
       </span>
 
       <div className="flex items-center gap-3">
@@ -133,7 +144,11 @@ export function PostsToolbar({
               variant="default"
               size="defaultIcon"
               onClick={() => step(-1)}
-              aria-label={t(view === 'month' ? 'calendar.previousMonth' : 'calendar.previousWeek')}
+              aria-label={t(
+                view === 'month'
+                  ? 'calendar.previousMonth'
+                  : 'calendar.previousWeek',
+              )}
               // The calendar binds the arrow keys to these two buttons; saying
               // so here is what puts the shortcut in front of a screen-reader
               // user, who has nothing else to discover it from.
@@ -152,7 +167,9 @@ export function PostsToolbar({
               variant="default"
               size="defaultIcon"
               onClick={() => step(1)}
-              aria-label={t(view === 'month' ? 'calendar.nextMonth' : 'calendar.nextWeek')}
+              aria-label={t(
+                view === 'month' ? 'calendar.nextMonth' : 'calendar.nextWeek',
+              )}
               aria-keyshortcuts="ArrowRight"
             >
               <CaretRightIcon />

@@ -94,7 +94,10 @@ function WorkspaceSettings() {
                   button in the card below. */}
               {/* Above the cards: it reports on something that has already
                   happened, and the account it is about arrives below it. */}
-              <ConnectLanding connected={connected} connectError={connectError} />
+              <ConnectLanding
+                connected={connected}
+                connectError={connectError}
+              />
               <WorkspaceSection />
               <PlanSection />
               <PeopleSection />
