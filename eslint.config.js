@@ -74,6 +74,10 @@ export default tseslint.config(
       '.tanstack',
       // Untracked per-worktree dev overlay — never committed, so never linted.
       'vite.config.js',
+      // Local agent state, including whole in-repo git worktrees. Gitignored,
+      // so Prettier skips it already; flat-config ESLint reads no .gitignore
+      // and would recurse into every checked-out worktree.
+      '.claude/**',
       // Design harnesses are fixtures on their own `design/*` branches and
       // never reach `develop`; linting them would fail builds over code CI
       // cannot see. See CLAUDE.md.
