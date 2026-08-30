@@ -78,7 +78,7 @@ real advice about fast-refresh boundaries, not worth blocking a merge over.
 
 ### Suppressions
 
-Four exist, and every one names its reason on the line above. They are not
+Five exist, and every one names its reason on the line above. They are not
 concessions — they are places where the rule is right in general and wrong
 here:
 
@@ -94,6 +94,9 @@ here:
 - `src/hooks/useActivity.ts` — `exhaustive-deps`. `dataUpdatedAt` is the
   dependency deliberately: it is what makes the clock tick once per delivery of
   the data rather than once per render.
+- `src/test/renderWithProviders.tsx` — `no-explicit-any`. The memory router's
+  generated types don't match the app's route tree, and nothing in the test
+  harness depends on them.
 
 Turning ESLint back on also found a suppression that **had never worked**: in
 `src/test/renderWithProviders.tsx` the `eslint-disable-next-line` sat three
