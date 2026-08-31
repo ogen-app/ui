@@ -1,10 +1,10 @@
-import { apiJson } from "./http";
-import { ApiError } from "./errors";
+import { apiJson } from './http'
+import { ApiError } from './errors'
 import type {
   PostAnalyticsAnswer,
   PostAnalyticsPending,
   PostAnalyticsSnapshot,
-} from "@/types/analytics";
+} from '@/types/analytics'
 
 /**
  * One post's own figures — `GET /api/posts/:id/analytics` (CON-93 FR4).
@@ -23,7 +23,7 @@ import type {
  */
 
 /** The message the Go handler sends with its no-analytics-database 503. */
-const UNAVAILABLE_MESSAGE = "post analytics is not available";
+const UNAVAILABLE_MESSAGE = 'post analytics is not available'
 
 /**
  * Whether a failure means this deployment has no analytics database.
@@ -37,7 +37,7 @@ export function isPostAnalyticsUnavailable(error: unknown): boolean {
     error instanceof ApiError &&
     error.status === 503 &&
     error.message === UNAVAILABLE_MESSAGE
-  );
+  )
 }
 
 /**
@@ -49,21 +49,21 @@ export function isPostAnalyticsUnavailable(error: unknown): boolean {
  * is enough: 409 is the sole conflict this endpoint raises.
  */
 export function isNotPublishedViaPublisher(error: unknown): boolean {
-  return error instanceof ApiError && error.status === 409;
+  return error instanceof ApiError && error.status === 409
 }
 
 /** Whether the sweep has simply not reached this post yet. */
 export function isPending(
   answer: PostAnalyticsAnswer,
 ): answer is PostAnalyticsPending {
-  return (answer as PostAnalyticsPending).status === "pending";
+  return (answer as PostAnalyticsPending).status === 'pending'
 }
 
 /** Narrowed the other way, so a caller reads figures without a cast. */
 export function isMeasured(
   answer: PostAnalyticsAnswer,
 ): answer is PostAnalyticsSnapshot {
-  return !isPending(answer);
+  return !isPending(answer)
 }
 
 /**
@@ -78,6 +78,6 @@ export async function fetchPostAnalytics(
 ): Promise<PostAnalyticsAnswer> {
   return apiJson<PostAnalyticsAnswer>(
     `/api/posts/${postId}/analytics`,
-    "Unable to fetch analytics for this post",
-  );
+    'Unable to fetch analytics for this post',
+  )
 }

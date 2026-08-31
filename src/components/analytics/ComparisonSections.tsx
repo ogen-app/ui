@@ -96,7 +96,9 @@ export function NowSection({
   // that doesn't exist. See `MeasureMeta.kind`.
   const flow = meta.kind === 'flow'
   const columns = meta.chart === 'columns'
-  const series = flow ? accumulate(reading.series, reading.value) : reading.series
+  const series = flow
+    ? accumulate(reading.series, reading.value)
+    : reading.series
   // A ghost of the previous stretch works behind a line and not behind columns
   // — two sets of bars at the same dates read as a comparison of two things on
   // the same day, which is the one thing they are not.
@@ -134,7 +136,9 @@ export function NowSection({
             after every switch. The window is not repeated here: it is in the
             title, and the dates are on the axis.
           */}
-          <h3 className="font-display text-base font-medium">{meta.periodLabel}</h3>
+          <h3 className="font-display text-base font-medium">
+            {meta.periodLabel}
+          </h3>
           <Legend
             columns={columns}
             hasPrevious={Boolean(previousSeries)}
@@ -215,7 +219,10 @@ function Legend({
     <ul className="flex flex-wrap items-center gap-3 text-xs text-tertiary-foreground">
       <li className="flex items-center gap-1.5">
         {columns ? (
-          <span className="h-2.5 w-1.5 rounded-[1px] bg-quaternary-foreground" aria-hidden />
+          <span
+            className="h-2.5 w-1.5 rounded-[1px] bg-quaternary-foreground"
+            aria-hidden
+          />
         ) : (
           <span className="h-0.5 w-4 rounded-full bg-foreground" aria-hidden />
         )}
@@ -244,7 +251,10 @@ function Legend({
         <li className="flex items-center gap-1.5">
           {/* The mark itself, at its own size. A key that redraws a hairline as
               a swatch teaches the reader to look for the wrong ink. */}
-          <span className="h-2.5 w-[1.5px] bg-tertiary-foreground" aria-hidden />
+          <span
+            className="h-2.5 w-[1.5px] bg-tertiary-foreground"
+            aria-hidden
+          />
           a post went out
         </li>
       )}
@@ -314,7 +324,9 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
     <SectionCard
       title="Side by side"
       scope="lens"
-      status={<span className="text-xs text-secondary-foreground">{meta.label}</span>}
+      status={
+        <span className="text-xs text-secondary-foreground">{meta.label}</span>
+      }
     >
       <ul className="flex flex-col">
         <li className="flex items-center gap-3 border-b border-border pb-1.5 text-xs text-tertiary-foreground">
@@ -334,11 +346,17 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <div className="flex items-center gap-2">
                   <ToneDot tone={row.sleeve.tone} />
-                  <span className={cn('truncate text-sm', weak && 'text-tertiary-foreground')}>
+                  <span
+                    className={cn(
+                      'truncate text-sm',
+                      weak && 'text-tertiary-foreground',
+                    )}
+                  >
                     {row.sleeve.label}
                   </span>
                   <span className="shrink-0 text-xs text-tertiary-foreground">
-                    {row.sleeve.sample} {row.sleeve.sample === 1 ? 'post' : 'posts'}
+                    {row.sleeve.sample}{' '}
+                    {row.sleeve.sample === 1 ? 'post' : 'posts'}
                   </span>
                 </div>
                 <RankBar
@@ -353,7 +371,11 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
                 {formatMeasure(view.measure, row.perPost)}
               </span>
               <span className="flex w-16 justify-end">
-                {d ? <DeltaChip delta={d} /> : <span className="text-xs text-tertiary-foreground">—</span>}
+                {d ? (
+                  <DeltaChip delta={d} />
+                ) : (
+                  <span className="text-xs text-tertiary-foreground">—</span>
+                )}
               </span>
             </li>
           )
@@ -367,9 +389,7 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
       */}
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-medium">
-            {meta.label} day by day
-          </h3>
+          <h3 className="text-sm font-medium">{meta.label} day by day</h3>
           <ul className="flex flex-wrap items-center gap-3 text-xs text-secondary-foreground">
             {rows.map((row) => (
               <li key={row.sleeve.id} className="flex items-center gap-1.5">

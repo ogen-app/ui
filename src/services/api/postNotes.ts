@@ -47,10 +47,14 @@ export function createPostNote(
   postId: string,
   note: { type: PostNoteType; title: string; body: string },
 ): Promise<PostNote> {
-  return apiJson<PostNote>(`${BASE}/${postId}/notes`, 'Unable to add the note', {
-    method: 'POST',
-    body: note,
-  })
+  return apiJson<PostNote>(
+    `${BASE}/${postId}/notes`,
+    'Unable to add the note',
+    {
+      method: 'POST',
+      body: note,
+    },
+  )
 }
 
 /**
@@ -70,7 +74,11 @@ export function updatePostNote(
 }
 
 export function deletePostNote(postId: string, noteId: string): Promise<void> {
-  return apiVoid(`${BASE}/${postId}/notes/${noteId}`, 'Unable to delete the note', {
-    method: 'DELETE',
-  })
+  return apiVoid(
+    `${BASE}/${postId}/notes/${noteId}`,
+    'Unable to delete the note',
+    {
+      method: 'DELETE',
+    },
+  )
 }

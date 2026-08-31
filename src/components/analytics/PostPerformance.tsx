@@ -115,9 +115,16 @@ export function PostIdentityCard({ post }: { post: PostIdentity }) {
             views and a LinkedIn post's impressions are not the same currency. */}
         <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary">
           {Icon ? (
-            <Icon className="size-6" weight="fill" style={{ color: info?.color }} aria-hidden />
+            <Icon
+              className="size-6"
+              weight="fill"
+              style={{ color: info?.color }}
+              aria-hidden
+            />
           ) : (
-            <span className="text-xs font-medium">{post.platform.slice(0, 2)}</span>
+            <span className="text-xs font-medium">
+              {post.platform.slice(0, 2)}
+            </span>
           )}
         </span>
         <div className="flex min-w-0 flex-col gap-0.5">
@@ -138,7 +145,10 @@ export function PostIdentityCard({ post }: { post: PostIdentity }) {
             <>
               {post.publishedOn}
               {post.publishedAgo && (
-                <span className="text-tertiary-foreground"> · {post.publishedAgo}</span>
+                <span className="text-tertiary-foreground">
+                  {' '}
+                  · {post.publishedAgo}
+                </span>
               )}
             </>
           ) : (
@@ -313,7 +323,10 @@ export function PostMeasureCard({
       }
     >
       {metric && (
-        <MeasureHeadline metric={metric} ageCorrected={view.maturity !== 'final'} />
+        <MeasureHeadline
+          metric={metric}
+          ageCorrected={view.maturity !== 'final'}
+        />
       )}
 
       {points === null ? (
@@ -321,7 +334,10 @@ export function PostMeasureCard({
         // started, or a platform that only ever hands back a current total. The
         // figure above it is still true, which is why the card stays.
         <div className="flex flex-col gap-2">
-          <EmptyChart label="No history recorded for this post" className="h-32" />
+          <EmptyChart
+            label="No history recorded for this post"
+            className="h-32"
+          />
           <Basis>
             {meta.label} was collected as a total. Nothing recorded how it
             arrived, so there is no shape to draw.
@@ -469,7 +485,10 @@ function orderedMetrics(metrics: PostMetric[]): PostMetric[] {
   const known = MEASURE_ORDER.map((measure) =>
     metrics.find((m) => m.measure === measure),
   ).filter((m): m is PostMetric => m !== undefined)
-  return [...known, ...metrics.filter((m) => !MEASURE_ORDER.includes(m.measure))]
+  return [
+    ...known,
+    ...metrics.filter((m) => !MEASURE_ORDER.includes(m.measure)),
+  ]
 }
 
 function chartedMeasures(view: PostPerformanceView): MeasureId[] {
@@ -521,7 +540,11 @@ function seriesFor(
   // denominator is the post's whole reach so far, so it is past anything worth
   // flooring by its second point — and zeroing its first would draw a post that
   // started at 0% and jumped, which is not a thing that happened.
-  return ratioSeries(interactions, reach, mode === 'interval' ? rateFloor(reach) : 0)
+  return ratioSeries(
+    interactions,
+    reach,
+    mode === 'interval' ? rateFloor(reach) : 0,
+  )
 }
 
 function peak(points: PostSeriesPoint[]): number {
@@ -545,7 +568,12 @@ function percentileInsight(view: PostPerformanceView): Insight | null {
   if (view.percentile === null) return null
   return {
     id: 'percentile',
-    tone: view.percentile >= 75 ? 'positive' : view.percentile <= 25 ? 'negative' : 'neutral',
+    tone:
+      view.percentile >= 75
+        ? 'positive'
+        : view.percentile <= 25
+          ? 'negative'
+          : 'neutral',
     text: `Better than ${view.percentile}% of your posts.`,
     basis: view.sample
       ? `Ranked on reach against ${view.sample} measured posts`
@@ -563,7 +591,8 @@ function percentileInsight(view: PostPerformanceView): Insight | null {
  */
 const MATURITY_NOTE: Record<PostMaturity, string> = {
   unpublished: '',
-  counting: 'Still counting — every figure above is a floor rather than a result.',
+  counting:
+    'Still counting — every figure above is a floor rather than a result.',
   settling: 'Past its peak, and still adding a little.',
   final: 'This post has stopped earning — these numbers are final.',
 }

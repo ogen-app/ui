@@ -114,77 +114,77 @@ export function BriefForm({ campaign }: BriefFormProps) {
             assistantRunning && 'opacity-60',
           )}
         >
-        <SettingsCard
-          title="Messaging"
-          actions={<GenerateBriefAction campaign={campaign} />}
-        >
-          {/* Single column, but the same row rhythm as the settings grids. */}
-          <div className="grid grid-cols-1 gap-y-5">
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="What is this campaign about and why does it matter?"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="target_persona"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Target persona</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Who are we talking to? Role, goals, pain points."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="key_messages"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Key messages</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="The core points every piece of content should land."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="tone_guidelines"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tone guidelines</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Voice, style, words to use and avoid."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <SettingsCard
+            title="Messaging"
+            actions={<GenerateBriefAction campaign={campaign} />}
+          >
+            {/* Single column, but the same row rhythm as the settings grids. */}
+            <div className="grid grid-cols-1 gap-y-5">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="What is this campaign about and why does it matter?"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="target_persona"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target persona</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Who are we talking to? Role, goals, pain points."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="key_messages"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Key messages</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="The core points every piece of content should land."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tone_guidelines"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tone guidelines</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Voice, style, words to use and avoid."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </SettingsCard>
         </fieldset>
       </form>
@@ -212,13 +212,18 @@ function GenerateBriefAction({ campaign }: { campaign: Campaign }) {
 
   const ask = () => {
     openRightPanel('assistant')
-    askFor(threadIdFor({ kind: 'campaign', campaignId: campaign.id }), instruction(posture))
+    askFor(
+      threadIdFor({ kind: 'campaign', campaignId: campaign.id }),
+      instruction(posture),
+    )
   }
 
   return (
     <Button type="button" variant="ghost" onClick={ask}>
       <SparkleIcon />
-      <span>{posture.state === 'complete' ? 'IMPROVE BRIEF' : 'GENERATE BRIEF'}</span>
+      <span>
+        {posture.state === 'complete' ? 'IMPROVE BRIEF' : 'GENERATE BRIEF'}
+      </span>
     </Button>
   )
 }
@@ -228,13 +233,18 @@ function GenerateBriefAction({ campaign }: { campaign: Campaign }) {
  * in the partial case: without them the assistant rewrites the fields the user
  * already filled in, which is not what "generate the rest" meant.
  */
-function instruction({ state, missing }: ReturnType<typeof briefPosture>): string {
+function instruction({
+  state,
+  missing,
+}: ReturnType<typeof briefPosture>): string {
   if (state === 'complete') {
     return 'Improve the campaign brief — tighten it and make it more specific.'
   }
   if (state === 'empty') {
     return 'Write the campaign brief: the description, target persona, key messages and tone guidelines.'
   }
-  const gaps = missing.map((f) => BRIEF_FIELD_LABELS[f].toLowerCase()).join(', ')
+  const gaps = missing
+    .map((f) => BRIEF_FIELD_LABELS[f].toLowerCase())
+    .join(', ')
   return `Finish the campaign brief — fill in the ${gaps}, and leave what is already written alone.`
 }

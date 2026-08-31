@@ -1,4 +1,9 @@
-import { CalendarBlankIcon, ClockIcon, TrendDownIcon, TrendUpIcon } from '@phosphor-icons/react'
+import {
+  CalendarBlankIcon,
+  ClockIcon,
+  TrendDownIcon,
+  TrendUpIcon,
+} from '@phosphor-icons/react'
 import { cn } from '@/lib'
 import { DecayCurve, Heatmap } from './charts'
 import { Basis, NotYet, SectionCard } from './shell'
@@ -28,13 +33,17 @@ import type {
  * rearrange their week around it.
  */
 export function PatternsSection({ view }: { view: PatternsView }) {
-  const timingReady = view.bestTimes && supports(view.bestTimes.sample, 'timing')
+  const timingReady =
+    view.bestTimes && supports(view.bestTimes.sample, 'timing')
 
   return (
     <SectionCard title="What we've learned" scope="all-time">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <CalendarBlankIcon className="size-4 text-tertiary-foreground" aria-hidden />
+          <CalendarBlankIcon
+            className="size-4 text-tertiary-foreground"
+            aria-hidden
+          />
           <h3 className="text-sm font-medium">When your posts land</h3>
         </div>
         {timingReady && view.bestTimes ? (
@@ -58,15 +67,16 @@ export function PatternsSection({ view }: { view: PatternsView }) {
               </p>
             )}
             <Basis>
-              From {view.bestTimes.sample} measured posts across every hour you have
-              published in. Darker is better.
+              From {view.bestTimes.sample} measured posts across every hour you
+              have published in. Darker is better.
             </Basis>
           </>
         ) : (
           <NotYet title="Not enough posts to say yet">
-            This needs around thirty measured posts spread across different hours.
-            {view.bestTimes && ` You have ${view.bestTimes.sample}.`} Until then any
-            grid would be a coin toss wearing a chart's clothes.
+            This needs around thirty measured posts spread across different
+            hours.
+            {view.bestTimes && ` You have ${view.bestTimes.sample}.`} Until then
+            any grid would be a coin toss wearing a chart's clothes.
           </NotYet>
         )}
       </div>
@@ -80,8 +90,8 @@ export function PatternsSection({ view }: { view: PatternsView }) {
           <MaturityCurve shelfLife={view.shelfLife} />
         ) : (
           <NotYet title="Not enough finished posts yet">
-            A shelf life needs posts that have stopped earning, which takes a few
-            weeks of publishing.
+            A shelf life needs posts that have stopped earning, which takes a
+            few weeks of publishing.
           </NotYet>
         )}
       </div>
@@ -104,7 +114,15 @@ export function PatternsSection({ view }: { view: PatternsView }) {
   )
 }
 
-const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const DAY_NAMES = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+]
 
 /** `Thursday 18:00` — a slot named the way someone would say it out loud. */
 function slotLabel(day: number, hour: number): string {
@@ -159,10 +177,10 @@ function MaturityCurve({ shelfLife }: { shelfLife: ShelfLife }) {
       </ul>
 
       <Basis>
-        From {shelfLife.sample} posts that have run their course. The gap between
-        the first and last mark is your window to act on a post — after it, its
-        number is settled. It is also why a post younger than a day is shown as
-        still counting rather than ranked.
+        From {shelfLife.sample} posts that have run their course. The gap
+        between the first and last mark is your window to act on a post — after
+        it, its number is settled. It is also why a post younger than a day is
+        shown as still counting rather than ranked.
       </Basis>
     </>
   )
@@ -199,7 +217,9 @@ function PatternColumn({
           {patterns.map((p) => (
             <li key={p.id} className="flex flex-col gap-0.5">
               <span className="text-sm">{p.title}</span>
-              <span className="text-xs text-secondary-foreground">{p.detail}</span>
+              <span className="text-xs text-secondary-foreground">
+                {p.detail}
+              </span>
               {/* How far to trust it, in words rather than a coloured mark. The
                   dot that used to sit here graded the sample it was printed
                   beside, and a colour is a verdict — this is a note. */}
@@ -246,7 +266,9 @@ export function NextSection({ view }: { view: NextView }) {
               <UrgencyDot urgency={a.urgency} />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="text-sm">{a.title}</span>
-                <span className="text-xs text-secondary-foreground">{a.detail}</span>
+                <span className="text-xs text-secondary-foreground">
+                  {a.detail}
+                </span>
               </div>
               <button
                 type="button"
@@ -270,7 +292,8 @@ export function NextSection({ view }: { view: NextView }) {
  * would look exactly as authoritative as a real one.
  */
 function PacingBlock({ pacing }: { pacing: Pacing }) {
-  const fraction = pacing.planned === 0 ? 0 : Math.min(1, pacing.published / pacing.planned)
+  const fraction =
+    pacing.planned === 0 ? 0 : Math.min(1, pacing.published / pacing.planned)
   const behind = pacing.published < pacing.planned
 
   return (
@@ -280,10 +303,7 @@ function PacingBlock({ pacing }: { pacing: Pacing }) {
           {pacing.published} of {pacing.planned} posts {pacing.periodLabel}
         </span>
         <span
-          className={cn(
-            'text-xs',
-            behind ? 'text-warning' : 'text-positive',
-          )}
+          className={cn('text-xs', behind ? 'text-warning' : 'text-positive')}
         >
           {behind ? 'Behind the plan' : 'On plan'}
         </span>
@@ -291,7 +311,10 @@ function PacingBlock({ pacing }: { pacing: Pacing }) {
 
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-quaternary">
         <div
-          className={cn('h-full rounded-full', behind ? 'bg-warning' : 'bg-positive')}
+          className={cn(
+            'h-full rounded-full',
+            behind ? 'bg-warning' : 'bg-positive',
+          )}
           style={{ width: `${Math.max(2, fraction * 100)}%` }}
         />
       </div>
@@ -300,13 +323,14 @@ function PacingBlock({ pacing }: { pacing: Pacing }) {
         <Basis>
           At this rate this campaign finishes on {pacing.endsOn} with about{' '}
           {formatCount(pacing.projected)} posts
-          {pacing.target !== undefined && ` against a plan of ${formatCount(pacing.target)}`}
+          {pacing.target !== undefined &&
+            ` against a plan of ${formatCount(pacing.target)}`}
           .
         </Basis>
       ) : (
         <Basis>
-          This campaign runs on until you stop it, so this is a rate rather than a
-          finish line.
+          This campaign runs on until you stop it, so this is a rate rather than
+          a finish line.
         </Basis>
       )}
     </div>

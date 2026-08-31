@@ -122,7 +122,10 @@ export function getPlatformMedia(platformId: string): PlatformMediaConstraints {
  * The size ceiling for one file, which is not always the platform's headline
  * number — see `maxGifFileSizeBytes`.
  */
-export function imageSizeLimit(c: ImageMediaConstraints, mimeType: string): number {
+export function imageSizeLimit(
+  c: ImageMediaConstraints,
+  mimeType: string,
+): number {
   if (mimeType === 'image/gif' && c.maxGifFileSizeBytes !== undefined) {
     return c.maxGifFileSizeBytes
   }
@@ -146,7 +149,8 @@ export function describeImageConstraints(c: ImageMediaConstraints): string {
   // keeps the short hint. Silently showing the still-image number would read
   // as a limit on GIFs that is off by an order of magnitude.
   const gif =
-    c.maxGifFileSizeBytes !== undefined && c.maxGifFileSizeBytes !== c.maxFileSizeBytes
+    c.maxGifFileSizeBytes !== undefined &&
+    c.maxGifFileSizeBytes !== c.maxFileSizeBytes
       ? ` (GIF up to ${formatBytes(c.maxGifFileSizeBytes)})`
       : ''
   return `${formats} · up to ${formatBytes(c.maxFileSizeBytes)}${gif} · max ${c.maxPerPost} per post`

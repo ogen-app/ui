@@ -45,6 +45,9 @@ export function timeZoneNames(): string[] {
   if (cached) return cached
   const supported = (Intl as IntlWithSupportedValues).supportedValuesOf
   const zones = supported ? supported('timeZone') : []
-  cached = zones.length > 0 ? [...zones].sort() : [Intl.DateTimeFormat().resolvedOptions().timeZone]
+  cached =
+    zones.length > 0
+      ? [...zones].sort()
+      : [Intl.DateTimeFormat().resolvedOptions().timeZone]
   return cached
 }

@@ -1,0 +1,6 @@
+# Commits that changed formatting only. Configure once per clone with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# (GitHub reads this file automatically.)
+
+# style: reformat with Prettier — the one-time pass when Prettier was adopted.
+c25d1d5b833f055708d5c9548fa4c93a6448ee8b

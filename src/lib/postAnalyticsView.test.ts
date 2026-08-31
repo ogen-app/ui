@@ -6,10 +6,7 @@ import {
   readPublication,
   type PostFacts,
 } from '@/lib/postAnalyticsView'
-import type {
-  AnalyticsMetrics,
-  PostAnalyticsSnapshot,
-} from '@/types/analytics'
+import type { AnalyticsMetrics, PostAnalyticsSnapshot } from '@/types/analytics'
 
 /**
  * What the mapper does with the wire, and — more to the point — what it
@@ -44,7 +41,9 @@ const FACTS: PostFacts = {
 
 const NOW = new Date('2026-08-30T12:00:00Z')
 
-function snapshot(over: Partial<PostAnalyticsSnapshot> = {}): PostAnalyticsSnapshot {
+function snapshot(
+  over: Partial<PostAnalyticsSnapshot> = {},
+): PostAnalyticsSnapshot {
   return {
     post_id: 'p1',
     publisher: 'zernio',

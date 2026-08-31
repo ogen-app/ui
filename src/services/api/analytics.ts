@@ -1,5 +1,5 @@
-import { apiJson } from "./http";
-import { ApiError } from "./errors";
+import { apiJson } from './http'
+import { ApiError } from './errors'
 import type {
   AnalyticsLearnings,
   AnalyticsOverview,
@@ -10,9 +10,9 @@ import type {
   PerformersBoard,
   PostAnalyticsList,
   PostAnalyticsSort,
-} from "@/types/analytics";
+} from '@/types/analytics'
 
-const BASE = "/api/analytics";
+const BASE = '/api/analytics'
 
 /**
  * Filters `GET /api/analytics/posts` accepts. Note what is *not* here: there
@@ -21,24 +21,24 @@ const BASE = "/api/analytics";
  * `lib/campaignAnalytics`.
  */
 export type PostAnalyticsQuery = {
-  page?: number;
+  page?: number
   /** Server caps this at 100 whatever we ask for. */
-  limit?: number;
-  sortBy?: PostAnalyticsSort;
-  order?: "asc" | "desc";
+  limit?: number
+  sortBy?: PostAnalyticsSort
+  order?: 'asc' | 'desc'
   /** Platform *name* (e.g. "instagram"), not the platform id. */
-  platform?: string;
-};
+  platform?: string
+}
 
 function queryString(query: PostAnalyticsQuery): string {
-  const params = new URLSearchParams();
-  if (query.page !== undefined) params.set("page", String(query.page));
-  if (query.limit !== undefined) params.set("limit", String(query.limit));
-  if (query.sortBy) params.set("sort_by", query.sortBy);
-  if (query.order) params.set("order", query.order);
-  if (query.platform) params.set("platform", query.platform);
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
+  const params = new URLSearchParams()
+  if (query.page !== undefined) params.set('page', String(query.page))
+  if (query.limit !== undefined) params.set('limit', String(query.limit))
+  if (query.sortBy) params.set('sort_by', query.sortBy)
+  if (query.order) params.set('order', query.order)
+  if (query.platform) params.set('platform', query.platform)
+  const qs = params.toString()
+  return qs ? `?${qs}` : ''
 }
 
 /**
@@ -56,8 +56,8 @@ export async function listPostAnalytics(
 ): Promise<PostAnalyticsList> {
   return apiJson<PostAnalyticsList>(
     `${BASE}/posts${queryString(query)}`,
-    "Unable to fetch analytics",
-  );
+    'Unable to fetch analytics',
+  )
 }
 
 /**
@@ -67,7 +67,7 @@ export async function listPostAnalytics(
  * a redeploy — and that body never parses to this message, so it falls
  * through to the request's fallback text.
  */
-const UNAVAILABLE_MESSAGE = "analytics is not available";
+const UNAVAILABLE_MESSAGE = 'analytics is not available'
 
 /**
  * Whether a failure means "this deployment has no analytics database" rather
@@ -84,7 +84,7 @@ export function isAnalyticsUnavailable(error: unknown): boolean {
     error instanceof ApiError &&
     error.status === 503 &&
     error.message === UNAVAILABLE_MESSAGE
-  );
+  )
 }
 
 /* ------------------------------------------------ the dashboard endpoints -- */
@@ -99,24 +99,24 @@ export function isAnalyticsUnavailable(error: unknown): boolean {
  */
 export type AnalyticsWindowQuery = {
   /** `28d`, `12w`, `6mo`. Beyond 400 days the server answers `window_too_large`. */
-  window?: string;
+  window?: string
   /** Inclusive `YYYY-MM-DD`. Only meaningful with `to`. */
-  from?: string;
+  from?: string
   /** Inclusive `YYYY-MM-DD`. Only meaningful with `from`. */
-  to?: string;
-};
+  to?: string
+}
 
 function windowParams(query: AnalyticsWindowQuery): URLSearchParams {
-  const params = new URLSearchParams();
-  if (query.window) params.set("window", query.window);
-  if (query.from) params.set("from", query.from);
-  if (query.to) params.set("to", query.to);
-  return params;
+  const params = new URLSearchParams()
+  if (query.window) params.set('window', query.window)
+  if (query.from) params.set('from', query.from)
+  if (query.to) params.set('to', query.to)
+  return params
 }
 
 function search(params: URLSearchParams): string {
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
+  const qs = params.toString()
+  return qs ? `?${qs}` : ''
 }
 
 /**
@@ -131,7 +131,7 @@ function search(params: URLSearchParams): string {
 export function envelopeUnavailable(
   envelope: InsightEnvelope<unknown>,
 ): boolean {
-  return !envelope.available || envelope.data === null;
+  return !envelope.available || envelope.data === null
 }
 
 /**
@@ -141,15 +141,14 @@ export function envelopeUnavailable(
  * than once for the response — a workspace can know when to post and not yet
  * know how long a post lives.
  */
-export function hasHistory<T>(
-  section: LearningsSection<T>,
-): section is T {
+export function hasHistory<T>(section: LearningsSection<T>): section is T {
   return !(
-    typeof section === "object" &&
+    typeof section === 'object' &&
     section !== null &&
-    "insufficient_history" in section &&
-    (section as { insufficient_history?: boolean }).insufficient_history === true
-  );
+    'insufficient_history' in section &&
+    (section as { insufficient_history?: boolean }).insufficient_history ===
+      true
+  )
 }
 
 /**
@@ -166,18 +165,18 @@ export async function fetchAnalyticsOverview(
 ): Promise<InsightEnvelope<AnalyticsOverview>> {
   return apiJson<InsightEnvelope<AnalyticsOverview>>(
     `${BASE}/overview${search(windowParams(query))}`,
-    "Unable to fetch analytics",
-  );
+    'Unable to fetch analytics',
+  )
 }
 
 export type PerformersQuery = AnalyticsWindowQuery & {
   /** Default `against_typical`. Anything outside the union is a 400. */
-  by?: PerformerSort;
+  by?: PerformerSort
   /** Rows *per list*, not in total. Clamped to 20. */
-  limit?: number;
+  limit?: number
   /** The wire slug (`linkedin`), matched case-insensitively. */
-  platform?: string;
-};
+  platform?: string
+}
 
 /**
  * The window's best and worst posts, each scored against the typical post on
@@ -190,23 +189,23 @@ export type PerformersQuery = AnalyticsWindowQuery & {
 export async function fetchPerformers(
   query: PerformersQuery = {},
 ): Promise<InsightEnvelope<PerformersBoard>> {
-  const params = windowParams(query);
-  if (query.by) params.set("by", query.by);
-  if (query.limit !== undefined) params.set("limit", String(query.limit));
-  if (query.platform) params.set("platform", query.platform);
+  const params = windowParams(query)
+  if (query.by) params.set('by', query.by)
+  if (query.limit !== undefined) params.set('limit', String(query.limit))
+  if (query.platform) params.set('platform', query.platform)
   return apiJson<InsightEnvelope<PerformersBoard>>(
     `${BASE}/performers${search(params)}`,
-    "Unable to fetch analytics",
-  );
+    'Unable to fetch analytics',
+  )
 }
 
 export type LearningsQuery = {
   /** Lower bound, `YYYY-MM-DD`. Omitted means all-time. */
-  since?: string;
+  since?: string
   /** `90d`, `12w`, `6mo` — the comparison window for what's fading. */
-  trendWindow?: string;
-  metric?: LearningsMetric;
-};
+  trendWindow?: string
+  metric?: LearningsMetric
+}
 
 /**
  * What the workspace has learned, over all of its history (CON-239).
@@ -219,12 +218,12 @@ export type LearningsQuery = {
 export async function fetchLearnings(
   query: LearningsQuery = {},
 ): Promise<InsightEnvelope<AnalyticsLearnings>> {
-  const params = new URLSearchParams();
-  if (query.since) params.set("since", query.since);
-  if (query.trendWindow) params.set("trend_window", query.trendWindow);
-  if (query.metric) params.set("metric", query.metric);
+  const params = new URLSearchParams()
+  if (query.since) params.set('since', query.since)
+  if (query.trendWindow) params.set('trend_window', query.trendWindow)
+  if (query.metric) params.set('metric', query.metric)
   return apiJson<InsightEnvelope<AnalyticsLearnings>>(
     `${BASE}/learnings${search(params)}`,
-    "Unable to fetch analytics",
-  );
+    'Unable to fetch analytics',
+  )
 }

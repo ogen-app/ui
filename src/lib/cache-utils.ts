@@ -19,14 +19,19 @@ function deleteIndexedDatabase(dbName: string): Promise<void> {
       deleteRequest.onsuccess = () => resolve()
       deleteRequest.onerror = () => reject(deleteRequest.error)
       deleteRequest.onblocked = () => {
-        console.warn(`Database deletion blocked for ${dbName}, forcing close...`)
+        console.warn(
+          `Database deletion blocked for ${dbName}, forcing close...`,
+        )
         // Resolve anyway - page reload will clean up
         resolve()
       }
     }),
     // Timeout after 2 seconds
     new Promise<void>((_, reject) =>
-      setTimeout(() => reject(new Error(`Timeout deleting database ${dbName}`)), 2000)
+      setTimeout(
+        () => reject(new Error(`Timeout deleting database ${dbName}`)),
+        2000,
+      ),
     ),
   ])
 }
@@ -42,11 +47,17 @@ export async function clearAllApplicationData(): Promise<void> {
 
   // IMPORTANT: Clear persisted storage FIRST to prevent persist middleware from re-saving
   try {
-    console.log('Clearing localStorage... (this may take a few seconds, please be patient)')
+    console.log(
+      'Clearing localStorage... (this may take a few seconds, please be patient)',
+    )
     localStorage.clear()
     results.push({ type: 'localStorage', success: true })
   } catch (error) {
-    results.push({ type: 'localStorage', success: false, error: error as Error })
+    results.push({
+      type: 'localStorage',
+      success: false,
+      error: error as Error,
+    })
   }
 
   // THEN reset Zustand in-memory state without triggering persist middleware
@@ -56,7 +67,11 @@ export async function clearAllApplicationData(): Promise<void> {
 
     results.push({ type: 'zustandStores', success: true })
   } catch (error) {
-    results.push({ type: 'zustandStores', success: false, error: error as Error })
+    results.push({
+      type: 'zustandStores',
+      success: false,
+      error: error as Error,
+    })
     console.error('Failed to reset Zustand stores:', error)
   }
 
@@ -84,7 +99,11 @@ export async function clearAllApplicationData(): Promise<void> {
     sessionStorage.clear()
     results.push({ type: 'sessionStorage', success: true })
   } catch (error) {
-    results.push({ type: 'sessionStorage', success: false, error: error as Error })
+    results.push({
+      type: 'sessionStorage',
+      success: false,
+      error: error as Error,
+    })
   }
 
   // Clear service worker caches
@@ -94,7 +113,11 @@ export async function clearAllApplicationData(): Promise<void> {
       await Promise.all(cacheNames.map((name) => window.caches.delete(name)))
       results.push({ type: 'serviceWorkerCaches', success: true })
     } catch (error) {
-      results.push({ type: 'serviceWorkerCaches', success: false, error: error as Error })
+      results.push({
+        type: 'serviceWorkerCaches',
+        success: false,
+        error: error as Error,
+      })
     }
   }
 
@@ -103,7 +126,9 @@ export async function clearAllApplicationData(): Promise<void> {
     try {
       const databases = await window.indexedDB.databases()
       await Promise.allSettled(
-        databases.map((db) => (db.name ? deleteIndexedDatabase(db.name) : Promise.resolve()))
+        databases.map((db) =>
+          db.name ? deleteIndexedDatabase(db.name) : Promise.resolve(),
+        ),
       )
       results.push({ type: 'indexedDB', success: true })
     } catch (error) {
@@ -116,10 +141,15 @@ export async function clearAllApplicationData(): Promise<void> {
   const failed = results.filter((r) => !r.success)
 
   if (successful.length > 0) {
-    console.log(`Successfully cleared: ${successful.map((r) => r.type).join(', ')}`)
+    console.log(
+      `Successfully cleared: ${successful.map((r) => r.type).join(', ')}`,
+    )
   }
 
   if (failed.length > 0) {
-    console.warn('Failed to clear:', failed.map((r) => `${r.type}: ${r.error?.message}`).join(', '))
+    console.warn(
+      'Failed to clear:',
+      failed.map((r) => `${r.type}: ${r.error?.message}`).join(', '),
+    )
   }
 }

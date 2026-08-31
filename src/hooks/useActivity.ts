@@ -7,7 +7,11 @@ import { toast } from '@/stores/toastStore'
 import { useCampaignSummaries } from '@/hooks/useCampaigns'
 import { useTasks } from '@/hooks/useTasks'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { activityFeed, unreadCount, type ActivityEntry } from '@/lib/activityFeed'
+import {
+  activityFeed,
+  unreadCount,
+  type ActivityEntry,
+} from '@/lib/activityFeed'
 
 /**
  * Activity's data layer (CON-225, Phase 1).
@@ -95,13 +99,21 @@ export function useActivityFeed(): ActivityFeedResult {
   // One `now` per delivery of the data rather than one per render: it feeds the
   // day grouping, the future-event guard and the unread rule, and a fresh clock
   // on every render would recompute the whole feed each time.
+  // `dataUpdatedAt` is the dependency on purpose: it is what makes the clock
+  // tick once per delivery of the data rather than once per render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => new Date(), [dataUpdatedAt])
   const entries = useMemo(
     () => (enabled && data ? activityFeed(data, now, tasks) : []),
     [enabled, data, now, tasks],
   )
 
-  return { entries, now, isLoading: enabled && isLoading, isError: enabled && isError }
+  return {
+    entries,
+    now,
+    isLoading: enabled && isLoading,
+    isError: enabled && isError,
+  }
 }
 
 /**

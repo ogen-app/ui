@@ -53,7 +53,9 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
   const title = campaign.name.trim() || 'Untitled campaign'
   const typeName = campaign.campaign_type?.name
   const typeLabel = typeName ? campaignTypeInfo(typeName).label : null
-  const dates = setupChecks(campaign, platformViews).find((c) => c.id === 'dates')!
+  const dates = setupChecks(campaign, platformViews).find(
+    (c) => c.id === 'dates',
+  )!
   // Only a complete range describes the campaign; a half-set one is a gap, and
   // the attention badge already carries it.
   const properties = [typeLabel, dates.ok ? dates.detail : null]
@@ -134,7 +136,11 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
         </span>
         {settled &&
           (items.length === 0 ? (
-            <StatusBadge tone="positive" label="All clear" className="shrink-0" />
+            <StatusBadge
+              tone="positive"
+              label="All clear"
+              className="shrink-0"
+            />
           ) : (
             <StatusBadge
               tone={HEADLINE_TONE[items[0].severity]}
@@ -156,7 +162,10 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
         </p>
       ) : settled ? (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          <StatTile value={plannedToday(posts, new Date())} label="Planned for today" />
+          <StatTile
+            value={plannedToday(posts, new Date())}
+            label="Planned for today"
+          />
           <StatTile value={snapshot.readyToGo} label="Ready to go" />
           <StatTile value={snapshot.notReady} label="Still drafting" />
           <StatTile

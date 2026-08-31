@@ -454,6 +454,35 @@ would be two sources of truth and no correction.
   there is no separate video-metadata form, because the Zernio submit request
   models nothing else yet (CON-159).
 
+## An asset opens as a document only if we know it is one {#asset-opening}
+
+**Decision.** `AssetDocument` asks `opensAsDocument` (`lib/assetCategory.ts`)
+before it reaches the editor. `null | MD | PDF | URL` are documents; everything
+else — including a `type` this build has never seen — gets `UnsupportedAsset`, a
+read-only state, and loses the "Download as Markdown" item with it.
+
+**Why.** The screen used to treat the editor as its fallback: a URL asset still
+being scraped got `ScrapeState`, and *anything else* got `AssetEditor`. That is
+only safe while every asset is text, and the server's vocabulary grows without
+asking the client — `MD | PDF` became `MD | PDF | URL` in CON-222 and takes
+`IMG` next. `AssetEditor` seeds BlockNote from `asset.content` and autosaves it
+back, so the first asset type whose `content` is not a document is silently
+overwritten by anyone who opens it and types. CON-105 writes image assets with
+`content = "[]"`, which renders as an editable paragraph reading `[]` over a
+field that is meant to hold the image's description (CON-16 D4). Filed as
+CON-235.
+
+Two consequences worth keeping:
+
+- **PDF is a document.** What you edit there is the extracted text, and that
+  text is what the embeddings are built from — so the rule is about the *body*,
+  not about whether bytes sit behind the row.
+- **The fallback is a floor, not a destination.** A kind worth showing properly
+  gets its own view and stops arriving here. `IMG` will, once the asset DTO
+  carries a URL for the original — `AssetFile` exposes `thumbnail_url` and
+  nothing else today, which is why the image viewer is not written yet rather
+  than written against a guess. See the `content-bank-images` flag comment.
+
 ## English is bundled, every other language is a chunk {#i18n}
 
 **Decision.** i18next + react-i18next, one namespace, with English statically
@@ -672,7 +701,9 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
   ready building block; real invitations (email loop) await backend support
   (CON-26).
 - **Dark mode** is scaffolded (`.dark` block) but effectively empty.
-- The **Imagery** Content-Bank tab renders nothing yet (`assetCategory.ts`); AI
-  image generation + storage there is planned but **secondary** (CON-105/88/83).
-- **Lint/format configs** (eslint/prettier/stylelint) are installed but not
-  committed to this repo.
+- **Images can't be Content-Bank assets yet.** `assets.type` is `MD | PDF | URL`
+  and the upload endpoint takes `.md` and `.pdf` only, so `IMG` is a type the
+  client declares and the server cannot produce (CON-16). The upload surface
+  offers images behind `content-bank-images`, off; an `IMG` asset that did
+  arrive opens read-only — see [below](#asset-opening). AI image *generation* is
+  planned but **secondary** (CON-105/88/83).

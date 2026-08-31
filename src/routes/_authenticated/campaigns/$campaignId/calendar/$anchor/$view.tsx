@@ -1,80 +1,76 @@
-import { useMemo } from "react";
-import {
-  createFileRoute,
-  redirect,
-  useNavigate,
-} from "@tanstack/react-router";
-import { PostsEmptyState } from "@/components/campaigns/PostsEmptyState";
-import { PostsToolbar } from "@/components/campaigns/PostsToolbar";
-import { MonthlyCalendar } from "@/components/campaigns/calendar/MonthlyCalendar";
-import { WeeklyCalendar } from "@/components/campaigns/calendar/WeeklyCalendar";
+import { useMemo } from 'react'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
+import { PostsToolbar } from '@/components/campaigns/PostsToolbar'
+import { MonthlyCalendar } from '@/components/campaigns/calendar/MonthlyCalendar'
+import { WeeklyCalendar } from '@/components/campaigns/calendar/WeeklyCalendar'
 import {
   addDays,
   addMonths,
   formatAnchor,
   parseAnchor,
-} from "@/components/campaigns/calendar/date";
-import { useAddPost, useCampaignPosts } from "@/hooks/usePosts.ts";
-import { useCalendarSettings } from "@/hooks/useCalendarSettings";
-import { useHotkeys } from "@/hooks/useHotkeys";
-import type { Post } from "@/types/posts";
+} from '@/components/campaigns/calendar/date'
+import { useAddPost, useCampaignPosts } from '@/hooks/usePosts.ts'
+import { useCalendarSettings } from '@/hooks/useCalendarSettings'
+import { useHotkeys } from '@/hooks/useHotkeys'
+import type { Post } from '@/types/posts'
 
 /** Stable identity for a grid with nothing in it yet. */
-const NO_POSTS: Post[] = [];
+const NO_POSTS: Post[] = []
 
 /** The granularities the calendar can be read at. */
-const VIEWS = ["week", "month"] as const;
-type CalendarGranularity = (typeof VIEWS)[number];
+const VIEWS = ['week', 'month'] as const
+type CalendarGranularity = (typeof VIEWS)[number]
 
 function isGranularity(value: string): value is CalendarGranularity {
-  return (VIEWS as readonly string[]).includes(value);
+  return (VIEWS as readonly string[]).includes(value)
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/campaigns/$campaignId/calendar/$anchor/$view",
+  '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view',
 )({
   beforeLoad: ({ params }) => {
     // Normalize malformed anchors / unsupported views to the current week.
-    const parsed = parseAnchor(params.anchor);
+    const parsed = parseAnchor(params.anchor)
     if (!parsed || !isGranularity(params.view)) {
       throw redirect({
-        to: "/campaigns/$campaignId/calendar/$anchor/$view",
+        to: '/campaigns/$campaignId/calendar/$anchor/$view',
         params: {
           campaignId: params.campaignId,
           anchor: formatAnchor(parsed ?? new Date()),
-          view: "week",
+          view: 'week',
         },
-      });
+      })
     }
   },
   component: CalendarView,
-});
+})
 
 function CalendarView() {
-  const { campaignId, anchor, view } = Route.useParams();
-  const navigate = useNavigate();
+  const { campaignId, anchor, view } = Route.useParams()
+  const navigate = useNavigate()
   const {
     data: posts,
     isLoading: postsPending,
     isError: postsError,
-  } = useCampaignPosts(campaignId);
-  const rows = posts ?? NO_POSTS;
+  } = useCampaignPosts(campaignId)
+  const rows = posts ?? NO_POSTS
   // A failed fetch is not an empty campaign: without this, an error left
   // `rows` empty with `postsPending` false, and the screen invited the user to
   // add their first post to a campaign that may hold dozens. Cached rows from
   // an earlier success still draw — only a fetch that never answered is a
   // failure here.
-  const postsFailed = postsError && posts === undefined;
+  const postsFailed = postsError && posts === undefined
   // The grid reads the settings itself; the route only needs to know whether
   // they have arrived.
-  const { isPending: settingsPending } = useCalendarSettings(campaignId);
-  const addPost = useAddPost(campaignId);
+  const { isPending: settingsPending } = useCalendarSettings(campaignId)
+  const addPost = useAddPost(campaignId)
   // `beforeLoad` has already rejected anything else; this narrows the param
   // for the branches below rather than re-deciding it.
-  const granularity = isGranularity(view) ? view : "week";
+  const granularity = isGranularity(view) ? view : 'week'
   // Memoized because it is the key every range derivation downstream hangs
   // off: a fresh Date each render would rebuild the whole grid each render.
-  const anchorDate = useMemo(() => parseAnchor(anchor) ?? new Date(), [anchor]);
+  const anchorDate = useMemo(() => parseAnchor(anchor) ?? new Date(), [anchor])
 
   // Only the settings hold the grid back. Which day starts the week — and
   // which days are shown at all — is a stored preference, and a Monday that
@@ -87,11 +83,11 @@ function CalendarView() {
 
   const handleAnchorChange = (d: Date) =>
     navigate({
-      to: "/campaigns/$campaignId/calendar/$anchor/$view",
+      to: '/campaigns/$campaignId/calendar/$anchor/$view',
       params: { campaignId, anchor: formatAnchor(d), view: granularity },
-    });
+    })
 
-  const Calendar = granularity === "month" ? MonthlyCalendar : WeeklyCalendar;
+  const Calendar = granularity === 'month' ? MonthlyCalendar : WeeklyCalendar
 
   // The same step the toolbar's arrows take, on the arrow keys. Unbounded in
   // both directions — a campaign's calendar has no first or last week, so
@@ -103,14 +99,14 @@ function CalendarView() {
   // the month view a row at a time.
   const step = (direction: number) =>
     handleAnchorChange(
-      granularity === "month"
+      granularity === 'month'
         ? addMonths(anchorDate, direction)
         : addDays(anchorDate, direction * 7),
-    );
+    )
   useHotkeys({
     ArrowLeft: () => step(-1),
     ArrowRight: () => step(1),
-  });
+  })
 
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0">
@@ -139,5 +135,5 @@ function CalendarView() {
         <Calendar campaignId={campaignId} posts={rows} anchor={anchorDate} />
       )}
     </div>
-  );
+  )
 }

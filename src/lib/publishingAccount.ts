@@ -86,7 +86,11 @@ export function resolveForPlatform(
   hydrated?: PublisherAccount | null,
 ): PublishingAccountResolution {
   const view = views.find((v) => v.platform.id === platformId)
-  return resolvePublishingAccount(view ? connectedAccounts(view) : [], selectedId, hydrated)
+  return resolvePublishingAccount(
+    view ? connectedAccounts(view) : [],
+    selectedId,
+    hydrated,
+  )
 }
 
 /** The label a platform would show on the post, for a resolved account. */

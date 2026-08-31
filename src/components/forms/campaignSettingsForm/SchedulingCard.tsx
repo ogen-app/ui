@@ -71,17 +71,25 @@ export function SchedulingCard() {
   const zoneOptions = useMemo(() => {
     const names = timeZoneNames()
     const all = names.includes(timezone) ? names : [timezone, ...names]
-    return all.map((name) => ({ id: name, displayValue: describeTimeZone(name) }))
+    return all.map((name) => ({
+      id: name,
+      displayValue: describeTimeZone(name),
+    }))
   }, [timezone])
 
   // The spread the campaign actually has may not be one of the presets — a
   // value written before the list changed, or by the assistant. Show it rather
   // than silently snapping to a neighbour.
-  const spreadOptions = SPREAD_OPTIONS.some((o) => Number(o.id) === spreadMinutes)
+  const spreadOptions = SPREAD_OPTIONS.some(
+    (o) => Number(o.id) === spreadMinutes,
+  )
     ? SPREAD_OPTIONS
     : [
         ...SPREAD_OPTIONS,
-        { id: String(spreadMinutes), displayValue: `± ${spreadMinutes} minutes` },
+        {
+          id: String(spreadMinutes),
+          displayValue: `± ${spreadMinutes} minutes`,
+        },
       ]
 
   const toggleDay = (token: WeekdayToken) => {
@@ -107,9 +115,9 @@ export function SchedulingCard() {
   return (
     <SettingsCard title="Scheduling">
       <Explainer id="campaign-scheduling-preferences">
-        The assistant places every post at the publishing time, then nudges each one a
-        little either side of it so a week of posts doesn&rsquo;t all land on the same
-        minute. Days you switch off are skipped entirely.
+        The assistant places every post at the publishing time, then nudges each
+        one a little either side of it so a week of posts doesn&rsquo;t all land
+        on the same minute. Days you switch off are skipped entirely.
       </Explainer>
 
       {/* One gap for all three controls: time, zone and spread sit on the same
@@ -131,7 +139,9 @@ export function SchedulingCard() {
                 // The time input clears to "" mid-edit, and the server rejects
                 // anything that isn't a zero-padded HH:MM.
                 if (!isValidClock(e.target.value)) return
-                form.setValue('publishing_time', e.target.value, { shouldDirty: true })
+                form.setValue('publishing_time', e.target.value, {
+                  shouldDirty: true,
+                })
               }}
               className="w-28 shrink-0"
             />
@@ -152,7 +162,8 @@ export function SchedulingCard() {
             </div>
           </div>
           <p className="text-xs text-tertiary-foreground">
-            Posts are placed around this time, in this zone, on every publishing day.
+            Posts are placed around this time, in this zone, on every publishing
+            day.
           </p>
         </div>
 

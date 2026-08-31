@@ -5,7 +5,7 @@
  */
 export function formatTitle(
   title: string | null | undefined,
-  fallback = "Untitled"
+  fallback = 'Untitled',
 ): string {
-  return title && title.trim() !== "" ? title : fallback;
+  return title && title.trim() !== '' ? title : fallback
 }

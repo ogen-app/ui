@@ -64,7 +64,9 @@ export function PlatformFilter({
 
   const toggle = (id: string) =>
     onChange(
-      selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id],
+      selected.includes(id)
+        ? selected.filter((s) => s !== id)
+        : [...selected, id],
     )
 
   return (
@@ -186,7 +188,9 @@ function PlatformMark({
       <span
         className={cn(
           'absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-[10px] font-medium tabular-nums ring-2 ring-primary',
-          on ? 'bg-foreground text-primary' : 'bg-quaternary text-tertiary-foreground',
+          on
+            ? 'bg-foreground text-primary'
+            : 'bg-quaternary text-tertiary-foreground',
         )}
       >
         {platform.accounts}

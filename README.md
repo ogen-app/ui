@@ -37,8 +37,21 @@ The dev server proxies `/api` to the API (default `http://localhost:9001`; set
 ```bash
 pnpm build      # type-check + production build -> dist/
 pnpm preview    # serve the production build locally
-pnpm lint
 ```
+
+### Checks
+
+```bash
+pnpm typecheck  # tsc --noEmit
+pnpm lint       # eslint .           (add --fix for the mechanical ones)
+pnpm format     # prettier --write . (format:check to only report)
+pnpm test       # vitest run
+pnpm knip       # unused files, exports and deps — a report, not a gate
+```
+
+CI runs all of those except `knip` on every PR into `develop`. What each tool
+covers, and why some rules are warnings rather than errors:
+[`docs/quality-tooling.md`](./docs/quality-tooling.md).
 
 ### Feature flags, and forcing one for yourself
 

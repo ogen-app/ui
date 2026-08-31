@@ -42,7 +42,9 @@ describe('isNotePinned', () => {
 
   it('leaves every other type unpinned by default', () => {
     expect(isNotePinned(note({ id: 'a' }), {})).toBe(false)
-    expect(isNotePinned(note({ id: 'a', type: 'image_prompt' }), {})).toBe(false)
+    expect(isNotePinned(note({ id: 'a', type: 'image_prompt' }), {})).toBe(
+      false,
+    )
   })
 
   it('lets an explicit false outvote the draft-thesis default', () => {
@@ -85,7 +87,11 @@ describe('noteSummary', () => {
 
   it('falls back to the first non-empty body line', () => {
     // The assistant routinely writes a body with no title.
-    const n = note({ id: 'a', title: '   ', body: '\n\n  Open with the stat  \nthen' })
+    const n = note({
+      id: 'a',
+      title: '   ',
+      body: '\n\n  Open with the stat  \nthen',
+    })
     expect(noteSummary(n)).toBe('Open with the stat')
   })
 

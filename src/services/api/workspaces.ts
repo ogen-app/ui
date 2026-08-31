@@ -57,10 +57,14 @@ export function updateWorkspace(
   id: string,
   payload: UpdateWorkspacePayload,
 ): Promise<Tenant> {
-  return apiJson<Tenant>(`/api/tenants/${id}`, 'Unable to update the workspace', {
-    method: 'PUT',
-    body: payload,
-  })
+  return apiJson<Tenant>(
+    `/api/tenants/${id}`,
+    'Unable to update the workspace',
+    {
+      method: 'PUT',
+      body: payload,
+    },
+  )
 }
 
 /**
@@ -74,7 +78,9 @@ export function updateWorkspace(
  * account's, denormalised identically onto every membership, so it is the one
  * field that identifies the same person across workspaces.
  */
-export async function listMembers(callerEmail: string): Promise<WorkspaceMember[]> {
+export async function listMembers(
+  callerEmail: string,
+): Promise<WorkspaceMember[]> {
   const raw = await apiJson<RawUser[]>('/api/users', 'Unable to load members')
   const self = callerEmail.toLowerCase()
   return raw.map((u) => ({
@@ -145,7 +151,10 @@ export function removeMember(userId: string): Promise<void> {
  * the caller's (`invitationState`).
  */
 export function listInvitations(): Promise<WorkspaceInvitation[]> {
-  return apiJson<WorkspaceInvitation[]>('/api/invitations', 'Unable to load invitations')
+  return apiJson<WorkspaceInvitation[]>(
+    '/api/invitations',
+    'Unable to load invitations',
+  )
 }
 
 /**
@@ -163,18 +172,28 @@ export function listInvitations(): Promise<WorkspaceInvitation[]> {
  * The UI shows the server's message rather than pre-checking against a list
  * that can be stale.
  */
-export function inviteMember(payload: InvitePayload): Promise<WorkspaceInvitation> {
-  return apiJson<WorkspaceInvitation>('/api/invitations', 'Unable to send the invitation', {
-    method: 'POST',
-    body: payload,
-  })
+export function inviteMember(
+  payload: InvitePayload,
+): Promise<WorkspaceInvitation> {
+  return apiJson<WorkspaceInvitation>(
+    '/api/invitations',
+    'Unable to send the invitation',
+    {
+      method: 'POST',
+      body: payload,
+    },
+  )
 }
 
 /** `DELETE /api/invitations/:id` — revokes it; the emailed link stops working. Owner only. */
 export function revokeInvitation(invitationId: string): Promise<void> {
-  return apiVoid(`/api/invitations/${invitationId}`, 'Unable to revoke the invitation', {
-    method: 'DELETE',
-  })
+  return apiVoid(
+    `/api/invitations/${invitationId}`,
+    'Unable to revoke the invitation',
+    {
+      method: 'DELETE',
+    },
+  )
 }
 
 /* ------------------------------------------------------------------------ *
@@ -205,7 +224,9 @@ export function listWorkspaces(): Promise<WorkspaceChoice[]> {
  * workspace is what lets the same person hold two accounts on the same
  * platform. Does not move any tab into it.
  */
-export function createWorkspace(payload: CreateWorkspacePayload): Promise<Workspace> {
+export function createWorkspace(
+  payload: CreateWorkspacePayload,
+): Promise<Workspace> {
   return apiJson<Workspace>(CHOICES, 'Unable to create the workspace', {
     method: 'POST',
     body: payload,
@@ -222,7 +243,9 @@ export function createWorkspace(payload: CreateWorkspacePayload): Promise<Worksp
  * people's workspaces exist.
  */
 export function deleteWorkspace(id: string): Promise<void> {
-  return apiVoid(`${CHOICES}/${id}`, 'Unable to delete the workspace', { method: 'DELETE' })
+  return apiVoid(`${CHOICES}/${id}`, 'Unable to delete the workspace', {
+    method: 'DELETE',
+  })
 }
 
 /**
@@ -234,7 +257,11 @@ export function deleteWorkspace(id: string): Promise<void> {
  * `useSwitchWorkspace` fires it without waiting and swallows a failure.
  */
 export function switchWorkspace(id: string): Promise<void> {
-  return apiVoid(`${CHOICES}/${id}/switch`, 'Unable to remember this workspace', {
-    method: 'POST',
-  })
+  return apiVoid(
+    `${CHOICES}/${id}/switch`,
+    'Unable to remember this workspace',
+    {
+      method: 'POST',
+    },
+  )
 }

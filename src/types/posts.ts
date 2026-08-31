@@ -55,7 +55,15 @@ export type Post = {
   created_at: string
   updated_at: string
   campaign: Campaign | null
-  platform: { id: string; name: string; post_types: Record<string, string>; cadence: string; constraints: string; created_at: string; updated_at: string } | null
+  platform: {
+    id: string
+    name: string
+    post_types: Record<string, string>
+    cadence: string
+    constraints: string
+    created_at: string
+    updated_at: string
+  } | null
   /**
    * The chosen account, hydrated. Optional on the wire (`omitempty`), and
    * the server hydrates disconnected accounts too — so a post that already

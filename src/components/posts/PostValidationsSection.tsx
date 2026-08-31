@@ -89,7 +89,11 @@ export function PostValidationsSection({
           {/* A plain span when there is nothing behind it: a control that
               looks identical to the one that opens the list, and does
               nothing, is worse than no control. */}
-          <Summary as={expandable ? 'button' : 'span'} onClick={toggle} open={open}>
+          <Summary
+            as={expandable ? 'button' : 'span'}
+            onClick={toggle}
+            open={open}
+          >
             <StatusIcon status={overall} />
             <span className="min-w-0 truncate">
               {checksSummary(checks)}
@@ -100,7 +104,11 @@ export function PostValidationsSection({
           </Summary>
 
           {showQuality && (
-            <AssessLink assessment={assessment} assessing={assessing} onAssess={onAssess} />
+            <AssessLink
+              assessment={assessment}
+              assessing={assessing}
+              onAssess={onAssess}
+            />
           )}
         </div>
 
@@ -113,7 +121,10 @@ export function PostValidationsSection({
           >
             <span>{open ? 'Hide checks' : 'Show checks'}</span>
             <CaretDownIcon
-              className={cn('size-4 transition-transform', open && 'rotate-180')}
+              className={cn(
+                'size-4 transition-transform',
+                open && 'rotate-180',
+              )}
             />
           </button>
         )}
@@ -154,29 +165,29 @@ export function PostValidationsSection({
               </h3>
 
               <ul className="flex flex-col gap-1.5 pt-3">
-            {rows.map((check) => (
-              <li key={check.id} className="flex items-start gap-2 text-sm">
-                <StatusIcon status={check.status} className="mt-0.5" />
-                <span className="text-foreground">{check.label}</span>
-                {check.detail && (
-                  <span
-                    className={cn(
-                      'min-w-0 flex-1',
-                      // Colour is reserved for the two statuses that mean
-                      // something needs doing, and it is the same colour for
-                      // both — matching `StatusIcon`, which no longer draws a
-                      // red cross. A passing measurement is just information
-                      // and reads as body text; tinting it grey made the one
-                      // row worth reading look like the disabled remains of
-                      // the rows that were folded away.
-                      check.status === 'fail' || check.status === 'warn'
-                        ? 'text-warning'
-                        : 'text-foreground',
+                {rows.map((check) => (
+                  <li key={check.id} className="flex items-start gap-2 text-sm">
+                    <StatusIcon status={check.status} className="mt-0.5" />
+                    <span className="text-foreground">{check.label}</span>
+                    {check.detail && (
+                      <span
+                        className={cn(
+                          'min-w-0 flex-1',
+                          // Colour is reserved for the two statuses that mean
+                          // something needs doing, and it is the same colour for
+                          // both — matching `StatusIcon`, which no longer draws a
+                          // red cross. A passing measurement is just information
+                          // and reads as body text; tinting it grey made the one
+                          // row worth reading look like the disabled remains of
+                          // the rows that were folded away.
+                          check.status === 'fail' || check.status === 'warn'
+                            ? 'text-warning'
+                            : 'text-foreground',
+                        )}
+                      >
+                        {check.detail}
+                      </span>
                     )}
-                  >
-                    {check.detail}
-                  </span>
-                )}
                   </li>
                 ))}
               </ul>
@@ -287,14 +298,24 @@ function StatusIcon({
     // a post type" is what makes it stop meaning anything there.
     case 'fail':
     case 'warn':
-      return <WarningCircleIcon weight="fill" className={cn(shared, 'text-warning')} />
+      return (
+        <WarningCircleIcon
+          weight="fill"
+          className={cn(shared, 'text-warning')}
+        />
+      )
     case 'pending':
       return (
-        <CircleDashedIcon className={cn(shared, 'text-tertiary-foreground animate-spin')} />
+        <CircleDashedIcon
+          className={cn(shared, 'text-tertiary-foreground animate-spin')}
+        />
       )
     default:
       return (
-        <CheckCircleIcon weight="fill" className={cn(shared, 'text-tertiary-foreground')} />
+        <CheckCircleIcon
+          weight="fill"
+          className={cn(shared, 'text-tertiary-foreground')}
+        />
       )
   }
 }

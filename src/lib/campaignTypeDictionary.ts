@@ -8,7 +8,7 @@
 // to a paragraph while the rest stopped at a clause — and a database row is a
 // poor place to review UI text.
 
-import type { Icon } from "@phosphor-icons/react";
+import type { Icon } from '@phosphor-icons/react'
 import {
   BookmarkSimpleIcon,
   ChatCircleIcon,
@@ -16,44 +16,48 @@ import {
   GaugeIcon,
   InfinityIcon,
   TargetIcon,
-} from "@phosphor-icons/react";
+} from '@phosphor-icons/react'
 
 export type CampaignTypeInfo = {
-  label: string;
+  label: string
   // One clause, comparable in length across every type — these are read as a
   // set, stacked, and one long entry makes the others look like afterthoughts.
-  description: string;
-  icon: Icon;
-};
+  description: string
+  icon: Icon
+}
 
 const CAMPAIGN_TYPES: Record<string, CampaignTypeInfo> = {
   evergreen: {
-    label: "Evergreen",
+    label: 'Evergreen',
     description:
-      "Timeless content that holds its value for months and years — guides and reference material.",
+      'Timeless content that holds its value for months and years — guides and reference material.',
     icon: InfinityIcon,
   },
   awareness: {
-    label: "Awareness",
-    description: "Put the brand in front of people who haven't come across it yet.",
+    label: 'Awareness',
+    description:
+      "Put the brand in front of people who haven't come across it yet.",
     icon: EyeIcon,
   },
   engagement: {
-    label: "Engagement",
-    description: "Give the audience something to reply to, share, and come back for.",
+    label: 'Engagement',
+    description:
+      'Give the audience something to reply to, share, and come back for.',
     icon: ChatCircleIcon,
   },
   conversion: {
-    label: "Conversion",
-    description: "Drive one specific action — a purchase, a signup, a demo, a subscription.",
+    label: 'Conversion',
+    description:
+      'Drive one specific action — a purchase, a signup, a demo, a subscription.',
     icon: TargetIcon,
   },
   retention: {
-    label: "Retention",
-    description: "Keep current customers active and getting more out of what they have.",
+    label: 'Retention',
+    description:
+      'Keep current customers active and getting more out of what they have.',
     icon: BookmarkSimpleIcon,
   },
-};
+}
 
 /**
  * Display info for a campaign type, by its backend slug.
@@ -63,12 +67,12 @@ const CAMPAIGN_TYPES: Record<string, CampaignTypeInfo> = {
  * blank card. Add it here when one appears.
  */
 export function campaignTypeInfo(name: string): CampaignTypeInfo {
-  const slug = name.toLowerCase();
+  const slug = name.toLowerCase()
   return (
     CAMPAIGN_TYPES[slug] ?? {
       label: name.charAt(0).toUpperCase() + name.slice(1),
-      description: "",
+      description: '',
       icon: GaugeIcon,
     }
-  );
+  )
 }

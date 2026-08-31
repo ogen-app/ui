@@ -61,7 +61,9 @@ export function settingsDefaultValues(campaign: Campaign): SettingsFormValues {
     start_date: campaign.start_date,
     end_date: campaign.end_date,
     estimated_post_count:
-      campaign.estimated_post_count == null ? '' : String(campaign.estimated_post_count),
+      campaign.estimated_post_count == null
+        ? ''
+        : String(campaign.estimated_post_count),
     goal_cadence: normalizeGoalCadence(campaign.goal_cadence),
     publishing_time: campaign.publishing_time || DEFAULT_PUBLISHING_TIME,
     // `""` is how the server spells UTC; the picker needs a zone to select.

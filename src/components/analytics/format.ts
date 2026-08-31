@@ -96,14 +96,16 @@ export function delta(
   const direction: Direction =
     Math.abs(fraction) < FLAT_BAND ? 'flat' : fraction > 0 ? 'up' : 'down'
   const better = MEASURES[measure].better
-  const good = direction === 'flat' ? true : (direction === 'up') === (better === 'up')
+  const good =
+    direction === 'flat' ? true : (direction === 'up') === (better === 'up')
   return { fraction, direction, good }
 }
 
 export function formatDelta(d: Delta): string {
   if (d.direction === 'flat') return 'about the same'
   const pct = Math.abs(d.fraction) * 100
-  const rendered = pct >= 100 ? `${(pct / 100 + 1).toFixed(1)}×` : `${Math.round(pct)}%`
+  const rendered =
+    pct >= 100 ? `${(pct / 100 + 1).toFixed(1)}×` : `${Math.round(pct)}%`
   return `${d.direction === 'up' ? '+' : '−'}${rendered}`
 }
 
@@ -160,7 +162,10 @@ export function accumulate(points: Point[], total: number): Point[] {
   const end = summed[summed.length - 1]?.value ?? 0
   if (end === 0) return summed
   const factor = total / end
-  return summed.map((p) => ({ date: p.date, value: Math.round(p.value * factor) }))
+  return summed.map((p) => ({
+    date: p.date,
+    value: Math.round(p.value * factor),
+  }))
 }
 
 /* ---------------------------------------------------------- post history -- */
@@ -240,7 +245,11 @@ export function ratioSeries(
 ): PostSeriesPoint[] {
   return numerator.map((n, i) => {
     const d = denominator[i]?.value ?? 0
-    return { at: n.at, hour: n.hour, value: d >= floor && d > 0 ? n.value / d : 0 }
+    return {
+      at: n.at,
+      hour: n.hour,
+      value: d >= floor && d > 0 ? n.value / d : 0,
+    }
   })
 }
 
@@ -274,7 +283,10 @@ export function extent(series: Point[][]): { min: number; max: number } {
  * and deliberately here: every surface asks the same question, and a
  * best-time heatmap built from nine posts is confidently wrong.
  */
-export function supports(sample: number, claim: 'rank' | 'pattern' | 'timing'): boolean {
+export function supports(
+  sample: number,
+  claim: 'rank' | 'pattern' | 'timing',
+): boolean {
   if (claim === 'rank') return sample >= 5
   if (claim === 'pattern') return sample >= 15
   return sample >= 30

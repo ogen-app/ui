@@ -77,7 +77,9 @@ function parseCardFields(raw: unknown, defaults: CardFields): CardFields {
 function parseHiddenDays(raw: unknown): number[] {
   if (!Array.isArray(raw)) return DEFAULTS.hiddenDays
   const hidden = [
-    ...new Set(raw.filter((d): d is number => typeof d === 'number' && d >= 0 && d <= 6)),
+    ...new Set(
+      raw.filter((d): d is number => typeof d === 'number' && d >= 0 && d <= 6),
+    ),
   ]
   return hidden.length >= 7 ? DEFAULTS.hiddenDays : hidden
 }
@@ -102,12 +104,16 @@ function parse(raw: string | null): CalendarSettings {
     const perView = (card ?? {}) as Partial<Record<CalendarView, unknown>>
     return {
       firstDayOfWeek:
-        typeof firstDayOfWeek === 'number' && firstDayOfWeek >= 0 && firstDayOfWeek <= 6
+        typeof firstDayOfWeek === 'number' &&
+        firstDayOfWeek >= 0 &&
+        firstDayOfWeek <= 6
           ? firstDayOfWeek
           : DEFAULTS.firstDayOfWeek,
       hiddenDays: parseHiddenDays(hiddenDays),
       imagePreviews:
-        typeof imagePreviews === 'boolean' ? imagePreviews : DEFAULTS.imagePreviews,
+        typeof imagePreviews === 'boolean'
+          ? imagePreviews
+          : DEFAULTS.imagePreviews,
       card: {
         week: parseCardFields(perView.week, DEFAULT_WEEK_FIELDS),
         month: parseCardFields(perView.month, DEFAULT_MONTH_FIELDS),
@@ -215,7 +221,10 @@ export function useCalendarSettings(campaignId: string) {
       if (!visible && !canHideField(settings.card[view], field)) return
       write({
         ...settings,
-        card: { ...settings.card, [view]: { ...settings.card[view], [field]: visible } },
+        card: {
+          ...settings.card,
+          [view]: { ...settings.card[view], [field]: visible },
+        },
       })
     },
     [settings, write],

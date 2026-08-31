@@ -1,7 +1,11 @@
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
-import { CircleDashedIcon, UserCircleIcon, WarningIcon } from '@phosphor-icons/react'
+import {
+  CircleDashedIcon,
+  UserCircleIcon,
+  WarningIcon,
+} from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
 import { cn, formatTitle } from '@/lib'
 import { formatDate } from '@/lib/intl'
@@ -11,7 +15,12 @@ import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { hasVisibleProblem } from '@/lib/postValidation'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import { DEFAULT_WEEK_FIELDS, cardIsBare, type CardFields } from './cardFields'
-import { CARD_BANDS, CARD_RUNGS, type CardBand, type CardRung } from './cardRungs'
+import {
+  CARD_BANDS,
+  CARD_RUNGS,
+  type CardBand,
+  type CardRung,
+} from './cardRungs'
 import { LockMark, isDateLocked } from './LockMark'
 import { STATUS_ACCENT_COLOR, STATUS_ICON, STATUS_TEXT_COLOR } from './status'
 
@@ -170,7 +179,8 @@ const FADE_BACKGROUNDS: Record<CardBand, string> = Object.fromEntries(
     return [
       band,
       `linear-gradient(to bottom, transparent 0px, ${FADE_CURVE.map(
-        ([at, opacity]) => `${fill(opacity)} calc(${start}px + (100% - ${start}px) * ${at})`,
+        ([at, opacity]) =>
+          `${fill(opacity)} calc(${start}px + (100% - ${start}px) * ${at})`,
       ).join(', ')}, ${fill(1)} 100%)`,
     ]
   }),
@@ -429,7 +439,10 @@ function PostCardComponent({
               // rather than `regular` because at 14px a hairline stroke in a
               // status colour is a smudge.
               weight="bold"
-              className={cn('size-3.5 shrink-0', STATUS_TEXT_COLOR[post.status])}
+              className={cn(
+                'size-3.5 shrink-0',
+                STATUS_TEXT_COLOR[post.status],
+              )}
               // The status reaches assistive tech as text either way — from the
               // label beside this, or the `sr-only` one below — so the glyph
               // would only repeat it.
@@ -517,7 +530,9 @@ function PostCardComponent({
         {fields.account && (
           <div className="flex items-center gap-1 text-[12px]/[16px] text-tertiary-foreground min-w-0">
             <UserCircleIcon className="size-3.5 shrink-0" />
-            <span className="truncate">{account.name ?? t('posts.noAccount')}</span>
+            <span className="truncate">
+              {account.name ?? t('posts.noAccount')}
+            </span>
           </div>
         )}
       </div>

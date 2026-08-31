@@ -9,7 +9,13 @@ import type { Post } from '@/types/posts'
  * module here that returned "in 2 days" would bake English into a constant and
  * freeze whichever language loaded first. See `docs/technical-decisions.md#i18n`.
  */
-export type CountdownUnit = 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month'
+export type CountdownUnit =
+  | 'second'
+  | 'minute'
+  | 'hour'
+  | 'day'
+  | 'week'
+  | 'month'
 
 export type PublishCountdown = {
   /** Signed: positive is ahead, negative is overdue. Zero reads as "now". */

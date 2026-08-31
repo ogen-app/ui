@@ -17,7 +17,13 @@ import type { Point, Publication } from './types'
 
 const PAD = 2
 
-function path(points: Point[], min: number, max: number, w: number, h: number): string {
+function path(
+  points: Point[],
+  min: number,
+  max: number,
+  w: number,
+  h: number,
+): string {
   if (points.length === 0) return ''
   const span = max - min
   const step = points.length === 1 ? 0 : w / (points.length - 1)
@@ -284,7 +290,11 @@ export function TrendChart({
         />
       </svg>
 
-      <PublicationRail series={series} publications={publications} align="point" />
+      <PublicationRail
+        series={series}
+        publications={publications}
+        align="point"
+      />
       <TickRow ticks={ticks} />
     </div>
   )
@@ -407,7 +417,11 @@ export function ColumnChart({
           ))}
       </svg>
 
-      <PublicationRail series={series} publications={publications} align="slot" />
+      <PublicationRail
+        series={series}
+        publications={publications}
+        align="slot"
+      />
       <TickRow ticks={ticks} />
     </div>
   )
@@ -502,7 +516,8 @@ export function PublicationRail({
   align: 'point' | 'slot'
   className?: string
 }) {
-  if (!publications || publications.length === 0 || series.length < 2) return null
+  if (!publications || publications.length === 0 || series.length < 2)
+    return null
 
   const index = new Map(series.map((point, i) => [point.date, i]))
   const days = new Map<number, Publication[]>()
@@ -524,13 +539,12 @@ export function PublicationRail({
     >
       {[...days.entries()].map(([i, posts]) => {
         const centre =
-          align === 'slot'
-            ? (i + 0.5) * slot
-            : (i / (series.length - 1)) * 100
+          align === 'slot' ? (i + 0.5) * slot : (i / (series.length - 1)) * 100
         return posts.map((publication, k) => {
           // Spread around the day's centre, so a day with three posts reads as a
           // cluster on that day rather than as three days.
-          const offset = (k - (posts.length - 1) / 2) * Math.min(slot * 0.5, 1.4)
+          const offset =
+            (k - (posts.length - 1) / 2) * Math.min(slot * 0.5, 1.4)
           return (
             <span
               key={publication.id}
@@ -552,7 +566,11 @@ export function PublicationRail({
 }
 
 /** The dated labels under a chart. Shared, so both charts date the same way. */
-function TickRow({ ticks }: { ticks: { index: number; fraction: number; label: string }[] }) {
+function TickRow({
+  ticks,
+}: {
+  ticks: { index: number; fraction: number; label: string }[]
+}) {
   if (ticks.length === 0) return null
   return (
     <div className="relative h-4">
@@ -569,7 +587,10 @@ function TickRow({ ticks }: { ticks: { index: number; fraction: number; label: s
               ? { left: 0 }
               : tick.fraction >= 0.98
                 ? { right: 0 }
-                : { left: `${tick.fraction * 100}%`, transform: 'translateX(-50%)' }
+                : {
+                    left: `${tick.fraction * 100}%`,
+                    transform: 'translateX(-50%)',
+                  }
           }
         >
           {tick.label}
@@ -635,12 +656,20 @@ export function MultiSeriesChart({
   series,
   className,
 }: {
-  series: { id: string; label: string; tone: 1 | 2 | 3 | 4 | 5; points: Point[] }[]
+  series: {
+    id: string
+    label: string
+    tone: 1 | 2 | 3 | 4 | 5
+    points: Point[]
+  }[]
   className?: string
 }) {
   const W = 640
   const H = 140
-  const { min, max } = extent([...series.map((s) => s.points), [{ date: '', value: 0 }]])
+  const { min, max } = extent([
+    ...series.map((s) => s.points),
+    [{ date: '', value: 0 }],
+  ])
 
   return (
     <svg
@@ -791,18 +820,20 @@ export function PostSeriesChart({
           enough to find a date by.
         */}
         {mode === 'cumulative' &&
-          ticks.slice(1, -1).map((tick) => (
-            <line
-              key={tick.index}
-              x1={tick.fraction * W}
-              x2={tick.fraction * W}
-              y1={0}
-              y2={H}
-              strokeWidth={1}
-              vectorEffect="non-scaling-stroke"
-              className="stroke-quaternary"
-            />
-          ))}
+          ticks
+            .slice(1, -1)
+            .map((tick) => (
+              <line
+                key={tick.index}
+                x1={tick.fraction * W}
+                x2={tick.fraction * W}
+                y1={0}
+                y2={H}
+                strokeWidth={1}
+                vectorEffect="non-scaling-stroke"
+                className="stroke-quaternary"
+              />
+            ))}
 
         {mode === 'cumulative' ? (
           <CumulativePath points={points} y={y} w={W} h={H} />
@@ -829,11 +860,18 @@ function CumulativePath({
 }) {
   const step = points.length === 1 ? 0 : w / (points.length - 1)
   const d = points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'}${(i * step).toFixed(2)},${y(p.value).toFixed(2)}`)
+    .map(
+      (p, i) =>
+        `${i === 0 ? 'M' : 'L'}${(i * step).toFixed(2)},${y(p.value).toFixed(2)}`,
+    )
     .join(' ')
   return (
     <>
-      <path d={`${d} L${w},${h} L0,${h} Z`} className="fill-quaternary" opacity={0.5} />
+      <path
+        d={`${d} L${w},${h} L0,${h} Z`}
+        className="fill-quaternary"
+        opacity={0.5}
+      />
       <path
         d={d}
         fill="none"
@@ -867,7 +905,10 @@ function IntervalColumns({
   return (
     <>
       {points.map((point, i) => {
-        const height = Math.max(point.value > 0 ? 0.75 : 0, y(0) - y(point.value))
+        const height = Math.max(
+          point.value > 0 ? 0.75 : 0,
+          y(0) - y(point.value),
+        )
         return (
           <rect
             key={point.hour}
@@ -949,7 +990,10 @@ export function DecayCurve({
   const x = (hour: number) => (hour / maxHour) * W
   const y = (share: number) => H - PAD - share * (H - PAD * 2)
   const d = points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.hour).toFixed(2)},${y(p.share).toFixed(2)}`)
+    .map(
+      (p, i) =>
+        `${i === 0 ? 'M' : 'L'}${x(p.hour).toFixed(2)},${y(p.share).toFixed(2)}`,
+    )
     .join(' ')
 
   return (
@@ -1018,7 +1062,9 @@ export function RankBar({
   className?: string
 }) {
   return (
-    <div className={cn('h-1.5 w-full overflow-hidden bg-quaternary', className)}>
+    <div
+      className={cn('h-1.5 w-full overflow-hidden bg-quaternary', className)}
+    >
       <div
         className={cn(
           'h-full',
@@ -1064,7 +1110,10 @@ export function PaceBar({
   const left = t < 0 ? 50 - width : 50
 
   return (
-    <div title={title} className={cn('relative h-1.5 w-full bg-quaternary', className)}>
+    <div
+      title={title}
+      className={cn('relative h-1.5 w-full bg-quaternary', className)}
+    >
       <div
         className={cn(
           'absolute inset-y-0',

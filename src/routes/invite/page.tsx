@@ -58,7 +58,10 @@ function InvitePage() {
               i18nKey="auth.invite.brokenBody"
               components={{
                 login: (
-                  <Link to="/auth/login" className="text-primary-foreground font-medium" />
+                  <Link
+                    to="/auth/login"
+                    className="text-primary-foreground font-medium"
+                  />
                 ),
               }}
             />

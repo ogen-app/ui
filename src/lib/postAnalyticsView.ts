@@ -122,7 +122,12 @@ export function readPublication(
 }
 
 /** The wire measures that roll up into one figure on the surface. */
-const INTERACTION_PARTS: WireMeasure[] = ['likes', 'comments', 'shares', 'saves']
+const INTERACTION_PARTS: WireMeasure[] = [
+  'likes',
+  'comments',
+  'shares',
+  'saves',
+]
 
 /** Wire field → the measure it is shown as, for the ones shown one-to-one. */
 const DIRECT: [WireMeasure, MeasureId][] = [

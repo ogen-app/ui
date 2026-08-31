@@ -62,9 +62,9 @@ export function AnalyticsSurface({
         <SectionCard title="Analytics">
           <NotYet title="Nothing is being measured for this workspace">
             Analytics isn't switched on here yet. Everything else — planning,
-            generating, scheduling, publishing — works exactly as it does now, and
-            the moment measurement is connected these screens fill in from the
-            posts you have already sent.
+            generating, scheduling, publishing — works exactly as it does now,
+            and the moment measurement is connected these screens fill in from
+            the posts you have already sent.
           </NotYet>
         </SectionCard>
       </Wrapper>
@@ -76,9 +76,9 @@ export function AnalyticsSurface({
       <Wrapper>
         <SectionCard title="Analytics">
           <NotYet title="Couldn't load analytics">
-            {scope.kind === 'campaign' ? 'The campaign' : 'The workspace'} itself is
-            unaffected — nothing here changes what is scheduled or published. Try
-            again in a moment.
+            {scope.kind === 'campaign' ? 'The campaign' : 'The workspace'}{' '}
+            itself is unaffected — nothing here changes what is scheduled or
+            published. Try again in a moment.
           </NotYet>
         </SectionCard>
       </Wrapper>

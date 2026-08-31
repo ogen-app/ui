@@ -1,1 +1,1 @@
-export { AuthForgotPasswordForm } from "./AuthForgotPasswordForm";
+export { AuthForgotPasswordForm } from './AuthForgotPasswordForm'

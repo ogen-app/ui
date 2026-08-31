@@ -3,7 +3,14 @@ import { cn } from '@/lib'
 import { RankBar, TrendChart } from './charts'
 import { InsightLine } from './ComparisonSections'
 import { DeltaChip } from './MeasureTile'
-import { Basis, FigureGrid, FigureTile, NotYet, SectionCard, Todos } from './shell'
+import {
+  Basis,
+  FigureGrid,
+  FigureTile,
+  NotYet,
+  SectionCard,
+  Todos,
+} from './shell'
 import { accumulate, formatCount } from './format'
 import {
   GOAL_SIGNAL_NOUN,
@@ -43,8 +50,9 @@ export function OutcomesSection({ view }: { view: OutcomesView }) {
     return (
       <SectionCard title="Outcomes" scope="lens">
         <NotYet title="No goal set for this yet">
-          Naming what you want out of this — visits to a page, enquiries, sign-ups
-          — lets everything above be read against it instead of on its own terms.
+          Naming what you want out of this — visits to a page, enquiries,
+          sign-ups — lets everything above be read against it instead of on its
+          own terms.
         </NotYet>
         {view.upgrade && <UpgradeNote upgrade={view.upgrade} />}
       </SectionCard>
@@ -78,7 +86,9 @@ export function OutcomesSection({ view }: { view: OutcomesView }) {
             key={g.id}
             goal={g}
             selected={g.id === goal.id}
-            onSelect={view.goals.length > 1 ? () => setSelectedId(g.id) : undefined}
+            onSelect={
+              view.goals.length > 1 ? () => setSelectedId(g.id) : undefined
+            }
           />
         ))}
       </FigureGrid>
@@ -113,7 +123,8 @@ function GoalTile({
       ? {
           fraction: (goal.value - goal.previous) / Math.abs(goal.previous),
           direction:
-            Math.abs((goal.value - goal.previous) / Math.abs(goal.previous)) < 0.02
+            Math.abs((goal.value - goal.previous) / Math.abs(goal.previous)) <
+            0.02
               ? ('flat' as const)
               : goal.value > goal.previous
                 ? ('up' as const)
@@ -124,7 +135,9 @@ function GoalTile({
 
   return (
     <FigureTile selected={selected} onSelect={onSelect}>
-      <span className="text-xs text-secondary-foreground truncate">{goal.label}</span>
+      <span className="text-xs text-secondary-foreground truncate">
+        {goal.label}
+      </span>
 
       {unmeasured ? (
         <span className="font-display text-3xl font-medium leading-none text-tertiary-foreground">
@@ -198,8 +211,12 @@ function GoalDetail({ goal }: { goal: Goal }) {
             {contributors.map((c) => (
               <li key={c.label} className="flex flex-col gap-1">
                 <div className="flex items-baseline justify-between gap-3 text-xs">
-                  <span className="truncate text-secondary-foreground">{c.label}</span>
-                  <span className="shrink-0 tabular-nums">{formatCount(c.value)}</span>
+                  <span className="truncate text-secondary-foreground">
+                    {c.label}
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    {formatCount(c.value)}
+                  </span>
                 </div>
                 <RankBar fraction={leader === 0 ? 0 : c.value / leader} />
               </li>

@@ -49,8 +49,11 @@ import type { PerformerCriterionId, QualityView } from './types'
  * Outside the date lens on purpose — see {@link QualityView}.
  */
 export function QualitySection({ view }: { view: QualityView }) {
-  const [pickedCriterion, setPickedCriterion] = useState<PerformerCriterionId | null>(null)
-  const [pickedElement, setPickedElement] = useState<QualityElement | null>(null)
+  const [pickedCriterion, setPickedCriterion] =
+    useState<PerformerCriterionId | null>(null)
+  const [pickedElement, setPickedElement] = useState<QualityElement | null>(
+    null,
+  )
 
   const posts = comparablePosts(view)
   const stale = view.posts.length - posts.length
@@ -70,7 +73,8 @@ export function QualitySection({ view }: { view: QualityView }) {
   // Falls back rather than resetting, as everywhere else on this surface: a
   // criterion can retire when the platform mix changes, and a card that empties
   // itself because of that is worse than one that returns to the first question.
-  const criterion = criteria.find((c) => c.id === pickedCriterion) ?? criteria[0]
+  const criterion =
+    criteria.find((c) => c.id === pickedCriterion) ?? criteria[0]
 
   /*
     Under the gate the bands are not drawn at all. Three mostly-empty bands look
@@ -81,10 +85,12 @@ export function QualitySection({ view }: { view: QualityView }) {
   if (posts.length < MIN_SCORED_POSTS) {
     return (
       <SectionCard title="Quality against results" scope="all-time">
-        <NotYet title={`${posts.length} scored ${posts.length === 1 ? 'post' : 'posts'} so far`}>
-          Holding the score against results needs a few posts in each band before
-          it means anything — {MIN_SCORED_POSTS} is where this starts, and every
-          post you score from here counts towards it.
+        <NotYet
+          title={`${posts.length} scored ${posts.length === 1 ? 'post' : 'posts'} so far`}
+        >
+          Holding the score against results needs a few posts in each band
+          before it means anything — {MIN_SCORED_POSTS} is where this starts,
+          and every post you score from here counts towards it.
         </NotYet>
         <Basis>{coverage(view, posts.length, stale)}</Basis>
       </SectionCard>
@@ -145,7 +151,12 @@ export function QualitySection({ view }: { view: QualityView }) {
 
         <ul className="flex flex-col">
           {groups.map((group) => (
-            <BandRow key={group.band} group={group} criterion={criterion} best={best} />
+            <BandRow
+              key={group.band}
+              group={group}
+              criterion={criterion}
+              best={best}
+            />
           ))}
         </ul>
       </div>
@@ -246,8 +257,10 @@ function spreadVerdict(spread: QualitySpread | SpreadGap): {
   text: string
   tone: 'positive' | 'negative' | 'neutral'
 } {
-  if (spread === 'single-band') return { text: 'Every post scored the same', tone: 'neutral' }
-  if (spread === 'thin-bands') return { text: 'Too few in each band', tone: 'neutral' }
+  if (spread === 'single-band')
+    return { text: 'Every post scored the same', tone: 'neutral' }
+  if (spread === 'thin-bands')
+    return { text: 'Too few in each band', tone: 'neutral' }
   if (spread.direction === 'tracks') {
     return { text: `${spread.top.label} posts do better`, tone: 'positive' }
   }
@@ -289,7 +302,9 @@ function BandRow({
       <div className="flex w-40 shrink-0 flex-col items-end gap-1.5">
         {group.value !== null ? (
           <>
-            <span className="text-sm tabular-nums">{criterion.format(group.value)}</span>
+            <span className="text-sm tabular-nums">
+              {criterion.format(group.value)}
+            </span>
             <RankBar
               fraction={best === 0 ? 0 : group.value / best}
               className="w-full"
@@ -314,25 +329,45 @@ function BandRow({
 }
 
 /** What the comparison is over. The first sentence of the card's one note. */
-function coverage(view: QualityView, comparable: number, stale: number): string {
+function coverage(
+  view: QualityView,
+  comparable: number,
+  stale: number,
+): string {
   const parts: string[] = []
   if (view.unscored > 0) parts.push(`${view.unscored} never scored`)
-  if (view.awaiting > 0) parts.push(`${view.awaiting} still waiting on the platforms`)
-  if (stale > 0) parts.push(`${stale} edited after scoring, so the score is of different words`)
+  if (view.awaiting > 0)
+    parts.push(`${view.awaiting} still waiting on the platforms`)
+  if (stale > 0)
+    parts.push(
+      `${stale} edited after scoring, so the score is of different words`,
+    )
 
   const total = comparable + view.unscored + view.awaiting + stale
   const head = `${comparable} of the ${total} posts published here can be compared`
   return parts.length === 0 ? `${head}.` : `${head} — ${parts.join(', ')}.`
 }
 
-function emptyTitle(view: QualityView, comparable: number, criteria: number): string {
-  if (view.posts.length === 0 && view.awaiting === 0) return 'Nothing scored yet'
-  if (comparable === 0 && view.posts.length > 0) return 'Every score is out of date'
+function emptyTitle(
+  view: QualityView,
+  comparable: number,
+  criteria: number,
+): string {
+  if (view.posts.length === 0 && view.awaiting === 0)
+    return 'Nothing scored yet'
+  if (comparable === 0 && view.posts.length > 0)
+    return 'Every score is out of date'
   if (comparable === 0) return 'Scored, nothing back yet'
-  return criteria === 0 ? 'Nothing reported enough to compare' : 'Nothing to compare yet'
+  return criteria === 0
+    ? 'Nothing reported enough to compare'
+    : 'Nothing to compare yet'
 }
 
-function emptyBody(view: QualityView, comparable: number, criteria: number): string {
+function emptyBody(
+  view: QualityView,
+  comparable: number,
+  criteria: number,
+): string {
   if (view.posts.length === 0 && view.awaiting === 0) {
     return 'Nothing here has been through a quality check, so there is nothing to hold against what these posts earned. Score a few from the post editor and this fills in on its own.'
   }

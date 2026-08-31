@@ -1,28 +1,28 @@
-import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import { CaretRightIcon } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/button.tsx";
-import { formatAnchor } from "@/components/campaigns/calendar/date.ts";
-import { cn } from "@/lib";
+import type { ReactNode } from 'react'
+import { Link } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
+import { CaretRightIcon } from '@phosphor-icons/react'
+import { Button } from '@/components/ui/button.tsx'
+import { formatAnchor } from '@/components/campaigns/calendar/date.ts'
+import { cn } from '@/lib'
 import {
   campaignSection,
   type CampaignSectionId,
-} from "@/lib/campaignSections.ts";
-import type { FixTarget } from "@/lib/campaignReadiness.ts";
+} from '@/lib/campaignSections.ts'
+import type { FixTarget } from '@/lib/campaignReadiness.ts'
 
 /**
  * Where a card sends the user. `calendar` is the one destination the fix rules
  * don't have a name for: an attention row about a post opens the list it can be
  * fixed in, while the Content card opens the week the posts live in.
  */
-export type CardTarget = FixTarget | "calendar";
+export type CardTarget = FixTarget | 'calendar'
 
 /** Where a card's "open" button goes. */
 export type CardLink = {
-  target: CardTarget;
-  campaignId: string;
-};
+  target: CardTarget
+  campaignId: string
+}
 
 /**
  * One module card on the Campaign Overview screen. Capped at the shared
@@ -44,31 +44,31 @@ export function OverviewCard({
   className,
 }: {
   /** Sets the card's title, glyph and open-button label from one table. */
-  section?: CampaignSectionId;
+  section?: CampaignSectionId
   /** For a card that isn't one of the campaign's sections. */
-  title?: string;
+  title?: string
   /** Ditto — the mark beside such a card's title. */
-  icon?: ReactNode;
+  icon?: ReactNode
   /**
    * Sits in the header beside the title — normally a `StatusBadge`. A module's
    * verdict belongs here whether it's good news or not, so the body is free to
    * be about what to do next.
    */
-  status?: ReactNode;
+  status?: ReactNode
   /** Adds the open button. Needs `section`, which is where its label comes from. */
-  link?: CardLink;
-  children?: ReactNode;
-  className?: string;
+  link?: CardLink
+  children?: ReactNode
+  className?: string
 }) {
-  const { t } = useTranslation();
-  const meta = section ? campaignSection(section) : undefined;
-  const Glyph = meta?.icon;
-  const heading = title ?? (meta ? t(meta.labelKey) : undefined);
+  const { t } = useTranslation()
+  const meta = section ? campaignSection(section) : undefined
+  const Glyph = meta?.icon
+  const heading = title ?? (meta ? t(meta.labelKey) : undefined)
 
   return (
     <section
       className={cn(
-        "w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0",
+        'w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0',
         className,
       )}
     >
@@ -76,7 +76,11 @@ export function OverviewCard({
         <div className="flex items-center gap-3 min-w-0">
           <CardGlyph>
             {Glyph ? (
-              <Glyph className="size-5" style={{ color: meta?.tone }} aria-hidden />
+              <Glyph
+                className="size-5"
+                style={{ color: meta?.tone }}
+                aria-hidden
+              />
             ) : (
               icon
             )}
@@ -88,7 +92,12 @@ export function OverviewCard({
           )}
           {status}
           {link && meta && (
-            <Button variant="ghost" size="sm" className="ml-auto shrink-0" asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto shrink-0"
+              asChild
+            >
               <SectionLink target={link.target} campaignId={link.campaignId}>
                 {t(meta.openKey)}
               </SectionLink>
@@ -98,7 +107,7 @@ export function OverviewCard({
       )}
       {children}
     </section>
-  );
+  )
 }
 
 /**
@@ -117,7 +126,7 @@ function CardGlyph({ children }: { children?: ReactNode }) {
     <span className="flex w-4 shrink-0 items-center justify-center">
       {children}
     </span>
-  );
+  )
 }
 
 /**
@@ -132,65 +141,94 @@ export function SectionLink({
   label,
   children,
 }: {
-  target: CardTarget;
-  campaignId: string;
-  className?: string;
+  target: CardTarget
+  campaignId: string
+  className?: string
   /** Accessible name, for a link whose contents are a whole card. */
-  label?: string;
+  label?: string
   /** Optional: `LineItem asChild` injects the row's markup as children. */
-  children?: ReactNode;
+  children?: ReactNode
 }) {
-  const params = { campaignId };
-  const named = { "aria-label": label };
+  const params = { campaignId }
+  const named = { 'aria-label': label }
   switch (target) {
-    case "brief":
-      return (
-        <Link to="/campaigns/$campaignId/brief" params={params} className={className} {...named}>
-          {children}
-        </Link>
-      );
-    case "settings":
-      return (
-        <Link to="/campaigns/$campaignId/settings" params={params} className={className} {...named}>
-          {children}
-        </Link>
-      );
-    case "content":
-      return (
-        <Link to="/campaigns/$campaignId/content" params={params} className={className} {...named}>
-          {children}
-        </Link>
-      );
-    case "posts":
-      return (
-        <Link to="/campaigns/$campaignId/list" params={params} className={className} {...named}>
-          {children}
-        </Link>
-      );
-    case "calendar":
-      // The current week, exactly as the sidebar's own Posts row opens it.
+    case 'brief':
       return (
         <Link
-          to="/campaigns/$campaignId/calendar/$anchor/$view"
-          params={{ campaignId, anchor: formatAnchor(new Date()), view: "week" }}
+          to="/campaigns/$campaignId/brief"
+          params={params}
           className={className}
           {...named}
         >
           {children}
         </Link>
-      );
-    case "analytics":
+      )
+    case 'settings':
       return (
-        <Link to="/campaigns/$campaignId/analytics" params={params} className={className} {...named}>
+        <Link
+          to="/campaigns/$campaignId/settings"
+          params={params}
+          className={className}
+          {...named}
+        >
           {children}
         </Link>
-      );
-    case "workspace-settings":
+      )
+    case 'content':
+      return (
+        <Link
+          to="/campaigns/$campaignId/content"
+          params={params}
+          className={className}
+          {...named}
+        >
+          {children}
+        </Link>
+      )
+    case 'posts':
+      return (
+        <Link
+          to="/campaigns/$campaignId/list"
+          params={params}
+          className={className}
+          {...named}
+        >
+          {children}
+        </Link>
+      )
+    case 'calendar':
+      // The current week, exactly as the sidebar's own Posts row opens it.
+      return (
+        <Link
+          to="/campaigns/$campaignId/calendar/$anchor/$view"
+          params={{
+            campaignId,
+            anchor: formatAnchor(new Date()),
+            view: 'week',
+          }}
+          className={className}
+          {...named}
+        >
+          {children}
+        </Link>
+      )
+    case 'analytics':
+      return (
+        <Link
+          to="/campaigns/$campaignId/analytics"
+          params={params}
+          className={className}
+          {...named}
+        >
+          {children}
+        </Link>
+      )
+    case 'workspace-settings':
       return (
         <Link to="/workspace-settings" className={className} {...named}>
           {children}
         </Link>
-      );
+      )
   }
 }
 
@@ -211,14 +249,14 @@ export function CollapsedCard({
   status,
   children,
 }: CardLink & {
-  section: CampaignSectionId;
+  section: CampaignSectionId
   /** Sits in the header beside the title — normally a `StatusBadge`. */
-  status?: ReactNode;
+  status?: ReactNode
   /** The summary line: what this module currently holds. */
-  children: ReactNode;
+  children: ReactNode
 }) {
-  const { t } = useTranslation();
-  const { icon: Glyph, tone, labelKey, openKey } = campaignSection(section);
+  const { t } = useTranslation()
+  const { icon: Glyph, tone, labelKey, openKey } = campaignSection(section)
 
   return (
     <SectionLink
@@ -245,5 +283,5 @@ export function CollapsedCard({
         {children}
       </div>
     </SectionLink>
-  );
+  )
 }

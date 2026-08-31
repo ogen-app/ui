@@ -7,13 +7,23 @@ import {
   NO_USAGE,
 } from './assetUsage'
 
-const campaign = (id: string, name: string, asset_ids: string[]) => ({ id, name, asset_ids })
-const post = (campaign_id: string, used_asset_ids: string[]) => ({ campaign_id, used_asset_ids })
+const campaign = (id: string, name: string, asset_ids: string[]) => ({
+  id,
+  name,
+  asset_ids,
+})
+const post = (campaign_id: string, used_asset_ids: string[]) => ({
+  campaign_id,
+  used_asset_ids,
+})
 
 describe('assetUsageIndex', () => {
   it('names every campaign holding a document', () => {
     const index = assetUsageIndex(
-      [campaign('c1', 'Q3 launch', ['a1']), campaign('c2', 'Always on', ['a1', 'a2'])],
+      [
+        campaign('c1', 'Q3 launch', ['a1']),
+        campaign('c2', 'Always on', ['a1', 'a2']),
+      ],
       [],
       null,
     )
@@ -22,13 +32,21 @@ describe('assetUsageIndex', () => {
   })
 
   it('counts the posts that wrote from a document', () => {
-    const index = assetUsageIndex([], [post('c1', ['a1']), post('c2', ['a1', 'a2'])], null)
+    const index = assetUsageIndex(
+      [],
+      [post('c1', ['a1']), post('c2', ['a1', 'a2'])],
+      null,
+    )
     expect(index.get('a1')?.posts).toBe(2)
     expect(index.get('a2')?.posts).toBe(1)
   })
 
   it("splits out the scope campaign's own posts", () => {
-    const index = assetUsageIndex([], [post('c1', ['a1']), post('c2', ['a1'])], 'c1')
+    const index = assetUsageIndex(
+      [],
+      [post('c1', ['a1']), post('c2', ['a1'])],
+      'c1',
+    )
     expect(index.get('a1')).toMatchObject({ posts: 2, postsHere: 1 })
   })
 
@@ -46,7 +64,9 @@ describe('assetUsageIndex', () => {
   })
 
   it('has no entry for a document nothing uses', () => {
-    expect(assetUsageIndex([campaign('c1', 'Q3', [])], [], null).get('a1')).toBeUndefined()
+    expect(
+      assetUsageIndex([campaign('c1', 'Q3', [])], [], null).get('a1'),
+    ).toBeUndefined()
   })
 
   // Membership survives the document it points at, and a campaign left holding
@@ -58,16 +78,26 @@ describe('assetUsageIndex', () => {
 })
 
 describe('labels', () => {
-  const usage = (campaigns: string[], posts = 0, postsHere = 0) => ({ campaigns, posts, postsHere })
+  const usage = (campaigns: string[], posts = 0, postsHere = 0) => ({
+    campaigns,
+    posts,
+    postsHere,
+  })
 
   it('names a single campaign and counts several', () => {
     expect(campaignsLabel(usage(['Q3 launch']))).toBe('Q3 launch')
-    expect(campaignsLabel(usage(['Q3 launch', 'Always on']))).toBe('2 campaigns')
+    expect(campaignsLabel(usage(['Q3 launch', 'Always on']))).toBe(
+      '2 campaigns',
+    )
     expect(campaignsLabel(NO_USAGE)).toBeNull()
   })
 
   it('falls back to a name for an untitled campaign', () => {
-    const index = assetUsageIndex([{ id: 'c1', name: '  ', asset_ids: ['a1'] }], [], null)
+    const index = assetUsageIndex(
+      [{ id: 'c1', name: '  ', asset_ids: ['a1'] }],
+      [],
+      null,
+    )
     expect(campaignsLabel(index.get('a1')!)).toBe('Untitled campaign')
   })
 
@@ -78,7 +108,11 @@ describe('labels', () => {
 
   it('leaves the scope campaign out of the others', () => {
     expect(elsewhereLabel(usage(['Q3 launch']), true)).toBeNull()
-    expect(elsewhereLabel(usage(['Q3 launch', 'Always on']), true)).toBe('Also in 1 campaign')
-    expect(elsewhereLabel(usage(['a', 'b', 'c']), true)).toBe('Also in 2 campaigns')
+    expect(elsewhereLabel(usage(['Q3 launch', 'Always on']), true)).toBe(
+      'Also in 1 campaign',
+    )
+    expect(elsewhereLabel(usage(['a', 'b', 'c']), true)).toBe(
+      'Also in 2 campaigns',
+    )
   })
 })

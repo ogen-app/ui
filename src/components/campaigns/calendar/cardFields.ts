@@ -28,7 +28,13 @@
  */
 
 /** In the order the card draws them, top to bottom — the panel lists them so. */
-export const CARD_FIELDS = ['status', 'time', 'title', 'platform', 'account'] as const
+export const CARD_FIELDS = [
+  'status',
+  'time',
+  'title',
+  'platform',
+  'account',
+] as const
 
 export type CardField = (typeof CARD_FIELDS)[number]
 
@@ -106,7 +112,12 @@ export function visibleFieldCount(fields: CardFields): number {
  * status switch itself — it is what this decides.
  */
 export function cardIsBare(fields: CardFields, hasTime: boolean): boolean {
-  const rows = [fields.time && hasTime, fields.title, fields.platform, fields.account]
+  const rows = [
+    fields.time && hasTime,
+    fields.title,
+    fields.platform,
+    fields.account,
+  ]
   return rows.filter(Boolean).length <= 1
 }
 

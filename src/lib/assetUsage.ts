@@ -61,7 +61,8 @@ export function assetUsageIndex(
 
   for (const campaign of campaigns) {
     const label = campaignLabel(campaign)
-    for (const assetId of campaign.asset_ids ?? []) entry(assetId).campaigns.push(label)
+    for (const assetId of campaign.asset_ids ?? [])
+      entry(assetId).campaigns.push(label)
   }
 
   for (const post of posts) {
@@ -103,7 +104,10 @@ export function postsLabel(count: number): string {
  * The scope's own campaign is subtracted rather than counted, so the line
  * answers what it says: a document on this page is obviously on this page.
  */
-export function elsewhereLabel(usage: AssetUsage, inScope: boolean): string | null {
+export function elsewhereLabel(
+  usage: AssetUsage,
+  inScope: boolean,
+): string | null {
   const others = usage.campaigns.length - (inScope ? 1 : 0)
   if (others <= 0) return null
   return `Also in ${others} ${others === 1 ? 'campaign' : 'campaigns'}`

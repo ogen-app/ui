@@ -3,7 +3,11 @@ import { Link } from '@tanstack/react-router'
 
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { CheckCircleIcon, PlusIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import {
+  CheckCircleIcon,
+  PlusIcon,
+  WarningCircleIcon,
+} from '@phosphor-icons/react'
 import { cn } from '@/lib'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
@@ -51,12 +55,18 @@ function togglePostType(
     const has = p.post_types.includes(slug)
     return {
       ...p,
-      post_types: has ? p.post_types.filter((s) => s !== slug) : [...p.post_types, slug],
+      post_types: has
+        ? p.post_types.filter((s) => s !== slug)
+        : [...p.post_types, slug],
     }
   })
 }
 
-export function PlatformsControl({ value, onChange, onCommitPlatforms }: Props) {
+export function PlatformsControl({
+  value,
+  onChange,
+  onCommitPlatforms,
+}: Props) {
   const views = usePlatformViews()
   const selectedById = useMemo(
     () => new Map(value.map((p) => [p.id, p])),
@@ -65,7 +75,9 @@ export function PlatformsControl({ value, onChange, onCommitPlatforms }: Props) 
 
   if (views.length === 0) {
     return (
-      <span className="text-xs text-tertiary-foreground">No platforms available</span>
+      <span className="text-xs text-tertiary-foreground">
+        No platforms available
+      </span>
     )
   }
 
@@ -100,7 +112,10 @@ export function PlatformsControl({ value, onChange, onCommitPlatforms }: Props) 
               // use for and no obvious way out of. Treat it as the same
               // intention as DEACTIVATE ALL, which also means it persists
               // straight away rather than waiting for the header Save.
-              if (next.find((p) => p.id === view.platform.id)?.post_types.length === 0) {
+              if (
+                next.find((p) => p.id === view.platform.id)?.post_types
+                  .length === 0
+              ) {
                 deactivate()
                 return
               }
@@ -137,8 +152,8 @@ function PlatformsSummary({ value }: { value: CampaignPlatform[] }) {
 
   return (
     <p className="mb-3 text-sm text-tertiary-foreground">
-      {value.length} platform{value.length === 1 ? '' : 's'} added with {postTypes} post
-      type{postTypes === 1 ? '' : 's'}.
+      {value.length} platform{value.length === 1 ? '' : 's'} added with{' '}
+      {postTypes} post type{postTypes === 1 ? '' : 's'}.
     </p>
   )
 }
@@ -199,7 +214,10 @@ function PlatformRow({
           />
         </div>
         {!selected && (
-          <div className="flex shrink-0 items-center gap-1" onClick={stopRowClick}>
+          <div
+            className="flex shrink-0 items-center gap-1"
+            onClick={stopRowClick}
+          >
             <Button
               type="button"
               variant="ghost"
@@ -264,7 +282,8 @@ function PlatformRow({
   )
 }
 
-const ROW = 'group flex items-center justify-between gap-3 px-3 py-3 bg-secondary'
+const ROW =
+  'group flex items-center justify-between gap-3 px-3 py-3 bg-secondary'
 
 /**
  * The platform row. Only the unselected one is clickable as a whole: adding is
@@ -301,7 +320,10 @@ function RowShell({
         e.preventDefault()
         onToggle()
       }}
-      className={cn(ROW, 'cursor-pointer focus-visible:outline-2 focus-visible:outline-ring')}
+      className={cn(
+        ROW,
+        'cursor-pointer focus-visible:outline-2 focus-visible:outline-ring',
+      )}
     >
       {children}
     </div>
@@ -426,7 +448,9 @@ function PlatformLabel({
             (selected ? (
               <>
                 {counts && ' · '}
-                <span className="text-warning">Not connected to the workspace.</span>{' '}
+                <span className="text-warning">
+                  Not connected to the workspace.
+                </span>{' '}
                 <ConnectLink platformName={info.name} />
               </>
             ) : (

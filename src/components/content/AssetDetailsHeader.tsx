@@ -31,7 +31,12 @@ type Props = {
   sourceUrl?: string | null
   /** Re-scrape the source. Only passed for a document that has one. */
   onRefreshSource?: () => void
-  onDownloadMarkdown: () => void
+  /**
+   * Save the body as a `.md` file. Only passed for an asset whose body *is*
+   * text (`opensAsDocument`) — offering it on anything else would hand the user
+   * a Markdown file containing whatever the field happens to hold instead.
+   */
+  onDownloadMarkdown?: () => void
   onDelete: () => void
 }
 
@@ -77,7 +82,11 @@ export function AssetDetailsHeader({
           variant="headerIcon"
           size="excluded"
           asChild
-          aria-label={campaignId ? "Back to this campaign's content" : 'Back to the content bank'}
+          aria-label={
+            campaignId
+              ? "Back to this campaign's content"
+              : 'Back to the content bank'
+          }
         >
           {campaignId ? (
             <Link to="/campaigns/$campaignId/content" params={{ campaignId }}>
@@ -105,11 +114,19 @@ export function AssetDetailsHeader({
                 <span>Read the page again</span>
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onSelect={onDownloadMarkdown}>
-              <DownloadSimpleIcon />
-              <span>Download as Markdown</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            {onDownloadMarkdown && (
+              <DropdownMenuItem onSelect={onDownloadMarkdown}>
+                <DownloadSimpleIcon />
+                <span>Download as Markdown</span>
+              </DropdownMenuItem>
+            )}
+            {/* Delete is the one item always here, so the rule above it is only
+                a rule when there is something to separate it from. An asset
+                this build can't open has neither of the others, and a menu
+                opening on a stray line reads as a rendering fault. */}
+            {(onRefreshSource || onDownloadMarkdown) && (
+              <DropdownMenuSeparator />
+            )}
             <DropdownMenuItem variant="destructive" onSelect={onDelete}>
               <TrashIcon />
               <span>Delete document</span>

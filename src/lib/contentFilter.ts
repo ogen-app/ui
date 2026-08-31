@@ -1,5 +1,5 @@
-import { statusToBadge } from "@/lib/assetStatus";
-import type { Asset, AssetStatus } from "@/types/content";
+import { statusToBadge } from '@/lib/assetStatus'
+import type { Asset, AssetStatus } from '@/types/content'
 
 /**
  * What a document list is currently narrowed to: some words, and a list of
@@ -17,29 +17,29 @@ import type { Asset, AssetStatus } from "@/types/content";
  */
 export type ContentFilter = {
   /** Matched against the title, case-insensitively, anywhere in it. */
-  name: string;
-  clauses: Clause[];
-};
+  name: string
+  clauses: Clause[]
+}
 
 /** One value of one facet, wanted or unwanted. */
 export type Clause = {
-  facet: FilterFacet;
-  id: string;
+  facet: FilterFacet
+  id: string
   /** True excludes rather than includes — `not tag (Legal)`. */
-  negated: boolean;
-};
+  negated: boolean
+}
 
-export const EMPTY_FILTER: ContentFilter = { name: "", clauses: [] };
+export const EMPTY_FILTER: ContentFilter = { name: '', clauses: [] }
 
 /** Whether anything is being narrowed — what tells the empty state which words to use. */
 export function isFilterActive(filter: ContentFilter): boolean {
-  return filter.name.trim() !== "" || filter.clauses.length > 0;
+  return filter.name.trim() !== '' || filter.clauses.length > 0
 }
 
 function matches(asset: Asset, clause: Clause): boolean {
-  return clause.facet === "status"
+  return clause.facet === 'status'
     ? asset.status === clause.id
-    : asset.tags.some((tag) => tag.id === clause.id);
+    : asset.tags.some((tag) => tag.id === clause.id)
 }
 
 /**
@@ -60,26 +60,25 @@ function matches(asset: Asset, clause: Clause): boolean {
  * result.
  */
 export function filterAssets(assets: Asset[], filter: ContentFilter): Asset[] {
-  const name = filter.name.trim().toLowerCase();
-  const wanted = new Map<FilterFacet, Clause[]>();
-  const unwanted: Clause[] = [];
+  const name = filter.name.trim().toLowerCase()
+  const wanted = new Map<FilterFacet, Clause[]>()
+  const unwanted: Clause[] = []
   for (const clause of filter.clauses) {
-    if (clause.negated) unwanted.push(clause);
-    else
-      wanted.set(clause.facet, [...(wanted.get(clause.facet) ?? []), clause]);
+    if (clause.negated) unwanted.push(clause)
+    else wanted.set(clause.facet, [...(wanted.get(clause.facet) ?? []), clause])
   }
 
   return assets.filter((asset) => {
-    if (name !== "" && !asset.title.toLowerCase().includes(name)) return false;
+    if (name !== '' && !asset.title.toLowerCase().includes(name)) return false
     for (const group of wanted.values()) {
-      if (!group.some((clause) => matches(asset, clause))) return false;
+      if (!group.some((clause) => matches(asset, clause))) return false
     }
-    return !unwanted.some((clause) => matches(asset, clause));
-  });
+    return !unwanted.some((clause) => matches(asset, clause))
+  })
 }
 
 /** A named value a facet can be narrowed to. */
-export type FilterValue = { id: string; name: string };
+export type FilterValue = { id: string; name: string }
 
 /**
  * Everything the documents in scope could be filtered by.
@@ -90,32 +89,32 @@ export type FilterValue = { id: string; name: string };
  * ends is how a filter starts reading as broken. On a campaign where everything
  * has been read, `status` therefore isn't offered at all.
  */
-export type FilterVocabulary = { statuses: FilterValue[]; tags: FilterValue[] };
+export type FilterVocabulary = { statuses: FilterValue[]; tags: FilterValue[] }
 
 export function vocabulary(assets: Asset[]): FilterVocabulary {
-  return { statuses: statusVocabulary(assets), tags: tagVocabulary(assets) };
+  return { statuses: statusVocabulary(assets), tags: tagVocabulary(assets) }
 }
 
 /** The statuses present here, kept in life-cycle order rather than sorted. */
 export function statusVocabulary(assets: Asset[]): FilterValue[] {
-  const present = new Set(assets.map((asset) => asset.status));
+  const present = new Set(assets.map((asset) => asset.status))
   return FILTERABLE_STATUSES.filter((status) => present.has(status)).map(
     (status) => ({
       id: status,
       name: statusToBadge(status).label,
     }),
-  );
+  )
 }
 
 /** Sorted by name, so the menu doesn't reorder itself as documents come and go. */
 export function tagVocabulary(assets: Asset[]): FilterValue[] {
-  const byId = new Map<string, string>();
+  const byId = new Map<string, string>()
   for (const asset of assets) {
-    for (const tag of asset.tags) byId.set(tag.id, tag.name);
+    for (const tag of asset.tags) byId.set(tag.id, tag.name)
   }
   return [...byId]
     .map(([id, name]) => ({ id, name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => a.name.localeCompare(b.name))
 }
 
 /**
@@ -123,12 +122,12 @@ export function tagVocabulary(assets: Asset[]): FilterValue[] {
  * waiting, being read, then the three ways it can end up.
  */
 export const FILTERABLE_STATUSES: AssetStatus[] = [
-  "pending",
-  "processing",
-  "ready",
-  "partial",
-  "failed",
-];
+  'pending',
+  'processing',
+  'ready',
+  'partial',
+  'failed',
+]
 
 /* ------------------------------------------------------------------ *
  * Modifiers
@@ -145,28 +144,28 @@ export const FILTERABLE_STATUSES: AssetStatus[] = [
  * express a filter the chips cannot draw.
  * ------------------------------------------------------------------ */
 
-export type FilterFacet = "status" | "tag";
+export type FilterFacet = 'status' | 'tag'
 
 /** The modifiers, in the order they are offered. */
 export const FACETS: { facet: FilterFacet; keyword: string }[] = [
-  { facet: "status", keyword: "status" },
-  { facet: "tag", keyword: "tag" },
-];
+  { facet: 'status', keyword: 'status' },
+  { facet: 'tag', keyword: 'tag' },
+]
 
 /** `tags:` too, because people type the plural and being corrected is friction. */
 const KEYWORDS: Record<string, FilterFacet> = {
-  status: "status",
-  statuses: "status",
-  tag: "tag",
-  tags: "tag",
-};
+  status: 'status',
+  statuses: 'status',
+  tag: 'tag',
+  tags: 'tag',
+}
 
 /** A modifier half-typed: the facet is settled, the value is still being said. */
 export type ModifierDraft = {
-  facet: FilterFacet;
-  query: string;
-  negated: boolean;
-};
+  facet: FilterFacet
+  query: string
+  negated: boolean
+}
 
 /**
  * Reads `status:re` as a modifier, `-tag:legal` as one that excludes, and
@@ -177,14 +176,14 @@ export type ModifierDraft = {
  * keyword that is not a facet.
  */
 export function parseModifier(draft: string): ModifierDraft | null {
-  const trimmed = draft.trimStart();
-  const negated = trimmed.startsWith("-");
-  const body = negated ? trimmed.slice(1) : trimmed;
-  const colon = body.indexOf(":");
-  if (colon === -1) return null;
-  const facet = KEYWORDS[body.slice(0, colon).trim().toLowerCase()];
-  if (!facet) return null;
-  return { facet, query: body.slice(colon + 1).trimStart(), negated };
+  const trimmed = draft.trimStart()
+  const negated = trimmed.startsWith('-')
+  const body = negated ? trimmed.slice(1) : trimmed
+  const colon = body.indexOf(':')
+  if (colon === -1) return null
+  const facet = KEYWORDS[body.slice(0, colon).trim().toLowerCase()]
+  if (!facet) return null
+  return { facet, query: body.slice(colon + 1).trimStart(), negated }
 }
 
 /**
@@ -193,7 +192,7 @@ export function parseModifier(draft: string): ModifierDraft | null {
  * halfway through being typed.
  */
 export function draftName(draft: string): string {
-  return parseModifier(draft) ? "" : draft;
+  return parseModifier(draft) ? '' : draft
 }
 
 /** What a facet can be narrowed to here. */
@@ -201,11 +200,11 @@ export function facetValues(
   facet: FilterFacet,
   vocab: FilterVocabulary,
 ): FilterValue[] {
-  return facet === "status" ? vocab.statuses : vocab.tags;
+  return facet === 'status' ? vocab.statuses : vocab.tags
 }
 
 export function keywordFor(facet: FilterFacet): string {
-  return FACETS.find((entry) => entry.facet === facet)!.keyword;
+  return FACETS.find((entry) => entry.facet === facet)!.keyword
 }
 
 /**
@@ -221,13 +220,13 @@ export function withClause(
   id: string,
   negated: boolean,
 ): ContentFilter {
-  const at = filter.clauses.findIndex((c) => c.facet === facet && c.id === id);
+  const at = filter.clauses.findIndex((c) => c.facet === facet && c.id === id)
   if (at === -1)
-    return { ...filter, clauses: [...filter.clauses, { facet, id, negated }] };
-  if (filter.clauses[at].negated === negated) return filter;
-  const clauses = [...filter.clauses];
-  clauses[at] = { facet, id, negated };
-  return { ...filter, clauses };
+    return { ...filter, clauses: [...filter.clauses, { facet, id, negated }] }
+  if (filter.clauses[at].negated === negated) return filter
+  const clauses = [...filter.clauses]
+  clauses[at] = { facet, id, negated }
+  return { ...filter, clauses }
 }
 
 export function withoutClause(
@@ -238,10 +237,10 @@ export function withoutClause(
   return {
     ...filter,
     clauses: filter.clauses.filter((c) => !(c.facet === facet && c.id === id)),
-  };
+  }
 }
 
-export type FilterChip = Clause & { keyword: string; label: string };
+export type FilterChip = Clause & { keyword: string; label: string }
 
 /**
  * The filter as chips, one per clause, in the order they were added.
@@ -259,32 +258,32 @@ export function filterChips(
   // while `status (Failed)` is up — and the chip still has to say what it is
   // filtering by. Statuses are labelled from the type rather than from what is
   // present for exactly that reason.
-  const tags = new Map(vocab.tags.map((tag) => [tag.id, tag.name]));
+  const tags = new Map(vocab.tags.map((tag) => [tag.id, tag.name]))
   return filter.clauses.map((clause) => ({
     ...clause,
     keyword: keywordFor(clause.facet),
     label:
-      clause.facet === "status"
+      clause.facet === 'status'
         ? statusToBadge(clause.id as AssetStatus).label
         : (tags.get(clause.id) ?? clause.id),
-  }));
+  }))
 }
 
 export type Suggestion = {
-  facet: FilterFacet;
-  keyword: string;
-  negated: boolean;
+  facet: FilterFacet
+  keyword: string
+  negated: boolean
 } & (
-  | { kind: "facet"; hint: string }
-  | { kind: "value"; id: string; label: string }
-);
+  | { kind: 'facet'; hint: string }
+  | { kind: 'value'; id: string; label: string }
+)
 
 /** Enough of a facet's values to show what it holds, without wrapping the row. */
 function hint(values: FilterValue[]): string {
-  const shown = values.slice(0, 3).map((v) => v.name);
+  const shown = values.slice(0, 3).map((v) => v.name)
   return values.length > shown.length
-    ? `${shown.join(", ")}…`
-    : shown.join(", ");
+    ? `${shown.join(', ')}…`
+    : shown.join(', ')
 }
 
 /**
@@ -315,58 +314,58 @@ export function suggest(
   const remaining = (facet: FilterFacet) => {
     const claimed = new Set(
       filter.clauses.filter((c) => c.facet === facet).map((c) => c.id),
-    );
-    return facetValues(facet, vocab).filter((v) => !claimed.has(v.id));
-  };
+    )
+    return facetValues(facet, vocab).filter((v) => !claimed.has(v.id))
+  }
   // Once the minus is typed the polarity is settled, and offering the including
   // form would contradict the text the cursor is sitting in.
   const both = (suggestion: Suggestion): Suggestion[] =>
     suggestion.negated
       ? [suggestion]
-      : [suggestion, { ...suggestion, negated: true }];
+      : [suggestion, { ...suggestion, negated: true }]
   const values = (facet: FilterFacet, query: string, negated: boolean) =>
     remaining(facet)
       .filter((v) => v.name.toLowerCase().includes(query))
       .map(
         (v) =>
           ({
-            kind: "value",
+            kind: 'value',
             facet,
             keyword: keywordFor(facet),
             negated,
             id: v.id,
             label: v.name,
           }) as const,
-      );
+      )
 
-  const modifier = parseModifier(draft);
+  const modifier = parseModifier(draft)
   if (modifier) {
     return values(
       modifier.facet,
       modifier.query.toLowerCase(),
       modifier.negated,
-    ).flatMap(both);
+    ).flatMap(both)
   }
 
   // A lone minus is someone starting an exclusion: offer the modifiers, in the
   // form they are about to be typed.
-  const negated = draft.trimStart().startsWith("-");
+  const negated = draft.trimStart().startsWith('-')
   const typed = (negated ? draft.trimStart().slice(1) : draft)
     .trim()
-    .toLowerCase();
+    .toLowerCase()
   const facets = FACETS.filter(({ keyword }) => keyword.startsWith(typed))
     .map(
       ({ facet, keyword }) =>
         ({
-          kind: "facet",
+          kind: 'facet',
           facet,
           keyword,
           negated,
           hint: hint(remaining(facet)),
         }) as const,
     )
-    .filter((s) => s.hint !== "");
-  if (typed === "") return facets.flatMap(both);
+    .filter((s) => s.hint !== '')
+  if (typed === '') return facets.flatMap(both)
 
   // Six values, not six rows: the cap is on how much of the vocabulary a word
   // drags in, and a pair split across it would be an offer with no opposite.
@@ -375,5 +374,5 @@ export function suggest(
     ...FACETS.flatMap(({ facet }) => values(facet, typed, negated))
       .slice(0, 6)
       .flatMap(both),
-  ];
+  ]
 }

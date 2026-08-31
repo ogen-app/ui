@@ -66,7 +66,9 @@ export function PerformersSection({ view }: { view: PerformersView }) {
 
   const ranked = view.posts
     .map((post) => ({ post, value: criterion.value(post, corrected) }))
-    .filter((row): row is { post: RankedPost; value: number } => row.value !== null)
+    .filter(
+      (row): row is { post: RankedPost; value: number } => row.value !== null,
+    )
     .sort((a, b) => b.value - a.value)
 
   const heldOut = view.posts.length - ranked.length

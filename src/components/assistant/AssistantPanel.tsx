@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { ListBulletsIcon } from '@phosphor-icons/react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Logo } from '@/components/Logo'
@@ -25,7 +31,9 @@ import type { AssistantThread } from '@/types/assistant'
  */
 export function AssistantPanel({ onClose }: { onClose?: () => void }) {
   const activeId = useAssistantStore((s) => s.activeThreadId)
-  const thread = useAssistantStore((s) => (s.activeThreadId ? s.threads[s.activeThreadId] : undefined))
+  const thread = useAssistantStore((s) =>
+    s.activeThreadId ? s.threads[s.activeThreadId] : undefined,
+  )
   const loadHistory = useAssistantStore((s) => s.loadHistory)
   const selectThread = useAssistantStore((s) => s.selectThread)
   const send = useAssistantStore((s) => s.send)
@@ -82,7 +90,8 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
   // the write before paint means the newest turn is simply where the panel
   // opens.
   const turns = thread?.turns
-  const streamLength = turns && turns.length > 0 ? turns[turns.length - 1].content.length : 0
+  const streamLength =
+    turns && turns.length > 0 ? turns[turns.length - 1].content.length : 0
   useLayoutEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
@@ -151,7 +160,10 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
           // slab the ramp exists to get rid of. Keyed by thread: openThread can
           // swap the active thread without unmounting the panel, and the
           // composer's local draft must not follow into the next conversation.
-          <div key={thread.id} className={cn('flex flex-col gap-2', chipsInFooter && 'pt-3')}>
+          <div
+            key={thread.id}
+            className={cn('flex flex-col gap-2', chipsInFooter && 'pt-3')}
+          >
             {/* In an empty thread the chips are the body's, not the footer's. */}
             {chipsInFooter && (
               <StarterChips

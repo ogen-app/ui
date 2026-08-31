@@ -1,5 +1,10 @@
 import { formatCount, formatPercent } from './format'
-import type { PacePlacement, PerformerCriterionId, PerformersView, RankedPost } from './types'
+import type {
+  PacePlacement,
+  PerformerCriterionId,
+  PerformersView,
+  RankedPost,
+} from './types'
 
 /**
  * What "best" and "worst" mean on the performers card.
@@ -165,7 +170,10 @@ export function availableCriteria(view: RankableView): Criterion[] {
 }
 
 /** What to call a criterion, given whether there is a curve behind it. */
-export function criterionLabel(criterion: Criterion, corrected: boolean): string {
+export function criterionLabel(
+  criterion: Criterion,
+  corrected: boolean,
+): string {
   return corrected ? criterion.label : (criterion.rawLabel ?? criterion.label)
 }
 

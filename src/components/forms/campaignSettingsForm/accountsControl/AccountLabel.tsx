@@ -90,7 +90,12 @@ export function AccountLabel({
           // The badge is full colour whether or not the campaign targets this
           // account — which platform a face belongs to is identity, not
           // selection.
-          <AccountAvatar src={account.avatar_url} name={name} platform={info} size="md" />
+          <AccountAvatar
+            src={account.avatar_url}
+            name={name}
+            platform={info}
+            size="md"
+          />
         )}
         {/* A targeted placeholder is a campaign that cannot publish, and from a
             distance the row looks like any other. The badge is the one thing
@@ -122,7 +127,9 @@ export function AccountLabel({
               before asking. */}
           {selected && autoPublish !== 'unknown' && (
             <>
-              {autoPublish === 'allowed' ? 'Auto-publishing allowed' : 'Manual publishing only'}
+              {autoPublish === 'allowed'
+                ? 'Auto-publishing allowed'
+                : 'Manual publishing only'}
               {counts && ' · '}
             </>
           )}

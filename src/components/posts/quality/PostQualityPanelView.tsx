@@ -103,7 +103,9 @@ export function PostQualityPanelView({
             disabled={assessing}
           >
             <ArrowClockwiseIcon />
-            <span>{assessing ? 'Assessing this post…' : 'Re-assess this post'}</span>
+            <span>
+              {assessing ? 'Assessing this post…' : 'Re-assess this post'}
+            </span>
           </Button>
         ) : undefined
       }
@@ -153,7 +155,9 @@ export function PostQualityPanelView({
             'Oops, something broke.',
             'The assessment stopped before it finished. Nothing was saved, so running it again is safe.',
           ]}
-          action={<AssessButton onAssess={onAssess} label="Re-assess this post" />}
+          action={
+            <AssessButton onAssess={onAssess} label="Re-assess this post" />
+          }
         />
       ) : !assessment ? (
         <QualityEmptyState
@@ -166,7 +170,11 @@ export function PostQualityPanelView({
         />
       ) : (
         <>
-          <Overall evaluation={assessment} postUpdatedAt={postUpdatedAt} cached={cached} />
+          <Overall
+            evaluation={assessment}
+            postUpdatedAt={postUpdatedAt}
+            cached={cached}
+          />
           <div className="flex flex-col gap-3">
             {QUALITY_DIMENSIONS.map((meta) => (
               <QualityDimensionCard
@@ -182,9 +190,20 @@ export function PostQualityPanelView({
   )
 }
 
-function AssessButton({ onAssess, label }: { onAssess: () => void; label: string }) {
+function AssessButton({
+  onAssess,
+  label,
+}: {
+  onAssess: () => void
+  label: string
+}) {
   return (
-    <Button type="button" variant="outline" className="uppercase" onClick={onAssess}>
+    <Button
+      type="button"
+      variant="outline"
+      className="uppercase"
+      onClick={onAssess}
+    >
       <SparkleIcon />
       <span>{label}</span>
     </Button>
@@ -211,7 +230,9 @@ export function Overall({
       <div className="flex items-center gap-3">
         <ScoreRing pct={pct} band={band} />
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-medium text-foreground">Overall quality</h3>
+          <h3 className="text-sm font-medium text-foreground">
+            Overall quality
+          </h3>
           <p className="text-xs text-tertiary-foreground">
             {scored ? `Scored ${scored}` : 'Scored'}
             {cached && ' · unchanged since the last run'}
@@ -223,14 +244,15 @@ export function Overall({
 
       {stale && (
         <Flag>
-          This post has been edited since it was scored — re-assess to see where it stands now.
+          This post has been edited since it was scored — re-assess to see where
+          it stands now.
         </Flag>
       )}
 
       {evaluation.caption_scoped && (
         <Flag>
-          Only the text was scored. This post carries media the model can't see, so the visual
-          is not part of the number above.
+          Only the text was scored. This post carries media the model can't see,
+          so the visual is not part of the number above.
         </Flag>
       )}
     </section>
@@ -241,9 +263,12 @@ export function Overall({
 function Flag({ children }: { children: ReactNode }) {
   return (
     <p className="flex items-start gap-1.5 text-xs/[1.5] text-secondary-foreground">
-      <WarningIcon aria-hidden weight="regular" className="mt-[1px] size-4 shrink-0 text-warning" />
+      <WarningIcon
+        aria-hidden
+        weight="regular"
+        className="mt-[1px] size-4 shrink-0 text-warning"
+      />
       <span>{children}</span>
     </p>
   )
 }
-

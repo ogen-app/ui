@@ -67,7 +67,7 @@ export function Backdrop({
         'fixed inset-0 bg-background/70 backdrop-blur-xs transition-opacity duration-200',
         'data-[state=open]:opacity-100',
         'data-[state=collapsed]:opacity-0 data-[state=collapsed]:pointer-events-none',
-        className
+        className,
       )}
       style={{
         zIndex,

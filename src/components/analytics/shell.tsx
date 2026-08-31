@@ -80,7 +80,10 @@ export function SectionCard({
           <h2 className="font-display text-lg font-medium leading-6">
             {title}
             {qualifier && (
-              <span className="font-normal text-tertiary-foreground"> {qualifier}</span>
+              <span className="font-normal text-tertiary-foreground">
+                {' '}
+                {qualifier}
+              </span>
             )}
           </h2>
           {note && <p className="text-xs text-tertiary-foreground">{note}</p>}
@@ -166,7 +169,12 @@ export function FigureTile({
   if (!onSelect) return <div className={shared}>{children}</div>
 
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className={shared}>
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={shared}
+    >
       {children}
     </button>
   )
@@ -231,7 +239,11 @@ export function Basis({
   children: ReactNode
   className?: string
 }) {
-  return <p className={cn('text-xs text-tertiary-foreground', className)}>{children}</p>
+  return (
+    <p className={cn('text-xs text-tertiary-foreground', className)}>
+      {children}
+    </p>
+  )
 }
 
 /**

@@ -30,7 +30,9 @@ export function PageStatusFooter({ message = 'ERROR' }: PageStatusFooterProps) {
         'relative flex-shrink-0 h-[140px] bottom-0 left-0 right-0 flex flex-col gap-0 overflow-hidden'
       }
     >
-      <div className={'flex h-[140px] gap-24 justify-center items-center relative'}>
+      <div
+        className={'flex h-[140px] gap-24 justify-center items-center relative'}
+      >
         {/* Three copies so the row reads as a repeating band rather than one
             centred word; the fader over them takes the outer two down at the
             edges, so they never look cropped. */}

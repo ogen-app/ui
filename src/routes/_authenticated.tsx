@@ -1,27 +1,27 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/AppSidebar";
-import { UploadTracker } from "@/components/uploads/UploadTracker";
-import { RightSidebar } from "@/components/layout/RightSidebar";
-import { useSettingsStore } from "@/stores/settingsStore";
-import { useEventStream } from "@/hooks/useEventStream";
-import { prefetchReferenceData } from "@/lib/prefetch";
+import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { AppSidebar } from '@/components/layout/AppSidebar'
+import { UploadTracker } from '@/components/uploads/UploadTracker'
+import { RightSidebar } from '@/components/layout/RightSidebar'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { useEventStream } from '@/hooks/useEventStream'
+import { prefetchReferenceData } from '@/lib/prefetch'
 
-export const Route = createFileRoute("/_authenticated")({
+export const Route = createFileRoute('/_authenticated')({
   // Warm the shared reference caches now that we know there is a session —
   // see `lib/prefetch.ts` for why this can't live at module scope.
   loader: () => prefetchReferenceData(),
   component: AuthenticatedLayout,
-});
+})
 
 function AuthenticatedLayout() {
-  const sidebarCollapsed = useSettingsStore((s) => s.sidebarCollapsed);
-  const setSidebarCollapsed = useSettingsStore((s) => s.setSidebarCollapsed);
+  const sidebarCollapsed = useSettingsStore((s) => s.sidebarCollapsed)
+  const setSidebarCollapsed = useSettingsStore((s) => s.setSidebarCollapsed)
 
   // The one place the broadcast stream is opened. Here rather than in `__root`
   // so it can't outlive the session: the auth routes render outside this
   // layout, so logging out unmounts it and closes the connection.
-  useEventStream();
+  useEventStream()
 
   return (
     <SidebarProvider
@@ -35,5 +35,5 @@ function AuthenticatedLayout() {
       <RightSidebar />
       <UploadTracker />
     </SidebarProvider>
-  );
+  )
 }

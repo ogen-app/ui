@@ -271,7 +271,8 @@ without a round-trip. **These mirror specific Go files and must be kept in sync*
   bind mounts. `/api` proxies to `API_URL` (default `http://localhost:9001`).
   Prod build uses terser and strips `console.log` only.
 - **`package.json` scripts** — `dev`; `build` = `tsc && vite build`
-  (type-check gates the build); `preview`; `lint` = `eslint . --ext ts,tsx`.
+  (type-check gates the build); `preview`; `typecheck`; `lint` = `eslint .`;
+  `format` / `format:check` (Prettier); `knip` (report-only).
 - **`tsconfig.json`** — strict, `noUnusedLocals/Parameters`,
   `allowImportingTsExtensions` (imports use explicit `.ts`/`.tsx`), `@/*` alias.
 - **`VITE_DEV_TOOLS`** — the one build-time *behaviour* switch. `"1"` compiles
@@ -280,7 +281,8 @@ without a round-trip. **These mirror specific Go files and must be kept in sync*
   never emitted. Set it on the staging deploy only. See
   [technical-decisions](./technical-decisions.md#staging-flag-overrides).
 
-> **Tooling gap:** `eslint`, `prettier`, and `stylelint` are installed but no
-> config files are committed to this repo, so `pnpm lint` has no resolvable
-> config locally (inline `eslint-disable` directives imply a config exists in
-> CI / a parent context). Worth resolving.
+> **Quality tooling:** ESLint (flat config, `eslint.config.js`) and Prettier
+> (`.prettierrc`) are configured, stylelint is removed, and CI gates every PR
+> into `develop` with typecheck · lint · format · test · build. The reasoning
+> behind every line drawn there lives in
+> [quality-tooling](./quality-tooling.md).

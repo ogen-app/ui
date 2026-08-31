@@ -114,14 +114,20 @@ export function AddWebPageModal({
               className="px-0"
             />
           </div>
-          {error !== null && <p className="text-xs text-destructive">{error}</p>}
+          {error !== null && (
+            <p className="text-xs text-destructive">{error}</p>
+          )}
         </div>
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" loading={submit.isPending} disabled={url.trim() === ''}>
+          <Button
+            type="submit"
+            loading={submit.isPending}
+            disabled={url.trim() === ''}
+          >
             Add page
           </Button>
         </div>

@@ -1,4 +1,9 @@
-import { BAND_LABEL, overallBand, scoreBand, type QualityBand } from '@/lib/postQuality'
+import {
+  BAND_LABEL,
+  overallBand,
+  scoreBand,
+  type QualityBand,
+} from '@/lib/postQuality'
 import type { QualityDimensionKey } from '@/types/quality'
 import { placeAgainstTypical, type Criterion } from './criteria'
 import type { PostQuality, QualityView, ScoredPost } from './types'
@@ -110,12 +115,18 @@ export const MIN_BAND_POSTS = 3
 export const MIN_SCORED_POSTS = 6
 
 /** The element's score on a post: 0–100 for the overall, 0–10 otherwise. */
-export function elementScore(quality: PostQuality, element: QualityElement): number {
+export function elementScore(
+  quality: PostQuality,
+  element: QualityElement,
+): number {
   return element === 'overall' ? quality.overall : quality.scores[element]
 }
 
 /** Which band that score falls in. The app's own thresholds, not new ones. */
-export function elementBand(quality: PostQuality, element: QualityElement): QualityBand {
+export function elementBand(
+  quality: PostQuality,
+  element: QualityElement,
+): QualityBand {
   return element === 'overall'
     ? overallBand(quality.overall)
     : scoreBand(quality.scores[element])
@@ -155,7 +166,9 @@ export function bandGroups(
 ): BandGroup[] {
   const meta = elementMeta(element)
   return BAND_ORDER.map((band) => {
-    const inBand = posts.filter((post) => elementBand(post.quality, element) === band)
+    const inBand = posts.filter(
+      (post) => elementBand(post.quality, element) === band,
+    )
     const values = inBand
       .map((post) => criterion.value(post, corrected))
       .filter((value): value is number => value !== null)
@@ -220,13 +233,20 @@ export function spreadOf(groups: BandGroup[]): QualitySpread | SpreadGap {
     // a quarter better either way. Anything inside them is the ordinary spread
     // between two handfuls of a workspace's own posts, and calling that a
     // relationship is how a card starts confirming whatever it is shown.
-    direction: placement === 'ahead' ? 'tracks' : placement === 'behind' ? 'inverted' : 'flat',
+    direction:
+      placement === 'ahead'
+        ? 'tracks'
+        : placement === 'behind'
+          ? 'inverted'
+          : 'flat',
     top,
     bottom,
   }
 }
 
-export function isSpread(spread: QualitySpread | SpreadGap): spread is QualitySpread {
+export function isSpread(
+  spread: QualitySpread | SpreadGap,
+): spread is QualitySpread {
   return typeof spread !== 'string'
 }
 
@@ -238,5 +258,7 @@ export function comparablePosts(view: QualityView): ScoredPost[] {
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b)
   const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  return sorted.length % 2 === 1
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2
 }

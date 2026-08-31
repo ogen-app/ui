@@ -9,6 +9,7 @@ import {
   ChartLineUpIcon,
   GearSixIcon,
   LifebuoyIcon,
+  PaletteIcon,
   SignOutIcon,
   ToolboxIcon,
   UserIcon,
@@ -46,7 +47,10 @@ import { LiveStatus } from '@/components/layout/LiveStatus'
 import { ActivitySidebarItem } from '@/components/activity/ActivitySidebarItem'
 import { TasksSidebarItem } from '@/components/tasks/TasksSidebarItem'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { CAMPAIGN_SECTIONS, type CampaignSectionId } from '@/lib/campaignSections.ts'
+import {
+  CAMPAIGN_SECTIONS,
+  type CampaignSectionId,
+} from '@/lib/campaignSections.ts'
 // One categorical scale for campaigns and workspaces alike — the mark is how
 // you recognise a thing, so it can't be per-entity (see lib/identity.ts).
 import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
@@ -65,12 +69,18 @@ const HELP_URL = 'https://getogen.com/help'
  * It is the only place in the sidebar that gets it: mono is otherwise the
  * figure voice, and spending it on the rows too would put it back to one face.
  */
-function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; isCollapsed: boolean }) {
+function SectionLabel({
+  children,
+  isCollapsed,
+}: {
+  children: React.ReactNode
+  isCollapsed: boolean
+}) {
   return (
     <div
       className={cn(
         'px-1.5 lg:px-2.5 pt-5 pb-1 w-[232px] shrink-0 font-mono text-xs/4 font-medium uppercase text-sidebar-secondary-foreground transition-opacity duration-200',
-        isCollapsed && 'opacity-0'
+        isCollapsed && 'opacity-0',
       )}
     >
       {children}
@@ -94,8 +104,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const activityEnabled = useFeatureFlag('activity')
   const tasksEnabled = useFeatureFlag('tasks')
   const analyticsEnabled = useFeatureFlag('analytics-overview')
+  const brandEnabled = useFeatureFlag('brand-materials')
 
-  const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
+  const activeCampaignId =
+    location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
 
   // The heading belongs to whichever of the two bodies below is rendering —
   // skeleton rows or real ones — so it is written once for both.
@@ -124,11 +136,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               : 'posts'
 
   // Posts lands on the current week of the calendar; the rest are plain pages.
-  const subItemLink = (campaignId: string, id: CampaignSubItemId): { to: string; params: Record<string, string> } =>
+  const subItemLink = (
+    campaignId: string,
+    id: CampaignSubItemId,
+  ): { to: string; params: Record<string, string> } =>
     id === 'posts'
       ? {
           to: '/campaigns/$campaignId/calendar/$anchor/$view',
-          params: { campaignId, anchor: formatAnchor(new Date()), view: 'week' },
+          params: {
+            campaignId,
+            anchor: formatAnchor(new Date()),
+            view: 'week',
+          },
         }
       : { to: `/campaigns/$campaignId/${id}`, params: { campaignId } }
 
@@ -166,7 +185,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             ) : (
               <Link
                 to="/"
-                className={cn('flex items-center gap-2 font-semibold text-lg transition-all')}
+                className={cn(
+                  'flex items-center gap-2 font-semibold text-lg transition-all',
+                )}
               >
                 <Logo className="size-10 shrink-0" />
               </Link>
@@ -180,48 +201,59 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className={cn(
                   'flex group/button h-full transition-all duration-150',
                   isCollapsed && 'opacity-0 pointer-events-none',
-                  !isCollapsed && 'opacity-100 delay-100'
+                  !isCollapsed && 'opacity-100 delay-100',
                 )}
                 onClick={() => setOpen(false)}
               >
-                <CaretDoubleLeftIcon
-                  className="size-3 text-quaternary-foreground group-hover/button:text-primary-foreground transition-colors"
-                />
+                <CaretDoubleLeftIcon className="size-3 text-quaternary-foreground group-hover/button:text-primary-foreground transition-colors" />
               </Button>
             )}
           </div>
         </SidebarHeader>
         <SidebarContent>
           <nav
-            className={cn('flex flex-col gap-1 px-3 py-0 lg:px-6', isCollapsed && 'items-center')}
+            className={cn(
+              'flex flex-col gap-1 px-3 py-0 lg:px-6',
+              isCollapsed && 'items-center',
+            )}
           >
-            <SectionLabel isCollapsed={isCollapsed}>{t('nav.modules')}</SectionLabel>
+            <SectionLabel isCollapsed={isCollapsed}>
+              {t('nav.modules')}
+            </SectionLabel>
             {/* First in the section, and first for a reason: it answers "what
                 happened while I was away", which is the question you arrive
                 with. Rendered only when the flag is on so the feature's own
                 queries mount with it (CON-225). */}
             {activityEnabled && (
-              <ActivitySidebarItem isActive={location.pathname.startsWith('/activity')} />
+              <ActivitySidebarItem
+                isActive={location.pathname.startsWith('/activity')}
+              />
             )}
             {/* Directly under it: the feed is what reports the closures the
                 board produces. Near neighbours, separate destinations — what
                 happened and what is owed are two objects, opened at different
                 times. Its own flag, because the two ship separately. */}
             {tasksEnabled && (
-              <TasksSidebarItem isActive={location.pathname.startsWith('/tasks')} />
+              <TasksSidebarItem
+                isActive={location.pathname.startsWith('/tasks')}
+              />
             )}
             {/* The two module rows stay in the text colour. Colour here is for
                 telling near-identical siblings apart, and these two are a pair
                 with unmistakable glyphs — tinting them would only make the rail
                 louder. */}
             <AppSidebarButtonMenu
-              icon={<ToolboxIcon weight="regular" className="size-5 flex-none" />}
+              icon={
+                <ToolboxIcon weight="regular" className="size-5 flex-none" />
+              }
               text={t('nav.campaigns')}
               isActive={location.pathname === '/campaigns'}
               to="/campaigns"
             />
             <AppSidebarButtonMenu
-              icon={<CardsThreeIcon weight="regular" className="size-5 flex-none" />}
+              icon={
+                <CardsThreeIcon weight="regular" className="size-5 flex-none" />
+              }
               text={t('nav.contentBank')}
               isActive={location.pathname.startsWith('/content-bank')}
               // The tab, not the redirect that picks it — same reason as the
@@ -230,15 +262,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               // router pass.
               to="/content-bank/all"
             />
+            {/* CON-227. Below Content Bank rather than above it because it is
+                the newer of the two and the one that has to earn its place —
+                and because CON-210 is about to vacate that slot, at which point
+                Brand is what stays. Gated here as well as on the route: with
+                the flag off the app must have no Brand at all. */}
+            {brandEnabled && (
+              <AppSidebarButtonMenu
+                icon={
+                  <PaletteIcon weight="regular" className="size-5 flex-none" />
+                }
+                text={t('nav.brand')}
+                isActive={location.pathname.startsWith('/brand')}
+                to="/brand"
+              />
+            )}
             {/* Last of the workspace destinations, because it is the one you
                 arrive at after the work rather than to do it. Workspace-wide,
-                like the two above and unlike the campaign rows below — the
+                like the three above and unlike the campaign rows below — the
                 endpoint behind it is tenant-scoped and takes no campaign, so
                 this row is the only place the whole workspace's numbers are
                 asked for. */}
             {analyticsEnabled && (
               <AppSidebarButtonMenu
-                icon={<ChartLineUpIcon weight="regular" className="size-5 flex-none" />}
+                icon={
+                  <ChartLineUpIcon
+                    weight="regular"
+                    className="size-5 flex-none"
+                  />
+                }
                 text={t('nav.analytics')}
                 isActive={location.pathname.startsWith('/analytics')}
                 to="/analytics"
@@ -249,7 +301,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 the first thing you see on a cold load. Three rows hold the
                 space the campaigns will take. */}
             {showCampaignsGroup && (
-              <SectionLabel isCollapsed={isCollapsed}>{t('nav.campaigns')}</SectionLabel>
+              <SectionLabel isCollapsed={isCollapsed}>
+                {t('nav.campaigns')}
+              </SectionLabel>
             )}
             {campaignsPending && !isCollapsed && (
               <>
@@ -343,7 +397,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             className={cn(
                               'lg:h-8 text-xs hover:bg-secondary data-[active=true]:bg-secondary',
                               'duration-200 ease-linear',
-                              !isCollapsed && 'pl-10 lg:pl-3'
+                              !isCollapsed && 'pl-10 lg:pl-3',
                             )}
                           />
                         )
@@ -359,9 +413,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarFooter>
           <LiveStatus isCollapsed={isCollapsed} />
           <AppSidebarButtonMenu
-            icon={
-              <GearSixIcon weight="regular" className="size-5 flex-none" />
-            }
+            icon={<GearSixIcon weight="regular" className="size-5 flex-none" />}
             text={t('nav.workspaceSettings')}
             isActive={location.pathname.startsWith('/workspace-settings')}
             to="/workspace-settings"
@@ -372,7 +424,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div
                   role="button"
                   tabIndex={0}
-                  className={cn('flex w-full items-center justify-start gap-6 p-0 cursor-pointer select-none overflow-hidden')}
+                  className={cn(
+                    'flex w-full items-center justify-start gap-6 p-0 cursor-pointer select-none overflow-hidden',
+                  )}
                 >
                   {/* The workspace's mark, not the user's portrait. The
                       sidebar belongs to one workspace at a time — every item
@@ -392,7 +446,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Avatar>
                   )}
                   <div className="flex w-[168px] shrink-0 flex-col items-start transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
-                    <p className="w-full text-sm font-regular truncate text-left">{fullName}</p>
+                    <p className="w-full text-sm font-regular truncate text-left">
+                      {fullName}
+                    </p>
                     {/* The workspace, not the email: the email never changes
                         and is one click away in the menu, while the workspace
                         changes what every other screen is showing. */}
@@ -420,10 +476,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex min-w-0 flex-col">
-                      <p className="truncate text-sm text-primary-foreground">{fullName}</p>
+                      <p className="truncate text-sm text-primary-foreground">
+                        {fullName}
+                      </p>
                       {/* Just the account here. Which workspace you are in is
                           its own row below, with the role that comes with it. */}
-                      <p className="truncate text-xs text-tertiary-foreground">{user?.email}</p>
+                      <p className="truncate text-xs text-tertiary-foreground">
+                        {user?.email}
+                      </p>
                     </div>
                   </div>
                 </DropdownMenuLabel>
@@ -471,7 +531,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                 <DropdownMenuSeparator className="my-2" />
 
-                <DropdownMenuItem onClick={handleLogout} size="lg" className="px-2">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  size="lg"
+                  className="px-2"
+                >
                   <SignOutIcon weight="bold" />
                   <span>{t('nav.logOut')}</span>
                 </DropdownMenuItem>
@@ -481,7 +545,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-
     </>
   )
 }
@@ -507,7 +570,11 @@ function CurrentWorkspaceRow({
 
   return (
     <DropdownMenuItem className="gap-3 px-2 py-2" onSelect={onSelect}>
-      <WorkspaceMark id={workspace.id} name={workspace.name} className="size-10 text-sm" />
+      <WorkspaceMark
+        id={workspace.id}
+        name={workspace.name}
+        className="size-10 text-sm"
+      />
       <div className="flex min-w-0 flex-col">
         <p className="truncate text-sm">{workspace.name}</p>
         <p className="truncate text-xs text-tertiary-foreground">

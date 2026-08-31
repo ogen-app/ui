@@ -36,7 +36,7 @@ const textareaVariants = cva(
       variant: 'default',
       rows: 'default',
     },
-  }
+  },
 )
 
 function resize(el: HTMLTextAreaElement | null) {
@@ -51,46 +51,55 @@ function resize(el: HTMLTextAreaElement | null) {
 const Textarea = React.forwardRef<
   HTMLTextAreaElement,
   React.ComponentProps<'textarea'> & VariantProps<typeof textareaVariants>
->(({ className, variant, rows, onChange, value, defaultValue, ...props }, ref) => {
-  const innerRef = React.useRef<HTMLTextAreaElement | null>(null)
+>(
+  (
+    { className, variant, rows, onChange, value, defaultValue, ...props },
+    ref,
+  ) => {
+    const innerRef = React.useRef<HTMLTextAreaElement | null>(null)
 
-  React.useImperativeHandle(ref, () => innerRef.current as HTMLTextAreaElement, [])
+    React.useImperativeHandle(
+      ref,
+      () => innerRef.current as HTMLTextAreaElement,
+      [],
+    )
 
-  React.useLayoutEffect(() => {
-    resize(innerRef.current)
-  }, [value, defaultValue])
+    React.useLayoutEffect(() => {
+      resize(innerRef.current)
+    }, [value, defaultValue])
 
-  // A narrower box wraps the same text into more lines, so the autosized
-  // height is only right for the width it was measured at. Width-only: the
-  // height changes are ours, and re-measuring on them would loop.
-  React.useEffect(() => {
-    const el = innerRef.current
-    if (!el) return
-    let last = el.clientWidth
-    const observer = new ResizeObserver(() => {
-      if (el.clientWidth === last) return
-      last = el.clientWidth
-      resize(el)
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+    // A narrower box wraps the same text into more lines, so the autosized
+    // height is only right for the width it was measured at. Width-only: the
+    // height changes are ours, and re-measuring on them would loop.
+    React.useEffect(() => {
+      const el = innerRef.current
+      if (!el) return
+      let last = el.clientWidth
+      const observer = new ResizeObserver(() => {
+        if (el.clientWidth === last) return
+        last = el.clientWidth
+        resize(el)
+      })
+      observer.observe(el)
+      return () => observer.disconnect()
+    }, [])
 
-  return (
-    <textarea
-      ref={innerRef}
-      data-slot="textarea"
-      className={cn(textareaVariants({ variant, rows, className }))}
-      value={value}
-      defaultValue={defaultValue}
-      onChange={(e) => {
-        resize(e.currentTarget)
-        onChange?.(e)
-      }}
-      {...props}
-    />
-  )
-})
+    return (
+      <textarea
+        ref={innerRef}
+        data-slot="textarea"
+        className={cn(textareaVariants({ variant, rows, className }))}
+        value={value}
+        defaultValue={defaultValue}
+        onChange={(e) => {
+          resize(e.currentTarget)
+          onChange?.(e)
+        }}
+        {...props}
+      />
+    )
+  },
+)
 
 Textarea.displayName = 'Textarea'
 

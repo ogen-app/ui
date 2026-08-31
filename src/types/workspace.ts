@@ -33,12 +33,18 @@ export const WORKSPACE_ROLES: WorkspaceRole[] = ['owner', 'member']
  */
 
 /** Whether `actor` may change or remove a member holding `target`. */
-export function canActOnMember(actor: WorkspaceRole, _target: WorkspaceRole): boolean {
+export function canActOnMember(
+  actor: WorkspaceRole,
+  _target: WorkspaceRole,
+): boolean {
   return actor === 'owner'
 }
 
 /** Whether `actor` may hand out `role`. An owner may appoint a co-owner. */
-export function canGrantRole(actor: WorkspaceRole, _role: WorkspaceRole): boolean {
+export function canGrantRole(
+  actor: WorkspaceRole,
+  _role: WorkspaceRole,
+): boolean {
   return actor === 'owner'
 }
 
@@ -49,6 +55,19 @@ export function grantableRoles(actor: WorkspaceRole): WorkspaceRole[] {
 
 /** Invites, people management and workspace settings all sit behind this one line. */
 export function canManageWorkspace(actor: WorkspaceRole): boolean {
+  return actor === 'owner'
+}
+
+/**
+ * Whether `actor` may see and change what the workspace pays (CON-232).
+ *
+ * Separate from `canManageWorkspace` even though it answers the same today,
+ * because it is a different question with a different answer coming: an admin
+ * who runs the workspace is not automatically someone who should see the card
+ * on file. The server draws the same line — `/api/billing` is owner-only — and
+ * this is the mirror that keeps a member off a screen that would 403.
+ */
+export function canManageBilling(actor: WorkspaceRole): boolean {
   return actor === 'owner'
 }
 

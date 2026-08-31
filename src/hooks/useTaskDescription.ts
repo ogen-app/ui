@@ -46,7 +46,8 @@ export function useTaskDescription() {
       const written = task.description.trim()
       if (written) return written
       if (task.source.kind !== 'rule') return ''
-      const key = RULE_DESCRIPTIONS[task.source.ruleId as keyof typeof RULE_DESCRIPTIONS]
+      const key =
+        RULE_DESCRIPTIONS[task.source.ruleId as keyof typeof RULE_DESCRIPTIONS]
       return key ? t(key) : ''
     },
     [t],

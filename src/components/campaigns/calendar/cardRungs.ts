@@ -157,7 +157,10 @@ export function stackHeight(
 ): number {
   if (cards.length === 0) return 0
   return (
-    cards.reduce((sum, facts) => sum + cardHeight(rung, facts, fields, band), 0) +
+    cards.reduce(
+      (sum, facts) => sum + cardHeight(rung, facts, fields, band),
+      0,
+    ) +
     (cards.length - 1) * CARD_GAP
   )
 }
@@ -216,7 +219,12 @@ export function fitMonthCell(
   const asked = fitRung(cards, available, fields, 'compact')
   if (asked) return { rung: asked, image: fields.image }
   if (!fields.image) return null
-  const stripped = fitRung(cards, available, { ...fields, image: false }, 'compact')
+  const stripped = fitRung(
+    cards,
+    available,
+    { ...fields, image: false },
+    'compact',
+  )
   return stripped ? { rung: stripped, image: false } : null
 }
 
@@ -231,4 +239,3 @@ export function pickRung(
 ): CardRung {
   return fitRung(cards, available, fields) ?? CARD_RUNGS[CARD_RUNGS.length - 1]
 }
-

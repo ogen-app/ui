@@ -17,7 +17,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { CampaignIcon } from '@/components/layout/CampaignIcon'
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog'
-import { useTaskReconciliation, useTasks, useTaskWriter } from '@/hooks/useTasks'
+import {
+  useTaskReconciliation,
+  useTasks,
+  useTaskWriter,
+} from '@/hooks/useTasks'
 import { useTaskDescription } from '@/hooks/useTaskDescription'
 import { useDateTimeLabel } from '@/hooks/useActivityLabels'
 import { useCampaigns } from '@/hooks/useCampaigns'
@@ -81,7 +85,9 @@ export function TasksBoard() {
     since.setHours(0, 0, 0, 0)
     return tasks.filter(
       (task) =>
-        task.status === 'done' && task.closedAt && Date.parse(task.closedAt) >= since.getTime(),
+        task.status === 'done' &&
+        task.closedAt &&
+        Date.parse(task.closedAt) >= since.getTime(),
     )
   }, [tasks])
 
@@ -125,7 +131,10 @@ export function TasksBoard() {
 
         {visible.length === 0 ? (
           <div className="grow grid px-3 lg:px-6 pb-6">
-            <PageGridEmptyState title={t('tasks.empty.title')} subtitle={t('tasks.empty.subtitle')} />
+            <PageGridEmptyState
+              title={t('tasks.empty.title')}
+              subtitle={t('tasks.empty.subtitle')}
+            />
           </div>
         ) : (
           // Tighter than the feed's stack of days: these are rows of one line,
@@ -136,7 +145,9 @@ export function TasksBoard() {
                 key={task.id}
                 task={task}
                 expanded={task.id === expandedId}
-                onToggle={() => setExpandedId((id) => (id === task.id ? null : task.id))}
+                onToggle={() =>
+                  setExpandedId((id) => (id === task.id ? null : task.id))
+                }
               />
             ))}
           </div>
@@ -169,7 +180,7 @@ function TaskRow({
   const assigneeName = assignee ? assignee.name || assignee.email : null
   const campaign = campaigns?.find((c) => c.id === task.campaignId)
   const campaignName = task.campaignId
-    ? (campaign?.name.trim() || t('nav.untitledCampaign'))
+    ? campaign?.name.trim() || t('nav.untitledCampaign')
     : null
   const description = describe(task)
 
@@ -185,13 +196,19 @@ function TaskRow({
     task.source.kind === 'rule'
       ? t('tasks.createdBySystem', { at: when(task.createdAt) })
       : memberName(task.createdBy)
-        ? t('tasks.createdBy', { name: memberName(task.createdBy), at: when(task.createdAt) })
+        ? t('tasks.createdBy', {
+            name: memberName(task.createdBy),
+            at: when(task.createdAt),
+          })
         : when(task.createdAt),
     done && task.closedAt
       ? task.closedReason === 'auto'
         ? t('tasks.autoResolved')
         : memberName(task.closedBy)
-          ? t('tasks.closedBy', { name: memberName(task.closedBy), at: when(task.closedAt) })
+          ? t('tasks.closedBy', {
+              name: memberName(task.closedBy),
+              at: when(task.closedAt),
+            })
           : when(task.closedAt)
       : null,
   ]
@@ -207,7 +224,9 @@ function TaskRow({
         <span className="flex w-4 shrink-0 items-center justify-center">
           <Checkbox
             checked={done}
-            onCheckedChange={() => void (done ? reopenTask(task.id) : completeTask(task.id))}
+            onCheckedChange={() =>
+              void (done ? reopenTask(task.id) : completeTask(task.id))
+            }
             aria-label={done ? t('tasks.reopen') : t('tasks.complete')}
           />
         </span>
@@ -228,7 +247,9 @@ function TaskRow({
           <span
             className={cn(
               'min-w-0 truncate text-sm',
-              done ? 'text-tertiary-foreground line-through' : 'text-primary-foreground',
+              done
+                ? 'text-tertiary-foreground line-through'
+                : 'text-primary-foreground',
             )}
           >
             {task.title}
@@ -257,7 +278,9 @@ function TaskRow({
               color={identityColorVar(task.campaignId)}
               className="size-5"
             />
-            <span className="hidden sm:inline max-w-32 truncate">{campaignName}</span>
+            <span className="hidden sm:inline max-w-32 truncate">
+              {campaignName}
+            </span>
           </span>
         )}
 
@@ -271,7 +294,9 @@ function TaskRow({
               type="button"
               className="shrink-0 cursor-pointer"
               aria-label={
-                assigneeName ? t('tasks.assignedTo', { name: assigneeName }) : t('tasks.assign')
+                assigneeName
+                  ? t('tasks.assignedTo', { name: assigneeName })
+                  : t('tasks.assign')
               }
             >
               {task.assigneeId ? (
@@ -304,7 +329,10 @@ function TaskRow({
               {t('tasks.unassigned')}
             </DropdownMenuItem>
             {(members ?? []).map((member) => (
-              <DropdownMenuItem key={member.id} onSelect={() => void assignTask(task.id, member.id)}>
+              <DropdownMenuItem
+                key={member.id}
+                onSelect={() => void assignTask(task.id, member.id)}
+              >
                 {member.name || member.email}
               </DropdownMenuItem>
             ))}
@@ -328,7 +356,9 @@ function TaskRow({
             <p
               className={cn(
                 'text-sm whitespace-pre-line',
-                description ? 'text-secondary-foreground' : 'text-tertiary-foreground',
+                description
+                  ? 'text-secondary-foreground'
+                  : 'text-tertiary-foreground',
               )}
             >
               {description || t('tasks.noDescription')}
@@ -338,7 +368,9 @@ function TaskRow({
                 card: the lightest rule the palette has, and 8px either side of
                 it. The two things it separates belong to each other. */}
             <div className="flex items-center justify-between gap-3 border-t border-quaternary pt-2">
-              <p className="min-w-0 text-[13px] leading-5 text-tertiary-foreground">{record}</p>
+              <p className="min-w-0 text-[13px] leading-5 text-tertiary-foreground">
+                {record}
+              </p>
               {/* A bin rather than the words: the row underneath is one line,
                   and DELETE TASK in full weighs more than everything above it.
                   The caps survive where they are still read — the button's

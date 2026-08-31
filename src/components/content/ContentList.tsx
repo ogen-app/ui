@@ -76,7 +76,10 @@ export function ContentList({
   // against what is actually in this scope is what keeps "3 selected" from
   // counting rows that no longer exist — and from carrying a campaign's
   // selection into the bank.
-  const selected = useMemo(() => assets.filter((a) => ticked.has(a.id)), [assets, ticked])
+  const selected = useMemo(
+    () => assets.filter((a) => ticked.has(a.id)),
+    [assets, ticked],
+  )
 
   // Not merely cosmetic: a stale id would still be handed to the delete.
   useEffect(() => {
@@ -139,7 +142,12 @@ export function ContentList({
 
       {uploads.length > 0 && <UploadingRows uploads={uploads} />}
 
-      <div className={cn('grid min-h-0 flex-1 overflow-hidden', visible.length === 0 && 'min-h-50')}>
+      <div
+        className={cn(
+          'grid min-h-0 flex-1 overflow-hidden',
+          visible.length === 0 && 'min-h-50',
+        )}
+      >
         <AssetsTable
           assets={visible}
           campaignId={campaignId}
@@ -156,7 +164,9 @@ export function ContentList({
           // The table is only ever empty here because the filter emptied it —
           // an empty scope shows `EmptyBank` instead — so the way out is to
           // undo the filter, which is what the shared empty state offers.
-          onEmptyStateAction={narrowed ? () => setFilter(EMPTY_FILTER) : undefined}
+          onEmptyStateAction={
+            narrowed ? () => setFilter(EMPTY_FILTER) : undefined
+          }
         />
       </div>
 
@@ -336,9 +346,14 @@ function UploadingRows({ uploads }: { uploads: UploadItem[] }) {
   return (
     <div className="flex shrink-0 flex-col gap-1.5">
       {uploads.map((file) => (
-        <div key={file.id} className="flex items-center gap-3 bg-secondary px-3 py-2">
+        <div
+          key={file.id}
+          className="flex items-center gap-3 bg-secondary px-3 py-2"
+        >
           <UploadSimpleIcon className="size-4 shrink-0 text-tertiary-foreground" />
-          <span className="min-w-0 flex-1 truncate text-sm">{file.filename}</span>
+          <span className="min-w-0 flex-1 truncate text-sm">
+            {file.filename}
+          </span>
           {file.phase === 'failed' ? (
             <>
               <span className="shrink-0 text-xs text-destructive">

@@ -13,6 +13,7 @@ import {
 import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
 import { cn } from '@/lib'
 import { WorkspaceSection } from '@/components/workspace-settings/WorkspaceSection'
+import { PlanSection } from '@/components/workspace-settings/PlanSection'
 import { PeopleSection } from '@/components/workspace-settings/PeopleSection'
 import { PlatformsSection } from '@/components/workspace-settings/PlatformsSection'
 import { ConnectPlatformsSection } from '@/components/workspace-settings/ConnectPlatformsSection'
@@ -93,8 +94,12 @@ function WorkspaceSettings() {
                   button in the card below. */}
               {/* Above the cards: it reports on something that has already
                   happened, and the account it is about arrives below it. */}
-              <ConnectLanding connected={connected} connectError={connectError} />
+              <ConnectLanding
+                connected={connected}
+                connectError={connectError}
+              />
               <WorkspaceSection />
+              <PlanSection />
               <PeopleSection />
               <PlatformsSection />
               <ConnectPlatformsSection />

@@ -1,6 +1,12 @@
 import { CaretDownIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
-import { MEASURES, SLEEVE_DIMENSIONS, type MeasureId, type Period, type SleeveDimension } from './types'
+import {
+  MEASURES,
+  SLEEVE_DIMENSIONS,
+  type MeasureId,
+  type Period,
+  type SleeveDimension,
+} from './types'
 
 /**
  * The primitive, made visible.
@@ -167,7 +173,9 @@ export function Picker({
       <span className="text-xs text-tertiary-foreground">{label}</span>
       <span className="relative inline-flex items-center gap-1">
         <select
-          value={options.find((o) => o.label === value)?.value ?? options[0]?.value}
+          value={
+            options.find((o) => o.label === value)?.value ?? options[0]?.value
+          }
           onChange={(e) => onChange(e.target.value)}
           className="appearance-none bg-transparent pr-4 text-xs font-medium text-foreground outline-none"
         >

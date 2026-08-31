@@ -51,16 +51,20 @@ export function AccountsControl({
   // The hook owns both writes — the account choice into the settings key and
   // the platform-level view of it onto the campaign — so a burst of clicks
   // costs one request each and they can't disagree.
-  const { targets, isPending, write: apply } = useCampaignAccounts(
-    campaignId,
-    targetPlatforms,
-    onCommitPlatforms,
-  )
+  const {
+    targets,
+    isPending,
+    write: apply,
+  } = useCampaignAccounts(campaignId, targetPlatforms, onCommitPlatforms)
 
   const rows = useMemo(() => accountRows(views, targets), [views, targets])
 
   if (views.length === 0) {
-    return <span className="text-xs text-tertiary-foreground">No platforms available</span>
+    return (
+      <span className="text-xs text-tertiary-foreground">
+        No platforms available
+      </span>
+    )
   }
 
   // The list would otherwise draw every row as untargeted and then correct
@@ -105,7 +109,9 @@ export function AccountsControl({
           // DEACTIVATE is still right there when that is what they meant.
           apply(togglePostType(targets, platformId, accountId, slug))
         }
-        onDeactivate={() => apply(deactivateTarget(targets, platformId, accountId))}
+        onDeactivate={() =>
+          apply(deactivateTarget(targets, platformId, accountId))
+        }
       />
     )
   }
@@ -180,8 +186,8 @@ function AccountsSummary({ targets }: { targets: CampaignAccountTarget[] }) {
     <p className="mb-3 text-sm text-tertiary-foreground">
       {/* "Active", the same word the rows and their buttons use — the campaign
           has one verb for this and the summary shouldn't invent a second. */}
-      {targets.length} account{targets.length === 1 ? '' : 's'} active with {postTypes}{' '}
-      post type{postTypes === 1 ? '' : 's'}.
+      {targets.length} account{targets.length === 1 ? '' : 's'} active with{' '}
+      {postTypes} post type{postTypes === 1 ? '' : 's'}.
       {/* Not left to the rows: a placeholder is an active row that cannot
           publish at all, and a reader who takes the count above at face value
           would think it can. A row with no post types is the rows' own
@@ -191,8 +197,8 @@ function AccountsSummary({ targets }: { targets: CampaignAccountTarget[] }) {
       {placeholders > 0 && (
         <span className="text-warning">
           {' '}
-          {placeholders} of {placeholders === 1 ? 'them has' : 'them have'} no account
-          behind {placeholders === 1 ? 'it' : 'them'} yet.
+          {placeholders} of {placeholders === 1 ? 'them has' : 'them have'} no
+          account behind {placeholders === 1 ? 'it' : 'them'} yet.
         </span>
       )}
     </p>

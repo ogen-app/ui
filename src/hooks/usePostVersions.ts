@@ -61,7 +61,8 @@ export function usePostVersions(postId: string): UsePostVersionsResult {
       await flushPendingSave(postId)
       return createPostVersion(postId, note)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: postVersionsKey(postId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: postVersionsKey(postId) }),
   })
 
   const restoreMutation = useMutation({
@@ -87,7 +88,8 @@ export function usePostVersions(postId: string): UsePostVersionsResult {
   const removeMutation = useMutation({
     meta: { errorTitle: 'Unable to delete the version' },
     mutationFn: (version: PostVersion) => deletePostVersion(postId, version.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: postVersionsKey(postId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: postVersionsKey(postId) }),
   })
 
   const { mutateAsync: saveVersion } = saveMutation
@@ -104,7 +106,8 @@ export function usePostVersions(postId: string): UsePostVersionsResult {
     async (versionNumber: number) => {
       await restoreVersion(versionNumber)
       toast.success(`Restored version ${versionNumber}`, {
-        description: 'Saved as a new version — the earlier ones are still here.',
+        description:
+          'Saved as a new version — the earlier ones are still here.',
       })
     },
     [restoreVersion],

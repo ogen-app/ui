@@ -17,7 +17,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { SaveStatus } from '@/components/page-primitives/SaveStatus'
@@ -76,7 +80,11 @@ export function PostDetailsHeader({
         >
           <Link
             to="/campaigns/$campaignId/calendar/$anchor/$view"
-            params={{ campaignId, anchor: formatAnchor(new Date()), view: 'week' }}
+            params={{
+              campaignId,
+              anchor: formatAnchor(new Date()),
+              view: 'week',
+            }}
           >
             <CaretLeftIcon className="size-5" />
           </Link>
@@ -99,7 +107,10 @@ export function PostDetailsHeader({
                     a bold IconContext, which made this read heavier than the
                     cloud/gear/dots beside it. Fills when open, matching the
                     gear next to it. */}
-                <DevicesIcon weight={previewOpen ? 'fill' : 'regular'} className="size-5" />
+                <DevicesIcon
+                  weight={previewOpen ? 'fill' : 'regular'}
+                  className="size-5"
+                />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Preview</TooltipContent>
@@ -114,7 +125,10 @@ export function PostDetailsHeader({
                 aria-label="Quality"
                 aria-expanded={qualityOpen}
               >
-                <GaugeIcon weight={qualityOpen ? 'fill' : 'regular'} className="size-5" />
+                <GaugeIcon
+                  weight={qualityOpen ? 'fill' : 'regular'}
+                  className="size-5"
+                />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Quality</TooltipContent>
@@ -145,7 +159,10 @@ export function PostDetailsHeader({
             aria-label="Post settings"
             aria-expanded={settingsOpen}
           >
-            <GearSixIcon weight={settingsOpen ? 'fill' : 'regular'} className="size-5" />
+            <GearSixIcon
+              weight={settingsOpen ? 'fill' : 'regular'}
+              className="size-5"
+            />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

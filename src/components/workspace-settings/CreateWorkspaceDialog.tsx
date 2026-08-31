@@ -39,9 +39,12 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
             switchTo(workspace.id)
             return
           }
-          toast.success(t('workspaces.createDialog.created', { name: workspace.name }), {
-            description: t('workspaces.createDialog.createdNote'),
-          })
+          toast.success(
+            t('workspaces.createDialog.created', { name: workspace.name }),
+            {
+              description: t('workspaces.createDialog.createdNote'),
+            },
+          )
           setName('')
           onClose()
         },
@@ -76,7 +79,9 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
           </p>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="workspace-name">{t('workspaces.createDialog.nameLabel')}</Label>
+            <Label htmlFor="workspace-name">
+              {t('workspaces.createDialog.nameLabel')}
+            </Label>
             <Input
               id="workspace-name"
               value={name}
@@ -88,7 +93,12 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onClose}
+              disabled={busy}
+            >
               {t('workspaces.createDialog.cancel')}
             </Button>
             <Button

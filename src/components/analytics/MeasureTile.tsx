@@ -1,4 +1,8 @@
-import { ArrowDownRightIcon, ArrowRightIcon, ArrowUpRightIcon } from '@phosphor-icons/react'
+import {
+  ArrowDownRightIcon,
+  ArrowRightIcon,
+  ArrowUpRightIcon,
+} from '@phosphor-icons/react'
 import { cn } from '@/lib'
 import { Sparkbars, Sparkline } from './charts'
 import { FigureTile } from './shell'
@@ -73,9 +77,14 @@ export function MeasureTile({
       */}
       <div className="flex items-center gap-2">
         {d ? (
-          <DeltaChip delta={d} title={comparedTo ? `vs ${comparedTo}` : undefined} />
+          <DeltaChip
+            delta={d}
+            title={comparedTo ? `vs ${comparedTo}` : undefined}
+          />
         ) : (
-          <span className="text-xs text-tertiary-foreground">nothing to compare</span>
+          <span className="text-xs text-tertiary-foreground">
+            nothing to compare
+          </span>
         )}
       </div>
 
@@ -200,7 +209,9 @@ export function PostMeasureTile({
           // Not "nothing to compare": on a post the thing missing is a history
           // to compare *against*, and saying so is the difference between a
           // young workspace and a broken card.
-          <span className="text-xs text-tertiary-foreground">no typical yet</span>
+          <span className="text-xs text-tertiary-foreground">
+            no typical yet
+          </span>
         )}
       </div>
 
@@ -239,7 +250,11 @@ export function VerdictLine({
             : 'text-negative',
       )}
     >
-      {v === 'within' ? 'Normal for you' : v === 'above' ? 'Above usual' : 'Below usual'}
+      {v === 'within'
+        ? 'Normal for you'
+        : v === 'above'
+          ? 'Above usual'
+          : 'Below usual'}
     </span>
   )
 }
