@@ -6,6 +6,7 @@ import {
   ArrowsLeftRightIcon,
   CardsThreeIcon,
   CaretDoubleLeftIcon,
+  ChartLineUpIcon,
   GearSixIcon,
   LifebuoyIcon,
   SignOutIcon,
@@ -92,6 +93,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const workspace = useWorkspace()
   const activityEnabled = useFeatureFlag('activity')
   const tasksEnabled = useFeatureFlag('tasks')
+  const analyticsEnabled = useFeatureFlag('analytics-overview')
 
   const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
 
@@ -228,6 +230,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               // router pass.
               to="/content-bank/all"
             />
+            {/* Last of the workspace destinations, because it is the one you
+                arrive at after the work rather than to do it. Workspace-wide,
+                like the two above and unlike the campaign rows below — the
+                endpoint behind it is tenant-scoped and takes no campaign, so
+                this row is the only place the whole workspace's numbers are
+                asked for. */}
+            {analyticsEnabled && (
+              <AppSidebarButtonMenu
+                icon={<ChartLineUpIcon weight="regular" className="size-5 flex-none" />}
+                text={t('nav.analytics')}
+                isActive={location.pathname.startsWith('/analytics')}
+                to="/analytics"
+              />
+            )}
 
             {/* The nav is the same on every page, so an empty group here is
                 the first thing you see on a cold load. Three rows hold the

@@ -214,6 +214,7 @@ export const en = {
     activityUnread_other: '{{count}} unread entries',
     campaigns: 'Campaigns',
     contentBank: 'Content Bank',
+    analytics: 'Analytics',
     workspaceSettings: 'Workspace Settings',
     profile: 'Profile',
     help: 'Help and support',

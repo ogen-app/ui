@@ -178,6 +178,52 @@ const FEATURE_FLAGS = {
   'campaign-analytics': false,
 
   /**
+   * Analytics — the workspace's own numbers (CON-237): the `/analytics` route,
+   * its sidebar row, and the "What happened over last N days" card on it. Five
+   * figures, the chart behind whichever is selected, and the server's
+   * deterministic callouts.
+   *
+   * **The endpoint is real and shipped.** `GET /api/analytics/overview` landed
+   * with CON-237 (ogen#125, merged 2026-08-27) and this is built against it
+   * rather than ahead of it — unlike `campaign-analytics`, which is still
+   * waiting on a campaign dimension the dashboard reads do not have. That makes
+   * this the workspace surface that can ship first, exactly as the note on that
+   * flag predicted.
+   *
+   * **Off because it has never been run against a live workspace.** Everything
+   * here was read off the Go source, and three things want confirming before
+   * the flag flips:
+   *
+   * 1. **The window picker end to end.** `7d`/`28d`/`90d` all resolve to day
+   *    buckets server-side; a window that quietly came back weekly would put a
+   *    seven-point chart where the reader expects ninety.
+   * 2. **`series.previous` really is index-aligned** to the current window's
+   *    buckets rather than carrying its own dates. The mapper labels those
+   *    points with this window's dates on purpose — read as calendar dates they
+   *    are wrong by exactly one window — and the ghost line is drawn from them.
+   * 3. **`updated_at` on a workspace mid-sweep.** It is the newest
+   *    `last_checked_at`, and the Go zero value means nothing has ever been
+   *    checked; the card treats that as "no freshness to report" rather than
+   *    printing a date in year 1.
+   *
+   * **Known missing, and not a defect in this UI:** the usual-range band. Every
+   * card answers `baseline: "insufficient_history"` and no `band`, because the
+   * long-retention rollup behind it has no tenant with enough history yet
+   * (`analytics/overview/overview.go`). So the verdict lines, the cone and the
+   * "usual range" key are absent, and the previous-stretch delta is the whole
+   * comparison. `lib/analyticsOverviewView` reads the field rather than today's
+   * absence, so the band appears on its own when the server starts sending one.
+   *
+   * **i18n is deferred**, deliberately and on the Brand precedent (CON-227):
+   * `components/analytics/*` is hard-coded English throughout, and a translated
+   * wrapper around an untranslated card is worse than either. The sidebar row
+   * *is* translated, because the sidebar is converted (CON-174) and a single
+   * English row in it would be the only one. Convert the analytics components
+   * as one pass before this ships to a non-English workspace.
+   */
+  'analytics-overview': false,
+
+  /**
    * The marketing-email switch on Profile (CON-155). **Off — waiting on the
    * back end.** CON-154/CON-155 shipped the suppression engine, but every
    * endpoint it exposes is public and token-gated: it verifies a signature
