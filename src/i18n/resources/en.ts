@@ -761,10 +761,6 @@ export const en = {
       title: 'Platform Settings',
       empty:
         'No platforms connected yet — pick one under “Connect Platforms” below.',
-      cadence: 'Cadence',
-      constraints: 'Constraints',
-      /** Cadence and constraints await real backend data — see PlatformRow. */
-      comingSoon: 'Coming soon',
       contentTypes: 'Available Content Types',
       contentTypesEmpty: 'None',
       accountInactive: 'Inactive on {{platform}} — can’t receive posts',

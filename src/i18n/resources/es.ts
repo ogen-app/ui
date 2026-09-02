@@ -542,10 +542,6 @@ export const es: Translation = {
       title: 'Ajustes de plataformas',
       empty:
         'Aún no hay plataformas conectadas — elige una en «Conectar plataformas», más abajo.',
-      cadence: 'Frecuencia',
-      constraints: 'Restricciones',
-      /** Cadence and constraints await real backend data — see PlatformRow. */
-      comingSoon: 'Próximamente',
       contentTypes: 'Tipos de contenido disponibles',
       contentTypesEmpty: 'Ninguno',
       accountInactive:
