@@ -188,6 +188,10 @@ export const en = {
         'Invitations expire after seven days, and each one can only be used once',
       brokenBody:
         'Ask whoever invited you to send another. If you already accepted, <login>log in</login> instead.',
+      /** The preview request failed for a reason that says nothing about the token — retryable. */
+      previewFailedTitle: "We couldn't check this invitation",
+      previewFailedSubtitle:
+        'Something went wrong on our side — the link itself may still be fine',
       /** Already signed in as the invited address: nothing to create, one thing to confirm. */
       joinBody:
         "You're signed in as {{email}}, which is who this invitation is for. Accepting adds this workspace to your account.",
