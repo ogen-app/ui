@@ -5,7 +5,11 @@ import {
   invalidateCampaignPosts,
   landSavedPost,
 } from './postCache'
-import { CAMPAIGN_SUMMARIES_KEY, campaignPostsKey } from './queryKeys'
+import {
+  CAMPAIGN_SUMMARIES_KEY,
+  campaignPostsKey,
+  WORKSPACE_POSTS_KEY,
+} from './queryKeys'
 import type { Post } from '@/types/posts'
 
 /** Only the three fields these functions read. */
@@ -25,44 +29,44 @@ beforeEach(() => {
 const titles = () => qc.getQueryData<Post[]>(LIST)?.map((p) => p.title)
 
 describe('landSavedPost', () => {
-  it('puts the saved post in the list the calendar reads', () => {
+  it('puts the saved post in the list the calendar reads', async () => {
     qc.setQueryData<Post[]>(LIST, [post('p1', 'old'), post('p2', 'other')])
 
-    landSavedPost(qc, post('p1', 'renamed'))
+    await landSavedPost(qc, post('p1', 'renamed'))
 
     // The bug this exists for: without it the calendar keeps `old` for the
     // whole 30-second staleTime — longer than it takes to rename and go back.
     expect(titles()).toEqual(['renamed', 'other'])
   })
 
-  it('leaves the list alone when it has never been fetched', () => {
-    landSavedPost(qc, post('p1', 'renamed'))
+  it('leaves the list alone when it has never been fetched', async () => {
+    await landSavedPost(qc, post('p1', 'renamed'))
 
     // Seeding a one-post list here would be a lie the calendar then renders:
     // an unfetched list fetches, and it fetches everything.
     expect(qc.getQueryData(LIST)).toBeUndefined()
   })
 
-  it('does not add a post the list does not carry', () => {
+  it('does not add a post the list does not carry', async () => {
     qc.setQueryData<Post[]>(LIST, [post('p2', 'other')])
 
-    landSavedPost(qc, post('p1', 'new'))
+    await landSavedPost(qc, post('p1', 'new'))
 
     expect(titles()).toEqual(['other'])
   })
 
-  it('marks the summaries roll-up stale — it is derived, so it cannot be patched', () => {
+  it('marks the summaries roll-up stale — it is derived, so it cannot be patched', async () => {
     qc.setQueryData(CAMPAIGN_SUMMARIES_KEY, [])
 
-    landSavedPost(qc, post('p1', 'renamed'))
+    await landSavedPost(qc, post('p1', 'renamed'))
 
     expect(qc.getQueryState(CAMPAIGN_SUMMARIES_KEY)?.isInvalidated).toBe(true)
   })
 
-  it('does not refetch the post list — the autosave calls this on every burst', () => {
+  it('does not refetch the post list — the autosave calls this on every burst', async () => {
     qc.setQueryData<Post[]>(LIST, [post('p1', 'old')])
 
-    landSavedPost(qc, post('p1', 'renamed'))
+    await landSavedPost(qc, post('p1', 'renamed'))
 
     // A patch, not an invalidation. The list query is mounted the whole time
     // the editor is open (`usePostNeighbours`), so invalidating here would
@@ -70,17 +74,56 @@ describe('landSavedPost', () => {
     expect(qc.getQueryState(LIST)?.isInvalidated).toBe(false)
   })
 
-  it('files the post under its own campaign, not the open one', () => {
+  it('files the post under its own campaign, not the open one', async () => {
     const other = campaignPostsKey('c2')
     qc.setQueryData<Post[]>(LIST, [post('p1', 'old')])
     qc.setQueryData<Post[]>(other, [post('p9', 'old', 'c2')])
 
-    landSavedPost(qc, post('p9', 'renamed', 'c2'))
+    await landSavedPost(qc, post('p9', 'renamed', 'c2'))
 
     expect(titles()).toEqual(['old'])
     expect(qc.getQueryData<Post[]>(other)?.map((p) => p.title)).toEqual([
       'renamed',
     ])
+  })
+
+  it('patches the workspace-wide list too — it sits outside the campaigns namespace', async () => {
+    qc.setQueryData<Post[]>(WORKSPACE_POSTS_KEY, [
+      post('p1', 'old'),
+      post('p2', 'other', 'c2'),
+    ])
+
+    await landSavedPost(qc, post('p1', 'renamed'))
+
+    // `useAssetUsage` derives from this cache; without the patch it keeps
+    // counting the old `used_asset_ids` for the full staleTime.
+    expect(
+      qc.getQueryData<Post[]>(WORKSPACE_POSTS_KEY)?.map((p) => p.title),
+    ).toEqual(['renamed', 'other'])
+  })
+
+  it('waits out an in-flight list fetch so its revert cannot erase the patch', async () => {
+    qc.setQueryData<Post[]>(LIST, [post('p1', 'old')])
+    // A refetch dispatched before the save committed: cancellation reverts
+    // the query to its pre-fetch state as it settles, so patching before that
+    // revert lands would be undone by it.
+    let resolveFetch!: (rows: Post[]) => void
+    const inFlight = qc
+      .fetchQuery({
+        queryKey: LIST,
+        queryFn: () =>
+          new Promise<Post[]>((resolve) => {
+            resolveFetch = resolve
+          }),
+        staleTime: 0,
+      })
+      .catch(() => {})
+
+    await landSavedPost(qc, post('p1', 'renamed'))
+    resolveFetch([post('p1', 'stale')])
+    await inFlight
+
+    expect(titles()).toEqual(['renamed'])
   })
 })
 
@@ -120,13 +163,18 @@ describe('cachedPostFromList', () => {
 })
 
 describe('invalidateCampaignPosts', () => {
-  it('marks both the list and the roll-up stale', () => {
+  it('marks the list, the roll-up and the workspace-wide list stale', () => {
     qc.setQueryData<Post[]>(LIST, [post('p1', 'old')])
     qc.setQueryData(CAMPAIGN_SUMMARIES_KEY, [])
+    qc.setQueryData<Post[]>(WORKSPACE_POSTS_KEY, [post('p1', 'old')])
 
     invalidateCampaignPosts(qc, 'c1')
 
     expect(qc.getQueryState(LIST)?.isInvalidated).toBe(true)
     expect(qc.getQueryState(CAMPAIGN_SUMMARIES_KEY)?.isInvalidated).toBe(true)
+    // The workspace list holds the same rows under its own root; a delete or
+    // create that only touched the campaign namespace would leave
+    // `useAssetUsage` counting a post that is gone.
+    expect(qc.getQueryState(WORKSPACE_POSTS_KEY)?.isInvalidated).toBe(true)
   })
 })
