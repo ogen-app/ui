@@ -5,7 +5,11 @@ import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
-import { PLATFORMS, getPlatformInfo, releasedPostTypes } from '@/lib/platformDictionary'
+import {
+  PLATFORMS,
+  getPlatformInfo,
+  releasedPostTypes,
+} from '@/lib/platformDictionary'
 import {
   canEditPublishingAccount,
   type PublishMethod,
@@ -74,7 +78,9 @@ export function PostQuickSettingsBar({
   className,
 }: Props) {
   const platform = getPlatformInfo(doc.platform_id)
-  const { data: campaign, isLoading: campaignPending } = useCampaign(doc.campaign_id)
+  const { data: campaign, isLoading: campaignPending } = useCampaign(
+    doc.campaign_id,
+  )
   // The same source the route resolves the method against, so the two can't
   // disagree. `unknown` holds the picker: "manual publish" is a promise about
   // what happens to this post, and it waits until we can keep it.
@@ -86,14 +92,22 @@ export function PostQuickSettingsBar({
   const campaignPostTypes = useMemo(
     () =>
       new Map(
-        (campaign?.target_platforms ?? []).map((tp) => [tp.id, new Set(tp.post_types)]),
+        (campaign?.target_platforms ?? []).map((tp) => [
+          tp.id,
+          new Set(tp.post_types),
+        ]),
       ),
     [campaign],
   )
   // platform id → post-type slugs a CONNECTED publisher supports.
   const connectedPostTypes = useMemo(
     () =>
-      new Map(views.map((v) => [v.platform.id, new Set(v.available.map((pt) => pt.slug))])),
+      new Map(
+        views.map((v) => [
+          v.platform.id,
+          new Set(v.available.map((pt) => pt.slug)),
+        ]),
+      ),
     [views],
   )
 
@@ -108,7 +122,9 @@ export function PostQuickSettingsBar({
   // above deliberately drops it — and because a campaign row could name a
   // slug this build has not released.
   const campaignTypes = releasedPostTypes(doc.platform_id).filter(
-    (t) => !campaign || (campaignPostTypes.get(doc.platform_id)?.has(t.slug) ?? false),
+    (t) =>
+      !campaign ||
+      (campaignPostTypes.get(doc.platform_id)?.has(t.slug) ?? false),
   )
 
   // The publishing account comes from the backend: one of the connected
@@ -239,7 +255,9 @@ export function PostQuickSettingsBar({
               platform={platform}
               selected={doc.platform_post_type}
               types={campaignTypes}
-              connectedSlugs={connectedPostTypes.get(doc.platform_id) ?? EMPTY_SLUGS}
+              connectedSlugs={
+                connectedPostTypes.get(doc.platform_id) ?? EMPTY_SLUGS
+              }
               disabled={campaignPending}
               onSelect={selectPostType}
             />

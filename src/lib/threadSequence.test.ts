@@ -34,7 +34,7 @@ function plan(
     content,
     attachments: extra.attachments ?? [],
     assignment: extra.assignment ?? {},
-    ...(('charLimit' in extra) ? { charLimit: extra.charLimit } : {}),
+    ...('charLimit' in extra ? { charLimit: extra.charLimit } : {}),
   })
 }
 
@@ -202,9 +202,10 @@ describe('planThread', () => {
   })
 
   it('reports a body that needs more posts than a thread holds', () => {
-    const body = Array.from({ length: MAX_THREAD_POSTS + 5 }, (_, i) => `p${i}`).join(
-      '\n\n',
-    )
+    const body = Array.from(
+      { length: MAX_THREAD_POSTS + 5 },
+      (_, i) => `p${i}`,
+    ).join('\n\n')
     const result = plan(body)
     expect(result.overflowed).toBe(true)
     expect(result.posts).toHaveLength(MAX_THREAD_POSTS)

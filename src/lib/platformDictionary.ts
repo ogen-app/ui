@@ -17,15 +17,26 @@
 // Adding a format back means adding it in all three places, which is the work
 // it actually takes.
 
-import type { Icon } from "@phosphor-icons/react";
-import { FacebookLogoIcon, InstagramLogoIcon, LinkedinLogoIcon, ThreadsLogoIcon, XLogoIcon, YoutubeLogoIcon } from "@phosphor-icons/react";
+import type { Icon } from '@phosphor-icons/react'
+import {
+  FacebookLogoIcon,
+  InstagramLogoIcon,
+  LinkedinLogoIcon,
+  ThreadsLogoIcon,
+  XLogoIcon,
+  YoutubeLogoIcon,
+} from '@phosphor-icons/react'
 
-import { isFeatureEnabled, type FeatureFlag } from "@/config/featureFlags";
-import type { Platform, PlatformPublisher, PublisherAccount } from "@/types/campaigns";
+import { isFeatureEnabled, type FeatureFlag } from '@/config/featureFlags'
+import type {
+  Platform,
+  PlatformPublisher,
+  PublisherAccount,
+} from '@/types/campaigns'
 
 export type PlatformPostType = {
-  slug: string;
-  label: string;
+  slug: string
+  label: string
   /**
    * A post type this build has written but not released. Both readers drop it
    * while the flag is off — `buildPlatformView` for anything asking what can
@@ -42,89 +53,89 @@ export type PlatformPostType = {
    * acquire one: withdrawing it would change how the app behaves with the flag
    * off, which is the one thing a flag may never do.
    */
-  flag?: FeatureFlag;
-};
+  flag?: FeatureFlag
+}
 
 export type PlatformInfo = {
-  id: string;
-  name: string;
-  icon: Icon;
+  id: string
+  name: string
+  icon: Icon
   // Official brand color, hard-coded so the icon renders in its native hue
   // wherever it appears across the app.
-  color: string;
+  color: string
   // Zernio's wire identifier for this platform (e.g. "twitter" for X) —
   // the value POST /api/integrations/zernio/connect-links expects. Mirrors
   // the backend allowlist in publishers/zernio/platforms.go.
-  zernioId: string;
-  postTypes: PlatformPostType[];
-};
+  zernioId: string
+  postTypes: PlatformPostType[]
+}
 
 export const PLATFORMS: PlatformInfo[] = [
   {
-    id: "AXqWG7U2qnpt",
-    name: "LinkedIn",
+    id: 'AXqWG7U2qnpt',
+    name: 'LinkedIn',
     icon: LinkedinLogoIcon,
-    color: "#0A66C2",
-    zernioId: "linkedin",
+    color: '#0A66C2',
+    zernioId: 'linkedin',
     postTypes: [
-      { slug: "text-post", label: "Text post" },
-      { slug: "image-post", label: "Image post" },
+      { slug: 'text-post', label: 'Text post' },
+      { slug: 'image-post', label: 'Image post' },
       // LinkedIn's carousel is a PDF document, not a run of images — the one
       // place the slug means something different from Instagram and Threads.
-      { slug: "carousel", label: "Carousel" },
-      { slug: "video", label: "Video" },
-      { slug: "article", label: "Article" },
+      { slug: 'carousel', label: 'Carousel' },
+      { slug: 'video', label: 'Video' },
+      { slug: 'article', label: 'Article' },
     ],
   },
   {
-    id: "8S8bWQTG6qD",
-    name: "YouTube",
+    id: '8S8bWQTG6qD',
+    name: 'YouTube',
     icon: YoutubeLogoIcon,
-    color: "#FF0000",
-    zernioId: "youtube",
+    color: '#FF0000',
+    zernioId: 'youtube',
     postTypes: [
-      { slug: "video", label: "Video" },
-      { slug: "short", label: "Short" },
+      { slug: 'video', label: 'Video' },
+      { slug: 'short', label: 'Short' },
     ],
   },
   {
-    id: "zBU1zqVICGfk",
-    name: "Facebook",
+    id: 'zBU1zqVICGfk',
+    name: 'Facebook',
     icon: FacebookLogoIcon,
-    color: "#1877F2",
-    zernioId: "facebook",
+    color: '#1877F2',
+    zernioId: 'facebook',
     postTypes: [
-      { slug: "text-post", label: "Text post" },
-      { slug: "image-post", label: "Image post" },
-      { slug: "video", label: "Video" },
-      { slug: "reel", label: "Reel" },
-      { slug: "link-post", label: "Link post" },
+      { slug: 'text-post', label: 'Text post' },
+      { slug: 'image-post', label: 'Image post' },
+      { slug: 'video', label: 'Video' },
+      { slug: 'reel', label: 'Reel' },
+      { slug: 'link-post', label: 'Link post' },
     ],
   },
   {
-    id: "81mUCmc2xsKd",
-    name: "X (Twitter)",
+    id: '81mUCmc2xsKd',
+    name: 'X (Twitter)',
     icon: XLogoIcon,
-    color: "#000000",
-    zernioId: "twitter",
+    color: '#000000',
+    zernioId: 'twitter',
     postTypes: [
-      { slug: "text-post", label: "Text post" },
-      { slug: "image-post", label: "Image post" },
-      { slug: "video", label: "Video" },
-      { slug: "thread", label: "Thread" },
+      { slug: 'text-post', label: 'Text post' },
+      { slug: 'image-post', label: 'Image post' },
+      { slug: 'video', label: 'Video' },
+      { slug: 'thread', label: 'Thread' },
     ],
   },
   {
-    id: "pQ4yxT3SuE57",
-    name: "Threads",
+    id: 'pQ4yxT3SuE57',
+    name: 'Threads',
     icon: ThreadsLogoIcon,
-    color: "#000000",
-    zernioId: "threads",
+    color: '#000000',
+    zernioId: 'threads',
     postTypes: [
-      { slug: "text-post", label: "Text post" },
-      { slug: "image-post", label: "Image post" },
-      { slug: "carousel", label: "Carousel" },
-      { slug: "video", label: "Video" },
+      { slug: 'text-post', label: 'Text post' },
+      { slug: 'image-post', label: 'Image post' },
+      { slug: 'carousel', label: 'Carousel' },
+      { slug: 'video', label: 'Video' },
       // "Thread" and not "Sequence" on the network called Threads: a chain is
       // what Meta's own app calls a thread ("add to thread"), the same word X
       // uses, and one vocabulary across both beats one that reads better on a
@@ -138,35 +149,37 @@ export const PLATFORMS: PlatformInfo[] = [
       // — so the publisher will not report it here until the slug lands, and
       // `aheadOfPublishers` lets the flag answer in its place rather than
       // hiding the feature from the network it is named after.
-      { slug: "thread", label: "Thread", flag: "thread-sequence" },
+      { slug: 'thread', label: 'Thread', flag: 'thread-sequence' },
     ],
   },
   {
-    id: "rzgpTkARLH0L",
-    name: "Instagram",
+    id: 'rzgpTkARLH0L',
+    name: 'Instagram',
     icon: InstagramLogoIcon,
-    color: "#E4405F",
-    zernioId: "instagram",
+    color: '#E4405F',
+    zernioId: 'instagram',
     postTypes: [
       // No text-post: Instagram publishes nothing without media, and the
       // platforms table has never seeded the slug for it.
-      { slug: "image-post", label: "Image post" },
-      { slug: "carousel", label: "Carousel" },
-      { slug: "reel", label: "Reel" },
-      { slug: "story", label: "Story" },
+      { slug: 'image-post', label: 'Image post' },
+      { slug: 'carousel', label: 'Carousel' },
+      { slug: 'reel', label: 'Reel' },
+      { slug: 'story', label: 'Story' },
     ],
   },
-];
+]
 
-const BY_ID: Map<string, PlatformInfo> = new Map(PLATFORMS.map((p) => [p.id, p]));
+const BY_ID: Map<string, PlatformInfo> = new Map(
+  PLATFORMS.map((p) => [p.id, p]),
+)
 
 export function getPlatformInfo(id: string): PlatformInfo | undefined {
-  return BY_ID.get(id);
+  return BY_ID.get(id)
 }
 
 const BY_ZERNIO_ID: Map<string, PlatformInfo> = new Map(
   PLATFORMS.map((p) => [p.zernioId, p]),
-);
+)
 
 /**
  * The platform behind one of Zernio's wire ids (`twitter`, `linkedin`, …).
@@ -177,16 +190,19 @@ const BY_ZERNIO_ID: Map<string, PlatformInfo> = new Map(
  * our own name and mark. Undefined for a platform Zernio supports and we don't
  * yet name, which callers should render as the raw id rather than nothing.
  */
-export function getPlatformByZernioId(zernioId: string): PlatformInfo | undefined {
-  return BY_ZERNIO_ID.get(zernioId);
+export function getPlatformByZernioId(
+  zernioId: string,
+): PlatformInfo | undefined {
+  return BY_ZERNIO_ID.get(zernioId)
 }
 
 function unionSupportedSlugs(
   publishers: { supported_post_types: string[] }[],
 ): Set<string> {
-  const out = new Set<string>();
-  for (const p of publishers) for (const slug of p.supported_post_types) out.add(slug);
-  return out;
+  const out = new Set<string>()
+  for (const p of publishers)
+    for (const slug of p.supported_post_types) out.add(slug)
+  return out
 }
 
 // A resolved view of a platform: the dictionary metadata joined with the
@@ -194,18 +210,18 @@ function unionSupportedSlugs(
 // least one publisher supports — dictionary-only entries are excluded, with
 // the one deliberate exception `aheadOfPublishers` names.
 export type PlatformView = {
-  platform: Platform;
-  info: PlatformInfo;
+  platform: Platform
+  info: PlatformInfo
   // post types supported by at least one publisher (connected or not)
-  allowed: PlatformPostType[];
+  allowed: PlatformPostType[]
   // post types supported by at least one CONNECTED publisher
-  available: PlatformPostType[];
+  available: PlatformPostType[]
   // allowed but not currently available (publisher exists, not connected)
-  unavailable: PlatformPostType[];
-  publishers: PlatformPublisher[];
-  connectedPublishers: PlatformPublisher[];
-  connectedPublisherName: string | null;
-};
+  unavailable: PlatformPostType[]
+  publishers: PlatformPublisher[]
+  connectedPublishers: PlatformPublisher[]
+  connectedPublisherName: string | null
+}
 
 /**
  * Whether a released-but-flagged type may stand in for a slug no publisher has
@@ -224,35 +240,35 @@ export type PlatformView = {
  * a slug the server has genuinely withdrawn still disappears from the app.
  */
 function aheadOfPublishers(pt: PlatformPostType): boolean {
-  return pt.flag !== undefined;
+  return pt.flag !== undefined
 }
 
 export function buildPlatformView(
   platform: Platform,
   info: PlatformInfo,
 ): PlatformView {
-  const publishers = platform.publishers ?? [];
-  const connectedPublishers = publishers.filter((p) => p.connected);
-  const allowedSlugs = unionSupportedSlugs(publishers);
-  const availableSlugs = unionSupportedSlugs(connectedPublishers);
+  const publishers = platform.publishers ?? []
+  const connectedPublishers = publishers.filter((p) => p.connected)
+  const allowedSlugs = unionSupportedSlugs(publishers)
+  const availableSlugs = unionSupportedSlugs(connectedPublishers)
   // Two gates, and they answer different questions. `pt.flag` is whether this
   // build has released the type at all; `allowedSlugs` is what a publisher can
   // send — deployment and configuration. The release gate comes first, because
   // an unreleased type has no business being asked about.
   const released = info.postTypes.filter(
     (pt) => !pt.flag || isFeatureEnabled(pt.flag),
-  );
+  )
   const allowed = released.filter(
     (pt) =>
       allowedSlugs.has(pt.slug) ||
       (aheadOfPublishers(pt) && publishers.length > 0),
-  );
+  )
   const available = allowed.filter(
     (pt) =>
       availableSlugs.has(pt.slug) ||
       (aheadOfPublishers(pt) && connectedPublishers.length > 0),
-  );
-  const unavailable = allowed.filter((pt) => !available.includes(pt));
+  )
+  const unavailable = allowed.filter((pt) => !available.includes(pt))
   return {
     platform,
     info,
@@ -262,7 +278,7 @@ export function buildPlatformView(
     publishers,
     connectedPublishers,
     connectedPublisherName: connectedPublishers[0]?.name ?? null,
-  };
+  }
 }
 
 /**
@@ -276,14 +292,14 @@ export function buildPlatformView(
  * is required — has to count these instead (CON-150).
  */
 export function connectedAccounts(view: PlatformView): PublisherAccount[] {
-  return view.connectedPublishers.flatMap((p) => p.accounts);
+  return view.connectedPublishers.flatMap((p) => p.accounts)
 }
 
 export function buildPlatformViews(platforms: Platform[]): PlatformView[] {
   return platforms.flatMap((platform) => {
-    const info = getPlatformInfo(platform.id);
-    return info ? [buildPlatformView(platform, info)] : [];
-  });
+    const info = getPlatformInfo(platform.id)
+    return info ? [buildPlatformView(platform, info)] : []
+  })
 }
 
 /**
@@ -301,12 +317,12 @@ export function releasedPostTypes(platformId: string): PlatformPostType[] {
     getPlatformInfo(platformId)?.postTypes.filter(
       (pt) => !pt.flag || isFeatureEnabled(pt.flag),
     ) ?? []
-  );
+  )
 }
 
 export function getPostTypeLabel(platformId: string, slug: string): string {
   return (
     getPlatformInfo(platformId)?.postTypes.find((pt) => pt.slug === slug)
       ?.label ?? slug
-  );
+  )
 }

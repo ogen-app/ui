@@ -91,4 +91,3 @@ export type PreviewProps = {
    */
   sequence?: PreviewSequenceItem[]
 }
-

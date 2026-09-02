@@ -15,7 +15,9 @@ import type { Post } from '@/types/posts'
  */
 export function usePostMedia(post: Post, sequence = false) {
   const media = usePostAttachments(post.id)
-  const { data: rules, isLoading: rulesLoading } = usePostTypeRules(post.platform_id)
+  const { data: rules, isLoading: rulesLoading } = usePostTypeRules(
+    post.platform_id,
+  )
   // Reference data behind `staleTime: Infinity` — shared with every other
   // reader of the platforms query, so this costs no extra fetch.
   const { data: platforms, isLoading: platformsLoading } = usePlatforms()
@@ -37,7 +39,9 @@ export function usePostMedia(post: Post, sequence = false) {
   const maxContentChars = limitsReady
     ? resolveCharLimit(platform, rule, post.platform_post_type)
     : undefined
-  const maxTitleChars = limitsReady ? titleLimitFor(platform?.text_constraints) : undefined
+  const maxTitleChars = limitsReady
+    ? titleLimitFor(platform?.text_constraints)
+    : undefined
 
   const checks: PostCheck[] = useMemo(
     () =>

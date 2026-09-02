@@ -1,7 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { WarningCircleIcon } from '@phosphor-icons/react'
 
-import { MAX_THREAD_POSTS, autoSplitCount, type ThreadPlan } from '@/lib/threadSequence'
+import {
+  MAX_THREAD_POSTS,
+  autoSplitCount,
+  type ThreadPlan,
+} from '@/lib/threadSequence'
 
 type Props = {
   plan: ThreadPlan<unknown>
@@ -67,7 +71,10 @@ export function ThreadSplitNote({ plan, charLimit }: Props) {
       {/* Its own sentence, never a clause appended to the one above: the two
           are separately translatable, and only this one has a limit in it. */}
       {cut > 0 && charLimit != null && (
-        <> {t('posts.sequence.splitAutoCut', { count: cut, limit: charLimit })}</>
+        <>
+          {' '}
+          {t('posts.sequence.splitAutoCut', { count: cut, limit: charLimit })}
+        </>
       )}
     </Line>
   )

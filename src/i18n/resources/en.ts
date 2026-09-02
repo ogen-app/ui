@@ -101,7 +101,8 @@ export const en = {
       title: 'Log in',
       subtitle: 'Log in to continue managing your content',
       submit: 'LOG IN',
-      expired: 'Your session expired — log in again to pick up where you left off',
+      expired:
+        'Your session expired — log in again to pick up where you left off',
       afterReset: 'Your password has been changed. Log in with the new one',
       emailLabel: 'Email',
       emailPlaceholder: 'Enter your email',
@@ -146,7 +147,8 @@ export const en = {
         'If <strong>{{email}}</strong> has an Ogen account, a link to set a new password is on its way. It expires in an hour.',
       resend: 'SEND IT AGAIN',
       resentNote: 'Sent again — give it a minute.',
-      emailHint: 'Use the address you log in with. The link stops working after an hour.',
+      emailHint:
+        'Use the address you log in with. The link stops working after an hour.',
       backToLogin: 'Back to log in',
     },
     reset: {
@@ -157,14 +159,16 @@ export const en = {
       passwordPlaceholder: 'Enter a new password',
       confirmLabel: 'Confirm new password',
       confirmPlaceholder: 'Enter it again',
-      confirmHint: 'Type it again — a typo here locks you out of your own account.',
+      confirmHint:
+        'Type it again — a typo here locks you out of your own account.',
       requestNewLink: 'Request a new link',
       knowPassword: 'Know your password?',
       logInLink: 'Log in',
       brokenTitle: "This link doesn't work",
       brokenSubtitle:
         'It looks incomplete — mail clients sometimes cut long links in half',
-      brokenBody: 'Open the link straight from the email, or <request>request a new one</request>.',
+      brokenBody:
+        'Open the link straight from the email, or <request>request a new one</request>.',
     },
     /** The emailed invitation's landing page (CON-26). */
     invite: {
@@ -185,7 +189,8 @@ export const en = {
       brokenBody:
         'Ask whoever invited you to send another. If you already accepted, <login>log in</login> instead.',
       /** Already signed in as the invited address: nothing to create, one thing to confirm. */
-      joinBody: "You're signed in as {{email}}, which is who this invitation is for. Accepting adds this workspace to your account.",
+      joinBody:
+        "You're signed in as {{email}}, which is who this invitation is for. Accepting adds this workspace to your account.",
       joinSubmit: 'ACCEPT INVITATION',
       /** Signed in as somebody else — no form on this page can fix that. */
       wrongAccountBody:
@@ -303,7 +308,8 @@ export const en = {
       title: 'What needs doing',
       titlePlaceholder: 'Write the task as you would say it',
       description: 'Description',
-      descriptionPlaceholder: 'What the work is, and anything the next person needs to know',
+      descriptionPlaceholder:
+        'What the work is, and anything the next person needs to know',
       campaign: 'Campaign',
       noCampaign: 'No campaign',
       assignee: 'Assigned to',
@@ -378,7 +384,8 @@ export const en = {
        * or connection health that the feed will carry once the server records
        * them.
        */
-      coverage: 'Counted from this workspace’s posts, by your local calendar day.',
+      coverage:
+        'Counted from this workspace’s posts, by your local calendar day.',
     },
   },
 
@@ -460,7 +467,8 @@ export const en = {
     preferences: 'PREFERENCES',
     daysVisibility: 'DAYS VISIBILITY',
     firstDayOfWeek: 'First Day of Week',
-    statusColourAlways: "The status colour down the card's left edge is always shown.",
+    statusColourAlways:
+      "The status colour down the card's left edge is always shown.",
     notAPublishingDay: 'Not a publishing day',
     showDay: 'Show {{day}}',
 
@@ -481,7 +489,8 @@ export const en = {
     showFieldOnMonth: 'Show {{field}} on the month card',
 
     imagePreviews: 'Show cards as image previews',
-    imagePreviewsNote: 'Only posts that have a picture, and in the month only on the days with room for one',
+    imagePreviewsNote:
+      'Only posts that have a picture, and in the month only on the days with room for one',
     weekCard: 'WEEK CARD',
     monthCard: 'MONTH CARD',
 
@@ -588,8 +597,10 @@ export const en = {
      * on purpose, since they swap in place as the select changes.
      */
     ability: {
-      owner: 'Can invite people, change roles, connect accounts and rename the workspace.',
-      member: 'Can plan, write and publish content, but not manage the workspace or its people.',
+      owner:
+        'Can invite people, change roles, connect accounts and rename the workspace.',
+      member:
+        'Can plan, write and publish content, but not manage the workspace or its people.',
     },
   },
 
@@ -676,7 +687,8 @@ export const en = {
       nameLabel: 'Workspace name',
       nameEmpty: 'Name can’t be empty',
       slugLabel: 'Slug',
-      slugNote: "Set from the name at creation; renaming the workspace won't change it.",
+      slugNote:
+        "Set from the name at creation; renaming the workspace won't change it.",
       /** The way out of this card — every field in it describes one workspace. */
       switch: 'SWITCH',
       timeZoneLabel: 'Time zone',
@@ -731,10 +743,12 @@ export const en = {
       /** Soft-delete server-side, but the copy must not offer that as an undo —
        *  recovery is a manual support request (CON-147). */
       body: 'Deleting this workspace removes its campaigns, posts, assets and connected social accounts, and every member loses access. Already-published posts stay live on the social networks. You can’t undo this yourself — recovering a deleted workspace is a manual support request.',
-      lastWorkspace: 'This is your only workspace. Deleting it leaves you with nowhere to work — create another one first.',
+      lastWorkspace:
+        'This is your only workspace. Deleting it leaves you with nowhere to work — create another one first.',
       action: 'DELETE WORKSPACE',
       confirmTitle: 'Delete {{name}}?',
-      confirmBody: 'Everything in this workspace is deleted, for every member, and you can’t restore it yourself. Type <strong>{{name}}</strong> to confirm.',
+      confirmBody:
+        'Everything in this workspace is deleted, for every member, and you can’t restore it yourself. Type <strong>{{name}}</strong> to confirm.',
       confirmLabel: 'Workspace name',
       keep: 'KEEP WORKSPACE',
       confirm: 'DELETE WORKSPACE',
@@ -745,7 +759,8 @@ export const en = {
     },
     platforms: {
       title: 'Platform Settings',
-      empty: 'No platforms connected yet — pick one under “Connect Platforms” below.',
+      empty:
+        'No platforms connected yet — pick one under “Connect Platforms” below.',
       cadence: 'Cadence',
       constraints: 'Constraints',
       /** Cadence and constraints await real backend data — see PlatformRow. */
@@ -766,7 +781,8 @@ export const en = {
     },
     autoPublish: {
       allowedTitle: 'Auto-publishing allowed',
-      allowedBody: 'Scheduled posts go out on their own, across every campaign.',
+      allowedBody:
+        'Scheduled posts go out on their own, across every campaign.',
       blockedTitle: 'Auto-publishing not allowed',
       blockedBody: 'Scheduled posts wait for you to publish them by hand.',
       allow: 'ALLOW',
@@ -788,8 +804,10 @@ export const en = {
         convert_other: 'Switch all {{count}} to manual',
         converted_one: '{{count}} post moved to manual publishing',
         converted_other: '{{count}} posts moved to manual publishing',
-        convertFailed_one: '{{failed}} of {{count}} post could not be converted',
-        convertFailed_other: '{{failed}} of {{count}} posts could not be converted',
+        convertFailed_one:
+          '{{failed}} of {{count}} post could not be converted',
+        convertFailed_other:
+          '{{failed}} of {{count}} posts could not be converted',
         convertFailedDetail:
           'They are still scheduled to auto-publish. Auto-publishing was left on.',
       },
@@ -805,12 +823,16 @@ export const en = {
       modalTitle: 'Connect {{platform}}',
       preparing: 'Preparing your connect link…',
       redirecting: 'Taking you to {{platform}}…',
-      success: '{{platform}} is connected. You’ll find it under Platform Settings.',
+      success:
+        '{{platform}} is connected. You’ll find it under Platform Settings.',
       settling: 'Finishing setup — the account appears here in a moment.',
       errors: {
-        expired: 'That connection link expired. Please start the connection again.',
-        mismatch: 'Something went wrong connecting your account. Please try again.',
-        upstream: 'We couldn’t reach the platform. Please try again in a moment.',
+        expired:
+          'That connection link expired. Please start the connection again.',
+        mismatch:
+          'Something went wrong connecting your account. Please try again.',
+        upstream:
+          'We couldn’t reach the platform. Please try again in a moment.',
         noTargets:
           'This account doesn’t have any pages or profiles we can publish to.',
         generic: 'We couldn’t connect your account. Please try again.',
@@ -994,15 +1016,20 @@ export const en = {
        * sentences, never one assembled from clauses — only the second has a
        * limit in it, and only sometimes.
        */
-      splitByDivider_one: 'Publishes as {{count}} post, broken where you put a divider.',
+      splitByDivider_one:
+        'Publishes as {{count}} post, broken where you put a divider.',
       splitByDivider_other:
         'Publishes as {{count}} posts, broken where you put a divider.',
-      splitByBlankLine_one: 'Publishes as {{count}} post, broken at blank lines.',
-      splitByBlankLine_other: 'Publishes as {{count}} posts, broken at blank lines.',
-      splitAutoCut_one: '{{count}} of them came from copy cut at {{limit}} characters.',
+      splitByBlankLine_one:
+        'Publishes as {{count}} post, broken at blank lines.',
+      splitByBlankLine_other:
+        'Publishes as {{count}} posts, broken at blank lines.',
+      splitAutoCut_one:
+        '{{count}} of them came from copy cut at {{limit}} characters.',
       splitAutoCut_other:
         '{{count}} of them came from copy cut at {{limit}} characters.',
-      splitByLimit_one: 'Publishes as {{count}} post, cut to fit {{limit}} characters.',
+      splitByLimit_one:
+        'Publishes as {{count}} post, cut to fit {{limit}} characters.',
       splitByLimit_other:
         'Publishes as {{count}} posts, cut to fit {{limit}} characters.',
       /**
@@ -1039,7 +1066,8 @@ export const en = {
         pending: 'Checking…',
         overflow: 'More than {{max}} posts',
         issues_one: 'Post {{positions}} carries more media than one post takes',
-        issues_other: 'Posts {{positions}} carry more media than one post takes',
+        issues_other:
+          'Posts {{positions}} carry more media than one post takes',
       },
 
       /**
@@ -1121,14 +1149,16 @@ export const en = {
      * `services/api/tiers.ts`. Everything the app says *about* a tier is here.
      */
     plansTitle: 'Plans',
-    planIntro: 'What this workspace can do, and what the other plans would change.',
+    planIntro:
+      'What this workspace can do, and what the other plans would change.',
     /**
      * Not an Explainer, and not dismissible. Someone looking at a page of plans
      * with a button on each is entitled to know that the button does not buy
      * anything — hiding that behind a note they may have closed months ago is
      * exactly the case the Explainer rule exists to keep out.
      */
-    planMock: 'Plans are not connected to billing yet. Choosing one only changes what this workspace is allowed to do.',
+    planMock:
+      'Plans are not connected to billing yet. Choosing one only changes what this workspace is allowed to do.',
     planLoadFailed: 'The plans could not be loaded.',
     plansClose: 'Close plans',
     /**
@@ -1213,7 +1243,8 @@ export const en = {
      * The provider is named in both: the card is not held here, so "update your
      * payment method" without saying where is an instruction with no address.
      */
-    paymentRetrying: 'The last payment failed, and Lemon Squeezy will try it again.',
+    paymentRetrying:
+      'The last payment failed, and Lemon Squeezy will try it again.',
     paymentStopped:
       'The last payment failed and will not be retried — update your payment method with Lemon Squeezy to keep this plan.',
 

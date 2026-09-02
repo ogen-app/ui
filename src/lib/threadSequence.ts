@@ -279,9 +279,9 @@ export type PlanThreadInput<T> = {
  * one result, so "how many posts is this, and which one is the problem" has
  * exactly one answer on the screen.
  */
-export function planThread<
-  T extends Pick<PostAttachment, 'id' | 'mime_type'>,
->(input: PlanThreadInput<T>): ThreadPlan<T> {
+export function planThread<T extends Pick<PostAttachment, 'id' | 'mime_type'>>(
+  input: PlanThreadInput<T>,
+): ThreadPlan<T> {
   const { content, attachments, assignment, charLimit, imageCap, videoCap } =
     input
 
@@ -365,11 +365,17 @@ export function parseAssignment(raw: string | null): ThreadAssignment {
   if (!raw) return {}
   try {
     const parsed: unknown = JSON.parse(raw)
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
       return {}
     }
     const out: ThreadAssignment = {}
-    for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
+    for (const [id, value] of Object.entries(
+      parsed as Record<string, unknown>,
+    )) {
       if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
         out[id] = value
       }

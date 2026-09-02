@@ -279,7 +279,10 @@ function PostEditorSurface({
   // Opening the rail is its own action, separate from starting a run: the bar
   // can now do both, and a link that says "see the full breakdown" must not
   // also spend a model call.
-  const openQuality = useCallback(() => openRightPanel('postQuality'), [openRightPanel])
+  const openQuality = useCallback(
+    () => openRightPanel('postQuality'),
+    [openRightPanel],
+  )
   // Notes (CON-188). Where a note renders is a device-local preference, so the
   // pin map comes from the settings store rather than the record — the API has
   // no `pinned` column, and `lib/postNotes` supplies the default.
@@ -475,7 +478,11 @@ function PostEditorSurface({
           the bar recentres when a panel opens instead of drifting off the
           post it acts on. */}
       <div className="relative flex flex-1 min-h-0">
-        <ScrollArea className="flex-1 min-h-0" type="scroll" scrollHideDelay={350}>
+        <ScrollArea
+          className="flex-1 min-h-0"
+          type="scroll"
+          scrollHideDelay={350}
+        >
           <PostDetailsHeader
             campaignId={campaignId}
             saving={saving}
@@ -543,7 +550,10 @@ function PostEditorSurface({
                       and a counter on it would be noise. Deliberately not a
                       `maxLength`: silently swallowing keystrokes mid-word is
                       worse than showing how far over the title is. */}
-                  <TitleCounter title={titleDraft} limit={media.maxTitleChars} />
+                  <TitleCounter
+                    title={titleDraft}
+                    limit={media.maxTitleChars}
+                  />
                 </div>
                 {/* One editor for every post type, threads included: a thread
                     is the same Markdown body, and the chain is derived from
@@ -560,7 +570,10 @@ function PostEditorSurface({
                   readOnly={assistantRunning}
                 />
                 {isSequence && (
-                  <ThreadSplitNote plan={plan} charLimit={media.maxContentChars} />
+                  <ThreadSplitNote
+                    plan={plan}
+                    charLimit={media.maxContentChars}
+                  />
                 )}
               </div>
             </div>

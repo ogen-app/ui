@@ -90,25 +90,46 @@ function ThreadsPost({
   const over = charLimit !== null && count > charLimit
 
   return (
-    <div className="flex gap-2 p-3" style={{ paddingBottom: connector ? 0 : 12 }}>
+    <div
+      className="flex gap-2 p-3"
+      style={{ paddingBottom: connector ? 0 : 12 }}
+    >
       <div className="flex shrink-0 flex-col items-center">
-        <PreviewAvatar src={author.avatarUrl} name={handle} size={36} background={C.muted} />
+        <PreviewAvatar
+          src={author.avatarUrl}
+          name={handle}
+          size={36}
+          background={C.muted}
+        />
         {/* Threads' own thread line: what makes several cards read as one post
             rather than as unrelated ones in a feed. */}
         {connector && (
-          <div className="mt-1 min-h-2 w-0.5 flex-1" style={{ background: C.dotMuted }} />
+          <div
+            className="mt-1 min-h-2 w-0.5 flex-1"
+            style={{ background: C.dotMuted }}
+          />
         )}
       </div>
 
       <div className={`min-w-0 flex-1 ${connector ? 'pb-3' : ''}`}>
         <div className="flex items-center gap-1.5" style={{ fontSize: 15 }}>
-          <span className="min-w-0 truncate font-semibold" style={{ color: C.text }}>
+          <span
+            className="min-w-0 truncate font-semibold"
+            style={{ color: C.text }}
+          >
             {handle}
           </span>
-          <span className="ml-auto shrink-0" style={{ color: C.muted, fontSize: 14 }}>
+          <span
+            className="ml-auto shrink-0"
+            style={{ color: C.muted, fontSize: 14 }}
+          >
             {timeLabel}
           </span>
-          <DotsThreeIcon className="size-5 shrink-0" style={{ color: C.muted }} aria-hidden />
+          <DotsThreeIcon
+            className="size-5 shrink-0"
+            style={{ color: C.muted }}
+            aria-hidden
+          />
         </div>
 
         <div className="pt-0.5">
@@ -136,7 +157,10 @@ function ThreadsPost({
             to reproduce, and "which post is too long" is unanswerable from the
             notes alone once a chain runs past a few posts. */}
         {!folded && over && (
-          <div className="pt-1 font-semibold" style={{ color: C.danger, fontSize: 12 }}>
+          <div
+            className="pt-1 font-semibold"
+            style={{ color: C.danger, fontSize: 12 }}
+          >
             {count}/{charLimit} characters — this post is too long
           </div>
         )}
@@ -173,7 +197,11 @@ function ThreadsPost({
             single image, but its padding would still push the card. */}
         {media.length > 1 && (
           <div className="pt-2">
-            <CarouselDots carousel={carousel} activeColor={C.dot} mutedColor={C.dotMuted} />
+            <CarouselDots
+              carousel={carousel}
+              activeColor={C.dot}
+              mutedColor={C.dotMuted}
+            />
           </div>
         )}
       </div>

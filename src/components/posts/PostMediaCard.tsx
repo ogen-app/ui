@@ -18,7 +18,11 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.tsx'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip.tsx'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip.tsx'
 import { toast } from '@/stores/toastStore.ts'
 import { cn } from '@/lib'
 import { formatBytes } from '@/lib/platformMedia.ts'
@@ -30,7 +34,10 @@ import {
   mediaNoun,
   type MediaPolicy,
 } from '@/lib/postMedia.ts'
-import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments.ts'
+import {
+  attachmentKind,
+  type PostAttachmentWithValidation,
+} from '@/types/attachments.ts'
 import type { PendingUpload, UploadResult } from '@/hooks/usePostAttachments.ts'
 import type { Post } from '@/types/posts.ts'
 
@@ -99,9 +106,15 @@ export function PostMediaCard({
   // in the pre-publish bar.
   const totalMax = thread ? null : policy.max
   const canAdd =
-    !frozen && policy.accepts && (totalMax === null || attachments.length < totalMax)
+    !frozen &&
+    policy.accepts &&
+    (totalMax === null || attachments.length < totalMax)
 
-  if (attachments.length === 0 && pending.length === 0 && (!policy.accepts || frozen)) {
+  if (
+    attachments.length === 0 &&
+    pending.length === 0 &&
+    (!policy.accepts || frozen)
+  ) {
     return null
   }
 
@@ -112,7 +125,10 @@ export function PostMediaCard({
   // something) and stays shut until asked. Once open it stays open: a card
   // that closed itself again would look like the upload had failed.
   const collapsed =
-    !post.platform_id && !revealed && attachments.length === 0 && pending.length === 0
+    !post.platform_id &&
+    !revealed &&
+    attachments.length === 0 &&
+    pending.length === 0
 
   const handleFiles = async (files: File[]) => {
     const accepted: File[] = []
@@ -125,7 +141,8 @@ export function PostMediaCard({
       }
     }
     if (accepted.length === 0) return
-    const room = totalMax === null ? accepted.length : totalMax - attachments.length
+    const room =
+      totalMax === null ? accepted.length : totalMax - attachments.length
     const within = accepted.slice(0, Math.max(0, room))
     if (within.length < accepted.length) {
       toast.warning(`Only ${policy.max} files fit on this post type`, {
@@ -148,7 +165,12 @@ export function PostMediaCard({
   }
 
   return (
-    <div className={cn('w-full bg-primary px-10 py-6 flex flex-col gap-3', className)}>
+    <div
+      className={cn(
+        'w-full bg-primary px-10 py-6 flex flex-col gap-3',
+        className,
+      )}
+    >
       {/* `SettingsCard`'s header, matched deliberately: title left, the one
           action opposite it. This is a card with a heading and a body like
           any settings section, and it was the only one drawing its own. */}
@@ -197,8 +219,8 @@ export function PostMediaCard({
 
       {!policy.accepts && attachments.length > 0 && (
         <Notice>
-          This post type publishes without media. These files stay attached — remove
-          them, or pick a post type that uses them.
+          This post type publishes without media. These files stay attached —
+          remove them, or pick a post type that uses them.
         </Notice>
       )}
       {policy.videoUnsupported && (
@@ -240,7 +262,9 @@ export function PostMediaCard({
               index={index}
               total={attachments.length}
               frozen={frozen}
-              dropTarget={overIndex === index && dragIndex !== null && dragIndex !== index}
+              dropTarget={
+                overIndex === index && dragIndex !== null && dragIndex !== index
+              }
               onDragStart={() => setDragIndex(index)}
               onDragEnter={() => dragIndex !== null && setOverIndex(index)}
               onDragEnd={() => {
@@ -349,7 +373,9 @@ function ThreadPostPicker({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={t('posts.sequence.mediaOnLabel', { position: current + 1 })}
+          aria-label={t('posts.sequence.mediaOnLabel', {
+            position: current + 1,
+          })}
           className={cn(
             'flex w-32 items-center justify-between gap-1 px-1.5 py-1 cursor-pointer',
             'bg-tertiary hover:bg-quaternary text-[11px] text-tertiary-foreground',
@@ -375,7 +401,9 @@ function ThreadPostPicker({
                   how you tell post 4 from post 5 without counting paragraphs
                   back in the editor. */}
               {excerpt && (
-                <span className="truncate text-tertiary-foreground">{excerpt}</span>
+                <span className="truncate text-tertiary-foreground">
+                  {excerpt}
+                </span>
               )}
             </DropdownMenuRadioItem>
           ))}
@@ -500,7 +528,10 @@ function MediaTile({
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="absolute right-1 top-1 bg-primary/90 p-0.5">
-              <WarningCircleIcon weight="fill" className="size-4 text-warning" />
+              <WarningCircleIcon
+                weight="fill"
+                className="size-4 text-warning"
+              />
             </span>
           </TooltipTrigger>
           <TooltipContent>
@@ -544,7 +575,8 @@ function MediaTile({
  */
 function videoTileLabel(attachment: PostAttachmentWithValidation): string {
   const parts: string[] = []
-  if (attachment.duration_ms > 0) parts.push(formatTimecode(attachment.duration_ms))
+  if (attachment.duration_ms > 0)
+    parts.push(formatTimecode(attachment.duration_ms))
   if (attachment.width > 0 && attachment.height > 0) {
     parts.push(`${attachment.width}×${attachment.height}`)
   }
