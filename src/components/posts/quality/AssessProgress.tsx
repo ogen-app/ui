@@ -54,9 +54,15 @@ export function AssessProgress({ steps }: { steps: string[] }) {
   const shown = steps.slice(0, revealed)
 
   const done = new Set(shown)
-  const extra = shown.filter((step) => !ASSESS_STEPS.some((s) => s.step === step))
+  const extra = shown.filter(
+    (step) => !ASSESS_STEPS.some((s) => s.step === step),
+  )
   const rows = [
-    ...ASSESS_STEPS.map((s) => ({ key: s.step, label: s.label, done: done.has(s.step) })),
+    ...ASSESS_STEPS.map((s) => ({
+      key: s.step,
+      label: s.label,
+      done: done.has(s.step),
+    })),
     ...extra.map((step) => ({ key: step, label: stepLabel(step), done: true })),
   ]
 
@@ -78,7 +84,11 @@ export function AssessProgress({ steps }: { steps: string[] }) {
               it: the mark is the one thing on this screen saying work is
               happening, and sizing it to the ticks made it read as a seventh
               tick. The column keeps its width, so the labels stay aligned. */}
-          <Logo variant="mark" loading className="size-5 shrink-0 text-accent" />
+          <Logo
+            variant="mark"
+            loading
+            className="size-5 shrink-0 text-accent"
+          />
         </Glyph>
         <span className="animate-pulse-opacity">Assessing this post…</span>
       </p>
@@ -90,7 +100,9 @@ export function AssessProgress({ steps }: { steps: string[] }) {
               key={row.key}
               className={cn(
                 'flex items-center gap-2 text-sm transition-colors duration-300',
-                row.done ? 'text-secondary-foreground' : 'text-tertiary-foreground',
+                row.done
+                  ? 'text-secondary-foreground'
+                  : 'text-tertiary-foreground',
               )}
             >
               <Glyph>
@@ -110,7 +122,10 @@ export function AssessProgress({ steps }: { steps: string[] }) {
                       aria-hidden
                       className="absolute size-1.5 rounded-full bg-warning animate-step-ping"
                     />
-                    <span aria-hidden className="relative size-1.5 rounded-full bg-warning" />
+                    <span
+                      aria-hidden
+                      className="relative size-1.5 rounded-full bg-warning"
+                    />
                   </span>
                 ) : (
                   <CircleIcon aria-hidden weight="regular" className="size-4" />
@@ -131,8 +146,8 @@ export function AssessProgress({ steps }: { steps: string[] }) {
         })}
       </ol>
       <p className="text-xs text-tertiary-foreground">
-        Scoring runs on a small model and usually takes under a minute. You can keep editing —
-        the run reads the post as it was when you started it.
+        Scoring runs on a small model and usually takes under a minute. You can
+        keep editing — the run reads the post as it was when you started it.
       </p>
     </div>
   )
@@ -141,7 +156,10 @@ export function AssessProgress({ steps }: { steps: string[] }) {
 /** The shared 16px icon column. Every label starts after it, tick or mark. */
 function Glyph({ children }: { children: ReactNode }) {
   return (
-    <span aria-hidden className="flex size-4 shrink-0 items-center justify-center">
+    <span
+      aria-hidden
+      className="flex size-4 shrink-0 items-center justify-center"
+    >
       {children}
     </span>
   )

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   countdownRefreshMs,
@@ -6,6 +6,7 @@ import {
   type PublishCountdown,
   type PublishTiming,
 } from '@/lib/publishCountdown'
+import { formatNumber, formatRelative } from '@/lib/intl'
 import type { Post } from '@/types/posts'
 
 export type PublishStatus = {
@@ -29,6 +30,9 @@ export function usePublishStatus(post: Post): PublishStatus | null {
   const timing = useLiveTiming(post)
   const locale = i18n.language
 
+  if (!timing) return null
+
+  const { value, unit } = timing.countdown
   /**
    * "in 2 days" / "2 days ago" / "now", in the active language.
    *
@@ -36,15 +40,7 @@ export function usePublishStatus(post: Post): PublishStatus | null {
    * already knows every language's plural rules and its own word for "now",
    * so the catalogue only carries the sentence around it.
    */
-  const relative = useMemo(
-    () => new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }),
-    [locale],
-  )
-
-  if (!timing) return null
-
-  const { value, unit } = timing.countdown
-  const when = relative.format(value, unit)
+  const when = formatRelative(value, unit, locale)
 
   return {
     full: t(
@@ -80,12 +76,15 @@ export function usePublishStatus(post: Post): PublishStatus | null {
  * one collision worth paying two characters to avoid — "3m" meaning three
  * minutes and "3m" meaning three months call for very different reactions.
  */
-function compactAmount({ value, unit }: PublishCountdown, locale: string): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'unit',
-    unit,
-    unitDisplay: 'short',
-  }).format(Math.abs(value))
+function compactAmount(
+  { value, unit }: PublishCountdown,
+  locale: string,
+): string {
+  return formatNumber(
+    Math.abs(value),
+    { style: 'unit', unit, unitDisplay: 'short' },
+    locale,
+  )
 }
 
 /**

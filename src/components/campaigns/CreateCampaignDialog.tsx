@@ -133,7 +133,11 @@ export function CreateCampaignDialog({
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!canCreate} loading={createCampaign.isPending}>
+          <Button
+            type="submit"
+            disabled={!canCreate}
+            loading={createCampaign.isPending}
+          >
             CREATE CAMPAIGN
           </Button>
         </div>

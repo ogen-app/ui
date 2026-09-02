@@ -46,13 +46,22 @@ const TITLES: Record<BulkAction, string> = {
 function planSummary(plan: BulkPlan, verb: string): string {
   const n = plan.changes.length
   const head =
-    n === 0 ? `No posts will be ${verb}` : `${n} ${n === 1 ? 'post' : 'posts'} will be ${verb}`
+    n === 0
+      ? `No posts will be ${verb}`
+      : `${n} ${n === 1 ? 'post' : 'posts'} will be ${verb}`
   if (plan.skipped.length === 0) return `${head}.`
   const tail = plan.skipped.map((s) => `${s.count} ${s.reason}`).join(', ')
   return `${head}. Left alone: ${tail}.`
 }
 
-export function BulkActionDialog({ action, posts, onClose, onApply, onDelete, busy }: Props) {
+export function BulkActionDialog({
+  action,
+  posts,
+  onClose,
+  onApply,
+  onDelete,
+  busy,
+}: Props) {
   const [date, setDate] = useState<string | null>(null)
   const [time, setTime] = useState('')
   const tzLabel = getLocalTimezoneLabel()
@@ -80,9 +89,14 @@ export function BulkActionDialog({ action, posts, onClose, onApply, onDelete, bu
               <Label asChild>
                 <span>New date</span>
               </Label>
-              <DatePicker value={date} onChange={setDate} placeholder="Pick a date" />
+              <DatePicker
+                value={date}
+                onChange={setDate}
+                placeholder="Pick a date"
+              />
               <p className="text-xs text-tertiary-foreground">
-                Each post keeps its own time of day. Posts with no date yet get 09:00.
+                Each post keeps its own time of day. Posts with no date yet get
+                09:00.
               </p>
             </div>
             <Summary text={plan ? planSummary(plan, 'moved') : null} />
@@ -130,8 +144,8 @@ export function BulkActionDialog({ action, posts, onClose, onApply, onDelete, bu
         return (
           <>
             <p className="text-sm text-secondary-foreground">
-              The publication date and time are cleared. The posts stay as drafts and go
-              nowhere until they are scheduled again.
+              The publication date and time are cleared. The posts stay as
+              drafts and go nowhere until they are scheduled again.
             </p>
             <Summary text={planSummary(plan, 'unscheduled')} />
             <Actions
@@ -149,7 +163,8 @@ export function BulkActionDialog({ action, posts, onClose, onApply, onDelete, bu
         return (
           <>
             <p className="text-sm text-secondary-foreground">
-              These posts are permanently deleted from Ogen. This cannot be undone.
+              These posts are permanently deleted from Ogen. This cannot be
+              undone.
             </p>
             <Summary
               text={

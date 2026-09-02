@@ -100,7 +100,10 @@ export const useLocaleStore = create<LocaleState>()(
         try {
           // The floor and the fetch run together, so a slow connection costs
           // its own time rather than that time plus two seconds.
-          await Promise.all([loadLocaleResources(next), delay(MIN_LOCALE_SWITCH_MS)])
+          await Promise.all([
+            loadLocaleResources(next),
+            delay(MIN_LOCALE_SWITCH_MS),
+          ])
           await i18next.changeLanguage(next)
           document.documentElement.lang = next
           set({ locale: next, switchingTo: null }, false, 'locale/set')
@@ -113,8 +116,8 @@ export const useLocaleStore = create<LocaleState>()(
         }
       },
     }),
-    { name: 'locale-store' }
-  )
+    { name: 'locale-store' },
+  ),
 )
 
 /**
@@ -132,7 +135,10 @@ export const useLocaleStore = create<LocaleState>()(
  */
 export function bootstrapLocale(): void {
   const requested = takeForcedLocale() ?? readStoredLocale()
-  const next = requested !== null && isEnabledLocale(requested) ? requested : DEFAULT_LOCALE
+  const next =
+    requested !== null && isEnabledLocale(requested)
+      ? requested
+      : DEFAULT_LOCALE
 
   document.documentElement.lang = next
 
@@ -149,5 +155,8 @@ export function bootstrapLocale(): void {
   }
 
   // Rejections are already logged and recovered from inside `setLocale`.
-  void useLocaleStore.getState().setLocale(next).catch(() => {})
+  void useLocaleStore
+    .getState()
+    .setLocale(next)
+    .catch(() => {})
 }

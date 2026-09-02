@@ -9,7 +9,7 @@ services:
     volumes:
       - ogen-keys:/var/lib/ogen/keys
     ports:
-      - "9001:9001"
+      - '9001:9001'
     depends_on:
       postgres:
         condition: service_healthy
@@ -19,18 +19,18 @@ services:
     # (CON-87 WS4). Multi-arch, so it runs native on arm64/amd64 hosts.
     image: pgvector/pgvector:pg17
     environment:
-      POSTGRES_USER: "${POSTGRES_USER:-ogen}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-ogen}"
-      POSTGRES_DB: "${POSTGRES_DB:-ogen}"
+      POSTGRES_USER: '${POSTGRES_USER:-ogen}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-ogen}'
+      POSTGRES_DB: '${POSTGRES_DB:-ogen}'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - '5432:5432'
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-ogen} -d ${POSTGRES_DB:-ogen}",
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-ogen} -d ${POSTGRES_DB:-ogen}',
         ]
       interval: 2s
       timeout: 2s
@@ -67,18 +67,18 @@ services:
     working_dir: /app
     environment:
       # Let corepack fetch the pnpm version pinned in package.json non-interactively.
-      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
       # Vite proxies /api here (the api service on the compose network).
-      API_URL: "http://api:9001"
+      API_URL: 'http://api:9001'
       # Native FS events don't cross the bind mount on macOS/Windows — poll instead.
-      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_USEPOLLING: 'true'
     volumes:
       # Local UI source -> live hot-reload. node_modules stays in an anonymous
       # volume so the host's (wrong-arch) modules don't shadow the container's.
-      - "${UI_PATH:-../ui}:/app"
+      - '${UI_PATH:-../ui}:/app'
       - /app/node_modules
     ports:
-      - "9002:9002" # Vite dev server (port set in ui/vite.config.ts)
+      - '9002:9002' # Vite dev server (port set in ui/vite.config.ts)
     # `pnpm exec vite` invokes the Vite binary directly so `--host 0.0.0.0`
     # reaches it (a plain `pnpm dev -- --host` forwards the `--` literally and
     # Vite stays bound to the container's localhost, unreachable from the host).
@@ -101,7 +101,7 @@ services:
     image: alephbetai/pdf-service:latest
     platform: linux/amd64
     expose:
-      - "50051"
+      - '50051'
 
 volumes:
   postgres-data:

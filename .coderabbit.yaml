@@ -2,28 +2,25 @@
 # itself reviewed in PRs. Docs: https://docs.coderabbit.ai/reference/yaml-template
 language: en
 reviews:
-  profile: chill            # or "assertive" for nittier reviews
+  profile: chill # or "assertive" for nittier reviews
   request_changes_workflow: false
   high_level_summary: true
   auto_review:
-    enabled: true
-    base_branches:
-      - main
+    # Reviews are for release PRs (develop -> main) only, so auto-review is off
+    # here on develop. This repo is public, so CodeRabbit applies the config
+    # from a PR's *base* branch: PRs into develop read this file and stay
+    # quiet, while PRs into main read main's own .coderabbit.yaml (which keeps
+    # `enabled: true` + `base_branches: [main]`) and are reviewed. Don't
+    # "unify" the two files — the difference between them is the mechanism.
+    #
+    # To review a feature PR anyway: add the `coderabbit` label, or comment
+    # `@coderabbitai review`.
+    enabled: false
+    labels:
+      - coderabbit
+    drafts: false
   path_filters:
-    - "!dist/**"
-    - "!pnpm-lock.yaml"
-    # The free plan skips any review past 100 files, and release PRs
-    # (develop -> main) accumulate whole cycles — the first one to hit the cap
-    # was 107 files. Docs, tests, env examples and this file are dropped from
-    # review scope to keep the source files reviewable.
-    - "!**/*.md"
-    - "!**/*.test.ts"
-    - "!**/*.test.tsx"
-    - "!.env.example"
-    - "!.coderabbit.yaml"
-    # Same cap-management, continued: the generated route tree and the i18n
-    # string catalogues are bulk without review value.
-    - "!src/routeTree.gen.ts"
-    - "!src/i18n/resources/**"
+    - '!dist/**'
+    - '!pnpm-lock.yaml'
 chat:
   auto_reply: true

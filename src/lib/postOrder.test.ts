@@ -54,7 +54,10 @@ describe('comparePostOrder', () => {
   })
 
   it('treats an unparseable date as no date, not as the epoch', () => {
-    const posts = [post('bad', 'not-a-date'), post('real', '2026-08-10T09:00:00.000Z')]
+    const posts = [
+      post('bad', 'not-a-date'),
+      post('real', '2026-08-10T09:00:00.000Z'),
+    ]
     expect(sorted(posts)).toEqual(['real', 'bad'])
   })
 })
@@ -78,7 +81,10 @@ describe('postNeighbours', () => {
   })
 
   it('has no neighbours for a post that is not in the list', () => {
-    expect(postNeighbours(posts, 'gone')).toEqual({ previous: null, next: null })
+    expect(postNeighbours(posts, 'gone')).toEqual({
+      previous: null,
+      next: null,
+    })
     expect(postNeighbours([], 'first')).toEqual({ previous: null, next: null })
   })
 

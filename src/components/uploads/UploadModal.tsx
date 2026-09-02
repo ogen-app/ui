@@ -1,59 +1,81 @@
-import { useState } from "react";
-import { ModalContainer } from "@/components/ui/modal";
-import { Button } from "@/components/ui/button";
-import { XIcon } from "@phosphor-icons/react";
-import { Dropzone } from "./Dropzone";
-import { useUploadStore } from "@/stores/uploadStore";
+import { useState } from 'react'
+import { ModalContainer } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
+import { XIcon } from '@phosphor-icons/react'
+import { Dropzone } from './Dropzone'
+import { useUploadStore } from '@/stores/uploadStore'
 import {
-  UPLOAD_LIMITS_LABEL,
   formatBytes,
+  uploadLimitsLabel,
   validateUploadFile,
-} from "@/lib/assetStatus";
+} from '@/lib/assetStatus'
+import { useUploadOptions } from '@/hooks/useUploadOptions'
 
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
-};
+  isOpen: boolean
+  onClose: () => void
+  /** The campaign the files join, or null to upload to the workspace bank. */
+  campaignId: string | null
+  /**
+   * The post that should read from them, when the upload started on one. The
+   * files still join the campaign — a post is inside one.
+   */
+  postId?: string | null
+}
 
 /**
  * Modal entry point for uploads: shows the limits, a drop zone, and a staged
  * file list the user reviews before clicking Upload. Progress then continues
  * non-blocking in the UploadTracker, so the modal closes on submit.
  */
-export function UploadModal({ isOpen, onClose }: Props) {
-  const enqueue = useUploadStore((s) => s.enqueue);
-  const [staged, setStaged] = useState<File[]>([]);
+export function UploadModal({
+  isOpen,
+  onClose,
+  campaignId,
+  postId = null,
+}: Props) {
+  const enqueue = useUploadStore((s) => s.enqueue)
+  const [staged, setStaged] = useState<File[]>([])
+  const options = useUploadOptions()
 
-  const reset = () => setStaged([]);
+  const reset = () => setStaged([])
 
   const close = () => {
-    reset();
-    onClose();
-  };
+    reset()
+    onClose()
+  }
 
-  const addFiles = (files: File[]) =>
-    setStaged((prev) => [...prev, ...files]);
+  const addFiles = (files: File[]) => setStaged((prev) => [...prev, ...files])
 
   const removeStaged = (index: number) =>
-    setStaged((prev) => prev.filter((_, i) => i !== index));
+    setStaged((prev) => prev.filter((_, i) => i !== index))
 
   const handleUpload = () => {
-    if (staged.length === 0) return;
-    enqueue(staged);
-    close();
-  };
+    if (staged.length === 0) return
+    enqueue(staged, { campaignId, postId })
+    close()
+  }
 
   return (
     <ModalContainer
       isOpen={isOpen}
       onClose={close}
-      title="Upload to content bank"
+      title={
+        postId
+          ? 'Add to this post'
+          : campaignId
+            ? 'Add to this campaign'
+            : 'Add to the content bank'
+      }
       size="large"
     >
       <div className="flex flex-col gap-4">
         <p className="text-sm text-tertiary-foreground">
-          Upload Markdown or PDF files. {UPLOAD_LIMITS_LABEL}. PDFs are processed
-          in the background after upload.
+          {options.images
+            ? 'Upload Markdown, PDF or image files.'
+            : 'Upload Markdown or PDF files.'}{' '}
+          {uploadLimitsLabel(options)}. PDFs are processed in the background
+          after upload.
         </p>
 
         <Dropzone onFiles={addFiles} />
@@ -61,7 +83,7 @@ export function UploadModal({ isOpen, onClose }: Props) {
         {staged.length > 0 && (
           <ul className="flex flex-col gap-1">
             {staged.map((file, index) => {
-              const validation = validateUploadFile(file);
+              const validation = validateUploadFile(file, options)
               return (
                 <li
                   key={`${file.name}-${index}`}
@@ -90,7 +112,7 @@ export function UploadModal({ isOpen, onClose }: Props) {
                     <XIcon className="size-4" />
                   </Button>
                 </li>
-              );
+              )
             })}
           </ul>
         )}
@@ -100,10 +122,10 @@ export function UploadModal({ isOpen, onClose }: Props) {
             Cancel
           </Button>
           <Button onClick={handleUpload} disabled={staged.length === 0}>
-            Upload{staged.length > 0 ? ` (${staged.length})` : ""}
+            Upload{staged.length > 0 ? ` (${staged.length})` : ''}
           </Button>
         </div>
       </div>
     </ModalContainer>
-  );
+  )
 }

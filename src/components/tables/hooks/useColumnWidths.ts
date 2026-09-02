@@ -20,7 +20,7 @@ type ColumnWidthResult = {
 export function useColumnWidths<TData extends Record<string, unknown>>(
   containerWidth: number,
   activeColumns: string[],
-  columnConfigs: ColumnConfig<TData>[]
+  columnConfigs: ColumnConfig<TData>[],
 ): ColumnWidthResult {
   return useMemo(() => {
     const cssVariables: Record<string, string> = {}
@@ -33,7 +33,8 @@ export function useColumnWidths<TData extends Record<string, unknown>>(
     }
 
     // Separate columns into fixed and auto
-    const fixedColumns: Array<{ id: string; width: number; minWidth: number }> = []
+    const fixedColumns: Array<{ id: string; width: number; minWidth: number }> =
+      []
     const autoColumns: Array<{ id: string; minWidth: number }> = []
 
     activeColumns.forEach((columnId) => {
@@ -53,12 +54,19 @@ export function useColumnWidths<TData extends Record<string, unknown>>(
     })
 
     // Calculate total fixed width
-    const totalFixedWidth = fixedColumns.reduce((sum, col) => sum + col.width, 0)
-    const totalMinWidth = fixedColumns.reduce((sum, col) => sum + col.minWidth, 0) +
-                          autoColumns.reduce((sum, col) => sum + col.minWidth, 0)
+    const totalFixedWidth = fixedColumns.reduce(
+      (sum, col) => sum + col.width,
+      0,
+    )
+    const totalMinWidth =
+      fixedColumns.reduce((sum, col) => sum + col.minWidth, 0) +
+      autoColumns.reduce((sum, col) => sum + col.minWidth, 0)
 
     // Scenario 1: Overflow - total width exceeds container
-    if (totalFixedWidth + autoColumns.length * 100 > containerWidth || totalMinWidth > containerWidth) {
+    if (
+      totalFixedWidth + autoColumns.length * 100 > containerWidth ||
+      totalMinWidth > containerWidth
+    ) {
       // Use minimum widths for all columns
       fixedColumns.forEach((col) => {
         const width = col.minWidth
@@ -71,8 +79,16 @@ export function useColumnWidths<TData extends Record<string, unknown>>(
         computedWidths.set(col.id, width)
       })
 
-      const stickyLeftPositions = calculateStickyLeftPositions(activeColumns, columnConfigs, computedWidths)
-      const stickyRightPositions = calculateStickyRightPositions(activeColumns, columnConfigs, computedWidths)
+      const stickyLeftPositions = calculateStickyLeftPositions(
+        activeColumns,
+        columnConfigs,
+        computedWidths,
+      )
+      const stickyRightPositions = calculateStickyRightPositions(
+        activeColumns,
+        columnConfigs,
+        computedWidths,
+      )
 
       return {
         cssVariables,
@@ -90,11 +106,22 @@ export function useColumnWidths<TData extends Record<string, unknown>>(
         computedWidths.set(col.id, col.width)
       })
 
-      const stickyLeftPositions = calculateStickyLeftPositions(activeColumns, columnConfigs, computedWidths)
-      const stickyRightPositions = calculateStickyRightPositions(activeColumns, columnConfigs, computedWidths)
+      const stickyLeftPositions = calculateStickyLeftPositions(
+        activeColumns,
+        columnConfigs,
+        computedWidths,
+      )
+      const stickyRightPositions = calculateStickyRightPositions(
+        activeColumns,
+        columnConfigs,
+        computedWidths,
+      )
 
       // Calculate actual total width from all columns
-      const actualTotalWidth = Array.from(computedWidths.values()).reduce((sum, w) => sum + w, 0)
+      const actualTotalWidth = Array.from(computedWidths.values()).reduce(
+        (sum, w) => sum + w,
+        0,
+      )
 
       return {
         cssVariables,
@@ -109,7 +136,7 @@ export function useColumnWidths<TData extends Record<string, unknown>>(
     const remainingSpace = containerWidth - totalFixedWidth
     const autoColumnWidth = Math.max(
       100, // Minimum width for auto columns
-      Math.floor(remainingSpace / autoColumns.length)
+      Math.floor(remainingSpace / autoColumns.length),
     )
 
     // Set fixed column widths
@@ -123,7 +150,7 @@ export function useColumnWidths<TData extends Record<string, unknown>>(
       // Give last auto column any remaining pixels from floor rounding
       const isLast = index === autoColumns.length - 1
       const width = isLast
-        ? remainingSpace - (autoColumnWidth * (autoColumns.length - 1))
+        ? remainingSpace - autoColumnWidth * (autoColumns.length - 1)
         : autoColumnWidth
 
       const finalWidth = Math.max(col.minWidth, width)
@@ -131,11 +158,22 @@ export function useColumnWidths<TData extends Record<string, unknown>>(
       computedWidths.set(col.id, finalWidth)
     })
 
-    const stickyLeftPositions = calculateStickyLeftPositions(activeColumns, columnConfigs, computedWidths)
-    const stickyRightPositions = calculateStickyRightPositions(activeColumns, columnConfigs, computedWidths)
+    const stickyLeftPositions = calculateStickyLeftPositions(
+      activeColumns,
+      columnConfigs,
+      computedWidths,
+    )
+    const stickyRightPositions = calculateStickyRightPositions(
+      activeColumns,
+      columnConfigs,
+      computedWidths,
+    )
 
     // Calculate actual total width from all columns
-    const actualTotalWidth = Array.from(computedWidths.values()).reduce((sum, w) => sum + w, 0)
+    const actualTotalWidth = Array.from(computedWidths.values()).reduce(
+      (sum, w) => sum + w,
+      0,
+    )
 
     return {
       cssVariables,
@@ -154,7 +192,7 @@ export function useColumnWidths<TData extends Record<string, unknown>>(
 function calculateStickyLeftPositions<TData extends Record<string, unknown>>(
   activeColumns: string[],
   columnConfigs: ColumnConfig<TData>[],
-  computedWidths: Map<string, number>
+  computedWidths: Map<string, number>,
 ): Map<string, number> {
   const positions = new Map<string, number>()
   let cumulativeWidth = 0
@@ -179,7 +217,7 @@ function calculateStickyLeftPositions<TData extends Record<string, unknown>>(
 function calculateStickyRightPositions<TData extends Record<string, unknown>>(
   activeColumns: string[],
   columnConfigs: ColumnConfig<TData>[],
-  computedWidths: Map<string, number>
+  computedWidths: Map<string, number>,
 ): Map<string, number> {
   const positions = new Map<string, number>()
   let cumulativeWidth = 0
@@ -202,7 +240,9 @@ function calculateStickyRightPositions<TData extends Record<string, unknown>>(
 /**
  * Hook to measure container width with ResizeObserver
  */
-export function useContainerWidth(containerRef: React.RefObject<HTMLElement | null>): number {
+export function useContainerWidth(
+  containerRef: React.RefObject<HTMLElement | null>,
+): number {
   const [width, setWidth] = useState(0)
   const observerRef = useRef<ResizeObserver | null>(null)
 

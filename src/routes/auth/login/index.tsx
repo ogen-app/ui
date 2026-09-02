@@ -20,7 +20,9 @@ import LoginPage from './page'
 const flag = z
   .unknown()
   .optional()
-  .transform((v) => (v === true || v === 1 || v === '1' || v === 'true' ? true : undefined))
+  .transform((v) =>
+    v === true || v === 1 || v === '1' || v === 'true' ? true : undefined,
+  )
 
 const loginSearchSchema = z.object({
   redirect: z.string().optional(),
