@@ -245,6 +245,52 @@ exports `selectActivePanel`, which is how components ask what's open —
 rather than opening it a frame later. Scope and `campaignId` are session-only:
 where you are is not a preference.
 
+## A campaign remembers where you were in its posts {#posts-place}
+
+**Decision.** Each campaign remembers the arrangement its posts were last read
+in and the day the calendar was drawn around — `{ view, anchor, granularity }`
+per campaign id, in `settingsStore` (localStorage). The post editor's back arrow
+and the sidebar's **Posts** row restore all of it, the list included; the entry
+points that name the *calendar* — the overview's calendar card, a bare
+`/campaigns/:id/calendar` URL — restore the date and granularity but never
+redirect to the table.
+
+**Why.** A campaign's posts are usually not in the current week: you plan
+September in August. So "today", which every one of those links used to
+hard-code, is the one week reliably guaranteed to be empty, and each return trip
+through a post cost the user the navigation they had just done.
+
+`granularity` is stored rather than derived because the list is neither
+granularity, and something that opens a calendar after a trip through the table
+still has to pick one — without it, it would guess "week" at someone who reads
+their campaign by the month.
+
+**Why not `history.back()`.** It has nothing to go back to when the post was
+opened from a pasted URL or a new tab, and a button is not a link: the arrow
+would lose middle-click, right-click and the status-bar preview that every other
+navigation in the app has. The cost of keeping a real `<Link>` is that the back
+arrow is two branches, since a `<Link>`'s params are typed off a literal `to`.
+
+**Consequences.** The calendar writes the memory on every anchor change, so
+`rememberVisit` returns its input unchanged when nothing moved and the store
+skips the `set` — otherwise every arrow press would notify the sidebar and the
+post header. The default reads the clock and so is a fresh object each call,
+which is why the hooks subscribe to the stored entry (stable, or `undefined`)
+and derive the default outside the subscription. Views are the only writers: a
+redirect or a programmatic navigation must not be saved as the user's choice.
+Rehydration distrusts the blob — a malformed anchor here would not render wrong,
+it would put the router into `beforeLoad`'s normalising redirect on every
+navigation.
+
+`DeletePostDialog` is deliberately **not** wired to this: after deleting a post
+it lands on the week that post was going out, which is a different and better
+answer than where the user came from.
+
+**Where.** `lib/postsPlace.ts` (pure, with `postsPlace.test.ts`),
+`hooks/usePostsPlace.ts`, `stores/settingsStore.ts` (`rememberPostsPlace`),
+recorded by the two views and read by `PostDetailsHeader`, `AppSidebar`,
+`OverviewCard` and the bare-calendar redirect.
+
 ## The posts table's sort order follows the user, not the device {#posts-table-sort}
 
 **Decision.** The posts list defaults to **schedule date, earliest first**, with

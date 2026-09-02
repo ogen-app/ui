@@ -724,6 +724,8 @@ export const es: Translation = {
     noPlatform: 'Sin plataforma',
     noAccount: 'Sin cuenta',
 
+    backToPosts: 'Volver a las publicaciones',
+
     hasProblem: 'Esta publicación tiene un problema',
   },
   tiers: {

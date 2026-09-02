@@ -965,6 +965,13 @@ export const en = {
     noAccount: 'No account',
 
     /**
+     * The post editor's back arrow. Names the destination generically because
+     * it is not always the same one — it returns to whichever arrangement of
+     * the campaign's posts the user came from, calendar or table.
+     */
+    backToPosts: 'Back to posts',
+
+    /**
      * The card's warning mark. What is wrong is in the post itself — the mark
      * only says to go and look — so this is deliberately the whole of it.
      */
