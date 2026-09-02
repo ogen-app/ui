@@ -982,56 +982,64 @@ export const en = {
     sequence: {
       /**
        * Teaching, and only teaching — it can be dismissed for good, so nothing
-       * a person needs while writing may live here (CLAUDE.md).
+       * a person needs while writing may live here (CLAUDE.md). What the body
+       * actually became is the note under the editor, which cannot be
+       * dismissed.
        */
       explainer:
-        'Each post below publishes on its own, replying to the one before it. The character limit applies to every post separately, and media rides the post it sits on.',
-
-      /** The row's accessible name. The number is what the gutter shows. */
-      postLabel: 'Post {{position}} of {{total}}',
-      placeholderFirst: 'Write the first post…',
-      placeholderNext: 'Continue the thread…',
-
-      addPost: 'Add post',
-      addPostAfter: 'Add a post after post {{position}}',
-      removePost: 'Remove post {{position}}',
-      moveUp: 'Move post {{position}} earlier',
-      moveDown: 'Move post {{position}} later',
-      /** Reached the editor's own ceiling, which no platform imposes. */
-      capReached: 'A thread here holds up to {{max}} posts.',
-
-      addMedia: 'Add media to post {{position}}',
-      /** On a thumbnail's menu: which post of the thread carries this file. */
-      mediaOn: 'On post {{position}}',
-      moveMediaTo: 'Move to post {{position}}',
-      uploadFailed: 'Some files were not uploaded.',
-      saveFailed: 'Could not save the thread.',
+        'This publishes as a chain of posts, each replying to the one before it. Type --- on its own line wherever you want a break; with no divider anywhere, blank lines are the breaks. Anything still past the character limit is cut to fit.',
 
       /**
-       * The per-post counter. `chars` and not `count` on purpose: `count` is
-       * i18next's plural variable, and this is a bare number beside another.
+       * The note under the editor: what the body will publish as. Two
+       * sentences, never one assembled from clauses — only the second has a
+       * limit in it, and only sometimes.
        */
-      counter: '{{chars}}/{{limit}}',
+      splitByDivider_one: 'Publishes as {{count}} post, broken where you put a divider.',
+      splitByDivider_other:
+        'Publishes as {{count}} posts, broken where you put a divider.',
+      splitByBlankLine_one: 'Publishes as {{count}} post, broken at blank lines.',
+      splitByBlankLine_other: 'Publishes as {{count}} posts, broken at blank lines.',
+      splitAutoCut_one: '{{count}} of them came from copy cut at {{limit}} characters.',
+      splitAutoCut_other:
+        '{{count}} of them came from copy cut at {{limit}} characters.',
+      splitByLimit_one: 'Publishes as {{count}} post, cut to fit {{limit}} characters.',
+      splitByLimit_other:
+        'Publishes as {{count}} posts, cut to fit {{limit}} characters.',
+      /**
+       * One post, and therefore no rule to name: the body has no divider and
+       * no blank line, or it has one and still fits. How to make a second post
+       * is the Explainer's job, above — this line is a verdict.
+       */
+      splitSingle: 'Publishes as a single post.',
+      splitPending: 'Working out how this breaks into posts…',
+      splitOverflow:
+        'This is more than {{max}} posts. Shorten it, or publish it as more than one thread.',
+
+      /**
+       * The media card, when the post is a thread. The card's other copy is
+       * still legacy English (CON-174) — these are new, so they are here.
+       */
+      mediaPerPost: 'Every limit here is per post of the thread.',
+      mediaOn: 'Post {{position}}',
+      mediaOnLabel: 'This file rides post {{position}} — pick another',
+
+      saveFailed: 'Could not save which post carries which file.',
+
       postCount_one: '{{count}} post',
       postCount_other: '{{count}} posts',
 
       /**
-       * What is wrong with one post of the thread, said on that post. Each one
-       * names the platform, because the rule is the platform's rather than
-       * ours and the same thread is legal on the other network.
+       * The row this adds to the pre-publish bar. Length is not among the
+       * things it can fail on: copy past the ceiling is cut to fit as the
+       * chain is built, so what is left is the media, which only the author
+       * can move.
        */
-      issue: {
-        empty: 'This post is empty, so the thread would break here.',
-        overLimit: 'Past {{limit}} characters — {{platform}} will reject this post.',
-        tooManyImages: '{{platform}} takes at most {{cap}} images on one post.',
-        tooManyVideos: 'A post can carry one video.',
-      },
-
-      /** The row this adds to the pre-publish bar. */
       check: {
         label: 'Thread',
-        issues_one: 'Post {{positions}} needs fixing',
-        issues_other: 'Posts {{positions}} need fixing',
+        pending: 'Checking…',
+        overflow: 'More than {{max}} posts',
+        issues_one: 'Post {{positions}} carries more media than one post takes',
+        issues_other: 'Posts {{positions}} carry more media than one post takes',
       },
 
       /**

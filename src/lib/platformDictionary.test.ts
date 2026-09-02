@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { Platform, PublisherAccount } from "@/types/campaigns";
+import { clearFlagOverrides, setFlagOverride } from "@/config/flagOverrides.ts";
 import { makePlatform } from "./platformFixtures.ts";
 import {
   PLATFORMS,
@@ -8,6 +9,7 @@ import {
   connectedAccounts,
   getPlatformInfo,
   getPostTypeLabel,
+  releasedPostTypes,
 } from "./platformDictionary.ts";
 
 // Sqids from the dictionary itself.
@@ -136,5 +138,83 @@ describe("flagged post types", () => {
       apiPlatform(TWITTER, ["text-post", "thread"]),
     ]);
     expect(view.allowed.map((pt) => pt.slug)).toEqual(["text-post", "thread"]);
+  });
+
+  // The editor's picker does not go through `buildPlatformView` — it asks the
+  // campaign which types it offers, and shows the unconnected ones rather than
+  // hiding them. So the release gate has to exist on its own, or the flag
+  // leaks through the one menu that can actually set the post type.
+  it("withholds a flagged type from the editor's picker too", () => {
+    expect(releasedPostTypes(THREADS).map((pt) => pt.slug)).not.toContain(
+      "thread",
+    );
+    expect(releasedPostTypes(TWITTER).map((pt) => pt.slug)).toContain("thread");
+  });
+
+  it("has no types for a platform it does not know", () => {
+    expect(releasedPostTypes("not-a-platform")).toEqual([]);
+  });
+
+  // The other half of the same gate, and the point of the feature: with the
+  // flag on, Threads has to offer the type its publisher has never heard of.
+  // `supportedPlatforms` in the Go repo lists `thread` for `twitter` only, so
+  // intersecting with the publisher would hide CON-196 from the network it is
+  // named after — for exactly as long as the server takes to learn the slug,
+  // which is what running ahead behind a flag exists to avoid.
+  describe("with the flag on", () => {
+    afterEach(() => clearFlagOverrides());
+
+    function threadsView(supported: string[], connected = true) {
+      setFlagOverride("thread-sequence", true);
+      const platform = makePlatform({
+        id: THREADS,
+        publishers: [
+          {
+            id: "pub1",
+            name: "Zernio",
+            state: "ok",
+            connected,
+            supported_post_types: supported,
+            accounts: [],
+          },
+        ],
+      });
+      const info = getPlatformInfo(THREADS);
+      if (!info) throw new Error("Threads missing from the dictionary");
+      return buildPlatformView(platform, info);
+    }
+
+    it("stands in for the slug the publisher has not learned yet", () => {
+      const view = threadsView(["text-post", "image-post"]);
+      expect(view.allowed.map((pt) => pt.slug)).toContain("thread");
+      // Available, not dormant: the publisher is connected, and the only
+      // thing it is missing is a word for what we are asking it to send.
+      expect(view.available.map((pt) => pt.slug)).toContain("thread");
+      expect(view.unavailable.map((pt) => pt.slug)).not.toContain("thread");
+    });
+
+    it("still waits on the connection, like every other type", () => {
+      const view = threadsView(["text-post"], false);
+      expect(view.allowed.map((pt) => pt.slug)).toContain("thread");
+      expect(view.available).toEqual([]);
+      expect(view.unavailable.map((pt) => pt.slug)).toContain("thread");
+    });
+
+    it("invents nothing for a platform with no publisher at all", () => {
+      setFlagOverride("thread-sequence", true);
+      const info = getPlatformInfo(THREADS);
+      if (!info) throw new Error("Threads missing from the dictionary");
+      const view = buildPlatformView(makePlatform({ id: THREADS }), info);
+      expect(view.allowed).toEqual([]);
+    });
+
+    it("does not stand in for an unflagged type", () => {
+      setFlagOverride("thread-sequence", true);
+      // X's `thread` carries no flag, so the publisher is still the whole
+      // answer for it: a server that stopped reporting the slug really has
+      // withdrawn it, and the app has to follow.
+      const [view] = buildPlatformViews([apiPlatform(TWITTER, ["text-post"])]);
+      expect(view.allowed.map((pt) => pt.slug)).toEqual(["text-post"]);
+    });
   });
 });

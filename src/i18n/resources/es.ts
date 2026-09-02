@@ -689,41 +689,46 @@ export const es: Translation = {
 
     sequence: {
       explainer:
-        'Cada publicación de abajo se publica por su cuenta, respondiendo a la anterior. El límite de caracteres se aplica a cada una por separado, y los archivos acompañan a la publicación en la que están.',
+        'Esto se publica como una cadena de publicaciones, cada una respondiendo a la anterior. Escribe --- en una línea aparte donde quieras un corte; si no hay ningún divisor, los cortes son las líneas en blanco. Lo que siga pasándose del límite de caracteres se recorta para que quepa.',
 
-      postLabel: 'Publicación {{position}} de {{total}}',
-      placeholderFirst: 'Escribe la primera publicación…',
-      placeholderNext: 'Continúa el hilo…',
+      splitByDivider_one:
+        'Se publica como {{count}} publicación, cortada donde pusiste un divisor.',
+      splitByDivider_other:
+        'Se publica como {{count}} publicaciones, cortadas donde pusiste un divisor.',
+      splitByBlankLine_one:
+        'Se publica como {{count}} publicación, cortada en las líneas en blanco.',
+      splitByBlankLine_other:
+        'Se publica como {{count}} publicaciones, cortadas en las líneas en blanco.',
+      splitAutoCut_one:
+        '{{count}} de ellas salieron de texto cortado en {{limit}} caracteres.',
+      splitAutoCut_other:
+        '{{count}} de ellas salieron de texto cortado en {{limit}} caracteres.',
+      splitByLimit_one:
+        'Se publica como {{count}} publicación, recortada para caber en {{limit}} caracteres.',
+      splitByLimit_other:
+        'Se publica como {{count}} publicaciones, recortadas para caber en {{limit}} caracteres.',
+      splitSingle: 'Se publica como una sola publicación.',
+      splitPending: 'Calculando en cuántas publicaciones se divide esto…',
+      splitOverflow:
+        'Esto son más de {{max}} publicaciones. Acórtalo o publícalo como más de un hilo.',
 
-      addPost: 'Añadir publicación',
-      addPostAfter: 'Añadir una publicación después de la {{position}}',
-      removePost: 'Eliminar la publicación {{position}}',
-      moveUp: 'Mover la publicación {{position}} antes',
-      moveDown: 'Mover la publicación {{position}} después',
-      capReached: 'Un hilo admite aquí hasta {{max}} publicaciones.',
+      mediaPerPost: 'Todos los límites de aquí son por publicación del hilo.',
+      mediaOn: 'Publicación {{position}}',
+      mediaOnLabel: 'Este archivo va en la publicación {{position}}: elige otra',
 
-      addMedia: 'Añadir archivos a la publicación {{position}}',
-      mediaOn: 'En la publicación {{position}}',
-      moveMediaTo: 'Mover a la publicación {{position}}',
-      uploadFailed: 'Algunos archivos no se subieron.',
-      saveFailed: 'No se pudo guardar el hilo.',
+      saveFailed: 'No se pudo guardar qué publicación lleva cada archivo.',
 
-      counter: '{{chars}}/{{limit}}',
       postCount_one: '{{count}} publicación',
       postCount_other: '{{count}} publicaciones',
 
-      issue: {
-        empty: 'Esta publicación está vacía, así que el hilo se rompería aquí.',
-        overLimit:
-          'Supera los {{limit}} caracteres: {{platform}} rechazará esta publicación.',
-        tooManyImages: '{{platform}} admite como máximo {{cap}} imágenes por publicación.',
-        tooManyVideos: 'Una publicación puede llevar un vídeo.',
-      },
-
       check: {
         label: 'Hilo',
-        issues_one: 'La publicación {{positions}} necesita atención',
-        issues_other: 'Las publicaciones {{positions}} necesitan atención',
+        pending: 'Comprobando…',
+        overflow: 'Más de {{max}} publicaciones',
+        issues_one:
+          'La publicación {{positions}} lleva más archivos de los que admite una publicación',
+        issues_other:
+          'Las publicaciones {{positions}} llevan más archivos de los que admite una publicación',
       },
 
       previewNote:

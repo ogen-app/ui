@@ -7,9 +7,10 @@ import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBa
 import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
+import { Explainer } from '@/components/page-primitives/Explainer'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
-import { PostSequenceEditor } from '@/components/posts/sequence/PostSequenceEditor'
+import { ThreadSplitNote } from '@/components/posts/sequence/ThreadSplitNote'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
@@ -35,7 +36,11 @@ import { usePanelScope } from '@/hooks/usePanelScope'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { charCount } from '@/lib/socialText'
 import { getPlatformInfo } from '@/lib/platformDictionary'
-import { evaluateSequence, isSequencePost } from '@/lib/threadSequence'
+import {
+  MAX_THREAD_POSTS,
+  isSequencePost,
+  planThread,
+} from '@/lib/threadSequence'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { useThreadSequence } from '@/hooks/useThreadSequence'
 import type { PostCheck } from '@/lib/postValidation'
@@ -126,6 +131,15 @@ function PostPage() {
       campaignId={campaignId}
     />
   )
+}
+
+/**
+ * The first few words of a post, for the media picker's menu. Long enough to
+ * recognise the post by, short enough not to reflow the menu.
+ */
+function excerpt(text: string): string {
+  const flat = text.replace(/\s+/g, ' ').trim()
+  return flat.length > 48 ? `${flat.slice(0, 47)}…` : flat
 }
 
 type PostEditorSurfaceProps = {
@@ -356,62 +370,94 @@ function PostEditorSurface({
     [changeDoc],
   )
 
-  // The posts of the thread, and the only place they are edited. The body is
-  // written back from them on every flush, so everything that reads
-  // `doc.content` — the calendar, the table, search, the assistant — keeps
-  // seeing the post's words rather than an empty post.
+  // The one thing a thread stores: which post of the chain carries which file.
+  // The words are not here — they are `doc.content`, and the chain is derived
+  // from it below, so there is no second copy to keep in step.
   const sequence = useThreadSequence(doc.id, {
     enabled: isSequence,
-    content: doc.content,
     attachments: media.attachments,
-    onCommitContent: handleContentChange,
   })
 
-  // Every ceiling here is per post of the chain, because each post of a chain
-  // *is* a post on the platform: the character limit the server resolved, and
-  // the platform's own per-post media caps.
-  const sequenceReports = useMemo(
+  // The chain itself, worked out from the body on every keystroke. Every
+  // ceiling here is per post, because each post of a chain *is* a post on the
+  // platform: the character limit the server resolved, and the platform's own
+  // per-post media caps.
+  const plan = useMemo(
     () =>
-      isSequence
-        ? evaluateSequence({
-            items: sequence.items,
-            attachments: media.attachments,
-            charLimit: media.maxContentChars,
-            imageCap: media.policy.image?.maxPerPost,
-            videoCap: media.policy.video?.maxPerPost,
-          })
-        : [],
+      planThread({
+        content: isSequence ? doc.content : '',
+        attachments: media.attachments,
+        assignment: sequence.assignment,
+        charLimit: media.maxContentChars,
+        imageCap: media.policy.image?.maxPerPost,
+        videoCap: media.policy.video?.maxPerPost,
+      }),
     [
       isSequence,
-      sequence.items,
+      doc.content,
       media.attachments,
+      sequence.assignment,
       media.maxContentChars,
       media.policy,
     ],
   )
 
+  // What the media card's per-thumbnail picker offers. Excerpts rather than
+  // numbers alone: telling post 4 from post 5 by counting paragraphs back in
+  // the editor is not something to ask of anyone.
+  const threadTargets = useMemo(
+    () =>
+      isSequence
+        ? {
+            excerpts: plan.posts.map((p) => excerpt(p.text)),
+            indexFor: (id: string) =>
+              // Never -1: `planThread` puts every live attachment on a post,
+              // and an unassigned one on the first.
+              Math.max(
+                0,
+                plan.posts.findIndex((p) =>
+                  p.attachments.some((a) => a.id === id),
+                ),
+              ),
+            assign: sequence.assign,
+          }
+        : undefined,
+    [isSequence, plan, sequence.assign],
+  )
+
   // Appended here rather than inside `evaluatePost`, which is a pure module
   // with no `t` — and this row is new copy, so it belongs in the catalogue
   // (CLAUDE.md) rather than beside that file's legacy English.
+  //
+  // Length is deliberately not among the things it can fail on: a part of the
+  // body past the ceiling is cut to fit rather than reported, so what is left
+  // is the media the author has to move themselves.
   const checks = useMemo<PostCheck[]>(() => {
     if (!isSequence) return media.checks
-    const failing = sequenceReports.filter((r) => r.issues.length > 0)
+    const failing = plan.posts.filter((p) => p.issues.length > 0)
     return [
       ...media.checks,
       {
         id: 'thread-sequence',
         label: t('posts.sequence.check.label'),
-        status: failing.length > 0 ? 'fail' : 'pass',
-        detail:
-          failing.length > 0
-            ? t('posts.sequence.check.issues', {
-                count: failing.length,
-                positions: failing.map((r) => r.position).join(', '),
-              })
-            : t('posts.sequence.postCount', { count: sequenceReports.length }),
+        status: plan.pending
+          ? 'pending'
+          : plan.overflowed || failing.length > 0
+            ? 'fail'
+            : 'pass',
+        detail: plan.pending
+          ? t('posts.sequence.check.pending')
+          : plan.overflowed
+            ? t('posts.sequence.check.overflow', { max: MAX_THREAD_POSTS })
+            : failing.length > 0
+              ? t('posts.sequence.check.issues', {
+                  count: failing.length,
+                  positions: failing.map((p) => p.position).join(', '),
+                })
+              : t('posts.sequence.postCount', { count: plan.posts.length }),
       },
     ]
-  }, [isSequence, media.checks, sequenceReports, t])
+  }, [isSequence, media.checks, plan, t])
 
   const handleDownloadMarkdown = useCallback(
     () => downloadMarkdown(doc.title, doc.content, 'post'),
@@ -499,24 +545,22 @@ function PostEditorSurface({
                       worse than showing how far over the title is. */}
                   <TitleCounter title={titleDraft} limit={media.maxTitleChars} />
                 </div>
-                {isSequence ? (
-                  <PostSequenceEditor
-                    items={sequence.items}
-                    reports={sequenceReports}
-                    attachments={media.attachments}
-                    charLimit={media.maxContentChars}
-                    imageCap={media.policy.image?.maxPerPost}
-                    platformName={platformInfo?.name ?? ''}
-                    readOnly={assistantRunning}
-                    update={sequence.update}
-                    upload={media.upload}
-                  />
-                ) : (
-                  <PostContentEditor
-                    content={doc.content}
-                    onContentChange={handleContentChange}
-                    readOnly={assistantRunning}
-                  />
+                {/* One editor for every post type, threads included: a thread
+                    is the same Markdown body, and the chain is derived from
+                    it. The Explainer teaches the divider; the note below
+                    reports what the body actually became. */}
+                {isSequence && (
+                  <Explainer id="post-thread-sequence" className="mb-6">
+                    {t('posts.sequence.explainer')}
+                  </Explainer>
+                )}
+                <PostContentEditor
+                  content={doc.content}
+                  onContentChange={handleContentChange}
+                  readOnly={assistantRunning}
+                />
+                {isSequence && (
+                  <ThreadSplitNote plan={plan} charLimit={media.maxContentChars} />
                 )}
               </div>
             </div>
@@ -532,6 +576,7 @@ function PostEditorSurface({
                 upload={media.upload}
                 remove={media.remove}
                 reorder={media.reorder}
+                thread={threadTargets}
               />
             </div>
             <div className="w-content">
@@ -596,7 +641,7 @@ function PostEditorSurface({
             <PostPreviewPanel
               doc={doc}
               attachments={media.attachments}
-              sequence={isSequence ? sequence.items : undefined}
+              sequence={isSequence ? plan : undefined}
               onClose={closeRightPanel}
             />,
             previewHost,

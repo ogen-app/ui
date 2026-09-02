@@ -5,26 +5,30 @@
  * X and Threads both take one: Zernio calls it `platformSpecificData.
  * threadItems`, "the first item is the root post and subsequent items become
  * replies in order" (docs.zernio.com/platforms/threads, /platforms/twitter).
- * Its two consequences are what this module exists to encode:
  *
- * 1. **Each item is a post on the platform**, so every per-post rule applies
- *    per *item* — the character ceiling, the image cap, the one-video cap.
- *    Measuring the whole body against a single limit, which is what the editor
- *    did before this, is wrong in both directions: it fails a sequence that is
- *    fine and stays silent about the one item that isn't.
- * 2. **The post's `content` stops being what publishes.** Zernio: "When
- *    `threadItems` is provided, the top-level `content` field is used only for
- *    display and search purposes, it is NOT published." So the body becomes a
- *    derived summary of the items (`contentFromItems`) — it is what the
- *    calendar card, the list and search keep reading, and it must never be the
- *    place the words are edited.
+ * **The thread is the body, and nothing else.** The post is written in the one
+ * Markdown editor every other post type uses, and the chain is *derived* from
+ * it on every keystroke — there is no second copy of the words, no per-post
+ * input, and nothing to keep in step. Two rules produce it:
  *
- * Attachments stay **post-level rows**, exactly as they are. An item names the
- * ones it carries by id, which is why adding sequences needs no change to
- * `post_attachments` at all — see `attachmentsByItem` for the one rule that
- * makes that safe.
+ * 1. **A divider is a break.** A `---` line is a real block in the editor, so
+ *    the author sees the seam they typed. Where the body has dividers, they
+ *    are the only breaks and blank lines stay inside a post.
+ * 2. **With no divider, blank lines are the breaks** — the convention the
+ *    preview card has drawn since it learned about threads, and how people
+ *    write threads in practice.
+ *
+ * Then whatever is still past the platform's per-post ceiling is cut to fit,
+ * on a sentence boundary where there is one. That last step is why a thread
+ * has no "too long" state to report: the length problem is solved rather than
+ * flagged, and what the author sees in the preview is what publishes.
+ *
+ * The one thing a body cannot express is **which post carries which file**, so
+ * that — and only that — is stored: `ThreadAssignment`, a map from attachment
+ * id to the post it rides. Attachments stay post-level rows, and a file nobody
+ * assigned rides the first post, which is what the X card always drew.
  */
-import { charCount, splitThread } from '@/lib/socialText'
+import { charCount, markdownToSocialText, splitThread } from '@/lib/socialText'
 import { attachmentKind, type PostAttachment } from '@/types/attachments'
 
 /**
@@ -43,31 +47,41 @@ const SEQUENCE_NETWORKS: ReadonlySet<string> = new Set(['twitter', 'threads'])
 
 /**
  * A ceiling of ours, not the platforms'. Zernio documents no maximum item
- * count for either network, and neither does Meta — but an unbounded list in a
- * key/value row is a way to lose a whole post to one bad paste, and nobody
- * writes a 26-post chain on purpose.
+ * count for either network, and neither does Meta — but a body that splits
+ * into fifty posts is a mistake rather than a thread, and it is better to say
+ * so than to publish it.
  */
-export const MAX_SEQUENCE_ITEMS = 25
+export const MAX_THREAD_POSTS = 25
 
 /**
- * One post of the chain.
- *
- * `id` is the **editor's** identity and not Zernio's: the wire shape is
- * `{content, mediaItems}` and carries no ids at all. It exists so a row keeps
- * its React identity — and therefore its cursor and its scroll — across an
- * insert or a drag, which index keys cannot do. Whatever endpoint eventually
- * stores these may keep it or drop it; nothing outside this module reads it.
+ * A divider line, matching `markdownToSocialText`'s own test for one so the
+ * two can never disagree about what is a break and what is copy. BlockNote
+ * parses `---` into a `divider` block and writes it back as `***`, so both
+ * forms arrive here.
  */
-export type ThreadItem = {
-  id: string
-  content: string
-  /**
-   * The post's attachments this item carries, in the order it carries them.
-   * Ids only — the rows live under the post, and an id here that no longer
-   * exists is dropped by `reconcileItems` rather than trusted.
-   */
-  attachment_ids: string[]
-}
+const DIVIDER = /^\s*([-*_])(\s*\1){2,}\s*$/
+
+/** A fence opening or closing, so a `---` inside a code block is not a break. */
+const FENCE = /^\s*(```|~~~)/
+
+/**
+ * How full a post has to be before a nicer break is worth taking. Ending on a
+ * sentence is better than ending mid-word, but not at the price of publishing
+ * a post half the length it could have been.
+ */
+const MIN_FILL = 0.6
+
+/** Which rule produced the breaks — what the note under the editor reports. */
+export type SplitRule = 'divider' | 'blank-line'
+
+/**
+ * Which post of the thread carries an attachment, by attachment id. 0-based,
+ * and absent means the first post.
+ *
+ * The only part of a thread that is stored, because it is the only part the
+ * body cannot say. Everything else is derived from `content`.
+ */
+export type ThreadAssignment = Record<string, number>
 
 export function supportsSequence(zernioId: string | undefined): boolean {
   return !!zernioId && SEQUENCE_NETWORKS.has(zernioId)
@@ -81,248 +95,175 @@ export function isSequencePost(
   return postType === SEQUENCE_SLUG && supportsSequence(zernioId)
 }
 
-export function newThreadItem(
-  content = '',
-  attachmentIds: string[] = [],
-): ThreadItem {
-  return { id: crypto.randomUUID(), content, attachment_ids: attachmentIds }
-}
-
 /**
- * Seeds a sequence from a post that was written as one body — what happens the
- * first time a post's type is switched to a sequence.
+ * The body cut at its dividers, or `null` when it has none.
  *
- * Splits at blank lines, which is the convention the preview card has drawn
- * since it learned about threads, so a post that already reads as a chain
- * arrives as one. A body with nothing in it seeds a single empty item: a
- * sequence always has at least one post, or there is nothing to publish.
+ * Returns the Markdown of each part rather than its text: flattening happens
+ * once, per part, in `splitBody` — running it first would erase the very lines
+ * this is looking for, since a thematic break has no plain-text equivalent.
  */
-export function itemsFromContent(content: string): ThreadItem[] {
-  const parts = splitThread(content ?? '').filter((p) => p.trim().length > 0)
-  if (parts.length === 0) return [newThreadItem()]
-  return parts.slice(0, MAX_SEQUENCE_ITEMS).map((part) => newThreadItem(part))
-}
+function splitAtDividers(markdown: string): string[] | null {
+  const lines = markdown.replace(/\r\n/g, '\n').split('\n')
+  const parts: string[][] = [[]]
+  let inFence = false
+  let found = false
 
-/**
- * The display copy for the post's `content` field — a rejoin of the items,
- * blank-line separated, which is the form `itemsFromContent` reads back.
- *
- * Not what publishes (see the module note). It is written back on every change
- * so the calendar, the posts table, search and the assistant keep seeing the
- * post's words in the field they already read, instead of an empty post beside
- * a sequence they know nothing about.
- */
-export function contentFromItems(items: ThreadItem[]): string {
-  return items
-    .map((i) => i.content.trim())
-    .filter((c) => c.length > 0)
-    .join('\n\n')
-}
-
-/**
- * Parses the stored value, or `null` when there is nothing usable there.
- *
- * `null` means "seed from the body" rather than "empty sequence", so a
- * malformed row reads as never-written instead of wiping the post — the value
- * comes out of a workspace-wide key/value store that anything can write.
- */
-export function parseThreadItems(raw: string | null): ThreadItem[] | null {
-  if (!raw) return null
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (!Array.isArray(parsed) || parsed.length === 0) return null
-    const items = parsed.flatMap((entry): ThreadItem[] => {
-      if (typeof entry !== 'object' || entry === null) return []
-      const { id, content, attachment_ids: ids } = entry as Record<
-        string,
-        unknown
-      >
-      return [
-        {
-          id: typeof id === 'string' && id ? id : crypto.randomUUID(),
-          content: typeof content === 'string' ? content : '',
-          attachment_ids: Array.isArray(ids)
-            ? ids.filter((v): v is string => typeof v === 'string')
-            : [],
-        },
-      ]
-    })
-    return items.length > 0 ? items.slice(0, MAX_SEQUENCE_ITEMS) : null
-  } catch {
-    return null
-  }
-}
-
-/**
- * Drops references to attachments that are no longer on the post, and any
- * duplicate that would put one file on two items.
- *
- * Runs on every read of the pair, because the two are stored apart: deleting a
- * file from the media card is an attachment mutation that knows nothing about
- * the sequence, so a stale id is the normal state rather than a corruption.
- */
-export function reconcileItems(
-  items: ThreadItem[],
-  attachments: Pick<PostAttachment, 'id'>[],
-): ThreadItem[] {
-  const live = new Set(attachments.map((a) => a.id))
-  const claimed = new Set<string>()
-  let changed = false
-  const next = items.map((item) => {
-    const ids = item.attachment_ids.filter((id) => {
-      if (!live.has(id) || claimed.has(id)) return false
-      claimed.add(id)
-      return true
-    })
-    if (ids.length === item.attachment_ids.length) return item
-    changed = true
-    return { ...item, attachment_ids: ids }
-  })
-  // The same array back when there was nothing to fix, which is the common
-  // case: this runs on every render, and a fresh array would re-run every memo
-  // downstream of it — including the one that evaluates the whole chain.
-  return changed ? next : items
-}
-
-/**
- * The post's attachments bucketed by the item that carries them.
- *
- * **An attachment no item names rides the root.** That single rule is what
- * lets attachments stay post-level rows: uploading from the media card, from
- * the assistant, or from an API that predates this feature needs to know
- * nothing about sequences, and the file still publishes. It also matches what
- * the X preview card has always drawn — the lead post carries the media.
- *
- * Named ids keep the item's own order; the implicit ones keep the post's
- * (`position`, as the list endpoint sorts them).
- */
-export function attachmentsByItem<T extends Pick<PostAttachment, 'id'>>(
-  items: ThreadItem[],
-  attachments: T[],
-): T[][] {
-  const byId = new Map(attachments.map((a) => [a.id, a]))
-  const named = new Set<string>()
-  const buckets = items.map((item) =>
-    item.attachment_ids.flatMap((id) => {
-      const found = byId.get(id)
-      if (!found) return []
-      named.add(id)
-      return [found]
-    }),
-  )
-  if (buckets.length === 0) return buckets
-  buckets[0] = [
-    ...attachments.filter((a) => !named.has(a.id)),
-    ...buckets[0],
-  ]
-  return buckets
-}
-
-/** The index of the item carrying this attachment — the root when unnamed. */
-export function ownerIndex(items: ThreadItem[], attachmentId: string): number {
-  const found = items.findIndex((i) => i.attachment_ids.includes(attachmentId))
-  return found === -1 ? 0 : found
-}
-
-/**
- * Moves one attachment onto an item, taking it off whichever item had it.
- *
- * Moving a file back onto the root *names* it there rather than unnaming it:
- * an explicit choice should survive a later upload, and an unnamed file is
- * only unnamed because nobody has had the conversation about it yet.
- */
-export function assignAttachment(
-  items: ThreadItem[],
-  attachmentId: string,
-  toIndex: number,
-): ThreadItem[] {
-  if (toIndex < 0 || toIndex >= items.length) return items
-  return items.map((item, i) => {
-    const has = item.attachment_ids.includes(attachmentId)
-    if (i === toIndex) {
-      return has
-        ? item
-        : { ...item, attachment_ids: [...item.attachment_ids, attachmentId] }
+  for (const line of lines) {
+    if (FENCE.test(line)) inFence = !inFence
+    if (!inFence && DIVIDER.test(line)) {
+      found = true
+      parts.push([])
+      continue
     }
-    return has
-      ? {
-          ...item,
-          attachment_ids: item.attachment_ids.filter(
-            (id) => id !== attachmentId,
-          ),
-        }
-      : item
-  })
-}
+    parts[parts.length - 1].push(line)
+  }
 
-export function moveItem(
-  items: ThreadItem[],
-  from: number,
-  to: number,
-): ThreadItem[] {
-  if (from === to || from < 0 || to < 0) return items
-  if (from >= items.length || to >= items.length) return items
-  const next = items.slice()
-  const [moved] = next.splice(from, 1)
-  next.splice(to, 0, moved)
-  return next
-}
-
-/** Adds an empty post after `index`. At the cap, nothing happens. */
-export function insertItemAfter(
-  items: ThreadItem[],
-  index: number,
-): ThreadItem[] {
-  if (items.length >= MAX_SEQUENCE_ITEMS) return items
-  const next = items.slice()
-  next.splice(Math.min(index + 1, items.length), 0, newThreadItem())
-  return next
+  return found ? parts.map((part) => part.join('\n')) : null
 }
 
 /**
- * Removes a post from the chain, handing its attachments to the item that
- * takes its place — deleting a paragraph must not silently delete the user's
- * uploads with it. Removing the last remaining item empties it instead: a
- * sequence with no posts is not a state the editor can render.
+ * The body, broken into the posts the author asked for — before any ceiling is
+ * applied. Empty parts are dropped: a divider typed against another one, or a
+ * trailing one left while writing, is a seam rather than a post.
  */
-export function removeItem(items: ThreadItem[], index: number): ThreadItem[] {
-  if (index < 0 || index >= items.length) return items
-  if (items.length === 1) return [{ ...items[0], content: '' }]
-  const orphaned = items[index].attachment_ids
-  const rest = items.filter((_, i) => i !== index)
-  if (orphaned.length === 0) return rest
-  const heir = Math.min(index, rest.length - 1)
-  return rest.map((item, i) =>
-    i === heir
-      ? { ...item, attachment_ids: [...item.attachment_ids, ...orphaned] }
-      : item,
-  )
+export function splitBody(markdown: string): {
+  parts: string[]
+  rule: SplitRule
+} {
+  const dividers = splitAtDividers(markdown ?? '')
+  if (dividers) {
+    const parts = dividers
+      .map((part) => markdownToSocialText(part))
+      .filter((part) => part.length > 0)
+    return { parts: parts.length > 0 ? parts : [''], rule: 'divider' }
+  }
+  const flat = markdownToSocialText(markdown ?? '')
+  return { parts: splitThread(flat), rule: 'blank-line' }
 }
 
-/** Why one post of the chain would not publish as written. */
-export type SequenceIssue =
-  | 'empty'
-  | 'over-limit'
-  | 'too-many-images'
-  | 'too-many-videos'
+/** The UTF-16 offset `codePoints` code points into `text`. */
+function utf16IndexAt(text: string, codePoints: number): number {
+  let i = 0
+  for (let n = 0; n < codePoints && i < text.length; n++) {
+    i += (text.codePointAt(i) as number) > 0xffff ? 2 : 1
+  }
+  return i
+}
 
-export type SequenceItemReport = {
-  item: ThreadItem
+/** The end of the last sentence in `window`, or -1. */
+function lastSentenceEnd(window: string): number {
+  const pattern = /[.!?…]["'”’)\]]*(?=\s)/g
+  let at = -1
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(window)) !== null) {
+    at = match.index + match[0].length
+  }
+  return at
+}
+
+/**
+ * Where to cut a post that is past the ceiling: the last sentence end that
+ * leaves the post reasonably full, else a line break, else a space. A single
+ * unbroken token longer than the limit — a URL, a pasted key — is cut where
+ * the limit falls, because there is nowhere better and dropping it silently
+ * would be worse.
+ */
+function cutPoint(text: string, limit: number): number {
+  const hard = utf16IndexAt(text, limit)
+  if (hard >= text.length) return text.length
+  const window = text.slice(0, hard)
+  const floor = hard * MIN_FILL
+
+  const sentence = lastSentenceEnd(window)
+  if (sentence > floor) return sentence
+
+  const newline = window.lastIndexOf('\n')
+  if (newline > floor) return newline
+
+  const space = window.lastIndexOf(' ')
+  if (space > 0) return space
+
+  return hard
+}
+
+/**
+ * One part of the body, cut into posts that fit. Returns the part unchanged
+ * when it already does, or when there is no ceiling to fit it to — a limit
+ * still loading (`undefined`) must never produce a split that then moves.
+ */
+export function splitToLimit(
+  text: string,
+  limit: number | null | undefined,
+): string[] {
+  if (limit == null || limit <= 0 || charCount(text) <= limit) return [text]
+
+  const out: string[] = []
+  let rest = text
+  while (charCount(rest) > limit && out.length < MAX_THREAD_POSTS) {
+    const cut = cutPoint(rest, limit)
+    const head = rest.slice(0, cut).trimEnd()
+    // A cut that consumed nothing would spin forever; it can only happen on
+    // leading whitespace, which the trim below eats anyway.
+    if (head.length === 0 && cut === 0) break
+    out.push(head)
+    rest = rest.slice(cut).trimStart()
+  }
+  if (rest.length > 0) out.push(rest)
+  return out
+}
+
+/** One post of the chain, with its verdict and the files it carries. */
+export type ThreadPost<T> = {
   /** 1-based, because the chain is counted the way the reader will read it. */
   position: number
+  /** The plain text this post publishes. */
+  text: string
   /** Code points, via `charCount` — the platforms' own unit. */
   count: number
+  /** True when the ceiling cut this post out of a longer part of the body. */
+  autoSplit: boolean
+  attachments: T[]
   images: number
   videos: number
-  issues: SequenceIssue[]
+  issues: ThreadIssue[]
 }
 
-export type EvaluateSequenceInput = {
-  items: ThreadItem[]
-  attachments: Pick<PostAttachment, 'id' | 'mime_type'>[]
+/**
+ * Why one post of the chain would not publish as written.
+ *
+ * Length is not among them, and that is the point of deriving the chain: a
+ * part past the ceiling is cut to fit rather than reported. What is left are
+ * the two things the author has to decide, because moving a file is a choice
+ * only they can make.
+ */
+export type ThreadIssue = 'too-many-images' | 'too-many-videos'
+
+export type ThreadPlan<T> = {
+  posts: ThreadPost<T>[]
+  /** Which rule produced the breaks. */
+  rule: SplitRule
   /**
-   * The platform's per-post character ceiling, which is per *item* here.
-   * `null` or `undefined` while it loads — no verdict rather than a wrong one.
+   * How many parts the *author* made, before the ceiling cut any of them. One
+   * means they made none — the whole chain is the limit's doing, and saying it
+   * was "broken at blank lines" would be a sentence about nothing.
+   */
+  parts: number
+  /** True while the platform's ceiling is still loading — no verdict yet. */
+  pending: boolean
+  /** The body needs more posts than a thread holds; the tail is not shown. */
+  overflowed: boolean
+}
+
+export type PlanThreadInput<T> = {
+  /** The post's body, exactly as the editor stores it. */
+  content: string
+  /** The post's attachments, in the order they publish (`position`). */
+  attachments: T[]
+  /** Which post carries which file. `{}` puts everything on the first. */
+  assignment: ThreadAssignment
+  /**
+   * The platform's character ceiling, which is per *post* here. `null` is a
+   * platform with no limit; `undefined` is one still loading.
    */
   charLimit: number | null | undefined
   /** Images one post may carry: 4 on X, 10 on Threads. */
@@ -332,19 +273,43 @@ export type EvaluateSequenceInput = {
 }
 
 /**
- * Every item's verdict, in one pass.
+ * The whole chain, derived from the body in one pass.
  *
- * The editor's per-row marks and the preview's notes both read this, so "which
- * post is the problem" has exactly one answer — the same arrangement
- * `threadSegments` already gives the X card.
+ * The editor's note, the preview's cards and the pre-publish row all read this
+ * one result, so "how many posts is this, and which one is the problem" has
+ * exactly one answer on the screen.
  */
-export function evaluateSequence(
-  input: EvaluateSequenceInput,
-): SequenceItemReport[] {
-  const { items, attachments, charLimit, imageCap, videoCap } = input
-  const buckets = attachmentsByItem(items, attachments)
+export function planThread<
+  T extends Pick<PostAttachment, 'id' | 'mime_type'>,
+>(input: PlanThreadInput<T>): ThreadPlan<T> {
+  const { content, attachments, assignment, charLimit, imageCap, videoCap } =
+    input
 
-  return items.map((item, i) => {
+  const { parts, rule } = splitBody(content)
+
+  const texts: { text: string; autoSplit: boolean }[] = []
+  for (const part of parts) {
+    const pieces = splitToLimit(part, charLimit)
+    for (const piece of pieces) {
+      texts.push({ text: piece, autoSplit: pieces.length > 1 })
+    }
+  }
+
+  const overflowed = texts.length > MAX_THREAD_POSTS
+  const kept = overflowed ? texts.slice(0, MAX_THREAD_POSTS) : texts
+
+  // Every file lands on a post that exists: an assignment outliving the post
+  // it named (the author deleted a paragraph) rides the last one rather than
+  // jumping back to the top, which is where the reader last saw it.
+  const last = kept.length - 1
+  const buckets: T[][] = kept.map(() => [])
+  for (const attachment of attachments) {
+    const wanted = assignment[attachment.id] ?? 0
+    const index = Math.min(Math.max(wanted, 0), Math.max(last, 0))
+    buckets[index]?.push(attachment)
+  }
+
+  const posts = kept.map((entry, i) => {
     const carried = buckets[i] ?? []
     const images = carried.filter(
       (a) => attachmentKind(a.mime_type) === 'image',
@@ -352,23 +317,102 @@ export function evaluateSequence(
     const videos = carried.filter(
       (a) => attachmentKind(a.mime_type) === 'video',
     ).length
-    const count = charCount(item.content)
 
-    const issues: SequenceIssue[] = []
-    // An item with no words is only a problem when it carries nothing either:
-    // a post that is one image and no caption is legal on both networks.
-    if (item.content.trim().length === 0 && carried.length === 0) {
-      issues.push('empty')
-    }
-    if (charLimit != null && count > charLimit) issues.push('over-limit')
+    const issues: ThreadIssue[] = []
     if (imageCap != null && images > imageCap) issues.push('too-many-images')
     if (videoCap != null && videos > videoCap) issues.push('too-many-videos')
 
-    return { item, position: i + 1, count, images, videos, issues }
+    return {
+      position: i + 1,
+      text: entry.text,
+      count: charCount(entry.text),
+      autoSplit: entry.autoSplit,
+      attachments: carried,
+      images,
+      videos,
+      issues,
+    }
   })
+
+  return {
+    posts,
+    rule,
+    parts: parts.length,
+    pending: charLimit === undefined,
+    overflowed,
+  }
 }
 
 /** True when any post of the chain would be refused as written. */
-export function sequenceHasIssues(reports: SequenceItemReport[]): boolean {
-  return reports.some((r) => r.issues.length > 0)
+export function threadHasIssues<T>(plan: ThreadPlan<T>): boolean {
+  return plan.overflowed || plan.posts.some((p) => p.issues.length > 0)
+}
+
+/** How many posts our own splitter cut out of longer parts of the body. */
+export function autoSplitCount<T>(plan: ThreadPlan<T>): number {
+  return plan.posts.filter((p) => p.autoSplit).length
+}
+
+/**
+ * Parses the stored assignment, or `{}` when there is nothing usable there.
+ *
+ * Never throws and never half-trusts a row: the value comes out of a
+ * workspace-wide key/value store that anything can write, and the worst case
+ * of ignoring it is that files ride the first post — which is where they rode
+ * before anyone assigned them.
+ */
+export function parseAssignment(raw: string | null): ThreadAssignment {
+  if (!raw) return {}
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {}
+    }
+    const out: ThreadAssignment = {}
+    for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
+        out[id] = value
+      }
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Moves one attachment onto a post of the chain.
+ *
+ * Putting a file back on the first post *records* it there rather than
+ * forgetting it: an explicit choice should survive the next edit that changes
+ * how the body splits, and a file is only unassigned because nobody has had
+ * the conversation about it yet.
+ */
+export function assignAttachment(
+  assignment: ThreadAssignment,
+  attachmentId: string,
+  index: number,
+): ThreadAssignment {
+  if (index < 0) return assignment
+  return { ...assignment, [attachmentId]: index }
+}
+
+/**
+ * The assignment with entries for files that are no longer on the post taken
+ * out. Deleting a file from the media card knows nothing about the thread, so
+ * a stale entry is the normal state rather than a corruption.
+ *
+ * Returns the same object when there is nothing to drop — this runs on every
+ * render, and a fresh one would re-run every memo below it.
+ */
+export function reconcileAssignment(
+  assignment: ThreadAssignment,
+  attachments: Pick<PostAttachment, 'id'>[],
+): ThreadAssignment {
+  const live = new Set(attachments.map((a) => a.id))
+  const ids = Object.keys(assignment)
+  if (ids.every((id) => live.has(id))) return assignment
+  const out: ThreadAssignment = {}
+  for (const id of ids) if (live.has(id)) out[id] = assignment[id]
+  return out
 }

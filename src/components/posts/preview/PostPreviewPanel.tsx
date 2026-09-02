@@ -7,8 +7,8 @@ import { getPlatformMedia } from '@/lib/platformMedia.ts'
 import { relativeTime } from '@/lib/relativeTime.ts'
 import { formatNumber } from '@/lib/intl'
 import { useCharLimit } from '@/hooks/useCharLimit'
-import { charCount, markdownToSocialText, threadSegments } from '@/lib/socialText.ts'
-import { attachmentsByItem, type ThreadItem } from '@/lib/threadSequence'
+import { charCount, markdownToSocialText } from '@/lib/socialText.ts'
+import type { ThreadPlan } from '@/lib/threadSequence'
 import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments'
 import type { Post } from '@/types/posts'
 import { FacebookPreview } from './FacebookPreview.tsx'
@@ -113,12 +113,13 @@ export function PostPreviewPanel({
    */
   attachments: PostAttachmentWithValidation[]
   /**
-   * The posts of a thread sequence, when the post is one and the feature is on
-   * (CON-196). Passed in rather than read here for the same reason the
-   * attachments are: the editor owns the one copy, and a second reader of the
-   * settings key would drift from what is on screen.
+   * The chain a thread publishes as, when the post is one and the feature is
+   * on (CON-196). Passed in rather than worked out here for the same reason
+   * the attachments are: the editor owns the one plan, and a second one
+   * derived from the same body could still disagree about the ceiling it was
+   * cut to while that ceiling is loading.
    */
-  sequence?: ThreadItem[]
+  sequence?: ThreadPlan<PostAttachmentWithValidation>
   onClose?: () => void
 }) {
   const platform = getPlatformInfo(doc.platform_id)
@@ -201,30 +202,14 @@ export function PostPreviewPanel({
   // side, and there is one owner of them by design.
   const previewSequence = useMemo(() => {
     if (!sequence) return undefined
-    const ordered = [...attachments].sort((a, b) => a.position - b.position)
-    const buckets = attachmentsByItem(sequence, ordered)
-    return sequence.map((item, i) => ({
-      // Not flattened through `markdownToSocialText`: a sequence is composed
-      // in plain textareas, so its text is already what publishes — running it
-      // through the Markdown flattener would eat a literal `*` or `#` the user
-      // typed on purpose.
-      text: item.content,
-      media: toPreviewMedia(buckets[i] ?? []),
+    return sequence.posts.map((post) => ({
+      // Already flattened: `planThread` runs the body through
+      // `markdownToSocialText` before it cuts it, so this is the text the
+      // network receives, cut where the network will see it cut.
+      text: post.text,
+      media: toPreviewMedia(post.attachments),
     }))
-  }, [sequence, attachments])
-
-  // 1-based, because the note counts posts the way the reader will. The cards
-  // measure the same posts against the same limit, so the note and the badge
-  // cannot disagree about which one is too long.
-  const longSegments = useMemo(() => {
-    if (!isThread) return []
-    const texts = previewSequence
-      ? previewSequence.map((p) => p.text)
-      : threadSegments(text, limit).map((s) => s.text)
-    return texts.flatMap((body, i) =>
-      limit !== null && charCount(body) > limit ? [i + 1] : [],
-    )
-  }, [isThread, previewSequence, text, limit])
+  }, [sequence])
 
   // The platform's own ceiling on images in one post. Anything past it cannot
   // publish, so the card is drawn from the images that can — otherwise the
@@ -320,7 +305,6 @@ export function PostPreviewPanel({
             story={isStory}
             thread={isThread}
             sequence={!!previewSequence}
-            longSegments={longSegments}
             max={limit}
             accountConnected={author.connected}
           />
@@ -353,7 +337,6 @@ function Notes({
   carousel,
   story,
   thread,
-  longSegments,
   max,
   accountConnected,
 }: {
@@ -387,7 +370,6 @@ function Notes({
   /** An X thread: several posts, each with its own character limit. */
   thread: boolean
   /** 1-based positions of the thread posts that are over that limit. */
-  longSegments: number[]
   /** The platform's ceiling; `null` while unresolved or where there is none. */
   max: number | null
   accountConnected: boolean
@@ -469,27 +451,18 @@ function Notes({
       <>{t(sequence ? 'posts.sequence.previewNote' : 'posts.sequence.previewNoteUnsplit')}</>,
     )
 
-    // The limit is per post here, so the usual "over the limit" note would be
-    // wrong in both directions — it fires on threads that are fine and says
-    // nothing about which post is the problem.
-    if (longSegments.length > 0 && max) {
-      notes.push(
-        <span className="text-destructive">
-          {longSegments.length === 1
-            ? `Post ${longSegments[0]} is`
-            : `Posts ${longSegments.slice(0, -1).join(', ')} and ${
-                longSegments[longSegments.length - 1]
-              } are`}{' '}
-          past {platformName}'s {max} characters per post, and will be rejected.
-        </span>,
-      )
-    }
+    // No "post 3 is too long" note, deliberately: the chain is cut to the
+    // per-post ceiling as it is built, so a post past it is not a state this
+    // card can be shown. The whole-body length note below is skipped for the
+    // same reason — `thread` guards it.
   }
 
   // Past the platform's cap the extra images do not publish at all — a
   // different and worse fact than a feed that collapses them, so it is said
-  // first and in the destructive colour.
-  if (!story && imageCap !== null && imageCount > imageCap) {
+  // first and in the destructive colour. Not on a chain: its images are spread
+  // across its posts, and the cap is per post — the thread's own row in the
+  // pre-publish bar is what measures them.
+  if (!story && !sequence && imageCap !== null && imageCount > imageCap) {
     notes.push(
       <span className="text-destructive">
         Only the first {imageCap} of {imageCount} images will publish — {platformName} takes{' '}
@@ -500,7 +473,7 @@ function Notes({
 
   const publishing = imageCap === null ? imageCount : Math.min(imageCount, imageCap)
 
-  if (!story && feedTiles !== undefined && publishing > feedTiles) {
+  if (!story && !sequence && feedTiles !== undefined && publishing > feedTiles) {
     notes.push(
       <>
         {publishing} images publish, and the feed shows the first {feedTiles} — the rest open

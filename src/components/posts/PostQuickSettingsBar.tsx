@@ -5,7 +5,7 @@ import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
-import { PLATFORMS, getPlatformInfo } from '@/lib/platformDictionary'
+import { PLATFORMS, getPlatformInfo, releasedPostTypes } from '@/lib/platformDictionary'
 import {
   canEditPublishingAccount,
   type PublishMethod,
@@ -103,7 +103,11 @@ export function PostQuickSettingsBar({
   const campaignPlatforms = campaign
     ? PLATFORMS.filter((p) => (campaignPostTypes.get(p.id)?.size ?? 0) > 0)
     : PLATFORMS
-  const campaignTypes = (platform?.postTypes ?? []).filter(
+  // `releasedPostTypes` and not `platform.postTypes`: the campaign filter is
+  // the wrong thing to lean on for the release gate, because the fallback
+  // above deliberately drops it — and because a campaign row could name a
+  // slug this build has not released.
+  const campaignTypes = releasedPostTypes(doc.platform_id).filter(
     (t) => !campaign || (campaignPostTypes.get(doc.platform_id)?.has(t.slug) ?? false),
   )
 
@@ -141,7 +145,7 @@ export function PostQuickSettingsBar({
       // sides read the selectable list, so switching platforms can never
       // land the post on a video type the picker would not have offered.
       const next = getPlatformInfo(platformId)
-      const types = next?.postTypes ?? []
+      const types = releasedPostTypes(platformId)
       if (next && !types.some((t) => t.slug === d.platform_post_type)) {
         const camp = campaignPostTypes.get(platformId)
         const preferred = types.find((t) => camp?.has(t.slug)) ?? types[0]

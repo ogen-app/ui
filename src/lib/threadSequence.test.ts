@@ -1,36 +1,41 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  MAX_SEQUENCE_ITEMS,
+  MAX_THREAD_POSTS,
   assignAttachment,
-  attachmentsByItem,
-  contentFromItems,
-  evaluateSequence,
-  insertItemAfter,
+  autoSplitCount,
   isSequencePost,
-  itemsFromContent,
-  moveItem,
-  newThreadItem,
-  ownerIndex,
-  parseThreadItems,
-  reconcileItems,
-  removeItem,
-  sequenceHasIssues,
+  parseAssignment,
+  planThread,
+  reconcileAssignment,
+  splitBody,
+  splitToLimit,
   supportsSequence,
-  type ThreadItem,
+  threadHasIssues,
+  type ThreadAssignment,
 } from './threadSequence.ts'
 
 function att(id: string, mime = 'image/jpeg') {
   return { id, mime_type: mime }
 }
 
-/** Items with predictable ids, so assertions can name them. */
-function items(...contents: string[]): ThreadItem[] {
-  return contents.map((content, i) => ({
-    id: `item-${i}`,
+const LIMITS = { charLimit: 280, imageCap: 4, videoCap: 1 }
+
+function plan(
+  content: string,
+  extra: {
+    attachments?: { id: string; mime_type: string }[]
+    assignment?: ThreadAssignment
+    charLimit?: number | null | undefined
+  } = {},
+) {
+  return planThread({
+    ...LIMITS,
     content,
-    attachment_ids: [],
-  }))
+    attachments: extra.attachments ?? [],
+    assignment: extra.assignment ?? {},
+    ...(('charLimit' in extra) ? { charLimit: extra.charLimit } : {}),
+  })
 }
 
 describe('supportsSequence / isSequencePost', () => {
@@ -38,7 +43,6 @@ describe('supportsSequence / isSequencePost', () => {
     expect(supportsSequence('twitter')).toBe(true)
     expect(supportsSequence('threads')).toBe(true)
     expect(supportsSequence('linkedin')).toBe(false)
-    expect(supportsSequence('instagram')).toBe(false)
     expect(supportsSequence(undefined)).toBe(false)
   })
 
@@ -49,268 +53,207 @@ describe('supportsSequence / isSequencePost', () => {
   })
 })
 
-describe('itemsFromContent', () => {
-  it('splits at blank lines, the convention the preview already drew', () => {
-    const result = itemsFromContent('First post\n\nSecond post\n\nThird')
-    expect(result.map((i) => i.content)).toEqual([
-      'First post',
-      'Second post',
-      'Third',
-    ])
+describe('splitBody', () => {
+  it('breaks at a divider, and leaves blank lines inside a post', () => {
+    const { parts, rule } = splitBody('One\n\nstill one\n\n---\n\nTwo')
+    expect(rule).toBe('divider')
+    expect(parts).toEqual(['One\n\nstill one', 'Two'])
   })
 
-  it('keeps single newlines inside one post', () => {
-    const result = itemsFromContent('One line\nstill the same post')
-    expect(result).toHaveLength(1)
-    expect(result[0].content).toBe('One line\nstill the same post')
+  it('takes the form BlockNote writes a divider back as', () => {
+    expect(splitBody('One\n\n***\n\nTwo').parts).toEqual(['One', 'Two'])
+    expect(splitBody('One\n\n___\n\nTwo').parts).toEqual(['One', 'Two'])
   })
 
-  it('seeds an empty body as one empty post, never as nothing', () => {
-    expect(itemsFromContent('')).toHaveLength(1)
-    expect(itemsFromContent('   \n\n  ')).toHaveLength(1)
-    expect(itemsFromContent('')[0].content).toBe('')
+  it('falls back to blank lines when the body has no divider', () => {
+    const { parts, rule } = splitBody('First post\n\nSecond post\n\nThird')
+    expect(rule).toBe('blank-line')
+    expect(parts).toEqual(['First post', 'Second post', 'Third'])
   })
 
-  it('stops at the cap', () => {
-    const body = Array.from({ length: 40 }, (_, i) => `p${i}`).join('\n\n')
-    expect(itemsFromContent(body)).toHaveLength(MAX_SEQUENCE_ITEMS)
+  it('does not read a divider inside a fenced code block as a break', () => {
+    // It stays copy — `markdownToSocialText` keeps what is inside a fence —
+    // so the body falls back to blank lines rather than claiming a divider.
+    const { parts, rule } = splitBody('Look:\n\n```\n---\n```\n\nSee?')
+    expect(rule).toBe('blank-line')
+    expect(parts).toContain('---')
   })
 
-  it('round-trips through contentFromItems', () => {
-    const body = 'First post\n\nSecond post'
-    expect(contentFromItems(itemsFromContent(body))).toBe(body)
+  it('drops the empty parts a half-typed divider leaves behind', () => {
+    expect(splitBody('---\n\nFirst\n\n---').parts).toEqual(['First'])
   })
 
-  it('drops empty posts from the display copy', () => {
-    const seq = items('First', '', 'Third')
-    expect(contentFromItems(seq)).toBe('First\n\nThird')
-  })
-})
-
-describe('parseThreadItems', () => {
-  it('reads back what was written', () => {
-    const seq = items('a', 'b')
-    expect(parseThreadItems(JSON.stringify(seq))).toEqual(seq)
+  it('never returns nothing, so an empty body previews as an empty post', () => {
+    expect(splitBody('').parts).toEqual([''])
+    expect(splitBody('---').parts).toEqual([''])
   })
 
-  it('treats nothing, junk and an empty list alike as never-written', () => {
-    expect(parseThreadItems(null)).toBeNull()
-    expect(parseThreadItems('')).toBeNull()
-    expect(parseThreadItems('not json')).toBeNull()
-    expect(parseThreadItems('[]')).toBeNull()
-    expect(parseThreadItems('{"content":"a"}')).toBeNull()
-  })
-
-  it('repairs entries rather than dropping the sequence', () => {
-    const parsed = parseThreadItems('[{"content":"a"},{"id":"x"},7]')
-    expect(parsed).toHaveLength(2)
-    expect(parsed?.[0].id).toBeTruthy()
-    expect(parsed?.[0].attachment_ids).toEqual([])
-    expect(parsed?.[1].content).toBe('')
+  it('flattens the Markdown, so the count is what the network receives', () => {
+    expect(splitBody('**bold**').parts).toEqual(['bold'])
   })
 })
 
-describe('attachmentsByItem', () => {
-  it('gives the root every attachment no item names', () => {
-    const seq = items('a', 'b')
-    const buckets = attachmentsByItem(seq, [att('1'), att('2')])
-    expect(buckets[0].map((a) => a.id)).toEqual(['1', '2'])
-    expect(buckets[1]).toEqual([])
+describe('splitToLimit', () => {
+  it('leaves a part that already fits', () => {
+    expect(splitToLimit('short', 280)).toEqual(['short'])
   })
 
-  it('honours a named id on a later item', () => {
-    const seq = items('a', 'b')
-    seq[1].attachment_ids = ['2']
-    const buckets = attachmentsByItem(seq, [att('1'), att('2')])
-    expect(buckets[0].map((a) => a.id)).toEqual(['1'])
-    expect(buckets[1].map((a) => a.id)).toEqual(['2'])
+  it('says nothing while the ceiling is still loading', () => {
+    expect(splitToLimit('x'.repeat(900), undefined)).toHaveLength(1)
+    expect(splitToLimit('x'.repeat(900), null)).toHaveLength(1)
   })
 
-  it('keeps the item’s own order for named ids', () => {
-    const seq = items('a')
-    seq[0].attachment_ids = ['2', '1']
-    const buckets = attachmentsByItem(seq, [att('1'), att('2')])
-    expect(buckets[0].map((a) => a.id)).toEqual(['2', '1'])
+  it('cuts on a sentence end where there is one', () => {
+    const body = `${'a'.repeat(120)}. ${'b'.repeat(120)}. ${'c'.repeat(120)}.`
+    const parts = splitToLimit(body, 280)
+    expect(parts).toHaveLength(2)
+    expect(parts[0].endsWith('.')).toBe(true)
+    expect(parts[0].startsWith('a')).toBe(true)
   })
 
-  it('ignores ids for attachments that are gone', () => {
-    const seq = items('a', 'b')
-    seq[1].attachment_ids = ['missing']
-    const buckets = attachmentsByItem(seq, [att('1')])
-    expect(buckets[0].map((a) => a.id)).toEqual(['1'])
-    expect(buckets[1]).toEqual([])
-  })
-})
-
-describe('ownerIndex / assignAttachment', () => {
-  it('reports the root for an unnamed attachment', () => {
-    expect(ownerIndex(items('a', 'b'), '1')).toBe(0)
+  it('falls back to a word break rather than leaving a post half empty', () => {
+    // One sentence ends early, then nothing but words: taking the sentence
+    // would publish a post a third of the length it could be.
+    const body = `Short. ${'word '.repeat(200)}`
+    const parts = splitToLimit(body, 280)
+    expect(parts[0].length).toBeGreaterThan(200)
+    expect(parts[0].endsWith('word')).toBe(true)
   })
 
-  it('moves an attachment between items, never leaving two owners', () => {
-    let seq = items('a', 'b', 'c')
-    seq = assignAttachment(seq, '1', 2)
-    expect(ownerIndex(seq, '1')).toBe(2)
-    seq = assignAttachment(seq, '1', 1)
-    expect(seq[2].attachment_ids).toEqual([])
-    expect(seq[1].attachment_ids).toEqual(['1'])
+  it('cuts an unbroken token where the limit falls', () => {
+    const parts = splitToLimit('x'.repeat(600), 280)
+    expect(parts[0]).toHaveLength(280)
+    expect(parts.join('')).toHaveLength(600)
   })
 
-  it('names an attachment on the root rather than unnaming it', () => {
-    let seq = items('a', 'b')
-    seq = assignAttachment(seq, '1', 1)
-    seq = assignAttachment(seq, '1', 0)
-    expect(seq[0].attachment_ids).toEqual(['1'])
-  })
-
-  it('ignores an index outside the chain', () => {
-    const seq = items('a')
-    expect(assignAttachment(seq, '1', 3)).toBe(seq)
-  })
-})
-
-describe('reconcileItems', () => {
-  it('drops ids whose attachment is gone', () => {
-    const seq = items('a')
-    seq[0].attachment_ids = ['1', 'gone']
-    expect(reconcileItems(seq, [att('1')])[0].attachment_ids).toEqual(['1'])
-  })
-
-  it('gives a duplicated id to the first item that claims it', () => {
-    const seq = items('a', 'b')
-    seq[0].attachment_ids = ['1']
-    seq[1].attachment_ids = ['1']
-    const result = reconcileItems(seq, [att('1')])
-    expect(result[0].attachment_ids).toEqual(['1'])
-    expect(result[1].attachment_ids).toEqual([])
-  })
-
-  it('returns the very same array when there is nothing to fix', () => {
-    const seq = items('a')
-    seq[0].attachment_ids = ['1']
-    // Identity, not equality: this runs on every render, and a fresh array
-    // would re-run every memo downstream of it.
-    expect(reconcileItems(seq, [att('1')])).toBe(seq)
-  })
-})
-
-describe('moveItem / insertItemAfter / removeItem', () => {
-  it('moves a post through the chain', () => {
-    const seq = items('a', 'b', 'c')
-    expect(moveItem(seq, 2, 0).map((i) => i.content)).toEqual(['c', 'a', 'b'])
-    expect(moveItem(seq, 0, 2).map((i) => i.content)).toEqual(['b', 'c', 'a'])
-  })
-
-  it('ignores a move that goes nowhere or off the end', () => {
-    const seq = items('a', 'b')
-    expect(moveItem(seq, 1, 1)).toBe(seq)
-    expect(moveItem(seq, 0, 5)).toBe(seq)
-    expect(moveItem(seq, -1, 0)).toBe(seq)
-  })
-
-  it('inserts an empty post after the one asked for', () => {
-    const seq = insertItemAfter(items('a', 'b'), 0)
-    expect(seq.map((i) => i.content)).toEqual(['a', '', 'b'])
-  })
-
-  it('refuses to insert past the cap', () => {
-    const seq = Array.from({ length: MAX_SEQUENCE_ITEMS }, () =>
-      newThreadItem('x'),
-    )
-    expect(insertItemAfter(seq, 0)).toBe(seq)
-  })
-
-  it('hands a removed post’s attachments to the one that replaces it', () => {
-    const seq = items('a', 'b', 'c')
-    seq[1].attachment_ids = ['1']
-    const result = removeItem(seq, 1)
-    expect(result.map((i) => i.content)).toEqual(['a', 'c'])
-    expect(result[1].attachment_ids).toEqual(['1'])
-  })
-
-  it('hands the last post’s attachments backwards', () => {
-    const seq = items('a', 'b')
-    seq[1].attachment_ids = ['1']
-    expect(removeItem(seq, 1)[0].attachment_ids).toEqual(['1'])
-  })
-
-  it('empties the only post rather than leaving no chain', () => {
-    const result = removeItem(items('a'), 0)
-    expect(result).toHaveLength(1)
-    expect(result[0].content).toBe('')
-  })
-})
-
-describe('evaluateSequence', () => {
-  const limits = { charLimit: 280, imageCap: 4, videoCap: 1 }
-
-  it('measures each post against the limit, not the whole body', () => {
-    const seq = items('x'.repeat(200), 'y'.repeat(200))
-    const reports = evaluateSequence({ ...limits, items: seq, attachments: [] })
-    expect(sequenceHasIssues(reports)).toBe(false)
-    expect(reports.map((r) => r.count)).toEqual([200, 200])
-  })
-
-  it('names the post that is over, by its position in the chain', () => {
-    const seq = items('short', 'y'.repeat(300), 'also short')
-    const reports = evaluateSequence({ ...limits, items: seq, attachments: [] })
-    const over = reports.filter((r) => r.issues.includes('over-limit'))
-    expect(over.map((r) => r.position)).toEqual([2])
+  it('keeps every post within the limit', () => {
+    const parts = splitToLimit('word '.repeat(400).trim(), 280)
+    expect(parts.length).toBeGreaterThan(1)
+    for (const part of parts) expect(part.length).toBeLessThanOrEqual(280)
   })
 
   it('counts code points, so an emoji is one character', () => {
-    const reports = evaluateSequence({
-      ...limits,
-      items: items('👍👍'),
-      attachments: [],
-    })
-    expect(reports[0].count).toBe(2)
+    expect(splitToLimit('👍👍', 2)).toEqual(['👍👍'])
+  })
+})
+
+describe('planThread', () => {
+  it('numbers the posts the way the reader reads them', () => {
+    const result = plan('One\n\nTwo\n\nThree')
+    expect(result.posts.map((p) => p.position)).toEqual([1, 2, 3])
+    expect(result.posts.map((p) => p.text)).toEqual(['One', 'Two', 'Three'])
+    expect(result.rule).toBe('blank-line')
   })
 
-  it('applies the image cap per post', () => {
-    const seq = items('a', 'b')
-    seq[1].attachment_ids = ['1', '2', '3', '4', '5']
-    const reports = evaluateSequence({
-      ...limits,
-      items: seq,
-      attachments: ['1', '2', '3', '4', '5'].map((id) => att(id)),
+  it('has no over-limit state, because it cuts instead', () => {
+    const result = plan('word '.repeat(300).trim())
+    expect(result.posts.length).toBeGreaterThan(1)
+    for (const post of result.posts) expect(post.count).toBeLessThanOrEqual(280)
+    expect(threadHasIssues(result)).toBe(false)
+  })
+
+  it('marks only the posts its own splitter cut', () => {
+    const result = plan(`Short one\n\n${'word '.repeat(300).trim()}`)
+    expect(result.posts[0].autoSplit).toBe(false)
+    expect(autoSplitCount(result)).toBe(result.posts.length - 1)
+  })
+
+  it('gives every unassigned file to the first post', () => {
+    const result = plan('One\n\nTwo', { attachments: [att('1'), att('2')] })
+    expect(result.posts[0].attachments.map((a) => a.id)).toEqual(['1', '2'])
+    expect(result.posts[1].attachments).toEqual([])
+  })
+
+  it('honours an assignment', () => {
+    const result = plan('One\n\nTwo', {
+      attachments: [att('1'), att('2')],
+      assignment: { '2': 1 },
     })
-    expect(reports[0].issues).toEqual([])
-    expect(reports[1].issues).toContain('too-many-images')
-    expect(reports[1].images).toBe(5)
+    expect(result.posts[0].attachments.map((a) => a.id)).toEqual(['1'])
+    expect(result.posts[1].attachments.map((a) => a.id)).toEqual(['2'])
+  })
+
+  it('gives a file the last post when the post it named is gone', () => {
+    const result = plan('Only one post now', {
+      attachments: [att('1')],
+      assignment: { '1': 6 },
+    })
+    expect(result.posts[0].attachments.map((a) => a.id)).toEqual(['1'])
+  })
+
+  it('applies the image cap per post, not to the thread', () => {
+    const attachments = ['1', '2', '3', '4', '5'].map((id) => att(id))
+    const spread = plan('One\n\nTwo', {
+      attachments,
+      assignment: { '4': 1, '5': 1 },
+    })
+    expect(spread.posts.every((p) => p.issues.length === 0)).toBe(true)
+
+    const piled = plan('One\n\nTwo', { attachments })
+    expect(piled.posts[0].issues).toContain('too-many-images')
   })
 
   it('applies the one-video cap per post', () => {
-    const seq = items('a')
-    const reports = evaluateSequence({
-      ...limits,
-      items: seq,
+    const result = plan('One', {
       attachments: [att('1', 'video/mp4'), att('2', 'video/mp4')],
     })
-    expect(reports[0].videos).toBe(2)
-    expect(reports[0].issues).toContain('too-many-videos')
+    expect(result.posts[0].videos).toBe(2)
+    expect(result.posts[0].issues).toContain('too-many-videos')
   })
 
-  it('calls an empty post empty only when it carries nothing either', () => {
-    const withImage = items('')
-    withImage[0].attachment_ids = ['1']
-    expect(
-      evaluateSequence({ ...limits, items: withImage, attachments: [att('1')] })[0]
-        .issues,
-    ).toEqual([])
-    expect(
-      evaluateSequence({ ...limits, items: items(''), attachments: [] })[0].issues,
-    ).toEqual(['empty'])
+  it('reports a body that needs more posts than a thread holds', () => {
+    const body = Array.from({ length: MAX_THREAD_POSTS + 5 }, (_, i) => `p${i}`).join(
+      '\n\n',
+    )
+    const result = plan(body)
+    expect(result.overflowed).toBe(true)
+    expect(result.posts).toHaveLength(MAX_THREAD_POSTS)
+    expect(threadHasIssues(result)).toBe(true)
   })
 
-  it('says nothing while the limits are still loading', () => {
-    const reports = evaluateSequence({
-      items: items('x'.repeat(5000)),
-      attachments: [],
-      charLimit: undefined,
-      imageCap: undefined,
-      videoCap: undefined,
-    })
-    expect(reports[0].issues).toEqual([])
+  it('gives no verdict while the ceiling is loading', () => {
+    const result = plan('word '.repeat(300).trim(), { charLimit: undefined })
+    expect(result.pending).toBe(true)
+    // Uncut, rather than cut at a limit that is about to arrive and move it.
+    expect(result.posts).toHaveLength(1)
+  })
+})
+
+describe('parseAssignment', () => {
+  it('reads back what was written', () => {
+    expect(parseAssignment('{"a":2}')).toEqual({ a: 2 })
+  })
+
+  it('treats nothing and junk alike as never-written', () => {
+    expect(parseAssignment(null)).toEqual({})
+    expect(parseAssignment('')).toEqual({})
+    expect(parseAssignment('not json')).toEqual({})
+    expect(parseAssignment('[1,2]')).toEqual({})
+  })
+
+  it('drops entries that are not a post index', () => {
+    expect(parseAssignment('{"a":"1","b":-1,"c":1.5,"d":0}')).toEqual({ d: 0 })
+  })
+})
+
+describe('assignAttachment / reconcileAssignment', () => {
+  it('records a file on the first post rather than forgetting it', () => {
+    expect(assignAttachment({ a: 2 }, 'a', 0)).toEqual({ a: 0 })
+  })
+
+  it('ignores an index that is not a post', () => {
+    const current = { a: 1 }
+    expect(assignAttachment(current, 'a', -1)).toBe(current)
+  })
+
+  it('drops entries for files that are gone', () => {
+    expect(reconcileAssignment({ a: 1, b: 2 }, [att('a')])).toEqual({ a: 1 })
+  })
+
+  it('returns the very same object when there is nothing to fix', () => {
+    // Identity, not equality: this runs on every render, and a fresh object
+    // would re-run every memo downstream of it.
+    const current = { a: 1 }
+    expect(reconcileAssignment(current, [att('a')])).toBe(current)
   })
 })

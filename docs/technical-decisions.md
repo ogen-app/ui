@@ -626,71 +626,123 @@ it. Same rule as always: a flag is not a permission.
 `config/featureFlags.ts`, `devtools/FlagsPanel.tsx`, `devtools/OverrideMarker.tsx`,
 `routes/flags.tsx`, the `VITE_DEV_TOOLS` build arg in the `Dockerfile`.
 
-## A thread is a list of posts, and the body becomes a summary {#thread-sequence}
+## A thread is the body, split {#thread-sequence}
 
-**Decision.** On X and Threads, a `thread` post is edited as an ordered list of
-posts — each with its own text and its own media — and the post's `content`
-column becomes a *derived* rejoin of them rather than the thing anyone types
-into. Behind the `thread-sequence` flag (CON-196).
+**Decision.** On X and Threads, a `thread` post is written in the same single
+Markdown editor as every other post type, and the chain it publishes as is
+**derived from the body on every keystroke** — never stored, never edited
+separately. A `---` divider is a break; with no divider in the body, blank lines
+are; anything still past the platform's per-post ceiling is cut to fit. The only
+thing stored beside the body is which post carries which file. Behind the
+`thread-sequence` flag (CON-196).
 
 **Why.** Zernio publishes a chain from `platformSpecificData.threadItems` on
 both networks: "the first item is the root post and subsequent items become
 replies in order", and "when `threadItems` is provided, the top-level `content`
 field is used only for display and search purposes, it is **NOT** published"
 (docs.zernio.com/platforms/threads, /platforms/twitter). Once that is the wire
-format, two things follow that a single body cannot express:
+format, every ceiling is per part of the chain — 280 characters on X, 500 on
+Threads, four images or ten, one video — so the whole body measured against one
+of them fails a thread that is fine and stays silent about the one post that is
+not.
 
-- **Every limit is per post.** 280 characters on X, 500 on Threads, four images
-  or ten, one video — all of them apply to each part of the chain. The editor
-  measured the whole body against one of them, which fails a thread that is
-  fine and stays silent about the one post that is not.
-- **Media belongs to a post, not to the thread.** There is no way to say "this
-  image rides the third one" with a flat attachment list and no item to hang it
-  on.
+The first build answered that with a per-post editor: numbered rows, each its
+own textarea and its own media, with `content` written back as a derived
+summary. It worked and it was wrong. A thread is not a different kind of
+document, it is a post that gets cut up on the way out, and turning the editor
+into a list of inputs made it a different screen from every other post type for
+a difference that belongs at the publish boundary. It also put the words in two
+places — the items and the `content` written back from them — and a screen whose
+two copies must be kept in step is a screen with a bug waiting in it.
+
+Deriving the chain removes both problems and one more: **there is no "this post
+is too long" state left.** A part past the ceiling is cut rather than reported,
+so the app fixes the thing it used to complain about, and the preview shows
+exactly where.
 
 **What it is not.** It is not the blank-line splitting the X preview card has
-always drawn. That was a guess about what the publisher would do, and the
-guess was wrong: nothing in the Go repo has ever sent `threadItems`, so a
-`thread` post publishes as one post with the whole body in it. The card's note
-said the publisher did the splitting; it never did, and that sentence is gone.
+always drawn, even though blank lines are still the fallback rule. That was a
+guess about what the publisher would do, and the guess was wrong: nothing in the
+Go repo has ever sent `threadItems`, so a `thread` post publishes as one post
+with the whole body in it. The card's note said the publisher did the splitting;
+it never did, and that sentence is gone.
 
 **How.**
 
-- `lib/threadSequence.ts` owns the model and every rule. Pure, tested, and the
-  single source for "which post is too long" — the editor's per-row marks and
-  the preview's notes both read `evaluateSequence`.
-- **Attachments stay post-level rows.** An item names the ones it carries by
-  id, so `post_attachments` needs no column and no migration. The rule that
-  makes it safe: *an attachment no item names rides the root.* Uploading from
-  the media card, from the assistant, or from an older client needs to know
-  nothing about sequences and the file still publishes — and it matches what
-  the X card always drew, where the lead post carries the media.
-- **The items live in the tenant key/value store** under
+- **A divider is a real block, not a convention.** BlockNote parses `---` into
+  a `divider` block and serialises it back as `***`, so the author sees the seam
+  they typed as a line across the editor. That is why it is the primary rule:
+  the split is visible in the document rather than inferred from whitespace.
+- **Blank lines are the fallback, and only the fallback.** A body with a divider
+  anywhere in it splits *only* at dividers, which is what makes multi-paragraph
+  posts expressible. A body with none splits at blank lines, which is the
+  convention the preview has always drawn and how people write threads.
+- **The ceiling cuts what is left**, on the last sentence end that leaves the
+  post reasonably full (`MIN_FILL`), else a line break, else a word. An unbroken
+  token longer than the limit — a URL, a pasted key — is cut where the limit
+  falls, because there is nowhere better.
+- **`lib/threadSequence.ts` owns every rule**, pure and tested, and one
+  `planThread` call produces the whole chain. The note under the editor, both
+  preview cards and the pre-publish row read that one result, so the screen
+  cannot disagree with itself about how many posts this is.
+- **Attachments stay post-level rows.** `ThreadAssignment` maps an attachment id
+  to a post index, so `post_attachments` needs no column and no migration. The
+  rule that makes it safe: *a file with no entry rides the first post.* Uploading
+  from the media card, from the assistant, or from an older client needs to know
+  nothing about threads and the file still publishes — and it is what the X card
+  always drew, where the lead post carries the media. An entry naming a post that
+  no longer exists rides the last one, where the reader last saw it.
+- **The assignment lives in the tenant key/value store** under
   `thread-sequence.<postId>` (`useThreadSequence`), the same stand-in
   `campaign-accounts` uses while waiting for its column, with the same limits:
-  workspace-wide, whole-list writes, last write wins.
-- **`content` is written on every flush** from the items. Everything
-  downstream — the calendar, the posts table, search, the assistant — keeps
-  reading the field it already reads instead of finding the post empty. It is
-  also what a post is re-seeded from the first time its type becomes a
-  sequence, split at blank lines.
-- **The editor replaces the body rather than sitting beside it.** Two copies of
-  the same words, only one of which publishes, is not a screen worth building.
-  Its rows are plain textareas, not BlockNote: these networks take plain text,
-  so a rich editor would offer formatting that is dropped at publish and would
-  make Enter mean "new block" where the blocks are already the numbered rows.
+  workspace-wide, whole-value writes, last write wins. Losing it is survivable
+  by design — see the rule above.
+- **The media card is where a file's post is chosen**, because it is where the
+  files are. Each thumbnail carries one picker naming the post it rides; the
+  card's total cap is dropped for a thread, since `policy.max` is what *one*
+  post takes and a five-post thread holds five times it.
+- **`content` is never rewritten.** The body is what the author typed, and
+  everything downstream — the calendar, the posts table, search, the assistant —
+  keeps reading exactly the field it already reads. This is the largest
+  behavioural difference from the first build, and the reason the flag now
+  changes nothing outside its own screen.
 - **The post type is gated on its dictionary entry, not on the slug.**
   `PlatformPostType.flag` withholds *Threads'* `thread`, which is new. X's is
   untouched, because the app has always offered it and a flag may never change
   what happens when it is off.
+- **While it is on, that flag also stands in for the publisher's vocabulary.**
+  `buildPlatformView` intersects the dictionary with the slugs a publisher
+  reports, and `supportedPlatforms` in the Go repo lists `thread` for `twitter`
+  only — so the honest intersection hides the feature from the network it is
+  named after until the server learns one word. `aheadOfPublishers` lets the
+  flag answer in the slug's place: a publisher exists, so the type is allowed;
+  it is connected, so it is available. Scoped to *flagged* types, so a slug the
+  server genuinely withdraws still disappears from the app, and with the flag
+  off the publisher is the whole answer exactly as before. The same trade every
+  flagged feature here makes — the UI is reviewable before the endpoint answers
+  — applied to a vocabulary rather than to a route.
+
+**The consequence to hand the back end:** because the words live only in
+`content`, the publisher has to cut it the same way before filling
+`threadItems`, or what goes out is not what the author was shown. That is the
+`src/lib/*` arrangement this repo already runs on — the Go rule is the source of
+truth, ours mirrors it — and `splitBody`/`splitToLimit` are written to port,
+with their tests as the specification.
 
 **Waiting on** the back end: `SubmitRequest` (`publishers/zernio/posts.go`) has
-no `platformSpecificData` at all, so nothing sends the chain yet; somewhere on
-the post to keep the items; and `thread` added to Threads in
-`publishers/zernio/platforms.go`, which lists it for `twitter` only.
+no `platformSpecificData` at all, so nothing sends the chain yet; the same split
+implemented server-side; a home for the media assignment; `thread` added to
+Threads in `publishers/zernio/platforms.go`, which lists it for `twitter` only
+— a *submit* blocker rather than a UI one, since the flag stands in for the
+missing slug; and **attachment validation counted per item** — the server measures the files
+against the post, so a thread spreading five images over three posts still comes
+back "post has 5 image attachments; platform allows up to 4". We pass
+`platform_validation` through as written, because until the publisher splits it
+is *right*: a thread really does go out as one post with every file on it.
 
 **Where.** `lib/threadSequence.ts` (+ test), `hooks/useThreadSequence.ts`,
-`components/posts/sequence/`, the `sequence` branch in `lib/postValidation.ts`,
+`components/posts/sequence/ThreadSplitNote.tsx`, the `thread` branch in
+`PostMediaCard`, the `sequence` branch in `lib/postValidation.ts`,
 `TwitterPreview` / `ThreadsPreview` / `PostPreviewPanel`, and the
 `thread-sequence` flag.
 

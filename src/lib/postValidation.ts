@@ -46,10 +46,11 @@ export type EvaluateInput = {
    */
   maxTitleChars: number | null | undefined
   /**
-   * The post publishes as a chain rather than one post (CON-196). Only the
-   * length check cares: every ceiling this file measures is per published
-   * post, and for a sequence that is per item — measured in
-   * `lib/threadSequence` and reported by the row the route appends.
+   * The post publishes as a chain rather than one post (CON-196). Every
+   * ceiling this file measures is per published post, and a chain has many —
+   * so the two checks that measure one (length, and the media cap) stand down
+   * here and are answered per post by `planThread`, in the row the route
+   * appends.
    */
   sequence: boolean
 }
@@ -135,11 +136,11 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
         : 'No copy yet',
   })
 
-  // A sequence has no single length to check: the ceiling is per post of the
+  // A thread has no single length to check: the ceiling is per post of the
   // chain, so measuring the whole body against it is wrong in both directions
   // — it fails a thread that is fine and says nothing about the one post that
-  // isn't. The per-post verdicts come from `evaluateSequence` instead, and the
-  // route appends their summary as its own row (CON-196).
+  // isn't. It cannot fail at all, in fact: `planThread` cuts the body to the
+  // ceiling as it builds the chain (CON-196).
   if (!sequence) {
     const length = charCount(published)
     if (maxContentChars === undefined) {
@@ -176,6 +177,7 @@ function mediaChecks({
   attachments,
   ready,
   postValidation,
+  sequence,
 }: EvaluateInput): PostCheck[] {
   const checks: PostCheck[] = []
 
@@ -186,7 +188,10 @@ function mediaChecks({
   const count = attachments.length
   if (policy.accepts) {
     const belowMin = count < policy.min
-    const aboveMax = policy.max !== null && count > policy.max
+    // On a thread the cap is what *one post* takes, and the files are spread
+    // across the chain — six images over three posts is legal where six on one
+    // is not. The thread's own row measures them per post.
+    const aboveMax = !sequence && policy.max !== null && count > policy.max
     checks.push({
       id: 'media-count',
       label: 'Media',

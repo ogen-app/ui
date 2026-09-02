@@ -261,7 +261,7 @@ const FEATURE_FLAGS = {
    * That is the format this is built against, and it is the whole reason the
    * feature can exist at all.
    *
-   * **Waiting on three things, all server-side.**
+   * **Waiting on four things, all server-side.**
    *
    * 1. **The field.** `SubmitRequest` in `publishers/zernio/posts.go` has no
    *    `platformSpecificData` at all, and nothing in the Go repo mentions
@@ -269,32 +269,67 @@ const FEATURE_FLAGS = {
    *    top-level `content` and publishes as a single post. The chain the
    *    preview card draws has never been what goes out. This is the one that
    *    makes the feature real; the rest is bookkeeping.
-   * 2. **Somewhere to keep the items.** The post has one `content` column, so
-   *    the sequence lives in the tenant key/value store under
-   *    `thread-sequence.<postId>` (`useThreadSequence`), the same stand-in
+   * 2. **The same split, server-side.** The thread is *derived* from the body
+   *    (`lib/threadSequence`) rather than stored as a list, which is the whole
+   *    shape of the feature: one Markdown editor, dividers as the breaks,
+   *    blank lines where there are none, and anything still past the per-post
+   *    ceiling cut to fit. So the publisher has to cut `content` the same way
+   *    before it fills `threadItems`, or what goes out is not what the author
+   *    was shown. That is the `src/lib/*` arrangement this repo already runs on
+   *    — the Go rule is the source of truth and ours mirrors it — and
+   *    `splitBody`/`splitToLimit` are written to be portable for exactly that
+   *    reason. Its tests are the specification.
+   * 3. **A home for the media assignment.** *Which post carries which file* is
+   *    the one thing a body cannot say, so it is the one thing stored: a map
+   *    from attachment id to post index, under `thread-sequence.<postId>` in
+   *    the tenant key/value store (`useThreadSequence`), the same stand-in
    *    `campaign-accounts` uses while waiting for its column. What that cannot
-   *    do: two people editing different posts of the same chain in the same
-   *    second means the later write wins for both, and the row is
-   *    workspace-wide like every other settings key.
-   * 3. **The slug on Threads.** `supportedPlatforms` in
+   *    do: the row is workspace-wide like every other settings key, and two
+   *    people moving files on the same post in the same second means the later
+   *    write wins. Losing it entirely is survivable by design — an attachment
+   *    with no entry rides the first post, which is where every file rode
+   *    before this existed.
+   * 4. **The slug on Threads.** `supportedPlatforms` in
    *    `publishers/zernio/platforms.go` lists `thread` for `twitter` only, so
-   *    Threads cannot offer the type until it is added there — `buildPlatformView`
-   *    intersects our dictionary with what a publisher reports, and correctly
-   *    drops it.
+   *    a Threads thread cannot actually be *submitted* until it is added
+   *    there. The UI no longer waits on it: `buildPlatformView` intersects our
+   *    dictionary with what a publisher reports, and `aheadOfPublishers`
+   *    (`lib/platformDictionary`) lets this flag answer in the missing slug's
+   *    place while it is on — because the honest intersection hides the
+   *    feature from the network it is named after for as long as the server
+   *    takes to learn one word, which is the opposite of what running ahead
+   *    behind a flag is for. The stand-in is itself flag-scoped: with this
+   *    off the publisher is the whole answer, exactly as before.
+   * 5. **Media validation counted per item.** Found testing the real screen:
+   *    the server validates attachments against the *post*, so five images
+   *    spread three-one-one over a chain still comes back as "post has 5 image
+   *    attachments; platform allows up to 4" — a warning the author cannot act
+   *    on, because no post of the thread is over. Our own count row already
+   *    stands down for a thread (`mediaChecks`) and the per-post verdict comes
+   *    from `planThread`, but `platform_validation` is the server's and is
+   *    passed through as written — deliberately, because it is right *today*:
+   *    until (1) lands, a thread really does publish as one post with every
+   *    file on it. It has to become per-item at the same time the split does,
+   *    or the flag turns on a screen with a permanent false alarm.
    *
-   * With this off the post type is filtered out of the picker on both networks
-   * (`buildPlatformView`), the editor is the single body it has always been,
-   * and nothing reads the settings key — which also means an existing X
-   * `thread` post keeps behaving exactly as it did.
+   * With this off, Threads does not offer the type (`buildPlatformView` and
+   * `releasedPostTypes` both drop it), nothing reads the settings key, and the
+   * editor is what it always was. X keeps offering `thread`, as it always has
+   * — withdrawing it would be a change with the flag off, which a flag may
+   * never make. An existing X `thread` post therefore behaves identically
+   * either way, because a thread is the same one Markdown body as every other
+   * post type; all the flag adds is the note under the editor, the
+   * per-thumbnail picker and the row in the pre-publish bar.
    *
-   * The post's `content` is still written on every change, as the rejoined
-   * items, so everything downstream — calendar, posts table, search, the
-   * assistant — keeps reading the field it already reads instead of an empty
-   * post. Nothing outside the flag knows the sequence exists.
+   * Nothing outside the flag reads anything new: `doc.content` is still the
+   * post's words, unchanged and un-rewritten, so the calendar, the posts table,
+   * search and the assistant are untouched by this.
    *
-   * Switch this on once the submit path sends `threadItems`, migrate the key
-   * onto whatever column holds them, and re-test the whole path against the
-   * real thing — per-item media is the half most likely to need a pass.
+   * Switch this on once the submit path sends `threadItems`, splits the body
+   * the way we do and names the slug on `threads`, then re-test the whole path
+   * against the real thing — the media assignment is the half most likely to
+   * need a pass, and (5) is the one that shows up as a warning rather than as
+   * a wrong post.
    */
   'thread-sequence': false,
 
