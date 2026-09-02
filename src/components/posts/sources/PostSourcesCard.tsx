@@ -1,4 +1,5 @@
 import { PostSourcesControl } from '@/components/posts/sources/PostSourcesControl'
+import { isSubmitted } from '@/lib/postStatusMachine'
 import { cn } from '@/lib'
 import type { Post } from '@/types/posts'
 
@@ -23,7 +24,12 @@ type Props = {
 export function PostSourcesCard({ post, changeDoc, className }: Props) {
   return (
     <div className={cn('bg-primary px-10 py-6', className)}>
-      <PostSourcesControl post={post} changeDoc={changeDoc} layout="card" />
+      <PostSourcesControl
+        post={post}
+        changeDoc={changeDoc}
+        layout="card"
+        locked={isSubmitted(post.status)}
+      />
     </div>
   )
 }

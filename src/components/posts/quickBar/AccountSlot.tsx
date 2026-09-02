@@ -40,7 +40,13 @@ export function AccountSlot({
   // `account.name` survives disconnection via the post's hydrated relation,
   // so a published post still names what it went out as even once that
   // account has left the platform's connected list.
-  if (!account.name && !account.connected) {
+  //
+  // The warning is for a post that still has to publish. Once it can't change
+  // (CON-251) nothing can be connected retroactively — the post has already
+  // gone out, or Zernio is holding it — so this would be urging an action
+  // against a settled fact. It falls through to "Account not recorded" below,
+  // which is the true statement about a post whose account nobody wrote down.
+  if (!account.name && !account.connected && editable) {
     return (
       <span className="flex min-w-0 items-center gap-1.5 text-tertiary-foreground">
         <WarningHint

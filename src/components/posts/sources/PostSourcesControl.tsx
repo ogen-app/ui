@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import {
   BooksIcon,
@@ -43,6 +44,13 @@ type Props = {
   post: Post
   changeDoc: (fn: (p: Post) => void) => void
   layout: SourcesLayout
+  /**
+   * The post is submitted, so its reading list is part of the record: the
+   * assistant has already written from exactly these documents, and the
+   * quality assessment was taken against them (CON-251). The list stays — it
+   * is the interesting half — and only the ways to change it go.
+   */
+  locked?: boolean
 }
 
 /**
@@ -57,7 +65,13 @@ type Props = {
  * assessment reads them too. So an empty list is not an empty field — it is an
  * assistant working from the brief and the body alone.
  */
-export function PostSourcesControl({ post, changeDoc, layout }: Props) {
+export function PostSourcesControl({
+  post,
+  changeDoc,
+  layout,
+  locked = false,
+}: Props) {
+  const { t } = useTranslation()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [webPageOpen, setWebPageOpen] = useState(false)
@@ -122,17 +136,17 @@ export function PostSourcesControl({ post, changeDoc, layout }: Props) {
     })
   }
 
-  const addButton = (
+  const addButton = locked ? null : (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           className={cn(layout === 'rail' && 'w-full justify-center')}
         >
           <PlusIcon />
-          <span>ADD SOURCE</span>
+          <span>{t('posts.sources.add')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -145,11 +159,11 @@ export function PostSourcesControl({ post, changeDoc, layout }: Props) {
       >
         <DropdownMenuItem onSelect={() => setPickerOpen(true)}>
           <BooksIcon />
-          <span>Choose from content bank</span>
+          <span>{t('posts.sources.fromBank')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => setUploadOpen(true)}>
           <UploadSimpleIcon />
-          <span>Upload files</span>
+          <span>{t('posts.sources.upload')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => {
@@ -158,7 +172,7 @@ export function PostSourcesControl({ post, changeDoc, layout }: Props) {
           }}
         >
           <GlobeSimpleIcon />
-          <span>Add a web page</span>
+          <span>{t('posts.sources.webPage')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -167,9 +181,14 @@ export function PostSourcesControl({ post, changeDoc, layout }: Props) {
   const list =
     rows.length === 0 ? (
       <p className="text-sm text-tertiary-foreground">
-        {layout === 'rail'
-          ? 'Nothing yet — this post writes from the campaign brief alone.'
-          : 'This post writes from the campaign brief alone. Add the documents it should also draw on — the assistant reads exactly what is listed here.'}
+        {/* Locked drops the invitation and keeps the fact: on a submitted
+            post "add the documents it should draw on" names something the
+            reader cannot do, and the sentence would read as a broken button. */}
+        {locked
+          ? t('posts.sources.emptyLocked')
+          : layout === 'rail'
+            ? t('posts.sources.emptyRail')
+            : t('posts.sources.emptyCard')}
       </p>
     ) : (
       <ul className="flex flex-col">
@@ -180,13 +199,16 @@ export function PostSourcesControl({ post, changeDoc, layout }: Props) {
             asset={asset}
             campaignId={post.campaign_id}
             layout={layout}
+            locked={locked}
             onDetach={() => detach(id)}
           />
         ))}
       </ul>
     )
 
-  const modals = (
+  // Nothing can open them, so a locked post does not mount them — the upload
+  // and web-page modals are always-mounted-and-closed rather than conditional.
+  const modals = locked ? null : (
     <>
       {/* Mounted only while open: it reads the whole content bank, and every
           document's markdown comes with it. See `AddSourcesModal`. */}
@@ -226,7 +248,7 @@ export function PostSourcesControl({ post, changeDoc, layout }: Props) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4 min-w-0">
         <h2 className="flex items-center gap-2 min-w-0 text-xl font-display font-medium tracking-tight">
-          Sources
+          {t('posts.sources.heading')}
           {rows.length > 0 && (
             <span className="font-normal text-tertiary-foreground">
               {rows.length}
@@ -258,14 +280,17 @@ function SourceRow({
   asset,
   campaignId,
   layout,
+  locked,
   onDetach,
 }: {
   id: string
   asset: Asset | null
   campaignId: string
   layout: SourcesLayout
+  locked: boolean
   onDetach: () => void
 }) {
+  const { t } = useTranslation()
   const rail = layout === 'rail'
   const rowClass = cn(
     'group flex items-center border-b border-quaternary last:border-b-0',
@@ -280,7 +305,7 @@ function SourceRow({
       <li className={rowClass}>
         <span className="size-8 shrink-0 border border-quaternary" />
         <span className="flex-1 text-sm text-tertiary-foreground">
-          Loading…
+          {t('posts.sources.loading')}
         </span>
       </li>
     )
@@ -312,26 +337,28 @@ function SourceRow({
       {reach === 'never' ? (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="shrink-0 text-xs text-warning">Can't be read</span>
+            <span className="shrink-0 text-xs text-warning">
+              {t('posts.sources.unreadable')}
+            </span>
           </TooltipTrigger>
-          <TooltipContent>
-            Nothing was extracted from this document, so retrieval skips it.
-          </TooltipContent>
+          <TooltipContent>{t('posts.sources.unreadableHint')}</TooltipContent>
         </Tooltip>
       ) : reach === 'waiting' ? (
         <span className="shrink-0 text-xs text-tertiary-foreground">
-          Still reading
+          {t('posts.sources.reading')}
         </span>
       ) : null}
-      <Button
-        type="button"
-        variant="ghost"
-        size="xsIcon"
-        aria-label={`Remove ${label} from this post`}
-        onClick={onDetach}
-      >
-        <XIcon className="size-4" />
-      </Button>
+      {!locked && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="xsIcon"
+          aria-label={t('posts.sources.remove', { title: label })}
+          onClick={onDetach}
+        >
+          <XIcon className="size-4" />
+        </Button>
+      )}
     </li>
   )
 }

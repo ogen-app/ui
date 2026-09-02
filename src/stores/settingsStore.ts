@@ -37,19 +37,6 @@ export type LocalSettings = {
    * table is the wrong home for it.
    */
   dismissedNotes: string[]
-
-  /**
-   * Note id -> whether it sits above the post body (CON-188).
-   *
-   * A map rather than a list because the default is not "unpinned": a
-   * `draft_thesis` starts pinned, so an explicit `false` has to be storable to
-   * outvote it. Absent means "whatever the type says" (`lib/postNotes`).
-   *
-   * Device-local, which is the compromise the API forces — `post_notes` has no
-   * `pinned` column, so there is nowhere shared to put it. A teammate opening
-   * the same post sees the type-based default, not your arrangement.
-   */
-  notePins: Record<string, boolean>
 }
 
 /**
@@ -95,12 +82,6 @@ type SettingsState = LocalSettings &
     /** Close an explainer permanently. Idempotent. */
     dismissNote: (id: string) => void
 
-    /** Pin a note above the post body, or send it back down. */
-    setNotePin: (noteId: string, pinned: boolean) => void
-
-    /** Forget a deleted note's pin — the map is persisted and never expires. */
-    clearNotePin: (noteId: string) => void
-
     // Reset all settings to defaults
     resetAllSettings: () => void
   }
@@ -110,7 +91,6 @@ const DEFAULT_SETTINGS: LocalSettings = {
   panelMemory: DEFAULT_PANEL_MEMORY,
   lastOpenedModals: {},
   dismissedNotes: [],
-  notePins: {},
 }
 
 const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null, campaignId: null }
@@ -185,21 +165,6 @@ export const useSettingsStore = create<SettingsState>()(
           )
         },
 
-        setNotePin: (noteId, pinned) => {
-          set((state) => ({
-            notePins: { ...state.notePins, [noteId]: pinned },
-          }))
-        },
-
-        clearNotePin: (noteId) => {
-          set((state) => {
-            if (!(noteId in state.notePins)) return state
-            const next = { ...state.notePins }
-            delete next[noteId]
-            return { notePins: next }
-          })
-        },
-
         // Reset all settings — this brings closed explainers back, which is
         // the only way to see one again.
         resetAllSettings: () => {
@@ -214,7 +179,6 @@ export const useSettingsStore = create<SettingsState>()(
           panelMemory: state.panelMemory,
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
-          notePins: state.notePins,
           // Don't persist
           // scope, campaignId — where you are, not what you chose
         }),

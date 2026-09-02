@@ -731,8 +731,93 @@ export const es: Translation = {
 
     noPlatform: 'Sin plataforma',
     noAccount: 'Sin cuenta',
+    noPostType: 'Sin tipo de publicación',
 
     hasProblem: 'Esta publicación tiene un problema',
+
+    sources: {
+      heading: 'Fuentes',
+      sectionTitle: 'FUENTES',
+      add: 'AÑADIR FUENTE',
+      fromBank: 'Elegir del banco de contenido',
+      upload: 'Subir archivos',
+      webPage: 'Añadir una página web',
+      emptyCard:
+        'Esta publicación se basa únicamente en el brief de la campaña. Añade los documentos de los que también debería partir: el asistente lee exactamente lo que aparece aquí.',
+      emptyRail:
+        'Nada todavía — esta publicación se basa únicamente en el brief de la campaña.',
+      emptyLocked:
+        'Esta publicación se basa únicamente en el brief de la campaña.',
+      loading: 'Cargando…',
+      unreadable: 'No se puede leer',
+      unreadableHint:
+        'No se extrajo nada de este documento, así que la recuperación lo omite.',
+      reading: 'Leyendo todavía',
+      remove: 'Quitar {{title}} de esta publicación',
+    },
+
+    locked: {
+      scheduled:
+        'Esta publicación está programada. Cancela la programación para modificarla.',
+      published:
+        'Esta publicación ya salió — lo que ves es el registro de lo que se publicó.',
+    },
+
+    quality: {
+      score: 'Calidad de la publicación {{score}}',
+      assess: 'Evaluar la calidad',
+      reassess: 'Volver a evaluar',
+      assessing: 'Evaluando…',
+      neverScored: 'Esta publicación nunca se evaluó.',
+      scoringIsForDrafts:
+        'La evaluación es para una publicación que todavía puedes cambiar.',
+    },
+
+    versions: {
+      liveDraft: 'Borrador',
+      liveDraftTime: 'Sin guardar',
+      liveDraftNote: 'Todavía sin instantánea',
+      liveSubmitted: 'Texto actual',
+      liveSubmittedNote: 'Nunca se guardó una instantánea',
+    },
+
+    duplicate: {
+      action: 'DUPLICAR COMO BORRADOR',
+      pending: 'Duplicando…',
+      success: 'Borrador creado',
+      error: 'No se pudo duplicar la publicación. Inténtalo de nuevo.',
+      titleSuffix: '{{title}} (copia)',
+    },
+
+    notes: {
+      heading: 'Notas',
+      add: 'AÑADIR NOTA',
+      save: 'GUARDAR',
+      cancel: 'CANCELAR',
+      delete: 'ELIMINAR',
+      edit: 'Editar la nota',
+
+      titlePlaceholder: 'Título (opcional)',
+      titleLabel: 'Título de la nota',
+      bodyPlaceholder: '¿Qué debería recordar esta publicación?',
+      bodyLabel: 'Nota',
+
+      deleteConfirm: '¿Eliminar esta nota? No se podrá recuperar.',
+
+      loadError:
+        'No se pudieron cargar las notas. Vuelve a cargar la página para intentarlo de nuevo.',
+
+      origin: {
+        assistant: 'Escrita por el asistente de publicaciones',
+        generated: 'Capturada cuando se generó esta publicación',
+      },
+
+      type: {
+        note: 'Nota',
+        draftThesis: 'Tesis del borrador',
+        imagePrompt: 'Prompt de imagen',
+      },
+    },
   },
   tiers: {
     notInPlan: 'No está en tu plan',
