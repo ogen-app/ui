@@ -373,3 +373,23 @@ export function canEditScheduledAt(status: PostStatus): boolean {
 export function canEditPublishingAccount(status: PostStatus): boolean {
   return canEditScheduledAt(status)
 }
+
+// Whether this post can have numbers yet — the gate on asking
+// `GET /api/posts/:id/analytics` at all.
+//
+// Deliberately narrower than "submitted". A `scheduled` post has handed a
+// submission to Zernio and still gone out nowhere, so there is nothing to
+// measure and the request could only ever answer 409; the same goes for
+// `scheduled_for_manual_publishing`, where a human has not been yet. Only
+// `published` means a copy of this post exists on a network — whether the
+// publisher put it there or a person did and linked it back with
+// `verify-external`, which is the transition that produces the publisher id
+// the analytics sweep follows.
+//
+// So this is not `isTerminalStatus` and not `isSubmitted`. It agrees with
+// `isTerminalStatus` on every status in the app today, which is exactly why it
+// is written out: the day a second terminal status is added, that one would
+// start claiming numbers it has none of.
+export function canHaveAnalytics(status: PostStatus): boolean {
+  return status === 'published'
+}
