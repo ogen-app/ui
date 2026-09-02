@@ -89,12 +89,27 @@ function VoiceEditorPage() {
   )
 
   const body = () => {
+    // The library gates the create branch as well as the edit one, and that is
+    // new: whether this is the workspace's *first* voice decides whether it is
+    // born the default, and a guess either way is silently wrong — `false`
+    // costs an empty workspace its default, `true` takes it off a voice that
+    // already has it. One spinner on a cold load of `/new` is the price.
+    if (isPending)
+      return (
+        <Static header={header}>
+          <PageLoader />
+        </Static>
+      )
+
     if (isNew) {
       return (
         <VoiceEditor
           header={header}
           voice={null}
           starter={voiceStarter(from)}
+          // `data` is absent when the fetch failed, and `undefined === 0` is
+          // false — so a library we could not read never promotes anything.
+          first={data?.voices.length === 0}
           onCancel={back}
           onSave={(written) => {
             save.mutate(written, {
@@ -113,12 +128,6 @@ function VoiceEditorPage() {
     // what a `?? null` here would do — would answer a wrong URL with a create
     // screen, and the first thing typed into it would be saved under whatever
     // the address bar happened to say.
-    if (isPending)
-      return (
-        <Static header={header}>
-          <PageLoader />
-        </Static>
-      )
     if (isError || !voice) {
       return (
         <Static header={header}>

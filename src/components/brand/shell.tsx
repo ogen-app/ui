@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react'
 import {
   CaretRightIcon,
-  FileArrowUpIcon,
   GlobeIcon,
   PencilSimpleIcon,
   PlusIcon,
-  SparkleIcon,
+  StarIcon,
   XIcon,
   type Icon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { cn } from '@/lib'
 import { useSettingsStore } from '@/stores/settingsStore'
 import type { BrandConsumer, BrandOrigin } from './types'
@@ -236,26 +236,34 @@ const OFFER_NOTE_ID = 'brand-read-from-website'
  * to do something, and the explanation is most of it.
  *
  * **And it can be closed for good.** Not the `Explainer` contract — that one
- * bans anything the user needs while working, and this is an action. It is safe
- * to lose because it is a shortcut and never the only way in: every section
- * still offers its own starters and its own blank form, so someone who dismisses
- * this has skipped a fast path, not been locked out of one. The alternative was
- * a card that reappears on every visit until the brand is complete, which is
- * the definition of nagging.
+ * bans anything the user needs while working. It is safe to lose because it is
+ * a shortcut and never the only way in: every section still offers its own
+ * starters and its own blank form, so someone who dismisses this has skipped a
+ * fast path, not been locked out of one. The alternative was a card that
+ * reappears on every visit until the brand is complete, which is the definition
+ * of nagging.
+ *
+ * The dismissal is one-way and there is no control that undoes it — the only
+ * route back is `resetAllSettings`, which resets everything else too. That is
+ * acceptable for a card offering a shortcut and would not be for one carrying a
+ * feature, so it is worth revisiting when these paths actually work.
+ *
+ * ## Which, today, they do not — so the buttons are gone
+ *
+ * It carried three: ask Ogen, point us at your site, upload a document. None
+ * has an endpoint behind it, and three disabled buttons under a paragraph is a
+ * worse lie than no buttons at all — disabled reads as *not right now*, as
+ * something a permission or a missing field is withholding, and people click it
+ * to find out which. The card keeps the offer as a sentence and says COMING
+ * SOON once. The order those three paths belong in is argued in `FirstRun`,
+ * where they are still on screen as rows; when they work, that is the file that
+ * changes first and this one follows.
  */
 export function WholeBrandOffer({
   fills,
-  onFromWebsite,
-  onFromDocument,
-  onAskOgen,
 }: {
   /** The sections it would populate, named. */
   fills: string[]
-  onFromWebsite?: () => void
-  /** For a workspace whose brand is already written down somewhere. */
-  onFromDocument?: () => void
-  /** For one where it is not written down anywhere. */
-  onAskOgen?: () => void
 }) {
   const dismissed = useSettingsStore((s) =>
     s.dismissedNotes.includes(OFFER_NOTE_ID),
@@ -271,8 +279,9 @@ export function WholeBrandOffer({
         'relative flex flex-col gap-5 bg-primary px-6 py-6',
       )}
     >
-      {/* Parked in the corner rather than sharing the action row: closing the
-          card is not one of the things it offers to do. */}
+      {/* Parked in the corner. It was there to stay out of the action row;
+          with the actions gone it is the only control on the card, and the
+          corner is still where a dismissal belongs. */}
       <Button
         variant="ghost"
         size="smIcon"
@@ -283,16 +292,23 @@ export function WholeBrandOffer({
         <XIcon />
       </Button>
 
-      {/* The one chip on this screen that is filled rather than tinted. Accent
-          is a fill and not an ink (it fails as text — see docs/colors.md), and
-          this is the screen's single promoted action, so it gets the fill. */}
+      {/* Tinted like every other card's chip, not filled. The accent fill was
+          earned by this being the screen's one promoted action; with the
+          actions gone it would be the loudest mark on the page attached to the
+          one thing you cannot do. */}
       <header className="flex max-w-2xl flex-col gap-3 pr-10">
-        <span className="flex size-10 items-center justify-center rounded-md bg-accent text-primary">
+        <span className="flex size-10 items-center justify-center rounded-md bg-secondary">
           <GlobeIcon className="size-6" />
         </span>
-        <h2 className="font-display text-2xl font-medium leading-8 tracking-tight">
-          Read the rest off your website
-        </h2>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h2 className="font-display text-2xl font-medium leading-8 tracking-tight">
+            Read the rest off your website
+          </h2>
+          {/* Beside the heading, because with the buttons gone the tag is
+              the card's whole state — the difference between an offer and a
+              notice is that one of them can be taken. */}
+          <StatusBadge tone="neutral" label="COMING SOON" />
+        </div>
         <p className="text-sm leading-5">
           One pass fills {joinList(fills)} — from your own copy, not from a
           template. You see everything it proposes before any of it is saved.
@@ -308,30 +324,6 @@ export function WholeBrandOffer({
           does.
         </p>
       </header>
-
-      {/* Three ways in, and the first one looks like the recommendation it is.
-          Ogen leads: a website read is the better raw material when there is a
-          website worth reading, but answering a few questions is the path that
-          works for every workspace, and the one nobody has to go and find a URL
-          or a file for first.
-
-          Capitals because these are the actions, not links in a paragraph: same
-          rule the rest of the app's action labels follow, and the caps are the
-          copy rather than a CSS transform. */}
-      <div className="flex flex-wrap gap-2">
-        <Button variant="defaultInverted" size="sm" onClick={onAskOgen}>
-          <SparkleIcon />
-          <span>ASK OGEN TO HELP</span>
-        </Button>
-        <Button variant="outline" size="sm" onClick={onFromWebsite}>
-          <GlobeIcon />
-          <span>POINT US AT YOUR SITE</span>
-        </Button>
-        <Button variant="outline" size="sm" onClick={onFromDocument}>
-          <FileArrowUpIcon />
-          <span>UPLOAD A DOCUMENT</span>
-        </Button>
-      </div>
     </section>
   )
 }
@@ -703,7 +695,7 @@ export function StarterCard({
     <button
       type="button"
       onClick={onClick}
-      className="group flex items-center gap-3 rounded-md border border-quaternary px-4 py-4 text-left transition-colors hover:border-foreground hover:bg-secondary"
+      className="group flex cursor-pointer items-center gap-3 rounded-md border border-quaternary px-4 py-4 text-left transition-colors hover:border-foreground hover:bg-secondary"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary transition-colors group-hover:bg-primary">
         <Glyph className="size-6" style={{ color: tone }} />
@@ -782,6 +774,63 @@ export function EntryCard({
       {children}
       {footer}
     </article>
+  )
+}
+
+/**
+ * Which entry the app falls back to — a star, wherever that entry is listed.
+ *
+ * **One mark, three screens.** It replaces the dot-and-word the voice card
+ * carried on its own, because the same fact is now told in three places (the
+ * Overview's rows, the two library screens) and by the two editors, and the
+ * editors were already using a star. A fact that looks like a dot in a list and
+ * a star in the form it opens is two facts as far as anybody reading is
+ * concerned.
+ *
+ * **The colour is the second half of the fact, and it is the useful half.**
+ * Being the default is not an achievement — it is the ordinary resting state of
+ * one of four voices — but being the default *with nothing behind you* is the
+ * one thing on these screens actually worth finding, because it is the case
+ * where every post the workspace generates falls back to material that changes
+ * nothing. Green is this app's word for fine and working; the grey is the same
+ * grey as an unticked row, so the two marks agree down a column.
+ *
+ * Positive green rather than the section's own hue, on both sections, even
+ * though audiences' hue is itself a green: the hue means *which section this
+ * is* — it is the colour of the page header, the Overview card and the empty
+ * state — and a second meaning laid over it breaks both readings.
+ *
+ * No tooltip, and the word stays: a mark whose meaning is only available on
+ * hover is not available at all in a list somebody is scanning, and the whole
+ * sentence goes to a screen reader through the label.
+ */
+export function DefaultStar({
+  backed,
+  label,
+  className,
+}: {
+  /** Whether the entry has the material behind it that makes it worth being the default. */
+  backed: boolean
+  /** The whole fact, for a screen reader — the visible word is only one of it. */
+  label: string
+  /** Type for the mark; it inherits nothing of its own. See `OriginLine`. */
+  className?: string
+}) {
+  return (
+    <span
+      aria-label={label}
+      className={cn('flex shrink-0 items-center gap-1.5', className)}
+    >
+      <StarIcon
+        weight="fill"
+        aria-hidden
+        className={cn(
+          'size-4',
+          backed ? 'text-positive' : 'text-senary-foreground',
+        )}
+      />
+      default
+    </span>
   )
 }
 

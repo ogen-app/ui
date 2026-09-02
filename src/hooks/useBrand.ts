@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   deleteAudience,
+  getCampaignBrand,
+  getPostBrand,
+  saveCampaignBrand,
+  savePostBrand,
   deleteGuardrails,
   deleteVoice,
   getBrand,
-  resetBrand,
   saveAudience,
   saveGuardrails,
   saveVoice,
@@ -14,6 +17,8 @@ import type {
   BrandData,
   BrandGuardrails,
   BrandVoice,
+  CampaignBrand,
+  PostBrand,
 } from '@/components/brand/types'
 
 /**
@@ -31,10 +36,9 @@ import type {
  * guardrails" is a to-do, "we did not say" is nothing at all, and the whole
  * argument for this screen over a folder is that it can be measured against.
  *
- * What is behind it today is a stub (`services/api/brand.ts`): no endpoint, a
- * JSON seed, and `localStorage` where the database goes. That is invisible from
- * here on purpose — this file is written as though the API existed, so the day
- * it does the only edit is in the service.
+ * That shape is now the endpoint's, not a guess about it: CON-228 answers in
+ * exactly this form, and the swap from the stub touched only the service — the
+ * bet this file was written on.
  */
 export const BRAND_KEY = ['brand'] as const
 
@@ -66,6 +70,7 @@ export function useSaveVoice() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (voice: BrandVoice) => saveVoice(voice),
+    meta: { errorTitle: 'Unable to save the voice' },
     onSuccess: (saved) => {
       // Written into the cache as well as invalidated: the editor navigates
       // back to the library the moment this resolves, and without the direct
@@ -99,6 +104,7 @@ export function useDeleteVoice() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteVoice(id),
+    meta: { errorTitle: 'Unable to delete the voice' },
     onSuccess: (_void, id) => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) => {
         if (!current) return current
@@ -117,27 +123,23 @@ export function useDeleteVoice() {
 }
 
 /**
- * Create or replace an audience.
- *
- * The voice mutation's shape without the demotion: the editor hands back a
- * whole audience, and there is no flag on the collection to keep. The direct
- * cache write is here for the same reason it is there — the editor navigates
- * back to the library the instant this resolves, and without it the list paints
- * one frame of its pre-save self, which reads as "it didn't save".
+ * Create or replace an audience — the voice mutation without the demotion,
+ * because there is no audience default to keep. CON-228 scopes the one-default
+ * invariant to voices and templates; see `resolveAudience` in
+ * `components/brand/binding.ts`.
  */
 export function useSaveAudience() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (audience: BrandAudience) => saveAudience(audience),
+    meta: { errorTitle: 'Unable to save the audience' },
     onSuccess: (saved) => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) => {
         if (!current) return current
-        return {
-          ...current,
-          audiences: current.audiences.some((a) => a.id === saved.id)
-            ? current.audiences.map((a) => (a.id === saved.id ? saved : a))
-            : [...current.audiences, saved],
-        }
+        const merged = current.audiences.some((a) => a.id === saved.id)
+          ? current.audiences.map((a) => (a.id === saved.id ? saved : a))
+          : [...current.audiences, saved]
+        return { ...current, audiences: merged }
       })
       qc.invalidateQueries({ queryKey: BRAND_KEY })
     },
@@ -148,6 +150,7 @@ export function useDeleteAudience() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteAudience(id),
+    meta: { errorTitle: 'Unable to delete the audience' },
     onSuccess: (_void, id) => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) =>
         current
@@ -175,6 +178,7 @@ export function useSaveGuardrails() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (guardrails: BrandGuardrails) => saveGuardrails(guardrails),
+    meta: { errorTitle: 'Unable to save the guardrails' },
     onSuccess: (saved) => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) =>
         current ? { ...current, guardrails: saved } : current,
@@ -189,6 +193,7 @@ export function useDeleteGuardrails() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: deleteGuardrails,
+    meta: { errorTitle: 'Unable to clear the guardrails' },
     onSuccess: () => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) =>
         current ? { ...current, guardrails: null } : current,
@@ -198,16 +203,65 @@ export function useDeleteGuardrails() {
   })
 }
 
-/**
- * Put the stub workspace back to its seed — the harness's control, and no part
- * of the feature. It goes with the stub. See `services/api/brand.ts`.
+/* -- Binding ---------------------------------------------------------------
+ *
+ * A campaign's share of the library, and a post's overrides on top of it (§8).
+ *
+ * Separate queries from `useBrand` rather than fields on it, because they have
+ * different lifetimes and different scopes: the library is one object per
+ * workspace that every Brand screen wants, and a binding is one small row that
+ * only the campaign or post looking at it wants. Folding them together would
+ * mean a post editor refetching every voice, audience and template in the
+ * workspace to find out which voice it is in.
+ *
+ * These are the hooks with the shortest life in this file. When CON-228 lands
+ * the binding rides the campaign and post payloads, and these fold into
+ * `useCampaign` and `usePost` — see the note in `services/api/brand`.
  */
-export function useResetBrand() {
+
+export const CAMPAIGN_BRAND_KEY = (campaignId: string) =>
+  ['brand', 'campaign', campaignId] as const
+
+export const POST_BRAND_KEY = (postId: string) =>
+  ['brand', 'post', postId] as const
+
+export function useCampaignBrand(campaignId: string | undefined) {
+  return useQuery({
+    queryKey: CAMPAIGN_BRAND_KEY(campaignId ?? ''),
+    queryFn: () => getCampaignBrand(campaignId!),
+    enabled: !!campaignId,
+    staleTime: FIVE_MINUTES,
+  })
+}
+
+export function useSaveCampaignBrand(campaignId: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: resetBrand,
-    onSuccess: (data) => {
-      qc.setQueryData<BrandData>(BRAND_KEY, data)
+    mutationFn: (value: CampaignBrand) => saveCampaignBrand(campaignId, value),
+    onSuccess: (saved) => {
+      // Written straight into the cache, like `useSaveVoice`: the pickers are
+      // edited in place and a refetch round-trip would paint one frame of the
+      // pre-save selection, which reads as the click not having landed.
+      qc.setQueryData(CAMPAIGN_BRAND_KEY(campaignId), saved)
+    },
+  })
+}
+
+export function usePostBrand(postId: string | undefined) {
+  return useQuery({
+    queryKey: POST_BRAND_KEY(postId ?? ''),
+    queryFn: () => getPostBrand(postId!),
+    enabled: !!postId,
+    staleTime: FIVE_MINUTES,
+  })
+}
+
+export function useSavePostBrand(postId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (value: PostBrand) => savePostBrand(postId, value),
+    onSuccess: (saved) => {
+      qc.setQueryData(POST_BRAND_KEY(postId), saved)
     },
   })
 }

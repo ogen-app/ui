@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react'
 import {
-  ArrowRightIcon,
+  ChatCircleTextIcon,
   GlobeIcon,
   PencilSimpleIcon,
   SparkleIcon,
   StackIcon,
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { cn } from '@/lib'
 
 /**
@@ -18,38 +18,53 @@ import { cn } from '@/lib'
  * run is not blank. "Here is the Brand we read off your website" is a screen
  * worth arriving at; five empty cards is not.
  *
- * So the offers are ordered best-first, and the order is the argument:
+ * ## Five ways in, stacked, in the campaign-type anatomy
  *
- * 1. **From the website** — CON-222 already scrapes a URL to Markdown with
- *    images, so this is assembly of machinery that exists, and it starts the
- *    customer somewhere nobody else is.
- * 2. **From what they have published** — produces something they recognise,
- *    which is a different and easier kind of agreement than authoring.
- * 3. **From our library** — for the true cold start. Few and opinionated;
- *    eight to twelve, not sixty. A library that needs a search box has failed.
+ * It was a row of three tiles with a text link underneath, which made two
+ * claims that turned out to be wrong. The first was in the shape: three
+ * columns have room for a heading and a caption and nothing else, so each
+ * onramp had to sell itself in a fragment. The second was in the demotion —
+ * writing it yourself was the escape hatch, sized and coloured as the thing
+ * you resort to. On a screen where most of the onramps are not built yet, the
+ * one that always works cannot be the one drawn smallest.
  *
- * And the fourth is deliberately not a peer of the other three: **the blank
- * form is the escape hatch, not the default.** Nobody's first act should be
- * authoring a brand voice from nothing, so it is a text link under the cards
- * rather than a fourth tile.
+ * So this is `CampaignTypePicker`'s card, one per row: a 40px glyph, a label,
+ * and a full sentence with somewhere to put it. Same anatomy, same measure,
+ * same hover — a stack of choices where each choice explains itself is a
+ * pattern this app already has, and inventing a second one for five items
+ * would only mean two ways of drawing the same idea.
  *
- * The risk is stated on the screen rather than hidden in a doc: if the template
- * path works as intended, every customer picks from the same twelve voices and
- * we have relocated the un-branded problem rather than solved it. **The
- * template's job is to be replaced**, which is why paths 1 and 2 outrank it and
- * why the screen keeps asking for samples afterwards.
+ * ## One of them works, and four say COMING SOON
+ *
+ * That ratio is uncomfortable and it is deliberate. These four are the argument
+ * for the whole section — reading a brand off a website, or being asked a
+ * handful of questions instead of facing five empty forms, is the thing that
+ * starts a customer somewhere nobody else does. None of them is a feature you
+ * discover later from a changelog. Hiding them until the endpoints land would
+ * mean the day-one screen understates what Brand is for, and the day they
+ * arrive nobody would be looking.
+ *
+ * The honest cost is a screen that promises four times and delivers once, which
+ * is why the tag is on the row rather than in a footnote: it is the first thing
+ * read after the label, and nothing about a faded row invites a click.
+ *
+ * ## The template row is the wizard, not the starters
+ *
+ * Voices and Audiences each ship three starters today, and those still work —
+ * open the section, pick one, it is yours. What does *not* exist is the thing
+ * this row promises, which is a single pass that sets a voice **and** an
+ * audience **and** the guardrails together. A stepper is the only shape that
+ * does that without becoming five forms in a trench coat, and it is the one
+ * onramp here that is a build rather than an endpoint. So the row says coming
+ * soon and its copy points at the per-section starters, because a customer who
+ * reads "templates: coming soon" and then finds template cards two clicks later
+ * has been told something false.
  */
 export function FirstRun({
-  onFromWebsite,
-  onFromPosts,
-  onFromLibrary,
-  onSkip,
+  onManual,
 }: {
-  onFromWebsite?: () => void
-  onFromPosts?: () => void
-  onFromLibrary?: () => void
   /** Straight to the empty sections, for someone who wants to type. */
-  onSkip?: () => void
+  onManual?: () => void
 }) {
   return (
     <div className="mx-auto flex w-full max-w-content flex-col gap-6 rounded-lg bg-primary p-6">
@@ -62,86 +77,121 @@ export function FirstRun({
           People use social media to be distinct — that is what branding is for.
           Generated content has no voice of its own and nothing stopping it from
           reading like the rest of the feed. This is where you keep the material
-          that makes yours yours: how you sound, who you are talking to, what
-          you may never claim, and what your images look like.
+          that makes yours yours: how you sound, who you are talking to, and
+          what you may never claim.
         </p>
       </header>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <Offer
+      {/* The one that works, then the four that do not. Grouping beats
+          best-first here: interleaved, the eye would have to read the tag on
+          all five rows to find the single one it can use today. Within the
+          faded group the old order stands, so the day an endpoint lands the
+          only change is deleting a prop. */}
+      <div className="grid grid-cols-1 gap-3">
+        <Onramp
+          icon={<PencilSimpleIcon />}
+          title="Fill it in yourself"
+          body="Straight to the three sections, empty. The fastest path when you already know how you sound and only need somewhere to put it."
+          onClick={onManual}
+        />
+        <Onramp
+          icon={<SparkleIcon />}
+          title="Build it with Ogen"
+          body="Answer a handful of questions and Ogen drafts the whole thing with you — the path that works when none of this is written down anywhere, and the only one that needs no website, no archive and no file."
+          comingSoon
+        />
+        <Onramp
           icon={<GlobeIcon />}
           title="Read it off your website"
-          body="Point us at your site and we propose the whole thing in one step — voice samples from your own copy, the disclaimer you already run, product facts, colours and logo."
-          recommended
-          onClick={onFromWebsite}
+          body="Point us at your site and we propose the whole thing in one step — voice samples from your own copy, the disclaimer you already run, and the product facts behind every claim."
+          comingSoon
         />
-        <Offer
-          icon={<SparkleIcon />}
+        <Onramp
+          icon={<ChatCircleTextIcon />}
           title="Learn it from your posts"
-          body="Here is the voice you already have, in your own words. Fix what's wrong rather than inventing something from scratch."
-          onClick={onFromPosts}
+          body="The voice you already have, in your own words. Fix what's wrong rather than inventing something from scratch."
+          comingSoon
         />
-        <Offer
+        <Onramp
           icon={<StackIcon />}
           title="Start from a template"
-          body="A dozen voices with real samples, for a cold start. Yours the moment you pick one, and meant to be replaced as you go."
-          onClick={onFromLibrary}
+          body="A short setup that walks the whole brand one question at a time — voice, audience and the things you can never claim. Individual starter voices and audiences already exist inside those two sections; what is coming is doing all three in one pass."
+          comingSoon
         />
-      </div>
-
-      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-tertiary-foreground">
-        <span>
-          A template gets you most of the way in one click. It is the samples
-          you add afterwards that make it yours — twelve workspaces on the same
-          template sound like twelve workspaces on the same template.
-        </span>
-      </p>
-
-      <div>
-        <Button variant="ghost" size="sm" onClick={onSkip}>
-          <PencilSimpleIcon />
-          <span>Or fill it in yourself</span>
-        </Button>
       </div>
     </div>
   )
 }
 
-function Offer({
+/**
+ * One way in.
+ *
+ * A `coming soon` row is a `div` and not a disabled `button`, because there is
+ * no action behind it to disable — the badge is the whole content of the row's
+ * state, and a control that will never fire is a promise the markup makes and
+ * the app cannot keep. The fade is on the glyph and the words only: a greyed
+ * badge on a greyed row is the one part that still has to be read.
+ */
+function Onramp({
   icon,
   title,
   body,
-  recommended = false,
+  comingSoon = false,
   onClick,
 }: {
   icon: ReactNode
   title: string
   body: string
-  recommended?: boolean
+  comingSoon?: boolean
   onClick?: () => void
 }) {
+  const content = (
+    <>
+      <span
+        className={cn(
+          'flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary [&_svg]:size-6',
+          comingSoon && 'opacity-50',
+        )}
+      >
+        {icon}
+      </span>
+      <span
+        className={cn(
+          'flex min-w-0 flex-col gap-0.5 text-left',
+          comingSoon && 'opacity-50',
+        )}
+      >
+        <span className="text-base font-medium">{title}</span>
+        <span className="text-sm leading-5 text-secondary-foreground">
+          {body}
+        </span>
+      </span>
+    </>
+  )
+
+  if (comingSoon) {
+    return (
+      <div className="flex items-start gap-3 rounded-md border border-quaternary px-4 py-4">
+        {content}
+        <StatusBadge
+          tone="neutral"
+          label="COMING SOON"
+          className="ml-auto shrink-0 pl-3 pt-0.5"
+        />
+      </div>
+    )
+  }
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'group flex flex-col gap-2 rounded-md p-4 text-left transition-colors',
-        // The recommended one is not merely first — a row of three identical
-        // tiles is a menu, and a menu is what the blank box already was.
-        recommended
-          ? 'bg-secondary hover:bg-tertiary'
-          : 'border border-quaternary hover:bg-secondary',
+        'flex items-start gap-3 rounded-md border border-quaternary px-4 py-4',
+        'cursor-pointer text-primary-foreground transition-colors hover:border-foreground',
       )}
     >
-      <span className="flex items-center gap-2">
-        <span className="[&_svg]:size-4 text-secondary-foreground">{icon}</span>
-        <span className="font-grotesk text-sm font-medium">{title}</span>
-      </span>
-      <span className="text-xs leading-4 text-tertiary-foreground">{body}</span>
-      <span className="mt-auto flex items-center gap-1 pt-2 text-xs text-secondary-foreground">
-        <span>{recommended ? 'Start here' : 'Use this'}</span>
-        <ArrowRightIcon className="size-3 transition-transform group-hover:translate-x-0.5" />
-      </span>
+      {content}
     </button>
   )
 }

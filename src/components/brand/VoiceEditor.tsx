@@ -3,7 +3,6 @@ import {
   ArrowCounterClockwiseIcon,
   DotsThreeVerticalIcon,
   PlusIcon,
-  StarIcon,
   TrashIcon,
   UploadSimpleIcon,
 } from '@phosphor-icons/react'
@@ -17,15 +16,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { ModalContainer } from '@/components/ui/modal'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { cn } from '@/lib'
 import {
   BrandEditorFrame,
   DangerCard,
+  DefaultControl,
   EditorCard,
   EditorIntro,
   Field,
@@ -91,6 +86,7 @@ export function VoiceEditor({
   header,
   voice,
   starter,
+  first = false,
   onSave,
   onCancel,
   onDelete,
@@ -109,12 +105,24 @@ export function VoiceEditor({
   voice: BrandVoice | null
   /** The template this was forked from, when arriving via a starter card. */
   starter?: VoiceStarter | null
+  /**
+   * Whether the library is empty — i.e. this is the workspace's first voice.
+   *
+   * The one thing on this screen the editor cannot work out for itself, and the
+   * route has to be sure of it rather than guess: `false` while the library is
+   * still loading would silently cost the workspace its default, and `true`
+   * would silently take it off whichever voice has it. See `draftFrom`.
+   */
+  first?: boolean
   onSave?: (voice: BrandVoice) => void
   onCancel?: () => void
   /** Only offered for a voice that exists. */
   onDelete?: () => void
 }) {
-  const initial = useMemo(() => draftFrom(voice, starter), [voice, starter])
+  const initial = useMemo(
+    () => draftFrom(voice, starter, first),
+    [voice, starter, first],
+  )
   const [draft, setDraft] = useState<Draft>(initial)
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
@@ -150,6 +158,8 @@ export function VoiceEditor({
           <DefaultControl
             isDefault={draft.isDefault}
             onMakeDefault={() => set('isDefault', true)}
+            does="Posts start in this voice unless another one is picked."
+            costs="Takes the default off whichever voice has it now."
           />
         }
       >
@@ -157,7 +167,7 @@ export function VoiceEditor({
           <Input
             value={draft.name}
             onChange={(e) => set('name', e.target.value)}
-            placeholder="Friday finfluencer"
+            placeholder="Founder, off the cuff"
           />
         </Field>
         {/* The field the library shows under the name, and the reason it is
@@ -171,7 +181,7 @@ export function VoiceEditor({
           <Input
             value={draft.whenToUse}
             onChange={(e) => set('whenToUse', e.target.value)}
-            placeholder="The Friday joke post, and nothing else"
+            placeholder="The lighter end-of-week post, and nothing else"
           />
         </Field>
       </EditorCard>
@@ -304,9 +314,21 @@ const BLANK_RULES: VoiceRules = {
   closing: '',
 }
 
+/**
+ * What the editor opens with.
+ *
+ * `first` is the only argument that changes an *unsaved* voice's meaning, and
+ * it is worth the prop. A new voice is not born the default, because promotion
+ * demotes somebody else's entry and a Create button does not get to do that
+ * quietly — but there is nobody to demote in an empty library, and a workspace
+ * whose only voice is not its default has just filled in a section that changes
+ * nothing: every post falls back past it to no voice at all. So the first one
+ * takes the flag, visibly, on a control the writer can see before they commit.
+ */
 function draftFrom(
   voice: BrandVoice | null,
   starter?: VoiceStarter | null,
+  first = false,
 ): Draft {
   if (voice) {
     return {
@@ -324,11 +346,7 @@ function draftFrom(
   return {
     name: seed?.name ?? '',
     whenToUse: seed?.whenToUse ?? '',
-    // A new voice is never born the default. Making one takes a deliberate
-    // switch, because it demotes whichever voice is the default today — and a
-    // side effect on somebody else's entry is not something a Create button
-    // gets to do quietly.
-    isDefault: false,
+    isDefault: first,
     samples: [],
     rules: seed?.rules ?? BLANK_RULES,
     channelNotes: {},
@@ -342,6 +360,11 @@ function draftFrom(
  * forward: it is our reading of the samples, and a reading of text that no
  * longer exists is worse than none — it is the drift the field was added to
  * make visible, pointing the wrong way.
+ *
+ * The id is `''` for a voice that has never been stored. Ids are the server's
+ * (CON-228), so a create is a `POST` with no id and the real one arrives in the
+ * response; minting a UUID here would be the client guessing at an answer only
+ * the server has.
  */
 function assemble(
   draft: Draft,
@@ -351,7 +374,7 @@ function assemble(
   const samplesChanged =
     draft.samples.join('\u0000') !== (voice?.samples ?? []).join('\u0000')
   return {
-    id: voice?.id ?? crypto.randomUUID(),
+    id: voice?.id ?? '',
     ...draft,
     summary: samplesChanged ? '' : (voice?.summary ?? ''),
     usage: voice?.usage ?? { drafts: 0, published: 0 },
@@ -516,19 +539,13 @@ function SamplesCard({
             </SampleCard>
           </li>
         ))}
+        {/* The add cell says one thing whether the voice has six samples or
+            none. It used to carry the consequence of saving an empty voice as
+            well — but the card's own hint says that above the grid while the
+            set is short, and a cell that argues with you is a worse button
+            than one that does not. */}
         <li className="flex">
-          <SampleCard
-            blank
-            onClick={() => open(samples.length)}
-            className="gap-3"
-          >
-            {samples.length === 0 && (
-              <span className="text-sm leading-5 text-tertiary-foreground">
-                Nothing yet. Saved like this the voice has a name and nothing
-                behind it, and it will generate exactly what no voice at all
-                would.
-              </span>
-            )}
+          <SampleCard blank onClick={() => open(samples.length)}>
             <span className="flex items-center gap-1.5 font-grotesk text-xs font-medium uppercase text-tertiary-foreground transition-colors group-hover:text-primary-foreground">
               <PlusIcon className="size-4" weight="bold" />
               Add a sample
@@ -583,10 +600,42 @@ function SamplesCard({
 }
 
 /**
- * How wide the dog-ear is, in px. One number, because the cut in the card and
- * the line that closes it have to be the same size or the corner shows a seam.
+ * How wide the dog-ear is, in px. One number, because every edge of the fold —
+ * the cut in the silhouette, the flap under it and the two hairlines that close
+ * both — is derived from it. Two numbers is how a corner gets a seam.
  */
 const FOLD = 20
+
+/** The hairline, in px. The card has no CSS border; see `SampleCard`. */
+const LINE = 1
+
+/**
+ * How far a 45° edge moves along an axis when the shape is inset by `LINE`.
+ *
+ * A vertical or horizontal edge inset by one pixel moves by one pixel. A
+ * diagonal one does not: insetting it *perpendicularly* by `LINE` slides its
+ * intercepts by `LINE / sin 45°`. Getting this wrong by the 0.414px difference
+ * is exactly the seam this whole approach exists to remove, so it is a named
+ * constant rather than a fudge factor spelled out at three call sites.
+ */
+const SKEW = LINE * Math.SQRT2
+
+/** The corner-cut silhouette: a rectangle with its top-right corner taken off. */
+const OUTER = `polygon(0 0, calc(100% - ${FOLD}px) 0, 100% ${FOLD}px, 100% 100%, 0 100%)`
+
+/** The same silhouette, inset by `LINE` on all five edges. */
+const INNER = `polygon(${LINE}px ${LINE}px, calc(100% - ${FOLD + SKEW - LINE}px) ${LINE}px, calc(100% - ${LINE}px) ${FOLD + SKEW - LINE}px, calc(100% - ${LINE}px) calc(100% - ${LINE}px), ${LINE}px calc(100% - ${LINE}px))`
+
+/**
+ * The turned-down corner itself, in a `FOLD`-square box pinned to the card's
+ * top-right — the removed corner reflected back across the diagonal, which is
+ * where a real fold puts it. Right angle at the inside, hypotenuse along the
+ * crease.
+ */
+const FLAP = 'polygon(0 0, 100% 100%, 0 100%)'
+
+/** `FLAP`, inset by `LINE`. */
+const FLAP_INNER = `polygon(${LINE}px ${LINE + SKEW}px, ${FOLD - LINE - SKEW}px ${FOLD - LINE}px, ${LINE}px ${FOLD - LINE}px)`
 
 /**
  * Three clamped lines, their padding and their border — what a sample card
@@ -597,20 +646,36 @@ const SAMPLE_HEIGHT = 3 * 20 + 2 * 12 + 2
 
 /**
  * A sample, or the space where one goes: a page with its top-right corner
- * turned.
+ * turned down.
  *
- * The cut is a `clip-path` on the card, and the corner is left **hollow** — one
- * hairline across the diagonal and nothing behind it. The filled version read
- * as a grey tab stuck onto the card: it sat on top of the top and right borders
- * rather than continuing them, so the outline stepped where the two met. A line
- * has no thickness to misalign. It runs corner to corner of a `FOLD`-square box
- * pinned to the card's own corner, which is exactly where `clip-path` took the
- * border away, so the card's outline closes on itself.
+ * ## It is folded, not cut
  *
- * Drawn as a gradient rather than a rotated rule because a gradient band is
- * positioned from the box's own geometry — it cannot drift by a subpixel the
- * way a transformed element does — and `currentColor` lets the one class that
- * moves on hover move the line with the border it belongs to.
+ * The previous build clipped the corner off and ruled one hairline across the
+ * gap. That is a *cut* corner — a page with a bite out of it — and it read as
+ * one, because the thing that makes a dog-ear legible is the flap: the small
+ * triangle of the reverse side lying on top of the page, which is the only part
+ * of the drawing that says the paper went somewhere rather than being removed.
+ * So the corner is back, reflected across the crease into the card, filled a
+ * step darker than the card because you are looking at the back of the sheet.
+ *
+ * ## Why there is no `border` anywhere in here
+ *
+ * The seam was not a rounding error, it was the technique. A CSS border is
+ * painted *inside* the box while `clip-path` cuts the box's *edge*, so along
+ * the diagonal the clip ate the border and any line drawn to replace it met the
+ * top and right borders a pixel off — visible as a step at both ends of the
+ * diagonal, which is what the corner was reported for.
+ *
+ * The outline here is not drawn at all. It is the **difference between two
+ * clipped shapes**: this element is filled with the line colour and clipped to
+ * `OUTER`, a child is filled with the card colour and clipped to `INNER`, and
+ * what shows between them is a hairline that follows all five edges. There is
+ * no join to misalign because there are no two lines to join — the corner is a
+ * single filled polygon. The flap is the same sandwich at `FOLD` scale.
+ *
+ * The cost is one extra element per card and the `SKEW` arithmetic; the return
+ * is that the shape is correct by construction at any size, on any zoom, in any
+ * colour it is ever hovered into.
  *
  * `blank` is the add-a-sample cell: the same card, not a dashed ghost of one.
  * Dashes said "placeholder" about a control that is not a placeholder — it is
@@ -632,34 +697,48 @@ function SampleCard({
     <button
       type="button"
       onClick={onClick}
-      style={{
-        clipPath: `polygon(0 0, calc(100% - ${FOLD}px) 0, 100% ${FOLD}px, 100% 100%, 0 100%)`,
-        minHeight: SAMPLE_HEIGHT,
-      }}
+      style={{ clipPath: OUTER, minHeight: SAMPLE_HEIGHT }}
       className={cn(
-        'group relative flex w-full flex-col rounded-md border border-quaternary py-3 pl-4 text-left transition-colors',
-        // The right padding clears the fold: text running under a turned corner
-        // is the one way this shape can go wrong.
-        'pr-7',
-        'hover:border-foreground hover:bg-secondary',
-        // The default outline would be drawn outside the clip and disappear
-        // with it, so focus goes inside, the same ring every button uses.
+        'group relative flex w-full cursor-pointer flex-col rounded-md bg-quaternary text-left transition-colors hover:bg-foreground',
+        // The default outline would be drawn outside the clip and vanish with
+        // it, so focus goes inside, the same ring every button uses.
         'outline-none focus-visible:inset-ring-[2px] focus-visible:inset-ring-ring',
-        blank && 'justify-center',
-        className,
       )}
     >
-      {children}
+      {/* The card's own face. Inset by the hairline on every edge, which is
+          what leaves the hairline visible. */}
       <span
         aria-hidden
-        style={{
-          width: FOLD,
-          height: FOLD,
-          backgroundImage:
-            'linear-gradient(to top right, transparent calc(50% - 0.5px), currentColor calc(50% - 0.5px), currentColor calc(50% + 0.5px), transparent calc(50% + 0.5px))',
-        }}
-        className="absolute right-0 top-0 text-quaternary transition-colors group-hover:text-foreground"
+        style={{ clipPath: INNER }}
+        className="absolute inset-0 rounded-md bg-primary transition-colors group-hover:bg-secondary"
       />
+
+      {/* The flap, over the face and under the text. Its hypotenuse is the
+          crease and coincides with the silhouette's diagonal, so the two never
+          need to agree about where the edge is — they are the same edge. */}
+      <span
+        aria-hidden
+        style={{ width: FOLD, height: FOLD, clipPath: FLAP }}
+        className="absolute right-0 top-0 bg-quaternary transition-colors group-hover:bg-foreground"
+      >
+        <span
+          aria-hidden
+          style={{ clipPath: FLAP_INNER }}
+          className="absolute inset-0 bg-secondary transition-colors group-hover:bg-tertiary"
+        />
+      </span>
+
+      {/* The right padding clears the fold: text running under a turned corner
+          is the one way this shape can go wrong. */}
+      <span
+        className={cn(
+          'relative flex min-w-0 flex-col py-3 pl-4 pr-7',
+          blank && 'my-auto',
+          className,
+        )}
+      >
+        {children}
+      </span>
     </button>
   )
 }
@@ -749,97 +828,6 @@ function VoiceIntro({ name }: { name?: string }) {
       title={name ? `${name} Voice` : 'A new voice'}
       body="Three to eight real posts you would be happy to have written are what make one. Everything else on this screen is what a sample cannot say for itself."
     />
-  )
-}
-
-/**
- * Whether posts start in this voice — **a state with an action, not a setting
- * with a switch.**
- *
- * It was a labelled `Switch` with two sentences under it, and the sentences
- * were the tell. Being the default is not symmetrical: you can *take* it, and
- * you cannot give it back, because a workspace with no default at all sends
- * every post that follows through a four-way choice nobody asked for. A switch
- * promises the second half of a pair that does not exist, so it had to spend a
- * line of tertiary copy explaining that it only goes one way — a control that
- * needs a footnote to say which of its two states is reachable is the wrong
- * control.
- *
- * So: one thing, in the card's top-right corner, and which thing it is *is* the
- * state.
- *
- * - **Not the default** — a ghost `MAKE DEFAULT` with a hollow star. An offer,
- *   and a quiet one: it sits on the heading line of a card whose heading is the
- *   loudest thing on it, and an outline button there read as the card's main action.
- * - **The default** — a filled star and the word, inert. The tooltip carries
- *   what the two removed sentences were for: what being the default actually
- *   does. Repeating the label back ("this is the default voice") would leave
- *   the meaning of the word unsaid, which was the only thing worth saying.
- *
- * **Both states are 32px tall and padded like the button**, which is not a
- * detail: the first cut swapped a `size="sm"` button for a bare inline span, so
- * taking the default shrank the card's header by twelve pixels and jumped every
- * field below it up the screen. A control that changes shape when you press it
- * has to keep its footprint, or the press moves the page under the cursor.
- *
- * Green rather than the section's hue, matching the `default` mark on the
- * library card: the hue means "voices", and green is this app's word for *fine
- * and working*, which is the claim.
- *
- * Demotion still happens the way it always did — by another voice being
- * promoted — and that is stated on the offer rather than on the state, because
- * it is a consequence of clicking, not a fact about a voice that already has
- * it.
- */
-function DefaultControl({
-  isDefault,
-  onMakeDefault,
-}: {
-  isDefault: boolean
-  onMakeDefault: () => void
-}) {
-  if (isDefault) {
-    return (
-      <Tooltip>
-        {/* A span, not a disabled button: there is nothing to press. A disabled
-            button says "you may not do this", and what is true here is that
-            this is already done. */}
-        <TooltipTrigger asChild>
-          <span
-            tabIndex={0}
-            // `h-8`, `px-3`, the button's own type — and `pt-1` for the two
-            // pixels its optical top padding puts on a label. The whole point
-            // of this branch is that pressing the other one does not move
-            // anything, including itself.
-            className="flex h-8 shrink-0 items-center gap-2 px-3 pt-1 text-[13px]/4 font-medium text-secondary-foreground"
-          >
-            <StarIcon
-              weight="fill"
-              className="size-4 text-positive"
-              aria-hidden
-            />
-            Default
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>
-          Posts start in this voice unless another one is picked.
-        </TooltipContent>
-      </Tooltip>
-    )
-  }
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button variant="ghost" size="sm" onClick={onMakeDefault}>
-          <StarIcon />
-          <span>MAKE DEFAULT</span>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        Takes the default off whichever voice has it now.
-      </TooltipContent>
-    </Tooltip>
   )
 }
 
