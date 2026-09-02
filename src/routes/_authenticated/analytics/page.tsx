@@ -4,26 +4,37 @@ import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { Picker } from '@/components/analytics/ComparisonBar'
 import { NotYet, SectionCard } from '@/components/analytics/shell'
 import { WorkspaceOverviewView } from '@/components/analytics/WorkspaceOverview'
+import { WorkspacePerformersView } from '@/components/analytics/WorkspacePerformers'
 import {
   DEFAULT_OVERVIEW_WINDOW,
   OVERVIEW_WINDOWS,
   useAnalyticsOverview,
 } from '@/hooks/useAnalyticsOverview.ts'
+import { useAnalyticsPerformers } from '@/hooks/useAnalyticsPerformers.ts'
+import { DEFAULT_PERFORMER_BASIS } from '@/lib/analyticsPerformersView'
 import { useFeatureFlag } from '@/config/featureFlags.ts'
+import type { PerformerSort } from '@/types/analytics'
 
 /**
- * Analytics — the workspace's own numbers (CON-237).
+ * Analytics — the workspace's own numbers: what happened (CON-237), and which
+ * posts did it (CON-238).
  *
- * Workspace-wide because the endpoint is: `/api/analytics/overview` is
- * tenant-scoped and takes neither a campaign nor a platform, so this is a
- * destination of its own rather than a section inside a campaign. The campaign
- * Analytics tab keeps answering the campaign's question by a different route.
+ * Workspace-wide because the endpoints are: both `/api/analytics/overview` and
+ * `/api/analytics/performers` are tenant-scoped and take no campaign, so this
+ * is a destination of its own rather than a section inside a campaign. The
+ * campaign Analytics tab keeps answering the campaign's question by a different
+ * route.
  *
- * The window picker sits top-right, which is the corner for anything that
- * switches a representation and never changes the document (CON-178). It is the
- * only control on the page, and the card repeats the window it resolved to in
- * its own heading — the server does the resolving, so what the picker asked for
- * and what the figures cover are two different facts and both are shown.
+ * **Two controls, in two different places, because they are two different kinds
+ * of thing.** The window is the page's — both cards are drawn from it — so it
+ * sits top-right, the corner for anything that switches a representation and
+ * never changes the document (CON-178). The board's ranking basis is the
+ * board's alone and sits in that card's own header; putting it in the corner
+ * would claim it governs the page.
+ *
+ * Each card repeats the window it resolved to in its own heading. The server
+ * does the resolving, so what the picker asked for and what the figures cover
+ * are two different facts, and both are shown.
  */
 export function AnalyticsPage() {
   const enabled = useFeatureFlag('analytics-overview')
@@ -43,7 +54,12 @@ export function AnalyticsPage() {
  */
 function Live() {
   const [window, setWindow] = useState<string>(DEFAULT_OVERVIEW_WINDOW)
-  const result = useAnalyticsOverview(window)
+  // The board's own control, held here because it is a query parameter rather
+  // than a view of what is already loaded — the server ranks and sends two
+  // clamped ends, so re-ranking is a refetch.
+  const [by, setBy] = useState<PerformerSort>(DEFAULT_PERFORMER_BASIS)
+  const overview = useAnalyticsOverview(window)
+  const performers = useAnalyticsPerformers(window, by)
   const current =
     OVERVIEW_WINDOWS.find((w) => w.window === window) ?? OVERVIEW_WINDOWS[1]
 
@@ -63,8 +79,18 @@ function Live() {
           />
         }
       />
+      {/*
+        What happened, then which posts did it. The order is the order the
+        questions arrive in: the overview's five figures provoke exactly one
+        follow-up, and the board is it.
+      */}
       <div className="flex flex-col gap-3 px-3 lg:px-6 pt-4 pb-10">
-        <WorkspaceOverviewView {...result} />
+        <WorkspaceOverviewView {...overview} />
+        <WorkspacePerformersView
+          result={performers}
+          by={by}
+          onChangeBasis={setBy}
+        />
       </div>
     </>
   )
@@ -90,6 +116,14 @@ function ComingSoon() {
             each against the stretch before it. Nothing else about the workspace
             is affected, and the numbers will fill in here on their own once
             this is switched on.
+          </NotYet>
+        </SectionCard>
+        <SectionCard title="Performers and outliers">
+          <NotYet title="Not switched on yet">
+            Which posts carried the period and which fell behind, each scored
+            against a typical post of yours on the same platform at the same age
+            — so a strong post from this morning isn't buried under older ones
+            that have finished earning.
           </NotYet>
         </SectionCard>
       </div>

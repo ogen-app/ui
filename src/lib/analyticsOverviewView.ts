@@ -8,7 +8,7 @@ import {
   type Period,
   type Point,
 } from '@/components/analytics/types'
-import { relativeTime } from '@/lib/relativeTime'
+import { checkedAt } from '@/lib/analyticsFreshness'
 import type {
   AnalyticsInsight,
   AnalyticsOverview,
@@ -88,18 +88,6 @@ const TONE: Record<string, Insight['tone']> = {
   // A caveat about concentration: one huge day is not itself good or bad, it
   // is a reason to distrust the window's average.
   peak_bucket: 'neutral',
-}
-
-/**
- * The Go zero time, which is what `updated_at` carries when nothing behind the
- * window has ever been checked. Rendering it relative produces "2025 years
- * ago", so it is treated as absent.
- */
-function checkedAt(iso: string): string | undefined {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime()) || date.getUTCFullYear() <= 1)
-    return undefined
-  return relativeTime(iso) ?? undefined
 }
 
 /**

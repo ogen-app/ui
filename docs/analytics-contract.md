@@ -93,6 +93,22 @@ Performers:
 | `PerformersView.typical` | — | `against_typical` is already normalised; there is no absolute typical per criterion |
 | `PerformerCriterionId` — `pace`, `save_rate`, `follow_rate` | `by` — `against_typical`, `interactions` | `save_rate`/`follow_rate` are unserviceable; `interactions` is missing from the FE |
 
+*Resolved, differently from the overview.* The overview's card fitted the wire
+and was reused behind a mapper (`lib/analyticsOverviewView` → `NowSection`). The
+performers card did not: too much of what `PerformersSection` is built on —
+client-side ranking, the maturation curve, an absolute typical per criterion —
+has no server behind it. So the shipping board is written against the wire
+instead (`lib/analyticsPerformersView` → `components/analytics/WorkspacePerformers`),
+and `PerformersSection` stays as it is, feeding the still-flagged campaign
+surface from fixtures. The rows above are therefore a record of why there are
+two, not a list of things still to map.
+
+Two consequences the shipping board states out loud rather than hiding: the
+middle of the distribution is never sent, so it counts what it is not showing
+(`total_posts` less the two lists); and a row the server could not place carries
+no bar at all, because a bar at the centre would claim the post is typical —
+the one thing `insufficient_history` says cannot be known.
+
 Learnings:
 
 | `PatternsView` | The wire | Note |

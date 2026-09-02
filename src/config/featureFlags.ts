@@ -178,21 +178,24 @@ const FEATURE_FLAGS = {
   'campaign-analytics': false,
 
   /**
-   * Analytics — the workspace's own numbers (CON-237): the `/analytics` route,
-   * its sidebar row, and the "What happened over last N days" card on it. Five
-   * figures, the chart behind whichever is selected, and the server's
-   * deterministic callouts.
+   * Analytics — the workspace's own numbers: the `/analytics` route, its
+   * sidebar row, and the two cards on it. **What happened** (CON-237) — five
+   * figures, the chart behind whichever is selected, the deterministic
+   * callouts — and **Performers and outliers** (CON-238), the window's best and
+   * worst posts scored against a typical post on the same platform at the same
+   * age.
    *
-   * **The endpoint is real and shipped.** `GET /api/analytics/overview` landed
-   * with CON-237 (ogen#125, merged 2026-08-27) and this is built against it
-   * rather than ahead of it — unlike `campaign-analytics`, which is still
-   * waiting on a campaign dimension the dashboard reads do not have. That makes
-   * this the workspace surface that can ship first, exactly as the note on that
-   * flag predicted.
+   * **Both endpoints are real and shipped.** `GET /api/analytics/overview`
+   * landed with CON-237 (ogen#125) and `GET /api/analytics/performers` with
+   * CON-238 (ogen#126), both merged 2026-08-27, so this is built against the
+   * API rather than ahead of it — unlike `campaign-analytics`, which is still
+   * waiting on a campaign dimension neither read has. That makes this the
+   * workspace surface that can ship first, exactly as the note on that flag
+   * predicted. CON-239 (learnings) is the third card and is not built.
    *
-   * **Off because it has never been run against a live workspace.** Everything
-   * here was read off the Go source, and three things want confirming before
-   * the flag flips:
+   * **Off because none of it has been run against a live workspace.**
+   * Everything here was read off the Go source and the hand-off comments. What
+   * wants confirming before the flag flips:
    *
    * 1. **The window picker end to end.** `7d`/`28d`/`90d` all resolve to day
    *    buckets server-side; a window that quietly came back weekly would put a
@@ -203,16 +206,30 @@ const FEATURE_FLAGS = {
    *    are wrong by exactly one window — and the ghost line is drawn from them.
    * 3. **`updated_at` on a workspace mid-sweep.** It is the newest
    *    `last_checked_at`, and the Go zero value means nothing has ever been
-   *    checked; the card treats that as "no freshness to report" rather than
+   *    checked; the cards treat that as "no freshness to report" rather than
    *    printing a date in year 1.
+   * 4. **`total_posts` against the two lists.** The board's foot-note counts
+   *    the hidden middle by subtracting them, so a `total_posts` that counts a
+   *    different set from the one that was ranked would print a wrong "and N
+   *    more".
+   * 5. **A `by` the server rejects.** The picker only offers the four in the
+   *    contract, so `invalid_sort` should be unreachable — worth proving,
+   *    because it surfaces as a bare failed request rather than a bad-input
+   *    message.
    *
-   * **Known missing, and not a defect in this UI:** the usual-range band. Every
-   * card answers `baseline: "insufficient_history"` and no `band`, because the
-   * long-retention rollup behind it has no tenant with enough history yet
-   * (`analytics/overview/overview.go`). So the verdict lines, the cone and the
-   * "usual range" key are absent, and the previous-stretch delta is the whole
-   * comparison. `lib/analyticsOverviewView` reads the field rather than today's
-   * absence, so the band appears on its own when the server starts sending one.
+   * **Known missing, and not defects in this UI:**
+   *
+   * - **The usual-range band** on the overview. Every card answers `baseline:
+   *   "insufficient_history"` and no `band`, because the long-retention rollup
+   *   behind it has no tenant with enough history yet
+   *   (`analytics/overview/overview.go`). So the verdict lines, the cone and
+   *   the "usual range" key are absent, and the previous-stretch delta is the
+   *   whole comparison. `lib/analyticsOverviewView` reads the field rather than
+   *   today's absence, so the band appears on its own when one is sent.
+   * - **Account pictures** on the board. `account.avatar_url` is declared and
+   *   always empty, and `display_name` mirrors `username`; enrichment from
+   *   `social_accounts` is a server follow-up. Rows fall back to the initial
+   *   plus the platform badge and fill in on their own.
    *
    * **i18n is deferred**, deliberately and on the Brand precedent (CON-227):
    * `components/analytics/*` is hard-coded English throughout, and a translated
