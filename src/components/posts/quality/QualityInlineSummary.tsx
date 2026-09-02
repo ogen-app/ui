@@ -39,7 +39,11 @@ type Props = {
  * never scored, running, failed, switched off — belong to the bar's header,
  * where they stay reachable without expanding anything.
  */
-export function QualityInlineSummary({ assessment, postUpdatedAt, onOpenPanel }: Props) {
+export function QualityInlineSummary({
+  assessment,
+  postUpdatedAt,
+  onOpenPanel,
+}: Props) {
   const pct = overallPct(assessment)
   const band = overallBand(pct)
   const stale = isAssessmentStale(assessment, postUpdatedAt)
@@ -71,7 +75,9 @@ export function QualityInlineSummary({ assessment, postUpdatedAt, onOpenPanel }:
                 rows up, and the ring beside it already says this is the
                 overall — the label was only there to introduce a word that
                 needs no introduction. */}
-            <p className="text-sm font-medium text-foreground">{BAND_LABEL[band]}</p>
+            <p className="text-sm font-medium text-foreground">
+              {BAND_LABEL[band]}
+            </p>
             <p className="text-sm text-tertiary-foreground">
               {scored ? `Scored ${scored}` : 'Scored'}
             </p>
@@ -83,8 +89,15 @@ export function QualityInlineSummary({ assessment, postUpdatedAt, onOpenPanel }:
             last column drops the gutter its scores would otherwise sit on:
             there is no next column for them to collide with, and keeping it
             left the row's right edge ragged against the section's. */}
-        <DimensionColumn assessment={assessment} metas={QUALITY_DIMENSIONS.slice(0, 2)} />
-        <DimensionColumn assessment={assessment} metas={QUALITY_DIMENSIONS.slice(2)} last />
+        <DimensionColumn
+          assessment={assessment}
+          metas={QUALITY_DIMENSIONS.slice(0, 2)}
+        />
+        <DimensionColumn
+          assessment={assessment}
+          metas={QUALITY_DIMENSIONS.slice(2)}
+          last
+        />
       </div>
 
       {stale && (
@@ -95,8 +108,8 @@ export function QualityInlineSummary({ assessment, postUpdatedAt, onOpenPanel }:
             className="mt-[3px] size-4 shrink-0 text-warning"
           />
           <span>
-            This post has been edited since it was scored — re-assess to see where it stands
-            now.
+            This post has been edited since it was scored — re-assess to see
+            where it stands now.
           </span>
         </p>
       )}
@@ -150,13 +163,22 @@ function DimensionColumn({
               weight="fill"
               className="size-4 shrink-0 text-quaternary-foreground"
             />
-            <span className="min-w-0 flex-1 truncate text-foreground">{meta.label}</span>
+            <span className="min-w-0 flex-1 truncate text-foreground">
+              {meta.label}
+            </span>
             {/* `pr-4` on top of the grid's column gap: the score sits on the
                 column's right edge, which is otherwise the next column's left
                 edge, and "10/10" ended up touching "Engagement". The last
                 column has nothing to its right, so it goes without. */}
-            <span className={cn('shrink-0 text-xs tabular-nums', !last && 'pr-4')}>
-              <span className={cn('font-display font-medium', BAND_TEXT[scoreBand(score)])}>
+            <span
+              className={cn('shrink-0 text-xs tabular-nums', !last && 'pr-4')}
+            >
+              <span
+                className={cn(
+                  'font-display font-medium',
+                  BAND_TEXT[scoreBand(score)],
+                )}
+              >
                 {score}
               </span>
               <span className="text-tertiary-foreground">/10</span>

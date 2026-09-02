@@ -37,8 +37,41 @@ The dev server proxies `/api` to the API (default `http://localhost:9001`; set
 ```bash
 pnpm build      # type-check + production build -> dist/
 pnpm preview    # serve the production build locally
-pnpm lint
 ```
+
+### Checks
+
+```bash
+pnpm typecheck  # tsc --noEmit
+pnpm lint       # eslint .           (add --fix for the mechanical ones)
+pnpm format     # prettier --write . (format:check to only report)
+pnpm test       # vitest run
+pnpm knip       # unused files, exports and deps — a report, not a gate
+```
+
+CI runs all of those except `knip` on every PR into `develop`. What each tool
+covers, and why some rules are warnings rather than errors:
+[`docs/quality-tooling.md`](./docs/quality-tooling.md).
+
+### Feature flags, and forcing one for yourself
+
+Half-built features ship with their flag off (`src/config/featureFlags.ts`), so
+`develop` is always shippable. In development and on staging you can force a
+flag **for your browser alone**, which is how one person exercises an unfinished
+feature on a deploy everyone else is using:
+
+```
+http://localhost:9002/campaigns?ff=tasks,-activity   # `-` forces off, ?ff= clears
+```
+
+`/flags` lists every flag with a switch and a reset. Overrides live in
+localStorage — nobody else on the deploy is affected and nothing is written to
+the workspace — and a badge above the assistant trigger shows when any are on.
+
+**None of this exists in a production build.** It is compiled in only when
+`VITE_DEV_TOOLS=1` is set at build time; without it the storage key is inert and
+the panel's chunk is not emitted. `pnpm dev` always has it. See
+[technical-decisions](docs/technical-decisions.md#staging-flag-overrides).
 
 ### Platform API keys (Zernio / Anthropic / Gemini)
 
@@ -77,6 +110,7 @@ Set on the Railway service:
 |---|---|---|
 | `API_ORIGIN` | `api.railway.internal:8080` | Backend's private address (API service name + its `ADDR` port). |
 | `PORT` | injected by Railway | Caddy listens on it automatically. |
+| `VITE_DEV_TOOLS` | `1` — **staging only** | Build variable. Enables the per-browser flag overrides and `/flags` (above). Leave unset in production: unset is off, and off means the code is not in the bundle. |
 
 Add the custom domain (e.g. `app.getogen.com`) on the service. Keeping it on the
 same registrable domain as the API keeps cookies same-site. See the API deploy

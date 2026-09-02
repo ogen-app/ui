@@ -1,15 +1,18 @@
-import { create } from "zustand";
-import { persist, devtools } from "zustand/middleware";
-import { AUTH_STORE_PERSIST_KEY } from "@/stores/constants";
-import { logout as logoutRequest, invalidateSession } from "@/services/api/sessions";
-import type { User } from "@/types/user";
+import { create } from 'zustand'
+import { persist, devtools } from 'zustand/middleware'
+import { AUTH_STORE_PERSIST_KEY } from '@/stores/constants'
+import {
+  logout as logoutRequest,
+  invalidateSession,
+} from '@/services/api/sessions'
+import type { User } from '@/types/user'
 
 export interface AuthState {
-  user: User | null;
-  isAuthenticated: () => boolean;
-  setUser: (user: User) => void;
-  clearUser: () => void;
-  logout: () => Promise<void>;
+  user: User | null
+  isAuthenticated: () => boolean
+  setUser: (user: User) => void
+  clearUser: () => void
+  logout: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -21,9 +24,9 @@ export const useAuthStore = create<AuthState>()(
         setUser: (user) => set({ user }),
         clearUser: () => set({ user: null }),
         logout: async () => {
-          await logoutRequest();
-          invalidateSession();
-          set({ user: null });
+          await logoutRequest()
+          invalidateSession()
+          set({ user: null })
         },
       }),
       {
@@ -31,10 +34,10 @@ export const useAuthStore = create<AuthState>()(
         partialize: (state) => ({
           user: state.user,
         }),
-      }
+      },
     ),
     {
       name: AUTH_STORE_PERSIST_KEY,
-    }
-  )
-);
+    },
+  ),
+)

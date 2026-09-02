@@ -20,6 +20,14 @@ type PageContainerProps = {
   className?: string
 } & VariantProps<typeof pageContainerVariants>
 
-export function PageContainer({ children, className, variant }: PageContainerProps) {
-  return <div className={cn(pageContainerVariants({ variant }), className)}>{children}</div>
+export function PageContainer({
+  children,
+  className,
+  variant,
+}: PageContainerProps) {
+  return (
+    <div className={cn(pageContainerVariants({ variant }), className)}>
+      {children}
+    </div>
+  )
 }

@@ -102,10 +102,10 @@ export function PostGoalCard() {
                   explain, and the note would be the tallest thing on a card
                   that is switched off. */}
               <Explainer id="campaign-post-goal">
-                The post goal is what Ogen plans against — how much content it drafts
-                for the campaign, and what the overview measures progress against. You
-                set the rate, and Ogen works out the campaign total from how long the
-                campaign runs.
+                The post goal is what Ogen plans against — how much content it
+                drafts for the campaign, and what the overview measures progress
+                against. You set the rate, and Ogen works out the campaign total
+                from how long the campaign runs.
               </Explainer>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
@@ -148,7 +148,9 @@ export function PostGoalCard() {
               <p
                 className={cn(
                   'text-sm',
-                  total.kind === 'ok' && total.dated ? 'text-foreground' : 'text-warning',
+                  total.kind === 'ok' && total.dated
+                    ? 'text-foreground'
+                    : 'text-warning',
                 )}
               >
                 {describePostGoalTotal(

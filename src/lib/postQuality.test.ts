@@ -12,7 +12,9 @@ import {
   totalSuggestions,
 } from './postQuality.ts'
 
-function dimension(overrides: Partial<QualityDimension> = {}): QualityDimension {
+function dimension(
+  overrides: Partial<QualityDimension> = {},
+): QualityDimension {
   return {
     score: 7,
     rationale: 'Reads cleanly but the hook is generic.',
@@ -141,9 +143,12 @@ describe('isAssessmentStale', () => {
 
   it('stays quiet rather than guessing when a timestamp is unparseable', () => {
     expect(isAssessmentStale(evaluation(), '')).toBe(false)
-    expect(isAssessmentStale(evaluation({ updated_at: 'nope' }), '2026-07-21T09:00:00Z')).toBe(
-      false,
-    )
+    expect(
+      isAssessmentStale(
+        evaluation({ updated_at: 'nope' }),
+        '2026-07-21T09:00:00Z',
+      ),
+    ).toBe(false)
   })
 })
 
@@ -174,9 +179,8 @@ describe('QUALITY_DIMENSIONS', () => {
   // CON-85: Correctness and Clarity are platform-agnostic, the other two are
   // judged against the channel's conventions.
   it('marks only Engagement and Delivery as platform-aware', () => {
-    expect(QUALITY_DIMENSIONS.filter((d) => d.platformAware).map((d) => d.key)).toEqual([
-      'engagement',
-      'delivery',
-    ])
+    expect(
+      QUALITY_DIMENSIONS.filter((d) => d.platformAware).map((d) => d.key),
+    ).toEqual(['engagement', 'delivery'])
   })
 })

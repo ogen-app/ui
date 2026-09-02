@@ -30,7 +30,9 @@ export const SORTABLE_POST_COLUMNS = [
  * with no date sort to the bottom rather than the top: "not scheduled yet" is
  * not "scheduled at the beginning of time". See `sortUndefined` on the column.
  */
-export const DEFAULT_POSTS_SORT: SortingState = [{ id: 'scheduled_at', desc: false }]
+export const DEFAULT_POSTS_SORT: SortingState = [
+  { id: 'scheduled_at', desc: false },
+]
 
 /** Namespace of the settings key the order is stored under. */
 const NAMESPACE = 'postsTable'
@@ -57,7 +59,9 @@ export function parsePostsSort(raw: string | null): SortingState {
         typeof entry === 'object' &&
         typeof (entry as { id?: unknown }).id === 'string' &&
         typeof (entry as { desc?: unknown }).desc === 'boolean' &&
-        (SORTABLE_POST_COLUMNS as readonly string[]).includes((entry as { id: string }).id),
+        (SORTABLE_POST_COLUMNS as readonly string[]).includes(
+          (entry as { id: string }).id,
+        ),
     )
     // An empty result means the stored order named nothing this build has. The
     // default is a better answer than no order at all — an unsorted table looks

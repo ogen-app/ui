@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { Platform, VideoConstraints } from '@/types/campaigns'
-import { makePlatform, videoConstraints as constraints } from './platformFixtures.ts'
+import {
+  makePlatform,
+  videoConstraints as constraints,
+} from './platformFixtures.ts'
 import {
   MAX_VIDEO_UPLOAD_BYTES,
   describeVideoConstraints,
@@ -25,7 +28,12 @@ describe('resolveVideoConstraints', () => {
   it('clamps the platform ceiling to Ogen’s own ingest budget', () => {
     // YouTube is seeded at 64 GB. We are not storing 64 GB.
     const c = resolveVideoConstraints(
-      platform(constraints({ max_file_size_bytes: 68719476736, allowed_formats: ['mp4'] })),
+      platform(
+        constraints({
+          max_file_size_bytes: 68719476736,
+          allowed_formats: ['mp4'],
+        }),
+      ),
     )
     expect(c?.maxFileSizeBytes).toBe(MAX_VIDEO_UPLOAD_BYTES)
     expect(c?.cappedByOgen).toBe(true)
@@ -33,7 +41,12 @@ describe('resolveVideoConstraints', () => {
 
   it('keeps a platform ceiling that is already stricter than ours', () => {
     const c = resolveVideoConstraints(
-      platform(constraints({ max_file_size_bytes: 10 * 1024 * 1024, allowed_formats: ['mp4'] })),
+      platform(
+        constraints({
+          max_file_size_bytes: 10 * 1024 * 1024,
+          allowed_formats: ['mp4'],
+        }),
+      ),
     )
     expect(c?.maxFileSizeBytes).toBe(10 * 1024 * 1024)
     expect(c?.cappedByOgen).toBe(false)
@@ -41,7 +54,9 @@ describe('resolveVideoConstraints', () => {
 
   it('reads a zero bound as unbounded rather than as a bound of zero', () => {
     const c = resolveVideoConstraints(
-      platform(constraints({ allowed_formats: ['mp4'], max_duration_seconds: 140 })),
+      platform(
+        constraints({ allowed_formats: ['mp4'], max_duration_seconds: 140 }),
+      ),
     )
     expect(c?.maxDurationSeconds).toBe(140)
     // Not seeded for this platform — 0 must not become "0 seconds allowed".
@@ -51,7 +66,9 @@ describe('resolveVideoConstraints', () => {
 
   it('maps container names to the MIME types the picker needs', () => {
     const c = resolveVideoConstraints(
-      platform(constraints({ allowed_formats: ['mp4', 'mov', 'webm', 'avi', 'mkv'] })),
+      platform(
+        constraints({ allowed_formats: ['mp4', 'mov', 'webm', 'avi', 'mkv'] }),
+      ),
     )
     expect(c?.allowedMimes).toEqual([
       'video/mp4',
@@ -72,7 +89,9 @@ describe('resolveVideoConstraints', () => {
   })
 
   it('defaults a missing per-post cap to one', () => {
-    const c = resolveVideoConstraints(platform(constraints({ allowed_formats: ['mp4'] })))
+    const c = resolveVideoConstraints(
+      platform(constraints({ allowed_formats: ['mp4'] })),
+    )
     expect(c?.maxPerPost).toBe(1)
   })
 })
@@ -110,7 +129,9 @@ describe('describeVideoConstraints', () => {
         }),
       ),
     )!
-    expect(describeVideoConstraints(c)).toBe('MP4 · up to 500 MB · up to 15:00 · at least 3s')
+    expect(describeVideoConstraints(c)).toBe(
+      'MP4 · up to 500 MB · up to 15:00 · at least 3s',
+    )
   })
 
   it('drops bounds the platform does not set', () => {

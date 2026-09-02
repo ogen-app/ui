@@ -50,17 +50,6 @@ export type LocalSettings = {
    * the same post sees the type-based default, not your arrangement.
    */
   notePins: Record<string, boolean>
-
-  /**
-   * Campaign id -> the asset ids that campaign last had explicitly picked.
-   *
-   * A stash, not the record: the campaign itself is the record. It exists
-   * because switching a campaign to "all assets" has to clear `asset_ids`
-   * server-side (an empty list is how the API spells *everything*), which
-   * would otherwise throw away a hand-picked set the moment someone looked at
-   * the other option. Keeping a copy here makes that switch reversible.
-   */
-  assetSelections: Record<string, string[]>
 }
 
 /**
@@ -112,9 +101,6 @@ type SettingsState = LocalSettings &
     /** Forget a deleted note's pin — the map is persisted and never expires. */
     clearNotePin: (noteId: string) => void
 
-    /** Stash what this campaign has picked, so "all assets" can't lose it. */
-    rememberAssetSelection: (campaignId: string, assetIds: string[]) => void
-
     // Reset all settings to defaults
     resetAllSettings: () => void
   }
@@ -125,7 +111,6 @@ const DEFAULT_SETTINGS: LocalSettings = {
   lastOpenedModals: {},
   dismissedNotes: [],
   notePins: {},
-  assetSelections: {},
 }
 
 const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null, campaignId: null }
@@ -196,12 +181,14 @@ export const useSettingsStore = create<SettingsState>()(
           set((state) =>
             state.dismissedNotes.includes(id)
               ? state
-              : { dismissedNotes: [...state.dismissedNotes, id] }
+              : { dismissedNotes: [...state.dismissedNotes, id] },
           )
         },
 
         setNotePin: (noteId, pinned) => {
-          set((state) => ({ notePins: { ...state.notePins, [noteId]: pinned } }))
+          set((state) => ({
+            notePins: { ...state.notePins, [noteId]: pinned },
+          }))
         },
 
         clearNotePin: (noteId) => {
@@ -211,15 +198,6 @@ export const useSettingsStore = create<SettingsState>()(
             delete next[noteId]
             return { notePins: next }
           })
-        },
-
-        rememberAssetSelection: (campaignId, assetIds) => {
-          set((state) => ({
-            assetSelections: {
-              ...state.assetSelections,
-              [campaignId]: assetIds,
-            },
-          }))
         },
 
         // Reset all settings — this brings closed explainers back, which is
@@ -237,7 +215,6 @@ export const useSettingsStore = create<SettingsState>()(
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
           notePins: state.notePins,
-          assetSelections: state.assetSelections,
           // Don't persist
           // scope, campaignId — where you are, not what you chose
         }),
@@ -251,10 +228,10 @@ export const useSettingsStore = create<SettingsState>()(
             panelMemory: sanitizePanelMemory(saved.panelMemory),
           }
         },
-      }
+      },
     ),
     {
       name: SETTINGS_STORE_PERSIST_KEY,
-    }
-  )
+    },
+  ),
 )

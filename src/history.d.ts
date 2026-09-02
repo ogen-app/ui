@@ -1,8 +1,8 @@
-import "@tanstack/history";
-import type { LoginPayload } from "@/types/session";
+import '@tanstack/history'
+import type { LoginPayload } from '@/types/session'
 
-declare module "@tanstack/history" {
+declare module '@tanstack/history' {
   interface HistoryState {
-    credentials?: LoginPayload;
+    credentials?: LoginPayload
   }
 }

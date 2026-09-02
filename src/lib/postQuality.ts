@@ -97,7 +97,9 @@ export function overallPct(evaluation: PostEvaluation): number {
 }
 
 /** Go marshals an empty slice as `null`, so every read goes through here. */
-export function suggestionsOf(dimension: QualityDimension | undefined): QualitySuggestion[] {
+export function suggestionsOf(
+  dimension: QualityDimension | undefined,
+): QualitySuggestion[] {
   return dimension?.suggestions ?? []
 }
 

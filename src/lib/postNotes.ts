@@ -29,7 +29,10 @@ export function noteTypeLabel(type: PostNoteType | string): string {
  * explicit `false` has to be able to outvote the default, and "absent from a
  * list" cannot say that.
  */
-export function isNotePinned(note: PostNote, pins: Record<string, boolean>): boolean {
+export function isNotePinned(
+  note: PostNote,
+  pins: Record<string, boolean>,
+): boolean {
   return pins[note.id] ?? note.type === 'draft_thesis'
 }
 

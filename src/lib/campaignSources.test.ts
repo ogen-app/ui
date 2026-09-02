@@ -1,136 +1,84 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 import {
-  poolStats,
+  campaignAssets,
+  membershipPayload,
   retrievability,
-  selectionStats,
-  sourceModeOf,
-  sourcesPayload,
-} from "./campaignSources";
-import type { AssetStatus } from "@/types/content";
+  seedsWholeBank,
+} from './campaignSources'
+import type { Asset } from '@/types/content'
 
-const asset = (id: string, status: AssetStatus) => ({ id, status });
+const doc = (id: string): Asset => ({
+  id,
+  title: id,
+  content: '',
+  status: 'ready',
+  type: null,
+  tag_ids: [],
+  tags: [],
+  created_by: 'user',
+  created_at: '2026-08-01T00:00:00Z',
+  updated_at: '2026-08-01T00:00:00Z',
+})
 
-describe("sourceModeOf", () => {
-  it("reads an untouched campaign as campaign-only — the default", () => {
-    expect(sourceModeOf({ use_assets: false, asset_ids: [] })).toBe("campaign");
-  });
-
-  it("stays campaign-only over a kept set", () => {
-    expect(sourceModeOf({ use_assets: false, asset_ids: ["a"] })).toBe(
-      "campaign",
-    );
-  });
-
-  it("reads an empty id list as the whole bank, not as nothing", () => {
-    expect(sourceModeOf({ use_assets: true, asset_ids: [] })).toBe("all");
-  });
-
-  it("reads a non-empty id list as an explicit set", () => {
-    expect(sourceModeOf({ use_assets: true, asset_ids: ["a"] })).toBe(
-      "selected",
-    );
-  });
-});
-
-describe("sourcesPayload", () => {
-  it("keeps the set when the bank is switched off", () => {
-    expect(sourcesPayload("campaign", ["a", "b"])).toEqual({
-      use_assets: false,
-      asset_ids: ["a", "b"],
-    });
-  });
-
-  it("clears the set for the whole bank — a list would make it explicit", () => {
-    expect(sourcesPayload("all", ["a", "b"])).toEqual({
+describe('membershipPayload', () => {
+  it('sends the set a campaign holds', () => {
+    expect(membershipPayload(['a', 'b'])).toEqual({
       use_assets: true,
-      asset_ids: [],
-    });
-  });
+      asset_ids: ['a', 'b'],
+    })
+  })
 
-  it("sends the set for an explicit selection", () => {
-    expect(sourcesPayload("selected", ["a", "b"])).toEqual({
-      use_assets: true,
-      asset_ids: ["a", "b"],
-    });
-  });
-
-  it("round-trips every mode back through sourceModeOf", () => {
-    for (const mode of ["campaign", "all", "selected"] as const) {
-      expect(sourceModeOf(sourcesPayload(mode, ["a"]))).toBe(mode);
-    }
-  });
-
-  it("round-trips campaign-only over an empty set too", () => {
-    // The state every new campaign starts in, and the one the page defaults to.
-    expect(sourceModeOf(sourcesPayload("campaign", []))).toBe("campaign");
-  });
-
-  it("falls back to campaign-only when nothing is ticked", () => {
-    // The one thing that must never happen: an empty explicit set saved as
-    // `use_assets: true`, which the server reads as the entire bank.
-    expect(sourcesPayload("selected", [])).toEqual({
+  it('writes an empty campaign as brief-only, never as an empty list', () => {
+    // The one thing that must never happen: an empty list saved as
+    // `use_assets: true`, which the server reads as the entire workspace.
+    expect(membershipPayload([])).toEqual({
       use_assets: false,
       asset_ids: [],
-    });
-  });
-});
+    })
+  })
+})
 
-describe("retrievability", () => {
-  it("only ready assets can be retrieved", () => {
-    expect(retrievability("ready")).toBe("ready");
-  });
+describe('seedsWholeBank', () => {
+  it('finds a campaign left in the old whole-bank mode', () => {
+    expect(seedsWholeBank({ use_assets: true, asset_ids: [] })).toBe(true)
+  })
 
-  it("treats in-flight processing as not yet", () => {
-    expect(retrievability("pending")).toBe("waiting");
-    expect(retrievability("processing")).toBe("waiting");
-  });
+  it('leaves a campaign with its own set alone', () => {
+    expect(seedsWholeBank({ use_assets: true, asset_ids: ['a'] })).toBe(false)
+  })
 
-  it("treats partial and failed as never — the server skips both", () => {
-    expect(retrievability("partial")).toBe("never");
-    expect(retrievability("failed")).toBe("never");
-  });
-});
+  it('leaves a brief-only campaign alone — an empty bank is not a lost one', () => {
+    expect(seedsWholeBank({ use_assets: false, asset_ids: [] })).toBe(false)
+  })
+})
 
-describe("poolStats", () => {
-  it("buckets a mixed bank", () => {
+describe('campaignAssets', () => {
+  it('keeps only what the campaign holds', () => {
+    const bank = [doc('a'), doc('b'), doc('c')]
     expect(
-      poolStats([
-        asset("a", "ready"),
-        asset("b", "ready"),
-        asset("c", "processing"),
-        asset("d", "failed"),
-        asset("e", "partial"),
-      ]),
-    ).toEqual({ total: 5, ready: 2, waiting: 1, inert: 2 });
-  });
+      campaignAssets(bank, { asset_ids: ['c', 'a'] }).map((a) => a.id),
+    ).toEqual(['a', 'c'])
+  })
 
-  it("is all zeroes for an empty bank", () => {
-    expect(poolStats([])).toEqual({ total: 0, ready: 0, waiting: 0, inert: 0 });
-  });
-});
+  it('ignores ids whose asset is gone from the bank', () => {
+    expect(
+      campaignAssets([doc('a')], { asset_ids: ['a', 'deleted'] }),
+    ).toHaveLength(1)
+  })
+})
 
-describe("selectionStats", () => {
-  it("counts only the assigned subset", () => {
-    const bank = [
-      asset("a", "ready"),
-      asset("b", "failed"),
-      asset("c", "ready"),
-    ];
-    expect(selectionStats(bank, ["a", "b"])).toEqual({
-      total: 2,
-      ready: 1,
-      waiting: 0,
-      inert: 1,
-    });
-  });
+describe('retrievability', () => {
+  it('only ready assets can be retrieved', () => {
+    expect(retrievability('ready')).toBe('ready')
+  })
 
-  it("ignores ids that are no longer in the bank", () => {
-    expect(selectionStats([asset("a", "ready")], ["a", "gone"])).toEqual({
-      total: 1,
-      ready: 1,
-      waiting: 0,
-      inert: 0,
-    });
-  });
-});
+  it('treats in-flight processing as not yet', () => {
+    expect(retrievability('pending')).toBe('waiting')
+    expect(retrievability('processing')).toBe('waiting')
+  })
 
+  it('treats partial and failed as never — the server skips both', () => {
+    expect(retrievability('partial')).toBe('never')
+    expect(retrievability('failed')).toBe('never')
+  })
+})

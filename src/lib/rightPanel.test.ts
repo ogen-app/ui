@@ -39,7 +39,9 @@ describe('resolveActivePanel', () => {
   })
 
   it('keeps each screen’s choice apart', () => {
-    const m = memory({ scoped: { post: 'postPreview', calendar: 'notScheduled' } })
+    const m = memory({
+      scoped: { post: 'postPreview', calendar: 'notScheduled' },
+    })
     expect(resolveActivePanel(m, 'post')).toBe('postPreview')
     expect(resolveActivePanel(m, 'calendar')).toBe('notScheduled')
   })
@@ -54,7 +56,11 @@ describe('openPanel', () => {
   it('clears the covering panel when the assistant is opened', () => {
     // Otherwise the assistant is filed as open underneath something still
     // covering it, and the trigger looks broken.
-    const m = openPanel(memory({ scoped: { post: 'postQuality' } }), 'assistant', 'post')
+    const m = openPanel(
+      memory({ scoped: { post: 'postQuality' } }),
+      'assistant',
+      'post',
+    )
     expect(resolveActivePanel(m, 'post')).toBe('assistant')
   })
 
@@ -160,6 +166,8 @@ describe('sanitizePanelMemory', () => {
     expect(sanitizePanelMemory({ assistantOpen: false, scoped: {} })).toEqual(
       EMPTY_PANEL_MEMORY,
     )
-    expect(sanitizePanelMemory({ assistantOpen: 'yes' })).toEqual(EMPTY_PANEL_MEMORY)
+    expect(sanitizePanelMemory({ assistantOpen: 'yes' })).toEqual(
+      EMPTY_PANEL_MEMORY,
+    )
   })
 })
