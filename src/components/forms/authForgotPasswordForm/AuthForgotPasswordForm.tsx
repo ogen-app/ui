@@ -38,7 +38,7 @@ export function AuthForgotPasswordForm() {
   const [resent, setResent] = useState(false)
   const { values, setField, fieldErrors, validate } = useFormValidation(
     useForgotPasswordSchema(),
-    { email: '' }
+    { email: '' },
   )
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -164,7 +164,9 @@ export function AuthForgotPasswordForm() {
         {/* The note every other form's last field has, and the reason the
             button no longer sits right under the input. It also answers the
             question this screen reliably produces — which of my addresses? */}
-        <p className="text-xs text-tertiary-foreground">{t('auth.forgot.emailHint')}</p>
+        <p className="text-xs text-tertiary-foreground">
+          {t('auth.forgot.emailHint')}
+        </p>
       </div>
       <div className="w-full pt-2">
         <Button

@@ -22,7 +22,10 @@ type Props = {
   isPinned: (note: PostNote) => boolean
   onTogglePin: (note: PostNote) => void
   onAdd: (note: { title: string; body: string }) => Promise<unknown>
-  onSave: (note: PostNote, patch: { title: string; body: string }) => Promise<void>
+  onSave: (
+    note: PostNote,
+    patch: { title: string; body: string },
+  ) => Promise<void>
   onDelete: (note: PostNote) => Promise<void>
   className?: string
 }
@@ -54,7 +57,9 @@ export function PostNotesCard({
         <h2 className="flex items-center gap-2 min-w-0 text-xl font-display font-medium tracking-tight">
           Notes
           {notes.length > 0 && (
-            <span className="font-normal text-tertiary-foreground">{notes.length}</span>
+            <span className="font-normal text-tertiary-foreground">
+              {notes.length}
+            </span>
           )}
         </h2>
         {!composing && (

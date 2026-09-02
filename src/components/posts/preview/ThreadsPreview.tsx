@@ -27,24 +27,44 @@ import type { PreviewProps } from './types.ts'
  * the Instagram card shows — worth seeing side by side, because that is the
  * account the post actually goes out as.
  */
-export function ThreadsPreview({ text, media, author, timeLabel }: PreviewProps) {
+export function ThreadsPreview({
+  text,
+  media,
+  author,
+  timeLabel,
+}: PreviewProps) {
   const handle = author.username ?? author.name ?? 'your.account'
   const carousel = useCarousel(media.length)
 
   return (
     <PreviewSurface style={{ borderRadius: 8 }}>
       <div className="flex gap-2 p-3">
-        <PreviewAvatar src={author.avatarUrl} name={handle} size={36} background={C.muted} />
+        <PreviewAvatar
+          src={author.avatarUrl}
+          name={handle}
+          size={36}
+          background={C.muted}
+        />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5" style={{ fontSize: 15 }}>
-            <span className="min-w-0 truncate font-semibold" style={{ color: C.text }}>
+            <span
+              className="min-w-0 truncate font-semibold"
+              style={{ color: C.text }}
+            >
               {handle}
             </span>
-            <span className="ml-auto shrink-0" style={{ color: C.muted, fontSize: 14 }}>
+            <span
+              className="ml-auto shrink-0"
+              style={{ color: C.muted, fontSize: 14 }}
+            >
               {timeLabel}
             </span>
-            <DotsThreeIcon className="size-5 shrink-0" style={{ color: C.muted }} aria-hidden />
+            <DotsThreeIcon
+              className="size-5 shrink-0"
+              style={{ color: C.muted }}
+              aria-hidden
+            />
           </div>
 
           <div className="pt-0.5">
@@ -59,7 +79,10 @@ export function ThreadsPreview({ text, media, author, timeLabel }: PreviewProps)
           </div>
 
           {media.length > 0 && (
-            <div className="mt-2" style={{ borderRadius: 8, overflow: 'hidden' }}>
+            <div
+              className="mt-2"
+              style={{ borderRadius: 8, overflow: 'hidden' }}
+            >
               {media.length === 1 ? (
                 <PreviewMedia items={media} background={C.surface} />
               ) : (
@@ -77,7 +100,10 @@ export function ThreadsPreview({ text, media, author, timeLabel }: PreviewProps)
             </div>
           )}
 
-          <div className="flex items-center gap-4 pt-3" style={{ color: C.text }}>
+          <div
+            className="flex items-center gap-4 pt-3"
+            style={{ color: C.text }}
+          >
             <HeartIcon className="size-5" aria-hidden />
             <ChatCircleIcon className="size-5" aria-hidden />
             <RepeatIcon className="size-5" aria-hidden />
@@ -90,7 +116,11 @@ export function ThreadsPreview({ text, media, author, timeLabel }: PreviewProps)
               single image, but its padding would still push the card. */}
           {media.length > 1 && (
             <div className="pt-2">
-              <CarouselDots carousel={carousel} activeColor={C.dot} mutedColor={C.dotMuted} />
+              <CarouselDots
+                carousel={carousel}
+                activeColor={C.dot}
+                mutedColor={C.dotMuted}
+              />
             </div>
           )}
         </div>

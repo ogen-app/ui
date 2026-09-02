@@ -1,11 +1,11 @@
-import type { Platform } from "@/types/campaigns";
-import type { PostTypeRuleView } from "@/types/validation";
-import { apiJson } from "./http";
+import type { Platform } from '@/types/campaigns'
+import type { PostTypeRuleView } from '@/types/validation'
+import { apiJson } from './http'
 
-const BASE = "/api/platforms";
+const BASE = '/api/platforms'
 
 export function listPlatforms(): Promise<Platform[]> {
-  return apiJson<Platform[]>(BASE, "Unable to fetch platforms");
+  return apiJson<Platform[]>(BASE, 'Unable to fetch platforms')
 }
 
 /**
@@ -15,9 +15,11 @@ export function listPlatforms(): Promise<Platform[]> {
  * for the publish gate; this is what lets the editor check the same rules
  * before the user hits it.
  */
-export function getPostTypeRules(platformId: string): Promise<PostTypeRuleView[]> {
+export function getPostTypeRules(
+  platformId: string,
+): Promise<PostTypeRuleView[]> {
   return apiJson<PostTypeRuleView[]>(
     `${BASE}/${platformId}/post-type-rules`,
-    "Unable to fetch post type rules",
-  );
+    'Unable to fetch post type rules',
+  )
 }

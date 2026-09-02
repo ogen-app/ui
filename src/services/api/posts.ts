@@ -8,7 +8,10 @@ const BASE = '/api/posts'
 export type CancelTarget = 'ready_for_publish' | 'draft'
 
 export function listCampaignPosts(campaignId: string): Promise<Post[]> {
-  return apiJson<Post[]>(`/api/campaigns/${campaignId}/posts`, 'Unable to fetch posts')
+  return apiJson<Post[]>(
+    `/api/campaigns/${campaignId}/posts`,
+    'Unable to fetch posts',
+  )
 }
 
 /**
@@ -26,11 +29,17 @@ export function getPost(id: string): Promise<Post> {
 }
 
 export function createPost(payload: PostPayload): Promise<Post> {
-  return apiJson<Post>(BASE, 'Unable to create post', { method: 'POST', body: payload })
+  return apiJson<Post>(BASE, 'Unable to create post', {
+    method: 'POST',
+    body: payload,
+  })
 }
 
 export function updatePost(id: string, payload: PostPayload): Promise<Post> {
-  return apiJson<Post>(`${BASE}/${id}`, 'Unable to update post', { method: 'PUT', body: payload })
+  return apiJson<Post>(`${BASE}/${id}`, 'Unable to update post', {
+    method: 'PUT',
+    body: payload,
+  })
 }
 
 export function deletePost(id: string): Promise<void> {
@@ -55,11 +64,18 @@ export type ScheduleResult = {
  * the future) and routes auto- vs manual-publish via the allowlist — the
  * returned post carries the routed status.
  */
-export function schedulePost(id: string, scheduledAt: string): Promise<ScheduleResult> {
-  return apiJson<ScheduleResult>(`${BASE}/${id}/schedule`, 'Unable to schedule post', {
-    method: 'POST',
-    body: { scheduled_at: scheduledAt },
-  })
+export function schedulePost(
+  id: string,
+  scheduledAt: string,
+): Promise<ScheduleResult> {
+  return apiJson<ScheduleResult>(
+    `${BASE}/${id}/schedule`,
+    'Unable to schedule post',
+    {
+      method: 'POST',
+      body: { scheduled_at: scheduledAt },
+    },
+  )
 }
 
 /**
@@ -160,11 +176,18 @@ export function listPostVersions(postId: string): Promise<PostVersion[]> {
 }
 
 /** Snapshots the post's *stored* content — flush pending edits before calling. */
-export function createPostVersion(postId: string, note: string): Promise<PostVersion> {
-  return apiJson<PostVersion>(`${BASE}/${postId}/versions`, 'Unable to save a version', {
-    method: 'POST',
-    body: { note },
-  })
+export function createPostVersion(
+  postId: string,
+  note: string,
+): Promise<PostVersion> {
+  return apiJson<PostVersion>(
+    `${BASE}/${postId}/versions`,
+    'Unable to save a version',
+    {
+      method: 'POST',
+      body: { note },
+    },
+  )
 }
 
 /**
@@ -177,7 +200,10 @@ export function createPostVersion(postId: string, note: string): Promise<PostVer
  * currently 404s. Requested on CON-44; the caller is behind the
  * `post-version-delete` flag until it lands.
  */
-export function deletePostVersion(postId: string, versionId: string): Promise<void> {
+export function deletePostVersion(
+  postId: string,
+  versionId: string,
+): Promise<void> {
   return apiVoid(
     `${BASE}/${postId}/versions/${versionId}`,
     'Unable to delete the version',
@@ -197,11 +223,18 @@ export function deletePostVersion(postId: string, versionId: string): Promise<vo
  * Returns the hydrated post, like `updatePost` — the caller can write it
  * straight into the editor's cache entry.
  */
-export function restorePost(postId: string, versionNumber: number): Promise<Post> {
-  return apiJson<Post>(`${BASE}/${postId}/restore`, 'Unable to restore the version', {
-    method: 'POST',
-    body: { version_number: versionNumber },
-  })
+export function restorePost(
+  postId: string,
+  versionNumber: number,
+): Promise<Post> {
+  return apiJson<Post>(
+    `${BASE}/${postId}/restore`,
+    'Unable to restore the version',
+    {
+      method: 'POST',
+      body: { version_number: versionNumber },
+    },
+  )
 }
 
 export function postToPayload(post: Post): PostPayload {

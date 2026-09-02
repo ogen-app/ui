@@ -10,33 +10,40 @@
  * the building block for a future "invite teammate" UI.
  */
 
-import type { User, RegisterPayload } from "@/types/user";
-import type { Tenant } from "@/types/tenant";
-import { apiJson, apiVoid } from "./http";
+import type { User, RegisterPayload } from '@/types/user'
+import type { Tenant } from '@/types/tenant'
+import type { WorkspaceRole } from '@/types/workspace'
+import { apiJson } from './http'
 
 /** Wire shape of a user as the backend sends it (single `name` field). */
 export type RawUser = {
-  id: string;
-  name: string;
-  email: string;
-  created_at: string;
-  updated_at: string;
+  id: string
+  name: string
+  email: string
+  /** CON-26. Backfilled to `owner` for every user that predates it. */
+  role: WorkspaceRole
+  created_at: string
+  updated_at: string
   /** Embedded only by `GET /api/current_user` (CON-97 §7.4) and signup. */
-  tenant?: Tenant;
-};
+  tenant?: Tenant
+}
 
 /** Maps the backend's single `name` into the UI's first/last pair. */
 export function rawUserToUser(raw: RawUser): User {
-  const [firstName = "", ...rest] = raw.name.split(" ");
+  const [firstName = '', ...rest] = raw.name.split(' ')
   return {
     id: raw.id,
     firstName,
-    lastName: rest.join(" "),
+    lastName: rest.join(' '),
     email: raw.email,
+    // Signup answers before the column matters and older payloads predate it;
+    // `member` is the safe default because it hides controls rather than
+    // offering ones the server would refuse.
+    role: raw.role ?? 'member',
     created_at: raw.created_at,
     updated_at: raw.updated_at,
     tenant: raw.tenant,
-  };
+  }
 }
 
 /**
@@ -48,9 +55,9 @@ export function rawUserToUser(raw: RawUser): User {
  * see `updateUser`.
  */
 export type UpdateUserPayload = {
-  name: string;
-  email: string;
-};
+  name: string
+  email: string
+}
 
 /**
  * `PUT /api/users/:id` — updates the signed-in user's own record.
@@ -71,41 +78,33 @@ export async function updateUser(
   id: string,
   payload: UpdateUserPayload,
 ): Promise<User> {
-  const raw = await apiJson<RawUser>(`/api/users/${id}`, "Unable to save your profile", {
-    method: "PUT",
-    body: payload,
-  });
-  return rawUserToUser(raw);
-}
-
-/**
- * `DELETE /api/users/:id` — deletes the signed-in user's own account.
- *
- * Also `requireSelf`-gated, and irreversible in a way the name understates:
- * the row is hard-deleted and the schema cascades from `users.id` into
- * `sessions`, `tags`, `campaigns`, `assets`, `posts` and `post_attachments`
- * via `ON DELETE CASCADE` on `created_by`. Everything this user created is
- * destroyed with them, including from under their colleagues in a shared
- * workspace. The tenant row itself has no such link and survives, so deleting
- * the last member leaves the workspace standing but unreachable.
- *
- * Callers must state that plainly before asking for confirmation.
- */
-export async function deleteUser(id: string): Promise<void> {
-  await apiVoid(`/api/users/${id}`, "Unable to delete your account", {
-    method: "DELETE",
-  });
+  // `unscoped`: the id came from the header-free `GET /api/current_user`, so
+  // it names the *default* workspace's membership — a scoped request from a
+  // tab pinned elsewhere would compare it against a different membership and
+  // 403. The server syncs name/email onto the account and every membership
+  // (CON-147), so which workspace answers doesn't matter; that it's the same
+  // one that minted the id does.
+  const raw = await apiJson<RawUser>(
+    `/api/users/${id}`,
+    'Unable to save your profile',
+    {
+      method: 'PUT',
+      body: payload,
+      unscoped: true,
+    },
+  )
+  return rawUserToUser(raw)
 }
 
 /** `POST /api/users` — adds a user to the caller's tenant (future invite flow). */
 export async function register(payload: RegisterPayload): Promise<User> {
-  const raw = await apiJson<RawUser>("/api/users", "Unable to create account", {
-    method: "POST",
+  const raw = await apiJson<RawUser>('/api/users', 'Unable to create account', {
+    method: 'POST',
     body: {
       name: `${payload.firstName} ${payload.lastName}`.trim(),
       email: payload.email,
       password: payload.password,
     },
-  });
-  return rawUserToUser(raw);
+  })
+  return rawUserToUser(raw)
 }

@@ -49,7 +49,10 @@ describe('handleUnauthorized', () => {
   it('drops the persisted user before reloading', async () => {
     // Otherwise the reloaded app paints a signed-in sidebar for the instant
     // before the root guard resolves.
-    localStorage.setItem(AUTH_STORE_PERSIST_KEY, '{"state":{"user":{"id":"u1"}}}')
+    localStorage.setItem(
+      AUTH_STORE_PERSIST_KEY,
+      '{"state":{"user":{"id":"u1"}}}',
+    )
     atPath('/campaigns')
     const { handleUnauthorized } = await freshModule()
 

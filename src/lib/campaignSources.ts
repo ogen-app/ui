@@ -1,67 +1,68 @@
-import type { Campaign, UpdateCampaignPayload } from "@/types/campaigns";
-import type { Asset, AssetStatus } from "@/types/content";
+import type { Campaign, UpdateCampaignPayload } from '@/types/campaigns'
+import type { Asset, AssetStatus } from '@/types/content'
 
 /**
- * Where a campaign's generated content is written from. Mirrors the Go server's
- * `UseAssets` / `AssetIDs` pair (CON-118, `content_plan/assets.go`), which
- * encodes three states in two fields:
+ * What a campaign writes from (CON-210).
  *
- * - `campaign` — `use_assets: false`. The campaign itself is the only source.
- * - `all`      — `use_assets: true`, `asset_ids: []`. **An empty list means
- *                every ready asset in the bank**, not "nothing selected".
- * - `selected` — `use_assets: true`, `asset_ids: [...]`. Exactly those.
+ * A campaign owns a set of documents. There is no mode: the empty set means
+ * the campaign writes from its brief alone, and any other set means the brief
+ * plus those documents. The three-mode picker this replaces
+ * (`campaign` / `all` / `selected`) is gone — nobody understood it in
+ * interviews, and its middle mode meant "every asset in the workspace", which
+ * has no referent once a campaign owns its own.
  *
- * The empty-list-means-everything rule is the one that bites: read naively,
- * `all` looks like a half-configured `selected`.
+ * The two campaign fields underneath are unchanged, because generation still
+ * reads them (CON-118, `content_plan/assets.go`):
  *
- * `campaign` is also what an untouched campaign is in, which is why it's the
- * page's default rather than a fourth "undecided" state. The server can't tell
- * the two apart, and doesn't need to: both mean the same thing to generation.
+ * - `use_assets: false` — the campaign's own brief only.
+ * - `use_assets: true`, `asset_ids: [...]` — the brief plus exactly those.
+ *
+ * `use_assets: true` with an *empty* list is the one combination the front end
+ * no longer writes: server-side it still means every asset in the workspace,
+ * which is the model being retired. `seedsWholeBank` below finds campaigns
+ * left in that state so they can be pinned to the set they were generating
+ * from before it changes meaning under them.
  */
-export type SourceMode = "campaign" | "all" | "selected";
+export type MembershipFields = Required<
+  Pick<UpdateCampaignPayload, 'use_assets' | 'asset_ids'>
+>
 
-export function sourceModeOf(
-  campaign: Pick<Campaign, "use_assets" | "asset_ids">,
-): SourceMode {
-  if (!campaign.use_assets) return "campaign";
-  return campaign.asset_ids.length > 0 ? "selected" : "all";
+/**
+ * The two campaign fields for a membership set.
+ *
+ * An empty set writes `use_assets: false` rather than an empty list, because
+ * an empty list is how the server spells *everything* — writing it would hand
+ * the campaign the opposite of what the user did. This is exactly what the old
+ * `sourcesPayload("selected", ids)` did, so what reaches the server for any
+ * given on-screen state is unchanged.
+ */
+export function membershipPayload(assetIds: string[]): MembershipFields {
+  return assetIds.length > 0
+    ? { use_assets: true, asset_ids: assetIds }
+    : { use_assets: false, asset_ids: [] }
 }
 
 /**
- * The pair of campaign fields a mode resolves to. Both are required here even
- * though `UpdateCampaignPayload` has them optional — a mode always says
- * something about both, and a partially-specified pair is a bug.
+ * A campaign saved under the old whole-bank mode.
+ *
+ * Read as a set, `use_assets: true, asset_ids: []` is an *empty* bank — the
+ * campaign silently loses every source it has been generating from, and
+ * nothing on screen would differ. These have to be pinned to the bank's
+ * current ids on first sight of the page.
  */
-export type SourceFields = Required<
-  Pick<UpdateCampaignPayload, "use_assets" | "asset_ids">
->;
+export function seedsWholeBank(
+  campaign: Pick<Campaign, 'use_assets' | 'asset_ids'>,
+): boolean {
+  return campaign.use_assets && campaign.asset_ids.length === 0
+}
 
-/**
- * The two campaign fields for a mode plus a working selection.
- *
- * `campaign` keeps the id list so switching the bank off and back on doesn't
- * throw the user's set away. `all` must clear it: a non-empty list is what
- * makes the server treat the pool as explicit.
- *
- * `selected` with nothing ticked saves as campaign-only. It cannot save as
- * itself, because an empty list is how the server spells *everything*, so
- * writing it would hand the campaign the opposite of what the user did. Nothing
- * chosen and nothing used are close enough to be the same thing.
- */
-export function sourcesPayload(
-  mode: SourceMode,
-  assetIds: string[],
-): SourceFields {
-  switch (mode) {
-    case "campaign":
-      return { use_assets: false, asset_ids: assetIds };
-    case "all":
-      return { use_assets: true, asset_ids: [] };
-    case "selected":
-      return assetIds.length > 0
-        ? { use_assets: true, asset_ids: assetIds }
-        : { use_assets: false, asset_ids: [] };
-  }
+/** The campaign's own documents, in the order the bank lists them. */
+export function campaignAssets(
+  assets: Asset[],
+  campaign: Pick<Campaign, 'asset_ids'>,
+): Asset[] {
+  const owned = new Set(campaign.asset_ids)
+  return assets.filter((asset) => owned.has(asset.id))
 }
 
 /**
@@ -70,57 +71,19 @@ export function sourcesPayload(
  * - `ready`   — chunked and embedded; the retriever can pull passages from it.
  * - `waiting` — `pending`/`processing`; nothing to retrieve *yet*.
  * - `never`   — `failed`/`partial`; the server skips these outright
- *               (CON-118 §10), so an assigned one is silently inert.
+ *               (CON-118 §10), so one sitting in a campaign is silently inert.
  */
-export type Retrievability = "ready" | "waiting" | "never";
+export type Retrievability = 'ready' | 'waiting' | 'never'
 
 export function retrievability(status: AssetStatus): Retrievability {
   switch (status) {
-    case "ready":
-      return "ready";
-    case "pending":
-    case "processing":
-      return "waiting";
-    case "partial":
-    case "failed":
-      return "never";
+    case 'ready':
+      return 'ready'
+    case 'pending':
+    case 'processing':
+      return 'waiting'
+    case 'partial':
+    case 'failed':
+      return 'never'
   }
-}
-
-export type PoolStats = {
-  total: number;
-  /** Assets retrieval can use right now. */
-  ready: number;
-  /** Assets still processing — usable once they finish. */
-  waiting: number;
-  /** Assets retrieval will never use. */
-  inert: number;
-};
-
-export function poolStats(assets: Pick<Asset, "status">[]): PoolStats {
-  const stats: PoolStats = { total: 0, ready: 0, waiting: 0, inert: 0 };
-  for (const asset of assets) {
-    stats.total += 1;
-    switch (retrievability(asset.status)) {
-      case "ready":
-        stats.ready += 1;
-        break;
-      case "waiting":
-        stats.waiting += 1;
-        break;
-      case "never":
-        stats.inert += 1;
-        break;
-    }
-  }
-  return stats;
-}
-
-/** The stats for just the assigned subset, for the count under the tile. */
-export function selectionStats(
-  assets: Pick<Asset, "id" | "status">[],
-  selectedIds: string[],
-): PoolStats {
-  const selected = new Set(selectedIds);
-  return poolStats(assets.filter((a) => selected.has(a.id)));
 }

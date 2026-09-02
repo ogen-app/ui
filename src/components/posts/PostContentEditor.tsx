@@ -47,7 +47,10 @@ export function PostContentEditor({
     if (appliedRef.current === content) return
     const next = editor.tryParseMarkdownToBlocks(content ?? '')
     appliedRef.current = content
-    editor.replaceBlocks(editor.document, next.length > 0 ? next : DEFAULT_CONTENT)
+    editor.replaceBlocks(
+      editor.document,
+      next.length > 0 ? next : DEFAULT_CONTENT,
+    )
     readyRef.current = true
   }, [editor, content])
 
@@ -68,7 +71,10 @@ export function PostContentEditor({
   }, [])
 
   return (
-    <div className={cn(readOnly && 'opacity-60 transition-opacity')} aria-busy={readOnly}>
+    <div
+      className={cn(readOnly && 'opacity-60 transition-opacity')}
+      aria-busy={readOnly}
+    >
       <BlockNoteView
         editor={editor}
         editable={!readOnly}

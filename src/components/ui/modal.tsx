@@ -136,7 +136,10 @@ export function ModalContainer({
       // claimed it. React applies a child's `autoFocus` during commit, before
       // this effect runs, so focusing the container unconditionally would take
       // focus straight back off the field the modal meant to start on.
-      if (modalRef.current && !modalRef.current.contains(document.activeElement)) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(document.activeElement)
+      ) {
         modalRef.current.focus()
       }
 
@@ -210,7 +213,11 @@ export function ModalContainer({
       role="dialog"
       aria-modal={true}
       aria-labelledby={title ? 'modal-title' : undefined}
-      className={cn('flex', 'animate-in fade-in-0 duration-300', backdropAlignmentClasses[height])}
+      className={cn(
+        'flex',
+        'animate-in fade-in-0 duration-300',
+        backdropAlignmentClasses[height],
+      )}
     >
       <div
         ref={modalRef}
@@ -225,7 +232,7 @@ export function ModalContainer({
           // modals are untouched — they grow with their content, and a flex
           // column would change nothing except what can go wrong.
           height !== 'auto' && 'flex flex-col',
-          className
+          className,
         )}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
@@ -233,7 +240,10 @@ export function ModalContainer({
         {/* Header */}
         {title && (
           <div className="flex flex-col gap-1.5 px-6 py-4 border-b">
-            <h2 id="modal-title" className="font-semibold text-foreground leading-7">
+            <h2
+              id="modal-title"
+              className="font-semibold text-foreground leading-7"
+            >
               {title}
             </h2>
           </div>
@@ -266,6 +276,6 @@ export function ModalContainer({
         </div>
       </div>
     </Backdrop>,
-    document.body
+    document.body,
   )
 }

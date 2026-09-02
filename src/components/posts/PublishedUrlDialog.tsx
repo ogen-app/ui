@@ -3,7 +3,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
-import type { TransitionStatusResult, VerifyExternalResult } from '@/hooks/usePost'
+import type {
+  TransitionStatusResult,
+  VerifyExternalResult,
+} from '@/hooks/usePost'
 import { toast } from '@/stores/toastStore'
 import type { Post } from '@/types/posts'
 
@@ -90,7 +93,9 @@ export function PublishedUrlDialog({
     const result = await verifyExternal(url.trim())
     setVerifying(false)
     if (result.ok) {
-      toast.success(alreadyPublished ? 'Post link added' : 'Post marked as published')
+      toast.success(
+        alreadyPublished ? 'Post link added' : 'Post marked as published',
+      )
       onClose()
       return
     }
@@ -123,7 +128,9 @@ export function PublishedUrlDialog({
     <ModalContainer
       isOpen={isOpen}
       onClose={busy ? () => {} : onClose}
-      title={alreadyPublished ? 'Add the post link' : 'Where did you publish it?'}
+      title={
+        alreadyPublished ? 'Add the post link' : 'Where did you publish it?'
+      }
       size="small"
       closeOnBackdropClick={!busy}
       closeOnEscape={!busy}
@@ -140,15 +147,16 @@ export function PublishedUrlDialog({
         <p className="text-sm text-secondary-foreground">
           {alreadyPublished ? (
             <>
-              Paste the link to this post{platformName ? ` on ${platformName}` : ''}{' '}
-              and we'll match it up, so its performance shows up in Ogen.
+              Paste the link to this post
+              {platformName ? ` on ${platformName}` : ''} and we'll match it up,
+              so its performance shows up in Ogen.
             </>
           ) : (
             <>
               Paste the link to the post you just published
-              {platformName ? ` on ${platformName}` : ''}. We'll check it's really
-              there before marking this one as published — and it's what lets us
-              track how it performs.
+              {platformName ? ` on ${platformName}` : ''}. We'll check it's
+              really there before marking this one as published — and it's what
+              lets us track how it performs.
             </>
           )}
         </p>
@@ -166,7 +174,9 @@ export function PublishedUrlDialog({
             onChange={(e) => setUrl(e.target.value)}
             disabled={busy}
             aria-invalid={stage.kind !== 'input' || undefined}
-            aria-describedby={stage.kind === 'input' ? undefined : 'published-url-problem'}
+            aria-describedby={
+              stage.kind === 'input' ? undefined : 'published-url-problem'
+            }
           />
           {/*
             Both problems are answered in place, with the field still filled
@@ -175,9 +185,10 @@ export function PublishedUrlDialog({
           */}
           {stage.kind === 'notFound' && (
             <p id="published-url-problem" className="text-sm text-destructive">
-              We couldn't find that post{platformName ? ` on ${platformName}` : ''}.
-              Check the link is the published post itself and try again — a
-              just-published post can also take a moment to show up.
+              We couldn't find that post
+              {platformName ? ` on ${platformName}` : ''}. Check the link is the
+              published post itself and try again — a just-published post can
+              also take a moment to show up.
             </p>
           )}
           {stage.kind === 'error' && (
@@ -189,7 +200,12 @@ export function PublishedUrlDialog({
 
         <div className="flex justify-end gap-2">
           {alreadyPublished ? (
-            <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onClose}
+              disabled={busy}
+            >
               CANCEL
             </Button>
           ) : (

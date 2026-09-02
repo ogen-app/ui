@@ -1,40 +1,45 @@
 export type PageStatusFooterProps = {
   message?: string
 }
+
+/**
+ * The word set as a texture, not as a label — which is why it is uppercased
+ * here rather than in the copy (callers pass the same string they use in
+ * sentence case elsewhere) and why it sits at half opacity on top of the
+ * already-quiet senary token. It should read as a watermark behind the page,
+ * never as something to look at.
+ *
+ * `whitespace-nowrap` and `shrink-0` are load-bearing, not tidying: the band is
+ * one line tall by construction (140px of type in a 140px box), so a message
+ * with a space in it — `NOT FOUND` — wrapped to two lines and had its second
+ * one sliced off by the row's `overflow-hidden`. The copies are meant to run
+ * off both edges under the fader; letting them shrink to fit is what turned an
+ * overflowing band into a broken one.
+ */
+const WORD =
+  'font-display font-black uppercase tracking-[0.05em] opacity-50 text-senary-foreground text-center text-[140px] leading-none pt-2 whitespace-nowrap shrink-0'
+
 export function PageStatusFooter({ message = 'ERROR' }: PageStatusFooterProps) {
   return (
+    // `aria-hidden`: the band is a watermark — the page has already said what
+    // happened in its own copy, and three decorative repeats of the same word
+    // are noise to a screen reader, not information.
     <div
+      aria-hidden="true"
       className={
-        'relative flex-shrink-0 h-[300px] bottom-0 left-0 right-0 p-y-2 flex flex-col gap-0 overflow-hidden'
+        'relative flex-shrink-0 h-[140px] bottom-0 left-0 right-0 flex flex-col gap-0 overflow-hidden'
       }
     >
-      <div className={'flex h-[140px] gap-24 justify-center items-center relative'}>
-        <div
-          className={
-            'font-display text-senary-foreground text-center text-[140px] leading-none pt-2'
-          }
-        >
-          {message}
-        </div>
-        <div
-          className={
-            'font-display text-senary-foreground text-center text-[140px] leading-none pt-2'
-          }
-        >
-          {message}
-        </div>
-        <div
-          className={
-            'font-display text-senary-foreground text-center text-[140px] leading-none pt-2'
-          }
-        >
-          {message}
-        </div>
+      <div
+        className={'flex h-[140px] gap-24 justify-center items-center relative'}
+      >
+        {/* Three copies so the row reads as a repeating band rather than one
+            centred word; the fader over them takes the outer two down at the
+            edges, so they never look cropped. */}
+        <div className={WORD}>{message}</div>
+        <div className={WORD}>{message}</div>
+        <div className={WORD}>{message}</div>
         <div className={'absolute inset-0 background-fader-2'} />
-      </div>
-      <div className={'h-40 relative'}>
-        <div className={'h-full bg-[url(/textures/ticks_tile.png)] bg-size-[9px] opacity-80'} />
-        <div className={'absolute inset-0 background-fader-1'} />
       </div>
     </div>
   )

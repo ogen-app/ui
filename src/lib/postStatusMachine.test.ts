@@ -94,8 +94,13 @@ describe('getTransitionBlockers — account selection', () => {
   })
 
   it('leaves the earlier edges alone', () => {
-    expect(getTransitionBlockers(post({ status: 'draft' }), 'ready_for_publish', AMBIGUOUS))
-      .toEqual([])
+    expect(
+      getTransitionBlockers(
+        post({ status: 'draft' }),
+        'ready_for_publish',
+        AMBIGUOUS,
+      ),
+    ).toEqual([])
   })
 
   it('reports the account alongside the other missing fields', () => {
@@ -120,25 +125,30 @@ describe('action mechanisms', () => {
   it('completes a manual publish by verifying the URL, not by a status PUT', () => {
     // A PUT here would mark the post published with no publisher linkage,
     // stranding it outside analytics forever (CON-149).
-    expect(getActionMeta('scheduled_for_manual_publishing', 'published')?.mechanism).toBe(
-      'verify',
-    )
+    expect(
+      getActionMeta('scheduled_for_manual_publishing', 'published')?.mechanism,
+    ).toBe('verify')
   })
 
   it('unschedules through the cancel endpoint', () => {
-    expect(getActionMeta('scheduled', 'ready_for_publish')?.mechanism).toBe('cancel')
+    expect(getActionMeta('scheduled', 'ready_for_publish')?.mechanism).toBe(
+      'cancel',
+    )
     expect(getActionMeta('scheduled', 'draft')?.mechanism).toBe('cancel')
   })
 
   it('schedules auto-publish through the schedule endpoint', () => {
-    expect(getActionMeta('ready_for_publish', 'scheduled')?.mechanism).toBe('schedule')
+    expect(getActionMeta('ready_for_publish', 'scheduled')?.mechanism).toBe(
+      'schedule',
+    )
   })
 
   it('keeps the manual-publish schedule edge on the PUT path', () => {
     // Deliberately not 'schedule': the schedule endpoint would re-route an
     // allowlisted platform to auto-publish against the user's explicit choice.
     expect(
-      getActionMeta('ready_for_publish', 'scheduled_for_manual_publishing')?.mechanism,
+      getActionMeta('ready_for_publish', 'scheduled_for_manual_publishing')
+        ?.mechanism,
     ).toBeUndefined()
   })
 })

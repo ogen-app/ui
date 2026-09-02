@@ -60,10 +60,17 @@ function LogoutPage() {
             &nbsp;
           </span>
           <span className="text-[2rem] leading-[46px] font-medium font-display tracking-tight">
-            {isDone ? t('auth.logout.doneTitle') : t('auth.logout.pendingTitle')}
+            {isDone
+              ? t('auth.logout.doneTitle')
+              : t('auth.logout.pendingTitle')}
           </span>
-          <p className="text-[14px] leading-[24px] text-tertiary-foreground">
-            {isDone ? t('auth.logout.doneMessage') : t('auth.logout.pendingMessage')}
+          {/* Matches PageError's description — same size, same tone. These two
+              are the only screens in the app that are a single sentence and
+              nothing else, and they should read alike. */}
+          <p className="text-[16px] leading-7 text-secondary-foreground">
+            {isDone
+              ? t('auth.logout.doneMessage')
+              : t('auth.logout.pendingMessage')}
           </p>
           <div className="mt-4 h-12 flex items-center justify-center">
             {isDone ? (

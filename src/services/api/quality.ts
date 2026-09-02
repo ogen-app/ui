@@ -1,4 +1,4 @@
-import { apiUrl } from './base'
+import { scopedFetch } from './base'
 import { errorMessage } from './errors'
 import { isRecord } from './json'
 import { readSSEStream } from '@/lib/sse'
@@ -23,13 +23,14 @@ export class QualityUnavailableError extends Error {
  * assessed. The backend says 404 for that case; it is an ordinary state — the
  * panel's "not assessed yet" prompt — so it resolves rather than throws.
  */
-export async function getPostAssessment(postId: string): Promise<PostEvaluation | null> {
-  const res = await fetch(apiUrl(`/api/posts/${postId}/assessment`), {
-    credentials: 'include',
-  })
+export async function getPostAssessment(
+  postId: string,
+): Promise<PostEvaluation | null> {
+  const res = await scopedFetch(`/api/posts/${postId}/assessment`)
   if (res.status === 404) return null
   if (res.status === 503) throw new QualityUnavailableError()
-  if (!res.ok) throw new Error(await errorMessage(res, 'Unable to load the assessment'))
+  if (!res.ok)
+    throw new Error(await errorMessage(res, 'Unable to load the assessment'))
   return (await res.json()) as PostEvaluation
 }
 
@@ -60,9 +61,8 @@ export async function streamPostAssessment(
   onEvent: (event: AssessEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const res = await fetch(apiUrl(`/api/posts/${postId}/assess`), {
+  const res = await scopedFetch(`/api/posts/${postId}/assess`, {
     method: 'POST',
-    credentials: 'include',
     headers: { Accept: 'text/event-stream' },
     signal,
   })
@@ -93,7 +93,9 @@ export async function streamPostAssessment(
         onEvent({
           type: 'error',
           message:
-            typeof parsed.message === 'string' ? parsed.message : 'The assessment failed',
+            typeof parsed.message === 'string'
+              ? parsed.message
+              : 'The assessment failed',
         })
         break
     }
@@ -108,4 +110,3 @@ function safeParse(data: string): Record<string, unknown> {
     return {}
   }
 }
-
