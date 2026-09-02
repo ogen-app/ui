@@ -69,10 +69,14 @@ function wrapper({ children }: { children: ReactNode }) {
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 
-function run(status: PostStatus) {
-  return renderHook(() => usePostPerformance('post_1', status, FACTS), {
-    wrapper,
-  })
+// `null` rather than `undefined` for "no publisher id": passing `undefined`
+// explicitly would trigger the default and quietly test the opposite case.
+function run(status: PostStatus, publisherPostId: string | null = 'z_1') {
+  return renderHook(
+    () =>
+      usePostPerformance('post_1', status, publisherPostId ?? undefined, FACTS),
+    { wrapper },
+  )
 }
 
 afterEach(() => {
@@ -97,6 +101,18 @@ describe('usePostPerformance', () => {
     // Zernio holds a submission; the network holds nothing. This is the case a
     // broader "is it submitted?" gate would have got wrong.
     expect(result.current).toEqual({ state: 'unpublished' })
+    expect(fetched).not.toHaveBeenCalled()
+  })
+
+  it('knows a published post is unlinked without asking', () => {
+    const fetched = vi.spyOn(service, 'fetchPostAnalytics')
+    const { result } = run('published', null)
+
+    // No `publisher_post_id` means the plain-PUT fallback was taken — the way
+    // out for an account Zernio cannot verify. The 409 is already knowable off
+    // the document, so spending a request to be told it is pure waste, and on
+    // a screen someone reloads all day.
+    expect(result.current).toEqual({ state: 'unlinked' })
     expect(fetched).not.toHaveBeenCalled()
   })
 

@@ -74,9 +74,26 @@ export type PostPerformanceResult =
 export function usePostPerformance(
   postId: string,
   status: PostStatus,
+  /**
+   * The publisher's own id for this post. Absent means nothing links it to the
+   * thing that was actually posted — see below.
+   */
+  publisherPostId: string | undefined,
   facts: PostFacts,
 ): PostPerformanceResult {
-  const enabled = canHaveAnalytics(status)
+  const published = canHaveAnalytics(status)
+
+  // A published post with no publisher id is the 409, and we can read it off
+  // the document instead of spending a request to be told. `verify-external`
+  // is what mints that id; a post that took the plain-PUT fallback instead —
+  // the route out for accounts Zernio cannot verify, LinkedIn personal ones —
+  // is published, unlinked, and permanently invisible to analytics until
+  // somebody supplies the URL.
+  //
+  // The server stays the authority: the 409 is still handled below, because
+  // the field could be stale in a cache this screen did not refetch.
+  const linked = Boolean(publisherPostId)
+  const enabled = published && linked
 
   const query = useQuery({
     queryKey: postPerformanceKey(postId),
@@ -114,7 +131,8 @@ export function usePostPerformance(
     [answer, facts],
   )
 
-  if (!enabled) return { state: 'unpublished' }
+  if (!published) return { state: 'unpublished' }
+  if (!linked) return { state: 'unlinked' }
   if (query.isPending) return { state: 'loading' }
   if (isNotPublishedViaPublisher(query.error)) return { state: 'unlinked' }
   if (isPostAnalyticsUnavailable(query.error)) return { state: 'unavailable' }

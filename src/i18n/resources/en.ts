@@ -1049,6 +1049,31 @@ export const en = {
     },
 
     /**
+     * The post's own numbers, and the three answers that are not numbers.
+     *
+     * Each names what is true rather than what is missing. "No analytics" would
+     * cover all three and explain none: one has an action behind it, one is a
+     * clock, and one is a fact about the deployment that no reader can act on.
+     */
+    performance: {
+      unlinked: {
+        title: 'Nothing links this post to what was published',
+        body: 'It went out by hand, so we have no way to find it on the platform and no figures for it. Adding the post link connects the two — from then on it is measured like any other.',
+        action: 'ADD POST LINK',
+      },
+      waiting: {
+        title: 'Numbers are on their way',
+        body: 'This post has gone out and the first figures have not come back yet. They usually arrive within a few hours; this will fill in on its own.',
+      },
+      unavailable: {
+        body: 'Analytics is not switched on for this deployment, so no figures are collected for published posts.',
+      },
+      error: {
+        body: "This post's figures could not be loaded.",
+      },
+    },
+
+    /**
      * The CON-85 score, where it shares a line with the platform checks and
      * where it stands alone in the rail.
      *

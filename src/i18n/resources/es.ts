@@ -764,6 +764,24 @@ export const es: Translation = {
         'Esta publicación ya salió — lo que ves es el registro de lo que se publicó.',
     },
 
+    performance: {
+      unlinked: {
+        title: 'Nada conecta esta publicación con lo que se publicó',
+        body: 'Salió a mano, así que no podemos encontrarla en la plataforma ni tenemos cifras suyas. Añadir el enlace conecta las dos — a partir de ahí se mide como cualquier otra.',
+        action: 'AÑADIR ENLACE',
+      },
+      waiting: {
+        title: 'Las cifras están en camino',
+        body: 'Esta publicación ya salió y aún no han vuelto las primeras cifras. Suelen llegar en unas horas; esto se rellenará solo.',
+      },
+      unavailable: {
+        body: 'Las analíticas no están activadas en esta instalación, así que no se recogen cifras de las publicaciones.',
+      },
+      error: {
+        body: 'No se han podido cargar las cifras de esta publicación.',
+      },
+    },
+
     quality: {
       score: 'Calidad de la publicación {{score}}',
       assess: 'Evaluar la calidad',
