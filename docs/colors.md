@@ -124,6 +124,16 @@ reach into
   SVG `fill`/`stroke` that needs it. Held to one lightness with the chroma
   pushed as far as each hue carries it — seven marks have to be told apart at
   20px, and the first, muted cut of this palette could not be.
+- **Section glyphs** (`--nav-*` for the campaign rail, `--brand-*` for Brand's
+  five tabs) are one permanent hue per fixed place, so a row of otherwise
+  identical line icons can be aimed at rather than read. Same register as
+  `--campaign-*` (L≈0.53, chroma as far as the hue carries it) and the same
+  exclusions — nothing near red (~25°, the destructive voice) and nothing within
+  20° of the teal accent (~191°). They are separate families rather than aliases
+  of each other: retuning one set of places must not silently retune another.
+  Applied inline (`style={{ color: tone }}`) from the section table that owns
+  them, never as a utility class, and never on anything but the glyph — colour
+  here means *which section* and must not also be able to mean a state.
 - **Shadows** carry their color inside the shadow tokens
   (`--shadow-md`, `--shadow-lg`, `--shadow-top`).
 

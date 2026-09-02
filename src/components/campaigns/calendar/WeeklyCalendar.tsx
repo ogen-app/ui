@@ -1,13 +1,21 @@
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
-import { useAddPost, useUpdatePost } from '@/hooks/usePosts'
-import { postToPayload } from '@/services/api/posts'
-import { canEditScheduledAt } from '@/lib/postStatusMachine'
+import { useAddPost } from '@/hooks/usePosts'
+// The drop logic that used to sit inline here — `useUpdatePost`,
+// `postToPayload`, `DEFAULT_HOUR` and the rest — now lives in this hook, which
+// the month view shares. Only the ordering rule stayed behind, because it is
+// about how a column reads rather than about dropping into one.
+import { useCalendarDrop } from '@/hooks/useCalendarDrop'
 import { comparePostOrder } from '@/lib/postOrder'
-import { DEFAULT_HOUR } from '@/lib/postSchedule'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
+import { usePlatformViews } from '@/hooks/usePlatforms'
+import { resolveForPlatform } from '@/lib/publishingAccount'
+import { hasVisibleProblem } from '@/lib/postValidation'
+import { isDateLocked } from './LockMark'
 import { PostCard } from './PostCard'
+import { CARD_RUNGS, pickRung, stackHeight, type CardRung } from './cardRungs'
 import { dayLabel, isSameDay, visibleWeekDays, weekdayLabel } from './date'
 import { cn } from '@/lib'
 
@@ -27,7 +35,22 @@ type Column = {
   day: Date
   isToday: boolean
   posts: Post[]
+  /** How much of itself every card in this column shows — see `cardRungs`. */
+  rung: CardRung
+  /**
+   * Whether the cards, at that rung, still add up to more than the lane holds.
+   * Decides whether the lane scrolls — and scrolling is what clips a hovered
+   * card's shadow, so a column that fits is left un-clipped.
+   */
+  overflows: boolean
 }
+
+/**
+ * The ADD POST button holds its space even at `opacity-0`: `h-9` (36px) plus
+ * the lane's `gap-0.5` (2px) above it. (Its `gap-2` is the horizontal gap
+ * between icon and label — nothing vertical.)
+ */
+const ADD_BUTTON_SPACE = 38
 
 /** Whole days strictly before today — today itself still accepts posts. */
 function isPastDay(day: Date): boolean {
@@ -36,14 +59,22 @@ function isPastDay(day: Date): boolean {
   return day.getTime() < startOfToday.getTime()
 }
 
-function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarProps) {
-  const [dragOverKey, setDragOverKey] = useState<string | null>(null)
+function WeeklyCalendarComponent({
+  campaignId,
+  posts,
+  anchor,
+}: WeeklyCalendarProps) {
   /** Column whose empty space the pointer is on — see the column's onMouseOver. */
   const [hoverKey, setHoverKey] = useState<string | null>(null)
+  const { t, i18n } = useTranslation()
   const today = useMemo(() => new Date(), [])
-  const { mutate: updatePost } = useUpdatePost(campaignId)
   const addPost = useAddPost(campaignId)
-  const { firstDayOfWeek, hiddenDays } = useCalendarSettings(campaignId)
+  const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings(campaignId)
+  const fields = card.week
+  const { dragOverKey, laneHandlers } = useCalendarDrop(campaignId, posts)
+  // One read of the cached platform list for the whole grid; the cards call
+  // the hook form for themselves and get the same answer.
+  const platformViews = usePlatformViews()
 
   const days = useMemo(
     () => visibleWeekDays(anchor, firstDayOfWeek, hiddenDays),
@@ -74,69 +105,97 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
     return map
   }, [posts, days])
 
+  /**
+   * The lane's content height, which is all the ladder needs: every column is
+   * `flex-1` off the same floor, so one lane describes them all. Height alone
+   * since the picture moved to the card's background — nothing on the ladder
+   * is measured in the card's width any more. `ResizeObserver` fires once on
+   * `observe`, so this is also the first measurement; until it lands, cards
+   * draw at the roomiest rung.
+   */
+  const [laneHeight, setLaneHeight] = useState<number | null>(null)
+  const laneObserver = useRef<ResizeObserver | null>(null)
+  // A callback ref, not an effect: the columns are keyed by day, so paging to
+  // another week replaces the measured node — an observer bound once on mount
+  // would keep watching the detached lane and the ladder would go blind to
+  // every resize after the first navigation.
+  const laneRef = useCallback((lane: HTMLDivElement | null) => {
+    laneObserver.current?.disconnect()
+    laneObserver.current = null
+    if (!lane) return
+    const observer = new ResizeObserver(([entry]) => {
+      setLaneHeight(entry.contentRect.height)
+    })
+    observer.observe(lane)
+    laneObserver.current = observer
+  }, [])
+
   const columns = useMemo<Column[]>(
     () =>
-      days.map((day) => ({
-        key: day.toDateString(),
-        label: weekdayLabel(day),
-        dateLabel: dayLabel(day),
-        day,
-        isToday: isSameDay(day, today),
-        posts: postsByDay.get(day.toDateString()) ?? [],
-      })),
-    [days, today, postsByDay],
-  )
-
-  const applyDrop = useCallback(
-    (post: Post, targetDay: Date) => {
-      // PostCard already refuses to start these drags; this guards the
-      // drop side against stale cards and native link drags.
-      if (!canEditScheduledAt(post.status)) return
-      const orig = post.scheduled_at ? new Date(post.scheduled_at) : null
-      if (orig && isSameDay(orig, targetDay)) return
-      const next = new Date(
-        targetDay.getFullYear(),
-        targetDay.getMonth(),
-        targetDay.getDate(),
-        orig ? orig.getHours() : DEFAULT_HOUR,
-        orig ? orig.getMinutes() : 0,
-        orig ? orig.getSeconds() : 0,
-      )
-      updatePost({
-        id: post.id,
-        payload: { ...postToPayload(post), scheduled_at: next.toISOString() },
-      })
-    },
-    [updatePost],
-  )
-
-  const laneHandlers = useCallback(
-    (key: string, targetDay: Date) => ({
-      onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault()
-        e.dataTransfer.dropEffect = 'move'
-        if (dragOverKey !== key) setDragOverKey(key)
-      },
-      onDragLeave: () => {
-        setDragOverKey((k) => (k === key ? null : k))
-      },
-      onDrop: (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault()
-        const id = e.dataTransfer.getData('text/plain')
-        setDragOverKey(null)
-        if (!id) return
-        const post = posts.find((p) => p.id === id)
-        if (post) applyDrop(post, targetDay)
-      },
-    }),
-    [dragOverKey, posts, applyDrop],
+      days.map((day) => {
+        const dayPosts = postsByDay.get(day.toDateString()) ?? []
+        // Past days draw no ADD POST button, so they have that much more room
+        // for cards — the rung is per column, and so is what is in the column.
+        const available =
+          laneHeight === null
+            ? 0
+            : laneHeight - (isPastDay(day) ? 0 : ADD_BUTTON_SPACE)
+        const facts = dayPosts.map((post) => ({
+          hasTime: Boolean(post.scheduled_at ?? post.published_at),
+          // Resolved exactly as the card resolves it, from one platform-list
+          // read rather than a hook per row — see `resolveForPlatform`. A card
+          // keeping its indicator row is a card the ladder has to budget for.
+          hasFlag:
+            isDateLocked(post.status) ||
+            hasVisibleProblem(
+              post,
+              resolveForPlatform(
+                platformViews,
+                post.platform_id,
+                post.social_account_id,
+                post.social_account,
+              ),
+            ),
+          // Truthiness, exactly as the card decides whether to draw the band
+          // (`media_urls[0]` there too) — `length > 0` would charge a 100px
+          // band for a post whose first URL is the empty string.
+          hasImage: Boolean(post.media_urls[0]),
+        }))
+        const rung =
+          laneHeight === null
+            ? CARD_RUNGS[0]
+            : pickRung(facts, available, fields)
+        return {
+          key: day.toDateString(),
+          label: weekdayLabel(day, i18n.language),
+          dateLabel: dayLabel(day, i18n.language),
+          day,
+          isToday: isSameDay(day, today),
+          posts: dayPosts,
+          rung,
+          // The same arithmetic the rung was picked with, asked one more
+          // question. It errs high — `cardHeight` rounds a title line up —
+          // so the answer is "scrolls" in the borderline case, which is the
+          // safe direction: a clipped shadow beats a lane that can't reach its
+          // last card.
+          overflows:
+            laneHeight !== null && stackHeight(rung, facts, fields) > available,
+        }
+      }),
+    [days, today, postsByDay, laneHeight, platformViews, fields, i18n.language],
   )
 
   return (
     // min-w-0 lets the calendar shrink to its grid cell so the day columns
     // scroll inside the wrapper below instead of pushing the whole component
     // past the viewport edge.
-    <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-x-auto">
+    //
+    // `-mx-1 px-1` is the scroller's own doing and cancels out: a scroll
+    // container clips at its padding box, so without the 4px the first and last
+    // columns would shear the side off a hovered card's shadow (`--shadow-md`
+    // reaches 4px). The negative margin gives those 4px back to the layout, so
+    // the grid still starts and ends exactly where the toolbar above it does.
+    <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-x-auto -mx-1 px-1">
       {/* gap-0.5 = the 2px gutters between columns; the page background
           shows through as the divider. */}
       <div className="flex h-full gap-0.5">
@@ -154,9 +213,7 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
                 (e.target as HTMLElement).closest('a') ? null : col.key,
               )
             }
-            onMouseLeave={() =>
-              setHoverKey((k) => (k === col.key ? null : k))
-            }
+            onMouseLeave={() => setHoverKey((k) => (k === col.key ? null : k))}
             className="flex flex-col min-w-[150px] flex-1 min-h-0 gap-0.5"
           >
             {/* Column header — weekday over the full date, centered. */}
@@ -180,14 +237,41 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
                 the whitespace beside a card. Creating is the button's job
                 now; the lane just holds posts. */}
             <div
+              ref={col.key === columns[0]?.key ? laneRef : undefined}
               {...laneHandlers(col.key, col.day)}
               className={cn(
-                'flex-1 min-h-0 overflow-y-auto bg-secondary p-1 flex flex-col gap-2 items-stretch transition-colors',
+                // No padding at all, with 2px between cards — the same as the
+                // month's cells. The lane is a container, not a frame: every
+                // pixel it keeps for itself is a pixel off the card, and at a
+                // 150px column that is the difference between a title fitting
+                // and clamping. What separates a card from the lane's fill is
+                // the gap, not a frame.
+                //
+                // It used to hold 4px each side for the hovered card's shadow:
+                // `--shadow-md` here is `0 5px 10px -1px`, so it reaches 4px
+                // past the card sideways, and every box that clips this lane —
+                // itself when it scrolls, the grid's `overflow-x-auto` at the
+                // first and last column — clips at the padding box. That inset
+                // is gone, so in those two cases the side of the shadow is
+                // sheared off flush with the card. The cost is only visible
+                // while hovering; the inset was visible always, on every card
+                // and on the dashed ADD POST below them.
+                'flex-1 min-h-0 bg-secondary flex flex-col gap-0.5 items-stretch transition-colors',
+                // And the lane only scrolls when it has to, because a scroll
+                // container clips on *both* axes however little scrolling it is
+                // doing — so `overflow-y-auto` on a lane with room to spare was
+                // cutting the shadow off downwards for nothing.
+                col.overflows ? 'overflow-y-auto' : 'overflow-visible',
                 dragOverKey === col.key && 'bg-quaternary',
               )}
             >
               {col.posts.map((post) => (
-                <PostCard key={post.id} post={post} />
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  rung={col.rung}
+                  fields={fields}
+                />
               ))}
 
               {/* The only way to create a post on this day. Kept at a whisper
@@ -206,7 +290,7 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
                 <button
                   type="button"
                   onClick={() => addPost(col.day)}
-                  title={`Add a post on ${col.dateLabel}`}
+                  title={t('calendar.addPostOn', { date: col.dateLabel })}
                   className={cn(
                     'shrink-0 flex h-9 items-center justify-center gap-2 cursor-pointer',
                     // Typography lifted from the toolbar's ADD POST (the
@@ -223,7 +307,7 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
                   )}
                 >
                   <PlusIcon weight="bold" className="size-4 shrink-0" />
-                  <span>ADD POST</span>
+                  <span>{t('calendar.addPost')}</span>
                 </button>
               )}
             </div>
