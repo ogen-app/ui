@@ -255,11 +255,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               }
               text={t('nav.contentBank')}
               isActive={location.pathname.startsWith('/content-bank')}
-              // The tab, not the redirect that picks it — same reason as the
-              // campaign rows above, minus the visible symptom: the tab bar
-              // falls back to All anyway, so this only spares the second
-              // router pass.
-              to="/content-bank/all"
+              to="/content-bank"
             />
             {/* CON-227. Below Content Bank rather than above it because it is
                 the newer of the two and the one that has to earn its place —
