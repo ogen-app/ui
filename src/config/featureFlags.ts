@@ -251,6 +251,36 @@ const FEATURE_FLAGS = {
   'content-bank-images': false,
 
   /**
+   * *Show cards as image previews* in Calendar Settings — the one switch in
+   * that panel, and the calendar-wide answer the per-view `image` field is
+   * copied from (`useCalendarSettings`).
+   *
+   * **Waiting on:** CON-247. The switch has never done anything and could not:
+   * a card's only image source is `post.media_urls`, and nothing writes it.
+   * Editor uploads land in `post_attachments`, which `GET /api/campaigns/:id/
+   * posts` does not join — and that table's `thumbnail_url` is a 15-minute
+   * presigned GET, so copying one into `media_urls` would store a URL that is
+   * dead within the hour. The fix is the server's: a thumbnail on the post list
+   * payload, from a durable key the way `assets` already does it.
+   *
+   * So this is a flag over a control rather than a feature — it was on by
+   * default and inert, which is worse than absent: a switch that is already
+   * *on* tells the user the pictures are missing for some other reason, and the
+   * one thing it can't be read as is "not built yet". Hidden, the panel stops
+   * making a promise the calendar can't keep.
+   *
+   * Nothing else changes with it off. The stored preference is left alone, so
+   * whatever a user set comes back when this is switched on, and the card
+   * renders exactly as it does today either way — it has no picture to draw.
+   *
+   * Switch this on when the payload carries a thumbnail, and re-test against
+   * a real one: the card reserves a band for the image and the month view only
+   * offers it where a cell has room (`cardRungs`), neither of which has ever
+   * been seen with an actual picture in it.
+   */
+  'calendar-card-images': false,
+
+  /**
    * Deleting one saved version of a post, from the version-history panel
    * (CON-168). Off until the API grows `DELETE /api/posts/:id/versions/
    * :versionId` — `handlers/posts.go` registers `GET`/`POST` on `/versions`

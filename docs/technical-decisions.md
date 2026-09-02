@@ -161,9 +161,30 @@ is not a promise the post will publish — it understates rather than cries wolf
 
 **Known gap.** The editor's uploads go to the `post_attachments` table, whose
 presigned/thumbnail URLs are hydrated per post at response time. Nothing writes
-`media_urls`, so **the leading image never renders in practice today.** The
-card is built and correct; lighting it up needs the backend to put a thumbnail
-URL on the post list payload. Backend ticket, not a front-end change.
+`media_urls`, so **the leading image never renders in practice today**. The card
+is built and correct; lighting it up needs the backend to put a thumbnail URL on
+the post list payload — **CON-247**, a backend ticket with no front-end change
+expected.
+
+Calendar Settings' *Show cards as image previews* switch is therefore **hidden
+behind `calendar-card-images`**. It was on by default and inert, which is the
+worst of the three states it could be in: an off switch would read as a setting
+to try, an absent one as a feature not built, but a switch already *on* says the
+pictures are missing for some other reason and sends the user looking for it in
+their posts. The preference itself is untouched — still stored, still defaulted
+— so this hides a control rather than changing a setting, and whatever a user
+chose comes back when the flag flips.
+
+There is no client-side workaround, and it is worth writing down which one fails
+and why. `postToPayload` does round-trip `media_urls`, so the front end could in
+principle write a thumbnail URL there on upload — but `PostAttachment.ThumbnailURL`
+is a **presigned GET with a 15-minute TTL** (`PresignedURLTTL`, `handlers/post_attachments.go`),
+so what would be persisted is a URL that is broken by the time anyone reloads.
+The server's own `ListByCampaign` returns bare post rows with no attachment join,
+so the payload has no other image in it either. The fix is one of: hydrate a
+thumbnail onto the post list rows, or serve attachment thumbnails from a public
+key the way `assets` already does (`storage.PublicURL`) so a stored URL would
+keep working.
 
 **Where.** `components/campaigns/calendar/PostCard.tsx`,
 `lib/postValidation.ts` (`hasVisibleProblem`).
