@@ -1,21 +1,21 @@
-import type { Asset } from "@/types/content";
-import { apiUrl } from "./base";
+import type { Asset } from '@/types/content'
+import { apiUrl, workspaceHeader } from './base'
 
-const UPLOAD_URL = "/api/content-bank/assets/upload";
+const UPLOAD_URL = '/api/content-bank/assets/upload'
 
 /** Per-file outcome returned by the backend's batch upload endpoint. */
 export type UploadResult = {
-  filename: string;
-  asset_id?: string;
-  status: "created" | "failed";
-  error?: string;
-  asset?: Asset;
-};
+  filename: string
+  asset_id?: string
+  status: 'created' | 'failed'
+  error?: string
+  asset?: Asset
+}
 
 type UploadOptions = {
-  onProgress?: (percent: number) => void;
-  signal?: AbortSignal;
-};
+  onProgress?: (percent: number) => void
+  signal?: AbortSignal
+}
 
 /**
  * Uploads a single file to the content bank. Uses XMLHttpRequest (not fetch) so
@@ -28,58 +28,64 @@ export function uploadAssetFile(
   opts: UploadOptions = {},
 ): Promise<UploadResult> {
   return new Promise((resolve, reject) => {
-    const form = new FormData();
-    form.append("files", file);
+    const form = new FormData()
+    form.append('files', file)
 
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", apiUrl(UPLOAD_URL), true);
-    xhr.withCredentials = true;
-    xhr.responseType = "json";
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', apiUrl(UPLOAD_URL), true)
+    xhr.withCredentials = true
+    xhr.responseType = 'json'
+    // The upload takes a different transport but lands in the same workspace
+    // as everything else this tab does (CON-147). `setRequestHeader` has to
+    // come after `open`, which is why it isn't part of the options above.
+    for (const [key, value] of Object.entries(workspaceHeader(UPLOAD_URL))) {
+      xhr.setRequestHeader(key, value)
+    }
 
     if (opts.onProgress) {
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
-          opts.onProgress?.(Math.round((e.loaded / e.total) * 100));
+          opts.onProgress?.(Math.round((e.loaded / e.total) * 100))
         }
-      };
+      }
     }
 
     xhr.onload = () => {
-      const body = xhr.response as
-        | { results?: UploadResult[]; error?: string }
-        | null;
+      const body = xhr.response as {
+        results?: UploadResult[]
+        error?: string
+      } | null
       if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new Error(extractError(body, "Upload failed")));
-        return;
+        reject(new Error(extractError(body, 'Upload failed')))
+        return
       }
-      const result = body?.results?.[0];
+      const result = body?.results?.[0]
       if (!result) {
-        reject(new Error("Server returned no upload result"));
-        return;
+        reject(new Error('Server returned no upload result'))
+        return
       }
-      resolve(result);
-    };
+      resolve(result)
+    }
 
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    xhr.onabort = () =>
-      reject(new DOMException("Upload aborted", "AbortError"));
+    xhr.onerror = () => reject(new Error('Network error during upload'))
+    xhr.onabort = () => reject(new DOMException('Upload aborted', 'AbortError'))
 
     if (opts.signal) {
       if (opts.signal.aborted) {
-        xhr.abort();
-        return;
+        xhr.abort()
+        return
       }
-      opts.signal.addEventListener("abort", () => xhr.abort(), { once: true });
+      opts.signal.addEventListener('abort', () => xhr.abort(), { once: true })
     }
 
-    xhr.send(form);
-  });
+    xhr.send(form)
+  })
 }
 
 function extractError(body: unknown, fallback: string): string {
-  if (body && typeof body === "object" && "error" in body) {
-    const e = (body as { error?: unknown }).error;
-    if (typeof e === "string" && e.length > 0) return e;
+  if (body && typeof body === 'object' && 'error' in body) {
+    const e = (body as { error?: unknown }).error
+    if (typeof e === 'string' && e.length > 0) return e
   }
-  return fallback;
+  return fallback
 }
