@@ -36,7 +36,8 @@ export function UsageMeter({ usage, format, className }: Props) {
   // The language comes off the `useTranslation` this already holds, so the
   // number and the sentence around it are read from the same one — and the
   // `t()` above it is what re-renders this on a switch.
-  const write = format ?? ((value: number) => formatNumber(value, {}, i18n.language))
+  const write =
+    format ?? ((value: number) => formatNumber(value, {}, i18n.language))
 
   const text =
     usage.limit === null
@@ -46,7 +47,11 @@ export function UsageMeter({ usage, format, className }: Props) {
           limit: write(usage.limit),
         })
 
-  return <span className={cn('text-[13px] text-tertiary-foreground', className)}>{text}</span>
+  return (
+    <span className={cn('text-[13px] text-tertiary-foreground', className)}>
+      {text}
+    </span>
+  )
 }
 
 /**

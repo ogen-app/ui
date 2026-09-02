@@ -66,7 +66,10 @@ export function AudienceEditor({
   /** Only offered for an audience that exists. */
   onDelete?: () => void
 }) {
-  const initial = useMemo(() => draftFrom(audience, starter), [audience, starter])
+  const initial = useMemo(
+    () => draftFrom(audience, starter),
+    [audience, starter],
+  )
   const [draft, setDraft] = useState<Draft>(initial)
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
@@ -172,10 +175,13 @@ function ConsequencesCard({
         <>
           {summary ? (
             <span>
-              <span className="text-primary-foreground">Reads as</span> {summary}
+              <span className="text-primary-foreground">Reads as</span>{' '}
+              {summary}
             </span>
           ) : (
-            !incomplete && <span>Read back off these three once this is saved.</span>
+            !incomplete && (
+              <span>Read back off these three once this is saved.</span>
+            )
           )}
           {incomplete && (
             <span>
@@ -188,8 +194,8 @@ function ConsequencesCard({
     >
       {blank && (
         <p className="border-l-2 border-quaternary pl-3 text-sm leading-5 text-tertiary-foreground">
-          Nothing yet. Saved like this the audience is a label, and not one
-          post will come out differently because it exists.
+          Nothing yet. Saved like this the audience is a label, and not one post
+          will come out differently because it exists.
         </p>
       )}
 
@@ -275,7 +281,9 @@ function draftFrom(
  */
 function linesOf(entry: Draft | BrandAudience | null): string {
   if (!entry) return ''
-  return [entry.readsOn, entry.scrollsPastWhen, entry.believesWhen].join('\u0000')
+  return [entry.readsOn, entry.scrollsPastWhen, entry.believesWhen].join(
+    '\u0000',
+  )
 }
 
 /**

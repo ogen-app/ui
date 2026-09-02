@@ -59,7 +59,11 @@ function isPastDay(day: Date): boolean {
   return day.getTime() < startOfToday.getTime()
 }
 
-function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarProps) {
+function WeeklyCalendarComponent({
+  campaignId,
+  posts,
+  anchor,
+}: WeeklyCalendarProps) {
   /** Column whose empty space the pointer is on — see the column's onMouseOver. */
   const [hoverKey, setHoverKey] = useState<string | null>(null)
   const { t, i18n } = useTranslation()
@@ -133,7 +137,9 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
         // Past days draw no ADD POST button, so they have that much more room
         // for cards — the rung is per column, and so is what is in the column.
         const available =
-          laneHeight === null ? 0 : laneHeight - (isPastDay(day) ? 0 : ADD_BUTTON_SPACE)
+          laneHeight === null
+            ? 0
+            : laneHeight - (isPastDay(day) ? 0 : ADD_BUTTON_SPACE)
         const facts = dayPosts.map((post) => ({
           hasTime: Boolean(post.scheduled_at ?? post.published_at),
           // Resolved exactly as the card resolves it, from one platform-list
@@ -156,7 +162,9 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
           hasImage: Boolean(post.media_urls[0]),
         }))
         const rung =
-          laneHeight === null ? CARD_RUNGS[0] : pickRung(facts, available, fields)
+          laneHeight === null
+            ? CARD_RUNGS[0]
+            : pickRung(facts, available, fields)
         return {
           key: day.toDateString(),
           label: weekdayLabel(day, i18n.language),
@@ -170,7 +178,8 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
           // so the answer is "scrolls" in the borderline case, which is the
           // safe direction: a clipped shadow beats a lane that can't reach its
           // last card.
-          overflows: laneHeight !== null && stackHeight(rung, facts, fields) > available,
+          overflows:
+            laneHeight !== null && stackHeight(rung, facts, fields) > available,
         }
       }),
     [days, today, postsByDay, laneHeight, platformViews, fields, i18n.language],
@@ -204,9 +213,7 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
                 (e.target as HTMLElement).closest('a') ? null : col.key,
               )
             }
-            onMouseLeave={() =>
-              setHoverKey((k) => (k === col.key ? null : k))
-            }
+            onMouseLeave={() => setHoverKey((k) => (k === col.key ? null : k))}
             className="flex flex-col min-w-[150px] flex-1 min-h-0 gap-0.5"
           >
             {/* Column header — weekday over the full date, centered. */}
@@ -259,7 +266,12 @@ function WeeklyCalendarComponent({ campaignId, posts, anchor }: WeeklyCalendarPr
               )}
             >
               {col.posts.map((post) => (
-                <PostCard key={post.id} post={post} rung={col.rung} fields={fields} />
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  rung={col.rung}
+                  fields={fields}
+                />
               ))}
 
               {/* The only way to create a post on this day. Kept at a whisper

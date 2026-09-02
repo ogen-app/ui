@@ -84,7 +84,9 @@ export function useSaveVoice() {
         return {
           ...current,
           voices: saved.isDefault
-            ? merged.map((v) => (v.id === saved.id ? v : { ...v, isDefault: false }))
+            ? merged.map((v) =>
+                v.id === saved.id ? v : { ...v, isDefault: false },
+              )
             : merged,
         }
       })
@@ -149,7 +151,10 @@ export function useDeleteAudience() {
     onSuccess: (_void, id) => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) =>
         current
-          ? { ...current, audiences: current.audiences.filter((a) => a.id !== id) }
+          ? {
+              ...current,
+              audiences: current.audiences.filter((a) => a.id !== id),
+            }
           : current,
       )
       qc.invalidateQueries({ queryKey: BRAND_KEY })

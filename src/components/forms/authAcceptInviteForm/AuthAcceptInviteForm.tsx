@@ -47,9 +47,15 @@ export function AuthAcceptInviteForm({ token, email, hasAccount }: Props) {
   if (signedInAs) {
     return (
       <Panel
-        body={t('auth.invite.wrongAccountBody', { invited: email, current: signedInAs })}
+        body={t('auth.invite.wrongAccountBody', {
+          invited: email,
+          current: signedInAs,
+        })}
         action={
-          <Link to="/auth/logout" className="text-primary-foreground text-[13px] font-medium">
+          <Link
+            to="/auth/logout"
+            className="text-primary-foreground text-[13px] font-medium"
+          >
             {t('auth.invite.logOutLink')}
           </Link>
         }
@@ -71,7 +77,9 @@ function ExistingAccount({ email }: { email: string }) {
       action={
         <Link
           to="/auth/login"
-          search={{ redirect: window.location.pathname + window.location.search }}
+          search={{
+            redirect: window.location.pathname + window.location.search,
+          }}
           className="text-primary-foreground text-[13px] font-medium"
         >
           {t('auth.invite.logInLink')}
@@ -101,7 +109,9 @@ function AcceptAsSelf({ token, email }: { token: string; email: string }) {
         disabled={isPending}
         // No payload: the account exists, so the server only adds the
         // membership. See `acceptInvitation`.
-        onClick={() => accept(undefined, { onSuccess: () => void navigate({ to: '/' }) })}
+        onClick={() =>
+          accept(undefined, { onSuccess: () => void navigate({ to: '/' }) })
+        }
       >
         <span>{t('auth.invite.joinSubmit')}</span>
         <ArrowUpRightIcon />
@@ -162,7 +172,14 @@ function CreateAccount({ token, email }: { token: string; email: string }) {
     >
       <div className="flex flex-col gap-2">
         <Label htmlFor="invite-email">{t('auth.invite.emailLabel')}</Label>
-        <Input id="invite-email" name="email" type="email" value={email} disabled readOnly />
+        <Input
+          id="invite-email"
+          name="email"
+          type="email"
+          value={email}
+          disabled
+          readOnly
+        />
       </div>
       <div className="flex flex-col gap-2 md:flex-row md:gap-4">
         <div className="flex flex-1 flex-col gap-2">
@@ -238,7 +255,10 @@ function CreateAccount({ token, email }: { token: string; email: string }) {
         {/* What's left here is the token dying while the page was open. The
             address-already-taken case has its own screen above. */}
         <FormError message={error?.message}>
-          <Link to="/auth/login" className="text-primary-foreground text-[13px] font-medium">
+          <Link
+            to="/auth/login"
+            className="text-primary-foreground text-[13px] font-medium"
+          >
             {t('auth.invite.logInLink')}
           </Link>
         </FormError>

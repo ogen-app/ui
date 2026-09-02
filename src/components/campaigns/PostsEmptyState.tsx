@@ -4,7 +4,13 @@ import { PlusIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import folderEmptyImage from '@/assets/illustrations/folder-empty.webp'
-import { addDays, isSameDay, monthWeeks, startOfWeek, weekdayLabel } from './calendar/date'
+import {
+  addDays,
+  isSameDay,
+  monthWeeks,
+  startOfWeek,
+  weekdayLabel,
+} from './calendar/date'
 import { formatDate } from '@/lib/intl'
 import { cn } from '@/lib'
 
@@ -29,10 +35,22 @@ type Props = {
  * would freeze whichever language loaded first.
  */
 const COPY = {
-  week: { title: 'calendar.empty.calendarTitle', subtitle: 'calendar.empty.calendarSubtitle' },
-  month: { title: 'calendar.empty.calendarTitle', subtitle: 'calendar.empty.calendarSubtitle' },
-  list: { title: 'calendar.empty.listTitle', subtitle: 'calendar.empty.listSubtitle' },
-  panel: { title: 'calendar.empty.panelTitle', subtitle: 'calendar.empty.panelSubtitle' },
+  week: {
+    title: 'calendar.empty.calendarTitle',
+    subtitle: 'calendar.empty.calendarSubtitle',
+  },
+  month: {
+    title: 'calendar.empty.calendarTitle',
+    subtitle: 'calendar.empty.calendarSubtitle',
+  },
+  list: {
+    title: 'calendar.empty.listTitle',
+    subtitle: 'calendar.empty.listSubtitle',
+  },
+  panel: {
+    title: 'calendar.empty.panelTitle',
+    subtitle: 'calendar.empty.panelSubtitle',
+  },
 } as const
 
 // How many placeholder cards each weekday column gets. Fixed (not random)
@@ -95,7 +113,10 @@ export function PostsEmptyState({
         {monthGrid && <MonthSketch weeks={monthGrid} />}
         {variant === 'week' &&
           columns.map((col) => (
-            <div key={col.key} className="flex flex-col min-w-[150px] flex-1 gap-0.5">
+            <div
+              key={col.key}
+              className="flex flex-col min-w-[150px] flex-1 gap-0.5"
+            >
               <div className="shrink-0 bg-secondary px-2 pt-2.5 pb-2 flex flex-col items-center gap-0.5">
                 <span
                   className={cn(
@@ -204,9 +225,17 @@ function MonthSketch({ weeks }: { weeks: Date[][] }) {
                 {day.getDate()}
               </span>
               {Array.from(
-                { length: GHOSTS_PER_DAY[(weekIndex + dayIndex) % GHOSTS_PER_DAY.length] },
+                {
+                  length:
+                    GHOSTS_PER_DAY[
+                      (weekIndex + dayIndex) % GHOSTS_PER_DAY.length
+                    ],
+                },
                 (_, i) => (
-                  <div key={i} className="h-5 shrink-0 border-2 border-dashed border-border" />
+                  <div
+                    key={i}
+                    className="h-5 shrink-0 border-2 border-dashed border-border"
+                  />
                 ),
               )}
             </div>

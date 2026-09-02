@@ -64,7 +64,11 @@ function isPastDay(day: Date): boolean {
  * posts than it did as a result, which is what `DEFAULT_MONTH_FIELDS` starting
  * with the platform switched off is there to pay for.
  */
-function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendarProps) {
+function MonthlyCalendarComponent({
+  campaignId,
+  posts,
+  anchor,
+}: MonthlyCalendarProps) {
   /** Cell whose empty space the pointer is on — see the cell's onMouseOver. */
   const [hoverKey, setHoverKey] = useState<string | null>(null)
   const [laneHeight, setLaneHeight] = useState(ASSUMED_LANE_HEIGHT)
@@ -159,7 +163,10 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
           whole thing on one screen whether the month spans four rows or six. */}
       <div className="flex flex-1 min-h-0 flex-col gap-0.5">
         {weeks.map((week, weekIndex) => (
-          <div key={week[0].toDateString()} className="flex flex-1 min-h-0 gap-0.5">
+          <div
+            key={week[0].toDateString()}
+            className="flex flex-1 min-h-0 gap-0.5"
+          >
             {week.map((day, dayIndex) => {
               const key = day.toDateString()
               const dayPosts = postsByDay.get(key) ?? []
@@ -196,7 +203,9 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
                   key={key}
                   {...laneHandlers(key, day)}
                   onMouseOver={(e) => cellMouseOver(key, e)}
-                  onMouseLeave={() => setHoverKey((k) => (k === key ? null : k))}
+                  onMouseLeave={() =>
+                    setHoverKey((k) => (k === key ? null : k))
+                  }
                   className={cn(
                     // No padding — same reasoning as the week lane, and more
                     // acute here: in a cell this narrow the inset was a tenth
@@ -233,7 +242,9 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
                     <span
                       className={cn(
                         'text-xs leading-4 tabular-nums',
-                        outside ? 'text-quaternary-foreground' : 'text-tertiary-foreground',
+                        outside
+                          ? 'text-quaternary-foreground'
+                          : 'text-tertiary-foreground',
                         isSameDay(day, today) &&
                           'font-medium text-secondary-foreground underline decoration-2 underline-offset-2',
                       )}
@@ -256,7 +267,11 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
                         type="button"
                         onClick={() => addPost(day)}
                         title={t('calendar.addPostOn', {
-                          date: formatDate(day, { dateStyle: 'long' }, i18n.language),
+                          date: formatDate(
+                            day,
+                            { dateStyle: 'long' },
+                            i18n.language,
+                          ),
                         })}
                         className={cn(
                           'flex size-5 shrink-0 items-center justify-center cursor-pointer',
@@ -274,11 +289,17 @@ function MonthlyCalendarComponent({ campaignId, posts, anchor }: MonthlyCalendar
                   {/* Posts lane. Measured on the first cell of the first row —
                       every cell is the same height, so one is the whole grid. */}
                   <div
-                    ref={weekIndex === 0 && dayIndex === 0 ? laneRef : undefined}
+                    ref={
+                      weekIndex === 0 && dayIndex === 0 ? laneRef : undefined
+                    }
                     className="flex flex-1 min-h-0 flex-col gap-0.5"
                   >
                     {fit === null ? (
-                      <MonthDensity campaignId={campaignId} day={day} posts={dayPosts} />
+                      <MonthDensity
+                        campaignId={campaignId}
+                        day={day}
+                        posts={dayPosts}
+                      />
                     ) : (
                       dayPosts.map((post) => (
                         <PostCard

@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { stubListTiers, stubResetPlan, stubSelectTier, stubWorkspacePlan } from './tiers.stub'
+import {
+  stubListTiers,
+  stubResetPlan,
+  stubSelectTier,
+  stubWorkspacePlan,
+} from './tiers.stub'
 
 /**
  * The stub is standing in for the server, so what is asserted here is the
@@ -27,11 +32,9 @@ describe('the tier list', () => {
     return stubListTiers().then((tiers) => {
       const legacy = tiers.find((tier) => tier.id === LEGACY_PRO)
       expect(legacy?.available).toBe(false)
-      expect(tiers.filter((tier) => tier.available).map((tier) => tier.id)).toEqual([
-        TRIAL,
-        PRO,
-        MAX,
-      ])
+      expect(
+        tiers.filter((tier) => tier.available).map((tier) => tier.id),
+      ).toEqual([TRIAL, PRO, MAX])
     })
   })
 
@@ -135,7 +138,10 @@ describe('choosing a tier', () => {
   it('falls back to the seed when the stored tier no longer exists', async () => {
     // An id from an older seed would resolve to no allowances at all, which
     // reads as a broken app rather than as a stale stub.
-    localStorage.setItem('stub-plan', JSON.stringify({ tierId: 'tier_gone', since: 'x' }))
+    localStorage.setItem(
+      'stub-plan',
+      JSON.stringify({ tierId: 'tier_gone', since: 'x' }),
+    )
     const plan = await stubWorkspacePlan()
     expect(plan.tier.id).toBe(TRIAL)
   })

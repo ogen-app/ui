@@ -69,9 +69,13 @@ describe('reconcileTasks', () => {
   })
 
   it('leaves hygiene warnings alone — only alert and risk become work', () => {
-    expect(reconcileTasks([], [warning('stale-drafts', 'todo')], NOW)).toBeNull()
+    expect(
+      reconcileTasks([], [warning('stale-drafts', 'todo')], NOW),
+    ).toBeNull()
     expect(reconcileTasks([], [warning('no-language', 'info')], NOW)).toBeNull()
-    expect(reconcileTasks([], [warning('slot-collision', 'risk')], NOW)).toHaveLength(1)
+    expect(
+      reconcileTasks([], [warning('slot-collision', 'risk')], NOW),
+    ).toHaveLength(1)
   })
 
   it('is idempotent: a second pass over its own work changes nothing', () => {
@@ -94,7 +98,11 @@ describe('reconcileTasks', () => {
     const raised = reconcileTasks([], [warning('failed-posts')], NOW)!
     const resolved = reconcileTasks(raised, [], NOW)!
     const next = reconcileTasks(resolved, [warning('failed-posts')], NOW)
-    expect(next![0]).toMatchObject({ status: 'open', closedAt: null, closedReason: null })
+    expect(next![0]).toMatchObject({
+      status: 'open',
+      closedAt: null,
+      closedReason: null,
+    })
     // One row per rule, not one per recurrence.
     expect(next).toHaveLength(1)
   })
@@ -129,7 +137,10 @@ describe('reconcileTasks', () => {
   it('keeps one task per rule per campaign', () => {
     const next = reconcileTasks(
       [],
-      [warning('failed-posts', 'alert', 'c1'), warning('failed-posts', 'alert', 'c2')],
+      [
+        warning('failed-posts', 'alert', 'c1'),
+        warning('failed-posts', 'alert', 'c2'),
+      ],
       NOW,
     )
     expect(next).toHaveLength(2)
@@ -157,20 +168,32 @@ describe('parseTasks', () => {
 
 describe('sortTasks', () => {
   it('puts open work above finished work, newest first inside each', () => {
-    const older = task({ id: 'a', createdAt: new Date(2026, 7, 10).toISOString() })
-    const newer = task({ id: 'b', createdAt: new Date(2026, 7, 18).toISOString() })
+    const older = task({
+      id: 'a',
+      createdAt: new Date(2026, 7, 10).toISOString(),
+    })
+    const newer = task({
+      id: 'b',
+      createdAt: new Date(2026, 7, 18).toISOString(),
+    })
     const done = task({
       id: 'c',
       status: 'done',
       closedAt: new Date(2026, 7, 19).toISOString(),
       closedReason: 'completed',
     })
-    expect(sortTasks([done, older, newer]).map((t) => t.id)).toEqual(['b', 'a', 'c'])
+    expect(sortTasks([done, older, newer]).map((t) => t.id)).toEqual([
+      'b',
+      'a',
+      'c',
+    ])
   })
 })
 
 describe('openTasks', () => {
   it('counts only what is still to do', () => {
-    expect(openTasks([task(), task({ id: 'b', status: 'done' })])).toHaveLength(1)
+    expect(openTasks([task(), task({ id: 'b', status: 'done' })])).toHaveLength(
+      1,
+    )
   })
 })

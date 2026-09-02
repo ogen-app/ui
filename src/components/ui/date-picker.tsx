@@ -34,7 +34,7 @@ const datePickerTriggerVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 )
 
 type DatePickerProps = {
@@ -61,7 +61,11 @@ function toISODate(d: Date): string {
 }
 
 function formatDisplay(d: Date, locale: string): string {
-  return formatDate(d, { year: 'numeric', month: 'short', day: 'numeric' }, locale)
+  return formatDate(
+    d,
+    { year: 'numeric', month: 'short', day: 'numeric' },
+    locale,
+  )
 }
 
 function DatePicker({
@@ -90,7 +94,7 @@ function DatePicker({
         <span
           className={cn(
             'truncate',
-            selected ? 'text-foreground' : 'text-tertiary-foreground'
+            selected ? 'text-foreground' : 'text-tertiary-foreground',
           )}
         >
           {selected ? formatDisplay(selected, locale) : placeholder}

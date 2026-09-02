@@ -38,7 +38,8 @@ const SettingsSaveContext = createContext<SettingsSaveState | null>(null)
 
 function useSettingsSave(): SettingsSaveState {
   const ctx = useContext(SettingsSaveContext)
-  if (!ctx) throw new Error('useSettingsSave must be used inside SettingsSaveProvider')
+  if (!ctx)
+    throw new Error('useSettingsSave must be used inside SettingsSaveProvider')
   return ctx
 }
 
@@ -90,7 +91,7 @@ export function SettingsSaveProvider({ children }: { children: ReactNode }) {
 export function useRegisterSettingsSave(
   id: string,
   dirty: boolean,
-  save: () => Promise<unknown>
+  save: () => Promise<unknown>,
 ) {
   const { register, unregister } = useSettingsSave()
   useEffect(() => {

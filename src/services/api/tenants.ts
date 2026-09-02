@@ -14,29 +14,33 @@
  * a session exists.
  */
 
-import type { User } from "@/types/user";
-import type { SignupPayload, Tenant } from "@/types/tenant";
-import { apiJson } from "./http";
-import { rawUserToUser, type RawUser } from "./users";
+import type { User } from '@/types/user'
+import type { SignupPayload, Tenant } from '@/types/tenant'
+import { apiJson } from './http'
+import { rawUserToUser, type RawUser } from './users'
 
 type RawSignupResponse = {
-  tenant: Tenant;
-  user: RawUser;
-  session: { id: string; user_id: string; expires_at: string };
-};
+  tenant: Tenant
+  user: RawUser
+  session: { id: string; user_id: string; expires_at: string }
+}
 
 /** `POST /api/tenants` — creates org + first admin, opens a session. */
 export async function signup(payload: SignupPayload): Promise<User> {
-  const body = await apiJson<RawSignupResponse>("/api/tenants", "Unable to create account", {
-    method: "POST",
-    body: {
-      tenant: { name: payload.organizationName.trim() },
-      user: {
-        name: `${payload.firstName} ${payload.lastName}`.trim(),
-        email: payload.email,
-        password: payload.password,
+  const body = await apiJson<RawSignupResponse>(
+    '/api/tenants',
+    'Unable to create account',
+    {
+      method: 'POST',
+      body: {
+        tenant: { name: payload.organizationName.trim() },
+        user: {
+          name: `${payload.firstName} ${payload.lastName}`.trim(),
+          email: payload.email,
+          password: payload.password,
+        },
       },
     },
-  });
-  return rawUserToUser({ ...body.user, tenant: body.tenant });
+  )
+  return rawUserToUser({ ...body.user, tenant: body.tenant })
 }

@@ -46,19 +46,32 @@ export type AssistantStreamEvent =
   // Each delta is the whole document so far, not a patch — concatenating the
   // deltas reproduces the full updated content (verified against the API).
   | { type: 'content_delta'; delta: string }
-  | { type: 'tool_call'; name: string; ref?: string; input?: Record<string, unknown> }
+  | {
+      type: 'tool_call'
+      name: string
+      ref?: string
+      input?: Record<string, unknown>
+    }
   | { type: 'tool_result'; ref?: string }
   | { type: 'complete'; result: AssistantResult }
   | { type: 'campaign_complete'; result: CampaignAssistantResult }
   /** A post the generation sub-flow has already persisted. */
   | { type: 'post_generated'; post: StreamedPost }
   /** The assistant cloned the post into a new, already-persisted one (CON-59). */
-  | { type: 'clone_complete'; newPostId: string; platformId?: string; postType?: string; adapted: boolean }
+  | {
+      type: 'clone_complete'
+      newPostId: string
+      platformId?: string
+      postType?: string
+      adapted: boolean
+    }
   | { type: 'error'; message: string }
   /** Namespaced sub-flow progress, annotating the running tool step. */
   | { type: 'progress'; step: string }
 
-export function listPostMessages(postId: string): Promise<AssistantHistoryMessage[]> {
+export function listPostMessages(
+  postId: string,
+): Promise<AssistantHistoryMessage[]> {
   return apiJson<AssistantHistoryMessage[] | null>(
     `/api/posts/${postId}/messages`,
     'Unable to load the conversation',
@@ -66,7 +79,9 @@ export function listPostMessages(postId: string): Promise<AssistantHistoryMessag
   ).then(orderHistory)
 }
 
-export function listCampaignMessages(campaignId: string): Promise<AssistantHistoryMessage[]> {
+export function listCampaignMessages(
+  campaignId: string,
+): Promise<AssistantHistoryMessage[]> {
   return apiJson<AssistantHistoryMessage[] | null>(
     `/api/campaigns/${campaignId}/messages`,
     'Unable to load the conversation',
@@ -79,7 +94,9 @@ export function listCampaignMessages(campaignId: string): Promise<AssistantHisto
  * renders the reply above the question it answers. Sort by time, breaking ties
  * in favour of the user's message.
  */
-function orderHistory(rows: AssistantHistoryMessage[] | null): AssistantHistoryMessage[] {
+function orderHistory(
+  rows: AssistantHistoryMessage[] | null,
+): AssistantHistoryMessage[] {
   const list = rows ?? []
   return [...list].sort((a, b) => {
     const ta = Date.parse(a.created_at) || 0
@@ -110,14 +127,17 @@ export function parseModelContent(content: string): AssistantResult {
       explanation: parsed.explanation,
       action: postAction(parsed.action),
       saveVersion: parsed.saveVersion === true,
-      versionNote: typeof parsed.versionNote === 'string' ? parsed.versionNote : undefined,
+      versionNote:
+        typeof parsed.versionNote === 'string' ? parsed.versionNote : undefined,
     }
   }
   return { explanation: content, action: 'declined', saveVersion: false }
 }
 
 /** The history counterpart for campaign turns (stored as compact JSON). */
-export function parseCampaignModelContent(content: string): CampaignAssistantResult {
+export function parseCampaignModelContent(
+  content: string,
+): CampaignAssistantResult {
   const parsed = safeParse(content)
   if (typeof parsed.explanation === 'string') {
     return {
@@ -142,43 +162,60 @@ export function streamPostAssistant(
   onEvent: (event: AssistantStreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  return streamAssistant(`/api/posts/${postId}/assistant`, instruction, signal, (event, parsed) => {
-    switch (event) {
-      case 'content_delta':
-        if (typeof parsed.delta === 'string') {
-          onEvent({ type: 'content_delta', delta: parsed.delta })
-        }
-        return true
-      case 'complete':
-        onEvent({
-          type: 'complete',
-          result: {
-            explanation: str(parsed.explanation),
-            updatedContent:
-              typeof parsed.updatedContent === 'string' ? parsed.updatedContent : undefined,
-            action: postAction(parsed.action),
-            saveVersion: parsed.saveVersion === true,
-            versionNote: typeof parsed.versionNote === 'string' ? parsed.versionNote : undefined,
-          },
-        })
-        return true
-      // The clone is a new, already-persisted post; the store attaches it to
-      // the turn so the reply can offer a jump to it. Emitted before `complete`.
-      case 'clone_complete':
-        if (typeof parsed.newPostId === 'string' && parsed.newPostId) {
+  return streamAssistant(
+    `/api/posts/${postId}/assistant`,
+    instruction,
+    signal,
+    (event, parsed) => {
+      switch (event) {
+        case 'content_delta':
+          if (typeof parsed.delta === 'string') {
+            onEvent({ type: 'content_delta', delta: parsed.delta })
+          }
+          return true
+        case 'complete':
           onEvent({
-            type: 'clone_complete',
-            newPostId: parsed.newPostId,
-            platformId: typeof parsed.platformId === 'string' ? parsed.platformId : undefined,
-            postType: typeof parsed.postType === 'string' ? parsed.postType : undefined,
-            adapted: parsed.adapted === true,
+            type: 'complete',
+            result: {
+              explanation: str(parsed.explanation),
+              updatedContent:
+                typeof parsed.updatedContent === 'string'
+                  ? parsed.updatedContent
+                  : undefined,
+              action: postAction(parsed.action),
+              saveVersion: parsed.saveVersion === true,
+              versionNote:
+                typeof parsed.versionNote === 'string'
+                  ? parsed.versionNote
+                  : undefined,
+            },
           })
-        }
-        return true
-      default:
-        return false
-    }
-  }, onEvent)
+          return true
+        // The clone is a new, already-persisted post; the store attaches it to
+        // the turn so the reply can offer a jump to it. Emitted before `complete`.
+        case 'clone_complete':
+          if (typeof parsed.newPostId === 'string' && parsed.newPostId) {
+            onEvent({
+              type: 'clone_complete',
+              newPostId: parsed.newPostId,
+              platformId:
+                typeof parsed.platformId === 'string'
+                  ? parsed.platformId
+                  : undefined,
+              postType:
+                typeof parsed.postType === 'string'
+                  ? parsed.postType
+                  : undefined,
+              adapted: parsed.adapted === true,
+            })
+          }
+          return true
+        default:
+          return false
+      }
+    },
+    onEvent,
+  )
 }
 
 /**
@@ -237,13 +274,18 @@ async function streamAssistant(
 ): Promise<void> {
   const res = await scopedFetch(path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+    },
     body: JSON.stringify({ instruction }),
     signal,
   })
 
   if (!res.ok || !res.body) {
-    throw new Error(await errorMessage(res, 'The assistant could not be reached'))
+    throw new Error(
+      await errorMessage(res, 'The assistant could not be reached'),
+    )
   }
 
   await readSSEStream(res.body, ({ event, data }) => {
@@ -273,7 +315,10 @@ async function streamAssistant(
       case 'error':
         onEvent({
           type: 'error',
-          message: typeof parsed.message === 'string' ? parsed.message : 'The assistant failed',
+          message:
+            typeof parsed.message === 'string'
+              ? parsed.message
+              : 'The assistant failed',
         })
         break
       default:
@@ -308,17 +353,25 @@ function campaignAction(value: unknown): CampaignAssistantAction {
  * Pulls the structured result out of a campaign `complete` payload. Every key
  * is optional and only one is ever populated, so each is read defensively.
  */
-function resultDetails(parsed: Record<string, unknown>): AssistantResultDetails {
+function resultDetails(
+  parsed: Record<string, unknown>,
+): AssistantResultDetails {
   const details: AssistantResultDetails = {}
 
   const contentPlan = record(parsed.contentPlan)
   if (contentPlan) {
-    details.contentPlan = { postCount: num(contentPlan.postCount), warnings: strings(contentPlan.warnings) }
+    details.contentPlan = {
+      postCount: num(contentPlan.postCount),
+      warnings: strings(contentPlan.warnings),
+    }
   }
 
   const generated = record(parsed.generatedPosts)
   if (generated) {
-    details.generatedPosts = { postCount: num(generated.postCount), warnings: strings(generated.warnings) }
+    details.generatedPosts = {
+      postCount: num(generated.postCount),
+      warnings: strings(generated.warnings),
+    }
   }
 
   // The stream sends `brief: {applied}`; the persisted history row flattens it
@@ -390,7 +443,9 @@ function sentenceCase(text: string): string {
 }
 
 function severity(value: unknown): ReviewSeverity | undefined {
-  return value === 'high' || value === 'medium' || value === 'low' ? value : undefined
+  return value === 'high' || value === 'medium' || value === 'low'
+    ? value
+    : undefined
 }
 
 /**
@@ -403,14 +458,16 @@ function streamedPost(parsed: Record<string, unknown>): StreamedPost | null {
   if (!post) return null
   const id = typeof parsed.id === 'string' && parsed.id ? parsed.id : null
   if (!id) return null
-  const publishDate = typeof post.publishDate === 'string' ? post.publishDate : ''
+  const publishDate =
+    typeof post.publishDate === 'string' ? post.publishDate : ''
   return {
     id,
     title: str(post.title) || `Post ${num(parsed.index) + 1}`,
     content: str(post.body),
     platform_id: str(post.platformId),
     platform_post_type: str(post.contentType),
-    campaign_type_phase_id: typeof post.phaseId === 'string' ? post.phaseId : null,
+    campaign_type_phase_id:
+      typeof post.phaseId === 'string' ? post.phaseId : null,
     // Local noon keeps the post on its calendar day regardless of timezone.
     scheduled_at: publishDate ? `${publishDate}T12:00:00` : null,
   }
@@ -425,7 +482,6 @@ function safeParse(data: string): Record<string, unknown> {
   }
 }
 
-
 function record(value: unknown): Record<string, unknown> | null {
   return isRecord(value) ? value : null
 }
@@ -439,5 +495,7 @@ function num(value: unknown): number {
 }
 
 function strings(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : []
+  return Array.isArray(value)
+    ? value.filter((v): v is string => typeof v === 'string')
+    : []
 }

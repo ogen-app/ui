@@ -59,7 +59,9 @@ export function AccountSlot({
     // which one the worker picked. Saying so beats naming the wrong one.
     if (!account.name) {
       return (
-        <span className="truncate text-tertiary-foreground">Account not recorded</span>
+        <span className="truncate text-tertiary-foreground">
+          Account not recorded
+        </span>
       )
     }
     // gap-1.5 matches the icon/label spacing inside the bar's triggers.
@@ -84,7 +86,9 @@ export function AccountSlot({
               }
             />
             <span className="truncate">
-              {account.name ? `${account.name} — disconnected` : 'Account disconnected'}
+              {account.name
+                ? `${account.name} — disconnected`
+                : 'Account disconnected'}
             </span>
           </>
         ) : account.account ? (
@@ -105,10 +109,17 @@ export function AccountSlot({
       <DropdownMenuContent align="start">
         {account.accounts.map((a) => (
           <DropdownMenuItem key={a.id} onSelect={() => onSelect(a.id)}>
-            <AccountAvatar src={a.avatar_url} name={accountLabel(a)} size="sm" />
+            <AccountAvatar
+              src={a.avatar_url}
+              name={accountLabel(a)}
+              size="sm"
+            />
             <div className="flex min-w-0 flex-col">
               <span
-                className={cn('truncate', a.id === account.account?.id && 'font-medium')}
+                className={cn(
+                  'truncate',
+                  a.id === account.account?.id && 'font-medium',
+                )}
               >
                 {accountLabel(a)}
               </span>

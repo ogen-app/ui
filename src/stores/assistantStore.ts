@@ -44,7 +44,9 @@ import type {
 const runners = new Map<string, AbortController>()
 
 export function threadIdFor(subject: ThreadSubject): string {
-  return subject.kind === 'post' ? `post:${subject.postId}` : `campaign:${subject.campaignId}`
+  return subject.kind === 'post'
+    ? `post:${subject.postId}`
+    : `campaign:${subject.campaignId}`
 }
 
 /** The id whose pending edits a turn must flush before it starts. */
@@ -74,9 +76,17 @@ type AssistantState = {
   prefillRequest: { threadId: string; text: string; token: number } | null
 
   /** Register a thread for a subject and make it the active one. */
-  openThread: (subject: ThreadSubject, title: string, campaignTitle: string) => string
+  openThread: (
+    subject: ThreadSubject,
+    title: string,
+    campaignTitle: string,
+  ) => string
   /** Keep a thread's labels in sync with its subject, without selecting it. */
-  renameThread: (threadId: string, title: string, campaignTitle?: string) => void
+  renameThread: (
+    threadId: string,
+    title: string,
+    campaignTitle?: string,
+  ) => void
   /** Show a thread that is already open. */
   selectThread: (threadId: string | null) => void
   /**
@@ -103,7 +113,14 @@ export const useAssistantStore = create<AssistantState>()(
     (set, get) => {
       const patchThread = (id: string, changes: Partial<AssistantThread>) =>
         set((s) =>
-          s.threads[id] ? { threads: { ...s.threads, [id]: { ...s.threads[id], ...changes } } } : s,
+          s.threads[id]
+            ? {
+                threads: {
+                  ...s.threads,
+                  [id]: { ...s.threads[id], ...changes },
+                },
+              }
+            : s,
         )
 
       /** Replace the last turn of a thread — every stream event lands here. */
@@ -156,7 +173,9 @@ export const useAssistantStore = create<AssistantState>()(
           const current = get().threads[threadId]
           if (!current) return
           const sameTitle = current.title === title
-          const sameCampaign = campaignTitle === undefined || current.campaignTitle === campaignTitle
+          const sameCampaign =
+            campaignTitle === undefined ||
+            current.campaignTitle === campaignTitle
           if (sameTitle && sameCampaign) return
           patchThread(threadId, {
             title,
@@ -192,8 +211,10 @@ export const useAssistantStore = create<AssistantState>()(
             delete threads[threadId]
             return {
               threads,
-              activeThreadId: s.activeThreadId === threadId ? null : s.activeThreadId,
-              currentThreadId: s.currentThreadId === threadId ? null : s.currentThreadId,
+              activeThreadId:
+                s.activeThreadId === threadId ? null : s.activeThreadId,
+              currentThreadId:
+                s.currentThreadId === threadId ? null : s.currentThreadId,
             }
           })
         },
@@ -240,7 +261,10 @@ export const useAssistantStore = create<AssistantState>()(
               if (!current) return s
               const live = current.turns
               return {
-                threads: { ...s.threads, [threadId]: { ...current, turns: [...turns, ...live] } },
+                threads: {
+                  ...s.threads,
+                  [threadId]: { ...current, turns: [...turns, ...live] },
+                },
               }
             })
           } catch {
@@ -324,7 +348,11 @@ export const useAssistantStore = create<AssistantState>()(
             const watching =
               selectActivePanel(useSettingsStore.getState()) === 'assistant' &&
               get().activeThreadId === threadId
-            patchThread(threadId, { status, runStartedAt: null, unread: !watching })
+            patchThread(threadId, {
+              status,
+              runStartedAt: null,
+              unread: !watching,
+            })
 
             if (watching || outcome === 'cancelled') return
             const thread = get().threads[threadId]
@@ -349,7 +377,10 @@ export const useAssistantStore = create<AssistantState>()(
             const now = performance.now()
             switch (event.type) {
               case 'explanation_delta':
-                patchLastTurn(threadId, (t) => ({ ...t, content: t.content + event.delta }))
+                patchLastTurn(threadId, (t) => ({
+                  ...t,
+                  content: t.content + event.delta,
+                }))
                 break
 
               case 'content_delta':
@@ -371,7 +402,10 @@ export const useAssistantStore = create<AssistantState>()(
                       ...s.threads,
                       [threadId]: {
                         ...current,
-                        streamedPosts: upsertPost(current.streamedPosts, event.post),
+                        streamedPosts: upsertPost(
+                          current.streamedPosts,
+                          event.post,
+                        ),
                       },
                     },
                   }
@@ -389,7 +423,9 @@ export const useAssistantStore = create<AssistantState>()(
               case 'tool_call':
                 patchLastTurn(threadId, (t) => {
                   const steps = (t.steps ?? []).map((s) =>
-                    s.kind !== 'tool' && s.endedAt === null ? { ...s, endedAt: now } : s,
+                    s.kind !== 'tool' && s.endedAt === null
+                      ? { ...s, endedAt: now }
+                      : s,
                   )
                   steps.push({
                     id: event.ref ?? `${event.name}-${steps.length}`,
@@ -409,8 +445,14 @@ export const useAssistantStore = create<AssistantState>()(
                 patchLastTurn(threadId, (t) => ({
                   ...t,
                   steps: (t.steps ?? []).map((s) =>
-                    s.kind === 'tool' && s.ref === event.ref && s.endedAt === null
-                      ? { ...s, endedAt: now, label: describeTool(s.tool ?? '', s.input, 'done') }
+                    s.kind === 'tool' &&
+                    s.ref === event.ref &&
+                    s.endedAt === null
+                      ? {
+                          ...s,
+                          endedAt: now,
+                          label: describeTool(s.tool ?? '', s.input, 'done'),
+                        }
                       : s,
                   ),
                 }))
@@ -421,7 +463,10 @@ export const useAssistantStore = create<AssistantState>()(
                   const steps = (t.steps ?? []).slice()
                   const idx = lastOpenToolIndex(steps)
                   if (idx < 0) return t
-                  steps[idx] = { ...steps[idx], detail: humanizeStep(event.step) }
+                  steps[idx] = {
+                    ...steps[idx],
+                    detail: humanizeStep(event.step),
+                  }
                   return { ...t, steps }
                 })
                 break
@@ -432,7 +477,10 @@ export const useAssistantStore = create<AssistantState>()(
                 // straight to the clone's editor.
                 patchLastTurn(threadId, (t) => ({
                   ...t,
-                  clone: { postId: event.newPostId, campaignId: subject.campaignId },
+                  clone: {
+                    postId: event.newPostId,
+                    campaignId: subject.campaignId,
+                  },
                 }))
                 break
 
@@ -477,17 +525,32 @@ export const useAssistantStore = create<AssistantState>()(
 
           try {
             if (subject.kind === 'post') {
-              await streamPostAssistant(subject.postId, text, onEvent, controller.signal)
+              await streamPostAssistant(
+                subject.postId,
+                text,
+                onEvent,
+                controller.signal,
+              )
             } else {
-              await streamCampaignAssistant(subject.campaignId, text, onEvent, controller.signal)
+              await streamCampaignAssistant(
+                subject.campaignId,
+                text,
+                onEvent,
+                controller.signal,
+              )
             }
 
             // The server writes the result itself — the payload describes what
             // it already saved. Never write it back; just refresh.
-            await refreshSubject(subject, get().threads[threadId], streamedContent)
+            await refreshSubject(
+              subject,
+              get().threads[threadId],
+              streamedContent,
+            )
             finish('idle', sawErrorEvent ? 'failed' : 'answered')
           } catch (err) {
-            const aborted = err instanceof DOMException && err.name === 'AbortError'
+            const aborted =
+              err instanceof DOMException && err.name === 'AbortError'
             patchLastTurn(threadId, (t) => ({
               ...t,
               content: aborted ? cancelledText(subject) : errorText(err),
@@ -502,7 +565,11 @@ export const useAssistantStore = create<AssistantState>()(
             // the finally below clears streamedPosts, so without a refresh
             // here those already-saved posts vanish from the calendar until
             // an unrelated refetch.
-            await refreshSubject(subject, get().threads[threadId], streamedContent)
+            await refreshSubject(
+              subject,
+              get().threads[threadId],
+              streamedContent,
+            )
             finish(aborted ? 'idle' : 'error', aborted ? 'cancelled' : 'failed')
           } finally {
             runners.delete(threadId)
@@ -539,7 +606,9 @@ async function refreshSubject(
     // to the body — including one that only wrote notes, and one that failed
     // after writing some. `beginLocalRun` suppresses the actor's own
     // broadcast, so nothing else refreshes this for the person who ran it.
-    await queryClient.invalidateQueries({ queryKey: postNotesKey(subject.postId) })
+    await queryClient.invalidateQueries({
+      queryKey: postNotesKey(subject.postId),
+    })
     if (applied?.action === 'edited' || streamedContent) {
       await queryClient.invalidateQueries({ queryKey: postKey(subject.postId) })
       // The flow snapshots the post before it rewrites, so an edited turn
@@ -561,7 +630,9 @@ async function refreshSubject(
   }
   // Campaign turns can touch the brief, the dates, or the post list, and the
   // post list key nests under the campaign's — one invalidation covers all.
-  await queryClient.invalidateQueries({ queryKey: campaignKey(subject.campaignId) })
+  await queryClient.invalidateQueries({
+    queryKey: campaignKey(subject.campaignId),
+  })
 }
 
 /** True while any thread has a turn in flight — drives the sidebar trigger. */
@@ -615,10 +686,18 @@ function lastOpenToolIndex(steps: AssistantStep[]): number {
  */
 function withWritingStep(steps: AssistantStep[], now: number): AssistantStep[] {
   if (steps.some((s) => s.kind === 'compose')) return steps
-  const closed = steps.map((s) => (s.endedAt === null ? { ...s, endedAt: now } : s))
+  const closed = steps.map((s) =>
+    s.endedAt === null ? { ...s, endedAt: now } : s,
+  )
   return [
     ...closed,
-    { id: 'compose', kind: 'compose', label: 'Writing the post', startedAt: now, endedAt: null },
+    {
+      id: 'compose',
+      kind: 'compose',
+      label: 'Writing the post',
+      startedAt: now,
+      endedAt: null,
+    },
   ]
 }
 

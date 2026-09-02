@@ -1,6 +1,6 @@
-import { retrievability } from "@/lib/campaignSources";
-import { formatNumber } from "@/lib/intl";
-import type { Asset } from "@/types/content";
+import { retrievability } from '@/lib/campaignSources'
+import { formatNumber } from '@/lib/intl'
+import type { Asset } from '@/types/content'
 
 /**
  * How much of a document there actually is.
@@ -15,9 +15,9 @@ import type { Asset } from "@/types/content";
  * It also catches the case a size never would: a PDF that uploaded perfectly
  * and extracted to nothing.
  */
-export function wordCount(asset: Pick<Asset, "content">): number {
-  const text = asset.content.trim();
-  return text === "" ? 0 : text.split(/\s+/).length;
+export function wordCount(asset: Pick<Asset, 'content'>): number {
+  const text = asset.content.trim()
+  return text === '' ? 0 : text.split(/\s+/).length
 }
 
 /**
@@ -30,11 +30,12 @@ export function wordCount(asset: Pick<Asset, "content">): number {
  * left here is the exact call the rest of the app just stopped making, and it
  * would read as permission to make it again.
  */
-export function extentLabel(asset: Pick<Asset, "content" | "status">): string {
-  const count = wordCount(asset);
-  if (count > 0) return `${formatNumber(count)} ${count === 1 ? "word" : "words"}`;
+export function extentLabel(asset: Pick<Asset, 'content' | 'status'>): string {
+  const count = wordCount(asset)
+  if (count > 0)
+    return `${formatNumber(count)} ${count === 1 ? 'word' : 'words'}`
   // Empty while the server is still working on it is a wait, not a verdict.
-  return retrievability(asset.status) === "waiting"
-    ? "Not read yet"
-    : "Nothing extracted";
+  return retrievability(asset.status) === 'waiting'
+    ? 'Not read yet'
+    : 'Nothing extracted'
 }

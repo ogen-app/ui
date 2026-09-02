@@ -72,7 +72,9 @@ function ProfilePage() {
               <ProfileIdentitySection user={user} />
               <LanguageSection />
               <PasswordSection />
-              {emailPreferencesEnabled && <EmailPreferencesSection userId={user.id} />}
+              {emailPreferencesEnabled && (
+                <EmailPreferencesSection userId={user.id} />
+              )}
               <SettingsCard title={t('profile.dangerZone.title')}>
                 <div className="flex flex-col items-start gap-3">
                   <p className="max-w-150 text-sm text-tertiary-foreground">

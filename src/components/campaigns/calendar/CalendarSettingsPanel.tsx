@@ -34,8 +34,16 @@ function dayNames(locale: string): Record<number, string> {
 
 /** The views that draw cards, in the order the view switcher offers them. */
 const CARD_VIEWS = [
-  { view: 'week', titleKey: 'calendar.weekCard', showKey: 'calendar.showFieldOnWeek' },
-  { view: 'month', titleKey: 'calendar.monthCard', showKey: 'calendar.showFieldOnMonth' },
+  {
+    view: 'week',
+    titleKey: 'calendar.weekCard',
+    showKey: 'calendar.showFieldOnWeek',
+  },
+  {
+    view: 'month',
+    titleKey: 'calendar.monthCard',
+    showKey: 'calendar.showFieldOnMonth',
+  },
 ] as const
 
 /**
@@ -76,10 +84,16 @@ export function CalendarSettingsPanel({
   // While it is loading there is nothing to annotate — and no annotation is the
   // right guess, since a campaign publishes on every day by default.
   const { data: campaign } = useCampaign(campaignId)
-  const publishingDays = campaign ? publishingDayNumbers(campaign.publishing_days) : null
+  const publishingDays = campaign
+    ? publishingDayNumbers(campaign.publishing_days)
+    : null
 
   return (
-    <RailPanel title={t('calendar.settings')} onClose={onClose} className="h-full">
+    <RailPanel
+      title={t('calendar.settings')}
+      onClose={onClose}
+      className="h-full"
+    >
       <Collapse
         title={t('calendar.preferences')}
         defaultOpen
@@ -149,7 +163,8 @@ export function CalendarSettingsPanel({
               const locked = !canHideField(card[view], field)
               const label = t(`calendar.field.${field}` as const)
               // Only the status row carries one — see `calendar.fieldNoteStatus`.
-              const note = field === 'status' ? t('calendar.fieldNoteStatus') : null
+              const note =
+                field === 'status' ? t('calendar.fieldNoteStatus') : null
               return (
                 <div
                   key={field}
@@ -157,7 +172,11 @@ export function CalendarSettingsPanel({
                 >
                   <span className="flex min-w-0 flex-col">
                     <span className="text-sm">{label}</span>
-                    {note && <span className="text-xs text-tertiary-foreground">{note}</span>}
+                    {note && (
+                      <span className="text-xs text-tertiary-foreground">
+                        {note}
+                      </span>
+                    )}
                   </span>
                   {isPending ? (
                     <Skeleton className="h-5 w-9" />
@@ -165,7 +184,9 @@ export function CalendarSettingsPanel({
                     <Switch
                       checked={card[view][field]}
                       disabled={locked}
-                      onCheckedChange={(checked) => setCardField(view, field, checked)}
+                      onCheckedChange={(checked) =>
+                        setCardField(view, field, checked)
+                      }
                       aria-label={t(showKey, { field: label.toLowerCase() })}
                     />
                   )}
@@ -198,7 +219,8 @@ export function CalendarSettingsPanel({
             // Why a hidden day may be safe to hide: the campaign never
             // publishes on it. State, not teaching, so it sits in the row
             // rather than in a note the user can close.
-            const unused = publishingDays !== null && !publishingDays.includes(day)
+            const unused =
+              publishingDays !== null && !publishingDays.includes(day)
             return (
               <div
                 key={day}

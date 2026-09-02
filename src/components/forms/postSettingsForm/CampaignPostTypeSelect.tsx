@@ -200,7 +200,9 @@ function GroupItem({ item }: { item: Item }) {
 
 function InfoRow({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-2 py-1.5 text-xs text-tertiary-foreground">{children}</div>
+    <div className="px-2 py-1.5 text-xs text-tertiary-foreground">
+      {children}
+    </div>
   )
 }
 

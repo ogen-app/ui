@@ -21,7 +21,13 @@ const VERTICAL_TYPES = new Set(['reel', 'short', 'story'])
  * number always comes back.
  */
 export function frameAspect(postType: string, feedAspect: number): number
-export function frameAspect(postType: string, feedAspect?: number): number | undefined
-export function frameAspect(postType: string, feedAspect?: number): number | undefined {
+export function frameAspect(
+  postType: string,
+  feedAspect?: number,
+): number | undefined
+export function frameAspect(
+  postType: string,
+  feedAspect?: number,
+): number | undefined {
   return VERTICAL_TYPES.has(postType) ? 9 / 16 : feedAspect
 }

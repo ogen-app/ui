@@ -36,7 +36,9 @@ export function PlanSummary({ tier, retired, onCancelChange, busy }: Props) {
   return (
     <div className="flex flex-col gap-4 min-w-0">
       <div className="flex flex-col gap-1 min-w-0">
-        <span className="text-[13px] text-tertiary-foreground">{t('tiers.currentPlan')}</span>
+        <span className="text-[13px] text-tertiary-foreground">
+          {t('tiers.currentPlan')}
+        </span>
         <div className="flex items-center gap-3 min-w-0">
           <h2 className="text-2xl font-display font-medium tracking-tight min-w-0 truncate">
             {tier.name}
@@ -44,7 +46,9 @@ export function PlanSummary({ tier, retired, onCancelChange, busy }: Props) {
           {retired && <Chip variant="muted">{t('tiers.retired')}</Chip>}
         </div>
         <p className="text-[13px] text-tertiary-foreground">
-          {t('tiers.since', { when: formatDay(tier.effectiveFrom, i18n.language) })}
+          {t('tiers.since', {
+            when: formatDay(tier.effectiveFrom, i18n.language),
+          })}
         </p>
       </div>
 
@@ -64,10 +68,13 @@ export function PlanSummary({ tier, retired, onCancelChange, busy }: Props) {
             },
           )}
           action={
-            busy ? undefined : { label: t('tiers.cancelChange'), onClick: onCancelChange }
+            busy
+              ? undefined
+              : { label: t('tiers.cancelChange'), onClick: onCancelChange }
           }
         >
-          {tier.scheduled.direction === 'downgrade' && t('tiers.changeScheduledBody')}
+          {tier.scheduled.direction === 'downgrade' &&
+            t('tiers.changeScheduledBody')}
         </NoticeShell>
       )}
     </div>

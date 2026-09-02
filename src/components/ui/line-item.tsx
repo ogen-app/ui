@@ -1,12 +1,12 @@
-import { cloneElement, isValidElement } from "react";
-import type { ReactElement, ReactNode } from "react";
-import { Slot } from "@radix-ui/react-slot";
+import { cloneElement, isValidElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
+import { Slot } from '@radix-ui/react-slot'
 import {
   CaretRightIcon,
   CheckCircleIcon,
   CircleIcon,
-} from "@phosphor-icons/react";
-import { cn } from "@/lib";
+} from '@phosphor-icons/react'
+import { cn } from '@/lib'
 
 /**
  * The one row shape every list in the app uses: the Campaign Overview's
@@ -45,16 +45,16 @@ import { cn } from "@/lib";
  * margin: "4 samples · 24 published · 3 in draft" is a sentence, and a sentence
  * squeezed into the right margin wraps into a column of fragments.
  */
-export type LineItemVariant = "task" | "entry";
+export type LineItemVariant = 'task' | 'entry'
 
 /** Colour of a notification's dot. Severity is carried by the dot alone. */
-export type LineItemTone = "alert" | "warning" | "neutral";
+export type LineItemTone = 'alert' | 'warning' | 'neutral'
 
 const DOT: Record<LineItemTone, string> = {
-  alert: "bg-destructive",
-  warning: "bg-warning",
-  neutral: "bg-senary-foreground",
-};
+  alert: 'bg-destructive',
+  warning: 'bg-warning',
+  neutral: 'bg-senary-foreground',
+}
 
 /**
  * What sits in the left slot. Omitted entirely = a statusless row: the slot
@@ -62,14 +62,14 @@ const DOT: Record<LineItemTone, string> = {
  */
 export type LineItemIndicator =
   /** Something is true and worth knowing — a dot, coloured by tone. */
-  | { kind: "notification"; tone: LineItemTone }
+  | { kind: 'notification'; tone: LineItemTone }
   /** Something to do — a checkbox that is either ticked or empty. */
-  | { kind: "task"; done: boolean }
+  | { kind: 'task'; done: boolean }
   /** Anything else that fits 16px, e.g. a channel icon on a post row. */
-  | { kind: "custom"; node: ReactNode };
+  | { kind: 'custom'; node: ReactNode }
 
 /** The band a one-line row occupies; the indicator and chevron pin to it. */
-const BAND = "h-10";
+const BAND = 'h-10'
 
 export function LineItem({
   indicator,
@@ -78,45 +78,47 @@ export function LineItem({
   meta,
   trailing,
   chevron,
-  variant = "task",
+  variant = 'task',
   asChild = false,
   className,
   children,
 }: {
-  indicator?: LineItemIndicator;
-  label: ReactNode;
+  indicator?: LineItemIndicator
+  label: ReactNode
   /** Second line: the row grows past 40px, the slots stay on the first band. */
-  details?: ReactNode;
+  details?: ReactNode
   /** Third line, set back — counts, dates, provenance. See `LineItemVariant`. */
-  meta?: ReactNode;
+  meta?: ReactNode
   /** Before the chevron: an action hint, a status badge, a timestamp. */
-  trailing?: ReactNode;
-  variant?: LineItemVariant;
+  trailing?: ReactNode
+  variant?: LineItemVariant
   /** Defaults to "whenever the row is interactive" — a chevron implies a destination. */
-  chevron?: boolean;
+  chevron?: boolean
   /** Render as `children` (a `Link`, a `button`) instead of a plain `div`. */
-  asChild?: boolean;
-  className?: string;
-  children?: ReactNode;
+  asChild?: boolean
+  className?: string
+  children?: ReactNode
 }) {
-  const interactive = asChild && isValidElement(children);
-  const showChevron = chevron ?? interactive;
-  const entry = variant === "entry";
+  const interactive = asChild && isValidElement(children)
+  const showChevron = chevron ?? interactive
+  const entry = variant === 'entry'
 
   // Not a bare `&&` guard on the prop: a `0` is falsy, and React would print
   // the bare number outside the styled span instead of skipping it.
-  const has = (node: ReactNode) => node != null && node !== false;
+  const has = (node: ReactNode) => node != null && node !== false
 
   const content = (
     <>
       <span
-        className={cn("flex w-4 shrink-0 items-center justify-center", BAND)}
+        className={cn('flex w-4 shrink-0 items-center justify-center', BAND)}
       >
         <Indicator indicator={indicator} />
       </span>
 
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 py-2.5">
-        <span className={cn("truncate text-sm leading-5", entry && "font-semibold")}>
+        <span
+          className={cn('truncate text-sm leading-5', entry && 'font-semibold')}
+        >
           {label}
         </span>
         {has(details) && (
@@ -127,8 +129,8 @@ export function LineItem({
                   // 14px the description carried the same weight as the thing
                   // it describes and the row had no top line; one step down is
                   // enough to rank them without dropping to caption size.
-                  "line-clamp-2 text-[13px] leading-5"
-                : "text-xs leading-4 text-tertiary-foreground",
+                  'line-clamp-2 text-[13px] leading-5'
+                : 'text-xs leading-4 text-tertiary-foreground',
             )}
           >
             {details}
@@ -137,8 +139,8 @@ export function LineItem({
         {has(meta) && (
           <span
             className={cn(
-              "leading-5 text-secondary-foreground",
-              entry ? "text-[13px]" : "text-xs leading-4",
+              'leading-5 text-secondary-foreground',
+              entry ? 'text-[13px]' : 'text-xs leading-4',
             )}
           >
             {meta}
@@ -149,7 +151,7 @@ export function LineItem({
       {has(trailing) && (
         <span
           className={cn(
-            "flex shrink-0 items-center gap-2 text-xs text-tertiary-foreground",
+            'flex shrink-0 items-center gap-2 text-xs text-tertiary-foreground',
             BAND,
           )}
         >
@@ -159,9 +161,10 @@ export function LineItem({
 
       <span
         className={cn(
-          "flex w-4 shrink-0 items-center justify-center",
+          'flex w-4 shrink-0 items-center justify-center',
           BAND,
-          interactive && "text-tertiary-foreground group-hover:text-primary-foreground",
+          interactive &&
+            'text-tertiary-foreground group-hover:text-primary-foreground',
         )}
       >
         {showChevron && (
@@ -169,13 +172,13 @@ export function LineItem({
         )}
       </span>
     </>
-  );
+  )
 
   const rowClassName = cn(
-    "group -mx-2 flex min-h-10 items-start gap-3 rounded-md px-2",
-    interactive && "hover:bg-secondary",
+    'group -mx-2 flex min-h-10 items-start gap-3 rounded-md px-2',
+    interactive && 'hover:bg-secondary',
     className,
-  );
+  )
 
   // `asChild` hands the row's markup to the caller's element (a Link, a
   // button) so the whole 40px band is the hit target, not just the label.
@@ -184,29 +187,29 @@ export function LineItem({
       <Slot className={rowClassName}>
         {cloneElement(children as ReactElement, undefined, content)}
       </Slot>
-    );
+    )
   }
 
-  return <div className={rowClassName}>{content}</div>;
+  return <div className={rowClassName}>{content}</div>
 }
 
 function Indicator({ indicator }: { indicator?: LineItemIndicator }) {
-  if (!indicator) return null;
+  if (!indicator) return null
   switch (indicator.kind) {
-    case "notification":
+    case 'notification':
       return (
         <span
-          className={cn("size-1.5 rounded-full", DOT[indicator.tone])}
+          className={cn('size-1.5 rounded-full', DOT[indicator.tone])}
           aria-hidden
         />
-      );
-    case "task":
+      )
+    case 'task':
       return indicator.done ? (
         <CheckCircleIcon weight="fill" className="size-4 text-positive" />
       ) : (
         <CircleIcon className="size-4 text-senary-foreground" />
-      );
-    case "custom":
-      return <>{indicator.node}</>;
+      )
+    case 'custom':
+      return <>{indicator.node}</>
   }
 }

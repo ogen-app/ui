@@ -52,7 +52,12 @@ export function DeleteDocumentsDialog({
             : `${one ? 'This document' : 'These documents'} will be permanently deleted, and any campaign using ${one ? 'it' : 'them'} will stop writing from ${one ? 'it' : 'them'}. This cannot be undone.`}
         </p>
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={deleting}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={deleting}
+          >
             {one ? 'KEEP DOCUMENT' : 'KEEP DOCUMENTS'}
           </Button>
           <Button

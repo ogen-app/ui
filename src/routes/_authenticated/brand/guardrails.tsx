@@ -5,7 +5,11 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { BrandBackButton, BrandPage } from '@/components/brand/detail'
 import { GuardrailsEditor } from '@/components/brand/GuardrailsEditor'
-import { useBrand, useDeleteGuardrails, useSaveGuardrails } from '@/hooks/useBrand'
+import {
+  useBrand,
+  useDeleteGuardrails,
+  useSaveGuardrails,
+} from '@/hooks/useBrand'
 import { toast } from '@/stores/toastStore'
 
 /**
@@ -83,7 +87,9 @@ function GuardrailsPage() {
           save.mutate(written, {
             onSuccess: () => {
               toast.success(
-                guardrails ? 'The guardrails are saved.' : 'The guardrails are set.',
+                guardrails
+                  ? 'The guardrails are saved.'
+                  : 'The guardrails are set.',
               )
             },
           })
@@ -105,7 +111,13 @@ function GuardrailsPage() {
  * The header above something that does not scroll — the spinner, and the
  * failed-to-load page. Nothing passes under the gradient in either.
  */
-function Static({ header, children }: { header: ReactNode; children: ReactNode }) {
+function Static({
+  header,
+  children,
+}: {
+  header: ReactNode
+  children: ReactNode
+}) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {header}

@@ -23,7 +23,13 @@ import { reportForDay, type CountsByKind } from '@/lib/activityFeed'
  * — for a daily report that is most of the point, and a plain overlay
  * forecloses it.
  */
-export function DailyReportModal({ date, onClose }: { date: string; onClose: () => void }) {
+export function DailyReportModal({
+  date,
+  onClose,
+}: {
+  date: string
+  onClose: () => void
+}) {
   const { t } = useTranslation()
   const dayLabel = useDayLabel()
   const { data: summaries } = useCampaignSummaries()
@@ -50,7 +56,9 @@ export function DailyReportModal({ date, onClose }: { date: string; onClose: () 
     >
       <div className="flex h-full flex-col gap-8 overflow-y-auto">
         {!report ? (
-          <p className="text-sm text-tertiary-foreground">{t('activity.report.nothing')}</p>
+          <p className="text-sm text-tertiary-foreground">
+            {t('activity.report.nothing')}
+          </p>
         ) : (
           <>
             <CountTiles counts={report.counts} />
@@ -100,7 +108,10 @@ function CountTiles({ counts }: { counts: CountsByKind }) {
   const { t } = useTranslation()
   return (
     <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-      <StatTile value={counts.published} label={t('activity.report.label.published')} />
+      <StatTile
+        value={counts.published}
+        label={t('activity.report.label.published')}
+      />
       <StatTile
         value={counts.failed}
         label={t('activity.report.label.failed')}
@@ -111,7 +122,10 @@ function CountTiles({ counts }: { counts: CountsByKind }) {
         label={t('activity.report.label.notPublished')}
         tone={counts.not_published > 0 ? 'alert' : 'default'}
       />
-      <StatTile value={counts.created} label={t('activity.report.label.created')} />
+      <StatTile
+        value={counts.created}
+        label={t('activity.report.label.created')}
+      />
     </div>
   )
 }
@@ -123,10 +137,13 @@ function CountTiles({ counts }: { counts: CountsByKind }) {
  */
 function countSentences(counts: CountsByKind, t: TFunction): string {
   const parts = [
-    counts.published > 0 && t('activity.report.published', { count: counts.published }),
+    counts.published > 0 &&
+      t('activity.report.published', { count: counts.published }),
     counts.failed > 0 && t('activity.report.failed', { count: counts.failed }),
-    counts.not_published > 0 && t('activity.report.notPublished', { count: counts.not_published }),
-    counts.created > 0 && t('activity.report.created', { count: counts.created }),
+    counts.not_published > 0 &&
+      t('activity.report.notPublished', { count: counts.not_published }),
+    counts.created > 0 &&
+      t('activity.report.created', { count: counts.created }),
   ].filter((part): part is string => typeof part === 'string')
   return parts.join(' · ')
 }
@@ -142,12 +159,28 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-function Row({ label, value, detail }: { label: string; value?: string; detail?: string }) {
+function Row({
+  label,
+  value,
+  detail,
+}: {
+  label: string
+  value?: string
+  detail?: string
+}) {
   return (
     <li className="flex items-baseline justify-between gap-4 border-b border-border py-2 last:border-b-0">
-      <span className="min-w-0 flex-1 truncate text-sm text-primary-foreground">{label}</span>
-      {detail && <span className="text-xs text-tertiary-foreground">{detail}</span>}
-      {value && <span className="font-mono text-sm text-primary-foreground">{value}</span>}
+      <span className="min-w-0 flex-1 truncate text-sm text-primary-foreground">
+        {label}
+      </span>
+      {detail && (
+        <span className="text-xs text-tertiary-foreground">{detail}</span>
+      )}
+      {value && (
+        <span className="font-mono text-sm text-primary-foreground">
+          {value}
+        </span>
+      )}
     </li>
   )
 }

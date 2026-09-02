@@ -43,7 +43,9 @@ export function ThreadEmptyState({
           <p key={line}>{line}</p>
         ))}
       </div>
-      {showStarters && <StarterChips kind={kind} onPick={onPick} disabled={disabled} />}
+      {showStarters && (
+        <StarterChips kind={kind} onPick={onPick} disabled={disabled} />
+      )}
     </div>
   )
 }

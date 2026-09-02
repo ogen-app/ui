@@ -96,7 +96,10 @@ type ActionMeta = {
   reverse?: true
 }
 
-const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> = {
+const ACTION_META: Record<
+  PostStatus,
+  Partial<Record<PostStatus, ActionMeta>>
+> = {
   draft: {
     ready_for_publish: {
       buttonLabel: 'MARK AS READY',
@@ -219,7 +222,10 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
   },
 }
 
-export function getActionMeta(from: PostStatus, to: PostStatus): ActionMeta | null {
+export function getActionMeta(
+  from: PostStatus,
+  to: PostStatus,
+): ActionMeta | null {
   return ACTION_META[from]?.[to] ?? null
 }
 
@@ -314,12 +320,18 @@ export function getTransitionBlockers(
       blockers.push({ field: 'platform_id', message: 'Pick a platform first' })
     }
     if (!post.platform_post_type) {
-      blockers.push({ field: 'platform_post_type', message: 'Pick a post type first' })
+      blockers.push({
+        field: 'platform_post_type',
+        message: 'Pick a post type first',
+      })
     }
   }
   if (next === 'scheduled' || next === 'scheduled_for_manual_publishing') {
     if (!post.scheduled_at) {
-      blockers.push({ field: 'scheduled_at', message: 'Set a publish date first' })
+      blockers.push({
+        field: 'scheduled_at',
+        message: 'Set a publish date first',
+      })
     } else if (new Date(post.scheduled_at).getTime() <= Date.now()) {
       blockers.push({
         field: 'scheduled_at',

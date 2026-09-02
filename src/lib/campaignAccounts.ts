@@ -89,11 +89,15 @@ export function parseAccountTargets(
     const out: CampaignAccountTarget[] = []
     for (const entry of parsed) {
       if (!entry || typeof entry !== 'object') continue
-      const { platform_id, account_id, post_types } = entry as Record<string, unknown>
+      const { platform_id, account_id, post_types } = entry as Record<
+        string,
+        unknown
+      >
       if (typeof platform_id !== 'string' || platform_id === '') continue
       out.push({
         platform_id,
-        account_id: typeof account_id === 'string' ? account_id : PLACEHOLDER_ACCOUNT_ID,
+        account_id:
+          typeof account_id === 'string' ? account_id : PLACEHOLDER_ACCOUNT_ID,
         post_types: Array.isArray(post_types)
           ? post_types.filter((s): s is string => typeof s === 'string')
           : [],
@@ -133,7 +137,9 @@ export function activateTarget(
     {
       platform_id: platformId,
       account_id: accountId,
-      post_types: placeholder ? [...placeholder.post_types] : [...defaultPostTypes],
+      post_types: placeholder
+        ? [...placeholder.post_types]
+        : [...defaultPostTypes],
     },
   ]
 }
@@ -159,7 +165,9 @@ export function togglePostType(
     const has = t.post_types.includes(slug)
     return {
       ...t,
-      post_types: has ? t.post_types.filter((s) => s !== slug) : [...t.post_types, slug],
+      post_types: has
+        ? t.post_types.filter((s) => s !== slug)
+        : [...t.post_types, slug],
     }
   })
 }
@@ -272,7 +280,9 @@ export function accountRows(
   }
 
   const chosenAt = new Map<string, number>()
-  targets.forEach((t, i) => chosenAt.set(targetKey(t.platform_id, t.account_id), i))
+  targets.forEach((t, i) =>
+    chosenAt.set(targetKey(t.platform_id, t.account_id), i),
+  )
 
   // 0/1 for the active half, 2/3 for the inactive one; inside a rank, active
   // rows go by when they were chosen and inactive rows keep the order the

@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { assetPreviewUrl } from '@/lib/assetPreview'
 import type { Asset } from '@/types/content'
 

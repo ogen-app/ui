@@ -1,7 +1,11 @@
 import { WarningCircleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 /**
  * The pieces every control on the quick-settings bar is built from.
@@ -34,7 +38,13 @@ export function Dot() {
  * `focusable` is opt-in: these sit inside dropdown triggers in most places,
  * and a focusable span nested in a button is a keyboard trap.
  */
-export function WarningHint({ text, focusable }: { text: string; focusable?: boolean }) {
+export function WarningHint({
+  text,
+  focusable,
+}: {
+  text: string
+  focusable?: boolean
+}) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -60,7 +70,11 @@ export function WarningHint({ text, focusable }: { text: string; focusable?: boo
  * it can't be mistaken for an option.
  */
 export function InfoRow({ children }: { children: React.ReactNode }) {
-  return <div className="px-2 py-1.5 text-xs text-tertiary-foreground">{children}</div>
+  return (
+    <div className="px-2 py-1.5 text-xs text-tertiary-foreground">
+      {children}
+    </div>
+  )
 }
 
 export function QuickBarTrigger({

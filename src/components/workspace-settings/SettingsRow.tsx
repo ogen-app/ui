@@ -35,7 +35,9 @@ export function SettingsRow({
             {title && <h3 className="text-base font-medium">{title}</h3>}
             {badges}
           </div>
-          {actions && <div className="flex items-center gap-1 shrink-0">{actions}</div>}
+          {actions && (
+            <div className="flex items-center gap-1 shrink-0">{actions}</div>
+          )}
         </div>
       )}
       {description && (
@@ -83,7 +85,9 @@ export function ReadOnlyField({
           className="size-4 text-tertiary-foreground absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
         />
       </div>
-      {description && <p className="text-xs text-tertiary-foreground">{description}</p>}
+      {description && (
+        <p className="text-xs text-tertiary-foreground">{description}</p>
+      )}
     </div>
   )
 }

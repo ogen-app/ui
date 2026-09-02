@@ -14,7 +14,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { AssetGlyph } from '@/components/content/AssetGlyph'
 import { AddWebPageModal } from '@/components/content/AddWebPageModal'
 import { UploadModal } from '@/components/uploads/UploadModal'
@@ -83,7 +87,10 @@ export function PostSourcesControl({ post, changeDoc, layout }: Props) {
     setPending((prev) => [...prev, ...assets])
     changeDoc((d) => {
       const held = new Set(d.used_asset_ids)
-      d.used_asset_ids = [...d.used_asset_ids, ...ids.filter((id) => !held.has(id))]
+      d.used_asset_ids = [
+        ...d.used_asset_ids,
+        ...ids.filter((id) => !held.has(id)),
+      ]
     })
     // A post is inside a campaign, so anything it reads from belongs to that
     // campaign's Content too — otherwise the campaign would be missing a
@@ -206,7 +213,9 @@ export function PostSourcesControl({ post, changeDoc, layout }: Props) {
         <h2 className="flex items-center gap-2 min-w-0 text-xl font-display font-medium tracking-tight">
           Sources
           {rows.length > 0 && (
-            <span className="font-normal text-tertiary-foreground">{rows.length}</span>
+            <span className="font-normal text-tertiary-foreground">
+              {rows.length}
+            </span>
           )}
         </h2>
         {addButton}
@@ -255,14 +264,18 @@ function SourceRow({
     return (
       <li className={rowClass}>
         <span className="size-8 shrink-0 border border-quaternary" />
-        <span className="flex-1 text-sm text-tertiary-foreground">Loading…</span>
+        <span className="flex-1 text-sm text-tertiary-foreground">
+          Loading…
+        </span>
       </li>
     )
   }
 
   const reach = retrievability(asset.status)
   const provisional = asset.type === 'URL' && asset.source_url === asset.title
-  const label = provisional ? pageUrlLabel(asset.title) : formatTitle(asset.title)
+  const label = provisional
+    ? pageUrlLabel(asset.title)
+    : formatTitle(asset.title)
 
   return (
     <li className={rowClass}>
@@ -272,7 +285,9 @@ function SourceRow({
         params={{ campaignId, assetId: id }}
         className="flex min-w-0 flex-1 flex-col"
       >
-        <span className="truncate text-sm text-foreground hover:underline">{label}</span>
+        <span className="truncate text-sm text-foreground hover:underline">
+          {label}
+        </span>
         {asset.source_url && !provisional && !rail && (
           <span className="truncate text-xs text-tertiary-foreground">
             {pageUrlLabel(asset.source_url)}
@@ -289,7 +304,9 @@ function SourceRow({
           </TooltipContent>
         </Tooltip>
       ) : reach === 'waiting' ? (
-        <span className="shrink-0 text-xs text-tertiary-foreground">Still reading</span>
+        <span className="shrink-0 text-xs text-tertiary-foreground">
+          Still reading
+        </span>
       ) : null}
       <Button
         type="button"

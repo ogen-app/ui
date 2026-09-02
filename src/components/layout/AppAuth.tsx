@@ -54,7 +54,10 @@ export function AppAuth({ title, subtitle, form, bottomNav }: AppAuthProps) {
       setCardRevealed(true)
       return
     }
-    const timer = window.setTimeout(() => setCardRevealed(true), CARD_REVEAL_TIMEOUT_MS)
+    const timer = window.setTimeout(
+      () => setCardRevealed(true),
+      CARD_REVEAL_TIMEOUT_MS,
+    )
     return () => window.clearTimeout(timer)
   }, [photoSettled])
 
@@ -150,9 +153,11 @@ export function AppAuth({ title, subtitle, form, bottomNav }: AppAuthProps) {
                 so the inline link inside it spilled half a pixel past the line
                 box, which was enough to make the card permanently scrollable
                 with a screenful of empty space above it. */}
-            {bottomNav && (<div className="shrink-0 mt-auto text-[13px] leading-5 text-secondary-foreground">
-              {bottomNav}
-            </div>)}
+            {bottomNav && (
+              <div className="shrink-0 mt-auto text-[13px] leading-5 text-secondary-foreground">
+                {bottomNav}
+              </div>
+            )}
           </div>
         </div>
       </div>

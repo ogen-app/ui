@@ -35,7 +35,12 @@ type Props = {
  * never a number we show. The server says what is true; the screen decides what
  * is worth saying.
  */
-export function UpgradeCallout({ entitlement, onUpgrade, format, className }: Props) {
+export function UpgradeCallout({
+  entitlement,
+  onUpgrade,
+  format,
+  className,
+}: Props) {
   const { t, i18n } = useTranslation()
   const upgrade = onUpgrade
     ? { label: t('tiers.upgrade'), onClick: onUpgrade }
@@ -63,9 +68,17 @@ export function UpgradeCallout({ entitlement, onUpgrade, format, className }: Pr
       className={className}
     >
       <div className="flex flex-col gap-0.5">
-        <UsageMeter usage={usage} format={format} className="text-tertiary-foreground" />
+        <UsageMeter
+          usage={usage}
+          format={format}
+          className="text-tertiary-foreground"
+        />
         {usage.resetsAt && (
-          <span>{t('tiers.resets', { when: formatDay(usage.resetsAt, i18n.language) })}</span>
+          <span>
+            {t('tiers.resets', {
+              when: formatDay(usage.resetsAt, i18n.language),
+            })}
+          </span>
         )}
       </div>
     </NoticeShell>

@@ -7,7 +7,10 @@ import type { AssistantThread } from '@/types/assistant'
 
 type ToolInput = Record<string, unknown> | undefined
 
-const TOOL_LABELS: Record<string, { running: (i: ToolInput) => string; done: (i: ToolInput) => string }> = {
+const TOOL_LABELS: Record<
+  string,
+  { running: (i: ToolInput) => string; done: (i: ToolInput) => string }
+> = {
   listAssets: {
     running: () => 'Listing attached assets',
     done: () => 'Listed attached assets',
@@ -79,7 +82,11 @@ function platformSuffix(input: ToolInput): string {
   return typeof platform === 'string' && platform ? ` for ${platform}` : ''
 }
 
-export function describeTool(name: string, input: ToolInput, status: 'running' | 'done'): string {
+export function describeTool(
+  name: string,
+  input: ToolInput,
+  status: 'running' | 'done',
+): string {
   const entry = TOOL_LABELS[name]
   // An unrecognised tool still gets a row — better a raw name than a gap.
   if (!entry) return name
@@ -111,7 +118,9 @@ function query(q: unknown): string {
  */
 export function threadName(thread: AssistantThread): string {
   if (thread.subject.kind === 'campaign') {
-    return thread.campaignTitle.trim() || i18next.t('assistant.untitledCampaign')
+    return (
+      thread.campaignTitle.trim() || i18next.t('assistant.untitledCampaign')
+    )
   }
   return thread.title.trim() || i18next.t('assistant.untitledPost')
 }

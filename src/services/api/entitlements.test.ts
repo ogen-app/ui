@@ -48,7 +48,9 @@ describe('fetchWorkspacePlan', () => {
   it('reads one flat, workspace-scoped route', async () => {
     // No workspace id in the path: like `/api/tenants/current` and `/api/users`
     // it answers for whichever workspace this tab's `X-Workspace-Id` names.
-    const fetchMock = stubFetch(jsonResponse(200, { tier: TIER, entitlements: {} }))
+    const fetchMock = stubFetch(
+      jsonResponse(200, { tier: TIER, entitlements: {} }),
+    )
 
     await fetchWorkspacePlan()
 
@@ -76,7 +78,11 @@ describe('fetchWorkspacePlan', () => {
     // "auto-renews on the 1st" under a plan that will never be invoiced.
     stubFetch(
       jsonResponse(200, {
-        tier: { id: 'tier_trial', name: 'Trial', effective_from: '2026-08-01T00:00:00Z' },
+        tier: {
+          id: 'tier_trial',
+          name: 'Trial',
+          effective_from: '2026-08-01T00:00:00Z',
+        },
         entitlements: {},
       }),
     )
@@ -161,8 +167,12 @@ describe('fetchWorkspacePlan', () => {
     expect(plan.entitlements.seats).toEqual({ limit: null, used: 4 })
     // A verdict, with nothing to meter — `limit` stays unsaid rather than
     // becoming a number.
-    expect(plan.entitlements.multiple_accounts_per_platform).toEqual({ allowed: false })
-    expect('limit' in plan.entitlements.multiple_accounts_per_platform).toBe(false)
+    expect(plan.entitlements.multiple_accounts_per_platform).toEqual({
+      allowed: false,
+    })
+    expect('limit' in plan.entitlements.multiple_accounts_per_platform).toBe(
+      false,
+    )
     // Never mentioned at all: the client will allow it.
     expect(plan.entitlements.campaigns).toBeUndefined()
   })
@@ -171,7 +181,9 @@ describe('fetchWorkspacePlan', () => {
     stubFetch(
       jsonResponse(200, {
         tier: TIER,
-        entitlements: { content_plan_runs: { limit: 3, used: 1, period: 'quarter' } },
+        entitlements: {
+          content_plan_runs: { limit: 3, used: 1, period: 'quarter' },
+        },
       }),
     )
 
@@ -205,6 +217,8 @@ describe('fetchWorkspacePlan', () => {
   it("surfaces the server's message rather than a generic failure", async () => {
     stubFetch(jsonResponse(403, { error: 'no workspace on this request' }))
 
-    await expect(fetchWorkspacePlan()).rejects.toThrow('no workspace on this request')
+    await expect(fetchWorkspacePlan()).rejects.toThrow(
+      'no workspace on this request',
+    )
   })
 })

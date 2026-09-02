@@ -113,7 +113,11 @@ function UsedIn({ usage, scoped }: { usage: AssetUsage; scoped: boolean }) {
     // so the only question left is whether anything wrote from it.
     return (
       <Lines
-        lead={usage.postsHere > 0 ? postsLabel(usage.postsHere) : 'Not used in posts'}
+        lead={
+          usage.postsHere > 0
+            ? postsLabel(usage.postsHere)
+            : 'Not used in posts'
+        }
         faded={usage.postsHere === 0}
         under={elsewhereLabel(usage, true)}
       />
@@ -122,19 +126,42 @@ function UsedIn({ usage, scoped }: { usage: AssetUsage; scoped: boolean }) {
 
   const campaigns = campaignsLabel(usage)
   if (!campaigns) return <Lines lead="Not used" faded />
-  return <Lines lead={campaigns} under={usage.posts > 0 ? postsLabel(usage.posts) : 'Not used in posts'} />
-}
-
-/** The column's two lines: the fact, and the smaller one qualifying it. */
-function Lines({ lead, faded, under }: { lead: string; faded?: boolean; under?: string | null }) {
   return (
-    <span className="flex min-w-0 flex-col gap-0.5">
-      <span className={cn('table-text truncate', faded && 'text-tertiary-foreground')}>{lead}</span>
-      {under && <span className="truncate text-xs text-tertiary-foreground">{under}</span>}
-    </span>
+    <Lines
+      lead={campaigns}
+      under={usage.posts > 0 ? postsLabel(usage.posts) : 'Not used in posts'}
+    />
   )
 }
 
+/** The column's two lines: the fact, and the smaller one qualifying it. */
+function Lines({
+  lead,
+  faded,
+  under,
+}: {
+  lead: string
+  faded?: boolean
+  under?: string | null
+}) {
+  return (
+    <span className="flex min-w-0 flex-col gap-0.5">
+      <span
+        className={cn(
+          'table-text truncate',
+          faded && 'text-tertiary-foreground',
+        )}
+      >
+        {lead}
+      </span>
+      {under && (
+        <span className="truncate text-xs text-tertiary-foreground">
+          {under}
+        </span>
+      )}
+    </span>
+  )
+}
 
 type AssetsTableProps = {
   assets: Asset[]
@@ -182,10 +209,12 @@ function AssetsTableComponent({
   // narrowing the list the header answers "is everything here ticked?", and
   // ids ticked before the filter must not make it claim otherwise.
   const visibleSelected = useMemo(
-    () => (selectedIds ? assets.filter((a) => selectedIds.has(a.id)).length : 0),
+    () =>
+      selectedIds ? assets.filter((a) => selectedIds.has(a.id)).length : 0,
     [assets, selectedIds],
   )
-  const allVisibleSelected = assets.length > 0 && visibleSelected === assets.length
+  const allVisibleSelected =
+    assets.length > 0 && visibleSelected === assets.length
 
   const columnConfigs = useMemo<ColumnConfig<AssetRow>[]>(
     () => [
@@ -197,10 +226,18 @@ function AssetsTableComponent({
                 <div className="flex h-full items-center justify-center">
                   <Checkbox
                     checked={
-                      visibleSelected === 0 ? false : allVisibleSelected ? true : 'indeterminate'
+                      visibleSelected === 0
+                        ? false
+                        : allVisibleSelected
+                          ? true
+                          : 'indeterminate'
                     }
                     onCheckedChange={onToggleAll}
-                    aria-label={allVisibleSelected ? 'Clear selection' : 'Select all documents'}
+                    aria-label={
+                      allVisibleSelected
+                        ? 'Clear selection'
+                        : 'Select all documents'
+                    }
                   />
                 </div>
               ),
@@ -240,20 +277,29 @@ function AssetsTableComponent({
                 to: '/campaigns/$campaignId/content/$assetId',
                 params: { campaignId, assetId: row.id },
               } as const)
-            : ({ to: '/content-bank/$assetId', params: { assetId: row.id } } as const)
+            : ({
+                to: '/content-bank/$assetId',
+                params: { assetId: row.id },
+              } as const)
           return (
             <Link {...open} className={cn(CELL, 'gap-3')}>
               <AssetGlyph asset={row} />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="table-text truncate hover:underline">
-                  {provisional ? pageUrlLabel(row.title) : formatTitle(row.title)}
+                  {provisional
+                    ? pageUrlLabel(row.title)
+                    : formatTitle(row.title)}
                 </span>
                 {/* How much of it there is, then whether the campaign can read
                     it. Both are properties of the thing named above, which is
                     why they sit under it rather than in columns of their own. */}
                 <span className="flex items-center gap-2 text-xs text-tertiary-foreground">
-                  {source && <span className="truncate">{pageUrlLabel(source)}</span>}
-                  <span className="shrink-0 tabular-nums">{extentLabel(row)}</span>
+                  {source && (
+                    <span className="truncate">{pageUrlLabel(source)}</span>
+                  )}
+                  <span className="shrink-0 tabular-nums">
+                    {extentLabel(row)}
+                  </span>
                   <StatusBadge tone={badge.tone} label={badge.label} />
                 </span>
               </span>
@@ -287,7 +333,9 @@ function AssetsTableComponent({
             <span className="flex flex-col gap-0.5">
               {/* The exact date for reconciling against something outside the
                   app, the distance for the question people actually ask. */}
-              <span className="table-text tabular-nums">{stamp(row.updated_at)}</span>
+              <span className="table-text tabular-nums">
+                {stamp(row.updated_at)}
+              </span>
               <span className="text-xs text-tertiary-foreground">
                 {relativeTime(row.updated_at)}
               </span>
@@ -314,7 +362,12 @@ function AssetsTableComponent({
             {/* Blank until the counts land, rather than a dash: "nothing uses
                 this" is a claim about the document, and a table that makes it
                 a beat early is a table that lies for one frame. */}
-            {usageReady && <UsedIn usage={usage.get(row.id) ?? NO_USAGE} scoped={!!campaignId} />}
+            {usageReady && (
+              <UsedIn
+                usage={usage.get(row.id) ?? NO_USAGE}
+                scoped={!!campaignId}
+              />
+            )}
           </div>
         ),
       },
@@ -327,9 +380,13 @@ function AssetsTableComponent({
         cell: (_value, row) => (
           <div className={cn(CELL, 'justify-start gap-1.5')}>
             {row.tags.length === 0 ? (
-              <span className="table-text text-tertiary-foreground">No tags</span>
+              <span className="table-text text-tertiary-foreground">
+                No tags
+              </span>
             ) : (
-              row.tags.slice(0, 2).map((tag) => <TagPill key={tag.id} tag={tag} />)
+              row.tags
+                .slice(0, 2)
+                .map((tag) => <TagPill key={tag.id} tag={tag} />)
             )}
           </div>
         ),

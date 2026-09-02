@@ -7,8 +7,13 @@ import { apiJson, apiVoid } from './http'
 
 const base = (postId: string) => `/api/posts/${postId}/attachments`
 
-export function listAttachments(postId: string): Promise<AttachmentListResponse> {
-  return apiJson<AttachmentListResponse>(base(postId), 'Unable to fetch attachments')
+export function listAttachments(
+  postId: string,
+): Promise<AttachmentListResponse> {
+  return apiJson<AttachmentListResponse>(
+    base(postId),
+    'Unable to fetch attachments',
+  )
 }
 
 type UploadOptions = {
@@ -145,7 +150,11 @@ export async function uploadVideoAttachment(
  * The Content-Type must match what presign was told: it is part of what the
  * signature covers.
  */
-function putToStorage(url: string, file: File, opts: UploadOptions): Promise<void> {
+function putToStorage(
+  url: string,
+  file: File,
+  opts: UploadOptions,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', url, true)
@@ -166,7 +175,11 @@ function putToStorage(url: string, file: File, opts: UploadOptions): Promise<voi
       if (xhr.status < 200 || xhr.status >= 300) {
         // The body is storage-provider XML, not our error envelope; surfacing
         // it verbatim would be noise.
-        reject(new Error(`Storage rejected the upload of ${file.name} (${xhr.status})`))
+        reject(
+          new Error(
+            `Storage rejected the upload of ${file.name} (${xhr.status})`,
+          ),
+        )
         return
       }
       resolve()
@@ -214,8 +227,15 @@ export function reorderAttachment(
   )
 }
 
-export function deleteAttachment(postId: string, attachmentId: string): Promise<void> {
-  return apiVoid(`${base(postId)}/${attachmentId}`, 'Unable to delete attachment', {
-    method: 'DELETE',
-  })
+export function deleteAttachment(
+  postId: string,
+  attachmentId: string,
+): Promise<void> {
+  return apiVoid(
+    `${base(postId)}/${attachmentId}`,
+    'Unable to delete attachment',
+    {
+      method: 'DELETE',
+    },
+  )
 }

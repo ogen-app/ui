@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { featureValue, formatStorage, tierFeatures, TIER_FEATURE_ORDER } from './tierFeatures'
+import {
+  featureValue,
+  formatStorage,
+  tierFeatures,
+  TIER_FEATURE_ORDER,
+} from './tierFeatures'
 import type { Tier } from '@/types/tiers'
 
 /**
@@ -43,7 +48,9 @@ describe('featureValue', () => {
     // is a feature with no ceiling to buy. They read the same to a user and
     // must not be conflated in the data.
     expect(featureValue({ limit: null })).toEqual({ kind: 'unlimited' })
-    expect(featureValue({ allowed: true, limit: undefined })).toEqual({ kind: 'included' })
+    expect(featureValue({ allowed: true, limit: undefined })).toEqual({
+      kind: 'included',
+    })
   })
 
   it('keeps the period with the number', () => {
@@ -55,7 +62,11 @@ describe('featureValue', () => {
   })
 
   it('carries a limit with no period as a plain total', () => {
-    expect(featureValue({ limit: 3 })).toEqual({ kind: 'limit', limit: 3, period: null })
+    expect(featureValue({ limit: 3 })).toEqual({
+      kind: 'limit',
+      limit: 3,
+      period: null,
+    })
   })
 
   it('does not treat a spent allowance as an exclusion', () => {
@@ -73,7 +84,9 @@ describe('featureValue', () => {
 describe('tierFeatures', () => {
   it('answers for every feature in the table, in order', () => {
     const features = tierFeatures(tier({ campaigns: { limit: 5 } }))
-    expect(features.map((feature) => feature.key)).toEqual([...TIER_FEATURE_ORDER])
+    expect(features.map((feature) => feature.key)).toEqual([
+      ...TIER_FEATURE_ORDER,
+    ])
   })
 
   it('ignores a key the client has never heard of', () => {
@@ -81,7 +94,9 @@ describe('tierFeatures', () => {
     // client knows them. Rendering an unknown key would mean rendering its
     // raw id as a label.
     const features = tierFeatures(tier({ time_travel: { allowed: true } }))
-    expect(features.some((feature) => (feature.key as string) === 'time_travel')).toBe(false)
+    expect(
+      features.some((feature) => (feature.key as string) === 'time_travel'),
+    ).toBe(false)
   })
 })
 

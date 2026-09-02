@@ -31,7 +31,11 @@ export function useDayLabel() {
       const yesterday = new Date(now)
       yesterday.setDate(yesterday.getDate() - 1)
       if (date === dayKey(yesterday)) return t('activity.yesterday')
-      return formatDate(parsed, { weekday: 'long', day: 'numeric', month: 'long' }, i18n.language)
+      return formatDate(
+        parsed,
+        { weekday: 'long', day: 'numeric', month: 'long' },
+        i18n.language,
+      )
     },
     [i18n.language, t],
   )
@@ -64,7 +68,8 @@ export function useTimeLabel() {
 
   return useCallback(
     (iso: string) =>
-      formatDate(iso, { hour: '2-digit', minute: '2-digit' }, i18n.language) ?? '',
+      formatDate(iso, { hour: '2-digit', minute: '2-digit' }, i18n.language) ??
+      '',
     [i18n.language],
   )
 }

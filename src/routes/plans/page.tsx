@@ -163,8 +163,12 @@ function PlansFrame({ children }: { children: React.ReactNode }) {
             <h1 className="font-display text-3xl font-medium tracking-tight">
               {t('tiers.plansTitle')}
             </h1>
-            <p className="text-sm text-tertiary-foreground">{t('tiers.planIntro')}</p>
-            <p className="text-[13px] text-tertiary-foreground">{t('tiers.planMock')}</p>
+            <p className="text-sm text-tertiary-foreground">
+              {t('tiers.planIntro')}
+            </p>
+            <p className="text-[13px] text-tertiary-foreground">
+              {t('tiers.planMock')}
+            </p>
           </div>
           {children}
         </div>

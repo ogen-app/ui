@@ -3,7 +3,11 @@ import { devtools } from 'zustand/middleware'
 import { queryClient } from '@/lib/queryClient'
 import { flushAllPendingSaves } from '@/lib/pendingSaves'
 import { isLocalRun } from '@/lib/localRuns'
-import { RECONCILE_FILTERS, invalidationsFor, localRunKeyFor } from '@/lib/eventRouting'
+import {
+  RECONCILE_FILTERS,
+  invalidationsFor,
+  localRunKeyFor,
+} from '@/lib/eventRouting'
 import { streamAppEvents } from '@/services/api/events'
 import { toast } from '@/stores/toastStore'
 import type { AppEvent, EventStreamStatus } from '@/types/events'
@@ -73,7 +77,8 @@ export const useEventStreamStore = create<EventStreamState>()(
   }),
 )
 
-const set = (patch: Partial<EventStreamState>) => useEventStreamStore.setState(patch)
+const set = (patch: Partial<EventStreamState>) =>
+  useEventStreamStore.setState(patch)
 
 let subscribers = 0
 let controller: AbortController | null = null
@@ -207,7 +212,11 @@ async function reconcile(): Promise<void> {
   set({ reconciling: true })
   try {
     await flushAllPendingSaves()
-    await Promise.all(RECONCILE_FILTERS.map((filters) => queryClient.invalidateQueries(filters)))
+    await Promise.all(
+      RECONCILE_FILTERS.map((filters) =>
+        queryClient.invalidateQueries(filters),
+      ),
+    )
   } finally {
     set({ reconciling: false })
   }

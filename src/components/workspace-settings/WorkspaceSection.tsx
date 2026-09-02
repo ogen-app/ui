@@ -26,14 +26,18 @@ function WorkspaceSectionComponent() {
   return (
     <SettingsCard>
       {!workspace ? (
-        <p className="text-sm text-tertiary-foreground">{t('common.loading')}</p>
+        <p className="text-sm text-tertiary-foreground">
+          {t('common.loading')}
+        </p>
       ) : (
         <ul className="flex flex-col">
           {/* No card h2 here — the row title doubles as the section heading,
               e.g. "BN Digital Workspace". The whole phrase is one key: the
               name does not sit in the same place in every language. */}
           <SettingsRow
-            title={t('workspaceSettings.workspace.rowTitle', { name: workspace.name })}
+            title={t('workspaceSettings.workspace.rowTitle', {
+              name: workspace.name,
+            })}
             actions={
               // The way out of this card: everything in it describes one
               // workspace, so the other ones belong behind a single move.

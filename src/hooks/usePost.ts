@@ -36,8 +36,7 @@ export type TransitionStatusResult =
   // `notice` is informational feedback about a successful action the user
   // should still be told about — e.g. the server routed a schedule request
   // somewhere other than where the button implied.
-  | { ok: true; post: Post; notice?: string }
-  | { ok: false; error: string }
+  { ok: true; post: Post; notice?: string } | { ok: false; error: string }
 
 /**
  * Outcome of handing the server a manually-published post's URL. `not_found`
@@ -280,7 +279,8 @@ export function usePost(postId: string): UsePostResult {
           pendingEdit.status = base.status
         }
         qc.invalidateQueries({ queryKey: postKey(postId) })
-        const message = err instanceof Error ? err.message : 'Unable to update post'
+        const message =
+          err instanceof Error ? err.message : 'Unable to update post'
         return { ok: false, error: message }
       } finally {
         transitionRef.current = null
@@ -305,7 +305,8 @@ export function usePost(postId: string): UsePostResult {
     setSaving(false)
     const base = pending ?? qc.getQueryData<Post>(postKey(postId))
     if (!base) return { ok: false, error: 'Post not loaded' }
-    if (!base.scheduled_at) return { ok: false, error: 'Set a publish date first' }
+    if (!base.scheduled_at)
+      return { ok: false, error: 'Set a publish date first' }
     genRef.current += 1
     try {
       if (pending) {
@@ -329,7 +330,8 @@ export function usePost(postId: string): UsePostResult {
       return { ok: true, post: result.post }
     } catch (err) {
       qc.invalidateQueries({ queryKey: postKey(postId) })
-      const message = err instanceof Error ? err.message : 'Unable to schedule post'
+      const message =
+        err instanceof Error ? err.message : 'Unable to schedule post'
       return { ok: false, error: message }
     }
   }, [postId, qc])
@@ -360,7 +362,8 @@ export function usePost(postId: string): UsePostResult {
         return { ok: true, post: fresh }
       } catch (err) {
         setCancelling(false)
-        const message = err instanceof Error ? err.message : 'Unable to unschedule post'
+        const message =
+          err instanceof Error ? err.message : 'Unable to unschedule post'
         return { ok: false, error: message }
       }
     },
@@ -401,7 +404,9 @@ export function usePost(postId: string): UsePostResult {
       } catch (err) {
         qc.invalidateQueries({ queryKey: postKey(postId) })
         const message =
-          err instanceof Error ? err.message : 'Unable to verify the published post'
+          err instanceof Error
+            ? err.message
+            : 'Unable to verify the published post'
         return { ok: false, reason: 'error', error: message }
       }
     },

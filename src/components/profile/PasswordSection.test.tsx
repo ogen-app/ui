@@ -90,7 +90,9 @@ describe('PasswordSection', () => {
     await renderWithProviders(<PasswordSection />, { path: '/profile/' })
 
     await send(user)
-    await user.click(await screen.findByRole('button', { name: /send it again/i }))
+    await user.click(
+      await screen.findByRole('button', { name: /send it again/i }),
+    )
 
     expect(await screen.findByText(/sent again/i)).toBeInTheDocument()
     expect(requestPasswordReset).toHaveBeenCalledTimes(2)
@@ -104,7 +106,9 @@ describe('PasswordSection', () => {
 
     await send(user)
     requestPasswordReset.mockRejectedValue(new Error('Too many requests'))
-    await user.click(await screen.findByRole('button', { name: /send it again/i }))
+    await user.click(
+      await screen.findByRole('button', { name: /send it again/i }),
+    )
 
     expect(await screen.findByText(/too many requests/i)).toBeInTheDocument()
     expect(screen.getByText(/on its way to/i)).toBeInTheDocument()
@@ -117,13 +121,17 @@ describe('PasswordSection', () => {
     await renderWithProviders(<PasswordSection />, { path: '/profile/' })
 
     expect(screen.getByText(/changed by email/i)).toBeInTheDocument()
-    expect(screen.getByText(/signs out your other devices/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/signs out your other devices/i),
+    ).toBeInTheDocument()
   })
 
   it('renders nothing without a session to mail', async () => {
     useAuthStore.setState({ user: null })
     await renderWithProviders(<PasswordSection />, { path: '/profile/' })
 
-    expect(screen.queryByRole('button', { name: /reset link/i })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /reset link/i }),
+    ).not.toBeInTheDocument()
   })
 })

@@ -33,7 +33,7 @@ export function AuthResetPasswordForm({ token }: Props) {
   const { mutate: submit, isPending, error, reset } = useResetPassword()
   const { values, setField, fieldErrors, validate } = useFormValidation(
     useResetPasswordSchema(),
-    { password: '', confirmPassword: '' }
+    { password: '', confirmPassword: '' },
   )
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -45,7 +45,10 @@ export function AuthResetPasswordForm({ token }: Props) {
     }
     submit(
       { token, password: data.password },
-      { onSuccess: () => void navigate({ to: '/auth/login', search: { reset: true } }) }
+      {
+        onSuccess: () =>
+          void navigate({ to: '/auth/login', search: { reset: true } }),
+      },
     )
   }
 
@@ -102,7 +105,10 @@ export function AuthResetPasswordForm({ token }: Props) {
             {fieldErrors.confirmPassword}
           </p>
         ) : (
-          <p id="confirmPassword-note" className="text-xs text-tertiary-foreground">
+          <p
+            id="confirmPassword-note"
+            className="text-xs text-tertiary-foreground"
+          >
             {t('auth.reset.confirmHint')}
           </p>
         )}
@@ -122,7 +128,10 @@ export function AuthResetPasswordForm({ token }: Props) {
         {/* A dead link is the one failure the user can act on, so it gets a
             way out rather than only an error string. */}
         <FormError message={error?.message}>
-          <Link to="/auth/forgot" className="text-primary-foreground text-[13px] font-medium">
+          <Link
+            to="/auth/forgot"
+            className="text-primary-foreground text-[13px] font-medium"
+          >
             {t('auth.reset.requestNewLink')}
           </Link>
         </FormError>

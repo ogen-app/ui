@@ -15,7 +15,10 @@ function ForgotPasswordPage() {
       bottomNav={
         <>
           {t('auth.forgot.remembered')}{' '}
-          <Link to="/auth/login" className="text-primary-foreground font-medium">
+          <Link
+            to="/auth/login"
+            className="text-primary-foreground font-medium"
+          >
             {t('auth.forgot.logInLink')}
           </Link>
         </>

@@ -1,5 +1,5 @@
-import type { Campaign, UpdateCampaignPayload } from "@/types/campaigns";
-import type { Asset, AssetStatus } from "@/types/content";
+import type { Campaign, UpdateCampaignPayload } from '@/types/campaigns'
+import type { Asset, AssetStatus } from '@/types/content'
 
 /**
  * What a campaign writes from (CON-210).
@@ -24,8 +24,8 @@ import type { Asset, AssetStatus } from "@/types/content";
  * from before it changes meaning under them.
  */
 export type MembershipFields = Required<
-  Pick<UpdateCampaignPayload, "use_assets" | "asset_ids">
->;
+  Pick<UpdateCampaignPayload, 'use_assets' | 'asset_ids'>
+>
 
 /**
  * The two campaign fields for a membership set.
@@ -39,7 +39,7 @@ export type MembershipFields = Required<
 export function membershipPayload(assetIds: string[]): MembershipFields {
   return assetIds.length > 0
     ? { use_assets: true, asset_ids: assetIds }
-    : { use_assets: false, asset_ids: [] };
+    : { use_assets: false, asset_ids: [] }
 }
 
 /**
@@ -51,18 +51,18 @@ export function membershipPayload(assetIds: string[]): MembershipFields {
  * current ids on first sight of the page.
  */
 export function seedsWholeBank(
-  campaign: Pick<Campaign, "use_assets" | "asset_ids">,
+  campaign: Pick<Campaign, 'use_assets' | 'asset_ids'>,
 ): boolean {
-  return campaign.use_assets && campaign.asset_ids.length === 0;
+  return campaign.use_assets && campaign.asset_ids.length === 0
 }
 
 /** The campaign's own documents, in the order the bank lists them. */
 export function campaignAssets(
   assets: Asset[],
-  campaign: Pick<Campaign, "asset_ids">,
+  campaign: Pick<Campaign, 'asset_ids'>,
 ): Asset[] {
-  const owned = new Set(campaign.asset_ids);
-  return assets.filter((asset) => owned.has(asset.id));
+  const owned = new Set(campaign.asset_ids)
+  return assets.filter((asset) => owned.has(asset.id))
 }
 
 /**
@@ -73,17 +73,17 @@ export function campaignAssets(
  * - `never`   — `failed`/`partial`; the server skips these outright
  *               (CON-118 §10), so one sitting in a campaign is silently inert.
  */
-export type Retrievability = "ready" | "waiting" | "never";
+export type Retrievability = 'ready' | 'waiting' | 'never'
 
 export function retrievability(status: AssetStatus): Retrievability {
   switch (status) {
-    case "ready":
-      return "ready";
-    case "pending":
-    case "processing":
-      return "waiting";
-    case "partial":
-    case "failed":
-      return "never";
+    case 'ready':
+      return 'ready'
+    case 'pending':
+    case 'processing':
+      return 'waiting'
+    case 'partial':
+    case 'failed':
+      return 'never'
   }
 }

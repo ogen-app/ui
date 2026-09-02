@@ -27,11 +27,14 @@ function plan(
 ): BulkPlan {
   const changes: BulkPlan['changes'] = []
   const reasons = new Map<string, number>()
-  const skip = (reason: string) => reasons.set(reason, (reasons.get(reason) ?? 0) + 1)
+  const skip = (reason: string) =>
+    reasons.set(reason, (reasons.get(reason) ?? 0) + 1)
 
   for (const post of posts) {
     if (!canEditScheduledAt(post.status)) {
-      skip(post.status === 'published' ? 'already published' : 'already scheduled')
+      skip(
+        post.status === 'published' ? 'already published' : 'already scheduled',
+      )
       continue
     }
     const reason = extraReason?.(post)
@@ -86,13 +89,19 @@ export function planClearDate(posts: Post[]): BulkPlan {
 }
 
 /** Which of the selected posts may actually be deleted. */
-export function planDelete(posts: Post[]): { deletable: Post[]; blocked: number } {
+export function planDelete(posts: Post[]): {
+  deletable: Post[]
+  blocked: number
+} {
   const deletable = posts.filter((p) => DELETABLE_STATUSES.includes(p.status))
   return { deletable, blocked: posts.length - deletable.length }
 }
 
 /** "3 posts updated · 2 already scheduled" — one line covering both halves. */
-export function describeResult(applied: number, skipped: BulkPlan['skipped']): string {
+export function describeResult(
+  applied: number,
+  skipped: BulkPlan['skipped'],
+): string {
   const head = applied === 1 ? '1 post updated' : `${applied} posts updated`
   if (skipped.length === 0) return head
   const tail = skipped.map((s) => `${s.count} ${s.reason}`).join(', ')

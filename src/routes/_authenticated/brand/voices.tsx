@@ -27,7 +27,10 @@ function VoicesPage() {
         <VoicesSection
           voices={brand.voices}
           onAdd={() =>
-            navigate({ to: '/brand/voices/$voiceId', params: { voiceId: 'new' } })
+            navigate({
+              to: '/brand/voices/$voiceId',
+              params: { voiceId: 'new' },
+            })
           }
           onOpen={(voiceId) =>
             navigate({ to: '/brand/voices/$voiceId', params: { voiceId } })

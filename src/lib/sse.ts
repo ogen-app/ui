@@ -39,7 +39,9 @@ const FRAME_BOUNDARY = /\r?\n\r?\n/g
  * each frame as it closes. Comment lines (`: ping`) carry no fields, so a
  * heartbeat frame is consumed and produces nothing.
  */
-export function createSSEParser(onFrame: (frame: SSEFrame) => void): (chunk: string) => void {
+export function createSSEParser(
+  onFrame: (frame: SSEFrame) => void,
+): (chunk: string) => void {
   let buffer = ''
 
   return (chunk: string) => {
@@ -95,7 +97,8 @@ export function createSSEParser(onFrame: (frame: SSEFrame) => void): (chunk: str
 
       // Fields but no `event:` means `message`, per spec. A frame with no
       // fields at all was a comment — nothing to dispatch.
-      if (event === null && data.length === 0 && id === null && retry === null) continue
+      if (event === null && data.length === 0 && id === null && retry === null)
+        continue
       onFrame({ event: event ?? 'message', data: data.join('\n'), id, retry })
     }
   }

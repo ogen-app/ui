@@ -17,7 +17,10 @@ import {
 import { invalidateSession } from '@/services/api/sessions'
 import { flushAllPendingSaves } from '@/lib/pendingSaves'
 import { queryClient } from '@/lib/queryClient'
-import { getActiveWorkspaceId, setActiveWorkspaceId } from '@/lib/activeWorkspace'
+import {
+  getActiveWorkspaceId,
+  setActiveWorkspaceId,
+} from '@/lib/activeWorkspace'
 import { reconnectEvents } from '@/stores/eventStreamStore'
 import { useAuthStore } from '@/stores/authStore'
 import type {
@@ -69,7 +72,8 @@ export function useWorkspace(): Workspace | undefined {
 export function useUpdateWorkspace(id: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (payload: UpdateWorkspacePayload) => updateWorkspace(id, payload),
+    mutationFn: (payload: UpdateWorkspacePayload) =>
+      updateWorkspace(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: WORKSPACE_KEY }),
   })
 }
@@ -161,7 +165,8 @@ export function useInviteMember() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: InvitePayload) => inviteMember(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: WORKSPACE_INVITATIONS_KEY }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: WORKSPACE_INVITATIONS_KEY }),
   })
 }
 
@@ -169,7 +174,8 @@ export function useRevokeInvitation() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (invitationId: string) => revokeInvitation(invitationId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: WORKSPACE_INVITATIONS_KEY }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: WORKSPACE_INVITATIONS_KEY }),
   })
 }
 

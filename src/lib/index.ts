@@ -1,5 +1,5 @@
-export { cn } from "./styles.ts";
-export { formatTitle } from "./formatTitle.ts";
+export { cn } from './styles.ts'
+export { formatTitle } from './formatTitle.ts'
 // `registerSchema` and `validateField` went with the i18n conversion — both
 // were exported here and called from nowhere.
 export {
@@ -11,5 +11,5 @@ export {
   profileSchema,
   passwordRules,
   type FieldErrors,
-} from "./auth-validation.ts";
-export { safeRedirect } from "./redirects.ts";
+} from './auth-validation.ts'
+export { safeRedirect } from './redirects.ts'

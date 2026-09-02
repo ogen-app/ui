@@ -827,5 +827,3 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
   offers images behind `content-bank-images`, off; an `IMG` asset that did
   arrive opens read-only — see [below](#asset-opening). AI image *generation* is
   planned but **secondary** (CON-105/88/83).
-- **Lint/format configs** (eslint/prettier/stylelint) are installed but not
-  committed to this repo.

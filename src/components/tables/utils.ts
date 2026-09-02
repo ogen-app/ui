@@ -5,7 +5,7 @@ import type { ColumnConfig } from './types'
  */
 export function calculateTotal<TData extends Record<string, unknown>>(
   rows: TData[],
-  config: ColumnConfig<TData>
+  config: ColumnConfig<TData>,
 ): unknown {
   if (!config.totals) return ''
 
@@ -26,7 +26,9 @@ export function calculateTotal<TData extends Record<string, unknown>>(
     case 'sum':
       return values.reduce((sum, val) => sum + val, 0)
     case 'average':
-      return values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0
+      return values.length > 0
+        ? values.reduce((sum, val) => sum + val, 0) / values.length
+        : 0
     case 'count':
       return rows.length
     default:

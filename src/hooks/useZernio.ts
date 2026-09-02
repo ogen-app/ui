@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createConnectLink,
   disconnectZernioAccount,
@@ -7,13 +7,13 @@ import {
   listZernioAccounts,
   selectPendingTarget,
   triggerZernioSync,
-} from "@/services/api/zernio";
-import { PLATFORMS_KEY } from "@/hooks/usePlatforms";
-import { ZernioError } from "@/types/integrations";
-import { toast } from "@/stores/toastStore";
+} from '@/services/api/zernio'
+import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
+import { ZernioError } from '@/types/integrations'
+import { toast } from '@/stores/toastStore'
 
-export const ZERNIO_HEALTH_KEY = ["zernio", "health"] as const;
-export const ZERNIO_ACCOUNTS_KEY = ["zernio", "accounts"] as const;
+export const ZERNIO_HEALTH_KEY = ['zernio', 'health'] as const
+export const ZERNIO_ACCOUNTS_KEY = ['zernio', 'accounts'] as const
 
 export function useZernioHealth() {
   return useQuery({
@@ -23,8 +23,8 @@ export function useZernioHealth() {
     // Only poll while the integration is reconnecting; otherwise rely on
     // explicit invalidation (after upserting the Zernio key, after Sync now).
     refetchInterval: (query) =>
-      query.state.data?.state === "degraded" ? 60_000 : false,
-  });
+      query.state.data?.state === 'degraded' ? 60_000 : false,
+  })
 }
 
 export function useZernioAccounts() {
@@ -32,7 +32,7 @@ export function useZernioAccounts() {
     queryKey: ZERNIO_ACCOUNTS_KEY,
     queryFn: listZernioAccounts,
     staleTime: 30_000,
-  });
+  })
 }
 
 export function useCreateConnectLink() {
@@ -43,11 +43,11 @@ export function useCreateConnectLink() {
     // generic toast couldn't.
     meta: { errorToast: false },
     mutationFn: (platform: string) => createConnectLink(platform),
-  });
+  })
 }
 
 export const pendingConnectionKey = (id: string) =>
-  ["zernio", "pending", id] as const;
+  ['zernio', 'pending', id] as const
 
 /**
  * The targets awaiting a choice on a pending connect (CON-217).
@@ -67,7 +67,7 @@ export function usePendingConnection(id: string) {
     retry: false,
     staleTime: 0,
     gcTime: 0,
-  });
+  })
 }
 
 /**
@@ -80,18 +80,18 @@ export function usePendingConnection(id: string) {
  * caller navigates to the accounts page, which waits for it there.
  */
 export function useSelectPendingTarget(id: string) {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
     // The picker renders its own failure inline, next to the choice the user
     // is still looking at — a toast would talk over it.
     meta: { errorToast: false },
     mutationFn: (targetId: string) => selectPendingTarget(id, targetId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: PLATFORMS_KEY });
-      qc.invalidateQueries({ queryKey: ZERNIO_ACCOUNTS_KEY });
-      qc.invalidateQueries({ queryKey: ZERNIO_HEALTH_KEY });
+      qc.invalidateQueries({ queryKey: PLATFORMS_KEY })
+      qc.invalidateQueries({ queryKey: ZERNIO_ACCOUNTS_KEY })
+      qc.invalidateQueries({ queryKey: ZERNIO_HEALTH_KEY })
     },
-  });
+  })
 }
 
 /**
@@ -105,7 +105,7 @@ export function useSelectPendingTarget(id: string) {
  * `resolvePublishingAccount` starts reporting the post as mismatched.
  */
 export function useDisconnectZernioAccount() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
     // Two of this endpoint's failures aren't failures to report, so the
     // triage below owns the toast rather than the default (see `onError`).
@@ -113,9 +113,9 @@ export function useDisconnectZernioAccount() {
     mutationFn: ({ id, force }: { id: string; force?: boolean }) =>
       disconnectZernioAccount(id, force),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: PLATFORMS_KEY });
-      qc.invalidateQueries({ queryKey: ZERNIO_ACCOUNTS_KEY });
-      qc.invalidateQueries({ queryKey: ZERNIO_HEALTH_KEY });
+      qc.invalidateQueries({ queryKey: PLATFORMS_KEY })
+      qc.invalidateQueries({ queryKey: ZERNIO_ACCOUNTS_KEY })
+      qc.invalidateQueries({ queryKey: ZERNIO_HEALTH_KEY })
     },
     onError: (err) => {
       // A 404 means the account is already gone — a concurrent disconnect, or
@@ -123,33 +123,33 @@ export function useDisconnectZernioAccount() {
       // view is the stale thing, so refresh it rather than leave a row the
       // user can only fail to click again. The user wanted the account gone
       // and it is gone, so there is nothing to tell them.
-      if (err instanceof ZernioError && err.code === "account_not_found") {
-        qc.invalidateQueries({ queryKey: PLATFORMS_KEY });
-        qc.invalidateQueries({ queryKey: ZERNIO_ACCOUNTS_KEY });
-        return;
+      if (err instanceof ZernioError && err.code === 'account_not_found') {
+        qc.invalidateQueries({ queryKey: PLATFORMS_KEY })
+        qc.invalidateQueries({ queryKey: ZERNIO_ACCOUNTS_KEY })
+        return
       }
       // The scheduled-posts guard doing its job — `DisconnectAccountDialog`
       // catches this one and turns it into the next question ("disconnect
       // anyway?"), which a toast would only talk over.
       if (
         err instanceof ZernioError &&
-        err.code === "account_has_scheduled_posts"
+        err.code === 'account_has_scheduled_posts'
       ) {
-        return;
+        return
       }
-      toast.error(err instanceof Error ? err.message : "Unable to disconnect");
+      toast.error(err instanceof Error ? err.message : 'Unable to disconnect')
     },
-  });
+  })
 }
 
 export function useTriggerZernioSync() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: () => triggerZernioSync(),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ZERNIO_ACCOUNTS_KEY });
-      qc.invalidateQueries({ queryKey: ZERNIO_HEALTH_KEY });
-      qc.invalidateQueries({ queryKey: PLATFORMS_KEY });
+      qc.invalidateQueries({ queryKey: ZERNIO_ACCOUNTS_KEY })
+      qc.invalidateQueries({ queryKey: ZERNIO_HEALTH_KEY })
+      qc.invalidateQueries({ queryKey: PLATFORMS_KEY })
     },
-  });
+  })
 }

@@ -25,7 +25,10 @@ const LAYERS = 4
  * asked for by that, so the innermost edge lands on the number they wrote.
  */
 const COMPOUNDING = Math.sqrt(
-  Array.from({ length: LAYERS }, (_, i) => 1 / 4 ** i).reduce((a, b) => a + b, 0),
+  Array.from({ length: LAYERS }, (_, i) => 1 / 4 ** i).reduce(
+    (a, b) => a + b,
+    0,
+  ),
 )
 
 type SurfaceFaderProps = {
@@ -90,7 +93,10 @@ export function SurfaceFader({
         // the count of overlapping panes — and with it the blur — steps down
         // across the ramp. The widest radius is in every band; the narrowest in
         // the first only.
-        const mask = ramp(at(blurFrom + band * i), at(blurFrom + band * (i + 1)))
+        const mask = ramp(
+          at(blurFrom + band * i),
+          at(blurFrom + band * (i + 1)),
+        )
         return (
           <div
             key={i}

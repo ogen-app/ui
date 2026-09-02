@@ -1,8 +1,8 @@
-import { useLocation } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { ZIndex } from "@/config/zIndex";
-import { useUploadStore } from "@/stores/uploadStore";
-import { UploadRow } from "./UploadRow";
+import { useLocation } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
+import { ZIndex } from '@/config/zIndex'
+import { useUploadStore } from '@/stores/uploadStore'
+import { UploadRow } from './UploadRow'
 
 /**
  * App-level, non-blocking upload panel docked bottom-right. Renders nothing when
@@ -17,25 +17,26 @@ import { UploadRow } from "./UploadRow";
  * longer looking.
  */
 export function UploadTracker() {
-  const all = useUploadStore((s) => s.items);
-  const clearFinished = useUploadStore((s) => s.clearFinished);
-  const pathname = useLocation({ select: (l) => l.pathname });
+  const all = useUploadStore((s) => s.items)
+  const clearFinished = useUploadStore((s) => s.clearFinished)
+  const pathname = useLocation({ select: (l) => l.pathname })
 
   // Which list is on screen, and therefore already reporting its own uploads:
   // a campaign's Content page, or the workspace bank (whose uploads carry no
   // campaign at all).
-  const openCampaign = pathname.match(/^\/campaigns\/([^/]+)\/content$/)?.[1] ?? null;
-  const bankOpen = pathname === "/content-bank";
+  const openCampaign =
+    pathname.match(/^\/campaigns\/([^/]+)\/content$/)?.[1] ?? null
+  const bankOpen = pathname === '/content-bank'
   const items =
     openCampaign !== null || bankOpen
       ? all.filter((it) => it.campaignId !== openCampaign)
-      : all;
+      : all
 
-  if (items.length === 0) return null;
+  if (items.length === 0) return null
 
   const active = items.filter(
-    (it) => it.phase === "uploading" || it.phase === "processing",
-  ).length;
+    (it) => it.phase === 'uploading' || it.phase === 'processing',
+  ).length
 
   return (
     <div
@@ -44,7 +45,7 @@ export function UploadTracker() {
     >
       <div className="flex items-center justify-between bg-quaternary px-4 py-3">
         <span className="text-sm font-medium text-foreground">
-          {active > 0 ? `Uploading ${active}…` : "Uploads"}
+          {active > 0 ? `Uploading ${active}…` : 'Uploads'}
         </span>
         <Button variant="ghost" size="sm" onClick={clearFinished}>
           Clear
@@ -56,5 +57,5 @@ export function UploadTracker() {
         ))}
       </div>
     </div>
-  );
+  )
 }

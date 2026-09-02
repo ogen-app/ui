@@ -94,7 +94,11 @@ describe('postEvents', () => {
 
   it('falls back to updated_at when a failure has no scheduled date', () => {
     const [, failure] = postEvents(
-      makePost({ status: 'failed', scheduled_at: null, updated_at: at(2026, 8, 19, 16) }),
+      makePost({
+        status: 'failed',
+        scheduled_at: null,
+        updated_at: at(2026, 8, 19, 16),
+      }),
       'c1',
     )
     expect(dayKey(failure.at)).toBe('2026-08-19')
@@ -110,13 +114,20 @@ describe('postEvents', () => {
   })
 
   it('ignores a published post with no published_at rather than inventing one', () => {
-    const events = postEvents(makePost({ status: 'published', published_at: null }), 'c1')
+    const events = postEvents(
+      makePost({ status: 'published', published_at: null }),
+      'c1',
+    )
     expect(events.map((e) => e.kind)).toEqual(['created'])
   })
 
   it('survives unparseable timestamps', () => {
     const events = postEvents(
-      makePost({ status: 'published', created_at: 'not a date', published_at: '' }),
+      makePost({
+        status: 'published',
+        created_at: 'not a date',
+        published_at: '',
+      }),
       'c1',
     )
     expect(events).toEqual([])
@@ -164,7 +175,12 @@ describe('dailyReports', () => {
 
   it('counts every outcome and totals them', () => {
     const [today] = dailyReports(summaries, NOW)
-    expect(today.counts).toEqual({ published: 3, failed: 1, not_published: 0, created: 3 })
+    expect(today.counts).toEqual({
+      published: 3,
+      failed: 1,
+      not_published: 0,
+      created: 3,
+    })
     expect(today.total).toBe(7)
   })
 
@@ -186,7 +202,9 @@ describe('dailyReports', () => {
 
   it('timestamps the report with the last thing that happened on the day', () => {
     const [today] = dailyReports(summaries, NOW)
-    expect(new Date(today.lastEventAt).getTime()).toBe(new Date(at(2026, 8, 19, 16)).getTime())
+    expect(new Date(today.lastEventAt).getTime()).toBe(
+      new Date(at(2026, 8, 19, 16)).getTime(),
+    )
   })
 
   it('drops events dated in the future', () => {
@@ -257,8 +275,14 @@ describe('activityFeed', () => {
   })
 
   it('names the post an exception is about, so the row can link to it', () => {
-    const failure = activityFeed(summaries, NOW).find((e) => e.kind === 'failed')
-    expect(failure).toMatchObject({ postId: 'b', campaignId: 'c1', platformId: 'linkedin' })
+    const failure = activityFeed(summaries, NOW).find(
+      (e) => e.kind === 'failed',
+    )
+    expect(failure).toMatchObject({
+      postId: 'b',
+      campaignId: 'c1',
+      platformId: 'linkedin',
+    })
   })
 })
 

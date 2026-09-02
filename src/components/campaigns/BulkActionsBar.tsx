@@ -33,7 +33,13 @@ type Props = {
  * occupy — the surrounding 8px stays transparent, so this row is exactly as
  * tall as the one it replaced and keeps the same gap above the table.
  */
-export function BulkActionsBar({ posts, onClear, onApply, onDelete, busy = false }: Props) {
+export function BulkActionsBar({
+  posts,
+  onClear,
+  onApply,
+  onDelete,
+  busy = false,
+}: Props) {
   const [action, setAction] = useState<BulkAction | null>(null)
 
   // Success is claimed only for what succeeded, and only once it has: the

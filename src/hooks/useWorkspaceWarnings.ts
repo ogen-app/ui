@@ -2,7 +2,10 @@ import { useMemo } from 'react'
 import { useCampaigns, useCampaignSummaries } from '@/hooks/useCampaigns'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { workspaceWarnings, type WorkspaceWarning } from '@/lib/workspaceWarnings'
+import {
+  workspaceWarnings,
+  type WorkspaceWarning,
+} from '@/lib/workspaceWarnings'
 
 /**
  * The workspace's warnings (CON-225), scored by `lib/workspaceWarnings`.
@@ -24,7 +27,10 @@ export function useWorkspaceWarnings(): {
   const platformViews = usePlatformViews()
 
   const settled = campaignsQuery.isSuccess && summariesQuery.isSuccess
-  const dataUpdatedAt = Math.max(campaignsQuery.dataUpdatedAt, summariesQuery.dataUpdatedAt)
+  const dataUpdatedAt = Math.max(
+    campaignsQuery.dataUpdatedAt,
+    summariesQuery.dataUpdatedAt,
+  )
 
   const warnings = useMemo(
     () =>
@@ -39,12 +45,20 @@ export function useWorkspaceWarnings(): {
             new Date(dataUpdatedAt || Date.now()),
           )
         : [],
-    [enabled, settled, dataUpdatedAt, campaignsQuery.data, summariesQuery.data, platformViews],
+    [
+      enabled,
+      settled,
+      dataUpdatedAt,
+      campaignsQuery.data,
+      summariesQuery.data,
+      platformViews,
+    ],
   )
 
   return {
     warnings,
-    isLoading: enabled && (campaignsQuery.isLoading || summariesQuery.isLoading),
+    isLoading:
+      enabled && (campaignsQuery.isLoading || summariesQuery.isLoading),
     isError: enabled && (campaignsQuery.isError || summariesQuery.isError),
   }
 }

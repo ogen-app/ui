@@ -4,7 +4,11 @@ import { LineItem } from '@/components/ui/line-item'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { BRAND_SECTIONS, type BrandSectionId, type BrandSectionInfo } from '@/lib/brandSections'
+import {
+  BRAND_SECTIONS,
+  type BrandSectionId,
+  type BrandSectionInfo,
+} from '@/lib/brandSections'
 import { FirstRun } from './FirstRun'
 import { sampleCount, usageLine } from './format'
 import { WholeBrandOffer } from './shell'
@@ -156,7 +160,11 @@ function SectionCard({
                 the hue is what makes the card you are looking for findable
                 without reading the headings. Same device as the campaign rail,
                 and the same glyph that titles the screen this card opens. */}
-            <Icon className="size-5 shrink-0" style={{ color: section.tone }} aria-hidden />
+            <Icon
+              className="size-5 shrink-0"
+              style={{ color: section.tone }}
+              aria-hidden
+            />
             <span className="truncate">{section.label}</span>
             {/* The honesty rule (CON-226 §9) at index length. The section's own
                 screen still says it in a sentence; here it is three words,
@@ -178,7 +186,9 @@ function SectionCard({
         }
       >
         {rows.length === 0 ? (
-          <p className="text-sm text-secondary-foreground">{section.whenEmpty}</p>
+          <p className="text-sm text-secondary-foreground">
+            {section.whenEmpty}
+          </p>
         ) : (
           <ul className="flex flex-col">
             {rows.map((row) => (
@@ -214,7 +224,13 @@ function SectionCard({
  * this screen with no navigation, and a `role="button"` that does nothing is a
  * lie told to a screen reader.
  */
-function Opens({ onOpen, children }: { onOpen?: () => void; children: ReactNode }) {
+function Opens({
+  onOpen,
+  children,
+}: {
+  onOpen?: () => void
+  children: ReactNode
+}) {
   if (!onOpen) return <>{children}</>
 
   return (
@@ -261,7 +277,9 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
         // failure the guardrail rails had — and the row already says it twice
         // over: an empty tick, and `no samples, never used` in the margin.
         details: voice.summary || undefined,
-        meta: [sampleCount(voice.samples.length), usageLine(voice.usage)].join(', '),
+        meta: [sampleCount(voice.samples.length), usageLine(voice.usage)].join(
+          ', ',
+        ),
       }))
 
     case 'audiences':
@@ -269,7 +287,9 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
         key: audience.id,
         // Named is not described. The tick is the three consequence lines,
         // because those are what make an audience usable rather than a label.
-        done: Boolean(audience.readsOn && audience.scrollsPastWhen && audience.believesWhen),
+        done: Boolean(
+          audience.readsOn && audience.scrollsPastWhen && audience.believesWhen,
+        ),
         label: audience.name,
         details: audience.summary || undefined,
         meta: usageLine(audience.usage),
@@ -283,7 +303,10 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
           key: 'facts',
           done: g.facts.length > 0,
           label: 'Facts',
-          details: g.facts.length === 0 ? 'Every number and product detail is invented fresh.' : undefined,
+          details:
+            g.facts.length === 0
+              ? 'Every number and product detail is invented fresh.'
+              : undefined,
           trailing: statedCount(g.facts.length),
         },
         {
@@ -291,7 +314,9 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
           done: g.mayClaim.length > 0,
           label: 'May claim',
           details:
-            g.mayClaim.length === 0 ? 'Nothing has a form we know is safe to repeat.' : undefined,
+            g.mayClaim.length === 0
+              ? 'Nothing has a form we know is safe to repeat.'
+              : undefined,
           trailing: statedCount(g.mayClaim.length),
         },
         {
@@ -308,7 +333,8 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
           key: 'banned',
           done: g.bannedWords.length > 0,
           label: 'Banned words',
-          trailing: g.bannedWords.length > 0 ? `${g.bannedWords.length} words` : 'none',
+          trailing:
+            g.bannedWords.length > 0 ? `${g.bannedWords.length} words` : 'none',
         },
         {
           key: 'disclaimer',
@@ -334,7 +360,8 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
           key: 'palette',
           done: l.palette.length > 0,
           label: 'Palette',
-          trailing: l.palette.length > 0 ? `${l.palette.length} with roles` : 'none',
+          trailing:
+            l.palette.length > 0 ? `${l.palette.length} with roles` : 'none',
         },
         {
           key: 'type',

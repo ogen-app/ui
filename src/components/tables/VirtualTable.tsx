@@ -1,4 +1,12 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, memo, type JSX } from 'react'
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  memo,
+  type JSX,
+} from 'react'
 import {
   type Column,
   type ColumnDef,
@@ -78,7 +86,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
     (columnId: string) => {
       return columnConfigs.find((config) => config.id === columnId)
     },
-    [columnConfigs]
+    [columnConfigs],
   )
 
   // Create TanStack Table columns from configs
@@ -119,7 +127,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                 'text-xs font-normal text-tertiary-foreground',
                 alignment === 'right' && 'justify-end text-right',
                 alignment === 'center' && 'justify-center text-center',
-                alignment === 'left' && 'justify-start text-left'
+                alignment === 'left' && 'justify-start text-left',
               )}
             >
               {config.header}
@@ -135,7 +143,9 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             className={cn(
               'w-full justify-start gap-1 overflow-hidden',
-              alignment === 'right' ? 'text-right flex-row-reverse' : 'text-left'
+              alignment === 'right'
+                ? 'text-right flex-row-reverse'
+                : 'text-left',
             )}
           >
             <span className="truncate">{config.header}</span>
@@ -157,7 +167,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
         const alignment = config.alignment || 'left'
         const cellClass = cn(
           alignment === 'right' ? 'text-right' : 'text-left',
-          config.cellClassName ?? ''
+          config.cellClassName ?? '',
         )
 
         if (config.cell) {
@@ -169,7 +179,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             // box no longer the thing the eye reads as the row. Same fix as
             // the wrapper: one number, read in both places.
             <div
-              className={cn('border-b-2 border-background leading-7 relative', cellClass)}
+              className={cn(
+                'border-b-2 border-background leading-7 relative',
+                cellClass,
+              )}
               style={{ height: `${estimatedRowHeight}px` }}
             >
               {config.cell(value, row.original)}
@@ -181,7 +194,9 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
       },
       footer: config.totals
         ? ({ table }) => {
-            const filteredRows = table.getFilteredRowModel().rows.map((row) => row.original)
+            const filteredRows = table
+              .getFilteredRowModel()
+              .rows.map((row) => row.original)
             const result = calculateTotal(filteredRows, config)
             const alignment = config.alignment || 'left'
             const cellClass = alignment === 'right' ? 'text-right' : 'text-left'
@@ -189,7 +204,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             if (config.totals!.formatter && typeof result === 'number') {
               return (
                 <div className={cn('h-8 px-3', cellClass)}>
-                  <FooterCell className={'leading-8'} value={config.totals!.formatter(result)} />
+                  <FooterCell
+                    className={'leading-8'}
+                    value={config.totals!.formatter(result)}
+                  />
                 </div>
               )
             }
@@ -242,13 +260,13 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   // Get sticky left position for a column
   const getStickyLeftPosition = useCallback(
     (columnId: string) => stickyLeftPositions.get(columnId) ?? 0,
-    [stickyLeftPositions]
+    [stickyLeftPositions],
   )
 
   // Get sticky right position for a column
   const getStickyRightPosition = useCallback(
     (columnId: string) => stickyRightPositions.get(columnId) ?? 0,
-    [stickyRightPositions]
+    [stickyRightPositions],
   )
 
   // The column shell for a body-level row that carries no cell content: the
@@ -269,7 +287,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
           isRightSticky && 'sticky bg-table-row',
           columnConfig?.borderSide === 'left' && 'border-l-2',
           columnConfig?.borderSide === 'right' && 'border-r-2',
-          columnConfig?.borderSide === 'both' && 'border-x-2'
+          columnConfig?.borderSide === 'both' && 'border-x-2',
         ),
         style: {
           width: `var(--col-${columnId}-width)`,
@@ -284,7 +302,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
         },
       }
     },
-    [getColumnConfig, getStickyLeftPosition, getStickyRightPosition]
+    [getColumnConfig, getStickyLeftPosition, getStickyRightPosition],
   )
 
   // One header group carries the leaf columns; the spacer row below walks it
@@ -302,7 +320,9 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
     showFooter &&
     table
       .getFooterGroups()
-      .some((group) => group.headers.some((header) => header.column.columnDef.footer))
+      .some((group) =>
+        group.headers.some((header) => header.column.columnDef.footer),
+      )
 
   // Calculate spacer height when fillHeight is enabled and check if content fits.
   //
@@ -318,9 +338,12 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
 
     const updateMeasurements = () => {
       // Measure parent's available space (the grid cell)
-      const parentHeight = containerRef.current?.parentElement?.clientHeight ?? 0
+      const parentHeight =
+        containerRef.current?.parentElement?.clientHeight ?? 0
       const headerHeight = headerRef.current?.clientHeight ?? 0
-      const footerHeight = hasFooter ? (footerRef.current?.clientHeight ?? 0) : 0
+      const footerHeight = hasFooter
+        ? (footerRef.current?.clientHeight ?? 0)
+        : 0
       const contentHeight = headerHeight + totalSize + footerHeight
 
       // Update spacer height for fillHeight mode
@@ -364,12 +387,14 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
           : contentFitsInSpace
             ? 'self-start'
             : 'flex-1 min-h-0',
-        className
+        className,
       )}
       style={columnWidthVars}
     >
       {/* Scrollable viewport */}
-      <ScrollAreaPrimitive.Root className={cn('relative flex-1 min-h-0 overflow-hidden')}>
+      <ScrollAreaPrimitive.Root
+        className={cn('relative flex-1 min-h-0 overflow-hidden')}
+      >
         <ScrollAreaPrimitive.Viewport
           ref={viewportRef}
           // `overscroll-none` turns off the elastic bounce macOS gives an inner
@@ -386,7 +411,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             className={cn(
               'sticky top-0 bg-table-header',
               `z-${ZIndex.stickyTableHeader}`,
-              !hasData && 'pointer-events-none'
+              !hasData && 'pointer-events-none',
             )}
           >
             {table.getHeaderGroups().map((headerGroup) => (
@@ -400,9 +425,11 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                 {headerGroup.headers.map((header) => {
                   const columnConfig = getColumnConfig(header.column.id)
                   const isLeftSticky =
-                    columnConfig?.isSticky && columnConfig?.stickyPosition === 'left'
+                    columnConfig?.isSticky &&
+                    columnConfig?.stickyPosition === 'left'
                   const isRightSticky =
-                    columnConfig?.isSticky && columnConfig?.stickyPosition === 'right'
+                    columnConfig?.isSticky &&
+                    columnConfig?.stickyPosition === 'right'
                   const stickyLeftPosition = isLeftSticky
                     ? getStickyLeftPosition(header.column.id)
                     : 0
@@ -419,7 +446,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                         isRightSticky && 'sticky bg-table-header',
                         columnConfig?.borderSide === 'left' && 'border-l-2',
                         columnConfig?.borderSide === 'right' && 'border-r-2',
-                        columnConfig?.borderSide === 'both' && 'border-x-2'
+                        columnConfig?.borderSide === 'both' && 'border-x-2',
                       )}
                       style={{
                         width: `var(--col-${header.column.id}-width)`,
@@ -435,7 +462,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                     >
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </div>
                   )
                 })}
@@ -475,7 +505,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                   <div
                     key={row.id}
                     className={cn(
-                      'group flex absolute top-0 left-0 bg-table-row hover:bg-table-row-hover contain-strict'
+                      'group flex absolute top-0 left-0 bg-table-row hover:bg-table-row-hover contain-strict',
                     )}
                     style={{
                       // Was hard-coded `h-[34px]`, which silently disagreed
@@ -492,9 +522,11 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                     {row.getVisibleCells().map((cell) => {
                       const columnConfig = getColumnConfig(cell.column.id)
                       const isLeftSticky =
-                        columnConfig?.isSticky && columnConfig?.stickyPosition === 'left'
+                        columnConfig?.isSticky &&
+                        columnConfig?.stickyPosition === 'left'
                       const isRightSticky =
-                        columnConfig?.isSticky && columnConfig?.stickyPosition === 'right'
+                        columnConfig?.isSticky &&
+                        columnConfig?.stickyPosition === 'right'
                       const stickyLeftPosition = isLeftSticky
                         ? getStickyLeftPosition(cell.column.id)
                         : 0
@@ -507,12 +539,15 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                           key={cell.id}
                           className={cn(
                             'shrink-0 border-background contain-[layout_style_paint]',
-                            isLeftSticky && 'sticky bg-table-row group-hover:bg-table-row-hover',
-                            isRightSticky && 'sticky bg-table-row group-hover:bg-table-row-hover',
+                            isLeftSticky &&
+                              'sticky bg-table-row group-hover:bg-table-row-hover',
+                            isRightSticky &&
+                              'sticky bg-table-row group-hover:bg-table-row-hover',
                             columnConfig?.borderSide === 'left' && 'border-l-2',
-                            columnConfig?.borderSide === 'right' && 'border-r-2',
+                            columnConfig?.borderSide === 'right' &&
+                              'border-r-2',
                             columnConfig?.borderSide === 'both' && 'border-x-2',
-                            columnConfig?.cellClassName
+                            columnConfig?.cellClassName,
                           )}
                           style={{
                             width: `var(--col-${cell.column.id}-width)`,
@@ -526,7 +561,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                             }),
                           }}
                         >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
                         </div>
                       )
                     })}
@@ -557,7 +595,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
               ref={footerRef}
               className={cn(
                 'sticky bottom-0 bg-table-footer -mt-0.5',
-                `z-${ZIndex.stickyTableFooter}`
+                `z-${ZIndex.stickyTableFooter}`,
               )}
             >
               {table.getFooterGroups().map((footerGroup) => (
@@ -571,9 +609,11 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                   {footerGroup.headers.map((header) => {
                     const columnConfig = getColumnConfig(header.column.id)
                     const isLeftSticky =
-                      columnConfig?.isSticky && columnConfig?.stickyPosition === 'left'
+                      columnConfig?.isSticky &&
+                      columnConfig?.stickyPosition === 'left'
                     const isRightSticky =
-                      columnConfig?.isSticky && columnConfig?.stickyPosition === 'right'
+                      columnConfig?.isSticky &&
+                      columnConfig?.stickyPosition === 'right'
                     const stickyLeftPosition = isLeftSticky
                       ? getStickyLeftPosition(header.column.id)
                       : 0
@@ -590,7 +630,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                           isRightSticky && 'sticky bg-table-footer',
                           columnConfig?.borderSide === 'left' && 'border-l-2',
                           columnConfig?.borderSide === 'right' && 'border-r-2',
-                          columnConfig?.borderSide === 'both' && 'border-x-2'
+                          columnConfig?.borderSide === 'both' && 'border-x-2',
                         )}
                         style={{
                           width: `var(--col-${header.column.id}-width)`,
@@ -606,7 +646,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                       >
                         {header.isPlaceholder
                           ? null
-                          : flexRender(header.column.columnDef.footer, header.getContext())}
+                          : flexRender(
+                              header.column.columnDef.footer,
+                              header.getContext(),
+                            )}
                       </div>
                     )
                   })}
@@ -615,17 +658,29 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             </div>
           )}
         </ScrollAreaPrimitive.Viewport>
-        {hasData && <ScrollBar orientation="vertical" style={{ zIndex: ZIndex.scrollBar }} />}
-        {hasData && hasOverflow && (
-          <ScrollBar orientation="horizontal" style={{ zIndex: ZIndex.scrollBar }} />
+        {hasData && (
+          <ScrollBar
+            orientation="vertical"
+            style={{ zIndex: ZIndex.scrollBar }}
+          />
         )}
-        {hasData && <ScrollAreaPrimitive.Corner style={{ zIndex: ZIndex.scrollBar }} />}
+        {hasData && hasOverflow && (
+          <ScrollBar
+            orientation="horizontal"
+            style={{ zIndex: ZIndex.scrollBar }}
+          />
+        )}
+        {hasData && (
+          <ScrollAreaPrimitive.Corner style={{ zIndex: ZIndex.scrollBar }} />
+        )}
       </ScrollAreaPrimitive.Root>
     </div>
   )
 }
 
 // Export memoized version
-export const VirtualTable = memo(VirtualTableComponent) as <TData extends Record<string, unknown>>(
-  props: VirtualTableProps<TData>
+export const VirtualTable = memo(VirtualTableComponent) as <
+  TData extends Record<string, unknown>,
+>(
+  props: VirtualTableProps<TData>,
 ) => JSX.Element

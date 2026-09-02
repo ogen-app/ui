@@ -40,10 +40,17 @@ type PostsTableProps = {
   onSortingChange?: (next: SortingState) => void
 }
 
-function formatDate(dateStr: string | null, t: TFunction, locale: string): string {
+function formatDate(
+  dateStr: string | null,
+  t: TFunction,
+  locale: string,
+): string {
   return (
-    formatLocaleDate(dateStr, { year: 'numeric', month: 'short', day: 'numeric' }, locale) ??
-    t('postsTable.notSet')
+    formatLocaleDate(
+      dateStr,
+      { year: 'numeric', month: 'short', day: 'numeric' },
+      locale,
+    ) ?? t('postsTable.notSet')
   )
 }
 
@@ -56,9 +63,19 @@ function formatRelativeDate(dateStr: string | null, t: TFunction): string {
   if (!dateStr) return t('postsTable.notSet')
   const now = new Date()
   const date = new Date(dateStr)
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  const diffDays = Math.round((startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24))
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  )
+  const startOfTarget = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  )
+  const diffDays = Math.round(
+    (startOfTarget.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24),
+  )
 
   if (diffDays === 0) return t('postsTable.today')
   if (diffDays === 1) return t('postsTable.tomorrow')
@@ -225,7 +242,8 @@ function PostsTableComponent({
         isControl: true,
         cell: (_value, row) => {
           const canDelete = DELETABLE_STATUSES.includes(row.status)
-          if (!canDelete) return <div className="h-[34px] border-b-2 border-background" />
+          if (!canDelete)
+            return <div className="h-[34px] border-b-2 border-background" />
           return (
             <div className="h-[34px] border-b-2 border-background px-3 flex items-center justify-center">
               <Button
@@ -243,7 +261,18 @@ function PostsTableComponent({
         },
       },
     ],
-    [campaignId, onDelete, selectable, selectedIds, onToggleRow, onToggleAll, posts, visibleSelected, locale, t],
+    [
+      campaignId,
+      onDelete,
+      selectable,
+      selectedIds,
+      onToggleRow,
+      onToggleAll,
+      posts,
+      visibleSelected,
+      locale,
+      t,
+    ],
   )
 
   const activeColumns = useMemo(

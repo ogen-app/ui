@@ -61,8 +61,12 @@ describe('usePlanStatement', () => {
     at('2026-08-22T12:00:00Z')
     render(<Statement tier={PAID} />)
 
-    expect(screen.getByText("You're on the Ogen Max plan, billed monthly.")).toBeInTheDocument()
-    expect(screen.getByText('It auto-renews in 31 days, on September 22, 2026.')).toBeInTheDocument()
+    expect(
+      screen.getByText("You're on the Ogen Max plan, billed monthly."),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('It auto-renews in 31 days, on September 22, 2026.'),
+    ).toBeInTheDocument()
   })
 
   it('leaves the cadence out of a plan nobody pays for', () => {
@@ -71,8 +75,12 @@ describe('usePlanStatement', () => {
     at('2026-08-22T12:00:00Z')
     render(<Statement tier={FREE} />)
 
-    expect(screen.getByText("You're on the Ogen Trial plan.")).toBeInTheDocument()
-    expect(screen.getByText('On this plan since August 1, 2026.')).toBeInTheDocument()
+    expect(
+      screen.getByText("You're on the Ogen Trial plan."),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('On this plan since August 1, 2026.'),
+    ).toBeInTheDocument()
   })
 
   it('lets a pending downgrade outrank the renewal date', () => {
@@ -95,7 +103,9 @@ describe('usePlanStatement', () => {
     )
 
     expect(
-      screen.getByText('You move to Ogen Trial in 31 days, on September 22, 2026.'),
+      screen.getByText(
+        'You move to Ogen Trial in 31 days, on September 22, 2026.',
+      ),
     ).toBeInTheDocument()
     expect(screen.queryByText(/auto-renews/)).not.toBeInTheDocument()
   })
@@ -118,7 +128,9 @@ describe('usePlanStatement', () => {
       />,
     )
 
-    expect(screen.getByText('Ogen Max starts in 31 days, on September 22, 2026.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Ogen Max starts in 31 days, on September 22, 2026.'),
+    ).toBeInTheDocument()
   })
 
   it('says nothing at all before the plan arrives', () => {
@@ -135,9 +147,13 @@ describe('usePlanStatement', () => {
     await i18next.changeLanguage('es')
     render(<Statement tier={PAID} />)
 
-    expect(screen.getByText('Estás en el plan Ogen Max, con facturación mensual.')).toBeInTheDocument()
     expect(
-      screen.getByText('Se renueva automáticamente dentro de 31 días, el 22 de septiembre de 2026.'),
+      screen.getByText('Estás en el plan Ogen Max, con facturación mensual.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Se renueva automáticamente dentro de 31 días, el 22 de septiembre de 2026.',
+      ),
     ).toBeInTheDocument()
   })
 })

@@ -88,7 +88,11 @@ export type Task = {
  * The tombstone a deleted task leaves. Only a rule task needs one — nothing
  * would ever write a manual task again, so that row is simply gone.
  */
-export function dismissTask(task: Task, by: string | null, now: Date = new Date()): Task {
+export function dismissTask(
+  task: Task,
+  by: string | null,
+  now: Date = new Date(),
+): Task {
   return {
     ...task,
     status: 'dismissed',
@@ -138,7 +142,9 @@ export function parseTasks(raw: string | null): Task[] {
   // `description` is newer than the first rows written here, and the store is
   // schemaless. A row without one is filled in rather than dropped — the field
   // is not what makes it a task.
-  return parsed.filter(isTask).map((task) => ({ ...task, description: task.description ?? '' }))
+  return parsed
+    .filter(isTask)
+    .map((task) => ({ ...task, description: task.description ?? '' }))
 }
 
 function isTask(value: unknown): value is Task {
@@ -147,7 +153,9 @@ function isTask(value: unknown): value is Task {
   return (
     typeof task.id === 'string' &&
     typeof task.title === 'string' &&
-    (task.status === 'open' || task.status === 'done' || task.status === 'dismissed') &&
+    (task.status === 'open' ||
+      task.status === 'done' ||
+      task.status === 'dismissed') &&
     typeof task.createdAt === 'string' &&
     typeof task.source === 'object' &&
     task.source !== null
@@ -185,7 +193,10 @@ export function reconcileTasks(
   const live = new Map(
     warnings
       .filter((warning) => raising.has(warning.severity))
-      .map((warning) => [ruleTaskId(warning.campaignId, warning.item.id), warning]),
+      .map((warning) => [
+        ruleTaskId(warning.campaignId, warning.item.id),
+        warning,
+      ]),
   )
   const at = now.toISOString()
   let changed = false
@@ -202,7 +213,13 @@ export function reconcileTasks(
       // particular problem stays in one place instead of accumulating a row
       // per recurrence.
       changed = true
-      return { ...task, status: 'open' as const, closedAt: null, closedBy: null, closedReason: null }
+      return {
+        ...task,
+        status: 'open' as const,
+        closedAt: null,
+        closedBy: null,
+        closedReason: null,
+      }
     }
 
     if (!warning && task.status === 'open') {
@@ -229,7 +246,11 @@ export function reconcileTasks(
       // Empty by design — see `Task.description`. What this task is about is
       // the rule's paragraph, read from the catalogue at render.
       description: '',
-      source: { kind: 'rule', campaignId: warning.campaignId, ruleId: warning.item.id },
+      source: {
+        kind: 'rule',
+        campaignId: warning.campaignId,
+        ruleId: warning.item.id,
+      },
       campaignId: warning.campaignId,
       fix: warning.item.fix,
       assigneeId: null,

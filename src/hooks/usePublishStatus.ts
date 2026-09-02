@@ -76,7 +76,10 @@ export function usePublishStatus(post: Post): PublishStatus | null {
  * one collision worth paying two characters to avoid — "3m" meaning three
  * minutes and "3m" meaning three months call for very different reactions.
  */
-function compactAmount({ value, unit }: PublishCountdown, locale: string): string {
+function compactAmount(
+  { value, unit }: PublishCountdown,
+  locale: string,
+): string {
   return formatNumber(
     Math.abs(value),
     { style: 'unit', unit, unitDisplay: 'short' },
