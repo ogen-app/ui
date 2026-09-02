@@ -71,7 +71,7 @@ export function usePostVersions(postId: string): UsePostVersionsResult {
       await flushPendingSave(postId)
       return restorePost(postId, versionNumber)
     },
-    onSuccess: (post) => {
+    onSuccess: async (post) => {
       // The response is the hydrated post, so the editor can take it directly
       // rather than refetching what we already hold.
       qc.setQueryData(postKey(postId), post)
@@ -81,7 +81,7 @@ export function usePostVersions(postId: string): UsePostVersionsResult {
       // We hold the restored row, so land it rather than invalidate — the
       // list shows the restored title immediately instead of flashing the
       // pre-restore one through a refetch (postCache's own rule).
-      landSavedPost(qc, post)
+      await landSavedPost(qc, post)
     },
   })
 

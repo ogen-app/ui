@@ -124,13 +124,18 @@ function Offer({
     <button
       type="button"
       onClick={onClick}
+      // A path nobody has wired renders disabled rather than as a live tile
+      // that does nothing — the callback being supplied is what says the flow
+      // exists.
+      disabled={!onClick}
       className={cn(
         'group flex flex-col gap-2 rounded-md p-4 text-left transition-colors',
+        'disabled:cursor-default disabled:opacity-60',
         // The recommended one is not merely first — a row of three identical
         // tiles is a menu, and a menu is what the blank box already was.
         recommended
-          ? 'bg-secondary hover:bg-tertiary'
-          : 'border border-quaternary hover:bg-secondary',
+          ? 'bg-secondary enabled:hover:bg-tertiary'
+          : 'border border-quaternary enabled:hover:bg-secondary',
       )}
     >
       <span className="flex items-center gap-2">

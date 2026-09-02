@@ -73,6 +73,26 @@ export function AccountSlot({
     )
   }
 
+  // The chosen account disconnected and nothing else is left: `mismatched`
+  // keeps this out of the settled branch above, but a picker here would open
+  // onto an empty menu. There is no choice to offer — say what the warning for
+  // an unconnected platform says, keeping the name the post still carries.
+  if (account.accounts.length === 0) {
+    return (
+      <span className="flex min-w-0 items-center gap-1.5 text-tertiary-foreground">
+        <WarningHint
+          focusable
+          text={`No ${platformName} account is connected, so nothing can publish this post. Connect one in Platform settings.`}
+        />
+        <span className="truncate">
+          {account.name
+            ? `${account.name} — disconnected`
+            : 'No account connected'}
+        </span>
+      </span>
+    )
+  }
+
   return (
     <DropdownMenu>
       <QuickBarTrigger label="Change the account this post publishes as">

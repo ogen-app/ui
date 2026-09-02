@@ -64,10 +64,13 @@ async function write(
     : campaign
   const ids = nextIds(base)
   // Compared against the row as the server holds it, not the expanded base —
-  // a legacy campaign whose expanded set differs from the stored `[]` must
-  // write, because that write *is* the pin. (An empty bank expands to `[]`,
-  // stays equal, and correctly writes nothing.)
+  // and never skipped for a campaign still in the legacy whole-bank state:
+  // its stored `use_assets: true, asset_ids: []` means "everything" to the
+  // server, so even when the bank expands to `[]` the write must land — that
+  // write *is* the pin (`membershipPayload([])` turns the sentinel into
+  // `use_assets: false`, which is what an empty bank was generating from).
   if (
+    !seedsWholeBank(campaign) &&
     ids.length === campaign.asset_ids.length &&
     ids.every((id, i) => id === campaign.asset_ids[i])
   ) {
@@ -86,25 +89,33 @@ async function write(
  *
  * Reports its own failure: this is called from the upload store and from
  * create-and-open, neither of which goes through the mutation cache that
- * toasts everything else.
+ * toasts everything else. It also *resolves* that failure — `true` once the
+ * campaign holds the documents, `false` when the write was refused — because
+ * two callers act ahead of the write and must be able to stop or take it
+ * back: the Content page navigates into the campaign's copy, and a post
+ * keeps the id in its own reading list.
  */
 export function addToCampaign(
   campaignId: string,
   assetIds: string[],
-): Promise<void> {
+): Promise<boolean> {
   return enqueue(campaignId, () =>
     write(campaignId, (campaign) => {
       const held = new Set(campaign.asset_ids)
       return [...campaign.asset_ids, ...assetIds.filter((id) => !held.has(id))]
     }),
-  ).catch((error: unknown) => {
-    toast.error('Unable to add to this campaign', {
-      description:
-        error instanceof Error
-          ? error.message
-          : 'The document was saved but is not attached to the campaign.',
-    })
-  })
+  ).then(
+    () => true,
+    (error: unknown) => {
+      toast.error('Unable to add to this campaign', {
+        description:
+          error instanceof Error
+            ? error.message
+            : 'The document was saved but is not attached to the campaign.',
+      })
+      return false
+    },
+  )
 }
 
 /**

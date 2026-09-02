@@ -35,6 +35,14 @@ import type {
  * JSON seed, and `localStorage` where the database goes. That is invisible from
  * here on purpose — this file is written as though the API existed, so the day
  * it does the only edit is in the service.
+ *
+ * Keyed without the workspace id, like `WORKSPACE_MEMBERS_KEY`: the request is
+ * scoped by the tab's `X-Workspace-Id` (the stub reads the same pin), and every
+ * path that changes which workspace the tab is in tears the whole cache down —
+ * a switch and an active-workspace delete clear the query client
+ * (`useSwitchWorkspace`, `useDeleteWorkspace`), stale-workspace recovery and
+ * login/logout end in a full load or a clear. That teardown is what keeps an
+ * unkeyed entry from ever surviving into another workspace.
  */
 export const BRAND_KEY = ['brand'] as const
 

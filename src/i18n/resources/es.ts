@@ -162,6 +162,9 @@ export const es: Translation = {
         'Las invitaciones caducan a los siete días y solo pueden usarse una vez',
       brokenBody:
         'Pide a quien te invitó que te envíe otra. Si ya la aceptaste, <login>inicia sesión</login>.',
+      previewFailedTitle: 'No se ha podido comprobar la invitación',
+      previewFailedSubtitle:
+        'Algo ha fallado por nuestra parte — puede que el enlace siga siendo válido',
       joinBody:
         'Has iniciado sesión como {{email}}, que es a quien va dirigida esta invitación. Al aceptarla, este espacio se añade a tu cuenta.',
       joinSubmit: 'ACEPTAR INVITACIÓN',
@@ -499,7 +502,9 @@ export const es: Translation = {
       resend: 'REENVIAR',
       cancel: 'CANCELAR',
       cancelInvitation: 'Cancelar la invitación a {{email}}',
-      invitedBy: 'invitada por {{name}}',
+      // Agrees with the (elided) "invitación", never with the person — the
+      // invitee's gender is unknown.
+      invitedBy: 'invitación de {{name}}',
       expiresToday: 'caduca hoy',
       expiresIn_one: 'caduca mañana',
       expiresIn_other: 'caduca en {{count}} días',
@@ -508,7 +513,9 @@ export const es: Translation = {
       expiredAgo_other: 'caducó hace {{count}} días',
       roleChanged: 'Rol actualizado para {{name}}',
       roleChangeFailed: 'No se ha podido cambiar el rol',
-      removed: '{{name}} eliminada',
+      // Impersonal construction on purpose: no participle agreeing with a
+      // person whose gender we don't know.
+      removed: 'Se ha eliminado a {{name}}',
       removeFailed: 'No se ha podido eliminar',
       invitationSent: 'Invitación enviada a {{email}}',
       inviteFailed: 'No se ha podido enviar la invitación',
@@ -519,7 +526,8 @@ export const es: Translation = {
       removeBody:
         'Esto elimina a {{name}} del espacio y borra todo lo que creó en él — sus campañas, las publicaciones de esas campañas y los archivos que subió — para todo el mundo. Su cuenta de acceso y sus otros espacios no se tocan. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
       removeConfirmLabel: 'Escribe su correo electrónico para confirmar',
-      removeDismiss: 'MANTENERLA',
+      // No clitic pronoun: "MANTENERLA/LO" would gender the member being kept.
+      removeDismiss: 'NO ELIMINAR',
       removeConfirm: 'ELIMINAR DE ESTE ESPACIO',
     },
     dangerZone: {
