@@ -454,6 +454,35 @@ would be two sources of truth and no correction.
   there is no separate video-metadata form, because the Zernio submit request
   models nothing else yet (CON-159).
 
+## An asset opens as a document only if we know it is one {#asset-opening}
+
+**Decision.** `AssetDocument` asks `opensAsDocument` (`lib/assetCategory.ts`)
+before it reaches the editor. `null | MD | PDF | URL` are documents; everything
+else — including a `type` this build has never seen — gets `UnsupportedAsset`, a
+read-only state, and loses the "Download as Markdown" item with it.
+
+**Why.** The screen used to treat the editor as its fallback: a URL asset still
+being scraped got `ScrapeState`, and *anything else* got `AssetEditor`. That is
+only safe while every asset is text, and the server's vocabulary grows without
+asking the client — `MD | PDF` became `MD | PDF | URL` in CON-222 and takes
+`IMG` next. `AssetEditor` seeds BlockNote from `asset.content` and autosaves it
+back, so the first asset type whose `content` is not a document is silently
+overwritten by anyone who opens it and types. CON-105 writes image assets with
+`content = "[]"`, which renders as an editable paragraph reading `[]` over a
+field that is meant to hold the image's description (CON-16 D4). Filed as
+CON-235.
+
+Two consequences worth keeping:
+
+- **PDF is a document.** What you edit there is the extracted text, and that
+  text is what the embeddings are built from — so the rule is about the *body*,
+  not about whether bytes sit behind the row.
+- **The fallback is a floor, not a destination.** A kind worth showing properly
+  gets its own view and stops arriving here. `IMG` will, once the asset DTO
+  carries a URL for the original — `AssetFile` exposes `thumbnail_url` and
+  nothing else today, which is why the image viewer is not written yet rather
+  than written against a guess. See the `content-bank-images` flag comment.
+
 ## English is bundled, every other language is a chunk {#i18n}
 
 **Decision.** i18next + react-i18next, one namespace, with English statically
@@ -550,6 +579,53 @@ full for those surfaces and gated: with the app only part-converted, choosing
 it today would yield a half-Spanish UI, and the copy has had no native review.
 Releasing it is `enabled: true`.
 
+## A flag can be forced per browser, on staging only {#staging-flag-overrides}
+
+**Decision.** `useFeatureFlag`/`isFeatureEnabled` resolve
+`readFlagOverrides()[flag] ?? FEATURE_FLAGS[flag]`. The override set lives in
+**localStorage**, is set by a bookmarkable `?ff=tasks,-activity` link or the
+unlisted `/flags` panel, and the whole layer is compiled out of any build that
+was not made with `VITE_DEV_TOOLS=1`.
+
+**Why.** On a shared staging deploy the two audiences want opposite things: the
+back end needs to exercise a half-built feature, and the copy team needs the app
+to look like the app — a copywriter seeing unfinished work costs a round of
+feedback about a decision nobody has made yet. Before this, the only way to give
+one person a different answer was a branch and a deploy of their own, which is
+exactly the tedium that stops people testing.
+
+Four things follow, and each was a wrong answer first:
+
+- **localStorage, not `/api/settings`.** That row is tenant-scoped and readable
+  by the whole workspace ([user-scoped settings](#user-scoped-settings)), so a
+  flag stored there would turn the feature on for the very people it is being
+  kept from. Per-browser is the grain the problem has.
+- **The link is the feature; the panel is for undoing.** `?ff=` is modelled on
+  `?lang=` ([i18n](#i18n)) down to the `replaceState` strip and its position in
+  `main.tsx` — read before `createRouter`, because route guards consult flags in
+  `beforeLoad`. One bookmark per feature, and they compose.
+- **A production build does not contain it.** `DEV_TOOLS` is a build-time
+  constant, so the reader folds to `{}`, the panel's `import()` becomes
+  unreachable and its chunk is never emitted. Verified by grepping `dist/` both
+  ways. This is what makes the promise real: in production, writing the
+  localStorage key by hand does nothing. An unlisted URL is not a security
+  boundary and is not asked to be one — the protection on staging is that seeing
+  unfinished work requires deliberately switching it on.
+- **Overrides announce themselves.** `OverrideMarker` sits above the assistant
+  trigger (the CON-178 bottom-left corner is only empty in the content column —
+  a viewport-fixed badge there lands on the sidebar's account row) whenever
+  any flag is forced. Without it, an override left on weeks ago becomes a bug
+  report nobody else can reproduce.
+
+**Caveat worth knowing.** A flag hides UI, not data. Tasks writes its list into
+the tenant settings row, so a teammate switching it on and creating tasks on
+staging puts that data in the shared workspace — others just have no screen for
+it. Same rule as always: a flag is not a permission.
+
+**Where.** `config/flagOverrides.ts` (+ its test), the resolver in
+`config/featureFlags.ts`, `devtools/FlagsPanel.tsx`, `devtools/OverrideMarker.tsx`,
+`routes/flags.tsx`, the `VITE_DEV_TOOLS` build arg in the `Dockerfile`.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain
@@ -625,7 +701,9 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
   ready building block; real invitations (email loop) await backend support
   (CON-26).
 - **Dark mode** is scaffolded (`.dark` block) but effectively empty.
-- The **Imagery** Content-Bank tab renders nothing yet (`assetCategory.ts`); AI
-  image generation + storage there is planned but **secondary** (CON-105/88/83).
-- **Lint/format configs** (eslint/prettier/stylelint) are installed but not
-  committed to this repo.
+- **Images can't be Content-Bank assets yet.** `assets.type` is `MD | PDF | URL`
+  and the upload endpoint takes `.md` and `.pdf` only, so `IMG` is a type the
+  client declares and the server cannot produce (CON-16). The upload surface
+  offers images behind `content-bank-images`, off; an `IMG` asset that did
+  arrive opens read-only — see [below](#asset-opening). AI image *generation* is
+  planned but **secondary** (CON-105/88/83).

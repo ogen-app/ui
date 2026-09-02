@@ -6,8 +6,17 @@ import {
   HeartIcon,
   RepeatIcon,
 } from '@phosphor-icons/react'
-import { PLATFORM_FOLDS, threadSegments, type ThreadSegment } from '@/lib/socialText.ts'
-import { FoldedText, PreviewAvatar, PreviewMedia, PreviewSurface } from './previewParts.tsx'
+import {
+  PLATFORM_FOLDS,
+  threadSegments,
+  type ThreadSegment,
+} from '@/lib/socialText.ts'
+import {
+  FoldedText,
+  PreviewAvatar,
+  PreviewMedia,
+  PreviewSurface,
+} from './previewParts.tsx'
 import { TWITTER as C } from './previewTheme.ts'
 import type { PreviewAuthor, PreviewMediaItem, PreviewProps } from './types.ts'
 
@@ -93,13 +102,24 @@ function Tweet({
   const handle = author.username ? `@${author.username}` : null
 
   return (
-    <div className="flex gap-2 p-3" style={{ paddingBottom: connector ? 0 : 12 }}>
+    <div
+      className="flex gap-2 p-3"
+      style={{ paddingBottom: connector ? 0 : 12 }}
+    >
       <div className="flex shrink-0 flex-col items-center">
-        <PreviewAvatar src={author.avatarUrl} name={name} size={40} background={C.link} />
+        <PreviewAvatar
+          src={author.avatarUrl}
+          name={name}
+          size={40}
+          background={C.link}
+        />
         {/* X's thread line: what makes several cards read as one post rather
             than as three unrelated ones in a feed. */}
         {connector && (
-          <div className="mt-1 min-h-2 w-0.5 flex-1" style={{ background: C.border }} />
+          <div
+            className="mt-1 min-h-2 w-0.5 flex-1"
+            style={{ background: C.border }}
+          />
         )}
       </div>
 
@@ -157,7 +177,10 @@ function Tweet({
             "which post in the thread is too long" is unanswerable from the
             notes alone once a thread runs past a few segments. */}
         {thread && segment.over && (
-          <div className="pt-1 font-semibold" style={{ color: C.danger, fontSize: 12 }}>
+          <div
+            className="pt-1 font-semibold"
+            style={{ color: C.danger, fontSize: 12 }}
+          >
             {segment.count}/{charLimit} characters — this post is too long
           </div>
         )}
@@ -168,7 +191,11 @@ function Tweet({
           // radius — `PreviewMedia` owns its own layout inside.
           <div
             className="mt-3"
-            style={{ borderRadius: 16, overflow: 'hidden', border: `1px solid ${C.border}` }}
+            style={{
+              borderRadius: 16,
+              overflow: 'hidden',
+              border: `1px solid ${C.border}`,
+            }}
           >
             <PreviewMedia items={media} background={C.surface} />
           </div>

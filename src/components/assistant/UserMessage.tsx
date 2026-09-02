@@ -27,7 +27,9 @@ export function UserMessage({ content }: { content: string }) {
     // Read the line height rather than assuming it: the bubble's type scale is
     // free to change without this quietly clamping at the wrong place.
     const lineHeight = parseFloat(getComputedStyle(el).lineHeight)
-    setCollapsed((Number.isFinite(lineHeight) ? lineHeight : 21) * COLLAPSED_LINES)
+    setCollapsed(
+      (Number.isFinite(lineHeight) ? lineHeight : 21) * COLLAPSED_LINES,
+    )
     // scrollHeight is the unclamped height even while max-height hides part of
     // it, which is exactly what the expanded state needs.
     setFull(el.scrollHeight)
@@ -47,7 +49,13 @@ export function UserMessage({ content }: { content: string }) {
   // Open and *settled*: the clamp is dropped altogether once the animation has
   // played, so a later reflow can't be cut off by a stale pixel height.
   const [settled, setSettled] = useState(false)
-  const maxHeight = expanded ? (settled ? undefined : full) : overflowing ? collapsed : undefined
+  const maxHeight = expanded
+    ? settled
+      ? undefined
+      : full
+    : overflowing
+      ? collapsed
+      : undefined
 
   const toggle = () => {
     if (!expanded) {

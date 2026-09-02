@@ -1,5 +1,5 @@
 import { readSSEStream } from '@/lib/sse'
-import { apiUrl } from './base'
+import { scopedFetch } from './base'
 import { errorMessage } from './errors'
 import { isRecord } from './json'
 import type { AppEvent } from '@/types/events'
@@ -28,8 +28,7 @@ export async function streamAppEvents(
   // requires the parameter and answers 400 without it; the server already
   // scopes what it sends to the caller's tenant, so narrowing here would only
   // mean re-subscribing on every navigation for no privacy gain.
-  const res = await fetch(apiUrl('/api/events?topics=all'), {
-    credentials: 'include',
+  const res = await scopedFetch('/api/events?topics=all', {
     headers: { Accept: 'text/event-stream' },
     signal,
   })
@@ -63,7 +62,8 @@ function parseEnvelope(data: string): AppEvent | null {
   } catch {
     return null
   }
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+    return null
   const record = parsed as Record<string, unknown>
   return {
     id: typeof record.id === 'string' ? record.id : '',
@@ -73,4 +73,3 @@ function parseEnvelope(data: string): AppEvent | null {
     created_at: typeof record.created_at === 'string' ? record.created_at : '',
   }
 }
-

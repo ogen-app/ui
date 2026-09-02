@@ -103,7 +103,9 @@ export function resolveVideoConstraints(
         ? MAX_VIDEO_UPLOAD_BYTES
         : Math.min(platformMax, MAX_VIDEO_UPLOAD_BYTES),
     cappedByOgen: platformMax === null || platformMax > MAX_VIDEO_UPLOAD_BYTES,
-    allowedMimes: formats.map((f) => FORMAT_MIMES[f.toLowerCase()]).filter(Boolean),
+    allowedMimes: formats
+      .map((f) => FORMAT_MIMES[f.toLowerCase()])
+      .filter(Boolean),
     allowedFormats: formats,
     maxDurationSeconds: bound(c.max_duration_seconds),
     minDurationSeconds: bound(c.min_duration_seconds),
@@ -120,7 +122,9 @@ export function videoFormatOf(mimeType: string): string {
   for (const [format, mime] of Object.entries(FORMAT_MIMES)) {
     if (mime === mimeType) return format
   }
-  return mimeType.startsWith('video/') ? mimeType.slice('video/'.length) : mimeType
+  return mimeType.startsWith('video/')
+    ? mimeType.slice('video/'.length)
+    : mimeType
 }
 
 /**

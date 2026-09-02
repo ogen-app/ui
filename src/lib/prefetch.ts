@@ -13,15 +13,15 @@
  * depends on: someone is logged in.
  */
 
-import { queryClient, QUERY_FIVE_MINUTES } from "@/lib/queryClient";
-import { CAMPAIGN_TYPES_KEY } from "@/hooks/useCampaigns";
-import { TAGS_KEY } from "@/hooks/useTags";
-import { PLATFORMS_KEY } from "@/hooks/usePlatforms";
-import { listCampaignTypes } from "@/services/api/campaigns";
-import { listTags } from "@/services/api/tags";
-import { listPlatforms } from "@/services/api/platforms";
+import { queryClient, QUERY_FIVE_MINUTES } from '@/lib/queryClient'
+import { CAMPAIGN_TYPES_KEY } from '@/hooks/useCampaigns'
+import { TAGS_KEY } from '@/hooks/useTags'
+import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
+import { listCampaignTypes } from '@/services/api/campaigns'
+import { listTags } from '@/services/api/tags'
+import { listPlatforms } from '@/services/api/platforms'
 
-let started = false;
+let started = false
 
 /**
  * Re-arms the prefetch. Called from `clearAllApplicationData` on logout:
@@ -31,27 +31,27 @@ let started = false;
  * still-warm cache.
  */
 export function resetPrefetchLatch(): void {
-  started = false;
+  started = false
 }
 
 /** Idempotent: the layout remounts on every navigation, the fetches don't. */
 export function prefetchReferenceData(): void {
-  if (started) return;
-  started = true;
+  if (started) return
+  started = true
 
   void queryClient.prefetchQuery({
     queryKey: CAMPAIGN_TYPES_KEY,
     queryFn: listCampaignTypes,
     staleTime: Infinity,
-  });
+  })
   void queryClient.prefetchQuery({
     queryKey: TAGS_KEY,
     queryFn: listTags,
     staleTime: QUERY_FIVE_MINUTES,
-  });
+  })
   void queryClient.prefetchQuery({
     queryKey: PLATFORMS_KEY,
     queryFn: listPlatforms,
     staleTime: Infinity,
-  });
+  })
 }

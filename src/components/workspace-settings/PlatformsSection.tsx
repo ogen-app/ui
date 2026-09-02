@@ -7,7 +7,11 @@ import { AccountAvatar } from '@/components/ui/account-avatar'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import {
   connectedAccounts,
   type PlatformPostType,
@@ -43,7 +47,11 @@ function PlatformsSectionComponent() {
         // (SettingsRow zeroes it via first:pt-0).
         <ul className="flex flex-col border-t border-border pt-6 divide-y divide-border">
           {connected.map((v) => (
-            <PlatformRow key={v.platform.id} view={v} onReconnect={() => start(v)} />
+            <PlatformRow
+              key={v.platform.id}
+              view={v}
+              onReconnect={() => start(v)}
+            />
           ))}
         </ul>
       )}
@@ -80,14 +88,26 @@ function platformNotice(view: PlatformView, t: TFunction): string {
  * account carries the platform's mark on its avatar, and its own button
  * carries the connection state.
  */
-function PlatformRow({ view, onReconnect }: { view: PlatformView; onReconnect: () => void }) {
+function PlatformRow({
+  view,
+  onReconnect,
+}: {
+  view: PlatformView
+  onReconnect: () => void
+}) {
   const { t } = useTranslation()
   const accounts = connectedAccounts(view)
   const notice = platformNotice(view, t)
 
   return (
     <SettingsRow description={notice ? <p>{notice}</p> : undefined}>
-      {accounts.length > 0 && <ConnectedAccounts view={view} accounts={accounts} onReconnect={onReconnect} />}
+      {accounts.length > 0 && (
+        <ConnectedAccounts
+          view={view}
+          accounts={accounts}
+          onReconnect={onReconnect}
+        />
+      )}
       <AutoPublishControl view={view} />
       {/* The seeded `cadence` and `constraints` prose is stand-in copy, so
           showing it would state a rule the platform doesn't actually enforce.
@@ -114,7 +134,9 @@ function PlatformRow({ view, onReconnect }: { view: PlatformView; onReconnect: (
  */
 function PostTypeChips({ view }: { view: PlatformView }) {
   const { t } = useTranslation()
-  const supported = new Set(view.connectedPublishers.flatMap((p) => p.supported_post_types))
+  const supported = new Set(
+    view.connectedPublishers.flatMap((p) => p.supported_post_types),
+  )
   const items = view.allowed.filter((pt) => supported.has(pt.slug))
 
   return (
@@ -138,10 +160,14 @@ function ChipGroup({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[13px] font-normal text-input-label h-4">{label}</span>
+      <span className="text-[13px] font-normal text-input-label h-4">
+        {label}
+      </span>
       {items.length === 0 ? (
         <div className="h-10 py-1 border-b border-transparent flex items-center gap-2 flex-wrap">
-          <span className="text-[13px] leading-4 text-primary-foreground">{emptyText}</span>
+          <span className="text-[13px] leading-4 text-primary-foreground">
+            {emptyText}
+          </span>
         </div>
       ) : (
         <ul className="flex flex-wrap gap-1.5">
@@ -172,7 +198,12 @@ function ConnectedAccounts({
   return (
     <ul className="flex flex-col gap-3 min-w-0">
       {accounts.map((a) => (
-        <AccountRow key={a.id} view={view} account={a} onReconnect={onReconnect} />
+        <AccountRow
+          key={a.id}
+          view={view}
+          account={a}
+          onReconnect={onReconnect}
+        />
       ))}
     </ul>
   )
@@ -211,20 +242,34 @@ function AccountRow({
 
   return (
     <li className="flex items-center gap-3 min-w-0">
-      <AccountAvatar src={account.avatar_url} name={name} platform={view.info} />
+      <AccountAvatar
+        src={account.avatar_url}
+        name={name}
+        platform={view.info}
+      />
       <div className="flex flex-col items-start min-w-0 flex-1">
         {/* The row's headline now that the platform heading is gone — it
             carries the weight that heading used to. */}
-        <p className="w-full text-base font-medium truncate text-left">{name}</p>
+        <p className="w-full text-base font-medium truncate text-left">
+          {name}
+        </p>
         <p className="w-full text-xs text-tertiary-foreground truncate text-left">
           {broken
-            ? t('workspaceSettings.platforms.accountInactive', { platform: view.info.name })
+            ? t('workspaceSettings.platforms.accountInactive', {
+                platform: view.info.name,
+              })
             : `@${account.username}`}
         </p>
       </div>
 
       {broken ? (
-        <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={onReconnect}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          onClick={onReconnect}
+        >
           <ArrowsClockwiseIcon />
           <span>{t('workspaceSettings.platforms.reconnect')}</span>
         </Button>
@@ -247,12 +292,16 @@ function AccountRow({
             // as a warning about the account itself.
             className="shrink-0 hover:text-destructive"
             onClick={() => setConfirming(true)}
-            aria-label={t('workspaceSettings.platforms.disconnectAccount', { name })}
+            aria-label={t('workspaceSettings.platforms.disconnectAccount', {
+              name,
+            })}
           >
             <PlugsIcon className="size-5" weight="regular" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{t('workspaceSettings.platforms.disconnectTooltip')}</TooltipContent>
+        <TooltipContent>
+          {t('workspaceSettings.platforms.disconnectTooltip')}
+        </TooltipContent>
       </Tooltip>
 
       <DisconnectAccountDialog

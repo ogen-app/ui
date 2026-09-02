@@ -22,7 +22,9 @@ async function signIn(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   login.mockReset().mockResolvedValue({ id: 's1' })
-  checkSession.mockReset().mockResolvedValue({ id: 'u1', email: 'ada@example.com' })
+  checkSession
+    .mockReset()
+    .mockResolvedValue({ id: 'u1', email: 'ada@example.com' })
   localStorage.clear()
 })
 
@@ -36,7 +38,9 @@ describe('AuthLoginForm', () => {
 
     await signIn(user)
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/campaigns/abc'))
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/campaigns/abc'),
+    )
   })
 
   it('refuses a redirect that leaves the app', async () => {
@@ -78,12 +82,16 @@ describe('AuthLoginForm', () => {
     login.mockRejectedValue(new Error('Invalid email or password'))
     await renderWithProviders(<AuthLoginForm />, { path: LOGIN_ROUTE })
 
-    expect(screen.getByRole('link', { name: /reset it here/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /reset it here/i }),
+    ).toBeInTheDocument()
 
     await signIn(user)
     await screen.findByText('Invalid email or password')
 
-    expect(screen.getByRole('link', { name: /reset it here/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /reset it here/i }),
+    ).toBeInTheDocument()
   })
 
   it('does not print the password policy on a public screen', async () => {
@@ -100,12 +108,16 @@ describe('AuthLoginForm', () => {
     await renderWithProviders(<AuthLoginForm />, { path: LOGIN_ROUTE })
 
     await signIn(user)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Invalid email or password',
+    )
 
     await user.type(screen.getByLabelText('Password'), '2')
 
     await waitFor(() =>
-      expect(screen.getByRole('alert')).not.toHaveTextContent('Invalid email or password'),
+      expect(screen.getByRole('alert')).not.toHaveTextContent(
+        'Invalid email or password',
+      ),
     )
   })
 
@@ -114,7 +126,9 @@ describe('AuthLoginForm', () => {
     // must not strand the user on the login screen with a working session.
     const user = userEvent.setup()
     checkSession.mockRejectedValue(new Error('Server unavailable'))
-    const { router } = await renderWithProviders(<AuthLoginForm />, { path: LOGIN_ROUTE })
+    const { router } = await renderWithProviders(<AuthLoginForm />, {
+      path: LOGIN_ROUTE,
+    })
 
     await signIn(user)
 

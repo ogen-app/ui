@@ -1,4 +1,4 @@
-import { apiUrl } from "./base";
+import { apiUrl } from './base'
 
 /**
  * Thrown when a request never reached the backend — the `fetch` promise itself
@@ -10,8 +10,8 @@ import { apiUrl } from "./base";
  */
 export class ServerUnavailableError extends Error {
   constructor() {
-    super("The server is unreachable");
-    this.name = "ServerUnavailableError";
+    super('The server is unreachable')
+    this.name = 'ServerUnavailableError'
   }
 }
 
@@ -22,12 +22,12 @@ export class ServerUnavailableError extends Error {
  */
 export async function fetchOrThrowUnavailable(
   input: RequestInfo,
-  init?: RequestInit
+  init?: RequestInit,
 ): Promise<Response> {
   try {
-    return await fetch(typeof input === "string" ? apiUrl(input) : input, init);
+    return await fetch(typeof input === 'string' ? apiUrl(input) : input, init)
   } catch {
-    throw new ServerUnavailableError();
+    throw new ServerUnavailableError()
   }
 }
 
@@ -41,12 +41,12 @@ export async function fetchOrThrowUnavailable(
  * analytics database, which is a state to explain, not an error to report.
  */
 export class ApiError extends Error {
-  readonly status: number;
+  readonly status: number
 
   constructor(status: number, message: string) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
   }
 }
 
@@ -57,24 +57,24 @@ export class ApiError extends Error {
  * self-contained ("file is N bytes; platform allows up to M").
  */
 type PlatformValidationError = {
-  message?: string;
-  rule?: string;
-};
+  message?: string
+  rule?: string
+}
 
 type ApiErrorBody = {
-  error?: string;
+  error?: string
   /**
    * Keyed by platform id. Sent with 422s from the validation gate — post
    * create, the draft → ready_for_publish PUT, and POST /:id/schedule.
    */
-  platform_validation?: Record<string, PlatformValidationError[]>;
-};
+  platform_validation?: Record<string, PlatformValidationError[]>
+}
 
 /**
  * Caps how many validation details are folded into one message so a post
  * with many failing attachments doesn't produce a paragraph.
  */
-const MAX_VALIDATION_DETAILS = 4;
+const MAX_VALIDATION_DETAILS = 4
 
 /**
  * The account-selection 422s (CON-150) send a bare machine code as `error`
@@ -87,27 +87,27 @@ const MAX_VALIDATION_DETAILS = 4;
  */
 const ACCOUNT_SELECTION_MESSAGES: Record<string, string> = {
   account_selection_required:
-    "This platform has more than one connected account, so the post has to say which one it publishes as. Pick an account and try again.",
+    'This platform has more than one connected account, so the post has to say which one it publishes as. Pick an account and try again.',
   account_unavailable:
-    "The account this post publishes as is no longer connected. Pick another one and try again.",
+    'The account this post publishes as is no longer connected. Pick another one and try again.',
   account_platform_mismatch:
-    "The account this post publishes as belongs to a different platform. Pick one that matches and try again.",
-};
+    'The account this post publishes as belongs to a different platform. Pick one that matches and try again.',
+}
 
 function validationDetails(
-  byPlatform: ApiErrorBody["platform_validation"]
+  byPlatform: ApiErrorBody['platform_validation'],
 ): string[] {
-  if (!byPlatform || typeof byPlatform !== "object") return [];
+  if (!byPlatform || typeof byPlatform !== 'object') return []
   // Dedupe: several attachments can fail the same rule with the same text.
-  const seen = new Set<string>();
+  const seen = new Set<string>()
   for (const errs of Object.values(byPlatform)) {
-    if (!Array.isArray(errs)) continue;
+    if (!Array.isArray(errs)) continue
     for (const e of errs) {
-      const detail = e?.message || e?.rule;
-      if (detail) seen.add(detail);
+      const detail = e?.message || e?.rule
+      if (detail) seen.add(detail)
     }
   }
-  return [...seen];
+  return [...seen]
 }
 
 /**
@@ -119,21 +119,21 @@ function validationDetails(
  */
 export async function errorMessage(
   res: Response,
-  fallback: string
+  fallback: string,
 ): Promise<string> {
   try {
-    const body = (await res.json()) as ApiErrorBody;
-    if (typeof body.error === "string" && body.error.length > 0) {
-      const accountMessage = ACCOUNT_SELECTION_MESSAGES[body.error];
-      if (accountMessage) return accountMessage;
-      const details = validationDetails(body.platform_validation);
-      if (details.length === 0) return body.error;
-      const shown = details.slice(0, MAX_VALIDATION_DETAILS);
-      const more = details.length - shown.length;
-      return `${body.error}: ${shown.join("; ")}${more > 0 ? ` (+${more} more)` : ""}`;
+    const body = (await res.json()) as ApiErrorBody
+    if (typeof body.error === 'string' && body.error.length > 0) {
+      const accountMessage = ACCOUNT_SELECTION_MESSAGES[body.error]
+      if (accountMessage) return accountMessage
+      const details = validationDetails(body.platform_validation)
+      if (details.length === 0) return body.error
+      const shown = details.slice(0, MAX_VALIDATION_DETAILS)
+      const more = details.length - shown.length
+      return `${body.error}: ${shown.join('; ')}${more > 0 ? ` (+${more} more)` : ''}`
     }
   } catch {
     // fall through
   }
-  return fallback;
+  return fallback
 }

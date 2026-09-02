@@ -17,11 +17,26 @@ const DAY = 24 * HOUR
 
 describe('publishCountdown', () => {
   it('counts forward in the largest unit that still fits', () => {
-    expect(publishCountdown(at(5 * MINUTE), NOW)).toEqual({ value: 5, unit: 'minute' })
-    expect(publishCountdown(at(3 * HOUR), NOW)).toEqual({ value: 3, unit: 'hour' })
-    expect(publishCountdown(at(2 * DAY), NOW)).toEqual({ value: 2, unit: 'day' })
-    expect(publishCountdown(at(14 * DAY), NOW)).toEqual({ value: 2, unit: 'week' })
-    expect(publishCountdown(at(90 * DAY), NOW)).toEqual({ value: 3, unit: 'month' })
+    expect(publishCountdown(at(5 * MINUTE), NOW)).toEqual({
+      value: 5,
+      unit: 'minute',
+    })
+    expect(publishCountdown(at(3 * HOUR), NOW)).toEqual({
+      value: 3,
+      unit: 'hour',
+    })
+    expect(publishCountdown(at(2 * DAY), NOW)).toEqual({
+      value: 2,
+      unit: 'day',
+    })
+    expect(publishCountdown(at(14 * DAY), NOW)).toEqual({
+      value: 2,
+      unit: 'week',
+    })
+    expect(publishCountdown(at(90 * DAY), NOW)).toEqual({
+      value: 3,
+      unit: 'month',
+    })
   })
 
   it('rounds before choosing the unit, not after', () => {
@@ -39,15 +54,27 @@ describe('publishCountdown', () => {
   it('reads under a minute either way as "now"', () => {
     // The publisher worker polls; naming the seconds would claim a precision
     // the countdown does not have.
-    expect(publishCountdown(at(20_000), NOW)).toEqual({ value: 0, unit: 'second' })
-    expect(publishCountdown(at(-20_000), NOW)).toEqual({ value: 0, unit: 'second' })
+    expect(publishCountdown(at(20_000), NOW)).toEqual({
+      value: 0,
+      unit: 'second',
+    })
+    expect(publishCountdown(at(-20_000), NOW)).toEqual({
+      value: 0,
+      unit: 'second',
+    })
   })
 
   it('goes negative once the date has passed', () => {
     // An overdue post is the case worth getting right: the worker is late, or
     // stuck, and the bar has to say so rather than silently show nothing.
-    expect(publishCountdown(at(-5 * MINUTE), NOW)).toEqual({ value: -5, unit: 'minute' })
-    expect(publishCountdown(at(-2 * DAY), NOW)).toEqual({ value: -2, unit: 'day' })
+    expect(publishCountdown(at(-5 * MINUTE), NOW)).toEqual({
+      value: -5,
+      unit: 'minute',
+    })
+    expect(publishCountdown(at(-2 * DAY), NOW)).toEqual({
+      value: -2,
+      unit: 'day',
+    })
   })
 
   it('has nothing to say about a missing or unparseable date', () => {
@@ -59,7 +86,9 @@ describe('publishCountdown', () => {
 
 describe('countdownRefreshMs', () => {
   it('ticks faster the closer the date is', () => {
-    expect(countdownRefreshMs('minute')).toBeLessThan(countdownRefreshMs('hour'))
+    expect(countdownRefreshMs('minute')).toBeLessThan(
+      countdownRefreshMs('hour'),
+    )
     expect(countdownRefreshMs('hour')).toBeLessThan(countdownRefreshMs('day'))
     expect(countdownRefreshMs('month')).toEqual(countdownRefreshMs('day'))
   })
@@ -89,7 +118,9 @@ describe('publishTiming', () => {
     // counting down to it would promise something SCHEDULE has not been
     // pressed for yet.
     expect(publishTiming(post('draft', at(2 * DAY)), NOW)).toBeNull()
-    expect(publishTiming(post('ready_for_publish', at(2 * DAY)), NOW)).toBeNull()
+    expect(
+      publishTiming(post('ready_for_publish', at(2 * DAY)), NOW),
+    ).toBeNull()
   })
 
   it('says nothing once the post is done, either way', () => {

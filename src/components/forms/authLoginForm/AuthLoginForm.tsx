@@ -23,10 +23,13 @@ export function AuthLoginForm() {
   // finished reset — is answered by the screen's subtitle, not by the form.
   const { redirect } = useSearch({ from: '/auth/login/' })
   const { mutate: login, isPending, error, reset } = useLogin()
-  const { values, setField, fieldErrors, validate } = useFormValidation(useLoginSchema(), {
-    email: '',
-    password: '',
-  })
+  const { values, setField, fieldErrors, validate } = useFormValidation(
+    useLoginSchema(),
+    {
+      email: '',
+      password: '',
+    },
+  )
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -104,18 +107,28 @@ export function AuthLoginForm() {
           </p>
         )}
       </div>
-      {/* Its own row rather than a note under the field, and in the link
-          colour rather than the muted one: for a user who can't get in this is
-          the only thing on the screen that helps, so it is not going to sit in
-          the typography we use for asides. Never conditional either — a field
-          error must not be able to displace it. */}
-      <p className="text-[13px] leading-5 text-primary-foreground">
+      {/* Its own row rather than a note under the field: for a user who can't
+          get in this is the only thing on the screen that helps, so it keeps a
+          line of its own. Never conditional either — a field error must not be
+          able to displace it.
+
+          The row sits in the secondary colour and the link inside it lifts to
+          the primary one on hover, so it reads as an aside until you reach for
+          it rather than competing with the form for attention. */}
+      <p className="text-[13px] leading-5 text-secondary-foreground">
         {/* One key with the link inside it, not prompt + action + a glued-on
             period: the full stop belongs to the sentence, and a translator has
             to be able to move the link within it. */}
         <Trans
           i18nKey="auth.login.forgot"
-          components={{ resetLink: <Link to="/auth/forgot" className="font-medium" /> }}
+          components={{
+            resetLink: (
+              <Link
+                to="/auth/forgot"
+                className="font-medium transition-colors hover:text-primary-foreground"
+              />
+            ),
+          }}
         />
       </p>
       <div className="w-full">

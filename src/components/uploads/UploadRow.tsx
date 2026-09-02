@@ -1,24 +1,24 @@
-import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getAsset } from "@/services/api/content";
-import { Button } from "@/components/ui/button";
-import { ArrowsLeftRightIcon, XIcon } from "@phosphor-icons/react";
-import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
-import { isTerminalStatus } from "@/lib/assetStatus";
-import { useUploadStore, type UploadItem } from "@/stores/uploadStore";
+import { useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { getAsset } from '@/services/api/content'
+import { Button } from '@/components/ui/button'
+import { ArrowsLeftRightIcon, XIcon } from '@phosphor-icons/react'
+import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
+import { isTerminalStatus } from '@/lib/assetStatus'
+import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
 
 const PHASE_BADGE: Record<
-  UploadItem["phase"],
+  UploadItem['phase'],
   { tone: StatusTone; label: string }
 > = {
-  uploading: { tone: "progress", label: "Uploading" },
-  processing: { tone: "progress", label: "Processing" },
-  ready: { tone: "positive", label: "Ready" },
-  partial: { tone: "warn", label: "Partial" },
-  failed: { tone: "destructive", label: "Failed" },
-};
+  uploading: { tone: 'progress', label: 'Uploading' },
+  processing: { tone: 'progress', label: 'Processing' },
+  ready: { tone: 'positive', label: 'Ready' },
+  partial: { tone: 'warn', label: 'Partial' },
+  failed: { tone: 'destructive', label: 'Failed' },
+}
 
-const POLL_MS = 2000;
+const POLL_MS = 2000
 
 /**
  * One line in the upload tracker. While an asset is processing it polls
@@ -26,36 +26,36 @@ const POLL_MS = 2000;
  * the store and refreshing the asset list once it settles.
  */
 export function UploadRow({ item }: { item: UploadItem }) {
-  const setStatus = useUploadStore((s) => s.setStatus);
-  const remove = useUploadStore((s) => s.remove);
-  const retry = useUploadStore((s) => s.retry);
-  const qc = useQueryClient();
+  const setStatus = useUploadStore((s) => s.setStatus)
+  const remove = useUploadStore((s) => s.remove)
+  const retry = useUploadStore((s) => s.retry)
+  const qc = useQueryClient()
 
-  const shouldPoll = item.phase === "processing" && !!item.assetId;
+  const shouldPoll = item.phase === 'processing' && !!item.assetId
 
   const { data: asset } = useQuery({
-    queryKey: ["assets", item.assetId],
+    queryKey: ['assets', item.assetId],
     queryFn: () => getAsset(item.assetId as string),
     enabled: shouldPoll,
     refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      return status && isTerminalStatus(status) ? false : POLL_MS;
+      const status = query.state.data?.status
+      return status && isTerminalStatus(status) ? false : POLL_MS
     },
-  });
+  })
 
   // Mirror polled status into the tracker and refresh the list when it settles.
   useEffect(() => {
-    if (!asset) return;
-    setStatus(item.id, asset.status);
+    if (!asset) return
+    setStatus(item.id, asset.status)
     if (isTerminalStatus(asset.status)) {
-      qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ['assets'] })
     }
-  }, [asset, item.id, setStatus, qc]);
+  }, [asset, item.id, setStatus, qc])
 
   const badge =
-    item.phase === "uploading"
-      ? { tone: "progress" as const, label: `Uploading ${item.progress}%` }
-      : PHASE_BADGE[item.phase];
+    item.phase === 'uploading'
+      ? { tone: 'progress' as const, label: `Uploading ${item.progress}%` }
+      : PHASE_BADGE[item.phase]
 
   return (
     <div className="flex flex-col gap-1 py-2">
@@ -65,7 +65,7 @@ export function UploadRow({ item }: { item: UploadItem }) {
         </span>
         <div className="flex items-center gap-1 shrink-0">
           <StatusBadge tone={badge.tone} label={badge.label} />
-          {item.phase === "failed" && (
+          {item.phase === 'failed' && (
             <Button
               variant="ghost"
               size="xsIcon"
@@ -86,7 +86,7 @@ export function UploadRow({ item }: { item: UploadItem }) {
         </div>
       </div>
 
-      {item.phase === "uploading" && (
+      {item.phase === 'uploading' && (
         <div className="h-0.5 w-full bg-quaternary">
           <div
             className="h-full bg-info transition-all"
@@ -95,9 +95,9 @@ export function UploadRow({ item }: { item: UploadItem }) {
         </div>
       )}
 
-      {item.phase === "failed" && item.error && (
+      {item.phase === 'failed' && item.error && (
         <span className="text-xs text-destructive">{item.error}</span>
       )}
     </div>
-  );
+  )
 }
