@@ -20,7 +20,6 @@ import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettin
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
 import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
-import { PinnedPostNotes } from '@/components/posts/notes/PinnedPostNotes'
 import { PostNotesCard } from '@/components/posts/notes/PostNotesCard'
 import {
   POST_PREVIEW_PORTAL_ID,
@@ -49,7 +48,6 @@ import { usePublishStatus } from '@/hooks/usePublishStatus'
 import { cn } from '@/lib'
 import { downloadMarkdown } from '@/lib/downloadMarkdown'
 import { resolvePublishMethod } from '@/lib/autoPublish'
-import { isNotePinned, splitNotesByPin } from '@/lib/postNotes'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
 import type { PostNote } from '@/services/api/postNotes'
@@ -247,24 +245,8 @@ function PostEditorSurface({
     () => openRightPanel('postQuality'),
     [openRightPanel],
   )
-  // Notes (CON-188). Where a note renders is a device-local preference, so the
-  // pin map comes from the settings store rather than the record — the API has
-  // no `pinned` column, and `lib/postNotes` supplies the default.
+  // Notes (CON-188), all of them in the one card below the media.
   const notes = usePostNotes(doc.id)
-  const notePins = useSettingsStore((s) => s.notePins)
-  const setNotePin = useSettingsStore((s) => s.setNotePin)
-  const isPinned = useCallback(
-    (note: PostNote) => isNotePinned(note, notePins),
-    [notePins],
-  )
-  const togglePin = useCallback(
-    (note: PostNote) => setNotePin(note.id, !isNotePinned(note, notePins)),
-    [notePins, setNotePin],
-  )
-  const { pinned: pinnedNotes, rest: unpinnedNotes } = splitNotesByPin(
-    notes.notes,
-    notePins,
-  )
   const { edit: editNote } = notes
   const saveNote = useCallback(
     (note: PostNote, patch: { title: string; body: string }) =>
@@ -400,12 +382,6 @@ function PostEditorSurface({
                 onOpenQuality={openQuality}
               />
             </div>
-            <PinnedPostNotes
-              notes={pinnedNotes}
-              onTogglePin={togglePin}
-              onSave={saveNote}
-              onDelete={notes.remove}
-            />
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
                 <div className="mb-4 flex flex-col">
@@ -453,11 +429,9 @@ function PostEditorSurface({
             </div>
             <div className="w-content">
               <PostNotesCard
-                notes={unpinnedNotes}
+                notes={notes.notes}
                 loading={notes.loading}
                 error={notes.error !== null}
-                isPinned={isPinned}
-                onTogglePin={togglePin}
                 onAdd={notes.add}
                 onSave={saveNote}
                 onDelete={notes.remove}

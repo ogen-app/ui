@@ -725,6 +725,36 @@ export const es: Translation = {
     noAccount: 'Sin cuenta',
 
     hasProblem: 'Esta publicación tiene un problema',
+
+    notes: {
+      heading: 'Notas',
+      add: 'AÑADIR NOTA',
+      save: 'GUARDAR',
+      cancel: 'CANCELAR',
+      delete: 'ELIMINAR',
+      edit: 'Editar la nota',
+
+      titlePlaceholder: 'Título (opcional)',
+      titleLabel: 'Título de la nota',
+      bodyPlaceholder: '¿Qué debería recordar esta publicación?',
+      bodyLabel: 'Nota',
+
+      deleteConfirm: '¿Eliminar esta nota? No se podrá recuperar.',
+
+      loadError:
+        'No se pudieron cargar las notas. Vuelve a cargar la página para intentarlo de nuevo.',
+
+      origin: {
+        assistant: 'Escrita por el asistente de publicaciones',
+        generated: 'Capturada cuando se generó esta publicación',
+      },
+
+      type: {
+        note: 'Nota',
+        draftThesis: 'Tesis del borrador',
+        imagePrompt: 'Prompt de imagen',
+      },
+    },
   },
   tiers: {
     notInPlan: 'No está en tu plan',

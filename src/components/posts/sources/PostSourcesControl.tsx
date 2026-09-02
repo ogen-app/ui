@@ -112,7 +112,7 @@ export function PostSourcesControl({ post, changeDoc, layout }: Props) {
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           className={cn(layout === 'rail' && 'w-full justify-center')}
         >

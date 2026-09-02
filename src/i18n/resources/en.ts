@@ -986,6 +986,52 @@ export const en = {
       compactNow: 'now',
       compactLate: '{{amount}} late',
     },
+
+    /**
+     * The post's notes (CON-188) — draft theses the content plan captured,
+     * prompts the assistant wrote, and anything typed by hand.
+     */
+    notes: {
+      heading: 'Notes',
+      add: 'ADD NOTE',
+      save: 'SAVE',
+      cancel: 'CANCEL',
+      delete: 'DELETE',
+      edit: 'Edit note',
+
+      titlePlaceholder: 'Title (optional)',
+      titleLabel: 'Note title',
+      bodyPlaceholder: 'What should this post remember?',
+      bodyLabel: 'Note',
+
+      deleteConfirm: 'Delete this note? There is no way to get it back.',
+
+      /**
+       * Has to be said on the card: queries get no global error toast, and a
+       * post whose notes failed to load looks identical to one that has none.
+       */
+      loadError: "The notes couldn't be loaded. Reload the page to try again.",
+
+      /**
+       * Only the machine origins are marked. Labelling a hand-written note
+       * "manual" would put a badge on the ordinary case.
+       */
+      origin: {
+        assistant: 'Written by the post assistant',
+        generated: 'Captured when this post was generated',
+      },
+
+      /**
+       * What a note's type is called on screen. The API sends `draft_thesis`,
+       * never a label, and `noteTypeKey` maps a type the server grew without
+       * us onto `note` rather than leaking a snake_case identifier.
+       */
+      type: {
+        note: 'Note',
+        draftThesis: 'Draft thesis',
+        imagePrompt: 'Image prompt',
+      },
+    },
   },
   /**
    * Workspace tiers (CON-232) — what the app says when the plan is the reason.
