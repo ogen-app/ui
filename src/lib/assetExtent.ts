@@ -30,12 +30,17 @@ export function wordCount(asset: Pick<Asset, 'content'>): number {
  * left here is the exact call the rest of the app just stopped making, and it
  * would read as permission to make it again.
  */
-export function extentLabel(asset: Pick<Asset, 'content' | 'status'>): string {
+export function extentLabel(
+  asset: Pick<Asset, 'content' | 'status' | 'type'>,
+): string {
   const count = wordCount(asset)
   if (count > 0)
     return `${formatNumber(count)} ${count === 1 ? 'word' : 'words'}`
   // Empty while the server is still working on it is a wait, not a verdict.
-  return retrievability(asset.status) === 'waiting'
-    ? 'Not read yet'
-    : 'Nothing extracted'
+  if (retrievability(asset.status) === 'waiting') return 'Not read yet'
+  // Nothing was extracted from an image because nothing was ever going to be:
+  // its `content` is a description somebody writes, not text pulled out of a
+  // file. "Nothing extracted" on a picture that uploaded perfectly reads as a
+  // failed ingest, which is the one thing it isn't.
+  return asset.type === 'IMG' ? 'No description' : 'Nothing extracted'
 }

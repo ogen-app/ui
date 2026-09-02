@@ -845,6 +845,38 @@ export const es: Translation = {
       title: 'Esto no es un documento',
       body: 'Esta versión de la aplicación no sabe mostrar este tipo de recurso. No se ha cambiado nada: sigue aquí, y una versión más reciente lo abrirá.',
     },
+
+    image: {
+      titlePlaceholder: 'Título',
+      altLabel: 'Texto alternativo',
+      altPlaceholder: 'Una persona en un taller sosteniendo un implante dental',
+      altHelp:
+        'Lo que se le dice de la imagen a quien no puede verla. Acompaña a la imagen cuando esta pasa a una publicación.',
+      altCount_one: 'Queda {{count}} carácter',
+      altCount_other: 'Quedan {{count}} caracteres',
+      descriptionLabel: 'Descripción',
+      descriptionPlaceholder:
+        'Qué hay en esta imagen y para qué sirve: las palabras con las que debería encontrarse.',
+      descriptionHelp:
+        'No se muestra a nadie. Es lo que consulta el asistente cuando busca una imagen que usar.',
+      tagsLabel: 'Etiquetas',
+      tagsPlaceholder: 'Añade una etiqueta…',
+      tagsHelp: 'Cómo vuelves a encontrar esta imagen en la lista.',
+      missing: 'Esta imagen no se guardó, así que no hay nada que mostrar.',
+      animated: 'Animada',
+    },
+  },
+
+  uploads: {
+    limitDocs: 'Markdown hasta {{md}}, PDF hasta {{pdf}}',
+    limitImages: 'Imágenes (JPEG, PNG, WebP, GIF) hasta {{size}}',
+    pdfNote: 'Los PDF se leen en segundo plano, así que terminan después.',
+    browse: 'Suelta los archivos aquí o haz clic para elegirlos',
+    remove: 'Quitar {{name}}',
+    cancel: 'CANCELAR',
+    submit: 'SUBIR',
+    submitCount: 'SUBIR ({{n}})',
+    dropInto: 'Añadir a {{scope}}',
   },
 
   errors: {

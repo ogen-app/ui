@@ -1262,6 +1262,64 @@ export const en = {
       title: "This isn't a document",
       body: 'This app version has no way to show this kind of asset. Nothing has been changed — it is still here, and a newer version will open it.',
     },
+
+    /**
+     * An image asset's screen (CON-246). The two text fields are the whole
+     * point of it, so their help lines carry the distinction rather than
+     * leaving it to be guessed from the labels: one is read out to a person,
+     * the other is read by the assistant looking for a picture.
+     */
+    image: {
+      titlePlaceholder: 'Title',
+      altLabel: 'Alt text',
+      altPlaceholder: 'A person at a workbench, holding a dental implant',
+      altHelp:
+        'What someone who cannot see the picture is told it is. It travels with the image when it goes onto a post.',
+      /** Only shown near the cap, so it says what is left rather than what is used. */
+      altCount_one: '{{count}} character left',
+      altCount_other: '{{count}} characters left',
+      descriptionLabel: 'Description',
+      descriptionPlaceholder:
+        'What is in this picture, and what it is for — the words that should find it.',
+      descriptionHelp:
+        'Not shown to anyone. This is what the assistant searches when it looks for a picture to use.',
+      tagsLabel: 'Tags',
+      tagsPlaceholder: 'Add a tag…',
+      /**
+       * Tags are the only field here that isn't about this picture — it is
+       * about finding it among the others, which is the thing the filter above
+       * the list has always been able to do and nothing has been able to set.
+       */
+      tagsHelp: 'How you find this image again in the list.',
+      /** The bytes never reached storage — a deployment fault, not a bad file. */
+      missing: 'This image was not stored, so there is nothing to show.',
+      animated: 'Animated',
+    },
+  },
+
+  /**
+   * The upload modal and its drop zone.
+   *
+   * The limits are two lines rather than one because they answer two different
+   * questions — "will it take my PDF" and "will it take my photo" — and a
+   * reader looking for one of them should not have to read past the other.
+   * Their sizes are interpolated from the caps in `lib/assetStatus`, so the
+   * copy never states a number that has drifted from the one enforced.
+   */
+  uploads: {
+    limitDocs: 'Markdown up to {{md}}, PDF up to {{pdf}}',
+    limitImages: 'Images (JPEG, PNG, WebP, GIF) up to {{size}}',
+    /** Why an upload can finish and the document still not be readable. */
+    pdfNote: 'PDFs are read in the background, so they finish after upload.',
+    browse: 'Drop files here or click to browse',
+    remove: 'Remove {{name}}',
+    cancel: 'CANCEL',
+    submit: 'UPLOAD',
+    /** The count is what makes the button worth reading twice before clicking. */
+    submitCount: 'UPLOAD ({{n}})',
+    /** Named while a drag is over the page — the one moment the destination
+        can be stated without being asked for. */
+    dropInto: 'Add these to {{scope}}',
   },
 
   errors: {

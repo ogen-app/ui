@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { UploadSimpleIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
-import { uploadAccept, uploadLimitsLabel } from '@/lib/assetStatus'
+import { uploadAccept } from '@/lib/assetStatus'
 import { useUploadOptions } from '@/hooks/useUploadOptions'
 
 type Props = {
@@ -12,8 +13,17 @@ type Props = {
 /**
  * Click-to-browse + native drag-and-drop target for the file types the bank
  * currently takes — .md / .pdf, and images with `content-bank-images` on.
+ *
+ * Drawn as an outline rather than a filled slab: a dashed rectangle is the
+ * shape every application uses for "put something here", and it reads as an
+ * empty space waiting to be filled, which is what it is. A fill made it look
+ * like a card that already held something.
+ *
+ * It no longer repeats the limits — the modal states them directly above, and
+ * saying them twice in one dialog made the zone itself hard to find.
  */
 export function Dropzone({ onFiles, className }: Props) {
+  const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const options = useUploadOptions()
@@ -44,17 +54,17 @@ export function Dropzone({ onFiles, className }: Props) {
       }}
       className={cn(
         'flex flex-col items-center justify-center gap-2 px-6 py-10 text-center cursor-pointer transition-colors outline-none',
-        dragging ? 'bg-quaternary' : 'bg-tertiary hover:bg-quaternary',
+        'border border-dashed',
+        // The drag state deepens the outline rather than filling the box: a
+        // fill appearing under the cursor mid-drag reads as "dropped already".
+        dragging
+          ? 'border-foreground'
+          : 'border-quaternary hover:border-tertiary-foreground',
         className,
       )}
     >
       <UploadSimpleIcon className="size-6 text-tertiary-foreground" />
-      <p className="text-sm text-foreground">
-        Drop files here or click to browse
-      </p>
-      <p className="text-xs text-tertiary-foreground">
-        {uploadLimitsLabel(options)}
-      </p>
+      <p className="text-sm text-foreground">{t('uploads.browse')}</p>
       <input
         ref={inputRef}
         type="file"

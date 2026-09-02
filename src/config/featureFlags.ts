@@ -222,33 +222,19 @@ const FEATURE_FLAGS = {
    * Uploading images into the Content Bank (CON-16) — an asset that *is* a
    * picture, rather than a picture pasted inside a document.
    *
-   * **Waiting on:** the whole ingest path. `POST /api/content-bank/assets/
-   * upload` answers `"only .md and .pdf files are accepted"` (`assets.go`), and
-   * `assets_type_check` is `MD | PDF | URL`, so an image cannot be stored as an
-   * asset at all. CON-105's branch (PR #66, open since 2026-07-12) adds `IMG`
-   * plus `ai_generated`, `brand_style` and `generation`; CON-16 R1 adds the
-   * `width` / `height` / `is_animated` / `checksum_sha256` columns to
-   * `asset_files` that `post_attachments` already carries, and R3 adds
-   * `assets.alt_text`.
+   * **The server answers now** (CON-246, ogen#129, merged 2026-09-01): the
+   * upload endpoint takes JPEG/PNG/WebP/GIF, `assets_type_check` allows `IMG`,
+   * and `AssetFile` carries `url` for the original — which was the decision the
+   * viewer was waiting on, settled as `url` rather than `original_url`. The
+   * asset also gained `alt_text`, and the file gained the `width` / `height` /
+   * `is_animated` / `checksum_sha256` columns `post_attachments` already had.
    *
-   * With this on, the upload surface offers images and the server refuses
-   * them — which is the honest state of it, and why it is off.
-   *
-   * **The image asset's own screen is deliberately not built yet**, and this is
-   * the decision the back end has to make first: `AssetFile` exposes
-   * `thumbnail_url` and no URL for the original, so there is nothing to render
-   * an image *from*. CON-16 R5 puts the thumbnail at `assets/{id}/thumb.webp`
-   * and D2 the original at `assets/{id}/original.<ext>`, but neither the DTO
-   * field nor its name is settled. Until it is, an `IMG` asset opens on
-   * `UnsupportedAsset`, which is safe and says so. Guessing the field here
-   * would mean writing a viewer against a contract nobody has agreed to.
-   *
-   * Switch this on once the upload accepts images and the asset DTO carries the
-   * original's URL; re-test the whole path against the real thing — the sizes
-   * and MIME set in `lib/assetStatus.ts` mirror `imageprobe.AllowedMIMEs` and
-   * `maxImageSize`, and those are the server's to change.
+   * What is still missing is a *thumbnail* job, so an image asset's preview is
+   * the full file scaled down (`lib/assetPreview`). That is a cost, not a gap
+   * in the contract: `thumbnail_url` is already preferred wherever it appears,
+   * so the day one is rendered nothing here changes.
    */
-  'content-bank-images': false,
+  'content-bank-images': true,
 
   /**
    * Deleting one saved version of a post, from the version-history panel
