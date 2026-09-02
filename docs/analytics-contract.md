@@ -121,11 +121,34 @@ Learnings:
 | `Pattern {title, sample, confidence}` | `{headline, support, —}` | Plus `dimension`, `segment`, `lift`, `trend`, `metric` |
 | `winners` | `works` | Renamed |
 
-*Not fixed, deliberately.* Rewriting six thousand lines of design components
-against a contract nobody has run is how a UI acquires a second set of wrong
-assumptions. The table is what a mapper needs; the three rows with no wire
-source at all (`matured`, `curve`/`typical`, `save_rate`/`follow_rate`) are
-design decisions to revisit, not fields to request.
+*Resolved, and the mapping is the whole of it.* Unlike the performers card,
+nothing `PatternsSection` is built on turned out to be missing from the wire —
+every row above is a rename, a re-index or an assembly — so the shipping card
+(`lib/analyticsLearningsView` → `components/analytics/WorkspaceLearnings`) is the
+same three sections against the real shapes, and `PatternsSection` stays as it is
+for the still-flagged campaign surface.
+
+Four things the card decides that the table does not:
+
+- **The empty slot is a third state.** The grid is built here, and a slot the
+  server never sent stays `null` rather than becoming a `0`. `SlotHeatmap` draws
+  it as a different material, because "we post at 3am and nothing happens" and
+  "we have never posted at 3am" are opposite findings that one scale would draw
+  identically.
+- **The hours are labelled UTC.** The server buckets on a fixed display timezone
+  and sends no offset, and an aggregate over a year of posts has no single date
+  to apply one on. Getting the zone onto the wire is on the flag's list.
+- **No confidence is invented.** The wire has no enum because the server
+  enforces its own minimum support and withdraws a whole section below it; a
+  second threshold on this side would grade a card the server already decided
+  was worth sending. Same rule as the board's `direction`.
+- **`lift` and `trend` are shown in one unit** — `+60%` and `−34%` — with what
+  each is measured against named once per column. `1.6×` beside `0.66×` makes
+  the reader convert one of them.
+
+The three rows with no wire source at all (`matured`, `curve`/`typical`,
+`save_rate`/`follow_rate`) are design decisions to revisit, not fields to
+request.
 
 ### 2.3 The post surface has no *series* endpoint
 

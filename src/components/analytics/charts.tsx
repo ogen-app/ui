@@ -739,6 +739,81 @@ export function Heatmap({
 }
 
 /**
+ * The same grid, drawn from a **sparse** answer (CON-239).
+ *
+ * There are two heatmaps for one reason, and it is not the data shape: the
+ * server sends only the slots that have posts in them, so this grid holds a
+ * third state {@link Heatmap} has no way to express — *never published then*.
+ * Collapsing it into a zero draws "we post at 3am and nobody reads it" exactly
+ * like "we have never posted at 3am", which are opposite findings and lead to
+ * opposite actions.
+ *
+ * So an unpublished slot is a different material rather than a lighter shade of
+ * the same one: flat `bg-secondary`, off the scale entirely, while a measured
+ * slot starts above it and darkens with the score. The tooltip carries the
+ * count and the median, which is the only place the sample behind a square is
+ * available at all.
+ */
+export function SlotHeatmap({
+  grid,
+  days,
+  label,
+  className,
+}: {
+  /** Seven rows of 24; `null` is a slot with no posts. */
+  grid: ({ score: number; title: string } | null)[][]
+  /** Row labels, in the grid's own order. */
+  days: string[]
+  /** What the grid as a whole says, for anyone not reading squares. */
+  label: string
+  className?: string
+}) {
+  return (
+    <div
+      className={cn('flex flex-col gap-1', className)}
+      role="img"
+      aria-label={label}
+    >
+      <div className="flex gap-1 pl-8" aria-hidden>
+        {Array.from({ length: 24 }, (_, h) => (
+          <span
+            key={h}
+            className="min-w-0 flex-1 text-center text-[0.5rem] leading-3 text-tertiary-foreground"
+          >
+            {h % 6 === 0 ? h : ''}
+          </span>
+        ))}
+      </div>
+      {grid.map((row, d) => (
+        <div key={days[d] ?? d} className="flex items-center gap-1" aria-hidden>
+          <span className="w-7 shrink-0 text-[0.625rem] text-secondary-foreground">
+            {days[d]}
+          </span>
+          {row.map((cell, h) =>
+            cell ? (
+              <div
+                key={h}
+                className="h-4 min-w-0 flex-1 rounded-[2px] bg-foreground"
+                // The floor is deliberately clear of the empty cell's weight:
+                // the weakest slot you have published in still has to look
+                // like a slot you have published in.
+                style={{ opacity: 0.16 + cell.score * 0.74 }}
+                title={cell.title}
+              />
+            ) : (
+              <div
+                key={h}
+                className="h-4 min-w-0 flex-1 rounded-[2px] bg-secondary"
+              />
+            ),
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
  * One measure on one post, over the time since it was published.
  *
  * Two shapes for one series, because the two questions are different. A

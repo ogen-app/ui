@@ -179,19 +179,22 @@ const FEATURE_FLAGS = {
 
   /**
    * Analytics — the workspace's own numbers: the `/analytics` route, its
-   * sidebar row, and the two cards on it. **What happened** (CON-237) — five
+   * sidebar row, and the three cards on it. **What happened** (CON-237) — five
    * figures, the chart behind whichever is selected, the deterministic
-   * callouts — and **Performers and outliers** (CON-238), the window's best and
+   * callouts — **Performers and outliers** (CON-238), the window's best and
    * worst posts scored against a typical post on the same platform at the same
-   * age.
+   * age — and **What we've learned** (CON-239), the all-time slot heatmap, the
+   * curve a post follows after publishing, and the structural patterns behind
+   * what works and what is fading.
    *
-   * **Both endpoints are real and shipped.** `GET /api/analytics/overview`
-   * landed with CON-237 (ogen#125) and `GET /api/analytics/performers` with
-   * CON-238 (ogen#126), both merged 2026-08-27, so this is built against the
-   * API rather than ahead of it — unlike `campaign-analytics`, which is still
-   * waiting on a campaign dimension neither read has. That makes this the
+   * **All three endpoints are real and shipped.** `GET /api/analytics/overview`
+   * landed with CON-237 (ogen#125), `GET /api/analytics/performers` with
+   * CON-238 (ogen#126) and `GET /api/analytics/learnings` with CON-239
+   * (ogen#127) — all merged 2026-08-27, so this is built against the API rather
+   * than ahead of it, unlike `campaign-analytics`, which is still waiting on a
+   * campaign dimension none of the three reads has. That makes this the
    * workspace surface that can ship first, exactly as the note on that flag
-   * predicted. CON-239 (learnings) is the third card and is not built.
+   * predicted.
    *
    * **Off because none of it has been run against a live workspace.**
    * Everything here was read off the Go source and the hand-off comments. What
@@ -216,6 +219,17 @@ const FEATURE_FLAGS = {
    *    contract, so `invalid_sort` should be unreachable — worth proving,
    *    because it surfaces as a bare failed request rather than a bad-input
    *    message.
+   * 6. **Which timezone `/learnings` actually bucketed on.** The PRD says a
+   *    fixed display timezone defaulting to UTC and the wire carries no offset,
+   *    so every slot on the heatmap is labelled UTC. If the server is in fact
+   *    bucketing on a tenant timezone, the labels are wrong by that offset —
+   *    and a "best time" wrong by three hours is worse than no best time. Ask
+   *    for the zone on the wire either way.
+   * 7. **Whether a section can arrive as `null`** rather than as its fields or
+   *    `{insufficient_history: true}`. The builders always return a value
+   *    today, so the types treat the three sections as present; a `null` would
+   *    reach the mapper as a section with no history, which is the safe wrong
+   *    answer but still a wrong one.
    *
    * **Known missing, and not defects in this UI:**
    *
@@ -230,6 +244,16 @@ const FEATURE_FLAGS = {
    *   always empty, and `display_name` mirrors `username`; enrichment from
    *   `social_accounts` is a server follow-up. Rows fall back to the initial
    *   plus the platform badge and fill in on their own.
+   * - **Semantic patterns** in the lessons card — "posts that open with a
+   *   question", "team photos". Deferred server-side because they need content
+   *   classification, so the mining is structural only (format, length,
+   *   hashtags, links, timing, platform). The card shape takes them unchanged
+   *   when they land.
+   * - **`since` on `/learnings`** is on the wire and not exposed. It cuts off a
+   *   past the workspace has disowned, which is a workspace setting rather than
+   *   a control on a card; offering it beside the metric would turn an all-time
+   *   card back into a period one. The mapper reads it, so a server-set value
+   *   already shows in the card's heading.
    *
    * **i18n is deferred**, deliberately and on the Brand precedent (CON-227):
    * `components/analytics/*` is hard-coded English throughout, and a translated
