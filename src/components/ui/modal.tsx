@@ -140,7 +140,10 @@ export function ModalContainer({
         modalRef.current &&
         !modalRef.current.contains(document.activeElement)
       ) {
-        modalRef.current.focus()
+        // `preventScroll`, because focusing scrolls every scrollable ancestor
+        // to reveal the target — including ones the user cannot scroll back.
+        // See the guard in `ui/scroll-area.tsx`.
+        modalRef.current.focus({ preventScroll: true })
       }
 
       // Prevent body scroll
@@ -148,7 +151,10 @@ export function ModalContainer({
     } else {
       // Restore focus to the previously focused element
       if (previousActiveElement.current instanceof HTMLElement) {
-        previousActiveElement.current.focus()
+        // Same reason as above, and it matters more here: what we are focusing
+        // is behind the modal, so any scroll it causes is scroll the user did
+        // not ask for and cannot see the cause of.
+        previousActiveElement.current.focus({ preventScroll: true })
       }
 
       // Restore body scroll
