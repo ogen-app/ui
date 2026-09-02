@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { getSetting, putSetting } from '@/services/api/settings'
@@ -39,6 +39,25 @@ import {
 const STORAGE_KEY = 'tasks'
 export const TASKS_QUERY_KEY = ['settings', STORAGE_KEY] as const
 
+/**
+ * Every save of the row goes through one chain, because the store is
+ * overwrite-only: two PUTs in flight commit in whichever order the server
+ * lands them, so an older list could replace a newer one. `useTaskWriter` and
+ * `useTaskReconciliation` both write here; each save's snapshot was built from
+ * a cache the previous save had already patched, so last-in-order is also
+ * newest.
+ */
+let writeQueue: Promise<unknown> = Promise.resolve()
+
+function enqueueWrite(next: Task[]): Promise<void> {
+  // `then(run, run)`: a failed save must not break the chain for the next one,
+  // but its own rejection still has to reach the caller.
+  const run = () => putSetting(STORAGE_KEY, serializeTasks(next))
+  const chained = writeQueue.then(run, run)
+  writeQueue = chained.catch(() => {})
+  return chained
+}
+
 export function useTasks() {
   const enabled = useFeatureFlag('tasks')
 
@@ -69,7 +88,7 @@ export function useTaskWriter() {
       // still in flight would otherwise land its older list on top of this one.
       void qc.cancelQueries({ queryKey: TASKS_QUERY_KEY })
       qc.setQueryData(TASKS_QUERY_KEY, next)
-      return putSetting(STORAGE_KEY, serializeTasks(next)).catch(() => {
+      return enqueueWrite(next).catch(() => {
         toast.error(t('tasks.saveFailed'))
         void qc.invalidateQueries({ queryKey: TASKS_QUERY_KEY })
       })
@@ -209,6 +228,11 @@ export function useTaskReconciliation() {
   // One write per change, not one per render: the effect re-runs whenever the
   // queries settle, and without this a failed save would be retried in a loop.
   const inFlight = useRef(false)
+  // Resetting the ref in `finally` doesn't render, so a change that arrived
+  // while a write was in flight would otherwise never get its pass — the
+  // persisted list would stay derived from the warnings as they stood. This
+  // bump is the re-run.
+  const [settled, setSettled] = useState(0)
 
   useEffect(() => {
     if (!enabled || isLoading || warningsLoading || inFlight.current) return
@@ -218,13 +242,14 @@ export function useTaskReconciliation() {
     inFlight.current = true
     void qc.cancelQueries({ queryKey: TASKS_QUERY_KEY })
     qc.setQueryData(TASKS_QUERY_KEY, next)
-    void putSetting(STORAGE_KEY, serializeTasks(next))
+    void enqueueWrite(next)
       .catch(() => {
         toast.error(t('tasks.saveFailed'))
         void qc.invalidateQueries({ queryKey: TASKS_QUERY_KEY })
       })
       .finally(() => {
         inFlight.current = false
+        setSettled((n) => n + 1)
       })
-  }, [enabled, isLoading, warningsLoading, tasks, warnings, qc, t])
+  }, [enabled, isLoading, warningsLoading, tasks, warnings, settled, qc, t])
 }
