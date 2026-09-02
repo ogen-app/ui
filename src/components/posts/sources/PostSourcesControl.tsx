@@ -84,18 +84,33 @@ export function PostSourcesControl({ post, changeDoc, layout }: Props) {
 
   const attach = (assets: Asset[]) => {
     const ids = assets.map((a) => a.id)
+    // What this attach actually adds to the post, as distinct from what it
+    // re-picked: only these are taken back if the campaign refuses below.
+    const held = new Set(post.used_asset_ids)
+    const added = ids.filter((id) => !held.has(id))
     setPending((prev) => [...prev, ...assets])
     changeDoc((d) => {
-      const held = new Set(d.used_asset_ids)
+      const carried = new Set(d.used_asset_ids)
       d.used_asset_ids = [
         ...d.used_asset_ids,
-        ...ids.filter((id) => !held.has(id)),
+        ...ids.filter((id) => !carried.has(id)),
       ]
     })
     // A post is inside a campaign, so anything it reads from belongs to that
     // campaign's Content too — otherwise the campaign would be missing a
-    // document its own posts write from.
-    void addToCampaign(post.campaign_id, ids)
+    // document its own posts write from. And the other way round: if the
+    // campaign write fails (`addToCampaign` toasts it), the post must not be
+    // left reading from a document its campaign refused — the autosave above
+    // would persist exactly that — so the ids this attach added are removed
+    // again.
+    void addToCampaign(post.campaign_id, ids).then((attached) => {
+      if (attached || added.length === 0) return
+      const refused = new Set(added)
+      setPending((prev) => prev.filter((a) => !refused.has(a.id)))
+      changeDoc((d) => {
+        d.used_asset_ids = d.used_asset_ids.filter((id) => !refused.has(id))
+      })
+    })
   }
 
   const detach = (assetId: string) => {
