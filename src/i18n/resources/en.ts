@@ -188,6 +188,10 @@ export const en = {
         'Invitations expire after seven days, and each one can only be used once',
       brokenBody:
         'Ask whoever invited you to send another. If you already accepted, <login>log in</login> instead.',
+      /** The preview request failed for a reason that says nothing about the token — retryable. */
+      previewFailedTitle: "We couldn't check this invitation",
+      previewFailedSubtitle:
+        'Something went wrong on our side — the link itself may still be fine',
       /** Already signed in as the invited address: nothing to create, one thing to confirm. */
       joinBody:
         "You're signed in as {{email}}, which is who this invitation is for. Accepting adds this workspace to your account.",
@@ -959,12 +963,14 @@ export const en = {
     },
 
     /**
-     * The two absences a calendar card can carry. Both are shown in place of a
-     * name, so each has to read as a fact about the post rather than as a
-     * missing value.
+     * The absences a card or a locked post can carry. Each is shown in place
+     * of a name, so it has to read as a fact about the post rather than as a
+     * missing value — on a published post nobody can go back and fill these
+     * in, which is exactly why they are stated rather than warned about.
      */
     noPlatform: 'No platform',
     noAccount: 'No account',
+    noPostType: 'No post type',
 
     /**
      * The card's warning mark. What is wrong is in the post itself — the mark
@@ -987,6 +993,158 @@ export const en = {
       /** The short forms, for a bar too narrow for the sentence. */
       compactNow: 'now',
       compactLate: '{{amount}} late',
+    },
+
+    /**
+     * What a post writes from. The same control renders as the card under the
+     * copy and as a section in the settings rail, so the two empty states are
+     * one idea at two lengths — the card can afford to explain what the list
+     * is for, the rail cannot.
+     */
+    sources: {
+      heading: 'Sources',
+      /** The rail section's title. Its capitals are the copy, as everywhere. */
+      sectionTitle: 'SOURCES',
+      add: 'ADD SOURCE',
+      fromBank: 'Choose from content bank',
+      upload: 'Upload files',
+      webPage: 'Add a web page',
+      emptyCard:
+        'This post writes from the campaign brief alone. Add the documents it should also draw on — the assistant reads exactly what is listed here.',
+      emptyRail:
+        'Nothing yet — this post writes from the campaign brief alone.',
+      /**
+       * The same fact with nothing to do about it. Deliberately present
+       * tense: a scheduled post has not gone out yet, so the past tense would
+       * be wrong for half the statuses this is shown in.
+       */
+      emptyLocked: 'This post writes from the campaign brief alone.',
+      /** An id whose document has not arrived in this tab yet. */
+      loading: 'Loading…',
+      /**
+       * The one fact about a source nobody can infer from its title: a
+       * document retrieval skips is sitting in the list doing nothing.
+       */
+      unreadable: "Can't be read",
+      unreadableHint:
+        'Nothing was extracted from this document, so retrieval skips it.',
+      reading: 'Still reading',
+      remove: 'Remove {{title}} from this post',
+    },
+
+    /**
+     * Why a post is read-only (CON-251). One sentence per locked status,
+     * never a shared one: they differ by whether there is a way back, and
+     * that difference is the whole of what the reader needs.
+     *
+     * `scheduled` names the way out, because there is one and a screen that
+     * hid it would read as broken. `published` deliberately offers none —
+     * the post is on the network, and editing here would change our record
+     * of it rather than the thing itself.
+     */
+    locked: {
+      scheduled: 'This post is scheduled. Unschedule it to make changes.',
+      published:
+        'This post is published — what is here is the record of what went out.',
+    },
+
+    /**
+     * The CON-85 score, where it shares a line with the platform checks and
+     * where it stands alone in the rail.
+     *
+     * The score survives a lock and the offer to re-take it does not: an
+     * assessment costs a model call, and on a submitted post it would be paid
+     * for a verdict about text nobody can act on without unscheduling first.
+     * What a stored score gains instead is meaning — its "assessed at" stamp
+     * can no longer drift out of date behind an edit.
+     */
+    quality: {
+      score: 'Post quality {{score}}',
+      assess: 'Assess quality',
+      reassess: 'Re-assess',
+      assessing: 'Assessing…',
+      neverScored: 'This post was never scored.',
+      scoringIsForDrafts: 'Scoring is for a post you can still change.',
+    },
+
+    /**
+     * The version history's first row — the live document, which is always
+     * listed because a post with no snapshots has a history of one rather than
+     * an empty state.
+     *
+     * It reads two ways. On an editable post it is a draft nobody has
+     * snapshotted. On a submitted one it is the post itself: calling that a
+     * "draft" that is "unsaved" describes the opposite of what happened to it.
+     * The second pair goes away on its own once the server writes a version at
+     * publish (CON-253) — the snapshot will match the live text and the row
+     * collapses into a numbered version.
+     */
+    versions: {
+      liveDraft: 'Draft',
+      liveDraftTime: 'Unsaved',
+      liveDraftNote: 'Not snapshotted yet',
+      liveSubmitted: 'Current text',
+      liveSubmittedNote: 'Never snapshotted',
+    },
+
+    /**
+     * The one forward move a published post has. It is not a status change
+     * (`published` has no outgoing edge) but a new post, so the label says
+     * where the copy lands rather than what happens to this one.
+     */
+    duplicate: {
+      action: 'DUPLICATE INTO DRAFT',
+      pending: 'Duplicating…',
+      success: 'Draft created',
+      error: "The post couldn't be duplicated. Try again.",
+      /** Appended to the copy's title so the two are told apart in a list. */
+      titleSuffix: '{{title}} (copy)',
+    },
+
+    /**
+     * The post's notes (CON-188) — draft theses the content plan captured,
+     * prompts the assistant wrote, and anything typed by hand.
+     */
+    notes: {
+      heading: 'Notes',
+      add: 'ADD NOTE',
+      save: 'SAVE',
+      cancel: 'CANCEL',
+      delete: 'DELETE',
+      edit: 'Edit note',
+
+      titlePlaceholder: 'Title (optional)',
+      titleLabel: 'Note title',
+      bodyPlaceholder: 'What should this post remember?',
+      bodyLabel: 'Note',
+
+      deleteConfirm: 'Delete this note? There is no way to get it back.',
+
+      /**
+       * Has to be said on the card: queries get no global error toast, and a
+       * post whose notes failed to load looks identical to one that has none.
+       */
+      loadError: "The notes couldn't be loaded. Reload the page to try again.",
+
+      /**
+       * Only the machine origins are marked. Labelling a hand-written note
+       * "manual" would put a badge on the ordinary case.
+       */
+      origin: {
+        assistant: 'Written by the post assistant',
+        generated: 'Captured when this post was generated',
+      },
+
+      /**
+       * What a note's type is called on screen. The API sends `draft_thesis`,
+       * never a label, and `noteTypeKey` maps a type the server grew without
+       * us onto `note` rather than leaking a snake_case identifier.
+       */
+      type: {
+        note: 'Note',
+        draftThesis: 'Draft thesis',
+        imagePrompt: 'Image prompt',
+      },
     },
   },
   /**

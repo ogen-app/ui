@@ -135,6 +135,45 @@ describe('choosing a tier', () => {
     expect(plan.tier.id).toBe(PRO)
   })
 
+  it('lands a scheduled downgrade once its boundary has passed', async () => {
+    // The server applies the change when the cycle rolls over, so a plan read
+    // after the boundary answers with the new tier — a "scheduled" change that
+    // never lands would leave the workspace on the old tier forever.
+    await stubSelectTier(MAX, AUGUST)
+    await stubSelectTier(TRIAL, AUGUST)
+
+    const afterBoundary = new Date('2026-09-23T12:00:00Z')
+    const plan = await stubWorkspacePlan(afterBoundary)
+    expect(plan.tier.id).toBe(TRIAL)
+    expect(plan.tier.scheduled_change).toBeNull()
+    // And the allowances land with it.
+    expect(plan.entitlements?.campaigns).toEqual({ limit: 1, used: 3 })
+  })
+
+  it('persists a landed change rather than re-deriving it per read', async () => {
+    await stubSelectTier(MAX, AUGUST)
+    await stubSelectTier(TRIAL, AUGUST)
+    await stubWorkspacePlan(new Date('2026-09-23T12:00:00Z'))
+
+    // A read dated before the boundary now answers the landed tier: the
+    // change has been applied and written, not recomputed from the clock.
+    const plan = await stubWorkspacePlan(AUGUST)
+    expect(plan.tier.id).toBe(TRIAL)
+    expect(plan.tier.scheduled_change).toBeNull()
+  })
+
+  it('ranks a later choice against the landed tier, not the one left behind', async () => {
+    await stubSelectTier(MAX, AUGUST)
+    await stubSelectTier(TRIAL, AUGUST)
+
+    // After the downgrade to Trial has landed, choosing Pro is an upgrade from
+    // Trial — it applies now, instead of being scheduled as a downgrade from
+    // the Max the workspace is no longer on.
+    const plan = await stubSelectTier(PRO, new Date('2026-09-23T12:00:00Z'))
+    expect(plan.tier.id).toBe(PRO)
+    expect(plan.tier.scheduled_change).toBeNull()
+  })
+
   it('falls back to the seed when the stored tier no longer exists', async () => {
     // An id from an older seed would resolve to no allowances at all, which
     // reads as a broken app rather than as a stale stub.

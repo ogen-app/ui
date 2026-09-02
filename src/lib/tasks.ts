@@ -46,8 +46,7 @@ export type TaskStatus = 'open' | 'done' | 'dismissed'
 
 /** Why a task exists: the system saw a warning, or a person wrote it. */
 export type TaskSource =
-  | { kind: 'rule'; campaignId: string; ruleId: string }
-  | { kind: 'manual' }
+  { kind: 'rule'; campaignId: string; ruleId: string } | { kind: 'manual' }
 
 export type Task = {
   id: string
@@ -147,18 +146,44 @@ export function parseTasks(raw: string | null): Task[] {
     .map((task) => ({ ...task, description: task.description ?? '' }))
 }
 
+function isTaskSource(value: unknown): value is TaskSource {
+  if (typeof value !== 'object' || value === null) return false
+  const source = value as {
+    kind?: unknown
+    campaignId?: unknown
+    ruleId?: unknown
+  }
+  if (source.kind === 'manual') return true
+  return (
+    source.kind === 'rule' &&
+    typeof source.campaignId === 'string' &&
+    typeof source.ruleId === 'string'
+  )
+}
+
 function isTask(value: unknown): value is Task {
   if (typeof value !== 'object' || value === null) return false
   const task = value as Partial<Task>
   return (
     typeof task.id === 'string' &&
     typeof task.title === 'string' &&
+    // Absent is the migration `parseTasks` fills in; present must be text.
+    (task.description === undefined || typeof task.description === 'string') &&
+    isTaskSource(task.source) &&
+    (task.campaignId === null || typeof task.campaignId === 'string') &&
+    (task.fix === null || typeof task.fix === 'string') &&
+    (task.assigneeId === null || typeof task.assigneeId === 'string') &&
     (task.status === 'open' ||
       task.status === 'done' ||
       task.status === 'dismissed') &&
     typeof task.createdAt === 'string' &&
-    typeof task.source === 'object' &&
-    task.source !== null
+    (task.createdBy === null || typeof task.createdBy === 'string') &&
+    (task.closedAt === null || typeof task.closedAt === 'string') &&
+    (task.closedBy === null || typeof task.closedBy === 'string') &&
+    (task.closedReason === null ||
+      task.closedReason === 'completed' ||
+      task.closedReason === 'auto' ||
+      task.closedReason === 'dismissed')
   )
 }
 

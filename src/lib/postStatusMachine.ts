@@ -355,14 +355,50 @@ export function getTransitionBlockers(
   return blockers
 }
 
+// Whether a copy of this post already exists outside Ogen (CON-251) — the one
+// question every read-only surface on the post screen asks.
+//
+// `scheduled` means Zernio holds the submission; `published` means the social
+// network holds the post. In both, an edit here changes what Ogen displays and
+// not what went out, so the document is locked and the record stands. The two
+// differ by reversibility rather than permission, which is the caller's
+// business: a scheduled post's lock can name its way out, a published one's
+// cannot.
+//
+// Deliberately NOT `isTerminalStatus`. That is true of `published` alone today,
+// so it would pass every test — and then silently lock the next status anyone
+// gives an empty edge list to.
+//
+// Just as deliberately false for `scheduled_for_manual_publishing`: nothing has
+// been submitted anywhere, and the date is a reminder to a human. `failed` and
+// `not_published` are the copy coming back, which is precisely when an edit is
+// the point.
+//
+// This is also the seam. The day a post is frozen for some other reason — an
+// approval, a channel freeze, a client sign-off — this predicate changes and no
+// call site does.
+//
+// A type predicate rather than a plain boolean so the caller that has to tell
+// the two apart — the notice explaining the lock, which needs a different
+// sentence for each — narrows instead of re-testing the status by hand.
+export type SubmittedStatus = Extract<PostStatus, 'scheduled' | 'published'>
+
+export function isSubmitted(status: PostStatus): status is SubmittedStatus {
+  return status === 'scheduled' || status === 'published'
+}
+
 // Whether scheduled_at may be edited in the current status (settings-form
 // date picker, calendar drag-and-drop). Locked while `scheduled`: the
 // Zernio submission already carries the publish time, so a PUT would only
 // change the displayed date — the post would still publish at the original
 // time. Unschedule first, then re-schedule. Locked once `published`: the
 // date is history.
+//
+// The same rule as the document's, for the same reason, so it is written as
+// the same predicate rather than a second copy of the status list — if the two
+// ever have to diverge, this is the one line that moves.
 export function canEditScheduledAt(status: PostStatus): boolean {
-  return status !== 'scheduled' && status !== 'published'
+  return !isSubmitted(status)
 }
 
 // Whether the publishing account may still be changed (CON-150). Locked for

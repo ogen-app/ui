@@ -1,3 +1,4 @@
+import { FLAG_IDS } from '@/config/featureFlags'
 import { readFlagOverrides } from '@/config/flagOverrides'
 import { demoMode } from '@/services/api/analytics.demo'
 import { ZIndex } from '@/config/zIndex'
@@ -29,7 +30,11 @@ import { ZIndex } from '@/config/zIndex'
  * Its copy is literal English for the same reason the panel's is.
  */
 export default function OverrideMarker() {
-  const count = Object.keys(readFlagOverrides()).length
+  // Only overrides for flags this build actually has: storage can retain
+  // entries for flags that have since been deleted, and those do nothing —
+  // counting them would make the marker warn about a state with no effect.
+  const overrides = readFlagOverrides()
+  const count = FLAG_IDS.filter((flag) => flag in overrides).length
   const analytics = demoMode()
   if (count === 0 && analytics === 'live') return null
 

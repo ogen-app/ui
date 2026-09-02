@@ -105,29 +105,65 @@ export function AssetDocument({ assetId, campaignId }: Props) {
     setEditVersion(editVersionRef.current)
   }, [])
 
+  /*
+   * One document, one save at a time.
+   *
+   * The API takes the whole document on every PUT, so a title save carries a
+   * body and a body save carries a title — and each must carry the *latest*
+   * one, not whatever the server copy held when the handler was created:
+   * a body edit followed by a title edit inside the debounce window used to
+   * save the new body and then overwrite it with the old one. `draftRef` is
+   * the fields as edited here (null = untouched, fall back to the server's),
+   * and the chain sends the saves strictly in order so an older payload can
+   * never land after a newer one.
+   */
+  const draftRef = useRef<{ title: string | null; content: string | null }>({
+    title: null,
+    content: null,
+  })
+  const saveChainRef = useRef<Promise<unknown>>(Promise.resolve())
+  const { mutateAsync: saveAsset } = updateAsset
+
+  const enqueueSave = useCallback(
+    (payload: { title: string; content: string }) => {
+      const v = editVersionRef.current
+      saveChainRef.current = saveChainRef.current.then(() =>
+        saveAsset({ id: assetId, payload }).then(
+          () => setSavedVersion(v),
+          () => {
+            // Toasted by the mutation cache; the chain must survive so the
+            // next edit still saves. `savedVersion` stays behind — the header
+            // keeps saying unsaved, which is the truth.
+          },
+        ),
+      )
+    },
+    [assetId, saveAsset],
+  )
+
   const handleTitleChange = useCallback(
     (nextTitle: string) => {
       setTitle(nextTitle)
       if (!asset) return
-      const v = editVersionRef.current
-      updateAsset.mutate(
-        { id: assetId, payload: { title: nextTitle, content: asset.content } },
-        { onSuccess: () => setSavedVersion(v) },
-      )
+      draftRef.current.title = nextTitle
+      enqueueSave({
+        title: nextTitle,
+        content: draftRef.current.content ?? asset.content,
+      })
     },
-    [asset, assetId, updateAsset],
+    [asset, enqueueSave],
   )
 
   const handleContentChange = useCallback(
     (content: string) => {
       if (!asset) return
-      const v = editVersionRef.current
-      updateAsset.mutate(
-        { id: assetId, payload: { title: title ?? asset.title, content } },
-        { onSuccess: () => setSavedVersion(v) },
-      )
+      draftRef.current.content = content
+      enqueueSave({
+        title: draftRef.current.title ?? asset.title,
+        content,
+      })
     },
-    [asset, assetId, title, updateAsset],
+    [asset, enqueueSave],
   )
 
   /**

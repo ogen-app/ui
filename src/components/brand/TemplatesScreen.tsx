@@ -366,7 +366,9 @@ function Detail({
         )
       }
       action={
-        <Button variant="outline" size="sm" onClick={onAdd}>
+        // Disabled until a caller wires the flow — the route renders this
+        // screen with no `onAdd` today.
+        <Button variant="outline" size="sm" onClick={onAdd} disabled={!onAdd}>
           {inherited ? 'GIVE IT ITS OWN' : 'REPLACE'}
         </Button>
       }
@@ -487,6 +489,9 @@ function SetPanel({
           variant="outline"
           size="sm"
           onClick={onOpen ? () => onOpen(template.id) : undefined}
+          // No compositor is wired yet — disabled rather than a live button
+          // that does nothing.
+          disabled={!onOpen}
         >
           OPEN IN COMPOSITOR
         </Button>

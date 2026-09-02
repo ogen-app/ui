@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PlusIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,18 +10,15 @@ import { cn } from '@/lib'
 import type { PostNote } from '@/services/api/postNotes'
 
 type Props = {
-  /** The unpinned notes — pinned ones render above the post body instead. */
   notes: PostNote[]
   /** The list is still being read; an empty `notes` means nothing yet. */
   loading?: boolean
   /**
    * The read failed. Has to be said here: queries get no global error toast,
    * and a post whose notes silently failed to load looks identical to a post
-   * that has none — including the pinned thesis, which just isn't there.
+   * that has none.
    */
   error?: boolean
-  isPinned: (note: PostNote) => boolean
-  onTogglePin: (note: PostNote) => void
   onAdd: (note: { title: string; body: string }) => Promise<unknown>
   onSave: (
     note: PostNote,
@@ -42,20 +40,19 @@ export function PostNotesCard({
   notes,
   loading = false,
   error = false,
-  isPinned,
-  onTogglePin,
   onAdd,
   onSave,
   onDelete,
   className,
 }: Props) {
+  const { t } = useTranslation()
   const [composing, setComposing] = useState(false)
 
   return (
     <div className={cn('flex flex-col gap-4 bg-primary px-10 py-6', className)}>
       <div className="flex items-center justify-between gap-4 min-w-0">
         <h2 className="flex items-center gap-2 min-w-0 text-xl font-display font-medium tracking-tight">
-          Notes
+          {t('posts.notes.heading')}
           {notes.length > 0 && (
             <span className="font-normal text-tertiary-foreground">
               {notes.length}
@@ -65,12 +62,12 @@ export function PostNotesCard({
         {!composing && (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => setComposing(true)}
           >
             <PlusIcon />
-            <span>ADD NOTE</span>
+            <span>{t('posts.notes.add')}</span>
           </Button>
         )}
       </div>
@@ -93,10 +90,7 @@ export function PostNotesCard({
       )}
 
       {error && !loading && (
-        <p className="text-sm text-destructive">
-          The notes couldn't be loaded — anything pinned above the post is
-          missing too, not gone. Reload the page to try again.
-        </p>
+        <p className="text-sm text-destructive">{t('posts.notes.loadError')}</p>
       )}
 
       {/* A rule between rows rather than a gap: without it two notes with no
@@ -105,8 +99,6 @@ export function PostNotesCard({
         <NoteCard
           key={note.id}
           note={note}
-          pinned={isPinned(note)}
-          onTogglePin={() => onTogglePin(note)}
           onSave={(patch) => onSave(note, patch)}
           onDelete={() => onDelete(note)}
           className={index > 0 ? 'border-t border-border pt-4' : undefined}
@@ -123,6 +115,7 @@ function NoteComposer({
   onAdd: (note: { title: string; body: string }) => Promise<void>
   onCancel: () => void
 }) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
@@ -144,28 +137,31 @@ function NoteComposer({
         autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Title (optional)"
-        aria-label="Note title"
+        placeholder={t('posts.notes.titlePlaceholder')}
+        aria-label={t('posts.notes.titleLabel')}
       />
       <Textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder="What should this post remember?"
-        aria-label="Note"
+        placeholder={t('posts.notes.bodyPlaceholder')}
+        aria-label={t('posts.notes.bodyLabel')}
       />
       <div className="flex items-center gap-2">
+        {/* Same commit ink as the note editor's SAVE — ghost has no disabled
+            state of its own, so the strong foreground has to fade with it. */}
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
+          className="text-primary-foreground disabled:text-senary-foreground"
           disabled={!body.trim()}
           loading={busy}
           onClick={() => void submit()}
         >
-          <span>Add note</span>
+          <span>{t('posts.notes.add')}</span>
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          <span>Cancel</span>
+          <span>{t('posts.notes.cancel')}</span>
         </Button>
       </div>
     </div>
