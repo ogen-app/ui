@@ -11,13 +11,30 @@ import { SurfaceFader } from '@/components/page-primitives/SurfaceFader'
 import { cn } from '@/lib'
 
 /**
- * Solid panel from the top edge down to the middle of the title's line, so the
- * heading never sits on anything but the surface itself.
+ * Solid panel from the ramp's own top edge down, so the heading never sits on
+ * anything but the surface itself.
  */
 const HEADER_SOLID = 36
 
 /** The ramp below it: colour and blur both from full to nothing across this. */
 const HEADER_FADE = 48
+
+/**
+ * How far above the panel's top edge the whole ramp is hung.
+ *
+ * The ramp is for the body passing *under* the header. At rest there is nothing
+ * under it yet, so any part of it still live where the body begins is a wash
+ * over the first line of a panel nobody has scrolled — which read as the fade
+ * being half-applied to the content rather than to anything behind it. Lifting
+ * it clears the tail off that line; the body's own `pt-2` below opens the rest
+ * of the gap, and the two together are what the first line needs to arrive
+ * clean.
+ *
+ * Only the tail is really moving. The lift comes off the solid run as well, but
+ * that run has 24px of header padding above the title to give up before it
+ * reaches type.
+ */
+const HEADER_LIFT = 8
 
 type RailPanelProps = {
   title: string
@@ -120,8 +137,10 @@ export function RailPanel({
             edge="top"
             solid={`${HEADER_SOLID}px`}
             fade={HEADER_FADE}
-            className="top-0"
-            style={{ height: HEADER_SOLID + HEADER_FADE }}
+            style={{
+              top: -HEADER_LIFT,
+              height: HEADER_SOLID + HEADER_FADE,
+            }}
           />
           <div className="relative pt-6 px-3 lg:px-6 flex flex-col gap-0">
             <div className="flex items-stretch justify-between gap-3">
@@ -166,13 +185,15 @@ export function RailPanel({
                 the title ends. */}
             {!leading && subheader}
           </div>
-          {/* Where the body starts. Well short of the ramp's end, so the first
-              line of it arrives already under the tail of the fade. */}
+          {/* Where the header stops. The body's own `pt-2` sits under this. */}
           <div className="h-3 shrink-0" aria-hidden />
         </div>
         <div
           className={cn(
-            'px-3 lg:px-6 flex flex-col gap-4',
+            // `pt-2` is the other half of `HEADER_LIFT`: it starts the body
+            // clear of the ramp's tail, so the first line is never washed by a
+            // fade that has nothing behind it yet.
+            'px-3 lg:px-6 pt-2 flex flex-col gap-4',
             // With a footer the room at the end is the spacer's job — it has to
             // match the footer exactly, or the last line either hides under it
             // or stops short of it.
