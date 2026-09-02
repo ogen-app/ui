@@ -52,9 +52,19 @@ export function AppSidebarButtonMenu({
       <span className="relative flex shrink-0 items-center">
         {icon}
         {hasCounts && (
+          // Collapsed, the chip has nowhere to go — 20px of rail beside a
+          // glyph is not a figure — so the count becomes the fact that there
+          // is one. Orange and round, the shape a notification is, because
+          // that is all it has left to say it with: grey at this size is
+          // indistinguishable from part of the icon.
+          //
+          // The ring is the sidebar's own surface, not a colour: the dot sits
+          // on the glyph's corner, and without a gap punched around it the two
+          // read as one mark. 1px is enough to separate them and little enough
+          // that the dot doesn't grow into a badge.
           <span
             aria-hidden
-            className="absolute -right-0.5 -top-0.5 hidden size-2 rounded-md bg-tertiary-foreground group-data-[collapsible=icon]:block"
+            className="absolute -right-0.5 -top-0.5 hidden size-2 rounded-full bg-notification ring-1 ring-sidebar-primary group-data-[collapsible=icon]:block"
           />
         )}
       </span>
