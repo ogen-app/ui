@@ -12,7 +12,7 @@ import type { Post, PostStatus } from '@/types/posts'
 //   - → ready_for_publish / → draft are user-requested cancellations that
 //     go through POST /api/posts/:id/cancel (which cancels the Zernio job),
 //     not a plain status PUT — the worker lands the status change later.
-export const POST_STATUS_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
+const POST_STATUS_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
   draft: ['ready_for_publish'],
   ready_for_publish: ['scheduled', 'scheduled_for_manual_publishing', 'draft'],
   scheduled: ['failed', 'published', 'ready_for_publish', 'draft'],
@@ -24,11 +24,6 @@ export const POST_STATUS_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
 
 export function getAllowedNextStatuses(current: PostStatus): PostStatus[] {
   return POST_STATUS_TRANSITIONS[current] ?? []
-}
-
-export function canTransition(from: PostStatus, to: PostStatus): boolean {
-  if (from === to) return true
-  return getAllowedNextStatuses(from).includes(to)
 }
 
 export function isTerminalStatus(status: PostStatus): boolean {
@@ -101,7 +96,10 @@ type ActionMeta = {
   reverse?: true
 }
 
-const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> = {
+const ACTION_META: Record<
+  PostStatus,
+  Partial<Record<PostStatus, ActionMeta>>
+> = {
   draft: {
     ready_for_publish: {
       buttonLabel: 'MARK AS READY',
@@ -224,7 +222,10 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
   },
 }
 
-export function getActionMeta(from: PostStatus, to: PostStatus): ActionMeta | null {
+export function getActionMeta(
+  from: PostStatus,
+  to: PostStatus,
+): ActionMeta | null {
   return ACTION_META[from]?.[to] ?? null
 }
 
@@ -319,12 +320,18 @@ export function getTransitionBlockers(
       blockers.push({ field: 'platform_id', message: 'Pick a platform first' })
     }
     if (!post.platform_post_type) {
-      blockers.push({ field: 'platform_post_type', message: 'Pick a post type first' })
+      blockers.push({
+        field: 'platform_post_type',
+        message: 'Pick a post type first',
+      })
     }
   }
   if (next === 'scheduled' || next === 'scheduled_for_manual_publishing') {
     if (!post.scheduled_at) {
-      blockers.push({ field: 'scheduled_at', message: 'Set a publish date first' })
+      blockers.push({
+        field: 'scheduled_at',
+        message: 'Set a publish date first',
+      })
     } else if (new Date(post.scheduled_at).getTime() <= Date.now()) {
       blockers.push({
         field: 'scheduled_at',
