@@ -1,5 +1,11 @@
 import { apiJson } from './http'
 import { ApiError } from './errors'
+import {
+  demoLearnings,
+  demoMode,
+  demoOverview,
+  demoPerformers,
+} from './analytics.demo'
 import type {
   AnalyticsLearnings,
   AnalyticsOverview,
@@ -90,6 +96,19 @@ export function isAnalyticsUnavailable(error: unknown): boolean {
 /* ------------------------------------------------ the dashboard endpoints -- */
 
 /**
+ * Whether this browser has asked to be served simulated numbers instead.
+ *
+ * Unlike the `STUBBED` constant in `tiers.stub.ts`, these three endpoints exist
+ * and answer — the demo is for a dev machine whose analytics database has never
+ * seen a refresh sweep, so every card is stuck in its setup state. It is off by
+ * default, has to be asked for with `?analytics=demo`, and folds away entirely
+ * in a production build. See `analytics.demo.ts`.
+ */
+function demo(): boolean {
+  return demoMode() !== 'live'
+}
+
+/**
  * The window every dashboard read is asked for, in the server's own vocabulary.
  *
  * `from`/`to` win over `window` and must be sent together — one alone is a 400.
@@ -163,6 +182,7 @@ export function hasHistory<T>(section: LearningsSection<T>): section is T {
 export async function fetchAnalyticsOverview(
   query: AnalyticsWindowQuery = {},
 ): Promise<InsightEnvelope<AnalyticsOverview>> {
+  if (demo()) return demoOverview(query)
   return apiJson<InsightEnvelope<AnalyticsOverview>>(
     `${BASE}/overview${search(windowParams(query))}`,
     'Unable to fetch analytics',
@@ -189,6 +209,7 @@ export type PerformersQuery = AnalyticsWindowQuery & {
 export async function fetchPerformers(
   query: PerformersQuery = {},
 ): Promise<InsightEnvelope<PerformersBoard>> {
+  if (demo()) return demoPerformers(query)
   const params = windowParams(query)
   if (query.by) params.set('by', query.by)
   if (query.limit !== undefined) params.set('limit', String(query.limit))
@@ -218,6 +239,7 @@ export type LearningsQuery = {
 export async function fetchLearnings(
   query: LearningsQuery = {},
 ): Promise<InsightEnvelope<AnalyticsLearnings>> {
+  if (demo()) return demoLearnings(query)
   const params = new URLSearchParams()
   if (query.since) params.set('since', query.since)
   if (query.trendWindow) params.set('trend_window', query.trendWindow)

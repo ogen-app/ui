@@ -8,6 +8,7 @@ import { Sparkbars, Sparkline } from './charts'
 import { FigureTile } from './shell'
 import {
   delta,
+  drawnSeries,
   formatDelta,
   formatMeasure,
   measureMeta,
@@ -44,6 +45,15 @@ export function MeasureTile({
   const meta = measureMeta(reading.measure)
   const d = delta(reading.measure, reading.value, reading.previous)
   const v = verdict(reading.value, reading.expected)
+
+  // The shape the detail chart draws, from the one place that decides it. The
+  // tile and the chart below are a single measure over a single window, and a
+  // jagged daily shape above a monotone climb reads as one of the two being
+  // wrong. It settles the tile with itself too: the label says "Cumulative
+  // reach" and the figure is a period total, which left the sparkline the odd
+  // one out inside its own tile.
+  const columns = meta.chart === 'columns'
+  const points = drawnSeries(meta, reading.series, reading.value)
 
   return (
     <FigureTile selected={selected} onSelect={onSelect} className={className}>
@@ -95,16 +105,16 @@ export function MeasureTile({
         a number someone has to take on trust: interactions at 9,310 could be
         one good day or four steady weeks, and those call for different work.
       */}
-      {reading.series.length > 1 &&
-        (meta.chart === 'columns' ? (
+      {points.length > 1 &&
+        (columns ? (
           <Sparkbars
-            points={reading.series}
+            points={points}
             direction={d?.direction ?? 'neutral'}
             className="mt-auto pt-2"
           />
         ) : (
           <Sparkline
-            points={reading.series}
+            points={points}
             direction={d?.direction ?? 'neutral'}
             className="mt-auto pt-2"
           />

@@ -1,5 +1,7 @@
+import { LinePath } from '@visx/shape'
 import { cn } from '@/lib'
 import { extent, formatDay, formatHours, type Direction } from './format'
+import { buildScale, Plot, PlotFocus, PLOT_HEIGHT } from './plot'
 import type { Point, Publication } from './types'
 
 /**
@@ -159,6 +161,8 @@ export function TrendChart({
   endLabel,
   tickCount,
   publications,
+  formatValue = String,
+  previousLabel = 'the stretch before',
   className,
 }: {
   /** Cumulative for a flow measure; the daily level for a level measure. */
@@ -186,109 +190,140 @@ export function TrendChart({
   tickCount?: number
   /** When posts went out. Drawn between the plot and the dates. */
   publications?: Publication[]
+  /**
+   * How a value reads in the hover card. Left as `String` the chart would put
+   * `0.0412` where the tile above it says `4.1%`, which is the same measure
+   * disagreeing with itself one line apart.
+   */
+  formatValue?: (value: number) => string
+  /** What the ghosted line is called, in the card that names both. */
+  previousLabel?: string
   className?: string
 }) {
-  const W = 640
-  const H = 180
-  const all = [series, previousSeries ?? []]
-  // A running total starts from nothing, so the floor belongs on the scale. A
-  // level does not: forcing 0 onto a follower count that moves between 13.5K
-  // and 14.2K flattens the entire movement into the top two pixels.
-  if (bandShape === 'cone') all.push([{ date: '', value: 0 }])
-  if (band) {
-    all.push([
-      { date: '', value: band.low },
-      { date: '', value: band.high },
-    ])
-  }
+  const bandPoints: Point[] = band
+    ? [
+        { date: '', value: band.low },
+        { date: '', value: band.high },
+      ]
+    : []
   // Headroom above the target, or a target the series hasn't reached sits flat
   // against the top edge and reads as a border rather than a line to clear.
-  if (target !== undefined) all.push([{ date: '', value: target * 1.08 }])
-  const { min, max } = extent(all)
-  const span = max - min
-  const y = (value: number) => H - PAD - ((value - min) / span) * (H - PAD * 2)
+  const targetPoints: Point[] =
+    target === undefined ? [] : [{ date: '', value: target * 1.08 }]
+  const scale = buildScale(
+    [series, previousSeries ?? [], bandPoints, targetPoints],
+    PLOT_HEIGHT,
+    { floor: bandShape === 'cone' },
+  )
   const ticks = dateTicks(series, tickCount, endLabel)
 
   return (
     <div className={cn('relative w-full', className)}>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
-        className="h-44 w-full"
-        role="img"
-        aria-label="Running total across the selected period"
+      <Plot
+        count={series.length}
+        align="point"
+        label="Running total across the selected period"
+        scale={scale}
+        tooltip={(i) => {
+          const point = series[i]
+          if (!point) return null
+          const before = previousSeries?.[i]
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span className="text-tertiary-foreground">
+                {formatDay(point.date)}
+              </span>
+              <span className="font-medium tabular-nums">
+                {formatValue(point.value)}
+              </span>
+              {before && (
+                <span className="text-tertiary-foreground tabular-nums">
+                  {formatValue(before.value)} · {previousLabel}
+                </span>
+              )}
+            </div>
+          )
+        }}
       >
-        {/*
-          Drawn first, so the band, the target and the line all pass over them.
-          A gridline that competes with the data is worse than no gridline —
-          these exist only so a bend in the line can be given a date without
-          counting pixels from the left edge.
-        */}
-        {ticks.slice(1, -1).map((tick) => (
-          <line
-            key={tick.index}
-            x1={tick.fraction * W}
-            x2={tick.fraction * W}
-            y1={0}
-            y2={H}
-            strokeWidth={1}
-            vectorEffect="non-scaling-stroke"
-            className="stroke-quaternary"
-          />
-        ))}
+        {({ width, height, x, y, active }) => (
+          <>
+            {/*
+              Drawn first, so the band, the target and the line all pass over
+              them. A gridline that competes with the data is worse than no
+              gridline — these exist only so a bend in the line can be given a
+              date without counting pixels from the left edge.
+            */}
+            {ticks.slice(1, -1).map((tick) => (
+              <line
+                key={tick.index}
+                x1={tick.fraction * width}
+                x2={tick.fraction * width}
+                y1={0}
+                y2={height}
+                strokeWidth={1}
+                className="stroke-quaternary"
+              />
+            ))}
 
-        {band &&
-          (bandShape === 'cone' ? (
-            <path
-              d={`M0,${y(0)} L${W},${y(band.high)} L${W},${y(band.low)} Z`}
-              className="fill-quaternary"
-              opacity={0.55}
+            {band &&
+              (bandShape === 'cone' ? (
+                <path
+                  d={`M0,${y(0)} L${width},${y(band.high)} L${width},${y(band.low)} Z`}
+                  className="fill-quaternary"
+                  opacity={0.55}
+                />
+              ) : (
+                <rect
+                  x={0}
+                  y={y(band.high)}
+                  width={width}
+                  height={Math.max(1, y(band.low) - y(band.high))}
+                  className="fill-quaternary"
+                  opacity={0.55}
+                />
+              ))}
+
+            {target !== undefined && (
+              <line
+                x1={0}
+                x2={width}
+                y1={y(target)}
+                y2={y(target)}
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                className="stroke-tertiary-foreground"
+              />
+            )}
+
+            {previousSeries && previousSeries.length > 0 && (
+              <LinePath<Point>
+                data={previousSeries}
+                x={(_, i) => x(i)}
+                y={(d) => y(d.value)}
+                strokeWidth={1.5}
+                strokeDasharray="1 3"
+                className="stroke-quinary-foreground"
+                fill="none"
+              />
+            )}
+
+            <LinePath<Point>
+              data={series}
+              x={(_, i) => x(i)}
+              y={(d) => y(d.value)}
+              strokeWidth={2}
+              className="stroke-foreground"
+              fill="none"
+              strokeLinejoin="round"
+              strokeLinecap="round"
             />
-          ) : (
-            <rect
-              x={0}
-              y={y(band.high)}
-              width={W}
-              height={Math.max(1, y(band.low) - y(band.high))}
-              className="fill-quaternary"
-              opacity={0.55}
-            />
-          ))}
 
-        {target !== undefined && (
-          <line
-            x1={0}
-            x2={W}
-            y1={y(target)}
-            y2={y(target)}
-            strokeWidth={1.5}
-            strokeDasharray="4 3"
-            vectorEffect="non-scaling-stroke"
-            className="stroke-tertiary-foreground"
-          />
+            {active !== null && series[active] && (
+              <PlotFocus x={x(active)} y={y(series[active].value)} />
+            )}
+          </>
         )}
-
-        {previousSeries && previousSeries.length > 0 && (
-          <path
-            d={path(previousSeries, min, max, W, H)}
-            fill="none"
-            strokeWidth={1.5}
-            strokeDasharray="1 3"
-            vectorEffect="non-scaling-stroke"
-            className="stroke-quinary-foreground"
-          />
-        )}
-
-        <path
-          d={path(series, min, max, W, H)}
-          fill="none"
-          strokeWidth={2}
-          vectorEffect="non-scaling-stroke"
-          className="stroke-foreground"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </svg>
+      </Plot>
 
       <PublicationRail
         series={series}
@@ -319,6 +354,7 @@ export function ColumnChart({
   endLabel,
   tickCount,
   publications,
+  formatValue = String,
   className,
 }: {
   /** The level on each day, not a running total. */
@@ -329,27 +365,23 @@ export function ColumnChart({
   tickCount?: number
   /** When posts went out. Drawn between the plot and the dates. */
   publications?: Publication[]
+  /** How a value reads in the hover card. See {@link TrendChart}. */
+  formatValue?: (value: number) => string
   className?: string
 }) {
-  const W = 640
-  const H = 180
-  const all: Point[][] = [series, [{ date: '', value: 0 }]]
-  if (band) {
-    all.push([
-      { date: '', value: band.low },
-      { date: '', value: band.high },
-    ])
-  }
-  const { max } = extent(all)
-  // Headroom, so the tallest column doesn't end flush against the top edge and
-  // read as clipped.
-  const top = max * 1.06
-  const y = (value: number) => H - PAD - (value / top) * (H - PAD * 2)
-  const slot = W / Math.max(series.length, 1)
-  // Capped as well as proportional. A two-day window with no cap draws two
-  // slabs a third of the chart wide, which reads as a diagram of something
-  // rather than as two days of a rate.
-  const barWidth = Math.max(1, Math.min(slot * 0.68, 40))
+  const bandPoints: Point[] = band
+    ? [
+        { date: '', value: band.low },
+        { date: '', value: band.high },
+      ]
+    : []
+  // The baseline is zero and not negotiable — a column is read by its area, so
+  // a cropped axis exaggerates every difference on the chart. Headroom on top,
+  // or the tallest column ends flush against the edge and reads as clipped.
+  const scale = buildScale([series, bandPoints], PLOT_HEIGHT, {
+    floor: true,
+    headroom: 1.06,
+  })
   // Labels sit over the middle of their column, not over the edge of the slot
   // it stands in — a column *is* a day, where a point on a line only marks one.
   const ticks = dateTicks(series, tickCount, endLabel).map((tick) => ({
@@ -359,63 +391,86 @@ export function ColumnChart({
 
   return (
     <div className={cn('relative w-full', className)}>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
-        className="h-44 w-full"
-        role="img"
-        aria-label="Each day of the selected period"
-      >
-        {band && (
-          <rect
-            x={0}
-            y={y(band.high)}
-            width={W}
-            height={Math.max(1, y(band.low) - y(band.high))}
-            className="fill-quaternary"
-            opacity={0.55}
-          />
-        )}
-
-        {series.map((point, i) => {
-          const height = Math.max(0, y(0) - y(point.value))
+      <Plot
+        count={series.length}
+        align="slot"
+        label="Each day of the selected period"
+        scale={scale}
+        tooltip={(i) => {
+          const point = series[i]
+          if (!point) return null
           return (
-            <rect
-              key={point.date || i}
-              x={i * slot + (slot - barWidth) / 2}
-              y={y(point.value)}
-              width={barWidth}
-              height={height}
-              // Beige, not ink. Twenty-eight columns at full contrast make the
-              // chart the loudest thing on the card, when what it is there to
-              // support is the figure above it — and the band edges have to
-              // stay readable *over* the bars.
-              className="fill-quaternary-foreground"
-            />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-tertiary-foreground">
+                {formatDay(point.date)}
+              </span>
+              <span className="font-medium tabular-nums">
+                {formatValue(point.value)}
+              </span>
+            </div>
           )
-        })}
+        }}
+      >
+        {({ width, x, y, slot, active }) => {
+          // Capped as well as proportional. A two-day window with no cap draws
+          // two slabs a third of the chart wide, which reads as a diagram of
+          // something rather than as two days of a rate.
+          const barWidth = Math.max(1, Math.min(slot * 0.68, 40))
+          return (
+            <>
+              {band && (
+                <rect
+                  x={0}
+                  y={y(band.high)}
+                  width={width}
+                  height={Math.max(1, y(band.low) - y(band.high))}
+                  className="fill-quaternary"
+                  opacity={0.55}
+                />
+              )}
 
-        {/*
-          The edges of the band, drawn over the columns. The filled band behind
-          them is hidden wherever a column stands in front of it, which is
-          everywhere that matters — and "is today's rate inside the range" is
-          the entire question this chart is asked.
-        */}
-        {band &&
-          [band.low, band.high].map((value) => (
-            <line
-              key={value}
-              x1={0}
-              x2={W}
-              y1={y(value)}
-              y2={y(value)}
-              strokeWidth={1}
-              strokeDasharray="3 3"
-              vectorEffect="non-scaling-stroke"
-              className="stroke-quinary-foreground"
-            />
-          ))}
-      </svg>
+              {series.map((point, i) => (
+                <rect
+                  key={point.date || i}
+                  x={x(i) - barWidth / 2}
+                  y={y(point.value)}
+                  width={barWidth}
+                  height={Math.max(0, y(0) - y(point.value))}
+                  // Beige, not ink. Twenty-eight columns at full contrast make
+                  // the chart the loudest thing on the card, when what it is
+                  // there to support is the figure above it — and the band
+                  // edges have to stay readable *over* the bars.
+                  className={
+                    i === active
+                      ? 'fill-tertiary-foreground'
+                      : 'fill-quaternary-foreground'
+                  }
+                />
+              ))}
+
+              {/*
+                The edges of the band, drawn over the columns. The filled band
+                behind them is hidden wherever a column stands in front of it,
+                which is everywhere that matters — and "is today's rate inside
+                the range" is the entire question this chart is asked.
+              */}
+              {band &&
+                [band.low, band.high].map((value) => (
+                  <line
+                    key={value}
+                    x1={0}
+                    x2={width}
+                    y1={y(value)}
+                    y2={y(value)}
+                    strokeWidth={1}
+                    strokeDasharray="3 3"
+                    className="stroke-quinary-foreground"
+                  />
+                ))}
+            </>
+          )
+        }}
+      </Plot>
 
       <PublicationRail
         series={series}

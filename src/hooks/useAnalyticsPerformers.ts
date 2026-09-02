@@ -23,8 +23,12 @@ import type { PerformerSort } from '@/types/analytics'
  */
 export const ANALYTICS_PERFORMERS_KEY = ['analytics', 'performers'] as const
 
-export function analyticsPerformersKey(window: string, by: PerformerSort) {
-  return [...ANALYTICS_PERFORMERS_KEY, window, by] as const
+export function analyticsPerformersKey(
+  window: string,
+  by: PerformerSort,
+  platform?: string,
+) {
+  return [...ANALYTICS_PERFORMERS_KEY, window, by, platform ?? 'all'] as const
 }
 
 export type AnalyticsPerformersResult = {
@@ -40,10 +44,16 @@ export type AnalyticsPerformersResult = {
 export function useAnalyticsPerformers(
   window: string,
   by: PerformerSort = DEFAULT_PERFORMER_BASIS,
+  /**
+   * The wire slug of one platform, or nothing for all of them. This is the only
+   * one of the three dashboard reads the server will narrow by platform — see
+   * the `analytics-overview` flag.
+   */
+  platform?: string,
 ): AnalyticsPerformersResult {
   const query = useQuery({
-    queryKey: analyticsPerformersKey(window, by),
-    queryFn: () => fetchPerformers({ window, by }),
+    queryKey: analyticsPerformersKey(window, by, platform),
+    queryFn: () => fetchPerformers({ window, by, platform }),
     staleTime: 5 * 60_000,
     retry: 2,
     // Re-ranking is a refetch, and a board that empties itself into a skeleton

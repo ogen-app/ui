@@ -254,6 +254,18 @@ const FEATURE_FLAGS = {
    *   a control on a card; offering it beside the metric would turn an all-time
    *   card back into a period one. The mapper reads it, so a server-set value
    *   already shows in the card's heading.
+   * - **`platform` on `/overview`, and a decision on `/learnings`.** The scope
+   *   bar above the cards offers one platform at a time because that is exactly
+   *   what the server can answer: only `/performers` takes a `platform`, and it
+   *   takes one slug rather than a set. So the filter narrows the board and not
+   *   the other two, and both of them print "every platform — not affected by
+   *   the filter above" under their heading for as long as that is true. Two
+   *   things would retire that note: `platform` on `GET /analytics/overview`,
+   *   and a ruling on whether an all-time lessons card should be narrowable at
+   *   all — "your posts land on Tuesday evenings" may well be a fact about a
+   *   platform rather than about the workspace. Repeatable `platform` on both
+   *   would additionally let the marks go back to multi-select, which is what
+   *   the campaign surface's filter is already written for.
    *
    * **i18n is deferred**, deliberately and on the Brand precedent (CON-227):
    * `components/analytics/*` is hard-coded English throughout, and a translated

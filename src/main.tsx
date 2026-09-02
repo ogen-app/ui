@@ -8,6 +8,7 @@ import { Toaster } from './components/ui/toaster'
 import { LocaleSwitchOverlay } from './components/layout/LocaleSwitchOverlay'
 import { FLAG_IDS } from './config/featureFlags'
 import { DEV_TOOLS, bootstrapFlagOverrides } from './config/flagOverrides'
+import { bootstrapAnalyticsDemo } from './services/api/analytics.demo'
 import { bootstrapLocale } from './stores/localeStore'
 import './i18n'
 import './index.css'
@@ -24,6 +25,11 @@ bootstrapLocale()
 // link has to be in force before the first `beforeLoad` guard consults one.
 // Folds away entirely in a production build. See `config/flagOverrides.ts`.
 bootstrapFlagOverrides(FLAG_IDS)
+
+// `?analytics=demo` — simulated numbers for the dashboard on a machine that
+// measures nothing. Stripped here for the same reason, and folds away in a
+// production build. See `services/api/analytics.demo.ts`.
+bootstrapAnalyticsDemo()
 
 // Only ever mounted on staging and in dev: with `DEV_TOOLS` a build-time
 // `false` the ternary collapses and the marker's chunk is never emitted.

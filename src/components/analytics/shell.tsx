@@ -37,16 +37,34 @@ import { cn } from '@/lib'
  */
 export type SectionScope = 'lens' | 'all-time' | 'ahead'
 
-const SCOPE_NOTE: Record<SectionScope, string | null> = {
-  lens: null,
-  'all-time': 'All time — not affected by the period above',
-  ahead: 'Looking ahead — not affected by the period above',
+/**
+ * What the controls above this card do and do not reach.
+ *
+ * Composed rather than tabulated because the two dimensions are independent: a
+ * card can obey the period and ignore the platform filter, and stacking two
+ * separate footnotes to say so puts more type under the heading than the
+ * heading. One sentence, whichever combination it is.
+ */
+function scopeNote(scope: SectionScope, everyPlatform: boolean): string | null {
+  const period =
+    scope === 'all-time'
+      ? 'All time'
+      : scope === 'ahead'
+        ? 'Looking ahead'
+        : null
+
+  if (!everyPlatform) {
+    return period ? `${period} — not affected by the period above` : null
+  }
+  if (!period) return 'Every platform — not affected by the filter above'
+  return `${period} and every platform — not affected by the controls above`
 }
 
 export function SectionCard({
   title,
   qualifier,
   scope = 'lens',
+  everyPlatform = false,
   status,
   children,
   className,
@@ -63,11 +81,17 @@ export function SectionCard({
    */
   qualifier?: ReactNode
   scope?: SectionScope
+  /**
+   * Whether this card is counted over every platform whatever the filter above
+   * says. True for the two reads the server will not narrow — saying so is what
+   * keeps a filtered screenshot from being read as the whole picture.
+   */
+  everyPlatform?: boolean
   status?: ReactNode
   children: ReactNode
   className?: string
 }) {
-  const note = SCOPE_NOTE[scope]
+  const note = scopeNote(scope, everyPlatform)
   return (
     <section
       className={cn(

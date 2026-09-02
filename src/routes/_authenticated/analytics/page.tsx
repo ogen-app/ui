@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
 import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
-import { Picker } from '@/components/analytics/ComparisonBar'
 import { NotYet, SectionCard } from '@/components/analytics/shell'
+import { WorkspaceScopeBar } from '@/components/analytics/WorkspaceScopeBar'
 import { WorkspaceLearningsView } from '@/components/analytics/WorkspaceLearnings'
 import { WorkspaceOverviewView } from '@/components/analytics/WorkspaceOverview'
 import { WorkspacePerformersView } from '@/components/analytics/WorkspacePerformers'
@@ -16,6 +16,8 @@ import { useAnalyticsLearnings } from '@/hooks/useAnalyticsLearnings.ts'
 import { DEFAULT_PERFORMER_BASIS } from '@/lib/analyticsPerformersView'
 import { DEFAULT_LEARNINGS_METRIC } from '@/lib/analyticsLearningsView'
 import { useFeatureFlag } from '@/config/featureFlags.ts'
+import { usePlatformViews } from '@/hooks/usePlatforms.ts'
+import { connectedAccounts } from '@/lib/platformDictionary.ts'
 import type { LearningsMetric, PerformerSort } from '@/types/analytics'
 
 /**
@@ -59,6 +61,9 @@ export function AnalyticsPage() {
  */
 function Live() {
   const [window, setWindow] = useState<string>(DEFAULT_OVERVIEW_WINDOW)
+  // Our platform id, not the wire slug — the marks are drawn from the app's own
+  // dictionary, and the slug is worked out on the way to the request.
+  const [platform, setPlatform] = useState<string | undefined>(undefined)
   // The board's own control, held here because it is a query parameter rather
   // than a view of what is already loaded — the server ranks and sends two
   // clamped ends, so re-ranking is a refetch.
@@ -68,39 +73,48 @@ function Live() {
   const [metric, setMetric] = useState<LearningsMetric>(
     DEFAULT_LEARNINGS_METRIC,
   )
+
+  const views = usePlatformViews()
+  const platforms = views.map((view) => ({
+    id: view.info.id,
+    label: view.info.name,
+    accounts: connectedAccounts(view).length,
+  }))
+  // The board is the only read the server will narrow, and it takes Zernio's
+  // slug rather than ours — `twitter` where the app says `x`.
+  const wireSlug = views.find((v) => v.info.id === platform)?.info.zernioId
+
   const overview = useAnalyticsOverview(window)
-  const performers = useAnalyticsPerformers(window, by)
+  const performers = useAnalyticsPerformers(window, by, wireSlug)
   const learnings = useAnalyticsLearnings(metric)
-  const current =
-    OVERVIEW_WINDOWS.find((w) => w.window === window) ?? OVERVIEW_WINDOWS[1]
+
+  // Whether a filter the two standing cards cannot honour is on screen at all.
+  // The bar hides its marks when only one platform is connected, and a card
+  // must not disclaim a control the reader cannot see.
+  const filterable = platforms.filter((p) => p.accounts > 0).length > 1
 
   return (
     <>
-      <PageHeader
-        title="Analytics"
-        actions={
-          <Picker
-            label="Period"
-            value={current.label}
-            options={OVERVIEW_WINDOWS.map((w) => ({
-              value: w.window,
-              label: w.label,
-            }))}
-            onChange={setWindow}
-          />
-        }
-      />
+      <PageHeader title="Analytics" />
       {/*
         What happened, then which posts did it, then what holds whatever the
         period. The order is the order the questions arrive in: the overview's
         five figures provoke exactly one follow-up and the board is it, and only
         once you have seen both is "so what should we do differently" a question
         rather than a slogan. It is last for a second reason — it is the one
-        card the control above does not reach, and the reader meets it having
-        already used that control twice.
+        card the controls above reach least, and the reader meets it having
+        already used them.
       */}
       <div className="flex flex-col gap-3 px-3 lg:px-6 pt-4 pb-10">
-        <WorkspaceOverviewView {...overview} />
+        <WorkspaceScopeBar
+          platforms={platforms}
+          platform={platform}
+          onPlatformChange={setPlatform}
+          window={window}
+          windows={OVERVIEW_WINDOWS}
+          onWindowChange={setWindow}
+        />
+        <WorkspaceOverviewView {...overview} everyPlatform={filterable} />
         <WorkspacePerformersView
           result={performers}
           by={by}
@@ -110,6 +124,7 @@ function Live() {
           result={learnings}
           metric={metric}
           onChangeMetric={setMetric}
+          everyPlatform={filterable}
         />
       </div>
     </>

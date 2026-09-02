@@ -11,7 +11,24 @@ import {
 } from '@/config/flagOverrides'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import {
+  demoMode,
+  setDemoMode,
+  type DemoMode,
+} from '@/services/api/analytics.demo'
 import { cn } from '@/lib'
+
+/** What each analytics mode answers, said in the panel rather than in a doc. */
+const ANALYTICS_MODES: { id: DemoMode; label: string; note: string }[] = [
+  { id: 'live', label: 'Live', note: 'Whatever the API says' },
+  { id: 'demo', label: 'Demo', note: 'Simulated numbers, a full dashboard' },
+  { id: 'empty', label: 'No data', note: 'Wired up, nothing published yet' },
+  {
+    id: 'unavailable',
+    label: 'Unavailable',
+    note: 'Measurement not connected',
+  },
+]
 
 /**
  * The staging flag panel — every flag in the build, and a switch per flag that
@@ -131,6 +148,30 @@ export default function FlagsPanel() {
             </ul>
           </div>
         )}
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-sm font-medium">Analytics data</h2>
+          <p className="text-sm text-tertiary-foreground">
+            A local API measures nothing, so the dashboard is only ever seen in
+            its setup state. <strong>Demo</strong> serves simulated numbers to
+            all three cards instead — invented, and about this workspace's own
+            posts, so the corner says so for as long as it is on. Also reachable
+            as <code className="font-mono">?analytics=demo</code>.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {ANALYTICS_MODES.map((option) => (
+              <Button
+                key={option.id}
+                variant={demoMode() === option.id ? 'default' : 'outline'}
+                size="sm"
+                title={option.note}
+                onClick={() => apply(() => setDemoMode(option.id))}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </div>
 
         <div className="flex flex-col gap-2">
           <h2 className="text-sm font-medium">Share this set</h2>

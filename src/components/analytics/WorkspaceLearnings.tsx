@@ -45,10 +45,13 @@ export function WorkspaceLearningsView({
   result,
   metric,
   onChangeMetric,
+  everyPlatform = false,
 }: {
   result: AnalyticsLearningsResult
   metric: LearningsMetric
   onChangeMetric: (metric: LearningsMetric) => void
+  /** Whether a platform filter is on screen that this card is not counted under. */
+  everyPlatform?: boolean
 }) {
   const { view, isPending, isError, isUnavailable, isEmpty } = result
 
@@ -58,7 +61,12 @@ export function WorkspaceLearningsView({
 
   if (isUnavailable) {
     return (
-      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
+      <Shell
+        metric={metric}
+        onChangeMetric={onChangeMetric}
+        withPicker={false}
+        everyPlatform={everyPlatform}
+      >
         <NotYet title="Nothing is being measured for this workspace">
           Once measurement is connected, the hours you publish into, how long a
           post keeps earning, and what your posts have in common show up here —
@@ -73,7 +81,12 @@ export function WorkspaceLearningsView({
   // that has simply never published that something is broken.
   if (isEmpty) {
     return (
-      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
+      <Shell
+        metric={metric}
+        onChangeMetric={onChangeMetric}
+        withPicker={false}
+        everyPlatform={everyPlatform}
+      >
         <NotYet title="Nothing published yet">
           These are lessons drawn from your own posts, so they start the day you
           have some. Nothing needs setting up.
@@ -84,7 +97,12 @@ export function WorkspaceLearningsView({
 
   if (isError || !view) {
     return (
-      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
+      <Shell
+        metric={metric}
+        onChangeMetric={onChangeMetric}
+        withPicker={false}
+        everyPlatform={everyPlatform}
+      >
         <NotYet title="Couldn't load what we've learned">
           The workspace itself is unaffected — nothing here changes what is
           scheduled or published. Try again in a moment.
@@ -99,6 +117,7 @@ export function WorkspaceLearningsView({
       onChangeMetric={onChangeMetric}
       withPicker
       qualifier={view.historySince ?? undefined}
+      everyPlatform={everyPlatform}
     >
       <Section icon={CalendarBlankIcon} title="When your posts land">
         {view.heatmap ? (
@@ -173,18 +192,21 @@ function Shell({
   onChangeMetric,
   withPicker,
   qualifier,
+  everyPlatform = false,
   children,
 }: {
   metric: LearningsMetric
   onChangeMetric: (metric: LearningsMetric) => void
   withPicker: boolean
   qualifier?: string
+  everyPlatform?: boolean
   children: React.ReactNode
 }) {
   return (
     <SectionCard
       title="What we've learned"
       scope="all-time"
+      everyPlatform={everyPlatform}
       qualifier={qualifier}
       status={
         withPicker ? (

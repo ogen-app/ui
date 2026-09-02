@@ -14,6 +14,7 @@ import { Basis, FigureGrid, NotYet, SectionCard } from './shell'
 import {
   accumulate,
   delta,
+  drawnSeries,
   formatDay,
   formatMeasure,
   measureMeta,
@@ -46,10 +47,13 @@ import {
 export function NowSection({
   view,
   initialMeasure,
+  everyPlatform = false,
 }: {
   view: NowView
   /** Which tab opens. Omit for the headline measure. */
   initialMeasure?: MeasureId
+  /** Whether a platform filter above this card reaches it. See `SectionCard`. */
+  everyPlatform?: boolean
 }) {
   const headline = view.readings[0]
   const [selectedMeasure, setSelectedMeasure] = useState<MeasureId | null>(
@@ -65,7 +69,12 @@ export function NowSection({
   // later.
   if (view.coverage.measured === 0) {
     return (
-      <SectionCard title="What happened" qualifier={window} scope="lens">
+      <SectionCard
+        title="What happened"
+        qualifier={window}
+        scope="lens"
+        everyPlatform={everyPlatform}
+      >
         <EmptyChart />
         <p className="text-[13px] text-secondary-foreground">
           No data yet —{' '}
@@ -93,12 +102,11 @@ export function NowSection({
 
   // A flow accumulates into a period total and is drawn as progress; a level
   // is already the number on the day, and summing it would invent a quantity
-  // that doesn't exist. See `MeasureMeta.kind`.
+  // that doesn't exist. See `MeasureMeta.kind`. Decided in `drawnSeries` rather
+  // than here, because the tiles above have to draw the same shape.
   const flow = meta.kind === 'flow'
   const columns = meta.chart === 'columns'
-  const series = flow
-    ? accumulate(reading.series, reading.value)
-    : reading.series
+  const series = drawnSeries(meta, reading.series, reading.value)
   // A ghost of the previous stretch works behind a line and not behind columns
   // — two sets of bars at the same dates read as a comparison of two things on
   // the same day, which is the one thing they are not.
@@ -115,7 +123,12 @@ export function NowSection({
         : reading.previousSeries
 
   return (
-    <SectionCard title="What happened" qualifier={window} scope="lens">
+    <SectionCard
+      title="What happened"
+      qualifier={window}
+      scope="lens"
+      everyPlatform={everyPlatform}
+    >
       <FigureGrid>
         {view.readings.map((r) => (
           <MeasureTile
@@ -149,10 +162,11 @@ export function NowSection({
         </div>
         {columns ? (
           <ColumnChart
-            series={reading.series}
+            series={series}
             band={reading.expected ?? undefined}
             publications={publications}
             endLabel="Today"
+            formatValue={(v) => formatMeasure(reading.measure, v)}
           />
         ) : (
           <TrendChart
@@ -162,6 +176,12 @@ export function NowSection({
             bandShape={flow ? 'cone' : 'flat'}
             publications={publications}
             endLabel="Today"
+            formatValue={(v) => formatMeasure(reading.measure, v)}
+            // The legend's own wording. The hover card names the same two lines
+            // the key above it does, and two names for one line is two lines.
+            previousLabel={
+              anchor ? `the stretch to ${anchor}` : 'the stretch before'
+            }
           />
         )}
       </div>

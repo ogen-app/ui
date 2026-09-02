@@ -168,6 +168,30 @@ export function accumulate(points: Point[], total: number): Point[] {
   }))
 }
 
+/**
+ * The points a measure is drawn from — wherever it is drawn.
+ *
+ * Both the tile's sparkline and the detail chart under it come through here,
+ * because the two are one measure over one window and the only way they can
+ * disagree about its shape is by holding a copy of this rule each. They did,
+ * and they drifted: the tile drew per-day buckets under a label reading
+ * "Cumulative reach" while the chart below drew the running total.
+ *
+ * A **flow** is accumulated into the period total it is labelled with. A
+ * **level** is already the number on the day. **Columns** are drawn from the
+ * raw buckets whatever their kind — the point of bars is the day-to-day
+ * quantity, and a running total in bars is a staircase nobody reads.
+ */
+export function drawnSeries(
+  meta: MeasureMeta,
+  points: Point[],
+  /** The headline figure the accumulated line has to land on. */
+  total: number,
+): Point[] {
+  if (meta.chart === 'columns' || meta.kind !== 'flow') return points
+  return accumulate(points, total)
+}
+
 /* ---------------------------------------------------------- post history -- */
 
 /**

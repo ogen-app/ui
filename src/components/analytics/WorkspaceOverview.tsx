@@ -35,7 +35,16 @@ export function WorkspaceOverviewView({
   isError,
   isUnavailable,
   isEmpty,
-}: AnalyticsOverviewResult) {
+  everyPlatform = false,
+}: AnalyticsOverviewResult & {
+  /**
+   * Whether a platform filter is on screen that this card is not counted under.
+   * `GET /overview` takes no `platform`, so on the workspace page this is true
+   * whenever the filter is offered at all — and the card says so rather than
+   * letting a filtered page be read as filtered throughout.
+   */
+  everyPlatform?: boolean
+}) {
   if (isPending) {
     return <Skeleton className="h-96 w-full max-w-content mx-auto" />
   }
@@ -83,5 +92,5 @@ export function WorkspaceOverviewView({
     )
   }
 
-  return <NowSection view={view} />
+  return <NowSection view={view} everyPlatform={everyPlatform} />
 }
