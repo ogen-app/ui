@@ -167,12 +167,14 @@ const FEATURE_FLAGS = {
    *    *current* window's buckets) and the learnings sections, each of which
    *    withdraws on its own.
    *
-   * The two workspace-wide surfaces (`components/analytics`) are further along
-   * than the campaign one and could ship first — they need no campaign
-   * dimension. What they still need is a mapper from these wire shapes onto
-   * their view models, and three of their fields have no wire source at all:
-   * per-post `matured`, the performers' `curve`/`typical`, and the `save_rate`
-   * and `follow_rate` criteria (`/performers` reports no saves or follows).
+   * The two workspace-wide surfaces (`components/analytics`) needed no campaign
+   * dimension and have shipped ahead of this one: `analytics-overview` is on,
+   * with the mappers from these wire shapes onto the view models written and
+   * tested. Three of their fields still have no wire source at all — per-post
+   * `matured`, the performers' `curve`/`typical`, and the `save_rate` and
+   * `follow_rate` criteria (`/performers` reports no saves or follows) — and
+   * each surface states that where it would otherwise draw them. This flag is
+   * waiting on the campaign dimension, nothing else.
    * See `docs/analytics-contract.md`.
    */
   'campaign-analytics': false,
@@ -196,9 +198,15 @@ const FEATURE_FLAGS = {
    * workspace surface that can ship first, exactly as the note on that flag
    * predicted.
    *
-   * **Off because none of it has been run against a live workspace.**
-   * Everything here was read off the Go source and the hand-off comments. What
-   * wants confirming before the flag flips:
+   * **On.** The endpoints exist, the surface is complete and its copy is
+   * catalogued, so the honest state of it is shipped rather than hidden — with
+   * this off the route rendered a description of itself, which is a worse thing
+   * to show than real numbers with a stated coverage.
+   *
+   * What is *not* yet true is that any of it has met a live workspace:
+   * everything here was read off the Go source and the hand-off comments, so
+   * first contact is still the test. Seven things to look at when it happens,
+   * in rough order of how quietly they would be wrong:
    *
    * 1. **The window picker end to end.** `7d`/`28d`/`90d` all resolve to day
    *    buckets server-side; a window that quietly came back weekly would put a
@@ -267,14 +275,22 @@ const FEATURE_FLAGS = {
    *   would additionally let the marks go back to multi-select, which is what
    *   the campaign surface's filter is already written for.
    *
-   * **i18n is deferred**, deliberately and on the Brand precedent (CON-227):
-   * `components/analytics/*` is hard-coded English throughout, and a translated
-   * wrapper around an untranslated card is worse than either. The sidebar row
-   * *is* translated, because the sidebar is converted (CON-174) and a single
-   * English row in it would be the only one. Convert the analytics components
-   * as one pass before this ships to a non-English workspace.
+   * **i18n is done.** This used to defer it on the Brand precedent (CON-227),
+   * with the note that the components had to be converted as one pass before
+   * the surface could ship to a non-English workspace. That pass has happened:
+   * every string in `components/analytics/*` and in the three view mappers is
+   * a catalogue entry, the measure and criterion tables carry behaviour only,
+   * and the `en-GB`/`en-US` locale pins that used to sit in `format.ts` and the
+   * two mappers are gone — dates and numbers read the app's language like
+   * everything else. `components/analytics/localisation.test.tsx` renders the
+   * surface in Spanish and asserts on what comes out, which is the only way to
+   * tell a converted component from one whose literals happen to be English.
+   *
+   * Delete this flag, and the preview it switches between, once the surface has
+   * been exercised against the deployed API — a flag left switched on is a
+   * branch nobody takes and a question nobody re-asks.
    */
-  'analytics-overview': false,
+  'analytics-overview': true,
 
   /**
    * **Brand** — the workspace-level material every campaign writes from
