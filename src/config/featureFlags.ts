@@ -237,6 +237,119 @@ const FEATURE_FLAGS = {
   'content-bank-images': true,
 
   /**
+   * **Thread sequences** (CON-196) — a post on X or Threads that publishes as
+   * a chain of connected posts rather than one.
+   *
+   * Zernio takes one on both networks as
+   * `platformSpecificData.threadItems`: "the first item is the root post and
+   * subsequent items become replies in order", each item carrying its own text
+   * and its own media (docs.zernio.com/platforms/threads, /platforms/twitter).
+   * That is the format this is built against, and it is the whole reason the
+   * feature can exist at all.
+   *
+   * **Waiting on four things, all server-side.**
+   *
+   * 1. **The field.** `SubmitRequest` in `publishers/zernio/posts.go` has no
+   *    `platformSpecificData` at all, and nothing in the Go repo mentions
+   *    `threadItems` — so an X `thread` post today is submitted as one blob of
+   *    top-level `content` and publishes as a single post. The chain the
+   *    preview card draws has never been what goes out. This is the one that
+   *    makes the feature real; the rest is bookkeeping.
+   * 2. **The same split, server-side.** The thread is *derived* from the body
+   *    (`lib/threadSequence`) rather than stored as a list, which is the whole
+   *    shape of the feature: one Markdown editor, dividers as the breaks,
+   *    blank lines where there are none, and anything still past the per-post
+   *    ceiling cut to fit. So the publisher has to cut `content` the same way
+   *    before it fills `threadItems`, or what goes out is not what the author
+   *    was shown. That is the `src/lib/*` arrangement this repo already runs on
+   *    — the Go rule is the source of truth and ours mirrors it — and
+   *    `splitBody`/`splitToLimit` are written to be portable for exactly that
+   *    reason. Its tests are the specification.
+   * 3. **A home for the media assignment.** *Which post carries which file* is
+   *    the one thing a body cannot say, so it is the one thing stored: a map
+   *    from attachment id to post index, under `thread-sequence.<postId>` in
+   *    the tenant key/value store (`useThreadSequence`), the same stand-in
+   *    `campaign-accounts` uses while waiting for its column. What that cannot
+   *    do: the row is workspace-wide like every other settings key, and two
+   *    people moving files on the same post in the same second means the later
+   *    write wins. Losing it entirely is survivable by design — an attachment
+   *    with no entry rides the first post, which is where every file rode
+   *    before this existed.
+   * 4. **The slug on Threads.** `supportedPlatforms` in
+   *    `publishers/zernio/platforms.go` lists `thread` for `twitter` only, so
+   *    a Threads thread cannot actually be *submitted* until it is added
+   *    there. The UI no longer waits on it: `buildPlatformView` intersects our
+   *    dictionary with what a publisher reports, and `aheadOfPublishers`
+   *    (`lib/platformDictionary`) lets this flag answer in the missing slug's
+   *    place while it is on — because the honest intersection hides the
+   *    feature from the network it is named after for as long as the server
+   *    takes to learn one word, which is the opposite of what running ahead
+   *    behind a flag is for. The stand-in is itself flag-scoped: with this
+   *    off the publisher is the whole answer, exactly as before.
+   * 5. **Media validation counted per item.** Found testing the real screen:
+   *    the server validates attachments against the *post*, so five images
+   *    spread three-one-one over a chain still comes back as "post has 5 image
+   *    attachments; platform allows up to 4" — a warning the author cannot act
+   *    on, because no post of the thread is over. Our own count row already
+   *    stands down for a thread (`mediaChecks`) and the per-post verdict comes
+   *    from `planThread`, but `platform_validation` is the server's and is
+   *    passed through as written — deliberately, because it is right *today*:
+   *    until (1) lands, a thread really does publish as one post with every
+   *    file on it. It has to become per-item at the same time the split does,
+   *    or the flag turns on a screen with a permanent false alarm.
+   *
+   * With this off, Threads does not offer the type (`buildPlatformView` and
+   * `releasedPostTypes` both drop it), nothing reads the settings key, and the
+   * editor is what it always was. X keeps offering `thread`, as it always has
+   * — withdrawing it would be a change with the flag off, which a flag may
+   * never make. An existing X `thread` post therefore behaves identically
+   * either way, because a thread is the same one Markdown body as every other
+   * post type; all the flag adds is the note under the editor, the
+   * per-thumbnail picker and the row in the pre-publish bar.
+   *
+   * Nothing outside the flag reads anything new: `doc.content` is still the
+   * post's words, unchanged and un-rewritten, so the calendar, the posts table,
+   * search and the assistant are untouched by this.
+   *
+   * Switch this on once the submit path sends `threadItems`, splits the body
+   * the way we do and names the slug on `threads`, then re-test the whole path
+   * against the real thing — the media assignment is the half most likely to
+   * need a pass, and (5) is the one that shows up as a warning rather than as
+   * a wrong post.
+   */
+  'thread-sequence': false,
+
+  /**
+   * *Show cards as image previews* in Calendar Settings — the one switch in
+   * that panel, and the calendar-wide answer the per-view `image` field is
+   * copied from (`useCalendarSettings`).
+   *
+   * **Waiting on:** CON-247. The switch has never done anything and could not:
+   * a card's only image source is `post.media_urls`, and nothing writes it.
+   * Editor uploads land in `post_attachments`, which `GET /api/campaigns/:id/
+   * posts` does not join — and that table's `thumbnail_url` is a 15-minute
+   * presigned GET, so copying one into `media_urls` would store a URL that is
+   * dead within the hour. The fix is the server's: a thumbnail on the post list
+   * payload, from a durable key the way `assets` already does it.
+   *
+   * So this is a flag over a control rather than a feature — it was on by
+   * default and inert, which is worse than absent: a switch that is already
+   * *on* tells the user the pictures are missing for some other reason, and the
+   * one thing it can't be read as is "not built yet". Hidden, the panel stops
+   * making a promise the calendar can't keep.
+   *
+   * Nothing else changes with it off. The stored preference is left alone, so
+   * whatever a user set comes back when this is switched on, and the card
+   * renders exactly as it does today either way — it has no picture to draw.
+   *
+   * Switch this on when the payload carries a thumbnail, and re-test against
+   * a real one: the card reserves a band for the image and the month view only
+   * offers it where a cell has room (`cardRungs`), neither of which has ever
+   * been seen with an actual picture in it.
+   */
+  'calendar-card-images': false,
+
+  /**
    * Deleting one saved version of a post, from the version-history panel
    * (CON-168). Off until the API grows `DELETE /api/posts/:id/versions/
    * :versionId` — `handlers/posts.go` registers `GET`/`POST` on `/versions`

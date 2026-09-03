@@ -27,6 +27,7 @@ import {
   YoutubeLogoIcon,
 } from '@phosphor-icons/react'
 
+import { isFeatureEnabled, type FeatureFlag } from '@/config/featureFlags'
 import type {
   Platform,
   PlatformPublisher,
@@ -36,6 +37,23 @@ import type {
 export type PlatformPostType = {
   slug: string
   label: string
+  /**
+   * A post type this build has written but not released. Both readers drop it
+   * while the flag is off — `buildPlatformView` for anything asking what can
+   * publish, `releasedPostTypes` for the editor's picker — so it reaches no
+   * menu and no editor: the same gate every other half-built feature goes
+   * through, applied to the one thing a platform's vocabulary can be
+   * half-built in.
+   *
+   * While it is *on* the flag also stands in for the publisher's vocabulary,
+   * which is `aheadOfPublishers` below — a type the server has not learned to
+   * name yet is exactly what running ahead behind a flag is for.
+   *
+   * Only for types that are *new*. A type the app already offered must not
+   * acquire one: withdrawing it would change how the app behaves with the flag
+   * off, which is the one thing a flag may never do.
+   */
+  flag?: FeatureFlag
 }
 
 export type PlatformInfo = {
@@ -118,6 +136,20 @@ export const PLATFORMS: PlatformInfo[] = [
       { slug: 'image-post', label: 'Image post' },
       { slug: 'carousel', label: 'Carousel' },
       { slug: 'video', label: 'Video' },
+      // "Thread" and not "Sequence" on the network called Threads: a chain is
+      // what Meta's own app calls a thread ("add to thread"), the same word X
+      // uses, and one vocabulary across both beats one that reads better on a
+      // single screen. Zernio takes the identical `threadItems` on both
+      // (CON-196).
+      //
+      // Flagged where X's is not, because this one is new: X has offered
+      // `thread` all along and taking it away would be a change with the flag
+      // off. The flag is also the *only* gate this one has, because
+      // `supportedPlatforms` in the Go repo lists `thread` for `twitter` only
+      // — so the publisher will not report it here until the slug lands, and
+      // `aheadOfPublishers` lets the flag answer in its place rather than
+      // hiding the feature from the network it is named after.
+      { slug: 'thread', label: 'Thread', flag: 'thread-sequence' },
     ],
   },
   {
@@ -174,8 +206,9 @@ function unionSupportedSlugs(
 }
 
 // A resolved view of a platform: the dictionary metadata joined with the
-// publisher state from the API. The post-type universe is bounded by what
-// at least one publisher supports — dictionary-only entries are excluded.
+// publisher state from the API. The post-type universe is bounded by what at
+// least one publisher supports — dictionary-only entries are excluded, with
+// the one deliberate exception `aheadOfPublishers` names.
 export type PlatformView = {
   platform: Platform
   info: PlatformInfo
@@ -190,6 +223,26 @@ export type PlatformView = {
   connectedPublisherName: string | null
 }
 
+/**
+ * Whether a released-but-flagged type may stand in for a slug no publisher has
+ * declared.
+ *
+ * A flag means this build is ahead of the API — and on Threads the publisher's
+ * *vocabulary* is part of what the API cannot back yet: `supportedPlatforms` in
+ * the Go repo lists `thread` for `twitter` only. Intersecting with it would
+ * hide the feature from a network it was written for, which is the opposite of
+ * what running ahead behind a flag is for. So while the flag is on, the
+ * platform's own state answers in the slug's place: a publisher exists, so the
+ * type is allowed; that publisher is connected, so it is available.
+ *
+ * Narrow on purpose. It costs nothing with the flag off — `released` has
+ * already dropped the type by then — and it never touches an unflagged one, so
+ * a slug the server has genuinely withdrawn still disappears from the app.
+ */
+function aheadOfPublishers(pt: PlatformPostType): boolean {
+  return pt.flag !== undefined
+}
+
 export function buildPlatformView(
   platform: Platform,
   info: PlatformInfo,
@@ -198,9 +251,24 @@ export function buildPlatformView(
   const connectedPublishers = publishers.filter((p) => p.connected)
   const allowedSlugs = unionSupportedSlugs(publishers)
   const availableSlugs = unionSupportedSlugs(connectedPublishers)
-  const allowed = info.postTypes.filter((pt) => allowedSlugs.has(pt.slug))
-  const available = allowed.filter((pt) => availableSlugs.has(pt.slug))
-  const unavailable = allowed.filter((pt) => !availableSlugs.has(pt.slug))
+  // Two gates, and they answer different questions. `pt.flag` is whether this
+  // build has released the type at all; `allowedSlugs` is what a publisher can
+  // send — deployment and configuration. The release gate comes first, because
+  // an unreleased type has no business being asked about.
+  const released = info.postTypes.filter(
+    (pt) => !pt.flag || isFeatureEnabled(pt.flag),
+  )
+  const allowed = released.filter(
+    (pt) =>
+      allowedSlugs.has(pt.slug) ||
+      (aheadOfPublishers(pt) && publishers.length > 0),
+  )
+  const available = allowed.filter(
+    (pt) =>
+      availableSlugs.has(pt.slug) ||
+      (aheadOfPublishers(pt) && connectedPublishers.length > 0),
+  )
+  const unavailable = allowed.filter((pt) => !available.includes(pt))
   return {
     platform,
     info,
@@ -232,6 +300,24 @@ export function buildPlatformViews(platforms: Platform[]): PlatformView[] {
     const info = getPlatformInfo(platform.id)
     return info ? [buildPlatformView(platform, info)] : []
   })
+}
+
+/**
+ * A platform's post types, minus the ones this build has not released yet.
+ *
+ * The `flag` gate on its own. `buildPlatformView` applies it together with the
+ * publisher gate, which is the right pair when the question is "can this go
+ * out" — but the editor's picker asks a different one: the *campaign* decides
+ * which types it offers, and a type no connected publisher supports is shown
+ * as unconnected rather than hidden. That picker still must not offer an
+ * unreleased type, so it takes the release gate by itself.
+ */
+export function releasedPostTypes(platformId: string): PlatformPostType[] {
+  return (
+    getPlatformInfo(platformId)?.postTypes.filter(
+      (pt) => !pt.flag || isFeatureEnabled(pt.flag),
+    ) ?? []
+  )
 }
 
 export function getPostTypeLabel(platformId: string, slug: string): string {

@@ -31,3 +31,14 @@ window.matchMedia = (query: string) =>
     removeListener: () => {},
     dispatchEvent: () => false,
   }) as MediaQueryList
+
+// Nor does it implement ResizeObserver, which `ui/textarea.tsx` uses to
+// re-measure its auto-grown height when the column width changes. Nothing
+// resizes in jsdom, so a constructor that observes nothing is the whole of
+// what a test needs — without it, rendering any Textarea throws.
+class NoopResizeObserver implements ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver = NoopResizeObserver

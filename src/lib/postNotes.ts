@@ -1,56 +1,51 @@
 import type { PostNote, PostNoteType } from '@/services/api/postNotes'
 
 /**
- * What a note's type is called on screen. The front end owns this copy — the
- * API sends `draft_thesis`, never a label — so an unknown type coming back
- * from a server that has grown the vocabulary reads as a plain note rather
- * than leaking a snake_case identifier into the page.
+ * The catalogue keys `noteTypeKey` can answer with. Spelled out rather than
+ * `string`, so `t()` still type-checks them against the catalogue at the call
+ * site — a key renamed in `en.ts` has to break here, not at run time.
  */
-export function noteTypeLabel(type: PostNoteType | string): string {
+export type NoteTypeKey =
+  | 'posts.notes.type.note'
+  | 'posts.notes.type.draftThesis'
+  | 'posts.notes.type.imagePrompt'
+
+/**
+ * The catalogue key naming a note's type on screen.
+ *
+ * A table of keys rather than of copy: the API sends `draft_thesis`, never a
+ * label, and the vocabulary is validated in Go rather than by a DB constraint
+ * — so a type this build predates can arrive without a UI release. It maps
+ * onto `note` rather than leaking a snake_case identifier into the page.
+ */
+export function noteTypeKey(type: PostNoteType | string): NoteTypeKey {
   switch (type) {
     case 'draft_thesis':
-      return 'Draft thesis'
+      return 'posts.notes.type.draftThesis'
     case 'image_prompt':
-      return 'Image prompt'
+      return 'posts.notes.type.imagePrompt'
     default:
-      return 'Note'
+      return 'posts.notes.type.note'
   }
 }
 
 /**
- * Whether a note is pinned above the post body.
+ * The heading a note card carries.
  *
- * A `draft_thesis` is pinned unless the user has said otherwise. It is the
- * outline the post is being written *from* — since CON-188 the content plan
- * leaves the body empty and puts the thesis here, so filing it under the
- * images would hide the only copy of the brief behind a scroll.
- *
- * That default is why pins are stored as a map rather than a list of ids: an
- * explicit `false` has to be able to outvote the default, and "absent from a
- * list" cannot say that.
+ * The title when it has one — the note's own words are what identifies it in a
+ * list of notes. Failing that, a type worth naming: a draft thesis and an
+ * image prompt say where they came from, which a person cannot infer from the
+ * body. A plain untitled note gets nothing, because "Note" under a card headed
+ * "Notes" is the one label that adds no information — and a type this build
+ * predates is a plain note for exactly the same reason.
  */
-export function isNotePinned(
+export function noteHeading(
   note: PostNote,
-  pins: Record<string, boolean>,
-): boolean {
-  return pins[note.id] ?? note.type === 'draft_thesis'
-}
-
-/**
- * Splits the server's list into the two places notes render — above the post
- * body, and below the media — preserving the order the server sent (draft
- * theses first, then oldest-first) within each group.
- */
-export function splitNotesByPin(
-  notes: PostNote[],
-  pins: Record<string, boolean>,
-): { pinned: PostNote[]; rest: PostNote[] } {
-  const pinned: PostNote[] = []
-  const rest: PostNote[] = []
-  for (const note of notes) {
-    ;(isNotePinned(note, pins) ? pinned : rest).push(note)
-  }
-  return { pinned, rest }
+): { kind: 'title'; text: string } | { kind: 'type'; key: NoteTypeKey } | null {
+  const title = note.title.trim()
+  if (title) return { kind: 'title', text: title }
+  const key = noteTypeKey(note.type)
+  return key === 'posts.notes.type.note' ? null : { kind: 'type', key }
 }
 
 /**

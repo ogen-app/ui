@@ -40,7 +40,10 @@ export function LookSection({
       // the template compositor is the consumer, and it is prototype 6.
       readBy={[]}
       action={
-        look ? (
+        // Only when there is somewhere for it to go: the route renders this
+        // without an editor to open (`/brand/look`), and an EDIT that does
+        // nothing is worse than none.
+        look && onEdit ? (
           <Button variant="outline" size="sm" onClick={onEdit}>
             EDIT
           </Button>

@@ -186,6 +186,10 @@ export function Gap({
               variant={i === 0 ? 'defaultInverted' : 'outline'}
               size="sm"
               onClick={offer.onSelect}
+              // An offer nothing is wired to yet renders disabled rather than
+              // as a live button that does nothing — the caller saying which
+              // paths exist is the callback being supplied.
+              disabled={!offer.onSelect}
             >
               <span>{offer.label}</span>
               {offer.hint && (
@@ -263,6 +267,10 @@ export function WholeBrandOffer({
   const dismissNote = useSettingsStore((s) => s.dismissNote)
 
   if (fills.length === 0 || dismissed) return null
+  // The card is its three ways in. With none of them wired there is nothing to
+  // offer — a promise with dead buttons under it — so it doesn't render at all
+  // until a caller supplies at least one path.
+  if (!onAskOgen && !onFromWebsite && !onFromDocument) return null
 
   return (
     <section
@@ -319,18 +327,26 @@ export function WholeBrandOffer({
           rule the rest of the app's action labels follow, and the caps are the
           copy rather than a CSS transform. */}
       <div className="flex flex-wrap gap-2">
-        <Button variant="defaultInverted" size="sm" onClick={onAskOgen}>
-          <SparkleIcon />
-          <span>ASK OGEN TO HELP</span>
-        </Button>
-        <Button variant="outline" size="sm" onClick={onFromWebsite}>
-          <GlobeIcon />
-          <span>POINT US AT YOUR SITE</span>
-        </Button>
-        <Button variant="outline" size="sm" onClick={onFromDocument}>
-          <FileArrowUpIcon />
-          <span>UPLOAD A DOCUMENT</span>
-        </Button>
+        {/* Only the wired paths render — a button whose flow doesn't exist yet
+            is not "coming soon", it is a dead end. */}
+        {onAskOgen && (
+          <Button variant="defaultInverted" size="sm" onClick={onAskOgen}>
+            <SparkleIcon />
+            <span>ASK OGEN TO HELP</span>
+          </Button>
+        )}
+        {onFromWebsite && (
+          <Button variant="outline" size="sm" onClick={onFromWebsite}>
+            <GlobeIcon />
+            <span>POINT US AT YOUR SITE</span>
+          </Button>
+        )}
+        {onFromDocument && (
+          <Button variant="outline" size="sm" onClick={onFromDocument}>
+            <FileArrowUpIcon />
+            <span>UPLOAD A DOCUMENT</span>
+          </Button>
+        )}
       </div>
     </section>
   )
@@ -716,7 +732,11 @@ export function StarterCard({
   )
 }
 
-/** The `ADD …` control a library section carries in its header. */
+/**
+ * The `ADD …` control a library section carries in its header. Disabled while
+ * no handler is wired — an active-looking button that does nothing is worse
+ * than one that says it can't yet.
+ */
 export function AddButton({
   label,
   onClick,
@@ -725,7 +745,7 @@ export function AddButton({
   onClick?: () => void
 }) {
   return (
-    <Button variant="outline" size="sm" onClick={onClick}>
+    <Button variant="outline" size="sm" onClick={onClick} disabled={!onClick}>
       <PlusIcon />
       <span>{label}</span>
     </Button>

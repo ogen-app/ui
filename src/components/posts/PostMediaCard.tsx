@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
+  CaretDownIcon,
   FileArrowUpIcon,
   FilePdfIcon,
   ImageBrokenIcon,
@@ -10,11 +12,19 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button.tsx'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.tsx'
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip.tsx'
 import { toast } from '@/stores/toastStore.ts'
+import { isSubmitted } from '@/lib/postStatusMachine.ts'
 import { cn } from '@/lib'
 import { formatBytes } from '@/lib/platformMedia.ts'
 import { formatTimecode } from '@/lib/platformVideo.ts'
@@ -29,17 +39,34 @@ import {
   attachmentKind,
   type PostAttachmentWithValidation,
 } from '@/types/attachments.ts'
-import type { PendingUpload } from '@/hooks/usePostAttachments.ts'
+import type { PendingUpload, UploadResult } from '@/hooks/usePostAttachments.ts'
 import type { Post } from '@/types/posts.ts'
+
+/**
+ * The posts of a thread, when this post publishes as one (CON-196).
+ *
+ * A thread's ceilings are per post, and so is its media — which is the only
+ * part of a thread the body cannot express. So this is where it is said: every
+ * thumbnail gains one control naming the post it rides.
+ */
+export type ThreadMediaTargets = {
+  /** The first few words of each post, in order. Empty string is allowed. */
+  excerpts: string[]
+  /** Which post carries this file, 0-based. */
+  indexFor: (attachmentId: string) => number
+  assign: (attachmentId: string, index: number) => void
+}
 
 type Props = {
   post: Post
   attachments: PostAttachmentWithValidation[]
   pending: PendingUpload[]
   policy: MediaPolicy
-  upload: (files: File[]) => Promise<{ uploaded: number; errors: string[] }>
+  upload: (files: File[]) => Promise<UploadResult>
   remove: (attachmentId: string) => Promise<void>
   reorder: (ordered: PostAttachmentWithValidation[]) => void
+  /** Absent for every post that is not a thread, which is nearly all of them. */
+  thread?: ThreadMediaTargets
   className?: string
 }
 
@@ -61,21 +88,32 @@ export function PostMediaCard({
   upload,
   remove,
   reorder,
+  thread,
   className,
 }: Props) {
+  const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [overIndex, setOverIndex] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
 
-  // Attachments freeze once the post is published (the server rejects
-  // mutations with a 409), so the card becomes a read-only record.
-  const frozen = post.status === 'published'
+  // Attachments freeze once a copy of the post exists outside Ogen, so the
+  // card becomes a read-only record (CON-251). `published` was always frozen —
+  // the server rejects those mutations with a 409 — and `scheduled` joins it
+  // for the reason the date and the account already lock there: Zernio holds
+  // the submission, so removing an image here would change what the card shows
+  // and not what publishes.
+  const frozen = isSubmitted(post.status)
+  // On a thread `policy.max` is what *one post* takes, so it is not a ceiling
+  // on the card: a four-image cap across five posts is twenty files. The cap
+  // still holds where it means something — per post, on the thread's own row
+  // in the pre-publish bar.
+  const totalMax = thread ? null : policy.max
   const canAdd =
     !frozen &&
     policy.accepts &&
-    (policy.max === null || attachments.length < policy.max)
+    (totalMax === null || attachments.length < totalMax)
 
   if (
     attachments.length === 0 &&
@@ -109,7 +147,7 @@ export function PostMediaCard({
     }
     if (accepted.length === 0) return
     const room =
-      policy.max === null ? accepted.length : policy.max - attachments.length
+      totalMax === null ? accepted.length : totalMax - attachments.length
     const within = accepted.slice(0, Math.max(0, room))
     if (within.length < accepted.length) {
       toast.warning(`Only ${policy.max} files fit on this post type`, {
@@ -148,8 +186,9 @@ export function PostMediaCard({
             <span className="font-normal text-tertiary-foreground">
               {attachments.length}
               {/* Only against a cap the post type can actually reach — a text
-                  post caps at 0, and "2 / 0" reads as a broken counter. */}
-              {policy.accepts && policy.max !== null && ` / ${policy.max}`}
+                  post caps at 0, and "2 / 0" reads as a broken counter. A
+                  thread reaches none: its cap is per post of the chain. */}
+              {policy.accepts && totalMax !== null && ` / ${totalMax}`}
             </span>
           )}
         </h2>
@@ -176,6 +215,12 @@ export function PostMediaCard({
           )
         )}
       </div>
+
+      {thread && policy.accepts && (
+        <p className="text-xs text-tertiary-foreground">
+          {t('posts.sequence.mediaPerPost')}
+        </p>
+      )}
 
       {!policy.accepts && attachments.length > 0 && (
         <Notice>
@@ -205,38 +250,48 @@ export function PostMediaCard({
           if (files.length) void handleFiles(files)
         }}
         className={cn(
-          'flex flex-wrap gap-3 transition-colors',
+          // `items-start` because a thread's tiles carry a picker under them
+          // and the add-media tile must not stretch to match.
+          'flex flex-wrap items-start gap-3 transition-colors',
           dragging && 'bg-tertiary',
         )}
       >
         {attachments.map((att, index) => (
-          <MediaTile
-            key={att.id}
-            attachment={att}
-            index={index}
-            total={attachments.length}
-            frozen={frozen}
-            dropTarget={
-              overIndex === index && dragIndex !== null && dragIndex !== index
-            }
-            onDragStart={() => setDragIndex(index)}
-            onDragEnter={() => dragIndex !== null && setOverIndex(index)}
-            onDragEnd={() => {
-              setDragIndex(null)
-              setOverIndex(null)
-            }}
-            onDrop={() => {
-              if (dragIndex !== null) moveTo(dragIndex, index)
-              setDragIndex(null)
-              setOverIndex(null)
-            }}
-            onMove={(to) => moveTo(index, to)}
-            onRemove={async () => {
-              // The toast is the mutation's `errorTitle`; this only stops the
-              // rejection escaping as an unhandled promise.
-              await remove(att.id).catch(() => {})
-            }}
-          />
+          // The picker sits under the tile rather than on it: the tile's four
+          // corners are already spoken for (order, warning, size, delete), and
+          // this is the one control that has to read as a word rather than an
+          // icon — "which post carries this" is not guessable from a glyph.
+          <div key={att.id} className="flex flex-col gap-1">
+            <MediaTile
+              attachment={att}
+              index={index}
+              total={attachments.length}
+              frozen={frozen}
+              dropTarget={
+                overIndex === index && dragIndex !== null && dragIndex !== index
+              }
+              onDragStart={() => setDragIndex(index)}
+              onDragEnter={() => dragIndex !== null && setOverIndex(index)}
+              onDragEnd={() => {
+                setDragIndex(null)
+                setOverIndex(null)
+              }}
+              onDrop={() => {
+                if (dragIndex !== null) moveTo(dragIndex, index)
+                setDragIndex(null)
+                setOverIndex(null)
+              }}
+              onMove={(to) => moveTo(index, to)}
+              onRemove={async () => {
+                // The toast is the mutation's `errorTitle`; this only stops the
+                // rejection escaping as an unhandled promise.
+                await remove(att.id).catch(() => {})
+              }}
+            />
+            {thread && !frozen && (
+              <ThreadPostPicker attachmentId={att.id} thread={thread} />
+            )}
+          </div>
         ))}
 
         {pending.map((p) => (
@@ -297,6 +352,69 @@ export function PostMediaCard({
         }}
       />
     </div>
+  )
+}
+
+/**
+ * Which post of the thread this file rides — the one thing about a thread that
+ * cannot be said in the body, so it is said here (CON-196).
+ *
+ * A radio group rather than a list of "move to" actions: the current post is
+ * as much of the answer as the choice is, and on a thumbnail there is no room
+ * to show it twice.
+ */
+function ThreadPostPicker({
+  attachmentId,
+  thread,
+}: {
+  attachmentId: string
+  thread: ThreadMediaTargets
+}) {
+  const { t } = useTranslation()
+  const current = thread.indexFor(attachmentId)
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t('posts.sequence.mediaOnLabel', {
+            position: current + 1,
+          })}
+          className={cn(
+            'flex w-32 items-center justify-between gap-1 px-1.5 py-1 cursor-pointer',
+            'bg-tertiary hover:bg-quaternary text-[11px] text-tertiary-foreground',
+          )}
+        >
+          <span className="truncate">
+            {t('posts.sequence.mediaOn', { position: current + 1 })}
+          </span>
+          <CaretDownIcon className="size-3 shrink-0" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-w-72">
+        <DropdownMenuRadioGroup
+          value={String(current)}
+          onValueChange={(value) => thread.assign(attachmentId, Number(value))}
+        >
+          {thread.excerpts.map((excerpt, i) => (
+            <DropdownMenuRadioItem key={i} value={String(i)}>
+              <span className="shrink-0">
+                {t('posts.sequence.mediaOn', { position: i + 1 })}
+              </span>
+              {/* The excerpt is the post's own words, not copy of ours — it is
+                  how you tell post 4 from post 5 without counting paragraphs
+                  back in the editor. */}
+              {excerpt && (
+                <span className="truncate text-tertiary-foreground">
+                  {excerpt}
+                </span>
+              )}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

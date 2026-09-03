@@ -159,11 +159,15 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     createAsset.mutate(
       { title: ' ', content: ' ' },
       {
-        onSuccess: (asset) => {
+        onSuccess: async (asset) => {
           if (campaign) {
-            // Attaching is not a second action the user has to remember, and it
-            // is not conditional on this page surviving the navigation below.
-            void addToCampaign(campaign.id, [asset.id])
+            // Attaching is not a second action the user has to remember — and
+            // the navigation waits for it, because opening the campaign's copy
+            // of a document the campaign refused would present a membership
+            // that isn't there. On failure the note exists in the bank, the
+            // membership toast has said so, and this page stays put.
+            const attached = await addToCampaign(campaign.id, [asset.id])
+            if (!attached) return
             navigate({
               to: '/campaigns/$campaignId/content/$assetId',
               params: { campaignId: campaign.id, assetId: asset.id },
@@ -191,18 +195,29 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
    */
   const handleWebPage = (asset: Asset) => {
     const alreadyHere = shown.some((a) => a.id === asset.id)
-    if (campaign) void addToCampaign(campaign.id, [asset.id])
-    if (alreadyHere) {
-      toast.info('Re-reading that page', {
-        description:
-          "Its content will be replaced with the page's current version.",
-      })
-    } else {
-      toast.info('Reading that page', {
-        description:
-          'It appears in the list below and fills in when the read finishes.',
-      })
+    const announce = () => {
+      if (alreadyHere) {
+        toast.info('Re-reading that page', {
+          description:
+            "Its content will be replaced with the page's current version.",
+        })
+      } else {
+        toast.info('Reading that page', {
+          description:
+            'It appears in the list below and fills in when the read finishes.',
+        })
+      }
     }
+    if (!campaign) {
+      announce()
+      return
+    }
+    // "It appears in the list below" is only true once the campaign holds it,
+    // so the toast waits for the membership write; a refusal raises its own
+    // toast inside `addToCampaign` instead.
+    void addToCampaign(campaign.id, [asset.id]).then((attached) => {
+      if (attached) announce()
+    })
   }
 
   /*

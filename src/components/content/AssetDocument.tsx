@@ -112,40 +112,66 @@ export function AssetDocument({ assetId, campaignId }: Props) {
     setEditVersion(editVersionRef.current)
   }, [])
 
-  /**
-   * Write the asset back with these fields changed and the rest as they are.
+  /*
+   * One document, one save at a time — and always the whole document.
    *
-   * Every save goes through `assetToPayload` because the update is a
-   * whole-resource PUT: a payload naming only what moved is a payload that
-   * blanks the asset's tags and its alt text. Sending `{title, content}` was
-   * doing exactly that to tags for as long as this screen has existed.
+   * The API takes the whole resource on every PUT, which cuts two ways. Every
+   * save goes through `assetToPayload`, because a payload naming only what
+   * moved is a payload that blanks the asset's tags and its alt text. And each
+   * save must carry the *latest* fields, not whatever the server copy held
+   * when the handler was created: a body edit followed by a title edit inside
+   * the debounce window used to save the new body and then overwrite it with
+   * the old one. `draftRef` is the fields as edited here (null = untouched,
+   * fall back to the server's), and the chain sends the saves strictly in
+   * order so an older payload can never land after a newer one.
    */
-  const save = useCallback(
+  const draftRef = useRef<{ title: string | null; content: string | null }>({
+    title: null,
+    content: null,
+  })
+  const saveChainRef = useRef<Promise<unknown>>(Promise.resolve())
+  const { mutateAsync: saveAsset } = updateAsset
+
+  const enqueueSave = useCallback(
     (overrides: Partial<UpdateAssetPayload>) => {
       if (!asset) return
       const v = editVersionRef.current
-      updateAsset.mutate(
-        { id: assetId, payload: assetToPayload(asset, overrides) },
-        { onSuccess: () => setSavedVersion(v) },
+      const payload = assetToPayload(asset, {
+        title: draftRef.current.title ?? asset.title,
+        content: draftRef.current.content ?? asset.content,
+        ...overrides,
+      })
+      saveChainRef.current = saveChainRef.current.then(() =>
+        saveAsset({ id: assetId, payload }).then(
+          () => setSavedVersion(v),
+          () => {
+            // Toasted by the mutation cache; the chain must survive so the
+            // next edit still saves. `savedVersion` stays behind — the header
+            // keeps saying unsaved, which is the truth.
+          },
+        ),
       )
     },
-    [asset, assetId, updateAsset],
+    [asset, assetId, saveAsset],
   )
 
   const handleTitleChange = useCallback(
     (nextTitle: string) => {
       setTitle(nextTitle)
-      save({ title: nextTitle })
+      if (!asset) return
+      draftRef.current.title = nextTitle
+      enqueueSave({ title: nextTitle })
     },
-    [save],
+    [asset, enqueueSave],
   )
 
   const handleContentChange = useCallback(
     (content: string) => {
       if (!asset) return
-      save({ title: title ?? asset.title, content })
+      draftRef.current.content = content
+      enqueueSave({ content })
     },
-    [asset, save, title],
+    [asset, enqueueSave],
   )
 
   /**
@@ -243,7 +269,7 @@ export function AssetDocument({ assetId, campaignId }: Props) {
               // reserved for the one it doesn't.
               <AssetImageView
                 asset={asset}
-                onChange={save}
+                onChange={enqueueSave}
                 onDirty={markDirty}
               />
             ) : !editable ? (

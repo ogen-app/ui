@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   CaretDownIcon,
   CheckCircleIcon,
@@ -16,11 +17,15 @@ import {
   type PostCheck,
 } from '@/lib/postValidation'
 import { overallPct } from '@/lib/postQuality.ts'
+import { isSubmitted } from '@/lib/postStatusMachine.ts'
 import { QualityInlineSummary } from './quality/QualityInlineSummary.tsx'
 import type { PostEvaluation } from '@/types/quality'
+import type { PostStatus } from '@/types/posts'
 
 type Props = {
   checks: PostCheck[]
+  /** Decides which of the bar's two halves still have a question to answer. */
+  status: PostStatus
   /** The stored score: `null` never assessed, `undefined` not loaded yet. */
   assessment: PostEvaluation | null | undefined
   /** The live post's `updated_at`, for the staleness flag. */
@@ -52,9 +57,24 @@ type Props = {
  * plain trailing clause. Flat on purpose — no colour, no badge. The score is
  * an opinion sharing a line with a statement about whether publishing will
  * work, and styling it to compete would be the one way to make that line lie.
+ *
+ * The two halves stop applying at different moments (CON-251), which is why
+ * this reads the status rather than taking one `locked` flag:
+ *
+ * - **Requirements go once the post is `published`**, and not a moment
+ *   earlier. They are a forecast — "will this publish?" — and publishing
+ *   settles it by event: a post that went out over the character limit still
+ *   went out, so re-litigating it is noise. While `scheduled` they are still
+ *   worth reading, because unscheduling is a real way to act on them.
+ * - **The offer to assess goes as soon as the post is submitted.** A run costs
+ *   a model call, and on a scheduled post it would buy a verdict about text
+ *   nobody can change without unscheduling first. The score already taken
+ *   stays: it is the one thing here that gets *more* trustworthy under a lock,
+ *   because its "assessed at" stamp can no longer fall behind an edit.
  */
 export function PostValidationsSection({
   checks,
+  status,
   assessment,
   postUpdatedAt,
   qualityUnavailable,
@@ -63,16 +83,25 @@ export function PostValidationsSection({
   onOpenQuality,
   className,
 }: Props) {
+  const { t } = useTranslation()
   const overall = worstStatus(checks)
   const { heading, rows } = foldChecks(checks)
   const [open, setOpen] = useState(false)
   const toggle = () => setOpen((o) => !o)
   const showQuality = !qualityUnavailable
+  const showChecks = status !== 'published'
+  const canAssess = showQuality && !isSubmitted(status)
   const awaiting = awaitingPlatform(checks)
+  const hasScore = Boolean(showQuality && assessment)
   // With no platform there are no requirements to list, so the only thing
   // left to expand is a score — and if there isn't one, the disclosure would
   // open an empty drawer. It goes away instead of opening onto nothing.
-  const expandable = !awaiting || Boolean(showQuality && assessment)
+  const expandable = (showChecks && !awaiting) || hasScore
+
+  // A published post with no score has nothing left to say: the requirements
+  // are settled and there is no opinion to report. The bar goes rather than
+  // rendering an empty line above the post.
+  if (!showChecks && !hasScore) return null
 
   return (
     <div className={cn('w-full bg-primary px-10 py-3', className)}>
@@ -94,16 +123,25 @@ export function PostValidationsSection({
             onClick={toggle}
             open={open}
           >
-            <StatusIcon status={overall} />
+            {/* The verdict's mark goes with the verdict: on a published post
+                a tick or a warning would still be reporting the requirements
+                this bar has stopped answering for. */}
+            {showChecks && <StatusIcon status={overall} />}
             <span className="min-w-0 truncate">
-              {checksSummary(checks)}
-              {showQuality &&
+              {showChecks && checksSummary(checks)}
+              {/* Two clauses, joined by the separator rather than by building
+                  one sentence out of fragments — the score's own wording is a
+                  catalogue entry and stays whole inside it. */}
+              {showChecks && hasScore && ' · '}
+              {hasScore &&
                 assessment &&
-                ` · Post quality ${Math.round(overallPct(assessment))}`}
+                t('posts.quality.score', {
+                  score: Math.round(overallPct(assessment)),
+                })}
             </span>
           </Summary>
 
-          {showQuality && (
+          {canAssess && (
             <AssessLink
               assessment={assessment}
               assessing={assessing}
@@ -153,7 +191,7 @@ export function PostValidationsSection({
         >
           {/* Nothing at all while the platform is unpicked — the collapsed
               line has already said the only true thing there is to say. */}
-          {!awaiting && (
+          {showChecks && !awaiting && (
             <>
               {/* The platform and post type live in the heading rather than
                   beside the rows: they are what the rows are measured
@@ -194,7 +232,7 @@ export function PostValidationsSection({
             </>
           )}
 
-          {showQuality && assessment && (
+          {hasScore && assessment && (
             <QualityInlineSummary
               assessment={assessment}
               postUpdatedAt={postUpdatedAt}
@@ -228,13 +266,14 @@ function AssessLink({
   assessing: boolean
   onAssess: () => void
 }) {
+  const { t } = useTranslation()
   if (assessment === undefined && !assessing) return null
 
   if (assessing) {
     return (
       <span className="flex shrink-0 items-center gap-1.5 text-tertiary-foreground">
         <CircleDashedIcon className="size-4 animate-spin" />
-        <span>Assessing…</span>
+        <span>{t('posts.quality.assessing')}</span>
       </span>
     )
   }
@@ -246,7 +285,9 @@ function AssessLink({
       className="flex shrink-0 items-center gap-1.5 text-tertiary-foreground underline underline-offset-2 hover:text-foreground cursor-pointer"
     >
       <SparkleIcon className="size-4" />
-      <span>{assessment ? 'Re-assess' : 'Assess quality'}</span>
+      <span>
+        {assessment ? t('posts.quality.reassess') : t('posts.quality.assess')}
+      </span>
     </button>
   )
 }

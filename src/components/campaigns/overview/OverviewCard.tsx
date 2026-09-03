@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { CaretRightIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button.tsx'
-import { formatAnchor } from '@/components/campaigns/calendar/date.ts'
+import { useCalendarPlace } from '@/hooks/usePostsPlace'
 import { cn } from '@/lib'
 import {
   campaignSection,
@@ -151,6 +151,11 @@ export function SectionLink({
 }) {
   const params = { campaignId }
   const named = { 'aria-label': label }
+  // Unconditional, as a hook has to be — the `calendar` case is the only branch
+  // that reads it. The calendar's remembered date and granularity, not the
+  // remembered *arrangement*: this card names the calendar, and the card beside
+  // it (`posts`) is the one that means the table.
+  const calendar = useCalendarPlace(campaignId)
   switch (target) {
     case 'brief':
       return (
@@ -197,15 +202,10 @@ export function SectionLink({
         </Link>
       )
     case 'calendar':
-      // The current week, exactly as the sidebar's own Posts row opens it.
       return (
         <Link
           to="/campaigns/$campaignId/calendar/$anchor/$view"
-          params={{
-            campaignId,
-            anchor: formatAnchor(new Date()),
-            view: 'week',
-          }}
+          params={{ campaignId, ...calendar }}
           className={className}
           {...named}
         >

@@ -188,6 +188,10 @@ export const en = {
         'Invitations expire after seven days, and each one can only be used once',
       brokenBody:
         'Ask whoever invited you to send another. If you already accepted, <login>log in</login> instead.',
+      /** The preview request failed for a reason that says nothing about the token — retryable. */
+      previewFailedTitle: "We couldn't check this invitation",
+      previewFailedSubtitle:
+        'Something went wrong on our side — the link itself may still be fine',
       /** Already signed in as the invited address: nothing to create, one thing to confirm. */
       joinBody:
         "You're signed in as {{email}}, which is who this invitation is for. Accepting adds this workspace to your account.",
@@ -761,10 +765,6 @@ export const en = {
       title: 'Platform Settings',
       empty:
         'No platforms connected yet — pick one under “Connect Platforms” below.',
-      cadence: 'Cadence',
-      constraints: 'Constraints',
-      /** Cadence and constraints await real backend data — see PlatformRow. */
-      comingSoon: 'Coming soon',
       contentTypes: 'Available Content Types',
       contentTypesEmpty: 'None',
       accountInactive: 'Inactive on {{platform}} — can’t receive posts',
@@ -957,12 +957,21 @@ export const en = {
     },
 
     /**
-     * The two absences a calendar card can carry. Both are shown in place of a
-     * name, so each has to read as a fact about the post rather than as a
-     * missing value.
+     * The absences a card or a locked post can carry. Each is shown in place
+     * of a name, so it has to read as a fact about the post rather than as a
+     * missing value — on a published post nobody can go back and fill these
+     * in, which is exactly why they are stated rather than warned about.
      */
     noPlatform: 'No platform',
     noAccount: 'No account',
+    noPostType: 'No post type',
+
+    /**
+     * The post editor's back arrow. Names the destination generically because
+     * it is not always the same one — it returns to whichever arrangement of
+     * the campaign's posts the user came from, calendar or table.
+     */
+    backToPosts: 'Back to posts',
 
     /**
      * The card's warning mark. What is wrong is in the post itself — the mark
@@ -985,6 +994,259 @@ export const en = {
       /** The short forms, for a bar too narrow for the sentence. */
       compactNow: 'now',
       compactLate: '{{amount}} late',
+    },
+
+    /**
+     * Thread sequences (CON-196) — a post on X or Threads that publishes as a
+     * chain of connected posts rather than one.
+     *
+     * The vocabulary is fixed here and everything follows it. The whole thing
+     * is a **thread**; each part of it is a **post**, numbered from 1, because
+     * that is what each one becomes on the platform — calling them "items" or
+     * "segments" would name the data structure rather than the thing the
+     * reader will scroll through. Both networks use "thread" for this in their
+     * own apps, so it needs no gloss on either.
+     *
+     * Every limit these sentences quote is per *post*, never for the thread,
+     * which is the one thing about the format that surprises people.
+     */
+    sequence: {
+      /**
+       * Teaching, and only teaching — it can be dismissed for good, so nothing
+       * a person needs while writing may live here (CLAUDE.md). What the body
+       * actually became is the note under the editor, which cannot be
+       * dismissed.
+       */
+      explainer:
+        'This publishes as a chain of posts, each replying to the one before it. Type --- on its own line wherever you want a break; with no divider anywhere, blank lines are the breaks. Anything still past the character limit is cut to fit.',
+
+      /**
+       * The note under the editor: what the body will publish as. Two
+       * sentences, never one assembled from clauses — only the second has a
+       * limit in it, and only sometimes.
+       */
+      splitByDivider_one:
+        'Publishes as {{count}} post, broken where you put a divider.',
+      splitByDivider_other:
+        'Publishes as {{count}} posts, broken where you put a divider.',
+      splitByBlankLine_one:
+        'Publishes as {{count}} post, broken at blank lines.',
+      splitByBlankLine_other:
+        'Publishes as {{count}} posts, broken at blank lines.',
+      splitAutoCut_one:
+        '{{count}} of them came from copy cut at {{limit}} characters.',
+      splitAutoCut_other:
+        '{{count}} of them came from copy cut at {{limit}} characters.',
+      splitByLimit_one:
+        'Publishes as {{count}} post, cut to fit {{limit}} characters.',
+      splitByLimit_other:
+        'Publishes as {{count}} posts, cut to fit {{limit}} characters.',
+      /**
+       * One post, and therefore no rule to name: the body has no divider and
+       * no blank line, or it has one and still fits. How to make a second post
+       * is the Explainer's job, above — this line is a verdict.
+       */
+      splitSingle: 'Publishes as a single post.',
+      splitPending: 'Working out how this breaks into posts…',
+      splitOverflow:
+        'This is more than {{max}} posts. Shorten it, or publish it as more than one thread.',
+
+      /**
+       * The media card, when the post is a thread. The card's other copy is
+       * still legacy English (CON-174) — these are new, so they are here.
+       */
+      mediaPerPost: 'Every limit here is per post of the thread.',
+      mediaOn: 'Post {{position}}',
+      mediaOnLabel: 'This file rides post {{position}} — pick another',
+
+      saveFailed: 'Could not save which post carries which file.',
+
+      postCount_one: '{{count}} post',
+      postCount_other: '{{count}} posts',
+
+      /**
+       * The row this adds to the pre-publish bar. Length is not among the
+       * things it can fail on: copy past the ceiling is cut to fit as the
+       * chain is built, so what is left is the media, which only the author
+       * can move.
+       */
+      check: {
+        label: 'Thread',
+        pending: 'Checking…',
+        overflow: 'More than {{max}} posts',
+        issues_one: 'Post {{positions}} carries more media than one post takes',
+        issues_other:
+          'Posts {{positions}} carry more media than one post takes',
+      },
+
+      /**
+       * The preview panel's note. It replaces a sentence that said the
+       * publisher does the splitting — it does not, and never did: without
+       * `threadItems` the whole body goes out as a single post.
+       */
+      previewNote:
+        'A thread: each post below goes out separately, replying to the one before it.',
+      /**
+       * The same panel, for a `thread` post left over from before the feature
+       * — the type is withdrawn from every picker while the flag is off, but a
+       * post already saved as one keeps it. What it says is the uncomfortable
+       * truth: the card has always drawn a chain, and the submit path has
+       * always sent one post.
+       */
+      previewNoteUnsplit:
+        'The card splits this at blank lines, but it publishes as a single post — Ogen does not send the thread yet.',
+    },
+
+    /**
+     * What a post writes from. The same control renders as the card under the
+     * copy and as a section in the settings rail, so the two empty states are
+     * one idea at two lengths — the card can afford to explain what the list
+     * is for, the rail cannot.
+     */
+    sources: {
+      heading: 'Sources',
+      /** The rail section's title. Its capitals are the copy, as everywhere. */
+      sectionTitle: 'SOURCES',
+      add: 'ADD SOURCE',
+      fromBank: 'Choose from content bank',
+      upload: 'Upload files',
+      webPage: 'Add a web page',
+      emptyCard:
+        'This post writes from the campaign brief alone. Add the documents it should also draw on — the assistant reads exactly what is listed here.',
+      emptyRail:
+        'Nothing yet — this post writes from the campaign brief alone.',
+      /**
+       * The same fact with nothing to do about it. Deliberately present
+       * tense: a scheduled post has not gone out yet, so the past tense would
+       * be wrong for half the statuses this is shown in.
+       */
+      emptyLocked: 'This post writes from the campaign brief alone.',
+      /** An id whose document has not arrived in this tab yet. */
+      loading: 'Loading…',
+      /**
+       * The one fact about a source nobody can infer from its title: a
+       * document retrieval skips is sitting in the list doing nothing.
+       */
+      unreadable: "Can't be read",
+      unreadableHint:
+        'Nothing was extracted from this document, so retrieval skips it.',
+      reading: 'Still reading',
+      remove: 'Remove {{title}} from this post',
+    },
+
+    /**
+     * Why a post is read-only (CON-251). One sentence per locked status,
+     * never a shared one: they differ by whether there is a way back, and
+     * that difference is the whole of what the reader needs.
+     *
+     * `scheduled` names the way out, because there is one and a screen that
+     * hid it would read as broken. `published` deliberately offers none —
+     * the post is on the network, and editing here would change our record
+     * of it rather than the thing itself.
+     */
+    locked: {
+      scheduled: 'This post is scheduled. Unschedule it to make changes.',
+      published:
+        'This post is published — what is here is the record of what went out.',
+    },
+
+    /**
+     * The CON-85 score, where it shares a line with the platform checks and
+     * where it stands alone in the rail.
+     *
+     * The score survives a lock and the offer to re-take it does not: an
+     * assessment costs a model call, and on a submitted post it would be paid
+     * for a verdict about text nobody can act on without unscheduling first.
+     * What a stored score gains instead is meaning — its "assessed at" stamp
+     * can no longer drift out of date behind an edit.
+     */
+    quality: {
+      score: 'Post quality {{score}}',
+      assess: 'Assess quality',
+      reassess: 'Re-assess',
+      assessing: 'Assessing…',
+      neverScored: 'This post was never scored.',
+      scoringIsForDrafts: 'Scoring is for a post you can still change.',
+    },
+
+    /**
+     * The version history's first row — the live document, which is always
+     * listed because a post with no snapshots has a history of one rather than
+     * an empty state.
+     *
+     * It reads two ways. On an editable post it is a draft nobody has
+     * snapshotted. On a submitted one it is the post itself: calling that a
+     * "draft" that is "unsaved" describes the opposite of what happened to it.
+     * The second pair goes away on its own once the server writes a version at
+     * publish (CON-253) — the snapshot will match the live text and the row
+     * collapses into a numbered version.
+     */
+    versions: {
+      liveDraft: 'Draft',
+      liveDraftTime: 'Unsaved',
+      liveDraftNote: 'Not snapshotted yet',
+      liveSubmitted: 'Current text',
+      liveSubmittedNote: 'Never snapshotted',
+    },
+
+    /**
+     * The one forward move a published post has. It is not a status change
+     * (`published` has no outgoing edge) but a new post, so the label says
+     * where the copy lands rather than what happens to this one.
+     */
+    duplicate: {
+      action: 'DUPLICATE INTO DRAFT',
+      pending: 'Duplicating…',
+      success: 'Draft created',
+      error: "The post couldn't be duplicated. Try again.",
+      /** Appended to the copy's title so the two are told apart in a list. */
+      titleSuffix: '{{title}} (copy)',
+    },
+
+    /**
+     * The post's notes (CON-188) — draft theses the content plan captured,
+     * prompts the assistant wrote, and anything typed by hand.
+     */
+    notes: {
+      heading: 'Notes',
+      add: 'ADD NOTE',
+      save: 'SAVE',
+      cancel: 'CANCEL',
+      delete: 'DELETE',
+      edit: 'Edit note',
+
+      titlePlaceholder: 'Title (optional)',
+      titleLabel: 'Note title',
+      bodyPlaceholder: 'What should this post remember?',
+      bodyLabel: 'Note',
+
+      deleteConfirm: 'Delete this note? There is no way to get it back.',
+
+      /**
+       * Has to be said on the card: queries get no global error toast, and a
+       * post whose notes failed to load looks identical to one that has none.
+       */
+      loadError: "The notes couldn't be loaded. Reload the page to try again.",
+
+      /**
+       * Only the machine origins are marked. Labelling a hand-written note
+       * "manual" would put a badge on the ordinary case.
+       */
+      origin: {
+        assistant: 'Written by the post assistant',
+        generated: 'Captured when this post was generated',
+      },
+
+      /**
+       * What a note's type is called on screen. The API sends `draft_thesis`,
+       * never a label, and `noteTypeKey` maps a type the server grew without
+       * us onto `note` rather than leaking a snake_case identifier.
+       */
+      type: {
+        note: 'Note',
+        draftThesis: 'Draft thesis',
+        imagePrompt: 'Image prompt',
+      },
     },
   },
   /**
