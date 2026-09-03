@@ -46,7 +46,8 @@ export type TaskStatus = 'open' | 'done' | 'dismissed'
 
 /** Why a task exists: the system saw a warning, or a person wrote it. */
 export type TaskSource =
-  { kind: 'rule'; campaignId: string; ruleId: string } | { kind: 'manual' }
+  | { kind: 'rule'; campaignId: string; ruleId: string }
+  | { kind: 'manual' }
 
 export type Task = {
   id: string

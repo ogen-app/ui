@@ -54,8 +54,7 @@ function InvitePage() {
   // nothing about the invitation, so it gets a retry instead of the dead-link
   // screen, which would send the invitee off to ask for a new link they don't
   // need.
-  const tokenDead =
-    isError && error instanceof ApiError && error.status === 410
+  const tokenDead = isError && error instanceof ApiError && error.status === 410
 
   if (isError && !tokenDead) {
     return (
