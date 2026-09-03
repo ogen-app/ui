@@ -22,6 +22,7 @@ import {
   setActiveWorkspaceId,
 } from '@/lib/activeWorkspace'
 import { reconnectEvents } from '@/stores/eventStreamStore'
+import { reconnectNotifications } from '@/stores/notificationStreamStore'
 import { useAuthStore } from '@/stores/authStore'
 import type {
   CreateWorkspacePayload,
@@ -281,6 +282,11 @@ export function useSwitchWorkspace() {
       // does not reach it — left alone it would keep pushing the previous
       // workspace's events into this tab.
       reconnectEvents()
+      // Same argument for the notification stream, plus one of its own: its
+      // replay cursor is a `seq` in the log of the workspace being left, so
+      // reopening without dropping it would ask the new workspace to replay
+      // from a position in another one's. The cleared cache is what drops it.
+      reconnectNotifications()
       // Deliberately not awaited before the UI moves, and deliberately not
       // allowed to reject: remembering the default is a convenience for the
       // *next* tab. Coalesced rather than fired directly — see
@@ -310,8 +316,8 @@ export function useCreateWorkspace() {
  * workspace that no longer exists, and invalidating only the list would leave
  * the tenant, members, campaigns — everything scoped — quietly serving the
  * deleted workspace's data while new requests answer for the default. The
- * event stream is rebound too; its connection was opened under the deleted
- * workspace's header. Deleting any other workspace leaves the page alone and
+ * event and notification streams are rebound too; both connections were
+ * opened under the deleted workspace's header. Deleting any other workspace leaves the page alone and
  * just refreshes the list.
  */
 export function useDeleteWorkspace() {
@@ -323,6 +329,7 @@ export function useDeleteWorkspace() {
         setActiveWorkspaceId(null)
         qc.clear()
         reconnectEvents()
+        reconnectNotifications()
       } else {
         qc.invalidateQueries({ queryKey: WORKSPACES_KEY })
       }

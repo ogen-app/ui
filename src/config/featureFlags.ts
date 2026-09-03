@@ -36,24 +36,53 @@ import { readFlagOverrides } from './flagOverrides'
 const FEATURE_FLAGS = {
   /**
    * Activity (CON-225): the sidebar item, the feed, and the daily report — the
-   * workspace's answer to "what happened since I last looked?".
+   * workspace's answer to "what happened since I last looked?". Also the whole
+   * notification client (CON-242): the inbox queries, the durable stream and
+   * the unread count are mounted by this feature and by nothing else, so with
+   * the flag off no notification request is made at all.
    *
-   * **Waiting on:** the notifications subsystem, CON-224. Nothing persists a
-   * thing that happened today: `/api/events` is an invalidation bus with
-   * at-most-once delivery and no event log (`docs/sse.md`), which is
-   * disqualifying for a feature whose premise is that you were not looking. So
-   * Phase 1 *derives* its entries from the batched campaign summaries instead
-   * — which means only post outcomes can appear, and an entry disappears if
-   * the post behind it changes. The two things the feed is most wanted for,
-   * "your long run finished" and "this connection expired", leave no trace in
-   * that projection and are missing until the table exists.
+   * **The endpoints now exist.** CON-242 merged 2026-09-02 and
+   * `api.dev.getogen.com` answers `/api/notifications`,
+   * `/unread-count` and `/stream`. Phase 2 is built against them: recorded
+   * entries replaced the derived ones, read state is per row and server-side,
+   * and the Phase 1 last-seen timestamp is gone (`docs/activity.md`).
    *
-   * The daily report is the half that is not a stand-in: it is a count over
-   * posts, correct as computed, and it stays when CON-224 lands.
+   * **Waiting on**, in the order that decides whether this ships:
    *
-   * Switch this on once `GET /api/notifications` answers and the feed has been
-   * re-tested against recorded events rather than derived ones. See
-   * `docs/activity.md`.
+   * 1. **A pass against the real thing.** The client was written from the
+   *    contract on the ticket, not from a running server: the local API
+   *    predates the endpoints (404), and nothing here has yet seen a real row,
+   *    a real replay or a real reconnect. That is the step the global rule
+   *    calls for before a flag's fate is decided, and it has not happened.
+   * 2. **Whether the SSE crash reaches this stream.** A client disconnecting
+   *    from `/api/events` panicked the API process — finding 5 in
+   *    `docs/sse.md`, recorded 2026-08-03. The notification stream is a second
+   *    long-lived connection written to the same house pattern, so it either
+   *    shares the fault or has been fixed alongside it. Unanswered.
+   * 3. **Fan-out.** Every producer writes to the thing's `created_by`, so a
+   *    post failing to publish is news to whoever made it and to nobody else.
+   *    The derived entry it replaced was visible to the whole workspace, so
+   *    turning this on as it stands *narrows* who hears about a failure. Needs
+   *    a decision — probably workspace owners alongside the author.
+   * 4. **`post.published` is emitted, and CON-224 said it must not be.**
+   *    Successful auto-publishing is the highest-volume thing that happens, and
+   *    rolling it into one computed daily entry is the argument the whole
+   *    report rests on — a workspace posting three times a day across five
+   *    channels writes fifteen "it worked" rows, which is how a badge stops
+   *    being read. The client does *not* filter them: the count comes from the
+   *    server, and a feed hiding rows the badge still counts is worse than a
+   *    noisy feed. It needs deciding at the emit site.
+   * 5. **A producer for "never published".** `not_published` is a real outcome
+   *    with no notification type, so it now leaves no record at all. It is
+   *    counted in the day's report and nowhere else.
+   *
+   * 3 and 4 are the ones that decide whether this reads as better than Phase 1
+   * or worse: as it stands a post's author hears about every success and
+   * nobody else hears about the failures. Neither is a reason to hold the
+   * client, and both are what to settle before flipping.
+   *
+   * The daily report is the half that was never a stand-in: it is a count over
+   * posts, correct as computed, and it is untouched by all of the above.
    */
   activity: false,
 
@@ -80,8 +109,9 @@ const FEATURE_FLAGS = {
    *     the client, so it only runs while somebody has one of the two screens
    *     open, and exactly one may do it (`useTaskReconciliation`);
    *   · **telling the assignee** — assignment writes a membership id and
-   *     nothing else happens; there is no channel to notify them on until
-   *     CON-224.
+   *     nothing else happens. CON-242 built the channel, but its producers are
+   *     server-side and a task lives in a key/value row, so there is nothing to
+   *     emit from until tasks are rows.
    *
    * `assigned_to` does not exist on any model today, which is the column this
    * starts from. The row is also workspace-wide and readable by every member,

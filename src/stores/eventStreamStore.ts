@@ -8,6 +8,7 @@ import {
   invalidationsFor,
   localRunKeyFor,
 } from '@/lib/eventRouting'
+import { createStreamConnection } from '@/lib/streamConnection'
 import { streamAppEvents } from '@/services/api/events'
 import { toast } from '@/stores/toastStore'
 import type { AppEvent, EventStreamStatus } from '@/types/events'
@@ -22,18 +23,12 @@ import type { AppEvent, EventStreamStatus } from '@/types/events'
  *
  * The stream is a *hint* channel, never a source of truth — see
  * `types/events.ts`. Everything it does lands in `eventRouting`.
+ *
+ * Keeping it open — backoff, the silence watchdog, the subscriber count — is
+ * `lib/streamConnection`, shared with the notification inbox. What is left here
+ * is the half that is genuinely this stream's: what a reconnect means when
+ * there is no replay to resume into.
  */
-
-/** Backoff between attempts, in ms, holding at the last value. */
-const BACKOFF_MS = [1_000, 2_000, 4_000, 8_000, 15_000, 30_000]
-
-/**
- * The server pings every 20s, so three missed heartbeats means the connection
- * is gone. It has to be *this* side that notices: a TCP connection that dies
- * without a FIN — laptop lid, dropped Wi-Fi, a proxy timing out quietly —
- * leaves the read pending forever, and the UI would sit there looking live.
- */
-const SILENCE_TIMEOUT_MS = 65_000
 
 /**
  * Retries to ride out before saying anything. The first backoff step is a
@@ -80,12 +75,31 @@ export const useEventStreamStore = create<EventStreamState>()(
 const set = (patch: Partial<EventStreamState>) =>
   useEventStreamStore.setState(patch)
 
-let subscribers = 0
-let controller: AbortController | null = null
-let retryTimer: ReturnType<typeof setTimeout> | null = null
-let silenceTimer: ReturnType<typeof setTimeout> | null = null
-/** True once a connection has been open, so a later attempt is a *re*connect. */
-let everConnected = false
+const connection = createStreamConnection({
+  open: (signal, hooks) =>
+    streamAppEvents(
+      {
+        onOpen: hooks.opened,
+        onEvent: (event) => {
+          if (!signal.aborted) handleEvent(event)
+        },
+        onActivity: hooks.activity,
+      },
+      signal,
+    ),
+  onState: ({ status, attempts }) =>
+    // `idle` is the stream being let go — logging out, or the authenticated
+    // layout unmounting — so a refetch that was in flight is no longer
+    // anything the next session should be told about.
+    set(
+      status === 'idle'
+        ? { status, attempts, reconciling: false }
+        : { status, attempts },
+    ),
+  onOpen: ({ reconnected }) => {
+    if (reconnected) void reconcile()
+  },
+})
 
 /**
  * Opens the stream (or joins the open one) and returns the release. The
@@ -93,18 +107,7 @@ let everConnected = false
  * authenticated layout unmounting.
  */
 export function subscribeToEvents(): () => void {
-  subscribers += 1
-  if (subscribers === 1) start()
-  return () => {
-    subscribers -= 1
-    if (subscribers === 0) stop()
-  }
-}
-
-function start(): void {
-  if (controller) return
-  set({ status: everConnected ? 'reconnecting' : 'connecting' })
-  void connect()
+  return connection.subscribe()
 }
 
 /**
@@ -116,91 +119,9 @@ function start(): void {
  * carried. A tab that re-pins itself and does not do this keeps receiving the
  * *previous* workspace's events: another client's post finishing, invalidating
  * caches on a screen it has nothing to do with.
- *
- * A no-op when nobody is listening — there is no stream to be wrong.
  */
 export function reconnectEvents(): void {
-  if (subscribers === 0) return
-  clearTimers()
-  controller?.abort()
-  controller = null
-  // Not `stop()`: this is the same session continuing in another workspace, so
-  // the reconnect should present as one (`reconnecting`, no "connecting" flash).
-  start()
-}
-
-function stop(): void {
-  clearTimers()
-  controller?.abort()
-  controller = null
-  everConnected = false
-  set({ status: 'idle', attempts: 0, reconciling: false })
-}
-
-function clearTimers(): void {
-  if (retryTimer) clearTimeout(retryTimer)
-  if (silenceTimer) clearTimeout(silenceTimer)
-  retryTimer = null
-  silenceTimer = null
-}
-
-async function connect(): Promise<void> {
-  const own = new AbortController()
-  controller = own
-
-  try {
-    await streamAppEvents(
-      {
-        onOpen: () => {
-          if (own.signal.aborted) return
-          const reconnected = everConnected
-          everConnected = true
-          set({ status: 'open', attempts: 0 })
-          armSilenceWatchdog(own)
-          if (reconnected) void reconcile()
-        },
-        onEvent: (event) => {
-          if (!own.signal.aborted) handleEvent(event)
-        },
-        onActivity: () => armSilenceWatchdog(own),
-      },
-      own.signal,
-    )
-  } catch {
-    // Any failure is the same failure: we're not connected. The status below
-    // says so, and there is nothing the user can act on — no message to show.
-  }
-
-  // Reaching here with `controller` still ours means the stream ended: the
-  // server closed it, or the silence watchdog aborted it. Both are drops, so
-  // both retry through this one tail. A deliberate `stop()` nulls
-  // `controller` before its abort lands, so it returns here instead.
-  if (controller !== own) return
-  controller = null
-  scheduleRetry()
-}
-
-function scheduleRetry(): void {
-  if (subscribers === 0) return
-  const { attempts } = useEventStreamStore.getState()
-  set({ status: 'reconnecting', attempts: attempts + 1 })
-  const base = BACKOFF_MS[Math.min(attempts, BACKOFF_MS.length - 1)]
-  // Jittered so a server restart doesn't bring every open tab back at once.
-  const delay = base * (0.75 + Math.random() * 0.5)
-  retryTimer = setTimeout(() => {
-    retryTimer = null
-    if (subscribers > 0) void connect()
-  }, delay)
-}
-
-function armSilenceWatchdog(own: AbortController): void {
-  if (silenceTimer) clearTimeout(silenceTimer)
-  silenceTimer = setTimeout(() => {
-    silenceTimer = null
-    // Aborting unblocks the pending read; `connect`'s tail then sees the
-    // stream end and schedules the retry — the same path a server close takes.
-    own.abort()
-  }, SILENCE_TIMEOUT_MS)
+  connection.restart()
 }
 
 /**

@@ -5,6 +5,7 @@ import { UploadTracker } from '@/components/uploads/UploadTracker'
 import { RightSidebar } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useEventStream } from '@/hooks/useEventStream'
+import { useNotificationStream } from '@/hooks/useNotifications'
 import { prefetchReferenceData } from '@/lib/prefetch'
 
 export const Route = createFileRoute('/_authenticated')({
@@ -22,6 +23,11 @@ function AuthenticatedLayout() {
   // so it can't outlive the session: the auth routes render outside this
   // layout, so logging out unmounts it and closes the connection.
   useEventStream()
+  // The durable one, on the same terms and for the same reason (CON-242). Two
+  // connections rather than one because they answer different questions: this
+  // one replays what was missed, and the bus above deliberately cannot.
+  // A no-op while the `activity` flag is off.
+  useNotificationStream()
 
   return (
     <SidebarProvider

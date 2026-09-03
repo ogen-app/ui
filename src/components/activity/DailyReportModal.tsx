@@ -6,7 +6,7 @@ import { StatTile } from '@/components/campaigns/overview/StatTile'
 import { useCampaigns, useCampaignSummaries } from '@/hooks/useCampaigns'
 import { useActivityFeed } from '@/hooks/useActivity'
 import { useDayLabel } from '@/hooks/useActivityLabels'
-import { channelName } from '@/components/activity/ActivityFeed'
+import { channelName } from '@/lib/notifications'
 import { reportForDay, type CountsByKind } from '@/lib/activityFeed'
 
 /**
@@ -16,8 +16,10 @@ import { reportForDay, type CountsByKind } from '@/lib/activityFeed'
  * correct as of this second and any past day is available for as long as its
  * posts are. That also fixes what it can say — publishing and creation, the
  * only outcomes `PostSummary` carries. The assistant runs, uploads and
- * connection health that belong in a full picture of a day are waiting on
- * CON-224, which is why the coverage line at the bottom is not decoration.
+ * connection health that belong in a full picture of a day are recorded now
+ * (CON-242) and appear in the feed above as they happen, but they are not in
+ * this projection and so are not counted here — which is why the coverage line
+ * at the bottom is not decoration.
  *
  * Route-backed (`/activity/$date`), so a day can be linked and sent to someone
  * — for a daily report that is most of the point, and a plain overlay

@@ -4,13 +4,12 @@ import {
   activityFeed,
   dailyReports,
   dayKey,
-  isExceptionEntry,
-  isUnread,
+  isNotificationEntry,
   parseDayKey,
   postEvents,
   reportForDay,
-  unreadCount,
 } from './activityFeed.ts'
+import type { AppNotification } from '@/types/notifications'
 
 /**
  * Local times, written as local times. The day boundary these rules keep is
@@ -255,74 +254,72 @@ describe('activityFeed', () => {
     ],
   }
 
-  it('carries exceptions individually and rolls the rest into the day report', () => {
-    const feed = activityFeed(summaries, NOW)
+  const failure: AppNotification = {
+    id: 'n1',
+    seq: 12,
+    level: 'error',
+    type: 'post.publish_failed',
+    title: 'Post failed to publish',
+    body: '',
+    entity_type: 'post',
+    entity_id: 'b',
+    action_url: '',
+    data: { platform: 'linkedin' },
+    read_at: null,
+    created_at: at(2026, 8, 19, 14),
+    expires_at: null,
+  }
+
+  it('carries recorded entries individually and rolls the rest into the day report', () => {
+    const feed = activityFeed({ summaries, notifications: [failure] }, NOW)
     expect(feed.map((e) => e.kind)).toEqual([
-      // 19th: the failure at 14:00, then the day's report (last event 14:00).
-      'failed',
+      // 19th: the recorded failure at 14:00, then the day's report.
+      'notification',
       'report',
       // 18th: only a post being created, so the report alone.
       'report',
-      // 17th: the post that was never published, then that day's report.
-      'not_published',
+      // 17th: nothing was recorded, so the report alone — the derived
+      // exception Phase 1 would have shown here is gone on purpose.
       'report',
     ])
   })
 
-  it('never lists a successful publish on its own', () => {
-    const published = activityFeed(summaries, NOW).filter(isExceptionEntry)
-    expect(published.some((e) => e.postId === 'a')).toBe(false)
+  it('does not re-derive an outcome the server already recorded', () => {
+    // Every post in the fixture has an outcome, and only one notification was
+    // written. A feed reading both would show three exception rows and one
+    // record; this shows the record.
+    const feed = activityFeed({ summaries, notifications: [failure] }, NOW)
+    expect(feed.filter(isNotificationEntry)).toHaveLength(1)
   })
 
-  it('names the post an exception is about, so the row can link to it', () => {
-    const failure = activityFeed(summaries, NOW).find(
-      (e) => e.kind === 'failed',
+  it('carries the row whole, so the screen decides how to say it', () => {
+    const feed = activityFeed({ summaries, notifications: [failure] }, NOW)
+    const entry = feed.filter(isNotificationEntry)[0]
+    expect(entry.notification.type).toBe('post.publish_failed')
+    expect(entry.notification.entity_id).toBe('b')
+    // Prefixed: entry ids share one namespace with report and task entries.
+    expect(entry.id).toBe('notification:n1')
+  })
+
+  it('drops a row dated in the future', () => {
+    // A clock skew must not park an entry above today's, permanently first and
+    // never reachable by scrolling.
+    const feed = activityFeed(
+      {
+        summaries,
+        notifications: [
+          { ...failure, id: 'n2', created_at: at(2026, 8, 25, 9) },
+        ],
+      },
+      NOW,
     )
-    expect(failure).toMatchObject({
-      postId: 'b',
-      campaignId: 'c1',
-      platformId: 'linkedin',
-    })
-  })
-})
-
-describe('unreadCount', () => {
-  const summaries: Record<string, PostSummary[]> = {
-    c1: [
-      makePost({
-        id: 'a',
-        status: 'failed',
-        created_at: at(2026, 8, 10, 8),
-        scheduled_at: at(2026, 8, 19, 14),
-      }),
-      makePost({
-        id: 'b',
-        status: 'failed',
-        created_at: at(2026, 8, 10, 8),
-        scheduled_at: at(2026, 8, 12, 14),
-      }),
-    ],
-  }
-  const feed = activityFeed(summaries, NOW)
-
-  it('counts everything after the last visit', () => {
-    expect(unreadCount(feed, at(2026, 8, 19, 12), NOW)).toBe(2) // the failure + today's report
+    expect(feed.filter(isNotificationEntry)).toHaveLength(0)
   })
 
-  it('counts only today when nothing has been stored yet', () => {
-    // The 12th's failure and report are older than today, so a first visit
-    // does not open on a badge counting the whole history.
-    expect(unreadCount(feed, null, NOW)).toBe(2)
-  })
-
-  it('counts nothing once the feed has been marked read', () => {
-    expect(unreadCount(feed, NOW.toISOString(), NOW)).toBe(0)
-  })
-
-  it('agrees with isUnread entry by entry', () => {
-    const lastSeen = at(2026, 8, 19, 12)
-    expect(feed.filter((e) => isUnread(e, lastSeen, NOW))).toHaveLength(
-      unreadCount(feed, lastSeen, NOW),
-    )
+  it('is the reports alone when nothing has been recorded yet', () => {
+    // The state a fresh notifications table is in, and the state the feed is
+    // in for anyone whose workspace has never produced one.
+    const feed = activityFeed({ summaries }, NOW)
+    expect(new Set(feed.map((e) => e.kind))).toEqual(new Set(['report']))
   })
 })
