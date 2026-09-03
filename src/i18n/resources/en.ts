@@ -765,10 +765,6 @@ export const en = {
       title: 'Platform Settings',
       empty:
         'No platforms connected yet — pick one under “Connect Platforms” below.',
-      cadence: 'Cadence',
-      constraints: 'Constraints',
-      /** Cadence and constraints await real backend data — see PlatformRow. */
-      comingSoon: 'Coming soon',
       contentTypes: 'Available Content Types',
       contentTypesEmpty: 'None',
       accountInactive: 'Inactive on {{platform}} — can’t receive posts',
@@ -969,6 +965,13 @@ export const en = {
     noPlatform: 'No platform',
     noAccount: 'No account',
     noPostType: 'No post type',
+
+    /**
+     * The post editor's back arrow. Names the destination generically because
+     * it is not always the same one — it returns to whichever arrangement of
+     * the campaign's posts the user came from, calendar or table.
+     */
+    backToPosts: 'Back to posts',
 
     /**
      * The card's warning mark. What is wrong is in the post itself — the mark

@@ -41,7 +41,8 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { useWorkspace } from '@/hooks/useWorkspaces'
-import { formatAnchor } from '@/components/campaigns/calendar/date'
+import { usePostsPlaces } from '@/hooks/usePostsPlace'
+import { postsPlaceOf, postsPlaceLink } from '@/lib/postsPlace'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
@@ -121,6 +122,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate()
   const { data: campaigns, isPending: campaignsPending } = useCampaigns()
   const workspace = useWorkspace()
+  // The whole map rather than one campaign's: the nav draws a Posts row per
+  // campaign, so there is no single id to ask about here.
+  const postsPlaces = usePostsPlaces()
   const activityEnabled = useFeatureFlag('activity')
   const tasksEnabled = useFeatureFlag('tasks')
   const brandEnabled = useFeatureFlag('brand-materials')
@@ -154,26 +158,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               ? 'settings'
               : 'posts'
 
-  // Posts lands on the current week of the calendar; the rest are plain pages.
-  //
-  // Written out rather than interpolated from the id. `/campaigns/$campaignId/
-  // ${id}` is a `string`, which the router cannot check — a section renamed or
-  // a route moved would compile and fail on the click, which is exactly how
-  // the Content Bank row ended up pointing at a deleted route. Spelt out, each
-  // one is checked against the generated tree.
+  // Posts lands wherever the user last left this campaign's posts — the week or
+  // month they had navigated to, or the table. The row is labelled Posts, not
+  // Calendar, so it restores the arrangement as well as the date; the entry
+  // points that name the calendar (the overview's card, a bare `/calendar` URL)
+  // restore only the date. See `lib/postsPlace`. The rest are plain pages,
+  // spelt out in `SUB_ITEM_PATH` rather than interpolated from the id so each
+  // path is checked against the generated route tree.
   const subItemLink = (
     campaignId: string,
     id: CampaignSubItemId,
   ): { to: LinkProps['to']; params: LinkProps['params'] } =>
     id === 'posts'
-      ? {
-          to: '/campaigns/$campaignId/calendar/$anchor/$view',
-          params: {
-            campaignId,
-            anchor: formatAnchor(new Date()),
-            view: 'week',
-          },
-        }
+      ? postsPlaceLink(campaignId, postsPlaceOf(postsPlaces, campaignId))
       : { to: SUB_ITEM_PATH[id], params: { campaignId } }
 
   const initials =

@@ -1,7 +1,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { formatAnchor } from '@/components/campaigns/calendar/date'
+import { readCalendarPlace } from '@/hooks/usePostsPlace'
 
-// Bare /campaigns/:id/calendar → current week.
+// Bare /campaigns/:id/calendar → wherever this campaign's calendar was last
+// left, or the current week for one never opened. The date *and* the
+// granularity, but never the list: this URL names the calendar, so restoring a
+// table here would be answering a different question (`lib/postsPlace`).
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/calendar/',
 )({
@@ -10,8 +13,7 @@ export const Route = createFileRoute(
       to: '/campaigns/$campaignId/calendar/$anchor/$view',
       params: {
         campaignId: params.campaignId,
-        anchor: formatAnchor(new Date()),
-        view: 'week',
+        ...readCalendarPlace(params.campaignId),
       },
     })
   },
