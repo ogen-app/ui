@@ -8,7 +8,24 @@ const file = (thumbnail_url: string | null): AssetFile => ({
   mime_type: 'application/pdf',
   size_bytes: 1024,
   page_count: 12,
+  // Every stored file has a URL now, a PDF's included — which is exactly what
+  // stops the fallback below from being "use `url` when there is no thumbnail".
+  url: 'https://cdn/deck.pdf',
   thumbnail_url,
+  width: 0,
+  height: 0,
+  is_animated: false,
+})
+
+const imageFile = (url: string | null): AssetFile => ({
+  id: 'f2',
+  original_name: 'logo.png',
+  mime_type: 'image/png',
+  size_bytes: 2048,
+  url,
+  width: 800,
+  height: 600,
+  is_animated: false,
 })
 
 const image = (url: string, idx = 0): AssetImage => ({
@@ -35,14 +52,25 @@ describe('assetPreviewUrl', () => {
     ).toBe('https://cdn/a.png')
   })
 
+  it('shows an uploaded image itself', () => {
+    expect(assetPreviewUrl({ file: imageFile('https://cdn/logo.png') })).toBe(
+      'https://cdn/logo.png',
+    )
+  })
+
   it('has nothing to show for a note', () => {
     expect(assetPreviewUrl({})).toBeNull()
   })
 
-  // A PDF whose render failed still has a file row, so the file alone can't be
-  // read as "there is a picture" — the row falls back to its kind instead.
+  // A PDF whose render failed still has a file row, and that row now carries a
+  // URL for the PDF itself — which an `<img>` cannot draw. The media type is
+  // what keeps the image fallback off it.
   it('has nothing to show when the render failed', () => {
     expect(assetPreviewUrl({ file: file(null) })).toBeNull()
+  })
+
+  it('has nothing to show for an image storage never took', () => {
+    expect(assetPreviewUrl({ file: imageFile(null) })).toBeNull()
   })
 
   it('skips an image the storage never gave a URL', () => {

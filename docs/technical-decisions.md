@@ -545,10 +545,24 @@ Two consequences worth keeping:
   text is what the embeddings are built from — so the rule is about the *body*,
   not about whether bytes sit behind the row.
 - **The fallback is a floor, not a destination.** A kind worth showing properly
-  gets its own view and stops arriving here. `IMG` will, once the asset DTO
-  carries a URL for the original — `AssetFile` exposes `thumbnail_url` and
-  nothing else today, which is why the image viewer is not written yet rather
-  than written against a guess. See the `content-bank-images` flag comment.
+  gets its own view and stops arriving here, and `IMG` is the first to do it:
+  CON-246 settled the DTO field for the original (`AssetFile.url`), so
+  `AssetImageView` renders the picture with its alt text and description beside
+  it. `opensAsDocument` still answers `false` for an image — it is not a
+  document and never opens in the editor — so the two rules compose rather than
+  compete. What reaches `UnsupportedAsset` now is only a kind this build has
+  genuinely never heard of.
+
+**One further consequence, found while wiring that up.** The asset update is a
+whole-resource PUT and the handler assigns `tag_ids` and `alt_text` from the
+request unconditionally, so a payload naming only what changed erases the rest.
+`AssetDocument` had been sending `{title, content}`, which had been silently
+untagging every asset anyone renamed — invisible only because nothing in the app
+sets a tag. Every save now goes through `assetToPayload` (`lib/assetPayload.ts`),
+the same round-trip `campaignToPayload` does for the same reason. The image
+screen debounces the *asset* rather than each field for the matching reason: two
+saves in flight each carry a stale copy of the other's field, and the second to
+land wins.
 
 ## English is bundled, every other language is a chunk {#i18n}
 
@@ -888,9 +902,12 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
   ready building block; real invitations (email loop) await backend support
   (CON-26).
 - **Dark mode** is scaffolded (`.dark` block) but effectively empty.
-- **Images can't be Content-Bank assets yet.** `assets.type` is `MD | PDF | URL`
-  and the upload endpoint takes `.md` and `.pdf` only, so `IMG` is a type the
-  client declares and the server cannot produce (CON-16). The upload surface
-  offers images behind `content-bank-images`, off; an `IMG` asset that did
-  arrive opens read-only — see [below](#asset-opening). AI image *generation* is
-  planned but **secondary** (CON-105/88/83).
+- **Content-Bank images have no thumbnail.** An image is a first-class asset now
+  (CON-246): it uploads through the same endpoint as `.md` and `.pdf`, stores as
+  `IMG`, and opens on its own screen — see [below](#asset-opening). What the
+  server does not do yet is render a smaller copy, so the list's preview cell
+  draws the full file scaled into 40px. `thumbnail_url` is already preferred
+  everywhere it could appear, so the day that job exists nothing on the client
+  changes. Also missing: the bridge that attaches a bank image to a post as a
+  real `post_attachments` row, which is what the alt text is being collected
+  for. AI image *generation* is planned but **secondary** (CON-105/88/83).

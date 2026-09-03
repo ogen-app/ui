@@ -19,13 +19,10 @@ export type AssetStatus =
  * Markdown on our behalf (CON-222); it reads like any other document from here,
  * and only differs in having somewhere it came from.
  *
- * `"IMG"` is an image (CON-16). It is the first member that is **not** a
+ * `"IMG"` is an image (CON-246). It is the only member that is **not** a
  * document: its `content` is a description of the picture rather than the
- * thing itself, which is why `opensAsDocument` exists. Listed here ahead of the
- * server — the CHECK constraint still reads `MD | PDF | URL` and CON-105's
- * branch adds `IMG` — so that every screen that switches on a type has to say
- * what it does with one. Nothing outside the `content-bank-images` flag may
- * assume an image asset can be *created*; the type is only how one is read.
+ * thing itself, which is why `opensAsDocument` exists and why an image gets a
+ * screen of its own rather than the editor.
  */
 export type AssetType = 'MD' | 'PDF' | 'URL' | 'IMG' | null
 
@@ -51,12 +48,24 @@ export type AssetImage = {
 }
 
 /**
- * The stored file behind an uploaded asset — PDFs, today (CON-103).
+ * The stored file behind an uploaded asset — a PDF (CON-103) or an image
+ * (CON-246).
  *
- * `thumbnail_url` is the first page rendered to PNG when the upload was
- * ingested, and it is minted per response from the file's storage key: a URL
- * to draw right now, not an id worth keeping. Absent when the render failed,
- * which is why nothing may assume a file implies a picture.
+ * The two URLs are different things and only one of them is the file. `url` is
+ * the original bytes, which is what an image viewer renders; `thumbnail_url` is
+ * a picture *of* the file, in practice a PDF's first page rendered to PNG
+ * during ingestion. Both are minted per response from a storage key — a URL to
+ * draw right now, not an id worth keeping — and either can be absent, which is
+ * why nothing may assume a file implies a picture.
+ *
+ * They also arrive on opposite kinds. A PDF has the thumbnail and no use for
+ * the original; an image has no thumbnail at all, because the job that would
+ * make one isn't written yet, so the list draws the full-size `url` scaled
+ * down.
+ *
+ * The image metadata is zero on a PDF. It carries the names `post_attachments`
+ * already uses, so attaching a bank image to a post is a field copy on the day
+ * that bridge is built rather than a translation.
  */
 export type AssetFile = {
   id: string
@@ -64,7 +73,17 @@ export type AssetFile = {
   mime_type: string
   size_bytes: number
   page_count?: number | null
+  /** The file itself. Absent when storage is unconfigured. */
+  url?: string | null
+  /** A picture of the file: a PDF's first page. Absent when the render failed. */
   thumbnail_url?: string | null
+  /** Pixel dimensions of an image, `0` for anything else. */
+  width: number
+  height: number
+  /** A GIF with more than one frame. Nothing extracts them. */
+  is_animated: boolean
+  /** What the server dedupes uploads by, within a workspace. */
+  checksum_sha256?: string
 }
 
 export type Asset = {
@@ -75,6 +94,12 @@ export type Asset = {
   type: AssetType
   /** The page this was scraped from, normalised by the backend. URL assets only. */
   source_url?: string | null
+  /**
+   * An image's accessibility text — what someone who cannot see it is told the
+   * picture is (CON-246). Separate from `content`, which is the longer
+   * description the embeddings are built from, and empty on everything else.
+   */
+  alt_text: string
   /** Mirrored page images. Absent until a scrape has stored some. */
   images?: AssetImage[]
   /** The upload behind this document. Absent for notes and scraped pages. */
@@ -92,8 +117,18 @@ export type CreateAssetPayload = {
   tag_ids?: string[]
 }
 
+/**
+ * A whole-resource write, and the server defaults every field it doesn't find.
+ *
+ * Omitting `tag_ids` untags the asset and omitting `alt_text` blanks it — the
+ * handler assigns both from the request unconditionally, so a payload that
+ * mentions only the title is a payload that erases the rest. Never build one by
+ * hand: `assetToPayload` round-trips the asset's own values and takes the
+ * fields you mean to change as overrides.
+ */
 export type UpdateAssetPayload = {
   title: string
   content: string
-  tag_ids?: string[]
+  alt_text: string
+  tag_ids: string[]
 }

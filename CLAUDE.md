@@ -111,8 +111,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `AssetEditor`". It seeds BlockNote from `content` and autosaves it back, so
   the first type whose `content` isn't a document is overwritten by anyone who
   opens it and types (CON-235; `IMG`'s `content` is its description). PDF *is*
-  a document — its extracted text is what the embeddings are built from. See
+  a document — its extracted text is what the embeddings are built from. An
+  image is not, and has its own screen rather than the fallback
+  (`AssetImageView`, CON-246), so `UnsupportedAsset` is now only reached by a
+  kind this build has never heard of. See
   `docs/technical-decisions.md#asset-opening`.
+- **An asset update is a whole-resource PUT, like a campaign's.** The handler
+  assigns `tag_ids` and `alt_text` from the request unconditionally, so a
+  payload naming only what changed untags the asset and blanks its alt text —
+  which is what `{title, content}` had been quietly doing to tags. Build it
+  through `assetToPayload` (`lib/assetPayload.ts`). The image screen debounces
+  the whole asset rather than each field for the same reason: two saves in
+  flight each carry a stale copy of the other's field.
 - **A campaign update is a whole-resource PUT, and the server defaults every
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of
@@ -364,12 +374,13 @@ payload — CON-247. Calendar Settings' *Show cards as image previews* switch is
 hidden behind `calendar-card-images` until then; it was on by default and inert,
 which read as a broken calendar rather than an unbuilt feature
 (`docs/technical-decisions.md#calendar-card-media`) ·
-**an image cannot be a Content-Bank asset**
-— `assets.type` is `MD | PDF | URL` and the upload endpoint takes `.md` and
-`.pdf` only, so `IMG` is declared client-side and unproducible; the upload
-surface offers images behind `content-bank-images` (off) and the image asset's
-own screen is deliberately unwritten until the DTO carries a URL for the
-original (CON-16) · **the React Compiler lint rules are warnings, not errors** —
+**a Content-Bank image has no thumbnail** —
+images upload, store as `IMG` and open on their own screen (CON-246), but the
+server renders no smaller copy, so the list's preview cell draws the full file
+scaled into 40px; `thumbnail_url` is preferred wherever it appears, so nothing
+here changes when that job lands. The other half still missing is the bridge
+that attaches a bank image to a post (CON-16) — which is what the alt text is
+being collected for · **the React Compiler lint rules are warnings, not errors** —
 `react-hooks` v7 reports 123 of them against code that predates it, and each is
 a judgement call about a component rather than a mechanical fix
 ([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n covers the auth screens, sidebar,

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@tanstack/react-router'
 import {
   CaretDownIcon,
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { UploadModal } from '@/components/uploads/UploadModal'
 import { useAssets, useCreateAsset, useDeleteAsset } from '@/hooks/useContent'
-import { uploadLimitsLabel } from '@/lib/assetStatus'
+import { uploadLimitLines } from '@/lib/assetStatus'
 import { useUploadOptions } from '@/hooks/useUploadOptions'
 import {
   addToCampaign,
@@ -60,6 +61,7 @@ import { ContentList } from './ContentList'
  * on — not a staging area they travel out of.
  */
 export function ContentPage({ campaign }: { campaign: Campaign | null }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { data: assets, isLoading, isError } = useAssets()
   const createAsset = useCreateAsset()
@@ -360,10 +362,14 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             <UploadSimpleIcon className="size-8 text-foreground" />
             {/* The destination is the entire point of the change, and this is
                 the one moment the UI can name it without being asked. */}
-            <p className="text-sm text-foreground">Add these to {scopeName}</p>
-            <p className="text-xs text-tertiary-foreground">
-              {uploadLimitsLabel(uploadOptions)}
+            <p className="text-sm text-foreground">
+              {t('uploads.dropInto', { scope: scopeName })}
             </p>
+            {uploadLimitLines(t, uploadOptions).map((line) => (
+              <p key={line} className="text-xs text-tertiary-foreground">
+                {line}
+              </p>
+            ))}
           </div>
         </div>
       )}

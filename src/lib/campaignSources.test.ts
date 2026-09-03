@@ -13,6 +13,7 @@ const doc = (id: string): Asset => ({
   content: '',
   status: 'ready',
   type: null,
+  alt_text: '',
   tag_ids: [],
   tags: [],
   created_by: 'user',
