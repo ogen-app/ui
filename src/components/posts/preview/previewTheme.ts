@@ -74,6 +74,8 @@ export const THREADS = {
   surface: '#fafafa',
   dot: '#000000',
   dotMuted: '#d1d1d1',
+  /** Meta's red, for the over-length marker on a post of a thread. */
+  danger: '#ff3040',
 } as const
 
 // YouTube is a watch page rather than a feed card, so it needs two more

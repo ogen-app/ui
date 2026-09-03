@@ -715,6 +715,57 @@ export const es: Translation = {
       compactLate: '{{amount}} de retraso',
     },
 
+    sequence: {
+      explainer:
+        'Esto se publica como una cadena de publicaciones, cada una respondiendo a la anterior. Escribe --- en una línea aparte donde quieras un corte; si no hay ningún divisor, los cortes son las líneas en blanco. Lo que siga pasándose del límite de caracteres se recorta para que quepa.',
+
+      splitByDivider_one:
+        'Se publica como {{count}} publicación, cortada donde pusiste un divisor.',
+      splitByDivider_other:
+        'Se publica como {{count}} publicaciones, cortadas donde pusiste un divisor.',
+      splitByBlankLine_one:
+        'Se publica como {{count}} publicación, cortada en las líneas en blanco.',
+      splitByBlankLine_other:
+        'Se publica como {{count}} publicaciones, cortadas en las líneas en blanco.',
+      splitAutoCut_one:
+        '{{count}} de ellas salieron de texto cortado en {{limit}} caracteres.',
+      splitAutoCut_other:
+        '{{count}} de ellas salieron de texto cortado en {{limit}} caracteres.',
+      splitByLimit_one:
+        'Se publica como {{count}} publicación, recortada para caber en {{limit}} caracteres.',
+      splitByLimit_other:
+        'Se publica como {{count}} publicaciones, recortadas para caber en {{limit}} caracteres.',
+      splitSingle: 'Se publica como una sola publicación.',
+      splitPending: 'Calculando en cuántas publicaciones se divide esto…',
+      splitOverflow:
+        'Esto son más de {{max}} publicaciones. Acórtalo o publícalo como más de un hilo.',
+
+      mediaPerPost: 'Todos los límites de aquí son por publicación del hilo.',
+      mediaOn: 'Publicación {{position}}',
+      mediaOnLabel:
+        'Este archivo va en la publicación {{position}}: elige otra',
+
+      saveFailed: 'No se pudo guardar qué publicación lleva cada archivo.',
+
+      postCount_one: '{{count}} publicación',
+      postCount_other: '{{count}} publicaciones',
+
+      check: {
+        label: 'Hilo',
+        pending: 'Comprobando…',
+        overflow: 'Más de {{max}} publicaciones',
+        issues_one:
+          'La publicación {{positions}} lleva más archivos de los que admite una publicación',
+        issues_other:
+          'Las publicaciones {{positions}} llevan más archivos de los que admite una publicación',
+      },
+
+      previewNote:
+        'Un hilo: cada publicación de abajo sale por separado, respondiendo a la anterior.',
+      previewNoteUnsplit:
+        'La tarjeta divide esto en las líneas en blanco, pero se publica como una sola publicación: Ogen aún no envía el hilo.',
+    },
+
     status: {
       draft: 'Borrador',
       ready_for_publish: 'Lista para publicar',

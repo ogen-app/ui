@@ -997,6 +997,107 @@ export const en = {
     },
 
     /**
+     * Thread sequences (CON-196) — a post on X or Threads that publishes as a
+     * chain of connected posts rather than one.
+     *
+     * The vocabulary is fixed here and everything follows it. The whole thing
+     * is a **thread**; each part of it is a **post**, numbered from 1, because
+     * that is what each one becomes on the platform — calling them "items" or
+     * "segments" would name the data structure rather than the thing the
+     * reader will scroll through. Both networks use "thread" for this in their
+     * own apps, so it needs no gloss on either.
+     *
+     * Every limit these sentences quote is per *post*, never for the thread,
+     * which is the one thing about the format that surprises people.
+     */
+    sequence: {
+      /**
+       * Teaching, and only teaching — it can be dismissed for good, so nothing
+       * a person needs while writing may live here (CLAUDE.md). What the body
+       * actually became is the note under the editor, which cannot be
+       * dismissed.
+       */
+      explainer:
+        'This publishes as a chain of posts, each replying to the one before it. Type --- on its own line wherever you want a break; with no divider anywhere, blank lines are the breaks. Anything still past the character limit is cut to fit.',
+
+      /**
+       * The note under the editor: what the body will publish as. Two
+       * sentences, never one assembled from clauses — only the second has a
+       * limit in it, and only sometimes.
+       */
+      splitByDivider_one:
+        'Publishes as {{count}} post, broken where you put a divider.',
+      splitByDivider_other:
+        'Publishes as {{count}} posts, broken where you put a divider.',
+      splitByBlankLine_one:
+        'Publishes as {{count}} post, broken at blank lines.',
+      splitByBlankLine_other:
+        'Publishes as {{count}} posts, broken at blank lines.',
+      splitAutoCut_one:
+        '{{count}} of them came from copy cut at {{limit}} characters.',
+      splitAutoCut_other:
+        '{{count}} of them came from copy cut at {{limit}} characters.',
+      splitByLimit_one:
+        'Publishes as {{count}} post, cut to fit {{limit}} characters.',
+      splitByLimit_other:
+        'Publishes as {{count}} posts, cut to fit {{limit}} characters.',
+      /**
+       * One post, and therefore no rule to name: the body has no divider and
+       * no blank line, or it has one and still fits. How to make a second post
+       * is the Explainer's job, above — this line is a verdict.
+       */
+      splitSingle: 'Publishes as a single post.',
+      splitPending: 'Working out how this breaks into posts…',
+      splitOverflow:
+        'This is more than {{max}} posts. Shorten it, or publish it as more than one thread.',
+
+      /**
+       * The media card, when the post is a thread. The card's other copy is
+       * still legacy English (CON-174) — these are new, so they are here.
+       */
+      mediaPerPost: 'Every limit here is per post of the thread.',
+      mediaOn: 'Post {{position}}',
+      mediaOnLabel: 'This file rides post {{position}} — pick another',
+
+      saveFailed: 'Could not save which post carries which file.',
+
+      postCount_one: '{{count}} post',
+      postCount_other: '{{count}} posts',
+
+      /**
+       * The row this adds to the pre-publish bar. Length is not among the
+       * things it can fail on: copy past the ceiling is cut to fit as the
+       * chain is built, so what is left is the media, which only the author
+       * can move.
+       */
+      check: {
+        label: 'Thread',
+        pending: 'Checking…',
+        overflow: 'More than {{max}} posts',
+        issues_one: 'Post {{positions}} carries more media than one post takes',
+        issues_other:
+          'Posts {{positions}} carry more media than one post takes',
+      },
+
+      /**
+       * The preview panel's note. It replaces a sentence that said the
+       * publisher does the splitting — it does not, and never did: without
+       * `threadItems` the whole body goes out as a single post.
+       */
+      previewNote:
+        'A thread: each post below goes out separately, replying to the one before it.',
+      /**
+       * The same panel, for a `thread` post left over from before the feature
+       * — the type is withdrawn from every picker while the flag is off, but a
+       * post already saved as one keeps it. What it says is the uncomfortable
+       * truth: the card has always drawn a chain, and the submit path has
+       * always sent one post.
+       */
+      previewNoteUnsplit:
+        'The card splits this at blank lines, but it publishes as a single post — Ogen does not send the thread yet.',
+    },
+
+    /**
      * What a post writes from. The same control renders as the card under the
      * copy and as a section in the settings rail, so the two empty states are
      * one idea at two lengths — the card can afford to explain what the list

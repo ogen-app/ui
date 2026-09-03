@@ -379,6 +379,31 @@ is still hard-coded English (CON-174) · **English is the only released language
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
 
+**A thread publishes as one post, not as a thread** (CON-196,
+`thread-sequence`, off). X has offered a `thread` post type all along and the
+preview card has always drawn a chain, but `SubmitRequest` in the Go repo's
+`publishers/zernio/posts.go` carries no `platformSpecificData`, so nothing ever
+sent Zernio's `threadItems` — the whole body goes out as a single post. Behind
+the flag the chain is **derived from the body** rather than composed in
+separate inputs: the editor stays the one Markdown card every post type uses, a
+`---` divider is a break, blank lines are the break where the body has no
+divider, and anything still past the per-post ceiling is cut to fit. So there
+is no "this post is too long" to report — it is cut instead — and `content` is
+never rewritten, which is why nothing outside the flag is touched. The one
+thing a body cannot say is which post carries which file, so that map alone
+sits in the tenant key/value store and is chosen on each thumbnail in the media
+card. Threads gains the type too (Zernio takes the same field on both).
+**Waiting on** that field in the submit path, **the same split implemented
+server-side** (the words live only in `content`, so the publisher must cut it
+the way `splitBody`/`splitToLimit` do), a home for the media assignment,
+`thread` added to `threads` in `publishers/zernio/platforms.go` — a submit
+blocker only, because while the flag is on `aheadOfPublishers` lets it stand in
+for the slug the publisher has not learned yet — and
+**attachment validation counted per item** — the server measures files against
+the post, so five images spread over three posts still warns "platform allows
+up to 4". That message is passed through as written because until the publisher
+splits it is right. See `docs/technical-decisions.md#thread-sequence`.
+
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's
 token-gated unsubscribe pages, not a session-authenticated one, so
