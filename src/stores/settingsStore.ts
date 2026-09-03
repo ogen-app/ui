@@ -45,26 +45,13 @@ export type LocalSettings = {
   dismissedNotes: string[]
 
   /**
-   * Note id -> whether it sits above the post body (CON-188).
-   *
-   * A map rather than a list because the default is not "unpinned": a
-   * `draft_thesis` starts pinned, so an explicit `false` has to be storable to
-   * outvote it. Absent means "whatever the type says" (`lib/postNotes`).
-   *
-   * Device-local, which is the compromise the API forces — `post_notes` has no
-   * `pinned` column, so there is nowhere shared to put it. A teammate opening
-   * the same post sees the type-based default, not your arrangement.
-   */
-  notePins: Record<string, boolean>
-
-  /**
    * Campaign id -> where the user last was in that campaign's posts. See
    * `lib/postsPlace`; read it through `selectPostsPlace` / `selectCalendarPlace`
    * rather than the map directly.
    *
-   * Unbounded, like `notePins`, and for the same reason it doesn't matter: an
-   * entry is three short strings and a workspace has campaigns in the dozens. A
-   * deleted campaign leaves one behind that nothing will ever ask for again.
+   * Unbounded, and it doesn't matter: an entry is three short strings and a
+   * workspace has campaigns in the dozens. A deleted campaign leaves one
+   * behind that nothing will ever ask for again.
    */
   postsPlace: Record<string, PostsPlace>
 }
@@ -112,12 +99,6 @@ type SettingsState = LocalSettings &
     /** Close an explainer permanently. Idempotent. */
     dismissNote: (id: string) => void
 
-    /** Pin a note above the post body, or send it back down. */
-    setNotePin: (noteId: string, pinned: boolean) => void
-
-    /** Forget a deleted note's pin — the map is persisted and never expires. */
-    clearNotePin: (noteId: string) => void
-
     /**
      * Record that the user is looking at this campaign's posts, arranged this
      * way. Called by the views themselves, on every anchor change — the fold is
@@ -139,7 +120,6 @@ const DEFAULT_SETTINGS: LocalSettings = {
   panelMemory: DEFAULT_PANEL_MEMORY,
   lastOpenedModals: {},
   dismissedNotes: [],
-  notePins: {},
   postsPlace: {},
 }
 
@@ -226,21 +206,6 @@ export const useSettingsStore = create<SettingsState>()(
           )
         },
 
-        setNotePin: (noteId, pinned) => {
-          set((state) => ({
-            notePins: { ...state.notePins, [noteId]: pinned },
-          }))
-        },
-
-        clearNotePin: (noteId) => {
-          set((state) => {
-            if (!(noteId in state.notePins)) return state
-            const next = { ...state.notePins }
-            delete next[noteId]
-            return { notePins: next }
-          })
-        },
-
         rememberPostsPlace: (campaignId, visit) => {
           set((state) => {
             const prev = state.postsPlace[campaignId]
@@ -269,7 +234,6 @@ export const useSettingsStore = create<SettingsState>()(
           panelMemory: state.panelMemory,
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
-          notePins: state.notePins,
           postsPlace: state.postsPlace,
           // Don't persist
           // scope, campaignId — where you are, not what you chose

@@ -62,8 +62,24 @@ describe('invalidationsFor', () => {
 
   it('refreshes only the lists on a clone — the source post is unchanged', () => {
     const e = event('entity:post:p1', 'post_cloned')
-    expect(keys(e)).toEqual([undefined])
+    expect(keys(e)).toEqual([undefined, ['posts']])
     expect(hitsPostLists(e)).toBe(true)
+  })
+
+  it('keeps the workspace-wide post list in step with every post write', () => {
+    // `['posts']` sits outside `['campaigns']` on purpose, so no campaign
+    // filter ever reaches it — each of these events has to name it, or
+    // `useAssetUsage` keeps counting from stale rows.
+    for (const type of [
+      'post.analytics.updated',
+      'post_cloned',
+      'post_restored',
+      'post_scheduled',
+      'assistant_completed',
+      'assistant_failed',
+    ]) {
+      expect(keys(event('entity:post:p1', type))).toContainEqual(['posts'])
+    }
   })
 
   it("refreshes every calendar after someone else's assistant turn", () => {
@@ -85,9 +101,10 @@ describe('invalidationsFor', () => {
   })
 
   it('refreshes the whole campaign after a campaign-scoped AI run', () => {
-    // Posts and overview both nest under this key.
+    // Posts and overview both nest under this key; the workspace-wide post
+    // list holds the same rows outside it, so it comes along by name.
     expect(keys(event('entity:campaign:c1', 'content_plan_completed'))).toEqual(
-      [['campaigns', 'c1']],
+      [['campaigns', 'c1'], ['posts']],
     )
   })
 

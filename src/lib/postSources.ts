@@ -76,7 +76,9 @@ function enqueue(postId: string, run: () => Promise<void>): Promise<void> {
 /**
  * Bounded, because the loop below re-runs only when a keystroke lands in the
  * exact window of an in-flight PUT — twice in a row is already vanishingly
- * rare, and past this many attempts the next natural autosave settles it.
+ * rare. Exhausting the bound without ever reading the ids back stable is
+ * reported as a failure, not shrugged off: a pending autosave could still be
+ * holding the pre-write list, so "done" would be a lie.
  */
 const MAX_WRITE_ATTEMPTS = 4
 
@@ -84,7 +86,10 @@ async function write(
   postId: string,
   nextIds: (post: Post) => string[],
 ): Promise<void> {
-  for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS; attempt++) {
+  // One more pass than writes: the last round through the loop may only
+  // verify, never write, so success is only ever reported off a quiet pass —
+  // a read that found the ids already in place with no flush pending.
+  for (let attempt = 0; attempt <= MAX_WRITE_ATTEMPTS; attempt++) {
     // The editor holds the *whole* post in a 600ms debounce, so a PUT from
     // here would be overwritten wholesale by the flush that follows it — the
     // pending copy still carries the id list as it was before this ran.
@@ -99,6 +104,7 @@ async function write(
     ) {
       return
     }
+    if (attempt === MAX_WRITE_ATTEMPTS) break
     const saved = await updatePost(postId, {
       ...postToPayload(post),
       used_asset_ids: ids,
@@ -118,13 +124,20 @@ async function write(
           }
         : saved,
     )
-    landSavedPost(queryClient, saved)
+    await landSavedPost(queryClient, saved)
     // Not done yet: a keystroke that arrived *while the PUT was in flight*
     // cloned the pre-write document into the editor's debounce, and its flush
     // will put the old id list straight back. Going round again flushes that
     // straggler and re-asserts; the first quiet pass reads its own ids back
     // and returns above.
   }
+  // Every pass found a conflicting flush had already landed over the previous
+  // write. The last PUT may yet be overwritten by a pending autosave, so
+  // resolving here would report an attachment that can still be lost — throw
+  // instead, and the caller's toast says so.
+  throw new Error(
+    'The post kept saving over this change — try adding it again.',
+  )
 }
 
 /**

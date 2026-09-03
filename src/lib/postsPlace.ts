@@ -1,3 +1,4 @@
+import type { LinkProps } from '@tanstack/react-router'
 import { formatAnchor, parseAnchor } from '@/components/campaigns/calendar/date'
 
 /**
@@ -136,7 +137,7 @@ export function calendarPlaceOf(
 export function postsPlaceLink(
   campaignId: string,
   place: PostsPlace,
-): { to: string; params: Record<string, string> } {
+): { to: LinkProps['to']; params: LinkProps['params'] } {
   return place.view === 'list'
     ? { to: '/campaigns/$campaignId/list', params: { campaignId } }
     : {

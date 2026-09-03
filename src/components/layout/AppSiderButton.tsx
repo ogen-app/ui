@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button.tsx'
-import { Link } from '@tanstack/react-router'
+import { Link, type LinkProps } from '@tanstack/react-router'
 import { cn } from '@/lib'
 
 type AppSidebarButtonMenuProps = {
@@ -8,9 +8,17 @@ type AppSidebarButtonMenuProps = {
   icon: ReactNode
   text: string
   isActive: boolean
-  /** When provided the button renders as a Link, otherwise as a plain action. */
-  to?: string
-  params?: Record<string, string>
+  /**
+   * When provided the button renders as a Link, otherwise as a plain action.
+   *
+   * Typed as the router's own union rather than `string`, which is how the
+   * rail once pointed at `/content-bank/all` months after that route was
+   * deleted: the link matched `/content-bank/$assetId` instead and the
+   * sidebar's Content Bank opened on "Document not found". A `string` here is
+   * the one place in the app where a dead route compiles.
+   */
+  to?: LinkProps['to']
+  params?: LinkProps['params']
   onClick?: () => void
   className?: string
   /**

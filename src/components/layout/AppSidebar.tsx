@@ -1,5 +1,10 @@
 import * as React from 'react'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  type LinkProps,
+} from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowSquareOutIcon,
@@ -91,6 +96,22 @@ function SectionLabel({
 // The rows and the Overview's cards read one table — see `lib/campaignSections`.
 type CampaignSubItemId = CampaignSectionId
 
+/**
+ * Where each section row goes, less Posts, which needs a date in its path and
+ * is built beside it.
+ *
+ * `satisfies` is what makes this worth writing out: every value is checked
+ * against the router's own union, so a route that moves takes this table down
+ * with it at compile time instead of on the click.
+ */
+const SUB_ITEM_PATH = {
+  overview: '/campaigns/$campaignId/overview',
+  analytics: '/campaigns/$campaignId/analytics',
+  brief: '/campaigns/$campaignId/brief',
+  content: '/campaigns/$campaignId/content',
+  settings: '/campaigns/$campaignId/settings',
+} satisfies Record<Exclude<CampaignSubItemId, 'posts'>, LinkProps['to']>
+
 /** The app's main navigation sidebar, including the user/workspace menu. */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state, isMobile, setOpen, toggleSidebar } = useSidebar()
@@ -141,14 +162,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // month they had navigated to, or the table. The row is labelled Posts, not
   // Calendar, so it restores the arrangement as well as the date; the entry
   // points that name the calendar (the overview's card, a bare `/calendar` URL)
-  // restore only the date. See `lib/postsPlace`. The rest are plain pages.
+  // restore only the date. See `lib/postsPlace`. The rest are plain pages,
+  // spelt out in `SUB_ITEM_PATH` rather than interpolated from the id so each
+  // path is checked against the generated route tree.
   const subItemLink = (
     campaignId: string,
     id: CampaignSubItemId,
-  ): { to: string; params: Record<string, string> } =>
+  ): { to: LinkProps['to']; params: LinkProps['params'] } =>
     id === 'posts'
       ? postsPlaceLink(campaignId, postsPlaceOf(postsPlaces, campaignId))
-      : { to: `/campaigns/$campaignId/${id}`, params: { campaignId } }
+      : { to: SUB_ITEM_PATH[id], params: { campaignId } }
 
   const initials =
     `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`.toUpperCase() || '?'

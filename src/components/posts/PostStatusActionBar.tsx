@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowUUpLeftIcon,
   CalendarPlusIcon,
   CalendarXIcon,
   CheckCircleIcon,
+  CopyIcon,
   PaperPlaneTiltIcon,
   XCircleIcon,
 } from '@phosphor-icons/react'
@@ -20,6 +22,15 @@ type Props = {
   buttons: PostStatusAction[]
   /** The one step back, if the post can also still move forward. */
   back: PostStatusAction | null
+  /**
+   * Copy this post into a new draft (CON-251). Not a transition — `published`
+   * has no outgoing edge — but the one forward move it still has, so it takes
+   * the slot the transitions vacated rather than leaving the bar empty.
+   *
+   * Passed only where it applies; the bar never decides for itself which
+   * statuses may be duplicated.
+   */
+  duplicate?: { run: () => void; running: boolean } | null
   /**
    * What happens to this post next, in both its forms (CON-195). Null when
    * nothing is going to publish it — see `usePublishStatus`.
@@ -45,13 +56,20 @@ type Props = {
  * Moving them down separates the two kinds: the top of the screen switches
  * views, the bottom commits.
  *
- * The bar renders nothing in terminal states (`published` has no outgoing user
- * edge), which is exactly why the save indicator does *not* live in it — a
- * published post is still editable, and its save state has to outlive the bar.
+ * In a terminal state there are no transitions to show, so the slot holds the
+ * one forward move that is left instead: `duplicate`, which makes a new draft
+ * rather than moving this post (CON-251).
+ *
+ * The save indicator still does not live here, but no longer for the reason it
+ * once did — a published post is read-only now, so there is nothing to save on
+ * the one screen where this bar has no transitions. It stays in the header
+ * because that is where a passive status belongs (CON-178), not because it has
+ * to outlive the bar.
  */
 export function PostStatusActionBar({
   buttons,
   back,
+  duplicate,
   pending,
   onBlocked,
   status,
@@ -60,7 +78,7 @@ export function PostStatusActionBar({
   // that carry a countdown all have an outgoing user edge (a scheduled post
   // can be cancelled, a manual one verified), so this never hides one — and a
   // bar holding nothing but a sentence would be a banner, not a commit bar.
-  if (!back && buttons.length === 0) return null
+  if (!back && buttons.length === 0 && !duplicate) return null
 
   // Primary last — `usePostStatusActions` orders `buttons` so the most
   // prominent move ends the row, and the bar reads left-to-right into it.
@@ -73,7 +91,9 @@ export function PostStatusActionBar({
       // The edges on offer, not their in-flight state: the bar animates on
       // this, and a value that also moved for a spinner would restart the
       // hand-off while a transition was still running.
-      contentKey={actions.map((action) => action.next).join('|')}
+      contentKey={[...actions.map((a) => a.next), duplicate && 'duplicate']
+        .filter(Boolean)
+        .join('|')}
       status={
         status && {
           full: <PostPublishStatus text={status.full} />,
@@ -93,7 +113,37 @@ export function PostStatusActionBar({
           onBlocked={onBlocked}
         />
       ))}
+      {duplicate && <DuplicateButton {...duplicate} />}
     </PageActionBar>
+  )
+}
+
+/**
+ * Last in the row and at full strength, because on the one screen it appears
+ * it is the only thing there — a published post has no transitions to rank it
+ * against. Ghost like every other button on the bar; nothing here draws a slab.
+ */
+function DuplicateButton({
+  run,
+  running,
+}: {
+  run: () => void
+  running: boolean
+}) {
+  const { t } = useTranslation()
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="text-primary-foreground"
+      disabled={running}
+      loading={running}
+      onClick={run}
+    >
+      <CopyIcon />
+      <span>{t('posts.duplicate.action')}</span>
+    </Button>
   )
 }
 

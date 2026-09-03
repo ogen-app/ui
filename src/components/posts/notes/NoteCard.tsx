@@ -1,13 +1,6 @@
 import { useState } from 'react'
-import {
-  CheckIcon,
-  PencilSimpleIcon,
-  PushPinIcon,
-  PushPinSlashIcon,
-  SparkleIcon,
-  TrashIcon,
-  XIcon,
-} from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
+import { PencilSimpleIcon, SparkleIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -17,13 +10,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib'
-import { noteTypeLabel } from '@/lib/postNotes'
+import { noteHeading } from '@/lib/postNotes'
 import type { PostNote } from '@/services/api/postNotes'
 
 type Props = {
   note: PostNote
-  pinned: boolean
-  onTogglePin: () => void
   onSave: (patch: { title: string; body: string }) => Promise<void>
   onDelete: () => Promise<void>
   className?: string
@@ -32,19 +23,17 @@ type Props = {
 /**
  * One note, readable by default and editable in place.
  *
+ * The note's own title is its heading — a list of notes is told apart by what
+ * each one says, not by all of them being called "Note". `noteHeading` decides
+ * what stands in when there is no title.
+ *
  * Everything is editable regardless of origin: an assistant-written image
  * prompt is a draft you are meant to fix, not a record of what the machine
  * said. The origin mark is there to say where the text came from, not to
  * protect it.
  */
-export function NoteCard({
-  note,
-  pinned,
-  onTogglePin,
-  onSave,
-  onDelete,
-  className,
-}: Props) {
+export function NoteCard({ note, onSave, onDelete, className }: Props) {
+  const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [title, setTitle] = useState(note.title)
@@ -65,177 +54,194 @@ export function NoteCard({
   const open = () => {
     setTitle(note.title)
     setBody(note.body)
+    setConfirming(false)
     setEditing(true)
+  }
+
+  const close = () => {
+    setConfirming(false)
+    setEditing(false)
   }
 
   const submit = async () => {
     const trimmed = body.trim()
     // An empty body is a 400 from the API, and "delete by clearing the text"
-    // is not a gesture anyone means — the trash icon is right there.
+    // is not a gesture anyone means — DELETE is right there.
     if (!trimmed || busy) return
     setBusy(true)
     try {
       await onSave({ title: title.trim(), body: trimmed })
-      setEditing(false)
+      close()
     } finally {
       setBusy(false)
     }
   }
 
-  return (
-    // Surface-neutral on purpose: pinned notes are each their own card above
-    // the body, while the ones below the media are rows inside a single card.
-    // The container owns the background and padding; this owns the note.
-    <div className={cn('flex flex-col gap-2', className)}>
-      <div className="flex items-center justify-between gap-4 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs uppercase tracking-wide text-tertiary-foreground">
-            {noteTypeLabel(note.type)}
-          </span>
-          {/* Only for the machine origins. Marking a hand-written note
-              "manual" would label the ordinary case. */}
-          {note.origin !== 'manual' && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="flex items-center text-tertiary-foreground">
-                  <SparkleIcon className="size-3.5" />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {note.origin === 'assistant'
-                  ? 'Written by the post assistant'
-                  : 'Captured when this post was generated'}
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
+  const heading = noteHeading(note)
 
-        <div className="flex shrink-0 items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
+  // Only for the machine origins. Marking a hand-written note "manual" would
+  // label the ordinary case.
+  const originMark = note.origin !== 'manual' && (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="flex items-center text-tertiary-foreground">
+          <SparkleIcon className="size-3.5" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        {note.origin === 'assistant'
+          ? t('posts.notes.origin.assistant')
+          : t('posts.notes.origin.generated')}
+      </TooltipContent>
+    </Tooltip>
+  )
+
+  if (editing) {
+    return (
+      <div className={cn('flex flex-col gap-2', className)}>
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={t('posts.notes.titlePlaceholder')}
+          aria-label={t('posts.notes.titleLabel')}
+        />
+        <Textarea
+          autoFocus
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={t('posts.notes.bodyPlaceholder')}
+          aria-label={t('posts.notes.bodyLabel')}
+        />
+
+        {/* Deleting lives in here rather than beside the pencil: the trash was
+            one row away from the note it would destroy, on a card that is
+            otherwise all reading. Opening the editor is the deliberate act
+            that puts it within reach — and the inline confirm, same as the
+            versions panel next door, is what makes it safe, because the delete
+            is permanent and a `draft_thesis` can be the only copy of the
+            brief. It replaces the actions rather than joining them, so there
+            is never a second Cancel on screen meaning something else. */}
+        {confirming ? (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-secondary-foreground">
+              {t('posts.notes.deleteConfirm')}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={removing}
+                loading={removing}
+                onClick={() => void remove()}
+              >
+                {t('posts.notes.delete')}
+              </Button>
               <Button
                 type="button"
                 variant="ghost"
-                size="smIcon"
-                onClick={onTogglePin}
-                aria-label={pinned ? 'Unpin note' : 'Pin above the post'}
+                size="sm"
+                onClick={() => setConfirming(false)}
               >
-                {pinned ? <PushPinSlashIcon /> : <PushPinIcon />}
+                {t('posts.notes.cancel')}
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {pinned ? 'Move below the post' : 'Pin above the post'}
-            </TooltipContent>
-          </Tooltip>
-
-          {!editing && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="smIcon"
-              onClick={open}
-              aria-label="Edit note"
-            >
-              <PencilSimpleIcon />
-            </Button>
-          )}
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="smIcon"
-            onClick={() => setConfirming(true)}
-            aria-label="Delete note"
-          >
-            <TrashIcon className="text-destructive" />
-          </Button>
-        </div>
-      </div>
-
-      {/* An inline confirm, same as the versions panel next door: the trash
-          icon sits a few pixels from pin and edit, the delete is permanent,
-          and a `draft_thesis` can be the only copy of the brief. */}
-      {confirming && (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs text-secondary-foreground">
-            Delete this note? There is no way to get it back.
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              disabled={removing}
-              loading={removing}
-              onClick={() => void remove()}
-            >
-              DELETE
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setConfirming(false)}
-            >
-              Cancel
-            </Button>
+            </div>
           </div>
-        </div>
-      )}
-
-      {editing ? (
-        <div className="flex flex-col gap-2">
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title (optional)"
-            aria-label="Note title"
-          />
-          <Textarea
-            autoFocus
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="What should this post remember?"
-            aria-label="Note"
-          />
+        ) : (
           <div className="flex items-center gap-2">
+            {/* The ghost variant has no disabled ink of its own — it only
+                stops taking clicks — and the strong `text-primary-foreground`
+                that marks this as the commit is exactly what makes a dead
+                button look live. `senary` is the ink the default variant fades
+                to. */}
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="sm"
+              className="text-primary-foreground disabled:text-senary-foreground"
               disabled={!body.trim()}
               loading={busy}
               onClick={() => void submit()}
             >
-              <CheckIcon />
-              <span>Save</span>
+              {t('posts.notes.save')}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={close}>
+              {t('posts.notes.cancel')}
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setEditing(false)}
+              className="ml-auto text-destructive"
+              onClick={() => setConfirming(true)}
             >
-              <XIcon />
-              <span>Cancel</span>
+              {t('posts.notes.delete')}
             </Button>
           </div>
+        )}
+      </div>
+    )
+  }
+
+  const editButton = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="smIcon"
+      className="shrink-0"
+      onClick={open}
+      aria-label={t('posts.notes.edit')}
+    >
+      <PencilSimpleIcon />
+    </Button>
+  )
+
+  // `whitespace-pre-wrap`: the content plan writes the thesis as a bullet list
+  // and the assistant writes prompts in paragraphs — both collapse into one
+  // run-on line without it.
+  const bodyText = (
+    <p className="whitespace-pre-wrap text-sm text-secondary-foreground">
+      {note.body}
+    </p>
+  )
+
+  // An untitled note has no header row to put the pencil in, and giving it one
+  // anyway leaves an empty line with a lone icon floating over it. The body
+  // takes that row instead, so the note starts where its words do.
+  if (!heading) {
+    return (
+      <div className={cn('flex items-start justify-between gap-4', className)}>
+        <div className="min-w-0 flex-1">{bodyText}</div>
+        <div className="flex shrink-0 items-center gap-2">
+          {originMark}
+          {editButton}
         </div>
-      ) : (
-        <>
-          {note.title.trim() && (
-            <h3 className="text-base font-display font-medium tracking-tight">
-              {note.title}
-            </h3>
-          )}
-          {/* `whitespace-pre-wrap`: the content plan writes the thesis as a
-              bullet list and the assistant writes prompts in paragraphs — both
-              collapse into one run-on line without it. */}
-          <p className="whitespace-pre-wrap text-sm text-secondary-foreground">
-            {note.body}
-          </p>
-        </>
-      )}
+      </div>
+    )
+  }
+
+  return (
+    // Surface-neutral on purpose: the notes are rows inside a single card, so
+    // the container owns the background and padding; this owns the note.
+    <div className={cn('flex flex-col gap-2', className)}>
+      <div className="flex items-center justify-between gap-4 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <h3
+            className={cn(
+              'truncate text-base font-display font-medium tracking-tight',
+              // A type standing in for a missing title is a description of the
+              // note, not its name — it should not read as one.
+              heading.kind === 'type' && 'text-tertiary-foreground',
+            )}
+          >
+            {heading.kind === 'title' ? heading.text : t(heading.key)}
+          </h3>
+          {originMark}
+        </div>
+        {editButton}
+      </div>
+
+      {bodyText}
     </div>
   )
 }

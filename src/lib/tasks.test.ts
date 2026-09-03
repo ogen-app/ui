@@ -164,6 +164,38 @@ describe('parseTasks', () => {
     const raw = JSON.stringify([task(), { id: 'x' }, null])
     expect(parseTasks(raw)).toHaveLength(1)
   })
+
+  it('drops a row whose source is not a source', () => {
+    // `{}` used to pass the old object-shaped check and come out typed as a
+    // Task — then `task.source.kind` reads undefined everywhere downstream.
+    const raw = JSON.stringify([
+      { ...task({ id: 'manual:2' }), source: {} },
+      { ...task({ id: 'rule:c1:x' }), source: { kind: 'rule' } },
+      {
+        ...task({ id: 'rule:c1:y' }),
+        source: { kind: 'rule', campaignId: 'c1' },
+      },
+      task(),
+    ])
+    expect(parseTasks(raw).map((t) => t.id)).toEqual(['manual:1'])
+  })
+
+  it('drops a row missing the fields every task has', () => {
+    const noStatus = { ...task() } as Record<string, unknown>
+    delete noStatus.status
+    const noCampaign = { ...task({ id: 'manual:2' }) } as Record<
+      string,
+      unknown
+    >
+    delete noCampaign.campaignId
+    expect(parseTasks(JSON.stringify([noStatus, noCampaign]))).toEqual([])
+  })
+
+  it('fills in the description an older build never wrote', () => {
+    const legacy = { ...task() } as Record<string, unknown>
+    delete legacy.description
+    expect(parseTasks(JSON.stringify([legacy]))[0]?.description).toBe('')
+  })
 })
 
 describe('sortTasks', () => {

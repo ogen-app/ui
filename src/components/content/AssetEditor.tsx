@@ -33,6 +33,18 @@ export function AssetEditor({
   const [title, setTitle] = useState(initialTitle)
   const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // What each running debounce would send when it fires, so the unmount
+  // cleanup can flush it instead of throwing the last edit away. The callback
+  // refs exist because that cleanup runs once, with the first render's props
+  // in scope.
+  const pendingTitleRef = useRef<string | null>(null)
+  const pendingContentRef = useRef<string | null>(null)
+  const onTitleChangeRef = useRef(onTitleChange)
+  const onContentChangeRef = useRef(onContentChange)
+  useEffect(() => {
+    onTitleChangeRef.current = onTitleChange
+    onContentChangeRef.current = onContentChange
+  }, [onTitleChange, onContentChange])
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const readyRef = useRef(false)
   // The markdown the editor last held on our behalf: what we loaded into it,
@@ -72,9 +84,13 @@ export function AssetEditor({
       const next = e.target.value.replace(/\n/g, '')
       setTitle(next)
       onDirty?.()
+      const value = next.trim() === '' ? ' ' : next
+      pendingTitleRef.current = value
       if (titleTimerRef.current) clearTimeout(titleTimerRef.current)
       titleTimerRef.current = setTimeout(() => {
-        onTitleChange(next.trim() === '' ? ' ' : next)
+        titleTimerRef.current = null
+        pendingTitleRef.current = null
+        onTitleChange(value)
       }, 500)
     },
     [onTitleChange, onDirty],
@@ -123,18 +139,34 @@ export function AssetEditor({
     if (markdown === lastMarkdownRef.current) return
     lastMarkdownRef.current = markdown
     onDirty?.()
+    // A document emptied on purpose still has to be saved, and the API has
+    // no way to say "no body" — same single space the title falls back to.
+    const value = markdown === '' ? ' ' : markdown
+    pendingContentRef.current = value
     if (contentTimerRef.current) clearTimeout(contentTimerRef.current)
     contentTimerRef.current = setTimeout(() => {
-      // A document emptied on purpose still has to be saved, and the API has
-      // no way to say "no body" — same single space the title falls back to.
-      onContentChange(markdown === '' ? ' ' : markdown)
+      contentTimerRef.current = null
+      pendingContentRef.current = null
+      onContentChange(value)
     }, 500)
   }, [editor, onContentChange, onDirty])
 
   useEffect(() => {
+    // Flush, not cancel: leaving inside the debounce window still saves the
+    // last edit — the same flush-on-unmount rule as the post editor. The save
+    // this triggers is a promise already in motion by the time the tree is
+    // gone; unmounting cancels no promises.
     return () => {
       if (titleTimerRef.current) clearTimeout(titleTimerRef.current)
       if (contentTimerRef.current) clearTimeout(contentTimerRef.current)
+      if (pendingTitleRef.current !== null) {
+        onTitleChangeRef.current(pendingTitleRef.current)
+        pendingTitleRef.current = null
+      }
+      if (pendingContentRef.current !== null) {
+        onContentChangeRef.current(pendingContentRef.current)
+        pendingContentRef.current = null
+      }
     }
   }, [])
 

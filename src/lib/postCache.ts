@@ -1,5 +1,9 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { CAMPAIGN_SUMMARIES_KEY, campaignPostsKey } from '@/lib/queryKeys'
+import {
+  CAMPAIGN_SUMMARIES_KEY,
+  campaignPostsKey,
+  WORKSPACE_POSTS_KEY,
+} from '@/lib/queryKeys'
 import type { Post } from '@/types/posts'
 
 /**
@@ -29,6 +33,10 @@ export function invalidateCampaignPosts(
 ): void {
   qc.invalidateQueries({ queryKey: campaignPostsKey(campaignId) })
   qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })
+  // The workspace-wide list holds the same rows under its own root
+  // (`useAssetUsage`, auto-publish), so a campaign invalidation never reaches
+  // it by prefix — it has to be named.
+  qc.invalidateQueries({ queryKey: WORKSPACE_POSTS_KEY })
 }
 
 /**
@@ -66,15 +74,30 @@ export function cachedPostFromList(
   return undefined
 }
 
-export function landSavedPost(qc: QueryClient, post: Post): void {
+export async function landSavedPost(
+  qc: QueryClient,
+  post: Post,
+): Promise<void> {
   const key = campaignPostsKey(post.campaign_id)
   // A list refetch already in flight — a teammate's broadcast invalidating
   // the key just before this save landed — was dispatched before the write
   // committed, so its response can resolve *after* this patch and put the
   // old row back for the full staleTime. Cancel it; the query stays marked
   // stale and refetches on the next mount or focus with the fresh row.
-  void qc.cancelQueries({ queryKey: key })
+  // *Awaited*, because cancellation reverts the query to its pre-fetch state
+  // as it settles — patching before that revert lands would have the revert
+  // erase the patch.
+  await Promise.all([
+    qc.cancelQueries({ queryKey: key }),
+    qc.cancelQueries({ queryKey: WORKSPACE_POSTS_KEY }),
+  ])
   qc.setQueryData<Post[]>(key, (prev) =>
+    prev?.map((p) => (p.id === post.id ? post : p)),
+  )
+  // The same row again in the workspace-wide list, which sits outside the
+  // `['campaigns']` namespace and would otherwise keep serving the old
+  // `used_asset_ids` to `useAssetUsage` for its staleTime.
+  qc.setQueryData<Post[]>(WORKSPACE_POSTS_KEY, (prev) =>
     prev?.map((p) => (p.id === post.id ? post : p)),
   )
   qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })

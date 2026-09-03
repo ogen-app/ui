@@ -8,6 +8,7 @@ import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import { PLATFORMS, getPlatformInfo } from '@/lib/platformDictionary'
 import {
   canEditPublishingAccount,
+  isSubmitted,
   type PublishMethod,
 } from '@/lib/postStatusMachine'
 import { cn } from '@/lib'
@@ -83,6 +84,11 @@ export function PostQuickSettingsBar({
   const autoPublish = useAutoPublishState(doc.platform_id)
   const views = usePlatformViews()
   const flashing = useAttentionFlash(attention)
+  // A copy of this post already exists outside Ogen, so the channel it went
+  // out on is history rather than a setting (CON-251). The account slot was
+  // already doing this — `canEditPublishingAccount` is the same rule — and the
+  // two pickers beside it now read the same way.
+  const locked = isSubmitted(doc.status)
 
   // platform id → post-type slugs enabled on this campaign.
   const campaignPostTypes = useMemo(
@@ -233,6 +239,7 @@ export function PostQuickSettingsBar({
           platform={platform}
           platforms={campaignPlatforms}
           disabled={campaignPending}
+          readOnly={locked}
           onSelect={selectPlatform}
         />
 
@@ -251,6 +258,7 @@ export function PostQuickSettingsBar({
                 connectedPostTypes.get(doc.platform_id) ?? EMPTY_SLUGS
               }
               disabled={campaignPending}
+              readOnly={locked}
               onSelect={selectPostType}
             />
             <Dot />

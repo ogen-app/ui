@@ -1,4 +1,5 @@
 import { CaretDownIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,11 +20,18 @@ import { InfoRow, QuickBarTrigger, WarningHint } from './parts'
  * list — what the *campaign* enables, not what the platform can do. Neither
  * decides what it offers; the bar passes the lists in, having read the
  * campaign and the connected publishers once for both.
+ *
+ * Both take `readOnly` for a submitted post (CON-251), and both answer it by
+ * rendering **plain text rather than a disabled trigger** — the same shape
+ * `AccountSlot` has always used for the same situation. A greyed-out dropdown
+ * with a caret still on it reads as a control that is broken; the channel a
+ * published post went out on is not a control at all, it is a fact.
  */
 export function PlatformPicker({
   platform,
   platforms,
   disabled,
+  readOnly,
   onSelect,
 }: {
   /** The one currently on the post, or undefined while none is chosen. */
@@ -31,8 +39,31 @@ export function PlatformPicker({
   /** What this campaign allows — already filtered by the caller. */
   platforms: PlatformInfo[]
   disabled?: boolean
+  /** The post is submitted: show what it went out as, offer nothing. */
+  readOnly?: boolean
   onSelect: (platformId: string) => void
 }) {
+  const { t } = useTranslation()
+
+  if (readOnly) {
+    return (
+      <span className="flex min-w-0 items-center gap-1.5">
+        {platform ? (
+          <>
+            <platform.icon size={16} weight="fill" color={platform.color} />
+            <span className="truncate">{platform.name}</span>
+          </>
+        ) : (
+          // No warning glyph: on a locked post there is nothing to fix, so the
+          // absence is reported the way the calendar card reports it.
+          <span className="truncate text-tertiary-foreground">
+            {t('posts.noPlatform')}
+          </span>
+        )}
+      </span>
+    )
+  }
+
   return (
     <DropdownMenu>
       <QuickBarTrigger label="Change platform" disabled={disabled}>
@@ -80,6 +111,7 @@ export function PostTypePicker({
   types,
   connectedSlugs,
   disabled,
+  readOnly,
   onSelect,
 }: {
   /** Always set — the bar hides this picker entirely until a platform is. */
@@ -91,8 +123,26 @@ export function PostTypePicker({
   /** The subset a *connected* publisher supports; the rest are flagged. */
   connectedSlugs: ReadonlySet<string>
   disabled?: boolean
+  /** The post is submitted: show what it went out as, offer nothing. */
+  readOnly?: boolean
   onSelect: (slug: string) => void
 }) {
+  const { t } = useTranslation()
+
+  if (readOnly) {
+    return (
+      <span className="truncate">
+        {selected ? (
+          getPostTypeLabel(platform.id, selected)
+        ) : (
+          <span className="text-tertiary-foreground">
+            {t('posts.noPostType')}
+          </span>
+        )}
+      </span>
+    )
+  }
+
   return (
     <DropdownMenu>
       <QuickBarTrigger label="Change post type" disabled={disabled}>

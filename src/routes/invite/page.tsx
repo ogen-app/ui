@@ -4,6 +4,8 @@ import { Trans, useTranslation } from 'react-i18next'
 
 import { AppAuth } from '@/components/layout/AppAuth'
 import { AuthAcceptInviteForm } from '@/components/forms/authAcceptInviteForm'
+import { Button } from '@/components/ui/button'
+import { ApiError } from '@/services/api/errors'
 import { previewInvitation } from '@/services/api/invitations'
 
 /**
@@ -27,6 +29,8 @@ function InvitePage() {
     data: preview,
     isPending,
     isError,
+    error,
+    refetch,
   } = useQuery({
     queryKey: ['invitation', token],
     queryFn: () => previewInvitation(token as string),
@@ -45,7 +49,33 @@ function InvitePage() {
     </>
   )
 
-  if (!token || isError) {
+  // Only a 410 is a fact about the token — that is the one answer the server
+  // gives for every unusable one. Anything else (network drop, 500) says
+  // nothing about the invitation, so it gets a retry instead of the dead-link
+  // screen, which would send the invitee off to ask for a new link they don't
+  // need.
+  const tokenDead = isError && error instanceof ApiError && error.status === 410
+
+  if (isError && !tokenDead) {
+    return (
+      <AppAuth
+        title={t('auth.invite.previewFailedTitle')}
+        subtitle={t('auth.invite.previewFailedSubtitle')}
+        form={
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => void refetch()}
+          >
+            {t('common.tryAgain')}
+          </Button>
+        }
+        bottomNav={bottomNav}
+      />
+    )
+  }
+
+  if (!token || tokenDead) {
     return (
       <AppAuth
         title={t('auth.invite.brokenTitle')}
