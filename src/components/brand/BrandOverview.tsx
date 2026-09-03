@@ -5,13 +5,14 @@ import { SettingsCard } from '@/components/settings/SettingsCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
 import {
-  BRAND_SECTIONS,
+  SHOWN_BRAND_SECTIONS,
   type BrandSectionId,
   type BrandSectionInfo,
 } from '@/lib/brandSections'
 import { FirstRun } from './FirstRun'
 import { sampleCount, usageLine } from './format'
-import { WholeBrandOffer } from './shell'
+import { DefaultStar, WholeBrandOffer } from './shell'
+import { defaultVoiceLabel } from './VoicesSection'
 import { EXPECTED_RATIOS } from './TemplatesSection'
 import { isBrandEmpty, MIN_VOICE_SAMPLES, type BrandData } from './types'
 
@@ -72,7 +73,7 @@ export function BrandOverview({
   if (firstRun) {
     return (
       <Wrapper>
-        <FirstRun onSkip={() => setSkippedFirstRun(true)} />
+        <FirstRun onManual={() => setSkippedFirstRun(true)} />
       </Wrapper>
     )
   }
@@ -80,7 +81,7 @@ export function BrandOverview({
   return (
     <Wrapper>
       <WholeBrandOffer fills={missingSectionNames(data)} />
-      {BRAND_SECTIONS.map((section) => (
+      {SHOWN_BRAND_SECTIONS.map((section) => (
         <SectionCard
           key={section.id}
           section={section}
@@ -119,8 +120,16 @@ type BrandRow = {
    * that has one number for the margin.
    */
   meta?: string
-  /** For slot rows: one number, right-aligned. */
-  trailing?: string
+  /**
+   * The right margin: one number for a slot row, and — on the voices — the
+   * default star.
+   *
+   * A node rather than a string because of that star. It is the same mark the
+   * section screens and both editors carry, and the whole point of it is that
+   * the fact looks identical in all four places; a second rendering of "this is
+   * the default" invented for the index would be the fifth.
+   */
+  trailing?: ReactNode
 }
 
 /**
@@ -264,24 +273,39 @@ function Opens({
 function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
   switch (id) {
     case 'voices':
-      return data.voices.map((voice) => ({
-        key: voice.id,
+      return data.voices.map((voice) => {
         // The samples are the voice, so they are what the tick is about. A
         // named voice with nothing behind it generates exactly what no voice
         // would, and it is the failure this row exists to make visible.
-        done: voice.samples.length >= MIN_VOICE_SAMPLES,
-        label: voice.name,
-        // No description when there is nothing to describe it by, rather than a
-        // sentence explaining the absence. Three template voices in a row each
-        // explaining their own emptiness reads as a rendering bug — the same
-        // failure the guardrail rails had — and the row already says it twice
-        // over: an empty tick, and `no samples, never used` in the margin.
-        details: voice.summary || undefined,
-        meta: [sampleCount(voice.samples.length), usageLine(voice.usage)].join(
-          ', ',
-        ),
-      }))
+        const done = voice.samples.length >= MIN_VOICE_SAMPLES
+        return {
+          key: voice.id,
+          done,
+          label: voice.name,
+          // No description when there is nothing to describe it by, rather than
+          // a sentence explaining the absence. Three template voices in a row
+          // each explaining their own emptiness reads as a rendering bug — the
+          // same failure the guardrail rails had — and the row already says it
+          // twice over: an empty tick, and `no samples, never used` in the
+          // margin.
+          details: voice.summary || undefined,
+          meta: [
+            sampleCount(voice.samples.length),
+            usageLine(voice.usage),
+          ].join(', '),
+          // The star takes the same reading the tick does, which is the point
+          // of putting them on one row: a grey star beside an empty tick is the
+          // library's worst state — everything falls back to this entry, and
+          // this entry has nothing in it — and it is legible without reading a
+          // word.
+          trailing: voice.isDefault ? (
+            <DefaultStar backed={done} label={defaultVoiceLabel(voice)} />
+          ) : undefined,
+        }
+      })
 
+    // No star on these rows, and the voices above have one — the workspace
+    // default stops at voices. See `resolveAudience` in `binding.ts`.
     case 'audiences':
       return data.audiences.map((audience) => ({
         key: audience.id,
@@ -425,7 +449,8 @@ function missingSectionNames(data: BrandData): string[] {
   if (data.voices.length === 0) missing.push('voices')
   if (data.audiences.length === 0) missing.push('audiences')
   if (!data.guardrails) missing.push('guardrails')
-  if (!data.look) missing.push('your look')
+  // No `look` here while the section is not offered — the card would promise to
+  // fill something the user has no way to see or check afterwards.
   return missing
 }
 

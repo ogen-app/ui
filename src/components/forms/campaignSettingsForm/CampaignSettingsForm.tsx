@@ -44,6 +44,7 @@ import { PlatformsControl } from './PlatformsControl'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { PostGoalCard } from './PostGoalCard'
 import { SchedulingCard } from './SchedulingCard'
+import { CampaignBrandCard } from '@/components/brand/CampaignBrandCard'
 import {
   settingsDefaultValues,
   settingsSchema,
@@ -161,6 +162,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
   const goalsEnabled = useFeatureFlag('campaign-goals')
   const schedulingEnabled = useFeatureFlag('campaign-scheduling')
   const accountsEnabled = useFeatureFlag('campaign-accounts')
+  const brandBinds = useFeatureFlag('brand-materials')
 
   // `setCampaignDates` / `redistributePosts` rewrite these fields server-side
   // (CON-115), so the form is held read-only for the length of a turn. Unsaved
@@ -305,6 +307,12 @@ export function CampaignSettingsForm({ campaign }: Props) {
           {goalsEnabled && <PostGoalCard />}
 
           {schedulingEnabled && <SchedulingCard />}
+
+          {/* The same control the brief renders, from the same file. Two
+              screens ask this from different directions — what the campaign
+              says, and what it is configured with — and both are fair places
+              to answer it. What must not happen is two implementations. */}
+          {brandBinds && <CampaignBrandCard campaignId={campaign.id} />}
 
           <SettingsCard title="Advanced">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">

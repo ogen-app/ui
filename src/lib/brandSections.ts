@@ -37,6 +37,9 @@ import type { BrandConsumer } from '@/components/brand/types'
  *
  * A voice goes one level deeper again (`brand_/voices/$voiceId`), on the
  * trailing-underscore escape the asset editor uses.
+ *
+ * **Three of the five are offered today** — see `shown`, and read the rest of
+ * this file as describing the module rather than the current menu.
  */
 export type BrandSectionId =
   | 'voices'
@@ -90,7 +93,7 @@ export type BrandSectionInfo = {
    * though two people wrote it.
    *
    * Worded as a consequence, never as a scold: an empty section is a to-do,
-   * and a workspace on day one has five of them.
+   * and a workspace on day one has one for every section it is offered.
    */
   whenEmpty: string
   /**
@@ -99,6 +102,25 @@ export type BrandSectionInfo = {
    * `[]` is a real and current answer for three of these five.
    */
   readBy: BrandConsumer[]
+  /**
+   * Whether the section is offered at all yet.
+   *
+   * **Look and Templates are off**, and the same rule that keeps `readBy`
+   * honest is why. Their storage exists (CON-228 ships `PUT /api/brand/look`
+   * and the template routes) and their read screens are built, but nothing
+   * writes to them from the UI and nothing reads them out: the image flows that
+   * would consume a logo, a palette and a frame are CON-105/CON-132, both
+   * unstarted. A section that can be opened, cannot be filled in, and would
+   * change nothing if it were is worse than one that is not there — it spends
+   * two of the Overview's five cards teaching the user that this screen is a
+   * mock-up.
+   *
+   * Hidden rather than deleted, because the argument for them is unchanged and
+   * every screen behind this flag still compiles and still renders; turning
+   * them back on is this one word. The `false` rows are what mark them as
+   * pending rather than abandoned.
+   */
+  shown: boolean
 }
 
 export const BRAND_SECTIONS: BrandSectionInfo[] = [
@@ -112,6 +134,7 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     whenEmpty:
       'No voice of its own — everything generated here sounds generated.',
     readBy: ['plan', 'post'],
+    shown: true,
   },
   {
     id: 'audiences',
@@ -122,6 +145,7 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
       'Who the posts are written to, described by what follows from it: where they read, what makes them scroll past, and what they need before they believe a number. Every campaign asks who this is for, and this is where the answer comes from.',
     whenEmpty: 'Nobody in particular is being written to.',
     readBy: ['plan', 'post'],
+    shown: true,
   },
   {
     id: 'guardrails',
@@ -132,6 +156,7 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
       'What is true, what may be claimed, and what may never be. These are the rules nobody opts out of — they hold for every generated post whichever voice wrote it, and the more convincing the voice, the more convincing the invention they exist to stop.',
     whenEmpty: 'Nothing is off limits. Any voice here may promise anything.',
     readBy: [],
+    shown: true,
   },
   {
     id: 'look',
@@ -143,6 +168,7 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     whenEmpty:
       'No logo, no colours, no type — generated images land wherever the model puts them.',
     readBy: [],
+    shown: false,
   },
   {
     id: 'templates',
@@ -154,9 +180,22 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     whenEmpty:
       'Pictures go out bare. Nothing marks one as yours once it has left the app.',
     readBy: [],
+    shown: false,
   },
 ]
 
 export function brandSection(id: BrandSectionId): BrandSectionInfo {
   return BRAND_SECTIONS.find((s) => s.id === id)!
 }
+
+/**
+ * The sections a user can actually reach — what the Overview lists and what
+ * "all of Brand" means to anything counting it.
+ *
+ * `BRAND_SECTIONS` stays whole so `brandSection` can still answer for a hidden
+ * one: the screens behind Look and Templates are built and still ask their
+ * table for a label. It is the *offer* that is withdrawn, not the entry.
+ */
+export const SHOWN_BRAND_SECTIONS: BrandSectionInfo[] = BRAND_SECTIONS.filter(
+  (s) => s.shown,
+)

@@ -161,49 +161,42 @@ const FEATURE_FLAGS = {
 
   /**
    * **Brand** — the workspace-level material every campaign writes from
-   * (CON-226/227): voices, audiences, guardrails, look, overlays. Further from
-   * the API than anything else here: there is no endpoint, no table and no
-   * column, and `services/api/brand.ts` is a **stub** — a JSON seed and
-   * `localStorage` standing in for a server so the screens can be used rather
-   * than only looked at.
+   * (CON-226/227): voices, audiences and guardrails.
    *
-   * The flag gates the nav row *and* the route, so with it off the app has no
-   * Brand at all — which is the state `develop` ships in while the shape is
-   * still being argued in `/design/brand`.
+   * **On.** It was off for one reason — `services/api/brand.ts` was a stub, a
+   * JSON seed and `localStorage` standing in for a server, and a workspace's
+   * brand rules are the last material anyone would expect to retype after
+   * clearing their site data. CON-228 shipped the store and the endpoints, the
+   * service is `apiJson` calls against them, and the seed is deleted. The
+   * reason to hold it back is gone.
    *
-   * **Off, and it stays off until CON-228 lands.** Nothing in here is backed
-   * by a server: a workspace's voices would live in one browser, on one
-   * machine, and vanish with its site data. Switching it on before the
-   * endpoints exist would ship a feature that quietly forgets — and a
-   * workspace's brand rules are the last material anyone would expect to
-   * retype. Turn it on locally to work on the screens; turn it back before you
-   * push.
+   * The flag gates the nav row *and* the route, so it is still the one switch
+   * that removes Brand from the app.
    *
-   * **Waiting on:** everything in CON-228. In outline — Brand entities per
-   * workspace, tenant-scoped and fail-closed; one fetch that returns **every
-   * slot including the empty ones**, because an omitted key and an empty slot
-   * are different things on this screen; a voice reference plus a local delta
-   * on the post (replacing free-prose `toneNotes`) and on the campaign
-   * (replacing `tone_guidelines`); the generation flows reading guardrails
-   * always, the assigned voice per post, the audience per campaign; and binary
-   * handling for logos and overlays, where SVG is the open question (CON-132
-   * §10.4).
+   * **What is on with it, and what is not.** Voices, Audiences and Guardrails
+   * are complete: written here, stored server-side, and — as CON-245 lands —
+   * read by the flows that write posts. Look and Templates are **not offered**
+   * (`shown` in `lib/brandSections`): their endpoints exist and their screens
+   * render, but nothing writes them from the UI and the image flows that would
+   * consume them are CON-105/CON-132. Two Overview cards that cannot be filled
+   * in and would change nothing if they were teach the user that the screen is
+   * a mock-up, which is the one thing this module cannot afford to say.
    *
-   * Nothing outside this flag may read any of it. CON-226's shape is still
-   * moving, and per the global rule a half-defined field read by another
-   * screen is worse than a missing one — which is exactly what happened when
-   * `campaignReadiness` read `estimated_post_count` mid-redefinition.
+   * `usage` counts and `summary` lines arrive as zeroes and empty strings until
+   * CON-245 and the summary job land. That is not a bug to hide: the screens
+   * already draw "nothing has been written in this" as a designed state, and it
+   * is true.
    *
-   * **The copy is deliberately not in the i18n catalogue yet** — the one
-   * exception to the new-UI rule, decided at merge (2026-08-28), not drifted
-   * into. The screens' wording is still being argued alongside their shape,
-   * and cataloguing it now means retranslating every catalogue on every copy
-   * iteration. The conversion happens with the CON-228 pass, before this flag
-   * flips — the same pass that re-tests the UI against the real endpoints.
+   * **Outstanding: the copy is still not in the i18n catalogue.** It was
+   * deferred at the 2026-08-28 merge on the argument that the wording was being
+   * argued alongside the shape and cataloguing it meant retranslating on every
+   * iteration — with the conversion promised before this flag flipped. The flag
+   * has flipped first. The debt is real and it is the whole module's user-facing
+   * text; it does not block anyone from using Brand in English.
    *
    * The argument this is built from: `docs/brand-materials.md`.
    */
-  'brand-materials': false,
+  'brand-materials': true,
 
   /**
    * The marketing-email switch on Profile (CON-155). **Off — waiting on the

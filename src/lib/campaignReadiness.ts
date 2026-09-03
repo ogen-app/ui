@@ -41,15 +41,36 @@ const BRIEF_FIELDS: BriefField[] = [
   'tone_guidelines',
 ]
 
+/**
+ * What the brief still asks for once Brand supplies the rest (CON-226 §8).
+ *
+ * `target_persona` and `tone_guidelines` are answered by the campaign's
+ * audience and voice, and their boxes are gone from the screen — so counting
+ * them would report every campaign as permanently incomplete against fields
+ * nobody can fill. `key_messages` stays: it is what *this* campaign argues,
+ * which is not brand material.
+ *
+ * This does not yet count *having* a voice as part of readiness. It should —
+ * an unbound campaign is exactly as incomplete as one with no tone written —
+ * but the binding lives outside the campaign until CON-228, and reaching for
+ * it here would make a pure derivation fetch.
+ */
+const BOUND_BRIEF_FIELDS: BriefField[] = ['description', 'key_messages']
+
 export type BriefPosture = {
   state: 'empty' | 'partial' | 'complete'
   missing: BriefField[]
 }
 
-export function briefPosture(campaign: Campaign): BriefPosture {
-  const missing = BRIEF_FIELDS.filter((f) => campaign[f].trim() === '')
+export function briefPosture(
+  campaign: Campaign,
+  /** Whether Brand answers the persona and tone fields — the flag, passed in. */
+  brandBinds = false,
+): BriefPosture {
+  const fields = brandBinds ? BOUND_BRIEF_FIELDS : BRIEF_FIELDS
+  const missing = fields.filter((f) => campaign[f].trim() === '')
   const state =
-    missing.length === BRIEF_FIELDS.length
+    missing.length === fields.length
       ? 'empty'
       : missing.length > 0
         ? 'partial'

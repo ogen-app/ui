@@ -3,97 +3,187 @@ import type {
   BrandData,
   BrandGuardrails,
   BrandVoice,
+  CampaignBrand,
+  PostBrand,
 } from '@/components/brand/types'
+import {
+  EMPTY_CAMPAIGN_BRAND,
+  EMPTY_POST_BRAND,
+} from '@/components/brand/binding'
 import { getActiveWorkspaceId } from '@/lib/activeWorkspace'
-import seed from './brand.seed.json'
+import { apiJson, apiVoid } from './http'
 
 /**
- * Brand's data layer — **a stub, and the only stubbed service in the app**
- * (CON-226/227).
+ * Brand's data layer — `/api/brand`, tenant-scoped (CON-228).
  *
- * There is no `/api/brand`: CON-228 has not been written, so there is no
- * endpoint, no table and no column. Everything below fakes one, badly on
- * purpose — a promise, a small delay, and `localStorage` where a database goes.
+ * This file was a stub for the length of CON-227: a promise, a small delay, and
+ * `localStorage` where a database goes. It was built so that "when the endpoint
+ * lands, each body becomes one `apiJson` call and **nothing above this file
+ * changes**", and that is what happened — the hook, the routes and the
+ * components are untouched by the swap. The wire shapes match `types.ts`
+ * exactly, camelCase and all, because CON-228 was written from the prototype
+ * rather than the other way round.
  *
- * ## Why a stub rather than fixtures rendered straight into the routes
+ * ## What the server owns
  *
- * The screens were built against constants, which was enough to argue about how
- * they look and not enough to argue about how they *work*. A constant cannot
- * show you what saving a voice feels like, whether the list is where you expect
- * it to be when you come back, or whether the tab counts move. Those questions
- * are the ones left, so the data has to behave like data: asynchronous,
- * writable, and still there after a refresh.
+ * `id`, `updatedAt`, `summary`, `usage`, `postsBehind` and `origin` are
+ * server-owned: ignored on write, authoritative on the way back. So the editors
+ * may keep assembling a whole entity without having to know which of its fields
+ * they are actually allowed to set. Two of them are not yet real — `summary`
+ * answers `""` until the generation job ships, and `usage` / `postsBehind`
+ * answer `0` until CON-245 puts a voice reference on posts. Those are the same
+ * states the screens already draw for material nothing has been written in, so
+ * they read as an honest empty rather than as a bug.
  *
- * ## Why not MSW
+ * `origin` is **write-once**: set on create, preserved verbatim on every
+ * replace. That is what keeps *forked, never linked* honest — improving a
+ * starter template must never silently rewrite somebody's voice.
  *
- * A service worker intercepting `fetch` would buy fidelity we have no use for —
- * status codes, headers, a wire format — for a contract nobody has agreed yet.
- * CON-228 will be written *from* what this prototype settles on, so pinning a
- * JSON envelope now would be inventing the API by accident, in the mock. A
- * plain module is also visible: you can read it and see the whole fake, which
- * is not true of a worker that answers requests from somewhere off-screen.
+ * ## Two invariants that are no longer ours
  *
- * ## The seam
+ * The one-default rule and the empty-guardrails rule moved to the server, where
+ * they belong. Saving a voice with `isDefault` demotes its siblings in one
+ * transaction, and a partial unique index makes a second default impossible
+ * even under a racing double-write; deleting the default hands the flag to the
+ * earliest survivor. Audiences are outside it — they have no default (see
+ * `saveAudience`). A guardrails `PUT` with every list empty is a `422` rather
+ * than a way to reach `null` — emptiness is `DELETE`, because "we have not
+ * written these" and "we wrote them and they say nothing" are the two states
+ * that section exists to keep apart. The optimistic cache writes in `useBrand`
+ * still mirror both, but only so the library cannot contradict its own rule for
+ * the one frame before the refetch lands.
  *
- * The function signatures are the point. When the endpoint lands, each body
- * becomes one `apiJson` call and **nothing above this file changes** — the
- * hook, the routes and the components already treat this as a network.
- *
- * ```ts
- * export function getBrand(): Promise<BrandData> {
- *   return apiJson<BrandData>('/api/brand', 'Unable to fetch brand')
- * }
- * ```
- *
- * Two rules while it is a stub. It is reached **only** through `useBrand`, so
- * there is one place to change; and nothing outside the `brand-materials` flag
- * may read it, per the standing rule — a workspace's real brand is not in here,
- * and a screen that mixed the two would be lying about which is which.
- *
- * The types come from `components/brand/types` rather than `src/types/`, which
- * is backwards for a service and deliberate: a type in `src/types/` claims to
- * be what the server sends, and none of this is that yet. Both move together
- * when CON-228 lands.
+ * Not wired here: `POST /api/brand/uploads`, and the `look` / `templates`
+ * writes. The endpoints exist; the editors that would call them do not.
  */
 
-/**
- * The workspace the screens open on: **Quant Wealth Management**, the same
- * fixture the harness is drawn from, so the live tab and `/design/brand` are
- * two views of one workspace rather than two inventions.
- *
- * Cast once, here. TypeScript widens a JSON import — `"never"` becomes
- * `string`, so the literal unions in `VoiceRules` and `BrandOrigin` do not
- * survive the read — and there is no way to narrow it back without duplicating
- * the whole file as a `const`. The cast is no weaker than what replaces it:
- * `apiJson<BrandData>` is an unchecked assertion about a response body too.
- * Keep `brand.seed.json` in step with `types.ts` by hand.
- */
-const SEED = seed as unknown as BrandData
-
-/**
- * Where the fake writes.
- *
- * **Per workspace**, because the real thing will be tenant-scoped and a stub
- * that let one workspace's voices show up in another would teach the wrong
- * thing about the feature at exactly the moment somebody switched. A tab with
- * no workspace pinned rides the account default and gets the `default` bucket —
- * the same fallback `services/api/base.ts` makes.
- *
- * `localStorage` and not `sessionStorage`: surviving a refresh is most of what
- * makes this feel like a server rather than a fixture. It is also why this is
- * safe to leave lying around — it is seed data about an invented investment
- * firm, not anybody's brand.
- */
-function storageKey(): string {
-  return `ogen.brand.stub.${getActiveWorkspaceId() ?? 'default'}`
+export function getBrand(): Promise<BrandData> {
+  return apiJson<BrandData>('/api/brand', 'Unable to load the brand')
 }
 
 /**
- * Long enough to see, short enough not to be in the way.
+ * Create or replace one voice.
  *
- * Not zero, and that is the point of the number: a resolved-immediately promise
- * hides every loading state the screens have, and the first thing worth knowing
- * about a screen is what it looks like before it has anything.
+ * One function for both, because the editor makes one gesture: it hands back a
+ * whole voice, whether that voice started from nothing, from a starter, or from
+ * an existing entry. The split into `POST` and `PUT` is a fact about the wire
+ * rather than about what the user did, so it is settled here and nowhere else.
+ *
+ * **Ids are the server's.** A voice with no id has never been stored, which is
+ * what the editor means by handing back `''` (`assemble`, in `VoiceEditor`).
+ * The alternative — minting a UUID on the client and letting the server take
+ * it — would make "does this exist yet" a question with two answers, and the
+ * client's would be a guess.
+ */
+export function saveVoice(voice: BrandVoice): Promise<BrandVoice> {
+  const { id, ...body } = voice
+  return id
+    ? apiJson<BrandVoice>(
+        `/api/brand/voices/${id}`,
+        'Unable to save the voice',
+        { method: 'PUT', body: voice },
+      )
+    : apiJson<BrandVoice>('/api/brand/voices', 'Unable to save the voice', {
+        method: 'POST',
+        body,
+      })
+}
+
+/**
+ * Delete a voice. Nothing cascades — a post already written keeps its text,
+ * because the voice was an input to writing it rather than a filter over it.
+ */
+export function deleteVoice(id: string): Promise<void> {
+  return apiVoid(`/api/brand/voices/${id}`, 'Unable to delete the voice', {
+    method: 'DELETE',
+  })
+}
+
+/**
+ * Create or replace one audience — `saveVoice` without the one-default
+ * invariant, because an audience has no default to keep.
+ *
+ * `brand_audiences` has no `is_default` column and CON-245's resolver has no
+ * workspace step for an audience: a post is written to one because a campaign
+ * said so, and a campaign that has chosen nobody falls back to its legacy
+ * `target_persona` prose rather than to the library. The reasoning is on
+ * `resolveAudience` in `components/brand/binding.ts`; CON-263 is where it would
+ * be revisited.
+ */
+export function saveAudience(audience: BrandAudience): Promise<BrandAudience> {
+  const { id, ...body } = audience
+  return id
+    ? apiJson<BrandAudience>(
+        `/api/brand/audiences/${id}`,
+        'Unable to save the audience',
+        { method: 'PUT', body: audience },
+      )
+    : apiJson<BrandAudience>(
+        '/api/brand/audiences',
+        'Unable to save the audience',
+        { method: 'POST', body },
+      )
+}
+
+export function deleteAudience(id: string): Promise<void> {
+  return apiVoid(
+    `/api/brand/audiences/${id}`,
+    'Unable to delete the audience',
+    {
+      method: 'DELETE',
+    },
+  )
+}
+
+/**
+ * Write the guardrails — a singleton, so always a replace and never an insert.
+ *
+ * A `422` here is the server refusing an all-empty set, and the message it
+ * sends points at `DELETE`. It surfaces through the mutation cache's default
+ * error toast like any other refusal (`lib/queryClient.ts`); there is nothing
+ * for this file to translate.
+ */
+export function saveGuardrails(
+  guardrails: BrandGuardrails,
+): Promise<BrandGuardrails> {
+  return apiJson<BrandGuardrails>(
+    '/api/brand/guardrails',
+    'Unable to save the guardrails',
+    { method: 'PUT', body: guardrails },
+  )
+}
+
+/** Put the section back to empty — the only way to reach `null`. */
+export function deleteGuardrails(): Promise<void> {
+  return apiVoid('/api/brand/guardrails', 'Unable to clear the guardrails', {
+    method: 'DELETE',
+  })
+}
+
+/* -- Binding — still a stub ------------------------------------------------
+ *
+ * What a campaign and a post have chosen out of the library (§8). CON-228
+ * deliberately left this out: it is the *consumer* half, and it belongs to
+ * CON-245, which is open and unmerged. So `Campaign` and `Post` still have no
+ * column to put this in, and the four functions below keep faking one.
+ *
+ * **This is the last of the stub, and it is shaped differently from what is
+ * above.** A voice is its own resource with its own endpoint. A campaign's
+ * binding is not — CON-245 makes it two nullable columns on the campaign and
+ * two on the post (`brand_voice_id`, `brand_audience_id`), written by
+ * `PUT /api/campaigns/:id`, `PUT /api/posts/:id`, or the targeted
+ * `PUT /api/posts/:id/brand`. So these take an id and a whole value rather than
+ * pretending to be REST, and when CON-245 lands they are deleted rather than
+ * rewritten: the hooks fold into `useCampaign` and `usePost`.
+ *
+ * Kept in its own storage key rather than inside `BrandData`, because per-row
+ * bindings were never part of what the workspace-level fetch answers.
+ */
+
+/**
+ * Long enough to see, short enough not to be in the way. Not zero, and that is
+ * the point of the number: a promise that resolves immediately hides every
+ * loading state the pickers have.
  */
 const LATENCY_MS = 220
 
@@ -101,162 +191,73 @@ function settle<T>(value: T): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), LATENCY_MS))
 }
 
-function read(): BrandData {
+type BindingStore = {
+  campaigns: Record<string, CampaignBrand>
+  posts: Record<string, PostBrand>
+}
+
+const EMPTY_STORE: BindingStore = { campaigns: {}, posts: {} }
+
+function bindingKey(): string {
+  return `ogen.brand.binding.${getActiveWorkspaceId() ?? 'default'}`
+}
+
+function readBindings(): BindingStore {
   try {
-    const stored = localStorage.getItem(storageKey())
-    if (stored) return JSON.parse(stored) as BrandData
+    const stored = localStorage.getItem(bindingKey())
+    if (stored)
+      return { ...EMPTY_STORE, ...(JSON.parse(stored) as BindingStore) }
   } catch {
-    // Unparseable or unavailable storage falls back to the seed rather than
-    // throwing. A corrupt stub is a nuisance; a Brand tab that will not open
-    // until you clear storage by hand is a bug report about a fake.
+    // An unreadable stub answers with nothing bound, which every screen already
+    // draws. A corrupt fake is a nuisance; a campaign that will not open until
+    // you clear storage by hand is a bug report about one.
   }
-  return structuredClone(SEED)
+  return structuredClone(EMPTY_STORE)
 }
 
-function write(data: BrandData): BrandData {
+function writeBindings(store: BindingStore): void {
   try {
-    localStorage.setItem(storageKey(), JSON.stringify(data))
+    localStorage.setItem(bindingKey(), JSON.stringify(store))
   } catch {
-    // Quota or private mode. The write is lost on the next read, which is the
-    // honest degradation: the screen still shows what the mutation returned.
+    // Quota or private mode. Lost on the next read; the screen still shows what
+    // the mutation returned.
   }
-  return data
-}
-
-export function getBrand(): Promise<BrandData> {
-  return settle(read())
 }
 
 /**
- * Create or replace one voice — a whole-resource write, matching the shape the
- * rest of this app's API already has (`PUT /api/campaigns/:id`).
+ * A campaign's share of the library.
  *
- * The editor assembles the entire voice including its id, so there is no create
- * and no update here, only *this is the voice now*. That is the same claim the
- * editor route makes by serving `new` from the same URL as every other voice.
- *
- * **The one-default invariant is enforced here, not in the editor.** Saving a
- * voice with `isDefault` set demotes every other voice in the same write. It
- * belongs to whoever owns the collection — the editor holds one voice and
- * cannot see the other three, and a client that had to remember to clear them
- * would eventually forget on the one path nobody tested. CON-228 does this in a
- * transaction; this does it in an array, and the rule it is keeping is the
- * same.
+ * Answers with a stated empty rather than `null` for a campaign nobody has
+ * bound. "Has chosen nothing" is a real, common and perfectly valid state — it
+ * is what every campaign that existed before this feature is in — and making
+ * callers distinguish it from "no row" would be a distinction with no consumer.
  */
-export function saveVoice(voice: BrandVoice): Promise<BrandVoice> {
-  const data = read()
-  const at = data.voices.findIndex((v) => v.id === voice.id)
-  const next =
-    at === -1
-      ? [...data.voices, voice]
-      : data.voices.map((v) => (v.id === voice.id ? voice : v))
-
-  const voices = voice.isDefault
-    ? next.map((v) => (v.id === voice.id ? v : { ...v, isDefault: false }))
-    : next
-
-  write({ ...data, voices })
-  return settle(voice)
+export function getCampaignBrand(campaignId: string): Promise<CampaignBrand> {
+  return settle(readBindings().campaigns[campaignId] ?? EMPTY_CAMPAIGN_BRAND)
 }
 
-/**
- * Deleting the default hands the flag to whatever is left.
- *
- * A workspace with voices and no default is a state nothing in the UI can
- * repair: the editor only promotes, so the flag would sit unowned until
- * somebody happened to open a voice and switch it on. The first remaining voice
- * is an arbitrary choice and that is fine — any voice is a better answer than
- * none, and the library says out loud which one it landed on.
- */
-export function deleteVoice(id: string): Promise<void> {
-  const data = read()
-  const gone = data.voices.find((v) => v.id === id)
-  const voices = data.voices.filter((v) => v.id !== id)
-  if (gone?.isDefault && voices.length > 0) {
-    voices[0] = { ...voices[0], isDefault: true }
-  }
-
-  write({ ...data, voices })
-  return settle(undefined)
+export function saveCampaignBrand(
+  campaignId: string,
+  value: CampaignBrand,
+): Promise<CampaignBrand> {
+  const store = readBindings()
+  writeBindings({
+    ...store,
+    campaigns: { ...store.campaigns, [campaignId]: value },
+  })
+  return settle(value)
 }
 
-/**
- * Create or replace one audience — the same whole-resource write `saveVoice` is,
- * and simpler, because audiences have no invariant across the collection. There
- * is no default audience: a post is written *to* one because a campaign says so,
- * not because the library elected one.
- */
-export function saveAudience(audience: BrandAudience): Promise<BrandAudience> {
-  const data = read()
-  const at = data.audiences.findIndex((a) => a.id === audience.id)
-  const audiences =
-    at === -1
-      ? [...data.audiences, audience]
-      : data.audiences.map((a) => (a.id === audience.id ? audience : a))
-
-  write({ ...data, audiences })
-  return settle(audience)
+/** One post's overrides. Empty is the state almost every post stays in. */
+export function getPostBrand(postId: string): Promise<PostBrand> {
+  return settle(readBindings().posts[postId] ?? EMPTY_POST_BRAND)
 }
 
-/**
- * Nothing is handed on. Deleting the last audience leaves a workspace with
- * none, which is a state the section already draws and the generator already
- * survives — unlike voices, where the flag had to land somewhere.
- */
-export function deleteAudience(id: string): Promise<void> {
-  const data = read()
-  write({ ...data, audiences: data.audiences.filter((a) => a.id !== id) })
-  return settle(undefined)
-}
-
-/**
- * Write the guardrails.
- *
- * The one write with no collection under it: there is a single set per
- * workspace, so this is a replace and never an insert, and the editor hands
- * back the whole thing rather than a patch. `null` — the section empty — is a
- * state you reach through `deleteGuardrails`, not by saving nothing: an empty
- * save would make "we have not written these yet" and "we wrote them and they
- * say nothing" the same value, and those are the two states this whole section
- * exists to keep apart.
- */
-export function saveGuardrails(
-  guardrails: BrandGuardrails,
-): Promise<BrandGuardrails> {
-  const data = read()
-  write({ ...data, guardrails })
-  return settle(guardrails)
-}
-
-/**
- * Put the section back to empty.
- *
- * Nothing is handed on and nothing cascades — a post already published keeps
- * its text, because the rules were an input to writing it rather than a filter
- * over it. What changes is every generation after this one.
- */
-export function deleteGuardrails(): Promise<void> {
-  const data = read()
-  write({ ...data, guardrails: null })
-  return settle(undefined)
-}
-
-/**
- * Throw away everything this workspace has done to the stub and start from the
- * seed again.
- *
- * A stub needs one thing a real API must never have, which is an undo for the
- * whole world: iterating on a screen means wrecking its data repeatedly, and
- * without this the only way back is the browser's storage inspector. It is
- * reachable from `/design/brand` and nowhere else — a design harness is the one
- * place a dev-only control belongs, and it is a branch that never reaches
- * `develop`. This function goes when the endpoint lands.
- */
-export function resetBrand(): Promise<BrandData> {
-  try {
-    localStorage.removeItem(storageKey())
-  } catch {
-    // Nothing was stored to remove. `read()` already answers with the seed.
-  }
-  return settle(read())
+export function savePostBrand(
+  postId: string,
+  value: PostBrand,
+): Promise<PostBrand> {
+  const store = readBindings()
+  writeBindings({ ...store, posts: { ...store.posts, [postId]: value } })
+  return settle(value)
 }

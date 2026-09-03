@@ -32,6 +32,8 @@ import {
 } from '@/lib/postSchedule'
 import type { Post } from '@/types/posts'
 import { CampaignPostTypeSelect } from './CampaignPostTypeSelect'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { PostBrandSection } from '@/components/brand/PostBrandSection'
 
 const NO_PHASE = '__none__'
 
@@ -72,6 +74,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
     doc.campaign_id,
   )
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const brandBinds = useFeatureFlag('brand-materials')
 
   const platformId = form.watch('platform_id')
   const platformPostType = form.watch('platform_post_type')
@@ -236,6 +239,18 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
               type and the date rather than behind a fold. */}
           <PostSourcesSection post={doc} changeDoc={changeDoc} />
 
+          {/* Beside Sources rather than under ADVANCED: what a post is written
+              in is the same class of thing as what it is written from, and
+              burying it would make an inherited voice something you have to go
+              looking for to discover. */}
+          {brandBinds && (
+            <Collapse title="VOICE & AUDIENCE" defaultOpen>
+              <div className="pt-2 pb-4">
+                <PostBrandSection post={doc} />
+              </div>
+            </Collapse>
+          )}
+
           <Collapse title="ADVANCED">
             <div className="flex flex-col gap-4 pt-2 pb-4">
               <FormField
@@ -262,29 +277,35 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="target_audience_notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target audience notes</FormLabel>
-                    <FormControl>
-                      {/* readOnly, not disabled: the Textarea renders a
-                          read-only value as plain content rather than dimming
-                          it, which is what these notes become once the post
-                          has gone out. */}
-                      <Textarea
-                        placeholder={
-                          locked ? undefined : 'Who should this reach?'
-                        }
-                        readOnly={locked}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Answered by the post's audience once Brand is on. The stored
+                  value is left untouched rather than cleared — the box going
+                  away is a change to this panel, not permission to delete what
+                  somebody wrote. */}
+              {!brandBinds && (
+                <FormField
+                  control={form.control}
+                  name="target_audience_notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target audience notes</FormLabel>
+                      <FormControl>
+                        {/* readOnly, not disabled: the Textarea renders a
+                            read-only value as plain content rather than dimming
+                            it, which is what these notes become once the post
+                            has gone out. */}
+                        <Textarea
+                          placeholder={
+                            locked ? undefined : 'Who should this reach?'
+                          }
+                          readOnly={locked}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
           </Collapse>
 

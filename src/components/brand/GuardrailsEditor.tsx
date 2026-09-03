@@ -218,12 +218,12 @@ export function GuardrailsEditor({
 
       <EditorCard
         title="Facts"
-        hint="What is true, so it stops being invented. Figures, licence details, what the product does and what it costs — the things a generator otherwise fills in plausibly."
+        hint="What is true, so it stops being invented. Figures, dates, what the product does and what it costs — the things a generator otherwise fills in plausibly."
       >
         <StatementList
           items={draft.facts}
           onChange={(facts) => set('facts', facts)}
-          placeholder="Fee is 0.35% a year, all in, charged monthly."
+          placeholder="Support answers within one working day, every day of the week."
           addLabel="Add a fact"
         />
       </EditorCard>
@@ -235,14 +235,14 @@ export function GuardrailsEditor({
         <StatementList
           items={draft.mayClaim}
           onChange={(mayClaim) => set('mayClaim', mayClaim)}
-          placeholder="That withdrawals settle in two working days."
+          placeholder="That setup takes two weeks, start to finish."
           addLabel="Add a claim"
         />
       </EditorCard>
 
       <EditorCard
         title="Never claim"
-        hint="Write the claim itself rather than the topic — “any future return, in any form” rather than “returns”. A topic is something to avoid mentioning; a claim is something a sentence can be checked against."
+        hint="Write the claim itself rather than the topic — “any guaranteed outcome, in any form” rather than “results”. A topic is something to avoid mentioning; a claim is something a sentence can be checked against."
       >
         {draft.neverClaim.length === 0 && (
           <p className="border-l-2 border-destructive pl-3 text-sm leading-5 text-tertiary-foreground">
@@ -253,7 +253,7 @@ export function GuardrailsEditor({
         <StatementList
           items={draft.neverClaim}
           onChange={(neverClaim) => set('neverClaim', neverClaim)}
-          placeholder="That an investment is safe, protected or guaranteed."
+          placeholder="That the result is guaranteed, in any form."
           addLabel="Add a rule"
           tone="hard"
         />
@@ -271,12 +271,12 @@ export function GuardrailsEditor({
 
       <EditorCard
         title="Disclaimer"
-        hint="Carried by every post, added exactly as written and never reworded — a risk warning, a licence number, an ad disclosure."
+        hint="Carried by every post, added exactly as written and never reworded — a required legal line, a registration number, an ad disclosure."
       >
         <Textarea
           value={draft.disclaimer}
           onChange={(e) => set('disclaimer', e.target.value)}
-          placeholder="Capital at risk. The value of investments can go down as well as up and you may get back less than you put in."
+          placeholder="Results vary. Nothing here is a promise of the outcome you will get."
           className="min-h-20"
         />
       </EditorCard>
