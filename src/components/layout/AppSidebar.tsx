@@ -1,5 +1,10 @@
 import * as React from 'react'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  type LinkProps,
+} from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowSquareOutIcon,
@@ -90,6 +95,22 @@ function SectionLabel({
 // The rows and the Overview's cards read one table — see `lib/campaignSections`.
 type CampaignSubItemId = CampaignSectionId
 
+/**
+ * Where each section row goes, less Posts, which needs a date in its path and
+ * is built beside it.
+ *
+ * `satisfies` is what makes this worth writing out: every value is checked
+ * against the router's own union, so a route that moves takes this table down
+ * with it at compile time instead of on the click.
+ */
+const SUB_ITEM_PATH = {
+  overview: '/campaigns/$campaignId/overview',
+  analytics: '/campaigns/$campaignId/analytics',
+  brief: '/campaigns/$campaignId/brief',
+  content: '/campaigns/$campaignId/content',
+  settings: '/campaigns/$campaignId/settings',
+} satisfies Record<Exclude<CampaignSubItemId, 'posts'>, LinkProps['to']>
+
 /** The app's main navigation sidebar, including the user/workspace menu. */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state, isMobile, setOpen, toggleSidebar } = useSidebar()
@@ -134,10 +155,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               : 'posts'
 
   // Posts lands on the current week of the calendar; the rest are plain pages.
+  //
+  // Written out rather than interpolated from the id. `/campaigns/$campaignId/
+  // ${id}` is a `string`, which the router cannot check — a section renamed or
+  // a route moved would compile and fail on the click, which is exactly how
+  // the Content Bank row ended up pointing at a deleted route. Spelt out, each
+  // one is checked against the generated tree.
   const subItemLink = (
     campaignId: string,
     id: CampaignSubItemId,
-  ): { to: string; params: Record<string, string> } =>
+  ): { to: LinkProps['to']; params: LinkProps['params'] } =>
     id === 'posts'
       ? {
           to: '/campaigns/$campaignId/calendar/$anchor/$view',
@@ -147,7 +174,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             view: 'week',
           },
         }
-      : { to: `/campaigns/$campaignId/${id}`, params: { campaignId } }
+      : { to: SUB_ITEM_PATH[id], params: { campaignId } }
 
   const initials =
     `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`.toUpperCase() || '?'
@@ -254,11 +281,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               }
               text={t('nav.contentBank')}
               isActive={location.pathname.startsWith('/content-bank')}
-              // The tab, not the redirect that picks it — same reason as the
-              // campaign rows above, minus the visible symptom: the tab bar
-              // falls back to All anyway, so this only spares the second
-              // router pass.
-              to="/content-bank/all"
+              to="/content-bank"
             />
             {/* CON-227. Below Content Bank rather than above it because it is
                 the newer of the two and the one that has to earn its place —
