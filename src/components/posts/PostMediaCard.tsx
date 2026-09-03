@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip.tsx'
 import { toast } from '@/stores/toastStore.ts'
+import { isSubmitted } from '@/lib/postStatusMachine.ts'
 import { cn } from '@/lib'
 import { formatBytes } from '@/lib/platformMedia.ts'
 import { formatTimecode } from '@/lib/platformVideo.ts'
@@ -97,9 +98,13 @@ export function PostMediaCard({
   const [overIndex, setOverIndex] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
 
-  // Attachments freeze once the post is published (the server rejects
-  // mutations with a 409), so the card becomes a read-only record.
-  const frozen = post.status === 'published'
+  // Attachments freeze once a copy of the post exists outside Ogen, so the
+  // card becomes a read-only record (CON-251). `published` was always frozen —
+  // the server rejects those mutations with a 409 — and `scheduled` joins it
+  // for the reason the date and the account already lock there: Zernio holds
+  // the submission, so removing an image here would change what the card shows
+  // and not what publishes.
+  const frozen = isSubmitted(post.status)
   // On a thread `policy.max` is what *one post* takes, so it is not a ceiling
   // on the card: a four-image cap across five posts is twenty files. The cap
   // still holds where it means something — per post, on the thread's own row

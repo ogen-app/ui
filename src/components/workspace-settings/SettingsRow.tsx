@@ -55,14 +55,11 @@ export function ReadOnlyField({
   label,
   value,
   description,
-  placeholder = '—',
 }: {
   label: string
   value: string | undefined
   /** One line under the field — why it can't be edited, usually. */
   description?: string
-  /** Shown when there is no value — say what the emptiness means. */
-  placeholder?: string
 }) {
   const text = value?.trim() ?? ''
   const id = useId()
@@ -75,7 +72,7 @@ export function ReadOnlyField({
           value={text}
           readOnly
           disabled
-          placeholder={placeholder}
+          placeholder="—"
           title={text || undefined}
           className="pr-10"
         />

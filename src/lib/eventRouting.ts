@@ -6,7 +6,11 @@ import { ASSETS_KEY } from '@/hooks/useContent'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
-import { postNotesKey, postVersionsKey } from '@/lib/queryKeys'
+import {
+  postNotesKey,
+  postVersionsKey,
+  WORKSPACE_POSTS_KEY,
+} from '@/lib/queryKeys'
 import type { AppEvent, EventSubject } from '@/types/events'
 
 /**
@@ -35,6 +39,14 @@ const CAMPAIGN_POST_LISTS: QueryFilters = {
   predicate: (query) =>
     query.queryKey[0] === 'campaigns' && query.queryKey[2] === 'posts',
 }
+
+/**
+ * The workspace-wide post list (`useAssetUsage`, auto-publish) holds the same
+ * rows under its own root, deliberately outside `['campaigns']` — so no
+ * campaign filter ever reaches it and it has to travel with the lists above
+ * wherever a post changed.
+ */
+const WORKSPACE_POST_LIST: QueryFilters = { queryKey: WORKSPACE_POSTS_KEY }
 
 const ZERNIO_SURFACES: QueryFilters[] = [
   // Platforms first: it — not the account list — is what the composer's account
@@ -125,17 +137,17 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         // A background job wrote numbers no client could have known about.
         // The single genuinely new fact in the catalogue.
         case 'post.analytics.updated':
-          return [post, CAMPAIGN_POST_LISTS]
-        // The clone is a new row, so only the list changes; `subject.id` is
+          return [post, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
+        // The clone is a new row, so only the lists change; `subject.id` is
         // the post it was cloned *from*, which didn't.
         case 'post_cloned':
-          return [CAMPAIGN_POST_LISTS]
+          return [CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
         // A restore writes two versions (the auto-save of unsnapshotted
         // edits, then the copy) — the history is as stale as the post is.
         case 'post_restored':
-          return [post, versions, CAMPAIGN_POST_LISTS]
+          return [post, versions, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
         case 'post_scheduled':
-          return [post, CAMPAIGN_POST_LISTS]
+          return [post, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
         // The post flow snapshots before it rewrites. Only reaches other
         // people's tabs — the actor's own copy is suppressed as a local run,
         // and handled where the turn settles (assistantStore.refreshSubject).
@@ -148,12 +160,18 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
           // title, and a calendar showing the old one has no other way to
           // find out — there is no `post_updated` in the catalogue. Same rule
           // as everywhere here: if the post is stale, the rows are too.
-          return [post, versions, notes, CAMPAIGN_POST_LISTS]
+          return [
+            post,
+            versions,
+            notes,
+            CAMPAIGN_POST_LISTS,
+            WORKSPACE_POST_LIST,
+          ]
         case 'assistant_failed':
           // Notes are written by the tool as it goes, not at the end, so a
           // failed turn can still have left some behind — and a turn that
           // failed part-way can have written the body first.
-          return [post, notes, CAMPAIGN_POST_LISTS]
+          return [post, notes, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
         case 'assessment_completed':
         case 'assessment_failed':
           // Its own namespace, deliberately not nested under the post — see
@@ -171,8 +189,9 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         case 'content_plan_completed':
         case 'content_plan_failed':
           // The post list and the overview both nest under this key, and a
-          // content plan writes posts, so one filter covers all three.
-          return [{ queryKey: campaignKey(subject.id) }]
+          // content plan writes posts, so one filter covers all three. The
+          // workspace-wide list holds those same posts outside the namespace.
+          return [{ queryKey: campaignKey(subject.id) }, WORKSPACE_POST_LIST]
         default:
           return []
       }
@@ -225,5 +244,6 @@ export const RECONCILE_FILTERS: QueryFilters[] = [
   { queryKey: ASSETS_KEY },
   { queryKey: ['postAssessment'] },
   { queryKey: ['campaigns'] },
+  WORKSPACE_POST_LIST,
   ...ZERNIO_SURFACES,
 ]

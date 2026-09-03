@@ -13,6 +13,7 @@ import {
 import { useAddPost, useCampaignPosts } from '@/hooks/usePosts.ts'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useHotkeys } from '@/hooks/useHotkeys'
+import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
 import type { Post } from '@/types/posts'
 
 /** Stable identity for a grid with nothing in it yet. */
@@ -71,6 +72,13 @@ function CalendarView() {
   // Memoized because it is the key every range derivation downstream hangs
   // off: a fresh Date each render would rebuild the whole grid each render.
   const anchorDate = useMemo(() => parseAnchor(anchor) ?? new Date(), [anchor])
+
+  // The calendar is where the memory is written from — see `lib/postsPlace`.
+  // Recorded from the params rather than from `anchorDate`, so what is stored
+  // is the string the URL carried and not a re-serialisation of it. `beforeLoad`
+  // has already normalised anything malformed, so this only ever sees a real
+  // anchor and one of the two granularities.
+  useRememberPostsPlace(campaignId, granularity, anchor)
 
   // Only the settings hold the grid back. Which day starts the week — and
   // which days are shown at all — is a stored preference, and a Monday that

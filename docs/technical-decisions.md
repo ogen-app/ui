@@ -161,9 +161,30 @@ is not a promise the post will publish — it understates rather than cries wolf
 
 **Known gap.** The editor's uploads go to the `post_attachments` table, whose
 presigned/thumbnail URLs are hydrated per post at response time. Nothing writes
-`media_urls`, so **the leading image never renders in practice today.** The
-card is built and correct; lighting it up needs the backend to put a thumbnail
-URL on the post list payload. Backend ticket, not a front-end change.
+`media_urls`, so **the leading image never renders in practice today**. The card
+is built and correct; lighting it up needs the backend to put a thumbnail URL on
+the post list payload — **CON-247**, a backend ticket with no front-end change
+expected.
+
+Calendar Settings' *Show cards as image previews* switch is therefore **hidden
+behind `calendar-card-images`**. It was on by default and inert, which is the
+worst of the three states it could be in: an off switch would read as a setting
+to try, an absent one as a feature not built, but a switch already *on* says the
+pictures are missing for some other reason and sends the user looking for it in
+their posts. The preference itself is untouched — still stored, still defaulted
+— so this hides a control rather than changing a setting, and whatever a user
+chose comes back when the flag flips.
+
+There is no client-side workaround, and it is worth writing down which one fails
+and why. `postToPayload` does round-trip `media_urls`, so the front end could in
+principle write a thumbnail URL there on upload — but `PostAttachment.ThumbnailURL`
+is a **presigned GET with a 15-minute TTL** (`PresignedURLTTL`, `handlers/post_attachments.go`),
+so what would be persisted is a URL that is broken by the time anyone reloads.
+The server's own `ListByCampaign` returns bare post rows with no attachment join,
+so the payload has no other image in it either. The fix is one of: hydrate a
+thumbnail onto the post list rows, or serve attachment thumbnails from a public
+key the way `assets` already does (`storage.PublicURL`) so a stored URL would
+keep working.
 
 **Where.** `components/campaigns/calendar/PostCard.tsx`,
 `lib/postValidation.ts` (`hasVisibleProblem`).
@@ -244,6 +265,52 @@ exports `selectActivePanel`, which is how components ask what's open —
 *layout* effect so a reload straight into a post paints the restored panel
 rather than opening it a frame later. Scope and `campaignId` are session-only:
 where you are is not a preference.
+
+## A campaign remembers where you were in its posts {#posts-place}
+
+**Decision.** Each campaign remembers the arrangement its posts were last read
+in and the day the calendar was drawn around — `{ view, anchor, granularity }`
+per campaign id, in `settingsStore` (localStorage). The post editor's back arrow
+and the sidebar's **Posts** row restore all of it, the list included; the entry
+points that name the *calendar* — the overview's calendar card, a bare
+`/campaigns/:id/calendar` URL — restore the date and granularity but never
+redirect to the table.
+
+**Why.** A campaign's posts are usually not in the current week: you plan
+September in August. So "today", which every one of those links used to
+hard-code, is the one week reliably guaranteed to be empty, and each return trip
+through a post cost the user the navigation they had just done.
+
+`granularity` is stored rather than derived because the list is neither
+granularity, and something that opens a calendar after a trip through the table
+still has to pick one — without it, it would guess "week" at someone who reads
+their campaign by the month.
+
+**Why not `history.back()`.** It has nothing to go back to when the post was
+opened from a pasted URL or a new tab, and a button is not a link: the arrow
+would lose middle-click, right-click and the status-bar preview that every other
+navigation in the app has. The cost of keeping a real `<Link>` is that the back
+arrow is two branches, since a `<Link>`'s params are typed off a literal `to`.
+
+**Consequences.** The calendar writes the memory on every anchor change, so
+`rememberVisit` returns its input unchanged when nothing moved and the store
+skips the `set` — otherwise every arrow press would notify the sidebar and the
+post header. The default reads the clock and so is a fresh object each call,
+which is why the hooks subscribe to the stored entry (stable, or `undefined`)
+and derive the default outside the subscription. Views are the only writers: a
+redirect or a programmatic navigation must not be saved as the user's choice.
+Rehydration distrusts the blob — a malformed anchor here would not render wrong,
+it would put the router into `beforeLoad`'s normalising redirect on every
+navigation.
+
+`DeletePostDialog` is deliberately **not** wired to this: after deleting a post
+it lands on the week that post was going out, which is a different and better
+answer than where the user came from.
+
+**Where.** `lib/postsPlace.ts` (pure, with `postsPlace.test.ts`),
+`hooks/usePostsPlace.ts`, `stores/settingsStore.ts` (`rememberPostsPlace`),
+recorded by the two views and read by `PostDetailsHeader`, `AppSidebar`,
+`OverviewCard` and the bare-calendar redirect.
 
 ## The posts table's sort order follows the user, not the device {#posts-table-sort}
 

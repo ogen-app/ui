@@ -11,6 +11,7 @@ import {
   useUpdatePost,
 } from '@/hooks/usePosts.ts'
 import { usePostsTableSort } from '@/hooks/usePostsTableSort'
+import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
 import type { BulkPlan } from '@/lib/bulkPostEdits'
 import { postToPayload } from '@/services/api/posts'
 import type { Post } from '@/types/posts'
@@ -26,6 +27,9 @@ const NO_POSTS: Post[] = []
 
 function CampaignListView() {
   const { campaignId } = Route.useParams()
+  // No anchor: the table has no date range of its own, so it keeps whichever
+  // week the calendar last left — see `lib/postsPlace`.
+  useRememberPostsPlace(campaignId, 'list')
   const { data: posts, isLoading } = useCampaignPosts(campaignId)
   // `mutateAsync` is stable, so the columns aren't rebuilt on every render.
   const { mutateAsync: deletePost, isPending: deleting } =

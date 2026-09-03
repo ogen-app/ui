@@ -356,7 +356,15 @@ creates the account or adds the workspace to one that already exists) ·
 **multi-workspace is live, unflagged** — [ogen#109](https://github.com/ogen-app/ogen/pull/109)
 merged 2026-08-14; the `multi-workspace` flag and its off-branch were deleted
 once the client was re-tested against the shipped API (CON-147) ·
-dark mode is scaffolded but empty · **an image cannot be a Content-Bank asset**
+dark mode is scaffolded but empty · **calendar cards have never shown a
+picture** — the card's only image source is `post.media_urls` and nothing writes
+it; editor uploads land in `post_attachments`, whose thumbnails are 15-minute
+presigned URLs the client cannot persist. Needs a thumbnail on the post list
+payload — CON-247. Calendar Settings' *Show cards as image previews* switch is
+hidden behind `calendar-card-images` until then; it was on by default and inert,
+which read as a broken calendar rather than an unbuilt feature
+(`docs/technical-decisions.md#calendar-card-media`) ·
+**an image cannot be a Content-Bank asset**
 — `assets.type` is `MD | PDF | URL` and the upload endpoint takes `.md` and
 `.pdf` only, so `IMG` is declared client-side and unproducible; the upload
 surface offers images behind `content-bank-images` (off) and the image asset's

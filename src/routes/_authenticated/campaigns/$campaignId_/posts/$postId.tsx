@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { ThreadSplitNote } from '@/components/posts/sequence/ThreadSplitNote'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
+import { PostLockNotice } from '@/components/posts/PostLockNotice'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
@@ -23,7 +24,6 @@ import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettin
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
 import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
-import { PinnedPostNotes } from '@/components/posts/notes/PinnedPostNotes'
 import { PostNotesCard } from '@/components/posts/notes/PostNotesCard'
 import {
   POST_PREVIEW_PORTAL_ID,
@@ -54,6 +54,7 @@ import { usePostAssessment } from '@/hooks/usePostAssessment'
 import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostNotes } from '@/hooks/usePostNotes'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
+import { useDuplicatePost } from '@/hooks/usePosts'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import { usePostArrowNavigation } from '@/hooks/usePostNavigation'
@@ -61,8 +62,7 @@ import { usePublishStatus } from '@/hooks/usePublishStatus'
 import { cn } from '@/lib'
 import { downloadMarkdown } from '@/lib/downloadMarkdown'
 import { resolvePublishMethod } from '@/lib/autoPublish'
-import { isNotePinned, splitNotesByPin } from '@/lib/postNotes'
-import type { PublishMethod } from '@/lib/postStatusMachine'
+import { isSubmitted, type PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
 import type { PostNote } from '@/services/api/postNotes'
 import type { Post, PostStatus } from '@/types/posts'
@@ -183,6 +183,13 @@ function PostEditorSurface({
   // only has to survive until the button is pressed.
   const [publishMethod, setPublishMethod] = useState<PublishMethod>('auto')
 
+  // A copy of this post already exists outside Ogen — Zernio holds the
+  // submission, or the network holds the post — so the document below is the
+  // record of it rather than a draft (CON-251). Every surface on this screen
+  // asks the one predicate; the cards that already knew about `published`
+  // (media, the date, the account) now answer through it too.
+  const locked = isSubmitted(doc.status)
+
   // Resolved against the post's *current* platform rather than stored, so
   // switching to a channel the workspace hasn't allowlisted drops the post to
   // manual on the spot. Derived instead of an effect: there is no moment where
@@ -238,6 +245,16 @@ function PostEditorSurface({
   // Null unless something really is going to publish the post — see
   // `publishTiming` for which statuses those are.
   const publishStatus = usePublishStatus(doc)
+
+  // The bottom bar's slot once there are no transitions left to put in it.
+  // Offered on `published` alone, not on every locked status: a scheduled post
+  // still has UNSCHEDULE to make, and duplicating one would be a second copy
+  // of something that has not happened yet.
+  const duplicate = useDuplicatePost(campaignId)
+  const duplicateAction =
+    doc.status === 'published'
+      ? { run: () => duplicate.run(doc), running: duplicate.running }
+      : null
   // ← / → step to the neighbouring post, unless the keypress belongs to a
   // field the user is typing in.
   usePostArrowNavigation(campaignId, doc.id)
@@ -283,24 +300,8 @@ function PostEditorSurface({
     () => openRightPanel('postQuality'),
     [openRightPanel],
   )
-  // Notes (CON-188). Where a note renders is a device-local preference, so the
-  // pin map comes from the settings store rather than the record — the API has
-  // no `pinned` column, and `lib/postNotes` supplies the default.
+  // Notes (CON-188), all of them in the one card below the media.
   const notes = usePostNotes(doc.id)
-  const notePins = useSettingsStore((s) => s.notePins)
-  const setNotePin = useSettingsStore((s) => s.setNotePin)
-  const isPinned = useCallback(
-    (note: PostNote) => isNotePinned(note, notePins),
-    [notePins],
-  )
-  const togglePin = useCallback(
-    (note: PostNote) => setNotePin(note.id, !isNotePinned(note, notePins)),
-    [notePins, setNotePin],
-  )
-  const { pinned: pinnedNotes, rest: unpinnedNotes } = splitNotesByPin(
-    notes.notes,
-    notePins,
-  )
   const { edit: editNote } = notes
   const saveNote = useCallback(
     (note: PostNote, patch: { title: string; body: string }) =>
@@ -514,9 +515,15 @@ function PostEditorSurface({
                 onAddPostLink={() => setPublishedUrlOpen(true)}
               />
             </div>
+            {/* Between the bar and the checks: below the status badge that is
+                the reason for the lock, above everything the lock applies to. */}
+            <div className="w-content empty:hidden">
+              <PostLockNotice status={doc.status} />
+            </div>
             <div className="w-content">
               <PostValidationsSection
                 checks={checks}
+                status={doc.status}
                 assessment={assessment}
                 postUpdatedAt={doc.updated_at}
                 qualityUnavailable={quality.unavailable}
@@ -525,12 +532,6 @@ function PostEditorSurface({
                 onOpenQuality={openQuality}
               />
             </div>
-            <PinnedPostNotes
-              notes={pinnedNotes}
-              onTogglePin={togglePin}
-              onSave={saveNote}
-              onDelete={notes.remove}
-            />
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
                 <div className="mb-4 flex flex-col">
@@ -541,7 +542,12 @@ function PostEditorSurface({
                       const next = e.target.value.replace(/\n/g, '')
                       handleTitleChange(next)
                     }}
-                    placeholder="Title"
+                    // No placeholder once locked: "Title" under a published
+                    // post reads as a field waiting to be filled in, and
+                    // nobody can fill it in. An untitled post that has gone
+                    // out simply has no title.
+                    placeholder={locked ? undefined : 'Title'}
+                    readOnly={locked}
                     rows={1}
                     className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground"
                   />
@@ -567,7 +573,8 @@ function PostEditorSurface({
                 <PostContentEditor
                   content={doc.content}
                   onContentChange={handleContentChange}
-                  readOnly={assistantRunning}
+                  readOnly={locked}
+                  busy={assistantRunning}
                 />
                 {isSequence && (
                   <ThreadSplitNote
@@ -594,11 +601,9 @@ function PostEditorSurface({
             </div>
             <div className="w-content">
               <PostNotesCard
-                notes={unpinnedNotes}
+                notes={notes.notes}
                 loading={notes.loading}
                 error={notes.error !== null}
-                isPinned={isPinned}
-                onTogglePin={togglePin}
                 onAdd={notes.add}
                 onSave={saveNote}
                 onDelete={notes.remove}
@@ -628,6 +633,7 @@ function PostEditorSurface({
         <PostStatusActionBar
           buttons={buttons}
           back={back}
+          duplicate={duplicateAction}
           pending={statusBusy}
           onBlocked={flashBlockers}
           status={publishStatus}
@@ -677,6 +683,7 @@ function PostEditorSurface({
               steps={quality.steps}
               cached={quality.cached}
               assessError={quality.assessError}
+              locked={locked}
               onClose={closeRightPanel}
             />,
             qualityHost,
