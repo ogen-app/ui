@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   fetchPostAnalytics,
   isNotPublishedViaPublisher,
@@ -81,6 +82,7 @@ export function usePostPerformance(
   publisherPostId: string | undefined,
   facts: PostFacts,
 ): PostPerformanceResult {
+  const { t } = useTranslation()
   const published = canHaveAnalytics(status)
 
   // A published post with no publisher id is the 409, and we can read it off
@@ -123,12 +125,17 @@ export function usePostPerformance(
   // moves together, and only when the snapshot does — a fresh `new Date()` per
   // render would rebuild the whole view on every keystroke elsewhere on the
   // screen.
+  //
+  // `t` is enough to catch a language switch: react-i18next rebuilds it when
+  // the language changes (its snapshot is cached on `lng`), so the spans and
+  // relative dates below are rebuilt with it rather than being stranded in
+  // whichever language they were first built in.
   const view = useMemo(
     () =>
       answer && !isPending(answer)
-        ? buildPostPerformanceView(answer, facts, new Date())
+        ? buildPostPerformanceView(t, answer, facts, new Date())
         : null,
-    [answer, facts],
+    [answer, facts, t],
   )
 
   if (!published) return { state: 'unpublished' }

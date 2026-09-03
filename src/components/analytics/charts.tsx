@@ -1,6 +1,14 @@
 import { LinePath } from '@visx/shape'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
-import { extent, formatDay, formatHours, type Direction } from './format'
+import {
+  extent,
+  formatDay,
+  formatHours,
+  shortWeekdays,
+  type Direction,
+} from './format'
 import { buildScale, Plot, PlotFocus, PLOT_HEIGHT } from './plot'
 import type { Point, Publication } from './types'
 
@@ -162,7 +170,7 @@ export function TrendChart({
   tickCount,
   publications,
   formatValue = String,
-  previousLabel = 'the stretch before',
+  previousLabel,
   className,
 }: {
   /** Cumulative for a flow measure; the daily level for a level measure. */
@@ -196,10 +204,14 @@ export function TrendChart({
    * disagreeing with itself one line apart.
    */
   formatValue?: (value: number) => string
-  /** What the ghosted line is called, in the card that names both. */
+  /**
+   * What the ghosted line is called, in the card that names both. Defaults to
+   * the same words the legend uses when the caller has no anchor date to name.
+   */
   previousLabel?: string
   className?: string
 }) {
+  const { t } = useTranslation()
   const bandPoints: Point[] = band
     ? [
         { date: '', value: band.low },
@@ -222,7 +234,7 @@ export function TrendChart({
       <Plot
         count={series.length}
         align="point"
-        label="Running total across the selected period"
+        label={t('analytics.charts.trendAria')}
         scale={scale}
         tooltip={(i) => {
           const point = series[i]
@@ -238,7 +250,8 @@ export function TrendChart({
               </span>
               {before && (
                 <span className="text-tertiary-foreground tabular-nums">
-                  {formatValue(before.value)} · {previousLabel}
+                  {formatValue(before.value)} ·{' '}
+                  {previousLabel ?? t('analytics.charts.legendStretchBefore')}
                 </span>
               )}
             </div>
@@ -369,6 +382,7 @@ export function ColumnChart({
   formatValue?: (value: number) => string
   className?: string
 }) {
+  const { t } = useTranslation()
   const bandPoints: Point[] = band
     ? [
         { date: '', value: band.low },
@@ -394,7 +408,7 @@ export function ColumnChart({
       <Plot
         count={series.length}
         align="slot"
-        label="Each day of the selected period"
+        label={t('analytics.charts.columnsAria')}
         scale={scale}
         tooltip={(i) => {
           const point = series[i]
@@ -493,12 +507,15 @@ export function ColumnChart({
  * *nothing has come back yet*.
  */
 export function EmptyChart({
-  label = 'Data will appear here',
+  label,
   className,
 }: {
+  /** Defaults to the generic line — a caller with a reason should give it. */
   label?: string
   className?: string
 }) {
+  const { t } = useTranslation()
+  label ??= t('analytics.charts.empty')
   return (
     <div
       className={cn(
@@ -571,6 +588,8 @@ export function PublicationRail({
   align: 'point' | 'slot'
   className?: string
 }) {
+  const { t } = useTranslation()
+
   if (!publications || publications.length === 0 || series.length < 2)
     return null
 
@@ -590,7 +609,7 @@ export function PublicationRail({
     <div
       className={cn('relative h-3', className)}
       role="img"
-      aria-label={`${total} ${total === 1 ? 'post' : 'posts'} published in this period`}
+      aria-label={t('analytics.charts.publicationsAria', { count: total })}
     >
       {[...days.entries()].map(([i, posts]) => {
         const centre =
@@ -605,7 +624,10 @@ export function PublicationRail({
               key={publication.id}
               title={
                 publication.account
-                  ? `${publication.title} — ${publication.account}`
+                  ? t('analytics.charts.publicationMark', {
+                      title: publication.title,
+                      account: publication.account,
+                    })
                   : publication.title
               }
               className="absolute top-0 h-2.5 w-[1.5px] bg-tertiary-foreground"
@@ -719,6 +741,7 @@ export function MultiSeriesChart({
   }[]
   className?: string
 }) {
+  const { t } = useTranslation()
   const W = 640
   const H = 140
   const { min, max } = extent([
@@ -732,7 +755,9 @@ export function MultiSeriesChart({
       preserveAspectRatio="none"
       className={cn('h-32 w-full', className)}
       role="img"
-      aria-label={`Compared over the period: ${series.map((s) => s.label).join(', ')}`}
+      aria-label={t('analytics.charts.sleevesAria', {
+        sleeves: series.map((s) => s.label).join(', '),
+      })}
     >
       {series.map((s) => (
         <path
@@ -750,6 +775,11 @@ export function MultiSeriesChart({
   )
 }
 
+/** `09`, `18` — the hour as the grid's tooltips write it. */
+function pad(hour: number): string {
+  return String(hour).padStart(2, '0')
+}
+
 /** The 7×24 grid behind "when does our audience actually show up". */
 export function Heatmap({
   grid,
@@ -759,7 +789,8 @@ export function Heatmap({
   grid: number[][]
   className?: string
 }) {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const { t, i18n } = useTranslation()
+  const days = shortWeekdays(i18n.language)
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <div className="flex gap-1 pl-8">
@@ -784,7 +815,10 @@ export function Heatmap({
               // Opacity rather than a colour ramp: one hue, so the eye reads
               // intensity instead of hunting for a legend.
               style={{ opacity: 0.06 + cell * 0.84 }}
-              title={`${days[d]} ${h}:00`}
+              title={t('analytics.units.slot', {
+                day: days[d],
+                hour: t('analytics.units.hourOfDay', { hour: pad(h) }),
+              })}
             />
           ))}
         </div>
@@ -909,6 +943,7 @@ export function PostSeriesChart({
   showTicks?: boolean
   className?: string
 }) {
+  const { t } = useTranslation()
   const W = 640
   const H = 90
   // Headroom, or the peak ends flush against the top edge and reads as clipped.
@@ -917,7 +952,7 @@ export function PostSeriesChart({
   // A column *is* a bucket, where a point on a line only marks one — so a
   // column chart's labels sit over the middle of the slot their bucket stands
   // in, and a line's sit on the point itself.
-  const ticks = elapsedTicks(points, interval).map((tick) =>
+  const ticks = elapsedTicks(t, points, interval).map((tick) =>
     mode === 'interval'
       ? { ...tick, fraction: (tick.index + 0.5) / points.length }
       : tick,
@@ -939,8 +974,10 @@ export function PostSeriesChart({
         role="img"
         aria-label={
           mode === 'cumulative'
-            ? 'Running total since the post was published'
-            : `What the post earned in each ${interval} since it was published`
+            ? t('analytics.charts.runningTotalAria')
+            : interval === 'hour'
+              ? t('analytics.charts.earnedEachHourAria')
+              : t('analytics.charts.earnedEachDayAria')
         }
       >
         {/*
@@ -1060,39 +1097,31 @@ function IntervalColumns({
  * thinking "since I posted it" and starts thinking "last Tuesday".
  */
 function elapsedTicks(
+  t: TFunction,
   points: { hour: number; at: string }[],
   interval: 'hour' | 'day',
   count = 5,
 ): { index: number; fraction: number; label: string }[] {
+  const label = (point: { hour: number; at: string }) =>
+    interval === 'day'
+      ? formatDay(point.at.slice(0, 10))
+      : t('analytics.units.elapsed', { span: formatHours(t, point.hour) })
+
   // One bucket still gets dated. It only happens per day, on a post younger than
   // a day, and an undated column is the one case where the axis says less than
   // the header — `fraction` is fixed up by the caller, which knows a column is
   // labelled at its middle and a line at its point.
   if (points.length === 1) {
-    const [point] = points
-    return [
-      {
-        index: 0,
-        fraction: 0,
-        label:
-          interval === 'day'
-            ? formatDay(point.at.slice(0, 10))
-            : `+${formatHours(point.hour)}`,
-      },
-    ]
+    return [{ index: 0, fraction: 0, label: label(points[0]) }]
   }
   const n = Math.min(count, points.length)
   const step = (points.length - 1) / (n - 1)
   return Array.from({ length: n }, (_, i) => {
     const index = Math.round(i * step)
-    const point = points[index]
     return {
       index,
       fraction: index / (points.length - 1),
-      label:
-        interval === 'day'
-          ? formatDay(point.at.slice(0, 10))
-          : `+${formatHours(point.hour)}`,
+      label: label(points[index]),
     }
   })
 }
@@ -1114,6 +1143,7 @@ export function DecayCurve({
   height?: 'sm' | 'md'
   className?: string
 }) {
+  const { t } = useTranslation()
   const W = 240
   const H = 64
   const maxHour = Math.max(...points.map((p) => p.hour), 1)
@@ -1132,7 +1162,7 @@ export function DecayCurve({
       preserveAspectRatio="none"
       className={cn('w-full', height === 'md' ? 'h-28' : 'h-16', className)}
       role="img"
-      aria-label="Share of a post's eventual engagement earned by each hour since publishing"
+      aria-label={t('analytics.charts.decayAria')}
     >
       <path
         d={`${d} L${W},${H} L0,${H} Z`}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
 import { resolvePlatformInfo } from '@/lib/platformDictionary'
@@ -49,6 +50,7 @@ export function WorkspaceScopeBar({
   onWindowChange: (window: string) => void
   className?: string
 }) {
+  const { t } = useTranslation()
   const connected = platforms.filter((p) => p.accounts > 0)
 
   // Nothing to filter. One connected platform means every state of this control
@@ -88,7 +90,7 @@ export function WorkspaceScopeBar({
               className="ml-1"
               onClick={() => onPlatformChange(undefined)}
             >
-              ALL PLATFORMS
+              {t('analytics.scopeBar.allPlatforms')}
             </Button>
           )}
         </div>
@@ -98,7 +100,7 @@ export function WorkspaceScopeBar({
           the window rather than the sources. */}
       <div className="ml-auto">
         <Picker
-          label="Period"
+          label={t('analytics.scopeBar.period')}
           value={current.label}
           options={windows.map((w) => ({ value: w.window, label: w.label }))}
           onChange={onWindowChange}
@@ -118,15 +120,22 @@ function PlatformMark({
   on: boolean
   onSelect: () => void
 }) {
+  const { t } = useTranslation()
   const info = resolvePlatformInfo(platform.id)
   const Icon = info?.icon
+  const accounts = t('analytics.scopeBar.accounts', {
+    count: platform.accounts,
+  })
 
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-pressed={on}
-      title={`${platform.label} — ${platform.accounts} ${platform.accounts === 1 ? 'account' : 'accounts'}`}
+      title={t('analytics.scopeBar.platformAccounts', {
+        platform: platform.label,
+        accounts,
+      })}
       className={cn(
         'relative flex size-10 items-center justify-center rounded-md transition-colors',
         on
@@ -162,8 +171,10 @@ function PlatformMark({
         {platform.accounts}
       </span>
       <span className="sr-only">
-        {platform.label}, {platform.accounts}{' '}
-        {platform.accounts === 1 ? 'account' : 'accounts'}
+        {t('analytics.scopeBar.platformAccountsLabel', {
+          platform: platform.label,
+          accounts,
+        })}
       </span>
     </button>
   )

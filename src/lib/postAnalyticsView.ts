@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import type {
   MeasureId,
   PostIdentity,
@@ -210,13 +211,14 @@ function hoursSince(iso: string, now: Date): number {
  * How long the figures cover — `26 hours`, `12 days`.
  *
  * A bare span rather than a relative phrase: the card reads "over its first 26
- * hours", and `formatRelative` would put "26 hours ago" inside it.
+ * hours", and `formatRelative` would put "26 hours ago" inside it. Which also
+ * means it cannot borrow `Intl.RelativeTimeFormat`'s plural rules the way `ago`
+ * below does, so the two forms are spelled out in the catalogue instead.
  */
-function span(hours: number): string {
+function span(t: TFunction, hours: number): string {
   const h = Math.max(0, Math.round(hours))
-  if (h < 48) return `${h} ${h === 1 ? 'hour' : 'hours'}`
-  const d = Math.round(h / 24)
-  return `${d} ${d === 1 ? 'day' : 'days'}`
+  if (h < 48) return t('analytics.units.spanHours', { count: h })
+  return t('analytics.units.spanDays', { count: Math.round(h / 24) })
 }
 
 /** `12 days ago` — through `lib/intl`, so it follows the app's language. */
@@ -233,6 +235,7 @@ function ago(hours: number): string {
  * span and maturity below hangs off it.
  */
 export function buildPostPerformanceView(
+  t: TFunction,
   snapshot: PostAnalyticsSnapshot,
   facts: PostFacts,
   now: Date,
@@ -257,7 +260,7 @@ export function buildPostPerformanceView(
   return {
     maturity,
     post,
-    measuredOver: facts.publishedAt ? span(hours) : undefined,
+    measuredOver: facts.publishedAt ? span(t, hours) : undefined,
     // Nothing ranks one post against the workspace. `/performers` ranks the
     // posts inside a window and returns only its two ends, so a post in the
     // middle of the distribution is absent from every answer it gives.

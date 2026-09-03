@@ -1,7 +1,8 @@
 import { WarningIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import {
-  BAND_LABEL,
+  bandLabel,
   QUALITY_DIMENSIONS,
   isAssessmentStale,
   overallBand,
@@ -44,6 +45,7 @@ export function QualityInlineSummary({
   postUpdatedAt,
   onOpenPanel,
 }: Props) {
+  const { t } = useTranslation()
   const pct = overallPct(assessment)
   const band = overallBand(pct)
   const stale = isAssessmentStale(assessment, postUpdatedAt)
@@ -76,7 +78,7 @@ export function QualityInlineSummary({
                 overall — the label was only there to introduce a word that
                 needs no introduction. */}
             <p className="text-sm font-medium text-foreground">
-              {BAND_LABEL[band]}
+              {bandLabel(t, band)}
             </p>
             <p className="text-sm text-tertiary-foreground">
               {scored ? `Scored ${scored}` : 'Scored'}

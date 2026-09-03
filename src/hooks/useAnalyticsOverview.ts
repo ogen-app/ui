@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   envelopeUnavailable,
   fetchAnalyticsOverview,
@@ -62,6 +63,7 @@ export type AnalyticsOverviewResult = {
 export function useAnalyticsOverview(
   window: string = DEFAULT_OVERVIEW_WINDOW,
 ): AnalyticsOverviewResult {
+  const { t } = useTranslation()
   const query = useQuery({
     queryKey: analyticsOverviewKey(window),
     queryFn: () => fetchAnalyticsOverview({ window }),
@@ -78,9 +80,12 @@ export function useAnalyticsOverview(
   const withheld = envelope ? envelopeUnavailable(envelope) : false
   const overview = envelope && !withheld ? envelope.data : null
 
+  // `t` alone, and it is enough: react-i18next rebuilds `t` when the language
+  // changes (its snapshot is cached on `lng`), so a switch invalidates this
+  // memo and every phrase built below is rebuilt in the new language.
   const view = useMemo(
-    () => (overview ? buildNowView(overview) : undefined),
-    [overview],
+    () => (overview ? buildNowView(t, overview) : undefined),
+    [overview, t],
   )
 
   return {

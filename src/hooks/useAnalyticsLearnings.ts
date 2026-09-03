@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { envelopeUnavailable, fetchLearnings } from '@/services/api/analytics'
 import {
   buildLearningsView,
@@ -41,6 +42,10 @@ export type AnalyticsLearningsResult = {
 export function useAnalyticsLearnings(
   metric: LearningsMetric = DEFAULT_LEARNINGS_METRIC,
 ): AnalyticsLearningsResult {
+  const {
+    t,
+    i18n: { language },
+  } = useTranslation()
   const query = useQuery({
     queryKey: analyticsLearningsKey(metric),
     queryFn: () => fetchLearnings({ metric }),
@@ -59,9 +64,13 @@ export function useAnalyticsLearnings(
   const withheld = envelope ? envelopeUnavailable(envelope) : false
   const learnings = envelope && !withheld ? envelope.data : null
 
+  // `language` is passed as well as `t` because the heatmap's row labels come
+  // from `Intl` rather than the catalogue — `Intl` needs the locale by name.
+  // Either one alone would catch a switch (react-i18next rebuilds `t` on one),
+  // but the builder needs both, so both are in the deps.
   const view = useMemo(
-    () => (learnings ? buildLearningsView(learnings) : undefined),
-    [learnings],
+    () => (learnings ? buildLearningsView(t, language, learnings) : undefined),
+    [learnings, t, language],
   )
 
   return {

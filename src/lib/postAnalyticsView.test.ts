@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { t } from '@/test/i18n'
 import {
   buildPostPerformanceView,
   readMaturity,
@@ -176,6 +177,7 @@ describe('readMaturity', () => {
 describe('buildPostPerformanceView', () => {
   it('says how long the figures cover, and when we last looked', () => {
     const view = buildPostPerformanceView(
+      t,
       snapshot({ analytics: { ...ZERO, reach: 4200 } }),
       FACTS,
       NOW,
@@ -187,7 +189,7 @@ describe('buildPostPerformanceView', () => {
   })
 
   it('leaves every comparison absent — none of them has a source', () => {
-    const view = buildPostPerformanceView(snapshot(), FACTS, NOW)
+    const view = buildPostPerformanceView(t, snapshot(), FACTS, NOW)
 
     expect(view.percentile).toBeNull()
     expect(view.sample).toBeUndefined()
@@ -199,6 +201,7 @@ describe('buildPostPerformanceView', () => {
 
   it('measures nothing on a post that has not gone out', () => {
     const view = buildPostPerformanceView(
+      t,
       snapshot({ analytics: { ...ZERO, reach: 4200 } }),
       { ...FACTS, publishedAt: null },
       NOW,

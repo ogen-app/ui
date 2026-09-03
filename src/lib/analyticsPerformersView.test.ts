@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { t } from '@/test/i18n'
 import { buildPerformersView } from '@/lib/analyticsPerformersView'
 import type {
   PerformerRow,
@@ -57,6 +58,7 @@ function board(over: Partial<PerformersBoard> = {}): PerformersBoard {
 
 function figures(by: PerformerSort, rows: Partial<PerformerRow>[]) {
   const view = buildPerformersView(
+    t,
     board({
       by,
       best: rows.map((r, i) => row({ post_id: `p${i}`, ...r })),
@@ -98,6 +100,7 @@ describe('the figure column follows the basis the server ranked on', () => {
 
   it('falls back to the default when the server echoes a basis we do not offer', () => {
     const view = buildPerformersView(
+      t,
       board({ by: 'invented_later' as PerformerSort }),
     )
     expect(view.by).toBe('against_typical')
@@ -107,6 +110,7 @@ describe('the figure column follows the basis the server ranked on', () => {
 describe('a missing multiplier is a state, not a zero', () => {
   it('carries the null through rather than reading it as no performance', () => {
     const view = buildPerformersView(
+      t,
       board({
         best: [
           row({ against_typical: null, baseline: 'insufficient_history' }),
@@ -133,6 +137,7 @@ describe('a missing multiplier is a state, not a zero', () => {
     // scaled against the leader's 3.4×, which reads as a post that earned
     // nothing. What the server said is that it cannot be placed.
     const view = buildPerformersView(
+      t,
       board({
         by: 'against_typical',
         best: [
@@ -157,6 +162,7 @@ describe('a missing multiplier is a state, not a zero', () => {
     // Ranked on reach, this row has a reach — it loses its multiplier, not its
     // place in the list, and the bar falls back to a plain rank.
     const view = buildPerformersView(
+      t,
       board({
         by: 'reach',
         best: [row({ against_typical: null, reach: 2600 })],
@@ -170,6 +176,7 @@ describe('a missing multiplier is a state, not a zero', () => {
 
   it('counts the unplaceable rows across both lists', () => {
     const view = buildPerformersView(
+      t,
       board({
         best: [row({ against_typical: null }), row({ post_id: 'p2' })],
         worst: [row({ post_id: 'p3', against_typical: null })],
@@ -188,6 +195,7 @@ describe('the placement is the server’s verdict, not a threshold of ours', () 
     ['typical', 'usual'],
   ] as const)('reads %s as %s', (direction, expected) => {
     const view = buildPerformersView(
+      t,
       board({
         best: [row({ direction, against_typical: 1.1 })],
         worst: [],
@@ -201,6 +209,7 @@ describe('the placement is the server’s verdict, not a threshold of ours', () 
     // 1.3 would be "ahead" under the harness's own 1.25 threshold. The server
     // ran its own config and said otherwise, and its answer is the one drawn.
     const view = buildPerformersView(
+      t,
       board({
         best: [row({ direction: 'typical', against_typical: 1.3 })],
         worst: [],
@@ -214,6 +223,7 @@ describe('the placement is the server’s verdict, not a threshold of ours', () 
 describe('what the board is not showing', () => {
   it('counts the middle of the distribution the server never sent', () => {
     const view = buildPerformersView(
+      t,
       board({
         best: [row(), row({ post_id: 'p2' })],
         worst: [row({ post_id: 'p3' })],
@@ -226,6 +236,7 @@ describe('what the board is not showing', () => {
 
   it('says nothing is hidden when the two ends are the whole window', () => {
     const view = buildPerformersView(
+      t,
       board({ best: [row()], worst: [], total_posts: 1 }),
     )
 
@@ -236,6 +247,7 @@ describe('what the board is not showing', () => {
     // `total_posts` and the lists are counted separately server-side; "−2 more
     // posts are not shown" is worse than saying nothing.
     const view = buildPerformersView(
+      t,
       board({
         best: [row(), row({ post_id: 'p2' })],
         worst: [row({ post_id: 'p3' })],
@@ -250,6 +262,7 @@ describe('what the board is not showing', () => {
 describe('the row’s supporting line', () => {
   it('marks a young post’s reach as unfinished, not the post', () => {
     const view = buildPerformersView(
+      t,
       board({
         best: [row({ reach: 12900, reach_still_accruing: true })],
         worst: [],
@@ -262,6 +275,7 @@ describe('the row’s supporting line', () => {
 
   it('names a share worth checking and stays quiet about a sliver', () => {
     const view = buildPerformersView(
+      t,
       board({
         best: [row({ period_share: 0.19 })],
         worst: [row({ post_id: 'p2', period_share: 0.004 })],
@@ -276,6 +290,7 @@ describe('the row’s supporting line', () => {
 
   it('falls back through the account label rather than assuming either field', () => {
     const view = buildPerformersView(
+      t,
       board({
         best: [row({ account: { id: 'a1', username: 'ogendental' } })],
         worst: [],
@@ -289,6 +304,7 @@ describe('the row’s supporting line', () => {
   it('treats the empty avatar the server sends today as no avatar', () => {
     // An empty `src` is a request for the current page, not a missing image.
     const view = buildPerformersView(
+      t,
       board({
         best: [row({ account: { id: 'a1', username: 'x', avatar_url: '' } })],
         worst: [],
@@ -299,11 +315,13 @@ describe('the row’s supporting line', () => {
     expect(view.best[0].account.avatarUrl).toBeUndefined()
   })
 
-  it('writes the date day-first, as the chart axis above the board does', () => {
-    // `format.ts`'s `formatDay` pins en-GB for the axis. Reading the active
-    // language here would print "Aug 19, 2026" under an axis reading "19 Aug",
+  it('writes the date in the active language, as the chart axis above does', () => {
+    // Both used to pin en-GB so they would agree with each other; both now read
+    // the app's language, so they still do. What must never happen is one of
+    // them moving on its own — "Aug 19, 2026" under an axis reading "19 Aug",
     // in one column of one card.
     const view = buildPerformersView(
+      t,
       board({
         best: [row({ published_at: '2026-08-19T09:12:00Z' })],
         worst: [],
@@ -311,11 +329,12 @@ describe('the row’s supporting line', () => {
       }),
     )
 
-    expect(view.best[0].published).toBe('19 Aug 2026')
+    expect(view.best[0].published).toBe('Aug 19, 2026')
   })
 
   it('singularises a one-day-old post', () => {
     const view = buildPerformersView(
+      t,
       board({
         best: [row({ age_days: 1 }), row({ post_id: 'p2', age_days: 10 })],
         worst: [],
@@ -329,7 +348,7 @@ describe('the row’s supporting line', () => {
 
 describe('insight tone comes from the rule, not the severity', () => {
   const toneOf = (id: string, severity: 'info' | 'note' = 'info') =>
-    buildPerformersView(board({ insights: [{ id, severity, text: 'x' }] }))
+    buildPerformersView(t, board({ insights: [{ id, severity, text: 'x' }] }))
       .insights[0].tone
 
   it('does not colour an observation about shape as good or bad news', () => {
@@ -357,7 +376,7 @@ describe('insight tone comes from the rule, not the severity', () => {
 
 describe('the window and its freshness', () => {
   it('names the stretch the server resolved to', () => {
-    expect(buildPerformersView(board()).period).toEqual({
+    expect(buildPerformersView(t, board()).period).toEqual({
       label: 'last 28 days',
       from: '2026-07-22',
       to: '2026-08-19',
@@ -367,6 +386,7 @@ describe('the window and its freshness', () => {
 
   it('treats the Go zero time as no freshness rather than a date in year 1', () => {
     const view = buildPerformersView(
+      t,
       board({ updated_at: '0001-01-01T00:00:00Z' }),
     )
 

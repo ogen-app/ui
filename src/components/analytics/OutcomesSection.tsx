@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import { RankBar, TrendChart } from './charts'
 import { InsightLine } from './ComparisonSections'
@@ -12,13 +13,7 @@ import {
   Todos,
 } from './shell'
 import { accumulate, formatCount } from './format'
-import {
-  GOAL_SIGNAL_NOUN,
-  GOAL_SIGNAL_SHORT,
-  type Goal,
-  type GoalSignal,
-  type OutcomesView,
-} from './types'
+import type { Goal, GoalSignal, OutcomesView } from './types'
 
 /**
  * Did any of this do anything?
@@ -43,16 +38,15 @@ import {
  * obvious instead of hypothetical.
  */
 export function OutcomesSection({ view }: { view: OutcomesView }) {
+  const { t } = useTranslation()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const goal = view.goals.find((g) => g.id === selectedId) ?? view.goals[0]
 
   if (!goal) {
     return (
-      <SectionCard title="Outcomes" scope="lens">
-        <NotYet title="No goal set for this yet">
-          Naming what you want out of this — visits to a page, enquiries,
-          sign-ups — lets everything above be read against it instead of on its
-          own terms.
+      <SectionCard title={t('analytics.outcomes.title')} scope="lens">
+        <NotYet title={t('analytics.outcomes.noGoalTitle')}>
+          {t('analytics.outcomes.noGoalBody')}
         </NotYet>
         {view.upgrade && <UpgradeNote upgrade={view.upgrade} />}
       </SectionCard>
@@ -64,19 +58,23 @@ export function OutcomesSection({ view }: { view: OutcomesView }) {
     !unmeasured &&
       !goal.target && {
         id: 'target',
-        text: `No target set for ${goal.label.toLowerCase()}`,
-        action: 'Set one',
+        // The goal's own label, unchanged. Lower-casing it to fit the sentence
+        // is a rule that only holds in English.
+        text: t('analytics.outcomes.noTarget', { goal: goal.label }),
+        action: t('analytics.outcomes.setOne'),
       },
     view.upgrade && {
       id: 'upgrade',
       text: view.upgrade.label,
-      action: 'Connect a source',
+      action: t('analytics.outcomes.connectSource'),
     },
-  ].filter((t): t is { id: string; text: string; action: string } => Boolean(t))
+  ].filter((item): item is { id: string; text: string; action: string } =>
+    Boolean(item),
+  )
 
   return (
     <SectionCard
-      title="Outcomes"
+      title={t('analytics.outcomes.title')}
       scope="lens"
       status={<SignalBadge signal={view.bestAvailableSignal} />}
     >
@@ -117,6 +115,7 @@ function GoalTile({
   selected: boolean
   onSelect?: () => void
 }) {
+  const { t } = useTranslation()
   const unmeasured = goal.signal === 'unmeasured' || goal.value === null
   const d =
     goal.value !== null && goal.previous !== null && goal.previous !== 0
@@ -141,11 +140,11 @@ function GoalTile({
 
       {unmeasured ? (
         <span className="font-display text-3xl font-medium leading-none text-tertiary-foreground">
-          —
+          {t('analytics.units.none')}
         </span>
       ) : (
         <span className="font-display text-3xl font-medium leading-none truncate">
-          {formatCount(goal.value ?? 0)}
+          {formatCount(t, goal.value ?? 0)}
         </span>
       )}
 
@@ -155,7 +154,7 @@ function GoalTile({
             can be watched through different signals, and the tile is where
             they get read against each other. */}
         <span className="text-xs text-tertiary-foreground truncate">
-          {GOAL_SIGNAL_SHORT[goal.signal]}
+          {t(`analytics.outcomes.signalShort.${goal.signal}` as const)}
         </span>
       </div>
     </FigureTile>
@@ -164,13 +163,15 @@ function GoalTile({
 
 /** The selected goal, drawn out: how it is counted, its trend, and what drove it. */
 function GoalDetail({ goal }: { goal: Goal }) {
+  const { t } = useTranslation()
   const unmeasured = goal.signal === 'unmeasured' || goal.value === null
 
   if (unmeasured) {
     return (
-      <NotYet title={`${goal.label} isn't being counted yet`}>
-        The posts pointing at it are still going out, and the moment a signal is
-        connected this fills in from the links we already stamp.
+      <NotYet
+        title={t('analytics.outcomes.notCountedTitle', { goal: goal.label })}
+      >
+        {t('analytics.outcomes.notCountedBody')}
       </NotYet>
     )
   }
@@ -182,11 +183,22 @@ function GoalDetail({ goal }: { goal: Goal }) {
   return (
     <div className="mt-2 flex flex-col gap-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-medium">{goal.label} over the period</h3>
+        <h3 className="text-sm font-medium">
+          {t('analytics.outcomes.overThePeriod', { goal: goal.label })}
+        </h3>
         <span className="text-xs text-tertiary-foreground">
           {/* The honesty line. Never omitted, never softened. */}
-          Measured by {GOAL_SIGNAL_NOUN[goal.signal]}
-          {goal.destination && ` · ${goal.destination}`}
+          {t(
+            goal.destination
+              ? 'analytics.outcomes.measuredByAt'
+              : 'analytics.outcomes.measuredBy',
+            {
+              signal: t(
+                `analytics.outcomes.signalNoun.${goal.signal}` as const,
+              ),
+              destination: goal.destination,
+            },
+          )}
         </span>
       </div>
 
@@ -194,19 +206,29 @@ function GoalDetail({ goal }: { goal: Goal }) {
         <TrendChart
           series={accumulate(goal.series, value)}
           target={goal.target?.value}
-          endLabel="Today"
+          endLabel={t('analytics.charts.today')}
         />
       )}
 
       <Basis className="text-[13px] text-foreground">
         {goal.target
-          ? `${formatCount(value)} of the ${formatCount(goal.target.value)} a ${goal.target.per} you are aiming for. The dashed line is the target; the solid one is the running total.`
-          : `${formatCount(value)} so far. The line is a running total, so it ends on the figure above it.`}
+          ? t(
+              goal.target.per === 'week'
+                ? 'analytics.outcomes.towardsTargetWeek'
+                : 'analytics.outcomes.towardsTargetMonth',
+              {
+                value: formatCount(t, value),
+                target: formatCount(t, goal.target.value),
+              },
+            )
+          : t('analytics.outcomes.soFar', { value: formatCount(t, value) })}
       </Basis>
 
       {contributors.length > 0 && (
         <div className="flex flex-col gap-1.5 pt-1">
-          <h4 className="text-xs font-medium">Mostly from</h4>
+          <h4 className="text-xs font-medium">
+            {t('analytics.outcomes.mostlyFrom')}
+          </h4>
           <ul className="flex flex-col gap-2">
             {contributors.map((c) => (
               <li key={c.label} className="flex flex-col gap-1">
@@ -215,7 +237,7 @@ function GoalDetail({ goal }: { goal: Goal }) {
                     {c.label}
                   </span>
                   <span className="shrink-0 tabular-nums">
-                    {formatCount(c.value)}
+                    {formatCount(t, c.value)}
                   </span>
                 </div>
                 <RankBar fraction={leader === 0 ? 0 : c.value / leader} />
@@ -236,12 +258,7 @@ function GoalDetail({ goal }: { goal: Goal }) {
  * the badge self-explaining and makes the missing rung obvious.
  */
 function SignalBadge({ signal }: { signal: GoalSignal }) {
-  const label: Record<GoalSignal, string> = {
-    unmeasured: 'Nothing connected',
-    clicks: 'Link clicks only',
-    sessions: 'Your website is connected',
-    conversions: 'Your website reports its own goals',
-  }
+  const { t } = useTranslation()
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-secondary-foreground">
       <span
@@ -255,7 +272,7 @@ function SignalBadge({ signal }: { signal: GoalSignal }) {
         )}
         aria-hidden
       />
-      {label[signal]}
+      {t(`analytics.outcomes.signalBadge.${signal}` as const)}
     </span>
   )
 }

@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next'
+import { formatNumber } from '@/lib/intl'
 import { formatCount, formatPercent } from './format'
 import type {
   PacePlacement,
@@ -38,26 +40,21 @@ import type {
  * clicks with no destination named would be that card's question asked badly.
  */
 
+/**
+ * A criterion is arithmetic; its words are in the catalogue under
+ * `analytics.criteria.<id>`, read through {@link criterionLabel},
+ * {@link criterionSuffix} and {@link criterionHeldOut}.
+ *
+ * The table stays a table — this is the "table of keys" shape CLAUDE.md keeps,
+ * translated at the point of use — because everything else on it decides what
+ * gets ranked, and a factory rebuilt per render would make `availableCriteria`
+ * return new object identities on every pass.
+ */
 export interface Criterion {
   id: PerformerCriterionId
-  /** Names the column and the option in the picker. */
-  label: string
-  /**
-   * What it is called with no curve to correct against — read through
-   * `criterionLabel`, never directly.
-   *
-   * "Reach when it finishes" is a promise about a projection, and a workspace
-   * with no curve isn't projecting anything: the same column there is reach so
-   * far, and the label has to say which of the two it is.
-   */
-  rawLabel?: string
-  /** The unit, where the number alone doesn't carry it. */
-  suffix?: string
-  format: (value: number) => string
+  format: (t: TFunction, value: number) => string
   /** Reads a post, or refuses. `corrected` is whether a curve exists. */
   value: (post: RankedPost, corrected: boolean) => number | null
-  /** Why a post gets refused — the sentence at the foot when some are. */
-  heldOut: (count: number) => string
   /** Whether the row's meta line should carry the period share or the reach. */
   qualifier: 'share' | 'reach'
 }
@@ -83,17 +80,18 @@ const rate =
 export const CRITERIA: Criterion[] = [
   {
     id: 'pace',
-    label: 'Against your typical',
-    format: (v) => `${v.toFixed(1)}×`,
+    format: (t, v) =>
+      t('analytics.units.multiplier', {
+        value: formatNumber(v, {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        }),
+      }),
     value: (post) => post.pace,
-    heldOut: (n) =>
-      `${n === 1 ? 'One post is' : `${n} posts are`} too young to place against the curve.`,
     qualifier: 'share',
   },
   {
     id: 'reach',
-    label: 'Reach when it finishes',
-    rawLabel: 'Reach so far',
     format: formatCount,
     value: (post, corrected) => {
       const reach = post.metrics.reach
@@ -106,40 +104,35 @@ export const CRITERIA: Criterion[] = [
       if (post.pace === null || post.matured <= 0) return null
       return Math.round(reach / post.matured)
     },
-    heldOut: (n) =>
-      `${n === 1 ? 'One post is' : `${n} posts are`} too young to project — almost nothing has landed yet.`,
     qualifier: 'share',
   },
   {
     id: 'engagement_rate',
-    label: 'Engagement rate',
     format: formatPercent,
     value: rate('interactions', 1),
-    heldOut: (n) =>
-      `${n === 1 ? 'One post was' : `${n} posts were`} seen by too few people for a rate to mean anything, or reported no interactions.`,
     qualifier: 'reach',
   },
   {
     id: 'save_rate',
-    label: 'Saves',
-    suffix: 'per 1,000 reached',
-    format: (v) => v.toFixed(1),
+    format: (_t, v) => rounded(v),
     value: rate('saves', 1_000),
-    heldOut: (n) =>
-      `${n === 1 ? 'One post did' : `${n} posts did`} not report saves, or was seen by too few people to divide.`,
     qualifier: 'reach',
   },
   {
     id: 'follow_rate',
-    label: 'Follows',
-    suffix: 'per 1,000 reached',
-    format: (v) => v.toFixed(1),
+    format: (_t, v) => rounded(v),
     value: rate('followers', 1_000),
-    heldOut: (n) =>
-      `${n === 1 ? 'One post did' : `${n} posts did`} not report follows, or was seen by too few people to divide.`,
     qualifier: 'reach',
   },
 ]
+
+/** One decimal, in the active language's own notation. */
+function rounded(value: number): string {
+  return formatNumber(value, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })
+}
 
 /**
  * The least a view has to carry to be ranked: the posts, and whether there is a
@@ -169,12 +162,47 @@ export function availableCriteria(view: RankableView): Criterion[] {
   )
 }
 
-/** What to call a criterion, given whether there is a curve behind it. */
+/**
+ * What to call a criterion, given whether there is a curve behind it.
+ *
+ * Every criterion carries both labels in the catalogue, and for four of the
+ * five they are the same words. That is deliberate: "what is this column called
+ * when nothing is being projected" is a real question about each of them, and
+ * the answer being *the same* is a translator's call rather than a shape this
+ * code should encode. Only `reach` differs today — "Reach when it finishes" is
+ * a promise about a projection, and a workspace with no curve isn't projecting.
+ */
 export function criterionLabel(
+  t: TFunction,
   criterion: Criterion,
   corrected: boolean,
 ): string {
-  return corrected ? criterion.label : (criterion.rawLabel ?? criterion.label)
+  return corrected
+    ? t(`analytics.criteria.${criterion.id}.label` as const)
+    : t(`analytics.criteria.${criterion.id}.rawLabel` as const)
+}
+
+/** The unit, for the criteria whose number doesn't carry one. Empty otherwise. */
+export function criterionSuffix(
+  t: TFunction,
+  criterion: Criterion,
+): string | undefined {
+  return t(`analytics.criteria.${criterion.id}.suffix` as const) || undefined
+}
+
+/**
+ * Why some posts were refused — the sentence at the foot when any were.
+ *
+ * One whole sentence per criterion rather than a shared stem with a reason
+ * appended: "was seen by too few people" and "did not report saves" need
+ * different verbs even in English, and word order is not portable.
+ */
+export function criterionHeldOut(
+  t: TFunction,
+  criterion: Criterion,
+  count: number,
+): string {
+  return t(`analytics.criteria.${criterion.id}.heldOut` as const, { count })
 }
 
 /**

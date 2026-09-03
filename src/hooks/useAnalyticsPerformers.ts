@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { envelopeUnavailable, fetchPerformers } from '@/services/api/analytics'
 import {
   buildPerformersView,
@@ -51,6 +52,7 @@ export function useAnalyticsPerformers(
    */
   platform?: string,
 ): AnalyticsPerformersResult {
+  const { t } = useTranslation()
   const query = useQuery({
     queryKey: analyticsPerformersKey(window, by, platform),
     queryFn: () => fetchPerformers({ window, by, platform }),
@@ -67,9 +69,12 @@ export function useAnalyticsPerformers(
   const withheld = envelope ? envelopeUnavailable(envelope) : false
   const board = envelope && !withheld ? envelope.data : null
 
+  // `t` alone, and it is enough: react-i18next rebuilds `t` when the language
+  // changes (its snapshot is cached on `lng`), so a switch invalidates this
+  // memo and every phrase built below is rebuilt in the new language.
   const view = useMemo(
-    () => (board ? buildPerformersView(board) : undefined),
-    [board],
+    () => (board ? buildPerformersView(t, board) : undefined),
+    [board, t],
   )
 
   return {

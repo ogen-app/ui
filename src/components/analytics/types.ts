@@ -29,21 +29,30 @@ export type MeasureId =
   | 'followers'
   | 'published'
 
+/**
+ * How a measure *behaves*. What it is *called* is in the catalogue, under
+ * `analytics.measures.<id>` — read it with `measureCopy` (`format.ts`).
+ *
+ * The split is not tidiness. A table of labels at module scope freezes
+ * whichever language loaded first (CLAUDE.md), and these labels are read in
+ * pure functions as well as components, so there is no render to rebuild them
+ * on. Keeping the arithmetic here and the words there also means a measure's
+ * copy can be argued with without anyone touching how it is drawn.
+ *
+ * Three of those catalogue keys are worth knowing about from here:
+ *
+ * - `label` — the measure on its own, mid-sentence and in a picker.
+ * - `periodLabel` — the measure shown *over a period*. "Reach" and "Followers"
+ *   are the same word for two different quantities: one is everything earned
+ *   across the window, the other is where the number stands today. A tab
+ *   reading "Reach 184.9K" beside one reading "Followers 14.2K" invites both to
+ *   be read as period totals, and one of them isn't; "Cumulative reach" and
+ *   "Current followers" cost a word and remove the ambiguity everywhere.
+ * - `hint` — where the number comes from, when the label doesn't say. Empty
+ *   for the two whose labels already do.
+ */
 export interface MeasureMeta {
   id: MeasureId
-  label: string
-  /**
-   * What the measure is called once it is being shown *over a period* — the
-   * name on its tab and on the chart drawn out underneath.
-   *
-   * "Reach" and "Followers" are the same word for two different quantities:
-   * one is everything earned across the window and the other is where the
-   * number stands today. A tab that says "Reach 184.9K" beside a tab that says
-   * "Followers 14.2K" invites the reader to treat both as period totals, and
-   * one of them isn't. Naming them "Cumulative reach" and "Current followers"
-   * costs a word and removes the ambiguity everywhere the name appears.
-   */
-  periodLabel: string
   format: 'count' | 'percent'
   /**
    * Whether the measure accumulates or stands at a level.
@@ -73,85 +82,60 @@ export interface MeasureMeta {
    * because the moment unfollows or hides arrive the assumption breaks.
    */
   better: 'up' | 'down'
-  /** Where the number comes from, when the label doesn't say it. */
-  hint?: string
 }
 
 export const MEASURES: Record<MeasureId, MeasureMeta> = {
   reach: {
     id: 'reach',
-    label: 'Reach',
-    periodLabel: 'Cumulative reach',
     format: 'count',
     kind: 'flow',
     chart: 'running',
     better: 'up',
-    hint: 'Distinct accounts that saw a post',
   },
   impressions: {
     id: 'impressions',
-    label: 'Impressions',
-    periodLabel: 'Cumulative impressions',
     format: 'count',
     kind: 'flow',
     chart: 'running',
     better: 'up',
-    hint: 'Times a post was shown, the same person counted more than once',
   },
   interactions: {
     id: 'interactions',
-    label: 'Interactions',
-    periodLabel: 'Cumulative interactions',
     format: 'count',
     kind: 'flow',
     chart: 'running',
     better: 'up',
-    hint: 'Likes, comments, shares and saves together',
   },
   engagement_rate: {
     id: 'engagement_rate',
-    label: 'Engagement rate',
-    periodLabel: 'Daily engagement rate',
     format: 'percent',
     kind: 'level',
     chart: 'columns',
     better: 'up',
-    hint: 'Interactions as a share of reach',
   },
   saves: {
     id: 'saves',
-    label: 'Saves',
-    periodLabel: 'Cumulative saves',
     format: 'count',
     kind: 'flow',
     chart: 'running',
     better: 'up',
-    hint: 'People keeping a post to come back to',
   },
   clicks: {
     id: 'clicks',
-    label: 'Clicks',
-    periodLabel: 'Cumulative clicks',
     format: 'count',
     kind: 'flow',
     chart: 'running',
     better: 'up',
-    hint: 'Taps on a link out of the post',
   },
   views: {
     id: 'views',
-    label: 'Views',
-    periodLabel: 'Cumulative views',
     format: 'count',
     kind: 'flow',
     chart: 'running',
     better: 'up',
-    hint: 'Video plays, counted the way each platform counts one',
   },
   followers: {
     id: 'followers',
-    label: 'Followers',
-    periodLabel: 'Current followers',
     format: 'count',
     kind: 'level',
     chart: 'level',
@@ -159,14 +143,15 @@ export const MEASURES: Record<MeasureId, MeasureMeta> = {
   },
   published: {
     id: 'published',
-    label: 'Posts published',
-    periodLabel: 'Posts published',
     format: 'count',
     kind: 'flow',
     chart: 'running',
     better: 'up',
   },
 }
+
+/** Every measure, in the order a picker offers them. */
+export const MEASURE_IDS = Object.keys(MEASURES) as MeasureId[]
 
 /** What a set of sleeves is cut along. */
 export type SleeveDimension =
@@ -195,16 +180,21 @@ export type SleeveDimension =
    */
   | 'quality'
 
-export const SLEEVE_DIMENSIONS: Record<SleeveDimension, string> = {
-  platform: 'Platform',
-  account: 'Account',
-  campaign: 'Campaign',
-  format: 'Format',
-  theme: 'Theme',
-  origin: 'How it was written',
-  weekday: 'Day of week',
-  quality: 'Quality band',
-}
+/**
+ * Every dimension, in the order a picker offers them. What each is *called* is
+ * `analytics.sleeves.<id>` in the catalogue — see the note on {@link MeasureMeta}
+ * for why the words are not here.
+ */
+export const SLEEVE_DIMENSION_IDS: SleeveDimension[] = [
+  'platform',
+  'account',
+  'campaign',
+  'format',
+  'theme',
+  'origin',
+  'weekday',
+  'quality',
+]
 
 /** A named subset of the data. */
 export interface Sleeve {
@@ -469,30 +459,16 @@ export interface NextView {
  * point of carrying the rung on the goal is honesty: a goal measured by clicks
  * says *clicks to /book*, never *bookings*. Nothing on screen may claim a rung
  * it isn't standing on.
+ *
+ * Each rung is written three ways in the catalogue, under
+ * `analytics.outcomes.signal*`, and all three are load-bearing:
+ * `signalNoun` names it inside "Measured by …"; `signalShort` is short enough
+ * to sit under a figure, because every number carries its rung and 412 read as
+ * enquiries when it counts visits is exactly the misreading the ladder exists
+ * to prevent; `signalBadge` names the *connection* rather than the count, which
+ * is what makes the missing rung obvious.
  */
 export type GoalSignal = 'unmeasured' | 'clicks' | 'sessions' | 'conversions'
-
-export const GOAL_SIGNAL_NOUN: Record<GoalSignal, string> = {
-  unmeasured: 'not measurable yet',
-  clicks: 'clicks on the link',
-  sessions: 'visits that arrived from a post',
-  conversions: 'completions your website reported',
-}
-
-/**
- * The same rung, short enough to sit under a figure.
- *
- * Every number carries its rung, including the ones in a row of tiles — two
- * goals side by side can be watched through different signals, and 412 read as
- * enquiries when it counts visits is exactly the misreading the ladder exists
- * to prevent.
- */
-export const GOAL_SIGNAL_SHORT: Record<GoalSignal, string> = {
-  unmeasured: 'not measured',
-  clicks: 'link clicks',
-  sessions: 'site visits',
-  conversions: 'reported goals',
-}
 
 /**
  * Something the workspace is actually trying to cause. Optional target,

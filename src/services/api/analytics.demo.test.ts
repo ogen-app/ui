@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { t } from '@/test/i18n'
 import {
   demoLearnings,
   demoMode,
@@ -46,7 +47,7 @@ describe('the overview payload', () => {
   it('goes through the card’s own mapper', async () => {
     setDemoMode('demo')
     const envelope = await demoOverview({ window: '28d' }, NOW)
-    const view = buildNowView(envelope.data!)
+    const view = buildNowView(t, envelope.data!)
 
     expect(view.period).toMatchObject({ days: 28, to: '2026-09-02' })
     // Five cards, five series, and the headline first — `readings[0]` is reach
@@ -93,7 +94,7 @@ describe('the performers payload', () => {
   it('goes through the board’s own mapper', async () => {
     setDemoMode('demo')
     const envelope = await demoPerformers({ window: '28d' }, NOW)
-    const view = buildPerformersView(envelope.data!)
+    const view = buildPerformersView(t, envelope.data!)
 
     expect(view.best.length).toBeGreaterThan(0)
     expect(view.worst.length).toBeGreaterThan(0)
@@ -119,6 +120,7 @@ describe('the performers payload', () => {
   it('includes rows the server could not place against a typical', async () => {
     setDemoMode('demo')
     const view = buildPerformersView(
+      t,
       (await demoPerformers({ window: '28d' }, NOW)).data!,
     )
 
@@ -145,7 +147,11 @@ describe('the performers payload', () => {
 describe('the learnings payload', () => {
   it('goes through the card’s own mapper', async () => {
     setDemoMode('demo')
-    const view = buildLearningsView((await demoLearnings({}, NOW)).data!)
+    const view = buildLearningsView(
+      t,
+      'en',
+      (await demoLearnings({}, NOW)).data!,
+    )
 
     expect(view.heatmap?.strongest).toEqual({
       label: 'Thursday 18:00 UTC',
@@ -158,8 +164,11 @@ describe('the learnings payload', () => {
 
   it('sends a sparse grid, which is the case the mapper exists for', async () => {
     setDemoMode('demo')
-    const grid = buildLearningsView((await demoLearnings({}, NOW)).data!)
-      .heatmap!.grid
+    const grid = buildLearningsView(
+      t,
+      'en',
+      (await demoLearnings({}, NOW)).data!,
+    ).heatmap!.grid
 
     const filled = grid.flat().filter(Boolean).length
     expect(filled).toBeGreaterThan(0)

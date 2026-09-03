@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { t } from '@/test/i18n'
 import { WorkspacePerformersView } from './WorkspacePerformers'
 import { buildPerformersView } from '@/lib/analyticsPerformersView'
 import type { PerformerRow, PerformersBoard } from '@/types/analytics'
@@ -60,7 +61,7 @@ function view(best: number, worst: number, total = best + worst) {
     worst: Array.from({ length: worst }, (_, i) => row(100 + i)),
     insights: [],
   }
-  return buildPerformersView(board)
+  return buildPerformersView(t, board)
 }
 
 function renderBoard(

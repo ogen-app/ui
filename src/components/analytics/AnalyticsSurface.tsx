@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NowSection } from './ComparisonSections'
 import { PerformersSection } from './PerformersSection'
@@ -54,17 +55,16 @@ export function AnalyticsSurface({
   selectedPlatforms: string[]
   onPlatformsChange: (selected: string[]) => void
 }) {
+  const { t } = useTranslation()
+
   if (state.isPending) return <SurfaceSkeleton />
 
   if (state.isUnavailable) {
     return (
       <Wrapper>
-        <SectionCard title="Analytics">
-          <NotYet title="Nothing is being measured for this workspace">
-            Analytics isn't switched on here yet. Everything else — planning,
-            generating, scheduling, publishing — works exactly as it does now,
-            and the moment measurement is connected these screens fill in from
-            the posts you have already sent.
+        <SectionCard title={t('analytics.surface.title')}>
+          <NotYet title={t('analytics.surface.unavailableTitle')}>
+            {t('analytics.surface.unavailableBody')}
           </NotYet>
         </SectionCard>
       </Wrapper>
@@ -74,11 +74,11 @@ export function AnalyticsSurface({
   if (state.isError || !state.data) {
     return (
       <Wrapper>
-        <SectionCard title="Analytics">
-          <NotYet title="Couldn't load analytics">
-            {scope.kind === 'campaign' ? 'The campaign' : 'The workspace'}{' '}
-            itself is unaffected — nothing here changes what is scheduled or
-            published. Try again in a moment.
+        <SectionCard title={t('analytics.surface.title')}>
+          <NotYet title={t('analytics.surface.errorTitle')}>
+            {scope.kind === 'campaign'
+              ? t('analytics.surface.errorBodyCampaign')
+              : t('analytics.surface.errorBodyWorkspace')}
           </NotYet>
         </SectionCard>
       </Wrapper>
@@ -108,11 +108,13 @@ export function AnalyticsSurface({
             would be counted, and a scope line that appears only once figures
             arrive is one nobody knows they can change. */}
         {scopeBar}
-        <SectionCard title="What happened" scope="lens">
-          <NotYet title="Nothing measured yet">
+        <SectionCard title={t('analytics.now.title')} scope="lens">
+          <NotYet title={t('analytics.surface.coldTitle')}>
             {now.coverage.published === 0
-              ? 'Once this starts publishing, what each post earns shows up here — reach, interactions, and how that compares with what you normally do.'
-              : `${now.coverage.published} ${now.coverage.published === 1 ? 'post has' : 'posts have'} gone out, and the platforms haven't reported on them yet. This usually takes a few hours.`}
+              ? t('analytics.surface.coldNothingPublished')
+              : t('analytics.surface.coldNotReported', {
+                  count: now.coverage.published,
+                })}
           </NotYet>
         </SectionCard>
       </Wrapper>

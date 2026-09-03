@@ -3,6 +3,7 @@ import {
   ArrowRightIcon,
   ArrowUpRightIcon,
 } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import { Sparkbars, Sparkline } from './charts'
 import { FigureTile } from './shell'
@@ -11,6 +12,7 @@ import {
   drawnSeries,
   formatDelta,
   formatMeasure,
+  measureCopy,
   measureMeta,
   verdict,
   verdictIsGood,
@@ -42,7 +44,9 @@ export function MeasureTile({
   onSelect?: () => void
   className?: string
 }) {
+  const { t } = useTranslation()
   const meta = measureMeta(reading.measure)
+  const copy = measureCopy(t, reading.measure)
   const d = delta(reading.measure, reading.value, reading.previous)
   const v = verdict(reading.value, reading.expected)
 
@@ -65,8 +69,8 @@ export function MeasureTile({
       */}
       {/* Wraps rather than truncates. The label is what makes the figure
           readable, and "Cumulative intera…" costs more than a second line. */}
-      <span className="text-xs text-secondary-foreground" title={meta.hint}>
-        {meta.periodLabel}
+      <span className="text-xs text-secondary-foreground" title={copy.hint}>
+        {copy.periodLabel}
       </span>
 
       {/*
@@ -76,7 +80,7 @@ export function MeasureTile({
         already say which one is being read.
       */}
       <span className="font-display text-2xl font-medium leading-none truncate">
-        {formatMeasure(reading.measure, reading.value)}
+        {formatMeasure(t, reading.measure, reading.value)}
       </span>
 
       {/*
@@ -89,11 +93,15 @@ export function MeasureTile({
         {d ? (
           <DeltaChip
             delta={d}
-            title={comparedTo ? `vs ${comparedTo}` : undefined}
+            title={
+              comparedTo
+                ? t('analytics.tile.vsDay', { day: comparedTo })
+                : undefined
+            }
           />
         ) : (
           <span className="text-xs text-tertiary-foreground">
-            nothing to compare
+            {t('analytics.tile.nothingToCompare')}
           </span>
         )}
       </div>
@@ -133,6 +141,7 @@ export function DeltaChip({
   title?: string
   className?: string
 }) {
+  const { t } = useTranslation()
   const Icon =
     d.direction === 'up'
       ? ArrowUpRightIcon
@@ -154,7 +163,7 @@ export function DeltaChip({
       )}
     >
       <Icon className="size-3 shrink-0" weight="bold" aria-hidden />
-      {formatDelta(d)}
+      {formatDelta(t, d)}
     </span>
   )
 }
@@ -191,18 +200,19 @@ export function PostMeasureTile({
   ageCorrected: boolean
   className?: string
 }) {
-  const meta = measureMeta(metric.measure)
+  const { t } = useTranslation()
+  const copy = measureCopy(t, metric.measure)
   const d = delta(metric.measure, metric.value, metric.typical ?? null)
   const v = verdict(metric.value, metric.expected ?? null)
 
   return (
     <FigureTile className={className}>
-      <span className="text-xs text-secondary-foreground" title={meta.hint}>
-        {meta.label}
+      <span className="text-xs text-secondary-foreground" title={copy.hint}>
+        {copy.label}
       </span>
 
       <span className="font-display text-2xl font-medium leading-none truncate">
-        {formatMeasure(metric.measure, metric.value)}
+        {formatMeasure(t, metric.measure, metric.value)}
       </span>
 
       <div className="flex items-center gap-2">
@@ -211,8 +221,8 @@ export function PostMeasureTile({
             delta={d}
             title={
               ageCorrected
-                ? 'vs a typical post of yours at the same age'
-                : 'vs a typical post of yours'
+                ? t('analytics.tile.vsTypicalAtAge')
+                : t('analytics.tile.vsTypical')
             }
           />
         ) : (
@@ -220,7 +230,7 @@ export function PostMeasureTile({
           // to compare *against*, and saying so is the difference between a
           // young workspace and a broken card.
           <span className="text-xs text-tertiary-foreground">
-            no typical yet
+            {t('analytics.tile.noTypicalYet')}
           </span>
         )}
       </div>
@@ -248,6 +258,7 @@ export function VerdictLine({
   measure: MeasureId
   verdict: Verdict | null
 }) {
+  const { t } = useTranslation()
   if (!v) return null
   return (
     <span
@@ -261,10 +272,10 @@ export function VerdictLine({
       )}
     >
       {v === 'within'
-        ? 'Normal for you'
+        ? t('analytics.tile.verdictWithin')
         : v === 'above'
-          ? 'Above usual'
-          : 'Below usual'}
+          ? t('analytics.tile.verdictAbove')
+          : t('analytics.tile.verdictBelow')}
     </span>
   )
 }

@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import type {
   Insight,
   PacePlacement,
@@ -5,7 +6,7 @@ import type {
 } from '@/components/analytics/types'
 import { formatCount, formatPercent } from '@/components/analytics/format'
 import { checkedAt } from '@/lib/analyticsFreshness'
-import { formatDate } from '@/lib/intl'
+import { formatDate, formatNumber } from '@/lib/intl'
 import type {
   AnalyticsInsight,
   PerformerRow,
@@ -44,12 +45,16 @@ import type {
  *   metric, and the card draws no bar rather than a bar at zero.
  */
 
-/** What the board can be ranked by, in the order the picker offers them. */
-export const PERFORMER_BASES: { id: PerformerSort; label: string }[] = [
-  { id: 'against_typical', label: 'Against your typical' },
-  { id: 'reach', label: 'Reach' },
-  { id: 'engagement_rate', label: 'Engagement rate' },
-  { id: 'interactions', label: 'Interactions' },
+/**
+ * What the board can be ranked by, in the order the picker offers them. What
+ * each is called is `analytics.performers.basis.<id>` — read with
+ * {@link basisLabel}.
+ */
+export const PERFORMER_BASES: PerformerSort[] = [
+  'against_typical',
+  'reach',
+  'engagement_rate',
+  'interactions',
 ]
 
 export const DEFAULT_PERFORMER_BASIS: PerformerSort = 'against_typical'
@@ -159,11 +164,20 @@ function rankedValue(row: PerformerRow, by: PerformerSort): number | null {
   return row.against_typical
 }
 
-function formatFigure(value: number | null, by: PerformerSort): string {
-  if (value === null) return '—'
-  if (by === 'engagement_rate') return formatPercent(value)
-  if (by === 'reach' || by === 'interactions') return formatCount(value)
-  return `${value.toFixed(1)}×`
+function formatFigure(
+  t: TFunction,
+  value: number | null,
+  by: PerformerSort,
+): string {
+  if (value === null) return t('analytics.units.none')
+  if (by === 'engagement_rate') return formatPercent(t, value)
+  if (by === 'reach' || by === 'interactions') return formatCount(t, value)
+  return t('analytics.units.multiplier', {
+    value: formatNumber(value, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }),
+  })
 }
 
 /**
@@ -186,8 +200,13 @@ function placement(row: PerformerRow): PacePlacement | null {
   return 'usual'
 }
 
-function readRow(row: PerformerRow, by: PerformerSort): PerformerRowView {
+function readRow(
+  t: TFunction,
+  row: PerformerRow,
+  by: PerformerSort,
+): PerformerRowView {
   const value = rankedValue(row, by)
+  const reach = formatCount(t, row.reach)
 
   return {
     id: row.post_id,
@@ -199,41 +218,38 @@ function readRow(row: PerformerRow, by: PerformerSort): PerformerRowView {
       // request for the current page — the avatar has to see nothing at all.
       avatarUrl: row.account.avatar_url || undefined,
     },
-    figure: formatFigure(value, by),
+    figure: formatFigure(t, value, by),
     value,
     pace: row.against_typical,
     placement: placement(row),
     // The caveat belongs on the number that is still moving, not on the post:
     // a post is not "still counting", its reach is.
-    reach: `${formatCount(row.reach)} reached${
-      row.reach_still_accruing ? ' and counting' : ''
-    }`,
+    reach: row.reach_still_accruing
+      ? t('analytics.performers.reachedCounting', { reach })
+      : t('analytics.performers.reached', { reach }),
     share:
       row.period_share >= SHARE_WORTH_SAYING
-        ? `${Math.round(row.period_share * 100)}% of the period`
+        ? t('analytics.performers.periodShare', {
+            share: Math.round(row.period_share * 100),
+          })
         : null,
     /*
-      `19 Aug 2026`, day first.
-
-      Two decisions. The year is carried even inside a 28-day window, because
+      `19 Aug 2026`. The year is carried even inside a 28-day window, because
       these lists get screenshotted and a date with no year is undateable the
       moment it leaves the screen.
 
-      And the locale is pinned rather than read from the active language, which
-      is the opposite of the app's rule (`lib/intl`) and deliberate here: the
-      chart axis directly above this board is drawn by `format.ts`'s
-      `formatDay`, which pins `en-GB`. Reading the active language would print
-      `Aug 19, 2026` under an axis reading `19 Aug`, on one card, in one column
-      of dates. Both pins come out together in the i18n pass this surface is
-      waiting on — see the `analytics-overview` flag.
+      In the app's language, like everything else — the pin to `en-GB` that used
+      to be here came out with the one in `format.ts`'s `formatDay`, which is
+      what drew the axis this column had to agree with. They still agree; both
+      now read the active locale.
     */
     published:
-      formatDate(
-        row.published_at,
-        { day: 'numeric', month: 'short', year: 'numeric' },
-        'en-GB',
-      ) ?? '',
-    age: row.age_days === 1 ? '1 day' : `${row.age_days} days`,
+      formatDate(row.published_at, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }) ?? '',
+    age: t('analytics.units.spanDays', { count: row.age_days }),
   }
 }
 
@@ -247,22 +263,28 @@ function readInsight(insight: AnalyticsInsight): Insight {
 }
 
 /** The window as the card's heading reads it — `over last 28 days`. */
-function readPeriod(board: PerformersBoard): Period {
+function readPeriod(t: TFunction, board: PerformersBoard): Period {
   const { from, to, days } = board.window
-  return { label: `last ${days} days`, from, to, days }
+  return {
+    label: t('analytics.units.lastDays', { count: days }),
+    from,
+    to,
+    days,
+  }
 }
 
 export function buildPerformersView(
+  t: TFunction,
   board: PerformersBoard,
 ): PerformersBoardView {
-  const by = PERFORMER_BASES.some((b) => b.id === board.by)
+  const by = PERFORMER_BASES.includes(board.by)
     ? board.by
     : DEFAULT_PERFORMER_BASIS
-  const best = board.best.map((row) => readRow(row, by))
-  const worst = board.worst.map((row) => readRow(row, by))
+  const best = board.best.map((row) => readRow(t, row, by))
+  const worst = board.worst.map((row) => readRow(t, row, by))
 
   return {
-    period: readPeriod(board),
+    period: readPeriod(t, board),
     by,
     totalPosts: board.total_posts,
     best,
@@ -277,6 +299,6 @@ export function buildPerformersView(
 }
 
 /** What the ranked column is called, for the picker and the column head. */
-export function basisLabel(by: PerformerSort): string {
-  return PERFORMER_BASES.find((b) => b.id === by)?.label ?? by
+export function basisLabel(t: TFunction, by: PerformerSort): string {
+  return t(`analytics.performers.basis.${by}` as const)
 }

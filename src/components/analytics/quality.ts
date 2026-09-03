@@ -1,5 +1,6 @@
+import type { TFunction } from 'i18next'
 import {
-  BAND_LABEL,
+  bandLabel,
   overallBand,
   scoreBand,
   type QualityBand,
@@ -39,8 +40,26 @@ import type { PostQuality, QualityView, ScoredPost } from './types'
 /** The overall, plus each element the model scores separately. */
 export type QualityElement = 'overall' | QualityDimensionKey
 
-export interface QualityElementMeta {
-  id: QualityElement
+/**
+ * Overall first, then the four in the order CON-85 defines them — the same
+ * order the quality panel in the post editor renders, because a reader who has
+ * seen one should not have to re-find the elements in the other.
+ *
+ * Ids only. What each is called, the one-line question it answers, and how its
+ * three bands read in its own units are all in the catalogue under
+ * `analytics.quality.elements.<id>` — read through {@link elementCopy}. The
+ * band ranges are copy rather than data because two of them are words:
+ * "Under 50%" and "Under 5" are sentences a locale writes, not numbers.
+ */
+export const QUALITY_ELEMENTS: QualityElement[] = [
+  'overall',
+  'correctness',
+  'clarity',
+  'engagement',
+  'delivery',
+]
+
+export interface QualityElementCopy {
   label: string
   /** The one-line question the element answers — the tile's tooltip. */
   blurb: string
@@ -48,46 +67,19 @@ export interface QualityElementMeta {
   bands: Record<QualityBand, string>
 }
 
-/**
- * Overall first, then the four in the order CON-85 defines them — the same
- * order the quality panel in the post editor renders, because a reader who has
- * seen one should not have to re-find the elements in the other.
- */
-export const QUALITY_ELEMENTS: QualityElementMeta[] = [
-  {
-    id: 'overall',
-    label: 'Overall',
-    blurb: 'The weighted score the four elements roll up to',
-    bands: { strong: '80–100%', workable: '50–79%', weak: 'Under 50%' },
-  },
-  {
-    id: 'correctness',
-    label: 'Correctness',
-    blurb: 'True and well-formed',
-    bands: { strong: '8–10', workable: '5–7', weak: 'Under 5' },
-  },
-  {
-    id: 'clarity',
-    label: 'Clarity',
-    blurb: 'Understood on one pass',
-    bands: { strong: '8–10', workable: '5–7', weak: 'Under 5' },
-  },
-  {
-    id: 'engagement',
-    label: 'Engagement',
-    blurb: 'Makes people care and act',
-    bands: { strong: '8–10', workable: '5–7', weak: 'Under 5' },
-  },
-  {
-    id: 'delivery',
-    label: 'Delivery',
-    blurb: 'Fits the channel',
-    bands: { strong: '8–10', workable: '5–7', weak: 'Under 5' },
-  },
-]
-
-export function elementMeta(element: QualityElement): QualityElementMeta {
-  return QUALITY_ELEMENTS.find((e) => e.id === element) ?? QUALITY_ELEMENTS[0]
+export function elementCopy(
+  t: TFunction,
+  element: QualityElement,
+): QualityElementCopy {
+  return {
+    label: t(`analytics.quality.elements.${element}.label` as const),
+    blurb: t(`analytics.quality.elements.${element}.blurb` as const),
+    bands: {
+      strong: t(`analytics.quality.elements.${element}.strong` as const),
+      workable: t(`analytics.quality.elements.${element}.workable` as const),
+      weak: t(`analytics.quality.elements.${element}.weak` as const),
+    },
+  }
 }
 
 /** Best band first, so every list on the card runs the same way down. */
@@ -159,12 +151,13 @@ export interface BandGroup {
  * card whose third band is off the bottom.
  */
 export function bandGroups(
+  t: TFunction,
   posts: ScoredPost[],
   element: QualityElement,
   criterion: Criterion,
   corrected: boolean,
 ): BandGroup[] {
-  const meta = elementMeta(element)
+  const copy = elementCopy(t, element)
   return BAND_ORDER.map((band) => {
     const inBand = posts.filter(
       (post) => elementBand(post.quality, element) === band,
@@ -174,8 +167,8 @@ export function bandGroups(
       .filter((value): value is number => value !== null)
     return {
       band,
-      label: BAND_LABEL[band],
-      range: meta.bands[band],
+      label: bandLabel(t, band),
+      range: copy.bands[band],
       posts: inBand,
       placed: values.length,
       value: values.length >= MIN_BAND_POSTS ? median(values) : null,

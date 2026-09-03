@@ -1,13 +1,22 @@
 import { useState } from 'react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
+import { formatNumber } from '@/lib/intl'
 import { RankBar } from './charts'
 import { InsightLine } from './ComparisonSections'
 import { Picker } from './ComparisonBar'
-import { availableCriteria, criterionLabel, type Criterion } from './criteria'
+import {
+  availableCriteria,
+  criterionHeldOut,
+  criterionLabel,
+  criterionSuffix,
+  type Criterion,
+} from './criteria'
 import {
   bandGroups,
   comparablePosts,
-  elementMeta,
+  elementCopy,
   isSpread,
   MIN_BAND_POSTS,
   MIN_SCORED_POSTS,
@@ -49,6 +58,7 @@ import type { PerformerCriterionId, QualityView } from './types'
  * Outside the date lens on purpose — see {@link QualityView}.
  */
 export function QualitySection({ view }: { view: QualityView }) {
+  const { t } = useTranslation()
   const [pickedCriterion, setPickedCriterion] =
     useState<PerformerCriterionId | null>(null)
   const [pickedElement, setPickedElement] = useState<QualityElement | null>(
@@ -62,9 +72,9 @@ export function QualitySection({ view }: { view: QualityView }) {
 
   if (posts.length === 0 || criteria.length === 0) {
     return (
-      <SectionCard title="Quality against results" scope="all-time">
-        <NotYet title={emptyTitle(view, posts.length, criteria.length)}>
-          {emptyBody(view, posts.length, criteria.length)}
+      <SectionCard title={t('analytics.quality.title')} scope="all-time">
+        <NotYet title={emptyTitle(t, view, posts.length, criteria.length)}>
+          {emptyBody(t, view, posts.length, criteria.length)}
         </NotYet>
       </SectionCard>
     )
@@ -84,38 +94,36 @@ export function QualitySection({ view }: { view: QualityView }) {
   */
   if (posts.length < MIN_SCORED_POSTS) {
     return (
-      <SectionCard title="Quality against results" scope="all-time">
+      <SectionCard title={t('analytics.quality.title')} scope="all-time">
         <NotYet
-          title={`${posts.length} scored ${posts.length === 1 ? 'post' : 'posts'} so far`}
+          title={t('analytics.quality.gateTitle', { count: posts.length })}
         >
-          Holding the score against results needs a few posts in each band
-          before it means anything — {MIN_SCORED_POSTS} is where this starts,
-          and every post you score from here counts towards it.
+          {t('analytics.quality.gateBody', { minimum: MIN_SCORED_POSTS })}
         </NotYet>
-        <Basis>{coverage(view, posts.length, stale)}</Basis>
+        <Basis>{coverage(t, view, posts.length, stale)}</Basis>
       </SectionCard>
     )
   }
 
   const element = pickedElement ?? 'overall'
-  const groups = bandGroups(posts, element, criterion, corrected)
+  const groups = bandGroups(t, posts, element, criterion, corrected)
   const best = Math.max(...groups.map((g) => g.value ?? 0), 0)
   const placedTotal = groups.reduce((sum, g) => sum + g.placed, 0)
   const heldOut = posts.length - placedTotal
-  const meta = elementMeta(element)
+  const copy = elementCopy(t, element)
 
   return (
     <SectionCard
-      title="Quality against results"
-      qualifier="for every post we scored"
+      title={t('analytics.quality.title')}
+      qualifier={t('analytics.quality.qualifier')}
       scope="all-time"
       status={
         <Picker
-          label="Did better on"
-          value={criterionLabel(criterion, corrected)}
+          label={t('analytics.quality.didBetterOn')}
+          value={criterionLabel(t, criterion, corrected)}
           options={criteria.map((c) => ({
             value: c.id,
-            label: criterionLabel(c, corrected),
+            label: criterionLabel(t, c, corrected),
           }))}
           onChange={(v) => setPickedCriterion(v as PerformerCriterionId)}
         />
@@ -124,12 +132,11 @@ export function QualitySection({ view }: { view: QualityView }) {
       <FigureGrid columns={QUALITY_ELEMENTS.length}>
         {QUALITY_ELEMENTS.map((el) => (
           <ElementTile
-            key={el.id}
-            label={el.label}
-            blurb={el.blurb}
-            spread={spreadOf(bandGroups(posts, el.id, criterion, corrected))}
-            selected={el.id === element}
-            onSelect={() => setPickedElement(el.id)}
+            key={el}
+            element={el}
+            spread={spreadOf(bandGroups(t, posts, el, criterion, corrected))}
+            selected={el === element}
+            onSelect={() => setPickedElement(el)}
           />
         ))}
       </FigureGrid>
@@ -141,11 +148,16 @@ export function QualitySection({ view }: { view: QualityView }) {
             looking at. The criterion is beside it rather than in the rows,
             because it is the same answer on all three of them.
           */}
-          <h3 className="font-display text-base font-medium">{meta.label}</h3>
+          <h3 className="font-display text-base font-medium">{copy.label}</h3>
           <span className="text-xs text-tertiary-foreground">
-            {criterionLabel(criterion, corrected)}
-            {criterion.suffix && <> {criterion.suffix}</>}
-            {', median per band'}
+            {t('analytics.quality.medianPerBand', {
+              criterion: [
+                criterionLabel(t, criterion, corrected),
+                criterionSuffix(t, criterion),
+              ]
+                .filter(Boolean)
+                .join(' '),
+            })}
           </span>
         </div>
 
@@ -178,14 +190,15 @@ export function QualitySection({ view }: { view: QualityView }) {
         nothing is a finding about the rubric, not about the posts.
       */}
       <Basis>
-        {coverage(view, posts.length, stale)}{' '}
-        {heldOut > 0 && `${criterion.heldOut(heldOut)} `}
-        Each band shows its median, so one post that went unusually far can't
-        carry it.{' '}
+        {coverage(t, view, posts.length, stale)}{' '}
+        {heldOut > 0 && <>{criterionHeldOut(t, criterion, heldOut)} </>}
+        {t('analytics.quality.medianBasis')}{' '}
         {corrected
-          ? `Ages are corrected against how ${view.curve?.sample} finished posts of yours matured.`
-          : 'Not enough of your posts have finished earning to correct for age, so the bands are compared on a rate instead.'}{' '}
-        The score is advisory and was made before publishing.
+          ? t('analytics.quality.correctedBasis', {
+              count: view.curve?.sample ?? 0,
+            })
+          : t('analytics.quality.uncorrectedBasis')}{' '}
+        {t('analytics.quality.advisoryBasis')}
       </Basis>
     </SectionCard>
   )
@@ -205,25 +218,25 @@ export function QualitySection({ view }: { view: QualityView }) {
  * is a fact about the rubric's floor and not a win.
  */
 function ElementTile({
-  label,
-  blurb,
+  element,
   spread,
   selected,
   onSelect,
 }: {
-  label: string
-  blurb: string
+  element: QualityElement
   spread: QualitySpread | SpreadGap
   selected: boolean
   onSelect: () => void
 }) {
+  const { t } = useTranslation()
+  const copy = elementCopy(t, element)
   const placed = isSpread(spread)
-  const verdict = spreadVerdict(spread)
+  const verdict = spreadVerdict(t, spread)
 
   return (
     <FigureTile selected={selected} onSelect={onSelect}>
-      <span className="text-xs text-secondary-foreground" title={blurb}>
-        {label}
+      <span className="text-xs text-secondary-foreground" title={copy.blurb}>
+        {copy.label}
       </span>
 
       {/*
@@ -233,7 +246,14 @@ function ElementTile({
         reads as the element being a different kind of thing.
       */}
       <span className="font-display text-2xl font-medium leading-none truncate">
-        {placed ? `${spread.ratio.toFixed(1)}×` : '—'}
+        {placed
+          ? t('analytics.units.multiplier', {
+              value: formatNumber(spread.ratio, {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              }),
+            })
+          : t('analytics.units.none')}
       </span>
 
       <span
@@ -253,21 +273,32 @@ function ElementTile({
 }
 
 /** What the tile says under its figure, and whether that is a claim. */
-function spreadVerdict(spread: QualitySpread | SpreadGap): {
+function spreadVerdict(
+  t: TFunction,
+  spread: QualitySpread | SpreadGap,
+): {
   text: string
   tone: 'positive' | 'negative' | 'neutral'
 } {
   if (spread === 'single-band')
-    return { text: 'Every post scored the same', tone: 'neutral' }
+    return { text: t('analytics.quality.spread.singleBand'), tone: 'neutral' }
   if (spread === 'thin-bands')
-    return { text: 'Too few in each band', tone: 'neutral' }
+    return { text: t('analytics.quality.spread.thinBands'), tone: 'neutral' }
   if (spread.direction === 'tracks') {
-    return { text: `${spread.top.label} posts do better`, tone: 'positive' }
+    return {
+      text: t('analytics.quality.spread.tracks', { band: spread.top.label }),
+      tone: 'positive',
+    }
   }
   if (spread.direction === 'inverted') {
-    return { text: `${spread.bottom.label} posts do better`, tone: 'negative' }
+    return {
+      text: t('analytics.quality.spread.inverted', {
+        band: spread.bottom.label,
+      }),
+      tone: 'negative',
+    }
   }
-  return { text: 'No difference', tone: 'neutral' }
+  return { text: t('analytics.quality.spread.flat'), tone: 'neutral' }
 }
 
 /**
@@ -287,6 +318,7 @@ function BandRow({
   /** The leading band's figure — what the bars are drawn against. */
   best: number
 }) {
+  const { t } = useTranslation()
   return (
     <li className="flex items-start gap-3 border-b border-border py-2.5 last:border-0">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -294,8 +326,10 @@ function BandRow({
         {/* What a post had to score to be in here, and how many were. The range
             is the part that stops "Good" being read as our opinion of them. */}
         <span className="truncate text-xs text-tertiary-foreground">
-          {group.range} · {group.posts.length}{' '}
-          {group.posts.length === 1 ? 'post' : 'posts'}
+          {t('analytics.quality.band.range', {
+            range: group.range,
+            posts: t('analytics.units.posts', { count: group.posts.length }),
+          })}
         </span>
       </div>
 
@@ -303,7 +337,7 @@ function BandRow({
         {group.value !== null ? (
           <>
             <span className="text-sm tabular-nums">
-              {criterion.format(group.value)}
+              {criterion.format(t, group.value)}
             </span>
             <RankBar
               fraction={best === 0 ? 0 : group.value / best}
@@ -319,8 +353,8 @@ function BandRow({
           */
           <span className="text-right text-xs leading-tight text-tertiary-foreground">
             {group.posts.length === 0
-              ? 'Nothing scored here'
-              : `Under ${MIN_BAND_POSTS} placed — too few to compare`}
+              ? t('analytics.quality.band.nothingScored')
+              : t('analytics.quality.band.tooFew', { minimum: MIN_BAND_POSTS })}
           </span>
         )}
       </div>
@@ -330,54 +364,62 @@ function BandRow({
 
 /** What the comparison is over. The first sentence of the card's one note. */
 function coverage(
+  t: TFunction,
   view: QualityView,
   comparable: number,
   stale: number,
 ): string {
-  const parts: string[] = []
-  if (view.unscored > 0) parts.push(`${view.unscored} never scored`)
-  if (view.awaiting > 0)
-    parts.push(`${view.awaiting} still waiting on the platforms`)
-  if (stale > 0)
-    parts.push(
-      `${stale} edited after scoring, so the score is of different words`,
+  const reasons: string[] = []
+  if (view.unscored > 0)
+    reasons.push(
+      t('analytics.quality.reasonUnscored', { count: view.unscored }),
     )
+  if (view.awaiting > 0)
+    reasons.push(
+      t('analytics.quality.reasonAwaiting', { count: view.awaiting }),
+    )
+  if (stale > 0)
+    reasons.push(t('analytics.quality.reasonStale', { count: stale }))
 
   const total = comparable + view.unscored + view.awaiting + stale
-  const head = `${comparable} of the ${total} posts published here can be compared`
-  return parts.length === 0 ? `${head}.` : `${head} — ${parts.join(', ')}.`
+  return reasons.length === 0
+    ? t('analytics.quality.coveragePlain', { comparable, total })
+    : t('analytics.quality.coverageWithReasons', {
+        comparable,
+        total,
+        reasons: reasons.join(', '),
+      })
 }
 
 function emptyTitle(
+  t: TFunction,
   view: QualityView,
   comparable: number,
   criteria: number,
 ): string {
   if (view.posts.length === 0 && view.awaiting === 0)
-    return 'Nothing scored yet'
+    return t('analytics.quality.emptyNothingScoredTitle')
   if (comparable === 0 && view.posts.length > 0)
-    return 'Every score is out of date'
-  if (comparable === 0) return 'Scored, nothing back yet'
+    return t('analytics.quality.emptyStaleTitle')
+  if (comparable === 0) return t('analytics.quality.emptyAwaitingTitle')
   return criteria === 0
-    ? 'Nothing reported enough to compare'
-    : 'Nothing to compare yet'
+    ? t('analytics.quality.emptyThinTitle')
+    : t('analytics.quality.emptyTitle')
 }
 
 function emptyBody(
+  t: TFunction,
   view: QualityView,
   comparable: number,
   criteria: number,
 ): string {
-  if (view.posts.length === 0 && view.awaiting === 0) {
-    return 'Nothing here has been through a quality check, so there is nothing to hold against what these posts earned. Score a few from the post editor and this fills in on its own.'
-  }
-  if (comparable === 0 && view.posts.length > 0) {
-    return 'Every scored post here has been edited since, so each score describes words that never went out. Re-score any of them and it comes back into the comparison.'
-  }
-  if (comparable === 0) {
-    return `${view.awaiting} scored ${view.awaiting === 1 ? 'post has' : 'posts have'} gone out and the platforms haven't reported on them yet. This usually takes a few hours.`
-  }
+  if (view.posts.length === 0 && view.awaiting === 0)
+    return t('analytics.quality.emptyNothingScoredBody')
+  if (comparable === 0 && view.posts.length > 0)
+    return t('analytics.quality.emptyStaleBody')
+  if (comparable === 0)
+    return t('analytics.quality.emptyAwaitingBody', { count: view.awaiting })
   return criteria === 0
-    ? 'The scored posts here have not reported enough for any of the comparisons to mean anything yet.'
-    : 'There is nothing to compare here yet.'
+    ? t('analytics.quality.emptyThinBody')
+    : t('analytics.quality.emptyBody')
 }

@@ -4,7 +4,10 @@ import {
   TrendDownIcon,
   TrendUpIcon,
 } from '@phosphor-icons/react'
+import type { TFunction } from 'i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
+import { formatDate, formatNumber } from '@/lib/intl'
 import { DecayCurve, Heatmap } from './charts'
 import { Basis, NotYet, SectionCard } from './shell'
 import { formatCount, formatHours, supports } from './format'
@@ -33,18 +36,21 @@ import type {
  * rearrange their week around it.
  */
 export function PatternsSection({ view }: { view: PatternsView }) {
+  const { t, i18n } = useTranslation()
   const timingReady =
     view.bestTimes && supports(view.bestTimes.sample, 'timing')
 
   return (
-    <SectionCard title="What we've learned" scope="all-time">
+    <SectionCard title={t('analytics.learned.title')} scope="all-time">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <CalendarBlankIcon
             className="size-4 text-tertiary-foreground"
             aria-hidden
           />
-          <h3 className="text-sm font-medium">When your posts land</h3>
+          <h3 className="text-sm font-medium">
+            {t('analytics.learned.whenPostsLand')}
+          </h3>
         </div>
         {timingReady && view.bestTimes ? (
           <>
@@ -55,28 +61,45 @@ export function PatternsSection({ view }: { view: PatternsView }) {
               hour; naming the slot — with the number of posts behind it —
               is the part they can act on, and the part that keeps a "best
               time" resting on one post from reading like a finding.
+
+              `<Trans>` rather than a bold span around an interpolation: the
+              emphasis is inside the sentence, and a sentence split around a
+              tag is a sentence no locale can reorder.
             */}
             {view.bestTimes.best && (
               <p className="text-sm">
-                Your strongest slot is{' '}
-                <strong className="font-medium">
-                  {slotLabel(view.bestTimes.best.day, view.bestTimes.best.hour)}
-                </strong>
-                , from {view.bestTimes.best.sample}{' '}
-                {view.bestTimes.best.sample === 1 ? 'post' : 'posts'}.
+                <Trans
+                  i18nKey="analytics.learned.strongestSlot"
+                  values={{
+                    slot: slotLabel(
+                      t,
+                      i18n.language,
+                      view.bestTimes.best.day,
+                      view.bestTimes.best.hour,
+                    ),
+                    posts: t('analytics.units.posts', {
+                      count: view.bestTimes.best.sample,
+                    }),
+                  }}
+                  components={[<strong key="0" className="font-medium" />]}
+                />
               </p>
             )}
             <Basis>
-              From {view.bestTimes.sample} measured posts across every hour you
-              have published in. Darker is better.
+              {t('analytics.learned.slotsBasis', {
+                posts: t('analytics.learned.measuredPosts', {
+                  count: view.bestTimes.sample,
+                }),
+              })}
             </Basis>
           </>
         ) : (
-          <NotYet title="Not enough posts to say yet">
-            This needs around thirty measured posts spread across different
-            hours.
-            {view.bestTimes && ` You have ${view.bestTimes.sample}.`} Until then
-            any grid would be a coin toss wearing a chart's clothes.
+          <NotYet title={t('analytics.learned.slotsNotYetTitle')}>
+            {view.bestTimes
+              ? t('analytics.learned.slotsNotYetBodyWithCount', {
+                  count: view.bestTimes.sample,
+                })
+              : t('analytics.learned.slotsNotYetBody')}
           </NotYet>
         )}
       </div>
@@ -84,49 +107,59 @@ export function PatternsSection({ view }: { view: PatternsView }) {
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <ClockIcon className="size-4 text-tertiary-foreground" aria-hidden />
-          <h3 className="text-sm font-medium">How long a post lives</h3>
+          <h3 className="text-sm font-medium">
+            {t('analytics.learned.howLongAPostLives')}
+          </h3>
         </div>
         {view.shelfLife && supports(view.shelfLife.sample, 'pattern') ? (
           <MaturityCurve shelfLife={view.shelfLife} />
         ) : (
-          <NotYet title="Not enough finished posts yet">
-            A shelf life needs posts that have stopped earning, which takes a
-            few weeks of publishing.
+          <NotYet title={t('analytics.learned.lifespanNotYetTitle')}>
+            {t('analytics.learned.lifespanNotYetBody')}
           </NotYet>
         )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <PatternColumn
-          title="What works"
+          title={t('analytics.learned.whatWorks')}
           tone="positive"
           patterns={view.winners}
-          empty="Nothing has separated itself from the rest yet."
+          empty={t('analytics.learned.nothingSeparated')}
         />
         <PatternColumn
-          title="What's fading"
+          title={t('analytics.learned.whatsFading')}
           tone="negative"
           patterns={view.fading}
-          empty="Nothing has fallen off yet."
+          empty={t('analytics.learned.nothingFallen')}
         />
       </div>
     </SectionCard>
   )
 }
 
-const DAY_NAMES = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-]
-
 /** `Thursday 18:00` — a slot named the way someone would say it out loud. */
-function slotLabel(day: number, hour: number): string {
-  return `${DAY_NAMES[day] ?? ''} ${String(hour).padStart(2, '0')}:00`
+function slotLabel(
+  t: TFunction,
+  locale: string,
+  day: number,
+  hour: number,
+): string {
+  return t('analytics.units.slot', {
+    day: longWeekday(day, locale),
+    hour: t('analytics.units.hourOfDay', {
+      hour: String(hour).padStart(2, '0'),
+    }),
+  })
+}
+
+/** Monday-first, full names, from `Intl` — see `shortWeekdays`. */
+function longWeekday(day: number, locale: string): string {
+  return formatDate(
+    new Date(Date.UTC(2024, 0, 1 + day)),
+    { weekday: 'long', timeZone: 'UTC' },
+    locale,
+  )
 }
 
 /**
@@ -140,6 +173,7 @@ function slotLabel(day: number, hour: number): string {
  * it here means that behaviour is explained rather than merely enforced.
  */
 function MaturityCurve({ shelfLife }: { shelfLife: ShelfLife }) {
+  const { t } = useTranslation()
   const last = shelfLife.curve[shelfLife.curve.length - 1]
   const half = shelfLife.milestones.find((m) => m.share === 0.5)
 
@@ -147,8 +181,11 @@ function MaturityCurve({ shelfLife }: { shelfLife: ShelfLife }) {
     <>
       {half && (
         <p className="text-sm">
-          Half of everything a post earns arrives in the first{' '}
-          <strong className="font-medium">{formatHours(half.hour)}</strong>.
+          <Trans
+            i18nKey="analytics.learned.halfLife"
+            values={{ span: formatHours(t, half.hour) }}
+            components={[<strong key="0" className="font-medium" />]}
+          />
         </p>
       )}
 
@@ -159,28 +196,32 @@ function MaturityCurve({ shelfLife }: { shelfLife: ShelfLife }) {
       />
 
       <div className="flex justify-between text-xs text-tertiary-foreground">
-        <span>Published</span>
-        <span>{last ? formatHours(last.hour) : ''} later</span>
+        <span>{t('analytics.charts.published')}</span>
+        <span>
+          {last &&
+            t('analytics.charts.later', { span: formatHours(t, last.hour) })}
+        </span>
       </div>
 
       <ul className="flex flex-wrap gap-x-5 gap-y-1">
         {shelfLife.milestones.map((m) => (
           <li key={m.share} className="flex items-baseline gap-1.5 text-xs">
             <span className="font-medium tabular-nums">
-              {Math.round(m.share * 100)}%
+              {t('analytics.units.percent', {
+                value: formatNumber(Math.round(m.share * 100)),
+              })}
             </span>
             <span className="text-secondary-foreground">
-              by {formatHours(m.hour)}
+              {t('analytics.learned.milestone', {
+                span: formatHours(t, m.hour),
+              })}
             </span>
           </li>
         ))}
       </ul>
 
       <Basis>
-        From {shelfLife.sample} posts that have run their course. The gap
-        between the first and last mark is your window to act on a post — after
-        it, its number is settled. It is also why a post younger than a day is
-        shown as still counting rather than ranked.
+        {t('analytics.learned.lifespanBasis', { count: shelfLife.sample })}
       </Basis>
     </>
   )
@@ -197,6 +238,7 @@ function PatternColumn({
   patterns: Pattern[]
   empty: string
 }) {
+  const { t } = useTranslation()
   const Icon = tone === 'positive' ? TrendUpIcon : TrendDownIcon
   return (
     <div className="flex flex-col gap-2">
@@ -224,8 +266,13 @@ function PatternColumn({
                   dot that used to sit here graded the sample it was printed
                   beside, and a colour is a verdict — this is a note. */}
               <Basis>
-                {p.sample} posts
-                {p.confidence === 'low' && ' — too few to lean on'}
+                {p.confidence === 'low'
+                  ? t('analytics.learned.patternTooFew', {
+                      support: t('analytics.learned.patternSupport', {
+                        count: p.sample,
+                      }),
+                    })
+                  : t('analytics.learned.patternSupport', { count: p.sample })}
               </Basis>
             </li>
           ))}
@@ -247,14 +294,14 @@ function PatternColumn({
  * would be done.
  */
 export function NextSection({ view }: { view: NextView }) {
+  const { t } = useTranslation()
   return (
-    <SectionCard title="What's next" scope="ahead">
+    <SectionCard title={t('analytics.next.title')} scope="ahead">
       {view.pacing && <PacingBlock pacing={view.pacing} />}
 
       {view.actions.length === 0 ? (
-        <NotYet title="Nothing needs you right now">
-          When a slot goes unused, a post outruns its usual, or an account goes
-          quiet, it shows up here.
+        <NotYet title={t('analytics.next.nothingTitle')}>
+          {t('analytics.next.nothingBody')}
         </NotYet>
       ) : (
         <ul className="flex flex-col">
@@ -292,6 +339,7 @@ export function NextSection({ view }: { view: NextView }) {
  * would look exactly as authoritative as a real one.
  */
 function PacingBlock({ pacing }: { pacing: Pacing }) {
+  const { t } = useTranslation()
   const fraction =
     pacing.planned === 0 ? 0 : Math.min(1, pacing.published / pacing.planned)
   const behind = pacing.published < pacing.planned
@@ -300,12 +348,16 @@ function PacingBlock({ pacing }: { pacing: Pacing }) {
     <div className="flex flex-col gap-2 rounded-md bg-secondary px-4 py-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <span className="text-sm font-medium">
-          {pacing.published} of {pacing.planned} posts {pacing.periodLabel}
+          {t('analytics.next.pacing', {
+            published: pacing.published,
+            planned: pacing.planned,
+            period: pacing.periodLabel,
+          })}
         </span>
         <span
           className={cn('text-xs', behind ? 'text-warning' : 'text-positive')}
         >
-          {behind ? 'Behind the plan' : 'On plan'}
+          {behind ? t('analytics.next.behind') : t('analytics.next.onPlan')}
         </span>
       </div>
 
@@ -321,17 +373,22 @@ function PacingBlock({ pacing }: { pacing: Pacing }) {
 
       {pacing.kind === 'bounded' && pacing.projected !== undefined ? (
         <Basis>
-          At this rate this campaign finishes on {pacing.endsOn} with about{' '}
-          {formatCount(pacing.projected)} posts
-          {pacing.target !== undefined &&
-            ` against a plan of ${formatCount(pacing.target)}`}
-          .
+          {t(
+            pacing.target === undefined
+              ? 'analytics.next.projected'
+              : 'analytics.next.projectedAgainstTarget',
+            {
+              date: pacing.endsOn,
+              projected: formatCount(t, pacing.projected),
+              target:
+                pacing.target === undefined
+                  ? undefined
+                  : formatCount(t, pacing.target),
+            },
+          )}
         </Basis>
       ) : (
-        <Basis>
-          This campaign runs on until you stop it, so this is a rate rather than
-          a finish line.
-        </Basis>
+        <Basis>{t('analytics.next.evergreen')}</Basis>
       )}
     </div>
   )

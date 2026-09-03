@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import {
   MEASURES,
   type Coverage,
@@ -259,9 +260,14 @@ function readCoverage(
 }
 
 /** The window as the card's own heading reads it — `over last 28 days`. */
-export function readPeriod(overview: AnalyticsOverview): Period {
+export function readPeriod(t: TFunction, overview: AnalyticsOverview): Period {
   const { from, to, days } = overview.window
-  return { label: `last ${days} days`, from, to, days }
+  return {
+    label: t('analytics.units.lastDays', { count: days }),
+    from,
+    to,
+    days,
+  }
 }
 
 /**
@@ -274,12 +280,15 @@ export function readPeriod(overview: AnalyticsOverview): Period {
  * per post with its title and date, and this payload counts posts without
  * naming them. The card drops the rail and its legend entry on its own.
  */
-export function buildNowView(overview: AnalyticsOverview): NowView {
+export function buildNowView(
+  t: TFunction,
+  overview: AnalyticsOverview,
+): NowView {
   const values: Partial<Record<OverviewMetric, number>> = {}
   for (const card of overview.cards) values[card.metric] = card.value
 
   return {
-    period: readPeriod(overview),
+    period: readPeriod(t, overview),
     // The day the previous stretch ended, which is the day this one began. The
     // card's legend reads "the stretch to 15 Jul" off it.
     comparedToDate: overview.window.from,

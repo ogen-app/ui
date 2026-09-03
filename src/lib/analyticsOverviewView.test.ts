@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { t } from '@/test/i18n'
 import { buildNowView } from '@/lib/analyticsOverviewView'
 import type {
   AnalyticsOverview,
@@ -82,6 +83,7 @@ describe('flows are differenced back to per-bucket', () => {
     // The card accumulates a flow itself and scales onto the tile figure, so
     // handing it the wire's cumulative array draws the sum of a sum.
     const view = buildNowView(
+      t,
       overview([card('reach', { value: 400 })], {
         reach: series({ current: [100, 250, 300, 400] }),
       }),
@@ -94,6 +96,7 @@ describe('flows are differenced back to per-bucket', () => {
 
   it('leaves a level alone — followers is where the count stood, not what arrived', () => {
     const view = buildNowView(
+      t,
       overview([card('followers', { value: 14200 })], {
         followers: series({ current: [13900, 14000, 14100, 14200] }),
       }),
@@ -106,6 +109,7 @@ describe('flows are differenced back to per-bucket', () => {
 
   it('leaves a rate alone — a per-bucket ratio carries nothing over', () => {
     const view = buildNowView(
+      t,
       overview([card('engagement_rate', { value: 0.05 })], {
         engagement_rate: series({ current: [0.04, 0.06, 0.05, 0.05] }),
       }),
@@ -120,6 +124,7 @@ describe('flows are differenced back to per-bucket', () => {
     // `alignLen` pads a short previous-window array with trailing zeros. A flow
     // cannot un-earn reach, so the fall that padding creates is not a quantity.
     const view = buildNowView(
+      t,
       overview([card('reach', { value: 400 })], {
         reach: series({
           current: [400, 400, 400, 400],
@@ -136,6 +141,7 @@ describe('flows are differenced back to per-bucket', () => {
 describe('previous is a different quantity per metric', () => {
   it('reads a flow off the previous series, immune to trailing pad-zeros', () => {
     const view = buildNowView(
+      t,
       overview([card('reach', { value: 400 })], {
         reach: series({ previous: [100, 300, 0, 0] }),
       }),
@@ -149,6 +155,7 @@ describe('previous is a different quantity per metric', () => {
     // The server's own `followersStart`, which is also the end of the previous
     // window — so the tile's chip and the ghost behind the chart agree.
     const view = buildNowView(
+      t,
       overview([card('followers', { value: 14200 })], {
         followers: series({ current: [13900, 14000, 14100, 14200] }),
       }),
@@ -161,6 +168,7 @@ describe('previous is a different quantity per metric', () => {
     // The server compares the ratio of the previous window's sums, which a
     // series of per-bucket ratios cannot be summed back into.
     const view = buildNowView(
+      t,
       overview([card('engagement_rate', { value: 0.06, delta_pct: 20 })], {
         engagement_rate: series({ previous: [0.05, 0.05, 0.05, 0.05] }),
       }),
@@ -173,6 +181,7 @@ describe('previous is a different quantity per metric', () => {
 describe('delta_pct: 0 is two different answers', () => {
   it('reads a flat rate as flat when the previous window reported one', () => {
     const view = buildNowView(
+      t,
       overview([card('engagement_rate', { value: 0.05, delta_pct: 0 })], {
         engagement_rate: series({ previous: [0.05, 0.05, 0.05, 0.05] }),
       }),
@@ -186,6 +195,7 @@ describe('delta_pct: 0 is two different answers', () => {
     // tell "unchanged" from "nothing to change from". The tile says "nothing to
     // compare" rather than drawing a 0% chip.
     const view = buildNowView(
+      t,
       overview([card('engagement_rate', { value: 0.05, delta_pct: 0 })], {
         engagement_rate: series({ previous: [0, 0, 0, 0] }),
       }),
@@ -196,6 +206,7 @@ describe('delta_pct: 0 is two different answers', () => {
 
   it('gives a flow no comparison when the previous window earned nothing', () => {
     const view = buildNowView(
+      t,
       overview([card('reach', { value: 400 })], { reach: series() }),
     )
 
@@ -207,6 +218,7 @@ describe('insight tone comes from the rule, not the severity', () => {
   it('separates the two directions of the one rule that fires both ways', () => {
     const both = (severity: 'info' | 'note') =>
       buildNowView(
+        t,
         overview(
           [],
           {},
@@ -224,6 +236,7 @@ describe('insight tone comes from the rule, not the severity', () => {
     // `rate_vs_reach` explains arithmetic — rate fell because reach rose. Red
     // would make a definition look like a problem.
     const view = buildNowView(
+      t,
       overview(
         [],
         {},
@@ -241,6 +254,7 @@ describe('insight tone comes from the rule, not the severity', () => {
 
   it('falls back to neutral for a rule it has never heard of', () => {
     const view = buildNowView(
+      t,
       overview(
         [],
         {},
@@ -255,6 +269,7 @@ describe('insight tone comes from the rule, not the severity', () => {
 describe('what the endpoint cannot answer', () => {
   it('carries no usual range, because every card comes back insufficient_history', () => {
     const view = buildNowView(
+      t,
       overview([card('reach', { value: 400 })], { reach: series() }),
     )
 
@@ -265,6 +280,7 @@ describe('what the endpoint cannot answer', () => {
     // Written against the field rather than against today's absence, so the
     // verdict lines and the cone return without this mapper being edited.
     const view = buildNowView(
+      t,
       overview([card('reach', { value: 400, baseline: 'above_usual' })], {
         reach: series({
           band: [
@@ -282,7 +298,7 @@ describe('what the endpoint cannot answer', () => {
   })
 
   it('draws no publication rail — the payload counts posts without naming them', () => {
-    const view = buildNowView(overview([], {}))
+    const view = buildNowView(t, overview([], {}))
     expect(view.publications).toBeUndefined()
   })
 })
@@ -290,6 +306,7 @@ describe('what the endpoint cannot answer', () => {
 describe('coverage and freshness', () => {
   it('treats the Go zero time as no freshness rather than a date in year 1', () => {
     const view = buildNowView(
+      t,
       overview([], {}, { updated_at: '0001-01-01T00:00:00Z' }),
     )
 
@@ -298,6 +315,7 @@ describe('coverage and freshness', () => {
 
   it('counts published posts and reads anything earned as measured', () => {
     const view = buildNowView(
+      t,
       overview(
         [card('reach', { value: 4200 }), card('posts_published', { value: 9 })],
         { reach: series({ current: [4200, 4200, 4200, 4200] }) },
@@ -311,6 +329,7 @@ describe('coverage and freshness', () => {
   it('says nothing is measured when posts went out and none reported', () => {
     // The card's own empty state, and the sentence it prints quotes `published`.
     const view = buildNowView(
+      t,
       overview([card('reach'), card('posts_published', { value: 9 })], {}),
     )
 
@@ -321,7 +340,7 @@ describe('coverage and freshness', () => {
 
 describe('the window', () => {
   it('names the stretch and anchors the comparison to the day it began', () => {
-    const view = buildNowView(overview([], {}))
+    const view = buildNowView(t, overview([], {}))
 
     expect(view.period).toEqual({
       label: 'last 4 days',
@@ -336,6 +355,7 @@ describe('the window', () => {
 
   it('renames posts_published onto the view’s own id and keeps the server’s order', () => {
     const view = buildNowView(
+      t,
       overview(
         [card('reach'), card('interactions'), card('posts_published')],
         {},

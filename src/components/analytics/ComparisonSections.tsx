@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import {
   ColumnChart,
@@ -17,17 +18,12 @@ import {
   drawnSeries,
   formatDay,
   formatMeasure,
+  measureCopy,
   measureMeta,
   periodPhrase,
   supports,
 } from './format'
-import {
-  SLEEVE_DIMENSIONS,
-  type Insight,
-  type MeasureId,
-  type NowView,
-  type SideBySideView,
-} from './types'
+import type { Insight, MeasureId, NowView, SideBySideView } from './types'
 
 /* ------------------------------------------------------------------ now -- */
 
@@ -55,12 +51,13 @@ export function NowSection({
   /** Whether a platform filter above this card reaches it. See `SectionCard`. */
   everyPlatform?: boolean
 }) {
+  const { t } = useTranslation()
   const headline = view.readings[0]
   const [selectedMeasure, setSelectedMeasure] = useState<MeasureId | null>(
     initialMeasure ?? null,
   )
 
-  const window = periodPhrase(view.period)
+  const window = periodPhrase(t, view.period)
 
   // Nothing has reported. The frame stays and the plot is empty — a flat line
   // along the floor of an axis is a picture of *no reach*, and what is true is
@@ -70,17 +67,18 @@ export function NowSection({
   if (view.coverage.measured === 0) {
     return (
       <SectionCard
-        title="What happened"
+        title={t('analytics.now.title')}
         qualifier={window}
         scope="lens"
         everyPlatform={everyPlatform}
       >
         <EmptyChart />
         <p className="text-[13px] text-secondary-foreground">
-          No data yet —{' '}
           {view.coverage.published === 0
-            ? 'nothing has gone out in this window, so there is nothing to measure.'
-            : `${view.coverage.published} ${view.coverage.published === 1 ? 'post has' : 'posts have'} gone out and none of them have reported numbers yet. Platforms usually take a few hours.`}
+            ? t('analytics.now.noDataNothingOut')
+            : t('analytics.now.noDataNotReported', {
+                count: view.coverage.published,
+              })}
         </p>
         <Freshness at={view.coverage.lastRefreshedAt} />
       </SectionCard>
@@ -99,6 +97,7 @@ export function NowSection({
   const reading =
     view.readings.find((r) => r.measure === selectedMeasure) ?? headline
   const meta = measureMeta(reading.measure)
+  const copy = measureCopy(t, reading.measure)
 
   // A flow accumulates into a period total and is drawn as progress; a level
   // is already the number on the day, and summing it would invent a quantity
@@ -124,7 +123,7 @@ export function NowSection({
 
   return (
     <SectionCard
-      title="What happened"
+      title={t('analytics.now.title')}
       qualifier={window}
       scope="lens"
       everyPlatform={everyPlatform}
@@ -150,7 +149,7 @@ export function NowSection({
             title, and the dates are on the axis.
           */}
           <h3 className="font-display text-base font-medium">
-            {meta.periodLabel}
+            {copy.periodLabel}
           </h3>
           <Legend
             columns={columns}
@@ -165,8 +164,8 @@ export function NowSection({
             series={series}
             band={reading.expected ?? undefined}
             publications={publications}
-            endLabel="Today"
-            formatValue={(v) => formatMeasure(reading.measure, v)}
+            endLabel={t('analytics.charts.today')}
+            formatValue={(v) => formatMeasure(t, reading.measure, v)}
           />
         ) : (
           <TrendChart
@@ -175,12 +174,14 @@ export function NowSection({
             band={reading.expected ?? undefined}
             bandShape={flow ? 'cone' : 'flat'}
             publications={publications}
-            endLabel="Today"
-            formatValue={(v) => formatMeasure(reading.measure, v)}
+            endLabel={t('analytics.charts.today')}
+            formatValue={(v) => formatMeasure(t, reading.measure, v)}
             // The legend's own wording. The hover card names the same two lines
             // the key above it does, and two names for one line is two lines.
             previousLabel={
-              anchor ? `the stretch to ${anchor}` : 'the stretch before'
+              anchor
+                ? t('analytics.charts.legendStretchTo', { day: anchor })
+                : t('analytics.charts.legendStretchBefore')
             }
           />
         )}
@@ -216,8 +217,9 @@ export function NowSection({
  * for the one fact that applies to all of it at once.
  */
 function Freshness({ at }: { at?: string }) {
+  const { t } = useTranslation()
   if (!at) return null
-  return <Basis>Updated {at}</Basis>
+  return <Basis>{t('analytics.now.updated', { when: at })}</Basis>
 }
 
 function Legend({
@@ -235,6 +237,7 @@ function Legend({
   hasPublications: boolean
   anchor: string | null
 }) {
+  const { t } = useTranslation()
   return (
     <ul className="flex flex-wrap items-center gap-3 text-xs text-tertiary-foreground">
       <li className="flex items-center gap-1.5">
@@ -246,7 +249,9 @@ function Legend({
         ) : (
           <span className="h-0.5 w-4 rounded-full bg-foreground" aria-hidden />
         )}
-        {columns ? 'each day' : 'this stretch'}
+        {columns
+          ? t('analytics.charts.legendEachDay')
+          : t('analytics.charts.legendThisStretch')}
       </li>
       {hasPrevious && (
         <li className="flex items-center gap-1.5">
@@ -258,13 +263,15 @@ function Legend({
             }}
             aria-hidden
           />
-          {anchor ? `the stretch to ${anchor}` : 'the stretch before'}
+          {anchor
+            ? t('analytics.charts.legendStretchTo', { day: anchor })
+            : t('analytics.charts.legendStretchBefore')}
         </li>
       )}
       {hasBand && (
         <li className="flex items-center gap-1.5">
           <span className="h-2.5 w-4 rounded-[2px] bg-quaternary" aria-hidden />
-          usual range
+          {t('analytics.charts.legendUsualRange')}
         </li>
       )}
       {hasPublications && (
@@ -275,7 +282,7 @@ function Legend({
             className="h-2.5 w-[1.5px] bg-tertiary-foreground"
             aria-hidden
           />
-          a post went out
+          {t('analytics.charts.legendPublication')}
         </li>
       )}
     </ul>
@@ -324,17 +331,19 @@ export function InsightLine({ insight }: { insight: Insight }) {
  * someone to double down on their worst-performing channel.
  */
 export function SideBySideSection({ view }: { view: SideBySideView }) {
-  const meta = measureMeta(view.measure)
+  const { t } = useTranslation()
+  const copy = measureCopy(t, view.measure)
   const rows = [...view.rows].sort((a, b) => b.value - a.value)
   const leader = rows[0]?.value ?? 0
   const thin = rows.filter((r) => !supports(r.sleeve.sample, 'rank'))
 
   if (rows.length < 2) {
     return (
-      <SectionCard title="Side by side" scope="lens">
-        <NotYet title="Nothing to compare yet">
-          There is only one {view.dimension} with measured posts, so there is no
-          second thing to hold it against.
+      <SectionCard title={t('analytics.sideBySide.title')} scope="lens">
+        <NotYet title={t('analytics.sideBySide.nothingTitle')}>
+          {t('analytics.sideBySide.nothingBody', {
+            dimension: t(`analytics.sleeves.${view.dimension}` as const),
+          })}
         </NotYet>
       </SectionCard>
     )
@@ -342,18 +351,24 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
 
   return (
     <SectionCard
-      title="Side by side"
+      title={t('analytics.sideBySide.title')}
       scope="lens"
       status={
-        <span className="text-xs text-secondary-foreground">{meta.label}</span>
+        <span className="text-xs text-secondary-foreground">{copy.label}</span>
       }
     >
       <ul className="flex flex-col">
         <li className="flex items-center gap-3 border-b border-border pb-1.5 text-xs text-tertiary-foreground">
-          <span className="flex-1">{SLEEVE_DIMENSIONS[view.dimension]}</span>
-          <span className="w-20 text-right">{meta.label}</span>
-          <span className="w-16 text-right">per post</span>
-          <span className="w-16 text-right">vs before</span>
+          <span className="flex-1">
+            {t(`analytics.sleeves.${view.dimension}` as const)}
+          </span>
+          <span className="w-20 text-right">{copy.label}</span>
+          <span className="w-16 text-right">
+            {t('analytics.sideBySide.perPost')}
+          </span>
+          <span className="w-16 text-right">
+            {t('analytics.sideBySide.vsBefore')}
+          </span>
         </li>
         {rows.map((row) => {
           const d = delta(view.measure, row.value, row.previous)
@@ -375,8 +390,7 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
                     {row.sleeve.label}
                   </span>
                   <span className="shrink-0 text-xs text-tertiary-foreground">
-                    {row.sleeve.sample}{' '}
-                    {row.sleeve.sample === 1 ? 'post' : 'posts'}
+                    {t('analytics.units.posts', { count: row.sleeve.sample })}
                   </span>
                 </div>
                 <RankBar
@@ -385,16 +399,18 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
                 />
               </div>
               <span className="w-20 text-right text-sm tabular-nums">
-                {formatMeasure(view.measure, row.value)}
+                {formatMeasure(t, view.measure, row.value)}
               </span>
               <span className="w-16 text-right text-sm tabular-nums text-secondary-foreground">
-                {formatMeasure(view.measure, row.perPost)}
+                {formatMeasure(t, view.measure, row.perPost)}
               </span>
               <span className="flex w-16 justify-end">
                 {d ? (
                   <DeltaChip delta={d} />
                 ) : (
-                  <span className="text-xs text-tertiary-foreground">—</span>
+                  <span className="text-xs text-tertiary-foreground">
+                    {t('analytics.units.none')}
+                  </span>
                 )}
               </span>
             </li>
@@ -409,7 +425,9 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
       */}
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-medium">{meta.label} day by day</h3>
+          <h3 className="text-sm font-medium">
+            {t('analytics.sideBySide.dayByDay', { measure: copy.label })}
+          </h3>
           <ul className="flex flex-wrap items-center gap-3 text-xs text-secondary-foreground">
             {rows.map((row) => (
               <li key={row.sleeve.id} className="flex items-center gap-1.5">
@@ -432,17 +450,17 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
       {view.verdict ? (
         <InsightLine insight={view.verdict} />
       ) : (
-        <NotYet title="No call to make yet">
-          These sleeves are too close, or too thinly sampled, to say one is
-          beating another.
+        <NotYet title={t('analytics.sideBySide.noCallTitle')}>
+          {t('analytics.sideBySide.noCallBody')}
         </NotYet>
       )}
 
       {thin.length > 0 && (
         <Basis>
-          {thin.map((r) => r.sleeve.label).join(', ')}{' '}
-          {thin.length === 1 ? 'has' : 'have'} fewer than five measured posts —
-          shown, but not ranked against the rest.
+          {t('analytics.sideBySide.thin', {
+            count: thin.length,
+            sleeves: thin.map((r) => r.sleeve.label).join(', '),
+          })}
         </Basis>
       )}
     </SectionCard>

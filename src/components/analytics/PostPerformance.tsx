@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { resolvePlatformInfo } from '@/lib/platformDictionary'
 import { EmptyChart, PostSeriesChart } from './charts'
 import { Segmented } from './ComparisonBar'
@@ -7,7 +9,7 @@ import {
   bucketSeries,
   delta,
   formatMeasure,
-  measureMeta,
+  measureCopy,
   rateFloor,
   ratioSeries,
   runningTotal,
@@ -90,12 +92,13 @@ const MEASURE_ORDER: MeasureId[] = [
  * between a floor and a result.
  */
 export function PostIdentityCard({ post }: { post: PostIdentity }) {
+  const { t } = useTranslation()
   const info = resolvePlatformInfo(post.platform)
   const Icon = info?.icon
 
   return (
     <SectionCard
-      title="The post"
+      title={t('analytics.post.identityTitle')}
       status={
         post.permalink ? (
           <a
@@ -104,7 +107,9 @@ export function PostIdentityCard({ post }: { post: PostIdentity }) {
             rel="noreferrer noopener"
             className="text-xs font-medium underline underline-offset-2"
           >
-            Open on {info?.name ?? post.platform}
+            {t('analytics.post.openOn', {
+              platform: info?.name ?? post.platform,
+            })}
           </a>
         ) : undefined
       }
@@ -140,7 +145,7 @@ export function PostIdentityCard({ post }: { post: PostIdentity }) {
             the date and nothing else. "Published / 18 Aug 2026, 08:20" and
             "Scheduled / Friday 21 Aug, 09:00" read as one row of the same
             kind, which is what lets someone scan a column of these. */}
-        <Fact label={dateLabel(post)}>
+        <Fact label={dateLabel(t, post)}>
           {post.publishedOn ? (
             <>
               {post.publishedOn}
@@ -153,20 +158,24 @@ export function PostIdentityCard({ post }: { post: PostIdentity }) {
             </>
           ) : (
             <span className="text-secondary-foreground">
-              {post.scheduledFor ?? 'No date set'}
+              {post.scheduledFor ?? t('analytics.post.noDateSet')}
             </span>
           )}
         </Fact>
-        {post.campaign && <Fact label="Campaign">{post.campaign}</Fact>}
+        {post.campaign && (
+          <Fact label={t('analytics.post.campaign')}>{post.campaign}</Fact>
+        )}
       </dl>
     </SectionCard>
   )
 }
 
 /** Published, or the nearest true thing to it. */
-function dateLabel(post: PostIdentity): string {
-  if (post.publishedOn) return 'Published'
-  return post.scheduledFor ? 'Scheduled' : 'Not scheduled'
+function dateLabel(t: TFunction, post: PostIdentity): string {
+  if (post.publishedOn) return t('analytics.post.published')
+  return post.scheduledFor
+    ? t('analytics.post.scheduled')
+    : t('analytics.post.notScheduled')
 }
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
@@ -193,12 +202,13 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * with each other, which is the one thing they are for.
  */
 export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
+  const { t } = useTranslation()
+
   if (view.maturity === 'unpublished') {
     return (
-      <SectionCard title="Performance overview">
-        <NotYet title="Nothing to measure yet">
-          This post hasn't gone out. Once it does, what it earns shows up here —
-          and how that compares with what your posts normally do.
+      <SectionCard title={t('analytics.post.overviewTitle')}>
+        <NotYet title={t('analytics.post.unpublishedTitle')}>
+          {t('analytics.post.unpublishedBody')}
         </NotYet>
       </SectionCard>
     )
@@ -213,10 +223,12 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
       // answer: forty minutes is why there is nothing to show. What is *not*
       // here is the publication date — that is on the card above, and a header
       // restating it is the same fact in two type sizes.
-      <SectionCard title="Performance overview" qualifier={window_(view)}>
-        <NotYet title="Nothing back from the platform yet">
-          This post is out. The platform hasn't reported any numbers for it —
-          that usually takes a few hours.
+      <SectionCard
+        title={t('analytics.post.overviewTitle')}
+        qualifier={window_(t, view)}
+      >
+        <NotYet title={t('analytics.post.silentTitle')}>
+          {t('analytics.post.silentBody')}
         </NotYet>
         <Freshness at={view.lastRefreshedAt} />
       </SectionCard>
@@ -228,7 +240,7 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
   // the chip, because the two comparisons look identical and mean opposite
   // things on a four-hour-old post.
   const ageCorrected = view.maturity !== 'final'
-  const insights = [percentileInsight(view), view.insight].filter(
+  const insights = [percentileInsight(t, view), view.insight].filter(
     (i): i is Insight => i !== null,
   )
   // Every measure that came back, in the order the cards below stack — so the
@@ -237,7 +249,10 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
   const tiles = orderedMetrics(view.metrics)
 
   return (
-    <SectionCard title="Performance overview" qualifier={window_(view)}>
+    <SectionCard
+      title={t('analytics.post.overviewTitle')}
+      qualifier={window_(t, view)}
+    >
       {/*
         Two rows, deliberately, once there are enough figures to need them.
         Seven tiles across one line are 90px each: every label wraps, "Engagement
@@ -274,7 +289,7 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
         surfaces keeps it.
       */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-        <Basis>{MATURITY_NOTE[view.maturity]}</Basis>
+        <Basis>{maturityNote(t, view.maturity)}</Basis>
         <Freshness at={view.lastRefreshedAt} />
       </div>
     </SectionCard>
@@ -300,24 +315,27 @@ export function PostMeasureCard({
   view: PostPerformanceView
   measure: MeasureId
 }) {
+  const { t } = useTranslation()
   const [reading, setReading] = useState<PostSeriesReading>('total')
-  const meta = measureMeta(measure)
+  const copy = measureCopy(t, measure)
   const metric = view.metrics.find((m) => m.measure === measure)
   const points = seriesFor(view, measure, reading)
   const { mode, interval } = readingShape(reading)
-  const bucket = BUCKET[interval]
 
   return (
     <SectionCard
-      title={meta.label}
+      title={copy.label}
       status={
         <Segmented
           value={reading}
           onChange={setReading}
           options={[
-            { value: 'total' as const, label: 'Running total' },
-            { value: 'hour' as const, label: '1H' },
-            { value: 'day' as const, label: '1D' },
+            {
+              value: 'total' as const,
+              label: t('analytics.post.readingTotal'),
+            },
+            { value: 'hour' as const, label: t('analytics.post.readingHour') },
+            { value: 'day' as const, label: t('analytics.post.readingDay') },
           ]}
         />
       }
@@ -335,12 +353,11 @@ export function PostMeasureCard({
         // figure above it is still true, which is why the card stays.
         <div className="flex flex-col gap-2">
           <EmptyChart
-            label="No history recorded for this post"
+            label={t('analytics.post.noHistoryLabel')}
             className="h-32"
           />
           <Basis>
-            {meta.label} was collected as a total. Nothing recorded how it
-            arrived, so there is no shape to draw.
+            {t('analytics.post.noHistoryBasis', { measure: copy.label })}
           </Basis>
         </div>
       ) : peak(points) === 0 ? (
@@ -350,19 +367,20 @@ export function PostMeasureCard({
         // engaged with, when the rate is in the figure above.
         <div className="flex flex-col gap-2">
           <EmptyChart
-            label={`No ${bucket.noun} reached enough people to divide`}
+            label={
+              interval === 'hour'
+                ? t('analytics.post.noHourReached')
+                : t('analytics.post.noDayReached')
+            }
             className="h-32"
           />
-          <Basis>
-            Try the day, or the running total — both have enough behind them to
-            divide by.
-          </Basis>
+          <Basis>{t('analytics.post.tryTheDay')}</Basis>
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
           <PostSeriesChart points={points} mode={mode} interval={interval} />
           <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-            <Basis>{legend(measure, reading)}</Basis>
+            <Basis>{legend(t, measure, reading)}</Basis>
             {/*
               The scale, but only where the reader hasn't been given it already.
               On a running total the last point is the figure at the top of the
@@ -372,8 +390,12 @@ export function PostMeasureCard({
             */}
             {mode === 'interval' && (
               <Basis>
-                peak {formatMeasure(measure, peak(points))} {bucket.article}{' '}
-                {bucket.noun}
+                {t(
+                  interval === 'hour'
+                    ? 'analytics.post.peakPerHour'
+                    : 'analytics.post.peakPerDay',
+                  { value: formatMeasure(t, measure, peak(points)) },
+                )}
               </Basis>
             )}
           </div>
@@ -397,28 +419,31 @@ function MeasureHeadline({
   metric: PostMetric
   ageCorrected: boolean
 }) {
+  const { t } = useTranslation()
   const d = delta(metric.measure, metric.value, metric.typical ?? null)
   const v = verdict(metric.value, metric.expected ?? null)
 
   return (
     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
       <span className="font-display text-3xl font-medium leading-none">
-        {formatMeasure(metric.measure, metric.value)}
+        {formatMeasure(t, metric.measure, metric.value)}
       </span>
       {d ? (
         <DeltaChip
           delta={d}
           title={
             ageCorrected
-              ? 'vs a typical post of yours at the same age'
-              : 'vs a typical post of yours'
+              ? t('analytics.tile.vsTypicalAtAge')
+              : t('analytics.tile.vsTypical')
           }
         />
       ) : (
         // Not "nothing to compare": what is missing on a post is a history to
         // compare *against*, and saying so is the difference between a young
         // workspace and a broken card.
-        <span className="text-xs text-tertiary-foreground">no typical yet</span>
+        <span className="text-xs text-tertiary-foreground">
+          {t('analytics.tile.noTypicalYet')}
+        </span>
       )}
       <VerdictLine measure={metric.measure} verdict={v} />
     </div>
@@ -432,8 +457,10 @@ function MeasureHeadline({
  * the post has earned so far, and *first* is what says the window starts at
  * publication rather than being a lens someone chose.
  */
-function window_(view: PostPerformanceView): string | undefined {
-  return view.measuredOver ? `over its first ${view.measuredOver}` : undefined
+function window_(t: TFunction, view: PostPerformanceView): string | undefined {
+  return view.measuredOver
+    ? t('analytics.post.overviewWindow', { span: view.measuredOver })
+    : undefined
 }
 
 /**
@@ -447,23 +474,33 @@ function tileColumns(count: number): number | undefined {
   return count >= 5 ? Math.ceil(count / 2) : undefined
 }
 
-/** "an hour" and "a day" — the one that reads "an day" is the one people notice. */
-const BUCKET = {
-  hour: { noun: 'hour', article: 'an' },
-  day: { noun: 'day', article: 'a' },
-} as const
-
-function legend(measure: MeasureId, reading: PostSeriesReading): string {
+/**
+ * What the chart under this card is showing.
+ *
+ * Four whole sentences rather than one assembled from a bucket noun and its
+ * article. English alone needs "an hour" against "a day", and every other
+ * language has agreement rules of its own — a legend stitched together at
+ * runtime is a legend that reads wrong in most of them.
+ */
+function legend(
+  t: TFunction,
+  measure: MeasureId,
+  reading: PostSeriesReading,
+): string {
+  const rate = measure === 'engagement_rate'
   if (reading === 'total') {
-    return measure === 'engagement_rate'
-      ? 'The rate so far — interactions divided by everyone reached up to that point.'
-      : 'Running total since publishing — the line ends on the figure above.'
+    return rate
+      ? t('analytics.post.legendRateTotal')
+      : t('analytics.post.legendTotal')
   }
-  const bucket = BUCKET[readingShape(reading).interval]
-  const gap = `A gap is ${bucket.article} ${bucket.noun} with nothing in it`
-  return measure === 'engagement_rate'
-    ? `The rate it was running at each ${bucket.noun}. ${gap} — or one too quiet to divide.`
-    : `What arrived in each ${bucket.noun}. ${gap}.`
+  if (readingShape(reading).interval === 'hour') {
+    return rate
+      ? t('analytics.post.legendRateHour')
+      : t('analytics.post.legendHour')
+  }
+  return rate
+    ? t('analytics.post.legendRateDay')
+    : t('analytics.post.legendDay')
 }
 
 /**
@@ -564,7 +601,10 @@ function peak(points: PostSeriesPoint[]): number {
  * Derived here rather than carried on the view, so the wording and the
  * threshold live in one place.
  */
-function percentileInsight(view: PostPerformanceView): Insight | null {
+function percentileInsight(
+  t: TFunction,
+  view: PostPerformanceView,
+): Insight | null {
   if (view.percentile === null) return null
   return {
     id: 'percentile',
@@ -574,9 +614,9 @@ function percentileInsight(view: PostPerformanceView): Insight | null {
         : view.percentile <= 25
           ? 'negative'
           : 'neutral',
-    text: `Better than ${view.percentile}% of your posts.`,
+    text: t('analytics.post.percentile', { percentile: view.percentile }),
     basis: view.sample
-      ? `Ranked on reach against ${view.sample} measured posts`
+      ? t('analytics.post.percentileBasis', { count: view.sample })
       : undefined,
   }
 }
@@ -589,16 +629,16 @@ function percentileInsight(view: PostPerformanceView): Insight | null {
  * marks belong on claims, and "still counting" is a caveat about the data
  * rather than a finding about the post.
  */
-const MATURITY_NOTE: Record<PostMaturity, string> = {
-  unpublished: '',
-  counting:
-    'Still counting — every figure above is a floor rather than a result.',
-  settling: 'Past its peak, and still adding a little.',
-  final: 'This post has stopped earning — these numbers are final.',
+function maturityNote(t: TFunction, maturity: PostMaturity): string {
+  if (maturity === 'counting') return t('analytics.post.maturityCounting')
+  if (maturity === 'settling') return t('analytics.post.maturitySettling')
+  if (maturity === 'final') return t('analytics.post.maturityFinal')
+  return ''
 }
 
 /** When these numbers last moved. The last beat of every card on these surfaces. */
 function Freshness({ at }: { at?: string }) {
+  const { t } = useTranslation()
   if (!at) return null
-  return <Basis>Updated {at}</Basis>
+  return <Basis>{t('analytics.post.updated', { when: at })}</Basis>
 }

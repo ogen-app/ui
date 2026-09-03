@@ -1,8 +1,10 @@
 import { CaretDownIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
+import { measureCopy } from './format'
 import {
-  MEASURES,
-  SLEEVE_DIMENSIONS,
+  MEASURE_IDS,
+  SLEEVE_DIMENSION_IDS,
   type MeasureId,
   type Period,
   type SleeveDimension,
@@ -48,6 +50,8 @@ export function ComparisonBar({
   onMeasureChange: (measure: MeasureId) => void
   className?: string
 }) {
+  const { t } = useTranslation()
+
   return (
     <div
       className={cn(
@@ -59,8 +63,8 @@ export function ComparisonBar({
         value={axis}
         onChange={onAxisChange}
         options={[
-          { value: 'time', label: 'Now vs. before' },
-          { value: 'sleeve', label: 'Side by side' },
+          { value: 'time', label: t('analytics.scopeBar.axisTime') },
+          { value: 'sleeve', label: t('analytics.scopeBar.axisSleeve') },
         ]}
       />
 
@@ -69,20 +73,20 @@ export function ComparisonBar({
       {axis === 'sleeve' && (
         <>
           <Picker
-            label="Compare"
-            value={SLEEVE_DIMENSIONS[dimension]}
-            options={Object.entries(SLEEVE_DIMENSIONS).map(([id, label]) => ({
+            label={t('analytics.scopeBar.compare')}
+            value={t(`analytics.sleeves.${dimension}` as const)}
+            options={SLEEVE_DIMENSION_IDS.map((id) => ({
               value: id,
-              label,
+              label: t(`analytics.sleeves.${id}` as const),
             }))}
             onChange={(v) => onDimensionChange(v as SleeveDimension)}
           />
           <Picker
-            label="By"
-            value={MEASURES[measure].label}
-            options={Object.values(MEASURES).map((m) => ({
-              value: m.id,
-              label: m.label,
+            label={t('analytics.scopeBar.by')}
+            value={measureCopy(t, measure).label}
+            options={MEASURE_IDS.map((id) => ({
+              value: id,
+              label: measureCopy(t, id).label,
             }))}
             onChange={(v) => onMeasureChange(v as MeasureId)}
           />
@@ -90,7 +94,7 @@ export function ComparisonBar({
       )}
 
       <Picker
-        label="Period"
+        label={t('analytics.scopeBar.period')}
         value={period.label}
         options={periods.map((p) => ({ value: p.label, label: p.label }))}
         onChange={(v) => {

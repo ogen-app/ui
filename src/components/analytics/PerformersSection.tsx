@@ -1,12 +1,17 @@
 import { useState } from 'react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { AccountAvatar } from '@/components/ui/account-avatar'
+import { formatNumber } from '@/lib/intl'
 import { resolvePlatformInfo } from '@/lib/platformDictionary'
 import { PaceBar, RankBar } from './charts'
 import { InsightLine } from './ComparisonSections'
 import { Picker } from './ComparisonBar'
 import {
   availableCriteria,
+  criterionHeldOut,
   criterionLabel,
+  criterionSuffix,
   placeAgainstTypical,
   type Criterion,
 } from './criteria'
@@ -38,6 +43,7 @@ import type { PerformerCriterionId, PerformersView, RankedPost } from './types'
  * is a good engagement rate or a poor one depending entirely on that.
  */
 export function PerformersSection({ view }: { view: PerformersView }) {
+  const { t } = useTranslation()
   const [picked, setPicked] = useState<PerformerCriterionId | null>(null)
   const criteria = availableCriteria(view)
   const corrected = view.curve !== null
@@ -45,14 +51,14 @@ export function PerformersSection({ view }: { view: PerformersView }) {
   if (view.posts.length === 0 || criteria.length === 0) {
     return (
       <SectionCard
-        title="Performers and outliers"
-        qualifier={periodPhrase(view.period)}
+        title={t('analytics.performers.title')}
+        qualifier={periodPhrase(t, view.period)}
         scope="lens"
       >
-        <NotYet title="Nothing to rank in this period">
+        <NotYet title={t('analytics.performers.nothingTitle')}>
           {view.posts.length === 0
-            ? 'Once posts go out, the ones carrying the period — and the ones falling behind what you normally do — show up here.'
-            : 'The posts in this period have not reported enough for any of the rankings to mean anything yet. Platforms usually take a few hours.'}
+            ? t('analytics.performers.nothingPublishedBody')
+            : t('analytics.performers.nothingReportedBody')}
         </NotYet>
       </SectionCard>
     )
@@ -88,16 +94,16 @@ export function PerformersSection({ view }: { view: PerformersView }) {
 
   return (
     <SectionCard
-      title="Performers and outliers"
-      qualifier={periodPhrase(view.period)}
+      title={t('analytics.performers.title')}
+      qualifier={periodPhrase(t, view.period)}
       scope="lens"
       status={
         <Picker
-          label="By"
-          value={criterionLabel(criterion, corrected)}
+          label={t('analytics.performers.by')}
+          value={criterionLabel(t, criterion, corrected)}
           options={criteria.map((c) => ({
             value: c.id,
-            label: criterionLabel(c, corrected),
+            label: criterionLabel(t, c, corrected),
           }))}
           onChange={(v) => setPicked(v as PerformerCriterionId)}
         />
@@ -106,7 +112,7 @@ export function PerformersSection({ view }: { view: PerformersView }) {
       {split ? (
         <>
           <PostList
-            heading={`Best ${best}`}
+            heading={t('analytics.performers.best', { count: best })}
             rows={ranked.slice(0, best)}
             criterion={criterion}
             corrected={corrected}
@@ -114,7 +120,7 @@ export function PerformersSection({ view }: { view: PerformersView }) {
             leader={leader}
           />
           <PostList
-            heading={`Worst ${worst}`}
+            heading={t('analytics.performers.worst', { count: worst })}
             rows={ranked.slice(-worst).reverse()}
             criterion={criterion}
             corrected={corrected}
@@ -124,13 +130,13 @@ export function PerformersSection({ view }: { view: PerformersView }) {
         </>
       ) : (
         <PostList
-          heading={`All ${ranked.length}`}
+          heading={t('analytics.performers.all', { count: ranked.length })}
           rows={ranked}
           criterion={criterion}
           corrected={corrected}
           typical={typical}
           leader={leader}
-          note="Too few posts to have two ends — this is all of them, best first."
+          note={t('analytics.performers.singleListNote')}
         />
       )}
 
@@ -154,12 +160,13 @@ export function PerformersSection({ view }: { view: PerformersView }) {
         can't find this morning's post has to be told it is missing on purpose.
       */}
       <Basis>
-        {typical === undefined &&
-          'No typical to hold these against yet, so the bars run against the best in the list. '}
-        {heldOut > 0 && `${criterion.heldOut(heldOut)} `}
+        {typical === undefined && (
+          <>{t('analytics.performers.noTypicalBasis')} </>
+        )}
+        {heldOut > 0 && <>{criterionHeldOut(t, criterion, heldOut)} </>}
         {view.curve
-          ? `Aged against how ${view.curve.sample} finished posts of yours matured — your own curve, not an industry average.`
-          : 'Not enough of your posts have finished earning for us to know how yours mature, so nothing here is age-corrected — a rate is the ranking that holds up meanwhile.'}
+          ? t('analytics.performers.curveBasis', { count: view.curve.sample })
+          : t('analytics.performers.noCurveBasis')}
       </Basis>
     </SectionCard>
   )
@@ -192,6 +199,8 @@ function PostList({
   leader: number
   note?: string
 }) {
+  const { t } = useTranslation()
+  const suffix = criterionSuffix(t, criterion)
   return (
     <div className="flex flex-col">
       <div className="flex items-end gap-3 border-b border-border pb-1.5">
@@ -203,11 +212,11 @@ function PostList({
             the same thing on every row of every list, and the bar draws its own
             centre — the note at the foot is where the method belongs. */}
         <span className="w-36 shrink-0 text-right text-xs leading-tight text-tertiary-foreground">
-          {criterionLabel(criterion, corrected)}
-          {criterion.suffix && <> {criterion.suffix}</>}
+          {criterionLabel(t, criterion, corrected)}
+          {suffix && <> {suffix}</>}
         </span>
         <span className="w-28 shrink-0 text-right text-xs text-tertiary-foreground">
-          Published
+          {t('analytics.performers.publishedColumn')}
         </span>
       </div>
 
@@ -240,6 +249,7 @@ function PostRow({
   typical: number | undefined
   leader: number
 }) {
+  const { t } = useTranslation()
   const ratio = typical !== undefined && typical > 0 ? value / typical : null
   const platform = resolvePlatformInfo(post.account.platform)
 
@@ -274,12 +284,14 @@ function PostRow({
         <span className="truncate text-xs text-tertiary-foreground">
           {post.account.name}
           {' · '}
-          {qualify(post, criterion)}
+          {qualify(t, post, criterion)}
         </span>
       </div>
 
       <div className="flex w-36 shrink-0 flex-col items-end gap-1.5">
-        <span className="text-sm tabular-nums">{criterion.format(value)}</span>
+        <span className="text-sm tabular-nums">
+          {criterion.format(t, value)}
+        </span>
         {/*
           The comparison, in the column it qualifies. A separate "vs typical"
           column made the reader carry a number three columns to the left in
@@ -291,7 +303,12 @@ function PostRow({
             pace={ratio}
             placement={placeAgainstTypical(ratio)}
             className="w-full"
-            title={`${ratio.toFixed(1)}× your typical`}
+            title={t('analytics.tile.vsTypicalMultiple', {
+              value: formatNumber(ratio, {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              }),
+            })}
           />
         ) : (
           <RankBar
@@ -326,11 +343,15 @@ function PostRow({
  * difference between a good month and one lucky afternoon, while "0.4% of the
  * period" is a fact about arithmetic.
  */
-function qualify(post: RankedPost, criterion: Criterion): string {
-  const reached = `${formatCount(post.metrics.reach ?? 0)} reached${
-    post.matured >= 1 ? '' : ' and counting'
-  }`
-  return criterion.qualifier === 'share' && post.share >= 0.05
-    ? `${reached} · ${Math.round(post.share * 100)}% of the period`
-    : reached
+function qualify(t: TFunction, post: RankedPost, criterion: Criterion): string {
+  const reach = formatCount(t, post.metrics.reach ?? 0)
+  const reached =
+    post.matured >= 1
+      ? t('analytics.performers.reached', { reach })
+      : t('analytics.performers.reachedCounting', { reach })
+  if (criterion.qualifier !== 'share' || post.share < 0.05) return reached
+  const share = t('analytics.performers.periodShare', {
+    share: Math.round(post.share * 100),
+  })
+  return `${reached} · ${share}`
 }

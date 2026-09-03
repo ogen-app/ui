@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next'
+import { formatDate, formatNumber } from '@/lib/intl'
 import {
   MEASURES,
   type MeasureId,
@@ -12,25 +14,47 @@ import {
  * Formatting and delta arithmetic for the analytics surfaces. Pure, so the
  * rules that decide whether something counts as "unusual" can be argued with
  * in a test rather than read out of a component.
+ *
+ * **Everything that produces words takes `t`.** These are plain functions, not
+ * components, so there is no render to rebuild a label on — a module-level
+ * string here would freeze whichever language loaded first, which is the exact
+ * trap `CLAUDE.md` names. Passing `t` in also keeps them testable: a test pins
+ * a language by passing that language's `t`, rather than by reaching into
+ * i18next.
+ *
+ * Numbers and dates go through `lib/intl`, which reads the *app's* language
+ * rather than the browser's. This module used to pin `en-US` for thousands
+ * separators and `en-GB` for the axis; both were the browser-locale bug with
+ * the locale written out, and a Spanish workspace reading `12,400` as twelve
+ * point four is the kind of wrong that never announces itself.
  */
 
 /** `1,204` · `12.4K` · `3.1M`. Compact only once it stops being readable. */
-export function formatCount(value: number): string {
+export function formatCount(t: TFunction, value: number): string {
   const abs = Math.abs(value)
-  if (abs < 10_000) return value.toLocaleString('en-US')
-  if (abs < 1_000_000) return `${trim(value / 1_000)}K`
-  return `${trim(value / 1_000_000)}M`
+  if (abs < 10_000) return formatNumber(value)
+  if (abs < 1_000_000)
+    return t('analytics.units.thousand', { value: trim(value / 1_000) })
+  return t('analytics.units.million', { value: trim(value / 1_000_000) })
 }
 
 function trim(value: number): string {
   // One decimal, but never a trailing `.0` — `12K` reads better than `12.0K`.
-  return value.toFixed(1).replace(/\.0$/, '')
+  // Rounded before formatting rather than after: `maximumFractionDigits` and a
+  // locale that writes a comma for the point cannot be undone by a regex.
+  const rounded = Math.round(value * 10) / 10
+  return formatNumber(rounded, { maximumFractionDigits: 1 })
 }
 
-/** `15 Jul`. Named days rather than "the period before" — see `NowView`. */
+/**
+ * `15 Jul`. Named days rather than "the period before" — see `NowView`.
+ *
+ * UTC, because these are bucket keys the server cut on UTC days: rendering
+ * `2026-08-01` in a zone behind it would date the column to July.
+ */
 export function formatDay(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-GB', {
+  return formatDate(new Date(Date.UTC(y, m - 1, d)), {
     day: 'numeric',
     month: 'short',
     timeZone: 'UTC',
@@ -45,28 +69,84 @@ export function formatDay(iso: string): string {
  * reads as a control someone could change. Only a stretch takes *over* —
  * "What happened over today" is not a sentence, and a period picker hands us
  * both kinds of label.
+ *
+ * `days` rather than the label's own text decides which of the two it is. The
+ * label is already translated by whoever built the period, so matching `/^last/`
+ * on it was a rule that only worked in English.
  */
-export function periodPhrase(period: Period): string {
-  const label = period.label.toLowerCase()
-  return /^last\b/i.test(period.label) ? `over ${label}` : label
+export function periodPhrase(t: TFunction, period: Period): string {
+  return period.days > 1
+    ? t('analytics.units.over', { period: period.label })
+    : period.label
 }
 
 /** `19h` · `3d 10h`. Hours stop being readable somewhere around two days. */
-export function formatHours(hours: number): string {
+export function formatHours(t: TFunction, hours: number): string {
   const h = Math.round(hours)
-  if (h < 48) return `${h}h`
-  return `${Math.floor(h / 24)}d ${h % 24}h`
+  if (h < 48) return t('analytics.units.hours', { count: h })
+  return t('analytics.units.daysHours', {
+    days: Math.floor(h / 24),
+    hours: h % 24,
+  })
 }
 
 /** A rate held as a fraction, rendered as a percentage. */
-export function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)}%`
+export function formatPercent(t: TFunction, value: number): string {
+  return t('analytics.units.percent', {
+    value: formatNumber(value * 100, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }),
+  })
 }
 
-export function formatMeasure(measure: MeasureId, value: number): string {
+export function formatMeasure(
+  t: TFunction,
+  measure: MeasureId,
+  value: number,
+): string {
   return MEASURES[measure].format === 'percent'
-    ? formatPercent(value)
-    : formatCount(value)
+    ? formatPercent(t, value)
+    : formatCount(t, value)
+}
+
+/**
+ * Mon–Sun, abbreviated, in the app's language.
+ *
+ * No table: `Intl` already knows every language's weekday names, and a hard-coded
+ * `['Mon', …]` is exactly the module-level label map that freezes whichever
+ * language loaded first. The dates are arbitrary — 2024-01-01 was a Monday — and
+ * pinned to UTC so a zone behind it doesn't shift the whole row by a day.
+ */
+export function shortWeekdays(locale?: string): string[] {
+  return Array.from({ length: 7 }, (_, i) =>
+    formatDate(
+      new Date(Date.UTC(2024, 0, 1 + i)),
+      { weekday: 'short', timeZone: 'UTC' },
+      locale,
+    ),
+  )
+}
+
+/**
+ * What a measure is called, in the three places it is named.
+ *
+ * Read through here rather than off `MEASURES`, which carries no words — see
+ * the note on {@link MeasureMeta}. `hint` comes back `undefined` rather than
+ * empty so a call site can put it straight in a `title` without painting an
+ * empty tooltip on the two measures whose labels already say where the number
+ * comes from.
+ */
+export function measureCopy(
+  t: TFunction,
+  measure: MeasureId,
+): { label: string; periodLabel: string; hint: string | undefined } {
+  const hint = t(`analytics.measures.${measure}.hint` as const)
+  return {
+    label: t(`analytics.measures.${measure}.label` as const),
+    periodLabel: t(`analytics.measures.${measure}.periodLabel` as const),
+    hint: hint || undefined,
+  }
 }
 
 export type Direction = 'up' | 'down' | 'flat'
@@ -101,12 +181,21 @@ export function delta(
   return { fraction, direction, good }
 }
 
-export function formatDelta(d: Delta): string {
-  if (d.direction === 'flat') return 'about the same'
+export function formatDelta(t: TFunction, d: Delta): string {
+  if (d.direction === 'flat') return t('analytics.units.aboutTheSame')
   const pct = Math.abs(d.fraction) * 100
   const rendered =
-    pct >= 100 ? `${(pct / 100 + 1).toFixed(1)}×` : `${Math.round(pct)}%`
-  return `${d.direction === 'up' ? '+' : '−'}${rendered}`
+    pct >= 100
+      ? t('analytics.units.multiplier', {
+          value: formatNumber(pct / 100 + 1, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          }),
+        })
+      : t('analytics.units.percent', { value: formatNumber(Math.round(pct)) })
+  return d.direction === 'up'
+    ? t('analytics.units.deltaUp', { value: rendered })
+    : t('analytics.units.deltaDown', { value: rendered })
 }
 
 export type Verdict = 'above' | 'within' | 'below'
@@ -123,12 +212,6 @@ export function verdict(
   if (value > expected.high) return 'above'
   if (value < expected.low) return 'below'
   return 'within'
-}
-
-export function verdictLabel(measure: MeasureId, v: Verdict): string {
-  const noun = MEASURES[measure].label.toLowerCase()
-  if (v === 'within') return `Normal for your ${noun}`
-  return v === 'above' ? 'Above your usual range' : 'Below your usual range'
 }
 
 /** Whether a verdict is good news, given which way the measure should go. */

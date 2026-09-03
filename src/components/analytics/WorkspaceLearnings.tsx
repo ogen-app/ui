@@ -4,14 +4,15 @@ import {
   TrendDownIcon,
   TrendUpIcon,
 } from '@phosphor-icons/react'
+import { Trans, useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
+import { formatNumber } from '@/lib/intl'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DecayCurve, SlotHeatmap } from './charts'
 import { Picker } from './ComparisonBar'
 import { Basis, NotYet, SectionCard } from './shell'
-import { formatHours } from './format'
+import { formatHours, shortWeekdays } from './format'
 import {
-  DAY_LABELS,
   LEARNINGS_METRICS,
   metricLabel,
   type HeatmapView,
@@ -53,6 +54,7 @@ export function WorkspaceLearningsView({
   /** Whether a platform filter is on screen that this card is not counted under. */
   everyPlatform?: boolean
 }) {
+  const { t } = useTranslation()
   const { view, isPending, isError, isUnavailable, isEmpty } = result
 
   if (isPending) {
@@ -67,10 +69,8 @@ export function WorkspaceLearningsView({
         withPicker={false}
         everyPlatform={everyPlatform}
       >
-        <NotYet title="Nothing is being measured for this workspace">
-          Once measurement is connected, the hours you publish into, how long a
-          post keeps earning, and what your posts have in common show up here —
-          built from the posts you have already sent.
+        <NotYet title={t('analytics.learned.unavailableTitle')}>
+          {t('analytics.learned.unavailableBody')}
         </NotYet>
       </Shell>
     )
@@ -87,9 +87,8 @@ export function WorkspaceLearningsView({
         withPicker={false}
         everyPlatform={everyPlatform}
       >
-        <NotYet title="Nothing published yet">
-          These are lessons drawn from your own posts, so they start the day you
-          have some. Nothing needs setting up.
+        <NotYet title={t('analytics.learned.emptyTitle')}>
+          {t('analytics.learned.emptyBody')}
         </NotYet>
       </Shell>
     )
@@ -103,9 +102,8 @@ export function WorkspaceLearningsView({
         withPicker={false}
         everyPlatform={everyPlatform}
       >
-        <NotYet title="Couldn't load what we've learned">
-          The workspace itself is unaffected — nothing here changes what is
-          scheduled or published. Try again in a moment.
+        <NotYet title={t('analytics.learned.errorTitle')}>
+          {t('analytics.learned.errorBody')}
         </NotYet>
       </Shell>
     )
@@ -119,29 +117,32 @@ export function WorkspaceLearningsView({
       qualifier={view.historySince ?? undefined}
       everyPlatform={everyPlatform}
     >
-      <Section icon={CalendarBlankIcon} title="When your posts land">
+      <Section
+        icon={CalendarBlankIcon}
+        title={t('analytics.learned.whenPostsLand')}
+      >
         {view.heatmap ? (
           <Slots heatmap={view.heatmap} />
         ) : (
-          <NotYet title="Not enough posts to say yet">
-            A grid drawn from a handful of posts looks exactly like one drawn
-            from hundreds, and someone will rearrange their week around it. This
-            fills in once you have published across a few different hours.
+          <NotYet title={t('analytics.learned.slotsNotYetTitle')}>
+            {t('analytics.learned.slotsInsufficientBody')}
           </NotYet>
         )}
       </Section>
 
-      <Section icon={ClockIcon} title="How long a post lives">
+      <Section
+        icon={ClockIcon}
+        title={t('analytics.learned.howLongAPostLives')}
+      >
         {view.lifespan ? (
           <Lifespan lifespan={view.lifespan} />
         ) : (
-          <NotYet title="Not enough finished posts yet">
-            This needs posts that have stopped earning, which takes a few weeks
-            of publishing —{' '}
+          <NotYet title={t('analytics.learned.lifespanNotYetTitle')}>
             {view.settledPosts === 0
-              ? 'none of yours have run their course yet'
-              : `${view.settledPosts} of yours ${view.settledPosts === 1 ? 'has' : 'have'} so far`}
-            .
+              ? t('analytics.learned.lifespanNoneSettled')
+              : t('analytics.learned.lifespanSomeSettled', {
+                  count: view.settledPosts,
+                })}
           </NotYet>
         )}
       </Section>
@@ -149,33 +150,37 @@ export function WorkspaceLearningsView({
       {view.patterns ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <PatternColumn
-            title="What works"
-            note="Against your median."
+            title={t('analytics.learned.whatWorks')}
+            note={t('analytics.learned.againstMedian')}
             tone="positive"
             patterns={view.patterns.works}
-            empty="Nothing has separated itself from the rest yet."
+            empty={t('analytics.learned.nothingSeparated')}
           />
           <PatternColumn
-            title="What's fading"
+            title={t('analytics.learned.whatsFading')}
             // Not "against the 90 days before last", which was the first
             // attempt and reads as a window nobody asked about. `trend` is the
             // segment's own movement across the window — its referent is the
             // stretch before it, which "change over" says without naming two.
-            note={`Change over the last ${view.trendWindow}.`}
+            note={t('analytics.learned.changeOver', {
+              window: view.trendWindow,
+            })}
             tone="negative"
             patterns={view.patterns.fading}
-            empty="Nothing has fallen off yet."
+            empty={t('analytics.learned.nothingFallen')}
           />
         </div>
       ) : (
-        <NotYet title="No habits to compare yet">
-          Patterns come from splitting your posts by what they have in common —
-          format, length, links, timing, platform — and each side of a split
-          needs enough posts to mean anything.
+        <NotYet title={t('analytics.learned.noPatternsTitle')}>
+          {t('analytics.learned.noPatternsBody')}
         </NotYet>
       )}
 
-      {view.lastRefreshedAt && <Basis>Updated {view.lastRefreshedAt}.</Basis>}
+      {view.lastRefreshedAt && (
+        <Basis>
+          {t('analytics.learned.updated', { when: view.lastRefreshedAt })}
+        </Basis>
+      )}
     </Shell>
   )
 }
@@ -202,20 +207,21 @@ function Shell({
   everyPlatform?: boolean
   children: React.ReactNode
 }) {
+  const { t } = useTranslation()
   return (
     <SectionCard
-      title="What we've learned"
+      title={t('analytics.learned.title')}
       scope="all-time"
       everyPlatform={everyPlatform}
       qualifier={qualifier}
       status={
         withPicker ? (
           <Picker
-            label="Metric"
-            value={metricLabel(metric)}
-            options={LEARNINGS_METRICS.map((m) => ({
-              value: m.id,
-              label: m.label,
+            label={t('analytics.learned.metric')}
+            value={metricLabel(t, metric)}
+            options={LEARNINGS_METRICS.map((id) => ({
+              value: id,
+              label: metricLabel(t, id),
             }))}
             onChange={(v) => onChangeMetric(v as LearningsMetric)}
           />
@@ -256,26 +262,40 @@ function Section({
  * resting on two posts from reading like a finding.
  */
 function Slots({ heatmap }: { heatmap: HeatmapView }) {
-  const posts = `${heatmap.measuredPosts} measured ${heatmap.measuredPosts === 1 ? 'post' : 'posts'}`
+  const { t, i18n } = useTranslation()
+  const posts = t('analytics.learned.measuredPosts', {
+    count: heatmap.measuredPosts,
+  })
+  const strongestPosts = heatmap.strongest
+    ? t('analytics.units.posts', { count: heatmap.strongest.postCount })
+    : ''
 
   return (
     <>
       <SlotHeatmap
         grid={heatmap.grid}
-        days={DAY_LABELS}
+        days={shortWeekdays(i18n.language)}
         label={
           heatmap.strongest
-            ? `Median ${heatmap.metric} by hour published. Strongest slot: ${heatmap.strongest.label}, from ${heatmap.strongest.postCount} posts.`
-            : `Median ${heatmap.metric} by hour published, across ${posts}.`
+            ? t('analytics.learned.slotsAriaStrongest', {
+                metric: heatmap.metric,
+                slot: heatmap.strongest.label,
+                posts: strongestPosts,
+              })
+            : t('analytics.learned.slotsAria', {
+                metric: heatmap.metric,
+                posts,
+              })
         }
       />
 
       {heatmap.strongest && (
         <p className="text-sm">
-          Your strongest slot is{' '}
-          <strong className="font-medium">{heatmap.strongest.label}</strong>,
-          from {heatmap.strongest.postCount}{' '}
-          {heatmap.strongest.postCount === 1 ? 'post' : 'posts'}.
+          <Trans
+            i18nKey="analytics.learned.strongestSlot"
+            values={{ slot: heatmap.strongest.label, posts: strongestPosts }}
+            components={[<strong key="0" className="font-medium" />]}
+          />
         </p>
       )}
 
@@ -288,8 +308,10 @@ function Slots({ heatmap }: { heatmap: HeatmapView }) {
         it on.
       */}
       <Basis>
-        From {posts}, by median {heatmap.metric}. Darker is better; a blank
-        square is an hour you have never published in. Times are UTC.
+        {t('analytics.learned.slotsBasisUtc', {
+          posts,
+          metric: heatmap.metric,
+        })}
       </Basis>
     </>
   )
@@ -306,11 +328,15 @@ function Slots({ heatmap }: { heatmap: HeatmapView }) {
  * behaviour is explained rather than merely enforced.
  */
 function Lifespan({ lifespan }: { lifespan: LifespanView }) {
+  const { t } = useTranslation()
   return (
     <>
       <p className="text-sm">
-        Half of everything a post earns arrives in the first{' '}
-        <strong className="font-medium">{lifespan.half}</strong>.
+        <Trans
+          i18nKey="analytics.learned.halfLife"
+          values={{ span: lifespan.half }}
+          components={[<strong key="0" className="font-medium" />]}
+        />
       </p>
 
       {lifespan.curve.length > 0 && (
@@ -321,8 +347,10 @@ function Lifespan({ lifespan }: { lifespan: LifespanView }) {
             height="md"
           />
           <div className="flex justify-between text-xs text-tertiary-foreground">
-            <span>Published</span>
-            <span>{lifespan.horizon} later</span>
+            <span>{t('analytics.charts.published')}</span>
+            <span>
+              {t('analytics.charts.later', { span: lifespan.horizon })}
+            </span>
           </div>
         </>
       )}
@@ -331,19 +359,23 @@ function Lifespan({ lifespan }: { lifespan: LifespanView }) {
         {lifespan.milestones.map((m) => (
           <li key={m.share} className="flex items-baseline gap-1.5 text-xs">
             <span className="font-medium tabular-nums">
-              {Math.round(m.share * 100)}%
+              {t('analytics.units.percent', {
+                value: formatNumber(Math.round(m.share * 100)),
+              })}
             </span>
             <span className="text-secondary-foreground">
-              by {formatHours(m.hour)}
+              {t('analytics.learned.milestone', {
+                span: formatHours(t, m.hour),
+              })}
             </span>
           </li>
         ))}
       </ul>
 
       <Basis>
-        From {lifespan.settledPosts} posts that have run their course. Always
-        reach, whichever metric the card is set to — the curve is the shape of a
-        post's own reach over time, as a share of what it finally earned.
+        {t('analytics.learned.lifespanBasisWorkspace', {
+          count: lifespan.settledPosts,
+        })}
       </Basis>
     </>
   )
@@ -363,6 +395,7 @@ function PatternColumn({
   patterns: PatternView[]
   empty: string
 }) {
+  const { t } = useTranslation()
   const Icon = tone === 'positive' ? TrendUpIcon : TrendDownIcon
 
   return (
@@ -411,7 +444,10 @@ function PatternColumn({
                   the miner picks it per segment — a card can be about saves on
                   a board set to reach. */}
               <Basis>
-                {pattern.support} · {pattern.metric}
+                {t('analytics.learned.patternBasis', {
+                  support: pattern.support,
+                  metric: pattern.metric,
+                })}
               </Basis>
             </li>
           ))}

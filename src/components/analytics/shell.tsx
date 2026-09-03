@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 
 /**
@@ -45,19 +47,19 @@ export type SectionScope = 'lens' | 'all-time' | 'ahead'
  * separate footnotes to say so puts more type under the heading than the
  * heading. One sentence, whichever combination it is.
  */
-function scopeNote(scope: SectionScope, everyPlatform: boolean): string | null {
-  const period =
-    scope === 'all-time'
-      ? 'All time'
-      : scope === 'ahead'
-        ? 'Looking ahead'
-        : null
-
+function scopeNote(
+  t: TFunction,
+  scope: SectionScope,
+  everyPlatform: boolean,
+): string | null {
   if (!everyPlatform) {
-    return period ? `${period} — not affected by the period above` : null
+    if (scope === 'all-time') return t('analytics.scopeNote.allTime')
+    if (scope === 'ahead') return t('analytics.scopeNote.ahead')
+    return null
   }
-  if (!period) return 'Every platform — not affected by the filter above'
-  return `${period} and every platform — not affected by the controls above`
+  if (scope === 'all-time') return t('analytics.scopeNote.allTimeEveryPlatform')
+  if (scope === 'ahead') return t('analytics.scopeNote.aheadEveryPlatform')
+  return t('analytics.scopeNote.everyPlatform')
 }
 
 export function SectionCard({
@@ -91,7 +93,8 @@ export function SectionCard({
   children: ReactNode
   className?: string
 }) {
-  const note = scopeNote(scope, everyPlatform)
+  const { t } = useTranslation()
+  const note = scopeNote(t, scope, everyPlatform)
   return (
     <section
       className={cn(

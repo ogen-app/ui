@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NowSection } from './ComparisonSections'
 import { NotYet, SectionCard } from './shell'
@@ -45,18 +46,17 @@ export function WorkspaceOverviewView({
    */
   everyPlatform?: boolean
 }) {
+  const { t } = useTranslation()
+
   if (isPending) {
     return <Skeleton className="h-96 w-full max-w-content mx-auto" />
   }
 
   if (isUnavailable) {
     return (
-      <SectionCard title="What happened">
-        <NotYet title="Nothing is being measured for this workspace">
-          Analytics isn't switched on here yet. Everything else — planning,
-          generating, scheduling, publishing — works exactly as it does now, and
-          the moment measurement is connected this fills in from the posts you
-          have already sent.
+      <SectionCard title={t('analytics.now.title')}>
+        <NotYet title={t('analytics.now.unavailableTitle')}>
+          {t('analytics.now.unavailableBody')}
         </NotYet>
       </SectionCard>
     )
@@ -68,11 +68,9 @@ export function WorkspaceOverviewView({
   // broken when the truth is that it hasn't published yet.
   if (isEmpty) {
     return (
-      <SectionCard title="What happened">
-        <NotYet title="Nothing measured yet">
-          Once this workspace starts publishing, what each post earns shows up
-          here — reach, interactions, and how that compares with the stretch
-          before.
+      <SectionCard title={t('analytics.now.title')}>
+        <NotYet title={t('analytics.now.emptyTitle')}>
+          {t('analytics.now.emptyBody')}
         </NotYet>
       </SectionCard>
     )
@@ -83,10 +81,9 @@ export function WorkspaceOverviewView({
   // leave the skeleton spinning, which is indistinguishable from a hung app.
   if (isError || !view) {
     return (
-      <SectionCard title="What happened">
-        <NotYet title="Couldn't load analytics">
-          The workspace itself is unaffected — nothing here changes what is
-          scheduled or published. Try again in a moment.
+      <SectionCard title={t('analytics.now.title')}>
+        <NotYet title={t('analytics.now.errorTitle')}>
+          {t('analytics.now.errorBody')}
         </NotYet>
       </SectionCard>
     )

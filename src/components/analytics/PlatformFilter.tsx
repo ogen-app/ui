@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
 import { resolvePlatformInfo } from '@/lib/platformDictionary'
@@ -52,6 +53,7 @@ export function PlatformFilter({
   onPeriodChange: (period: Period) => void
   className?: string
 }) {
+  const { t } = useTranslation()
   const connected = platforms.filter((p) => p.accounts > 0)
 
   // Nothing to filter. One connected platform means every possible state of
@@ -105,7 +107,9 @@ export function PlatformFilter({
             className="ml-1"
             onClick={() => onChange(all ? [] : connected.map((p) => p.id))}
           >
-            {all ? 'DESELECT ALL' : 'SELECT ALL'}
+            {all
+              ? t('analytics.scopeBar.deselectAll')
+              : t('analytics.scopeBar.selectAll')}
           </Button>
         </div>
       )}
@@ -114,7 +118,7 @@ export function PlatformFilter({
           the window rather than the sources. */}
       <div className="ml-auto">
         <Picker
-          label="Period"
+          label={t('analytics.scopeBar.period')}
           value={period.label}
           options={periods.map((p) => ({ value: p.label, label: p.label }))}
           onChange={(v) => {
@@ -136,9 +140,13 @@ function PlatformMark({
   on: boolean
   onToggle: () => void
 }) {
+  const { t } = useTranslation()
   const info = resolvePlatformInfo(platform.id)
   const Icon = info?.icon
   const connected = platform.accounts > 0
+  const accounts = t('analytics.scopeBar.accounts', {
+    count: platform.accounts,
+  })
 
   const mark = Icon ? (
     <Icon
@@ -160,11 +168,17 @@ function PlatformMark({
   if (!connected) {
     return (
       <span
-        title={`${platform.label} — no account connected`}
+        title={t('analytics.scopeBar.platformNoAccount', {
+          platform: platform.label,
+        })}
         className="flex size-10 items-center justify-center rounded-md border border-dashed border-quinary text-quaternary-foreground"
       >
         {mark}
-        <span className="sr-only">{platform.label}, no account connected</span>
+        <span className="sr-only">
+          {t('analytics.scopeBar.platformNoAccountLabel', {
+            platform: platform.label,
+          })}
+        </span>
       </span>
     )
   }
@@ -174,7 +188,10 @@ function PlatformMark({
       type="button"
       onClick={onToggle}
       aria-pressed={on}
-      title={`${platform.label} — ${platform.accounts} ${platform.accounts === 1 ? 'account' : 'accounts'}`}
+      title={t('analytics.scopeBar.platformAccounts', {
+        platform: platform.label,
+        accounts,
+      })}
       className={cn(
         'relative flex size-10 items-center justify-center rounded-md transition-colors',
         on
@@ -196,8 +213,10 @@ function PlatformMark({
         {platform.accounts}
       </span>
       <span className="sr-only">
-        {platform.label}, {platform.accounts}{' '}
-        {platform.accounts === 1 ? 'account' : 'accounts'}
+        {t('analytics.scopeBar.platformAccountsLabel', {
+          platform: platform.label,
+          accounts,
+        })}
       </span>
     </button>
   )

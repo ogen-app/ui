@@ -1,6 +1,7 @@
+import type { TFunction } from 'i18next'
 import { formatCount, formatHours } from '@/components/analytics/format'
 import { checkedAt } from '@/lib/analyticsFreshness'
-import { formatDate } from '@/lib/intl'
+import { formatDate, formatNumber } from '@/lib/intl'
 import { hasHistory } from '@/services/api/analytics'
 import type {
   AnalyticsLearnings,
@@ -49,26 +50,28 @@ import type {
  *   reader. Same rule as the performers board's `direction`.
  */
 
-/** What the mining can be pointed at. Anything else is a 400. */
-export const LEARNINGS_METRICS: { id: LearningsMetric; label: string }[] = [
-  { id: 'reach', label: 'Reach' },
-  { id: 'saves', label: 'Saves' },
-]
+/**
+ * What the mining can be pointed at. Anything else is a 400. What each is
+ * called is `analytics.learned.metrics.<id>` — read with {@link metricLabel}.
+ */
+export const LEARNINGS_METRICS: LearningsMetric[] = ['reach', 'saves']
 
 export const DEFAULT_LEARNINGS_METRIC: LearningsMetric = 'reach'
 
-/** Monday first, as the grid is drawn. The wire's index is re-based into this. */
-const DAY_NAMES = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-]
-
-export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+/**
+ * Monday first, as the grid is drawn, in the app's language — `Intl` knows
+ * every language's weekday names, so there is no table. The wire's index is
+ * re-based into this by `dayRow`.
+ */
+function dayName(row: number, locale: string): string {
+  return (
+    formatDate(
+      new Date(Date.UTC(2024, 0, 1 + row)),
+      { weekday: 'long', timeZone: 'UTC' },
+      locale,
+    ) ?? ''
+  )
+}
 
 /**
  * `0 = Sunday` on the wire (the `/best-times` convention) into a Monday-first
@@ -81,8 +84,10 @@ function dayRow(dayOfWeek: number): number | null {
 }
 
 /** `18:00`. */
-function hourLabel(hour: number): string {
-  return `${String(hour).padStart(2, '0')}:00`
+function hourLabel(t: TFunction, hour: number): string {
+  return t('analytics.units.hourOfDay', {
+    hour: String(hour).padStart(2, '0'),
+  })
 }
 
 export interface SlotView {
@@ -154,7 +159,12 @@ export interface LearningsView {
  * `null` all the way to the chart so it can be drawn as absent rather than as
  * the bottom of the scale.
  */
-function readGrid(cells: HeatmapCell[], metric: string): (SlotView | null)[][] {
+function readGrid(
+  t: TFunction,
+  locale: string,
+  cells: HeatmapCell[],
+  metric: string,
+): (SlotView | null)[][] {
   const grid: (SlotView | null)[][] = Array.from({ length: 7 }, () =>
     Array.from({ length: 24 }, () => null),
   )
@@ -168,16 +178,42 @@ function readGrid(cells: HeatmapCell[], metric: string): (SlotView | null)[][] {
     grid[row][cell.hour] = {
       score: cell.score,
       postCount: cell.post_count,
-      title: `${DAY_NAMES[row]} ${hourLabel(cell.hour)} UTC · ${cell.post_count} ${
-        cell.post_count === 1 ? 'post' : 'posts'
-      } · ${formatCount(cell.median)} median ${metric}`,
+      title: t('analytics.learned.slotCell', {
+        slot: slotLabel(t, locale, row, cell.hour),
+        posts: t('analytics.units.posts', { count: cell.post_count }),
+        value: formatCount(t, cell.median),
+        metric,
+      }),
     }
   }
 
   return grid
 }
 
+/**
+ * `Thursday 18:00 UTC` — the slot as someone would say it out loud, with the
+ * clock it is on.
+ *
+ * The zone is on the label rather than only in the note at the foot: the server
+ * buckets on a fixed display timezone and sends no offset, and a workspace three
+ * hours ahead reading "18:00" as its own evening would rearrange its week around
+ * the wrong slot.
+ */
+function slotLabel(
+  t: TFunction,
+  locale: string,
+  row: number,
+  hour: number,
+): string {
+  return t('analytics.units.slotUtc', {
+    day: dayName(row, locale),
+    hour: hourLabel(t, hour),
+  })
+}
+
 function readHeatmap(
+  t: TFunction,
+  locale: string,
   section: LearningsSection<LearningsHeatmap>,
 ): HeatmapView | null {
   if (!hasHistory(section)) return null
@@ -186,11 +222,11 @@ function readHeatmap(
   const bestRow = best ? dayRow(best.day_of_week) : null
 
   return {
-    grid: readGrid(section.cells, section.metric),
+    grid: readGrid(t, locale, section.cells, section.metric),
     strongest:
       best && bestRow !== null
         ? {
-            label: `${DAY_NAMES[bestRow]} ${hourLabel(best.hour)} UTC`,
+            label: slotLabel(t, locale, bestRow, best.hour),
             postCount: best.post_count,
           }
         : null,
@@ -200,6 +236,7 @@ function readHeatmap(
 }
 
 function readLifespan(
+  t: TFunction,
   section: LearningsSection<LearningsLifespan>,
 ): LifespanView | null {
   if (!hasHistory(section)) return null
@@ -215,8 +252,8 @@ function readLifespan(
       { share: 0.75, hour: section.t75_hours },
       { share: 0.95, hour: section.t95_hours },
     ],
-    half: formatHours(section.t50_hours),
-    horizon: formatHours(section.horizon_hours),
+    half: formatHours(t, section.t50_hours),
+    horizon: formatHours(t, section.horizon_hours),
   }
 }
 
@@ -229,24 +266,29 @@ function readLifespan(
  * median, a `fading` trend is against the same segment's previous stretch), and
  * that referent is named once per column rather than repeated on every card.
  */
-function figureOf(pattern: LearningsPattern): string | null {
+function figureOf(t: TFunction, pattern: LearningsPattern): string | null {
   const ratio = pattern.lift ?? pattern.trend
   if (ratio === undefined || !Number.isFinite(ratio)) return null
   const change = Math.round((ratio - 1) * 100)
   if (change === 0) return null
-  return change > 0 ? `+${change}%` : `−${Math.abs(change)}%`
+  const percent = t('analytics.units.percent', {
+    value: formatNumber(Math.abs(change)),
+  })
+  return change > 0
+    ? t('analytics.units.deltaUp', { value: percent })
+    : t('analytics.units.deltaDown', { value: percent })
 }
 
-function readPattern(pattern: LearningsPattern): PatternView {
+function readPattern(t: TFunction, pattern: LearningsPattern): PatternView {
   return {
     id: pattern.id,
     headline: pattern.headline,
     detail: pattern.detail,
-    figure: figureOf(pattern),
+    figure: figureOf(t, pattern),
     // No confidence grade beside it: the server already refused to emit
     // anything below its own minimum support, so a second threshold here would
     // second-guess a card it decided was worth sending.
-    support: `${pattern.support} ${pattern.support === 1 ? 'post' : 'posts'}`,
+    support: t('analytics.learned.patternSupport', { count: pattern.support }),
     // The miner picks whichever of reach/saves gives the strongest signal for
     // that segment, so a card's metric is not necessarily the one asked for.
     metric: pattern.metric,
@@ -254,44 +296,49 @@ function readPattern(pattern: LearningsPattern): PatternView {
 }
 
 function readPatterns(
+  t: TFunction,
   section: LearningsSection<LearningsPatterns>,
 ): { works: PatternView[]; fading: PatternView[] } | null {
   if (!hasHistory(section)) return null
   return {
-    works: (section.works ?? []).map(readPattern),
-    fading: (section.fading ?? []).map(readPattern),
+    works: (section.works ?? []).map((p) => readPattern(t, p)),
+    fading: (section.fading ?? []).map((p) => readPattern(t, p)),
   }
 }
 
 /**
  * How far back the lessons reach, when that is not simply "all of it".
  *
- * Day-first and pinned to `en-GB` for the same reason the performers board's
- * dates are — the surface has one date convention, and it is the one
- * `format.ts`'s axis already draws. Both pins come out in the deferred i18n
- * pass.
+ * In the app's language, like every other date on the surface — the pin to
+ * `en-GB` that used to sit here came out with the performers board's and with
+ * `format.ts`'s axis, which were all pinned to agree with each other. They
+ * still agree; all three now read the active locale.
  */
-function historyPhrase(since: string | null): string | null {
+function historyPhrase(t: TFunction, since: string | null): string | null {
   if (!since) return null
-  const formatted = formatDate(
-    since,
-    { day: 'numeric', month: 'short', year: 'numeric' },
-    'en-GB',
-  )
-  return formatted ? `since ${formatted}` : null
+  const formatted = formatDate(since, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+  return formatted ? t('analytics.learned.since', { date: formatted }) : null
 }
 
 export function buildLearningsView(
+  t: TFunction,
+  locale: string,
   learnings: AnalyticsLearnings,
 ): LearningsView {
   const { scope } = learnings
 
   return {
-    heatmap: readHeatmap(learnings.heatmap),
-    lifespan: readLifespan(learnings.lifespan),
-    patterns: readPatterns(learnings.patterns),
-    historySince: historyPhrase(scope.since),
-    trendWindow: `${scope.trend_window_days} days`,
+    heatmap: readHeatmap(t, locale, learnings.heatmap),
+    lifespan: readLifespan(t, learnings.lifespan),
+    patterns: readPatterns(t, learnings.patterns),
+    historySince: historyPhrase(t, scope.since),
+    trendWindow: t('analytics.learned.trendWindowDays', {
+      count: scope.trend_window_days,
+    }),
     measuredPosts: scope.measured_posts,
     settledPosts: scope.settled_posts,
     metric: scope.metric,
@@ -300,6 +347,6 @@ export function buildLearningsView(
 }
 
 /** What the mined metric is called, for the picker. */
-export function metricLabel(metric: LearningsMetric): string {
-  return LEARNINGS_METRICS.find((m) => m.id === metric)?.label ?? metric
+export function metricLabel(t: TFunction, metric: LearningsMetric): string {
+  return t(`analytics.learned.metrics.${metric}` as const)
 }

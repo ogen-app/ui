@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next'
 import { AccountAvatar } from '@/components/ui/account-avatar'
 import { Skeleton } from '@/components/ui/skeleton'
+import { formatNumber } from '@/lib/intl'
 import { resolvePlatformInfo } from '@/lib/platformDictionary'
 import { PaceBar, RankBar } from './charts'
 import { InsightLine } from './ComparisonSections'
@@ -44,6 +46,7 @@ export function WorkspacePerformersView({
   by: PerformerSort
   onChangeBasis: (by: PerformerSort) => void
 }) {
+  const { t } = useTranslation()
   const { view, isPending, isError, isUnavailable, isEmpty } = result
 
   if (isPending) {
@@ -53,9 +56,8 @@ export function WorkspacePerformersView({
   if (isUnavailable) {
     return (
       <Shell by={by} onChangeBasis={onChangeBasis} withPicker={false}>
-        <NotYet title="Nothing is being measured for this workspace">
-          Once measurement is connected, the posts carrying the period — and the
-          ones falling behind what you normally do — show up here.
+        <NotYet title={t('analytics.performers.unavailableTitle')}>
+          {t('analytics.performers.unavailableBody')}
         </NotYet>
       </Shell>
     )
@@ -67,9 +69,8 @@ export function WorkspacePerformersView({
   if (isEmpty) {
     return (
       <Shell by={by} onChangeBasis={onChangeBasis} withPicker={false}>
-        <NotYet title="Nothing to rank in this period">
-          No posts went out in this window. Widen the period, or come back once
-          the next one has published.
+        <NotYet title={t('analytics.performers.emptyTitle')}>
+          {t('analytics.performers.emptyBody')}
         </NotYet>
       </Shell>
     )
@@ -78,9 +79,8 @@ export function WorkspacePerformersView({
   if (isError || !view) {
     return (
       <Shell by={by} onChangeBasis={onChangeBasis} withPicker={false}>
-        <NotYet title="Couldn't load performers">
-          The workspace itself is unaffected — nothing here changes what is
-          scheduled or published. Try again in a moment.
+        <NotYet title={t('analytics.performers.errorTitle')}>
+          {t('analytics.performers.errorBody')}
         </NotYet>
       </Shell>
     )
@@ -108,18 +108,19 @@ function Shell({
   qualifier?: string
   children: React.ReactNode
 }) {
+  const { t } = useTranslation()
   return (
     <SectionCard
-      title="Performers and outliers"
+      title={t('analytics.performers.title')}
       qualifier={qualifier}
       status={
         withPicker ? (
           <Picker
-            label="By"
-            value={basisLabel(by)}
-            options={PERFORMER_BASES.map((b) => ({
-              value: b.id,
-              label: b.label,
+            label={t('analytics.performers.by')}
+            value={basisLabel(t, by)}
+            options={PERFORMER_BASES.map((id) => ({
+              value: id,
+              label: basisLabel(t, id),
             }))}
             onChange={(v) => onChangeBasis(v as PerformerSort)}
           />
@@ -140,6 +141,7 @@ function Board({
   by: PerformerSort
   onChangeBasis: (by: PerformerSort) => void
 }) {
+  const { t } = useTranslation()
   /*
     One list or two. The server fills the best end first and gives the worst end
     what is left over, so the two are never the same post twice and are often
@@ -158,18 +160,22 @@ function Board({
       by={by}
       onChangeBasis={onChangeBasis}
       withPicker
-      qualifier={periodPhrase(view.period)}
+      qualifier={periodPhrase(t, view.period)}
     >
       {split ? (
         <>
           <PostList
-            heading={`Best ${view.best.length}`}
+            heading={t('analytics.performers.best', {
+              count: view.best.length,
+            })}
             rows={view.best}
             by={by}
             leader={leader}
           />
           <PostList
-            heading={`Worst ${view.worst.length}`}
+            heading={t('analytics.performers.worst', {
+              count: view.worst.length,
+            })}
             rows={view.worst}
             by={by}
             leader={leader}
@@ -177,11 +183,13 @@ function Board({
         </>
       ) : (
         <PostList
-          heading={`All ${view.best.length + view.worst.length}`}
+          heading={t('analytics.performers.all', {
+            count: view.best.length + view.worst.length,
+          })}
           rows={[...view.best, ...view.worst]}
           by={by}
           leader={leader}
-          note="Too few posts to have two ends — this is all of them, best first."
+          note={t('analytics.performers.singleListNote')}
         />
       )}
 
@@ -202,13 +210,23 @@ function Board({
         that rather than left to work it out.
       */}
       <Basis>
-        {view.hidden > 0 &&
-          `${view.hidden} more ${view.hidden === 1 ? 'post' : 'posts'} in this period sat between the two ends and ${view.hidden === 1 ? 'is' : 'are'} not shown. `}
-        {view.withoutBaseline > 0 &&
-          `${view.withoutBaseline} ${view.withoutBaseline === 1 ? 'post is' : 'posts are'} on a platform with too little history to place against, so ${view.withoutBaseline === 1 ? 'it sits' : 'they sit'} here on raw reach rather than a multiple. `}
-        Each bar is this post against a typical post of yours on the same
-        platform at the same age — your own posts, not an industry average.
-        {view.lastRefreshedAt && ` Updated ${view.lastRefreshedAt}.`}
+        {view.hidden > 0 && (
+          <>{t('analytics.performers.hidden', { count: view.hidden })} </>
+        )}
+        {view.withoutBaseline > 0 && (
+          <>
+            {t('analytics.performers.withoutBaseline', {
+              count: view.withoutBaseline,
+            })}{' '}
+          </>
+        )}
+        {t('analytics.performers.barBasis')}
+        {view.lastRefreshedAt && (
+          <>
+            {' '}
+            {t('analytics.performers.updated', { when: view.lastRefreshedAt })}
+          </>
+        )}
       </Basis>
     </Shell>
   )
@@ -233,6 +251,7 @@ function PostList({
   leader: number
   note?: string
 }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col">
       <div className="flex items-end gap-3 border-b border-border pb-1.5">
@@ -241,10 +260,10 @@ function PostList({
           {note && <p className="text-xs text-tertiary-foreground">{note}</p>}
         </div>
         <span className="w-36 shrink-0 text-right text-xs leading-tight text-tertiary-foreground">
-          {basisLabel(by)}
+          {basisLabel(t, by)}
         </span>
         <span className="w-28 shrink-0 text-right text-xs text-tertiary-foreground">
-          Published
+          {t('analytics.performers.publishedColumn')}
         </span>
       </div>
 
@@ -258,6 +277,7 @@ function PostList({
 }
 
 function PostRow({ row, leader }: { row: PerformerRowView; leader: number }) {
+  const { t } = useTranslation()
   const platform = resolvePlatformInfo(row.platform)
 
   /*
@@ -313,7 +333,12 @@ function PostRow({ row, leader }: { row: PerformerRowView; leader: number }) {
             pace={row.pace}
             placement={row.placement}
             className="w-full"
-            title={`${row.pace.toFixed(1)}× your typical`}
+            title={t('analytics.tile.vsTypicalMultiple', {
+              value: formatNumber(row.pace, {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              }),
+            })}
           />
         ) : row.value !== null ? (
           <RankBar

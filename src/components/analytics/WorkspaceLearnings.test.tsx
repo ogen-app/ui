@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { t } from '@/test/i18n'
 import { WorkspaceLearningsView } from './WorkspaceLearnings'
 import { buildLearningsView } from '@/lib/analyticsLearningsView'
 import type { AnalyticsLearnings } from '@/types/analytics'
@@ -128,6 +129,8 @@ describe('a section withdraws without taking the others with it', () => {
   it('keeps the heatmap when the curve has no settled posts behind it', () => {
     renderCard({
       view: buildLearningsView(
+        t,
+        'en',
         learnings({ lifespan: { insufficient_history: true } }),
       ),
     })
@@ -142,6 +145,8 @@ describe('a section withdraws without taking the others with it', () => {
   it('keeps the curve when there are too few slots to draw a week', () => {
     renderCard({
       view: buildLearningsView(
+        t,
+        'en',
         learnings({ heatmap: { insufficient_history: true } }),
       ),
     })
@@ -155,7 +160,9 @@ describe('a section withdraws without taking the others with it', () => {
   it('tells a patterns section with nothing in it from one with no history', () => {
     // Two different sentences, because they need two different responses: wait
     // versus there is nothing to see.
-    renderCard({ view: buildLearningsView(learnings({ patterns: {} })) })
+    renderCard({
+      view: buildLearningsView(t, 'en', learnings({ patterns: {} })),
+    })
 
     expect(
       screen.getByText(/Nothing has separated itself/i),
@@ -166,6 +173,8 @@ describe('a section withdraws without taking the others with it', () => {
   it('says so when the whole patterns section was withdrawn', () => {
     renderCard({
       view: buildLearningsView(
+        t,
+        'en',
         learnings({ patterns: { insufficient_history: true } }),
       ),
     })
@@ -177,7 +186,7 @@ describe('a section withdraws without taking the others with it', () => {
 describe('what the card says about its own scope', () => {
   it('states that the period picker above does not reach it', () => {
     // The whole reason this is a card and not a section of the overview.
-    renderCard({ view: buildLearningsView(learnings()) })
+    renderCard({ view: buildLearningsView(t, 'en', learnings()) })
 
     expect(
       screen.getByText(/All time — not affected by the period above/i),
@@ -185,14 +194,14 @@ describe('what the card says about its own scope', () => {
   })
 
   it('says the hours are UTC, because the wire carries no offset', () => {
-    renderCard({ view: buildLearningsView(learnings()) })
+    renderCard({ view: buildLearningsView(t, 'en', learnings()) })
 
     expect(screen.getByText(/Times are UTC/i)).toBeInTheDocument()
     expect(screen.getByText(/Thursday 18:00 UTC/)).toBeInTheDocument()
   })
 
   it('names the sample behind every section', () => {
-    renderCard({ view: buildLearningsView(learnings()) })
+    renderCard({ view: buildLearningsView(t, 'en', learnings()) })
 
     expect(screen.getByText(/From 96 measured posts/i)).toBeInTheDocument()
     expect(
