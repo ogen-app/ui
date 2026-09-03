@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import type { AssetStatus } from '@/types/content'
 import type { StatusTone } from '@/components/ui/status-badge'
 
@@ -9,11 +10,30 @@ const MB = 1 << 20
 const UPLOAD_LIMITS: Record<UploadKind, number> = {
   md: 10 * MB,
   pdf: 50 * MB,
-  // 10 MB is the number every image path the server already has agrees on —
-  // `POST /api/images` (`maxImageSize`) and post attachments both — and CON-16
-  // R11 keeps the asset upload on it rather than inventing a third.
+  // 10 MB is the number every image path the server has agrees on —
+  // `POST /api/images`, post attachments, and now the asset upload
+  // (`maxImageUploadSize`).
   image: 10 * MB,
 }
+
+/**
+ * The server's cap on an image's alt text (`maxAltTextLen`), counted in code
+ * points the way Go's `utf8.RuneCountInString` counts them — not UTF-16 units,
+ * which is what a `maxLength` attribute would use and what would put an emoji
+ * over the line half a limit early.
+ *
+ * Generous on purpose: it guards an unbounded column rather than expressing any
+ * platform's idea of a good alt text.
+ */
+export const MAX_ALT_TEXT_CHARS = 2000
+
+/*
+ * The server also caps each side at 8192 px (`maxImageDimension`), and that one
+ * is deliberately not mirrored: knowing an image's dimensions before uploading
+ * it means decoding it, and decoding every dropped file to pre-empt a refusal
+ * the server already words well buys nothing. Its per-file message arrives in
+ * the upload row like any other.
+ */
 
 /**
  * Whether the Content Bank takes images: the `content-bank-images` flag
@@ -35,13 +55,46 @@ export function uploadAccept({ images }: UploadOptions): string {
   return images ? '.md,.pdf,.jpg,.jpeg,.png,.webp,.gif' : '.md,.pdf'
 }
 
-const BASE_LIMITS_LABEL = 'Markdown (.md) up to 10 MB · PDF (.pdf) up to 50 MB'
+/**
+ * The limits, one line per kind of file.
+ *
+ * A list rather than a sentence because the caller decides how to separate
+ * them, and every caller so far separates them with a line break. Joining them
+ * here with a middle dot made one long line the eye has to parse before it can
+ * find the number it came for.
+ *
+ * The sizes are interpolated from `UPLOAD_LIMITS` rather than written into the
+ * copy, so a cap that moves on the server moves here in one place instead of in
+ * every catalogue.
+ */
+export function uploadLimitLines(
+  t: TFunction,
+  { images }: UploadOptions,
+): string[] {
+  const lines = [
+    t('uploads.limitDocs', {
+      md: capLabel(UPLOAD_LIMITS.md),
+      pdf: capLabel(UPLOAD_LIMITS.pdf),
+    }),
+  ]
+  if (images) {
+    lines.push(
+      t('uploads.limitImages', { size: capLabel(UPLOAD_LIMITS.image) }),
+    )
+  }
+  return lines
+}
 
-/** Human-readable summary of the limits, shown in the upload modal. */
-export function uploadLimitsLabel({ images }: UploadOptions): string {
-  return images
-    ? `${BASE_LIMITS_LABEL} · Images (JPEG, PNG, WebP, GIF) up to 10 MB`
-    : BASE_LIMITS_LABEL
+/**
+ * A cap, as the number it was set as: `10 MB`, never `10.0 MB`.
+ *
+ * `formatBytes` keeps a decimal because it measures a file, where the tenth is
+ * the difference between "just under" and "just over". A limit is a round
+ * number somebody chose, and printing it to a decimal implies a precision the
+ * rule does not have.
+ */
+function capLabel(bytes: number): string {
+  return `${Math.round(bytes / MB)} MB`
 }
 
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif']

@@ -24,7 +24,7 @@ import { useCampaign } from '@/hooks/useCampaigns'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PostSourcesSection } from '@/components/posts/sources/PostSourcesSection'
 import { cn } from '@/lib'
-import { canEditScheduledAt } from '@/lib/postStatusMachine'
+import { canEditScheduledAt, isSubmitted } from '@/lib/postStatusMachine'
 import {
   fromLocalParts,
   getLocalTimezoneLabel,
@@ -83,6 +83,12 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
   // edit here would change the displayed date without moving the actual
   // publish. Once `published` the date is history.
   const scheduleLocked = !canEditScheduledAt(doc.status)
+  // And so is the rest of the panel, for the same reason (CON-251): every
+  // field here is part of the post resource, and this form autosaves through
+  // the same whole-resource PUT the body does. DANGER ZONE is deliberately
+  // exempt — deleting a published post is still allowed, and
+  // `DeletePostDialog` already says what it does and does not undo.
+  const locked = isSubmitted(doc.status)
 
   useEffect(() => {
     const sub = form.watch((values, info) => {
@@ -144,6 +150,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                       campaign={campaign}
                       platformId={platformId}
                       postType={platformPostType}
+                      disabled={locked}
                       onChange={(pid, slug) => {
                         form.setValue('platform_id', pid, { shouldDirty: true })
                         form.setValue('platform_post_type', slug, {
@@ -262,7 +269,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                           onValueChange={field.onChange}
                           elements={phaseOptions}
                           placeholder="No phase"
-                          disabled={phaseOptions.length <= 1}
+                          disabled={locked || phaseOptions.length <= 1}
                         />
                       )}
                     </FormControl>
@@ -282,8 +289,15 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                     <FormItem>
                       <FormLabel>Target audience notes</FormLabel>
                       <FormControl>
+                        {/* readOnly, not disabled: the Textarea renders a
+                            read-only value as plain content rather than dimming
+                            it, which is what these notes become once the post
+                            has gone out. */}
                         <Textarea
-                          placeholder="Who should this reach?"
+                          placeholder={
+                            locked ? undefined : 'Who should this reach?'
+                          }
+                          readOnly={locked}
                           {...field}
                         />
                       </FormControl>

@@ -5,9 +5,14 @@ import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
-import { PLATFORMS, getPlatformInfo } from '@/lib/platformDictionary'
+import {
+  PLATFORMS,
+  getPlatformInfo,
+  releasedPostTypes,
+} from '@/lib/platformDictionary'
 import {
   canEditPublishingAccount,
+  isSubmitted,
   type PublishMethod,
 } from '@/lib/postStatusMachine'
 import { cn } from '@/lib'
@@ -83,6 +88,11 @@ export function PostQuickSettingsBar({
   const autoPublish = useAutoPublishState(doc.platform_id)
   const views = usePlatformViews()
   const flashing = useAttentionFlash(attention)
+  // A copy of this post already exists outside Ogen, so the channel it went
+  // out on is history rather than a setting (CON-251). The account slot was
+  // already doing this — `canEditPublishingAccount` is the same rule — and the
+  // two pickers beside it now read the same way.
+  const locked = isSubmitted(doc.status)
 
   // platform id → post-type slugs enabled on this campaign.
   const campaignPostTypes = useMemo(
@@ -113,7 +123,11 @@ export function PostQuickSettingsBar({
   const campaignPlatforms = campaign
     ? PLATFORMS.filter((p) => (campaignPostTypes.get(p.id)?.size ?? 0) > 0)
     : PLATFORMS
-  const campaignTypes = (platform?.postTypes ?? []).filter(
+  // `releasedPostTypes` and not `platform.postTypes`: the campaign filter is
+  // the wrong thing to lean on for the release gate, because the fallback
+  // above deliberately drops it — and because a campaign row could name a
+  // slug this build has not released.
+  const campaignTypes = releasedPostTypes(doc.platform_id).filter(
     (t) =>
       !campaign ||
       (campaignPostTypes.get(doc.platform_id)?.has(t.slug) ?? false),
@@ -153,7 +167,7 @@ export function PostQuickSettingsBar({
       // sides read the selectable list, so switching platforms can never
       // land the post on a video type the picker would not have offered.
       const next = getPlatformInfo(platformId)
-      const types = next?.postTypes ?? []
+      const types = releasedPostTypes(platformId)
       if (next && !types.some((t) => t.slug === d.platform_post_type)) {
         const camp = campaignPostTypes.get(platformId)
         const preferred = types.find((t) => camp?.has(t.slug)) ?? types[0]
@@ -233,6 +247,7 @@ export function PostQuickSettingsBar({
           platform={platform}
           platforms={campaignPlatforms}
           disabled={campaignPending}
+          readOnly={locked}
           onSelect={selectPlatform}
         />
 
@@ -251,6 +266,7 @@ export function PostQuickSettingsBar({
                 connectedPostTypes.get(doc.platform_id) ?? EMPTY_SLUGS
               }
               disabled={campaignPending}
+              readOnly={locked}
               onSelect={selectPostType}
             />
             <Dot />

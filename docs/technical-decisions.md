@@ -161,9 +161,30 @@ is not a promise the post will publish — it understates rather than cries wolf
 
 **Known gap.** The editor's uploads go to the `post_attachments` table, whose
 presigned/thumbnail URLs are hydrated per post at response time. Nothing writes
-`media_urls`, so **the leading image never renders in practice today.** The
-card is built and correct; lighting it up needs the backend to put a thumbnail
-URL on the post list payload. Backend ticket, not a front-end change.
+`media_urls`, so **the leading image never renders in practice today**. The card
+is built and correct; lighting it up needs the backend to put a thumbnail URL on
+the post list payload — **CON-247**, a backend ticket with no front-end change
+expected.
+
+Calendar Settings' *Show cards as image previews* switch is therefore **hidden
+behind `calendar-card-images`**. It was on by default and inert, which is the
+worst of the three states it could be in: an off switch would read as a setting
+to try, an absent one as a feature not built, but a switch already *on* says the
+pictures are missing for some other reason and sends the user looking for it in
+their posts. The preference itself is untouched — still stored, still defaulted
+— so this hides a control rather than changing a setting, and whatever a user
+chose comes back when the flag flips.
+
+There is no client-side workaround, and it is worth writing down which one fails
+and why. `postToPayload` does round-trip `media_urls`, so the front end could in
+principle write a thumbnail URL there on upload — but `PostAttachment.ThumbnailURL`
+is a **presigned GET with a 15-minute TTL** (`PresignedURLTTL`, `handlers/post_attachments.go`),
+so what would be persisted is a URL that is broken by the time anyone reloads.
+The server's own `ListByCampaign` returns bare post rows with no attachment join,
+so the payload has no other image in it either. The fix is one of: hydrate a
+thumbnail onto the post list rows, or serve attachment thumbnails from a public
+key the way `assets` already does (`storage.PublicURL`) so a stored URL would
+keep working.
 
 **Where.** `components/campaigns/calendar/PostCard.tsx`,
 `lib/postValidation.ts` (`hasVisibleProblem`).
@@ -244,6 +265,52 @@ exports `selectActivePanel`, which is how components ask what's open —
 *layout* effect so a reload straight into a post paints the restored panel
 rather than opening it a frame later. Scope and `campaignId` are session-only:
 where you are is not a preference.
+
+## A campaign remembers where you were in its posts {#posts-place}
+
+**Decision.** Each campaign remembers the arrangement its posts were last read
+in and the day the calendar was drawn around — `{ view, anchor, granularity }`
+per campaign id, in `settingsStore` (localStorage). The post editor's back arrow
+and the sidebar's **Posts** row restore all of it, the list included; the entry
+points that name the *calendar* — the overview's calendar card, a bare
+`/campaigns/:id/calendar` URL — restore the date and granularity but never
+redirect to the table.
+
+**Why.** A campaign's posts are usually not in the current week: you plan
+September in August. So "today", which every one of those links used to
+hard-code, is the one week reliably guaranteed to be empty, and each return trip
+through a post cost the user the navigation they had just done.
+
+`granularity` is stored rather than derived because the list is neither
+granularity, and something that opens a calendar after a trip through the table
+still has to pick one — without it, it would guess "week" at someone who reads
+their campaign by the month.
+
+**Why not `history.back()`.** It has nothing to go back to when the post was
+opened from a pasted URL or a new tab, and a button is not a link: the arrow
+would lose middle-click, right-click and the status-bar preview that every other
+navigation in the app has. The cost of keeping a real `<Link>` is that the back
+arrow is two branches, since a `<Link>`'s params are typed off a literal `to`.
+
+**Consequences.** The calendar writes the memory on every anchor change, so
+`rememberVisit` returns its input unchanged when nothing moved and the store
+skips the `set` — otherwise every arrow press would notify the sidebar and the
+post header. The default reads the clock and so is a fresh object each call,
+which is why the hooks subscribe to the stored entry (stable, or `undefined`)
+and derive the default outside the subscription. Views are the only writers: a
+redirect or a programmatic navigation must not be saved as the user's choice.
+Rehydration distrusts the blob — a malformed anchor here would not render wrong,
+it would put the router into `beforeLoad`'s normalising redirect on every
+navigation.
+
+`DeletePostDialog` is deliberately **not** wired to this: after deleting a post
+it lands on the week that post was going out, which is a different and better
+answer than where the user came from.
+
+**Where.** `lib/postsPlace.ts` (pure, with `postsPlace.test.ts`),
+`hooks/usePostsPlace.ts`, `stores/settingsStore.ts` (`rememberPostsPlace`),
+recorded by the two views and read by `PostDetailsHeader`, `AppSidebar`,
+`OverviewCard` and the bare-calendar redirect.
 
 ## The posts table's sort order follows the user, not the device {#posts-table-sort}
 
@@ -478,10 +545,24 @@ Two consequences worth keeping:
   text is what the embeddings are built from — so the rule is about the *body*,
   not about whether bytes sit behind the row.
 - **The fallback is a floor, not a destination.** A kind worth showing properly
-  gets its own view and stops arriving here. `IMG` will, once the asset DTO
-  carries a URL for the original — `AssetFile` exposes `thumbnail_url` and
-  nothing else today, which is why the image viewer is not written yet rather
-  than written against a guess. See the `content-bank-images` flag comment.
+  gets its own view and stops arriving here, and `IMG` is the first to do it:
+  CON-246 settled the DTO field for the original (`AssetFile.url`), so
+  `AssetImageView` renders the picture with its alt text and description beside
+  it. `opensAsDocument` still answers `false` for an image — it is not a
+  document and never opens in the editor — so the two rules compose rather than
+  compete. What reaches `UnsupportedAsset` now is only a kind this build has
+  genuinely never heard of.
+
+**One further consequence, found while wiring that up.** The asset update is a
+whole-resource PUT and the handler assigns `tag_ids` and `alt_text` from the
+request unconditionally, so a payload naming only what changed erases the rest.
+`AssetDocument` had been sending `{title, content}`, which had been silently
+untagging every asset anyone renamed — invisible only because nothing in the app
+sets a tag. Every save now goes through `assetToPayload` (`lib/assetPayload.ts`),
+the same round-trip `campaignToPayload` does for the same reason. The image
+screen debounces the *asset* rather than each field for the matching reason: two
+saves in flight each carry a stale copy of the other's field, and the second to
+land wins.
 
 ## English is bundled, every other language is a chunk {#i18n}
 
@@ -626,6 +707,126 @@ it. Same rule as always: a flag is not a permission.
 `config/featureFlags.ts`, `devtools/FlagsPanel.tsx`, `devtools/OverrideMarker.tsx`,
 `routes/flags.tsx`, the `VITE_DEV_TOOLS` build arg in the `Dockerfile`.
 
+## A thread is the body, split {#thread-sequence}
+
+**Decision.** On X and Threads, a `thread` post is written in the same single
+Markdown editor as every other post type, and the chain it publishes as is
+**derived from the body on every keystroke** — never stored, never edited
+separately. A `---` divider is a break; with no divider in the body, blank lines
+are; anything still past the platform's per-post ceiling is cut to fit. The only
+thing stored beside the body is which post carries which file. Behind the
+`thread-sequence` flag (CON-196).
+
+**Why.** Zernio publishes a chain from `platformSpecificData.threadItems` on
+both networks: "the first item is the root post and subsequent items become
+replies in order", and "when `threadItems` is provided, the top-level `content`
+field is used only for display and search purposes, it is **NOT** published"
+(docs.zernio.com/platforms/threads, /platforms/twitter). Once that is the wire
+format, every ceiling is per part of the chain — 280 characters on X, 500 on
+Threads, four images or ten, one video — so the whole body measured against one
+of them fails a thread that is fine and stays silent about the one post that is
+not.
+
+The first build answered that with a per-post editor: numbered rows, each its
+own textarea and its own media, with `content` written back as a derived
+summary. It worked and it was wrong. A thread is not a different kind of
+document, it is a post that gets cut up on the way out, and turning the editor
+into a list of inputs made it a different screen from every other post type for
+a difference that belongs at the publish boundary. It also put the words in two
+places — the items and the `content` written back from them — and a screen whose
+two copies must be kept in step is a screen with a bug waiting in it.
+
+Deriving the chain removes both problems and one more: **there is no "this post
+is too long" state left.** A part past the ceiling is cut rather than reported,
+so the app fixes the thing it used to complain about, and the preview shows
+exactly where.
+
+**What it is not.** It is not the blank-line splitting the X preview card has
+always drawn, even though blank lines are still the fallback rule. That was a
+guess about what the publisher would do, and the guess was wrong: nothing in the
+Go repo has ever sent `threadItems`, so a `thread` post publishes as one post
+with the whole body in it. The card's note said the publisher did the splitting;
+it never did, and that sentence is gone.
+
+**How.**
+
+- **A divider is a real block, not a convention.** BlockNote parses `---` into
+  a `divider` block and serialises it back as `***`, so the author sees the seam
+  they typed as a line across the editor. That is why it is the primary rule:
+  the split is visible in the document rather than inferred from whitespace.
+- **Blank lines are the fallback, and only the fallback.** A body with a divider
+  anywhere in it splits *only* at dividers, which is what makes multi-paragraph
+  posts expressible. A body with none splits at blank lines, which is the
+  convention the preview has always drawn and how people write threads.
+- **The ceiling cuts what is left**, on the last sentence end that leaves the
+  post reasonably full (`MIN_FILL`), else a line break, else a word. An unbroken
+  token longer than the limit — a URL, a pasted key — is cut where the limit
+  falls, because there is nowhere better.
+- **`lib/threadSequence.ts` owns every rule**, pure and tested, and one
+  `planThread` call produces the whole chain. The note under the editor, both
+  preview cards and the pre-publish row read that one result, so the screen
+  cannot disagree with itself about how many posts this is.
+- **Attachments stay post-level rows.** `ThreadAssignment` maps an attachment id
+  to a post index, so `post_attachments` needs no column and no migration. The
+  rule that makes it safe: *a file with no entry rides the first post.* Uploading
+  from the media card, from the assistant, or from an older client needs to know
+  nothing about threads and the file still publishes — and it is what the X card
+  always drew, where the lead post carries the media. An entry naming a post that
+  no longer exists rides the last one, where the reader last saw it.
+- **The assignment lives in the tenant key/value store** under
+  `thread-sequence.<postId>` (`useThreadSequence`), the same stand-in
+  `campaign-accounts` uses while waiting for its column, with the same limits:
+  workspace-wide, whole-value writes, last write wins. Losing it is survivable
+  by design — see the rule above.
+- **The media card is where a file's post is chosen**, because it is where the
+  files are. Each thumbnail carries one picker naming the post it rides; the
+  card's total cap is dropped for a thread, since `policy.max` is what *one*
+  post takes and a five-post thread holds five times it.
+- **`content` is never rewritten.** The body is what the author typed, and
+  everything downstream — the calendar, the posts table, search, the assistant —
+  keeps reading exactly the field it already reads. This is the largest
+  behavioural difference from the first build, and the reason the flag now
+  changes nothing outside its own screen.
+- **The post type is gated on its dictionary entry, not on the slug.**
+  `PlatformPostType.flag` withholds *Threads'* `thread`, which is new. X's is
+  untouched, because the app has always offered it and a flag may never change
+  what happens when it is off.
+- **While it is on, that flag also stands in for the publisher's vocabulary.**
+  `buildPlatformView` intersects the dictionary with the slugs a publisher
+  reports, and `supportedPlatforms` in the Go repo lists `thread` for `twitter`
+  only — so the honest intersection hides the feature from the network it is
+  named after until the server learns one word. `aheadOfPublishers` lets the
+  flag answer in the slug's place: a publisher exists, so the type is allowed;
+  it is connected, so it is available. Scoped to *flagged* types, so a slug the
+  server genuinely withdraws still disappears from the app, and with the flag
+  off the publisher is the whole answer exactly as before. The same trade every
+  flagged feature here makes — the UI is reviewable before the endpoint answers
+  — applied to a vocabulary rather than to a route.
+
+**The consequence to hand the back end:** because the words live only in
+`content`, the publisher has to cut it the same way before filling
+`threadItems`, or what goes out is not what the author was shown. That is the
+`src/lib/*` arrangement this repo already runs on — the Go rule is the source of
+truth, ours mirrors it — and `splitBody`/`splitToLimit` are written to port,
+with their tests as the specification.
+
+**Waiting on** the back end: `SubmitRequest` (`publishers/zernio/posts.go`) has
+no `platformSpecificData` at all, so nothing sends the chain yet; the same split
+implemented server-side; a home for the media assignment; `thread` added to
+Threads in `publishers/zernio/platforms.go`, which lists it for `twitter` only
+— a *submit* blocker rather than a UI one, since the flag stands in for the
+missing slug; and **attachment validation counted per item** — the server measures the files
+against the post, so a thread spreading five images over three posts still comes
+back "post has 5 image attachments; platform allows up to 4". We pass
+`platform_validation` through as written, because until the publisher splits it
+is *right*: a thread really does go out as one post with every file on it.
+
+**Where.** `lib/threadSequence.ts` (+ test), `hooks/useThreadSequence.ts`,
+`components/posts/sequence/ThreadSplitNote.tsx`, the `thread` branch in
+`PostMediaCard`, the `sequence` branch in `lib/postValidation.ts`,
+`TwitterPreview` / `ThreadsPreview` / `PostPreviewPanel`, and the
+`thread-sequence` flag.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain
@@ -701,9 +902,12 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
   ready building block; real invitations (email loop) await backend support
   (CON-26).
 - **Dark mode** is scaffolded (`.dark` block) but effectively empty.
-- **Images can't be Content-Bank assets yet.** `assets.type` is `MD | PDF | URL`
-  and the upload endpoint takes `.md` and `.pdf` only, so `IMG` is a type the
-  client declares and the server cannot produce (CON-16). The upload surface
-  offers images behind `content-bank-images`, off; an `IMG` asset that did
-  arrive opens read-only — see [below](#asset-opening). AI image *generation* is
-  planned but **secondary** (CON-105/88/83).
+- **Content-Bank images have no thumbnail.** An image is a first-class asset now
+  (CON-246): it uploads through the same endpoint as `.md` and `.pdf`, stores as
+  `IMG`, and opens on its own screen — see [below](#asset-opening). What the
+  server does not do yet is render a smaller copy, so the list's preview cell
+  draws the full file scaled into 40px. `thumbnail_url` is already preferred
+  everywhere it could appear, so the day that job exists nothing on the client
+  changes. Also missing: the bridge that attaches a bank image to a post as a
+  real `post_attachments` row, which is what the alt text is being collected
+  for. AI image *generation* is planned but **secondary** (CON-105/88/83).

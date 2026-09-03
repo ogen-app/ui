@@ -186,9 +186,14 @@ function Onramp({
     <button
       type="button"
       onClick={onClick}
+      // A path nobody has wired renders disabled rather than as a live tile
+      // that does nothing — the callback being supplied is what says the flow
+      // exists.
+      disabled={!onClick}
       className={cn(
         'flex items-start gap-3 rounded-md border border-quaternary px-4 py-4',
-        'cursor-pointer text-primary-foreground transition-colors hover:border-foreground',
+        'cursor-pointer text-primary-foreground transition-colors enabled:hover:border-foreground',
+        'disabled:cursor-default disabled:opacity-60',
       )}
     >
       {content}

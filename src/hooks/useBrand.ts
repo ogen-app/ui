@@ -39,6 +39,14 @@ import type {
  * That shape is now the endpoint's, not a guess about it: CON-228 answers in
  * exactly this form, and the swap from the stub touched only the service — the
  * bet this file was written on.
+ *
+ * Keyed without the workspace id, like `WORKSPACE_MEMBERS_KEY`: the request is
+ * scoped by the tab's `X-Workspace-Id`, and every path that changes which
+ * workspace the tab is in tears the whole cache down — a switch and an
+ * active-workspace delete clear the query client (`useSwitchWorkspace`,
+ * `useDeleteWorkspace`), stale-workspace recovery and login/logout end in a
+ * full load or a clear. That teardown is what keeps an unkeyed entry from ever
+ * surviving into another workspace.
  */
 export const BRAND_KEY = ['brand'] as const
 

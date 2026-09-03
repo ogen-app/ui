@@ -186,6 +186,10 @@ export function Gap({
               variant={i === 0 ? 'defaultInverted' : 'outline'}
               size="sm"
               onClick={offer.onSelect}
+              // An offer nothing is wired to yet renders disabled rather than
+              // as a live button that does nothing — the caller saying which
+              // paths exist is the callback being supplied.
+              disabled={!offer.onSelect}
             >
               <span>{offer.label}</span>
               {offer.hint && (
@@ -708,7 +712,11 @@ export function StarterCard({
   )
 }
 
-/** The `ADD …` control a library section carries in its header. */
+/**
+ * The `ADD …` control a library section carries in its header. Disabled while
+ * no handler is wired — an active-looking button that does nothing is worse
+ * than one that says it can't yet.
+ */
 export function AddButton({
   label,
   onClick,
@@ -717,7 +725,7 @@ export function AddButton({
   onClick?: () => void
 }) {
   return (
-    <Button variant="outline" size="sm" onClick={onClick}>
+    <Button variant="outline" size="sm" onClick={onClick} disabled={!onClick}>
       <PlusIcon />
       <span>{label}</span>
     </Button>

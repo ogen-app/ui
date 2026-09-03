@@ -43,10 +43,16 @@ export function identityColorVar(id: string): string {
 /**
  * Up to two letters for a name: the initials of its first two words, or the
  * first two characters of a single-word name.
+ *
+ * Words go through `Array.from`, which iterates code points rather than UTF-16
+ * code units — indexing/slicing the string directly would shear an emoji or
+ * any other astral-plane character into a lone surrogate ("😀 Team" must not
+ * render as a broken glyph).
  */
 export function identityAbbr(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean)
   if (words.length === 0) return '·'
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
-  return `${words[0][0]}${words[1][0]}`.toUpperCase()
+  const first = Array.from(words[0])
+  if (words.length === 1) return first.slice(0, 2).join('').toUpperCase()
+  return `${first[0]}${Array.from(words[1])[0]}`.toUpperCase()
 }

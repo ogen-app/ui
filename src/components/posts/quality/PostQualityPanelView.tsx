@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import {
   ArrowClockwiseIcon,
@@ -37,6 +38,13 @@ export type PostQualityPanelViewProps = {
   steps: string[]
   cached: boolean
   assessError: string | null
+  /**
+   * The post is submitted, so the panel keeps every reading and loses the run
+   * (CON-251). A stored score still describes the post exactly — better than
+   * before, since nothing can edit past it now — but paying for a new one
+   * would buy a verdict about text nobody can act on.
+   */
+  locked?: boolean
   onClose?: () => void
 }
 
@@ -65,8 +73,10 @@ export function PostQualityPanelView({
   steps,
   cached,
   assessError,
+  locked = false,
   onClose,
 }: PostQualityPanelViewProps) {
+  const { t } = useTranslation()
   const suggestions = assessment ? totalSuggestions(assessment) : 0
 
   return (
@@ -90,7 +100,7 @@ export function PostQualityPanelView({
       // — before that the call to action is the body, where it explains
       // itself.
       footer={
-        assessment && !unavailable ? (
+        assessment && !unavailable && !locked ? (
           <Button
             type="button"
             variant="outline"
@@ -148,6 +158,17 @@ export function PostQualityPanelView({
               <span>Try again</span>
             </Button>
           }
+        />
+      ) : !assessment && locked ? (
+        // Before the two states below it, and without their action: on a
+        // submitted post "hasn't been scored yet" describes a run that is
+        // never going to happen, and offering the button would spend a model
+        // call on text nobody can change.
+        <QualityEmptyState
+          lines={[
+            t('posts.quality.neverScored'),
+            t('posts.quality.scoringIsForDrafts'),
+          ]}
         />
       ) : assessError && !assessment ? (
         <QualityEmptyState

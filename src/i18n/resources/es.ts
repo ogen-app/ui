@@ -162,6 +162,9 @@ export const es: Translation = {
         'Las invitaciones caducan a los siete días y solo pueden usarse una vez',
       brokenBody:
         'Pide a quien te invitó que te envíe otra. Si ya la aceptaste, <login>inicia sesión</login>.',
+      previewFailedTitle: 'No se ha podido comprobar la invitación',
+      previewFailedSubtitle:
+        'Algo ha fallado por nuestra parte — puede que el enlace siga siendo válido',
       joinBody:
         'Has iniciado sesión como {{email}}, que es a quien va dirigida esta invitación. Al aceptarla, este espacio se añade a tu cuenta.',
       joinSubmit: 'ACEPTAR INVITACIÓN',
@@ -499,7 +502,9 @@ export const es: Translation = {
       resend: 'REENVIAR',
       cancel: 'CANCELAR',
       cancelInvitation: 'Cancelar la invitación a {{email}}',
-      invitedBy: 'invitada por {{name}}',
+      // Agrees with the (elided) "invitación", never with the person — the
+      // invitee's gender is unknown.
+      invitedBy: 'invitación de {{name}}',
       expiresToday: 'caduca hoy',
       expiresIn_one: 'caduca mañana',
       expiresIn_other: 'caduca en {{count}} días',
@@ -508,7 +513,9 @@ export const es: Translation = {
       expiredAgo_other: 'caducó hace {{count}} días',
       roleChanged: 'Rol actualizado para {{name}}',
       roleChangeFailed: 'No se ha podido cambiar el rol',
-      removed: '{{name}} eliminada',
+      // Impersonal construction on purpose: no participle agreeing with a
+      // person whose gender we don't know.
+      removed: 'Se ha eliminado a {{name}}',
       removeFailed: 'No se ha podido eliminar',
       invitationSent: 'Invitación enviada a {{email}}',
       inviteFailed: 'No se ha podido enviar la invitación',
@@ -519,7 +526,8 @@ export const es: Translation = {
       removeBody:
         'Esto elimina a {{name}} del espacio y borra todo lo que creó en él — sus campañas, las publicaciones de esas campañas y los archivos que subió — para todo el mundo. Su cuenta de acceso y sus otros espacios no se tocan. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
       removeConfirmLabel: 'Escribe su correo electrónico para confirmar',
-      removeDismiss: 'MANTENERLA',
+      // No clitic pronoun: "MANTENERLA/LO" would gender the member being kept.
+      removeDismiss: 'NO ELIMINAR',
       removeConfirm: 'ELIMINAR DE ESTE ESPACIO',
     },
     dangerZone: {
@@ -542,10 +550,6 @@ export const es: Translation = {
       title: 'Ajustes de plataformas',
       empty:
         'Aún no hay plataformas conectadas — elige una en «Conectar plataformas», más abajo.',
-      cadence: 'Frecuencia',
-      constraints: 'Restricciones',
-      /** Cadence and constraints await real backend data — see PlatformRow. */
-      comingSoon: 'Próximamente',
       contentTypes: 'Tipos de contenido disponibles',
       contentTypesEmpty: 'Ninguno',
       accountInactive:
@@ -711,6 +715,57 @@ export const es: Translation = {
       compactLate: '{{amount}} de retraso',
     },
 
+    sequence: {
+      explainer:
+        'Esto se publica como una cadena de publicaciones, cada una respondiendo a la anterior. Escribe --- en una línea aparte donde quieras un corte; si no hay ningún divisor, los cortes son las líneas en blanco. Lo que siga pasándose del límite de caracteres se recorta para que quepa.',
+
+      splitByDivider_one:
+        'Se publica como {{count}} publicación, cortada donde pusiste un divisor.',
+      splitByDivider_other:
+        'Se publica como {{count}} publicaciones, cortadas donde pusiste un divisor.',
+      splitByBlankLine_one:
+        'Se publica como {{count}} publicación, cortada en las líneas en blanco.',
+      splitByBlankLine_other:
+        'Se publica como {{count}} publicaciones, cortadas en las líneas en blanco.',
+      splitAutoCut_one:
+        '{{count}} de ellas salieron de texto cortado en {{limit}} caracteres.',
+      splitAutoCut_other:
+        '{{count}} de ellas salieron de texto cortado en {{limit}} caracteres.',
+      splitByLimit_one:
+        'Se publica como {{count}} publicación, recortada para caber en {{limit}} caracteres.',
+      splitByLimit_other:
+        'Se publica como {{count}} publicaciones, recortadas para caber en {{limit}} caracteres.',
+      splitSingle: 'Se publica como una sola publicación.',
+      splitPending: 'Calculando en cuántas publicaciones se divide esto…',
+      splitOverflow:
+        'Esto son más de {{max}} publicaciones. Acórtalo o publícalo como más de un hilo.',
+
+      mediaPerPost: 'Todos los límites de aquí son por publicación del hilo.',
+      mediaOn: 'Publicación {{position}}',
+      mediaOnLabel:
+        'Este archivo va en la publicación {{position}}: elige otra',
+
+      saveFailed: 'No se pudo guardar qué publicación lleva cada archivo.',
+
+      postCount_one: '{{count}} publicación',
+      postCount_other: '{{count}} publicaciones',
+
+      check: {
+        label: 'Hilo',
+        pending: 'Comprobando…',
+        overflow: 'Más de {{max}} publicaciones',
+        issues_one:
+          'La publicación {{positions}} lleva más archivos de los que admite una publicación',
+        issues_other:
+          'Las publicaciones {{positions}} llevan más archivos de los que admite una publicación',
+      },
+
+      previewNote:
+        'Un hilo: cada publicación de abajo sale por separado, respondiendo a la anterior.',
+      previewNoteUnsplit:
+        'La tarjeta divide esto en las líneas en blanco, pero se publica como una sola publicación: Ogen aún no envía el hilo.',
+    },
+
     status: {
       draft: 'Borrador',
       ready_for_publish: 'Lista para publicar',
@@ -723,8 +778,95 @@ export const es: Translation = {
 
     noPlatform: 'Sin plataforma',
     noAccount: 'Sin cuenta',
+    noPostType: 'Sin tipo de publicación',
+
+    backToPosts: 'Volver a las publicaciones',
 
     hasProblem: 'Esta publicación tiene un problema',
+
+    sources: {
+      heading: 'Fuentes',
+      sectionTitle: 'FUENTES',
+      add: 'AÑADIR FUENTE',
+      fromBank: 'Elegir del banco de contenido',
+      upload: 'Subir archivos',
+      webPage: 'Añadir una página web',
+      emptyCard:
+        'Esta publicación se basa únicamente en el brief de la campaña. Añade los documentos de los que también debería partir: el asistente lee exactamente lo que aparece aquí.',
+      emptyRail:
+        'Nada todavía — esta publicación se basa únicamente en el brief de la campaña.',
+      emptyLocked:
+        'Esta publicación se basa únicamente en el brief de la campaña.',
+      loading: 'Cargando…',
+      unreadable: 'No se puede leer',
+      unreadableHint:
+        'No se extrajo nada de este documento, así que la recuperación lo omite.',
+      reading: 'Leyendo todavía',
+      remove: 'Quitar {{title}} de esta publicación',
+    },
+
+    locked: {
+      scheduled:
+        'Esta publicación está programada. Cancela la programación para modificarla.',
+      published:
+        'Esta publicación ya salió — lo que ves es el registro de lo que se publicó.',
+    },
+
+    quality: {
+      score: 'Calidad de la publicación {{score}}',
+      assess: 'Evaluar la calidad',
+      reassess: 'Volver a evaluar',
+      assessing: 'Evaluando…',
+      neverScored: 'Esta publicación nunca se evaluó.',
+      scoringIsForDrafts:
+        'La evaluación es para una publicación que todavía puedes cambiar.',
+    },
+
+    versions: {
+      liveDraft: 'Borrador',
+      liveDraftTime: 'Sin guardar',
+      liveDraftNote: 'Todavía sin instantánea',
+      liveSubmitted: 'Texto actual',
+      liveSubmittedNote: 'Nunca se guardó una instantánea',
+    },
+
+    duplicate: {
+      action: 'DUPLICAR COMO BORRADOR',
+      pending: 'Duplicando…',
+      success: 'Borrador creado',
+      error: 'No se pudo duplicar la publicación. Inténtalo de nuevo.',
+      titleSuffix: '{{title}} (copia)',
+    },
+
+    notes: {
+      heading: 'Notas',
+      add: 'AÑADIR NOTA',
+      save: 'GUARDAR',
+      cancel: 'CANCELAR',
+      delete: 'ELIMINAR',
+      edit: 'Editar la nota',
+
+      titlePlaceholder: 'Título (opcional)',
+      titleLabel: 'Título de la nota',
+      bodyPlaceholder: '¿Qué debería recordar esta publicación?',
+      bodyLabel: 'Nota',
+
+      deleteConfirm: '¿Eliminar esta nota? No se podrá recuperar.',
+
+      loadError:
+        'No se pudieron cargar las notas. Vuelve a cargar la página para intentarlo de nuevo.',
+
+      origin: {
+        assistant: 'Escrita por el asistente de publicaciones',
+        generated: 'Capturada cuando se generó esta publicación',
+      },
+
+      type: {
+        note: 'Nota',
+        draftThesis: 'Tesis del borrador',
+        imagePrompt: 'Prompt de imagen',
+      },
+    },
   },
   tiers: {
     notInPlan: 'No está en tu plan',
@@ -845,6 +987,38 @@ export const es: Translation = {
       title: 'Esto no es un documento',
       body: 'Esta versión de la aplicación no sabe mostrar este tipo de recurso. No se ha cambiado nada: sigue aquí, y una versión más reciente lo abrirá.',
     },
+
+    image: {
+      titlePlaceholder: 'Título',
+      altLabel: 'Texto alternativo',
+      altPlaceholder: 'Una persona en un taller sosteniendo un implante dental',
+      altHelp:
+        'Lo que se le dice de la imagen a quien no puede verla. Acompaña a la imagen cuando esta pasa a una publicación.',
+      altCount_one: 'Queda {{count}} carácter',
+      altCount_other: 'Quedan {{count}} caracteres',
+      descriptionLabel: 'Descripción',
+      descriptionPlaceholder:
+        'Qué hay en esta imagen y para qué sirve: las palabras con las que debería encontrarse.',
+      descriptionHelp:
+        'No se muestra a nadie. Es lo que consulta el asistente cuando busca una imagen que usar.',
+      tagsLabel: 'Etiquetas',
+      tagsPlaceholder: 'Añade una etiqueta…',
+      tagsHelp: 'Cómo vuelves a encontrar esta imagen en la lista.',
+      missing: 'Esta imagen no se guardó, así que no hay nada que mostrar.',
+      animated: 'Animada',
+    },
+  },
+
+  uploads: {
+    limitDocs: 'Markdown hasta {{md}}, PDF hasta {{pdf}}',
+    limitImages: 'Imágenes (JPEG, PNG, WebP, GIF) hasta {{size}}',
+    pdfNote: 'Los PDF se leen en segundo plano, así que terminan después.',
+    browse: 'Suelta los archivos aquí o haz clic para elegirlos',
+    remove: 'Quitar {{name}}',
+    cancel: 'CANCELAR',
+    submit: 'SUBIR',
+    submitCount: 'SUBIR ({{n}})',
+    dropInto: 'Añadir a {{scope}}',
   },
 
   errors: {

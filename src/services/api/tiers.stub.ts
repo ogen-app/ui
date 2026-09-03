@@ -266,6 +266,26 @@ function nextRenewal(since: string, now: Date): string {
   return next.toISOString()
 }
 
+/**
+ * Lands a scheduled change whose boundary has passed — the third place the
+ * stub reads the clock, and for the same reason as the other two: on the real
+ * thing the *server* applies the change when the billing cycle rolls over, so
+ * a plan read after the boundary already answers with the new tier. Without
+ * this, a stored downgrade would sit "scheduled" forever. Persisted, so the
+ * landing survives a reload the same way the choice did.
+ */
+function reconcile(selection: Selection, now: Date): Selection {
+  const due = selection.scheduled
+  if (!due || new Date(due.effectiveFrom).getTime() > now.getTime()) {
+    return selection
+  }
+  return write({
+    tierId: due.tierId,
+    since: due.effectiveFrom,
+    scheduled: null,
+  })
+}
+
 function toBody(tier: SeedTier): TierBody {
   // Neither leaves this file. `rank` because the client is not allowed to order
   // tiers, `billingPeriod` because it belongs to a subscription rather than to
@@ -292,13 +312,18 @@ export function stubSelectTier(
   now: Date = new Date(),
 ): Promise<PlanBody> {
   const target = tierById(tierId)
-  const current = read()
+  // A change already due has landed by the time this click happens, so the
+  // ranks below compare against the tier the workspace is actually on — not
+  // the one it left at the last boundary.
+  const current = reconcile(read(), now)
   const held = tierById(current.tierId)
-  if (!target || !held) return Promise.resolve(stubPlanFrom(current))
+  if (!target || !held) return Promise.resolve(stubPlanFrom(current, now))
 
   if (target.id === held.id) {
     // Same tier: the click means "call the downgrade off", or it means nothing.
-    return Promise.resolve(stubPlanFrom(write({ ...current, scheduled: null })))
+    return Promise.resolve(
+      stubPlanFrom(write({ ...current, scheduled: null }), now),
+    )
   }
 
   const next: Selection =
@@ -314,11 +339,11 @@ export function stubSelectTier(
           },
         }
 
-  return Promise.resolve(stubPlanFrom(write(next)))
+  return Promise.resolve(stubPlanFrom(write(next), now))
 }
 
-export function stubWorkspacePlan(): Promise<PlanBody> {
-  return Promise.resolve(stubPlanFrom(read()))
+export function stubWorkspacePlan(now: Date = new Date()): Promise<PlanBody> {
+  return Promise.resolve(stubPlanFrom(reconcile(read(), now), now))
 }
 
 /** Only for tests and for a hard reset while poking at the screen. */

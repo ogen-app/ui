@@ -191,6 +191,7 @@
   --color-negative: var(--negative);
   --color-info: var(--info);
   --color-attention: var(--attention);
+  --color-notification: var(--notification);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -286,6 +287,17 @@
   /* Waiting on a person, with nothing wrong — a post you publish by hand
      (violet). Deliberately not orange: "your turn" is not "this is broken". */
   --attention: oklch(0.53 0.16 305);
+  /* Unread — the collapsed sidebar's dot, and nothing else yet. Orange, which
+     is the second meaning that hue now carries; see `docs/colors.md`.
+
+     Its own token rather than `--warning` for the reason `--info` and
+     `--attention` are their own: the dot says "there is something here you
+     haven't read", and painting it with the validation-warning token would
+     make every unread count read in code as a thing that is wrong.
+
+     It never carries text — it is 8px of fill — so it is free to be a stronger
+     orange than `--warning`, which has to stay legible under one. */
+  --notification: oklch(0.65 0.18 48);
   /* Selected/active affordance accent — teal, #00837F.
      The brand hue at a lightness that reads. Two things it changes:
 

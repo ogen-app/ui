@@ -298,7 +298,8 @@ export type BrandTemplate = {
    */
   isDefault: boolean
   /**
-   * Platform ids this set is chosen for (`lib/platformDictionary`). Empty means
+   * Display names of the platforms this set is chosen for ("Instagram" —
+   * matched against `PlatformInfo.name`, not the sqid). Empty means
    * it claims no platform of its own and is only ever used because it is the
    * default.
    *

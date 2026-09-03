@@ -16,10 +16,20 @@ type PostContentEditorProps = {
   content: string
   onContentChange: (content: string) => void
   /**
-   * Freezes the editor while the assistant rewrites this post server-side.
-   * Editing during a run would be lost — the assistant's write wins.
+   * Locked for good: a copy of this post exists outside Ogen, so these words
+   * are the record of what went out rather than a draft (CON-251).
+   *
+   * Rendered at full strength, unlike `busy` below. Dimming it would make the
+   * one authoritative copy of what was published the hardest thing on the page
+   * to read — and there is nothing in flight to wait for, which is what dimming
+   * means everywhere else in the app.
    */
   readOnly?: boolean
+  /**
+   * Frozen while the assistant rewrites this post server-side.
+   * Editing during a run would be lost — the assistant's write wins.
+   */
+  busy?: boolean
 }
 
 const DEFAULT_CONTENT = [{ type: 'paragraph' as const }]
@@ -28,7 +38,9 @@ export function PostContentEditor({
   content,
   onContentChange,
   readOnly = false,
+  busy = false,
 }: PostContentEditorProps) {
+  const frozen = readOnly || busy
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const readyRef = useRef(false)
   // The Markdown this editor last put on screen. Guards the sync effect below
@@ -55,14 +67,14 @@ export function PostContentEditor({
   }, [editor, content])
 
   const handleChange = useCallback(() => {
-    if (!readyRef.current || readOnly) return
+    if (!readyRef.current || frozen) return
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
       const markdown = editor.blocksToMarkdownLossy()
       appliedRef.current = markdown
       onContentChange(markdown)
     }, 500)
-  }, [editor, onContentChange, readOnly])
+  }, [editor, onContentChange, frozen])
 
   useEffect(() => {
     return () => {
@@ -72,12 +84,14 @@ export function PostContentEditor({
 
   return (
     <div
-      className={cn(readOnly && 'opacity-60 transition-opacity')}
-      aria-busy={readOnly}
+      // Only the assistant's run dims the page — see `readOnly`'s note.
+      className={cn(busy && 'opacity-60 transition-opacity')}
+      aria-busy={busy}
+      aria-readonly={readOnly || undefined}
     >
       <BlockNoteView
         editor={editor}
-        editable={!readOnly}
+        editable={!frozen}
         onChange={handleChange}
         theme="light"
       />

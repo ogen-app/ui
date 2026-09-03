@@ -4,6 +4,7 @@ import { Collapse } from '@/components/ui/collapse'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { TextSelect } from '@/components/ui/text-select'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { publishingDayNumbers } from '@/lib/campaignScheduling'
@@ -62,6 +63,7 @@ export function CalendarSettingsPanel({
   onClose?: () => void
 }) {
   const { t, i18n } = useTranslation()
+  const imagesEnabled = useFeatureFlag('calendar-card-images')
   const dayLabels = dayNames(i18n.language)
   const firstDayOptions = WEEK_DAYS.map((day) => ({
     id: String(day),
@@ -123,24 +125,31 @@ export function CalendarSettingsPanel({
               and turning it off is a decision about what the calendar is for
               rather than about what a week card needs. It reaches both views —
               the month on a shorter band, and only on the days that have room
-              for one (see `cardRungs`). */}
-          <div className="mt-2 flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2">
-            <span className="flex min-w-0 flex-col">
-              <span className="text-sm">{t('calendar.imagePreviews')}</span>
-              <span className="text-xs text-tertiary-foreground">
-                {t('calendar.imagePreviewsNote')}
+              for one (see `cardRungs`).
+
+              Behind `calendar-card-images` because no card has ever drawn one:
+              nothing writes `post.media_urls` (CON-247). The preference itself
+              stays stored and defaulted, so this is the control disappearing,
+              not the setting. */}
+          {imagesEnabled && (
+            <div className="mt-2 flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2">
+              <span className="flex min-w-0 flex-col">
+                <span className="text-sm">{t('calendar.imagePreviews')}</span>
+                <span className="text-xs text-tertiary-foreground">
+                  {t('calendar.imagePreviewsNote')}
+                </span>
               </span>
-            </span>
-            {isPending ? (
-              <Skeleton className="h-5 w-9" />
-            ) : (
-              <Switch
-                checked={imagePreviews}
-                onCheckedChange={setImagePreviews}
-                aria-label={t('calendar.imagePreviews')}
-              />
-            )}
-          </div>
+              {isPending ? (
+                <Skeleton className="h-5 w-9" />
+              ) : (
+                <Switch
+                  checked={imagePreviews}
+                  onCheckedChange={setImagePreviews}
+                  aria-label={t('calendar.imagePreviews')}
+                />
+              )}
+            </div>
+          )}
         </div>
       </Collapse>
 

@@ -6,17 +6,20 @@ import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AssetDetailsHeader } from '@/components/content/AssetDetailsHeader'
 import { AssetEditor } from '@/components/content/AssetEditor'
+import { AssetImageView } from '@/components/content/AssetImageView'
 import { DeleteAssetDialog } from '@/components/content/DeleteAssetDialog'
 import { ScrapeState } from '@/components/content/ScrapeState'
 import { UnsupportedAsset } from '@/components/content/UnsupportedAsset'
 import { useAsset, useCreateUrlAsset, useUpdateAsset } from '@/hooks/useContent'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { downloadMarkdown } from '@/lib/downloadMarkdown'
+import { assetToPayload } from '@/lib/assetPayload'
 import { opensAsDocument } from '@/lib/assetCategory'
 import { isTerminalStatus } from '@/lib/assetStatus'
 import { readPageErrorMessage } from '@/lib/scrapeErrors'
 import { toast } from '@/stores/toastStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
+import type { UpdateAssetPayload } from '@/types/content'
 
 type Props = {
   assetId: string
@@ -46,6 +49,10 @@ type Props = {
  * the whole of CON-16 R32: the previous arrangement mounted an autosaving
  * editor on whatever arrived, so the first type the server added that wasn't a
  * document would have been quietly overwritten by anyone who opened it.
+ *
+ * An image is that type, and it now has a screen rather than the fallback
+ * (`AssetImageView`, CON-246). What arrives at `UnsupportedAsset` from here on
+ * is only a kind this build has genuinely never heard of.
  *
  * What it does *not* borrow is the commit bar. A post has one because it has
  * somewhere to go — draft, scheduled, published — and the bar is where that
@@ -105,29 +112,66 @@ export function AssetDocument({ assetId, campaignId }: Props) {
     setEditVersion(editVersionRef.current)
   }, [])
 
+  /*
+   * One document, one save at a time — and always the whole document.
+   *
+   * The API takes the whole resource on every PUT, which cuts two ways. Every
+   * save goes through `assetToPayload`, because a payload naming only what
+   * moved is a payload that blanks the asset's tags and its alt text. And each
+   * save must carry the *latest* fields, not whatever the server copy held
+   * when the handler was created: a body edit followed by a title edit inside
+   * the debounce window used to save the new body and then overwrite it with
+   * the old one. `draftRef` is the fields as edited here (null = untouched,
+   * fall back to the server's), and the chain sends the saves strictly in
+   * order so an older payload can never land after a newer one.
+   */
+  const draftRef = useRef<{ title: string | null; content: string | null }>({
+    title: null,
+    content: null,
+  })
+  const saveChainRef = useRef<Promise<unknown>>(Promise.resolve())
+  const { mutateAsync: saveAsset } = updateAsset
+
+  const enqueueSave = useCallback(
+    (overrides: Partial<UpdateAssetPayload>) => {
+      if (!asset) return
+      const v = editVersionRef.current
+      const payload = assetToPayload(asset, {
+        title: draftRef.current.title ?? asset.title,
+        content: draftRef.current.content ?? asset.content,
+        ...overrides,
+      })
+      saveChainRef.current = saveChainRef.current.then(() =>
+        saveAsset({ id: assetId, payload }).then(
+          () => setSavedVersion(v),
+          () => {
+            // Toasted by the mutation cache; the chain must survive so the
+            // next edit still saves. `savedVersion` stays behind — the header
+            // keeps saying unsaved, which is the truth.
+          },
+        ),
+      )
+    },
+    [asset, assetId, saveAsset],
+  )
+
   const handleTitleChange = useCallback(
     (nextTitle: string) => {
       setTitle(nextTitle)
       if (!asset) return
-      const v = editVersionRef.current
-      updateAsset.mutate(
-        { id: assetId, payload: { title: nextTitle, content: asset.content } },
-        { onSuccess: () => setSavedVersion(v) },
-      )
+      draftRef.current.title = nextTitle
+      enqueueSave({ title: nextTitle })
     },
-    [asset, assetId, updateAsset],
+    [asset, enqueueSave],
   )
 
   const handleContentChange = useCallback(
     (content: string) => {
       if (!asset) return
-      const v = editVersionRef.current
-      updateAsset.mutate(
-        { id: assetId, payload: { title: title ?? asset.title, content } },
-        { onSuccess: () => setSavedVersion(v) },
-      )
+      draftRef.current.content = content
+      enqueueSave({ content })
     },
-    [asset, assetId, title, updateAsset],
+    [asset, enqueueSave],
   )
 
   /**
@@ -218,6 +262,15 @@ export function AssetDocument({ assetId, campaignId }: Props) {
                 failed={asset.status === 'failed'}
                 onRetry={handleRefreshSource}
                 retrying={rescrape.isPending}
+              />
+            ) : asset.type === 'IMG' ? (
+              // Named ahead of the fallback rather than folded into it: an
+              // image is a kind this build knows, and `UnsupportedAsset` is
+              // reserved for the one it doesn't.
+              <AssetImageView
+                asset={asset}
+                onChange={enqueueSave}
+                onDirty={markDirty}
               />
             ) : !editable ? (
               <UnsupportedAsset />

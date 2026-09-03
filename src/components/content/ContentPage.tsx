@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@tanstack/react-router'
 import {
   CaretDownIcon,
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { UploadModal } from '@/components/uploads/UploadModal'
 import { useAssets, useCreateAsset, useDeleteAsset } from '@/hooks/useContent'
-import { uploadLimitsLabel } from '@/lib/assetStatus'
+import { uploadLimitLines } from '@/lib/assetStatus'
 import { useUploadOptions } from '@/hooks/useUploadOptions'
 import {
   addToCampaign,
@@ -60,6 +61,7 @@ import { ContentList } from './ContentList'
  * on — not a staging area they travel out of.
  */
 export function ContentPage({ campaign }: { campaign: Campaign | null }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { data: assets, isLoading, isError } = useAssets()
   const createAsset = useCreateAsset()
@@ -157,11 +159,15 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     createAsset.mutate(
       { title: ' ', content: ' ' },
       {
-        onSuccess: (asset) => {
+        onSuccess: async (asset) => {
           if (campaign) {
-            // Attaching is not a second action the user has to remember, and it
-            // is not conditional on this page surviving the navigation below.
-            void addToCampaign(campaign.id, [asset.id])
+            // Attaching is not a second action the user has to remember — and
+            // the navigation waits for it, because opening the campaign's copy
+            // of a document the campaign refused would present a membership
+            // that isn't there. On failure the note exists in the bank, the
+            // membership toast has said so, and this page stays put.
+            const attached = await addToCampaign(campaign.id, [asset.id])
+            if (!attached) return
             navigate({
               to: '/campaigns/$campaignId/content/$assetId',
               params: { campaignId: campaign.id, assetId: asset.id },
@@ -189,18 +195,29 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
    */
   const handleWebPage = (asset: Asset) => {
     const alreadyHere = shown.some((a) => a.id === asset.id)
-    if (campaign) void addToCampaign(campaign.id, [asset.id])
-    if (alreadyHere) {
-      toast.info('Re-reading that page', {
-        description:
-          "Its content will be replaced with the page's current version.",
-      })
-    } else {
-      toast.info('Reading that page', {
-        description:
-          'It appears in the list below and fills in when the read finishes.',
-      })
+    const announce = () => {
+      if (alreadyHere) {
+        toast.info('Re-reading that page', {
+          description:
+            "Its content will be replaced with the page's current version.",
+        })
+      } else {
+        toast.info('Reading that page', {
+          description:
+            'It appears in the list below and fills in when the read finishes.',
+        })
+      }
     }
+    if (!campaign) {
+      announce()
+      return
+    }
+    // "It appears in the list below" is only true once the campaign holds it,
+    // so the toast waits for the membership write; a refusal raises its own
+    // toast inside `addToCampaign` instead.
+    void addToCampaign(campaign.id, [asset.id]).then((attached) => {
+      if (attached) announce()
+    })
   }
 
   /*
@@ -345,10 +362,14 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             <UploadSimpleIcon className="size-8 text-foreground" />
             {/* The destination is the entire point of the change, and this is
                 the one moment the UI can name it without being asked. */}
-            <p className="text-sm text-foreground">Add these to {scopeName}</p>
-            <p className="text-xs text-tertiary-foreground">
-              {uploadLimitsLabel(uploadOptions)}
+            <p className="text-sm text-foreground">
+              {t('uploads.dropInto', { scope: scopeName })}
             </p>
+            {uploadLimitLines(t, uploadOptions).map((line) => (
+              <p key={line} className="text-xs text-tertiary-foreground">
+                {line}
+              </p>
+            ))}
           </div>
         </div>
       )}
