@@ -131,6 +131,7 @@ column. Three things that cannot fix themselves without the real endpoint, all
 recorded on the `tasks` flag: every write rewrites the entire list, so
 concurrent edits are last-write-wins; raising and auto-resolving run on the
 client and therefore only while somebody has the page open; and assignment
-writes an id but tells nobody, because there is no channel to tell them on
-until CON-224. The row is workspace-wide and readable by every member, which is
-right for shared work and is why nothing personal may go in a task.
+writes an id but tells nobody — CON-242 built the channel, but every producer
+on it is server-side, so nothing can raise a notification about a task the
+client invented. The row is workspace-wide and readable by every member, which
+is right for shared work and is why nothing personal may go in a task.

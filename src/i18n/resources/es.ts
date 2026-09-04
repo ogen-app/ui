@@ -274,8 +274,9 @@ export const es: Translation = {
   activity: {
     title: 'Actividad',
     markAllRead: 'MARCAR TODO COMO LEÍDO',
-    markReadFailed: 'No se pudo guardar por dónde ibas en la actividad.',
     loadFailed: 'No se pudo cargar la actividad',
+    truncated:
+      'Mostrando las 100 entradas más recientes. Los informes diarios de abajo llegan más atrás.',
     empty: {
       title: 'Todavía no ha pasado nada',
       subtitle:
@@ -285,12 +286,22 @@ export const es: Translation = {
     today: 'Hoy',
     yesterday: 'Ayer',
     entry: {
-      failed: 'No se pudo publicar una publicación de {{channel}}',
-      notPublished: 'Una publicación de {{channel}} nunca se publicó',
       reportTitle: 'Informe diario',
       task_created: 'Tarea añadida — «{{title}}»',
       task_completed: 'Tarea hecha — «{{title}}»',
       task_resolved: 'Tarea resuelta sola — «{{title}}»',
+    },
+    notification: {
+      connectionExpiring: 'Tu conexión con {{channel}} caduca pronto',
+      connectionActionRequired: 'Tu conexión con {{channel}} debe reconectarse',
+      postPublished: 'Se publicó una publicación de {{channel}}',
+      postPublishFailed: 'No se pudo publicar una publicación de {{channel}}',
+      assetReady: 'Un documento terminó de procesarse',
+      assetIngestFailed: 'No se pudo procesar un documento',
+      campaignContentPlanReady_one:
+        'Hay un plan de contenido listo — {{count}} publicación',
+      campaignContentPlanReady_other:
+        'Hay un plan de contenido listo — {{count}} publicaciones',
     },
     report: {
       label: {

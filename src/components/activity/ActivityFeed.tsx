@@ -14,8 +14,9 @@ import {
   CheckCircleIcon,
   CheckSquareIcon,
   ChecksIcon,
+  InfoIcon,
   NotebookIcon,
-  ProhibitIcon,
+  WarningIcon,
   WarningOctagonIcon,
 } from '@phosphor-icons/react'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
@@ -24,15 +25,16 @@ import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState'
 import { Button } from '@/components/ui/button'
-import { useActivityFeed, useActivityLastSeen } from '@/hooks/useActivity'
-import { useTaskReconciliation } from '@/hooks/useTasks'
-import { getPlatformInfo } from '@/lib/platformDictionary'
+import { useActivityFeed } from '@/hooks/useActivity'
 import {
-  dayKey,
-  isTaskEntry,
-  isUnread,
-  type ActivityEntry,
-} from '@/lib/activityFeed'
+  useMarkAllNotificationsRead,
+  useNotificationUnreadCount,
+  useSetNotificationRead,
+} from '@/hooks/useNotifications'
+import { useTaskReconciliation } from '@/hooks/useTasks'
+import { notificationCopy, notificationTarget } from '@/lib/notifications'
+import { dayKey, isTaskEntry, type ActivityEntry } from '@/lib/activityFeed'
+import type { AppNotification } from '@/types/notifications'
 import { cn } from '@/lib'
 import { useDayLabel, useTimeLabel } from '@/hooks/useActivityLabels'
 
@@ -50,31 +52,34 @@ import { useDayLabel, useTimeLabel } from '@/hooks/useActivityLabels'
  * card sit its sections, one per thing that needs saying that day.
  *
  * Two kinds of section, and the split is the design (`docs/activity.md`).
- * **Exceptions** — a post that failed, a post that was never published — get a
- * section of their own at the moment they happened. Everything routine rolls
- * into the day's **report** section, because successful auto-publishing is the
- * highest-volume thing that happens and listing it one line at a time is what
- * teaches people to stop reading the badge.
+ * **Notifications** — a post that failed, a connection about to lapse, a
+ * content plan that finished — get a section of their own at the moment they
+ * happened. Everything routine rolls into the day's **report** section, because
+ * successful auto-publishing is the highest-volume thing that happens and
+ * listing it one line at a time is what teaches people to stop reading the
+ * badge.
+ *
+ * **Read and unread are the only verbs here**, and that is a decision rather
+ * than a first cut. Dismiss, resolve and snooze are all *task* verbs; putting
+ * them on a feed teaches people that clearing an entry fixes something, which
+ * it never does. The API offers a dismiss and this screen deliberately does not
+ * call it — what is owed is the module next door (CON-234).
  */
 export function ActivityFeed() {
   const { t } = useTranslation()
-  const { entries, now, isLoading, isError } = useActivityFeed()
-  const {
-    lastSeen,
-    isLoading: lastSeenLoading,
-    markAllRead,
-  } = useActivityLastSeen()
+  const { entries, now, isLoading, isError, isTruncated, campaignOfPost } =
+    useActivityFeed()
+  // The badge is the inbox's own count, not a count of what is on screen: the
+  // page is the newest hundred rows and the number is over all of them.
+  const unread = useNotificationUnreadCount()
+  const markAllRead = useMarkAllNotificationsRead()
+  const setRead = useSetNotificationRead()
   // There is no server raising or resolving tasks, so a screen has to. Both
   // this one and the Tasks board do — they are separate destinations and can
   // never be mounted at once, so there is still only ever one writer, and a
   // task's closure reaches the feed on whichever of the two you opened. See
   // `useTaskReconciliation`.
   useTaskReconciliation()
-
-  const unread = useMemo(
-    () => entries.filter((entry) => isUnread(entry, lastSeen, now)).length,
-    [entries, lastSeen, now],
-  )
 
   // The feed is already in time order; grouping only cuts it into days.
   const days = useMemo(() => {
@@ -117,7 +122,7 @@ export function ActivityFeed() {
             // That is a property of the view, which is what this corner is for.
             <MarkAllReadButton
               unread={unread}
-              settled={!lastSeenLoading}
+              settled={!isLoading}
               onClick={markAllRead}
             />
           }
@@ -139,10 +144,20 @@ export function ActivityFeed() {
                 key={day.date}
                 date={day.date}
                 entries={day.entries}
-                lastSeen={lastSeen}
                 now={now}
+                campaignOfPost={campaignOfPost}
+                onOpen={(id) => setRead.mutate({ id, read: true })}
               />
             ))}
+            {/* Said rather than swallowed: a list that stops at a round number
+                with no word about it reads as "that is everything". The reports
+                below are not truncated — they are computed from posts — so the
+                sentence names which half ran out. */}
+            {isTruncated && (
+              <p className="w-full max-w-content mx-auto px-1 text-xs text-tertiary-foreground">
+                {t('activity.truncated')}
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -190,9 +205,9 @@ function MarkAllReadButton({
     return () => observer.disconnect()
   }, [])
 
-  // Held off until the stored last-read moment is in: before that everything
-  // counts as read, so the label would play its opening on every cold load —
-  // an animation reporting nothing.
+  // Held off until the first load has settled: before that the count is zero,
+  // so the label would play its opening on every cold load — an animation
+  // reporting nothing.
   const [animate, setAnimate] = useState(false)
   useEffect(() => {
     if (!settled || animate) return
@@ -234,13 +249,15 @@ function MarkAllReadButton({
 function DayCard({
   date,
   entries,
-  lastSeen,
   now,
+  campaignOfPost,
+  onOpen,
 }: {
   date: string
   entries: ActivityEntry[]
-  lastSeen: string | null
   now: Date
+  campaignOfPost: (postId: string) => string | null
+  onOpen: (notificationId: string) => void
 }) {
   const dayLabel = useDayLabel()
 
@@ -257,7 +274,8 @@ function DayCard({
           <EntrySection
             key={entry.id}
             entry={entry}
-            unread={isUnread(entry, lastSeen, now)}
+            campaignOfPost={campaignOfPost}
+            onOpen={onOpen}
           />
         ))}
       </div>
@@ -266,20 +284,26 @@ function DayCard({
 }
 
 /**
- * One section of a day: a report, or a single exception. Both are links — an
- * entry that tells you something happened and then leaves you to find it is
- * half a feature — so the whole section is the target rather than a trailing
- * "view" affordance.
+ * One section of a day: a report, or one recorded notification, or something
+ * that happened to a task. Most are links — an entry that tells you something
+ * happened and then leaves you to find it is half a feature — so the whole
+ * section is the target rather than a trailing "view" affordance.
  */
 function EntrySection({
   entry,
-  unread,
+  campaignOfPost,
+  onOpen,
 }: {
   entry: ActivityEntry
-  unread: boolean
+  campaignOfPost: (postId: string) => string | null
+  onOpen: (notificationId: string) => void
 }) {
   const { t } = useTranslation()
   const timeLabel = useTimeLabel()
+  // Only a recorded row can be unread. A report is arithmetic and a task entry
+  // belongs to the module next door; neither has a read state to carry, and
+  // inventing one would put a dot beside something nobody can clear.
+  const unread = entry.kind === 'notification' && !entry.notification.read_at
 
   const heading = (icon: ReactNode, title: string, linked = true) => (
     <div className="flex items-center gap-3 min-w-0">
@@ -369,42 +393,74 @@ function EntrySection({
     )
   }
 
+  const { notification } = entry
+  const copy = notificationCopy(notification)
+  // The catalogue where this build knows the type, the server's own English
+  // where it doesn't. A producer can ship before its copy does, and a blank
+  // row would be the worse of the two failures — see `lib/notifications`.
+  const title = copy ? t(copy.key, copy.vars) : notification.title
+  const target = notificationTarget(notification, campaignOfPost)
+  const icon = <LevelIcon level={notification.level} />
+
+  if (!target) {
+    // Nothing to open — an entity that has been deleted, or a type this build
+    // cannot place. The row still says what happened, which is the part that
+    // matters; it just makes no promise about going anywhere.
+    return <div className={className}>{heading(icon, title, false)}</div>
+  }
+
   return (
     <Link
-      to="/campaigns/$campaignId/posts/$postId"
-      params={{ campaignId: entry.campaignId, postId: entry.postId }}
+      to={target.to}
+      params={target.params}
       className={className}
+      // Opening what an entry points at *is* reading it. The click navigates
+      // either way — a failed write leaves the row unread, which is the
+      // harmless direction to fail in.
+      onClick={() => onOpen(notification.id)}
     >
-      {heading(
-        entry.kind === 'failed' ? (
-          <WarningOctagonIcon
-            weight="regular"
-            className="size-5 shrink-0 text-negative"
-          />
-        ) : (
-          <ProhibitIcon
-            weight="regular"
-            className="size-5 shrink-0 text-warning"
-          />
-        ),
-        t(
-          entry.kind === 'failed'
-            ? 'activity.entry.failed'
-            : 'activity.entry.notPublished',
-          {
-            channel: channelName(entry.platformId),
-          },
-        ),
-      )}
+      {heading(icon, title)}
     </Link>
   )
 }
 
 /**
- * A channel's display name. The dictionary still knows a platform the API has
- * stopped returning, and naming it is the difference between a row you can act
- * on and one that says something failed somewhere.
+ * The mark beside an entry, chosen by severity and never by type.
+ *
+ * `type` is an open vocabulary that grows whenever the back end has something
+ * new to say; `level` is four values and closed. Switching on the first would
+ * mean every new producer arrives unstyled — see `lib/notifications`.
  */
-export function channelName(platformId: string): string {
-  return getPlatformInfo(platformId)?.name ?? platformId
+function LevelIcon({ level }: { level: AppNotification['level'] }) {
+  const className = 'size-5 shrink-0'
+  switch (level) {
+    case 'error':
+      return (
+        <WarningOctagonIcon
+          weight="regular"
+          className={cn(className, 'text-negative')}
+        />
+      )
+    case 'warning':
+      return (
+        <WarningIcon
+          weight="regular"
+          className={cn(className, 'text-warning')}
+        />
+      )
+    case 'success':
+      return (
+        <CheckCircleIcon
+          weight="regular"
+          className={cn(className, 'text-positive')}
+        />
+      )
+    default:
+      return (
+        <InfoIcon
+          weight="regular"
+          className={cn(className, 'text-tertiary-foreground')}
+        />
+      )
+  }
 }

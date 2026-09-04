@@ -3,18 +3,20 @@
 The design behind **Activity**, the workspace's answer to *"what happened since
 I last looked?"* Requirements live in
 [CON-225](https://linear.app/ogen/issue/CON-225) (this repo) and
-[CON-224](https://linear.app/ogen/issue/CON-224) (the backend subsystem it
-consumes); this file is the reasoning — what the surface is for, what it
+[CON-242](https://linear.app/ogen/issue/CON-242) (the backend subsystem it
+consumes — it superseded CON-224, which is archived); this file is the
+reasoning — what the surface is for, what it
 deliberately is not, and which decisions are load-bearing enough that changing
 one means revisiting the rest.
 
-**What exists today:** Phase 1, behind the `activity` flag. The sidebar item
-with its counts, `/activity`, the day cards and the full-screen report at
-`/activity/$date` are built and derive everything from the batched campaign
-summaries — `lib/activityFeed.ts` is the whole rule set, pure and tested. The
-live feed is Phase 2 and waits on CON-224; until then the only post entries a
-reader sees are outcomes and the daily reports, and they are *derived* rather
-than recorded, which the flag's own comment spells out.
+**What exists today:** Phase 2, behind the `activity` flag. The sidebar item
+with its count, `/activity`, the day cards and the full-screen report at
+`/activity/$date` are built; the feed reads the recorded notifications CON-242
+landed (`GET /api/notifications`, live over
+`GET /api/notifications/stream`), and the day reports are still computed from
+the batched campaign summaries. `lib/activityFeed.ts` is the whole rule set,
+pure and tested. What is left before the flag can flip is in the flag's own
+comment — it is about coverage on the *server* side, not about this screen.
 
 **Tasks are a separate feature** (CON-234, [`tasks.md`](./tasks.md)), a module
 of their own next door in the rail rather than a card on this screen. "Edges and
@@ -106,9 +108,10 @@ notification. The premise of the feature is *you were not looking* — anything
 delivered only over the stream is lost for exactly the users it is meant for.
 
 So the table is the source of truth and **SSE only makes an entry appear
-instantly**. A client that was offline catches up over REST. The hub already
-reserves `user:<id>` as a documented topic shape with no publisher; that is the
-seat this takes.
+instantly**. A client that was offline catches up over REST. The hub reserved `user:<id>` as a documented
+topic shape with no publisher; CON-242 took that seat — the notification service
+publishes to `notification:user:<uid>` purely to wake live connections, and
+durability comes from the table either way.
 
 ## What the feed carries
 
@@ -204,12 +207,17 @@ Three details that follow from the sidebar being what it is:
 
 - **Collapsed, the count is a dot.** There is no room for a number beside a 20px
   icon, and the collapsed rail is label-free by design.
-- **The counter counts unread entries**, with the day's report counting as one
-  until opened. A "7" means seven things happened that you have not seen — never
-  "you published seven posts". Informational entries appear in the list without
-  raising it.
-- **The count never costs its own request.** It rides on the list response and
-  is bumped live by SSE.
+- **The counter is the inbox's own unread count**, `GET
+  /api/notifications/unread-count`. A "7" means seven things happened that you
+  have not seen — never "you published seven posts". Only recorded rows can be
+  unread: a day report is arithmetic and a task entry belongs to the module next
+  door, so neither carries a dot, and Phase 1's "the report counts as one until
+  opened" went with the timestamp it was built on.
+- **The count is one small request, and never the page.** It spans the whole
+  inbox where the feed holds only the newest hundred rows, so it cannot be a
+  length — and the sidebar is on every screen, which is why it does not pull the
+  rows down with it. Between refetches it is nudged by the stream and by the
+  reads themselves rather than re-asked per change.
 
 The report opens as a **route-backed** full-screen modal (`/activity/$date`), so
 a day can be linked and shared. A plain overlay forecloses that, and for a daily
@@ -233,28 +241,51 @@ thing in the backend issue rather than a footnote.
 
 ## Phasing
 
-**Phase 1 needs no backend.** Sidebar item, `/activity`, computed daily reports,
-the full-screen report view. The feed contains report entries only. Unread state
-is a last-seen timestamp under `userScopedKey('activity')`, so it follows the
-user between devices rather than marking everything unread on the second machine
-(precedent: the posts-table sort order,
-[`technical-decisions.md#user-scoped-settings`](./technical-decisions.md#user-scoped-settings)) —
-it is a date, nothing sensitive.
+**Phase 1 needed no backend.** Sidebar item, `/activity`, computed daily
+reports, the full-screen report view, with the feed's own entries *derived* from
+current post state and unread kept as a last-seen timestamp under
+`userScopedKey('activity')`.
 
-**Phase 2 is the live feed**, once CON-224 lands. Real entries join the reports,
-read state moves server-side per entry, and the Phase 1 timestamp is deleted.
+**Phase 2 is the live feed**, and it landed with CON-242. Recorded entries
+replaced the derived ones, read state is per row and server-side, and the
+Phase 1 timestamp is deleted — so is `unreadCount`/`isUnread`, and so are the
+derived `failed` / `not_published` feed entries, which were a stand-in for
+`post.publish_failed`. Keeping both would have reported one failure twice: once
+as a record, once as a re-reading of current state that disappears the moment
+the post is edited.
+
+Two consequences worth stating rather than discovering:
+
+- **The feed starts empty.** Nothing was recorded before the table existed, so
+  the entries only go back as far as CON-242's deploy. The reports do not — they
+  are computed from posts and reach as far back as the posts do.
+- **A recorded row has one recipient.** The producers write to the thing's
+  `created_by`, so a post failing is news to whoever made it and to nobody else,
+  where the derived entry was visible to the whole workspace. That is a fan-out
+  question for the back end, not something to paper over here; it is written up
+  in the `activity` flag's comment.
 
 Both phases sit behind one flag in `config/featureFlags.ts`; Phase 1 can flip on
 without Phase 2. **Tasks are a separate feature with a separate flag** (CON-234,
 [`tasks.md`](./tasks.md)) on its own timetable: they are stored rather than
-derived, so they wait on a table rather than on CON-224, and either can ship
+derived, so they wait on a table rather than on CON-242, and either can ship
 without the other.
 
 ## Open dependencies
 
 - **A disconnecting SSE client panics the API process** — `events.go:154`,
-  finding 5 in [`sse.md`](./sse.md), recorded 2026-08-03. The live half cannot
-  deploy until it is fixed. Phase 1 does not touch SSE.
+  finding 5 in [`sse.md`](./sse.md), recorded 2026-08-03. It was recorded
+  against `/api/events`; the notification stream is a second long-lived
+  connection written to the same house pattern, so whether it shares the fault
+  has to be answered before either is deployed.
+- **The copy still arrives as prose.** CON-242 sends a server-rendered `title`
+  and `body` alongside `type` and `data`, rather than the type-plus-vars this
+  document asked for. The client renders from `type` and `data` where it knows
+  the type and falls back to the server's English where it doesn't
+  (`lib/notifications.ts`), which is the honest shape of the compromise: a
+  producer can ship before its copy does, and its rows are untranslatable until
+  a key is added.
 - **Event naming is still mixed** — dotted (`zernio.sync.ok`) and snake_case
-  (`post_cloned`), matched literally in `lib/eventRouting.ts`. Worth settling
-  before a whole notification-type vocabulary is minted on top of it.
+  (`post_cloned`), matched literally in `lib/eventRouting.ts`. The notification
+  vocabulary settled on dotted (`post.publish_failed`), so the hub is now the
+  odd one out.

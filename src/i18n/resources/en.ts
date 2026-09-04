@@ -335,8 +335,14 @@ export const en = {
     title: 'Activity',
     /** Capitals are the copy, as on every other list's header action. */
     markAllRead: 'MARK ALL READ',
-    markReadFailed: 'Could not save your place in the feed.',
     loadFailed: 'Unable to load activity',
+    /**
+     * Said under the last day card when the recorded half came back a full
+     * page. Names which half ran out — the day reports below it are computed
+     * from posts and go back as far as the posts do.
+     */
+    truncated:
+      'Showing the most recent 100 entries. The daily reports below go back further.',
     empty: {
       title: 'Nothing has happened yet',
       subtitle:
@@ -349,8 +355,6 @@ export const en = {
     yesterday: 'Yesterday',
     /** A section's heading inside a day's card. Each one stands alone. */
     entry: {
-      failed: 'A {{channel}} post failed to publish',
-      notPublished: 'A {{channel}} post was never published',
       reportTitle: 'Daily report',
       /**
        * What happened to a task. The title is quoted because it is somebody's
@@ -360,6 +364,30 @@ export const en = {
       task_created: 'Task added — “{{title}}”',
       task_completed: 'Task done — “{{title}}”',
       task_resolved: 'Task resolved on its own — “{{title}}”',
+    },
+    /**
+     * What a recorded notification says (CON-242), one key per `type` this
+     * build knows. The server sends its own English title beside every row and
+     * these deliberately replace it: a sentence composed on the wire cannot be
+     * translated or re-worded without a deploy on both sides. A `type` with no
+     * key here falls back to the server's title, which is how a new producer
+     * ships before its copy does — see `lib/notifications.ts`.
+     *
+     * Written as outcomes rather than as instructions: the feed is a record of
+     * what happened, and what to do about it is the row you click through to.
+     */
+    notification: {
+      connectionExpiring: 'Your {{channel}} connection expires soon',
+      connectionActionRequired:
+        'Your {{channel}} connection needs reconnecting',
+      postPublished: 'A {{channel}} post was published',
+      postPublishFailed: 'A {{channel}} post failed to publish',
+      assetReady: 'A document finished processing',
+      assetIngestFailed: 'A document could not be processed',
+      /** The count is the point — it is what says whether the plan is worth opening. */
+      campaignContentPlanReady_one: 'A content plan is ready — {{count}} post',
+      campaignContentPlanReady_other:
+        'A content plan is ready — {{count}} posts',
     },
     report: {
       /**

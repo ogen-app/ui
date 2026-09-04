@@ -16,7 +16,7 @@ says so.
 
 ## What the UI consumes today
 
-Five streams. Four are **per-request POST flows** — the request opens a stream,
+Six streams. Four are **per-request POST flows** — the request opens a stream,
 the stream ends when the work does: 
 
 | Endpoint | Consumer | Events handled |
@@ -26,11 +26,24 @@ the stream ends when the work does:
 | `POST /api/posts/:id/assess` | `services/api/quality.ts` | `step`, `complete`, `error` |
 | `POST /api/campaigns/:id/generate-draft` | `services/api/contentPlan.ts` | `step`, `post`, `warning`, `complete`, `error` |
 
-The fifth is **`GET /api/events`**, the hub-backed broadcast stream, added by
-this work — the only channel carrying things the tab did not itself start.
+The other two are long-lived and carry things the tab did not itself start:
 
-`EventSource` is not used anywhere and can't be: it is GET-only and can't carry
-a JSON body, so all five read the wire format off a `fetch` response body.
+| Endpoint | Consumer | Guarantee |
+| --- | --- | --- |
+| `GET /api/events` | `stores/eventStreamStore` | at-most-once, no log — a hint that a cache is stale |
+| `GET /api/notifications/stream` | `stores/notificationStreamStore` | durable; the table is the log and `Last-Event-ID` replays from it |
+
+The second landed with CON-242 and is the answer to the last item under *Still
+open* below: a run that outlives the tab now leaves a record, so "this finished
+while you were away" is a row rather than a silent invalidation. The two are
+deliberately separate connections — one is an invalidation bus and the other is
+an inbox, and the guarantees above are why neither can be a topic on the other.
+What they share is the machinery for staying open (`lib/streamConnection`:
+backoff, silence watchdog, subscriber counting), written once.
+
+`EventSource` is not used anywhere and can't be: it is GET-only, can't carry a
+JSON body, and can't set `X-Workspace-Id` — so all six read the wire format off
+a `fetch` response body.
 
 ## What it does not consume
 
@@ -231,8 +244,28 @@ Decisions worth knowing:
 - **Topics are `all`.** Narrowing to the mounted screens would mean
   re-subscribing on every navigation for no privacy gain, since the server
   already scopes to the tenant. Revisit if event volume grows.
-- **A run that outlives the tab has no UI.** Reload during an assistant turn and
-  the hub will report its completion, which currently just invalidates. Telling
-  the user "this finished while you were away" is the next visible feature.
-- **`id:` is parsed and unused**, ready for the replay the endpoint reserves it
-  for.
+- **`id:` is parsed and unused on `/api/events`.** The hub reserves the field
+  and ignores what is sent back, so there is nothing to resume into. The
+  notification stream is where replay actually happens.
+- **`id:` is `0` on every replayed notification frame**, and `seq` is `0` on
+  every row `GET /api/notifications` returns — the column is right, and a
+  *live* frame is right, but anything the server reads back loses it
+  (`bun:"seq,scanonly"` keeps it out of the generated `SELECT`). So the replay
+  cursor can only ever be 0, which `parseCursor` reads as "no cursor": the
+  durable half of the inbox is unreachable except while already connected.
+  Measured 2026-09-04 against ogen@e722bab; the client is written for the
+  fixed server and the reconnect refetch is what covers for it meanwhile.
+- **A user gets 10 concurrent hub subscriptions, across both streams**
+  (`eventhub.Config.MaxSubscribersPerUser`), and a dead connection keeps its
+  slot until the next heartbeat write fails — up to 20s. So a reload orphans
+  two slots where it used to orphan one, and both streams answer 429 until
+  they free. Reproduced on `/api/events` alone, so it predates the second
+  stream; the shared backoff rides it out. A cheaper reap, or a cap counted
+  per topic rather than per user, would remove the wait.
+
+### Closed since
+
+- **A run that outlives the tab has no UI.** Closed by CON-242: the notification
+  table records what finished, `GET /api/notifications/stream` replays it from
+  `Last-Event-ID`, and Activity renders it (`docs/activity.md`). The hub still
+  only invalidates, which is now the right division of labour rather than a gap.

@@ -321,6 +321,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   So gating applies to **creating and choosing**, never to displaying what
   exists: suspended things stay in their lists and still open, and every picker
   has to tolerate a current value that is no longer among its options.
+- **Two long-lived streams, and they are not interchangeable.** `/api/events`
+  is an invalidation bus — at-most-once, no log, `Last-Event-ID` ignored — so an
+  event is a *hint* that a cache is stale and the recovery path is refetch.
+  `/api/notifications/stream` is an inbox: the table is the log, the stream
+  replays from `Last-Event-ID`, and a row survives the tab being closed. Put a
+  fact somebody must not miss on the second one and a cache hint on the first;
+  neither can be a topic on the other. They share only the machinery for staying
+  open (`lib/streamConnection`: backoff, silence watchdog, subscriber counting)
+  and the one frame parser (`lib/sse.ts`) — keep both single. And notification
+  copy comes from the **catalogue**, keyed off `type` + `data`, never from the
+  `title`/`body` the server composes; those are the fallback for a `type` this
+  build predates (`lib/notifications.ts`, `docs/activity.md`).
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).

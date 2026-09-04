@@ -50,36 +50,78 @@ import { readFlagOverrides } from './flagOverrides'
 const FEATURE_FLAGS = {
   /**
    * Activity (CON-225): the sidebar item, the feed, and the daily report — the
-   * workspace's answer to "what happened since I last looked?".
+   * workspace's answer to "what happened since I last looked?". Also the whole
+   * notification client (CON-242): the inbox queries, the durable stream and
+   * the unread count are mounted by this feature and by nothing else, so with
+   * the flag off no notification request is made at all.
    *
-   * **The table now exists.** CON-224 was built as CON-242 and merged
-   * 2026-09-02: `notifications` is a real table with a `seq BIGSERIAL`, so
-   * `GET /api/notifications` answers, `?since=<seq>` replays what was missed,
-   * and the rows already cover the two things the feed was most wanted for —
-   * a long run finishing (`campaign.content_plan_ready`) and a connection
-   * expiring (`connection.<stage>`). The SSE writer's fasthttp panic is fixed
-   * too, and notifications ride the existing `?topics=all` subscription rather
-   * than needing a second EventSource: `notify` publishes on the eventhub with
-   * `Event.UserID` set, and authorization is per-user. Note the wire quirk —
-   * on that path both `topic` and `type` are the literal `"notification"`, and
-   * the real type is `payload.type`, which `services/api/events.ts` does not
-   * read yet.
+   * **Exercised against the real API**, 2026-09-04, local build of `main` at
+   * ogen@e722bab: a real `connection.action_required` row read over REST and
+   * rendered from the catalogue, replay served against `Last-Event-ID`,
+   * click-through `PATCH`, and `mark-all-read`. Phase 2 is built on it:
+   * recorded entries replaced the derived ones, read state is per row and
+   * server-side, and the Phase 1 last-seen timestamp is gone
+   * (`docs/activity.md`). What that pass found is 1 below.
    *
-   * **Waiting on:** this feed being rebuilt on those rows. It still *derives*
-   * its entries from the batched campaign summaries, so only post outcomes
-   * appear and an entry disappears if the post behind it changes — which is
-   * the wrong shape now that recorded edges are available. Three contract
-   * differences to settle in the rebuild, all raised with the back end:
-   * `title`/`body` arrive as server-rendered English, which the catalogue
-   * cannot translate (CON-224 §5 asked for `type` + `vars`); `post.published`
-   * is emitted on the happy path, which §6 excluded by name; and there is no
-   * `actor_user_id`, so "who did this" cannot be drawn.
+   * **Waiting on**, in the order that decides whether this ships:
+   *
+   * 1. **`seq` comes back 0 on every row the server *reads*.** It is correct in
+   *    the column and correct on a live frame — `Insert` populates it from
+   *    `RETURNING` — but `List` and `ReplaySince` both return 0, and the
+   *    stream's `id:` line is 0 for a replayed row. One cause:
+   *    `bun:"seq,scanonly"` on `models.Notification` keeps the column out of
+   *    the generated `SELECT` (`ORDER BY n.seq` still works, which is why
+   *    nothing looks wrong server-side). Every seq assertion in
+   *    `notifications_test.go` reads `n.Seq` off the *inserted* model, so the
+   *    suite passes. It costs three things: replay can never advance, because
+   *    a cursor is only ever 0 and `parseCursor` reads 0 as "no cursor" — so
+   *    the durable half of the inbox is unreachable except while already
+   *    connected; `mark-all-read`'s `before` bound is inert, and the client
+   *    duly sends `{"before":0}`, which the repo reads as "all", marking read
+   *    a row that arrived after the click; and keyset paging would loop on
+   *    page one. The client is written for the fixed server and needs no
+   *    change — a reconnect refetches page one, which is what covers for the
+   *    missing replay today.
+   * 2. **Whether the SSE crash reaches this stream.** A client disconnecting
+   *    from `/api/events` panicked the API process — finding 5 in
+   *    `docs/sse.md`, recorded 2026-08-03. The notification stream is a second
+   *    long-lived connection written to the same house pattern, so it either
+   *    shares the fault or has been fixed alongside it. Unanswered.
+   * 3. **Fan-out.** Every producer writes to the thing's `created_by`
+   *    (`submit_post_to_zernio.go`), so a post failing to publish is news to
+   *    whoever made it and to nobody else. The derived entry it replaced was
+   *    visible to the whole workspace, so turning this on as it stands
+   *    *narrows* who hears about a failure. `notify.EmitToUsers` already
+   *    exists and the connection-expiry producer reaches every owner with it —
+   *    this is a decision at one call site, not a missing capability.
+   * 4. **`post.published` is emitted, and CON-224 said it must not be.**
+   *    Successful auto-publishing is the highest-volume thing that happens, and
+   *    rolling it into one computed daily entry is the argument the whole
+   *    report rests on — a workspace posting three times a day across five
+   *    channels writes fifteen "it worked" rows, which is how a badge stops
+   *    being read. The client does *not* filter them: the count comes from the
+   *    server, and a feed hiding rows the badge still counts is worse than a
+   *    noisy feed. It needs deciding at the emit site.
+   * 5. **A producer for "never published".** `not_published` is a real outcome
+   *    with no notification type, so it now leaves no record at all. It is
+   *    counted in the day's report and nowhere else.
+   *
+   * 1 is the one that has to be fixed rather than decided; 3 and 4 decide
+   * whether this reads as better than Phase 1 or worse, since as it stands a
+   * post's author hears about every success and nobody else hears about the
+   * failures. None of them is a reason to change the client.
+   *
+   * One thing the pass turned up that is **not** this feature's fault, but is
+   * made twice as likely by it: `eventhub` caps a user at 10 concurrent
+   * subscriptions across *both* streams, and a dropped connection holds its
+   * slot until the server's next heartbeat write notices (20s). A reload
+   * therefore orphans two slots where it used to orphan one, and both streams
+   * answer 429 and back off until the slots free — reproduced on `/api/events`
+   * as well, so it predates this. The backoff rides it out; a tighter cap or a
+   * faster reap would not have to.
    *
    * The daily report is the half that was never a stand-in: it is a count over
-   * posts, correct as computed, and it survives the rebuild.
-   *
-   * Switch this on once the feed reads recorded events rather than derived
-   * ones. See `docs/activity.md`.
+   * posts, correct as computed, and it is untouched by all of the above.
    */
   activity: false,
 
@@ -106,8 +148,9 @@ const FEATURE_FLAGS = {
    *     the client, so it only runs while somebody has one of the two screens
    *     open, and exactly one may do it (`useTaskReconciliation`);
    *   · **telling the assignee** — assignment writes a membership id and
-   *     nothing else happens; there is no channel to notify them on until
-   *     CON-224.
+   *     nothing else happens. CON-242 built the channel, but its producers are
+   *     server-side and a task lives in a key/value row, so there is nothing to
+   *     emit from until tasks are rows.
    *
    * `assigned_to` does not exist on any model today, which is the column this
    * starts from. The row is also workspace-wide and readable by every member,

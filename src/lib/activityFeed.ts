@@ -1,26 +1,25 @@
 // The pure derivations behind Activity (CON-225): the feed's entries and the
-// daily report. Everything here is a pure function of already-fetched data —
-// the batched campaign summaries the Campaigns list reads anyway (CON-152) —
+// daily report. Everything here is a pure function of already-fetched data,
 // with `now` injected, so the rules stay unit-testable. No fetching, no stores.
 // Same shape as `campaignReadiness`, and for the same reasons.
 //
-// **This is Phase 1: there is no notifications table yet.** So every entry is
-// *derived* from current post state rather than recorded when it happened, and
-// that ceiling is worth naming:
+// **This is Phase 2**: the notifications table exists (CON-242), so what
+// happened is *recorded* rather than inferred. The feed now has two sources and
+// they are different in kind:
 //
-// - An entry disappears if the state it was derived from changes. Re-publish a
-//   failed post and the failure leaves the feed, where a persisted notification
-//   would stay — it is history, and history doesn't get undone.
-// - Only outcomes visible in `PostSummary` can appear. Assistant turns, content
-//   plans, asset processing and connection health leave no trace in it, so the
-//   two things the feed is most wanted for — "your long run finished" and "this
-//   connection expired" — are exactly what Phase 1 cannot show.
-// - `published_at` is the only timestamp the server records for an *outcome*.
-//   A failure is dated by when the post was due (`scheduled_at`), falling back
-//   to `updated_at`, which a later edit would move.
+// - **Notifications** — rows the server wrote at the moment something happened,
+//   carrying their own read state. History, and it does not get undone.
+// - **The daily report** — a count over the campaign summaries the Campaigns
+//   list fetches anyway (CON-152). Still computed, and deliberately so: it is
+//   arithmetic over posts, always correct and always instant, so storing it
+//   could only make it wronger. Any day is available as long as its posts are.
 //
-// CON-224 replaces all of it with recorded events. What survives is the report:
-// it is a count over posts, so computing it is not a stand-in for anything.
+// The derived post *exceptions* Phase 1 carried are gone. They were a stand-in
+// for `post.publish_failed`, and keeping both would report one failure twice —
+// once as a record and once as a re-reading of current state that disappears
+// the moment the post is edited. What the recorded half does not yet cover is
+// written down in the `activity` flag's comment, because it is a question for
+// the back end rather than a gap to paper over here.
 //
 // The rule deciding what is allowed in here at all is edges vs levels — an
 // entry is a fact with a timestamp that stays true forever, never a condition
@@ -28,6 +27,7 @@
 
 import type { PostSummary } from '@/types/posts'
 import type { Task } from '@/lib/tasks'
+import type { AppNotification } from '@/types/notifications'
 
 /**
  * What can happen to a post that a person would want to read about later.
@@ -42,10 +42,6 @@ export type ActivityEventKind =
   | 'failed'
   | 'not_published'
   | 'created'
-
-/** The kinds that reach the feed on their own, as exceptions. */
-const EXCEPTION_KINDS = ['failed', 'not_published'] as const
-export type ActivityExceptionKind = (typeof EXCEPTION_KINDS)[number]
 
 export type PostEvent = {
   kind: ActivityEventKind
@@ -82,13 +78,14 @@ export type DailyReport = {
 
 export type ActivityEntry =
   | { kind: 'report'; id: string; at: string; report: DailyReport }
+  // One recorded notification, carried whole: the entry adds nothing the row
+  // does not already say, and flattening it here would mean re-deciding what a
+  // notification is every time the server grows a producer.
   | {
-      kind: ActivityExceptionKind
+      kind: 'notification'
       id: string
       at: string
-      postId: string
-      campaignId: string
-      platformId: string
+      notification: AppNotification
     }
   // What happened *to a task*, never the task itself. A task is a level — it
   // sits in the card above until it is finished — but a task being written,
@@ -113,11 +110,11 @@ export function isTaskEntry(
   return (TASK_KINDS as readonly string[]).includes(entry.kind)
 }
 
-/** Narrows to a post exception, the only entries with a post behind them. */
-export function isExceptionEntry(
+/** Narrows to a recorded notification — the entries with a server row behind them. */
+export function isNotificationEntry(
   entry: ActivityEntry,
-): entry is Extract<ActivityEntry, { kind: ActivityExceptionKind }> {
-  return (EXCEPTION_KINDS as readonly string[]).includes(entry.kind)
+): entry is Extract<ActivityEntry, { kind: 'notification' }> {
+  return entry.kind === 'notification'
 }
 
 /**
@@ -133,13 +130,6 @@ export function dayKey(date: Date): string {
   const month = `${date.getMonth() + 1}`.padStart(2, '0')
   const day = `${date.getDate()}`.padStart(2, '0')
   return `${date.getFullYear()}-${month}-${day}`
-}
-
-/** Midnight at the start of the local day a moment falls in. */
-export function startOfDay(date: Date): Date {
-  const out = new Date(date)
-  out.setHours(0, 0, 0, 0)
-  return out
 }
 
 /** Parses a `YYYY-MM-DD` day key back to local midnight, or null if malformed. */
@@ -356,41 +346,55 @@ export function taskEntries(tasks: Task[]): ActivityEntry[] {
   return entries
 }
 
+/** Everything the feed is built from. */
+export type ActivitySources = {
+  /** The batched campaign summaries (CON-152) — the report's whole input. */
+  summaries: Record<string, PostSummary[]>
+  /** Recorded notifications, newest first (CON-242). */
+  notifications?: AppNotification[]
+  tasks?: Task[]
+}
+
 /**
- * The feed: exceptions as they happened, what happened to the tasks, plus one
- * report entry per day.
+ * The feed: what was recorded as it happened, what happened to the tasks, plus
+ * one report entry per day.
  *
- * The classes are the whole design. An exception is something that went wrong
- * or now needs a person, and it appears at the moment it happened. Everything
- * routine — created, published — rolls into the day's report, so the unread
- * count keeps meaning "things you would want to know about".
+ * The classes are the whole design. A notification is something that went wrong
+ * or now needs a person or finished without them, and it appears at the moment
+ * it happened. Everything routine — created, published — rolls into the day's
+ * report, because successful auto-publishing is the highest-volume thing that
+ * happens and listing it one line at a time is what teaches people to stop
+ * reading the badge.
+ *
+ * Future-dated entries are dropped from both halves. A clock skew on the server
+ * or a bad `scheduled_at` must not park a row above today's, permanently first
+ * and never reachable by scrolling down.
  */
 export function activityFeed(
-  summaries: Record<string, PostSummary[]>,
+  sources: ActivitySources,
   now: Date = new Date(),
-  tasks: Task[] = [],
 ): ActivityEntry[] {
   const entries: ActivityEntry[] = []
 
-  for (const entry of taskEntries(tasks)) {
+  for (const entry of taskEntries(sources.tasks ?? [])) {
     if (Date.parse(entry.at) > now.getTime()) continue
     entries.push(entry)
   }
 
-  for (const event of activityEvents(summaries)) {
-    if (event.at.getTime() > now.getTime()) continue
-    if (!(EXCEPTION_KINDS as readonly string[]).includes(event.kind)) continue
+  for (const notification of sources.notifications ?? []) {
+    const at = parseDate(notification.created_at)
+    if (!at || at.getTime() > now.getTime()) continue
     entries.push({
-      kind: event.kind as ActivityExceptionKind,
-      id: `${event.kind}:${event.post.id}`,
-      at: event.at.toISOString(),
-      postId: event.post.id,
-      campaignId: event.campaignId,
-      platformId: event.post.platform_id,
+      kind: 'notification',
+      // Prefixed rather than bare: entry ids share one namespace across three
+      // kinds, and a sqid colliding with a day key is only unlikely.
+      id: `notification:${notification.id}`,
+      at: at.toISOString(),
+      notification,
     })
   }
 
-  for (const report of dailyReports(summaries, now)) {
+  for (const report of dailyReports(sources.summaries, now)) {
     entries.push({
       kind: 'report',
       id: `report:${report.date}`,
@@ -406,31 +410,4 @@ export function activityFeed(
       new Date(b.at).getTime() - new Date(a.at).getTime() ||
       (a.kind === 'report' ? 1 : 0) - (b.kind === 'report' ? 1 : 0),
   )
-}
-
-/**
- * How many entries the user has not seen.
- *
- * With nothing stored — the first visit, or a workspace the user has never
- * opened Activity in — only today counts. The alternative is honest and
- * useless: a badge showing every failure in the workspace's history on first
- * run, which teaches the reader to ignore it before they have read one entry.
- */
-export function unreadCount(
-  entries: ActivityEntry[],
-  lastSeen: string | null,
-  now: Date = new Date(),
-): number {
-  const since = parseDate(lastSeen) ?? startOfDay(now)
-  return entries.filter((entry) => new Date(entry.at) > since).length
-}
-
-/** Whether one entry is unread, on the same rule as the count. */
-export function isUnread(
-  entry: ActivityEntry,
-  lastSeen: string | null,
-  now: Date = new Date(),
-): boolean {
-  const since = parseDate(lastSeen) ?? startOfDay(now)
-  return new Date(entry.at) > since
 }
