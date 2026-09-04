@@ -20,7 +20,6 @@ import {
 import { UploadModal } from '@/components/uploads/UploadModal'
 import { useAssets, useCreateAsset, useDeleteAsset } from '@/hooks/useContent'
 import { uploadLimitLines } from '@/lib/assetStatus'
-import { useUploadOptions } from '@/hooks/useUploadOptions'
 import {
   addToCampaign,
   removeFromCampaign,
@@ -69,7 +68,6 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
 
   const enqueueUploads = useUploadStore((s) => s.enqueue)
   const uploadItems = useUploadStore((s) => s.items)
-  const uploadOptions = useUploadOptions()
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [webPageModalOpen, setWebPageModalOpen] = useState(false)
   /*
@@ -365,7 +363,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             <p className="text-sm text-foreground">
               {t('uploads.dropInto', { scope: scopeName })}
             </p>
-            {uploadLimitLines(t, uploadOptions).map((line) => (
+            {uploadLimitLines(t).map((line) => (
               <p key={line} className="text-xs text-tertiary-foreground">
                 {line}
               </p>

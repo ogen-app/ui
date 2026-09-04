@@ -355,24 +355,6 @@ const FEATURE_FLAGS = {
   'email-preferences': false,
 
   /**
-   * Uploading images into the Content Bank (CON-16) — an asset that *is* a
-   * picture, rather than a picture pasted inside a document.
-   *
-   * **The server answers now** (CON-246, ogen#129, merged 2026-09-01): the
-   * upload endpoint takes JPEG/PNG/WebP/GIF, `assets_type_check` allows `IMG`,
-   * and `AssetFile` carries `url` for the original — which was the decision the
-   * viewer was waiting on, settled as `url` rather than `original_url`. The
-   * asset also gained `alt_text`, and the file gained the `width` / `height` /
-   * `is_animated` / `checksum_sha256` columns `post_attachments` already had.
-   *
-   * What is still missing is a *thumbnail* job, so an image asset's preview is
-   * the full file scaled down (`lib/assetPreview`). That is a cost, not a gap
-   * in the contract: `thumbnail_url` is already preferred wherever it appears,
-   * so the day one is rendered nothing here changes.
-   */
-  'content-bank-images': true,
-
-  /**
    * **Thread sequences** (CON-196) — a post on X or Threads that publishes as
    * a chain of connected posts rather than one.
    *

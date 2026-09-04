@@ -2,22 +2,10 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { uploadAssetFile } from '@/services/api/uploads'
 import { validateUploadFile, type UploadKind } from '@/lib/assetStatus'
-import { isFeatureEnabled } from '@/config/featureFlags'
 import { addToCampaign } from '@/lib/campaignMembership'
 import { attachToPost } from '@/lib/postSources'
 import { queryClient } from '@/lib/queryClient'
 import type { AssetStatus } from '@/types/content'
-
-/**
- * What the bank accepts, read at validation time rather than at module load.
- *
- * The store outlives any one screen, and on staging the flag it reads can be
- * forced per browser — so a value captured when this module first ran would be
- * the answer from before the override, for the rest of the session.
- */
-const uploadOptions = () => ({
-  images: isFeatureEnabled('content-bank-images'),
-})
 
 /**
  * A tracked upload moves: uploading (HTTP transfer) → processing (async backend
@@ -137,7 +125,7 @@ export const useUploadStore = create<UploadState>()(
 
         enqueue: (files, target) => {
           const items: UploadItem[] = Array.from(files).map((file) => {
-            const validation = validateUploadFile(file, uploadOptions())
+            const validation = validateUploadFile(file)
             const base = {
               id: newId(),
               campaignId: target.campaignId,
@@ -171,7 +159,7 @@ export const useUploadStore = create<UploadState>()(
         retry: (id) => {
           const item = get().items.find((it) => it.id === id)
           if (!item) return
-          const validation = validateUploadFile(item.file, uploadOptions())
+          const validation = validateUploadFile(item.file)
           if (!validation.ok) {
             patch(id, { phase: 'failed', error: validation.error })
             return
