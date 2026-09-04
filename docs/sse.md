@@ -247,6 +247,21 @@ Decisions worth knowing:
 - **`id:` is parsed and unused on `/api/events`.** The hub reserves the field
   and ignores what is sent back, so there is nothing to resume into. The
   notification stream is where replay actually happens.
+- **`id:` is `0` on every replayed notification frame**, and `seq` is `0` on
+  every row `GET /api/notifications` returns — the column is right, and a
+  *live* frame is right, but anything the server reads back loses it
+  (`bun:"seq,scanonly"` keeps it out of the generated `SELECT`). So the replay
+  cursor can only ever be 0, which `parseCursor` reads as "no cursor": the
+  durable half of the inbox is unreachable except while already connected.
+  Measured 2026-09-04 against ogen@e722bab; the client is written for the
+  fixed server and the reconnect refetch is what covers for it meanwhile.
+- **A user gets 10 concurrent hub subscriptions, across both streams**
+  (`eventhub.Config.MaxSubscribersPerUser`), and a dead connection keeps its
+  slot until the next heartbeat write fails — up to 20s. So a reload orphans
+  two slots where it used to orphan one, and both streams answer 429 until
+  they free. Reproduced on `/api/events` alone, so it predates the second
+  stream; the shared backoff rides it out. A cheaper reap, or a cap counted
+  per topic rather than per user, would remove the wait.
 
 ### Closed since
 

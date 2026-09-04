@@ -41,29 +41,45 @@ const FEATURE_FLAGS = {
    * the unread count are mounted by this feature and by nothing else, so with
    * the flag off no notification request is made at all.
    *
-   * **The endpoints now exist.** CON-242 merged 2026-09-02 and
-   * `api.dev.getogen.com` answers `/api/notifications`,
-   * `/unread-count` and `/stream`. Phase 2 is built against them: recorded
-   * entries replaced the derived ones, read state is per row and server-side,
-   * and the Phase 1 last-seen timestamp is gone (`docs/activity.md`).
+   * **Exercised against the real API**, 2026-09-04, local build of `main` at
+   * ogen@e722bab: a real `connection.action_required` row read over REST and
+   * rendered from the catalogue, replay served against `Last-Event-ID`,
+   * click-through `PATCH`, and `mark-all-read`. Phase 2 is built on it:
+   * recorded entries replaced the derived ones, read state is per row and
+   * server-side, and the Phase 1 last-seen timestamp is gone
+   * (`docs/activity.md`). What that pass found is 1 below.
    *
    * **Waiting on**, in the order that decides whether this ships:
    *
-   * 1. **A pass against the real thing.** The client was written from the
-   *    contract on the ticket, not from a running server: the local API
-   *    predates the endpoints (404), and nothing here has yet seen a real row,
-   *    a real replay or a real reconnect. That is the step the global rule
-   *    calls for before a flag's fate is decided, and it has not happened.
+   * 1. **`seq` comes back 0 on every row the server *reads*.** It is correct in
+   *    the column and correct on a live frame — `Insert` populates it from
+   *    `RETURNING` — but `List` and `ReplaySince` both return 0, and the
+   *    stream's `id:` line is 0 for a replayed row. One cause:
+   *    `bun:"seq,scanonly"` on `models.Notification` keeps the column out of
+   *    the generated `SELECT` (`ORDER BY n.seq` still works, which is why
+   *    nothing looks wrong server-side). Every seq assertion in
+   *    `notifications_test.go` reads `n.Seq` off the *inserted* model, so the
+   *    suite passes. It costs three things: replay can never advance, because
+   *    a cursor is only ever 0 and `parseCursor` reads 0 as "no cursor" — so
+   *    the durable half of the inbox is unreachable except while already
+   *    connected; `mark-all-read`'s `before` bound is inert, and the client
+   *    duly sends `{"before":0}`, which the repo reads as "all", marking read
+   *    a row that arrived after the click; and keyset paging would loop on
+   *    page one. The client is written for the fixed server and needs no
+   *    change — a reconnect refetches page one, which is what covers for the
+   *    missing replay today.
    * 2. **Whether the SSE crash reaches this stream.** A client disconnecting
    *    from `/api/events` panicked the API process — finding 5 in
    *    `docs/sse.md`, recorded 2026-08-03. The notification stream is a second
    *    long-lived connection written to the same house pattern, so it either
    *    shares the fault or has been fixed alongside it. Unanswered.
-   * 3. **Fan-out.** Every producer writes to the thing's `created_by`, so a
-   *    post failing to publish is news to whoever made it and to nobody else.
-   *    The derived entry it replaced was visible to the whole workspace, so
-   *    turning this on as it stands *narrows* who hears about a failure. Needs
-   *    a decision — probably workspace owners alongside the author.
+   * 3. **Fan-out.** Every producer writes to the thing's `created_by`
+   *    (`submit_post_to_zernio.go`), so a post failing to publish is news to
+   *    whoever made it and to nobody else. The derived entry it replaced was
+   *    visible to the whole workspace, so turning this on as it stands
+   *    *narrows* who hears about a failure. `notify.EmitToUsers` already
+   *    exists and the connection-expiry producer reaches every owner with it —
+   *    this is a decision at one call site, not a missing capability.
    * 4. **`post.published` is emitted, and CON-224 said it must not be.**
    *    Successful auto-publishing is the highest-volume thing that happens, and
    *    rolling it into one computed daily entry is the argument the whole
@@ -76,10 +92,19 @@ const FEATURE_FLAGS = {
    *    with no notification type, so it now leaves no record at all. It is
    *    counted in the day's report and nowhere else.
    *
-   * 3 and 4 are the ones that decide whether this reads as better than Phase 1
-   * or worse: as it stands a post's author hears about every success and
-   * nobody else hears about the failures. Neither is a reason to hold the
-   * client, and both are what to settle before flipping.
+   * 1 is the one that has to be fixed rather than decided; 3 and 4 decide
+   * whether this reads as better than Phase 1 or worse, since as it stands a
+   * post's author hears about every success and nobody else hears about the
+   * failures. None of them is a reason to change the client.
+   *
+   * One thing the pass turned up that is **not** this feature's fault, but is
+   * made twice as likely by it: `eventhub` caps a user at 10 concurrent
+   * subscriptions across *both* streams, and a dropped connection holds its
+   * slot until the server's next heartbeat write notices (20s). A reload
+   * therefore orphans two slots where it used to orphan one, and both streams
+   * answer 429 and back off until the slots free — reproduced on `/api/events`
+   * as well, so it predates this. The backoff rides it out; a tighter cap or a
+   * faster reap would not have to.
    *
    * The daily report is the half that was never a stand-in: it is a count over
    * posts, correct as computed, and it is untouched by all of the above.
