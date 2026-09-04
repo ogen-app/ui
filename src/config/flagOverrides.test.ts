@@ -15,7 +15,15 @@ import { isFeatureEnabled } from './featureFlags'
  * half is a build-time fold, asserted by the build rather than here: see
  * `docs/technical-decisions.md#staging-flag-overrides`.
  */
-const KNOWN = ['tasks', 'activity', 'campaign-goals']
+const KNOWN = ['tasks', 'activity', 'brand-materials']
+
+/**
+ * Two of those ship off and one ships on, which is what the resolver's second
+ * case needs — forcing a flag *off* is only testable against a flag the build
+ * has on. On-flags are retired as their features settle, so when
+ * `brand-materials` goes, this moves to whichever one is on at the time; it is
+ * the only thing here that cares which flag it names.
+ */
 
 function visit(url: string) {
   window.history.replaceState(null, '', url)
@@ -63,20 +71,20 @@ describe('the resolver', () => {
   })
 
   it('can force a flag off that the build has on', () => {
-    expect(isFeatureEnabled('campaign-goals')).toBe(true)
-    setFlagOverride('campaign-goals', false)
-    expect(isFeatureEnabled('campaign-goals')).toBe(false)
+    expect(isFeatureEnabled('brand-materials')).toBe(true)
+    setFlagOverride('brand-materials', false)
+    expect(isFeatureEnabled('brand-materials')).toBe(false)
   })
 })
 
 describe('?ff=', () => {
   it('forces the names it lists and strips itself from the address bar', () => {
-    visit('/campaigns?ff=tasks,-campaign-goals')
+    visit('/campaigns?ff=tasks,-brand-materials')
     bootstrapFlagOverrides(KNOWN)
 
     expect(readFlagOverrides()).toEqual({
       tasks: true,
-      'campaign-goals': false,
+      'brand-materials': false,
     })
     expect(window.location.search).toBe('')
   })

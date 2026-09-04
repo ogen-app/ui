@@ -156,11 +156,9 @@ export function CampaignSettingsForm({ campaign }: Props) {
   const targetPlatforms = form.watch('target_platforms')
   const noPlatforms = targetPlatforms.length === 0
 
-  // Both cards edit campaign columns through this same form, so a flag being
-  // off simply means the page doesn't offer those fields — the values it holds
-  // are still the campaign's own, and Save round-trips them untouched.
-  const goalsEnabled = useFeatureFlag('campaign-goals')
-  const schedulingEnabled = useFeatureFlag('campaign-scheduling')
+  // A card behind a flag that is off simply means the page doesn't offer those
+  // fields — the values it holds are still the campaign's own, and Save
+  // round-trips them untouched.
   const accountsEnabled = useFeatureFlag('campaign-accounts')
   const brandBinds = useFeatureFlag('brand-materials')
 
@@ -304,9 +302,9 @@ export function CampaignSettingsForm({ campaign }: Props) {
             post target used to sit in Advanced next to budget and language,
             where it read as trivia rather than as the rate the assistant plans
             against. */}
-          {goalsEnabled && <PostGoalCard />}
+          <PostGoalCard />
 
-          {schedulingEnabled && <SchedulingCard />}
+          <SchedulingCard />
 
           {/* The same control the brief renders, from the same file. Two
               screens ask this from different directions — what the campaign

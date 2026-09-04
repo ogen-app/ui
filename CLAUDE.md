@@ -246,6 +246,16 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   from the `FEATURE_FLAGS` record directly: the hook is the seam where
   server-driven values will land, and going through it keeps every call site
   untouched when they do. A flag is not a permission.
+- **A flag's life ends at the second merge, not the first.** Turning one on is
+  a deliberate step; deleting it is the *next* one, once the feature has
+  survived one real deploy and nobody has reached for the switch. A flag left
+  on is a branch nobody takes, and every reader of its call sites has to answer
+  "and when this is false?" about code that has not run since it shipped.
+  **The `true` entries are the ones on a clock — the `false` ones are the
+  mechanism working**, holding unshippable work on `develop`, and their number
+  is not a problem to solve. Reviewed on the first working day of each month:
+  every flag that is on and has had a deploy goes, with its off-branch, in a
+  commit that touches nothing else.
 - **On staging and in dev, a flag can be forced for one browser.** A
   `?ff=tasks,-activity` link or the unlisted `/flags` panel writes an override
   to localStorage, so one teammate can exercise a half-built feature on the

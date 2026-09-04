@@ -30,6 +30,20 @@
  * render nothing when it is off. Removing one is the point — a flag whose
  * feature has settled should be deleted along with the `off` branch of the
  * code, not left switched on forever.
+ *
+ * **A flag's life ends at the second merge, not the first.** Turning it on is
+ * one deliberate step; deleting it is the next, once the feature has survived
+ * one real deploy and nobody has reached for the switch. A flag left on is not
+ * a flag — it is a branch nobody takes and a question every reader of the call
+ * site has to answer ("and when this is false?") for code that has not run
+ * since the day it shipped. The off-branch rots quietly, and the person who
+ * eventually deletes it cannot tell stale scaffolding from a deliberate
+ * fallback. `campaign-goals` and `campaign-scheduling` sat on for four weeks
+ * before this rule existed; they were the reason for it.
+ *
+ * The `false` entries below are the healthy ones — the count is not the metric.
+ * They are holding unshippable work on `develop`, which is the whole point of
+ * the mechanism. It is the `true` ones that are on a clock.
  */
 import { readFlagOverrides } from './flagOverrides'
 
@@ -38,22 +52,34 @@ const FEATURE_FLAGS = {
    * Activity (CON-225): the sidebar item, the feed, and the daily report — the
    * workspace's answer to "what happened since I last looked?".
    *
-   * **Waiting on:** the notifications subsystem, CON-224. Nothing persists a
-   * thing that happened today: `/api/events` is an invalidation bus with
-   * at-most-once delivery and no event log (`docs/sse.md`), which is
-   * disqualifying for a feature whose premise is that you were not looking. So
-   * Phase 1 *derives* its entries from the batched campaign summaries instead
-   * — which means only post outcomes can appear, and an entry disappears if
-   * the post behind it changes. The two things the feed is most wanted for,
-   * "your long run finished" and "this connection expired", leave no trace in
-   * that projection and are missing until the table exists.
+   * **The table now exists.** CON-224 was built as CON-242 and merged
+   * 2026-09-02: `notifications` is a real table with a `seq BIGSERIAL`, so
+   * `GET /api/notifications` answers, `?since=<seq>` replays what was missed,
+   * and the rows already cover the two things the feed was most wanted for —
+   * a long run finishing (`campaign.content_plan_ready`) and a connection
+   * expiring (`connection.<stage>`). The SSE writer's fasthttp panic is fixed
+   * too, and notifications ride the existing `?topics=all` subscription rather
+   * than needing a second EventSource: `notify` publishes on the eventhub with
+   * `Event.UserID` set, and authorization is per-user. Note the wire quirk —
+   * on that path both `topic` and `type` are the literal `"notification"`, and
+   * the real type is `payload.type`, which `services/api/events.ts` does not
+   * read yet.
    *
-   * The daily report is the half that is not a stand-in: it is a count over
-   * posts, correct as computed, and it stays when CON-224 lands.
+   * **Waiting on:** this feed being rebuilt on those rows. It still *derives*
+   * its entries from the batched campaign summaries, so only post outcomes
+   * appear and an entry disappears if the post behind it changes — which is
+   * the wrong shape now that recorded edges are available. Three contract
+   * differences to settle in the rebuild, all raised with the back end:
+   * `title`/`body` arrive as server-rendered English, which the catalogue
+   * cannot translate (CON-224 §5 asked for `type` + `vars`); `post.published`
+   * is emitted on the happy path, which §6 excluded by name; and there is no
+   * `actor_user_id`, so "who did this" cannot be drawn.
    *
-   * Switch this on once `GET /api/notifications` answers and the feed has been
-   * re-tested against recorded events rather than derived ones. See
-   * `docs/activity.md`.
+   * The daily report is the half that was never a stand-in: it is a count over
+   * posts, correct as computed, and it survives the rebuild.
+   *
+   * Switch this on once the feed reads recorded events rather than derived
+   * ones. See `docs/activity.md`.
    */
   activity: false,
 
@@ -92,22 +118,6 @@ const FEATURE_FLAGS = {
    * hand-written ones, not that it is replaced.
    */
   tasks: false,
-
-  /**
-   * The Goals card in campaign settings: the post rate the campaign is planned
-   * against. On — CON-182 landed `goal_cadence` beside `estimated_post_count`
-   * and the content-plan flow generates against the pair. Delete this flag once
-   * the card has been exercised against the deployed API.
-   */
-  'campaign-goals': true,
-
-  /**
-   * The Scheduling card in campaign settings: publishing time, time zone,
-   * spread, and the days the campaign publishes on. On — CON-181 landed the
-   * four columns and the content-plan flow places every draft by them. Delete
-   * this flag once the card has been exercised against the deployed API.
-   */
-  'campaign-scheduling': true,
 
   /**
    * "Accounts & Post Types" in campaign settings: the campaign targets an
