@@ -17,7 +17,6 @@ import {
   validateUploadFile,
   type UploadValidation,
 } from '@/lib/assetStatus'
-import { useUploadOptions } from '@/hooks/useUploadOptions'
 
 type Props = {
   isOpen: boolean
@@ -45,7 +44,6 @@ export function UploadModal({
   const { t } = useTranslation()
   const enqueue = useUploadStore((s) => s.enqueue)
   const [staged, setStaged] = useState<File[]>([])
-  const options = useUploadOptions()
 
   const reset = () => setStaged([])
 
@@ -84,7 +82,7 @@ export function UploadModal({
             running them together as a sentence made the reader parse all three
             to find the one they came for. */}
         <div className="flex flex-col text-sm text-tertiary-foreground">
-          {uploadLimitLines(t, options).map((line) => (
+          {uploadLimitLines(t).map((line) => (
             <p key={line}>{line}</p>
           ))}
           <p>{t('uploads.pdfNote')}</p>
@@ -95,7 +93,7 @@ export function UploadModal({
         {staged.length > 0 && (
           <ul className="flex flex-col gap-2">
             {staged.map((file, index) => {
-              const validation = validateUploadFile(file, options)
+              const validation = validateUploadFile(file)
               return (
                 // Bordered, so a staged file reads as an object that is now
                 // sitting here rather than a line of text about one. One line:

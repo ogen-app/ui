@@ -176,8 +176,9 @@ in progress; the UI (CON-61) is not built** — only the "Coming Soon" panel exi
 
 Reusable source material generation draws on (`src/types/content.ts`). An **Asset**
 is Markdown **text** (`MD`) written in-app, an uploaded **PDF** file (or
-multiple `.md` files uploaded at once — CON-46), or a **web page** the backend
-scraped to Markdown (`URL`, CON-222). Uploads process asynchronously
+multiple `.md` files uploaded at once — CON-46), a **web page** the backend
+scraped to Markdown (`URL`, CON-222), or an **image** (`IMG`, CON-246). Uploads
+process asynchronously
 (`pending → processing → ready | partial | failed`); the backend extracts text,
 splits it into page-aware chunks (CON-47), and embeds the chunks (Gemini) so
 campaigns retrieve relevant passages by meaning. Assets are tagged and filtered
@@ -185,12 +186,14 @@ in one table — the old **All / Text / Files / Imagery** tabs went with the
 workspace bank's previous layout (CON-210/211) and did not come back; the
 distinction survives as a glyph on the row (`src/lib/assetCategory.ts`).
 
-_Images as assets are specced (CON-16) and not built: the server takes only
-`.md` and `.pdf`, and `assets.type` is `MD | PDF | URL`. The front end declares
-`IMG` and accepts image uploads behind the `content-bank-images` flag, which is
-off. **Generating** them (Google "Nano Banana" / Gemini) is CON-105/88/83 — a
-desirable extension, **not a main goal**._ Historical note: assets were
-originally called **"Pieces"** (renamed in CON-48).
+_An image asset holds the picture itself, not a picture pasted inside a
+document: JPEG/PNG/WebP/GIF up to 10 MB, probed and stored by the server, which
+also dedupes a re-upload of the same bytes (CON-246). It is the buildable slice
+of CON-16 — the publishing bridge (attaching a bank image to a post as a real
+attachment) is still missing, as is a thumbnail job, so a preview today is the
+full file scaled down. **Generating** images (Google "Nano Banana" / Gemini) is
+CON-105/88/83 — a desirable extension, **not a main goal**._ Historical note:
+assets were originally called **"Pieces"** (renamed in CON-48).
 
 ### Platforms & Publishing
 

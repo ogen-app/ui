@@ -2,8 +2,7 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { UploadSimpleIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
-import { uploadAccept } from '@/lib/assetStatus'
-import { useUploadOptions } from '@/hooks/useUploadOptions'
+import { UPLOAD_ACCEPT } from '@/lib/assetStatus'
 
 type Props = {
   onFiles: (files: File[]) => void
@@ -12,7 +11,7 @@ type Props = {
 
 /**
  * Click-to-browse + native drag-and-drop target for the file types the bank
- * currently takes — .md / .pdf, and images with `content-bank-images` on.
+ * takes — .md, .pdf and images.
  *
  * Drawn as an outline rather than a filled slab: a dashed rectangle is the
  * shape every application uses for "put something here", and it reads as an
@@ -26,7 +25,6 @@ export function Dropzone({ onFiles, className }: Props) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
-  const options = useUploadOptions()
 
   const open = () => inputRef.current?.click()
 
@@ -68,7 +66,7 @@ export function Dropzone({ onFiles, className }: Props) {
       <input
         ref={inputRef}
         type="file"
-        accept={uploadAccept(options)}
+        accept={UPLOAD_ACCEPT}
         multiple
         hidden
         onChange={(e) => {
