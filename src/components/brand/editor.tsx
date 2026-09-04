@@ -1,8 +1,13 @@
 import { useState, type ReactNode } from 'react'
-import { TrashIcon, type Icon } from '@phosphor-icons/react'
+import { StarIcon, TrashIcon, type Icon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import {
   PAGE_ACTION_BAR_INSET,
   PageActionBar,
@@ -385,5 +390,103 @@ export function DangerCard({
         </div>
       </ModalContainer>
     </EditorCard>
+  )
+}
+
+/**
+ * Whether the app falls back to this entry — **a state with an action, not a
+ * setting with a switch.**
+ *
+ * It was a labelled `Switch` with two sentences under it, and the sentences
+ * were the tell. Being the default is not symmetrical: you can *take* it, and
+ * you cannot give it back, because a library with no default at all sends every
+ * post that follows through a choice nobody asked for. A switch promises the
+ * second half of a pair that does not exist, so it had to spend a line of
+ * tertiary copy explaining that it only goes one way — a control that needs a
+ * footnote to say which of its two states is reachable is the wrong control.
+ *
+ * So: one thing, in the card's top-right corner, and which thing it is *is* the
+ * state.
+ *
+ * - **Not the default** — a ghost `MAKE DEFAULT` with a hollow star. An offer,
+ *   and a quiet one: it sits on the heading line of a card whose heading is the
+ *   loudest thing on it, and an outline button there read as the card's main
+ *   action.
+ * - **The default** — a filled star and the word, inert. The tooltip carries
+ *   what the two removed sentences were for: what being the default actually
+ *   does. Repeating the label back ("this is the default voice") would leave
+ *   the meaning of the word unsaid, which was the only thing worth saying.
+ *
+ * **Both states are 32px tall and padded like the button**, which is not a
+ * detail: the first cut swapped a `size="sm"` button for a bare inline span, so
+ * taking the default shrank the card's header by twelve pixels and jumped every
+ * field below it up the screen. A control that changes shape when you press it
+ * has to keep its footprint, or the press moves the page under the cursor.
+ *
+ * Green rather than the section's hue, matching `DefaultStar` on the library
+ * cards and the Overview: the hue means which section this is, and green is
+ * this app's word for *fine and working*, which is the claim.
+ *
+ * **Here rather than in `VoiceEditor`, because audiences have a default now
+ * too.** It moved the moment the second section grew one — the two differ by a
+ * noun and by nothing else, and two copies of a control whose whole job is to
+ * make one fact look the same everywhere is the joke telling itself.
+ *
+ * Demotion still happens the way it always did — by another entry being
+ * promoted — and that is stated on the offer rather than on the state, because
+ * it is a consequence of clicking, not a fact about an entry that already has
+ * it.
+ */
+export function DefaultControl({
+  isDefault,
+  onMakeDefault,
+  /** What posts do with this entry, in the state's tooltip. */
+  does,
+  /** What promoting this one costs, on the offer's tooltip. */
+  costs,
+}: {
+  isDefault: boolean
+  onMakeDefault: () => void
+  does: string
+  costs: string
+}) {
+  if (isDefault) {
+    return (
+      <Tooltip>
+        {/* A span, not a disabled button: there is nothing to press. A disabled
+            button says "you may not do this", and what is true here is that
+            this is already done. */}
+        <TooltipTrigger asChild>
+          <span
+            tabIndex={0}
+            // `h-8`, `px-3`, the button's own type — and `pt-1` for the two
+            // pixels its optical top padding puts on a label. The whole point
+            // of this branch is that pressing the other one does not move
+            // anything, including itself.
+            className="flex h-8 shrink-0 items-center gap-2 px-3 pt-1 text-[13px]/4 font-medium text-secondary-foreground"
+          >
+            <StarIcon
+              weight="fill"
+              className="size-4 text-positive"
+              aria-hidden
+            />
+            Default
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{does}</TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button variant="ghost" size="sm" onClick={onMakeDefault}>
+          <StarIcon />
+          <span>MAKE DEFAULT</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{costs}</TooltipContent>
+    </Tooltip>
   )
 }

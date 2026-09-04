@@ -9,6 +9,7 @@ import { sampleCount, usageLine } from './format'
 import {
   AddEntryCard,
   BrandLibrary,
+  DefaultStar,
   LibraryCard,
   OriginLine,
   PlainActionCard,
@@ -274,7 +275,13 @@ function VoiceCard({
           <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
             {voice.name}
           </h3>
-          {voice.isDefault && <DefaultMark />}
+          {voice.isDefault && (
+            <DefaultStar
+              backed={voice.samples.length >= MIN_VOICE_SAMPLES}
+              label={defaultVoiceLabel(voice)}
+              className="text-sm leading-5 text-secondary-foreground"
+            />
+          )}
         </div>
         <p className="text-sm leading-5 text-secondary-foreground">
           {voice.whenToUse}
@@ -316,30 +323,17 @@ function VoiceCard({
 }
 
 /**
- * Which voice a post starts in — a dot and a word, beside the name.
+ * What the star on a voice actually says, in a sentence, for anybody who is not
+ * looking at the colour.
  *
- * **Not a badge, and deliberately the quietest mark on the card.** The app's
- * `StatusBadge` says something has happened or needs attention; being the
- * default is neither, it is the ordinary resting state of one of four voices.
- * A filled pill in the corner would make the most normal fact on the screen
- * look like the most urgent one.
- *
- * Positive green rather than the section's own hue: the hue means "voices" —
- * it is the same colour on the page header, the Overview card and the empty state — and
- * a second meaning on the same colour breaks both readings. Green here is the
- * app's word for *this is fine and working*, which is exactly the claim.
- *
- * Lower case against the `text-xl` display name it sits beside, because it is
- * not a second title. The dot carries the emphasis; the word only says what the
- * dot means.
+ * Two readings rather than one, because the interesting state is the second: a
+ * default voice with nothing behind it is the case where the whole library is
+ * decorative, and "default" on its own would report that as success.
  */
-function DefaultMark() {
-  return (
-    <span className="flex shrink-0 items-center gap-1.5 text-sm leading-5 text-secondary-foreground">
-      <span aria-hidden className="size-1.5 rounded-full bg-positive" />
-      default
-    </span>
-  )
+export function defaultVoiceLabel(voice: BrandVoice): string {
+  return voice.samples.length >= MIN_VOICE_SAMPLES
+    ? 'The default voice — posts start in it unless something else is picked.'
+    : 'The default voice, with nothing like enough behind it — posts start in it and it changes almost nothing about what they say.'
 }
 
 const EMOJI_LABEL: Record<VoiceRules['emoji'], string> = {

@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest'
+import type { TFunction } from 'i18next'
 import {
   uploadAccept,
-  uploadLimitsLabel,
+  uploadLimitLines,
   validateUploadFile,
 } from './assetStatus'
+
+/**
+ * A `t` that echoes the key and whatever was interpolated into it, so these
+ * tests assert what the copy is *told* rather than what English says today —
+ * the sizes are the part that has to match the server.
+ */
+const t = ((key: string, vars?: Record<string, string>) =>
+  `${key} ${JSON.stringify(vars ?? {})}`) as unknown as TFunction
 
 /** A `File` of a given size without allocating the bytes. */
 function file(name: string, sizeBytes: number): File {
@@ -34,13 +43,30 @@ describe('uploadAccept', () => {
   })
 })
 
-describe('uploadLimitsLabel', () => {
+describe('uploadLimitLines', () => {
   it('says nothing about images while they are off', () => {
-    expect(uploadLimitsLabel(OFF)).not.toMatch(/image/i)
+    expect(uploadLimitLines(t, OFF)).toHaveLength(1)
+    expect(uploadLimitLines(t, OFF).join(' ')).not.toMatch(/limitImages/)
   })
 
   it('names the image cap once they are on', () => {
-    expect(uploadLimitsLabel(ON)).toMatch(/Images .* up to 10 MB/)
+    const lines = uploadLimitLines(t, ON)
+    expect(lines).toHaveLength(2)
+    expect(lines[1]).toContain('uploads.limitImages')
+    expect(lines[1]).toContain('10 MB')
+  })
+
+  // Written into the copy, these would be two more places to forget when the
+  // server's caps move.
+  it('interpolates the document caps rather than stating them', () => {
+    expect(uploadLimitLines(t, OFF)[0]).toContain('10 MB')
+    expect(uploadLimitLines(t, OFF)[0]).toContain('50 MB')
+  })
+
+  // One string per line is the whole point: the caller breaks them, so no
+  // separator character survives into the copy.
+  it('keeps each limit a line of its own', () => {
+    for (const line of uploadLimitLines(t, ON)) expect(line).not.toContain('·')
   })
 })
 

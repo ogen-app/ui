@@ -29,6 +29,8 @@ import {
 } from '@/stores/assistantStore.ts'
 import { campaignToPayload } from '@/lib/campaignPayload'
 import { SettingsCard } from '@/components/settings/SettingsCard.tsx'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { CampaignBrandCard } from '@/components/brand/CampaignBrandCard'
 
 const briefSchema = z.object({
   description: z.string(),
@@ -53,6 +55,10 @@ type BriefFormProps = {
 }
 
 export function BriefForm({ campaign }: BriefFormProps) {
+  // Whether Brand answers persona and tone. Read once and threaded through
+  // rather than checked at each site, so the two boxes and the card they are
+  // replaced by can never both be on screen.
+  const brandBinds = useFeatureFlag('brand-materials')
   const form = useForm<BriefFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(briefSchema as any),
@@ -136,22 +142,28 @@ export function BriefForm({ campaign }: BriefFormProps) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="target_persona"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target persona</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Who are we talking to? Role, goals, pain points."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Answered by the campaign's audience once Brand is on — see
+                  `CampaignBrandCard`. The value is still round-tripped on save
+                  rather than cleared: the box going away is a change to this
+                  screen, not permission to delete what somebody wrote. */}
+              {!brandBinds && (
+                <FormField
+                  control={form.control}
+                  name="target_persona"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target persona</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Who are we talking to? Role, goals, pain points."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="key_messages"
@@ -168,24 +180,28 @@ export function BriefForm({ campaign }: BriefFormProps) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="tone_guidelines"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tone guidelines</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Voice, style, words to use and avoid."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Answered by the campaign's voice. Same treatment. */}
+              {!brandBinds && (
+                <FormField
+                  control={form.control}
+                  name="tone_guidelines"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tone guidelines</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Voice, style, words to use and avoid."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
           </SettingsCard>
+          {brandBinds && <CampaignBrandCard campaignId={campaign.id} />}
         </fieldset>
       </form>
     </Form>
@@ -208,7 +224,10 @@ export function BriefForm({ campaign }: BriefFormProps) {
 function GenerateBriefAction({ campaign }: { campaign: Campaign }) {
   const askFor = useAssistantStore((s) => s.askFor)
   const openRightPanel = useSettingsStore((s) => s.openRightPanel)
-  const posture = briefPosture(campaign)
+  // The ask names the fields still missing, so it must not ask for the two
+  // that are no longer on the screen — the tool would write them and nothing
+  // would show what changed.
+  const posture = briefPosture(campaign, useFeatureFlag('brand-materials'))
 
   const ask = () => {
     openRightPanel('assistant')

@@ -142,6 +142,31 @@ describe('briefPosture', () => {
   it('is complete when all fields are filled', () => {
     expect(briefPosture(makeCampaign(filledBrief)).state).toBe('complete')
   })
+
+  it('stops counting persona and tone once Brand answers them', () => {
+    // Both boxes are gone from the screen with the flag on, so a campaign that
+    // never filled them is not incomplete — it is bound instead.
+    const posture = briefPosture(
+      makeCampaign({
+        description: 'A launch.',
+        key_messages: 'It is faster.',
+        target_persona: '',
+        tone_guidelines: '',
+      }),
+      true,
+    )
+    expect(posture.state).toBe('complete')
+    expect(posture.missing).toEqual([])
+  })
+
+  it('still reports what is left of the brief when bound', () => {
+    const posture = briefPosture(
+      makeCampaign({ description: '', key_messages: 'It is faster.' }),
+      true,
+    )
+    expect(posture.state).toBe('partial')
+    expect(posture.missing).toEqual(['description'])
+  })
 })
 
 describe('setupChecks', () => {

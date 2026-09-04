@@ -12,6 +12,12 @@ import {
   type PanelScope,
   type RightPanel,
 } from '@/lib/rightPanel'
+import {
+  rememberVisit,
+  sanitizePostsPlaces,
+  type PostsPlace,
+  type PostsView,
+} from '@/lib/postsPlace'
 
 /**
  * Local-only settings stored in localStorage
@@ -37,6 +43,17 @@ export type LocalSettings = {
    * table is the wrong home for it.
    */
   dismissedNotes: string[]
+
+  /**
+   * Campaign id -> where the user last was in that campaign's posts. See
+   * `lib/postsPlace`; read it through `selectPostsPlace` / `selectCalendarPlace`
+   * rather than the map directly.
+   *
+   * Unbounded, and it doesn't matter: an entry is three short strings and a
+   * workspace has campaigns in the dozens. A deleted campaign leaves one
+   * behind that nothing will ever ask for again.
+   */
+  postsPlace: Record<string, PostsPlace>
 }
 
 /**
@@ -82,6 +99,18 @@ type SettingsState = LocalSettings &
     /** Close an explainer permanently. Idempotent. */
     dismissNote: (id: string) => void
 
+    /**
+     * Record that the user is looking at this campaign's posts, arranged this
+     * way. Called by the views themselves, on every anchor change — the fold is
+     * identity-stable when nothing moved, so a re-render is not a write.
+     *
+     * The list passes no anchor; it has none, and keeps the calendar's.
+     */
+    rememberPostsPlace: (
+      campaignId: string,
+      visit: { view: PostsView; anchor?: string },
+    ) => void
+
     // Reset all settings to defaults
     resetAllSettings: () => void
   }
@@ -91,6 +120,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   panelMemory: DEFAULT_PANEL_MEMORY,
   lastOpenedModals: {},
   dismissedNotes: [],
+  postsPlace: {},
 }
 
 const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null, campaignId: null }
@@ -101,6 +131,17 @@ const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null, campaignId: null }
  */
 export const selectActivePanel = (state: SettingsState): RightPanel | null =>
   resolveActivePanel(state.panelMemory, state.scope)
+
+/**
+ * The raw entry for one campaign, or `undefined` — the identity is what makes
+ * this safe to subscribe to. Both readers derive from it outside the store, so
+ * that the default (which reads the clock, and so is a fresh object every time)
+ * is never what a subscriber is comparing against. See `hooks/usePostsPlace`.
+ */
+export const selectPostsPlaceEntry =
+  (campaignId: string) =>
+  (state: SettingsState): PostsPlace | undefined =>
+    state.postsPlace[campaignId]
 
 export const useSettingsStore = create<SettingsState>()(
   devtools(
@@ -165,6 +206,20 @@ export const useSettingsStore = create<SettingsState>()(
           )
         },
 
+        rememberPostsPlace: (campaignId, visit) => {
+          set((state) => {
+            const prev = state.postsPlace[campaignId]
+            const next = rememberVisit(prev, visit)
+            // `rememberVisit` hands back the same object when nothing moved,
+            // and this is what that is for: the calendar records on every
+            // render of every anchor, so an unconditional `set` would notify
+            // every subscriber — the sidebar and the post header among them —
+            // on navigations that changed nothing.
+            if (next === prev) return state
+            return { postsPlace: { ...state.postsPlace, [campaignId]: next } }
+          })
+        },
+
         // Reset all settings — this brings closed explainers back, which is
         // the only way to see one again.
         resetAllSettings: () => {
@@ -179,17 +234,20 @@ export const useSettingsStore = create<SettingsState>()(
           panelMemory: state.panelMemory,
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
+          postsPlace: state.postsPlace,
           // Don't persist
           // scope, campaignId — where you are, not what you chose
         }),
-        // Rehydration is the one place a panel id arrives from outside this
-        // build, so it is the one place that has to distrust it.
+        // Rehydration is the one place a panel id — or a remembered calendar
+        // anchor — arrives from outside this build, so it is the one place that
+        // has to distrust them.
         merge: (persisted, current) => {
           const saved = (persisted ?? {}) as Partial<LocalSettings>
           return {
             ...current,
             ...saved,
             panelMemory: sanitizePanelMemory(saved.panelMemory),
+            postsPlace: sanitizePostsPlaces(saved.postsPlace),
           }
         },
       },

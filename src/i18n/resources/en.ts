@@ -767,10 +767,6 @@ export const en = {
       title: 'Platform Settings',
       empty:
         'No platforms connected yet — pick one under “Connect Platforms” below.',
-      cadence: 'Cadence',
-      constraints: 'Constraints',
-      /** Cadence and constraints await real backend data — see PlatformRow. */
-      comingSoon: 'Coming soon',
       contentTypes: 'Available Content Types',
       contentTypesEmpty: 'None',
       accountInactive: 'Inactive on {{platform}} — can’t receive posts',
@@ -1594,6 +1590,13 @@ export const en = {
     noPostType: 'No post type',
 
     /**
+     * The post editor's back arrow. Names the destination generically because
+     * it is not always the same one — it returns to whichever arrangement of
+     * the campaign's posts the user came from, calendar or table.
+     */
+    backToPosts: 'Back to posts',
+
+    /**
      * The card's warning mark. What is wrong is in the post itself — the mark
      * only says to go and look — so this is deliberately the whole of it.
      */
@@ -1614,6 +1617,107 @@ export const en = {
       /** The short forms, for a bar too narrow for the sentence. */
       compactNow: 'now',
       compactLate: '{{amount}} late',
+    },
+
+    /**
+     * Thread sequences (CON-196) — a post on X or Threads that publishes as a
+     * chain of connected posts rather than one.
+     *
+     * The vocabulary is fixed here and everything follows it. The whole thing
+     * is a **thread**; each part of it is a **post**, numbered from 1, because
+     * that is what each one becomes on the platform — calling them "items" or
+     * "segments" would name the data structure rather than the thing the
+     * reader will scroll through. Both networks use "thread" for this in their
+     * own apps, so it needs no gloss on either.
+     *
+     * Every limit these sentences quote is per *post*, never for the thread,
+     * which is the one thing about the format that surprises people.
+     */
+    sequence: {
+      /**
+       * Teaching, and only teaching — it can be dismissed for good, so nothing
+       * a person needs while writing may live here (CLAUDE.md). What the body
+       * actually became is the note under the editor, which cannot be
+       * dismissed.
+       */
+      explainer:
+        'This publishes as a chain of posts, each replying to the one before it. Type --- on its own line wherever you want a break; with no divider anywhere, blank lines are the breaks. Anything still past the character limit is cut to fit.',
+
+      /**
+       * The note under the editor: what the body will publish as. Two
+       * sentences, never one assembled from clauses — only the second has a
+       * limit in it, and only sometimes.
+       */
+      splitByDivider_one:
+        'Publishes as {{count}} post, broken where you put a divider.',
+      splitByDivider_other:
+        'Publishes as {{count}} posts, broken where you put a divider.',
+      splitByBlankLine_one:
+        'Publishes as {{count}} post, broken at blank lines.',
+      splitByBlankLine_other:
+        'Publishes as {{count}} posts, broken at blank lines.',
+      splitAutoCut_one:
+        '{{count}} of them came from copy cut at {{limit}} characters.',
+      splitAutoCut_other:
+        '{{count}} of them came from copy cut at {{limit}} characters.',
+      splitByLimit_one:
+        'Publishes as {{count}} post, cut to fit {{limit}} characters.',
+      splitByLimit_other:
+        'Publishes as {{count}} posts, cut to fit {{limit}} characters.',
+      /**
+       * One post, and therefore no rule to name: the body has no divider and
+       * no blank line, or it has one and still fits. How to make a second post
+       * is the Explainer's job, above — this line is a verdict.
+       */
+      splitSingle: 'Publishes as a single post.',
+      splitPending: 'Working out how this breaks into posts…',
+      splitOverflow:
+        'This is more than {{max}} posts. Shorten it, or publish it as more than one thread.',
+
+      /**
+       * The media card, when the post is a thread. The card's other copy is
+       * still legacy English (CON-174) — these are new, so they are here.
+       */
+      mediaPerPost: 'Every limit here is per post of the thread.',
+      mediaOn: 'Post {{position}}',
+      mediaOnLabel: 'This file rides post {{position}} — pick another',
+
+      saveFailed: 'Could not save which post carries which file.',
+
+      postCount_one: '{{count}} post',
+      postCount_other: '{{count}} posts',
+
+      /**
+       * The row this adds to the pre-publish bar. Length is not among the
+       * things it can fail on: copy past the ceiling is cut to fit as the
+       * chain is built, so what is left is the media, which only the author
+       * can move.
+       */
+      check: {
+        label: 'Thread',
+        pending: 'Checking…',
+        overflow: 'More than {{max}} posts',
+        issues_one: 'Post {{positions}} carries more media than one post takes',
+        issues_other:
+          'Posts {{positions}} carry more media than one post takes',
+      },
+
+      /**
+       * The preview panel's note. It replaces a sentence that said the
+       * publisher does the splitting — it does not, and never did: without
+       * `threadItems` the whole body goes out as a single post.
+       */
+      previewNote:
+        'A thread: each post below goes out separately, replying to the one before it.',
+      /**
+       * The same panel, for a `thread` post left over from before the feature
+       * — the type is withdrawn from every picker while the flag is off, but a
+       * post already saved as one keeps it. What it says is the uncomfortable
+       * truth: the card has always drawn a chain, and the submit path has
+       * always sent one post.
+       */
+      previewNoteUnsplit:
+        'The card splits this at blank lines, but it publishes as a single post — Ogen does not send the thread yet.',
     },
 
     /**
@@ -2078,6 +2182,64 @@ export const en = {
       title: "This isn't a document",
       body: 'This app version has no way to show this kind of asset. Nothing has been changed — it is still here, and a newer version will open it.',
     },
+
+    /**
+     * An image asset's screen (CON-246). The two text fields are the whole
+     * point of it, so their help lines carry the distinction rather than
+     * leaving it to be guessed from the labels: one is read out to a person,
+     * the other is read by the assistant looking for a picture.
+     */
+    image: {
+      titlePlaceholder: 'Title',
+      altLabel: 'Alt text',
+      altPlaceholder: 'A person at a workbench, holding a dental implant',
+      altHelp:
+        'What someone who cannot see the picture is told it is. It travels with the image when it goes onto a post.',
+      /** Only shown near the cap, so it says what is left rather than what is used. */
+      altCount_one: '{{count}} character left',
+      altCount_other: '{{count}} characters left',
+      descriptionLabel: 'Description',
+      descriptionPlaceholder:
+        'What is in this picture, and what it is for — the words that should find it.',
+      descriptionHelp:
+        'Not shown to anyone. This is what the assistant searches when it looks for a picture to use.',
+      tagsLabel: 'Tags',
+      tagsPlaceholder: 'Add a tag…',
+      /**
+       * Tags are the only field here that isn't about this picture — it is
+       * about finding it among the others, which is the thing the filter above
+       * the list has always been able to do and nothing has been able to set.
+       */
+      tagsHelp: 'How you find this image again in the list.',
+      /** The bytes never reached storage — a deployment fault, not a bad file. */
+      missing: 'This image was not stored, so there is nothing to show.',
+      animated: 'Animated',
+    },
+  },
+
+  /**
+   * The upload modal and its drop zone.
+   *
+   * The limits are two lines rather than one because they answer two different
+   * questions — "will it take my PDF" and "will it take my photo" — and a
+   * reader looking for one of them should not have to read past the other.
+   * Their sizes are interpolated from the caps in `lib/assetStatus`, so the
+   * copy never states a number that has drifted from the one enforced.
+   */
+  uploads: {
+    limitDocs: 'Markdown up to {{md}}, PDF up to {{pdf}}',
+    limitImages: 'Images (JPEG, PNG, WebP, GIF) up to {{size}}',
+    /** Why an upload can finish and the document still not be readable. */
+    pdfNote: 'PDFs are read in the background, so they finish after upload.',
+    browse: 'Drop files here or click to browse',
+    remove: 'Remove {{name}}',
+    cancel: 'CANCEL',
+    submit: 'UPLOAD',
+    /** The count is what makes the button worth reading twice before clicking. */
+    submitCount: 'UPLOAD ({{n}})',
+    /** Named while a drag is over the page — the one moment the destination
+        can be stated without being asked for. */
+    dropInto: 'Add these to {{scope}}',
   },
 
   errors: {

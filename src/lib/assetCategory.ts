@@ -16,10 +16,8 @@ export type AssetCategory = 'text' | 'imagery' | 'files'
  * handled by the row itself — it is text too, but where it came from is worth
  * its own glyph.
  *
- * `IMG` is the one that finally makes `imagery` mean something (CON-16 R31).
- * The category is safe to map unflagged because it only decides which glyph a
- * row draws: with no way to create an image asset yet, nothing reaches it, and
- * when one arrives it is labelled correctly rather than filed under text.
+ * `IMG` is the one that finally makes `imagery` mean something (CON-246), and
+ * it is reachable now that images upload.
  */
 export function assetCategory(asset: Pick<Asset, 'type'>): AssetCategory {
   switch (asset.type) {
@@ -39,9 +37,10 @@ export function assetCategory(asset: Pick<Asset, 'type'>): AssetCategory {
  * mid-scrape URL, which is only safe for as long as every asset is text. A PDF
  * qualifies — what you edit is the text the extractor pulled out of it, and
  * that text is what the embeddings are built from. An image does not: its
- * `content` is a description, not a document, and CON-105 writes `"[]"` there.
- * Seed BlockNote with that and the user gets an editable page reading `[]`
- * whose first keystroke autosaves over the asset (CON-16 R32).
+ * `content` is the description someone writes about the picture. Seed BlockNote
+ * with that and the description becomes a document whose first keystroke
+ * autosaves over the asset (CON-16 R32) — which is why an image has a screen of
+ * its own (`AssetImageView`) and still answers `false` here.
  *
  * So the types that *are* documents are named and everything else falls
  * through — including a type this build has never heard of, which is the case

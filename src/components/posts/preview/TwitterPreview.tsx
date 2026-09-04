@@ -8,6 +8,7 @@ import {
 } from '@phosphor-icons/react'
 import {
   PLATFORM_FOLDS,
+  measureSegment,
   threadSegments,
   type ThreadSegment,
 } from '@/lib/socialText.ts'
@@ -31,9 +32,13 @@ import type { PreviewAuthor, PreviewMediaItem, PreviewProps } from './types.ts'
  *
  * A `thread` post is the exception, and the reason this component knows its
  * post type: the 280 characters apply *per post*, so a 900-character thread is
- * perfectly valid and the single-card preview was calling it rejected. Threads
- * are drawn as the several posts they are, split at blank lines — see
- * `splitThread` for why that is the rule.
+ * perfectly valid and the single-card preview was calling it rejected.
+ *
+ * Where those posts come from depends on whether the sequence feature is on.
+ * With it on the editor hands them over (`sequence`), each with the media it
+ * carries. Without it, the card falls back to splitting the body at blank
+ * lines — a guess, but the honest one: that is also what the single block of
+ * `content` would have to be split on by anything downstream.
  *
  * The avatar sits in its own column with everything else indented past it,
  * which is X's layout and the reason its text measure is narrower than the
@@ -46,30 +51,39 @@ export function TwitterPreview({
   timeLabel,
   postType,
   charLimit,
+  sequence,
 }: PreviewProps) {
   const thread = postType === 'thread'
-  // The panel's notes read the same `threadSegments` verdicts, so the badge
-  // on a post and the note naming it can never disagree.
-  const segments: ThreadSegment[] = thread
-    ? threadSegments(text, charLimit ?? null)
-    : [{ text, count: 0, over: false }]
+  // The panel's notes read the same verdicts, so the badge on a post and the
+  // note naming it can never disagree.
+  const posts: { segment: ThreadSegment; media: PreviewMediaItem[] }[] =
+    sequence
+      ? sequence.map((item) => ({
+          segment: measureSegment(item.text, charLimit ?? null),
+          media: item.media,
+        }))
+      : thread
+        ? threadSegments(text, charLimit ?? null).map((segment, i) => ({
+            segment,
+            /* Without a sequence there is nothing saying which post carries
+               what, and a thread's images conventionally ride the first —
+               which is the one decision the preview cannot leave blank. */
+            media: i === 0 ? media : [],
+          }))
+        : [{ segment: { text, count: 0, over: false }, media }]
 
   return (
     <PreviewSurface style={{ borderRadius: 16 }}>
-      {segments.map((segment, i) => (
+      {posts.map(({ segment, media: postMedia }, i) => (
         <Tweet
           key={i}
           segment={segment}
-          /* The lead post carries the media. Ogen sends the attachments with
-             the post as a whole and the publisher places them, but a thread's
-             images conventionally ride the first one — and that is the one
-             decision the preview cannot leave blank. */
-          media={i === 0 ? media : []}
+          media={postMedia}
           author={author}
           timeLabel={timeLabel}
           thread={thread}
           charLimit={charLimit}
-          connector={i < segments.length - 1}
+          connector={i < posts.length - 1}
         />
       ))}
     </PreviewSurface>

@@ -49,8 +49,17 @@ export function AssetPreview({ asset }: { asset: Asset }) {
       {/* Right of the row, so it never covers the title it belongs to. `p-1`
           makes the tooltip's own surface a frame around the picture; 400px is
           the cap on both sides, which keeps a portrait page and a wide hero
-          image the same weight on screen. */}
-      <TooltipContent side="right" sideOffset={8} className="max-w-none p-1">
+          image the same weight on screen.
+
+          No arrow: this tooltip is the picture, and there is no ambiguity about
+          which row it belongs to — it opens against the cell the pointer is
+          already resting on. */}
+      <TooltipContent
+        side="right"
+        sideOffset={8}
+        showArrow={false}
+        className="max-w-none p-1"
+      >
         <img src={url} alt="" className="max-h-100 max-w-100 object-contain" />
       </TooltipContent>
     </Tooltip>

@@ -13,7 +13,7 @@ import type { Post } from '@/types/posts'
  * of the same state, and the upload progress lives in here, so they have to
  * share a single instance (called once, in the post route).
  */
-export function usePostMedia(post: Post) {
+export function usePostMedia(post: Post, sequence = false) {
   const media = usePostAttachments(post.id)
   const { data: rules, isLoading: rulesLoading } = usePostTypeRules(
     post.platform_id,
@@ -54,6 +54,7 @@ export function usePostMedia(post: Post) {
         requiresContent: rule?.requires_content ?? false,
         maxContentChars,
         maxTitleChars,
+        sequence,
       }),
     [
       post,
@@ -64,8 +65,9 @@ export function usePostMedia(post: Post) {
       rule,
       maxContentChars,
       maxTitleChars,
+      sequence,
     ],
   )
 
-  return { ...media, policy, checks, ready, maxTitleChars }
+  return { ...media, policy, checks, ready, maxContentChars, maxTitleChars }
 }

@@ -111,8 +111,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `AssetEditor`". It seeds BlockNote from `content` and autosaves it back, so
   the first type whose `content` isn't a document is overwritten by anyone who
   opens it and types (CON-235; `IMG`'s `content` is its description). PDF *is*
-  a document — its extracted text is what the embeddings are built from. See
+  a document — its extracted text is what the embeddings are built from. An
+  image is not, and has its own screen rather than the fallback
+  (`AssetImageView`, CON-246), so `UnsupportedAsset` is now only reached by a
+  kind this build has never heard of. See
   `docs/technical-decisions.md#asset-opening`.
+- **An asset update is a whole-resource PUT, like a campaign's.** The handler
+  assigns `tag_ids` and `alt_text` from the request unconditionally, so a
+  payload naming only what changed untags the asset and blanks its alt text —
+  which is what `{title, content}` had been quietly doing to tags. Build it
+  through `assetToPayload` (`lib/assetPayload.ts`). The image screen debounces
+  the whole asset rather than each field for the same reason: two saves in
+  flight each carry a stale copy of the other's field.
 - **A campaign update is a whole-resource PUT, and the server defaults every
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of
@@ -412,12 +422,21 @@ creates the account or adds the workspace to one that already exists) ·
 **multi-workspace is live, unflagged** — [ogen#109](https://github.com/ogen-app/ogen/pull/109)
 merged 2026-08-14; the `multi-workspace` flag and its off-branch were deleted
 once the client was re-tested against the shipped API (CON-147) ·
-dark mode is scaffolded but empty · **an image cannot be a Content-Bank asset**
-— `assets.type` is `MD | PDF | URL` and the upload endpoint takes `.md` and
-`.pdf` only, so `IMG` is declared client-side and unproducible; the upload
-surface offers images behind `content-bank-images` (off) and the image asset's
-own screen is deliberately unwritten until the DTO carries a URL for the
-original (CON-16) · **the React Compiler lint rules are warnings, not errors** —
+dark mode is scaffolded but empty · **calendar cards have never shown a
+picture** — the card's only image source is `post.media_urls` and nothing writes
+it; editor uploads land in `post_attachments`, whose thumbnails are 15-minute
+presigned URLs the client cannot persist. Needs a thumbnail on the post list
+payload — CON-247. Calendar Settings' *Show cards as image previews* switch is
+hidden behind `calendar-card-images` until then; it was on by default and inert,
+which read as a broken calendar rather than an unbuilt feature
+(`docs/technical-decisions.md#calendar-card-media`) ·
+**a Content-Bank image has no thumbnail** —
+images upload, store as `IMG` and open on their own screen (CON-246), but the
+server renders no smaller copy, so the list's preview cell draws the full file
+scaled into 40px; `thumbnail_url` is preferred wherever it appears, so nothing
+here changes when that job lands. The other half still missing is the bridge
+that attaches a bank image to a post (CON-16) — which is what the alt text is
+being collected for · **the React Compiler lint rules are warnings, not errors** —
 `react-hooks` v7 reports 123 of them against code that predates it, and each is
 a judgement call about a component rather than a mechanical fix
 ([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n covers the auth screens, sidebar,
@@ -428,6 +447,31 @@ post's own numbers, and the three view mappers behind them) — everything else
 is still hard-coded English (CON-174) · **English is the only released language**: Spanish is
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
+
+**A thread publishes as one post, not as a thread** (CON-196,
+`thread-sequence`, off). X has offered a `thread` post type all along and the
+preview card has always drawn a chain, but `SubmitRequest` in the Go repo's
+`publishers/zernio/posts.go` carries no `platformSpecificData`, so nothing ever
+sent Zernio's `threadItems` — the whole body goes out as a single post. Behind
+the flag the chain is **derived from the body** rather than composed in
+separate inputs: the editor stays the one Markdown card every post type uses, a
+`---` divider is a break, blank lines are the break where the body has no
+divider, and anything still past the per-post ceiling is cut to fit. So there
+is no "this post is too long" to report — it is cut instead — and `content` is
+never rewritten, which is why nothing outside the flag is touched. The one
+thing a body cannot say is which post carries which file, so that map alone
+sits in the tenant key/value store and is chosen on each thumbnail in the media
+card. Threads gains the type too (Zernio takes the same field on both).
+**Waiting on** that field in the submit path, **the same split implemented
+server-side** (the words live only in `content`, so the publisher must cut it
+the way `splitBody`/`splitToLimit` do), a home for the media assignment,
+`thread` added to `threads` in `publishers/zernio/platforms.go` — a submit
+blocker only, because while the flag is on `aheadOfPublishers` lets it stand in
+for the slug the publisher has not learned yet — and
+**attachment validation counted per item** — the server measures files against
+the post, so five images spread over three posts still warns "platform allows
+up to 4". That message is passed through as written because until the publisher
+splits it is right. See `docs/technical-decisions.md#thread-sequence`.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's

@@ -1,5 +1,10 @@
 import * as React from 'react'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  type LinkProps,
+} from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowSquareOutIcon,
@@ -37,7 +42,8 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { useWorkspace } from '@/hooks/useWorkspaces'
-import { formatAnchor } from '@/components/campaigns/calendar/date'
+import { usePostsPlaces } from '@/hooks/usePostsPlace'
+import { postsPlaceOf, postsPlaceLink } from '@/lib/postsPlace'
 import { Logo } from '@/components/Logo'
 import { cn } from '@/lib'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
@@ -91,6 +97,22 @@ function SectionLabel({
 // The rows and the Overview's cards read one table — see `lib/campaignSections`.
 type CampaignSubItemId = CampaignSectionId
 
+/**
+ * Where each section row goes, less Posts, which needs a date in its path and
+ * is built beside it.
+ *
+ * `satisfies` is what makes this worth writing out: every value is checked
+ * against the router's own union, so a route that moves takes this table down
+ * with it at compile time instead of on the click.
+ */
+const SUB_ITEM_PATH = {
+  overview: '/campaigns/$campaignId/overview',
+  analytics: '/campaigns/$campaignId/analytics',
+  brief: '/campaigns/$campaignId/brief',
+  content: '/campaigns/$campaignId/content',
+  settings: '/campaigns/$campaignId/settings',
+} satisfies Record<Exclude<CampaignSubItemId, 'posts'>, LinkProps['to']>
+
 /** The app's main navigation sidebar, including the user/workspace menu. */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state, isMobile, setOpen, toggleSidebar } = useSidebar()
@@ -101,6 +123,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate()
   const { data: campaigns, isPending: campaignsPending } = useCampaigns()
   const workspace = useWorkspace()
+  // The whole map rather than one campaign's: the nav draws a Posts row per
+  // campaign, so there is no single id to ask about here.
+  const postsPlaces = usePostsPlaces()
   const activityEnabled = useFeatureFlag('activity')
   const tasksEnabled = useFeatureFlag('tasks')
   const analyticsEnabled = useFeatureFlag('analytics-overview')
@@ -135,21 +160,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               ? 'settings'
               : 'posts'
 
-  // Posts lands on the current week of the calendar; the rest are plain pages.
+  // Posts lands wherever the user last left this campaign's posts — the week or
+  // month they had navigated to, or the table. The row is labelled Posts, not
+  // Calendar, so it restores the arrangement as well as the date; the entry
+  // points that name the calendar (the overview's card, a bare `/calendar` URL)
+  // restore only the date. See `lib/postsPlace`. The rest are plain pages,
+  // spelt out in `SUB_ITEM_PATH` rather than interpolated from the id so each
+  // path is checked against the generated route tree.
   const subItemLink = (
     campaignId: string,
     id: CampaignSubItemId,
-  ): { to: string; params: Record<string, string> } =>
+  ): { to: LinkProps['to']; params: LinkProps['params'] } =>
     id === 'posts'
-      ? {
-          to: '/campaigns/$campaignId/calendar/$anchor/$view',
-          params: {
-            campaignId,
-            anchor: formatAnchor(new Date()),
-            view: 'week',
-          },
-        }
-      : { to: `/campaigns/$campaignId/${id}`, params: { campaignId } }
+      ? postsPlaceLink(campaignId, postsPlaceOf(postsPlaces, campaignId))
+      : { to: SUB_ITEM_PATH[id], params: { campaignId } }
 
   const initials =
     `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`.toUpperCase() || '?'
@@ -256,11 +280,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               }
               text={t('nav.contentBank')}
               isActive={location.pathname.startsWith('/content-bank')}
-              // The tab, not the redirect that picks it — same reason as the
-              // campaign rows above, minus the visible symptom: the tab bar
-              // falls back to All anyway, so this only spares the second
-              // router pass.
-              to="/content-bank/all"
+              to="/content-bank"
             />
             {/* CON-227. Below Content Bank rather than above it because it is
                 the newer of the two and the one that has to earn its place —

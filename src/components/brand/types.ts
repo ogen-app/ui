@@ -1,12 +1,14 @@
 /**
- * The Brand module's shapes (CON-226/227). There is no endpoint — what answers
- * to these today is a stub (`services/api/brand.ts`) — and nothing outside the
- * `brand-materials` flag may read any of it.
+ * The Brand module's shapes (CON-226/227) — now also the wire format of
+ * `/api/brand`, which CON-228 was written to match field for field.
  *
- * These live beside the components rather than in `src/types/` on purpose. A
- * type in `src/types/` is a claim about what the server sends; none of this is
- * that yet, and CON-228 will be written *from* what the prototype settles on
- * rather than the other way round. They move when the API does.
+ * They live beside the components rather than in `src/types/`, which was
+ * backwards for a service and deliberate while there was no endpoint: a type in
+ * `src/types/` is a claim about what the server sends, and none of this was
+ * that. It is now, and moving them is a tidy-up worth doing on its own rather
+ * than inside the swap — every Brand screen imports from here.
+ *
+ * Nothing outside the `brand-materials` flag may read any of it.
  *
  * The argument behind every decision here is `docs/brand-materials.md`.
  */
@@ -137,6 +139,14 @@ export type BrandVoice = {
    * clears the flag on the others (`services/api/brand.ts` today, CON-228
    * later). A screen may assume at most one is set and must survive none being
    * set — which is what an empty library is.
+   *
+   * **The first voice a workspace writes is born with it.** Promotion was a
+   * deliberate switch for a good reason — it demotes somebody else's entry, and
+   * a Create button does not get to do that quietly — but that reason has no
+   * force when there is nobody to demote. A library of one whose one voice is
+   * not the default is the rule failing at the only size where it cannot be
+   * argued about: every post falls back to no voice at all, and the section the
+   * workspace has just filled in changes nothing.
    */
   isDefault: boolean
   /** What has actually been written in it. See `BrandUsage`. */
@@ -190,6 +200,13 @@ export type BrandAudience = {
   who: string
   /** Read back off the three consequence lines — see `BrandVoice.summary`. */
   summary: string
+  /*
+   * No `isDefault`, and voices have one. It is a decision rather than an
+   * omission: CON-228 FR4 scopes the one-default invariant to voices and
+   * templates, `brand_audiences` has no such column, and CON-245 §5 resolves an
+   * audience post → campaign → legacy prose with no workspace step. See
+   * `resolveAudience` in `binding.ts` for why, and CON-263 if it is to change.
+   */
   /** What has actually been written for them. See `BrandUsage`. */
   usage: BrandUsage
   readsOn: string
@@ -316,12 +333,14 @@ export type BrandData = {
 
 /** Whether a workspace has anything at all — the first-run branch. */
 export function isBrandEmpty(data: BrandData): boolean {
+  // The three sections that are offered — see `shown` in `lib/brandSections`.
+  // A workspace whose only brand material is a `look` it has no way to have
+  // written from this app is still, from the Overview's point of view, a
+  // workspace that has not started.
   return (
     data.voices.length === 0 &&
     data.audiences.length === 0 &&
-    data.templates.length === 0 &&
-    data.guardrails === null &&
-    data.look === null
+    data.guardrails === null
   )
 }
 
@@ -333,3 +352,89 @@ export function isBrandEmpty(data: BrandData): boolean {
  * is the one place in this module where more input is straightforwardly better.
  */
 export const MIN_VOICE_SAMPLES = 3
+
+/* -- Binding ---------------------------------------------------------------
+ *
+ * What a campaign and a post have chosen out of the library above. The model
+ * is `docs/brand-materials.md` §8 and it is deliberately three levels deep:
+ *
+ *     workspace has a cast of voices
+ *         → a campaign picks which of them it uses
+ *             → each post carries one, changeable
+ *
+ * There is no fourth. Binding at phase, post type or account was considered
+ * and cut — a campaign carrying a cast plus a per-post assignment expresses
+ * every case we have with one fewer concept, and each extra level is another
+ * place the resolved value has to be explained.
+ *
+ * **Guardrails are absent from both, and that is the design.** They apply to
+ * every generation regardless of what is picked here, so there is nothing to
+ * pick and nothing to override. A guardrails control on these screens would
+ * imply a campaign could opt out of the claims it is allowed to make.
+ */
+
+/**
+ * A campaign's share of the library.
+ *
+ * Neither field is a copy — both are live references, per §8's *live links are
+ * safe* argument. Editing a voice changes the next generation and changes
+ * nothing already written.
+ */
+export type CampaignBrand = {
+  /**
+   * The voices this campaign draws on, in the order they were chosen.
+   *
+   * A cast rather than one, because the plan generator assigns a voice **as it
+   * plans**: twelve Friday slots get the Friday voice at generation time
+   * rather than through twelve manual corrections afterwards. A campaign with
+   * one voice is the common case and costs nothing to express here.
+   *
+   * Empty means the campaign has not chosen, which resolves to the library's
+   * default voice — not to "no voice". A campaign that opts out of having a
+   * voice is not a case anybody has asked for, and reading empty as silence
+   * keeps an untouched campaign working exactly as it did before.
+   */
+  voiceIds: string[]
+  /**
+   * Which of the cast a post starts in. `null` falls back to the library's own
+   * `isDefault` voice.
+   *
+   * Stored rather than derived from `voiceIds[0]`: the order of the cast is the
+   * order they were picked in, and nobody expects re-picking to change which
+   * voice their next post opens in.
+   */
+  defaultVoiceId: string | null
+  /**
+   * Who the campaign writes to. **One, not a cast** — the asymmetry with voices
+   * is deliberate rather than an omission.
+   *
+   * A cast of voices exists because something automatic chooses between them
+   * per post. Nothing chooses an audience per post, so a list here would be a
+   * picker whose extra entries no code path ever reads. A post that addresses
+   * somebody else says so on the post.
+   */
+  audienceId: string | null
+}
+
+/**
+ * One post's assignment. Both fields are overrides — absent means *whatever the
+ * campaign says*, which is the state almost every post stays in.
+ */
+export type PostBrand = {
+  /**
+   * The voice this post is written in, plus what was bent locally.
+   *
+   * A `BrandRef` rather than a bare id because the local delta and the promote
+   * path come with it (§4). `null` id with a delta is a pure local value —
+   * somebody wrote a one-off instruction without naming a voice, which is the
+   * state promotion exists to rescue.
+   *
+   * `null` for the whole field means the post has not overridden anything and
+   * takes the campaign's default. That is different from a ref pointing at the
+   * same voice the campaign would have given it: the second survives the
+   * campaign's default changing, and was chosen.
+   */
+  voice: BrandRef<string> | null
+  /** Overrides the campaign's audience. `null` takes the campaign's. */
+  audienceId: string | null
+}
