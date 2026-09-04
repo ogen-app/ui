@@ -1,6 +1,5 @@
-import { addPostAssets, getPost } from '@/services/api/posts'
+import { addPostAssets, getPost, removePostAsset } from '@/services/api/posts'
 import { postKey } from '@/hooks/usePost'
-import { flushPendingSave } from '@/lib/pendingSaves'
 import { landSavedPost } from '@/lib/postCache'
 import { queryClient } from '@/lib/queryClient'
 import { toast } from '@/stores/toastStore'
@@ -59,24 +58,21 @@ export function indexAssets(
 }
 
 /**
- * Bounded, because the loop below re-runs only when a keystroke lands in the
- * exact window of an in-flight write — twice in a row is already vanishingly
- * rare. Exhausting the bound without ever reading the ids back stable is
- * reported as a failure, not shrugged off: a pending autosave could still be
- * holding the pre-write list, so "done" would be a lie.
- */
-const MAX_WRITE_ATTEMPTS = 4
-
-/** Lands the source fields of a server copy in the editor's cache and the row.
+ * Lands the source fields of a server copy in the editor's cache and the row.
  *
- * Only the source fields. The user may have typed since the flush that
- * preceded this, and `changeDoc` has already painted those keystrokes —
- * replacing the whole document would snap the text, and the cursor, back one
- * round-trip. Both server copies here are hydrated, so `used_assets` comes
- * along and the sources card can name the new document without fetching it.
+ * Only the source fields. The user may well have typed since the write went
+ * out, and `changeDoc` has already painted those keystrokes — replacing the
+ * whole document would snap the text, and the cursor, back one round-trip. The
+ * server copy is hydrated, so `used_assets` comes along and the sources card
+ * can name the new document without fetching it.
+ *
+ * Nothing else has to be done to make the write stick. The membership endpoints
+ * are the only writer of `used_asset_ids` — the whole-post PUT stopped carrying
+ * the field with CON-233 — so there is no autosave left to race, and no read
+ * back to check that there wasn't.
  */
-async function landSources(postId: string, server: Post): Promise<void> {
-  queryClient.setQueryData<Post>(postKey(postId), (prev) =>
+async function landPostSources(server: Post): Promise<void> {
+  queryClient.setQueryData<Post>(postKey(server.id), (prev) =>
     prev
       ? {
           ...prev,
@@ -89,75 +85,72 @@ async function landSources(postId: string, server: Post): Promise<void> {
 }
 
 /**
- * Unions `assetIds` into the post's sources and confirms they stayed.
+ * Puts the sources back to what the server holds, after a write it refused.
  *
- * The write itself is one atomic `POST /api/posts/:id/assets` (CON-233): the
- * server unions the ids into `used_asset_ids` and touches nothing else, so
- * three uploads finishing at once no longer each write the set they read —
- * which is what the read-modify-write here, and the promise queue that
- * serialized it, existed to survive.
- *
- * The verify pass is what remains, and it is not about this endpoint. `PUT
- * /api/posts/:id` still full-replaces `used_asset_ids`, and the editor
- * autosaves the *whole* post — so a keystroke landing while the POST is in
- * flight clones the pre-write list into the 600ms debounce, and its flush puts
- * that list straight back over the attach. Flushing first (the same thing the
- * assistant does before writing a post server-side) closes the window before
- * the write; reading back afterwards catches the straggler that opened it
- * again. Both go when `used_asset_ids` leaves the PUT payload.
+ * Both writes below are painted optimistically by their caller, so a refusal
+ * leaves a row on screen for a document the post does not read from — the one
+ * state this list must never be left in, since it is what the assistant is
+ * about to be told it can see. Only the source fields move: the user may be
+ * mid-sentence, and their words are not what failed.
  */
-async function attach(postId: string, assetIds: string[]): Promise<void> {
-  // One more pass than writes: the last round may only verify, never write, so
-  // success is only ever reported off a quiet pass — a read that found the ids
-  // in place with no flush pending.
-  for (let attempt = 0; attempt <= MAX_WRITE_ATTEMPTS; attempt++) {
-    await flushPendingSave(postId)
-    if (attempt > 0) {
-      const post = await getPost(postId)
-      // Landed even though nothing was written: with no queue serializing
-      // them, several attaches to one post resolve in whatever order the
-      // server answers, and the cache holds whichever response arrived last —
-      // possibly one taken before a sibling's ids were in the set. This read
-      // is the true set, so it converges the cache on the way past.
-      await landSources(postId, post)
-      const held = new Set(post.used_asset_ids)
-      if (assetIds.every((id) => held.has(id))) return
-    }
-    if (attempt === MAX_WRITE_ATTEMPTS) break
-    await landSources(postId, await addPostAssets(postId, assetIds))
-  }
-  // Every pass found a conflicting flush had already landed over the previous
-  // write. The last one may yet be overwritten by a pending autosave, so
-  // resolving here would report an attachment that can still be lost — throw
-  // instead, and the caller's toast says so.
-  throw new Error(
-    'The post kept saving over this change — try adding it again.',
-  )
+function repairSources(postId: string): void {
+  void getPost(postId)
+    .then(landPostSources)
+    .catch(() => {
+      // The read failed too — the server is unreachable rather than refusing,
+      // and the toast has already said the change did not land. The next fetch
+      // of this post corrects the row.
+    })
 }
 
 /**
  * Adds documents to a post's sources, ignoring any it already has.
  *
- * For writes that have to survive the page: an upload finishing after the user
- * walked away still has to join the post it was dropped on. Everything the
- * editor does while it is on screen goes through `changeDoc` instead, which is
- * instant and rides the autosave.
+ * One atomic `POST /api/posts/:id/assets`: the server unions the ids in and
+ * touches nothing else, so three uploads finishing at once all survive — which
+ * is what the read-modify-write this replaced, and the promise queue that
+ * serialized it, existed to fake.
  *
- * Reports its own failure, because the upload store has no mutation cache
- * behind it to toast for it. A post that is already `scheduled` or `published`
- * answers 409 — its sources are locked content (CON-251) — and the server's
- * message is what the toast says.
+ * Reports its own failure: both callers — the sources card and an upload
+ * finishing after the user has walked away — are outside the mutation cache
+ * that toasts everything else. A post that is already `scheduled` or
+ * `published` answers 409, its sources being locked content (CON-251), and the
+ * server's message is what the toast says.
  */
 export function attachToPost(
   postId: string,
   assetIds: string[],
 ): Promise<void> {
-  return attach(postId, assetIds).catch((error: unknown) => {
-    toast.error('Unable to add this to the post', {
-      description:
-        error instanceof Error
-          ? error.message
-          : 'The document was saved but the post is not reading from it.',
+  return addPostAssets(postId, assetIds)
+    .then(landPostSources)
+    .catch((error: unknown) => {
+      toast.error('Unable to add this to the post', {
+        description:
+          error instanceof Error
+            ? error.message
+            : 'The document was saved but the post is not reading from it.',
+      })
+      repairSources(postId)
     })
-  })
+}
+
+/**
+ * Takes one document off a post's sources, leaving the asset alone.
+ *
+ * The counterpart of `attachToPost`, and the only way a source comes off: the
+ * editor's autosave cannot write `used_asset_ids` at all now. The optimistic
+ * paint is the caller's — this lands what the server actually holds over it.
+ */
+export function detachFromPost(postId: string, assetId: string): Promise<void> {
+  return removePostAsset(postId, assetId)
+    .then(landPostSources)
+    .catch((error: unknown) => {
+      toast.error('Unable to remove this from the post', {
+        description:
+          error instanceof Error
+            ? error.message
+            : 'The post is still reading from that document.',
+      })
+      repairSources(postId)
+    })
 }

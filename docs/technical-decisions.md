@@ -116,6 +116,58 @@ unmount** so navigation never drops an edit.
 **Where.** `hooks/usePost.ts`. Campaign forms use the analogous autosave in
 `components/forms/campaignBriefForm/shared.ts` (500ms, version-tracked).
 
+## A document set is written through its own endpoints, never through the record {#asset-membership}
+
+**Decision.** Attaching and detaching documents goes through four endpoints of
+their own (CON-233, [ogen#138](https://github.com/ogen-app/ogen/pull/138)) —
+`POST`/`DELETE /api/campaigns/:id/assets` and the same pair on posts — and the
+two id lists they write, `campaigns.asset_ids` and `posts.used_asset_ids`, are
+**absent from the whole-record PUT payloads**. `campaignToPayload` and
+`postToPayload` no longer name them; the server reads them presence-aware and
+drops the omitted column from its `UPDATE`, so an ordinary save leaves the
+stored set alone.
+
+**Why.** Both fields were being written by read-modify-write over a
+whole-resource PUT, which is two bugs. Concurrent writers lost ids — three
+uploads finishing together each wrote the set *it* had read — and the client
+compensated with a promise queue per resource, a re-read immediately before each
+write, and (on posts) a flush-and-verify retry loop. Worse, the field shared a
+payload with the editor's autosave: a keystroke inside the 600ms debounce cloned
+the pre-attach list and its flush put the document straight back off the post.
+None of that is fixable on the client, because the race is between two writers
+of one column. Server-side it is one atomic statement — `jsonb_agg` over the
+union `WITH ORDINALITY`, or `col - id` — so ids keep their order, a repeat add
+is a no-op, and concurrent adds serialize on the row lock.
+
+**The flag is derived, not sent.** `campaigns.use_assets` is maintained by the
+same statement: attaching turns it on, detaching the last document turns it off.
+It cannot be the client's decision. Generation checks the flag *before* the set
+(`resolveAssets` returns early when it is false), so a campaign whose documents
+were attached with the flag left off shows a full list and writes from none of
+it — and `use_assets: true` over an *empty* list is how the server still spells
+"every asset in the workspace", so a client that cleared the set and left the
+flag would hand the campaign the whole workspace bank. Both are invisible on
+screen. This was the blocking review comment on ogen#138.
+
+**Consequences.** The per-resource write queues, the pre-write re-reads and the
+retry loop are gone (`lib/campaignMembership.ts`, `lib/postSources.ts`).
+Detaching a source is `removePostAsset`, not a `changeDoc` that rides the
+autosave — the autosave cannot write the field at all now — though the
+optimistic paint still goes through `changeDoc`, because a keystroke inside the
+debounce clones the *pending* copy and a cache-only edit would be dropped. For
+the same reason a save's response is no longer evidence about the set: it
+carries the row as the server read it, *before* an attach that may have landed
+since, so `withHeldSources` (`lib/postCache.ts`) keeps what the cache holds over
+what the PUT answered.
+
+**What is left.** One read before each campaign write, to catch a campaign still
+in the legacy whole-bank state and pin it to the bank first — otherwise
+attaching one document collapses "everything" to that document. It consults the
+cache first (a campaign can only *leave* that state), and it dies with a
+backfill of those rows. The empty-bank case is the one place the client still
+writes `use_assets`, since there is no id to union and so no derivation to
+trigger.
+
 ## The Campaigns list batches posts instead of moving the rules {#batched-summaries}
 
 **Decision.** The list gets its post data from one shared query —

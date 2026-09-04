@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { addPostAssets } from './posts'
+import { addPostAssets, postToPayload, removePostAsset } from './posts'
+import type { Post } from '@/types/posts'
 
 /**
  * The executable statement of CON-233's post half: path, method and body of the
@@ -63,6 +64,18 @@ describe('addPostAssets', () => {
     expect(post.used_assets?.[0].title).toBe('Brand guide')
   })
 
+  it('names the asset in the path on removal, with no body at all', async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(200, { id: 'p1', used_asset_ids: [], used_assets: [] }),
+    )
+
+    await removePostAsset('p1', 'a1')
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/posts/p1/assets/a1')
+    expect(fetchMock.mock.calls[0][1].method).toBe('DELETE')
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined()
+  })
+
   it("surfaces the submitted-post lock in the server's own words", async () => {
     // CON-251: sources are locked content, so the endpoint answers 409 exactly
     // as PUT does. The caller toasts this message rather than a generic one —
@@ -77,5 +90,22 @@ describe('addPostAssets', () => {
     await expect(addPostAssets('p1', ['a1'])).rejects.toThrow(
       'unschedule to edit',
     )
+  })
+})
+
+describe('postToPayload', () => {
+  it('leaves the sources out of the whole-post PUT entirely', () => {
+    // Not `[]` and not the post's own list: the key must be *absent*, which is
+    // what tells the server to leave the stored set — and the column — alone.
+    // Sending it back would put every autosave in a race with an attach.
+    const payload = postToPayload({
+      id: 'p1',
+      campaign_id: 'c1',
+      content: 'Draft',
+      used_asset_ids: ['a1'],
+    } as Post)
+
+    expect('used_asset_ids' in payload).toBe(false)
+    expect(payload.content).toBe('Draft')
   })
 })

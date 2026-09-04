@@ -11,6 +11,18 @@ import type { Campaign, UpdateCampaignPayload } from '@/types/campaigns'
  * for every field the payload leaves out — so this has to name all of them.
  * Dropping `publishing_days` here does not preserve the campaign's publishing
  * days, it resets them to all seven.
+ *
+ * The two exceptions are `use_assets` and `asset_ids`, which are absent on
+ * purpose. The server reads them presence-aware since CON-233 — an omitted key
+ * leaves the stored value alone, right down to dropping the column from the
+ * UPDATE — because the content-bank set has its own membership endpoints now.
+ * Restating it here would mean every brief save carried a set as its form had
+ * read it, and would undo an attach that landed while the user was typing.
+ *
+ * They can still be passed as `overrides`, and one caller does: clearing the
+ * legacy whole-bank flag on a campaign with nothing to pin
+ * (`lib/campaignMembership`). A *present* field still full-replaces, so passing
+ * one is saying so.
  */
 export function campaignToPayload(
   campaign: Campaign,
@@ -23,8 +35,6 @@ export function campaignToPayload(
     target_persona: campaign.target_persona,
     key_messages: campaign.key_messages,
     tone_guidelines: campaign.tone_guidelines,
-    use_assets: campaign.use_assets,
-    asset_ids: campaign.asset_ids,
     target_platforms: campaign.target_platforms,
     status: campaign.status,
     start_date: campaign.start_date,

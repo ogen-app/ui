@@ -24,7 +24,12 @@ import { AssetGlyph } from '@/components/content/AssetGlyph'
 import { AddWebPageModal } from '@/components/content/AddWebPageModal'
 import { UploadModal } from '@/components/uploads/UploadModal'
 import { AddSourcesModal } from '@/components/posts/sources/AddSourcesModal'
-import { indexAssets, postAssets } from '@/lib/postSources'
+import {
+  attachToPost,
+  detachFromPost,
+  indexAssets,
+  postAssets,
+} from '@/lib/postSources'
 import { addToCampaign } from '@/lib/campaignMembership'
 import { retrievability } from '@/lib/campaignSources'
 import { pageUrlLabel } from '@/lib/webPageUrl'
@@ -96,6 +101,15 @@ export function PostSourcesControl({
   const known = indexAssets(post.used_assets, pending)
   const rows = postAssets(post.used_asset_ids, known)
 
+  /*
+   * `changeDoc` here paints and nothing more. Since CON-233 the post's sources
+   * have their own endpoints and `used_asset_ids` is not in the autosave's
+   * payload at all, so the write is `attachToPost` / `detachFromPost` below —
+   * but the field still has to move through `changeDoc` rather than straight
+   * into the cache, because a keystroke within the debounce clones the *pending*
+   * copy, and a cache-only edit would be dropped from the row the moment the
+   * user typed.
+   */
   const attach = (assets: Asset[]) => {
     const ids = assets.map((a) => a.id)
     // What this attach actually adds to the post, as distinct from what it
@@ -112,13 +126,16 @@ export function PostSourcesControl({
     })
     // A post is inside a campaign, so anything it reads from belongs to that
     // campaign's Content too — otherwise the campaign would be missing a
-    // document its own posts write from. And the other way round: if the
-    // campaign write fails (`addToCampaign` toasts it), the post must not be
-    // left reading from a document its campaign refused — the autosave above
-    // would persist exactly that — so the ids this attach added are removed
-    // again.
+    // document its own posts write from. It goes first for the same reason: if
+    // the campaign refuses (`addToCampaign` toasts it), the post must not be
+    // left reading from a document its campaign does not hold, and the cheapest
+    // way to guarantee that is never to have written it.
     void addToCampaign(post.campaign_id, ids).then((attached) => {
-      if (attached || added.length === 0) return
+      if (attached) {
+        void attachToPost(post.id, ids)
+        return
+      }
+      if (added.length === 0) return
       const refused = new Set(added)
       setPending((prev) => prev.filter((a) => !refused.has(a.id)))
       changeDoc((d) => {
@@ -134,6 +151,7 @@ export function PostSourcesControl({
     changeDoc((d) => {
       d.used_asset_ids = d.used_asset_ids.filter((id) => id !== assetId)
     })
+    void detachFromPost(post.id, assetId)
   }
 
   const addButton = locked ? null : (

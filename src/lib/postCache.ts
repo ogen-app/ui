@@ -22,6 +22,31 @@ import type { Post } from '@/types/posts'
  */
 
 /**
+ * A saved post, carrying the sources the client already holds rather than the
+ * ones its own response came back with.
+ *
+ * The whole-post `PUT` stopped sending `used_asset_ids` with CON-233 — the
+ * membership endpoints own the field — so a save's response says nothing about
+ * it beyond what the row happened to hold when the server read it. Attach a
+ * document while a save is in flight and the two land in either order; without
+ * this, the later response quietly takes the document back off the list, and
+ * the post looks like it refused an attach that in fact succeeded.
+ *
+ * `held` is whatever the cache has — the optimistic paint, or the membership
+ * endpoint's own hydrated answer, both of which are newer evidence than a reply
+ * to a request that never mentioned the field. With nothing cached there is
+ * nothing better, and the response stands.
+ */
+export function withHeldSources(saved: Post, held: Post | undefined): Post {
+  if (!held) return saved
+  return {
+    ...saved,
+    used_asset_ids: held.used_asset_ids,
+    used_assets: held.used_assets,
+  }
+}
+
+/**
  * Marks the campaign's posts stale, plus the roll-up that is computed from
  * them. For writes whose result we don't hold — a delete, a create, an
  * assistant turn that rewrote the post server-side. If you *do* hold the saved

@@ -71,14 +71,26 @@ export function addPostAssets(id: string, assetIds: string[]): Promise<Post> {
   )
 }
 
-// There is deliberately no `removePostAsset` wrapper for the endpoint's
-// `DELETE` half. Detaching a source only ever happens in the editor, where it
-// rides `changeDoc` and the autosave like every other edit — and while `PUT`
-// still full-replaces `used_asset_ids`, going out of band there would be the
-// *less* safe of the two: a keystroke in the preceding 600ms leaves a pending
-// whole-post copy holding the pre-detach list, and its flush would put the
-// document straight back. Add the wrapper when that field leaves the PUT
-// payload (CON-233 follow-up).
+/**
+ * Detaches one document from a post's sources (CON-233). Removing an id the
+ * post does not hold is a no-op, not a 404.
+ *
+ * This is the *only* way a source comes off a post: `used_asset_ids` is no
+ * longer in the PUT payload (see `postToPayload`), so the editor's autosave
+ * cannot write the field at all — which is the point. It used to be able to,
+ * and a keystroke landing during an attach would clone the pre-attach list into
+ * the debounce and put it straight back.
+ *
+ * 409 while the post is `scheduled` or `published`, exactly as the add half:
+ * sources are locked content (CON-251).
+ */
+export function removePostAsset(id: string, assetId: string): Promise<Post> {
+  return apiJson<Post>(
+    `${BASE}/${id}/assets/${assetId}`,
+    'Unable to remove this from the post',
+    { method: 'DELETE' },
+  )
+}
 
 export type ScheduleResult = {
   post: Post
@@ -271,6 +283,27 @@ export function restorePost(
   )
 }
 
+/**
+ * The whole-post PUT body.
+ *
+ * `used_asset_ids` is deliberately absent, and this is the only place that
+ * decides so. The server reads the field presence-aware since CON-233 — an
+ * omitted key leaves the stored set alone, right down to dropping the column
+ * from the UPDATE — so the post's sources now have exactly one writer, the
+ * membership endpoints. Restating them here would put every autosave back in
+ * the race it was in: a keystroke during an attach clones the pre-attach list
+ * into the debounce, and its flush undoes the attach.
+ *
+ * Two things follow. Attaching and detaching go through `addPostAssets` /
+ * `removePostAsset`, never through `changeDoc` alone — an edit to the field
+ * that only rides the autosave is now discarded. And a status transition can no
+ * longer trip the CON-251 content lock by restating sources it did not mean to
+ * change.
+ *
+ * `createPost` still sends the field (`PostPayload` keeps it optional): a post
+ * being created has no stored set to preserve, and duplicating one carries its
+ * reading list over.
+ */
 export function postToPayload(post: Post): PostPayload {
   return {
     campaign_id: post.campaign_id,
@@ -286,7 +319,6 @@ export function postToPayload(post: Post): PostPayload {
     cta_type: post.cta_type,
     cta_url: post.cta_url,
     target_audience_notes: post.target_audience_notes,
-    used_asset_ids: post.used_asset_ids,
     campaign_type_phase_id: post.campaign_type_phase_id,
   }
 }

@@ -127,8 +127,21 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of
   the CON-181/182 columns. Always build the payload through `campaignToPayload`
-  (`campaignBriefForm/shared.ts`), which round-trips the server's own values and
+  (`lib/campaignPayload.ts`), which round-trips the server's own values and
   takes only the fields you mean to change as overrides.
+- **The two document sets are the exception, and are written through their own
+  endpoints** (CON-233). `campaigns.asset_ids` and `posts.used_asset_ids` are
+  deliberately *absent* from `campaignToPayload` and `postToPayload`: the server
+  reads them presence-aware and drops the omitted column from its `UPDATE`, so
+  the membership endpoints (`POST`/`DELETE …/:id/assets`) are the only writer.
+  Never put either field back in a PUT payload — that is what let a keystroke
+  inside the autosave debounce undo an attach. `use_assets` is **derived
+  server-side** from the set in the same statement, so the client does not send
+  it either; the one exception is pinning a legacy whole-bank campaign that has
+  no bank to pin. Detaching a post source is `removePostAsset`, not a
+  `changeDoc` — though the optimistic paint still goes through `changeDoc`, or a
+  keystroke within the debounce drops it. See
+  `docs/technical-decisions.md#asset-membership`.
 - **The campaign's `estimated_post_count` is a rate, not a total.** Since
   CON-182 it means "this many posts per `goal_cadence` period" (`week`/`month`),
   and the server backfilled every campaign to `month` — so an old total of 12 on

@@ -1,4 +1,4 @@
-import type { Campaign, UpdateCampaignPayload } from '@/types/campaigns'
+import type { Campaign } from '@/types/campaigns'
 import type { Asset, AssetStatus } from '@/types/content'
 
 /**
@@ -17,30 +17,20 @@ import type { Asset, AssetStatus } from '@/types/content'
  * - `use_assets: false` — the campaign's own brief only.
  * - `use_assets: true`, `asset_ids: [...]` — the brief plus exactly those.
  *
- * `use_assets: true` with an *empty* list is the one combination the front end
- * no longer writes: server-side it still means every asset in the workspace,
- * which is the model being retired. `seedsWholeBank` below finds campaigns
- * left in that state so they can be pinned to the set they were generating
- * from before it changes meaning under them.
- */
-export type MembershipFields = Required<
-  Pick<UpdateCampaignPayload, 'use_assets' | 'asset_ids'>
->
-
-/**
- * The two campaign fields for a membership set.
+ * `use_assets: true` with an *empty* list is the one combination nothing
+ * writes: server-side it still means every asset in the workspace, which is the
+ * model being retired. `seedsWholeBank` below finds campaigns left in that
+ * state so they can be pinned to the set they were generating from before it
+ * changes meaning under them.
  *
- * An empty set writes `use_assets: false` rather than an empty list, because
- * an empty list is how the server spells *everything* — writing it would hand
- * the campaign the opposite of what the user did. This is exactly what the old
- * `sourcesPayload("selected", ids)` did, so what reaches the server for any
- * given on-screen state is unchanged.
+ * **The client no longer writes either field.** Since CON-233 the flag is
+ * derived from the set by the membership endpoints themselves — attaching turns
+ * it on, detaching the last document turns it off — in the same statement that
+ * writes the set, so the two can't disagree and no campaign can be left holding
+ * documents it doesn't read from. The pair that used to build the payload for
+ * it is gone with the whole-campaign PUT it rode on
+ * (`services/api/campaigns.ts`, `lib/campaignMembership.ts`).
  */
-export function membershipPayload(assetIds: string[]): MembershipFields {
-  return assetIds.length > 0
-    ? { use_assets: true, asset_ids: assetIds }
-    : { use_assets: false, asset_ids: [] }
-}
 
 /**
  * A campaign saved under the old whole-bank mode.

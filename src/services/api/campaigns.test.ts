@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { listCampaignSummaries } from './campaigns'
+import {
+  addCampaignAssets,
+  listCampaignSummaries,
+  removeCampaignAsset,
+} from './campaigns'
 import type { CampaignSummariesResponse } from '@/types/posts'
 
 function stubFetch(res: Response) {
@@ -84,5 +88,56 @@ describe('listCampaignSummaries', () => {
     await expect(listCampaignSummaries()).rejects.toThrow(
       'campaign summaries are not available',
     )
+  })
+})
+
+/**
+ * CON-233's campaign half: path, method and body of each membership endpoint.
+ *
+ * Worth pinning because the point of these is what they *don't* send. A
+ * regression that restated the campaign — the twenty-odd-field payload they
+ * replaced — would still attach the document, and nothing would look wrong
+ * until a publishing day or a post goal it reset was noticed somewhere else.
+ */
+describe('campaign membership', () => {
+  it('posts only the ids, to the campaign-scoped membership path', async () => {
+    const fetchMock = stubFetch(jsonResponse(200, { id: 'c1' }))
+
+    await addCampaignAssets('c1', ['a1', 'a2'])
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/campaigns/c1/assets')
+    expect(fetchMock.mock.calls[0][1].method).toBe('POST')
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      asset_ids: ['a1', 'a2'],
+    })
+  })
+
+  it('takes the flag from the server rather than sending one', async () => {
+    // `use_assets` is derived from the set inside the same UPDATE, so a
+    // campaign that was brief-only is generating from the document by the time
+    // this resolves — without the client ever naming the field.
+    stubFetch(
+      jsonResponse(200, { id: 'c1', use_assets: true, asset_ids: ['a1'] }),
+    )
+
+    const campaign = await addCampaignAssets('c1', ['a1'])
+
+    expect(campaign.use_assets).toBe(true)
+    expect(campaign.asset_ids).toEqual(['a1'])
+  })
+
+  it('names the asset in the path on removal, with no body at all', async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(200, { id: 'c1', use_assets: false, asset_ids: [] }),
+    )
+
+    const campaign = await removeCampaignAsset('c1', 'a1')
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/campaigns/c1/assets/a1')
+    expect(fetchMock.mock.calls[0][1].method).toBe('DELETE')
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined()
+    // Detaching the last document turns the flag off server-side. Left on over
+    // an empty list it would mean *every* asset in the workspace.
+    expect(campaign.use_assets).toBe(false)
   })
 })
