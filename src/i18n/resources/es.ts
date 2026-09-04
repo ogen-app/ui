@@ -982,6 +982,40 @@ export const es: Translation = {
     },
   },
 
+  campaigns: {
+    title: 'Campañas',
+    add: 'AÑADIR CAMPAÑA',
+    error: 'No se pudieron cargar las campañas',
+    untitled: 'esta campaña',
+    empty: {
+      title: 'Todavía no hay campañas',
+      subtitle: 'Crea tu primera campaña para empezar',
+    },
+    archivedTitle: 'Campañas archivadas',
+    archivedError: 'No se pudieron cargar las campañas archivadas',
+    showArchived: 'Ver las campañas archivadas',
+    showActive: 'Volver a las campañas activas',
+    archivedOn: 'Archivada el {{archivedOn}}',
+    unarchive: 'DESARCHIVAR',
+    archivedEmpty: {
+      title: 'No hay nada archivado',
+      subtitle:
+        'Archivar una campaña la quita de la lista sin borrar nada. Sus publicaciones, su calendario y su contenido siguen tal cual.',
+    },
+    archiveCard: {
+      title: 'Archivar',
+      body: 'Quita esta campaña de la lista de campañas y deja de ofrecerla allí donde se archiva trabajo nuevo. No se borra nada, y puedes recuperarla cuando quieras.',
+      action: 'ARCHIVAR CAMPAÑA',
+      confirm: '¿Archivar {{name}}? Podrás recuperarla desde el archivo.',
+    },
+    dangerZone: {
+      title: 'Zona de peligro',
+      body: 'Eliminar una campaña borra sus publicaciones y su calendario. Esto no se puede deshacer: archívala si solo quieres quitarla de la lista.',
+      action: 'ELIMINAR CAMPAÑA',
+      confirm: '¿Eliminar {{name}}? Esto no se puede deshacer.',
+    },
+  },
+
   content: {
     unsupported: {
       title: 'Esto no es un documento',
@@ -1006,6 +1040,32 @@ export const es: Translation = {
       tagsHelp: 'Cómo vuelves a encontrar esta imagen en la lista.',
       missing: 'Esta imagen no se guardó, así que no hay nada que mostrar.',
       animated: 'Animada',
+    },
+
+    selection: {
+      count_one: '{{count}} seleccionado',
+      count_other: '{{count}} seleccionados',
+      clear: 'QUITAR SELECCIÓN',
+      delete: 'ELIMINAR',
+    },
+
+    tagging: {
+      action: 'ETIQUETAR',
+      title_one: 'Etiquetar este documento',
+      title_other: 'Etiquetar {{count}} documentos',
+      addLabel: 'Añadir etiquetas',
+      addPlaceholder: 'Añade una etiqueta…',
+      addHelp:
+        'Todos los documentos seleccionados las reciben. Los que ya tienen una etiqueta se quedan como están.',
+      removeLabel: 'Quitar etiquetas',
+      removeHelp:
+        'Haz clic en una etiqueta para quitarla de los documentos que la llevan.',
+      removeNone: 'Nada de esta selección tiene etiquetas todavía.',
+      onCount: 'en {{count}} de {{total}}',
+      cancel: 'CANCELAR',
+      submit: 'APLICAR',
+      done_one: '{{count}} documento actualizado',
+      done_other: '{{count}} documentos actualizados',
     },
   },
 

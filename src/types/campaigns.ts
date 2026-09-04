@@ -1,15 +1,6 @@
 import type { Tag } from '@/types/content'
 import type { GoalCadence } from '@/lib/postGoal'
 
-/**
- * Server-owned and no longer user-facing: `draft` and `active` both mean
- * active, and the UI neither shows nor sets this. It stays on the DTO only so
- * an update round-trips the server's own value instead of clearing it. Once
- * campaigns are created `active` server-side and the lifecycle moves to
- * soft-delete/archive (CON-156 §6), this and its pass-through come out.
- */
-export type CampaignStatus = 'draft' | 'active'
-
 export type CampaignPlatform = {
   id: string
   post_types: string[]
@@ -126,7 +117,18 @@ export type Campaign = {
   asset_ids: string[]
   target_platforms: CampaignPlatform[]
   campaign_type_id: string
-  status: CampaignStatus
+  /**
+   * When this campaign was put away, or null while it is in the active set
+   * (CON-156). Archiving is the reversible half of the lifecycle that replaced
+   * `status`, which is gone from the client entirely: `draft` and `active` both
+   * meant active, the UI never showed either, and the server now creates every
+   * campaign active.
+   *
+   * A deleted campaign is stamped rather than dropped server-side, but it is
+   * excluded from every read — so `deleted_at` is deliberately not modelled
+   * here. There is no screen that could ever receive one.
+   */
+  archived_at: string | null
   start_date: string | null
   end_date: string | null
   /**
@@ -171,7 +173,6 @@ export type CreateCampaignPayload = {
   use_assets?: boolean
   asset_ids?: string[]
   target_platforms?: CampaignPlatform[]
-  status?: CampaignStatus
   start_date?: string | null
   end_date?: string | null
   estimated_post_count?: number | null

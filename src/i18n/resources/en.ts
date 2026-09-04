@@ -1509,6 +1509,49 @@ export const en = {
    * The Content Bank. Still largely hard-coded English (CON-174) — these are
    * the strings converted so far, not the screen's full copy.
    */
+  /**
+   * The Campaigns list and the lifecycle actions on a campaign (CON-156).
+   *
+   * Archive and delete are described in terms of what happens to the *posts*,
+   * because that is what a campaign is made of and what someone is really
+   * asking about. Neither describes the server's soft delete: the row it keeps
+   * is a safety net for us, not an undo for the user, and hinting at one would
+   * be a promise nothing in the product can keep.
+   */
+  campaigns: {
+    title: 'Campaigns',
+    add: 'ADD CAMPAIGN',
+    error: 'Failed to load campaigns',
+    untitled: 'this campaign',
+    empty: {
+      title: 'No campaigns yet',
+      subtitle: 'Create your first campaign to get started',
+    },
+    archivedTitle: 'Archived campaigns',
+    archivedError: 'Failed to load archived campaigns',
+    showArchived: 'Show archived campaigns',
+    showActive: 'Back to active campaigns',
+    archivedOn: 'Archived {{archivedOn}}',
+    unarchive: 'UNARCHIVE',
+    archivedEmpty: {
+      title: 'Nothing is archived',
+      subtitle:
+        'Archiving a campaign takes it off the list without deleting anything. Its posts, schedule and content stay exactly as they are.',
+    },
+    archiveCard: {
+      title: 'Archive',
+      body: 'Takes this campaign off the Campaigns list and stops it being offered anywhere new work is filed. Nothing is deleted, and you can bring it back at any time.',
+      action: 'ARCHIVE CAMPAIGN',
+      confirm: 'Archive {{name}}? You can bring it back from the archive.',
+    },
+    dangerZone: {
+      title: 'Danger Zone',
+      body: 'Deleting a campaign removes its posts and schedule. This cannot be undone — archive it instead if you only want it off the list.',
+      action: 'DELETE CAMPAIGN',
+      confirm: 'Delete {{name}}? This cannot be undone.',
+    },
+  },
+
   content: {
     /**
      * Shown in place of the editor for an asset this build can't open — in
@@ -1556,6 +1599,41 @@ export const en = {
       /** The bytes never reached storage — a deployment fault, not a bad file. */
       missing: 'This image was not stored, so there is nothing to show.',
       animated: 'Animated',
+    },
+
+    /** The floating bar over a ticked selection in the documents list. */
+    selection: {
+      count_one: '{{count}} selected',
+      count_other: '{{count}} selected',
+      clear: 'CLEAR',
+      delete: 'DELETE',
+    },
+
+    /**
+     * Filing a selection of documents under tags (CON-279).
+     *
+     * `addHelp` says what happens to a document that already carries the tag,
+     * because that is the question a half-tagged selection raises and the
+     * answer — nothing — is the reason this can be used without checking each
+     * row first.
+     */
+    tagging: {
+      action: 'TAG',
+      title_one: 'Tag this document',
+      title_other: 'Tag {{count}} documents',
+      addLabel: 'Add tags',
+      addPlaceholder: 'Add a tag…',
+      addHelp:
+        'Every selected document gets these. Ones that already have a tag are left as they are.',
+      removeLabel: 'Remove tags',
+      removeHelp: 'Click a tag to take it off the documents that carry it.',
+      removeNone: 'Nothing in this selection is tagged yet.',
+      /** Sits inside the chip, so it is the count alone rather than a sentence. */
+      onCount: 'on {{count}} of {{total}}',
+      cancel: 'CANCEL',
+      submit: 'APPLY',
+      done_one: '{{count}} document updated',
+      done_other: '{{count}} documents updated',
     },
   },
 

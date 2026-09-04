@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { listCampaignSummaries } from './campaigns'
+import {
+  archiveCampaign,
+  listCampaigns,
+  listCampaignSummaries,
+  unarchiveCampaign,
+} from './campaigns'
 import type { CampaignSummariesResponse } from '@/types/posts'
 
 function stubFetch(res: Response) {
@@ -36,6 +41,44 @@ function summary(campaignId: string, postIds: string[]) {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+/**
+ * The lifecycle half of the contract (CON-156). These assert the wire, not the
+ * happy path of a helper: the archived list is a *query parameter* on the same
+ * endpoint and the toggles are POSTs to their own paths, and getting either
+ * wrong shows up as an empty list or a silent no-op rather than an error.
+ */
+describe('the campaign lifecycle', () => {
+  it('asks for the active set by default and the archived one on request', async () => {
+    const fetchMock = stubFetch(jsonResponse(200, []))
+    await listCampaigns()
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/campaigns')
+
+    stubFetch(jsonResponse(200, []))
+    await listCampaigns(true)
+    expect(
+      (vi.mocked(fetch).mock.calls[0][0] as string).endsWith(
+        '/api/campaigns?archived=true',
+      ),
+    ).toBe(true)
+  })
+
+  it('archives and unarchives by POST, and expects no body back', async () => {
+    const fetchMock = stubFetch(new Response(null, { status: 204 }))
+
+    await expect(archiveCampaign('c1')).resolves.toBeUndefined()
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/campaigns/c1/archive')
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: 'POST' })
+
+    await expect(unarchiveCampaign('c1')).resolves.toBeUndefined()
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/campaigns/c1/unarchive')
+  })
+
+  it("throws the backend's message when the campaign is gone", async () => {
+    stubFetch(jsonResponse(404, { error: 'campaign not found' }))
+    await expect(archiveCampaign('nope')).rejects.toThrow('campaign not found')
+  })
 })
 
 describe('listCampaignSummaries', () => {

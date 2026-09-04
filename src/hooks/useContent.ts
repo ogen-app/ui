@@ -5,10 +5,15 @@ import {
   createAsset,
   createUrlAsset,
   updateAsset,
+  bulkTagAssets,
   deleteAsset,
 } from '@/services/api/content'
 import { retrievability } from '@/lib/campaignSources'
-import type { CreateAssetPayload, UpdateAssetPayload } from '@/types/content'
+import type {
+  BulkTagPayload,
+  CreateAssetPayload,
+  UpdateAssetPayload,
+} from '@/types/content'
 
 export const ASSETS_KEY = ['assets'] as const
 export const assetKey = (id: string) => ['assets', id] as const
@@ -104,6 +109,27 @@ export function useUpdateAsset() {
     onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: ASSETS_KEY })
       qc.invalidateQueries({ queryKey: assetKey(id) })
+    },
+  })
+}
+
+/**
+ * Tags a selection in one request (CON-279).
+ *
+ * The list is invalidated rather than patched: the server decides what each
+ * asset ends up carrying — dedupe, order, assets it skipped — and a client-side
+ * merge of `add`/`remove` would be a second opinion about the same rows.
+ */
+export function useBulkTagAssets() {
+  const qc = useQueryClient()
+  return useMutation({
+    meta: { errorTitle: 'Unable to tag those documents' },
+    mutationFn: (payload: BulkTagPayload) => bulkTagAssets(payload),
+    onSuccess: (assets) => {
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
+      for (const asset of assets) {
+        qc.invalidateQueries({ queryKey: assetKey(asset.id) })
+      }
     },
   })
 }

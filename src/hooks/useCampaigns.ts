@@ -5,6 +5,8 @@ import {
   getCampaign,
   createCampaign,
   updateCampaign,
+  archiveCampaign,
+  unarchiveCampaign,
   deleteCampaign,
   listCampaignTypes,
 } from '@/services/api/campaigns'
@@ -21,11 +23,28 @@ const CAMPAIGNS_KEY = ['campaigns'] as const
 // campaign's post list nests under this key, so invalidating it covers both.
 export const campaignKey = (id: string) => ['campaigns', id] as const
 export const CAMPAIGN_TYPES_KEY = ['campaign-types'] as const
+/**
+ * The archived list is a sibling key, not a variant of the active one: it is a
+ * different read, and a campaign moves between them rather than changing
+ * inside one. Deliberately outside `CAMPAIGNS_KEY`, so the sidebar's list and
+ * `useCampaign`'s seed can never be served an archived campaign — and both
+ * are invalidated together on every archive.
+ */
+const ARCHIVED_CAMPAIGNS_KEY = ['campaigns-archived'] as const
 
 export function useCampaigns() {
   return useQuery({
     queryKey: CAMPAIGNS_KEY,
-    queryFn: listCampaigns,
+    queryFn: () => listCampaigns(),
+  })
+}
+
+/** Campaigns that have been put away (CON-156). Fetched only where shown. */
+export function useArchivedCampaigns(enabled = true) {
+  return useQuery({
+    queryKey: ARCHIVED_CAMPAIGNS_KEY,
+    queryFn: () => listCampaigns(true),
+    enabled,
   })
 }
 
@@ -111,12 +130,50 @@ export function useUpdateCampaign(meta?: MutationErrorMeta) {
   })
 }
 
+/**
+ * Archiving and its undo (CON-156).
+ *
+ * Both lists are invalidated on either, because either moves a campaign from
+ * one to the other — and the summaries with them, since the Campaigns list
+ * scores its cards from that one batched query and would go on counting posts
+ * for a campaign that is no longer on screen.
+ */
+function useArchiveMutation(
+  fn: (id: string) => Promise<void>,
+  errorTitle: string,
+) {
+  const qc = useQueryClient()
+  return useMutation({
+    meta: { errorTitle },
+    mutationFn: fn,
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY })
+      qc.invalidateQueries({ queryKey: ARCHIVED_CAMPAIGNS_KEY })
+      qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })
+      qc.invalidateQueries({ queryKey: campaignKey(id) })
+    },
+  })
+}
+
+export function useArchiveCampaign() {
+  return useArchiveMutation(archiveCampaign, 'Unable to archive the campaign')
+}
+
+export function useUnarchiveCampaign() {
+  return useArchiveMutation(
+    unarchiveCampaign,
+    'Unable to bring the campaign back',
+  )
+}
+
 export function useDeleteCampaign() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteCampaign(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY })
+      qc.invalidateQueries({ queryKey: ARCHIVED_CAMPAIGNS_KEY })
+      qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })
     },
   })
 }

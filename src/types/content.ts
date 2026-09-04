@@ -118,17 +118,38 @@ export type CreateAssetPayload = {
 }
 
 /**
- * A whole-resource write, and the server defaults every field it doesn't find.
+ * A presence-aware write (CON-279): `alt_text` and `tag_ids` are optional, and
+ * leaving one out leaves the stored value alone. Sending it — including `""`
+ * or `[]` — replaces it.
  *
- * Omitting `tag_ids` untags the asset and omitting `alt_text` blanks it — the
- * handler assigns both from the request unconditionally, so a payload that
- * mentions only the title is a payload that erases the rest. Never build one by
- * hand: `assetToPayload` round-trips the asset's own values and takes the
- * fields you mean to change as overrides.
+ * That is the opposite of the campaign PUT, and the difference is deliberate
+ * rather than an inconsistency to iron out. Both fields belong to screens the
+ * document editor cannot see: tags are now filed in bulk over a selection, and
+ * `alt_text` is only ever written on the image screen. A whole-resource write
+ * would have every save carry the copy of those the editor last read, so
+ * saving a title would undo a re-tag done in another tab a second earlier.
+ *
+ * `title` and `content` stay required: they are what a screen editing an asset
+ * always has in hand, and a PUT that names neither is not an update.
  */
 export type UpdateAssetPayload = {
   title: string
   content: string
-  alt_text: string
-  tag_ids: string[]
+  alt_text?: string
+  tag_ids?: string[]
+}
+
+/**
+ * Adds and/or removes tags across many assets at once (CON-279).
+ *
+ * Each asset keeps the tags it has, minus `remove`, plus `add` — so this is a
+ * filing operation over a selection, not a whole-set replacement, and it never
+ * has to be told what an asset already carries. The server rejects a tag named
+ * in both lists rather than picking a silent winner, and it requires at least
+ * one of them to be non-empty.
+ */
+export type BulkTagPayload = {
+  asset_ids: string[]
+  add?: string[]
+  remove?: string[]
 }
