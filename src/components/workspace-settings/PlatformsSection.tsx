@@ -22,7 +22,7 @@ import { SettingsCard } from '@/components/settings/SettingsCard'
 import { AutoPublishControl } from './AutoPublishControl'
 import { useConnectPlatform } from './connectPlatform'
 import { DisconnectAccountDialog } from './DisconnectAccountDialog'
-import { ReadOnlyField, SettingsRow } from './SettingsRow'
+import { SettingsRow } from './SettingsRow'
 
 /**
  * Platform Settings — one row per platform the workspace has actually
@@ -80,13 +80,18 @@ function platformNotice(view: PlatformView, t: TFunction): string {
 }
 
 /**
- * One connected platform: the connected accounts, then cadence, constraints,
- * and the content types the platform can publish — stacked full-width.
+ * One connected platform: the connected accounts, auto-publish, and the content
+ * types the platform can publish — stacked full-width.
  *
  * No heading. The platform's name and its "Connected" badge used to sit above
  * all this, saying twice over what the account below already shows — the
  * account carries the platform's mark on its avatar, and its own button
  * carries the connection state.
+ *
+ * There were two more fields here, Cadence and Constraints, reading "Coming
+ * soon" against seeded stand-in prose. They are gone rather than waiting: the
+ * platform enforces neither, nothing was ever going to fill them, and two
+ * permanently empty rows on every platform only made the row longer.
  */
 function PlatformRow({
   view,
@@ -109,20 +114,6 @@ function PlatformRow({
         />
       )}
       <AutoPublishControl view={view} />
-      {/* The seeded `cadence` and `constraints` prose is stand-in copy, so
-          showing it would state a rule the platform doesn't actually enforce.
-          The fields stay — named and in place — reading as pending until the
-          backend has something true to put in them. */}
-      <ReadOnlyField
-        label={t('workspaceSettings.platforms.cadence')}
-        value={undefined}
-        placeholder={t('workspaceSettings.platforms.comingSoon')}
-      />
-      <ReadOnlyField
-        label={t('workspaceSettings.platforms.constraints')}
-        value={undefined}
-        placeholder={t('workspaceSettings.platforms.comingSoon')}
-      />
       <PostTypeChips view={view} />
     </SettingsRow>
   )

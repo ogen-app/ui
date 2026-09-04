@@ -216,49 +216,42 @@ const FEATURE_FLAGS = {
 
   /**
    * **Brand** — the workspace-level material every campaign writes from
-   * (CON-226/227): voices, audiences, guardrails, look, overlays. Further from
-   * the API than anything else here: there is no endpoint, no table and no
-   * column, and `services/api/brand.ts` is a **stub** — a JSON seed and
-   * `localStorage` standing in for a server so the screens can be used rather
-   * than only looked at.
+   * (CON-226/227): voices, audiences and guardrails.
    *
-   * The flag gates the nav row *and* the route, so with it off the app has no
-   * Brand at all — which is the state `develop` ships in while the shape is
-   * still being argued in `/design/brand`.
+   * **On.** It was off for one reason — `services/api/brand.ts` was a stub, a
+   * JSON seed and `localStorage` standing in for a server, and a workspace's
+   * brand rules are the last material anyone would expect to retype after
+   * clearing their site data. CON-228 shipped the store and the endpoints, the
+   * service is `apiJson` calls against them, and the seed is deleted. The
+   * reason to hold it back is gone.
    *
-   * **Off, and it stays off until CON-228 lands.** Nothing in here is backed
-   * by a server: a workspace's voices would live in one browser, on one
-   * machine, and vanish with its site data. Switching it on before the
-   * endpoints exist would ship a feature that quietly forgets — and a
-   * workspace's brand rules are the last material anyone would expect to
-   * retype. Turn it on locally to work on the screens; turn it back before you
-   * push.
+   * The flag gates the nav row *and* the route, so it is still the one switch
+   * that removes Brand from the app.
    *
-   * **Waiting on:** everything in CON-228. In outline — Brand entities per
-   * workspace, tenant-scoped and fail-closed; one fetch that returns **every
-   * slot including the empty ones**, because an omitted key and an empty slot
-   * are different things on this screen; a voice reference plus a local delta
-   * on the post (replacing free-prose `toneNotes`) and on the campaign
-   * (replacing `tone_guidelines`); the generation flows reading guardrails
-   * always, the assigned voice per post, the audience per campaign; and binary
-   * handling for logos and overlays, where SVG is the open question (CON-132
-   * §10.4).
+   * **What is on with it, and what is not.** Voices, Audiences and Guardrails
+   * are complete: written here, stored server-side, and — as CON-245 lands —
+   * read by the flows that write posts. Look and Templates are **not offered**
+   * (`shown` in `lib/brandSections`): their endpoints exist and their screens
+   * render, but nothing writes them from the UI and the image flows that would
+   * consume them are CON-105/CON-132. Two Overview cards that cannot be filled
+   * in and would change nothing if they were teach the user that the screen is
+   * a mock-up, which is the one thing this module cannot afford to say.
    *
-   * Nothing outside this flag may read any of it. CON-226's shape is still
-   * moving, and per the global rule a half-defined field read by another
-   * screen is worse than a missing one — which is exactly what happened when
-   * `campaignReadiness` read `estimated_post_count` mid-redefinition.
+   * `usage` counts and `summary` lines arrive as zeroes and empty strings until
+   * CON-245 and the summary job land. That is not a bug to hide: the screens
+   * already draw "nothing has been written in this" as a designed state, and it
+   * is true.
    *
-   * **The copy is deliberately not in the i18n catalogue yet** — the one
-   * exception to the new-UI rule, decided at merge (2026-08-28), not drifted
-   * into. The screens' wording is still being argued alongside their shape,
-   * and cataloguing it now means retranslating every catalogue on every copy
-   * iteration. The conversion happens with the CON-228 pass, before this flag
-   * flips — the same pass that re-tests the UI against the real endpoints.
+   * **Outstanding: the copy is still not in the i18n catalogue.** It was
+   * deferred at the 2026-08-28 merge on the argument that the wording was being
+   * argued alongside the shape and cataloguing it meant retranslating on every
+   * iteration — with the conversion promised before this flag flipped. The flag
+   * has flipped first. The debt is real and it is the whole module's user-facing
+   * text; it does not block anyone from using Brand in English.
    *
    * The argument this is built from: `docs/brand-materials.md`.
    */
-  'brand-materials': false,
+  'brand-materials': true,
 
   /**
    * The marketing-email switch on Profile (CON-155). **Off — waiting on the
@@ -277,33 +270,132 @@ const FEATURE_FLAGS = {
    * Uploading images into the Content Bank (CON-16) — an asset that *is* a
    * picture, rather than a picture pasted inside a document.
    *
-   * **Waiting on:** the whole ingest path. `POST /api/content-bank/assets/
-   * upload` answers `"only .md and .pdf files are accepted"` (`assets.go`), and
-   * `assets_type_check` is `MD | PDF | URL`, so an image cannot be stored as an
-   * asset at all. CON-105's branch (PR #66, open since 2026-07-12) adds `IMG`
-   * plus `ai_generated`, `brand_style` and `generation`; CON-16 R1 adds the
-   * `width` / `height` / `is_animated` / `checksum_sha256` columns to
-   * `asset_files` that `post_attachments` already carries, and R3 adds
-   * `assets.alt_text`.
+   * **The server answers now** (CON-246, ogen#129, merged 2026-09-01): the
+   * upload endpoint takes JPEG/PNG/WebP/GIF, `assets_type_check` allows `IMG`,
+   * and `AssetFile` carries `url` for the original — which was the decision the
+   * viewer was waiting on, settled as `url` rather than `original_url`. The
+   * asset also gained `alt_text`, and the file gained the `width` / `height` /
+   * `is_animated` / `checksum_sha256` columns `post_attachments` already had.
    *
-   * With this on, the upload surface offers images and the server refuses
-   * them — which is the honest state of it, and why it is off.
-   *
-   * **The image asset's own screen is deliberately not built yet**, and this is
-   * the decision the back end has to make first: `AssetFile` exposes
-   * `thumbnail_url` and no URL for the original, so there is nothing to render
-   * an image *from*. CON-16 R5 puts the thumbnail at `assets/{id}/thumb.webp`
-   * and D2 the original at `assets/{id}/original.<ext>`, but neither the DTO
-   * field nor its name is settled. Until it is, an `IMG` asset opens on
-   * `UnsupportedAsset`, which is safe and says so. Guessing the field here
-   * would mean writing a viewer against a contract nobody has agreed to.
-   *
-   * Switch this on once the upload accepts images and the asset DTO carries the
-   * original's URL; re-test the whole path against the real thing — the sizes
-   * and MIME set in `lib/assetStatus.ts` mirror `imageprobe.AllowedMIMEs` and
-   * `maxImageSize`, and those are the server's to change.
+   * What is still missing is a *thumbnail* job, so an image asset's preview is
+   * the full file scaled down (`lib/assetPreview`). That is a cost, not a gap
+   * in the contract: `thumbnail_url` is already preferred wherever it appears,
+   * so the day one is rendered nothing here changes.
    */
-  'content-bank-images': false,
+  'content-bank-images': true,
+
+  /**
+   * **Thread sequences** (CON-196) — a post on X or Threads that publishes as
+   * a chain of connected posts rather than one.
+   *
+   * Zernio takes one on both networks as
+   * `platformSpecificData.threadItems`: "the first item is the root post and
+   * subsequent items become replies in order", each item carrying its own text
+   * and its own media (docs.zernio.com/platforms/threads, /platforms/twitter).
+   * That is the format this is built against, and it is the whole reason the
+   * feature can exist at all.
+   *
+   * **Waiting on four things, all server-side.**
+   *
+   * 1. **The field.** `SubmitRequest` in `publishers/zernio/posts.go` has no
+   *    `platformSpecificData` at all, and nothing in the Go repo mentions
+   *    `threadItems` — so an X `thread` post today is submitted as one blob of
+   *    top-level `content` and publishes as a single post. The chain the
+   *    preview card draws has never been what goes out. This is the one that
+   *    makes the feature real; the rest is bookkeeping.
+   * 2. **The same split, server-side.** The thread is *derived* from the body
+   *    (`lib/threadSequence`) rather than stored as a list, which is the whole
+   *    shape of the feature: one Markdown editor, dividers as the breaks,
+   *    blank lines where there are none, and anything still past the per-post
+   *    ceiling cut to fit. So the publisher has to cut `content` the same way
+   *    before it fills `threadItems`, or what goes out is not what the author
+   *    was shown. That is the `src/lib/*` arrangement this repo already runs on
+   *    — the Go rule is the source of truth and ours mirrors it — and
+   *    `splitBody`/`splitToLimit` are written to be portable for exactly that
+   *    reason. Its tests are the specification.
+   * 3. **A home for the media assignment.** *Which post carries which file* is
+   *    the one thing a body cannot say, so it is the one thing stored: a map
+   *    from attachment id to post index, under `thread-sequence.<postId>` in
+   *    the tenant key/value store (`useThreadSequence`), the same stand-in
+   *    `campaign-accounts` uses while waiting for its column. What that cannot
+   *    do: the row is workspace-wide like every other settings key, and two
+   *    people moving files on the same post in the same second means the later
+   *    write wins. Losing it entirely is survivable by design — an attachment
+   *    with no entry rides the first post, which is where every file rode
+   *    before this existed.
+   * 4. **The slug on Threads.** `supportedPlatforms` in
+   *    `publishers/zernio/platforms.go` lists `thread` for `twitter` only, so
+   *    a Threads thread cannot actually be *submitted* until it is added
+   *    there. The UI no longer waits on it: `buildPlatformView` intersects our
+   *    dictionary with what a publisher reports, and `aheadOfPublishers`
+   *    (`lib/platformDictionary`) lets this flag answer in the missing slug's
+   *    place while it is on — because the honest intersection hides the
+   *    feature from the network it is named after for as long as the server
+   *    takes to learn one word, which is the opposite of what running ahead
+   *    behind a flag is for. The stand-in is itself flag-scoped: with this
+   *    off the publisher is the whole answer, exactly as before.
+   * 5. **Media validation counted per item.** Found testing the real screen:
+   *    the server validates attachments against the *post*, so five images
+   *    spread three-one-one over a chain still comes back as "post has 5 image
+   *    attachments; platform allows up to 4" — a warning the author cannot act
+   *    on, because no post of the thread is over. Our own count row already
+   *    stands down for a thread (`mediaChecks`) and the per-post verdict comes
+   *    from `planThread`, but `platform_validation` is the server's and is
+   *    passed through as written — deliberately, because it is right *today*:
+   *    until (1) lands, a thread really does publish as one post with every
+   *    file on it. It has to become per-item at the same time the split does,
+   *    or the flag turns on a screen with a permanent false alarm.
+   *
+   * With this off, Threads does not offer the type (`buildPlatformView` and
+   * `releasedPostTypes` both drop it), nothing reads the settings key, and the
+   * editor is what it always was. X keeps offering `thread`, as it always has
+   * — withdrawing it would be a change with the flag off, which a flag may
+   * never make. An existing X `thread` post therefore behaves identically
+   * either way, because a thread is the same one Markdown body as every other
+   * post type; all the flag adds is the note under the editor, the
+   * per-thumbnail picker and the row in the pre-publish bar.
+   *
+   * Nothing outside the flag reads anything new: `doc.content` is still the
+   * post's words, unchanged and un-rewritten, so the calendar, the posts table,
+   * search and the assistant are untouched by this.
+   *
+   * Switch this on once the submit path sends `threadItems`, splits the body
+   * the way we do and names the slug on `threads`, then re-test the whole path
+   * against the real thing — the media assignment is the half most likely to
+   * need a pass, and (5) is the one that shows up as a warning rather than as
+   * a wrong post.
+   */
+  'thread-sequence': false,
+
+  /**
+   * *Show cards as image previews* in Calendar Settings — the one switch in
+   * that panel, and the calendar-wide answer the per-view `image` field is
+   * copied from (`useCalendarSettings`).
+   *
+   * **Waiting on:** CON-247. The switch has never done anything and could not:
+   * a card's only image source is `post.media_urls`, and nothing writes it.
+   * Editor uploads land in `post_attachments`, which `GET /api/campaigns/:id/
+   * posts` does not join — and that table's `thumbnail_url` is a 15-minute
+   * presigned GET, so copying one into `media_urls` would store a URL that is
+   * dead within the hour. The fix is the server's: a thumbnail on the post list
+   * payload, from a durable key the way `assets` already does it.
+   *
+   * So this is a flag over a control rather than a feature — it was on by
+   * default and inert, which is worse than absent: a switch that is already
+   * *on* tells the user the pictures are missing for some other reason, and the
+   * one thing it can't be read as is "not built yet". Hidden, the panel stops
+   * making a promise the calendar can't keep.
+   *
+   * Nothing else changes with it off. The stored preference is left alone, so
+   * whatever a user set comes back when this is switched on, and the card
+   * renders exactly as it does today either way — it has no picture to draw.
+   *
+   * Switch this on when the payload carries a thumbnail, and re-test against
+   * a real one: the card reserves a band for the image and the month view only
+   * offers it where a cell has room (`cardRungs`), neither of which has ever
+   * been seen with an actual picture in it.
+   */
+  'calendar-card-images': false,
 
   /**
    * Deleting one saved version of a post, from the version-history panel

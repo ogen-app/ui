@@ -9,6 +9,7 @@ function asset(id: string, title: string): Asset {
     content: '',
     status: 'ready',
     type: null,
+    alt_text: '',
     tag_ids: [],
     tags: [],
     created_by: 'u1',

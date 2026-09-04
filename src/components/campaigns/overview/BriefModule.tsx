@@ -11,9 +11,12 @@ import { formatDate } from '@/lib/intl'
 import type { Campaign } from '@/types/campaigns'
 import { CallToAction } from './CallToAction.tsx'
 import { CollapsedCard, OverviewCard } from './OverviewCard.tsx'
+import { useFeatureFlag } from '@/config/featureFlags'
 
 export function BriefModule({ campaign }: { campaign: Campaign }) {
-  const posture = briefPosture(campaign)
+  // With Brand on, persona and tone are chosen rather than written, so the
+  // brief is measured against what is left of it.
+  const posture = briefPosture(campaign, useFeatureFlag('brand-materials'))
   const [aiModalOpen, setAiModalOpen] = useState(false)
 
   const aiModal = (

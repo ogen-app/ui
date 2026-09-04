@@ -97,12 +97,15 @@ export function AudienceEditor({
         </ForkedNote>
       )}
 
+      {/* No `DefaultControl` here, and the voice editor has one. An audience
+          has no workspace default to promote it to — the resolution stops at
+          the campaign. See `resolveAudience` in `binding.ts`. */}
       <EditorCard title="General">
         <Field label="Name">
           <Input
             value={draft.name}
             onChange={(e) => set('name', e.target.value)}
-            placeholder="Sceptical index holders"
+            placeholder="Time-poor team leads"
           />
         </Field>
         {/* Labelled by what it is for, the same way the voice editor labels its
@@ -115,7 +118,7 @@ export function AudienceEditor({
           <Textarea
             value={draft.who}
             onChange={(e) => set('who', e.target.value)}
-            placeholder="Retail investors, 30–45, already hold index funds, distrust anything that sounds like a pitch, read on a phone in the evening."
+            placeholder="Team leads, 30–45, already run two tools that half-solve this, distrust anything that sounds like a pitch, read on a phone between meetings."
             className="min-h-24"
           />
         </Field>
@@ -216,7 +219,7 @@ function ConsequencesCard({
         <Input
           value={draft.scrollsPastWhen}
           onChange={(e) => onChange('scrollsPastWhen', e.target.value)}
-          placeholder='The first line contains a percentage or the word "opportunity"'
+          placeholder='The first line contains a percentage or the word "solution"'
         />
       </Field>
       <Field
@@ -292,6 +295,9 @@ function linesOf(entry: Draft | BrandAudience | null): string {
  * `summary` is cleared whenever the three lines have moved, rather than carried
  * forward: it is our reading of them, and a reading of text that no longer
  * exists is worse than none.
+ *
+ * The id is `''` for an audience that has never been stored — ids are the
+ * server's (CON-228), so a create is a `POST` with no id.
  */
 function assemble(
   draft: Draft,
@@ -300,7 +306,7 @@ function assemble(
 ): BrandAudience {
   const changed = linesOf(draft) !== linesOf(audience)
   return {
-    id: audience?.id ?? crypto.randomUUID(),
+    id: audience?.id ?? '',
     ...draft,
     summary: changed ? '' : (audience?.summary ?? ''),
     usage: audience?.usage ?? { drafts: 0, published: 0 },
