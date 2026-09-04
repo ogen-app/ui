@@ -27,6 +27,14 @@ export type ActivityFeedResult = {
   isLoading: boolean
   isError: boolean
   /**
+   * Exactly one of the two sources failed. The feed still renders the half
+   * that answered — that is the point of keeping them independent — but the
+   * screen has to say so: notifications failing alone would otherwise read as
+   * a quiet workspace, and summaries failing alone strips post entries of
+   * their links without a word about why.
+   */
+  degraded: 'notifications' | 'summaries' | null
+  /**
    * The recorded half came back a full page, so there is older history the feed
    * is not showing. The reports below it are not truncated — they are computed
    * from posts — so this is about the entries, and the screen says which.
@@ -98,9 +106,16 @@ export function useActivityFeed(): ActivityFeedResult {
     campaignOfPost,
     // The two sources are independent, and either alone is a feed worth
     // showing: a screen that waits for both means one slow request hides
-    // notifications that are already in hand.
+    // notifications that are already in hand. So the page-level error is both
+    // failing, and one failing alone is `degraded` — shown, and said.
     isLoading: enabled && summariesLoading && notificationsLoading,
     isError: enabled && summariesError && notificationsError,
+    degraded:
+      enabled && notificationsError !== summariesError
+        ? notificationsError
+          ? 'notifications'
+          : 'summaries'
+        : null,
     isTruncated: enabled && isTruncated,
   }
 }

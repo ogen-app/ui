@@ -249,8 +249,15 @@ function readCoverage(
   updatedAt: string,
 ): Coverage {
   const published = values.posts_published ?? 0
+  // Followers count as reported: a quiet week where no post earned anything
+  // but the follower count moved is still a measurement, and collapsing the
+  // card to "nothing has reported yet" would hide the one tile holding a real
+  // figure. `posts_published` deliberately does not count — it comes from the
+  // main DB, so it can be non-zero before the sweep has measured anything.
   const anythingReported =
-    (values.reach ?? 0) > 0 || (values.interactions ?? 0) > 0
+    (values.reach ?? 0) > 0 ||
+    (values.interactions ?? 0) > 0 ||
+    (values.followers ?? 0) > 0
 
   return {
     measured: anythingReported ? Math.max(published, 1) : 0,

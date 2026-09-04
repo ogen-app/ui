@@ -67,8 +67,15 @@ import { useDayLabel, useTimeLabel } from '@/hooks/useActivityLabels'
  */
 export function ActivityFeed() {
   const { t } = useTranslation()
-  const { entries, now, isLoading, isError, isTruncated, campaignOfPost } =
-    useActivityFeed()
+  const {
+    entries,
+    now,
+    isLoading,
+    isError,
+    isTruncated,
+    degraded,
+    campaignOfPost,
+  } = useActivityFeed()
   // The badge is the inbox's own count, not a count of what is on screen: the
   // page is the newest hundred rows and the number is over all of them.
   const unread = useNotificationUnreadCount()
@@ -80,6 +87,14 @@ export function ActivityFeed() {
   // task's closure reaches the feed on whichever of the two you opened. See
   // `useTaskReconciliation`.
   useTaskReconciliation()
+
+  // MARK ALL READ is bounded by the highest row the page holds, so with no
+  // rows loaded it has nothing to act on — clicking would silently do nothing,
+  // however loud the badge. The button stays down until rows arrive.
+  const hasRows = useMemo(
+    () => entries.some((entry) => entry.kind === 'notification'),
+    [entries],
+  )
 
   // The feed is already in time order; grouping only cuts it into days.
   const days = useMemo(() => {
@@ -121,12 +136,25 @@ export function ActivityFeed() {
             // — only which of these sections are still lit for this reader.
             // That is a property of the view, which is what this corner is for.
             <MarkAllReadButton
-              unread={unread}
+              unread={hasRows ? unread : 0}
               settled={!isLoading}
               onClick={markAllRead}
             />
           }
         />
+
+        {/* Half the feed failed. Above the cards and above the empty state,
+            because the empty state is where the silence lies hardest: a feed
+            whose notifications failed reads as a quiet workspace without it. */}
+        {degraded && (
+          <div className="px-3 lg:px-6 pt-4">
+            <p className="w-full max-w-content mx-auto px-1 text-xs text-warning">
+              {degraded === 'notifications'
+                ? t('activity.notificationsUnavailable')
+                : t('activity.summariesUnavailable')}
+            </p>
+          </div>
+        )}
 
         {days.length === 0 ? (
           <div className="grow grid px-3 lg:px-6 pb-6">

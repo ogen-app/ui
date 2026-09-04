@@ -28,6 +28,7 @@ const FACTS: PostFacts = {
   platform: 'linkedin',
   format: 'Imagen única',
   publishedAt: '2026-08-20T09:00:00Z',
+  scheduledAt: null,
   campaign: 'Lanzamiento de otoño',
   socialAccountId: 'acc_1',
 }

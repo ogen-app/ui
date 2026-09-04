@@ -184,8 +184,11 @@ export function delta(
 export function formatDelta(t: TFunction, d: Delta): string {
   if (d.direction === 'flat') return t('analytics.units.aboutTheSame')
   const pct = Math.abs(d.fraction) * 100
+  // The multiplier form is for growth only. A count cannot fall by more than
+  // 100%, so the only downward value that could reach this branch is a total
+  // collapse — and "down 2.0×" is not what −100% means.
   const rendered =
-    pct >= 100
+    d.direction === 'up' && pct >= 100
       ? t('analytics.units.multiplier', {
           value: formatNumber(pct / 100 + 1, {
             minimumFractionDigits: 1,

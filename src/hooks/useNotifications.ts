@@ -138,7 +138,12 @@ export function useMarkAllNotificationsRead() {
   const mutation = useMutation({
     mutationFn: (before: number | null) =>
       markAllNotificationsRead(before ?? undefined),
-    onSuccess: (_updated, before) => {
+    onSuccess: async (_updated, before) => {
+      // A list refetch that was already in flight when the write landed holds
+      // the *pre-write* rows, and with `staleTime: 0` there is one on every
+      // mount — resolving after this patch it would put the unread rows back
+      // while the badge reads zero. Cancel it before touching the cache.
+      await qc.cancelQueries({ queryKey: NOTIFICATION_LIST_KEY })
       markCachedRead(qc, before, new Date().toISOString())
       // The write touched rows this page does not hold, so the count has to
       // come from the server rather than from the adjustment above.

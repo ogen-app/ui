@@ -346,6 +346,27 @@ const FEATURE_FLAGS = {
   'analytics-overview': true,
 
   /**
+   * The post's own numbers — the performance section at the foot of the post
+   * editor (`PostPerformanceSection`), fed by `GET /api/posts/:id/analytics`.
+   *
+   * **On**, like `analytics-overview` and for the same reason: the endpoint is
+   * real and the honest state of the surface is shipped. This flag existed in
+   * `lib/platformMeasures.ts`'s safety note before it existed here — the
+   * surface shipped ungated while its own comment deferred correction to a
+   * flag that was never declared. Now it is the one switch that removes the
+   * section, and with it every analytics request the post editor makes.
+   *
+   * What is still unverified, and what to check before deleting this flag: the
+   * `UNREPORTED` table in `lib/platformMeasures.ts` is read off the public
+   * platform APIs, not off a running Zernio, and it decides whether a
+   * platform's `0` renders as a figure or as nothing. It can suppress a
+   * genuine zero but never a real number, so first contact with live data is
+   * the test — a platform showing a tile this build says it shouldn't is the
+   * signal an entry is wrong.
+   */
+  'post-analytics': true,
+
+  /**
    * **Brand** — the workspace-level material every campaign writes from
    * (CON-226/227): voices, audiences and guardrails.
    *

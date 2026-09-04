@@ -70,15 +70,10 @@ export function AssetImageView({ asset, onChange, onDirty }: Props) {
    * re-seeding when the query refetches would take a field away from whoever is
    * mid-sentence in it.
    *
-   * One object rather than a `useState` per field because every save carries
-   * all four values whichever one moved. Kept apart, each handler would have to
-   * remember to read the other three, and the one it forgot would be sent at
-   * its mounted value and quietly revert. Here there is one place the payload
-   * is built and no way to omit from it.
-   *
-   * Sending all four is this screen's own choice, not the API's rule any more
-   * (CON-279 made the PUT presence-aware): these are the fields it shows, so
-   * they are the fields it is answerable for.
+   * One object rather than a `useState` per field because a save must carry the
+   * *latest* of every field it sends. Kept apart, each handler would have to
+   * remember to read the others, and the one it forgot would be sent at its
+   * mounted value and quietly revert.
    */
   const [draft, setDraft] = useState({
     title: asset.title,
@@ -86,6 +81,17 @@ export function AssetImageView({ asset, onChange, onDirty }: Props) {
     content: asset.content,
     tag_ids: asset.tag_ids,
   })
+
+  /*
+   * Which fields have actually been edited here, and therefore which the save
+   * names. The PUT is presence-aware (CON-279), so an unnamed field is left
+   * alone server-side — and that is the whole defence: the draft above was
+   * seeded at mount, so sending all four on every keystroke would carry this
+   * screen's opening copy of the tags over a re-tag done elsewhere in the
+   * meantime, with nothing on either side to notice. A field is only this
+   * screen's to write once someone has written in it.
+   */
+  const touchedRef = useRef(new Set<keyof typeof draft>())
 
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -102,21 +108,28 @@ export function AssetImageView({ asset, onChange, onDirty }: Props) {
   const edit = useCallback(
     (patch: Partial<typeof draft>) => {
       const next = { ...draft, ...patch }
+      for (const key of Object.keys(patch) as (keyof typeof draft)[]) {
+        touchedRef.current.add(key)
+      }
       setDraft(next)
       onDirty()
       if (timerRef.current) clearTimeout(timerRef.current)
-      timerRef.current = setTimeout(
-        // The API has no way to say "no title", so an emptied one saves as a
-        // space — the same fallback the document editor uses, for the same 400.
-        // The description gets no such treatment: blank is a valid description,
-        // and the one relaxation the update handler makes for `IMG`.
-        () =>
-          onChange({
-            ...next,
+      timerRef.current = setTimeout(() => {
+        const touched = touchedRef.current
+        onChange({
+          // The API has no way to say "no title", so an emptied one saves as a
+          // space — the same fallback the document editor uses, for the same
+          // 400. The description gets no such treatment: blank is a valid
+          // description, and the one relaxation the update handler makes for
+          // `IMG`.
+          ...(touched.has('title') && {
             title: next.title.trim() === '' ? ' ' : next.title,
           }),
-        SAVE_DEBOUNCE_MS,
-      )
+          ...(touched.has('content') && { content: next.content }),
+          ...(touched.has('alt_text') && { alt_text: next.alt_text }),
+          ...(touched.has('tag_ids') && { tag_ids: next.tag_ids }),
+        })
+      }, SAVE_DEBOUNCE_MS)
     },
     [draft, onChange, onDirty],
   )

@@ -7,7 +7,7 @@ import type {
   PostPerformanceView,
 } from '@/components/analytics/types'
 import { isReported, type WireMeasure } from '@/lib/platformMeasures'
-import { formatRelative } from '@/lib/intl'
+import { formatDate, formatRelative } from '@/lib/intl'
 import type {
   AnalyticsMetrics,
   PlatformAnalyticsRow,
@@ -37,6 +37,8 @@ export type PostFacts = {
   format: string
   /** RFC3339, or `null` for a post that has not gone out. */
   publishedAt: string | null
+  /** RFC3339, or `null` when no date is set. Ignored once the post is out. */
+  scheduledAt: string | null
   campaign?: string
   /**
    * **Our** `social_account_id`, which is what a reconnect link points at.
@@ -252,7 +254,24 @@ export function buildPostPerformanceView(
     // a platform is not an account.
     account: publication.account ?? '',
     format: facts.format,
+    // The card leads with the absolute date and trails the relative one — the
+    // date survives a screenshot, the age says how much of the post's life is
+    // still ahead. `scheduledFor` only speaks for a post that has not gone
+    // out; once it has, the schedule is history the publication supersedes.
+    publishedOn: facts.publishedAt
+      ? (formatDate(facts.publishedAt, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }) ?? undefined)
+      : undefined,
     publishedAgo: facts.publishedAt ? ago(hours) : undefined,
+    scheduledFor:
+      !facts.publishedAt && facts.scheduledAt
+        ? (formatDate(facts.scheduledAt, {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          }) ?? undefined)
+        : undefined,
     campaign: facts.campaign,
     permalink: publication.permalink ?? undefined,
   }

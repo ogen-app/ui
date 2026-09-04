@@ -66,21 +66,42 @@ export type NotificationCopy = {
 }
 
 /**
+ * What each type's catalogue entry cannot render without. `data` arrives as an
+ * unvalidated blob (`parseNotification` only checks it is a record), so a row
+ * can be a known type and still be missing the value its sentence
+ * interpolates — and i18next would render a literal `{{channel}}`, or miss
+ * plural resolution entirely and print the key's own name. A row like that
+ * takes the server-title fallback instead, same as an unknown type.
+ */
+const REQUIRED_VARS: Partial<
+  Record<keyof typeof COPY_KEY, 'channel' | 'count'>
+> = {
+  'connection.expiring_soon': 'channel',
+  'connection.action_required': 'channel',
+  'post.published': 'channel',
+  'post.publish_failed': 'channel',
+  'campaign.content_plan_ready': 'count',
+}
+
+/**
  * What to say about a row, or null when only the server can say it.
  *
  * Null is the honest answer for an unknown `type`: it means "render
  * `notification.title`", which is English and untranslatable but *true*, and
  * that beats inventing a generic sentence that says less than the server
- * already did.
+ * already did. A known type whose `data` blob lacks what its sentence
+ * interpolates gets the same answer, for the same reason.
  */
 export function notificationCopy(
   notification: AppNotification,
 ): NotificationCopy | null {
-  const key = COPY_KEY[notification.type as keyof typeof COPY_KEY] as
-    | NotificationCopyKey
-    | undefined
+  const type = notification.type as keyof typeof COPY_KEY
+  const key = COPY_KEY[type] as NotificationCopyKey | undefined
   if (!key) return null
-  return { key, vars: notificationVars(notification) }
+  const vars = notificationVars(notification)
+  const required = REQUIRED_VARS[type]
+  if (required && !(required in vars)) return null
+  return { key, vars }
 }
 
 function notificationVars(

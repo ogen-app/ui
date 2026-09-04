@@ -40,6 +40,7 @@ const FACTS: PostFacts = {
   platform: 'linkedin',
   format: 'Single image',
   publishedAt: '2026-08-20T09:00:00Z',
+  scheduledAt: null,
   campaign: 'Autumn launch',
   socialAccountId: 'acc_1',
 }

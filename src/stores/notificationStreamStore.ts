@@ -49,7 +49,11 @@ const connection = createStreamConnection({
       {
         onOpen: hooks.opened,
         onNotification: (notification) => {
-          landLiveNotification(queryClient, notification)
+          // A frame can resolve just before a restart aborts the connection and
+          // be parsed just after — on a workspace switch that would land the old
+          // workspace's row in the new workspace's cache. Same guard as the
+          // events stream.
+          if (!signal.aborted) landLiveNotification(queryClient, notification)
         },
         onActivity: hooks.activity,
       },

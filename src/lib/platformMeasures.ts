@@ -20,9 +20,10 @@ import type { AnalyticsMetrics } from '@/types/analytics'
  * Which is what this is. Nothing here has been checked against a running
  * Zernio: the entries below are the public platform APIs, and Zernio's own
  * normalisation sits between them and us. Correct them against real data
- * before the `post-analytics` flag is flipped — a slug that turns out to
- * report a measure listed here shows a tile the moment it reports a non-zero,
- * which is the signal that the entry is wrong.
+ * before the `post-analytics` flag (`config/featureFlags.ts`, the switch for
+ * the whole post surface) is deleted — a slug that turns out to report a
+ * measure listed here shows a tile the moment it reports a non-zero, which is
+ * the signal that the entry is wrong.
  */
 
 /** The nine the wire carries — the keys of the metrics block itself. */

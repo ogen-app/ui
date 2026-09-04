@@ -36,6 +36,7 @@ const FACTS: PostFacts = {
   platform: 'linkedin',
   format: 'Text post',
   publishedAt: '2026-08-30T06:00:00Z',
+  scheduledAt: null,
   campaign: 'Launch',
   socialAccountId: 'our-account-1',
 }

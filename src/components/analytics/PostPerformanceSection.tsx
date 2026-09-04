@@ -38,6 +38,10 @@ export function PostPerformanceSection({
   const { t } = useTranslation()
 
   switch (result.state) {
+    // The feature is switched off: the section does not exist.
+    case 'off':
+      return null
+
     // Nothing has gone out, so there is nothing to be silent *about*.
     case 'unpublished':
       return null

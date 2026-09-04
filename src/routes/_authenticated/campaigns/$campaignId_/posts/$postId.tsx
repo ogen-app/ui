@@ -345,6 +345,7 @@ function PostEditorSurface({
       platform: doc.platform_id,
       format: doc.platform?.post_types[doc.platform_post_type] ?? '',
       publishedAt: doc.published_at,
+      scheduledAt: doc.scheduled_at,
       campaign: campaignName,
       // Empty means unspecified, and a reconnect link pointing at "" would
       // name an account the connections screen has never heard of.
@@ -356,6 +357,7 @@ function PostEditorSurface({
       doc.platform,
       doc.platform_post_type,
       doc.published_at,
+      doc.scheduled_at,
       doc.social_account_id,
       campaignName,
     ],
