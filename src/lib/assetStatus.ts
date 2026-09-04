@@ -36,14 +36,6 @@ export const MAX_ALT_TEXT_CHARS = 2000
  */
 
 /**
- * Whether the Content Bank takes images: the `content-bank-images` flag
- * (CON-16), threaded in rather than read from the flag record in here. These
- * functions mirror server rules and are worth testing in both states without
- * reaching for global flag state.
- */
-export type UploadOptions = { images: boolean }
-
-/**
  * The extensions the file picker offers.
  *
  * Kept in step with `imageprobe.AllowedMIMEs` — JPEG, PNG, WebP, GIF (CON-16
@@ -51,9 +43,7 @@ export type UploadOptions = { images: boolean }
  * extension while the server sniffs the body, so leaving it out would reject a
  * file the server would have taken.
  */
-export function uploadAccept({ images }: UploadOptions): string {
-  return images ? '.md,.pdf,.jpg,.jpeg,.png,.webp,.gif' : '.md,.pdf'
-}
+export const UPLOAD_ACCEPT = '.md,.pdf,.jpg,.jpeg,.png,.webp,.gif'
 
 /**
  * The limits, one line per kind of file.
@@ -67,22 +57,14 @@ export function uploadAccept({ images }: UploadOptions): string {
  * copy, so a cap that moves on the server moves here in one place instead of in
  * every catalogue.
  */
-export function uploadLimitLines(
-  t: TFunction,
-  { images }: UploadOptions,
-): string[] {
-  const lines = [
+export function uploadLimitLines(t: TFunction): string[] {
+  return [
     t('uploads.limitDocs', {
       md: capLabel(UPLOAD_LIMITS.md),
       pdf: capLabel(UPLOAD_LIMITS.pdf),
     }),
+    t('uploads.limitImages', { size: capLabel(UPLOAD_LIMITS.image) }),
   ]
-  if (images) {
-    lines.push(
-      t('uploads.limitImages', { size: capLabel(UPLOAD_LIMITS.image) }),
-    )
-  }
-  return lines
 }
 
 /**
@@ -100,14 +82,11 @@ function capLabel(bytes: number): string {
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
 
 /** Maps a filename extension to an upload kind, or null if unsupported. */
-function detectUploadKind(
-  filename: string,
-  { images }: UploadOptions,
-): UploadKind | null {
+function detectUploadKind(filename: string): UploadKind | null {
   const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase()
   if (ext === '.md') return 'md'
   if (ext === '.pdf') return 'pdf'
-  if (images && IMAGE_EXTENSIONS.includes(ext)) return 'image'
+  if (IMAGE_EXTENSIONS.includes(ext)) return 'image'
   return null
 }
 
@@ -120,17 +99,12 @@ export type UploadValidation =
  * obviously-bad files fail instantly without a network round-trip. The error
  * strings match the messages the server returns for the same conditions.
  */
-export function validateUploadFile(
-  file: File,
-  options: UploadOptions,
-): UploadValidation {
-  const kind = detectUploadKind(file.name, options)
+export function validateUploadFile(file: File): UploadValidation {
+  const kind = detectUploadKind(file.name)
   if (!kind) {
     return {
       ok: false,
-      error: options.images
-        ? 'only .md, .pdf and image files are accepted'
-        : 'only .md and .pdf files are accepted',
+      error: 'only .md, .pdf and image files are accepted',
     }
   }
   const limit = UPLOAD_LIMITS[kind]

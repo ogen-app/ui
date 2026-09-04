@@ -30,6 +30,20 @@
  * render nothing when it is off. Removing one is the point — a flag whose
  * feature has settled should be deleted along with the `off` branch of the
  * code, not left switched on forever.
+ *
+ * **A flag's life ends at the second merge, not the first.** Turning it on is
+ * one deliberate step; deleting it is the next, once the feature has survived
+ * one real deploy and nobody has reached for the switch. A flag left on is not
+ * a flag — it is a branch nobody takes and a question every reader of the call
+ * site has to answer ("and when this is false?") for code that has not run
+ * since the day it shipped. The off-branch rots quietly, and the person who
+ * eventually deletes it cannot tell stale scaffolding from a deliberate
+ * fallback. `campaign-goals` and `campaign-scheduling` sat on for four weeks
+ * before this rule existed; they were the reason for it.
+ *
+ * The `false` entries below are the healthy ones — the count is not the metric.
+ * They are holding unshippable work on `develop`, which is the whole point of
+ * the mechanism. It is the `true` ones that are on a clock.
  */
 import { readFlagOverrides } from './flagOverrides'
 
@@ -149,22 +163,6 @@ const FEATURE_FLAGS = {
   tasks: false,
 
   /**
-   * The Goals card in campaign settings: the post rate the campaign is planned
-   * against. On — CON-182 landed `goal_cadence` beside `estimated_post_count`
-   * and the content-plan flow generates against the pair. Delete this flag once
-   * the card has been exercised against the deployed API.
-   */
-  'campaign-goals': true,
-
-  /**
-   * The Scheduling card in campaign settings: publishing time, time zone,
-   * spread, and the days the campaign publishes on. On — CON-181 landed the
-   * four columns and the content-plan flow places every draft by them. Delete
-   * this flag once the card has been exercised against the deployed API.
-   */
-  'campaign-scheduling': true,
-
-  /**
    * "Accounts & Post Types" in campaign settings: the campaign targets an
    * **account on a platform** rather than the platform, so a workspace with two
    * Facebook pages can send a campaign to one of them, or to both with
@@ -194,25 +192,158 @@ const FEATURE_FLAGS = {
    * measure nothing, and no analytics request is made. Turning it on swaps
    * that preview for the real totals in both places.
    *
-   * **Waiting on:** a campaign dimension on `GET /api/analytics/posts`. The
-   * endpoint filters by `platform` and nothing else (`handlers/analytics.go`),
-   * and its `overview` block totals the whole *workspace* — so a campaign
-   * screen cannot ask the server its own question. Until it takes a
-   * `campaign_id` (or the rows carry one), the page fetches one 100-row page,
-   * intersects it with the campaign's posts client-side, and sums the rows
-   * itself; the server's `overview` is deliberately ignored. Beyond ~100
-   * measured posts in a workspace that is no longer complete, which is why
-   * every surface states its coverage.
+   * **Still waiting on: a campaign dimension.** CON-236–239 landed the
+   * analytics dashboard API on 2026-08-27 — `/overview`, `/performers` and
+   * `/learnings`, typed against the real handlers in `types/analytics.ts` and
+   * pinned by `services/api/analytics.test.ts` — and every one of them is
+   * **tenant-scoped**. None takes a `campaign_id`; only `/performers` takes a
+   * `platform`. So the thing this flag was originally waiting for did not
+   * arrive: a campaign screen still cannot ask the server its own question.
    *
-   * The content is a first cut besides: only the stored post series is wired.
-   * `/followers`, `/best-times`, `/content-decay` and `/posting-frequency`
-   * exist and are typed but unused.
+   * Until it can, the page fetches one 100-row page of `/posts`, intersects it
+   * with the campaign's posts client-side, and sums the rows itself; the
+   * server's `overview` block is workspace-wide and deliberately ignored.
+   * Beyond ~100 measured posts in a workspace that stops being complete, which
+   * is why every surface states its coverage.
    *
-   * Switch this on once `GET /api/analytics/posts` can be asked about one
-   * campaign, re-test the totals against the real thing, and delete the flag
-   * once the section has been exercised against the deployed API.
+   * **Before this can be flipped**, in order:
+   *
+   * 1. A campaign dimension — `campaign_id` on the dashboard reads, or a
+   *    campaign column on the rows. Nothing else unblocks the campaign screen.
+   * 2. A per-post series. `post_analytics_snapshots` is written and retained,
+   *    and no endpoint reads it (`models/post_analytics.go` says so in as many
+   *    words), so a post's own history has no source — the ask is
+   *    `GET /api/analytics/posts/:id/series` with a granularity.
+   * 3. A live re-test. Everything typed here was read off the Go source, not
+   *    off a running server; the shapes with the least margin for a
+   *    misreading are the overview's `series.previous` (index-aligned to the
+   *    *current* window's buckets) and the learnings sections, each of which
+   *    withdraws on its own.
+   *
+   * The two workspace-wide surfaces (`components/analytics`) needed no campaign
+   * dimension and have shipped ahead of this one: `analytics-overview` is on,
+   * with the mappers from these wire shapes onto the view models written and
+   * tested. Three of their fields still have no wire source at all — per-post
+   * `matured`, the performers' `curve`/`typical`, and the `save_rate` and
+   * `follow_rate` criteria (`/performers` reports no saves or follows) — and
+   * each surface states that where it would otherwise draw them. This flag is
+   * waiting on the campaign dimension, nothing else.
+   * See `docs/analytics-contract.md`.
    */
   'campaign-analytics': false,
+
+  /**
+   * Analytics — the workspace's own numbers: the `/analytics` route, its
+   * sidebar row, and the three cards on it. **What happened** (CON-237) — five
+   * figures, the chart behind whichever is selected, the deterministic
+   * callouts — **Performers and outliers** (CON-238), the window's best and
+   * worst posts scored against a typical post on the same platform at the same
+   * age — and **What we've learned** (CON-239), the all-time slot heatmap, the
+   * curve a post follows after publishing, and the structural patterns behind
+   * what works and what is fading.
+   *
+   * **All three endpoints are real and shipped.** `GET /api/analytics/overview`
+   * landed with CON-237 (ogen#125), `GET /api/analytics/performers` with
+   * CON-238 (ogen#126) and `GET /api/analytics/learnings` with CON-239
+   * (ogen#127) — all merged 2026-08-27, so this is built against the API rather
+   * than ahead of it, unlike `campaign-analytics`, which is still waiting on a
+   * campaign dimension none of the three reads has. That makes this the
+   * workspace surface that can ship first, exactly as the note on that flag
+   * predicted.
+   *
+   * **On.** The endpoints exist, the surface is complete and its copy is
+   * catalogued, so the honest state of it is shipped rather than hidden — with
+   * this off the route rendered a description of itself, which is a worse thing
+   * to show than real numbers with a stated coverage.
+   *
+   * What is *not* yet true is that any of it has met a live workspace:
+   * everything here was read off the Go source and the hand-off comments, so
+   * first contact is still the test. Seven things to look at when it happens,
+   * in rough order of how quietly they would be wrong:
+   *
+   * 1. **The window picker end to end.** `7d`/`28d`/`90d` all resolve to day
+   *    buckets server-side; a window that quietly came back weekly would put a
+   *    seven-point chart where the reader expects ninety.
+   * 2. **`series.previous` really is index-aligned** to the current window's
+   *    buckets rather than carrying its own dates. The mapper labels those
+   *    points with this window's dates on purpose — read as calendar dates they
+   *    are wrong by exactly one window — and the ghost line is drawn from them.
+   * 3. **`updated_at` on a workspace mid-sweep.** It is the newest
+   *    `last_checked_at`, and the Go zero value means nothing has ever been
+   *    checked; the cards treat that as "no freshness to report" rather than
+   *    printing a date in year 1.
+   * 4. **`total_posts` against the two lists.** The board's foot-note counts
+   *    the hidden middle by subtracting them, so a `total_posts` that counts a
+   *    different set from the one that was ranked would print a wrong "and N
+   *    more".
+   * 5. **A `by` the server rejects.** The picker only offers the four in the
+   *    contract, so `invalid_sort` should be unreachable — worth proving,
+   *    because it surfaces as a bare failed request rather than a bad-input
+   *    message.
+   * 6. **Which timezone `/learnings` actually bucketed on.** The PRD says a
+   *    fixed display timezone defaulting to UTC and the wire carries no offset,
+   *    so every slot on the heatmap is labelled UTC. If the server is in fact
+   *    bucketing on a tenant timezone, the labels are wrong by that offset —
+   *    and a "best time" wrong by three hours is worse than no best time. Ask
+   *    for the zone on the wire either way.
+   * 7. **Whether a section can arrive as `null`** rather than as its fields or
+   *    `{insufficient_history: true}`. The builders always return a value
+   *    today, so the types treat the three sections as present; a `null` would
+   *    reach the mapper as a section with no history, which is the safe wrong
+   *    answer but still a wrong one.
+   *
+   * **Known missing, and not defects in this UI:**
+   *
+   * - **The usual-range band** on the overview. Every card answers `baseline:
+   *   "insufficient_history"` and no `band`, because the long-retention rollup
+   *   behind it has no tenant with enough history yet
+   *   (`analytics/overview/overview.go`). So the verdict lines, the cone and
+   *   the "usual range" key are absent, and the previous-stretch delta is the
+   *   whole comparison. `lib/analyticsOverviewView` reads the field rather than
+   *   today's absence, so the band appears on its own when one is sent.
+   * - **Account pictures** on the board. `account.avatar_url` is declared and
+   *   always empty, and `display_name` mirrors `username`; enrichment from
+   *   `social_accounts` is a server follow-up. Rows fall back to the initial
+   *   plus the platform badge and fill in on their own.
+   * - **Semantic patterns** in the lessons card — "posts that open with a
+   *   question", "team photos". Deferred server-side because they need content
+   *   classification, so the mining is structural only (format, length,
+   *   hashtags, links, timing, platform). The card shape takes them unchanged
+   *   when they land.
+   * - **`since` on `/learnings`** is on the wire and not exposed. It cuts off a
+   *   past the workspace has disowned, which is a workspace setting rather than
+   *   a control on a card; offering it beside the metric would turn an all-time
+   *   card back into a period one. The mapper reads it, so a server-set value
+   *   already shows in the card's heading.
+   * - **`platform` on `/overview`, and a decision on `/learnings`.** The scope
+   *   bar above the cards offers one platform at a time because that is exactly
+   *   what the server can answer: only `/performers` takes a `platform`, and it
+   *   takes one slug rather than a set. So the filter narrows the board and not
+   *   the other two, and both of them print "every platform — not affected by
+   *   the filter above" under their heading for as long as that is true. Two
+   *   things would retire that note: `platform` on `GET /analytics/overview`,
+   *   and a ruling on whether an all-time lessons card should be narrowable at
+   *   all — "your posts land on Tuesday evenings" may well be a fact about a
+   *   platform rather than about the workspace. Repeatable `platform` on both
+   *   would additionally let the marks go back to multi-select, which is what
+   *   the campaign surface's filter is already written for.
+   *
+   * **i18n is done.** This used to defer it on the Brand precedent (CON-227),
+   * with the note that the components had to be converted as one pass before
+   * the surface could ship to a non-English workspace. That pass has happened:
+   * every string in `components/analytics/*` and in the three view mappers is
+   * a catalogue entry, the measure and criterion tables carry behaviour only,
+   * and the `en-GB`/`en-US` locale pins that used to sit in `format.ts` and the
+   * two mappers are gone — dates and numbers read the app's language like
+   * everything else. `components/analytics/localisation.test.tsx` renders the
+   * surface in Spanish and asserts on what comes out, which is the only way to
+   * tell a converted component from one whose literals happen to be English.
+   *
+   * Delete this flag, and the preview it switches between, once the surface has
+   * been exercised against the deployed API — a flag left switched on is a
+   * branch nobody takes and a question nobody re-asks.
+   */
+  'analytics-overview': true,
 
   /**
    * **Brand** — the workspace-level material every campaign writes from
@@ -265,24 +396,6 @@ const FEATURE_FLAGS = {
    * against the deployed API.
    */
   'email-preferences': false,
-
-  /**
-   * Uploading images into the Content Bank (CON-16) — an asset that *is* a
-   * picture, rather than a picture pasted inside a document.
-   *
-   * **The server answers now** (CON-246, ogen#129, merged 2026-09-01): the
-   * upload endpoint takes JPEG/PNG/WebP/GIF, `assets_type_check` allows `IMG`,
-   * and `AssetFile` carries `url` for the original — which was the decision the
-   * viewer was waiting on, settled as `url` rather than `original_url`. The
-   * asset also gained `alt_text`, and the file gained the `width` / `height` /
-   * `is_animated` / `checksum_sha256` columns `post_attachments` already had.
-   *
-   * What is still missing is a *thumbnail* job, so an image asset's preview is
-   * the full file scaled down (`lib/assetPreview`). That is a cost, not a gap
-   * in the contract: `thumbnail_url` is already preferred wherever it appears,
-   * so the day one is rendered nothing here changes.
-   */
-  'content-bank-images': true,
 
   /**
    * **Thread sequences** (CON-196) — a post on X or Threads that publishes as

@@ -11,6 +11,7 @@ import {
   ArrowsLeftRightIcon,
   CardsThreeIcon,
   CaretDoubleLeftIcon,
+  ChartLineUpIcon,
   GearSixIcon,
   LifebuoyIcon,
   PaletteIcon,
@@ -127,6 +128,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const postsPlaces = usePostsPlaces()
   const activityEnabled = useFeatureFlag('activity')
   const tasksEnabled = useFeatureFlag('tasks')
+  const analyticsEnabled = useFeatureFlag('analytics-overview')
   const brandEnabled = useFeatureFlag('brand-materials')
 
   const activeCampaignId =
@@ -293,6 +295,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 text={t('nav.brand')}
                 isActive={location.pathname.startsWith('/brand')}
                 to="/brand"
+              />
+            )}
+            {/* Last of the workspace destinations, because it is the one you
+                arrive at after the work rather than to do it. Workspace-wide,
+                like the three above and unlike the campaign rows below — the
+                endpoint behind it is tenant-scoped and takes no campaign, so
+                this row is the only place the whole workspace's numbers are
+                asked for. */}
+            {analyticsEnabled && (
+              <AppSidebarButtonMenu
+                icon={
+                  <ChartLineUpIcon
+                    weight="regular"
+                    className="size-5 flex-none"
+                  />
+                }
+                text={t('nav.analytics')}
+                isActive={location.pathname.startsWith('/analytics')}
+                to="/analytics"
               />
             )}
 

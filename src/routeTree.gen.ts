@@ -30,6 +30,7 @@ import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedContentBankIndexRouteImport } from './routes/_authenticated/content-bank/index'
 import { Route as AuthenticatedCampaignsIndexRouteImport } from './routes/_authenticated/campaigns/index'
 import { Route as AuthenticatedBrandIndexRouteImport } from './routes/_authenticated/brand/index'
+import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics/index'
 import { Route as AuthenticatedActivityIndexRouteImport } from './routes/_authenticated/activity/index'
 import { Route as AuthenticatedContentBankAssetIdRouteImport } from './routes/_authenticated/content-bank/$assetId'
 import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
@@ -162,6 +163,12 @@ const AuthenticatedBrandIndexRoute = AuthenticatedBrandIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedBrandRoute,
 } as any)
+const AuthenticatedAnalyticsIndexRoute =
+  AuthenticatedAnalyticsIndexRouteImport.update({
+    id: '/analytics/',
+    path: '/analytics/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedActivityIndexRoute =
   AuthenticatedActivityIndexRouteImport.update({
     id: '/',
@@ -320,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   '/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
   '/activity/': typeof AuthenticatedActivityIndexRoute
+  '/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/brand/': typeof AuthenticatedBrandIndexRoute
   '/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/content-bank/': typeof AuthenticatedContentBankIndexRoute
@@ -362,6 +370,7 @@ export interface FileRoutesByTo {
   '/brand/voices': typeof AuthenticatedBrandVoicesRoute
   '/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
   '/activity': typeof AuthenticatedActivityIndexRoute
+  '/analytics': typeof AuthenticatedAnalyticsIndexRoute
   '/brand': typeof AuthenticatedBrandIndexRoute
   '/campaigns': typeof AuthenticatedCampaignsIndexRoute
   '/content-bank': typeof AuthenticatedContentBankIndexRoute
@@ -409,6 +418,7 @@ export interface FileRoutesById {
   '/_authenticated/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   '/_authenticated/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
   '/_authenticated/activity/': typeof AuthenticatedActivityIndexRoute
+  '/_authenticated/analytics/': typeof AuthenticatedAnalyticsIndexRoute
   '/_authenticated/brand/': typeof AuthenticatedBrandIndexRoute
   '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/_authenticated/content-bank/': typeof AuthenticatedContentBankIndexRoute
@@ -456,6 +466,7 @@ export interface FileRouteTypes {
     | '/campaigns/$campaignId'
     | '/content-bank/$assetId'
     | '/activity/'
+    | '/analytics/'
     | '/brand/'
     | '/campaigns/'
     | '/content-bank/'
@@ -498,6 +509,7 @@ export interface FileRouteTypes {
     | '/brand/voices'
     | '/content-bank/$assetId'
     | '/activity'
+    | '/analytics'
     | '/brand'
     | '/campaigns'
     | '/content-bank'
@@ -544,6 +556,7 @@ export interface FileRouteTypes {
     | '/_authenticated/campaigns/$campaignId'
     | '/_authenticated/content-bank/$assetId'
     | '/_authenticated/activity/'
+    | '/_authenticated/analytics/'
     | '/_authenticated/brand/'
     | '/_authenticated/campaigns/'
     | '/_authenticated/content-bank/'
@@ -733,6 +746,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/brand/'
       preLoaderRoute: typeof AuthenticatedBrandIndexRouteImport
       parentRoute: typeof AuthenticatedBrandRoute
+    }
+    '/_authenticated/analytics/': {
+      id: '/_authenticated/analytics/'
+      path: '/analytics'
+      fullPath: '/analytics/'
+      preLoaderRoute: typeof AuthenticatedAnalyticsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/activity/': {
       id: '/_authenticated/activity/'
@@ -980,6 +1000,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCampaignsCampaignIdRoute: typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   AuthenticatedContentBankAssetIdRoute: typeof AuthenticatedContentBankAssetIdRoute
+  AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
   AuthenticatedCampaignsIndexRoute: typeof AuthenticatedCampaignsIndexRoute
   AuthenticatedContentBankIndexRoute: typeof AuthenticatedContentBankIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
@@ -999,6 +1020,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCampaignsCampaignIdRoute:
     AuthenticatedCampaignsCampaignIdRouteWithChildren,
   AuthenticatedContentBankAssetIdRoute: AuthenticatedContentBankAssetIdRoute,
+  AuthenticatedAnalyticsIndexRoute: AuthenticatedAnalyticsIndexRoute,
   AuthenticatedCampaignsIndexRoute: AuthenticatedCampaignsIndexRoute,
   AuthenticatedContentBankIndexRoute: AuthenticatedContentBankIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,

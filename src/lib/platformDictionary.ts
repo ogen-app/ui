@@ -196,6 +196,19 @@ export function getPlatformByZernioId(
   return BY_ZERNIO_ID.get(zernioId)
 }
 
+/**
+ * A platform by either of the identifiers it travels under — our sqid, or the
+ * wire slug ("linkedin", "twitter").
+ *
+ * For the surfaces that are handed platforms by something other than
+ * /api/platforms: analytics keys its per-platform figures by slug, and a UI
+ * that can only resolve sqids ends up drawing a logo for some platforms and a
+ * placeholder for the rest of the same row.
+ */
+export function resolvePlatformInfo(id: string): PlatformInfo | undefined {
+  return BY_ID.get(id) ?? BY_ZERNIO_ID.get(id)
+}
+
 function unionSupportedSlugs(
   publishers: { supported_post_types: string[] }[],
 ): Set<string> {
