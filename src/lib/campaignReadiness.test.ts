@@ -57,6 +57,7 @@ function makePost(overrides: Partial<Post> = {}): Post {
     media_urls: [],
     scheduled_at: null,
     published_at: null,
+    published_url: '',
     status: 'draft',
     cta_type: 'none',
     cta_url: '',

@@ -52,6 +52,7 @@ function draftPost(streamed: StreamedPost, campaignId: string): Post {
     social_account_id: '',
     media_urls: [],
     published_at: null,
+    published_url: '',
     status: 'draft',
     cta_type: 'none',
     cta_url: '',
@@ -124,8 +125,10 @@ export function useAddPost(campaignId: string) {
  *   Copying the strings would give the new post a calendar thumbnail of files
  *   it does not have — attachments are their own resource, uploaded per post,
  *   and nothing on the API copies them.
- * - **`published_at` and `publisher_post_id`** are the server's, and naming
- *   them here would claim the copy is the thing that was published.
+ * - **`published_at`, `publisher_post_id` and `published_url`** are the
+ *   server's, and naming them here would claim the copy is the thing that was
+ *   published — the last one literally: a draft carrying the original's
+ *   permalink would offer a "view post" link to somebody else's post.
  *
  * The account *is* carried: a repurposed post almost always goes out as the
  * same one, and a picker that has to tolerate a disconnected value already

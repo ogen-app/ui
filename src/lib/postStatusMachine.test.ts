@@ -36,6 +36,7 @@ function post(overrides: Partial<Post> = {}): Post {
     // Far enough out that the future-date rule never trips these cases.
     scheduled_at: '2099-01-01T00:00:00Z',
     published_at: null,
+    published_url: '',
     status: 'ready_for_publish',
     cta_type: 'none',
     cta_url: '',

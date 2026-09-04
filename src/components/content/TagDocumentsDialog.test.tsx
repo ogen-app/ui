@@ -80,13 +80,11 @@ describe('TagDocumentsDialog', () => {
   it('says so when there is nothing to remove', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response('[]', {
-            headers: { 'Content-Type': 'application/json' },
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        new Response('[]', {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
     )
 
     await renderWithProviders(open([asset('a1', [])]).ui)

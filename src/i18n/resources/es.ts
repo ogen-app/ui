@@ -715,6 +715,11 @@ export const es: Translation = {
       compactLate: '{{amount}} de retraso',
     },
 
+    publishedLink: {
+      view: 'Ver publicación',
+      add: 'Añadir enlace a la publicación',
+    },
+
     sequence: {
       explainer:
         'Esto se publica como una cadena de publicaciones, cada una respondiendo a la anterior. Escribe --- en una línea aparte donde quieras un corte; si no hay ningún divisor, los cortes son las líneas en blanco. Lo que siga pasándose del límite de caracteres se recorta para que quepa.',

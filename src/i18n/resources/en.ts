@@ -997,6 +997,19 @@ export const en = {
     },
 
     /**
+     * The two states a published post's permalink can be in (CON-165), on the
+     * quick bar's scheduling line. Never both: pasting the URL is how the link
+     * gets recorded, so a post that has one has already been asked.
+     *
+     * "View post" rather than "View on LinkedIn" — the line already names
+     * nothing platform-specific, and the platform is stated a row below.
+     */
+    publishedLink: {
+      view: 'View post',
+      add: 'Add post link',
+    },
+
+    /**
      * Thread sequences (CON-196) — a post on X or Threads that publishes as a
      * chain of connected posts rather than one.
      *
