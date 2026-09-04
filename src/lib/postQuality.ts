@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import type {
   PostEvaluation,
   QualityDimension,
@@ -79,14 +80,13 @@ export function overallBand(pct: number): QualityBand {
 /**
  * The band as a word, for places that state the verdict rather than draw it.
  *
- * A number needs a rubric to read; "Good" needs nothing. Deliberately three
- * flat words with no praise or alarm in them — the score is advisory, and copy
- * that congratulated or scolded would make an opinion sound like a result.
+ * A number needs a rubric to read; "Good" needs nothing. The words are in the
+ * catalogue (`posts.quality.bands`) and read through `t` rather than held in a
+ * map here: this module is imported by plain functions as well as components,
+ * so a `const` of labels would freeze whichever language loaded first.
  */
-export const BAND_LABEL: Record<QualityBand, string> = {
-  strong: 'Good',
-  workable: 'Workable',
-  weak: 'Weak',
+export function bandLabel(t: TFunction, band: QualityBand): string {
+  return t(`posts.quality.bands.${band}` as const)
 }
 
 /** Clamps the stored percentage into the range a progress ring can draw. */

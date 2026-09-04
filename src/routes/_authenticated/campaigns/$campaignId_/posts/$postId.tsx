@@ -13,6 +13,8 @@ import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { ThreadSplitNote } from '@/components/posts/sequence/ThreadSplitNote'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostLockNotice } from '@/components/posts/PostLockNotice'
+import { PostPerformanceSection } from '@/components/analytics/PostPerformanceSection'
+import { usePostPerformance } from '@/hooks/usePostPerformance'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
@@ -333,6 +335,37 @@ function PostEditorSurface({
   // The thread list leads every row with its campaign, so a post thread has to
   // carry its parent's name too. Cached from the campaign page in practice.
   const campaignName = useCampaign(campaignId).data?.name
+
+  // What this post did, once it is out there. The facts come off the document
+  // because the wire carries none of them — the snapshot knows figures, not
+  // which campaign this was for or what a "Single image" is called.
+  const performanceFacts = useMemo(
+    () => ({
+      title: doc.title,
+      platform: doc.platform_id,
+      format: doc.platform?.post_types[doc.platform_post_type] ?? '',
+      publishedAt: doc.published_at,
+      campaign: campaignName,
+      // Empty means unspecified, and a reconnect link pointing at "" would
+      // name an account the connections screen has never heard of.
+      socialAccountId: doc.social_account_id || null,
+    }),
+    [
+      doc.title,
+      doc.platform_id,
+      doc.platform,
+      doc.platform_post_type,
+      doc.published_at,
+      doc.social_account_id,
+      campaignName,
+    ],
+  )
+  const performance = usePostPerformance(
+    doc.id,
+    doc.status,
+    doc.publisher_post_id,
+    performanceFacts,
+  )
   useEffect(() => {
     openThread({ kind: 'post', postId: doc.id, campaignId }, doc.title, '')
     // Only on arrival — the title is tracked separately so that retitling the
@@ -597,6 +630,18 @@ function PostEditorSurface({
                 remove={media.remove}
                 reorder={media.reorder}
                 thread={threadTargets}
+              />
+            </div>
+            {/* Above the notes, below everything that *is* the post. For a
+                published post this is the reason the screen was opened, and
+                notes are the team's working material either way — burying the
+                figures under a card that grows without limit would put the
+                answer below the commentary. `empty:hidden` because most of
+                this section's states render nothing at all. */}
+            <div className="w-content empty:hidden">
+              <PostPerformanceSection
+                result={performance}
+                onAddPostLink={() => setPublishedUrlOpen(true)}
               />
             </div>
             <div className="w-content">

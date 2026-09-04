@@ -168,11 +168,23 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   whichever language loaded first. Where a table of *keys* is the natural
   shape, keep the table and translate at the point of use
   (`PostsEmptyState`'s `COPY`); where the values are something `Intl` already
-  knows, drop the table (Calendar Settings' weekday names). The auth screens,
-  sidebar, Profile, Workspace Settings and the campaign calendar are converted
-  (CON-174); the rest is still hard-coded English and renders fine — that is
-  legacy to be converted, not a precedent to copy. See
+  knows, drop the table (Calendar Settings' weekday names, and the analytics
+  heatmap's). **A pure function that produces words takes `t` as its first
+  argument** — `components/analytics/format.ts` is the worked example, and it
+  is what lets the same helper be called from a component and from a view
+  mapper without either of them holding a frozen label. The auth screens,
+  sidebar, Profile, Workspace Settings, the campaign calendar and the analytics
+  surfaces are converted (CON-174); the rest is still hard-coded English and
+  renders fine — that is legacy to be converted, not a precedent to copy. See
   `docs/technical-decisions.md#i18n`.
+- **A conversion is only proved by rendering in another language.** In an
+  English test a literal in a component and a catalogue entry are the same
+  string, so an English-only suite cannot tell a converted screen from an
+  unconverted one. `components/analytics/localisation.test.tsx` is the pattern:
+  load Spanish, switch to it, render, and assert both that the Spanish copy is
+  there *and* that the specific English words that used to be literals are not.
+  Spanish being gated off does not matter — the gate is on the entry points
+  that choose a locale, never on i18next.
 - **A language is released by one boolean.** `LOCALES` in `i18n/config.ts`
   carries `enabled` per locale; only enabled ones are offered in the picker,
   accepted from `?lang=` or restored from a previous visit — and a stored
@@ -194,7 +206,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `en-GB` because day-first `01 Aug 26` is the format that column was asked
   for. That last one is the only exception that is a *display* choice rather
   than a mechanical one, so it is the one to revisit first — the app now has
-  the date convention its comment says it was waiting for. Formatting without reading `t()`
+  the date convention its comment says it was waiting for. The analytics
+  surfaces used to hold a fourth and a fifth (`format.ts` pinning `en-GB` for
+  the axis, `en-US` for thousands, and two mappers pinned to agree with it);
+  they came out together in the i18n pass, because pins that exist only to
+  agree with each other agree just as well when all of them read the active
+  language. Formatting without reading `t()`
   means nothing re-renders the component on a switch — the overlay covers the
   app but doesn't remount it — so subscribe with `useLocale()` (or take
   `i18n.language` off a `useTranslation()` you already have) and pass it in.
@@ -238,6 +255,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `VITE_DEV_TOOLS=1`, so in production the key is inert and the panel's chunk
   does not exist; keep it that way, and never link `/flags` from the app. See
   `docs/technical-decisions.md#staging-flag-overrides`.
+- **The analytics dashboard can be served simulated numbers, for the same
+  browser and behind the same gate.** `?analytics=demo` (or the panel at
+  `/flags`) points `/overview`, `/performers` and `/learnings` at
+  `services/api/analytics.demo.ts`, because a local API answers
+  `available: false` for all three — nothing in a dev database has been through
+  a refresh sweep — so the cards are otherwise only ever seen in their setup
+  state. `empty` and `unavailable` produce the other two answers the endpoints
+  give. It is **not** the `STUBBED` pattern: these endpoints exist and ship, so
+  the demo is off by default even in dev, has to be asked for, folds away
+  entirely without `VITE_DEV_TOOLS=1`, and is announced in the corner for as
+  long as it is on — invented figures about a workspace's own posts are
+  indistinguishable from real ones, and somebody would act on them.
 - **What the workspace's tier allows is `useEntitlement(key)`, never a flag**
   (CON-232). A flag says whether a feature is *built*; a tier says whether this
   workspace *bought* it — per workspace, and therefore the server's answer. Four
@@ -333,6 +362,33 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   and `bottom-4` are shared with the assistant trigger so the bottom edge is one
   line; the trigger's `right-4` against the 24px content gutter is the one
   deliberate break-out.
+- **A control that doesn't govern the whole page doesn't go in the corner.**
+  The top-right rule above says what *may* sit there, not that every view
+  switch must. Analytics' period and platform controls sit in a scope bar above
+  the cards (`WorkspaceScopeBar`) because neither reaches all three: the period
+  does not reach the all-time lessons card, and only `/performers` takes a
+  `platform`. What makes that safe is that the cards answer back —
+  `SectionCard`'s `scope` and `everyPlatform` print one line under the heading
+  naming the controls that do *not* reach it. A card silently ignoring a
+  control above it is worse than not offering the control.
+- **Charts are hand-rolled SVG, except the two full-card plots.**
+  `components/analytics/charts.tsx` draws sparklines, heatmaps, the decay
+  curve, the publication rail and the rank bars itself — every shape is a
+  polyline, a band or a grid of rectangles, and rolling them keeps the colours
+  on semantic tokens. `TrendChart` and `ColumnChart` go through `plot.tsx`,
+  which measures real pixels and owns the scale (`@visx/scale`), the pointer
+  (`@visx/event`) and the hover card; only the line itself is `@visx/shape`.
+  Two things not to undo: the plot is **measured, not stretched** — the old
+  `preserveAspectRatio="none"` viewBox made the focus dot an ellipse and every
+  pointer coordinate a conversion — and it measures with its **own**
+  `useMeasuredWidth`, not `ParentSize`, which never observed a plot mounted
+  after the first paint and left every switched measure blank. Sparklines keep
+  the stretched viewBox; they have no pointer and nothing round.
+- **A measure is drawn in one shape, decided in one place.** `drawnSeries`
+  (`analytics/format.ts`) says whether a series is accumulated, and both the
+  tile's sparkline and the chart under it ask it. They used to each hold a
+  copy and drifted — per-day bars under a label reading "Cumulative reach",
+  above a chart drawing the running total.
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
 - **Destructive-action labels are written in literal capitals** — `DELETE
@@ -384,8 +440,10 @@ being collected for · **the React Compiler lint rules are warnings, not errors*
 `react-hooks` v7 reports 123 of them against code that predates it, and each is
 a judgement call about a component rather than a mechanical fix
 ([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n covers the auth screens, sidebar,
-Profile, Workspace Settings and the campaign calendar** (its week, month and
-list views, the cards, both rail panels and the posts table) — everything else
+Profile, Workspace Settings, the campaign calendar** (its week, month and
+list views, the cards, both rail panels and the posts table) **and the
+analytics surfaces** (the workspace dashboard, the campaign composition, a
+post's own numbers, and the three view mappers behind them) — everything else
 is still hard-coded English (CON-174) · **English is the only released language**: Spanish is
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
