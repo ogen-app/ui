@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { TagsInput } from '@/components/ui/tags-input'
 import { Button } from '@/components/ui/button'
-import { TrashIcon } from '@phosphor-icons/react'
+import { ArchiveIcon, TrashIcon } from '@phosphor-icons/react'
 import {
   Form,
   FormControl,
@@ -17,6 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import {
+  useArchiveCampaign,
   useCampaignTypes,
   useDeleteCampaign,
   useUpdateCampaign,
@@ -80,8 +82,10 @@ export function CampaignSettingsForm({ campaign }: Props) {
     defaultValues: settingsDefaultValues(campaign),
   })
 
+  const { t } = useTranslation()
   const { data: types, isLoading: typesLoading } = useCampaignTypes()
   const { mutate: deleteCampaign, isPending: deleting } = useDeleteCampaign()
+  const { mutate: archiveCampaign, isPending: archiving } = useArchiveCampaign()
   const navigate = useNavigate()
 
   // The type is stated, not offered — the chooser only appears once the user
@@ -167,13 +171,39 @@ export function CampaignSettingsForm({ campaign }: Props) {
   // edits stay in the form (header save) and are not flushed by the turn.
   const assistantRunning = useAssistantStore(selectCampaignRunning(campaign.id))
 
+  const displayName = () =>
+    campaign.name.trim() === '' ? t('campaigns.untitled') : `"${campaign.name}"`
+
   const handleDelete = () => {
-    const displayName =
-      campaign.name.trim() === '' ? 'this campaign' : `"${campaign.name}"`
-    if (!window.confirm(`Delete ${displayName}? This cannot be undone.`)) return
+    if (
+      !window.confirm(
+        t('campaigns.dangerZone.confirm', { name: displayName() }),
+      )
+    )
+      return
     deleteCampaign(campaign.id, {
       onSuccess: () => {
         navigate({ to: '/campaigns' })
+      },
+    })
+  }
+
+  /**
+   * Archiving leaves the campaign whole, so it asks once and then leaves —
+   * for the archive rather than the campaigns list, because the campaign is
+   * about to vanish from that list and landing on the screen that no longer
+   * shows it reads as a delete.
+   */
+  const handleArchive = () => {
+    if (
+      !window.confirm(
+        t('campaigns.archiveCard.confirm', { name: displayName() }),
+      )
+    )
+      return
+    archiveCampaign(campaign.id, {
+      onSuccess: () => {
+        navigate({ to: '/campaigns', search: { archived: true } })
       },
     })
   }
@@ -414,11 +444,36 @@ export function CampaignSettingsForm({ campaign }: Props) {
             )}
           </SettingsCard>
 
-          <SettingsCard title="Danger Zone">
+          {/* Archiving is not in the Danger Zone, and that is the point of it
+              existing: it is the reversible way to stop running a campaign,
+              and putting it under a red heading beside a delete would teach
+              people to avoid the safe option. It comes first because it is
+              what most people who arrive here wanting rid of a campaign
+              actually want. */}
+          <SettingsCard title={t('campaigns.archiveCard.title')}>
             <div className="flex flex-col gap-3 items-start">
               <p className="max-w-150 text-sm text-tertiary-foreground">
-                Deleting a campaign removes its posts and schedule. This cannot
-                be undone.
+                {t('campaigns.archiveCard.body')}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleArchive}
+                loading={archiving}
+              >
+                <ArchiveIcon />
+                <span>{t('campaigns.archiveCard.action')}</span>
+              </Button>
+            </div>
+          </SettingsCard>
+
+          <SettingsCard title={t('campaigns.dangerZone.title')}>
+            <div className="flex flex-col gap-3 items-start">
+              {/* No mention of the row the server keeps as its own safety net:
+                  saying it is retained reads as "recoverable", and nothing in
+                  the app or on the API can bring it back. */}
+              <p className="max-w-150 text-sm text-tertiary-foreground">
+                {t('campaigns.dangerZone.body')}
               </p>
               <Button
                 type="button"
@@ -428,7 +483,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
               >
                 <TrashIcon />
                 {/* Literal caps, not `uppercase` — see CLAUDE.md on destructive labels. */}
-                <span>DELETE CAMPAIGN</span>
+                <span>{t('campaigns.dangerZone.action')}</span>
               </Button>
             </div>
           </SettingsCard>

@@ -51,6 +51,18 @@ export type Post = {
    * `PostPayload` — an autosave must never write it back.
    */
   publisher_post_id?: string
+  /**
+   * The platform permalink for the live post (CON-165) — `""` until there is
+   * one. Written server-side from Zernio when a post publishes, and by the
+   * manual `verify-external` path from the URL the user pasted.
+   *
+   * Unlike `publisher_post_id` this one *is* on `PostPayload`, and has to be:
+   * the PUT is whole-resource and assigns the field unconditionally, so a
+   * payload that omits it clears the permalink. It stays writable after
+   * publish on purpose — recording a link is a post-publish act — which is
+   * also why it is not among the fields CON-251's content lock freezes.
+   */
+  published_url: string
   created_by: string
   created_at: string
   updated_at: string
@@ -144,4 +156,6 @@ export type PostPayload = {
   target_audience_notes?: string
   used_asset_ids?: string[]
   campaign_type_phase_id?: string | null
+  /** Round-tripped, never omitted — see `Post.published_url`. */
+  published_url?: string
 }

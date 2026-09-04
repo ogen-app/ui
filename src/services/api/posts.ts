@@ -237,9 +237,21 @@ export function restorePost(
   )
 }
 
+/**
+ * The post as a whole-resource payload — every field the PUT will otherwise
+ * default away.
+ *
+ * `published_url` is on this list for exactly that reason (CON-165): the
+ * handler assigns it from the request unconditionally, so an autosave that
+ * left it out would clear the permalink of every published post the moment
+ * someone edited it. It is the one field here that is normally the *server's*
+ * to write, which is why it needs saying out loud — `publisher_post_id`, its
+ * neighbour, is deliberately absent because the API does not take it.
+ */
 export function postToPayload(post: Post): PostPayload {
   return {
     campaign_id: post.campaign_id,
+    published_url: post.published_url,
     platform_id: post.platform_id,
     platform_post_type: post.platform_post_type,
     social_account_id: post.social_account_id,

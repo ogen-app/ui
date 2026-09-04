@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
+  ArrowSquareOutIcon,
   CaretDownIcon,
   ClockIcon,
   WarningCircleIcon,
@@ -51,13 +53,22 @@ export function SchedulingDetails({
   onChange: (iso: string | null) => void
   onAddPostLink: () => void
 }) {
+  const { t } = useTranslation()
   const editable = canEditScheduledAt(post.status) && !cancelling
   if (!editable) {
     const { text, warn } = schedulingDetails(post, cancelling)
+    // The permalink, once the server has one (CON-165) — from Zernio on the
+    // auto path, or from the URL the user pasted on the manual one. This is
+    // the only place in the app that goes to what actually went out.
+    const liveUrl = post.published_url?.trim()
     // Published, but nothing ties it to the post that actually went out — so
     // its analytics can never resolve. Offering the link here is the only
     // route back in: `published` is terminal, so the header shows no actions.
-    const unlinked = post.status === 'published' && !post.publisher_post_id
+    // Only asked for when there is no permalink either: pasting the URL is how
+    // the link gets recorded, so a post that has one has already been through
+    // this and either matched or been published unverified.
+    const unlinked =
+      post.status === 'published' && !post.publisher_post_id && !liveUrl
     return (
       <span
         className={cn(
@@ -80,6 +91,24 @@ export function SchedulingDetails({
           )}
           <span className="truncate">{text}</span>
         </span>
+        {liveUrl && (
+          <>
+            <Dot />
+            {/* A real anchor, not a Button with a handler: this leaves the app,
+                so it should middle-click, copy-link and open-in-new-tab like
+                any other link. `noopener` because the target is a page we do
+                not control. */}
+            <a
+              href={liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex shrink-0 items-center gap-1.5 text-sm text-primary-foreground underline underline-offset-4"
+            >
+              {t('posts.publishedLink.view')}
+              <ArrowSquareOutIcon className="size-3.5 shrink-0" />
+            </a>
+          </>
+        )}
         {unlinked && (
           <>
             <Dot />
@@ -89,7 +118,7 @@ export function SchedulingDetails({
               className="shrink-0 text-sm underline underline-offset-4"
               onClick={onAddPostLink}
             >
-              Add post link
+              {t('posts.publishedLink.add')}
             </Button>
           </>
         )}

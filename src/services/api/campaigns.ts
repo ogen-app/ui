@@ -10,8 +10,17 @@ import { apiJson, apiVoid } from './http'
 const BASE = '/api/campaigns'
 const TYPES_BASE = '/api/campaign_types'
 
-export function listCampaigns(): Promise<Campaign[]> {
-  return apiJson<Campaign[]>(BASE, 'Unable to fetch campaigns')
+/**
+ * The active set — neither archived nor deleted — or the archived one instead
+ * (CON-156). They are two lists, never one filtered client-side: the server
+ * excludes archived campaigns from the default read, so an "archived" flag on
+ * a row that was never sent could only ever be false.
+ */
+export function listCampaigns(archived = false): Promise<Campaign[]> {
+  return apiJson<Campaign[]>(
+    archived ? `${BASE}?archived=true` : BASE,
+    'Unable to fetch campaigns',
+  )
 }
 
 export function getCampaign(id: string): Promise<Campaign> {
@@ -37,6 +46,34 @@ export function updateCampaign(
   })
 }
 
+/**
+ * Takes a campaign out of the active list, reversibly (CON-156).
+ *
+ * Both of these are idempotent and answer 204, so nothing comes back to
+ * re-seed the cache with — the caller invalidates instead. Archiving is *not*
+ * an update: it has its own endpoint precisely so it can't be smuggled into a
+ * whole-resource PUT alongside a field the user was editing.
+ */
+export function archiveCampaign(id: string): Promise<void> {
+  return apiVoid(`${BASE}/${id}/archive`, 'Unable to archive campaign', {
+    method: 'POST',
+  })
+}
+
+export function unarchiveCampaign(id: string): Promise<void> {
+  return apiVoid(`${BASE}/${id}/unarchive`, 'Unable to unarchive campaign', {
+    method: 'POST',
+  })
+}
+
+/**
+ * Removes a campaign from the workspace.
+ *
+ * A soft delete server-side since CON-156 — the row is stamped and kept as a
+ * safety net — but that is an operational detail, not a promise to the user:
+ * there is no restore, in the app or on the API, and every read behaves as if
+ * the campaign is gone. Nothing in the UI should offer it back.
+ */
 export function deleteCampaign(id: string): Promise<void> {
   return apiVoid(`${BASE}/${id}`, 'Unable to delete campaign', {
     method: 'DELETE',

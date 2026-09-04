@@ -25,8 +25,9 @@ const COUNTER_FROM = Math.round(MAX_ALT_TEXT_CHARS * 0.9)
 type Props = {
   asset: Asset
   /**
-   * Write the changed fields back. The parent rebuilds the whole payload around
-   * them — the PUT replaces the resource — so this takes only what moved.
+   * Write this screen's fields back. The parent supplies the title and body it
+   * tracks; everything else on the payload comes from here, and the PUT leaves
+   * unnamed fields alone (CON-279).
    */
   onChange: (overrides: Partial<UpdateAssetPayload>) => void
   /** Marks the header's save indicator as in-flight, on the first keystroke. */
@@ -69,12 +70,15 @@ export function AssetImageView({ asset, onChange, onDirty }: Props) {
    * re-seeding when the query refetches would take a field away from whoever is
    * mid-sentence in it.
    *
-   * One object rather than a `useState` per field because the update is a
-   * whole-resource PUT — every save carries all four values whichever one
-   * moved. Kept apart, each handler would have to remember to read the other
-   * three, and the one it forgot would be sent at its mounted value and quietly
-   * revert. Here there is one place the payload is built and no way to omit
-   * from it.
+   * One object rather than a `useState` per field because every save carries
+   * all four values whichever one moved. Kept apart, each handler would have to
+   * remember to read the other three, and the one it forgot would be sent at
+   * its mounted value and quietly revert. Here there is one place the payload
+   * is built and no way to omit from it.
+   *
+   * Sending all four is this screen's own choice, not the API's rule any more
+   * (CON-279 made the PUT presence-aware): these are the fields it shows, so
+   * they are the fields it is answerable for.
    */
   const [draft, setDraft] = useState({
     title: asset.title,

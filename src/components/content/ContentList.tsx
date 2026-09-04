@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowsClockwiseIcon,
   FileTextIcon,
   GlobeSimpleIcon,
+  TagIcon,
   TrashIcon,
   UploadSimpleIcon,
   XIcon,
@@ -12,7 +14,9 @@ import { AssetsTable } from '@/components/tables/docsTable'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
 import { ZIndex } from '@/config/zIndex'
+import { useBulkTagAssets } from '@/hooks/useContent'
 import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
+import { toast } from '@/stores/toastStore'
 import type { Asset } from '@/types/content'
 import {
   EMPTY_FILTER,
@@ -22,6 +26,7 @@ import {
 } from '@/lib/contentFilter'
 import { ContentFilter } from './ContentFilter'
 import { DeleteDocumentsDialog } from './DeleteDocumentsDialog'
+import { TagDocumentsDialog } from './TagDocumentsDialog'
 
 type Props = {
   /** The campaign whose documents these are, or null for the whole workspace. */
@@ -63,10 +68,18 @@ export function ContentList({
   onUpload,
   onAddWebPage,
 }: Props) {
+  const { t } = useTranslation()
   const [filter, setFilter] = useState<Filter>(EMPTY_FILTER)
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [tagging, setTagging] = useState(false)
+
+  // Held here rather than passed down from the page, unlike the delete: filing
+  // a tag is the same act in both scopes, with nothing for a campaign to also
+  // do about it. The delete has to detach, which is why that one belongs up
+  // there with the campaign.
+  const bulkTag = useBulkTagAssets()
 
   const visible = useMemo(() => filterAssets(assets, filter), [assets, filter])
   const narrowed = isFilterActive(filter)
@@ -118,6 +131,27 @@ export function ContentList({
     setDeleting(false)
     setConfirming(false)
     setTicked(new Set())
+  }
+
+  /**
+   * One request for the whole selection, and the selection survives it.
+   *
+   * Unlike the delete, the documents are all still there afterwards — and the
+   * usual next move is another tag on the same set — so the ticks stay. The
+   * count in the toast comes from what the server says it touched, not from
+   * what was asked: an asset another tab deleted a moment ago is skipped
+   * server-side, and the toast should not claim it.
+   */
+  const handleTagSelected = (change: { add: string[]; remove: string[] }) => {
+    bulkTag.mutate(
+      { asset_ids: selected.map((a) => a.id), ...change },
+      {
+        onSuccess: (assets) => {
+          setTagging(false)
+          toast.success(t('content.tagging.done', { count: assets.length }))
+        },
+      },
+    )
   }
 
   if (assets.length === 0 && uploads.length === 0) {
@@ -173,11 +207,20 @@ export function ContentList({
       {selected.length > 0 && (
         <SelectionBar
           count={selected.length}
-          busy={deleting}
+          busy={deleting || bulkTag.isPending}
           onClear={() => setTicked(new Set())}
+          onTag={() => setTagging(true)}
           onDelete={() => setConfirming(true)}
         />
       )}
+
+      <TagDocumentsDialog
+        assets={selected}
+        isOpen={tagging}
+        onClose={() => setTagging(false)}
+        onConfirm={handleTagSelected}
+        saving={bulkTag.isPending}
+      />
 
       <DeleteDocumentsDialog
         count={selected.length}
@@ -192,12 +235,17 @@ export function ContentList({
 }
 
 /**
- * What is ticked, and the one thing that can be done to it.
+ * What is ticked, and what can be done to it.
  *
- * Deleting is the only action a document row has, so it is the only action a
- * selection has: a bar offering a menu of bulk edits would be promising
- * operations — retag, move, re-read — that do not exist on a single row
- * either.
+ * Two actions, and the bar takes an action only when there is a real operation
+ * behind it — it is not a menu of bulk edits standing in for features. Tagging
+ * earned its place when the API grew a bulk endpoint (CON-279): before that,
+ * nothing in the product could put a tag on a document at all, and the filter
+ * above the list sorted by a field only the image screen could set.
+ *
+ * Tag comes first because it is the reversible one, and because a bar whose
+ * leftmost button deletes is a bar people learn to approach carefully rather
+ * than use.
  *
  * It floats over the foot of the list rather than opening a band above it,
  * which is where the posts list puts the same idea. An inline bar would appear
@@ -213,13 +261,16 @@ function SelectionBar({
   count,
   busy,
   onClear,
+  onTag,
   onDelete,
 }: {
   count: number
   busy: boolean
   onClear: () => void
+  onTag: () => void
   onDelete: () => void
 }) {
+  const { t } = useTranslation()
   return (
     // The track is full width and takes no clicks, so the bar can centre on the
     // list without covering it; `bottom-4` and `h-12` are the assistant
@@ -231,9 +282,19 @@ function SelectionBar({
     >
       <div className="pointer-events-auto flex h-12 items-center gap-3 bg-primary px-4 shadow-lg">
         <span className="shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap">
-          {count} selected
+          {t('content.selection.count', { count })}
         </span>
         <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-primary-foreground"
+          onClick={onTag}
+          disabled={busy}
+        >
+          <TagIcon />
+          <span>{t('content.tagging.action')}</span>
+        </Button>
         {/* Ghost, like every button on the app's bottom bar, and not the
             destructive red: the dialog behind it is where the warning belongs,
             and a button that shouts on every selection teaches people to click
@@ -247,7 +308,7 @@ function SelectionBar({
           disabled={busy}
         >
           <TrashIcon />
-          <span>DELETE</span>
+          <span>{t('content.selection.delete')}</span>
         </Button>
         <Button
           variant="ghost"
@@ -256,7 +317,7 @@ function SelectionBar({
           onClick={onClear}
           disabled={busy}
         >
-          CLEAR
+          {t('content.selection.clear')}
         </Button>
       </div>
     </div>

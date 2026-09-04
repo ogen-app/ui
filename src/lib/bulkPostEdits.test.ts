@@ -25,6 +25,7 @@ function post(
     media_urls: [],
     scheduled_at,
     published_at: null,
+    published_url: '',
     status,
     cta_type: '' as Post['cta_type'],
     cta_url: '',

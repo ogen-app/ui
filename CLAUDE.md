@@ -116,19 +116,39 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`AssetImageView`, CON-246), so `UnsupportedAsset` is now only reached by a
   kind this build has never heard of. See
   `docs/technical-decisions.md#asset-opening`.
-- **An asset update is a whole-resource PUT, like a campaign's.** The handler
-  assigns `tag_ids` and `alt_text` from the request unconditionally, so a
-  payload naming only what changed untags the asset and blanks its alt text —
-  which is what `{title, content}` had been quietly doing to tags. Build it
-  through `assetToPayload` (`lib/assetPayload.ts`). The image screen debounces
-  the whole asset rather than each field for the same reason: two saves in
-  flight each carry a stale copy of the other's field.
+- **An asset update is presence-aware, and a campaign's is not.** Since CON-279
+  the asset PUT reads `alt_text` and `tag_ids` as optional: omit one and the
+  stored value is left alone, send it — including `""` or `[]` — and it is
+  replaced. So a screen sends the fields it owns and nothing else: the document
+  editor sends `{title, content}`, the image screen sends the four fields it
+  shows. `assetToPayload` is gone with the bug it existed for; do not
+  reintroduce a helper that round-trips fields the screen cannot see, because
+  that is exactly what put a stale copy of the tags back over a bulk re-tag.
+  The image screen still debounces the whole asset rather than each field, for
+  the unrelated reason that two saves in flight each carry a stale copy of the
+  other's field.
+- **Tags are filed over a selection, not on a row** (`POST
+  /api/content-bank/assets/tags`, CON-279). Each asset keeps what it has, minus
+  `remove`, plus `add`, so the client never has to say what an asset already
+  carries and two people filing at once don't overwrite each other. The server
+  refuses a tag named in both lists rather than picking a winner.
 - **A campaign update is a whole-resource PUT, and the server defaults every
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of
   the CON-181/182 columns. Always build the payload through `campaignToPayload`
-  (`campaignBriefForm/shared.ts`), which round-trips the server's own values and
+  (`lib/campaignPayload.ts`), which round-trips the server's own values and
   takes only the fields you mean to change as overrides.
+- **A campaign is archived or deleted — it has no status** (CON-156). `draft`
+  and `active` both meant active and nothing ever showed either, so the client
+  no longer models `status` at all and the server creates every campaign
+  active. What replaced it is a lifecycle with its own endpoints: `POST
+  …/:id/archive` and `…/unarchive` (204, idempotent, deliberately not a field on
+  the PUT so archiving can't ride along with an edit), and `GET /api/campaigns`
+  which returns the active set unless asked for `?archived=true`. The two lists
+  are separate query keys — an archived campaign must never reach the sidebar
+  or seed `useCampaign`. `DELETE` is a soft delete server-side, but that row is
+  our safety net and not an undo: there is no restore anywhere, so never write
+  copy that hints at one.
 - **The campaign's `estimated_post_count` is a rate, not a total.** Since
   CON-182 it means "this many posts per `goal_cadence` period" (`week`/`month`),
   and the server backfilled every campaign to `month` — so an old total of 12 on

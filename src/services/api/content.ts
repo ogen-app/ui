@@ -1,5 +1,6 @@
 import type {
   Asset,
+  BulkTagPayload,
   CreateAssetPayload,
   UpdateAssetPayload,
 } from '@/types/content'
@@ -48,6 +49,20 @@ export function updateAsset(
 ): Promise<Asset> {
   return apiJson<Asset>(`${BASE}/${id}`, 'Unable to update asset', {
     method: 'PUT',
+    body: payload,
+  })
+}
+
+/**
+ * Files tags across a selection in one request (CON-279).
+ *
+ * Returns the assets it touched, hydrated — assets outside this workspace are
+ * skipped rather than refused, so the reply is also the answer to "which of
+ * these did anything happen to".
+ */
+export function bulkTagAssets(payload: BulkTagPayload): Promise<Asset[]> {
+  return apiJson<Asset[]>(`${BASE}/tags`, 'Unable to tag those documents', {
+    method: 'POST',
     body: payload,
   })
 }

@@ -26,7 +26,6 @@ export function campaignToPayload(
     use_assets: campaign.use_assets,
     asset_ids: campaign.asset_ids,
     target_platforms: campaign.target_platforms,
-    status: campaign.status,
     start_date: campaign.start_date,
     end_date: campaign.end_date,
     estimated_post_count: campaign.estimated_post_count,

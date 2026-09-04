@@ -13,7 +13,6 @@ import { UnsupportedAsset } from '@/components/content/UnsupportedAsset'
 import { useAsset, useCreateUrlAsset, useUpdateAsset } from '@/hooks/useContent'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { downloadMarkdown } from '@/lib/downloadMarkdown'
-import { assetToPayload } from '@/lib/assetPayload'
 import { opensAsDocument } from '@/lib/assetCategory'
 import { isTerminalStatus } from '@/lib/assetStatus'
 import { readPageErrorMessage } from '@/lib/scrapeErrors'
@@ -113,17 +112,21 @@ export function AssetDocument({ assetId, campaignId }: Props) {
   }, [])
 
   /*
-   * One document, one save at a time — and always the whole document.
+   * One document, one save at a time — and only the fields this screen edits.
    *
-   * The API takes the whole resource on every PUT, which cuts two ways. Every
-   * save goes through `assetToPayload`, because a payload naming only what
-   * moved is a payload that blanks the asset's tags and its alt text. And each
-   * save must carry the *latest* fields, not whatever the server copy held
-   * when the handler was created: a body edit followed by a title edit inside
-   * the debounce window used to save the new body and then overwrite it with
-   * the old one. `draftRef` is the fields as edited here (null = untouched,
-   * fall back to the server's), and the chain sends the saves strictly in
-   * order so an older payload can never land after a newer one.
+   * The PUT is presence-aware (CON-279), so a payload that names the title and
+   * the body leaves the asset's tags and alt text exactly as they are. It used
+   * to name all four, because omitting one erased it; that made every save
+   * carry this screen's copy of two fields it cannot show, and a save here
+   * would put back the tags a bulk re-tag had just changed.
+   *
+   * Each save must still carry the *latest* of what it does send, not whatever
+   * the server copy held when the handler was created: a body edit followed by
+   * a title edit inside the debounce window used to save the new body and then
+   * overwrite it with the old one. `draftRef` is the fields as edited here
+   * (null = untouched, fall back to the server's), and the chain sends the
+   * saves strictly in order so an older payload can never land after a newer
+   * one.
    */
   const draftRef = useRef<{ title: string | null; content: string | null }>({
     title: null,
@@ -136,11 +139,11 @@ export function AssetDocument({ assetId, campaignId }: Props) {
     (overrides: Partial<UpdateAssetPayload>) => {
       if (!asset) return
       const v = editVersionRef.current
-      const payload = assetToPayload(asset, {
+      const payload: UpdateAssetPayload = {
         title: draftRef.current.title ?? asset.title,
         content: draftRef.current.content ?? asset.content,
         ...overrides,
-      })
+      }
       saveChainRef.current = saveChainRef.current.then(() =>
         saveAsset({ id: assetId, payload }).then(
           () => setSavedVersion(v),
