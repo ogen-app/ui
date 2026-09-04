@@ -46,6 +46,40 @@ export function deletePost(id: string): Promise<void> {
   return apiVoid(`${BASE}/${id}`, 'Unable to delete post', { method: 'DELETE' })
 }
 
+/**
+ * Attaches documents to a post's sources, touching no other field (CON-233).
+ *
+ * One atomic UPDATE of `used_asset_ids` server-side: ids the post already has
+ * keep their position, new ones append in the order given, and two attaches
+ * landing at once both survive — which is what the whole-post PUT could not
+ * promise, since each carried the set as its caller had read it. Adding an id
+ * the post already holds is a no-op.
+ *
+ * 409 while the post is `scheduled` or `published`: sources are locked content
+ * (CON-251), and the endpoint enforces the same lock PUT does — though a no-op
+ * add is let through. Returns the post hydrated, so `used_assets` comes back
+ * with it and the sources card can name the new document without fetching.
+ */
+export function addPostAssets(id: string, assetIds: string[]): Promise<Post> {
+  return apiJson<Post>(
+    `${BASE}/${id}/assets`,
+    'Unable to add this to the post',
+    {
+      method: 'POST',
+      body: { asset_ids: assetIds },
+    },
+  )
+}
+
+// There is deliberately no `removePostAsset` wrapper for the endpoint's
+// `DELETE` half. Detaching a source only ever happens in the editor, where it
+// rides `changeDoc` and the autosave like every other edit — and while `PUT`
+// still full-replaces `used_asset_ids`, going out of band there would be the
+// *less* safe of the two: a keystroke in the preceding 600ms leaves a pending
+// whole-post copy holding the pre-detach list, and its flush would put the
+// document straight back. Add the wrapper when that field leaves the PUT
+// payload (CON-233 follow-up).
+
 export type ScheduleResult = {
   post: Post
   // The routed status: the server consults the workspace auto-publish

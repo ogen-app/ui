@@ -1,4 +1,4 @@
-import { getPost, postToPayload, updatePost } from '@/services/api/posts'
+import { addPostAssets, getPost } from '@/services/api/posts'
 import { postKey } from '@/hooks/usePost'
 import { flushPendingSave } from '@/lib/pendingSaves'
 import { landSavedPost } from '@/lib/postCache'
@@ -58,81 +58,76 @@ export function indexAssets(
   return map
 }
 
-/** One promise chain per post, so read-modify-write on the id list is serial. */
-const queues = new Map<string, Promise<unknown>>()
-
-function enqueue(postId: string, run: () => Promise<void>): Promise<void> {
-  const previous = queues.get(postId) ?? Promise.resolve()
-  // `catch` on the tail, not on `run`: a failed write must not break the chain
-  // for the next one, but its own rejection still has to reach the caller.
-  const next = previous.then(run, run)
-  queues.set(
-    postId,
-    next.catch(() => {}),
-  )
-  return next
-}
-
 /**
  * Bounded, because the loop below re-runs only when a keystroke lands in the
- * exact window of an in-flight PUT — twice in a row is already vanishingly
+ * exact window of an in-flight write — twice in a row is already vanishingly
  * rare. Exhausting the bound without ever reading the ids back stable is
  * reported as a failure, not shrugged off: a pending autosave could still be
  * holding the pre-write list, so "done" would be a lie.
  */
 const MAX_WRITE_ATTEMPTS = 4
 
-async function write(
-  postId: string,
-  nextIds: (post: Post) => string[],
-): Promise<void> {
-  // One more pass than writes: the last round through the loop may only
-  // verify, never write, so success is only ever reported off a quiet pass —
-  // a read that found the ids already in place with no flush pending.
+/** Lands the source fields of a server copy in the editor's cache and the row.
+ *
+ * Only the source fields. The user may have typed since the flush that
+ * preceded this, and `changeDoc` has already painted those keystrokes —
+ * replacing the whole document would snap the text, and the cursor, back one
+ * round-trip. Both server copies here are hydrated, so `used_assets` comes
+ * along and the sources card can name the new document without fetching it.
+ */
+async function landSources(postId: string, server: Post): Promise<void> {
+  queryClient.setQueryData<Post>(postKey(postId), (prev) =>
+    prev
+      ? {
+          ...prev,
+          used_asset_ids: server.used_asset_ids,
+          used_assets: server.used_assets,
+        }
+      : server,
+  )
+  await landSavedPost(queryClient, server)
+}
+
+/**
+ * Unions `assetIds` into the post's sources and confirms they stayed.
+ *
+ * The write itself is one atomic `POST /api/posts/:id/assets` (CON-233): the
+ * server unions the ids into `used_asset_ids` and touches nothing else, so
+ * three uploads finishing at once no longer each write the set they read —
+ * which is what the read-modify-write here, and the promise queue that
+ * serialized it, existed to survive.
+ *
+ * The verify pass is what remains, and it is not about this endpoint. `PUT
+ * /api/posts/:id` still full-replaces `used_asset_ids`, and the editor
+ * autosaves the *whole* post — so a keystroke landing while the POST is in
+ * flight clones the pre-write list into the 600ms debounce, and its flush puts
+ * that list straight back over the attach. Flushing first (the same thing the
+ * assistant does before writing a post server-side) closes the window before
+ * the write; reading back afterwards catches the straggler that opened it
+ * again. Both go when `used_asset_ids` leaves the PUT payload.
+ */
+async function attach(postId: string, assetIds: string[]): Promise<void> {
+  // One more pass than writes: the last round may only verify, never write, so
+  // success is only ever reported off a quiet pass — a read that found the ids
+  // in place with no flush pending.
   for (let attempt = 0; attempt <= MAX_WRITE_ATTEMPTS; attempt++) {
-    // The editor holds the *whole* post in a 600ms debounce, so a PUT from
-    // here would be overwritten wholesale by the flush that follows it — the
-    // pending copy still carries the id list as it was before this ran.
-    // Landing that debounce first is the same thing the assistant does before
-    // writing a post server-side, and for the same reason.
     await flushPendingSave(postId)
-    const post = await getPost(postId)
-    const ids = nextIds(post)
-    if (
-      ids.length === post.used_asset_ids.length &&
-      ids.every((id, i) => id === post.used_asset_ids[i])
-    ) {
-      return
+    if (attempt > 0) {
+      const post = await getPost(postId)
+      // Landed even though nothing was written: with no queue serializing
+      // them, several attaches to one post resolve in whatever order the
+      // server answers, and the cache holds whichever response arrived last —
+      // possibly one taken before a sibling's ids were in the set. This read
+      // is the true set, so it converges the cache on the way past.
+      await landSources(postId, post)
+      const held = new Set(post.used_asset_ids)
+      if (assetIds.every((id) => held.has(id))) return
     }
     if (attempt === MAX_WRITE_ATTEMPTS) break
-    const saved = await updatePost(postId, {
-      ...postToPayload(post),
-      used_asset_ids: ids,
-    })
-    // Only the source fields land in the editor's cache. The user may have
-    // typed since the flush above, and `changeDoc` has already painted those
-    // keystrokes — replacing the whole document with `saved` would snap the
-    // text (and the cursor) back one round-trip. The response is hydrated, so
-    // `used_assets` comes along and the editor's card can name the new
-    // document without fetching anything.
-    queryClient.setQueryData<Post>(postKey(postId), (prev) =>
-      prev
-        ? {
-            ...prev,
-            used_asset_ids: saved.used_asset_ids,
-            used_assets: saved.used_assets,
-          }
-        : saved,
-    )
-    await landSavedPost(queryClient, saved)
-    // Not done yet: a keystroke that arrived *while the PUT was in flight*
-    // cloned the pre-write document into the editor's debounce, and its flush
-    // will put the old id list straight back. Going round again flushes that
-    // straggler and re-asserts; the first quiet pass reads its own ids back
-    // and returns above.
+    await landSources(postId, await addPostAssets(postId, assetIds))
   }
   // Every pass found a conflicting flush had already landed over the previous
-  // write. The last PUT may yet be overwritten by a pending autosave, so
+  // write. The last one may yet be overwritten by a pending autosave, so
   // resolving here would report an attachment that can still be lost — throw
   // instead, and the caller's toast says so.
   throw new Error(
@@ -149,18 +144,15 @@ async function write(
  * instant and rides the autosave.
  *
  * Reports its own failure, because the upload store has no mutation cache
- * behind it to toast for it.
+ * behind it to toast for it. A post that is already `scheduled` or `published`
+ * answers 409 — its sources are locked content (CON-251) — and the server's
+ * message is what the toast says.
  */
 export function attachToPost(
   postId: string,
   assetIds: string[],
 ): Promise<void> {
-  return enqueue(postId, () =>
-    write(postId, (post) => {
-      const held = new Set(post.used_asset_ids)
-      return [...post.used_asset_ids, ...assetIds.filter((id) => !held.has(id))]
-    }),
-  ).catch((error: unknown) => {
+  return attach(postId, assetIds).catch((error: unknown) => {
     toast.error('Unable to add this to the post', {
       description:
         error instanceof Error
