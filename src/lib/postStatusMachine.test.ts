@@ -3,6 +3,7 @@ import {
   canEditPublishingAccount,
   canEditScheduledAt,
   getActionMeta,
+  getAllowedNextStatuses,
   getTransitionBlockers,
   isSubmitted,
   isTerminalStatus,
@@ -165,6 +166,61 @@ describe('action mechanisms', () => {
       getActionMeta('ready_for_publish', 'scheduled_for_manual_publishing')
         ?.mechanism,
     ).toBeUndefined()
+  })
+})
+
+/**
+ * The reopening edges (CON-251, and CON-130 before it). A post reaches
+ * `failed`, `not_published` or `scheduled_for_manual_publishing` with nothing
+ * of it living outside Ogen, and usually because the words need changing — so
+ * every one of them goes back to `draft`. The server has accepted these all
+ * along; the machine is what decides whether anything offers them.
+ */
+describe('reopening a post for editing', () => {
+  it('offers the way back to draft from every status that has one', () => {
+    for (const status of [
+      'ready_for_publish',
+      'scheduled_for_manual_publishing',
+      'failed',
+      'not_published',
+    ] as const) {
+      expect(getAllowedNextStatuses(status)).toContain('draft')
+      expect(getActionMeta(status, 'draft')?.kind).toBe('user')
+    }
+  })
+
+  it('goes back by a plain status PUT, having no job to cancel', () => {
+    // Unlike `scheduled` → draft, which must cancel the Zernio submission
+    // first: none of these statuses has one in flight.
+    expect(getActionMeta('failed', 'draft')?.mechanism).toBeUndefined()
+    expect(getActionMeta('not_published', 'draft')?.mechanism).toBeUndefined()
+  })
+
+  it('never claims the back button off another edge', () => {
+    // At most one edge per status may be `reverse`, or the header would have
+    // two candidates for its one icon button and pick by table order.
+    for (const status of EVERY_STATUS) {
+      const reversible = getAllowedNextStatuses(status).filter(
+        (next) => getActionMeta(status, next)?.reverse,
+      )
+      expect(reversible.length).toBeLessThanOrEqual(1)
+    }
+  })
+})
+
+// The one edge in the machine the user cannot take.
+describe('the convert-to-manual edge', () => {
+  it('is the server’s move, not an action', () => {
+    // CON-130: the publisher takes a scheduled post to manual publishing when
+    // the platform's auto-publish allowlist is turned off under it. The cancel
+    // endpoint accepts only ready_for_publish or draft, so there is no request
+    // the UI could send — offering it would produce a 400.
+    expect(getAllowedNextStatuses('scheduled')).toContain(
+      'scheduled_for_manual_publishing',
+    )
+    expect(
+      getActionMeta('scheduled', 'scheduled_for_manual_publishing')?.kind,
+    ).toBe('system')
   })
 })
 

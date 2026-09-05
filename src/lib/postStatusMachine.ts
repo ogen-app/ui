@@ -5,21 +5,43 @@ import type { Post, PostStatus } from '@/types/posts'
 // server — the server is the source of truth and will reject any edge
 // not listed here with a 400.
 //
-// `scheduled` has four outgoing edges, but they are NOT all the same kind
+// `scheduled` has five outgoing edges, but they are NOT all the same kind
 // of move (see ACTION_META below):
 //   - → published / → failed are driven automatically by the publisher
 //     worker; the user never triggers them.
 //   - → ready_for_publish / → draft are user-requested cancellations that
 //     go through POST /api/posts/:id/cancel (which cancels the Zernio job),
 //     not a plain status PUT — the worker lands the status change later.
+//   - → scheduled_for_manual_publishing is the server's own convert-to-manual
+//     move (CON-130), taken when a platform's auto-publish allowlist is turned
+//     off under a post that is already scheduled. There is no client route to
+//     it: `cancel` accepts only ready_for_publish or draft as a target.
+//
+// The three edges into `draft` from a status the post can come *back* from —
+// scheduled_for_manual_publishing, failed and not_published — are CON-251's
+// (the last two) and CON-130's (the first). None of those statuses holds a
+// copy outside Ogen: the submission failed, or never left. Reopening them for
+// editing is the point, and reopening as far as `draft` rather than only
+// `ready_for_publish` is the rest of it, because needing the words changed is
+// exactly how a post reaches them.
 const POST_STATUS_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
   draft: ['ready_for_publish'],
   ready_for_publish: ['scheduled', 'scheduled_for_manual_publishing', 'draft'],
-  scheduled: ['failed', 'published', 'ready_for_publish', 'draft'],
-  scheduled_for_manual_publishing: ['published', 'not_published'],
-  failed: ['ready_for_publish'],
+  scheduled: [
+    'failed',
+    'published',
+    'ready_for_publish',
+    'draft',
+    'scheduled_for_manual_publishing',
+  ],
+  scheduled_for_manual_publishing: ['published', 'not_published', 'draft'],
+  failed: ['ready_for_publish', 'draft'],
   published: [],
-  not_published: ['ready_for_publish', 'scheduled_for_manual_publishing'],
+  not_published: [
+    'ready_for_publish',
+    'scheduled_for_manual_publishing',
+    'draft',
+  ],
 }
 
 export function getAllowedNextStatuses(current: PostStatus): PostStatus[] {
@@ -96,6 +118,19 @@ type ActionMeta = {
   reverse?: true
 }
 
+// Reopening a post for editing: the same move, in the same words, from every
+// status that has one. Nothing of a post in `ready_for_publish`,
+// `scheduled_for_manual_publishing`, `failed` or `not_published` lives outside
+// Ogen — it was never submitted, or the submission failed — so the document
+// simply goes back to being a draft (CON-130, CON-251). A plain status PUT
+// everywhere: none of these edges has a Zernio job to cancel.
+const BACK_TO_DRAFT: ActionMeta = {
+  buttonLabel: 'BACK TO DRAFT',
+  menuLabel: 'Back to draft',
+  intent: 'secondary',
+  kind: 'user',
+}
+
 const ACTION_META: Record<
   PostStatus,
   Partial<Record<PostStatus, ActionMeta>>
@@ -130,13 +165,9 @@ const ACTION_META: Record<
       intent: 'primary',
       kind: 'user',
     },
-    draft: {
-      buttonLabel: 'BACK TO DRAFT',
-      menuLabel: 'Back to draft',
-      intent: 'secondary',
-      kind: 'user',
-      reverse: true,
-    },
+    // The only one of the four that is also the way *back* out of its status:
+    // from `ready_for_publish` there is nowhere else to retreat to.
+    draft: { ...BACK_TO_DRAFT, reverse: true },
   },
   scheduled: {
     // System edges: the publisher worker drives these; never shown as
@@ -174,6 +205,17 @@ const ACTION_META: Record<
       kind: 'user',
       mechanism: 'cancel',
     },
+    // The server's convert-to-manual move (CON-130), not the user's: it fires
+    // when a platform's auto-publish allowlist is turned off under a post that
+    // is already scheduled. Listed so the machine mirrors the server, `system`
+    // so nothing offers it — the cancel endpoint takes only ready_for_publish
+    // or draft, so there is no request the UI could send for this edge.
+    scheduled_for_manual_publishing: {
+      buttonLabel: 'SWITCH TO MANUAL PUBLISHING',
+      menuLabel: 'Switch to manual publishing',
+      intent: 'secondary',
+      kind: 'system',
+    },
   },
   scheduled_for_manual_publishing: {
     published: {
@@ -195,6 +237,12 @@ const ACTION_META: Record<
       kind: 'user',
       reverse: true,
     },
+    // Reopening for editing, in all three statuses that carry it (see
+    // BACK_TO_DRAFT). Not `reverse` in any of them: two of the three already
+    // spend that flag on an edge the header shouldn't urge, and a control that
+    // means "back to draft" in one status and something else one status over
+    // is worse than a plain labelled button in all three.
+    draft: BACK_TO_DRAFT,
   },
   failed: {
     ready_for_publish: {
@@ -203,6 +251,7 @@ const ACTION_META: Record<
       intent: 'primary',
       kind: 'user',
     },
+    draft: BACK_TO_DRAFT,
   },
   published: {},
   not_published: {
@@ -219,6 +268,7 @@ const ACTION_META: Record<
       kind: 'user',
       reverse: true,
     },
+    draft: BACK_TO_DRAFT,
   },
 }
 
