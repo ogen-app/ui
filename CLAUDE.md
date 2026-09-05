@@ -390,13 +390,37 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
+- **A Brand binding is four nullable ids, and the client only ever sets them**
+  (CON-245). `brand_voice_id` and `brand_audience_id` sit on the campaign and on
+  the post; *which* voice a post is actually written in is resolved — post →
+  campaign → the library's default voice, and for an audience post → campaign
+  and then nothing, because the workspace step is voices-only. That walk lives
+  in `components/brand/binding.ts` and mirrors `brandresolve` on the server,
+  which is what the generation flows obey; when the two disagree, ours is wrong.
+  Never resolve inline at a call site, and always show `source` beside a
+  resolved value — an inherited voice in a bare picker reads as *no voice*, and
+  the repair everyone reaches for pins it onto every post and kills the
+  campaign-level control. The model is deliberately **narrower than
+  `docs/brand-materials.md` §8**: no cast of voices, no local delta, no
+  staleness read, because the server shipped none of the three (CON-245 §13 is
+  where they would come back) and a picker whose extra choices no generator
+  reads is worse than no picker. **All four refs are presence-aware on their
+  PUTs**, which is why `campaignToPayload` and `postToPayload` both leave them
+  out — restating one lets an autosave undo a choice made a moment ago. A
+  campaign's is written by passing an override to `campaignToPayload`; a post's
+  goes through `setPostBrand` (`PUT /api/posts/:id/brand`), which is *not*
+  blocked on a submitted post: a binding is an input to the next generation, not
+  a change to what already went out, so CON-251's lock does not reach it. See
+  `docs/technical-decisions.md#brand-binding`.
 - **A feature waiting on the back end is stubbed with a JSON seed, never with
   MSW.** When a flagged feature needs data the server cannot answer for yet,
   write the normal `services/api/<thing>.ts` with the signatures the endpoint
   will have, and back them with a `.seed.json` plus `localStorage` and a small
-  delay — `services/api/brand.ts` is the pattern. A service worker buys wire
-  fidelity for a contract nobody has agreed, and the mock ends up inventing the
-  API; a plain module is one readable file, and swapping each body for an
+  delay — `services/api/tiers.stub.ts` is the pattern today, and
+  `services/api/brand.ts` was the worked example until CON-245 took the last of
+  it out. A service worker buys wire fidelity for a contract nobody has agreed,
+  and the mock ends up inventing the API; a plain module is one readable file,
+  and swapping each body for an
   `apiJson` call leaves the hook, the routes and the components untouched. Rules
   that make it safe: the stub is reached only through its hook, its doc comment
   names what it is, and it stays behind the feature's flag like everything else

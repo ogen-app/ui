@@ -14,29 +14,6 @@
  */
 
 /**
- * The one pattern the whole module is made of: **a reference to a Brand entity,
- * plus an optional local delta, where the delta can be promoted into a new
- * library entry.**
- *
- * For prose the delta is appended text; for structured values it is changed
- * fields. Same model, two renderings — and building it once is what keeps four
- * pickers from reading as four features sharing a screen.
- *
- * The reference stays **live**. An earlier draft resolved it once at creation so
- * that editing a voice could not silently rewrite thirty drafts; that conflated
- * two things. The post's text is already written and nothing rewrites it, and
- * the reference is an input to the *next* generation rather than a filter over
- * existing output. What follows instead is one honest touch: a post written
- * under a voice that has since changed can say so, as a prompt to regenerate.
- */
-export type BrandRef<T> = {
-  /** The library entry this points at, or `null` for a pure local value. */
-  id: string | null
-  /** What was changed here, on top of the entry. `null` when unbent. */
-  delta: T | null
-}
-
-/**
  * Where a piece of material came from.
  *
  * Kept on every entity for three reasons, in ascending order of importance: a
@@ -355,86 +332,67 @@ export const MIN_VOICE_SAMPLES = 3
 
 /* -- Binding ---------------------------------------------------------------
  *
- * What a campaign and a post have chosen out of the library above. The model
- * is `docs/brand-materials.md` §8 and it is deliberately three levels deep:
+ * What a campaign and a post have chosen out of the library above: **four
+ * nullable ids**, two on the campaign and two on the post, resolved live.
  *
- *     workspace has a cast of voices
- *         → a campaign picks which of them it uses
- *             → each post carries one, changeable
+ *     the workspace library has a default voice
+ *         → a campaign picks a voice and an audience
+ *             → a post overrides either
  *
- * There is no fourth. Binding at phase, post type or account was considered
- * and cut — a campaign carrying a cast plus a per-post assignment expresses
- * every case we have with one fewer concept, and each extra level is another
- * place the resolved value has to be explained.
+ * There is no fourth level. Binding at phase, post type or account was
+ * considered and cut — each extra level is another place the resolved value has
+ * to be explained.
+ *
+ * **This is narrower than `docs/brand-materials.md` §8 describes, on purpose.**
+ * The doc argues for a *cast* of voices per campaign, a local delta on each
+ * reference, and a staleness read; CON-245 §4 scoped all three out of v1 and
+ * shipped the four columns below instead. These types used to model the doc
+ * rather than the server, which meant every screen offered choices no generator
+ * would ever read — a picker with no consumer is the exact failure CON-226 §9
+ * says is worse than no material at all. When the cast and the delta land
+ * server-side (CON-245 §13 lists both), this is where they come back.
  *
  * **Guardrails are absent from both, and that is the design.** They apply to
  * every generation regardless of what is picked here, so there is nothing to
  * pick and nothing to override. A guardrails control on these screens would
  * imply a campaign could opt out of the claims it is allowed to make.
+ *
+ * Neither type is a copy of anything: all four are live references, per §8's
+ * *live links are safe* argument. Editing a voice changes the next generation
+ * and changes nothing already written.
  */
 
 /**
- * A campaign's share of the library.
+ * A campaign's share of the library — `campaigns.brand_voice_id` and
+ * `brand_audience_id`, in the client's own spelling.
  *
- * Neither field is a copy — both are live references, per §8's *live links are
- * safe* argument. Editing a voice changes the next generation and changes
- * nothing already written.
+ * `null` on either means the campaign has not chosen, which is not the same as
+ * choosing nothing: a campaign without a voice resolves to the library's
+ * default, and one without an audience falls back to the legacy
+ * `target_persona` prose. Opting out of having a voice is not a case anybody
+ * has asked for, and reading `null` as silence keeps every campaign that
+ * predates this feature working exactly as it did.
  */
 export type CampaignBrand = {
+  voiceId: string | null
   /**
-   * The voices this campaign draws on, in the order they were chosen.
-   *
-   * A cast rather than one, because the plan generator assigns a voice **as it
-   * plans**: twelve Friday slots get the Friday voice at generation time
-   * rather than through twelve manual corrections afterwards. A campaign with
-   * one voice is the common case and costs nothing to express here.
-   *
-   * Empty means the campaign has not chosen, which resolves to the library's
-   * default voice — not to "no voice". A campaign that opts out of having a
-   * voice is not a case anybody has asked for, and reading empty as silence
-   * keeps an untouched campaign working exactly as it did before.
-   */
-  voiceIds: string[]
-  /**
-   * Which of the cast a post starts in. `null` falls back to the library's own
-   * `isDefault` voice.
-   *
-   * Stored rather than derived from `voiceIds[0]`: the order of the cast is the
-   * order they were picked in, and nobody expects re-picking to change which
-   * voice their next post opens in.
-   */
-  defaultVoiceId: string | null
-  /**
-   * Who the campaign writes to. **One, not a cast** — the asymmetry with voices
-   * is deliberate rather than an omission.
-   *
-   * A cast of voices exists because something automatic chooses between them
-   * per post. Nothing chooses an audience per post, so a list here would be a
-   * picker whose extra entries no code path ever reads. A post that addresses
-   * somebody else says so on the post.
+   * Who the campaign writes to. A post that addresses somebody else says so on
+   * the post.
    */
   audienceId: string | null
 }
 
 /**
- * One post's assignment. Both fields are overrides — absent means *whatever the
- * campaign says*, which is the state almost every post stays in.
+ * One post's assignment — `posts.brand_voice_id` and `brand_audience_id`. Both
+ * are overrides: `null` means *whatever the campaign says*, which is the state
+ * almost every post stays in.
+ *
+ * The same shape as `CampaignBrand` rather than a richer one, and the identity
+ * matters: a post pinned to the voice its campaign happens to use today keeps
+ * that voice when the campaign moves on. That is the only thing an override
+ * expresses now, and it is the thing people actually mean by one.
  */
 export type PostBrand = {
-  /**
-   * The voice this post is written in, plus what was bent locally.
-   *
-   * A `BrandRef` rather than a bare id because the local delta and the promote
-   * path come with it (§4). `null` id with a delta is a pure local value —
-   * somebody wrote a one-off instruction without naming a voice, which is the
-   * state promotion exists to rescue.
-   *
-   * `null` for the whole field means the post has not overridden anything and
-   * takes the campaign's default. That is different from a ref pointing at the
-   * same voice the campaign would have given it: the second survives the
-   * campaign's default changing, and was chosen.
-   */
-  voice: BrandRef<string> | null
-  /** Overrides the campaign's audience. `null` takes the campaign's. */
+  voiceId: string | null
   audienceId: string | null
 }
