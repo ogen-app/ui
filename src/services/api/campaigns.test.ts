@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  addCampaignAssets,
   archiveCampaign,
   listCampaigns,
   listCampaignSummaries,
+  removeCampaignAsset,
   unarchiveCampaign,
 } from './campaigns'
 import type { CampaignSummariesResponse } from '@/types/posts'
@@ -78,6 +80,51 @@ describe('the campaign lifecycle', () => {
   it("throws the backend's message when the campaign is gone", async () => {
     stubFetch(jsonResponse(404, { error: 'campaign not found' }))
     await expect(archiveCampaign('nope')).rejects.toThrow('campaign not found')
+  })
+})
+
+/**
+ * The membership half (CON-233). These assert the wire because the whole point
+ * of the endpoints is *what they don't send*: a body carrying only the ids
+ * being attached, and nothing that could restate the rest of the campaign.
+ */
+describe('campaign membership', () => {
+  it('attaches by POST, sending only the ids', async () => {
+    const fetchMock = stubFetch(jsonResponse(200, { id: 'c1' }))
+
+    await addCampaignAssets('c1', ['a1', 'a2'])
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/campaigns/c1/assets')
+    const init = fetchMock.mock.calls[0][1] as RequestInit
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({
+      asset_ids: ['a1', 'a2'],
+    })
+  })
+
+  it('detaches one id per request, by path', async () => {
+    const fetchMock = stubFetch(jsonResponse(200, { id: 'c1' }))
+
+    await removeCampaignAsset('c1', 'a1')
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/campaigns/c1/assets/a1')
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: 'DELETE' })
+  })
+
+  it('returns the updated campaign, which is what re-seeds the cache', async () => {
+    stubFetch(jsonResponse(200, { id: 'c1', asset_ids: ['a1'] }))
+
+    await expect(addCampaignAssets('c1', ['a1'])).resolves.toMatchObject({
+      asset_ids: ['a1'],
+    })
+  })
+
+  it("throws the backend's message when the campaign is gone", async () => {
+    stubFetch(jsonResponse(404, { error: 'campaign not found' }))
+
+    await expect(addCampaignAssets('nope', ['a1'])).rejects.toThrow(
+      'campaign not found',
+    )
   })
 })
 

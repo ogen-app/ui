@@ -137,7 +137,26 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   campaign's publishing days — it resets them to all seven, same for the rest of
   the CON-181/182 columns. Always build the payload through `campaignToPayload`
   (`lib/campaignPayload.ts`), which round-trips the server's own values and
-  takes only the fields you mean to change as overrides.
+  takes only the fields you mean to change as overrides. Two fields are the
+  exception, and the payload leaves them out on purpose: `use_assets` and
+  `asset_ids` are presence-aware since CON-233, so omitting them is what
+  preserves them — see the next bullet.
+- **A campaign's documents are attached and detached, never restated**
+  (CON-233). `POST /api/campaigns/:id/assets` unions ids in; `DELETE
+  …/assets/:assetId` takes one out; both are a single atomic UPDATE of one
+  column, both answer with the campaign, and both derive `use_assets` from the
+  set they leave behind — so the client never computes that flag and never
+  writes an empty list, which the server still reads as *every asset in the
+  workspace*. This is why `campaignToPayload` omits the pair: an autosave that
+  restated the set from the snapshot its form was built on would put a stale
+  copy back over an attach that had just landed. It is also why
+  `lib/campaignMembership` no longer has a write queue, a pre-write re-read or
+  a whole-record PUT — the server serialises these across tabs and users, which
+  is further than a queue in one tab could reach. The one thing that module
+  still does by hand is the pre-CON-210 whole-bank state (`use_assets: true`
+  over an empty set, meaning everything): the endpoints can only union and
+  subtract, so an attach to a campaign in that state has to carry the bank
+  along or it would silently narrow the campaign to the one new document.
 - **A campaign is archived or deleted — it has no status** (CON-156). `draft`
   and `active` both meant active and nothing ever showed either, so the client
   no longer models `status` at all and the server creates every campaign

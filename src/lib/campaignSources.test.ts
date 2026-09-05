@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   campaignAssets,
-  membershipPayload,
   retrievability,
   seedsWholeBank,
 } from './campaignSources'
@@ -19,24 +18,6 @@ const doc = (id: string): Asset => ({
   created_by: 'user',
   created_at: '2026-08-01T00:00:00Z',
   updated_at: '2026-08-01T00:00:00Z',
-})
-
-describe('membershipPayload', () => {
-  it('sends the set a campaign holds', () => {
-    expect(membershipPayload(['a', 'b'])).toEqual({
-      use_assets: true,
-      asset_ids: ['a', 'b'],
-    })
-  })
-
-  it('writes an empty campaign as brief-only, never as an empty list', () => {
-    // The one thing that must never happen: an empty list saved as
-    // `use_assets: true`, which the server reads as the entire workspace.
-    expect(membershipPayload([])).toEqual({
-      use_assets: false,
-      asset_ids: [],
-    })
-  })
 })
 
 describe('seedsWholeBank', () => {

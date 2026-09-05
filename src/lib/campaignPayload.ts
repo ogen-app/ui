@@ -11,6 +11,14 @@ import type { Campaign, UpdateCampaignPayload } from '@/types/campaigns'
  * for every field the payload leaves out — so this has to name all of them.
  * Dropping `publishing_days` here does not preserve the campaign's publishing
  * days, it resets them to all seven.
+ *
+ * With two exceptions, and they are exceptions because the server made them
+ * ones: `use_assets` and `asset_ids` are presence-aware since CON-233, so
+ * omitting them leaves the campaign's documents alone. They are omitted on
+ * purpose. Membership has its own endpoints now, and a brief autosave that
+ * restated the set — from whatever snapshot the form was built on — would put
+ * an old copy of it back over an attach that had just landed. Nothing here may
+ * name them again; see `lib/campaignMembership`.
  */
 export function campaignToPayload(
   campaign: Campaign,
@@ -23,8 +31,6 @@ export function campaignToPayload(
     target_persona: campaign.target_persona,
     key_messages: campaign.key_messages,
     tone_guidelines: campaign.tone_guidelines,
-    use_assets: campaign.use_assets,
-    asset_ids: campaign.asset_ids,
     target_platforms: campaign.target_platforms,
     start_date: campaign.start_date,
     end_date: campaign.end_date,

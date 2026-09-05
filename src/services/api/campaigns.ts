@@ -47,6 +47,50 @@ export function updateCampaign(
 }
 
 /**
+ * Attaches documents to a campaign's content-bank set, and nothing else
+ * (CON-233).
+ *
+ * A union server-side, in one atomic UPDATE: two people attaching different
+ * documents at the same moment both land, which a read-modify-write of the
+ * whole record could not promise. Re-attaching something the campaign already
+ * holds is a no-op, and the server keeps `use_assets` in lockstep with the set
+ * — attaching turns generation on, so the client never computes that flag.
+ *
+ * An empty list is a wasted round trip (the server answers it with a plain
+ * read), so callers guard it; `lib/campaignMembership` is the one that does.
+ */
+export function addCampaignAssets(
+  id: string,
+  assetIds: string[],
+): Promise<Campaign> {
+  return apiJson<Campaign>(
+    `${BASE}/${id}/assets`,
+    'Unable to add to this campaign',
+    { method: 'POST', body: { asset_ids: assetIds } },
+  )
+}
+
+/**
+ * Detaches one document, leaving the document itself alone (CON-233).
+ *
+ * One id per request because that is the endpoint's shape, and it is the right
+ * shape: removal is idempotent, so a detach that raced another one is not an
+ * error and nothing has to be resent. Detaching the last document re-derives
+ * `use_assets` to false rather than leaving `true` over an empty list — which
+ * the server reads as "every asset in the workspace".
+ */
+export function removeCampaignAsset(
+  id: string,
+  assetId: string,
+): Promise<Campaign> {
+  return apiJson<Campaign>(
+    `${BASE}/${id}/assets/${assetId}`,
+    'Unable to remove from this campaign',
+    { method: 'DELETE' },
+  )
+}
+
+/**
  * Takes a campaign out of the active list, reversibly (CON-156).
  *
  * Both of these are idempotent and answer 204, so nothing comes back to
