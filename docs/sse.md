@@ -268,14 +268,6 @@ Decisions worth knowing:
 - **`id:` is parsed and unused on `/api/events`.** The hub reserves the field
   and ignores what is sent back, so there is nothing to resume into. The
   notification stream is where replay actually happens.
-- **`id:` is `0` on every replayed notification frame**, and `seq` is `0` on
-  every row `GET /api/notifications` returns — the column is right, and a
-  *live* frame is right, but anything the server reads back loses it
-  (`bun:"seq,scanonly"` keeps it out of the generated `SELECT`). So the replay
-  cursor can only ever be 0, which `parseCursor` reads as "no cursor": the
-  durable half of the inbox is unreachable except while already connected.
-  Measured 2026-09-04 against ogen@e722bab; the client is written for the
-  fixed server and the reconnect refetch is what covers for it meanwhile.
 - **A user gets 10 concurrent hub subscriptions, across both streams**
   (`eventhub.Config.MaxSubscribersPerUser`), and a dead connection keeps its
   slot until the next heartbeat write fails — up to 20s. So a reload orphans
@@ -290,3 +282,15 @@ Decisions worth knowing:
   table records what finished, `GET /api/notifications/stream` replays it from
   `Last-Event-ID`, and Activity renders it (`docs/activity.md`). The hub still
   only invalidates, which is now the right division of labour rather than a gap.
+- **`seq` read back as `0`, so replay could never advance.** Measured
+  2026-09-04 against ogen@e722bab: the column was right and a *live* frame was
+  right, but `bun:"seq,scanonly"` kept it out of the generated `SELECT`, so
+  every row `List` / `ReplaySince` returned carried 0 — a cursor of 0, which
+  `parseCursor` reads as "no cursor". Fixed by
+  [ogen#139](https://github.com/ogen-app/ogen/pull/139) (merged 2026-09-04):
+  the tag is `nullzero,autoincrement`, which still lets the sequence assign on
+  insert while keeping the column in reads, and the new test asserts `seq` on a
+  row coming back from a *read* rather than off the inserted model — the reason
+  the original suite stayed green. **Not yet exercised from the client**: the
+  UI was written for the fixed server and needs no change, but the round trip
+  is unverified, so replay is proved by the server's tests and not by ours.
