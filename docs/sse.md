@@ -9,10 +9,13 @@ browser and timing what arrived, then checked against `ogen` `origin/main`
 (`a2e1435`). Where a claim here is measured rather than read off the code, it
 says so.
 
-> **Blocked on a backend crash.** The consumer described below is built and
-> tested, but must not be deployed until finding 5 is fixed: a client that
-> disconnects from `/api/events` panics the API process. See the bottom of this
-> file.
+> **The backend crash that blocked this is fixed** (CON-158). Finding 5 — a
+> client disconnecting from `/api/events` panicking the API process — was
+> repaired on `ogen` `main` by detaching a logging context before the writer
+> goroutine starts, and re-checked on 2026-09-05. The notification stream added
+> for CON-242 was written to the repaired pattern, so it never carried the bug.
+> Finding 5 at the bottom of this file keeps the diagnosis, because the shape of
+> the mistake is easy to make again.
 
 ## What the UI consumes today
 
@@ -156,9 +159,9 @@ flush at the end (first byte ~58s). `/api/events` is measured above as
 genuinely progressive, so the note should not be read as applying to it. The
 AI-flow timing was **not** re-measured for CON-134 and may well be stale.
 
-**5. A disconnecting client crashes the API.** Found by running the consumer
-below against the local stack: the process died four times, each time with the
-same panic.
+**5. A disconnecting client crashes the API — fixed, see the note at the end of
+this finding.** Found by running the consumer below against the local stack: the
+process died four times, each time with the same panic.
 
 ```
 panic: runtime error: invalid memory address or nil pointer dereference
@@ -191,6 +194,24 @@ and closing the tab.**
 The fix is to log the captured `sessionID` without the request context —
 `slog.Error(...)`, or a context built before the handler returns. Backend
 change; nothing the UI can work around.
+
+**Fixed, and the fix is worth reading.** `ogen` `main` now builds the logging
+context *before* the handler returns and hands the goroutine that instead:
+`reqID, _ := logging.RequestIDFrom(c.Context())` on the handler side, then
+`logCtx := logging.WithRequestID(context.Background(), reqID)` carrying the user
+and tenant, and every `slog.*Context` inside the writer takes `logCtx`. So the
+writer-side logs still correlate with the request and nothing reaches the
+recycled `RequestCtx`. The comment above it names CON-158 and spells out why —
+the panic lands on a goroutine Fiber's recover middleware cannot see, which is
+what turned a logging slip into a process kill.
+
+**The notification stream never had it.** `src/handlers/notifications.go`
+(CON-242) was written to the repaired pattern: it detaches both a `logCtx` and a
+`queryCtx` before `SetBodyStreamWriter`, and the last `c.Context()` in the file
+is the call that installs the writer. Checked against `main` on 2026-09-05 by
+reading both handlers. This answers the question the `activity` flag comment
+recorded as open — the second long-lived stream neither shares the fault nor
+needs its own fix.
 
 ## What was built
 
