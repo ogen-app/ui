@@ -52,13 +52,18 @@ function bySeqDesc(a: AppNotification, b: AppNotification): number {
  * Deduped by `id` rather than by `seq`: they agree today, and `id` is the one
  * the writes address. A replay after a reconnect re-sends rows the client
  * already has, so this runs on nearly every catch-up.
+ *
+ * Trimmed back to one page: the cache holds the newest `NOTIFICATION_PAGE_SIZE`
+ * rows and nothing else, so a stream of live frames cannot grow it without
+ * bound — and cannot push a REST page of 98 over the threshold that makes the
+ * feed claim older history it does not have.
  */
 export function mergeNotification(
   rows: AppNotification[],
   row: AppNotification,
 ): AppNotification[] {
   const without = rows.filter((existing) => existing.id !== row.id)
-  return [...without, row].sort(bySeqDesc)
+  return [...without, row].sort(bySeqDesc).slice(0, NOTIFICATION_PAGE_SIZE)
 }
 
 /** Whether a page already holds this row — i.e. whether it is news. */

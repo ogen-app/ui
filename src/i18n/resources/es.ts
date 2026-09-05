@@ -275,6 +275,10 @@ export const es: Translation = {
     title: 'Actividad',
     markAllRead: 'MARCAR TODO COMO LEÍDO',
     loadFailed: 'No se pudo cargar la actividad',
+    notificationsUnavailable:
+      'No se pudieron cargar las notificaciones; solo se muestran los informes diarios.',
+    summariesUnavailable:
+      'No se pudieron cargar los resúmenes de campaña; algunas entradas pueden no tener enlace y los informes diarios no están disponibles.',
     truncated:
       'Mostrando las 100 entradas más recientes. Los informes diarios de abajo llegan más atrás.',
     empty: {

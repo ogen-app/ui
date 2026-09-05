@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { useFeatureFlag } from '@/config/featureFlags'
 import {
   fetchPostAnalytics,
   isNotPublishedViaPublisher,
@@ -48,6 +49,8 @@ const POLL_MS = 60_000
  * the sweep.
  */
 export type PostPerformanceResult =
+  /** The `post-analytics` flag is off: nothing is asked, nothing renders. */
+  | { state: 'off' }
   /** Nothing has gone out, so nothing was asked. See {@link canHaveAnalytics}. */
   | { state: 'unpublished' }
   | { state: 'loading' }
@@ -83,6 +86,7 @@ export function usePostPerformance(
   facts: PostFacts,
 ): PostPerformanceResult {
   const { t } = useTranslation()
+  const flagOn = useFeatureFlag('post-analytics')
   const published = canHaveAnalytics(status)
 
   // A published post with no publisher id is the 409, and we can read it off
@@ -95,7 +99,7 @@ export function usePostPerformance(
   // The server stays the authority: the 409 is still handled below, because
   // the field could be stale in a cache this screen did not refetch.
   const linked = Boolean(publisherPostId)
-  const enabled = published && linked
+  const enabled = flagOn && published && linked
 
   const query = useQuery({
     queryKey: postPerformanceKey(postId),
@@ -138,6 +142,7 @@ export function usePostPerformance(
     [answer, facts, t],
   )
 
+  if (!flagOn) return { state: 'off' }
   if (!published) return { state: 'unpublished' }
   if (!linked) return { state: 'unlinked' }
   if (query.isPending) return { state: 'loading' }

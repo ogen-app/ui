@@ -68,12 +68,27 @@ describe('notificationCopy', () => {
     expect(copy?.vars).toEqual({ count: 12 })
   })
 
-  it('leaves a variable out rather than interpolating a blank', () => {
-    // A producer that sends no `platform` gets a sentence with a gap in it
-    // either way; i18next at least renders the key's own fallback text rather
-    // than the word "undefined".
-    const copy = notificationCopy(row({ data: null }))
-    expect(copy?.vars).toEqual({})
+  it('falls back to the server title when the sentence cannot be filled', () => {
+    // `data` is an unvalidated blob, so a known type can arrive without the
+    // value its copy interpolates. Rendering the key anyway would print a
+    // literal `{{channel}}` — or, for the plural-only keys, the key's own name
+    // — so the row takes the server-title fallback, same as an unknown type.
+    expect(notificationCopy(row({ data: null }))).toBeNull()
+    expect(
+      notificationCopy(
+        row({
+          type: 'campaign.content_plan_ready',
+          entity_type: 'campaign',
+          data: {},
+        }),
+      ),
+    ).toBeNull()
+    // A type whose sentence interpolates nothing needs nothing.
+    expect(
+      notificationCopy(
+        row({ type: 'asset.ready', entity_type: 'asset', data: null }),
+      ),
+    ).toEqual({ key: 'activity.notification.assetReady', vars: {} })
   })
 })
 

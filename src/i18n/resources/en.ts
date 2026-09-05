@@ -337,6 +337,15 @@ export const en = {
     markAllRead: 'MARK ALL READ',
     loadFailed: 'Unable to load activity',
     /**
+     * One of the feed's two sources failed while the other answered. The feed
+     * still renders what arrived; this names the half that is missing so a
+     * quiet page cannot be mistaken for a quiet workspace.
+     */
+    notificationsUnavailable:
+      'Notifications could not be loaded — showing the daily reports only.',
+    summariesUnavailable:
+      'Campaign summaries could not be loaded — entries may be missing their links and the daily reports are unavailable.',
+    /**
      * Said under the last day card when the recorded half came back a full
      * page. Names which half ran out — the day reports below it are computed
      * from posts and go back as far as the posts do.
