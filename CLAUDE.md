@@ -228,11 +228,20 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   heatmap's). **A pure function that produces words takes `t` as its first
   argument** — `components/analytics/format.ts` is the worked example, and it
   is what lets the same helper be called from a component and from a view
-  mapper without either of them holding a frozen label. The auth screens,
-  sidebar, Profile, Workspace Settings, the campaign calendar and the analytics
-  surfaces are converted (CON-174); the rest is still hard-coded English and
-  renders fine — that is legacy to be converted, not a precedent to copy. See
-  `docs/technical-decisions.md#i18n`.
+  mapper without either of them holding a frozen label. **Coverage comes in two
+  shapes**, and the difference is what you need to know before opening a file.
+  Some screens are converted whole: the auth screens, sidebar, Profile,
+  Workspace Settings, the campaign calendar, the analytics surfaces,
+  `/workspaces`, `/invite`, `/plans` with the Plan & billing card and the
+  entitlement renderings, and the two flag-gated features written catalogued
+  from the start (Tasks, Activity). Others hold **islands** of catalogued copy
+  inside hard-coded English, because a PR converted the strings it touched and
+  correctly left the rest alone — the post editor, the Campaigns list and the
+  Content Bank are all islands today. So a literal sitting beside a `t()` call
+  in those files is the existing state rather than a mistake to copy, and a
+  converted neighbour is no evidence a screen is done: check. The rest is still
+  hard-coded English and renders fine (CON-174) — legacy to be converted, not a
+  precedent. See `docs/technical-decisions.md#i18n`.
 - **A conversion is only proved by rendering in another language.** In an
   English test a literal in a component and a catalogue entry are the same
   string, so an English-only suite cannot tell a converted screen from an
@@ -517,12 +526,19 @@ that attaches a bank image to a post (CON-16) — which is what the alt text is
 being collected for · **the React Compiler lint rules are warnings, not errors** —
 `react-hooks` v7 reports 123 of them against code that predates it, and each is
 a judgement call about a component rather than a mechanical fix
-([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n covers the auth screens, sidebar,
-Profile, Workspace Settings, the campaign calendar** (its week, month and
-list views, the cards, both rail panels and the posts table) **and the
-analytics surfaces** (the workspace dashboard, the campaign composition, a
-post's own numbers, and the three view mappers behind them) — everything else
-is still hard-coded English (CON-174) · **English is the only released language**: Spanish is
+([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n converts whole screens in some
+places and only islands in others.** Converted whole: the auth screens,
+sidebar, Profile, Workspace Settings, the campaign calendar (its week, month
+and list views, the cards, both rail panels and the posts table), the
+analytics surfaces (the workspace dashboard, the campaign composition, a
+post's own numbers and the three view mappers behind them), `/workspaces`,
+`/invite`, `/plans` with the Plan & billing card, and the flag-gated Tasks and
+Activity features. Islands only: the post editor (`posts.*` — status and
+publish labels, the published link, sources, notes, quality, versions,
+duplicate and the performance card), the Campaigns list (the archive view, the
+posts toolbar and the empty state) and the Content Bank (the image screen, the
+tagging and selection dialogs, the list and page chrome). Everything else is
+still hard-coded English (CON-174) · **English is the only released language**: Spanish is
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
 

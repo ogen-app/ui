@@ -61,40 +61,32 @@ const FEATURE_FLAGS = {
    * click-through `PATCH`, and `mark-all-read`. Phase 2 is built on it:
    * recorded entries replaced the derived ones, read state is per row and
    * server-side, and the Phase 1 last-seen timestamp is gone
-   * (`docs/activity.md`). What that pass found is 1 below.
+   * (`docs/activity.md`). What that pass found is 1 below — since fixed on the
+   * server, so 1 is now a re-test rather than a blocker.
    *
    * **Waiting on**, in the order that decides whether this ships:
    *
-   * 1. **`seq` comes back 0 on every row the server *reads*.** It is correct in
-   *    the column and correct on a live frame — `Insert` populates it from
-   *    `RETURNING` — but `List` and `ReplaySince` both return 0, and the
-   *    stream's `id:` line is 0 for a replayed row. One cause:
-   *    `bun:"seq,scanonly"` on `models.Notification` keeps the column out of
-   *    the generated `SELECT` (`ORDER BY n.seq` still works, which is why
-   *    nothing looks wrong server-side). Every seq assertion in
-   *    `notifications_test.go` reads `n.Seq` off the *inserted* model, so the
-   *    suite passes. It costs three things: replay can never advance, because
-   *    a cursor is only ever 0 and `parseCursor` reads 0 as "no cursor" — so
-   *    the durable half of the inbox is unreachable except while already
-   *    connected; `mark-all-read`'s `before` bound is inert, and the client
-   *    duly sends `{"before":0}`, which the repo reads as "all", marking read
-   *    a row that arrived after the click; and keyset paging would loop on
-   *    page one. The client is written for the fixed server and needs no
-   *    change — a reconnect refetches page one, which is what covers for the
-   *    missing replay today.
-   * 2. **Whether the SSE crash reaches this stream.** A client disconnecting
-   *    from `/api/events` panicked the API process — finding 5 in
-   *    `docs/sse.md`, recorded 2026-08-03. The notification stream is a second
-   *    long-lived connection written to the same house pattern, so it either
-   *    shares the fault or has been fixed alongside it. Unanswered.
-   * 3. **Fan-out.** Every producer writes to the thing's `created_by`
+   * 1. **One round trip against the fixed `seq`.** The bug this pass found —
+   *    `bun:"seq,scanonly"` keeping the column out of the generated `SELECT`,
+   *    so every row `List` and `ReplaySince` returned carried 0 and the replay
+   *    cursor could never advance — is fixed by ogen#139, merged 2026-09-04:
+   *    the tag is `nullzero,autoincrement`, and the new test reads `seq` off a
+   *    row coming *back* rather than off the inserted model, which is why the
+   *    original suite stayed green. The client was written for that server and
+   *    needs no change, so what is left is rule 4 rather than work: open the
+   *    inbox against it once and confirm the three things the 0 made
+   *    unobservable — replay advancing across a reconnect, `mark-all-read`'s
+   *    `before` actually bounding (the client sends the highest seq it has
+   *    been shown, and a real bound is what stops it marking a row that
+   *    arrived after the click), and paging past page one.
+   * 2. **Fan-out.** Every producer writes to the thing's `created_by`
    *    (`submit_post_to_zernio.go`), so a post failing to publish is news to
    *    whoever made it and to nobody else. The derived entry it replaced was
    *    visible to the whole workspace, so turning this on as it stands
    *    *narrows* who hears about a failure. `notify.EmitToUsers` already
    *    exists and the connection-expiry producer reaches every owner with it —
    *    this is a decision at one call site, not a missing capability.
-   * 4. **`post.published` is emitted, and CON-224 said it must not be.**
+   * 3. **`post.published` is emitted, and CON-224 said it must not be.**
    *    Successful auto-publishing is the highest-volume thing that happens, and
    *    rolling it into one computed daily entry is the argument the whole
    *    report rests on — a workspace posting three times a day across five
@@ -102,14 +94,23 @@ const FEATURE_FLAGS = {
    *    being read. The client does *not* filter them: the count comes from the
    *    server, and a feed hiding rows the badge still counts is worse than a
    *    noisy feed. It needs deciding at the emit site.
-   * 5. **A producer for "never published".** `not_published` is a real outcome
+   * 4. **A producer for "never published".** `not_published` is a real outcome
    *    with no notification type, so it now leaves no record at all. It is
    *    counted in the day's report and nowhere else.
    *
-   * 1 is the one that has to be fixed rather than decided; 3 and 4 decide
-   * whether this reads as better than Phase 1 or worse, since as it stands a
-   * post's author hears about every success and nobody else hears about the
-   * failures. None of them is a reason to change the client.
+   * 1 is now the cheapest of the four and nothing else is blocked on it; 2 and
+   * 3 are the ones that decide whether this reads as better than Phase 1 or
+   * worse, since as it stands a post's author hears about every success and
+   * nobody else hears about the failures. None of them is a reason to change
+   * the client.
+   *
+   * **Answered since:** whether the `/api/events` crash reaches this stream —
+   * it does not, and it no longer reaches `/api/events` either. CON-158
+   * detaches a logging context before the writer goroutine starts, and
+   * `handlers/notifications.go` was written to that pattern from the first
+   * commit: the last `c.Context()` in the file is the call installing the
+   * writer. Re-read against `ogen` `main` 2026-09-05; finding 5 in
+   * `docs/sse.md` carries the diagnosis and the fix.
    *
    * One thing the pass turned up that is **not** this feature's fault, but is
    * made twice as likely by it: `eventhub` caps a user at 10 concurrent

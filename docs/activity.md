@@ -273,11 +273,11 @@ without the other.
 
 ## Open dependencies
 
-- **A disconnecting SSE client panics the API process** — `events.go:154`,
-  finding 5 in [`sse.md`](./sse.md), recorded 2026-08-03. It was recorded
-  against `/api/events`; the notification stream is a second long-lived
-  connection written to the same house pattern, so whether it shares the fault
-  has to be answered before either is deployed.
+- ~~**A disconnecting SSE client panics the API process**~~ — closed
+  2026-09-05. Finding 5 in [`sse.md`](./sse.md) was fixed under CON-158 by
+  detaching a logging context before the writer goroutine starts, and
+  `handlers/notifications.go` was written to that pattern from the first commit,
+  so the second stream never shared the fault. Neither is blocked on it now.
 - **The copy still arrives as prose.** CON-242 sends a server-rendered `title`
   and `body` alongside `type` and `data`, rather than the type-plus-vars this
   document asked for. The client renders from `type` and `data` where it knows

@@ -709,13 +709,21 @@ end to end by its tests while nothing but English is out. Per language rather
 than one flag for i18n as a whole, because a locale is finished, reviewed and
 released on its own schedule.
 
-**Scope today (CON-174).** The machinery plus real conversion of the auth
-screens, the sidebar, Profile and Workspace Settings. The rest of the app —
-campaigns, posts, calendar, content bank, the assistant — is still hard-coded
-English and reads correctly, because English is what `t` falls back to.
-Converting a surface is per-area work, not a flag day. Spanish is translated in
-full for those surfaces and gated: with the app only part-converted, choosing
-it today would yield a half-Spanish UI, and the copy has had no native review.
+**Scope today (CON-174).** Converting a surface is per-area work, not a flag
+day, and after four passes the app is in two states rather than one. Converted
+whole: the auth screens, the sidebar, Profile, Workspace Settings, the campaign
+calendar, the analytics surfaces, `/workspaces`, `/invite`, `/plans` with the
+Plan & billing card, and the flag-gated Tasks and Activity features — the last
+two because a feature written after the machinery landed has no reason to be
+written in literals. Converted in **islands**: the post editor, the Campaigns
+list and the Content Bank each hold catalogued copy for the parts a PR touched
+(`posts.*`, `campaigns.*`, `content.*`) inside screens that are otherwise
+hard-coded English. That is the rule working — you move the strings you touch —
+but it means a file can hold both, and neither form is evidence about the one
+next to it. Everything else is still hard-coded English and reads correctly,
+because English is what `t` falls back to. Spanish is translated in full for
+every key that exists and gated: with the app only part-converted, choosing it
+today would yield a half-Spanish UI, and the copy has had no native review.
 Releasing it is `enabled: true`.
 
 ## A flag can be forced per browser, on staging only {#staging-flag-overrides}
