@@ -39,19 +39,34 @@ import { toast } from '@/stores/toastStore'
  * Because the stored set is empty by definition, unioning the bank *is*
  * pinning it, so it still costs one atomic call.
  *
- * The campaign comes from the cache when it is there. A stale copy can only be
- * stale one way — a pinned campaign never returns to the sentinel — so the
- * worst case is pinning a campaign another tab already pinned, to the same ids.
+ * The cache answers only the *negative*. A campaign can only ever leave this
+ * state — nothing writes `use_assets: true` over an empty set any more — so a
+ * cached copy that is already an ordinary set is proof, and the ordinary attach
+ * costs no extra request. A cached copy that still looks like the sentinel
+ * proves nothing, since another tab may have pinned it since, so that one is
+ * re-read before a whole workspace of ids is written on the strength of it.
+ *
+ * All of this dies with a backfill of those rows; there is nothing here a
+ * migration wouldn't do better, once we know how many exist outside dev.
  */
 async function wholeBankIds(campaignId: string): Promise<string[] | null> {
   const cached = queryClient.getQueryData<Campaign>(campaignKey(campaignId))
-  const campaign = cached ?? (await getCampaign(campaignId))
-  if (!seedsWholeBank(campaign)) return null
+  if (cached && !seedsWholeBank(cached)) return null
+  if (!seedsWholeBank(await getCampaign(campaignId))) return null
   return (await listAssets()).map((asset) => asset.id)
 }
 
-function settle(campaignId: string): void {
-  queryClient.invalidateQueries({ queryKey: campaignKey(campaignId) })
+/**
+ * Takes the campaign the server just wrote.
+ *
+ * `setQueryData` paints it at once and the invalidate is what makes it true:
+ * with no queue serializing them, two writes to one campaign resolve in
+ * whatever order the server answers and the cache would otherwise keep
+ * whichever arrived last. `campaignKey` is under `["campaigns"]`, so one
+ * invalidate covers the campaign, the sidebar list and the summaries.
+ */
+function land(campaign: Campaign): void {
+  queryClient.setQueryData(campaignKey(campaign.id), campaign)
   queryClient.invalidateQueries({ queryKey: ['campaigns'] })
 }
 
@@ -75,11 +90,12 @@ export async function addToCampaign(
   if (assetIds.length === 0) return true
   try {
     const bank = await wholeBankIds(campaignId)
-    await addCampaignAssets(
-      campaignId,
-      bank ? [...bank, ...assetIds] : assetIds,
+    land(
+      await addCampaignAssets(
+        campaignId,
+        bank ? [...bank, ...assetIds] : assetIds,
+      ),
     )
-    settle(campaignId)
     return true
   } catch (error: unknown) {
     toast.error('Unable to add to this campaign', {
@@ -119,20 +135,23 @@ export async function removeFromCampaign(
       const dropped = new Set(assetIds)
       const kept = bank.filter((id) => !dropped.has(id))
       if (kept.length > 0) {
-        await addCampaignAssets(campaignId, kept)
+        land(await addCampaignAssets(campaignId, kept))
       } else {
         // Nothing left to pin to, but the detach still has to land: it is what
         // re-derives `use_assets`, which the server turns off when the set it
         // leaves behind is empty. Skipping it would leave the campaign holding
         // the sentinel — claiming a bank that is empty today and won't be as
         // soon as anyone uploads anything.
-        await removeCampaignAsset(campaignId, assetIds[0])
+        land(await removeCampaignAsset(campaignId, assetIds[0]))
       }
-      settle(campaignId)
       return
     }
-    await Promise.all(assetIds.map((id) => removeCampaignAsset(campaignId, id)))
-    settle(campaignId)
+    // One request per id, sequentially — each is its own atomic statement, so a
+    // failure part-way leaves the campaign holding the rest rather than a set
+    // nobody wrote, and the last answer to land is the newest.
+    for (const assetId of assetIds) {
+      land(await removeCampaignAsset(campaignId, assetId))
+    }
   } catch {
     // See the doc comment: the delete the caller already ran owns the toast.
   }
@@ -156,8 +175,7 @@ export async function seedFromWholeBank(campaignId: string): Promise<void> {
     // page pins it on the next visit, by which time there is something to
     // claim — which is exactly when the distinction starts to matter.
     if (!bank || bank.length === 0) return
-    await addCampaignAssets(campaignId, bank)
-    settle(campaignId)
+    land(await addCampaignAssets(campaignId, bank))
   } catch {
     // Silent: the user did not ask for this, and the page behind the toast
     // would be showing them an empty campaign either way. The next visit

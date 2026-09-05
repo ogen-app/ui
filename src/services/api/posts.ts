@@ -46,6 +46,51 @@ export function deletePost(id: string): Promise<void> {
   return apiVoid(`${BASE}/${id}`, 'Unable to delete post', { method: 'DELETE' })
 }
 
+/**
+ * Attaches documents to a post's sources, touching no other field (CON-233).
+ *
+ * One atomic UPDATE of `used_asset_ids` server-side: ids the post already has
+ * keep their position, new ones append in the order given, and two attaches
+ * landing at once both survive — which is what the whole-post PUT could not
+ * promise, since each carried the set as its caller had read it. Adding an id
+ * the post already holds is a no-op.
+ *
+ * 409 while the post is `scheduled` or `published`: sources are locked content
+ * (CON-251), and the endpoint enforces the same lock the PUT does — though a
+ * no-op add is let through. Returns the post hydrated, so `used_assets` comes
+ * back with it and the sources card can name the new document without fetching.
+ */
+export function addPostAssets(id: string, assetIds: string[]): Promise<Post> {
+  return apiJson<Post>(
+    `${BASE}/${id}/assets`,
+    'Unable to add this to the post',
+    {
+      method: 'POST',
+      body: { asset_ids: assetIds },
+    },
+  )
+}
+
+/**
+ * Detaches one document from a post's sources (CON-233). Removing an id the
+ * post does not hold is a no-op, not a 404.
+ *
+ * This is the *only* way a source comes off a post: `used_asset_ids` is no
+ * longer in the PUT payload (see `postToPayload`), so the editor's autosave
+ * cannot write the field at all — which is the point. It used to be able to,
+ * and a keystroke landing during an attach would clone the pre-attach list into
+ * the debounce and put it straight back.
+ *
+ * 409 while the post is `scheduled` or `published`, exactly as the add half.
+ */
+export function removePostAsset(id: string, assetId: string): Promise<Post> {
+  return apiJson<Post>(
+    `${BASE}/${id}/assets/${assetId}`,
+    'Unable to remove this from the post',
+    { method: 'DELETE' },
+  )
+}
+
 export type ScheduleResult = {
   post: Post
   // The routed status: the server consults the workspace auto-publish
@@ -247,6 +292,27 @@ export function restorePost(
  * someone edited it. It is the one field here that is normally the *server's*
  * to write, which is why it needs saying out loud — `publisher_post_id`, its
  * neighbour, is deliberately absent because the API does not take it.
+ *
+ * `used_asset_ids` is the one field that is absent on purpose, and this is the
+ * only place that decides so. The server reads it presence-aware since CON-233
+ * — an omitted key leaves the stored set alone, right down to dropping the
+ * column from the UPDATE — so the post's sources now have exactly one writer,
+ * the membership endpoints. Restating them here would put every autosave back
+ * in the race it was in: a keystroke during an attach clones the pre-attach
+ * list into the debounce, and its flush undoes the attach. Note the two fields
+ * are opposites, not a contradiction — the handler defaults `published_url`
+ * away when it is missing and *preserves* `used_asset_ids`, so each is listed
+ * or omitted according to what the server does with silence.
+ *
+ * Two things follow. Attaching and detaching go through `addPostAssets` /
+ * `removePostAsset`, never through `changeDoc` alone — an edit to the field
+ * that only rides the autosave is now discarded. And a status transition can no
+ * longer trip the CON-251 content lock by restating sources it did not mean to
+ * change.
+ *
+ * `createPost` still sends the field (`PostPayload` keeps it optional): a post
+ * being created has no stored set to preserve, and duplicating one carries its
+ * reading list over.
  */
 export function postToPayload(post: Post): PostPayload {
   return {
@@ -264,7 +330,6 @@ export function postToPayload(post: Post): PostPayload {
     cta_type: post.cta_type,
     cta_url: post.cta_url,
     target_audience_notes: post.target_audience_notes,
-    used_asset_ids: post.used_asset_ids,
     campaign_type_phase_id: post.campaign_type_phase_id,
   }
 }

@@ -157,6 +157,23 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   over an empty set, meaning everything): the endpoints can only union and
   subtract, so an attach to a campaign in that state has to carry the bank
   along or it would silently narrow the campaign to the one new document.
+- **A post's sources are the same rule, one field over** (CON-233). `POST` and
+  `DELETE /api/posts/:id/assets` own `used_asset_ids`, and `postToPayload`
+  omits it — so the editor's autosave can no longer write the field at all,
+  which is the point: it used to, and a keystroke inside the 600ms debounce
+  cloned the pre-attach list and its flush undid the attach. Attach and detach
+  through `attachToPost`/`detachFromPost` (`lib/postSources`), never through
+  `changeDoc` alone — but keep painting through `changeDoc`, because a cache-only
+  edit is dropped by that same clone. Two consequences worth knowing: a save's
+  *response* is no longer evidence about the set either (it carries the row as
+  the server read it, before any attach that landed since — hence
+  `withHeldSources` in `lib/postCache`, applied at all three write sites in
+  `usePost`), and both endpoints answer **409 while the post is `scheduled` or
+  `published`**, sources being locked content under CON-251. Note
+  `published_url` is in that same payload and is listed rather than omitted
+  (CON-165): the server defaults it away on silence and *preserves*
+  `used_asset_ids`, so the two fields are opposites and a builder that treats
+  them alike is wrong about one of them.
 - **A campaign is archived or deleted — it has no status** (CON-156). `draft`
   and `active` both meant active and nothing ever showed either, so the client
   no longer models `status` at all and the server creates every campaign

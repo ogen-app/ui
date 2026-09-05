@@ -10,8 +10,8 @@ import type { Campaign } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
 
 vi.mock('@/services/api/campaigns', () => ({
-  addCampaignAssets: vi.fn().mockResolvedValue({}),
-  removeCampaignAsset: vi.fn().mockResolvedValue({}),
+  addCampaignAssets: vi.fn(),
+  removeCampaignAsset: vi.fn(),
   getCampaign: vi.fn(),
 }))
 vi.mock('@/services/api/content', () => ({ listAssets: vi.fn() }))
@@ -36,6 +36,9 @@ function bank(...ids: string[]): Asset[] {
 beforeEach(() => {
   vi.mocked(getCampaign).mockResolvedValue(campaign(true, ['x']))
   vi.mocked(listAssets).mockResolvedValue(bank())
+  // Both endpoints answer with the campaign, which is what the cache takes.
+  vi.mocked(addCampaignAssets).mockResolvedValue(campaign(true, ['written']))
+  vi.mocked(removeCampaignAsset).mockResolvedValue(campaign(false, []))
 })
 
 afterEach(() => {
@@ -63,13 +66,23 @@ describe('attaching documents', () => {
     expect(getCampaign).not.toHaveBeenCalled()
   })
 
-  it('reads the campaign from the cache rather than the API', async () => {
+  it('takes an ordinary campaign off the cache rather than the API', async () => {
     queryClient.setQueryData(campaignKey('c1'), campaign(false, ['held']))
 
     await addToCampaign('c1', ['a1'])
 
     expect(getCampaign).not.toHaveBeenCalled()
     expect(addCampaignAssets).toHaveBeenCalledWith('c1', ['a1'])
+  })
+
+  it('lands the campaign the server answered with', async () => {
+    // Not a locally-patched copy, and not just an invalidate: the row has to
+    // paint before the refetch, or every attach flickers through the old set.
+    await addToCampaign('c1', ['a1'])
+
+    expect(
+      queryClient.getQueryData<Campaign>(campaignKey('c1'))?.asset_ids,
+    ).toEqual(['written'])
   })
 
   it('reports a refusal instead of throwing it', async () => {
@@ -122,6 +135,21 @@ describe('a campaign left in the old whole-bank mode', () => {
     // as soon as anyone uploads anything.
     expect(removeCampaignAsset).toHaveBeenCalledWith('c1', 'old1')
     expect(addCampaignAssets).not.toHaveBeenCalled()
+  })
+
+  it('re-reads a cached copy that still looks like the sentinel', async () => {
+    // The cache only ever answers the negative here. A campaign can leave this
+    // state but never enter it, so a cached ordinary set is proof and a cached
+    // sentinel is not — another tab may have pinned it since, and acting on the
+    // stale copy would write a whole workspace of ids over their pin.
+    queryClient.setQueryData(campaignKey('c1'), campaign(true, []))
+    vi.mocked(getCampaign).mockResolvedValue(campaign(true, ['pinned']))
+
+    await addToCampaign('c1', ['new1'])
+
+    expect(getCampaign).toHaveBeenCalledWith('c1')
+    expect(addCampaignAssets).toHaveBeenCalledWith('c1', ['new1'])
+    expect(listAssets).not.toHaveBeenCalled()
   })
 
   it('pins on sight of the page', async () => {
