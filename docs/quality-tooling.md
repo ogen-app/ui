@@ -128,6 +128,31 @@ documented pattern, not a defect.
 export their whole API on purpose, and reporting them drowned the real
 findings.
 
+## Dependabot
+
+`.github/dependabot.yml` opens weekly npm PRs (Monday, five at a time) and
+monthly ones for the pinned GitHub Actions. Security **alerts** never needed
+this file — they come from the advisory database — but nothing was acting on
+them: fourteen accumulated between 2026-07-31 and 2026-09-03 with no PR raised
+for any of them, and by the time anyone looked, twelve had gone stale (six
+naming versions the lockfile already carried, six naming packages that had left
+the tree entirely) while two were real and days old.
+
+**Packages that version in lockstep are grouped**, and that is the part not to
+undo. `@tiptap/*` is the worked example: bumping `@tiptap/core` on its own
+resolves, type-checks and passes all the tests, then fails the production build,
+because `@tiptap/react` imports a symbol the newer core no longer exports. Only
+Rollup's tree-shake catches a missing named export — vitest never links those
+two modules that way. An ungrouped Dependabot opens exactly that PR and the CI
+line that disagrees is the last one. `@blocknote/*`, `@radix-ui/*`,
+`@tanstack/*` and `@visx/*` are grouped for the same reason; eslint and
+`@types/*` are grouped because they are noise reviewed as one thing or not at
+all.
+
+Worth knowing when a PR looks green: **`build` is the only gate that links the
+bundle.** A dependency change that passes `typecheck` and `test` has not yet
+been tested in the way that matters.
+
 ## What is deliberately not here
 
 - **Type-aware linting** (`recommendedTypeChecked` — `no-floating-promises`,

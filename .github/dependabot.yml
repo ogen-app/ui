@@ -1,0 +1,76 @@
+# Dependabot version updates.
+#
+# Security *alerts* have always been on (they come from the advisory database
+# and the dependency graph, not from this file). What was missing was anything
+# that acts on them: between 2026-07-31 and 2026-09-03 fourteen alerts
+# accumulated with no PR raised for any of them, and the two that were still
+# real by the time anyone looked had been sitting there for days. This file is
+# the thing that would have opened those PRs.
+#
+# Weekly rather than daily: the point is a small, reviewable batch on a known
+# day, not a stream of PRs nobody has time to read. Five open at once is the
+# cap — past that the queue stops being a queue.
+#
+# **Grouping is the load-bearing part.** Some families cannot be bumped one
+# package at a time: raising `@tiptap/core` alone resolves cleanly, type-checks,
+# and passes the whole test suite, then fails the production build, because
+# `@tiptap/react` imports a symbol the newer core no longer exports. Only
+# Rollup's tree-shake sees it — vitest never links those two modules that way.
+# An ungrouped Dependabot would open exactly that PR, and its CI would tell the
+# truth only at the last step. So each family that versions in lockstep gets one
+# group and moves together.
+version: 2
+
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+    groups:
+      # Versioned in lockstep by their publishers; a partial bump breaks the
+      # build (tiptap) or the peer graph (the rest).
+      tiptap:
+        patterns:
+          - '@tiptap/*'
+      blocknote:
+        patterns:
+          - '@blocknote/*'
+      radix:
+        patterns:
+          - '@radix-ui/*'
+      tanstack:
+        patterns:
+          - '@tanstack/*'
+      visx:
+        patterns:
+          - '@visx/*'
+      # Toolchain. Noisy, low-risk, and reviewed as one thing or not at all.
+      eslint:
+        patterns:
+          - 'eslint'
+          - 'eslint-*'
+          - '@eslint/*'
+          - 'typescript-eslint'
+      types:
+        patterns:
+          - '@types/*'
+      # Everything else that is dev-only and not a major.
+      dev-minor-patch:
+        dependency-type: 'development'
+        update-types:
+          - 'minor'
+          - 'patch'
+
+  # The CI workflow pins actions by tag; monthly is often enough for those.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: 'chore(ci)'
