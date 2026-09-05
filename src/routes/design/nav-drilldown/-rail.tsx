@@ -47,7 +47,16 @@ export type RailState = {
   l1: string
 }
 
-const WORKSPACE_ITEMS = [...L0_PRIMARY, ...L0_SECONDARY]
+/**
+ * What the identity slot carries once you are inside a campaign — the one
+ * thing the shape of variant C still turns on.
+ *
+ * `icons` is the expanded rail: the workspace's own destinations laid out in
+ * the slot the avatar vacated. `single` is what the collapsed rail would have
+ * to do anyway, brought up to full width so the two can be compared at the
+ * same size rather than across a collapse.
+ */
+export type CampaignFooter = 'icons' | 'single'
 
 // ── Rows ────────────────────────────────────────────────────────────────────
 
@@ -197,12 +206,14 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export function DrillRail({
   variant,
   durationMs,
+  campaignFooter,
   state,
   onState,
 }: {
   variant: Variant
   /** Slowed down, the transition is judged rather than felt. */
   durationMs: number
+  campaignFooter: CampaignFooter
   state: RailState
   onState: (next: RailState) => void
 }) {
@@ -248,7 +259,9 @@ export function DrillRail({
       <Footer
         variant={variant}
         drilled={drilled}
-        onPick={(id) => onState({ ...state, level: 0, l0: id })}
+        campaignFooter={campaignFooter}
+        state={state}
+        onState={onState}
       />
     </div>
   )
@@ -401,18 +414,12 @@ function WorkspaceLevel({
         </React.Fragment>
       ))}
 
-      {/* The rule is the demotion. Above it is where the work happens; below
-          it is what the work is set up from and looked back on. */}
-      <div className="mx-1.5 my-3 h-px shrink-0 bg-quaternary lg:mx-2.5" />
-
-      {L0_SECONDARY.map((item) => (
-        <Row
-          key={item.id}
-          item={item}
-          isActive={state.l0 === item.id}
-          onClick={() => onState({ ...state, l0: item.id })}
-        />
-      ))}
+      {/* Foundation, Activity and Settings used to sit here under a rule.
+          They are in the footer now: a rule that demotes three rows is still
+          spending five rows' worth of the list on them, and what it was
+          demoting them *for* — you set the work up from them and look back on
+          them, you do not do the work in them — is exactly what the footer
+          already means. See `UtilityStrip`. */}
     </nav>
   )
 }
@@ -479,29 +486,202 @@ function CampaignLevel({
 // ── Footer ──────────────────────────────────────────────────────────────────
 
 /**
- * Settings, then who and where you are — the footer as the app has it.
+ * Three utilities, then who and where you are.
  *
- * At level 1 in the tail variant the identity block is replaced by a menu of
- * the workspace destinations. That swap is the whole of variant C, and it is
- * deliberately a replacement rather than an addition: an eight-glyph strip was
- * tried here first and it read as a second nav stapled under the first, which
- * is exactly the doubling the drill-down exists to remove. One control in a
- * slot that already holds one is the version that costs nothing new.
+ * Foundation, Activity and Settings live here rather than in the list above.
+ * They were already demoted there, under a rule, which was the list admitting
+ * they are not what you came to do while still spending list rows on them —
+ * and the footer is the part of a rail that already means "the things around
+ * the work". As glyphs they take one row instead of three, which is what buys
+ * the identity slot enough room to change with the level.
  *
- * What it costs instead is the account menu, which at level 1 has nowhere to
- * live. That is the open question this variant is asking.
+ * They survive the drill on purpose. A guardrail is the thing you check
+ * *while* writing a post, and a design that makes you leave the campaign to
+ * read one has lost the argument it was making about levels.
  */
 function Footer({
   variant,
   drilled,
-  onPick,
+  campaignFooter,
+  state,
+  onState,
 }: {
   variant: Variant
   drilled: boolean
+  campaignFooter: CampaignFooter
+  state: RailState
+  onState: (next: RailState) => void
+}) {
+  // The control keeps the footer it ships with — one settings row and the
+  // account block. Changing it here would compare the proposal against
+  // another proposal.
+  if (variant === 'today') return <TodayFooter />
+
+  const showWorkspaceNav = variant === 'drill-tail' && drilled
+  const goto = (id: string) => onState({ ...state, level: 0, l0: id })
+
+  return (
+    <div className="flex shrink-0 flex-col gap-4 p-3 lg:p-6">
+      <UtilityStrip
+        activeId={state.level === 0 ? state.l0 : null}
+        onPick={goto}
+      />
+      {showWorkspaceNav ? (
+        campaignFooter === 'icons' ? (
+          <PrimaryIcons onPick={goto} />
+        ) : (
+          <PrimaryMenu onPick={goto} />
+        )
+      ) : (
+        <IdentityBlock />
+      )}
+    </div>
+  )
+}
+
+/**
+ * Foundation, Activity, Settings — as glyphs, at both levels.
+ *
+ * Three is the number that makes this work. Eight of these was the first
+ * attempt and it read as a second nav stapled under the first; three reads as
+ * a toolbar, which is what it is.
+ */
+function UtilityStrip({
+  activeId,
+  onPick,
+}: {
+  activeId: string | null
   onPick: (id: string) => void
 }) {
-  const showWorkspaceMenu = variant === 'drill-tail' && drilled
+  return (
+    <div className="flex items-center gap-1">
+      {L0_SECONDARY.map((item) => {
+        const isActive = activeId === item.id
+        return (
+          <button
+            key={item.id}
+            type="button"
+            title={item.label}
+            aria-label={item.label}
+            onClick={() => onPick(item.id)}
+            className={cn(
+              'flex size-9 flex-none items-center justify-center rounded-md transition-colors',
+              isActive
+                ? 'bg-sidebar-secondary text-sidebar-primary-foreground'
+                : 'text-tertiary-foreground hover:bg-sidebar-secondary hover:text-sidebar-primary-foreground',
+            )}
+          >
+            <item.icon className="size-5" weight="regular" />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
+/**
+ * The workspace's own destinations, in the slot the avatar vacates once you
+ * are inside a campaign.
+ *
+ * Five glyphs rather than the eight this started as — the other three are the
+ * strip above, and splitting them is what stopped the footer reading as an
+ * undifferentiated bin of everything that would not fit. Where you are still
+ * shows, because arriving back at level 0 on a destination you did not choose
+ * is the failure mode a lateral move has.
+ */
+function PrimaryIcons({ onPick }: { onPick: (id: string) => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      {L0_PRIMARY.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          title={item.label}
+          aria-label={item.label}
+          onClick={() => onPick(item.id)}
+          className="flex size-9 flex-none items-center justify-center rounded-md text-tertiary-foreground transition-colors hover:bg-sidebar-secondary hover:text-sidebar-primary-foreground"
+        >
+          <item.icon className="size-5" weight="regular" />
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * The same five behind one glyph — what the collapsed rail would have to do,
+ * shown at full width so it can be judged against the row of icons rather
+ * than against a different rail size.
+ */
+function PrimaryMenu({ onPick }: { onPick: (id: string) => void }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Go to a workspace destination"
+          className="flex w-full cursor-pointer items-center gap-6 overflow-hidden select-none"
+        >
+          <span className="flex size-10 flex-none items-center justify-center rounded-md bg-sidebar-secondary text-tertiary-foreground">
+            <DotsThreeIcon weight="bold" className="size-5" />
+          </span>
+          <div className="flex min-w-0 flex-col items-start">
+            <p className="w-full truncate text-left text-sm">Workspace</p>
+            <p className="w-full truncate text-left text-xs text-tertiary-foreground">
+              {WORKSPACE.name}
+            </p>
+          </div>
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        className="w-64 p-2 shadow-md"
+        side="right"
+        align="end"
+        sideOffset={8}
+      >
+        {L0_PRIMARY.map((item) => (
+          <DropdownMenuItem
+            key={item.id}
+            size="lg"
+            className="px-2"
+            onSelect={() => onPick(item.id)}
+          >
+            <item.icon weight="regular" />
+            <span className="flex-1">{item.label}</span>
+            {item.build !== 'now' && (
+              <span className="font-mono text-[9px] text-tertiary-foreground">
+                {item.build === 'blocked' ? 'BE' : 'FE'}
+              </span>
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/** Who and where you are — the app's own footer block. */
+function IdentityBlock() {
+  return (
+    <div className="flex w-full items-center gap-6 overflow-hidden">
+      <WorkspaceMark
+        id={WORKSPACE.id}
+        name={WORKSPACE.name}
+        className="size-10 text-sm"
+      />
+      <div className="flex min-w-0 flex-col items-start">
+        <p className="w-full truncate text-left text-sm">{USER.name}</p>
+        <p className="w-full truncate text-left text-xs text-tertiary-foreground">
+          {WORKSPACE.name}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** The footer as it ships today: one settings row, then the account block. */
+function TodayFooter() {
   return (
     <div className="flex shrink-0 flex-col gap-3 p-3 lg:gap-6 lg:p-6">
       <Button
@@ -512,74 +692,12 @@ function Footer({
       >
         <GearSixIcon weight="regular" className="size-5 flex-none" />
         <div>
-          {/* Wider than the nav rows above: those reserve the right edge for
-              an FE/BE chip, and this row has none to make room for. Same rule
-              the real sidebar follows for a row with no count. */}
           <span className="block w-[180px] truncate text-left tracking-[0.02em]">
             Workspace settings
           </span>
         </div>
       </Button>
-
-      {showWorkspaceMenu ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <div
-              role="button"
-              tabIndex={0}
-              aria-label="Go to a workspace destination"
-              className="flex w-full cursor-pointer items-center gap-6 overflow-hidden select-none"
-            >
-              <span className="flex size-10 flex-none items-center justify-center rounded-md bg-sidebar-secondary text-tertiary-foreground">
-                <DotsThreeIcon weight="bold" className="size-5" />
-              </span>
-              <div className="flex min-w-0 flex-col items-start">
-                <p className="w-full truncate text-left text-sm">Workspace</p>
-                <p className="w-full truncate text-left text-xs text-tertiary-foreground">
-                  {WORKSPACE.name}
-                </p>
-              </div>
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-64 p-2 shadow-md"
-            side="right"
-            align="end"
-            sideOffset={8}
-          >
-            {WORKSPACE_ITEMS.map((item) => (
-              <DropdownMenuItem
-                key={item.id}
-                size="lg"
-                className="px-2"
-                onSelect={() => onPick(item.id)}
-              >
-                <item.icon weight="regular" />
-                <span className="flex-1">{item.label}</span>
-                {item.build !== 'now' && (
-                  <span className="font-mono text-[9px] text-tertiary-foreground">
-                    {item.build === 'blocked' ? 'BE' : 'FE'}
-                  </span>
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        <div className="flex w-full items-center gap-6 overflow-hidden">
-          <WorkspaceMark
-            id={WORKSPACE.id}
-            name={WORKSPACE.name}
-            className="size-10 text-sm"
-          />
-          <div className="flex min-w-0 flex-col items-start">
-            <p className="w-full truncate text-left text-sm">{USER.name}</p>
-            <p className="w-full truncate text-left text-xs text-tertiary-foreground">
-              {WORKSPACE.name}
-            </p>
-          </div>
-        </div>
-      )}
+      <IdentityBlock />
     </div>
   )
 }

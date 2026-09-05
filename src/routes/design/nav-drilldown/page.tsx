@@ -1,7 +1,12 @@
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
-import { DrillRail, type RailState, type Variant } from './-rail'
+import {
+  DrillRail,
+  type CampaignFooter,
+  type RailState,
+  type Variant,
+} from './-rail'
 import {
   L0_PRIMARY,
   L0_SECONDARY,
@@ -37,10 +42,15 @@ const VARIANTS: { id: Variant; title: string; blurb: string }[] = [
   },
   {
     id: 'drill-tail',
-    title: 'C · Drill-down + menu',
+    title: 'C · Drill-down + footer',
     blurb:
-      'As A, but at level 1 the footer’s identity block becomes a menu of the workspace destinations. Buys back the lateral move without adding a second nav — and costs the account menu, which then has nowhere to live.',
+      'As A, but the identity slot carries the workspace’s destinations once you are inside a campaign. Buys back the lateral move — and costs the account block, which at level 1 has nowhere to live.',
   },
+]
+
+const FOOTERS: { id: CampaignFooter; label: string }[] = [
+  { id: 'icons', label: 'Icons' },
+  { id: 'single', label: 'Single' },
 ]
 
 const SPEEDS = [
@@ -58,6 +68,8 @@ const INITIAL: RailState = {
 
 export function NavDrilldownHarness() {
   const [durationMs, setDurationMs] = React.useState(240)
+  const [campaignFooter, setCampaignFooter] =
+    React.useState<CampaignFooter>('icons')
   const [states, setStates] = React.useState<Record<Variant, RailState>>({
     today: INITIAL,
     drill: INITIAL,
@@ -126,6 +138,21 @@ export function NavDrilldownHarness() {
             </Button>
           ))}
         </div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-xs uppercase text-tertiary-foreground">
+            C · campaign footer
+          </span>
+          {FOOTERS.map((footer) => (
+            <Button
+              key={footer.id}
+              variant={campaignFooter === footer.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setCampaignFooter(footer.id)}
+            >
+              {footer.label}
+            </Button>
+          ))}
+        </div>
         <Button variant="outline" size="sm" onClick={replay}>
           Replay all three
         </Button>
@@ -149,6 +176,7 @@ export function NavDrilldownHarness() {
             <DrillRail
               variant={variant.id}
               durationMs={durationMs}
+              campaignFooter={campaignFooter}
               state={states[variant.id]}
               onState={setState(variant.id)}
             />
