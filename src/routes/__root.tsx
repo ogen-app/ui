@@ -46,6 +46,17 @@ async function probe<T>(
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ location }) => {
+    // TEMPORARY — design harnesses under `/design` render before anything else
+    // happens: no session probe, so they come up with the API down and nobody
+    // signed in, which is what lets a rail be judged at a quarter speed on a
+    // laptop with no backend. Returning early rather than joining
+    // `isAuthRoute` is deliberate — the auth routes still want the probe (it
+    // is what redirects an already-signed-in user out of `/auth`), and a
+    // harness wants none of it. Delete this with `routes/design/`.
+    if (location.pathname.startsWith('/design/')) {
+      return { auth: { isAuthenticated: false } }
+    }
+
     // `/invite` is public for the same reason the auth routes are, and one
     // step further: the person following an emailed invitation has no account
     // to have a session with — accepting the token is what creates it (CON-26).
