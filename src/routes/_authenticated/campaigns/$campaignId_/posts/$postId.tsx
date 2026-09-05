@@ -49,6 +49,7 @@ import type { PostCheck } from '@/lib/postValidation'
 import { useCampaign } from '@/hooks/useCampaigns'
 import {
   usePost,
+  type TransitionExtras,
   type TransitionStatusResult,
   type VerifyExternalResult,
 } from '@/hooks/usePost'
@@ -147,7 +148,10 @@ function excerpt(text: string): string {
 type PostEditorSurfaceProps = {
   doc: Post
   changeDoc: (fn: (p: Post) => void) => void
-  transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
+  transitionStatus: (
+    next: PostStatus,
+    extra?: TransitionExtras,
+  ) => Promise<TransitionStatusResult>
   verifyExternal: (url: string) => Promise<VerifyExternalResult>
   schedule: () => Promise<TransitionStatusResult>
   cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
@@ -757,12 +761,18 @@ function PostEditorSurface({
         isOpen={publishedUrlOpen}
         onClose={() => setPublishedUrlOpen(false)}
         verifyExternal={verifyExternal}
-        // Publishing unverified is the way out of the dialog, not of the
-        // status: an already-published post has nothing left to skip to.
-        onSkip={
-          doc.status === 'published'
-            ? undefined
-            : () => transitionStatus('published')
+        // One call for both states. On a post still waiting to be published
+        // this is the unverified publish it always was, now carrying the link;
+        // on one already published the status is what it already is, so the
+        // same PUT is a plain write of `published_url` and nothing else moves.
+        // The server allows it: CON-251's lock covers the fields that would
+        // diverge from what went out, and the permalink is deliberately not
+        // one of them — recording a link is a post-publish act.
+        saveUnverified={(url) =>
+          transitionStatus(
+            'published',
+            url ? { published_url: url } : undefined,
+          )
         }
       />
     </PageContainer>
