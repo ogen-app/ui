@@ -268,3 +268,20 @@ export const CAMPAIGNS: HarnessCampaign[] = [
     goal: 16,
   },
 ]
+
+// ── Footer chrome ───────────────────────────────────────────────────────────
+
+/**
+ * The workspace and the person, for the footer. Both exist so the harness can
+ * draw the block the workspace dropdown replaces — the cost of that swap is
+ * only legible against what is being given up.
+ */
+export const WORKSPACE = {
+  id: 'd3d94468-02a4-4c1f-9b57-7c8e9f0a1b2c',
+  name: 'Northwind Studio',
+}
+
+export const USER = {
+  name: 'Alec Vishmidt',
+  initials: 'AV',
+}

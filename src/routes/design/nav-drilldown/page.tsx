@@ -37,9 +37,9 @@ const VARIANTS: { id: Variant; title: string; blurb: string }[] = [
   },
   {
     id: 'drill-tail',
-    title: 'C · Drill-down + tail',
+    title: 'C · Drill-down + menu',
     blurb:
-      'As A, with level 0 kept as an icon strip along the bottom. Buys back the lateral move for 40px, at the cost of a level that is no longer purely a place.',
+      'As A, but at level 1 the footer’s identity block becomes a menu of the workspace destinations. Buys back the lateral move without adding a second nav — and costs the account menu, which then has nowhere to live.',
   },
 ]
 
@@ -231,7 +231,7 @@ function Chip({ kind }: { kind: 'fe' | 'be' }) {
       className={cn(
         'inline-block rounded-sm px-1 align-middle font-mono text-[9px] leading-4 tracking-wide',
         kind === 'be'
-          ? 'bg-destructive/12 text-destructive'
+          ? 'bg-warning/15 text-warning'
           : 'bg-tertiary text-tertiary-foreground',
       )}
     >
