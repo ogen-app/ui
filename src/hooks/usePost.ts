@@ -10,7 +10,11 @@ import {
   type CancelTarget,
 } from '@/services/api/posts'
 import { registerPendingSave } from '@/lib/pendingSaves'
-import { cachedPostFromList, landSavedPost } from '@/lib/postCache'
+import {
+  cachedPostFromList,
+  landSavedPost,
+  withHeldSources,
+} from '@/lib/postCache'
 import type { Post, PostStatus } from '@/types/posts'
 
 const SAVE_DEBOUNCE_MS = 600
@@ -157,7 +161,13 @@ export function usePost(postId: string): UsePostResult {
     const genAtFlush = genRef.current
     try {
       // `postId` here is the closure's — the post this flush was armed for.
-      const saved = await saveDoc({ id: postId, next })
+      // The sources come off the cache rather than the response: this PUT no
+      // longer sends `used_asset_ids` (CON-233), so its answer carries the set
+      // as the server read it *before* an attach that may have landed since.
+      const saved = withHeldSources(
+        await saveDoc({ id: postId, next }),
+        qc.getQueryData<Post>(postKey(postId)),
+      )
       if (genRef.current === genAtFlush) {
         qc.setQueryData(postKey(postId), saved)
         // The same row, in the list the calendar reads. Gen-guarded with the
@@ -252,7 +262,10 @@ export function usePost(postId: string): UsePostResult {
       const genAtStart = genRef.current
       transitionRef.current = next
       try {
-        const saved = await updatePost(postId, postToPayload(requested))
+        const saved = withHeldSources(
+          await updatePost(postId, postToPayload(requested)),
+          qc.getQueryData<Post>(postKey(postId)),
+        )
         // Gen-guarded like `flush`: an edit made during the round-trip has
         // already written its clone (carrying the requested status, via
         // `transitionRef`) into the cache, and the server's copy must not
@@ -313,21 +326,27 @@ export function usePost(postId: string): UsePostResult {
         await updatePost(postId, postToPayload(pending))
       }
       const result = await schedulePost(postId, base.scheduled_at)
-      qc.setQueryData(postKey(postId), result.post)
-      await landSavedPost(qc, result.post)
+      // Same as `flush`: the schedule endpoint reads the post to validate it,
+      // so its copy of the sources is as old as that read.
+      const scheduled = withHeldSources(
+        result.post,
+        qc.getQueryData<Post>(postKey(postId)),
+      )
+      qc.setQueryData(postKey(postId), scheduled)
+      await landSavedPost(qc, scheduled)
       // The user clicked "Schedule" expecting auto-publish, but the
       // allowlist routed the post to manual publishing. The badge flips
       // silently, so attach a notice explaining what happened.
-      if (result.post.status === 'scheduled_for_manual_publishing') {
+      if (scheduled.status === 'scheduled_for_manual_publishing') {
         return {
           ok: true,
-          post: result.post,
+          post: scheduled,
           notice:
             "This platform isn't set up for auto-publishing, so you'll need " +
             'to publish it yourself when the reminder comes up.',
         }
       }
-      return { ok: true, post: result.post }
+      return { ok: true, post: scheduled }
     } catch (err) {
       qc.invalidateQueries({ queryKey: postKey(postId) })
       const message =

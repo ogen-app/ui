@@ -170,8 +170,13 @@ export type CreateCampaignPayload = {
   target_persona?: string
   key_messages?: string
   tone_guidelines?: string
-  use_assets?: boolean
-  asset_ids?: string[]
+  /**
+   * Deliberately no `use_assets` / `asset_ids`. The campaign's documents are
+   * attached and detached through the CON-233 membership endpoints, which are
+   * atomic and derive the flag from the set — and the PUT reads both fields as
+   * presence-aware, so leaving them out is what preserves them. A payload that
+   * could name them is one an autosave could restate a stale copy of.
+   */
   target_platforms?: CampaignPlatform[]
   start_date?: string | null
   end_date?: string | null

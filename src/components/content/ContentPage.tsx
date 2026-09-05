@@ -239,10 +239,11 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
    * The same delete, over a selection.
    *
    * The requests fan out and any of them can fail, so the detach and the toast
-   * are built from what actually succeeded: `allSettled`, then one membership
-   * write for the ids that are really gone. One write rather than one per
-   * document because membership is a single field on a whole-campaign PUT —
-   * five parallel saves would each store the set they read.
+   * are built from what actually succeeded: `allSettled`, then the membership
+   * write for the ids that are really gone. It is handed the whole list rather
+   * than called per row because the answer for one document depends on the
+   * others — detaching the last one is what turns a campaign's generation off
+   * (see `lib/campaignMembership`).
    *
    * Failures raise their own toasts through the mutation cache, so nothing is
    * said about them here beyond leaving them out of the count.

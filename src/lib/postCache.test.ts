@@ -4,6 +4,7 @@ import {
   cachedPostFromList,
   invalidateCampaignPosts,
   landSavedPost,
+  withHeldSources,
 } from './postCache'
 import {
   CAMPAIGN_SUMMARIES_KEY,
@@ -176,5 +177,89 @@ describe('invalidateCampaignPosts', () => {
     // create that only touched the campaign namespace would leave
     // `useAssetUsage` counting a post that is gone.
     expect(qc.getQueryState(WORKSPACE_POSTS_KEY)?.isInvalidated).toBe(true)
+  })
+})
+
+/**
+ * The half of CON-233 that has no endpoint behind it. The whole-post PUT stopped
+ * sending `used_asset_ids`, so its *response* is no longer evidence about the
+ * field either — it carries whatever the row held when the server read it, which
+ * is before any attach that landed in the same window.
+ */
+describe('withHeldSources', () => {
+  const saved = {
+    id: 'p1',
+    title: 'Saved title',
+    used_asset_ids: ['a1'],
+    used_assets: [{ id: 'a1' }],
+  } as unknown as Post
+  const held = {
+    id: 'p1',
+    title: 'Stale title',
+    used_asset_ids: ['a1', 'a2'],
+    used_assets: [{ id: 'a1' }, { id: 'a2' }],
+  } as unknown as Post
+
+  it('keeps the sources the client holds over the ones the save answered with', () => {
+    // The bug without this: attach a document, type a character, and the
+    // autosave's response takes the document straight back off the list — so
+    // the attach looks like it was refused when in fact it landed.
+    const merged = withHeldSources(saved, held)
+    expect(merged.used_asset_ids).toEqual(['a1', 'a2'])
+    expect(merged.used_assets).toHaveLength(2)
+  })
+
+  it('takes everything else from the response', () => {
+    // Only the sources are held back. The save is the newest word on every
+    // other field, which is the whole reason it was sent.
+    expect(withHeldSources(saved, held).title).toBe('Saved title')
+  })
+
+  it('stands on its own when the cache holds nothing', () => {
+    // A first save with no cached copy: the response is the only evidence
+    // there is, so it wins by default rather than being emptied.
+    expect(withHeldSources(saved, undefined).used_asset_ids).toEqual(['a1'])
+  })
+})
+
+/**
+ * The half of CON-233 that has no endpoint behind it. The whole-post PUT stopped
+ * sending , so its *response* is no longer evidence about the
+ * field either — it carries whatever the row held when the server read it, which
+ * is before any attach that landed in the same window.
+ */
+describe('withHeldSources', () => {
+  const saved = {
+    id: 'p1',
+    title: 'Saved title',
+    used_asset_ids: ['a1'],
+    used_assets: [{ id: 'a1' }],
+  } as unknown as Post
+  const held = {
+    id: 'p1',
+    title: 'Stale title',
+    used_asset_ids: ['a1', 'a2'],
+    used_assets: [{ id: 'a1' }, { id: 'a2' }],
+  } as unknown as Post
+
+  it('keeps the sources the client holds over the ones the save answered with', () => {
+    // The bug without this: attach a document, type a character, and the
+    // autosave's response takes the document straight back off the list — so
+    // the attach looks like it was refused when in fact it landed.
+    const merged = withHeldSources(saved, held)
+    expect(merged.used_asset_ids).toEqual(['a1', 'a2'])
+    expect(merged.used_assets).toHaveLength(2)
+  })
+
+  it('takes everything else from the response', () => {
+    // Only the sources are held back. The save is the newest word on every
+    // other field, which is the whole reason it was sent.
+    expect(withHeldSources(saved, held).title).toBe('Saved title')
+  })
+
+  it('stands on its own when the cache holds nothing', () => {
+    // A first save with no cached copy: the response is the only evidence
+    // there is, so it wins by default rather than being emptied.
+    expect(withHeldSources(saved, undefined).used_asset_ids).toEqual(['a1'])
   })
 })
