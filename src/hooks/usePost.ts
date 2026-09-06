@@ -36,6 +36,22 @@ const SCHEDULED_POLL_MS = 5_000
  */
 export const postKey = (id: string) => ['post', id] as const
 
+/**
+ * Fields a status move may carry alongside the status itself.
+ *
+ * One field, and deliberately not `Partial<Post>`: this is the seam for values
+ * that are *part of the move* rather than part of the document, and widening it
+ * would make it a second way to edit a post that skips the debounce, the
+ * generation guard and the editor entirely.
+ *
+ * `published_url` qualifies because a manual publish Zernio cannot verify is
+ * the only chance we get at the permalink (CON-165) — the user has it in their
+ * hand, and the alternative is publishing unlinked, which is invisible to
+ * analytics forever. Recording it in the same PUT that publishes is what keeps
+ * the two from being separately losable.
+ */
+export type TransitionExtras = { published_url?: string }
+
 export type TransitionStatusResult =
   // `notice` is informational feedback about a successful action the user
   // should still be told about — e.g. the server routed a schedule request
@@ -56,7 +72,10 @@ export type VerifyExternalResult =
 type UsePostResult = {
   doc: Post | undefined
   changeDoc: (fn: (p: Post) => void) => void
-  transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
+  transitionStatus: (
+    next: PostStatus,
+    extra?: TransitionExtras,
+  ) => Promise<TransitionStatusResult>
   // Completes a manual publish by verifying the URL the user published at
   // (POST /api/posts/:id/verify-external). The server owns the transition
   // here — it marks the post published only if the URL really resolves to
@@ -244,7 +263,10 @@ export function usePost(postId: string): UsePostResult {
   // answer; this one no longer pretends. The caller's `pending` flag is what
   // covers the wait, not a badge that might have to be taken back.
   const transitionStatus = useCallback(
-    async (next: PostStatus): Promise<TransitionStatusResult> => {
+    async (
+      next: PostStatus,
+      extra?: TransitionExtras,
+    ): Promise<TransitionStatusResult> => {
       if (timerRef.current) {
         clearTimeout(timerRef.current)
         timerRef.current = null
@@ -258,6 +280,9 @@ export function usePost(postId: string): UsePostResult {
       // showing their words while only the status waits.
       const requested = structuredClone(base)
       requested.status = next
+      if (extra?.published_url !== undefined) {
+        requested.published_url = extra.published_url
+      }
       genRef.current += 1
       const genAtStart = genRef.current
       transitionRef.current = next

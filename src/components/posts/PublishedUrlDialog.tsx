@@ -16,12 +16,22 @@ type Props = {
   onClose: () => void
   verifyExternal: (url: string) => Promise<VerifyExternalResult>
   /**
-   * The way out when the link can't be supplied: publishes via a plain
-   * status PUT, unverified. Omitted for a post that is already `published`
-   * — there the dialog only adds a missing link, so there is nothing to
-   * fall back to.
+   * The way out when Zernio cannot confirm the link — a plain status PUT that
+   * records whatever the user typed, unverified, and publishes.
+   *
+   * It takes the URL rather than nothing (CON-165). The old signature threw
+   * the field away, which meant the one case this path exists for — a platform
+   * Zernio has no listing API for, LinkedIn personal accounts being the whole
+   * reason it exists — published with the permalink sitting in an input box
+   * that was about to be unmounted. The user had the link in their hand and we
+   * discarded it; there is no second chance at it, and a post with no
+   * `published_url` and no `publisher_post_id` is invisible to analytics
+   * forever.
+   *
+   * An empty string is a real answer: it means *I genuinely don't have it*,
+   * which is what the button said originally and is still allowed.
    */
-  onSkip?: () => Promise<TransitionStatusResult>
+  saveUnverified?: (url: string) => Promise<TransitionStatusResult>
 }
 
 /** What the dialog is currently showing. */
@@ -52,7 +62,7 @@ function looksLikeUrl(value: string): boolean {
  * This is not a form that records a link for later — it is how a manual
  * publish completes. The server looks the URL up through Zernio, and only a
  * post that really exists there flips to `published` with its analytics
- * linkage attached. Publishing without the link stays possible (`onSkip`)
+ * linkage attached. Publishing without the link stays possible (`saveUnverified`)
  * because Zernio cannot verify every platform — LinkedIn personal accounts
  * have no listing API at all — and a user who genuinely posted should never
  * be stuck behind a field they can't fill.
@@ -62,7 +72,7 @@ export function PublishedUrlDialog({
   isOpen,
   onClose,
   verifyExternal,
-  onSkip,
+  saveUnverified,
 }: Props) {
   const [url, setUrl] = useState('')
   const [stage, setStage] = useState<Stage>({ kind: 'input' })
@@ -106,22 +116,38 @@ export function PublishedUrlDialog({
     )
   }
 
+  // What the user typed, if it is a link at all. A half-typed string is not
+  // worth storing as a permalink — the field stays on screen either way, so
+  // nothing is lost by ignoring it — but anything that parses goes through
+  // unverified, because Zernio failing to find a post is not evidence the link
+  // is wrong.
+  const typedUrl = looksLikeUrl(url) ? url.trim() : ''
+
   const handleSkip = async () => {
-    if (!onSkip) {
+    if (!saveUnverified) {
       onClose()
       return
     }
     setSkipping(true)
-    const result = await onSkip()
+    const result = await saveUnverified(typedUrl)
     setSkipping(false)
     if (result.ok) {
-      toast.success('Post marked as published')
+      toast.success(
+        alreadyPublished
+          ? 'Post link saved'
+          : typedUrl
+            ? 'Post marked as published, link saved unverified'
+            : 'Post marked as published',
+      )
       onClose()
       return
     }
-    toast.error('Unable to mark the post as published', {
-      description: result.error,
-    })
+    toast.error(
+      alreadyPublished
+        ? 'Unable to save the link'
+        : 'Unable to mark the post as published',
+      { description: result.error },
+    )
   }
 
   return (
@@ -198,8 +224,22 @@ export function PublishedUrlDialog({
           )}
         </div>
 
+        {/*
+          The ghost slot is one control that changes what it says, because it
+          changes what it does. With nothing typed it is the escape hatch it
+          always was — leave without a link, publishing anyway where there is
+          something to publish. With a link typed it is the *other* way to
+          finish: record what the user has without asking Zernio to agree,
+          which is the only route for a platform Zernio cannot read at all.
+
+          Offering it on an already-published post is new (CON-165). That
+          screen previously had a single verify button and a cancel, so a link
+          Zernio would not match could not be saved at all — on exactly the
+          posts whose link we most need, since they are the ones with no
+          publisher linkage to fall back on.
+        */}
         <div className="flex justify-end gap-2">
-          {alreadyPublished ? (
+          {alreadyPublished && !typedUrl ? (
             <Button
               type="button"
               variant="ghost"
@@ -216,7 +256,11 @@ export function PublishedUrlDialog({
               disabled={verifying}
               loading={skipping}
             >
-              I DON'T HAVE THE LINK
+              {typedUrl
+                ? alreadyPublished
+                  ? 'SAVE WITHOUT CHECKING'
+                  : 'PUBLISH WITHOUT CHECKING'
+                : "I DON'T HAVE THE LINK"}
             </Button>
           )}
           <Button type="submit" disabled={!canSubmit} loading={verifying}>

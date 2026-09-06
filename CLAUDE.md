@@ -95,6 +95,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **`src/lib/*` mirrors Go server rules** (`postStatusMachine`, `assetStatus`,
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.
+- **A post's permalink survives publication and is not frozen with the rest**
+  (CON-165). `published_url` is on `PostPayload` and must stay there: the PUT
+  assigns it unconditionally, so an autosave that omits it clears the link on
+  every published post. It is deliberately outside CON-251's content lock —
+  recording a link is a post-publish act — which is what lets
+  `PublishedUrlDialog` save one Zernio cannot verify, on a post that has
+  already published as well as one about to. That path must always pass the
+  typed URL through; it used to discard it, and nothing in the product asks for
+  it a second time.
 - **Video uploads take a different path from images and PDFs** — presign →
   direct PUT to storage → finalize, so multi-hundred-megabyte files never
   buffer in the API. Routed by kind inside `usePostAttachments.upload`; the
