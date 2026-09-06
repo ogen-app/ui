@@ -94,8 +94,7 @@ export function BrandOverview({
 }
 
 export type BrandOverviewState =
-  | { isPending: true; data?: undefined }
-  | { isPending: false; data: BrandData }
+  { isPending: true; data?: undefined } | { isPending: false; data: BrandData }
 
 /**
  * One thing the section holds, as one row.

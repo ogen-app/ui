@@ -13,11 +13,7 @@ import type { AssetStatus } from '@/types/content'
  * network errors land directly in `failed`.
  */
 export type UploadPhase =
-  | 'uploading'
-  | 'processing'
-  | 'ready'
-  | 'partial'
-  | 'failed'
+  'uploading' | 'processing' | 'ready' | 'partial' | 'failed'
 
 /**
  * Where an upload is going, beyond the content bank it always joins.

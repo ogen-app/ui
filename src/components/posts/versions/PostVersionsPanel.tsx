@@ -65,9 +65,10 @@ function buildEntries(doc: Post, versions: PostVersion[]): Entry[] {
   const headIsLive = head?.content === doc.content
   return [
     { kind: 'live', content: doc.content, saved: headIsLive ? head : null },
-    ...(headIsLive ? rest : versions).map(
-      (v): Entry => ({ kind: 'saved', version: v }),
-    ),
+    ...(headIsLive ? rest : versions).map((v): Entry => ({
+      kind: 'saved',
+      version: v,
+    })),
   ]
 }
 

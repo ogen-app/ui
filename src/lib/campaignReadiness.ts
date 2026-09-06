@@ -22,10 +22,7 @@ function channelNameOf(view: PlatformView | undefined, id: string): string {
 // --- Brief ------------------------------------------------------------------
 
 export type BriefField =
-  | 'description'
-  | 'target_persona'
-  | 'key_messages'
-  | 'tone_guidelines'
+  'description' | 'target_persona' | 'key_messages' | 'tone_guidelines'
 
 export const BRIEF_FIELD_LABELS: Record<BriefField, string> = {
   description: 'Description',

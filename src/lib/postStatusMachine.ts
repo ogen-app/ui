@@ -92,10 +92,7 @@ export type PostStatusActionKind = 'user' | 'system'
 //     call — including the fallback to a plain PUT when the user can't
 //     supply a link (Zernio cannot verify LinkedIn personal accounts).
 export type PostStatusActionMechanism =
-  | 'transition'
-  | 'schedule'
-  | 'cancel'
-  | 'verify'
+  'transition' | 'schedule' | 'cancel' | 'verify'
 
 type ActionMeta = {
   // ALL CAPS form, used as the prominent header button label.
@@ -320,10 +317,7 @@ export function isPublishMethodEdge(from: PostStatus, to: PostStatus): boolean {
 
 export type PostStatusBlocker = {
   field:
-    | 'platform_id'
-    | 'platform_post_type'
-    | 'scheduled_at'
-    | 'social_account_id'
+    'platform_id' | 'platform_post_type' | 'scheduled_at' | 'social_account_id'
   message: string
 }
 

@@ -42,11 +42,7 @@ import type { BrandConsumer } from '@/components/brand/types'
  * this file as describing the module rather than the current menu.
  */
 export type BrandSectionId =
-  | 'voices'
-  | 'audiences'
-  | 'guardrails'
-  | 'look'
-  | 'templates'
+  'voices' | 'audiences' | 'guardrails' | 'look' | 'templates'
 
 export type BrandSectionInfo = {
   id: BrandSectionId

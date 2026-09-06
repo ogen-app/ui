@@ -9,8 +9,7 @@
  */
 
 export type PageUrlCheck =
-  | { ok: true; url: string }
-  | { ok: false; error: string }
+  { ok: true; url: string } | { ok: false; error: string }
 
 /**
  * The URL to submit, or why this one can't be.

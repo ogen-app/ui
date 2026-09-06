@@ -36,9 +36,7 @@ type Props = {
 
 /** What the dialog is currently showing. */
 type Stage =
-  | { kind: 'input' }
-  | { kind: 'notFound' }
-  | { kind: 'error'; message: string }
+  { kind: 'input' } | { kind: 'notFound' } | { kind: 'error'; message: string }
 
 /**
  * Loose on purpose. The platforms accept a wide spread of URL shapes

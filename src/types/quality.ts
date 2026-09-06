@@ -11,10 +11,7 @@
 
 /** The closed set of dimensions a post is scored on. */
 export type QualityDimensionKey =
-  | 'correctness'
-  | 'clarity'
-  | 'engagement'
-  | 'delivery'
+  'correctness' | 'clarity' | 'engagement' | 'delivery'
 
 export type QualitySeverity = 'high' | 'medium' | 'low'
 

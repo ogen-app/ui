@@ -259,11 +259,7 @@ export type AnalyticsInsight = {
 
 /** The five the overview reports. There is no series for anything else. */
 export type OverviewMetric =
-  | 'reach'
-  | 'interactions'
-  | 'engagement_rate'
-  | 'followers'
-  | 'posts_published'
+  'reach' | 'interactions' | 'engagement_rate' | 'followers' | 'posts_published'
 
 export type OverviewCard = {
   metric: OverviewMetric
@@ -318,10 +314,7 @@ export type AnalyticsOverview = {
 
 /** What `/performers` will rank by. Anything else is a 400 `invalid_sort`. */
 export type PerformerSort =
-  | 'against_typical'
-  | 'reach'
-  | 'engagement_rate'
-  | 'interactions'
+  'against_typical' | 'reach' | 'engagement_rate' | 'interactions'
 
 /**
  * The account a row went out on. Every field is omitted when empty, and
