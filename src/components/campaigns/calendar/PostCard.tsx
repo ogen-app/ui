@@ -7,6 +7,7 @@ import {
   WarningIcon,
 } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { cn, formatTitle } from '@/lib'
 import { formatDate } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
@@ -214,14 +215,21 @@ function PostCardComponent({
   band = 'full',
 }: PostCardProps) {
   const { t, i18n } = useTranslation()
+  const autoPostType = useFeatureFlag('post-type-auto')
   const title = formatTitle(post.title)
   const platformInfo = getPlatformInfo(post.platform_id)
   // Fall back to a neutral, "undefined"-feeling dashed circle (in the muted
   // tertiary color, not a warning hue) when no platform is assigned.
   const PlatformIcon = platformInfo?.icon ?? CircleDashedIcon
-  const label = platformInfo
-    ? getPostTypeLabel(post.platform_id, post.platform_post_type)
-    : t('posts.noPlatform')
+  // A post with no type of its own is deciding for itself (`lib/postTypeAuto`),
+  // and the card cannot say which format that came out as — resolving needs the
+  // attachments, and the list payload carries none. So it names the state
+  // rather than the answer; the editor is where the answer is.
+  const label = !platformInfo
+    ? t('posts.noPlatform')
+    : autoPostType && !post.platform_post_type
+      ? t('posts.postType.auto')
+      : getPostTypeLabel(post.platform_id, post.platform_post_type)
   const statusLabel = postStatusLabel(t, post.status)
   const borderColor = STATUS_ACCENT_COLOR[post.status] ?? 'border-l-border'
   // The calendar lays posts out by scheduled_at; show that time (or the

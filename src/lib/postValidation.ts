@@ -3,6 +3,7 @@ import type {
   PlatformValidationError,
   PostAttachmentWithValidation,
 } from '@/types/attachments'
+import { isFeatureEnabled } from '@/config/featureFlags'
 import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
 import {
   mediaNoun,
@@ -302,7 +303,15 @@ export function hasVisibleProblem(
   // Nothing can publish without a channel, a shape to publish in, and an
   // account resolution the server would accept.
   if (!getPlatformInfo(post.platform_id)) return true
-  if (!post.platform_post_type) return true
+  // An empty post type is a gap only while nothing is deciding it. With Auto
+  // released it is the *default* state of a draft, and the card has no way to
+  // resolve it — the answer needs the attachments, which the list payload does
+  // not carry. So the mark stands down rather than flagging every new post:
+  // the card understates by design (see the doc comment), and the editor's
+  // checks bar is where an unresolvable one is reported.
+  if (!post.platform_post_type && !isFeatureEnabled('post-type-auto')) {
+    return true
+  }
   if (account.ambiguous || account.mismatched) return true
   return false
 }

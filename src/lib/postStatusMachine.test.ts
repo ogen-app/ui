@@ -270,3 +270,49 @@ describe('isSubmitted', () => {
     }
   })
 })
+
+describe("an automatic post's type", () => {
+  // Auto resolves the format from the body and the files, and the record only
+  // gains a slug as the post is committed (`lib/postTypeAuto`).
+  const automatic = post({ platform_post_type: '' })
+
+  it('does not block the transition that writes it down', () => {
+    // Reading the record here would disable the very button that pins it.
+    expect(
+      fields(
+        getTransitionBlockers(automatic, 'ready_for_publish', {
+          ...RESOLVED,
+          postType: 'image-post',
+        }),
+      ),
+    ).not.toContain('platform_post_type')
+  })
+
+  it('blocks when nothing fits, exactly as an unchosen type does', () => {
+    // `''` is what the resolver answers with when no format takes the post, so
+    // the unresolvable case needs no rule of its own here.
+    expect(
+      fields(
+        getTransitionBlockers(automatic, 'ready_for_publish', {
+          ...RESOLVED,
+          postType: '',
+        }),
+      ),
+    ).toContain('platform_post_type')
+  })
+
+  it('falls back to the record for every caller but the editor', () => {
+    expect(
+      fields(getTransitionBlockers(post(), 'ready_for_publish', RESOLVED)),
+    ).not.toContain('platform_post_type')
+    expect(
+      fields(
+        getTransitionBlockers(
+          post({ platform_post_type: '' }),
+          'ready_for_publish',
+          RESOLVED,
+        ),
+      ),
+    ).toContain('platform_post_type')
+  })
+})
