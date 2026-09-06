@@ -144,7 +144,7 @@ function NothingToPickFrom() {
       </p>
       <div>
         <Button asChild variant="secondary" size="sm">
-          <Link to="/brand">Open Brand</Link>
+          <Link to="/foundation">Open Foundation</Link>
         </Button>
       </div>
     </SettingsCard>

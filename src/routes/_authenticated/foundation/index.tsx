@@ -8,7 +8,7 @@ import { useBrand } from '@/hooks/useBrand'
 import { useAssets } from '@/hooks/useContent'
 
 /**
- * `/brand` — the Overview, and **the main Brand screen**.
+ * `/foundation` — the Overview, and **the main Brand screen**.
  *
  * Not a tab any more: it is what the sidebar points at, what the five sections
  * lead back to, and the only place that answers *what is in my brand* in one
@@ -27,7 +27,7 @@ import { useAssets } from '@/hooks/useContent'
  * scroller, sticky and carrying the standard gradient, so the cards dissolve
  * under it rather than being cut off by it. See `BrandDetail`.
  */
-export const Route = createFileRoute('/_authenticated/brand/')({
+export const Route = createFileRoute('/_authenticated/foundation/')({
   component: BrandOverviewPage,
 })
 
@@ -55,7 +55,7 @@ function BrandOverviewPage() {
               rows for the whole length of the page. Same treatment as Profile
               and Workspace Settings, which are the app's other titled
               scrollers. */}
-          <PageHeader title={t('nav.brand')} fadeOnScroll />
+          <PageHeader title={t('nav.foundation')} fadeOnScroll />
           <div className="px-3 pb-10 lg:px-6">
             <BrandOverview
               state={
@@ -64,7 +64,7 @@ function BrandOverviewPage() {
                   : { isPending: true }
               }
               sources={assets}
-              onOpen={(id) => navigate({ to: `/brand/${id}` })}
+              onOpen={(id) => navigate({ to: `/foundation/${id}` })}
             />
           </div>
         </ScrollArea>

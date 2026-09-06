@@ -224,8 +224,15 @@ export const en = {
     campaigns: 'Campaigns',
     /** CON-237. Behind the `analytics-overview` flag — hidden while it is off. */
     analytics: 'Analytics',
-    /** CON-227. Behind the `brand-materials` flag — hidden while it is off. */
-    brand: 'Brand',
+    /**
+     * CON-227. Behind the `brand-materials` flag — hidden while it is off.
+     *
+     * Foundation rather than Brand: the section holds the voices, audiences,
+     * guardrails and source documents every campaign writes from, and only one
+     * of those four is what anyone means by a brand. The flag, the module
+     * folder and the `/api/brand` resource keep the server's word.
+     */
+    foundation: 'Foundation',
     workspaceSettings: 'Workspace Settings',
     profile: 'Profile',
     help: 'Help and support',

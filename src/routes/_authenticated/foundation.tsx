@@ -21,7 +21,7 @@ import { isFeatureEnabled } from '@/config/featureFlags'
  * this `beforeLoad`; the guardrails editor does not have to, because it *is*
  * the section's own route and sits under here with the rest.
  */
-export const Route = createFileRoute('/_authenticated/brand')({
+export const Route = createFileRoute('/_authenticated/foundation')({
   beforeLoad: () => {
     if (!isFeatureEnabled('brand-materials')) {
       throw redirect({ to: '/campaigns' })

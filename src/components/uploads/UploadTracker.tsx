@@ -26,7 +26,7 @@ export function UploadTracker() {
   // campaign at all).
   const openCampaign =
     pathname.match(/^\/campaigns\/([^/]+)\/content$/)?.[1] ?? null
-  const bankOpen = pathname === '/brand/sources'
+  const bankOpen = pathname === '/foundation/sources'
   const items =
     openCampaign !== null || bankOpen
       ? all.filter((it) => it.campaignId !== openCampaign)

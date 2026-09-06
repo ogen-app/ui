@@ -2,12 +2,12 @@ import { createFileRoute } from '@tanstack/react-router'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { ContentPage } from '@/components/content/ContentPage'
 
-export const Route = createFileRoute('/_authenticated/brand/sources')({
+export const Route = createFileRoute('/_authenticated/foundation/sources')({
   component: Sources,
 })
 
 /**
- * `/brand/sources` — the workspace's documents, all of them (CON-211).
+ * `/foundation/sources` — the workspace's documents, all of them (CON-211).
  *
  * **Brand's sixth section**, and it was `/content-bank` until it became one.
  * The move is an admission the module list had been making for a while: a

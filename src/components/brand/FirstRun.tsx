@@ -115,7 +115,7 @@ export function FirstRun({
         <Onramp
           icon={<StackIcon />}
           title="Start from a template"
-          body="A short setup that walks the whole brand one question at a time — voice, audience and the things you can never claim. Individual starter voices and audiences already exist inside those two sections; what is coming is doing all three in one pass."
+          body="A short setup that walks the whole foundation one question at a time — voice, audience and the things you can never claim. Individual starter voices and audiences already exist inside those two sections; what is coming is doing all three in one pass."
           comingSoon
         />
       </div>

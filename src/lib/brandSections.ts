@@ -26,7 +26,7 @@ import type { BrandConsumer } from '@/components/brand/types'
  * card can *summarise* any of those. It cannot be where the work happens.
  *
  * So Brand is a **hub and five drilldowns**, not a page and not five tabs. The
- * Overview is the screen `/brand` opens on and the only thing the sidebar
+ * Overview is the screen `/foundation` opens on and the only thing the sidebar
  * points at; each section is a page you go *into*, with one way back. It was
  * tabs for a while — first a bar under the header, then pills on the header
  * line — and both versions had the same fault, which is that a tab bar is

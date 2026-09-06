@@ -93,7 +93,7 @@ export function AssetDetailsHeader({
               <CaretLeftIcon className="size-5" />
             </Link>
           ) : (
-            <Link to="/brand/sources">
+            <Link to="/foundation/sources">
               <CaretLeftIcon className="size-5" />
             </Link>
           )}

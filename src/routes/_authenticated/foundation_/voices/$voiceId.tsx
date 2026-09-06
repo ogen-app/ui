@@ -12,15 +12,15 @@ import { useBrand, useDeleteVoice, useSaveVoice } from '@/hooks/useBrand'
 import { toast } from '@/stores/toastStore'
 
 /**
- * `/brand/voices/:id` — one voice, being written.
+ * `/foundation/voices/:id` — one voice, being written.
  *
  * **The third level**, and the only section that has one: the Overview lists
- * the voices, `/brand/voices` shows them, and this is one of them open. The
+ * the voices, `/foundation/voices` shows them, and this is one of them open. The
  * caret at top-left goes back one step, the same as the caret on the section
  * above it — from here the way out is always one gesture, never a choice.
  *
  * Escaped from the Brand layout (the trailing underscore on `brand_`) because
- * `/brand/voices` is a leaf and a leaf cannot have children. The URL is
+ * `/foundation/voices` is a leaf and a leaf cannot have children. The URL is
  * identical either way — the underscore never reaches the address bar — so
  * this is a file-tree fact, not a navigation one.
  *
@@ -39,7 +39,9 @@ import { toast } from '@/stores/toastStore'
  * point of putting the fake at the service and not in the screen: when CON-228
  * lands, this file does not change.
  */
-export const Route = createFileRoute('/_authenticated/brand_/voices/$voiceId')({
+export const Route = createFileRoute(
+  '/_authenticated/foundation_/voices/$voiceId',
+)({
   beforeLoad: () => {
     if (!isFeatureEnabled('brand-materials')) {
       throw redirect({ to: '/campaigns' })
@@ -66,7 +68,7 @@ function VoiceEditorPage() {
   const save = useSaveVoice()
   const remove = useDeleteVoice()
 
-  const back = () => navigate({ to: '/brand/voices' })
+  const back = () => navigate({ to: '/foundation/voices' })
   const isNew = voiceId === 'new'
   const voice = data?.voices.find((v) => v.id === voiceId) ?? null
 
@@ -84,7 +86,7 @@ function VoiceEditorPage() {
    */
   const header = (
     <PageHeader
-      back={<BrandBackButton to="/brand/voices" label="Back to voices" />}
+      back={<BrandBackButton to="/foundation/voices" label="Back to voices" />}
     />
   )
 

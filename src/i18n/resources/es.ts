@@ -192,7 +192,7 @@ export const es: Translation = {
     activityUnread_other: '{{count}} entradas sin leer',
     campaigns: 'Campañas',
     analytics: 'Analíticas',
-    brand: 'Marca',
+    foundation: 'Fundamentos',
     workspaceSettings: 'Ajustes del espacio',
     profile: 'Perfil',
     help: 'Ayuda y soporte',

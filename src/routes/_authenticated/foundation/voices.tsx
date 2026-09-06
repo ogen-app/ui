@@ -3,7 +3,7 @@ import { VoicesSection } from '@/components/brand/VoicesSection'
 import { BrandDetail } from '@/components/brand/detail'
 
 /**
- * `/brand/voices` — the cast, one level down from the Overview.
+ * `/foundation/voices` — the cast, one level down from the Overview.
  *
  * The first Brand section with a level below it: a voice is a screen of its own
  * again (`brand_/voices/$voiceId`), because writing one is pasting posts,
@@ -14,7 +14,7 @@ import { BrandDetail } from '@/components/brand/detail'
  * a starter and opening an existing voice differ only in what the editor opens
  * with. That is why the section takes three callbacks and not three flows.
  */
-export const Route = createFileRoute('/_authenticated/brand/voices')({
+export const Route = createFileRoute('/_authenticated/foundation/voices')({
   component: VoicesPage,
 })
 
@@ -28,16 +28,16 @@ function VoicesPage() {
           voices={brand.voices}
           onAdd={() =>
             navigate({
-              to: '/brand/voices/$voiceId',
+              to: '/foundation/voices/$voiceId',
               params: { voiceId: 'new' },
             })
           }
           onOpen={(voiceId) =>
-            navigate({ to: '/brand/voices/$voiceId', params: { voiceId } })
+            navigate({ to: '/foundation/voices/$voiceId', params: { voiceId } })
           }
           onStart={(from) =>
             navigate({
-              to: '/brand/voices/$voiceId',
+              to: '/foundation/voices/$voiceId',
               params: { voiceId: 'new' },
               search: { from },
             })

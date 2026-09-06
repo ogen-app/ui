@@ -278,7 +278,7 @@ function AssetsTableComponent({
                 params: { campaignId, assetId: row.id },
               } as const)
             : ({
-                to: '/brand/sources/$assetId',
+                to: '/foundation/sources/$assetId',
                 params: { assetId: row.id },
               } as const)
           return (

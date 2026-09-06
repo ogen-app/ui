@@ -12,7 +12,7 @@ import { useBrand, useDeleteAudience, useSaveAudience } from '@/hooks/useBrand'
 import { toast } from '@/stores/toastStore'
 
 /**
- * `/brand/audiences/:id` — one audience, being described.
+ * `/foundation/audiences/:id` — one audience, being described.
  *
  * The voice route's twin, and deliberately identical down to the branches: the
  * caret goes back one step, `new` is an id like any other so writing one and
@@ -25,7 +25,7 @@ import { toast } from '@/stores/toastStore'
  * they share belong in one place — see `components/brand/editor.tsx`.
  */
 export const Route = createFileRoute(
-  '/_authenticated/brand_/audiences/$audienceId',
+  '/_authenticated/foundation_/audiences/$audienceId',
 )({
   beforeLoad: () => {
     if (!isFeatureEnabled('brand-materials')) {
@@ -47,7 +47,7 @@ function AudienceEditorPage() {
   const save = useSaveAudience()
   const remove = useDeleteAudience()
 
-  const back = () => navigate({ to: '/brand/audiences' })
+  const back = () => navigate({ to: '/foundation/audiences' })
   const isNew = audienceId === 'new'
   const audience = data?.audiences.find((a) => a.id === audienceId) ?? null
 
@@ -60,7 +60,9 @@ function AudienceEditorPage() {
    */
   const header = (
     <PageHeader
-      back={<BrandBackButton to="/brand/audiences" label="Back to audiences" />}
+      back={
+        <BrandBackButton to="/foundation/audiences" label="Back to audiences" />
+      }
     />
   )
 

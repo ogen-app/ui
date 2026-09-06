@@ -186,7 +186,7 @@ export function notificationTarget(
         : null
     case 'asset':
       return id
-        ? { to: '/brand/sources/$assetId', params: { assetId: id } }
+        ? { to: '/foundation/sources/$assetId', params: { assetId: id } }
         : null
     case 'social_account':
       // No route addresses one connection: they are a section of Workspace

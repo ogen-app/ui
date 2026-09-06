@@ -404,6 +404,11 @@ const FEATURE_FLAGS = {
    *
    * The argument this is built from: `docs/brand-materials.md`.
    */
+  // The id keeps the server's word, as do `components/brand`, `useBrand` and
+  // the `/api/brand` resource it all talks to. Only the user's word changed:
+  // the module is called Foundation, because the voices, audiences,
+  // guardrails and source documents every campaign writes from are not all
+  // one thing, and only one of the four is what anyone means by a brand.
   'brand-materials': true,
 
   /**

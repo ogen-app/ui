@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
 /**
- * `/brand/look` — logos with jobs, colours with roles, type, imagery.
+ * `/foundation/look` — logos with jobs, colours with roles, type, imagery.
  *
  * **Closed, and the screen behind it still exists.** `LookSection` renders and
  * `GET /api/brand` returns `look`; what is missing is anything that writes it
@@ -14,8 +14,8 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
  * Reopening it is deleting this file's `beforeLoad` and restoring the two lines
  * below it — kept in the git history rather than commented out here.
  */
-export const Route = createFileRoute('/_authenticated/brand/look')({
+export const Route = createFileRoute('/_authenticated/foundation/look')({
   beforeLoad: () => {
-    throw redirect({ to: '/brand' })
+    throw redirect({ to: '/foundation' })
   },
 })

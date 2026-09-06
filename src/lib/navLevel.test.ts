@@ -5,7 +5,10 @@ describe('navLevelOf', () => {
   it('puts the workspace destinations on level 0', () => {
     expect(navLevelOf('/campaigns')).toEqual({ level: 0, campaignId: null })
     expect(navLevelOf('/analytics')).toEqual({ level: 0, campaignId: null })
-    expect(navLevelOf('/brand/voices')).toEqual({ level: 0, campaignId: null })
+    expect(navLevelOf('/foundation/voices')).toEqual({
+      level: 0,
+      campaignId: null,
+    })
   })
 
   it('drills on a campaign and on every section of one', () => {

@@ -29,10 +29,10 @@ export function NavUtilityStrip() {
     <div className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col">
       {brandEnabled && (
         <NavGlyph
-          label={t('nav.brand')}
+          label={t('nav.foundation')}
           icon={PaletteIcon}
-          to="/brand"
-          isActive={pathname.startsWith('/brand')}
+          to="/foundation"
+          isActive={pathname.startsWith('/foundation')}
         />
       )}
       {activityEnabled && <ActivityNavGlyph />}

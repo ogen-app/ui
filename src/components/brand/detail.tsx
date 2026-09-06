@@ -155,10 +155,10 @@ export function BrandPage({ children }: { children: ReactNode }) {
  * its screen *is* its editor and there is no level below it to come back from.
  */
 export function BrandBackButton({
-  to = '/brand',
-  label = 'Back to Brand',
+  to = '/foundation',
+  label = 'Back to Foundation',
 }: {
-  to?: '/brand' | '/brand/voices' | '/brand/audiences'
+  to?: '/foundation' | '/foundation/voices' | '/foundation/audiences'
   label?: string
 }) {
   return (
@@ -186,7 +186,7 @@ function BrandDetailBody({
   if (isError || !data) {
     return (
       <PageError
-        header="Brand could not be loaded"
+        header="Foundation could not be loaded"
         message="The workspace's voices, audiences and guardrails are not reachable right now. Everything else in the app is unaffected."
       />
     )
@@ -269,7 +269,7 @@ function isSectionEmpty(section: BrandSectionId, data: BrandData): boolean {
       return data.look === null
     case 'templates':
       return data.templates.length === 0
-    // Never asked: `/brand/sources` is the Content page rather than a
+    // Never asked: `/foundation/sources` is the Content page rather than a
     // `BrandDetail`, so it has no intro card to qualify.
     case 'sources':
       return false

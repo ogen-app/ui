@@ -173,7 +173,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             return
           }
           navigate({
-            to: '/brand/sources/$assetId',
+            to: '/foundation/sources/$assetId',
             params: { assetId: asset.id },
           })
         },

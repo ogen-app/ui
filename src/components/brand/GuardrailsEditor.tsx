@@ -44,7 +44,7 @@ import type { BrandGuardrails } from './types'
  * it added was a screen where the rules cannot be corrected while you are
  * looking at the mistake.
  *
- * So `/brand/guardrails` is this, and there is nothing under it. The Overview's
+ * So `/foundation/guardrails` is this, and there is nothing under it. The Overview's
  * card is the way in, the caret goes back to the Overview, and everything the
  * section card used to draw — the intro, what the emptiness costs, the three
  * starters — is drawn here around the fields it describes. Templates reaches

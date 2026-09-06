@@ -13,14 +13,14 @@ import {
 import { toast } from '@/stores/toastStore'
 
 /**
- * `/brand/guardrails` — what is true, what may be claimed, what never may.
+ * `/foundation/guardrails` — what is true, what may be claimed, what never may.
  *
  * **The one Brand section with nothing under it.** Voices and audiences are
  * libraries and their rows are screens; there is one set of guardrails per
  * workspace, so a section listing it and an editor below the section were two
  * screens showing the same document with a click between them that chose
  * nothing. This route is the editor — see `GuardrailsEditor` for the argument
- * — and `/brand` is what the caret goes back to.
+ * — and `/foundation` is what the caret goes back to.
  *
  * ## Two things the merge makes this route responsible for
  *
@@ -40,7 +40,7 @@ import { toast } from '@/stores/toastStore'
  * `guardrails: null` to the cache, so the remount and the emptied data land in
  * the same render.
  */
-export const Route = createFileRoute('/_authenticated/brand/guardrails')({
+export const Route = createFileRoute('/_authenticated/foundation/guardrails')({
   component: GuardrailsPage,
 })
 
