@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { BrandOverview } from '@/components/brand/BrandOverview'
 import { BrandPage } from '@/components/brand/detail'
 import { useBrand } from '@/hooks/useBrand'
+import { useAssets } from '@/hooks/useContent'
 
 /**
  * `/brand` — the Overview, and **the main Brand screen**.
@@ -34,6 +35,10 @@ function BrandOverviewPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { data } = useBrand()
+  // Sources is Brand's sixth section and the one `useBrand` knows nothing
+  // about, so the hub waits on both: a card that renders "nothing to write
+  // from" for the length of a second query is worse than a skeleton.
+  const { data: assets } = useAssets()
 
   return (
     <BrandPage>
@@ -53,7 +58,12 @@ function BrandOverviewPage() {
           <PageHeader title={t('nav.brand')} fadeOnScroll />
           <div className="px-3 pb-10 lg:px-6">
             <BrandOverview
-              state={data ? { isPending: false, data } : { isPending: true }}
+              state={
+                data && assets
+                  ? { isPending: false, data }
+                  : { isPending: true }
+              }
+              sources={assets}
               onOpen={(id) => navigate({ to: `/brand/${id}` })}
             />
           </div>

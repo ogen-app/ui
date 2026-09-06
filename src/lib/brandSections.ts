@@ -1,4 +1,5 @@
 import {
+  CardsThreeIcon,
   ChatCircleDotsIcon,
   FrameCornersIcon,
   ShieldIcon,
@@ -42,7 +43,7 @@ import type { BrandConsumer } from '@/components/brand/types'
  * this file as describing the module rather than the current menu.
  */
 export type BrandSectionId =
-  'voices' | 'audiences' | 'guardrails' | 'look' | 'templates'
+  'voices' | 'audiences' | 'guardrails' | 'sources' | 'look' | 'templates'
 
 export type BrandSectionInfo = {
   id: BrandSectionId
@@ -152,6 +153,18 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
       'What is true, what may be claimed, and what may never be. These are the rules nobody opts out of — they hold for every generated post whichever voice wrote it, and the more convincing the voice, the more convincing the invention they exist to stop.',
     whenEmpty: 'Nothing is off limits. Any voice here may promise anything.',
     readBy: [],
+    shown: true,
+  },
+  {
+    id: 'sources',
+    label: 'Sources',
+    icon: CardsThreeIcon,
+    tone: 'var(--brand-sources)',
+    description:
+      'The documents the workspace writes from — briefs, transcripts, product pages, anything already written down. A campaign attaches the ones it draws on; this is all of them, including the ones no campaign has claimed yet.',
+    whenEmpty:
+      'Nothing to write from but the brief. Every generated post is invention.',
+    readBy: ['plan', 'post'],
     shown: true,
   },
   {

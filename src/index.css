@@ -399,6 +399,7 @@
   --brand-guardrails: oklch(0.52 0.15 342); /* pink */
   --brand-look: oklch(0.55 0.14 66); /* amber */
   --brand-templates: oklch(0.54 0.11 214); /* cyan */
+  --brand-sources: oklch(0.53 0.14 300); /* purple */
 
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);

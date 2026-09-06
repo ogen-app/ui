@@ -55,7 +55,7 @@ export function DeleteAssetDialog({
               to: '/campaigns/$campaignId/content',
               params: { campaignId },
             })
-          : navigate({ to: '/content-bank' }))
+          : navigate({ to: '/brand/sources' }))
       },
       // No onError: the mutation cache raises the API's own message.
     })

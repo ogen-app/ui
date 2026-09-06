@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import {
-  CardsThreeIcon,
   ChartLineUpIcon,
   TargetIcon,
   ToolboxIcon,
@@ -55,26 +54,16 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
     })
   }
 
-  destinations.push(
-    {
-      id: 'campaigns',
-      label: t('nav.campaigns'),
-      icon: ToolboxIcon,
-      to: '/campaigns',
-      // Exact: everything below `/campaigns/<id>` is level 1, and lighting the
-      // module row up while the rail is drawing a campaign would say the two
-      // are the same place — which is the conflation the drill-down exists to
-      // undo.
-      isActive: (p) => p === '/campaigns',
-    },
-    {
-      id: 'content-bank',
-      label: t('nav.contentBank'),
-      icon: CardsThreeIcon,
-      to: '/content-bank',
-      isActive: (p) => p.startsWith('/content-bank'),
-    },
-  )
+  destinations.push({
+    id: 'campaigns',
+    label: t('nav.campaigns'),
+    icon: ToolboxIcon,
+    to: '/campaigns',
+    // Exact: everything below `/campaigns/<id>` is level 1, and lighting the
+    // module row up while the rail is drawing a campaign would say the two are
+    // the same place — which is the conflation the drill-down exists to undo.
+    isActive: (p) => p === '/campaigns',
+  })
 
   if (analyticsEnabled) {
     destinations.push({

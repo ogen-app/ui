@@ -269,5 +269,9 @@ function isSectionEmpty(section: BrandSectionId, data: BrandData): boolean {
       return data.look === null
     case 'templates':
       return data.templates.length === 0
+    // Never asked: `/brand/sources` is the Content page rather than a
+    // `BrandDetail`, so it has no intro card to qualify.
+    case 'sources':
+      return false
   }
 }

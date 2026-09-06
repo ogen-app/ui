@@ -222,7 +222,6 @@ export const en = {
     activityUnread_one: '{{count}} unread entry',
     activityUnread_other: '{{count}} unread entries',
     campaigns: 'Campaigns',
-    contentBank: 'Content Bank',
     /** CON-237. Behind the `analytics-overview` flag — hidden while it is off. */
     analytics: 'Analytics',
     /** CON-227. Behind the `brand-materials` flag — hidden while it is off. */

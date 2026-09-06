@@ -37,7 +37,7 @@ import { ContentList } from './ContentList'
  * Documents, in the scope that holds them.
  *
  * Two screens, one component: a campaign's Content page (CON-210), and the
- * workspace-wide Content Bank behind it. They are the same page because they
+ * workspace-wide bank behind it — Brand's Sources section (CON-211). They are the same page because they
  * are the same job — see what is here, put something in, open it, delete it —
  * and the only honest difference is what "here" means. `campaign === null` is
  * the workspace, and every place that matters says so out loud rather than
@@ -173,7 +173,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             return
           }
           navigate({
-            to: '/content-bank/$assetId',
+            to: '/brand/sources/$assetId',
             params: { assetId: asset.id },
           })
         },
@@ -280,7 +280,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
         // "assets" is the workspace pile's word for things filed away
         // centrally, and what a campaign holds is just its content. The pile
         // keeps its own name, because that is what it is.
-        title={campaign ? `${scopeName} Content` : 'Content Bank'}
+        title={campaign ? `${scopeName} Content` : 'Sources'}
         actions={
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

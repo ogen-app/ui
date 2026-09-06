@@ -4,6 +4,9 @@ import { LineItem } from '@/components/ui/line-item'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { formatDate } from '@/lib/intl'
+import { isTerminalStatus } from '@/lib/assetStatus'
+import type { Asset } from '@/types/content'
 import {
   SHOWN_BRAND_SECTIONS,
   type BrandSectionId,
@@ -55,10 +58,21 @@ import { isBrandEmpty, MIN_VOICE_SAMPLES, type BrandData } from './types'
  */
 export function BrandOverview({
   state,
+  sources = [],
   showWhenEmpty = false,
   onOpen,
 }: {
   state: BrandOverviewState
+  /**
+   * The workspace's documents (CON-211), which are Brand's sixth section and
+   * the one whose contents do not come from `useBrand`.
+   *
+   * Passed in rather than fetched here for the reason the rest of this screen
+   * takes `state`: it is a rendering of what is in the brand, and a component
+   * that fetches half of what it draws cannot be put in a harness or shown a
+   * fixture. The route owns both queries.
+   */
+  sources?: Asset[]
   /** Skips the first-run takeover — the escape hatch, and the harness. */
   showWhenEmpty?: boolean
   onOpen?: (id: BrandSectionId) => void
@@ -85,7 +99,14 @@ export function BrandOverview({
         <SectionCard
           key={section.id}
           section={section}
-          rows={sectionRows(section.id, data)}
+          rows={
+            section.id === 'sources'
+              ? sourceRows(sources)
+              : sectionRows(section.id, data)
+          }
+          footnote={
+            section.id === 'sources' ? sourcesFootnote(sources) : undefined
+          }
           onOpen={onOpen}
         />
       ))}
@@ -149,10 +170,18 @@ type BrandRow = {
 function SectionCard({
   section,
   rows,
+  footnote,
   onOpen,
 }: {
   section: BrandSectionInfo
   rows: BrandRow[]
+  /**
+   * A line under the rows, for a section whose card cannot show all of it.
+   * Only Sources has one: a library of four voices is listed, a library of
+   * four hundred documents is sampled, and a card that silently showed five of
+   * them would be reporting a number nobody asked it for.
+   */
+  footnote?: string
   onOpen?: (id: BrandSectionId) => void
 }) {
   const Icon = section.icon
@@ -198,20 +227,27 @@ function SectionCard({
             {section.whenEmpty}
           </p>
         ) : (
-          <ul className="flex flex-col">
-            {rows.map((row) => (
-              <li key={row.key}>
-                <LineItem
-                  variant={row.meta ? 'entry' : 'task'}
-                  indicator={{ kind: 'task', done: row.done }}
-                  label={row.label}
-                  details={row.details}
-                  meta={row.meta}
-                  trailing={row.trailing}
-                />
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="flex flex-col">
+              {rows.map((row) => (
+                <li key={row.key}>
+                  <LineItem
+                    variant={row.meta ? 'entry' : 'task'}
+                    indicator={{ kind: 'task', done: row.done }}
+                    label={row.label}
+                    details={row.details}
+                    meta={row.meta}
+                    trailing={row.trailing}
+                  />
+                </li>
+              ))}
+            </ul>
+            {footnote && (
+              <p className="pt-2 font-mono text-xs text-tertiary-foreground">
+                {footnote}
+              </p>
+            )}
+          </>
         )}
       </SettingsCard>
     </Opens>
@@ -271,6 +307,12 @@ function Opens({
  */
 function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
   switch (id) {
+    // The documents are not in `BrandData` — the caller builds these rows from
+    // its own query (`sourceRows`) and never reaches this arm. Present so the
+    // switch stays exhaustive, which is what makes a sixth section a compile
+    // error here rather than a blank card.
+    case 'sources':
+      return []
     case 'voices':
       return data.voices.map((voice) => {
         // The samples are the voice, so they are what the tick is about. A
@@ -443,6 +485,43 @@ function statedCount(n: number): string {
  * offer that over-promises is the fastest way to make the one good first-run
  * path look unreliable.
  */
+/** How many documents a card shows before it stops being a list. */
+const SOURCE_ROWS = 5
+
+/**
+ * The most recently changed documents, newest first.
+ *
+ * Recency rather than name, because the question this card answers is *what is
+ * in there* and the honest short answer to that for a library nobody can list
+ * is what has been going into it. Alphabetical would show the same five
+ * forever.
+ *
+ * `done` is "there is something behind this", as everywhere on this screen: a
+ * document still being read, or one whose scrape failed, is a row the app
+ * cannot yet write from — which is exactly the state the tick exists to make
+ * visible before somebody generates against it.
+ */
+function sourceRows(assets: Asset[]): BrandRow[] {
+  return [...assets]
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    .slice(0, SOURCE_ROWS)
+    .map((asset) => ({
+      key: asset.id,
+      done: isTerminalStatus(asset.status) && asset.status !== 'failed',
+      label: asset.title,
+      meta:
+        formatDate(asset.updated_at, { month: 'short', day: 'numeric' }) ??
+        undefined,
+    }))
+}
+
+/** Only when the card is showing a sample, and it says so in as many words. */
+function sourcesFootnote(assets: Asset[]): string | undefined {
+  return assets.length > SOURCE_ROWS
+    ? `Showing the ${SOURCE_ROWS} most recently changed of ${assets.length}.`
+    : undefined
+}
+
 function missingSectionNames(data: BrandData): string[] {
   const missing: string[] = []
   if (data.voices.length === 0) missing.push('voices')
