@@ -201,6 +201,10 @@ export const es: Translation = {
     closeSidebar: 'Cerrar la barra lateral',
     switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
+    backToWorkspace: 'Volver al espacio de trabajo',
+    account: 'Cuenta',
+    workspaceScope: 'Espacio de trabajo',
+    campaignNoWindow: 'Sin fechas',
     campaign: {
       overview: 'Resumen',
       posts: 'Calendario de publicaciones',

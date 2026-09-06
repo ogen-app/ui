@@ -53,18 +53,6 @@ export function usePostsPlace(campaignId: string): PostsPlace {
   return useMemo(() => stored ?? defaultPostsPlace(), [stored])
 }
 
-/**
- * The whole map, for a caller that needs several campaigns at once and so
- * cannot ask per campaign — the sidebar, which renders a row per campaign from
- * one table. Pair it with `postsPlaceOf` / `postsPlaceLink`.
- *
- * The map's identity is stable across renders that didn't write to it, which is
- * what makes this safe to subscribe to where the derived reads are not.
- */
-export function usePostsPlaces(): Record<string, PostsPlace> {
-  return useSettingsStore((s) => s.postsPlace)
-}
-
 /** The calendar's remembered position, for the entry points that name it. */
 export function useCalendarPlace(campaignId: string): {
   anchor: string

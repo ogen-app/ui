@@ -235,6 +235,17 @@ export const en = {
     /** Both halves of what the /workspaces page offers, in one row. */
     switchWorkspace: 'Create or switch',
     untitledCampaign: 'Untitled campaign',
+    /** The way out of a campaign, on the header caret and on the mark beside it. */
+    backToWorkspace: 'Back to workspace',
+    /** The mark that opens the account menu once the rail is inside a campaign. */
+    account: 'Account',
+    /**
+     * Heads the workspace's destinations where they appear inside the account
+     * menu — level 1's way back to a module without leaving the campaign first.
+     */
+    workspaceScope: 'Workspace',
+    /** A campaign with no start or end date, in the rail's window line. */
+    campaignNoWindow: 'No dates set',
     campaign: {
       overview: 'Overview',
       // Named for where it goes, not for what it holds: this row opens the
