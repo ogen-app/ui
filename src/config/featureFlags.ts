@@ -113,13 +113,25 @@ const FEATURE_FLAGS = {
    * `docs/sse.md` carries the diagnosis and the fix.
    *
    * One thing the pass turned up that is **not** this feature's fault, but is
-   * made twice as likely by it: `eventhub` caps a user at 10 concurrent
-   * subscriptions across *both* streams, and a dropped connection holds its
-   * slot until the server's next heartbeat write notices (20s). A reload
-   * therefore orphans two slots where it used to orphan one, and both streams
-   * answer 429 and back off until the slots free — reproduced on `/api/events`
-   * as well, so it predates this. The backoff rides it out; a tighter cap or a
-   * faster reap would not have to.
+   * made twice as likely by it, and is worse than it first read: `eventhub`
+   * caps a user at 10 concurrent subscriptions across *both* streams, and the
+   * slots **leak**. This was written as "a dropped connection holds its slot
+   * until the server's next heartbeat write notices (20s)… the backoff rides
+   * it out". It does not. Measured against the local API on 2026-09-06: 328
+   * `subscriber connected` against 318 `subscriber disconnected`, with exactly
+   * ten ids connected and never released — saturated six minutes after the
+   * container booted and still saturated 39 hours later, 1283 × `429
+   * eventhub: subscriber limit exceeded for user`. `lib/streamConnection` is
+   * doing its job (backoff caps at 30s and retries, which is exactly the
+   * cadence in the log); there is simply nothing to reconnect to.
+   *
+   * So the failure is not degraded live updates, it is **none** — no cross-tab
+   * invalidation and no notifications, permanently, for that user until the
+   * API restarts. A reload orphaning two slots where it used to orphan one is
+   * what makes the ten fill twice as fast. Fixing the reap is the ask; a
+   * tighter cap alone would make it worse. It also blocks the last of the
+   * round trip in 1 above, since the replay cannot be watched on a stream that
+   * never opens.
    *
    * The daily report is the half that was never a stand-in: it is a count over
    * posts, correct as computed, and it is untouched by all of the above.
