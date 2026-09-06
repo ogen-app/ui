@@ -10,12 +10,7 @@ import type { Post } from '@/types/posts'
  * freeze whichever language loaded first. See `docs/technical-decisions.md#i18n`.
  */
 export type CountdownUnit =
-  | 'second'
-  | 'minute'
-  | 'hour'
-  | 'day'
-  | 'week'
-  | 'month'
+  'second' | 'minute' | 'hour' | 'day' | 'week' | 'month'
 
 export type PublishCountdown = {
   /** Signed: positive is ahead, negative is overdue. Zero reads as "now". */

@@ -516,11 +516,7 @@ export type PacePlacement = 'ahead' | 'usual' | 'behind'
  * keyed by them.
  */
 export type PerformerCriterionId =
-  | 'pace'
-  | 'reach'
-  | 'engagement_rate'
-  | 'save_rate'
-  | 'follow_rate'
+  'pace' | 'reach' | 'engagement_rate' | 'save_rate' | 'follow_rate'
 
 /**
  * The connected account a post went out on.

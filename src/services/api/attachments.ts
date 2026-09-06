@@ -61,8 +61,7 @@ export function uploadAttachment(
 
     xhr.onload = () => {
       const body = xhr.response as
-        | (PostAttachmentWithValidation & { error?: string })
-        | null
+        (PostAttachmentWithValidation & { error?: string }) | null
       if (xhr.status < 200 || xhr.status >= 300) {
         reject(new Error(body?.error || `Unable to upload ${file.name}`))
         return
