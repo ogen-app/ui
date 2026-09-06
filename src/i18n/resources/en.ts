@@ -215,7 +215,6 @@ export const en = {
   },
 
   nav: {
-    modules: 'Modules',
     activity: 'Activity',
     tasks: 'Tasks',
     /** The count beside the Activity row, read out rather than seen. */

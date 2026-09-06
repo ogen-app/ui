@@ -185,7 +185,6 @@ export const es: Translation = {
   },
 
   nav: {
-    modules: 'Módulos',
     activity: 'Actividad',
     tasks: 'Tareas',
     activityUnread_one: '{{count}} entrada sin leer',
