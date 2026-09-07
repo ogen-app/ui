@@ -228,13 +228,18 @@ function HeaderMark({
   return (
     <div className="relative flex min-w-0 items-center">
       {/* In the gutter, which is 24px of the header's own padding and the only
-          room there is to the left of the mark without moving it. Hidden on
-          the collapsed rail, where there is no gutter at all — there the mark
-          is the way back, which is what its own link is for. */}
+          room there is to the left of the mark without moving it. Gone on the
+          collapsed rail, where there is no gutter at all — there the mark is
+          the way back, which is what its own link is for.
+
+          Faded out over the rail's own 200ms rather than switched off, so it
+          leaves with the width instead of a frame before it, and made
+          unclickable with it: a caret at zero opacity is still a link, and the
+          collapsed rail would have an invisible way out sitting on its edge. */}
       <Link
         to="/campaigns"
         aria-label={t('nav.backToWorkspace')}
-        className="absolute -left-2 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-sm text-tertiary-foreground transition-colors hover:text-sidebar-primary-foreground lg:-left-5 group-data-[collapsible=icon]:hidden"
+        className="absolute -left-2 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-sm text-tertiary-foreground transition-[color,opacity] duration-200 ease-linear hover:text-sidebar-primary-foreground lg:-left-5 group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0"
       >
         <CaretLeftIcon weight="bold" className="size-4" />
       </Link>
