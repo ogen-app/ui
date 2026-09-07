@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { AssetDocument } from '@/components/content/AssetDocument'
 
 export const Route = createFileRoute(
-  '/_authenticated/campaigns/$campaignId_/content/$assetId',
+  '/_authenticated/campaigns/$campaignId_/foundation/$assetId',
 )({
   component: CampaignDocument,
 })

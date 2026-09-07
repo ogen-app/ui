@@ -30,18 +30,29 @@ import { useUploadStore } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
 import type { Campaign } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
+import { InheritedBrand } from '@/components/brand/InheritedBrand'
 import { AddWebPageModal } from './AddWebPageModal'
 import { ContentList } from './ContentList'
 
 /**
  * Documents, in the scope that holds them.
  *
- * Two screens, one component: a campaign's Content page (CON-210), and the
- * workspace-wide bank behind it — Brand's Sources section (CON-211). They are the same page because they
+ * Two screens, one component: a campaign's Foundation page (CON-210), and the
+ * workspace-wide bank behind it — Foundation's Sources section (CON-211). They
+ * are the same page because they
  * are the same job — see what is here, put something in, open it, delete it —
  * and the only honest difference is what "here" means. `campaign === null` is
  * the workspace, and every place that matters says so out loud rather than
  * quietly reusing the campaign's words.
+ *
+ * **In a campaign it is the section's whole page, and the documents are the
+ * lower half of it.** `/campaigns/:id/foundation` is the level-1 twin of
+ * `/foundation`, and up there the word covers the guardrails, the voices and
+ * the audiences as well as the documents. So the campaign's version leads with
+ * what it inherits — read-only, collapsed, `InheritedBrand` — and the table
+ * below is what the campaign has put in itself. The workspace's bank shows no
+ * such band: it *is* the place those things are edited, one click away in its
+ * own Overview.
  *
  * The page owns its header and its drop target rather than taking the layout's,
  * because both name a destination: a file dropped anywhere on it joins *this*
@@ -167,7 +178,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             const attached = await addToCampaign(campaign.id, [asset.id])
             if (!attached) return
             navigate({
-              to: '/campaigns/$campaignId/content/$assetId',
+              to: '/campaigns/$campaignId/foundation/$assetId',
               params: { campaignId: campaign.id, assetId: asset.id },
             })
             return
@@ -276,11 +287,11 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     >
       <PageHeader
         // In a campaign, the shape the layout builds for every other section:
-        // `${campaign} ${section}`. The section is Content rather than Assets —
-        // "assets" is the workspace pile's word for things filed away
-        // centrally, and what a campaign holds is just its content. The pile
-        // keeps its own name, because that is what it is.
-        title={campaign ? `${scopeName} Content` : 'Sources'}
+        // `${campaign} ${section}`, with the section named as the rail names
+        // it. In the workspace this is one of Foundation's sections rather
+        // than a section of its own, and Sources is what the Overview's card
+        // that opens it says.
+        title={campaign ? `${scopeName} Foundation` : 'Sources'}
         actions={
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -328,9 +339,14 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
         }
       />
 
-      {/* The campaign layout's body box: fixed height, no page scroll — the
-          table virtualises against this and scrolls itself. */}
-      <div className="grid h-full overflow-hidden px-3 lg:px-6">
+      {campaign && <InheritedBrand campaignId={campaign.id} />}
+
+      {/* The campaign layout's body box: no page scroll — the table
+          virtualises against this and scrolls itself. `flex-1` over a fixed
+          `h-full`, because the band above it is a sibling whose height
+          changes: `h-full` measures the whole column and would push the
+          table's last rows under the fold every time somebody opened it. */}
+      <div className="grid min-h-0 flex-1 overflow-hidden px-3 lg:px-6">
         {isLoading ? (
           <PageLoader />
         ) : isError ? (

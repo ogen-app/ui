@@ -1,11 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useLocation } from '@tanstack/react-router'
-import {
-  BellSimpleIcon,
-  GearSixIcon,
-  PaletteIcon,
-  ScanIcon,
-} from '@phosphor-icons/react'
+import { BellSimpleIcon, GearSixIcon, PaletteIcon } from '@phosphor-icons/react'
 import { ActivitySidebarItem } from '@/components/activity/ActivitySidebarItem'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { useFeatureFlag } from '@/config/featureFlags'
@@ -18,11 +13,15 @@ import { useFeatureFlag } from '@/config/featureFlags'
  * both levels, in the same order and the same places — what each one points at
  * is the workspace's at level 0 and this campaign's at level 1:
  *
- * - Foundation → Campaign assets: what everything is written from, whether
- *   that is the workspace's guardrails or this campaign's own bank.
- * - Activity → Campaign activity: what happened, at whichever scope you are
- *   standing in.
- * - Workspace settings → Campaign settings: the record you are inside.
+ * - Foundation → Foundation: what everything is written from — the
+ *   workspace's guardrails, voices and documents up here, and down there the
+ *   ones this campaign has drawn on plus its own.
+ * - Activity → Activity: what happened, at whichever scope you are standing in.
+ * - Workspace settings → Settings: the record you are inside.
+ *
+ * The level-1 rows carry no "Campaign" prefix. The rail has already said which
+ * campaign, by name, at the top of the level, and repeating the noun down every
+ * row is the same fact stated eight more times.
  *
  * This is a reversal, and the reason is worth keeping. Foundation and Activity
  * used to survive the drill unchanged, on the argument that a guardrail is the
@@ -50,15 +49,16 @@ export function NavUtilityStrip({
   if (level === 1 && campaignId) {
     return (
       <div className="flex flex-col gap-1">
-        {/* The campaign's content bank, in Foundation's slot. Not behind
-            `brand-materials`: the bank is the campaign's own documents and
-            ships whether or not the workspace has guardrails, so the slot is
-            filled at this level even when it is empty at the one above. */}
+        {/* Foundation, narrowed to this campaign. Not behind
+            `brand-materials`, though half of what the page shows is: the
+            campaign's own documents ship regardless, so the slot is filled at
+            this level even when the workspace has no brand material at all.
+            The inherited half hides itself (`InheritedBrand`). */}
         <AppSidebarButtonMenu
-          icon={<ScanIcon weight="regular" className="size-5 flex-none" />}
-          text={t('nav.campaign.assets')}
-          isActive={pathname.includes('/content')}
-          to="/campaigns/$campaignId/content"
+          icon={<PaletteIcon weight="regular" className="size-5 flex-none" />}
+          text={t('nav.campaign.foundation')}
+          isActive={pathname.includes('/foundation')}
+          to="/campaigns/$campaignId/foundation"
           params={{ campaignId }}
         />
         {activityEnabled && (

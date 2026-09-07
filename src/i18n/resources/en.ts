@@ -267,33 +267,36 @@ export const en = {
     campaignNoWindow: 'No dates set',
     /**
      * Level 1's rows, each the campaign-narrowed twin of a level 0 row:
-     * Inbox → Overview, Ideas → Campaign ideas, Campaigns → Posts, Calendar →
-     * Calendar, Analytics → Campaign analytics.
+     * Inbox → Overview, Ideas → Ideas, Campaigns → Posts, Calendar → Calendar,
+     * Analytics → Analytics, Foundation → Foundation.
      *
-     * Which are prefixed and which are not is the pairing, not inconsistency.
-     * A row keeps its bare name where the level already makes it unambiguous —
-     * a campaign's Overview and Posts have no workspace-level namesake to be
-     * confused with. It takes "Campaign" where the same word names a
-     * destination one level up, so that a person who has both in their head
-     * can tell which of the two they are looking at.
+     * **No row says "Campaign".** They were prefixed for a while, on the
+     * argument that "Campaign analytics" tells you which of the two you are
+     * looking at. It does — and it says it eight times down a rail that has
+     * already said it once, in the campaign's own name at the top of the
+     * level. The word that disambiguates is up there and it is the campaign's
+     * actual name, which is better than the noun. What is left is a rail whose
+     * rows read as the workspace's, which is the point: going in narrows the
+     * same menu rather than opening a different one.
      */
     campaign: {
       overview: 'Overview',
       strategy: 'Strategy',
-      ideas: 'Campaign ideas',
+      ideas: 'Ideas',
       // The table, not the grid: this is the row that opens the place posts
       // are actually worked on, and the calendar is now its own row below.
       posts: 'Posts',
       calendar: 'Calendar',
-      analytics: 'Campaign analytics',
+      analytics: 'Analytics',
       /**
-       * The campaign's content bank. Named for the footer slot it now shares
-       * with the workspace's Foundation rather than for the page's own word:
-       * this level's version of "everything the campaign writes from".
+       * The workspace's Foundation, narrowed — the same word at both levels
+       * rather than a second name for it. The page holds the same kinds of
+       * thing scoped to one campaign: the brand material it draws on, and the
+       * documents it writes from.
        */
-      assets: 'Campaign assets',
-      activity: 'Campaign activity',
-      settings: 'Campaign settings',
+      foundation: 'Foundation',
+      activity: 'Activity',
+      settings: 'Settings',
     },
   },
 
@@ -517,7 +520,7 @@ export const en = {
     openActivity: 'OPEN ACTIVITY',
     openAnalytics: 'OPEN ANALYTICS',
     openStrategy: 'OPEN STRATEGY',
-    openContent: 'OPEN CONTENT',
+    openFoundation: 'OPEN FOUNDATION',
     openSettings: 'OPEN SETTINGS',
 
     /**

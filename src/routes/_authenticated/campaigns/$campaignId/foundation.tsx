@@ -3,12 +3,12 @@ import { ContentPage } from '@/components/content/ContentPage'
 import { useCampaign } from '@/hooks/useCampaigns.ts'
 
 export const Route = createFileRoute(
-  '/_authenticated/campaigns/$campaignId/content',
+  '/_authenticated/campaigns/$campaignId/foundation',
 )({
-  component: CampaignContent,
+  component: CampaignFoundation,
 })
 
-function CampaignContent() {
+function CampaignFoundation() {
   const { campaignId } = Route.useParams()
   const { data: campaign } = useCampaign(campaignId)
   // The layout above has already handled loading and failure for this

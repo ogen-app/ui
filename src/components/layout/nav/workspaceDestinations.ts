@@ -25,10 +25,11 @@ import { useFeatureFlag } from '@/config/featureFlags'
  *
  * Every row here has a campaign-scoped twin one level down — see
  * `lib/campaignSections`, which is the same list narrowed. The pairing is the
- * design: Inbox → Overview, Ideas → Campaign ideas, Campaigns → Posts,
- * Calendar → Calendar, Analytics → Campaign analytics, and in the footer
- * Foundation → Campaign assets, Activity → Campaign activity, Workspace
- * settings → Campaign settings. Adding a module to one level without the
+ * design: Inbox → Overview, Ideas → Ideas, Campaigns → Posts, Calendar →
+ * Calendar, Analytics → Analytics, and in the footer Foundation → Foundation,
+ * Activity → Activity, Workspace settings → Settings. The campaign's rows are
+ * not prefixed with its noun — the level is already named, in the campaign's
+ * own name above them. Adding a module to one level without the
  * other breaks the thing the two levels are teaching.
  *
  * `to` is the router's own union rather than a string, for the reason spelled

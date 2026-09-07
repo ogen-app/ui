@@ -4,7 +4,7 @@ import type { Campaign } from '@/types/campaigns'
 import { CollapsedCard } from './OverviewCard.tsx'
 
 /**
- * The documents row on the campaign Overview: how much this campaign has been
+ * The Foundation row on the campaign Overview: how much this campaign has been
  * given to write from.
  *
  * It used to report which of three source modes the campaign was in. There are
@@ -16,6 +16,12 @@ import { CollapsedCard } from './OverviewCard.tsx'
  * "Documents" to stay out of the way of the card above, which was headed
  * "Content" while it was about posts; that card is titled from the table too
  * now, and says Posts.
+ *
+ * **Still counts documents, though the page it opens now holds more than
+ * documents.** The rest of that page — the guardrails, the voice and the
+ * audience — is either the workspace's or already stated on the Strategy card
+ * above, and a count of things this campaign did not choose is not a reading of
+ * how ready it is. The one line says where the rest of it can be read.
  */
 export function DocumentsModule({ campaign }: { campaign: Campaign }) {
   // Counted from the campaign alone, not against the asset list: the Overview
@@ -30,13 +36,13 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
   if (seedsWholeBank(campaign)) {
     return (
       <CollapsedCard
-        section="content"
-        target="content"
+        section="foundation"
+        target="foundation"
         campaignId={campaign.id}
       >
         <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
-          This campaign still draws on the whole content bank — open Content to
-          see its documents.
+          This campaign still draws on the whole content bank — open Foundation
+          to see its documents.
         </span>
       </CollapsedCard>
     )
@@ -45,8 +51,8 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
   if (count === 0) {
     return (
       <CollapsedCard
-        section="content"
-        target="content"
+        section="foundation"
+        target="foundation"
         campaignId={campaign.id}
       >
         <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
@@ -58,8 +64,8 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
 
   return (
     <CollapsedCard
-      section="content"
-      target="content"
+      section="foundation"
+      target="foundation"
       campaignId={campaign.id}
       status={
         <StatusBadge
@@ -69,7 +75,7 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
       }
     >
       <span className="min-w-0 flex-1 truncate">
-        Generated posts can draw on the documents in this campaign.
+        What this campaign writes from, with the workspace’s brand material.
       </span>
     </CollapsedCard>
   )

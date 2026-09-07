@@ -89,7 +89,10 @@ export function AssetDetailsHeader({
           }
         >
           {campaignId ? (
-            <Link to="/campaigns/$campaignId/content" params={{ campaignId }}>
+            <Link
+              to="/campaigns/$campaignId/foundation"
+              params={{ campaignId }}
+            >
               <CaretLeftIcon className="size-5" />
             </Link>
           ) : (

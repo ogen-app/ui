@@ -52,7 +52,7 @@ export function DeleteAssetDialog({
         // This route would 404 on the deleted id, so leaving is not optional.
         void (campaignId
           ? navigate({
-              to: '/campaigns/$campaignId/content',
+              to: '/campaigns/$campaignId/foundation',
               params: { campaignId },
             })
           : navigate({ to: '/foundation/sources' }))

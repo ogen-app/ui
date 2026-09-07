@@ -27,7 +27,7 @@ const SECTIONS = [
   { slug: '/list', label: 'Posts' },
   { slug: '/strategy', label: 'Strategy' },
   { slug: '/ideas', label: 'Ideas' },
-  { slug: '/content', label: 'Content' },
+  { slug: '/foundation', label: 'Foundation' },
   { slug: '/activity', label: 'Activity' },
   { slug: '/settings', label: 'Settings' },
   { slug: '/overview', label: 'Overview' },
@@ -134,10 +134,11 @@ function CampaignLayout() {
     )
   }
 
-  // Content owns its whole page: its header carries an action that only means
-  // something there (add *to this campaign*), and the page is one big drop
-  // target, which a shared header sitting outside it could not be.
-  if (section === 'Content') {
+  // Foundation owns its whole page: its header carries an action that only
+  // means something there (add *to this campaign*), the page is one big drop
+  // target — neither of which a shared header sitting outside it could do —
+  // and it opens with a band of what the campaign inherits from the workspace.
+  if (section === 'Foundation') {
     return (
       <PageContainer variant={'fullFlex'}>
         <Outlet />

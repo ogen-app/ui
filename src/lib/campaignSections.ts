@@ -6,7 +6,7 @@ import {
   GearSixIcon,
   LightbulbIcon,
   NotepadIcon,
-  ScanIcon,
+  PaletteIcon,
   TrayIcon,
 } from '@phosphor-icons/react'
 
@@ -105,16 +105,21 @@ export const CAMPAIGN_SECTIONS = [
     utility: false,
   },
   {
-    // The campaign's content bank. `content` in the URL and in the code, and
-    // "Campaign assets" in the rail: the row moved into the footer slot the
-    // workspace fills with Foundation, and it is that pairing the label has to
-    // carry — everything this campaign writes from, as against everything the
-    // workspace does.
-    id: 'content',
-    labelKey: 'nav.campaign.assets',
-    openKey: 'campaignOverview.openContent',
-    icon: ScanIcon,
-    tone: 'var(--nav-content)',
+    // The workspace's Foundation, narrowed — and named for it, down to the
+    // URL. It was the campaign's Content page, holding its documents and
+    // nothing else, which made the pairing with Foundation a half-truth: up
+    // there the word covers the guardrails, the voices and the audiences as
+    // well as the documents. So this is now one place per campaign for
+    // everything it writes from — what it inherits from the workspace, read
+    // only, and what it has put in itself.
+    id: 'foundation',
+    labelKey: 'nav.campaign.foundation',
+    openKey: 'campaignOverview.openFoundation',
+    // Foundation's own glyph, as Overview takes Inbox's: the pair is the
+    // point, and two different marks over the same word at two levels is the
+    // reader's problem to solve rather than ours.
+    icon: PaletteIcon,
+    tone: 'var(--nav-foundation)',
     utility: true,
   },
   {

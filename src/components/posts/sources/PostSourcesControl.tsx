@@ -339,7 +339,7 @@ function SourceRow({
     <li className={rowClass}>
       <AssetGlyph asset={asset} />
       <Link
-        to="/campaigns/$campaignId/content/$assetId"
+        to="/campaigns/$campaignId/foundation/$assetId"
         params={{ campaignId, assetId: id }}
         className="flex min-w-0 flex-1 flex-col"
       >

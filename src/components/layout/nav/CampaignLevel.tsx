@@ -26,7 +26,7 @@ const SECTION_PATH = {
   ideas: '/campaigns/$campaignId/ideas',
   posts: '/campaigns/$campaignId/list',
   analytics: '/campaigns/$campaignId/analytics',
-  content: '/campaigns/$campaignId/content',
+  foundation: '/campaigns/$campaignId/foundation',
   activity: '/campaigns/$campaignId/activity',
   settings: '/campaigns/$campaignId/settings',
 } satisfies Record<Exclude<CampaignSectionId, 'calendar'>, LinkProps['to']>
@@ -86,8 +86,8 @@ export function CampaignLevel({
           ? 'calendar'
           : pathname.includes('/analytics')
             ? 'analytics'
-            : pathname.includes('/content')
-              ? 'content'
+            : pathname.includes('/foundation')
+              ? 'foundation'
               : pathname.includes('/activity')
                 ? 'activity'
                 : pathname.includes('/settings')

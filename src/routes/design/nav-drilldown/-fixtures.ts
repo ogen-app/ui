@@ -148,7 +148,7 @@ export const L1_SECTIONS: RailItem[] = [
     label: 'Ideas',
     icon: LightbulbIcon,
     build: 'blocked',
-    tone: 'var(--nav-content)',
+    tone: 'var(--nav-foundation)',
     note: 'Same blocker as the workspace Ideas module.',
   },
   {
@@ -213,7 +213,7 @@ export const TODAY_SECTIONS: RailItem[] = [
     label: 'Content',
     icon: ScanIcon,
     build: 'now',
-    tone: 'var(--nav-content)',
+    tone: 'var(--nav-foundation)',
   },
   { id: 'settings', label: 'Settings', icon: GearSixIcon, build: 'now' },
 ]

@@ -274,7 +274,7 @@ function AssetsTableComponent({
           // the URL so its back caret and its delete know where they are.
           const open = campaignId
             ? ({
-                to: '/campaigns/$campaignId/content/$assetId',
+                to: '/campaigns/$campaignId/foundation/$assetId',
                 params: { campaignId, assetId: row.id },
               } as const)
             : ({
