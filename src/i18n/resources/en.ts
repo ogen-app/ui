@@ -2297,6 +2297,710 @@ export const en = {
       openBrand: 'Open Brand',
       saveError: 'Unable to save the campaign voice',
     },
+
+    /**
+     * The five sections, as the app names and marks them.
+     *
+     * The words for what `BRAND_SECTIONS` used to carry inline. That table now
+     * holds behaviour only — the glyph, the hue, who reads the section, whether
+     * it is offered — and a module-level `const` can no longer freeze whichever
+     * language happened to load first. Keyed by `BrandSectionId`, so a section
+     * added to the table without copy here does not compile.
+     *
+     * One entry heads two places: the Overview's card and the intro card of the
+     * page that card opens. Renaming one renames both, which is the point of
+     * their being one entry.
+     */
+    sections: {
+      voices: {
+        label: 'Voices',
+        description:
+          'A voice is three to eight real posts you would be happy to have written, and the app writes from those rather than from an adjective. Several is normal: sarcastic commentary and the company page are not two tones of one personality.',
+        whenEmpty:
+          'No voice of its own — everything generated here sounds generated.',
+      },
+      audiences: {
+        label: 'Audiences',
+        description:
+          'Who the posts are written to, described by what follows from it: where they read, what makes them scroll past, and what they need before they believe a number. Every campaign asks who this is for, and this is where the answer comes from.',
+        whenEmpty: 'Nobody in particular is being written to.',
+      },
+      guardrails: {
+        label: 'Guardrails',
+        description:
+          'What is true, what may be claimed, and what may never be. These are the rules nobody opts out of — they hold for every generated post whichever voice wrote it, and the more convincing the voice, the more convincing the invention they exist to stop.',
+        whenEmpty:
+          'Nothing is off limits. Any voice here may promise anything.',
+      },
+      look: {
+        label: 'Look',
+        description:
+          'Logos with a declared job, colours with roles, type, and imagery to work from. Enough for the app to make a picture that looks like yours without stopping to ask which of four files goes in the corner.',
+        whenEmpty:
+          'No logo, no colours, no type — generated images land wherever the model puts them.',
+      },
+      templates: {
+        label: 'Templates',
+        description:
+          'A full-canvas frame per platform and per ratio — not a layout engine, which is why nothing here reflows. A set that misses a ratio its platform posts in is unusable there, so the screen leads with platforms rather than with sets.',
+        whenEmpty:
+          'Pictures go out bare. Nothing marks one as yours once it has left the app.',
+      },
+    },
+
+    /**
+     * The counts a piece of material is described by — `components/brand/
+     * format.ts`, which takes `t` as its first argument for exactly this.
+     *
+     * `samplesNone` and `usageNever` are separate keys rather than a `_zero`
+     * plural: both are the sentence a *missing* thing gets rather than a count
+     * of zero, and the English happens to agree with that reading while other
+     * languages need not.
+     */
+    facts: {
+      samplesNone: 'no samples',
+      samples_one: '{{count}} sample',
+      samples_other: '{{count}} samples',
+      usagePublished: '{{count}} published',
+      usageDrafts: '{{count}} in draft',
+      usageNever: 'never used',
+      /**
+       * How the parts of a fact are joined — a comma and a space in English.
+       * On the catalogue rather than in the helper because the separator is a
+       * property of the language, and a hard-coded `', '` is the same class of
+       * bug as a hard-coded date format.
+       */
+      separator: ', ',
+    },
+
+    /** The furniture every Brand screen is built from — `shell.tsx`. */
+    shell: {
+      readByNothing:
+        "Nothing reads this yet — you can fill it in, but it won't change what comes out.",
+      comingSoon: 'COMING SOON',
+      /** The word beside the star. Lower case is deliberate — it sits in a row of facts. */
+      default: 'default',
+      chipMore: '+{{count}} more',
+      origin: {
+        blank: 'Written here',
+        template: 'From a template',
+        website: 'Read off the website',
+        posts: 'Learned from published posts',
+        promoted: 'Saved from a post',
+      },
+      /** The detail beside `origin.posts` — how many posts it was learned from. */
+      originPostCount_one: '{{count}} post',
+      originPostCount_other: '{{count}} posts',
+      offer: {
+        dismiss: "Don't offer this again",
+        title: 'Read the rest off your website',
+        body: 'One pass fills {{fills}} — from your own copy, not from a template. You see everything it proposes before any of it is saved.',
+        fallback:
+          'If none of it is written down anywhere, Ogen will ask you a handful of questions and draft it with you. If it is — a brand deck, a tone-of-voice PDF, an old style guide — that works as well as the site does.',
+        /**
+         * The sections named *inside* `body`, which is why these are their own
+         * keys rather than `sections.<id>.label`. A heading and a noun in the
+         * middle of a sentence are two forms of one word, and English writes
+         * them differently; a language that capitalises differently again
+         * needs both spellings available rather than one derived from the
+         * other by the client.
+         */
+        fills: {
+          voices: 'voices',
+          audiences: 'audiences',
+          guardrails: 'guardrails',
+        },
+      },
+    },
+
+    /** The hub — `BrandOverview.tsx`. */
+    overview: {
+      /**
+       * The honesty rule at index length. The section's own screen says it in a
+       * sentence (`shell.readByNothing`); five sentences down one page is the
+       * noise that made this screen read as an essay, so here it is three
+       * words.
+       */
+      nothingReads: 'Nothing reads this yet',
+      /** The right margin of a row that counts a list. */
+      stated: '{{count}} stated',
+      none: 'none',
+      logosWithJobs: '{{count}} with jobs',
+      coloursWithRoles: '{{count}} with roles',
+      bannedWordCount: '{{count}} words',
+      written: 'written',
+      guardrails: {
+        facts: 'Facts',
+        factsEmpty: 'Every number and product detail is invented fresh.',
+        mayClaim: 'May claim',
+        mayClaimEmpty: 'Nothing has a form we know is safe to repeat.',
+        neverClaim: 'Never claim',
+        neverClaimEmpty:
+          'Nothing is off limits. Every voice here may promise anything, in any words.',
+        bannedWords: 'Banned words',
+        disclaimer: 'Disclaimer',
+      },
+      templates: {
+        isDefault:
+          'Applied by default, wherever nothing else claims the platform.',
+        forPlatforms: 'For {{platforms}}.',
+        unreachable:
+          'Claimed by no platform, and not the default — nothing ever reaches it.',
+        ratios: '{{covered}} of {{total}} ratios',
+      },
+    },
+
+    /** The section screen's chrome — `detail.tsx` and the routes under it. */
+    detail: {
+      back: 'Back to Brand',
+      backToVoices: 'Back to voices',
+      backToAudiences: 'Back to audiences',
+      errorHeader: 'Brand could not be loaded',
+      errorMessage:
+        "The workspace's voices, audiences and guardrails are not reachable right now. Everything else in the app is unaffected.",
+      guardrailsErrorHeader: 'Guardrails could not be loaded',
+      guardrailsErrorMessage:
+        "The workspace's rules are not reachable right now, and editing them without seeing them would overwrite what is there. Everything else in the app is unaffected.",
+      noVoiceHeader: 'No such voice',
+      noAudienceHeader: 'No such audience',
+      missingMessage:
+        'It may have been deleted, or the link may be to another workspace.',
+      /** The confirmations. `{{name}}` is the entry's own, always the user's words. */
+      created: '{{name}} is in the library.',
+      saved: '{{name}} saved.',
+      deleted: '{{name}} was deleted.',
+      guardrailsSaved: 'The guardrails are saved.',
+      guardrailsCreated: 'The guardrails are set.',
+      guardrailsDeleted: 'The guardrails were deleted.',
+    },
+
+    /** The screen every workspace sees on the day this ships — `FirstRun.tsx`. */
+    firstRun: {
+      title:
+        'Everything generated here sounds like everything else generated anywhere',
+      body: 'People use social media to be distinct — that is what branding is for. Generated content has no voice of its own and nothing stopping it from reading like the rest of the feed. This is where you keep the material that makes yours yours: how you sound, who you are talking to, and what you may never claim.',
+      manual: {
+        title: 'Fill it in yourself',
+        body: 'Straight to the three sections, empty. The fastest path when you already know how you sound and only need somewhere to put it.',
+      },
+      guided: {
+        title: 'Build it with Ogen',
+        body: 'Answer a handful of questions and Ogen drafts the whole thing with you — the path that works when none of this is written down anywhere, and the only one that needs no website, no archive and no file.',
+      },
+      website: {
+        title: 'Read it off your website',
+        body: 'Point us at your site and we propose the whole thing in one step — voice samples from your own copy, the disclaimer you already run, and the product facts behind every claim.',
+      },
+      posts: {
+        title: 'Learn it from your posts',
+        body: "The voice you already have, in your own words. Fix what's wrong rather than inventing something from scratch.",
+      },
+      template: {
+        title: 'Start from a template',
+        body: 'A short setup that walks the whole brand one question at a time — voice, audience and the things you can never claim. Individual starter voices and audiences already exist inside those two sections; what is coming is doing all three in one pass.',
+      },
+    },
+
+    /** The visual half — `LookSection.tsx`. */
+    look: {
+      edit: 'EDIT',
+      gap: 'No logo, no colours, no type. Anything generated with an image in it will look like stock.',
+      uploadLogo: 'Upload a logo',
+      best: 'best',
+      logoSlot: 'Logo',
+      paletteSlot: 'Palette',
+      typeSlot: 'Type',
+      referenceSlot: 'Reference imagery',
+      noLogo: 'No logo. Templates and profile images have nothing to place.',
+      noPalette: 'No colours stated.',
+      noTypefaces: 'No typefaces stated.',
+      noReference:
+        "Nothing to steer generated images by — they will land wherever the model's defaults are.",
+      /** A logo's declared job. It is both the caption and the image's `alt`. */
+      job: {
+        profile: 'Profile photo',
+        watermark: 'Watermark',
+        mark: 'Mark only',
+      },
+    },
+
+    /** The cast — `VoicesSection.tsx`. */
+    voices: {
+      writeFromScratch: 'WRITE ONE FROM SCRATCH',
+      add: 'ADD VOICE',
+      addHint: 'Another one, for the posts none of the above are right for.',
+      starterGroupTitle: 'Start from a template',
+      starterGroupBody:
+        'Yours the moment you pick it — a copy, not a link, so ours changing never changes yours. The samples you add afterwards are what stop it sounding like a template.',
+      /**
+       * The three we offer for a cold start. `title` and `body` are the card;
+       * `draft` is what forking one puts in the editor, and it is translated
+       * for the same reason the card is — a Spanish workspace that forks a
+       * starter and receives English material has been handed something it has
+       * to rewrite before it can use it.
+       */
+      starters: {
+        plain: {
+          title: 'Plain and direct',
+          body: 'Short sentences, no jargon, no emoji. Says the thing and stops.',
+          name: 'Plain and direct',
+          whenToUse: 'Anything that has to be understood on one read',
+          opening: 'States the point in the first sentence.',
+          closing: 'Stops. No sign-off, no question.',
+        },
+        warm: {
+          title: 'Warm and conversational',
+          body: 'One person talking to another. Contractions, the odd aside, first name terms.',
+          name: 'Warm and conversational',
+          whenToUse:
+            'The posts that are meant to sound like a person, not a company',
+          opening: 'Opens with something that actually happened.',
+          closing: 'Ends on a question worth answering.',
+        },
+        sharp: {
+          title: 'Sharp and opinionated',
+          body: 'Takes a position in the opening line and defends it. Dry, a little arch, never neutral.',
+          name: 'Sharp and opinionated',
+          whenToUse:
+            'Commentary, and anything the industry is already arguing about',
+          opening: 'Opens with the claim, then earns it.',
+          closing: 'Ends on the sharpest line, not on a summary.',
+        },
+      },
+      noSamples:
+        'No samples. This voice has a name and nothing behind it — it will generate exactly what no voice at all would.',
+      thin: '{{count}} is where it starts working',
+      postsBehind: '{{count}} could be redone',
+      defaultBacked:
+        'The default voice — posts start in it unless something else is picked.',
+      defaultThin:
+        'The default voice, with nothing like enough behind it — posts start in it and it changes almost nothing about what they say.',
+      /**
+       * The explicit habits, rendered as one line under a voice card.
+       *
+       * `formality` and `length` are keyed off the stored enum like the other
+       * three. They used to print the raw value — `neutral`, `short` — which is
+       * English by accident rather than by decision, and the only two fields
+       * here that were never a label map at all.
+       */
+      rules: {
+        formality: {
+          casual: 'casual',
+          neutral: 'neutral',
+          formal: 'formal',
+        },
+        person: {
+          i: 'first person',
+          we: 'we',
+          third: 'third person',
+        },
+        emoji: {
+          never: 'no emoji',
+          sparingly: 'some emoji',
+          freely: 'emoji freely',
+        },
+        hashtags: {
+          never: 'no hashtags',
+          few: 'few hashtags',
+          many: 'hashtag-heavy',
+        },
+        length: {
+          short: 'short posts',
+          medium: 'medium posts',
+          long: 'long posts',
+        },
+      },
+
+      /** The one place a voice is written — `VoiceEditor.tsx`. */
+      editor: {
+        needsName: 'Needs a name before it can be saved.',
+        save: 'Save voice',
+        create: 'Create voice',
+        introNamed: '{{name}} Voice',
+        introNew: 'A new voice',
+        introBody:
+          'Three to eight real posts you would be happy to have written are what make one. Everything else on this screen is what a sample cannot say for itself.',
+        forkedNote:
+          'Nothing is saved yet, and the samples are empty: that is the half a template cannot give you, and the half that does the work.',
+        general: 'General',
+        defaultDoes: 'Posts start in this voice unless another one is picked.',
+        defaultCosts: 'Takes the default off whichever voice has it now.',
+        name: 'Name',
+        namePlaceholder: 'Founder, off the cuff',
+        description: 'Description',
+        descriptionHint:
+          'When to use it — one line, and the one a picker shows under the name.',
+        descriptionPlaceholder:
+          'The lighter end-of-week post, and nothing else',
+        samples: 'Samples',
+        readsAs: 'Reads as',
+        summaryPending: 'Read back off the samples once this is saved.',
+        samplesShort:
+          'Three to eight real posts you would be happy to have written. This is the voice — everything below is only what a sample cannot say for itself.',
+        addSample: 'Add a sample',
+        editSample: 'Edit sample',
+        samplePlaceholder: 'Paste a post you would be happy to have written.',
+        removeSample: 'REMOVE SAMPLE',
+        cancel: 'CANCEL',
+        addIt: 'ADD IT',
+        done: 'DONE',
+        moreSampleOptions: 'More sample options',
+        resetSamples: 'Reset samples',
+        bulkUpload: 'Bulk upload',
+        bulkUploadSoon: 'Coming soon',
+        rules: 'Rules',
+        rulesHint:
+          'What a sample cannot say for itself. A pasted post shows the register; it cannot promise that the next thirty avoid hashtags.',
+        opening: 'How a post opens',
+        openingHint:
+          'The most recognisable habit a voice has, and worth writing out rather than picking.',
+        openingPlaceholder: 'Opens with the claim, then earns it.',
+        closing: 'How a post closes',
+        closingHint:
+          'The half people notice when it is wrong: a question, a call to action, or nothing at all.',
+        closingPlaceholder: 'Ends on the sharpest line, not on a summary.',
+        channels: 'Per-channel customisation',
+        channelsHint:
+          'A note inside this voice, not a second voice. “Dialled down on LinkedIn” belongs here; a near-identical second entry in the library does not.',
+        channelsUnbuilt:
+          'Not built yet. Every channel uses this voice exactly as written above.',
+        /**
+         * The five scales, as the *editor* words them — deliberately not
+         * `brand.voices.rules.*`, which is how a library card *describes* a
+         * voice. "I / we / the company" is a set being chosen between; "first
+         * person / we / third person" is a sentence about a voice. Two
+         * registers, so two sets of keys.
+         */
+        choices: {
+          formalityLabel: 'Formality',
+          formality: {
+            casual: 'casual',
+            neutral: 'neutral',
+            formal: 'formal',
+          },
+          personLabel: 'Speaks as',
+          person: {
+            i: 'I',
+            we: 'we',
+            third: 'the company',
+          },
+          emojiLabel: 'Emoji',
+          emoji: {
+            never: 'never',
+            sparingly: 'sparingly',
+            freely: 'freely',
+          },
+          hashtagsLabel: 'Hashtags',
+          hashtags: {
+            never: 'never',
+            few: 'a few',
+            many: 'many',
+          },
+          lengthLabel: 'Length',
+          length: {
+            short: 'short',
+            medium: 'medium',
+            long: 'long',
+          },
+        },
+        noun: 'VOICE',
+        deleteCostPublished_one:
+          '{{count}} published post was written in this voice. Deleting it leaves it exactly as it is — its text was written and it stands — but nothing new can be generated in it, and any campaign pointing here falls back to no voice at all.',
+        deleteCostPublished_other:
+          '{{count}} published posts were written in this voice. Deleting it leaves them exactly as they are — their text was written and it stands — but nothing new can be generated in it, and any campaign pointing here falls back to no voice at all.',
+        deleteCostDrafts_one:
+          '{{count}} draft points at this voice and will fall back to no voice at all.',
+        deleteCostDrafts_other:
+          '{{count}} drafts point at this voice and will fall back to no voice at all.',
+        deleteCostNone:
+          'Nothing has been written in this voice, so nothing else changes.',
+      },
+    },
+
+    /** Who the content is for — `AudiencesSection.tsx`. */
+    audiences: {
+      describeYourself: 'DESCRIBE ONE YOURSELF',
+      add: 'ADD AUDIENCE',
+      addHint: 'Another one, for the posts the others are not written to.',
+      starterGroupTitle: 'Start from a template',
+      starterGroupBody:
+        'Three every business has, so none of them needs inventing. Pick one and fill in what follows from it.',
+      /** A relationship rather than a demographic — see `AUDIENCE_STARTERS`. */
+      starters: {
+        customers: {
+          title: 'The people who already buy from you',
+          body: 'Described as they actually are, not as the deck describes them. The easiest one to get right and the one most often skipped.',
+          name: 'People who already buy from us',
+        },
+        nearly: {
+          title: 'The people who nearly bought',
+          body: 'They know the category, they looked at you, and they chose somebody else. What they needed and did not get is the whole brief.',
+          name: 'People who nearly bought',
+        },
+        advisers: {
+          title: 'The people who recommend you',
+          body: 'They never buy anything. They pass your name on, and they need something quotable to pass on with it.',
+          name: 'People who recommend us',
+        },
+      },
+      readsOn: 'Reads on',
+      scrollsPast: 'Scrolls past',
+      believesWhen: 'Believes you when',
+      notSaid: '— not said',
+
+      /** One audience, being described — `AudienceEditor.tsx`. */
+      editor: {
+        needsName: 'Needs a name before it can be saved.',
+        save: 'Save audience',
+        create: 'Create audience',
+        introNamed: '{{name}} Audience',
+        introNew: 'A new audience',
+        introBody:
+          'One relationship, described concretely enough to be wrong about. The three lines further down are what make it usable — where they read, what loses them, and what they need before they believe a number.',
+        forkedNote:
+          'Nothing is saved yet, and the three lines below are blank: a template knows which relationship you mean, and nothing whatever about the people in it.',
+        general: 'General',
+        name: 'Name',
+        namePlaceholder: 'Time-poor team leads',
+        who: 'Who they are',
+        whoHint:
+          'Concrete and narrowing. An age, a habit and a suspicion — not “professionals”.',
+        whoPlaceholder:
+          'Team leads, 30–45, already run two tools that half-solve this, distrust anything that sounds like a pitch, read on a phone between meetings.',
+        consequences: 'What follows',
+        readsAs: 'Reads as',
+        summaryPending: 'Read back off these three once this is saved.',
+        consequencesHint:
+          'The three things that change what gets written. An audience that cannot answer them is a label, and a label moves nothing.',
+        blank:
+          'Nothing yet. Saved like this the audience is a label, and not one post will come out differently because it exists.',
+        readsOnLabel: 'Reads on',
+        readsOnHint:
+          'Where, on what, and at what hour. Half of what you would otherwise post is ruled out by this line alone.',
+        readsOnPlaceholder: 'Phone, after 8pm, one-handed',
+        scrollsPastLabel: 'Scrolls past when',
+        scrollsPastHint:
+          'The line that loses them — worth writing as the sentence they would actually see.',
+        scrollsPastPlaceholder:
+          'The first line contains a percentage or the word "solution"',
+        believesLabel: 'Believes you when',
+        believesHint:
+          'What has to sit next to a claim before they will accept it.',
+        believesPlaceholder:
+          'The number comes with the period it was measured over',
+        /** The noun spliced into the danger zone's labels — capitals are the copy. */
+        noun: 'AUDIENCE',
+        deleteCostPublished_one:
+          '{{count}} published post was written for this audience. Deleting it leaves it exactly as it is — its text was written and it stands — but nothing new can be written to it, and any campaign pointing here falls back to no audience at all.',
+        deleteCostPublished_other:
+          '{{count}} published posts were written for this audience. Deleting it leaves them exactly as they are — their text was written and it stands — but nothing new can be written to it, and any campaign pointing here falls back to no audience at all.',
+        deleteCostDrafts_one:
+          '{{count}} draft points at this audience and will fall back to no audience at all.',
+        deleteCostDrafts_other:
+          '{{count}} drafts point at this audience and will fall back to no audience at all.',
+        deleteCostNone:
+          'Nothing has been written for this audience, so nothing else changes.',
+      },
+    },
+
+    /** The frames — `TemplatesSection.tsx` and `TemplatesScreen.tsx`. */
+    templates: {
+      count: '· {{count}}',
+      add: 'ADD TEMPLATE',
+      gap: 'Images go out bare. Nothing marks a picture as yours once it has left the app.',
+      gapScreen:
+        'Images go out bare. Nothing marks a picture as yours once it has left the app — and nothing here is per-platform yet, so there is no Instagram story frame and no LinkedIn lockup.',
+      buildFromLogo: 'Build one from your logo',
+      uploadPng: 'Upload a PNG',
+      appliedByDefault: 'Applied by default',
+      overImage: 'Sits over the image',
+      underImage: 'Sits under the image',
+      missingRatios:
+        'Nothing to apply on {{ratios}} — one PNG per ratio is what buys the simplicity.',
+
+      everywhere: 'Everywhere',
+      everywhereDetail: 'When nothing else claims it',
+      everywhereSubtitle:
+        'What gets applied on any platform that has not been given one of its own.',
+      noDefault:
+        'No default template. Every platform without one of its own sends pictures bare.',
+      connectedGroup: 'Connected',
+      notConnectedGroup: 'Not connected yet',
+      notConnected: 'not connected',
+      connected: 'connected',
+      inherited:
+        'Falling through to the default — nothing here is specific to this platform yet.',
+      ownTemplate: 'Has a template of its own.',
+      giveItsOwn: 'GIVE IT ITS OWN',
+      replace: 'REPLACE',
+      nothingApplies:
+        'Nothing applies here, and there is no default to fall back on.',
+      drawnOver: 'drawn over the picture',
+      sitsUnder: 'sits under the picture',
+      isDefaultSuffix: ' · the default',
+      /**
+       * The destination a set is judged against, as a phrase the three coverage
+       * sentences below take. A phrase rather than three whole sentences per
+       * destination because the destination is the variable and the verdict is
+       * the sentence — the alternative is six near-identical entries that drift.
+       */
+      neededEverything: 'every ratio the app produces',
+      neededPlatform_one: 'the ratio {{platform}} posts in',
+      neededPlatform_other: 'the {{count}} ratios {{platform}} posts in',
+      coversAll: 'Covers {{needed}}.',
+      coversNone:
+        'Covers none of {{needed}}. Every picture here goes out bare.',
+      coversSome_one:
+        'Missing {{ratios}} — that ratio goes out bare against {{needed}}.',
+      coversSome_other:
+        'Missing {{ratios}} — those ratios go out bare against {{needed}}.',
+      openInCompositor: 'OPEN IN COMPOSITOR',
+    },
+
+    /** The singleton with real weight — `GuardrailsEditor.tsx`. */
+    guardrails: {
+      cleared:
+        'Everything has been cleared. Guardrails that state nothing are the same as none — delete them below instead.',
+      save: 'Save guardrails',
+      create: 'Set the guardrails',
+      discard: 'Discard changes',
+      forkedNote:
+        'The rules arrived and the facts did not: a template knows what a business like yours may never claim, and nothing at all about what is true of you. Read every line before saving it — this is the section people stop checking.',
+      starterGroupTitle: 'Start from a template',
+      starterGroupBody:
+        'Three shapes the rules take, rather than thirty industries. Pick the closest and it fills the lists below — every line is meant to be read and edited, because this is the one section people will trust.',
+      facts: 'Facts',
+      factsHint:
+        'What is true, so it stops being invented. Figures, dates, what the product does and what it costs — the things a generator otherwise fills in plausibly.',
+      factsPlaceholder:
+        'Support answers within one working day, every day of the week.',
+      addFact: 'Add a fact',
+      mayClaim: 'May claim',
+      mayClaimHint:
+        'Claims already checked, in the form they were checked in. This is what stops a sentence that took a lawyer an hour being written from scratch every time.',
+      mayClaimPlaceholder: 'That setup takes two weeks, start to finish.',
+      addClaim: 'Add a claim',
+      neverClaim: 'Never claim',
+      neverClaimHint:
+        'Write the claim itself rather than the topic — “any guaranteed outcome, in any form” rather than “results”. A topic is something to avoid mentioning; a claim is something a sentence can be checked against.',
+      neverClaimEmpty:
+        'Nothing is off limits yet. Every voice in the workspace may promise anything, in any words.',
+      neverClaimPlaceholder: 'That the result is guaranteed, in any form.',
+      addRule: 'Add a rule',
+      bannedWords: 'Banned words',
+      bannedWordsHint:
+        'Words that may never appear, in any voice. Type one and press Enter; commas and pasted lists split into separate words.',
+      bannedWordPlaceholder: 'guaranteed',
+      removeWord: 'Remove {{word}}',
+      disclaimer: 'Disclaimer',
+      disclaimerHint:
+        'Carried by every post, added exactly as written and never reworded — a required legal line, a registration number, an ad disclosure.',
+      disclaimerPlaceholder:
+        'Results vary. Nothing here is a promise of the outcome you will get.',
+      removeLine: 'Remove this line',
+      keyboardHint:
+        'Enter starts the next one. Paste a list to add all of it at once.',
+      unsaved: 'Unsaved changes',
+      unsavedShort: 'Unsaved',
+      saved: 'Saved',
+      noun: 'GUARDRAILS',
+      /** The `name` in the delete dialog's title — a singleton has no name of its own. */
+      dangerName: 'Guardrails',
+      deleteCost:
+        'The section goes back to empty: no stated facts, nothing sanctioned and nothing off limits, for every voice in the workspace. Posts already published are untouched — their text was written and it stands.',
+      /**
+       * The three starters. `neverClaim` and `bannedWords` are arrays in the
+       * catalogue and read with `returnObjects` — they are lists of whole
+       * sentences, and numbering them into `neverClaim1…4` would fix their
+       * length in the schema for every language that follows.
+       *
+       * Translated for the same reason the voice starters are, and with more
+       * force: this is compliance copy that a workspace saves as its own, and
+       * a Spanish firm handed four English rules has been given a section it
+       * must retype before it can trust it.
+       */
+      starters: {
+        regulated: {
+          title: 'Regulated, and outcomes are the risk',
+          body: 'Finance, health, law. No result may be promised or implied, every figure names its source, and nothing is described as advice.',
+          neverClaim: [
+            'Any future return or outcome, in any form — including “historically”, and including as a joke.',
+            'That anything we publish is advice. It is information, and the difference is regulatory.',
+            'That a result is typical, protected, guaranteed or safe.',
+            'A figure without the period it was measured over and where it came from.',
+          ],
+          bannedWords: [
+            'guaranteed',
+            'risk-free',
+            'safe',
+            'proven',
+            'passive income',
+          ],
+        },
+        product: {
+          title: 'A product, and features are the risk',
+          body: 'Software, hardware, retail. Only what ships today: the roadmap is not a feature, and no integration exists until it is live.',
+          neverClaim: [
+            'A feature that is not in the build people can use today. The roadmap is not a feature.',
+            'An integration, platform or format we do not already support in production.',
+            'A number about speed, uptime or scale that we cannot point at a source for.',
+            'That a competitor lacks something, unless it is checkable today and dated.',
+          ],
+          bannedWords: [
+            'seamless',
+            'effortless',
+            'unlimited',
+            'instantly',
+            'revolutionary',
+          ],
+        },
+        plain: {
+          title: 'Everyone else, and overstating is the risk',
+          body: 'No superlatives, no invented statistics, no customer named without permission and no authority borrowed from a logo.',
+          neverClaim: [
+            'That we are the best, the first, the only or the fastest-growing anything.',
+            'A statistic we cannot show the source of.',
+            'A customer by name, or their results, without written permission.',
+            'An endorsement nobody has given — including implying one with a logo.',
+          ],
+          bannedWords: [
+            'best-in-class',
+            'world-class',
+            'game-changing',
+            'unrivalled',
+            'no-brainer',
+          ],
+        },
+      },
+    },
+
+    /** What every Brand editor is made of — `editor.tsx`. */
+    editor: {
+      cancel: 'Cancel',
+      /**
+       * The fork note's first sentence. `<name>` is the starter's name, set in
+       * the foreground colour — a `<Trans>` rather than three JSX fragments,
+       * because where the emphasis falls inside a sentence is the translator's
+       * decision and not the layout's.
+       */
+      forkedFrom:
+        'Started from <name>{{name}}</name>, and copied rather than linked — ours changing will never change yours.',
+      danger: {
+        title: 'Danger zone',
+        /**
+         * `{{noun}}` arrives already in capitals (`VOICE`, `AUDIENCE`) because
+         * the caps are part of the copy for a destructive action — they survive
+         * copy/paste, screen readers and any restyle, which a `uppercase` class
+         * does not. Every language writes its own here.
+         */
+        delete: 'DELETE {{noun}}',
+        keep: 'KEEP {{noun}}',
+        confirmTitle: 'Delete "{{name}}"?',
+        confirmBody: '{{cost}} This cannot be undone.',
+      },
+      default: 'Default',
+      makeDefault: 'MAKE DEFAULT',
+    },
   },
 
   campaigns: {

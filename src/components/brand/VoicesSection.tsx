@@ -1,11 +1,7 @@
-import {
-  LightningIcon,
-  SmileyIcon,
-  TextAlignLeftIcon,
-  type Icon,
-} from '@phosphor-icons/react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { brandSection } from '@/lib/brandSections'
-import { sampleCount, usageLine } from './format'
+import { defaultVoiceLabel, sampleCount, usageLine } from './format'
 import {
   AddEntryCard,
   BrandLibrary,
@@ -16,6 +12,7 @@ import {
   StarterCard,
   StarterGroup,
 } from './shell'
+import { VOICE_STARTERS, voiceStarterCopy } from './starters'
 import { MIN_VOICE_SAMPLES, type BrandVoice, type VoiceRules } from './types'
 
 /**
@@ -56,6 +53,7 @@ export function VoicesSection({
   /** Fork one of ours. */
   onStart?: (starterId: string) => void
 }) {
+  const { t } = useTranslation()
   const empty = voices.length === 0
 
   return (
@@ -65,11 +63,14 @@ export function VoicesSection({
           // The blank form, and it keeps the same slot the add card has when
           // there are voices: whatever else the screen is offering, the way to
           // write one yourself is the last card on the page.
-          <PlainActionCard label="WRITE ONE FROM SCRATCH" onClick={onAdd} />
+          <PlainActionCard
+            label={t('brand.voices.writeFromScratch')}
+            onClick={onAdd}
+          />
         ) : (
           <AddEntryCard
-            label="ADD VOICE"
-            hint="Another one, for the posts none of the above are right for."
+            label={t('brand.voices.add')}
+            hint={t('brand.voices.addHint')}
             onClick={onAdd}
           />
         )
@@ -87,126 +88,32 @@ export function VoicesSection({
 }
 
 /**
- * The three we offer for a cold start.
- *
- * Three and not thirty. A library that needs a search box has failed — picking
- * between twelve near-identical descriptions is the same paralysis as the blank
- * box, one step later. These are far enough apart that the choice is obvious in
- * one read, and each one is **forked on pick**, so improving ours never rewrites
- * anybody's.
- *
- * Their job is to be replaced. If a workspace still sounds like the preset it
- * picked six months on, that is the failure, not the success — which is why the
- * screen keeps asking for samples afterwards.
- */
-export type VoiceStarter = {
-  id: string
-  icon: Icon
-  title: string
-  body: string
-  /**
-   * What picking it actually puts in the editor — a name, a use, and a set of
-   * rules, and **no samples**.
-   *
-   * That last part is the honest half of forking a template and the reason the
-   * editor says so out loud: a starter is a set of habits, and habits are not a
-   * voice. Prefilling samples would hand somebody three posts written for a
-   * business that is not theirs, which is the one thing worse here than an
-   * empty box.
-   */
-  draft: Pick<BrandVoice, 'name' | 'whenToUse' | 'rules'>
-}
-
-export const VOICE_STARTERS: VoiceStarter[] = [
-  {
-    id: 'plain',
-    icon: TextAlignLeftIcon,
-    title: 'Plain and direct',
-    body: 'Short sentences, no jargon, no emoji. Says the thing and stops.',
-    draft: {
-      name: 'Plain and direct',
-      whenToUse: 'Anything that has to be understood on one read',
-      rules: {
-        formality: 'neutral',
-        person: 'we',
-        emoji: 'never',
-        hashtags: 'never',
-        length: 'short',
-        opening: 'States the point in the first sentence.',
-        closing: 'Stops. No sign-off, no question.',
-      },
-    },
-  },
-  {
-    id: 'warm',
-    icon: SmileyIcon,
-    title: 'Warm and conversational',
-    body: 'One person talking to another. Contractions, the odd aside, first name terms.',
-    draft: {
-      name: 'Warm and conversational',
-      whenToUse:
-        'The posts that are meant to sound like a person, not a company',
-      rules: {
-        formality: 'casual',
-        person: 'i',
-        emoji: 'sparingly',
-        hashtags: 'few',
-        length: 'medium',
-        opening: 'Opens with something that actually happened.',
-        closing: 'Ends on a question worth answering.',
-      },
-    },
-  },
-  {
-    id: 'sharp',
-    icon: LightningIcon,
-    title: 'Sharp and opinionated',
-    body: 'Takes a position in the opening line and defends it. Dry, a little arch, never neutral.',
-    draft: {
-      name: 'Sharp and opinionated',
-      whenToUse:
-        'Commentary, and anything the industry is already arguing about',
-      rules: {
-        formality: 'neutral',
-        person: 'i',
-        emoji: 'never',
-        hashtags: 'few',
-        length: 'medium',
-        opening: 'Opens with the claim, then earns it.',
-        closing: 'Ends on the sharpest line, not on a summary.',
-      },
-    },
-  },
-]
-
-/** The starter a `?from=` on the editor route names, if it names one at all. */
-export function voiceStarter(id: string | undefined): VoiceStarter | null {
-  return VOICE_STARTERS.find((s) => s.id === id) ?? null
-}
-
-/**
  * What an empty section offers, which is no longer *three* cards but two: the
  * page's own intro card states the absence above this, so the old "Nothing here
  * sounds like you yet" card would have been the second heading in a row saying
  * roughly one thing.
  */
 function VoicesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
+  const { t } = useTranslation()
   const { tone } = brandSection('voices')
   return (
     <StarterGroup
-      title="Start from a template"
-      body="Yours the moment you pick it — a copy, not a link, so ours changing never changes yours. The samples you add afterwards are what stop it sounding like a template."
+      title={t('brand.voices.starterGroupTitle')}
+      body={t('brand.voices.starterGroupBody')}
     >
-      {VOICE_STARTERS.map((starter) => (
-        <StarterCard
-          key={starter.id}
-          icon={starter.icon}
-          tone={tone}
-          title={starter.title}
-          body={starter.body}
-          onClick={onStart ? () => onStart(starter.id) : undefined}
-        />
-      ))}
+      {VOICE_STARTERS.map((starter) => {
+        const copy = voiceStarterCopy(t, starter)
+        return (
+          <StarterCard
+            key={starter.id}
+            icon={starter.icon}
+            tone={tone}
+            title={copy.title}
+            body={copy.body}
+            onClick={onStart ? () => onStart(starter.id) : undefined}
+          />
+        )
+      })}
     </StarterGroup>
   )
 }
@@ -258,15 +165,20 @@ function VoiceCard({
   voice: BrandVoice
   onOpen?: (id: string) => void
 }) {
+  const { t } = useTranslation()
   const thin =
     voice.samples.length > 0 && voice.samples.length < MIN_VOICE_SAMPLES
   const sample = voice.samples[0]
 
-  const facts = [sampleCount(voice.samples.length), usageLine(voice.usage)]
-  if (thin) facts.push(`${MIN_VOICE_SAMPLES} is where it starts working`)
+  const facts = [
+    sampleCount(t, voice.samples.length),
+    usageLine(t, voice.usage),
+  ]
+  if (thin) facts.push(t('brand.voices.thin', { count: MIN_VOICE_SAMPLES }))
   // Not a warning, and not in the corner. Nothing is broken — those posts were
   // written and they stand. This is an offer, so it reads with the other facts.
-  if (voice.postsBehind) facts.push(`${voice.postsBehind} could be redone`)
+  if (voice.postsBehind)
+    facts.push(t('brand.voices.postsBehind', { count: voice.postsBehind }))
 
   return (
     <LibraryCard onClick={onOpen ? () => onOpen(voice.id) : undefined}>
@@ -278,7 +190,7 @@ function VoiceCard({
           {voice.isDefault && (
             <DefaultStar
               backed={voice.samples.length >= MIN_VOICE_SAMPLES}
-              label={defaultVoiceLabel(voice)}
+              label={defaultVoiceLabel(t, voice)}
               className="text-sm leading-5 text-secondary-foreground"
             />
           )}
@@ -297,8 +209,7 @@ function VoiceCard({
         </blockquote>
       ) : (
         <p className="border-l-2 border-quaternary pl-3 text-sm leading-5 text-tertiary-foreground">
-          No samples. This voice has a name and nothing behind it — it will
-          generate exactly what no voice at all would.
+          {t('brand.voices.noSamples')}
         </p>
       )}
 
@@ -311,8 +222,8 @@ function VoiceCard({
           already saying this is the subordinate part. */}
       <footer>
         <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
-          <li>{rulesLine(voice.rules)}</li>
-          <li>{facts.join(', ')}</li>
+          <li>{rulesLine(t, voice.rules)}</li>
+          <li>{facts.join(t('brand.facts.separator'))}</li>
           <li>
             <OriginLine origin={voice.origin} />
           </li>
@@ -323,38 +234,6 @@ function VoiceCard({
 }
 
 /**
- * What the star on a voice actually says, in a sentence, for anybody who is not
- * looking at the colour.
- *
- * Two readings rather than one, because the interesting state is the second: a
- * default voice with nothing behind it is the case where the whole library is
- * decorative, and "default" on its own would report that as success.
- */
-export function defaultVoiceLabel(voice: BrandVoice): string {
-  return voice.samples.length >= MIN_VOICE_SAMPLES
-    ? 'The default voice — posts start in it unless something else is picked.'
-    : 'The default voice, with nothing like enough behind it — posts start in it and it changes almost nothing about what they say.'
-}
-
-const EMOJI_LABEL: Record<VoiceRules['emoji'], string> = {
-  never: 'no emoji',
-  sparingly: 'some emoji',
-  freely: 'emoji freely',
-}
-
-const HASHTAG_LABEL: Record<VoiceRules['hashtags'], string> = {
-  never: 'no hashtags',
-  few: 'few hashtags',
-  many: 'hashtag-heavy',
-}
-
-const PERSON_LABEL: Record<VoiceRules['person'], string> = {
-  i: 'first person',
-  we: 'we',
-  third: 'third person',
-}
-
-/**
  * The explicit rules, as one line rather than a grid of chips — and as a string
  * rather than a component, so it can only ever be set in the type its own
  * footer block is set in.
@@ -362,13 +241,19 @@ const PERSON_LABEL: Record<VoiceRules['person'], string> = {
  * Six chips under every card turned the section into a spec sheet and pulled
  * the eye off the sample, which is the one thing on the card that actually
  * distinguishes one voice from another.
+ *
+ * The three `Record<…, string>` maps this used to keep are gone into the
+ * catalogue: a module-level table of English is exactly the constant that
+ * freezes whichever language loaded first. `formality` and `length` join them —
+ * they used to print the stored enum straight out, which is English by accident
+ * rather than by decision.
  */
-function rulesLine(rules: VoiceRules): string {
+function rulesLine(t: TFunction, rules: VoiceRules): string {
   return [
-    rules.formality,
-    PERSON_LABEL[rules.person],
-    EMOJI_LABEL[rules.emoji],
-    HASHTAG_LABEL[rules.hashtags],
-    `${rules.length} posts`,
-  ].join(', ')
+    t(`brand.voices.rules.formality.${rules.formality}` as const),
+    t(`brand.voices.rules.person.${rules.person}` as const),
+    t(`brand.voices.rules.emoji.${rules.emoji}` as const),
+    t(`brand.voices.rules.hashtags.${rules.hashtags}` as const),
+    t(`brand.voices.rules.length.${rules.length}` as const),
+  ].join(t('brand.facts.separator'))
 }

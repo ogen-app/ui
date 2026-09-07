@@ -399,14 +399,31 @@ const FEATURE_FLAGS = {
    * screens already draw "nothing has been written in this" as a designed
    * state, and it is true.
    *
-   * **Outstanding: most of the copy is still not in the i18n catalogue.** It
-   * was deferred at the 2026-08-28 merge on the argument that the wording was
-   * being argued alongside the shape and cataloguing it meant retranslating on
-   * every iteration — with the conversion promised before this flag flipped.
-   * The flag has flipped first. The binding pickers came into the catalogue
-   * with the CON-245 narrowing (`brand.binding.*`) because their copy was
-   * being rewritten anyway; the eleven library screens are the rest of the
-   * debt. It does not block anyone from using Brand in English.
+   * **i18n is done.** It was deferred at the 2026-08-28 merge on the argument
+   * that the wording was being argued alongside the shape and cataloguing it
+   * meant retranslating on every iteration — with the conversion promised
+   * before this flag flipped. The flag flipped first, and the debt was paid
+   * after: the binding pickers came in with the CON-245 narrowing
+   * (`brand.binding.*`), and the eleven library screens followed. Every string
+   * in `components/brand/*`, in the Brand routes and in the two tables behind
+   * them (`lib/brandSections`, the starters) is a catalogue entry, and
+   * `components/brand/localisation.test.tsx` renders in Spanish and asserts on
+   * what comes out — which is the only way to tell a converted component from
+   * one whose literals happen to be English.
+   *
+   * Two things that conversion moved rather than merely translated, worth
+   * knowing before editing either: `BRAND_SECTIONS` carries **behaviour only**
+   * now (glyph, hue, readers, whether it is offered) and its words are
+   * `brand.sections.<id>.*`; and a starter's *draft* is catalogued along with
+   * its card, because forking one writes that material into the workspace's
+   * own library — an English draft handed to a Spanish workspace is something
+   * they must rewrite before they can use it.
+   *
+   * All three starter sets now live in `components/brand/starters.ts` rather
+   * than in the sections that render them. Taking the words out is what made
+   * them one object described three times instead of part of any one screen —
+   * and it gave those screens their fast refresh back, which is what
+   * `react-refresh/only-export-components` was asking for all along.
    *
    * The argument this is built from: `docs/brand-materials.md`.
    */

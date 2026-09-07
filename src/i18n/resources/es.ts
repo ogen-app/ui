@@ -1646,6 +1646,607 @@ export const es: Translation = {
       openBrand: 'Abrir Marca',
       saveError: 'No se pudo guardar la voz de la campaña',
     },
+
+    sections: {
+      voices: {
+        label: 'Voces',
+        description:
+          'Una voz son de tres a ocho publicaciones reales que te habría gustado escribir, y la aplicación escribe a partir de ellas y no de un adjetivo. Tener varias es lo normal: el comentario sarcástico y la página de empresa no son dos tonos de una misma personalidad.',
+        whenEmpty:
+          'Sin voz propia: todo lo que se genera aquí suena a generado.',
+      },
+      audiences: {
+        label: 'Audiencias',
+        description:
+          'A quién van dirigidas las publicaciones, descrito por lo que se deriva de ello: dónde leen, qué les hace pasar de largo y qué necesitan antes de creerse una cifra. Cada campaña pregunta para quién es esto, y la respuesta sale de aquí.',
+        whenEmpty: 'No se escribe a nadie en particular.',
+      },
+      guardrails: {
+        label: 'Límites',
+        description:
+          'Qué es cierto, qué se puede afirmar y qué no se puede afirmar nunca. Son las reglas de las que nadie se libra: valen para toda publicación generada, sea cual sea la voz que la escribió, y cuanto más convincente es la voz, más convincente resulta la invención que estas reglas existen para evitar.',
+        whenEmpty:
+          'Nada está prohibido. Cualquier voz de aquí puede prometer lo que sea.',
+      },
+      look: {
+        label: 'Aspecto',
+        description:
+          'Logotipos con una función declarada, colores con roles, tipografía e imágenes de referencia. Lo suficiente para que la aplicación cree una imagen con tu aspecto sin tener que preguntar cuál de los cuatro archivos va en la esquina.',
+        whenEmpty:
+          'Sin logotipo, sin colores, sin tipografía: las imágenes generadas quedan donde las deje el modelo.',
+      },
+      templates: {
+        label: 'Plantillas',
+        description:
+          'Un marco a lienzo completo por plataforma y por proporción, no un motor de composición, y por eso aquí nada se readapta. Un conjunto al que le falte una proporción en la que su plataforma publica no sirve allí, así que la pantalla empieza por las plataformas y no por los conjuntos.',
+        whenEmpty:
+          'Las imágenes salen desnudas. Nada las marca como tuyas una vez que han salido de la aplicación.',
+      },
+    },
+
+    facts: {
+      samplesNone: 'sin ejemplos',
+      samples_one: '{{count}} ejemplo',
+      samples_other: '{{count}} ejemplos',
+      usagePublished: '{{count}} publicadas',
+      usageDrafts: '{{count}} en borrador',
+      usageNever: 'nunca usada',
+      separator: ', ',
+    },
+
+    shell: {
+      readByNothing:
+        'Todavía nada lee esto: puedes rellenarlo, pero no cambiará lo que sale.',
+      comingSoon: 'PRÓXIMAMENTE',
+      default: 'predeterminada',
+      chipMore: '+{{count}} más',
+      origin: {
+        blank: 'Escrita aquí',
+        template: 'De una plantilla',
+        website: 'Leída del sitio web',
+        posts: 'Aprendida de publicaciones publicadas',
+        promoted: 'Guardada de una publicación',
+      },
+      originPostCount_one: '{{count}} publicación',
+      originPostCount_other: '{{count}} publicaciones',
+      offer: {
+        dismiss: 'No volver a ofrecer esto',
+        title: 'Lee el resto de tu sitio web',
+        body: 'Una sola pasada rellena {{fills}}, a partir de tus propios textos y no de una plantilla. Ves todo lo que propone antes de que se guarde nada.',
+        fallback:
+          'Si no hay nada de esto escrito en ningún sitio, Ogen te hará unas cuantas preguntas y lo redactará contigo. Y si lo hay —un dosier de marca, un PDF de tono de voz, una guía de estilo antigua—, funciona igual de bien que el sitio web.',
+        fills: {
+          voices: 'voces',
+          audiences: 'audiencias',
+          guardrails: 'límites',
+        },
+      },
+    },
+
+    overview: {
+      nothingReads: 'Todavía nada lee esto',
+      stated: '{{count}} indicados',
+      none: 'ninguno',
+      logosWithJobs: '{{count}} con función',
+      coloursWithRoles: '{{count}} con rol',
+      bannedWordCount: '{{count}} palabras',
+      written: 'escrito',
+      guardrails: {
+        facts: 'Datos',
+        factsEmpty: 'Cada cifra y cada detalle de producto se inventa de cero.',
+        mayClaim: 'Se puede afirmar',
+        mayClaimEmpty:
+          'Nada tiene una formulación que sepamos que es seguro repetir.',
+        neverClaim: 'No se puede afirmar nunca',
+        neverClaimEmpty:
+          'Nada está prohibido. Cualquier voz de aquí puede prometer lo que sea, con las palabras que sea.',
+        bannedWords: 'Palabras prohibidas',
+        disclaimer: 'Aviso legal',
+      },
+      templates: {
+        isDefault:
+          'Se aplica por defecto siempre que ninguna otra reclame la plataforma.',
+        forPlatforms: 'Para {{platforms}}.',
+        unreachable:
+          'Ninguna plataforma la reclama y no es la predeterminada: nunca le llega nada.',
+        ratios: '{{covered}} de {{total}} proporciones',
+      },
+    },
+
+    detail: {
+      back: 'Volver a Marca',
+      backToVoices: 'Volver a las voces',
+      backToAudiences: 'Volver a las audiencias',
+      errorHeader: 'No se pudo cargar Marca',
+      errorMessage:
+        'Las voces, audiencias y límites del espacio de trabajo no están accesibles en este momento. El resto de la aplicación no se ve afectado.',
+      guardrailsErrorHeader: 'No se pudieron cargar los límites',
+      guardrailsErrorMessage:
+        'Las reglas del espacio de trabajo no están accesibles en este momento, y editarlas sin verlas sobrescribiría lo que hay. El resto de la aplicación no se ve afectado.',
+      noVoiceHeader: 'No existe esa voz',
+      noAudienceHeader: 'No existe esa audiencia',
+      missingMessage:
+        'Puede que se haya eliminado, o que el enlace sea de otro espacio de trabajo.',
+      created: '{{name}} ya está en la biblioteca.',
+      saved: '{{name}} guardada.',
+      deleted: 'Se eliminó {{name}}.',
+      guardrailsSaved: 'Los límites están guardados.',
+      guardrailsCreated: 'Los límites están establecidos.',
+      guardrailsDeleted: 'Se eliminaron los límites.',
+    },
+
+    firstRun: {
+      title:
+        'Todo lo que se genera aquí suena igual que lo generado en cualquier otro sitio',
+      body: 'La gente usa las redes sociales para distinguirse: para eso está la marca. El contenido generado no tiene voz propia ni nada que le impida leerse como el resto del feed. Aquí es donde guardas el material que hace que lo tuyo sea tuyo: cómo suenas, a quién le hablas y qué no puedes afirmar nunca.',
+      manual: {
+        title: 'Rellénalo tú',
+        body: 'Directo a las tres secciones, vacías. El camino más rápido cuando ya sabes cómo suenas y solo necesitas dónde ponerlo.',
+      },
+      guided: {
+        title: 'Constrúyelo con Ogen',
+        body: 'Responde a unas cuantas preguntas y Ogen redacta todo contigo: el camino que funciona cuando nada de esto está escrito en ninguna parte, y el único que no necesita sitio web, ni archivo, ni documento.',
+      },
+      website: {
+        title: 'Léelo de tu sitio web',
+        body: 'Indícanos tu sitio y te proponemos todo de una vez: ejemplos de voz sacados de tus propios textos, el aviso legal que ya usas y los datos de producto que respaldan cada afirmación.',
+      },
+      posts: {
+        title: 'Apréndelo de tus publicaciones',
+        body: 'La voz que ya tienes, con tus propias palabras. Corrige lo que no encaje en lugar de inventar algo desde cero.',
+      },
+      template: {
+        title: 'Empieza con una plantilla',
+        body: 'Una configuración breve que recorre toda la marca pregunta a pregunta: voz, audiencia y las cosas que no puedes afirmar nunca. Dentro de esas dos secciones ya existen voces y audiencias de partida sueltas; lo que está por llegar es hacer las tres de una sola vez.',
+      },
+    },
+
+    look: {
+      edit: 'EDITAR',
+      gap: 'Sin logotipo, sin colores, sin tipografía. Todo lo que se genere con una imagen parecerá de banco de imágenes.',
+      uploadLogo: 'Subir un logotipo',
+      best: 'lo mejor',
+      logoSlot: 'Logotipo',
+      paletteSlot: 'Paleta',
+      typeSlot: 'Tipografía',
+      referenceSlot: 'Imágenes de referencia',
+      noLogo:
+        'Sin logotipo. Las plantillas y las imágenes de perfil no tienen nada que colocar.',
+      noPalette: 'No se han indicado colores.',
+      noTypefaces: 'No se han indicado tipografías.',
+      noReference:
+        'Nada con lo que guiar las imágenes generadas: acabarán donde los valores por defecto del modelo las dejen.',
+      job: {
+        profile: 'Foto de perfil',
+        watermark: 'Marca de agua',
+        mark: 'Solo el símbolo',
+      },
+    },
+
+    voices: {
+      writeFromScratch: 'ESCRIBIR UNA DESDE CERO',
+      add: 'AÑADIR VOZ',
+      addHint:
+        'Otra más, para las publicaciones a las que ninguna de las anteriores les va bien.',
+      starterGroupTitle: 'Empieza con una plantilla',
+      starterGroupBody:
+        'Tuya en cuanto la eliges: es una copia, no un enlace, así que si cambiamos la nuestra la tuya no cambia. Los ejemplos que añadas después son lo que hace que deje de sonar a plantilla.',
+      starters: {
+        plain: {
+          title: 'Clara y directa',
+          body: 'Frases cortas, sin jerga, sin emojis. Dice lo que tiene que decir y para.',
+          name: 'Clara y directa',
+          whenToUse: 'Cualquier cosa que deba entenderse a la primera',
+          opening: 'Dice a qué viene en la primera frase.',
+          closing: 'Para. Sin despedida y sin pregunta.',
+        },
+        warm: {
+          title: 'Cercana y conversacional',
+          body: 'Una persona hablando con otra. Contracciones, algún inciso, tuteo.',
+          name: 'Cercana y conversacional',
+          whenToUse:
+            'Las publicaciones que deben sonar a persona y no a empresa',
+          opening: 'Abre con algo que pasó de verdad.',
+          closing: 'Acaba con una pregunta que merezca respuesta.',
+        },
+        sharp: {
+          title: 'Incisiva y con opinión',
+          body: 'Toma partido en la primera línea y lo defiende. Seca, algo socarrona, nunca neutral.',
+          name: 'Incisiva y con opinión',
+          whenToUse:
+            'Comentario, y cualquier cosa sobre la que el sector ya esté discutiendo',
+          opening: 'Abre con la afirmación y luego se la gana.',
+          closing: 'Acaba con la línea más afilada, no con un resumen.',
+        },
+      },
+      noSamples:
+        'Sin ejemplos. Esta voz tiene un nombre y nada detrás: generará exactamente lo mismo que no tener voz alguna.',
+      thin: 'a partir de {{count}} empieza a funcionar',
+      postsBehind: '{{count}} se podrían rehacer',
+      defaultBacked:
+        'La voz predeterminada: las publicaciones empiezan con ella salvo que se elija otra.',
+      defaultThin:
+        'La voz predeterminada, y sin nada que se le acerque detrás: las publicaciones empiezan con ella y no cambia casi nada de lo que dicen.',
+      rules: {
+        formality: {
+          casual: 'informal',
+          neutral: 'neutra',
+          formal: 'formal',
+        },
+        person: {
+          i: 'primera persona',
+          we: 'nosotros',
+          third: 'tercera persona',
+        },
+        emoji: {
+          never: 'sin emojis',
+          sparingly: 'algunos emojis',
+          freely: 'emojis sin límite',
+        },
+        hashtags: {
+          never: 'sin hashtags',
+          few: 'pocos hashtags',
+          many: 'muchos hashtags',
+        },
+        length: {
+          short: 'publicaciones cortas',
+          medium: 'publicaciones medias',
+          long: 'publicaciones largas',
+        },
+      },
+
+      editor: {
+        needsName: 'Necesita un nombre para poder guardarse.',
+        save: 'Guardar voz',
+        create: 'Crear voz',
+        introNamed: 'Voz {{name}}',
+        introNew: 'Una voz nueva',
+        introBody:
+          'Lo que hace una voz son de tres a ocho publicaciones reales que te habría gustado escribir. Todo lo demás de esta pantalla es lo que un ejemplo no puede decir por sí solo.',
+        forkedNote:
+          'Todavía no se ha guardado nada y los ejemplos están vacíos: esa es la mitad que una plantilla no puede darte, y la que hace el trabajo.',
+        general: 'General',
+        defaultDoes:
+          'Las publicaciones empiezan con esta voz salvo que se elija otra.',
+        defaultCosts:
+          'Le quita el valor predeterminado a la voz que lo tenga ahora.',
+        name: 'Nombre',
+        namePlaceholder: 'Fundador, sin filtro',
+        description: 'Descripción',
+        descriptionHint:
+          'Cuándo usarla: una línea, y la que un selector muestra debajo del nombre.',
+        descriptionPlaceholder:
+          'La publicación distendida de fin de semana, y nada más',
+        samples: 'Ejemplos',
+        readsAs: 'Se lee como',
+        summaryPending: 'Se extrae de los ejemplos en cuanto se guarde.',
+        samplesShort:
+          'De tres a ocho publicaciones reales que te habría gustado escribir. Esto es la voz; todo lo de abajo es solo lo que un ejemplo no puede decir por sí solo.',
+        addSample: 'Añadir un ejemplo',
+        editSample: 'Editar ejemplo',
+        samplePlaceholder:
+          'Pega una publicación que te habría gustado escribir.',
+        removeSample: 'QUITAR EJEMPLO',
+        cancel: 'CANCELAR',
+        addIt: 'AÑADIRLO',
+        done: 'LISTO',
+        moreSampleOptions: 'Más opciones de ejemplos',
+        resetSamples: 'Restablecer ejemplos',
+        bulkUpload: 'Carga masiva',
+        bulkUploadSoon: 'Próximamente',
+        rules: 'Reglas',
+        rulesHint:
+          'Lo que un ejemplo no puede decir por sí solo. Una publicación pegada enseña el registro; no puede prometer que las treinta siguientes eviten los hashtags.',
+        opening: 'Cómo abre una publicación',
+        openingHint:
+          'La costumbre más reconocible de una voz, y merece la pena escribirla en vez de elegirla.',
+        openingPlaceholder: 'Abre con la afirmación y luego se la gana.',
+        closing: 'Cómo cierra una publicación',
+        closingHint:
+          'La mitad que la gente nota cuando falla: una pregunta, una llamada a la acción o nada en absoluto.',
+        closingPlaceholder:
+          'Acaba con la línea más afilada, no con un resumen.',
+        channels: 'Personalización por canal',
+        channelsHint:
+          'Una nota dentro de esta voz, no una segunda voz. «Más contenida en LinkedIn» va aquí; una segunda entrada casi idéntica en la biblioteca, no.',
+        channelsUnbuilt:
+          'Todavía sin construir. Todos los canales usan esta voz tal como está escrita arriba.',
+        choices: {
+          formalityLabel: 'Formalidad',
+          formality: {
+            casual: 'informal',
+            neutral: 'neutra',
+            formal: 'formal',
+          },
+          personLabel: 'Habla como',
+          person: {
+            i: 'yo',
+            we: 'nosotros',
+            third: 'la empresa',
+          },
+          emojiLabel: 'Emojis',
+          emoji: {
+            never: 'nunca',
+            sparingly: 'con moderación',
+            freely: 'sin límite',
+          },
+          hashtagsLabel: 'Hashtags',
+          hashtags: {
+            never: 'nunca',
+            few: 'unos pocos',
+            many: 'muchos',
+          },
+          lengthLabel: 'Extensión',
+          length: {
+            short: 'corta',
+            medium: 'media',
+            long: 'larga',
+          },
+        },
+        noun: 'VOZ',
+        deleteCostPublished_one:
+          'Se escribió {{count}} publicación publicada con esta voz. Al eliminarla, esa publicación se queda tal cual está —su texto se escribió y sigue en pie—, pero no se podrá generar nada nuevo con ella, y cualquier campaña que apunte aquí se quedará sin voz.',
+        deleteCostPublished_other:
+          'Se escribieron {{count}} publicaciones publicadas con esta voz. Al eliminarla, esas publicaciones se quedan tal cual están —su texto se escribió y sigue en pie—, pero no se podrá generar nada nuevo con ella, y cualquier campaña que apunte aquí se quedará sin voz.',
+        deleteCostDrafts_one:
+          '{{count}} borrador apunta a esta voz y se quedará sin voz.',
+        deleteCostDrafts_other:
+          '{{count}} borradores apuntan a esta voz y se quedarán sin voz.',
+        deleteCostNone:
+          'No se ha escrito nada con esta voz, así que no cambia nada más.',
+      },
+    },
+
+    audiences: {
+      describeYourself: 'DESCRIBIR UNA TÚ MISMO',
+      add: 'AÑADIR AUDIENCIA',
+      addHint:
+        'Otra más, para las publicaciones a las que no van dirigidas las demás.',
+      starterGroupTitle: 'Empieza con una plantilla',
+      starterGroupBody:
+        'Tres que tiene cualquier negocio, así que ninguna hay que inventarla. Elige una y rellena lo que se deriva de ella.',
+      starters: {
+        customers: {
+          title: 'Quienes ya te compran',
+          body: 'Descritos como son de verdad, no como los describe la presentación. La más fácil de acertar y la que más se salta.',
+          name: 'Quienes ya nos compran',
+        },
+        nearly: {
+          title: 'Quienes estuvieron a punto de comprar',
+          body: 'Conocen la categoría, te miraron y eligieron a otro. Lo que necesitaban y no obtuvieron es todo el encargo.',
+          name: 'Quienes estuvieron a punto de comprar',
+        },
+        advisers: {
+          title: 'Quienes te recomiendan',
+          body: 'No compran nunca nada. Pasan tu nombre, y necesitan algo citable que pasar con él.',
+          name: 'Quienes nos recomiendan',
+        },
+      },
+      readsOn: 'Lee en',
+      scrollsPast: 'Pasa de largo si',
+      believesWhen: 'Te cree cuando',
+      notSaid: '— sin indicar',
+
+      editor: {
+        needsName: 'Necesita un nombre para poder guardarse.',
+        save: 'Guardar audiencia',
+        create: 'Crear audiencia',
+        introNamed: 'Audiencia {{name}}',
+        introNew: 'Una audiencia nueva',
+        introBody:
+          'Una relación, descrita con la concreción suficiente como para poder equivocarse. Las tres líneas de más abajo son lo que la hace utilizable: dónde leen, qué les pierde y qué necesitan antes de creerse una cifra.',
+        forkedNote:
+          'Todavía no se ha guardado nada, y las tres líneas de abajo están en blanco: una plantilla sabe a qué relación te refieres y absolutamente nada sobre las personas que hay en ella.',
+        general: 'General',
+        name: 'Nombre',
+        namePlaceholder: 'Jefes de equipo sin tiempo',
+        who: 'Quiénes son',
+        whoHint:
+          'Concreto y que acote. Una edad, una costumbre y una sospecha, no «profesionales».',
+        whoPlaceholder:
+          'Jefes de equipo, 30-45 años, ya usan dos herramientas que resuelven esto a medias, desconfían de cualquier cosa que suene a venta, leen en el móvil entre reuniones.',
+        consequences: 'Qué se deriva',
+        readsAs: 'Se lee como',
+        summaryPending: 'Se extrae de estas tres en cuanto se guarde.',
+        consequencesHint:
+          'Las tres cosas que cambian lo que se escribe. Una audiencia que no sabe responderlas es una etiqueta, y una etiqueta no mueve nada.',
+        blank:
+          'Todavía nada. Guardada así, la audiencia es una etiqueta y ni una sola publicación saldrá distinta por que exista.',
+        readsOnLabel: 'Lee en',
+        readsOnHint:
+          'Dónde, en qué y a qué hora. Solo esta línea ya descarta la mitad de lo que publicarías.',
+        readsOnPlaceholder: 'Móvil, después de las 20:00, con una mano',
+        scrollsPastLabel: 'Pasa de largo cuando',
+        scrollsPastHint:
+          'La frase que les pierde, y merece la pena escribirla tal como la verían.',
+        scrollsPastPlaceholder:
+          'La primera línea lleva un porcentaje o la palabra «solución»',
+        believesLabel: 'Te cree cuando',
+        believesHint:
+          'Qué tiene que acompañar a una afirmación para que la acepten.',
+        believesPlaceholder: 'La cifra viene con el periodo en el que se midió',
+        noun: 'AUDIENCIA',
+        deleteCostPublished_one:
+          'Se escribió {{count}} publicación publicada para esta audiencia. Al eliminarla, esa publicación se queda tal cual está —su texto se escribió y sigue en pie—, pero no se podrá escribir nada nuevo para ella, y cualquier campaña que apunte aquí se quedará sin audiencia.',
+        deleteCostPublished_other:
+          'Se escribieron {{count}} publicaciones publicadas para esta audiencia. Al eliminarla, esas publicaciones se quedan tal cual están —su texto se escribió y sigue en pie—, pero no se podrá escribir nada nuevo para ella, y cualquier campaña que apunte aquí se quedará sin audiencia.',
+        deleteCostDrafts_one:
+          '{{count}} borrador apunta a esta audiencia y se quedará sin audiencia.',
+        deleteCostDrafts_other:
+          '{{count}} borradores apuntan a esta audiencia y se quedarán sin audiencia.',
+        deleteCostNone:
+          'No se ha escrito nada para esta audiencia, así que no cambia nada más.',
+      },
+    },
+
+    templates: {
+      count: '· {{count}}',
+      add: 'AÑADIR PLANTILLA',
+      gap: 'Las imágenes salen desnudas. Nada marca una imagen como tuya una vez que ha salido de la aplicación.',
+      gapScreen:
+        'Las imágenes salen desnudas. Nada marca una imagen como tuya una vez que ha salido de la aplicación, y aquí todavía no hay nada por plataforma, así que no hay marco de story de Instagram ni cierre de LinkedIn.',
+      buildFromLogo: 'Crear una a partir de tu logotipo',
+      uploadPng: 'Subir un PNG',
+      appliedByDefault: 'Se aplica por defecto',
+      overImage: 'Va encima de la imagen',
+      underImage: 'Va debajo de la imagen',
+      missingRatios:
+        'Nada que aplicar en {{ratios}}: un PNG por proporción es lo que compra la simplicidad.',
+
+      everywhere: 'En todas partes',
+      everywhereDetail: 'Cuando ninguna otra la reclama',
+      everywhereSubtitle:
+        'Lo que se aplica en cualquier plataforma a la que no se le haya dado una propia.',
+      noDefault:
+        'No hay plantilla predeterminada. Todas las plataformas sin una propia envían las imágenes desnudas.',
+      connectedGroup: 'Conectadas',
+      notConnectedGroup: 'Todavía sin conectar',
+      notConnected: 'sin conectar',
+      connected: 'conectada',
+      inherited:
+        'Recurre a la predeterminada: todavía no hay nada específico de esta plataforma.',
+      ownTemplate: 'Tiene una plantilla propia.',
+      giveItsOwn: 'DARLE UNA PROPIA',
+      replace: 'SUSTITUIR',
+      nothingApplies:
+        'Aquí no se aplica nada, y no hay ninguna predeterminada a la que recurrir.',
+      drawnOver: 'se dibuja sobre la imagen',
+      sitsUnder: 'va debajo de la imagen',
+      isDefaultSuffix: ' · la predeterminada',
+      neededEverything: 'todas las proporciones que produce la aplicación',
+      neededPlatform_one: 'la proporción en la que publica {{platform}}',
+      neededPlatform_other:
+        'las {{count}} proporciones en las que publica {{platform}}',
+      coversAll: 'Cubre {{needed}}.',
+      coversNone:
+        'No cubre ninguna de {{needed}}. Todas las imágenes de aquí salen desnudas.',
+      coversSome_one:
+        'Falta {{ratios}}: esa proporción sale desnuda frente a {{needed}}.',
+      coversSome_other:
+        'Faltan {{ratios}}: esas proporciones salen desnudas frente a {{needed}}.',
+      openInCompositor: 'ABRIR EN EL COMPOSITOR',
+    },
+
+    guardrails: {
+      cleared:
+        'Se ha borrado todo. Unos límites que no indican nada son lo mismo que no tener ninguno: elimínalos abajo en su lugar.',
+      save: 'Guardar límites',
+      create: 'Establecer los límites',
+      discard: 'Descartar cambios',
+      forkedNote:
+        'Han llegado las reglas y no los datos: una plantilla sabe qué no puede afirmar nunca un negocio como el tuyo, y absolutamente nada sobre qué es cierto en el tuyo. Lee cada línea antes de guardarla: esta es la sección que la gente deja de revisar.',
+      starterGroupTitle: 'Empieza con una plantilla',
+      starterGroupBody:
+        'Tres formas que adoptan las reglas, en lugar de treinta sectores. Elige la más parecida y rellenará las listas de abajo: cada línea está pensada para leerse y editarse, porque esta es la sección en la que la gente va a confiar.',
+      facts: 'Datos',
+      factsHint:
+        'Qué es cierto, para que deje de inventarse. Cifras, fechas, qué hace el producto y cuánto cuesta: las cosas que si no un generador rellena de forma verosímil.',
+      factsPlaceholder:
+        'Soporte responde en un día laborable, todos los días de la semana.',
+      addFact: 'Añadir un dato',
+      mayClaim: 'Se puede afirmar',
+      mayClaimHint:
+        'Afirmaciones ya revisadas, con la formulación con la que se revisaron. Esto es lo que evita que una frase que le costó una hora a un abogado se reescriba desde cero cada vez.',
+      mayClaimPlaceholder:
+        'Que la puesta en marcha lleva dos semanas, de principio a fin.',
+      addClaim: 'Añadir una afirmación',
+      neverClaim: 'No se puede afirmar nunca',
+      neverClaimHint:
+        'Escribe la afirmación en sí y no el tema: «cualquier resultado garantizado, en cualquier forma» y no «resultados». Un tema es algo que evitar mencionar; una afirmación es algo con lo que se puede contrastar una frase.',
+      neverClaimEmpty:
+        'Todavía no hay nada prohibido. Cualquier voz del espacio de trabajo puede prometer lo que sea, con las palabras que sea.',
+      neverClaimPlaceholder:
+        'Que el resultado está garantizado, en cualquier forma.',
+      addRule: 'Añadir una regla',
+      bannedWords: 'Palabras prohibidas',
+      bannedWordsHint:
+        'Palabras que no pueden aparecer nunca, en ninguna voz. Escribe una y pulsa Intro; las comas y las listas pegadas se separan en palabras sueltas.',
+      bannedWordPlaceholder: 'garantizado',
+      removeWord: 'Quitar {{word}}',
+      disclaimer: 'Aviso legal',
+      disclaimerHint:
+        'Lo lleva cada publicación, se añade exactamente como está escrito y no se reformula nunca: una línea legal obligatoria, un número de registro, una declaración de publicidad.',
+      disclaimerPlaceholder:
+        'Los resultados varían. Nada de lo aquí expuesto es una promesa del resultado que obtendrás.',
+      removeLine: 'Quitar esta línea',
+      keyboardHint:
+        'Intro empieza la siguiente. Pega una lista para añadirla entera de una vez.',
+      unsaved: 'Cambios sin guardar',
+      unsavedShort: 'Sin guardar',
+      saved: 'Guardado',
+      noun: 'LÍMITES',
+      dangerName: 'Límites',
+      deleteCost:
+        'La sección vuelve a quedarse vacía: ningún dato indicado, nada autorizado y nada prohibido, para todas las voces del espacio de trabajo. Las publicaciones ya publicadas no se tocan: su texto se escribió y sigue en pie.',
+      starters: {
+        regulated: {
+          title: 'Regulado, y el riesgo son los resultados',
+          body: 'Finanzas, salud, derecho. No se puede prometer ni insinuar ningún resultado, cada cifra indica su fuente y nada se describe como asesoramiento.',
+          neverClaim: [
+            'Cualquier rentabilidad o resultado futuro, en cualquier forma, incluido «históricamente» e incluido en broma.',
+            'Que algo de lo que publicamos sea asesoramiento. Es información, y la diferencia es regulatoria.',
+            'Que un resultado sea habitual, esté protegido, garantizado o sea seguro.',
+            'Una cifra sin el periodo en el que se midió y sin indicar de dónde sale.',
+          ],
+          bannedWords: [
+            'garantizado',
+            'sin riesgo',
+            'seguro',
+            'demostrado',
+            'ingresos pasivos',
+          ],
+        },
+        product: {
+          title: 'Un producto, y el riesgo son las funcionalidades',
+          body: 'Software, hardware, comercio. Solo lo que ya está disponible: la hoja de ruta no es una funcionalidad y ninguna integración existe hasta que está en producción.',
+          neverClaim: [
+            'Una funcionalidad que no esté en la versión que la gente puede usar hoy. La hoja de ruta no es una funcionalidad.',
+            'Una integración, plataforma o formato que no admitamos ya en producción.',
+            'Una cifra de velocidad, disponibilidad o escala de la que no podamos señalar la fuente.',
+            'Que a un competidor le falte algo, salvo que sea comprobable hoy y esté fechado.',
+          ],
+          bannedWords: [
+            'sin fricciones',
+            'sin esfuerzo',
+            'ilimitado',
+            'al instante',
+            'revolucionario',
+          ],
+        },
+        plain: {
+          title: 'Todos los demás, y el riesgo es exagerar',
+          body: 'Sin superlativos, sin estadísticas inventadas, sin nombrar a ningún cliente sin permiso y sin tomar prestada la autoridad de un logotipo.',
+          neverClaim: [
+            'Que somos los mejores, los primeros, los únicos o los que más crecen en lo que sea.',
+            'Una estadística cuya fuente no podamos enseñar.',
+            'Un cliente por su nombre, o sus resultados, sin permiso por escrito.',
+            'Un respaldo que nadie ha dado, incluido insinuarlo con un logotipo.',
+          ],
+          bannedWords: [
+            'líder del sector',
+            'de talla mundial',
+            'revolucionario',
+            'insuperable',
+            'no hay que pensárselo',
+          ],
+        },
+      },
+    },
+
+    editor: {
+      cancel: 'Cancelar',
+      forkedFrom:
+        'Partió de <name>{{name}}</name>, y se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',
+      danger: {
+        title: 'Zona de peligro',
+        delete: 'ELIMINAR {{noun}}',
+        keep: 'CONSERVAR {{noun}}',
+        confirmTitle: '¿Eliminar «{{name}}»?',
+        confirmBody: '{{cost}} Esto no se puede deshacer.',
+      },
+      default: 'Predeterminada',
+      makeDefault: 'HACER PREDETERMINADA',
+    },
   },
 
   campaigns: {

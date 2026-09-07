@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { StarIcon, TrashIcon, type Icon } from '@phosphor-icons/react'
+import { Trans, useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -81,7 +82,7 @@ export function BrandEditorFrame({
   dirty = true,
   contentKey,
   commitLabel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   onCancel,
   onSave,
   children,
@@ -101,12 +102,18 @@ export function BrandEditorFrame({
   contentKey: string
   /** `SAVE VOICE`, `CREATE AUDIENCE` — the noun is the editor's to name. */
   commitLabel: string
-  /** `CANCEL` leaves; `DISCARD CHANGES` puts a screen you stay on back. */
+  /**
+   * `CANCEL` leaves; `DISCARD CHANGES` puts a screen you stay on back.
+   * Defaulted in the body rather than in the signature — a default argument
+   * written as a literal here would be an English sentence on a prop
+   * signature, and the bar upper-cases whatever it is given.
+   */
   cancelLabel?: string
   onCancel?: () => void
   onSave?: () => void
   children: ReactNode
 }) {
+  const { t } = useTranslation()
   return (
     <div className="relative flex h-full min-h-0 flex-col">
       <ScrollArea
@@ -130,7 +137,9 @@ export function BrandEditorFrame({
             child that draws nothing and rules a divider beside it. */}
         {dirty ? (
           <Button variant="ghost" size="sm" onClick={onCancel}>
-            <span className="uppercase">{cancelLabel}</span>
+            <span className="uppercase">
+              {cancelLabel ?? t('brand.editor.cancel')}
+            </span>
           </Button>
         ) : null}
         <Button
@@ -305,8 +314,16 @@ export function ForkedNote({
         <Glyph className="size-5" />
       </span>
       <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">
-        Started from <span className="text-foreground">{title}</span>, and
-        copied rather than linked — ours changing will never change yours.{' '}
+        {/* The emphasis sits inside the sentence, so the sentence is one
+            catalogue entry with the mark in it rather than three fragments
+            assembled here — where the starter's name falls is a fact about the
+            language. The caller's second sentence follows as a sibling: it is
+            a whole sentence of its own, not a fragment of this one. */}
+        <Trans
+          i18nKey="brand.editor.forkedFrom"
+          values={{ name: title }}
+          components={{ name: <span className="text-foreground" /> }}
+        />{' '}
         {children}
       </p>
     </div>
@@ -346,10 +363,11 @@ export function DangerCard({
   cost: string
   onDelete: () => void
 }) {
+  const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
 
   return (
-    <EditorCard title="Danger zone" hint={cost}>
+    <EditorCard title={t('brand.editor.danger.title')} hint={cost}>
       <div>
         <Button
           variant="destructive"
@@ -357,19 +375,23 @@ export function DangerCard({
           onClick={() => setConfirming(true)}
         >
           <TrashIcon />
-          <span>DELETE {noun}</span>
+          <span>{t('brand.editor.danger.delete', { noun })}</span>
         </Button>
       </div>
 
       <ModalContainer
         isOpen={confirming}
         onClose={() => setConfirming(false)}
-        title={`Delete "${name}"?`}
+        title={t('brand.editor.danger.confirmTitle', { name })}
         size="small"
       >
         <div className="flex flex-col gap-4">
+          {/* One key holding both sentences rather than the caller's line and
+              a literal beside it: "this cannot be undone" is the second half
+              of a sentence the first half sets up, and a language may want
+              them the other way round. */}
           <p className="text-sm text-secondary-foreground">
-            {cost} This cannot be undone.
+            {t('brand.editor.danger.confirmBody', { cost })}
           </p>
           <div className="flex justify-end gap-2">
             <Button
@@ -377,14 +399,14 @@ export function DangerCard({
               variant="ghost"
               onClick={() => setConfirming(false)}
             >
-              KEEP {noun}
+              {t('brand.editor.danger.keep', { noun })}
             </Button>
             <Button
               type="button"
               variant="destructiveInverted"
               onClick={onDelete}
             >
-              DELETE {noun}
+              {t('brand.editor.danger.delete', { noun })}
             </Button>
           </div>
         </div>
@@ -450,6 +472,8 @@ export function DefaultControl({
   does: string
   costs: string
 }) {
+  const { t } = useTranslation()
+
   if (isDefault) {
     return (
       <Tooltip>
@@ -470,7 +494,7 @@ export function DefaultControl({
               className="size-4 text-positive"
               aria-hidden
             />
-            Default
+            {t('brand.editor.default')}
           </span>
         </TooltipTrigger>
         <TooltipContent>{does}</TooltipContent>
@@ -483,7 +507,7 @@ export function DefaultControl({
       <TooltipTrigger asChild>
         <Button variant="ghost" size="sm" onClick={onMakeDefault}>
           <StarIcon />
-          <span>MAKE DEFAULT</span>
+          <span>{t('brand.editor.makeDefault')}</span>
         </Button>
       </TooltipTrigger>
       <TooltipContent>{costs}</TooltipContent>

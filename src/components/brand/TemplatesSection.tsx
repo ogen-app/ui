@@ -1,9 +1,9 @@
 import { CheckIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
+import { brandSectionCopy } from '@/lib/brandSections'
+import { formatList } from '@/lib/intl'
 import { AddButton, BrandSection, EntryCard, Gap, OriginLine } from './shell'
-import type { BrandTemplate } from './types'
-
-/** Every ratio a template is expected to cover before it can be used everywhere. */
-export const EXPECTED_RATIOS = ['1:1', '4:5', '9:16', '16:9']
+import { EXPECTED_RATIOS, type BrandTemplate } from './types'
 
 /**
  * What ships instead of an image editor.
@@ -31,23 +31,31 @@ export function TemplatesSection({
   onAdd?: () => void
   onOpen?: (id: string) => void
 }) {
+  const { t } = useTranslation()
   return (
     <BrandSection
-      title="Templates"
-      qualifier={templates.length > 0 ? `· ${templates.length}` : undefined}
+      title={brandSectionCopy(t, 'templates').label}
+      qualifier={
+        templates.length > 0
+          ? t('brand.templates.count', { count: templates.length })
+          : undefined
+      }
       readBy={[]}
       action={
         templates.length > 0 ? (
-          <AddButton label="ADD TEMPLATE" onClick={onAdd} />
+          <AddButton label={t('brand.templates.add')} onClick={onAdd} />
         ) : undefined
       }
     >
       {templates.length === 0 ? (
         <Gap
-          what="Images go out bare. Nothing marks a picture as yours once it has left the app."
+          what={t('brand.templates.gap')}
           offers={[
-            { label: 'Build one from your logo', hint: 'best' },
-            { label: 'Upload a PNG' },
+            {
+              label: t('brand.templates.buildFromLogo'),
+              hint: t('brand.look.best'),
+            },
+            { label: t('brand.templates.uploadPng') },
           ]}
         />
       ) : (
@@ -72,6 +80,7 @@ function TemplateCard({
   template: BrandTemplate
   onOpen?: (id: string) => void
 }) {
+  const { t } = useTranslation()
   const have = new Set(template.ratios.map((r) => r.ratio))
   const missing = EXPECTED_RATIOS.filter((r) => !have.has(r))
   const preview = template.ratios[0]
@@ -86,7 +95,7 @@ function TemplateCard({
           // otherwise, which is the same applies-by-default rule voices have.
           <span className="flex shrink-0 items-center gap-1 text-xs text-tertiary-foreground">
             <CheckIcon className="size-3" />
-            Applied by default
+            {t('brand.templates.appliedByDefault')}
           </span>
         ) : undefined
       }
@@ -122,8 +131,8 @@ function TemplateCard({
         <div className="flex min-w-0 flex-col gap-2">
           <p className="text-xs text-tertiary-foreground">
             {template.role === 'foreground'
-              ? 'Sits over the image'
-              : 'Sits under the image'}
+              ? t('brand.templates.overImage')
+              : t('brand.templates.underImage')}
           </p>
 
           <div className="flex flex-wrap gap-1">
@@ -143,8 +152,9 @@ function TemplateCard({
 
           {missing.length > 0 && (
             <p className="text-xs text-tertiary-foreground">
-              Nothing to apply on {missing.join(', ')} — one PNG per ratio is
-              what buys the simplicity.
+              {t('brand.templates.missingRatios', {
+                ratios: formatList(missing),
+              })}
             </p>
           )}
         </div>

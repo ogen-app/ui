@@ -1,4 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -9,7 +11,11 @@ import {
   Field,
   ForkedNote,
 } from './editor'
-import type { AudienceStarter } from './AudiencesSection'
+import {
+  audienceStarterCopy,
+  audienceStarterDraft,
+  type AudienceStarter,
+} from './starters'
 import type { BrandAudience, BrandUsage } from './types'
 
 /**
@@ -66,9 +72,10 @@ export function AudienceEditor({
   /** Only offered for an audience that exists. */
   onDelete?: () => void
 }) {
+  const { t } = useTranslation()
   const initial = useMemo(
-    () => draftFrom(audience, starter),
-    [audience, starter],
+    () => draftFrom(t, audience, starter),
+    [t, audience, starter],
   )
   const [draft, setDraft] = useState<Draft>(initial)
 
@@ -82,43 +89,48 @@ export function AudienceEditor({
     <BrandEditorFrame
       header={header}
       contentKey={audience ? 'edit' : 'new'}
-      blocker={named ? undefined : 'Needs a name before it can be saved.'}
-      commitLabel={audience ? 'Save audience' : 'Create audience'}
+      blocker={named ? undefined : t('brand.audiences.editor.needsName')}
+      commitLabel={
+        audience
+          ? t('brand.audiences.editor.save')
+          : t('brand.audiences.editor.create')
+      }
       onCancel={onCancel}
-      onSave={() => onSave?.(assemble(draft, audience, starter))}
+      onSave={() => onSave?.(assemble(t, draft, audience, starter))}
     >
       <AudienceIntro name={audience?.name} />
 
       {starter && !audience && (
-        <ForkedNote icon={starter.icon} title={starter.title}>
-          Nothing is saved yet, and the three lines below are blank: a template
-          knows which relationship you mean, and nothing whatever about the
-          people in it.
+        <ForkedNote
+          icon={starter.icon}
+          title={audienceStarterCopy(t, starter).title}
+        >
+          {t('brand.audiences.editor.forkedNote')}
         </ForkedNote>
       )}
 
       {/* No `DefaultControl` here, and the voice editor has one. An audience
           has no workspace default to promote it to — the resolution stops at
           the campaign. See `resolveAudience` in `binding.ts`. */}
-      <EditorCard title="General">
-        <Field label="Name">
+      <EditorCard title={t('brand.audiences.editor.general')}>
+        <Field label={t('brand.audiences.editor.name')}>
           <Input
             value={draft.name}
             onChange={(e) => set('name', e.target.value)}
-            placeholder="Time-poor team leads"
+            placeholder={t('brand.audiences.editor.namePlaceholder')}
           />
         </Field>
         {/* Labelled by what it is for, the same way the voice editor labels its
             description: "who" invites a demographic, and what belongs here is
             the version with a habit and a suspicion in it. */}
         <Field
-          label="Who they are"
-          hint="Concrete and narrowing. An age, a habit and a suspicion — not “professionals”."
+          label={t('brand.audiences.editor.who')}
+          hint={t('brand.audiences.editor.whoHint')}
         >
           <Textarea
             value={draft.who}
             onChange={(e) => set('who', e.target.value)}
-            placeholder="Team leads, 30–45, already run two tools that half-solve this, distrust anything that sounds like a pitch, read on a phone between meetings."
+            placeholder={t('brand.audiences.editor.whoPlaceholder')}
             className="min-h-24"
           />
         </Field>
@@ -132,9 +144,9 @@ export function AudienceEditor({
 
       {audience && onDelete && (
         <DangerCard
-          noun="AUDIENCE"
+          noun={t('brand.audiences.editor.noun')}
           name={audience.name}
-          cost={deletionCost(audience.usage)}
+          cost={deletionCost(t, audience.usage)}
           onDelete={onDelete}
         />
       )}
@@ -167,69 +179,68 @@ function ConsequencesCard({
   /** Our reading of these three lines, or `null` once they have moved under it. */
   summary: string | null
 }) {
+  const { t } = useTranslation()
   const blank = !draft.readsOn && !draft.scrollsPastWhen && !draft.believesWhen
   const incomplete =
     !draft.readsOn || !draft.scrollsPastWhen || !draft.believesWhen
 
   return (
     <EditorCard
-      title="What follows"
+      title={t('brand.audiences.editor.consequences')}
       hint={
         <>
           {summary ? (
             <span>
-              <span className="text-primary-foreground">Reads as</span>{' '}
+              <span className="text-primary-foreground">
+                {t('brand.audiences.editor.readsAs')}
+              </span>{' '}
               {summary}
             </span>
           ) : (
             !incomplete && (
-              <span>Read back off these three once this is saved.</span>
+              <span>{t('brand.audiences.editor.summaryPending')}</span>
             )
           )}
           {incomplete && (
-            <span>
-              The three things that change what gets written. An audience that
-              cannot answer them is a label, and a label moves nothing.
-            </span>
+            <span>{t('brand.audiences.editor.consequencesHint')}</span>
           )}
         </>
       }
     >
       {blank && (
         <p className="border-l-2 border-quaternary pl-3 text-sm leading-5 text-tertiary-foreground">
-          Nothing yet. Saved like this the audience is a label, and not one post
-          will come out differently because it exists.
+          {t('brand.audiences.editor.blank')}
         </p>
       )}
 
       <Field
-        label="Reads on"
-        hint="Where, on what, and at what hour. Half of what you would otherwise post is ruled out by this line alone."
+        label={t('brand.audiences.editor.readsOnLabel')}
+        hint={t('brand.audiences.editor.readsOnHint')}
       >
         <Input
           value={draft.readsOn}
           onChange={(e) => onChange('readsOn', e.target.value)}
-          placeholder="Phone, after 8pm, one-handed"
+          placeholder={t('brand.audiences.editor.readsOnPlaceholder')}
         />
       </Field>
       <Field
-        label="Scrolls past when"
-        hint="The line that loses them — worth writing as the sentence they would actually see."
+        label={t('brand.audiences.editor.scrollsPastLabel')}
+        hint={t('brand.audiences.editor.scrollsPastHint')}
       >
         <Input
           value={draft.scrollsPastWhen}
           onChange={(e) => onChange('scrollsPastWhen', e.target.value)}
-          placeholder='The first line contains a percentage or the word "solution"'
+          placeholder={t('brand.audiences.editor.scrollsPastPlaceholder')}
         />
       </Field>
       <Field
-        label="Believes you when"
-        hint="What has to sit next to a claim before they will accept it."
+        label={t('brand.audiences.editor.believesLabel')}
+        hint={t('brand.audiences.editor.believesHint')}
       >
         <Input
           value={draft.believesWhen}
           onChange={(e) => onChange('believesWhen', e.target.value)}
-          placeholder="The number comes with the period it was measured over"
+          placeholder={t('brand.audiences.editor.believesPlaceholder')}
         />
       </Field>
     </EditorCard>
@@ -238,11 +249,18 @@ function ConsequencesCard({
 
 /** See `EditorIntro`. The saved name, never the draft's. */
 function AudienceIntro({ name }: { name?: string }) {
+  const { t } = useTranslation()
   return (
     <EditorIntro
       section="audiences"
-      title={name ? `${name} Audience` : 'A new audience'}
-      body="One relationship, described concretely enough to be wrong about. The three lines further down are what make it usable — where they read, what loses them, and what they need before they believe a number."
+      // The name is spliced by the catalogue rather than here: "X Audience" is
+      // an English word order, and Spanish puts the noun first.
+      title={
+        name
+          ? t('brand.audiences.editor.introNamed', { name })
+          : t('brand.audiences.editor.introNew')
+      }
+      body={t('brand.audiences.editor.introBody')}
     />
   )
 }
@@ -255,6 +273,7 @@ type Draft = Pick<
 >
 
 function draftFrom(
+  t: TFunction,
   audience: BrandAudience | null,
   starter?: AudienceStarter | null,
 ): Draft {
@@ -267,9 +286,9 @@ function draftFrom(
       believesWhen: audience.believesWhen,
     }
   }
-  // A starter hands over its name and nothing else — see `AudienceStarter`.
+  // A starter hands over its name and nothing else — see `audienceStarterDraft`.
   return {
-    name: starter?.draft.name ?? '',
+    name: starter ? audienceStarterDraft(t, starter).name : '',
     who: '',
     readsOn: '',
     scrollsPastWhen: '',
@@ -300,6 +319,7 @@ function linesOf(entry: Draft | BrandAudience | null): string {
  * server's (CON-228), so a create is a `POST` with no id.
  */
 function assemble(
+  t: TFunction,
   draft: Draft,
   audience: BrandAudience | null,
   starter?: AudienceStarter | null,
@@ -313,20 +333,32 @@ function assemble(
     origin:
       audience?.origin ??
       (starter
-        ? { kind: 'template', templateName: starter.title }
+        ? {
+            kind: 'template',
+            templateName: audienceStarterCopy(t, starter).title,
+          }
         : { kind: 'blank' }),
     updatedAt: new Date().toISOString(),
   }
 }
 
-/** What deleting this audience costs, in the numbers this audience has. */
-function deletionCost(usage: BrandUsage): string {
+/**
+ * What deleting this audience costs, in the numbers this audience has.
+ *
+ * Each count is a whole sentence per plural form rather than a stem with
+ * `post was`/`posts were` spliced into it: English happens to change two words
+ * there and other languages change others, so the fragment that used to be
+ * chosen here is the translator's to write out in full.
+ */
+function deletionCost(t: TFunction, usage: BrandUsage): string {
   const { published, drafts } = usage
   if (published > 0) {
-    return `${published} published ${published === 1 ? 'post was' : 'posts were'} written for this audience. Deleting it leaves them exactly as they are — their text was written and it stands — but nothing new can be written to it, and any campaign pointing here falls back to no audience at all.`
+    return t('brand.audiences.editor.deleteCostPublished', {
+      count: published,
+    })
   }
   if (drafts > 0) {
-    return `${drafts} ${drafts === 1 ? 'draft points' : 'drafts point'} at this audience and will fall back to no audience at all.`
+    return t('brand.audiences.editor.deleteCostDrafts', { count: drafts })
   }
-  return 'Nothing has been written for this audience, so nothing else changes.'
+  return t('brand.audiences.editor.deleteCostNone')
 }

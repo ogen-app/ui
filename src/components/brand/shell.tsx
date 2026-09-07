@@ -8,9 +8,11 @@ import {
   XIcon,
   type Icon,
 } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { cn } from '@/lib'
+import { formatList } from '@/lib/intl'
 import { useSettingsStore } from '@/stores/settingsStore'
 import type { BrandConsumer, BrandOrigin } from './types'
 
@@ -135,6 +137,7 @@ export function BrandSection({
  * this component is where that sentence gets written.
  */
 export function ReadBy({ consumers }: { consumers: BrandConsumer[] }) {
+  const { t } = useTranslation()
   if (consumers.length > 0) return null
 
   // Set at the card's own measure rather than in micro-type. It was 12px, and
@@ -143,8 +146,7 @@ export function ReadBy({ consumers }: { consumers: BrandConsumer[] }) {
   // what this line is for. Dimmer than the description above it, same size.
   return (
     <p className="max-w-2xl text-sm leading-5 text-tertiary-foreground">
-      Nothing reads this yet — you can fill it in, but it won't change what
-      comes out.
+      {t('brand.shell.readByNothing')}
     </p>
   )
 }
@@ -269,6 +271,7 @@ export function WholeBrandOffer({
   /** The sections it would populate, named. */
   fills: string[]
 }) {
+  const { t, i18n } = useTranslation()
   const dismissed = useSettingsStore((s) =>
     s.dismissedNotes.includes(OFFER_NOTE_ID),
   )
@@ -290,7 +293,7 @@ export function WholeBrandOffer({
         variant="ghost"
         size="smIcon"
         className="absolute top-3 right-3"
-        aria-label="Don't offer this again"
+        aria-label={t('brand.shell.offer.dismiss')}
         onClick={() => dismissNote(OFFER_NOTE_ID)}
       >
         <XIcon />
@@ -306,35 +309,31 @@ export function WholeBrandOffer({
         </span>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h2 className="font-display text-2xl font-medium leading-8 tracking-tight">
-            Read the rest off your website
+            {t('brand.shell.offer.title')}
           </h2>
           {/* Beside the heading, because with the buttons gone the tag is
               the card's whole state — the difference between an offer and a
               notice is that one of them can be taken. */}
-          <StatusBadge tone="neutral" label="COMING SOON" />
+          <StatusBadge tone="neutral" label={t('brand.shell.comingSoon')} />
         </div>
+        {/* The list is joined by `Intl`, not by this file: the conjunction and
+            the serial comma are the language's, and `a, b and c` is an English
+            rule that Spanish does not follow. `i18n.language` is passed rather
+            than read inside, so the switch that re-renders this component is
+            the same one that changes the join. */}
         <p className="text-sm leading-5">
-          One pass fills {joinList(fills)} — from your own copy, not from a
-          template. You see everything it proposes before any of it is saved.
+          {t('brand.shell.offer.body', {
+            fills: formatList(fills, 'conjunction', i18n.language),
+          })}
         </p>
         {/* Both halves of the offer are the explanation, so both are set the
             same. This one was a tertiary footnote *under* the buttons, which
             put the answer to "what if I have neither" after the point at which
             somebody with neither has already given up on the card. */}
-        <p className="text-sm leading-5">
-          If none of it is written down anywhere, Ogen will ask you a handful of
-          questions and draft it with you. If it is — a brand deck, a
-          tone-of-voice PDF, an old style guide — that works as well as the site
-          does.
-        </p>
+        <p className="text-sm leading-5">{t('brand.shell.offer.fallback')}</p>
       </header>
     </section>
   )
-}
-
-function joinList(items: string[]): string {
-  if (items.length === 1) return items[0]
-  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
 }
 
 /**
@@ -824,6 +823,7 @@ export function DefaultStar({
   /** Type for the mark; it inherits nothing of its own. See `OriginLine`. */
   className?: string
 }) {
+  const { t } = useTranslation()
   return (
     <span
       aria-label={label}
@@ -837,17 +837,9 @@ export function DefaultStar({
           backed ? 'text-positive' : 'text-senary-foreground',
         )}
       />
-      default
+      {t('brand.shell.default')}
     </span>
   )
-}
-
-const ORIGIN_LABEL: Record<BrandOrigin['kind'], string> = {
-  blank: 'Written here',
-  template: 'From a template',
-  website: 'Read off the website',
-  posts: 'Learned from published posts',
-  promoted: 'Saved from a post',
 }
 
 /**
@@ -874,20 +866,25 @@ export function OriginLine({
    */
   className?: string
 }) {
+  const { t } = useTranslation()
+
+  // Three of the five details are the customer's own words — a template's
+  // name, their URL, a post's title — and stay exactly as they are. Only the
+  // fourth is a sentence of ours, and it is the only one that needs counting.
   const detail =
     origin.kind === 'template'
       ? origin.templateName
       : origin.kind === 'website'
         ? origin.url
         : origin.kind === 'posts'
-          ? `${origin.count} posts`
+          ? t('brand.shell.originPostCount', { count: origin.count })
           : origin.kind === 'promoted'
             ? origin.fromPost
             : null
 
   return (
     <p className={className}>
-      {ORIGIN_LABEL[origin.kind]}
+      {t(`brand.shell.origin.${origin.kind}` as const)}
       {detail && <span> · {detail}</span>}
     </p>
   )
@@ -905,6 +902,7 @@ export function ChipList({
   items: string[]
   max?: number
 }) {
+  const { t } = useTranslation()
   const shown = items.slice(0, max)
   const rest = items.length - shown.length
   return (
@@ -919,7 +917,7 @@ export function ChipList({
       ))}
       {rest > 0 && (
         <span className="px-1.5 py-0.5 text-xs text-tertiary-foreground">
-          +{rest} more
+          {t('brand.shell.chipMore', { count: rest })}
         </span>
       )}
     </div>

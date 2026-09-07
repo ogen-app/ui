@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { CaretLeftIcon } from '@phosphor-icons/react'
 import { Link } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
@@ -8,7 +9,11 @@ import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { useBrand } from '@/hooks/useBrand'
-import { brandSection, type BrandSectionId } from '@/lib/brandSections'
+import {
+  brandSection,
+  brandSectionCopy,
+  type BrandSectionId,
+} from '@/lib/brandSections'
 import { BrandIntro } from './shell'
 import type { BrandData } from './types'
 
@@ -156,13 +161,26 @@ export function BrandPage({ children }: { children: ReactNode }) {
  */
 export function BrandBackButton({
   to = '/brand',
-  label = 'Back to Brand',
+  label,
 }: {
   to?: '/brand' | '/brand/voices' | '/brand/audiences'
+  /**
+   * Overrides the destination's name for a caller one level deeper. Defaulted
+   * inside rather than in the signature: a default argument is evaluated once
+   * per call and that is fine, but writing it as a literal here would put an
+   * English sentence on a prop signature, which is where a caller copies it
+   * from.
+   */
   label?: string
 }) {
+  const { t } = useTranslation()
   return (
-    <Button variant="headerIcon" size="excluded" asChild aria-label={label}>
+    <Button
+      variant="headerIcon"
+      size="excluded"
+      asChild
+      aria-label={label ?? t('brand.detail.back')}
+    >
       <Link to={to}>
         <CaretLeftIcon className="size-5" />
       </Link>
@@ -180,14 +198,15 @@ function BrandDetailBody({
   fixed?: boolean
   children: (data: BrandData) => ReactNode
 }) {
+  const { t } = useTranslation()
   const { data, isPending, isError } = useBrand()
 
   if (isPending) return <PageLoader />
   if (isError || !data) {
     return (
       <PageError
-        header="Brand could not be loaded"
-        message="The workspace's voices, audiences and guardrails are not reachable right now. Everything else in the app is unaffected."
+        header={t('brand.detail.errorHeader')}
+        message={t('brand.detail.errorMessage')}
       />
     )
   }
@@ -235,14 +254,16 @@ export function BrandSectionIntro({
   data: BrandData
   wide?: boolean
 }) {
+  const { t } = useTranslation()
   const info = brandSection(section)
+  const copy = brandSectionCopy(t, section)
   return (
     <BrandIntro
       icon={info.icon}
       tone={info.tone}
-      title={info.label}
-      body={info.description}
-      missing={isSectionEmpty(section, data) ? info.whenEmpty : undefined}
+      title={copy.label}
+      body={copy.description}
+      missing={isSectionEmpty(section, data) ? copy.whenEmpty : undefined}
       readBy={info.readBy}
       wide={wide}
     />

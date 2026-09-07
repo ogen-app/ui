@@ -330,6 +330,21 @@ export function isBrandEmpty(data: BrandData): boolean {
  */
 export const MIN_VOICE_SAMPLES = 3
 
+/**
+ * Every ratio a template is expected to cover before it can be used everywhere.
+ *
+ * Beside `MIN_VOICE_SAMPLES` because it is the same kind of thing — a number
+ * the module judges material against — and because three files read it
+ * (`TemplatesSection`, `TemplatesScreen`, `BrandOverview`). It used to live on
+ * the first of those, which made the other two import a constant from a
+ * component.
+ *
+ * A missing ratio is not cosmetic here: one PNG per ratio is the price of not
+ * reflowing, so a set that misses one is unusable wherever that ratio is what
+ * gets posted.
+ */
+export const EXPECTED_RATIOS = ['1:1', '4:5', '9:16', '16:9']
+
 /* -- Binding ---------------------------------------------------------------
  *
  * What a campaign and a post have chosen out of the library above: **four
