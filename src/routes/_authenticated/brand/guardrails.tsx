@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
@@ -45,6 +46,7 @@ export const Route = createFileRoute('/_authenticated/brand/guardrails')({
 })
 
 function GuardrailsPage() {
+  const { t } = useTranslation()
   const { data, isPending, isError } = useBrand()
   const save = useSaveGuardrails()
   const remove = useDeleteGuardrails()
@@ -67,8 +69,8 @@ function GuardrailsPage() {
       <BrandPage>
         <Static header={header}>
           <PageError
-            header="Guardrails could not be loaded"
-            message="The workspace's rules are not reachable right now, and editing them without seeing them would overwrite what is there. Everything else in the app is unaffected."
+            header={t('brand.detail.guardrailsErrorHeader')}
+            message={t('brand.detail.guardrailsErrorMessage')}
           />
         </Static>
       </BrandPage>
@@ -88,8 +90,8 @@ function GuardrailsPage() {
             onSuccess: () => {
               toast.success(
                 guardrails
-                  ? 'The guardrails are saved.'
-                  : 'The guardrails are set.',
+                  ? t('brand.detail.guardrailsSaved')
+                  : t('brand.detail.guardrailsCreated'),
               )
             },
           })
@@ -98,7 +100,7 @@ function GuardrailsPage() {
           remove.mutate(undefined, {
             onSuccess: () => {
               setDeletions((n) => n + 1)
-              toast.success('The guardrails were deleted.')
+              toast.success(t('brand.detail.guardrailsDeleted'))
             },
           })
         }}

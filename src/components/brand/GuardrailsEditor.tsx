@@ -14,10 +14,12 @@ import {
   XIcon,
   type Icon,
 } from '@phosphor-icons/react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import type { BarStatus } from '@/components/page-primitives/PageActionBar'
-import { brandSection } from '@/lib/brandSections'
+import { brandSection, brandSectionCopy } from '@/lib/brandSections'
 import { cn } from '@/lib'
 import {
   BrandEditorFrame,
@@ -136,7 +138,8 @@ export function GuardrailsEditor({
   /** Only offered once there are guardrails to remove. */
   onDelete?: () => void
 }) {
-  const [draft, setDraft] = useState<Draft>(() => draftFrom(guardrails))
+  const { t } = useTranslation()
+  const [draft, setDraft] = useState<Draft>(() => draftFrom(t, guardrails))
   /** Which of ours filled it in, while nothing has been saved over it yet. */
   const [forkedFrom, setForkedFrom] = useState<GuardrailStarter | null>(null)
 
@@ -149,47 +152,46 @@ export function GuardrailsEditor({
   const blank = stated === signature(null)
 
   const info = brandSection('guardrails')
+  const copy = brandSectionCopy(t, 'guardrails')
 
   return (
     <BrandEditorFrame
       header={header}
       contentKey={`${guardrails ? 'edit' : 'new'}-${dirty ? 'dirty' : 'clean'}`}
       dirty={dirty}
-      status={barStatus(dirty, guardrails !== null)}
+      status={barStatus(t, dirty, guardrails !== null)}
       // Only reachable with rules already stored: clearing every field is how
       // somebody deletes them without noticing they have, and an empty record
       // saved over a full one is indistinguishable afterwards from rules that
       // were never written. The way back to nothing is the danger zone, which
       // says what it costs and asks twice.
-      blocker={
-        guardrails && blank
-          ? 'Everything has been cleared. Guardrails that state nothing are the same as none — delete them below instead.'
-          : undefined
+      blocker={guardrails && blank ? t('brand.guardrails.cleared') : undefined}
+      commitLabel={
+        guardrails ? t('brand.guardrails.save') : t('brand.guardrails.create')
       }
-      commitLabel={guardrails ? 'Save guardrails' : 'Set the guardrails'}
-      cancelLabel="Discard changes"
+      cancelLabel={t('brand.guardrails.discard')}
       onCancel={() => {
-        setDraft(draftFrom(guardrails))
+        setDraft(draftFrom(t, guardrails))
         setForkedFrom(null)
       }}
       onSave={() => onSave?.(written)}
     >
       <EditorIntro
         section="guardrails"
-        title={info.label}
-        body={info.description}
+        title={copy.label}
+        body={copy.description}
         // The line the section card used to carry, on the screen that replaced
         // it. Only while nothing is stored: what the emptiness costs stops
         // being true the moment it is not empty.
-        missing={guardrails ? undefined : info.whenEmpty}
+        missing={guardrails ? undefined : copy.whenEmpty}
       />
 
       {forkedFrom && !guardrails && (
-        <ForkedNote icon={forkedFrom.icon} title={forkedFrom.title}>
-          The rules arrived and the facts did not: a template knows what a
-          business like yours may never claim, and nothing at all about what is
-          true of you. Read every line before saving it — this is the section
-          people stop checking.
+        <ForkedNote
+          icon={forkedFrom.icon}
+          title={guardrailStarterCopy(t, forkedFrom).title}
+        >
+          {t('brand.guardrails.forkedNote')}
         </ForkedNote>
       )}
 
@@ -197,71 +199,73 @@ export function GuardrailsEditor({
           keystroke — see the note on starters above. */}
       {!guardrails && !dirty && (
         <StarterGroup
-          title="Start from a template"
-          body="Three shapes the rules take, rather than thirty industries. Pick the closest and it fills the lists below — every line is meant to be read and edited, because this is the one section people will trust."
+          title={t('brand.guardrails.starterGroupTitle')}
+          body={t('brand.guardrails.starterGroupBody')}
         >
-          {GUARDRAIL_STARTERS.map((starter) => (
-            <StarterCard
-              key={starter.id}
-              icon={starter.icon}
-              tone={info.tone}
-              title={starter.title}
-              body={starter.body}
-              onClick={() => {
-                setDraft(draftFrom(null, starter))
-                setForkedFrom(starter)
-              }}
-            />
-          ))}
+          {GUARDRAIL_STARTERS.map((starter) => {
+            const starterCopy = guardrailStarterCopy(t, starter)
+            return (
+              <StarterCard
+                key={starter.id}
+                icon={starter.icon}
+                tone={info.tone}
+                title={starterCopy.title}
+                body={starterCopy.body}
+                onClick={() => {
+                  setDraft(draftFrom(t, null, starter))
+                  setForkedFrom(starter)
+                }}
+              />
+            )
+          })}
         </StarterGroup>
       )}
 
       <EditorCard
-        title="Facts"
-        hint="What is true, so it stops being invented. Figures, dates, what the product does and what it costs — the things a generator otherwise fills in plausibly."
+        title={t('brand.guardrails.facts')}
+        hint={t('brand.guardrails.factsHint')}
       >
         <StatementList
           items={draft.facts}
           onChange={(facts) => set('facts', facts)}
-          placeholder="Support answers within one working day, every day of the week."
-          addLabel="Add a fact"
+          placeholder={t('brand.guardrails.factsPlaceholder')}
+          addLabel={t('brand.guardrails.addFact')}
         />
       </EditorCard>
 
       <EditorCard
-        title="May claim"
-        hint="Claims already checked, in the form they were checked in. This is what stops a sentence that took a lawyer an hour being written from scratch every time."
+        title={t('brand.guardrails.mayClaim')}
+        hint={t('brand.guardrails.mayClaimHint')}
       >
         <StatementList
           items={draft.mayClaim}
           onChange={(mayClaim) => set('mayClaim', mayClaim)}
-          placeholder="That setup takes two weeks, start to finish."
-          addLabel="Add a claim"
+          placeholder={t('brand.guardrails.mayClaimPlaceholder')}
+          addLabel={t('brand.guardrails.addClaim')}
         />
       </EditorCard>
 
       <EditorCard
-        title="Never claim"
-        hint="Write the claim itself rather than the topic — “any guaranteed outcome, in any form” rather than “results”. A topic is something to avoid mentioning; a claim is something a sentence can be checked against."
+        title={t('brand.guardrails.neverClaim')}
+        hint={t('brand.guardrails.neverClaimHint')}
       >
         {draft.neverClaim.length === 0 && (
           <p className="border-l-2 border-destructive pl-3 text-sm leading-5 text-tertiary-foreground">
-            Nothing is off limits yet. Every voice in the workspace may promise
-            anything, in any words.
+            {t('brand.guardrails.neverClaimEmpty')}
           </p>
         )}
         <StatementList
           items={draft.neverClaim}
           onChange={(neverClaim) => set('neverClaim', neverClaim)}
-          placeholder="That the result is guaranteed, in any form."
-          addLabel="Add a rule"
+          placeholder={t('brand.guardrails.neverClaimPlaceholder')}
+          addLabel={t('brand.guardrails.addRule')}
           tone="hard"
         />
       </EditorCard>
 
       <EditorCard
-        title="Banned words"
-        hint="Words that may never appear, in any voice. Type one and press Enter; commas and pasted lists split into separate words."
+        title={t('brand.guardrails.bannedWords')}
+        hint={t('brand.guardrails.bannedWordsHint')}
       >
         <WordField
           words={draft.bannedWords}
@@ -270,22 +274,22 @@ export function GuardrailsEditor({
       </EditorCard>
 
       <EditorCard
-        title="Disclaimer"
-        hint="Carried by every post, added exactly as written and never reworded — a required legal line, a registration number, an ad disclosure."
+        title={t('brand.guardrails.disclaimer')}
+        hint={t('brand.guardrails.disclaimerHint')}
       >
         <Textarea
           value={draft.disclaimer}
           onChange={(e) => set('disclaimer', e.target.value)}
-          placeholder="Results vary. Nothing here is a promise of the outcome you will get."
+          placeholder={t('brand.guardrails.disclaimerPlaceholder')}
           className="min-h-20"
         />
       </EditorCard>
 
       {guardrails && onDelete && (
         <DangerCard
-          noun="GUARDRAILS"
-          name="Guardrails"
-          cost="The section goes back to empty: no stated facts, nothing sanctioned and nothing off limits, for every voice in the workspace. Posts already published are untouched — their text was written and it stands."
+          noun={t('brand.guardrails.noun')}
+          name={t('brand.guardrails.dangerName')}
+          cost={t('brand.guardrails.deleteCost')}
           onDelete={onDelete}
         />
       )}
@@ -329,6 +333,7 @@ function StatementList({
   /** `hard` marks the list whose rules bite, matching the section's red rule. */
   tone?: 'normal' | 'hard'
 }) {
+  const { t } = useTranslation()
   // An empty list still shows one row: the first thing anybody wants to do here
   // is type, and a list whose first action is "click add" charges a click for
   // the obvious move.
@@ -415,7 +420,7 @@ function StatementList({
               variant="ghost"
               size="smIcon"
               className="mt-0.5 shrink-0 text-tertiary-foreground hover:text-destructive"
-              aria-label="Remove this line"
+              aria-label={t('brand.guardrails.removeLine')}
               // Removing the only row leaves the phantom one behind, which is
               // the same thing as an empty list and renders as it.
               onClick={() => put(rows.filter((_, i) => i !== at))}
@@ -441,7 +446,7 @@ function StatementList({
             the screen is three copies of one sentence. */}
         {rows.length <= 1 && (
           <span className="text-xs text-tertiary-foreground">
-            Enter starts the next one. Paste a list to add all of it at once.
+            {t('brand.guardrails.keyboardHint')}
           </span>
         )}
       </div>
@@ -470,6 +475,7 @@ function WordField({
   words: string[]
   onChange: (next: string[]) => void
 }) {
+  const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -506,7 +512,7 @@ function WordField({
               e.stopPropagation()
               onChange(words.filter((w) => w !== word))
             }}
-            aria-label={`Remove ${word}`}
+            aria-label={t('brand.guardrails.removeWord', { word })}
             className="flex size-4 cursor-pointer items-center justify-center rounded-full hover:bg-foreground/10"
           >
             <XIcon className="size-3" />
@@ -517,7 +523,9 @@ function WordField({
         ref={inputRef}
         type="text"
         value={query}
-        placeholder={words.length === 0 ? 'guaranteed' : ''}
+        placeholder={
+          words.length === 0 ? t('brand.guardrails.bannedWordPlaceholder') : ''
+        }
         onChange={(e) => setQuery(e.target.value)}
         onBlur={() => commit(query)}
         onPaste={(e) => {
@@ -551,6 +559,7 @@ type Draft = Pick<
 >
 
 function draftFrom(
+  t: TFunction,
   guardrails: BrandGuardrails | null,
   starter?: GuardrailStarter,
 ): Draft {
@@ -564,11 +573,12 @@ function draftFrom(
     }
   }
   // A starter hands over rules and words, never facts — see `GuardrailStarter`.
+  const seed = starter ? guardrailStarterDraft(t, starter) : undefined
   return {
     facts: [],
     mayClaim: [],
-    neverClaim: starter?.draft.neverClaim ?? [],
-    bannedWords: starter?.draft.bannedWords ?? [],
+    neverClaim: seed?.neverClaim ?? [],
+    bannedWords: seed?.bannedWords ?? [],
     disclaimer: '',
   }
 }
@@ -649,19 +659,23 @@ function signature(guardrails: BrandGuardrails | null): string {
  * typed — there is no state to report yet, and the intro card above has just
  * said the section is empty in more useful words.
  */
-function barStatus(dirty: boolean, exists: boolean): BarStatus | undefined {
+function barStatus(
+  t: TFunction,
+  dirty: boolean,
+  exists: boolean,
+): BarStatus | undefined {
   if (dirty) {
     return {
       key: 'dirty',
-      full: <BarNote>Unsaved changes</BarNote>,
-      compact: <BarNote>Unsaved</BarNote>,
+      full: <BarNote>{t('brand.guardrails.unsaved')}</BarNote>,
+      compact: <BarNote>{t('brand.guardrails.unsavedShort')}</BarNote>,
     }
   }
   if (!exists) return undefined
   return {
     key: 'saved',
-    full: <BarNote>Saved</BarNote>,
-    compact: <BarNote>Saved</BarNote>,
+    full: <BarNote>{t('brand.guardrails.saved')}</BarNote>,
+    compact: <BarNote>{t('brand.guardrails.saved')}</BarNote>,
   }
 }
 
@@ -688,13 +702,12 @@ function BarNote({ children }: { children: ReactNode }) {
  * module could ship. An invented rule reads exactly like a checked one, and
  * this is the section people will trust without re-reading.
  */
+export type GuardrailStarterId = 'regulated' | 'product' | 'plain'
+
+/** Behaviour only — the glyph. Every word is in the catalogue. */
 export type GuardrailStarter = {
-  id: string
+  id: GuardrailStarterId
   icon: Icon
-  title: string
-  body: string
-  /** What it hands over. Never `facts`, and never the disclaimer. */
-  draft: Pick<BrandGuardrails, 'neverClaim' | 'bannedWords'>
 }
 
 /**
@@ -707,67 +720,46 @@ export type GuardrailStarter = {
  * section, because it is the one people will trust.
  */
 export const GUARDRAIL_STARTERS: GuardrailStarter[] = [
-  {
-    id: 'regulated',
-    icon: ScalesIcon,
-    title: 'Regulated, and outcomes are the risk',
-    body: 'Finance, health, law. No result may be promised or implied, every figure names its source, and nothing is described as advice.',
-    draft: {
-      neverClaim: [
-        'Any future return or outcome, in any form — including “historically”, and including as a joke.',
-        'That anything we publish is advice. It is information, and the difference is regulatory.',
-        'That a result is typical, protected, guaranteed or safe.',
-        'A figure without the period it was measured over and where it came from.',
-      ],
-      bannedWords: [
-        'guaranteed',
-        'risk-free',
-        'safe',
-        'proven',
-        'passive income',
-      ],
-    },
-  },
-  {
-    id: 'product',
-    icon: StorefrontIcon,
-    title: 'A product, and features are the risk',
-    body: 'Software, hardware, retail. Only what ships today: the roadmap is not a feature, and no integration exists until it is live.',
-    draft: {
-      neverClaim: [
-        'A feature that is not in the build people can use today. The roadmap is not a feature.',
-        'An integration, platform or format we do not already support in production.',
-        'A number about speed, uptime or scale that we cannot point at a source for.',
-        'That a competitor lacks something, unless it is checkable today and dated.',
-      ],
-      bannedWords: [
-        'seamless',
-        'effortless',
-        'unlimited',
-        'instantly',
-        'revolutionary',
-      ],
-    },
-  },
-  {
-    id: 'plain',
-    icon: SealCheckIcon,
-    title: 'Everyone else, and overstating is the risk',
-    body: 'No superlatives, no invented statistics, no customer named without permission and no authority borrowed from a logo.',
-    draft: {
-      neverClaim: [
-        'That we are the best, the first, the only or the fastest-growing anything.',
-        'A statistic we cannot show the source of.',
-        'A customer by name, or their results, without written permission.',
-        'An endorsement nobody has given — including implying one with a logo.',
-      ],
-      bannedWords: [
-        'best-in-class',
-        'world-class',
-        'game-changing',
-        'unrivalled',
-        'no-brainer',
-      ],
-    },
-  },
+  { id: 'regulated', icon: ScalesIcon },
+  { id: 'product', icon: StorefrontIcon },
+  { id: 'plain', icon: SealCheckIcon },
 ]
+
+/** The card: which shape the rules take, in one line each. */
+export function guardrailStarterCopy(
+  t: TFunction,
+  starter: GuardrailStarter,
+): { title: string; body: string } {
+  return {
+    title: t(`brand.guardrails.starters.${starter.id}.title` as const),
+    body: t(`brand.guardrails.starters.${starter.id}.body` as const),
+  }
+}
+
+/**
+ * What it hands over. Never `facts`, and never the disclaimer.
+ *
+ * Two lists, read out of the catalogue with `returnObjects` rather than
+ * numbered into `neverClaim1…4`: these are lists of whole sentences, and
+ * numbering them would fix their length in the schema for every language that
+ * follows. Copied out of the catalogue rather than handed over by reference,
+ * because what comes back is the workspace's own draft from here on and a
+ * screen editing it must not be editing the catalogue.
+ */
+export function guardrailStarterDraft(
+  t: TFunction,
+  starter: GuardrailStarter,
+): Pick<BrandGuardrails, 'neverClaim' | 'bannedWords'> {
+  return {
+    neverClaim: [
+      ...t(`brand.guardrails.starters.${starter.id}.neverClaim` as const, {
+        returnObjects: true,
+      }),
+    ],
+    bannedWords: [
+      ...t(`brand.guardrails.starters.${starter.id}.bannedWords` as const, {
+        returnObjects: true,
+      }),
+    ],
+  }
+}

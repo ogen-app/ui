@@ -1,10 +1,14 @@
 import { useState, type ReactNode } from 'react'
 import { CaretRightIcon } from '@phosphor-icons/react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { LineItem } from '@/components/ui/line-item'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { formatList } from '@/lib/intl'
 import {
+  brandSectionCopy,
   SHOWN_BRAND_SECTIONS,
   type BrandSectionId,
   type BrandSectionInfo,
@@ -63,6 +67,7 @@ export function BrandOverview({
   showWhenEmpty?: boolean
   onOpen?: (id: BrandSectionId) => void
 }) {
+  const { t } = useTranslation()
   const [skippedFirstRun, setSkippedFirstRun] = useState(false)
 
   if (state.isPending) return <OverviewSkeleton />
@@ -80,12 +85,12 @@ export function BrandOverview({
 
   return (
     <Wrapper>
-      <WholeBrandOffer fills={missingSectionNames(data)} />
+      <WholeBrandOffer fills={missingSectionNames(t, data)} />
       {SHOWN_BRAND_SECTIONS.map((section) => (
         <SectionCard
           key={section.id}
           section={section}
-          rows={sectionRows(section.id, data)}
+          rows={sectionRows(t, section.id, data)}
           onOpen={onOpen}
         />
       ))}
@@ -155,6 +160,8 @@ function SectionCard({
   rows: BrandRow[]
   onOpen?: (id: BrandSectionId) => void
 }) {
+  const { t } = useTranslation()
+  const copy = brandSectionCopy(t, section.id)
   const Icon = section.icon
   const open = onOpen ? () => onOpen(section.id) : undefined
 
@@ -173,13 +180,16 @@ function SectionCard({
               style={{ color: section.tone }}
               aria-hidden
             />
-            <span className="truncate">{section.label}</span>
+            <span className="truncate">{copy.label}</span>
             {/* The honesty rule (CON-226 §9) at index length. The section's own
                 screen still says it in a sentence; here it is three words,
                 because five sentences down one page is the noise that made this
                 screen read as an essay. */}
             {section.readBy.length === 0 && (
-              <StatusBadge tone="neutral" label="Nothing reads this yet" />
+              <StatusBadge
+                tone="neutral"
+                label={t('brand.overview.nothingReads')}
+              />
             )}
           </>
         }
@@ -194,9 +204,7 @@ function SectionCard({
         }
       >
         {rows.length === 0 ? (
-          <p className="text-sm text-secondary-foreground">
-            {section.whenEmpty}
-          </p>
+          <p className="text-sm text-secondary-foreground">{copy.whenEmpty}</p>
         ) : (
           <ul className="flex flex-col">
             {rows.map((row) => (
@@ -269,7 +277,11 @@ function Opens({
  * different findings, and four empty rows would say the first when the second
  * is true.
  */
-function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
+function sectionRows(
+  t: TFunction,
+  id: BrandSectionId,
+  data: BrandData,
+): BrandRow[] {
   switch (id) {
     case 'voices':
       return data.voices.map((voice) => {
@@ -289,16 +301,16 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
           // margin.
           details: voice.summary || undefined,
           meta: [
-            sampleCount(voice.samples.length),
-            usageLine(voice.usage),
-          ].join(', '),
+            sampleCount(t, voice.samples.length),
+            usageLine(t, voice.usage),
+          ].join(t('brand.facts.separator')),
           // The star takes the same reading the tick does, which is the point
           // of putting them on one row: a grey star beside an empty tick is the
           // library's worst state — everything falls back to this entry, and
           // this entry has nothing in it — and it is legible without reading a
           // word.
           trailing: voice.isDefault ? (
-            <DefaultStar backed={done} label={defaultVoiceLabel(voice)} />
+            <DefaultStar backed={done} label={defaultVoiceLabel(t, voice)} />
           ) : undefined,
         }
       })
@@ -315,7 +327,7 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
         ),
         label: audience.name,
         details: audience.summary || undefined,
-        meta: usageLine(audience.usage),
+        meta: usageLine(t, audience.usage),
       }))
 
     case 'guardrails': {
@@ -325,46 +337,52 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
         {
           key: 'facts',
           done: g.facts.length > 0,
-          label: 'Facts',
+          label: t('brand.overview.guardrails.facts'),
           details:
             g.facts.length === 0
-              ? 'Every number and product detail is invented fresh.'
+              ? t('brand.overview.guardrails.factsEmpty')
               : undefined,
-          trailing: statedCount(g.facts.length),
+          trailing: statedCount(t, g.facts.length),
         },
         {
           key: 'may',
           done: g.mayClaim.length > 0,
-          label: 'May claim',
+          label: t('brand.overview.guardrails.mayClaim'),
           details:
             g.mayClaim.length === 0
-              ? 'Nothing has a form we know is safe to repeat.'
+              ? t('brand.overview.guardrails.mayClaimEmpty')
               : undefined,
-          trailing: statedCount(g.mayClaim.length),
+          trailing: statedCount(t, g.mayClaim.length),
         },
         {
           key: 'never',
           done: g.neverClaim.length > 0,
-          label: 'Never claim',
+          label: t('brand.overview.guardrails.neverClaim'),
           details:
             g.neverClaim.length === 0
-              ? 'Nothing is off limits. Every voice here may promise anything, in any words.'
+              ? t('brand.overview.guardrails.neverClaimEmpty')
               : undefined,
-          trailing: statedCount(g.neverClaim.length),
+          trailing: statedCount(t, g.neverClaim.length),
         },
         {
           key: 'banned',
           done: g.bannedWords.length > 0,
-          label: 'Banned words',
+          label: t('brand.overview.guardrails.bannedWords'),
           trailing:
-            g.bannedWords.length > 0 ? `${g.bannedWords.length} words` : 'none',
+            g.bannedWords.length > 0
+              ? t('brand.overview.bannedWordCount', {
+                  count: g.bannedWords.length,
+                })
+              : t('brand.overview.none'),
         },
         {
           key: 'disclaimer',
           done: g.disclaimer.trim().length > 0,
-          label: 'Disclaimer',
+          label: t('brand.overview.guardrails.disclaimer'),
           details: g.disclaimer.trim() || undefined,
-          trailing: g.disclaimer.trim() ? 'written' : 'none',
+          trailing: g.disclaimer.trim()
+            ? t('brand.overview.written')
+            : t('brand.overview.none'),
         },
       ]
     }
@@ -376,27 +394,39 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
         {
           key: 'logos',
           done: l.logos.length > 0,
-          label: 'Logo',
-          trailing: l.logos.length > 0 ? `${l.logos.length} with jobs` : 'none',
+          label: t('brand.look.logoSlot'),
+          trailing:
+            l.logos.length > 0
+              ? t('brand.overview.logosWithJobs', { count: l.logos.length })
+              : t('brand.overview.none'),
         },
         {
           key: 'palette',
           done: l.palette.length > 0,
-          label: 'Palette',
+          label: t('brand.look.paletteSlot'),
           trailing:
-            l.palette.length > 0 ? `${l.palette.length} with roles` : 'none',
+            l.palette.length > 0
+              ? t('brand.overview.coloursWithRoles', {
+                  count: l.palette.length,
+                })
+              : t('brand.overview.none'),
         },
         {
           key: 'type',
           done: l.typefaces.length > 0,
-          label: 'Type',
-          trailing: l.typefaces.length > 0 ? l.typefaces.join(', ') : 'none',
+          label: t('brand.look.typeSlot'),
+          // The customer's own typeface names, joined the way the language
+          // joins a list rather than by a hard-coded comma.
+          trailing:
+            l.typefaces.length > 0
+              ? formatList(l.typefaces)
+              : t('brand.overview.none'),
         },
         {
           key: 'imagery',
           done: l.referenceImages.length > 0,
-          label: 'Reference imagery',
-          trailing: countOrNone(l.referenceImages.length),
+          label: t('brand.look.referenceSlot'),
+          trailing: countOrNone(t, l.referenceImages.length),
         },
       ]
     }
@@ -413,18 +443,23 @@ function sectionRows(id: BrandSectionId, data: BrandData): BrandRow[] {
           done: covered === EXPECTED_RATIOS.length,
           label: template.name,
           details: template.isDefault
-            ? 'Applied by default, wherever nothing else claims the platform.'
+            ? t('brand.overview.templates.isDefault')
             : template.platforms.length > 0
-              ? `For ${template.platforms.join(', ')}.`
-              : 'Claimed by no platform, and not the default — nothing ever reaches it.',
-          meta: `${covered} of ${EXPECTED_RATIOS.length} ratios`,
+              ? t('brand.overview.templates.forPlatforms', {
+                  platforms: formatList(template.platforms),
+                })
+              : t('brand.overview.templates.unreachable'),
+          meta: t('brand.overview.templates.ratios', {
+            covered,
+            total: EXPECTED_RATIOS.length,
+          }),
         }
       })
   }
 }
 
-function countOrNone(n: number): string {
-  return n > 0 ? String(n) : 'none'
+function countOrNone(t: TFunction, n: number): string {
+  return n > 0 ? String(n) : t('brand.overview.none')
 }
 
 /**
@@ -433,8 +468,10 @@ function countOrNone(n: number): string {
  * jobs", "4 of 4 ratios", "never used" — and the guardrail rows read as a
  * spreadsheet without one.
  */
-function statedCount(n: number): string {
-  return n > 0 ? `${n} stated` : 'none'
+function statedCount(t: TFunction, n: number): string {
+  return n > 0
+    ? t('brand.overview.stated', { count: n })
+    : t('brand.overview.none')
 }
 
 /**
@@ -443,11 +480,14 @@ function statedCount(n: number): string {
  * offer that over-promises is the fastest way to make the one good first-run
  * path look unreliable.
  */
-function missingSectionNames(data: BrandData): string[] {
+function missingSectionNames(t: TFunction, data: BrandData): string[] {
   const missing: string[] = []
-  if (data.voices.length === 0) missing.push('voices')
-  if (data.audiences.length === 0) missing.push('audiences')
-  if (!data.guardrails) missing.push('guardrails')
+  // The in-sentence forms, not the section headings — see `offer.fills`.
+  if (data.voices.length === 0)
+    missing.push(t('brand.shell.offer.fills.voices'))
+  if (data.audiences.length === 0)
+    missing.push(t('brand.shell.offer.fills.audiences'))
+  if (!data.guardrails) missing.push(t('brand.shell.offer.fills.guardrails'))
   // No `look` here while the section is not offered — the card would promise to
   // fill something the user has no way to see or check afterwards.
   return missing

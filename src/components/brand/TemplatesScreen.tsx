@@ -4,7 +4,9 @@ import {
   PlugsConnectedIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { formatList } from '@/lib/intl'
 import { PLATFORMS } from '@/lib/platformDictionary'
 import { cn } from '@/lib'
 import { AddButton, Gap } from './shell'
@@ -50,6 +52,7 @@ export function TemplatesScreen({
   onAdd?: () => void
   onOpen?: (id: string) => void
 }) {
+  const { t } = useTranslation()
   const [selected, setSelected] = useState<string>(EVERYWHERE)
 
   if (templates.length === 0) {
@@ -57,10 +60,13 @@ export function TemplatesScreen({
       <div className="h-full overflow-y-auto pb-10">
         <div className="mx-auto w-full max-w-content">
           <Gap
-            what="Images go out bare. Nothing marks a picture as yours once it has left the app — and nothing here is per-platform yet, so there is no Instagram story frame and no LinkedIn lockup."
+            what={t('brand.templates.gapScreen')}
             offers={[
-              { label: 'Build one from your logo', hint: 'best' },
-              { label: 'Upload a PNG' },
+              {
+                label: t('brand.templates.buildFromLogo'),
+                hint: t('brand.look.best'),
+              },
+              { label: t('brand.templates.uploadPng') },
             ]}
           />
         </div>
@@ -151,6 +157,7 @@ function PlatformRail({
   selected: string
   onSelect: (id: string) => void
 }) {
+  const { t } = useTranslation()
   const connected = PLATFORMS.filter((p) => isConnected(p.name))
   const notConnected = PLATFORMS.filter((p) => !isConnected(p.name))
 
@@ -159,13 +166,13 @@ function PlatformRail({
     // screen, so it must not scroll away with the detail beside it.
     <nav className="flex h-full w-56 shrink-0 flex-col gap-4 overflow-y-auto">
       <RailRow
-        label="Everywhere"
-        detail="When nothing else claims it"
+        label={t('brand.templates.everywhere')}
+        detail={t('brand.templates.everywhereDetail')}
         active={selected === EVERYWHERE}
         onSelect={() => onSelect(EVERYWHERE)}
       />
 
-      <RailGroup label="Connected">
+      <RailGroup label={t('brand.templates.connectedGroup')}>
         {connected.map((p) => (
           <PlatformRow
             key={p.id}
@@ -180,7 +187,7 @@ function PlatformRail({
         ))}
       </RailGroup>
 
-      <RailGroup label="Not connected yet">
+      <RailGroup label={t('brand.templates.notConnectedGroup')}>
         {notConnected.map((p) => (
           <PlatformRow
             key={p.id}
@@ -276,13 +283,14 @@ function PlatformRow({
   active: boolean
   onSelect: () => void
 }) {
+  const { t } = useTranslation()
   const { template } = setFor(name, templates)
   const { missing } = coverage(template, ratiosFor(name))
 
   return (
     <RailRow
       label={name}
-      detail={connected ? undefined : 'not connected'}
+      detail={connected ? undefined : t('brand.templates.notConnected')}
       active={active}
       onSelect={onSelect}
       warn={missing.length > 0}
@@ -310,25 +318,26 @@ function Detail({
   onAdd?: () => void
   onOpen?: (id: string) => void
 }) {
+  const { t } = useTranslation()
+
   if (selected === EVERYWHERE) {
     const fallback = templates.find((o) => o.isDefault) ?? null
     return (
       <DetailShell
-        title="Everywhere"
-        subtitle="What gets applied on any platform that has not been given one of its own."
-        action={<AddButton label="ADD TEMPLATE" onClick={onAdd} />}
+        title={t('brand.templates.everywhere')}
+        subtitle={t('brand.templates.everywhereSubtitle')}
+        action={<AddButton label={t('brand.templates.add')} onClick={onAdd} />}
       >
         {fallback ? (
           <SetPanel
             template={fallback}
             needed={EXPECTED_RATIOS}
-            neededLabel="every ratio the app produces"
+            neededLabel={t('brand.templates.neededEverything')}
             onOpen={onOpen}
           />
         ) : (
           <p className="text-sm text-secondary-foreground">
-            No default template. Every platform without one of its own sends
-            pictures bare.
+            {t('brand.templates.noDefault')}
           </p>
         )}
       </DetailShell>
@@ -347,21 +356,21 @@ function Detail({
       title={platform.name}
       subtitle={
         inherited
-          ? 'Falling through to the default — nothing here is specific to this platform yet.'
-          : 'Has a template of its own.'
+          ? t('brand.templates.inherited')
+          : t('brand.templates.ownTemplate')
       }
       badge={
         connected ? (
           <span className="flex items-center gap-1 text-xs text-tertiary-foreground">
             <PlugsConnectedIcon className="size-3.5" />
-            connected
+            {t('brand.templates.connected')}
           </span>
         ) : (
           // Stated flatly. Not a warning and not a call to connect: whether an
           // account exists has nothing to do with whether the artwork is right,
           // and nagging here would be nagging in the wrong place.
           <span className="text-xs text-tertiary-foreground">
-            not connected
+            {t('brand.templates.notConnected')}
           </span>
         )
       }
@@ -369,7 +378,9 @@ function Detail({
         // Disabled until a caller wires the flow — the route renders this
         // screen with no `onAdd` today.
         <Button variant="outline" size="sm" onClick={onAdd} disabled={!onAdd}>
-          {inherited ? 'GIVE IT ITS OWN' : 'REPLACE'}
+          {inherited
+            ? t('brand.templates.giveItsOwn')
+            : t('brand.templates.replace')}
         </Button>
       }
     >
@@ -377,12 +388,18 @@ function Detail({
         <SetPanel
           template={template}
           needed={needed}
-          neededLabel={`the ${needed.length} ${needed.length === 1 ? 'ratio' : 'ratios'} ${platform.name} posts in`}
+          // The count drives the plural and the platform is named inside it:
+          // "the 3 ratios Instagram posts in" is one phrase in the catalogue,
+          // not four fragments joined here.
+          neededLabel={t('brand.templates.neededPlatform', {
+            count: needed.length,
+            platform: platform.name,
+          })}
           onOpen={onOpen}
         />
       ) : (
         <p className="text-sm text-secondary-foreground">
-          Nothing applies here, and there is no default to fall back on.
+          {t('brand.templates.nothingApplies')}
         </p>
       )}
     </DetailShell>
@@ -433,6 +450,7 @@ function SetPanel({
   neededLabel: string
   onOpen?: (id: string) => void
 }) {
+  const { t } = useTranslation()
   const { missing } = coverage(template, needed)
   const have = new Map(template.ratios.map((r) => [r.ratio, r.url]))
 
@@ -442,9 +460,9 @@ function SetPanel({
         <p className="font-grotesk text-sm font-medium">{template.name}</p>
         <p className="text-xs text-tertiary-foreground">
           {template.role === 'foreground'
-            ? 'drawn over the picture'
-            : 'sits under the picture'}
-          {template.isDefault && ' · the default'}
+            ? t('brand.templates.drawnOver')
+            : t('brand.templates.sitsUnder')}
+          {template.isDefault && t('brand.templates.isDefaultSuffix')}
         </p>
       </div>
 
@@ -454,7 +472,7 @@ function SetPanel({
       {missing.length === 0 ? (
         <p className="flex items-center gap-1.5 text-sm text-secondary-foreground">
           <CheckIcon className="size-4 shrink-0" />
-          Covers {neededLabel}.
+          {t('brand.templates.coversAll', { needed: neededLabel })}
         </p>
       ) : missing.length === needed.length ? (
         // Every ratio missing is a different finding from some ratios missing,
@@ -464,16 +482,18 @@ function SetPanel({
         <p className="flex items-start gap-1.5 text-sm text-secondary-foreground">
           <WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
           <span>
-            Covers none of {neededLabel}. Every picture here goes out bare.
+            {t('brand.templates.coversNone', { needed: neededLabel })}
           </span>
         </p>
       ) : (
         <p className="flex items-start gap-1.5 text-sm text-secondary-foreground">
           <WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
           <span>
-            Missing {missing.join(', ')} —{' '}
-            {missing.length === 1 ? 'that ratio goes' : 'those ratios go'} out
-            bare against {neededLabel}.
+            {t('brand.templates.coversSome', {
+              count: missing.length,
+              ratios: formatList(missing),
+              needed: neededLabel,
+            })}
           </span>
         </p>
       )}
@@ -493,7 +513,7 @@ function SetPanel({
           // that does nothing.
           disabled={!onOpen}
         >
-          OPEN IN COMPOSITOR
+          {t('brand.templates.openInCompositor')}
         </Button>
       </div>
     </div>

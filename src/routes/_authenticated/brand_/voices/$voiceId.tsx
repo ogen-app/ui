@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
@@ -58,6 +59,7 @@ export const Route = createFileRoute('/_authenticated/brand_/voices/$voiceId')({
 })
 
 function VoiceEditorPage() {
+  const { t } = useTranslation()
   const { voiceId } = Route.useParams()
   const { from } = Route.useSearch()
   const navigate = useNavigate()
@@ -84,7 +86,12 @@ function VoiceEditorPage() {
    */
   const header = (
     <PageHeader
-      back={<BrandBackButton to="/brand/voices" label="Back to voices" />}
+      back={
+        <BrandBackButton
+          to="/brand/voices"
+          label={t('brand.detail.backToVoices')}
+        />
+      }
     />
   )
 
@@ -114,7 +121,7 @@ function VoiceEditorPage() {
           onSave={(written) => {
             save.mutate(written, {
               onSuccess: () => {
-                toast.success(`${written.name} is in the library.`)
+                toast.success(t('brand.detail.created', { name: written.name }))
                 back()
               },
             })
@@ -132,13 +139,15 @@ function VoiceEditorPage() {
       return (
         <Static header={header}>
           <PageError
-            subHeader="NOT FOUND"
-            errorType="NOT FOUND"
-            header="No such voice"
-            message="It may have been deleted, or the link may be to another workspace."
+            subHeader={t('errors.notFound.type')}
+            errorType={t('errors.notFound.type')}
+            header={t('brand.detail.noVoiceHeader')}
+            message={t('brand.detail.missingMessage')}
             action={
               <Button variant="ghost" size="sm" onClick={back}>
-                <span className="uppercase">Back to voices</span>
+                <span className="uppercase">
+                  {t('brand.detail.backToVoices')}
+                </span>
               </Button>
             }
           />
@@ -154,7 +163,7 @@ function VoiceEditorPage() {
         onSave={(written) => {
           save.mutate(written, {
             onSuccess: () => {
-              toast.success(`${written.name} saved.`)
+              toast.success(t('brand.detail.saved', { name: written.name }))
               back()
             },
           })
@@ -162,7 +171,7 @@ function VoiceEditorPage() {
         onDelete={() => {
           remove.mutate(voice.id, {
             onSuccess: () => {
-              toast.success(`${voice.name} was deleted.`)
+              toast.success(t('brand.detail.deleted', { name: voice.name }))
               back()
             },
           })

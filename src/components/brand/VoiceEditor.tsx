@@ -6,6 +6,8 @@ import {
   TrashIcon,
   UploadSimpleIcon,
 } from '@phosphor-icons/react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -26,7 +28,11 @@ import {
   Field,
   ForkedNote,
 } from './editor'
-import type { VoiceStarter } from './VoicesSection'
+import {
+  voiceStarterCopy,
+  voiceStarterDraft,
+  type VoiceStarter,
+} from './VoicesSection'
 import {
   MIN_VOICE_SAMPLES,
   type BrandUsage,
@@ -119,9 +125,10 @@ export function VoiceEditor({
   /** Only offered for a voice that exists. */
   onDelete?: () => void
 }) {
+  const { t } = useTranslation()
   const initial = useMemo(
-    () => draftFrom(voice, starter, first),
-    [voice, starter, first],
+    () => draftFrom(t, voice, starter, first),
+    [t, voice, starter, first],
   )
   const [draft, setDraft] = useState<Draft>(initial)
 
@@ -138,36 +145,40 @@ export function VoiceEditor({
     <BrandEditorFrame
       header={header}
       contentKey={voice ? 'edit' : 'new'}
-      blocker={named ? undefined : 'Needs a name before it can be saved.'}
-      commitLabel={voice ? 'Save voice' : 'Create voice'}
+      blocker={named ? undefined : t('brand.voices.editor.needsName')}
+      commitLabel={
+        voice ? t('brand.voices.editor.save') : t('brand.voices.editor.create')
+      }
       onCancel={onCancel}
-      onSave={() => onSave?.(assemble(draft, voice, starter))}
+      onSave={() => onSave?.(assemble(t, draft, voice, starter))}
     >
       <VoiceIntro name={voice?.name} />
 
       {starter && !voice && (
-        <ForkedNote icon={starter.icon} title={starter.title}>
-          Nothing is saved yet, and the samples are empty: that is the half a
-          template cannot give you, and the half that does the work.
+        <ForkedNote
+          icon={starter.icon}
+          title={voiceStarterCopy(t, starter).title}
+        >
+          {t('brand.voices.editor.forkedNote')}
         </ForkedNote>
       )}
 
       <EditorCard
-        title="General"
+        title={t('brand.voices.editor.general')}
         action={
           <DefaultControl
             isDefault={draft.isDefault}
             onMakeDefault={() => set('isDefault', true)}
-            does="Posts start in this voice unless another one is picked."
-            costs="Takes the default off whichever voice has it now."
+            does={t('brand.voices.editor.defaultDoes')}
+            costs={t('brand.voices.editor.defaultCosts')}
           />
         }
       >
-        <Field label="Name">
+        <Field label={t('brand.voices.editor.name')}>
           <Input
             value={draft.name}
             onChange={(e) => set('name', e.target.value)}
-            placeholder="Founder, off the cuff"
+            placeholder={t('brand.voices.editor.namePlaceholder')}
           />
         </Field>
         {/* The field the library shows under the name, and the reason it is
@@ -175,13 +186,13 @@ export function VoiceEditor({
             about the voice, and what belongs here is the one line that
             makes somebody pick this voice over the other three. */}
         <Field
-          label="Description"
-          hint="When to use it — one line, and the one a picker shows under the name."
+          label={t('brand.voices.editor.description')}
+          hint={t('brand.voices.editor.descriptionHint')}
         >
           <Input
             value={draft.whenToUse}
             onChange={(e) => set('whenToUse', e.target.value)}
-            placeholder="The lighter end-of-week post, and nothing else"
+            placeholder={t('brand.voices.editor.descriptionPlaceholder')}
           />
         </Field>
       </EditorCard>
@@ -198,8 +209,8 @@ export function VoiceEditor({
       />
 
       <EditorCard
-        title="Rules"
-        hint="What a sample cannot say for itself. A pasted post shows the register; it cannot promise that the next thirty avoid hashtags."
+        title={t('brand.voices.editor.rules')}
+        hint={t('brand.voices.editor.rulesHint')}
       >
         {/* Two columns, and the only two on the screen. It is affordable
             here for the reason it was not when these were one-line
@@ -210,33 +221,43 @@ export function VoiceEditor({
             and prose gets the whole column. */}
         <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
           <ChoiceRow
-            label="Formality"
+            label={t('brand.voices.editor.choices.formalityLabel')}
             value={draft.rules.formality}
-            options={FORMALITY}
+            options={choiceOptions(FORMALITY_VALUES, (v) =>
+              t(`brand.voices.editor.choices.formality.${v}` as const),
+            )}
             onChange={(v) => setRule('formality', v)}
           />
           <ChoiceRow
-            label="Speaks as"
+            label={t('brand.voices.editor.choices.personLabel')}
             value={draft.rules.person}
-            options={PERSON}
+            options={choiceOptions(PERSON_VALUES, (v) =>
+              t(`brand.voices.editor.choices.person.${v}` as const),
+            )}
             onChange={(v) => setRule('person', v)}
           />
           <ChoiceRow
-            label="Emoji"
+            label={t('brand.voices.editor.choices.emojiLabel')}
             value={draft.rules.emoji}
-            options={EMOJI}
+            options={choiceOptions(EMOJI_VALUES, (v) =>
+              t(`brand.voices.editor.choices.emoji.${v}` as const),
+            )}
             onChange={(v) => setRule('emoji', v)}
           />
           <ChoiceRow
-            label="Hashtags"
+            label={t('brand.voices.editor.choices.hashtagsLabel')}
             value={draft.rules.hashtags}
-            options={HASHTAGS}
+            options={choiceOptions(HASHTAG_VALUES, (v) =>
+              t(`brand.voices.editor.choices.hashtags.${v}` as const),
+            )}
             onChange={(v) => setRule('hashtags', v)}
           />
           <ChoiceRow
-            label="Length"
+            label={t('brand.voices.editor.choices.lengthLabel')}
             value={draft.rules.length}
-            options={LENGTH}
+            options={choiceOptions(LENGTH_VALUES, (v) =>
+              t(`brand.voices.editor.choices.length.${v}` as const),
+            )}
             onChange={(v) => setRule('length', v)}
           />
         </div>
@@ -246,31 +267,31 @@ export function VoiceEditor({
             failure worth being able to read straight down. */}
         <div className="flex flex-col gap-4">
           <Field
-            label="How a post opens"
-            hint="The most recognisable habit a voice has, and worth writing out rather than picking."
+            label={t('brand.voices.editor.opening')}
+            hint={t('brand.voices.editor.openingHint')}
           >
             <Input
               value={draft.rules.opening}
               onChange={(e) => setRule('opening', e.target.value)}
-              placeholder="Opens with the claim, then earns it."
+              placeholder={t('brand.voices.editor.openingPlaceholder')}
             />
           </Field>
           <Field
-            label="How a post closes"
-            hint="The half people notice when it is wrong: a question, a call to action, or nothing at all."
+            label={t('brand.voices.editor.closing')}
+            hint={t('brand.voices.editor.closingHint')}
           >
             <Input
               value={draft.rules.closing}
               onChange={(e) => setRule('closing', e.target.value)}
-              placeholder="Ends on the sharpest line, not on a summary."
+              placeholder={t('brand.voices.editor.closingPlaceholder')}
             />
           </Field>
         </div>
       </EditorCard>
 
       <EditorCard
-        title="Per-channel customisation"
-        hint="A note inside this voice, not a second voice. “Dialled down on LinkedIn” belongs here; a near-identical second entry in the library does not."
+        title={t('brand.voices.editor.channels')}
+        hint={t('brand.voices.editor.channelsHint')}
       >
         {/* Collapsed to a placeholder on purpose. It was six inputs — one
             per platform — which is a lot of screen spent on a question
@@ -280,15 +301,15 @@ export function VoiceEditor({
             more room than the samples. Any notes already written are kept
             and saved untouched; only the editing is parked. */}
         <p className="max-w-2xl text-sm leading-5 text-tertiary-foreground">
-          Not built yet. Every channel uses this voice exactly as written above.
+          {t('brand.voices.editor.channelsUnbuilt')}
         </p>
       </EditorCard>
 
       {voice && onDelete && (
         <DangerCard
-          noun="VOICE"
+          noun={t('brand.voices.editor.noun')}
           name={voice.name}
-          cost={deletionCost(voice.usage)}
+          cost={deletionCost(t, voice.usage)}
           onDelete={onDelete}
         />
       )}
@@ -326,6 +347,7 @@ const BLANK_RULES: VoiceRules = {
  * takes the flag, visibly, on a control the writer can see before they commit.
  */
 function draftFrom(
+  t: TFunction,
   voice: BrandVoice | null,
   starter?: VoiceStarter | null,
   first = false,
@@ -341,8 +363,8 @@ function draftFrom(
     }
   }
   // A fork takes the starter's name, use and rules — and, deliberately, none of
-  // its samples. See `VoiceStarter.draft`.
-  const seed = starter?.draft
+  // its samples. See `voiceStarterDraft`.
+  const seed = starter ? voiceStarterDraft(t, starter) : undefined
   return {
     name: seed?.name ?? '',
     whenToUse: seed?.whenToUse ?? '',
@@ -367,6 +389,7 @@ function draftFrom(
  * the server has.
  */
 function assemble(
+  t: TFunction,
   draft: Draft,
   voice: BrandVoice | null,
   starter?: VoiceStarter | null,
@@ -381,7 +404,7 @@ function assemble(
     origin:
       voice?.origin ??
       (starter
-        ? { kind: 'template', templateName: starter.title }
+        ? { kind: 'template', templateName: voiceStarterCopy(t, starter).title }
         : { kind: 'blank' }),
     updatedAt: new Date().toISOString(),
     postsBehind: voice?.postsBehind,
@@ -450,6 +473,7 @@ function SamplesCard({
   /** Our reading of these samples, or `null` once they have moved under it. */
   summary: string | null
 }) {
+  const { t } = useTranslation()
   /** Which sample the modal is on: an index, or `samples.length` for a new one. */
   const [editing, setEditing] = useState<number | null>(null)
   const [text, setText] = useState('')
@@ -486,7 +510,7 @@ function SamplesCard({
 
   return (
     <EditorCard
-      title="Samples"
+      title={t('brand.voices.editor.samples')}
       /*
        * The reading first, in the foreground colour, where the description used
        * to be — because once there are samples it is the more useful of the two
@@ -502,21 +526,17 @@ function SamplesCard({
         <>
           {summary ? (
             <span>
-              <span className="text-primary-foreground">Reads as</span>{' '}
+              <span className="text-primary-foreground">
+                {t('brand.voices.editor.readsAs')}
+              </span>{' '}
               {summary}
             </span>
           ) : (
             samples.length > 0 && (
-              <span>Read back off the samples once this is saved.</span>
+              <span>{t('brand.voices.editor.summaryPending')}</span>
             )
           )}
-          {short && (
-            <span>
-              Three to eight real posts you would be happy to have written. This
-              is the voice — everything below is only what a sample cannot say
-              for itself.
-            </span>
-          )}
+          {short && <span>{t('brand.voices.editor.samplesShort')}</span>}
         </>
       }
       action={
@@ -548,7 +568,7 @@ function SamplesCard({
           <SampleCard blank onClick={() => open(samples.length)}>
             <span className="flex items-center gap-1.5 font-grotesk text-xs font-medium uppercase text-tertiary-foreground transition-colors group-hover:text-primary-foreground">
               <PlusIcon className="size-4" weight="bold" />
-              Add a sample
+              {t('brand.voices.editor.addSample')}
             </span>
           </SampleCard>
         </li>
@@ -560,7 +580,11 @@ function SamplesCard({
       <ModalContainer
         isOpen={editing !== null}
         onClose={() => setEditing(null)}
-        title={isNewSample ? 'Add a sample' : 'Edit sample'}
+        title={
+          isNewSample
+            ? t('brand.voices.editor.addSample')
+            : t('brand.voices.editor.editSample')
+        }
         size="default"
       >
         <div className="flex flex-col gap-4">
@@ -568,7 +592,7 @@ function SamplesCard({
             autoFocus
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Paste a post you would be happy to have written."
+            placeholder={t('brand.voices.editor.samplePlaceholder')}
             className="min-h-60"
           />
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -576,7 +600,7 @@ function SamplesCard({
               {!isNewSample && (
                 <Button variant="destructive" size="sm" onClick={remove}>
                   <TrashIcon />
-                  <span>REMOVE SAMPLE</span>
+                  <span>{t('brand.voices.editor.removeSample')}</span>
                 </Button>
               )}
             </div>
@@ -586,10 +610,14 @@ function SamplesCard({
                 size="sm"
                 onClick={() => setEditing(null)}
               >
-                <span>CANCEL</span>
+                <span>{t('brand.voices.editor.cancel')}</span>
               </Button>
               <Button variant="outline" size="sm" onClick={commit}>
-                <span>{isNewSample ? 'ADD IT' : 'DONE'}</span>
+                <span>
+                  {isNewSample
+                    ? t('brand.voices.editor.addIt')
+                    : t('brand.voices.editor.done')}
+                </span>
               </Button>
             </div>
           </div>
@@ -762,6 +790,7 @@ function SamplesMenu({
   canReset: boolean
   onReset: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -769,7 +798,7 @@ function SamplesMenu({
           variant="ghost"
           size="smIcon"
           className="shrink-0"
-          aria-label="More sample options"
+          aria-label={t('brand.voices.editor.moreSampleOptions')}
         >
           <DotsThreeVerticalIcon weight="regular" className="size-5" />
         </Button>
@@ -777,13 +806,13 @@ function SamplesMenu({
       <DropdownMenuContent align="end">
         <DropdownMenuItem disabled={!canReset} onSelect={onReset}>
           <ArrowCounterClockwiseIcon />
-          <span>Reset samples</span>
+          <span>{t('brand.voices.editor.resetSamples')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem disabled>
           <UploadSimpleIcon />
-          <span>Bulk upload</span>
+          <span>{t('brand.voices.editor.bulkUpload')}</span>
           <span className="pl-6 text-xs text-tertiary-foreground">
-            Coming soon
+            {t('brand.voices.editor.bulkUploadSoon')}
           </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -800,15 +829,15 @@ function SamplesMenu({
  * asked "are you sure?" would make the second reading depend on remembering the
  * first.
  */
-function deletionCost(usage: BrandUsage): string {
+function deletionCost(t: TFunction, usage: BrandUsage): string {
   const { published, drafts } = usage
   if (published > 0) {
-    return `${published} published ${published === 1 ? 'post was' : 'posts were'} written in this voice. Deleting it leaves them exactly as they are — their text was written and it stands — but nothing new can be generated in it, and any campaign pointing here falls back to no voice at all.`
+    return t('brand.voices.editor.deleteCostPublished', { count: published })
   }
   if (drafts > 0) {
-    return `${drafts} ${drafts === 1 ? 'draft points' : 'drafts point'} at this voice and will fall back to no voice at all.`
+    return t('brand.voices.editor.deleteCostDrafts', { count: drafts })
   }
-  return 'Nothing has been written in this voice, so nothing else changes.'
+  return t('brand.voices.editor.deleteCostNone')
 }
 
 /* ------------------------------------------------------------- the furniture */
@@ -822,11 +851,18 @@ function deletionCost(usage: BrandUsage): string {
  * and quotation marks around it read as scare quotes.
  */
 function VoiceIntro({ name }: { name?: string }) {
+  const { t } = useTranslation()
   return (
     <EditorIntro
       section="voices"
-      title={name ? `${name} Voice` : 'A new voice'}
-      body="Three to eight real posts you would be happy to have written are what make one. Everything else on this screen is what a sample cannot say for itself."
+      // The name is spliced by the catalogue rather than here: "X Voice" is an
+      // English word order, and Spanish puts the noun first.
+      title={
+        name
+          ? t('brand.voices.editor.introNamed', { name })
+          : t('brand.voices.editor.introNew')
+      }
+      body={t('brand.voices.editor.introBody')}
     />
   )
 }
@@ -906,32 +942,38 @@ function ChoiceRow<T extends string>({
   )
 }
 
-const FORMALITY: { value: VoiceRules['formality']; label: string }[] = [
-  { value: 'casual', label: 'casual' },
-  { value: 'neutral', label: 'neutral' },
-  { value: 'formal', label: 'formal' },
-]
+/**
+ * The five scales, as **order only**.
+ *
+ * These were five `{ value, label }[]` constants, which is the module-level
+ * table `CLAUDE.md` names: evaluated once at import, so the first language
+ * loaded is the one every workspace gets thereafter. What is genuinely fixed
+ * here is the order — `casual · neutral · formal` is a scale and reads as one
+ * only in that sequence — so that is what stays, and the words come off the
+ * catalogue at the point of use.
+ *
+ * The editor's labels are its own (`voices.editor.choices.*`) rather than the
+ * library card's (`voices.rules.*`): "I / we / the company" is a set being
+ * chosen between, "first person / we / third person" is a sentence about a
+ * voice, and neither reads correctly in the other's place.
+ */
+const FORMALITY_VALUES = ['casual', 'neutral', 'formal'] as const
+const PERSON_VALUES = ['i', 'we', 'third'] as const
+const EMOJI_VALUES = ['never', 'sparingly', 'freely'] as const
+const HASHTAG_VALUES = ['never', 'few', 'many'] as const
+const LENGTH_VALUES = ['short', 'medium', 'long'] as const
 
-const PERSON: { value: VoiceRules['person']; label: string }[] = [
-  { value: 'i', label: 'I' },
-  { value: 'we', label: 'we' },
-  { value: 'third', label: 'the company' },
-]
-
-const EMOJI: { value: VoiceRules['emoji']; label: string }[] = [
-  { value: 'never', label: 'never' },
-  { value: 'sparingly', label: 'sparingly' },
-  { value: 'freely', label: 'freely' },
-]
-
-const HASHTAGS: { value: VoiceRules['hashtags']; label: string }[] = [
-  { value: 'never', label: 'never' },
-  { value: 'few', label: 'a few' },
-  { value: 'many', label: 'many' },
-]
-
-const LENGTH: { value: VoiceRules['length']; label: string }[] = [
-  { value: 'short', label: 'short' },
-  { value: 'medium', label: 'medium' },
-  { value: 'long', label: 'long' },
-]
+/**
+ * The scale's order, paired with its words.
+ *
+ * `label` is a callback rather than a rule name because the key has to be a
+ * literal at the call site for the catalogue's types to check it — a template
+ * built from two type parameters is a string as far as `t` is concerned, and a
+ * mistyped rule would compile.
+ */
+function choiceOptions<T extends string>(
+  values: readonly T[],
+  label: (value: T) => string,
+): { value: T; label: string }[] {
+  return values.map((value) => ({ value, label: label(value) }))
+}

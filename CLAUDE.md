@@ -240,7 +240,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   mapper without either of them holding a frozen label. **Coverage comes in two
   shapes**, and the difference is what you need to know before opening a file.
   Some screens are converted whole: the auth screens, sidebar, Profile,
-  Workspace Settings, the campaign calendar, the analytics surfaces,
+  Workspace Settings, the campaign calendar, the analytics surfaces, **Brand**,
   `/workspaces`, `/invite`, `/plans` with the Plan & billing card and the
   entitlement renderings, and the two flag-gated features written catalogued
   from the start (Tasks, Activity). Others hold **islands** of catalogued copy
@@ -266,9 +266,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   the deploy that releases it. The gate sits on those entry points, not on
   `setLocale`, so the switching machinery stays exercised by its tests while
   nothing but English is released. Spanish is complete and gated today.
-- **Dates, times and numbers go through `lib/intl.ts`** — `formatDate`,
-  `formatNumber`, `formatRelative` — never `toLocaleDateString(undefined, …)`
-  or a bare `new Intl.DateTimeFormat`. The bare forms mean the *browser's*
+- **Dates, times, numbers and joined lists go through `lib/intl.ts`** —
+  `formatDate`, `formatNumber`, `formatRelative`, `formatList` — never
+  `toLocaleDateString(undefined, …)`, a bare `new Intl.DateTimeFormat`, or a
+  hand-rolled `slice(0, -1).join(', ') + ' and '`, which is an English list
+  formatter wearing no label (Spanish turns *and* into *e* before an i- sound,
+  and neither the conjunction nor the serial comma is ours to hard-code).
+  The bare forms mean the *browser's*
   language, and the app's is a separate choice the user makes in Workspace
   Settings; a Spanish UI printing "Aug 20" is the same bug as an English one
   printing "20 ago". These helpers read the active language at call time and
@@ -564,7 +568,10 @@ places and only islands in others.** Converted whole: the auth screens,
 sidebar, Profile, Workspace Settings, the campaign calendar (its week, month
 and list views, the cards, both rail panels and the posts table), the
 analytics surfaces (the workspace dashboard, the campaign composition, a
-post's own numbers and the three view mappers behind them), `/workspaces`,
+post's own numbers and the three view mappers behind them), Brand (the
+Overview, all five sections, the three editors and the routes — plus the two
+tables behind them, `lib/brandSections` and the starters, which now carry
+behaviour only), `/workspaces`,
 `/invite`, `/plans` with the Plan & billing card, and the flag-gated Tasks and
 Activity features. Islands only: the post editor (`posts.*` — status and
 publish labels, the published link, sources, notes, quality, versions,

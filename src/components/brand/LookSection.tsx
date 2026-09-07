@@ -1,12 +1,8 @@
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { brandSectionCopy } from '@/lib/brandSections'
 import { BrandSection, ChipList, Gap } from './shell'
-import type { BrandLogo, BrandLook } from './types'
-
-const LOGO_JOB_LABEL: Record<BrandLogo['job'], string> = {
-  profile: 'Profile photo',
-  watermark: 'Watermark',
-  mark: 'Mark only',
-}
+import type { BrandLook } from './types'
 
 /**
  * The visual half, same semantics as the voice half: ambient, applied by
@@ -32,10 +28,11 @@ export function LookSection({
   onEdit?: () => void
   variant?: 'card' | 'page'
 }) {
+  const { t } = useTranslation()
   return (
     <BrandSection
       variant={variant}
-      title="Look"
+      title={brandSectionCopy(t, 'look').label}
       // `images` is aspirational and marked as such by being the only entry:
       // the template compositor is the consumer, and it is prototype 6.
       readBy={[]}
@@ -45,24 +42,24 @@ export function LookSection({
         // nothing is worse than none.
         look && onEdit ? (
           <Button variant="outline" size="sm" onClick={onEdit}>
-            EDIT
+            {t('brand.look.edit')}
           </Button>
         ) : undefined
       }
     >
       {!look ? (
         <Gap
-          what="No logo, no colours, no type. Anything generated with an image in it will look like stock."
-          offers={[{ label: 'Upload a logo', hint: 'best' }]}
+          what={t('brand.look.gap')}
+          offers={[
+            { label: t('brand.look.uploadLogo'), hint: t('brand.look.best') },
+          ]}
         />
       ) : (
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
-            <SlotLabel>Logo</SlotLabel>
+            <SlotLabel>{t('brand.look.logoSlot')}</SlotLabel>
             {look.logos.length === 0 ? (
-              <MissingPart>
-                No logo. Templates and profile images have nothing to place.
-              </MissingPart>
+              <MissingPart>{t('brand.look.noLogo')}</MissingPart>
             ) : (
               <ul className="flex flex-wrap gap-3">
                 {look.logos.map((logo) => (
@@ -74,13 +71,15 @@ export function LookSection({
                       <img
                         src={logo.url}
                         // The job, not the filename: the job is what the app
-                        // reads and what the user is choosing between.
-                        alt={LOGO_JOB_LABEL[logo.job]}
+                        // reads and what the user is choosing between. Both
+                        // renderings read one key, so the caption and the
+                        // accessible name can never drift apart.
+                        alt={t(`brand.look.job.${logo.job}` as const)}
                         className="max-h-full max-w-full object-contain"
                       />
                     </div>
                     <span className="text-xs text-tertiary-foreground">
-                      {LOGO_JOB_LABEL[logo.job]}
+                      {t(`brand.look.job.${logo.job}` as const)}
                     </span>
                   </li>
                 ))}
@@ -89,9 +88,9 @@ export function LookSection({
           </div>
 
           <div className="flex flex-col gap-2">
-            <SlotLabel>Palette</SlotLabel>
+            <SlotLabel>{t('brand.look.paletteSlot')}</SlotLabel>
             {look.palette.length === 0 ? (
-              <MissingPart>No colours stated.</MissingPart>
+              <MissingPart>{t('brand.look.noPalette')}</MissingPart>
             ) : (
               <ul className="flex flex-wrap gap-3">
                 {look.palette.map((color) => (
@@ -119,21 +118,18 @@ export function LookSection({
           </div>
 
           <div className="flex flex-col gap-2">
-            <SlotLabel>Type</SlotLabel>
+            <SlotLabel>{t('brand.look.typeSlot')}</SlotLabel>
             {look.typefaces.length === 0 ? (
-              <MissingPart>No typefaces stated.</MissingPart>
+              <MissingPart>{t('brand.look.noTypefaces')}</MissingPart>
             ) : (
               <ChipList items={look.typefaces} />
             )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <SlotLabel>Reference imagery</SlotLabel>
+            <SlotLabel>{t('brand.look.referenceSlot')}</SlotLabel>
             {look.referenceImages.length === 0 ? (
-              <MissingPart>
-                Nothing to steer generated images by — they will land wherever
-                the model's defaults are.
-              </MissingPart>
+              <MissingPart>{t('brand.look.noReference')}</MissingPart>
             ) : (
               <ul className="flex flex-wrap gap-2">
                 {look.referenceImages.map((url) => (

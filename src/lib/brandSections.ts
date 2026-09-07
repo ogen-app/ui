@@ -6,6 +6,7 @@ import {
   UsersThreeIcon,
   type Icon,
 } from '@phosphor-icons/react'
+import type { TFunction } from 'i18next'
 import type { BrandConsumer } from '@/components/brand/types'
 
 /**
@@ -44,14 +45,20 @@ import type { BrandConsumer } from '@/components/brand/types'
 export type BrandSectionId =
   'voices' | 'audiences' | 'guardrails' | 'look' | 'templates'
 
+/**
+ * **This table carries behaviour only — the words are in the catalogue.**
+ *
+ * The label, the description and the empty line used to sit here as English
+ * literals, which made this a module-level `const` holding copy: it is
+ * evaluated once at import, so it would have frozen whichever language loaded
+ * first and gone on serving it after a switch. They are now
+ * `brand.sections.<id>.*`, read through `brandSectionCopy` at the point of use.
+ *
+ * What is left is the part that genuinely is not language: which glyph, which
+ * hue, who reads the section, and whether it is offered at all.
+ */
 export type BrandSectionInfo = {
   id: BrandSectionId
-  /**
-   * Sentence case. It heads the Overview's card *and* the intro card of the
-   * page that card opens — one word for one place, so arriving somewhere
-   * confirms you clicked the right thing rather than making you check.
-   */
-  label: string
   icon: Icon
   /**
    * The glyph's permanent colour (see `--brand-*` in index.css), the same
@@ -65,33 +72,6 @@ export type BrandSectionInfo = {
    * both readings stop working.
    */
   tone: string
-  /**
-   * What the section is and what it is for, in the two sentences its own page
-   * leads with.
-   *
-   * It is on the table rather than in the component because the page has no
-   * heading of its own any more: the intro card at the top of a section *is*
-   * its title, so the label and the sentences under it are one entry. Written
-   * as what the material has to be, not as what the screen does — "a voice is
-   * three to eight real posts" is the sentence somebody arriving on an empty
-   * section needs, and "here you can manage your voices" is not a sentence at
-   * all.
-   */
-  description: string
-  /**
-   * What this section's absence costs, in one line.
-   *
-   * Two places read it: the Overview card that has no rows to show, and the
-   * section's own intro card, which adds it under the description while the
-   * section is empty. Deliberately the same string in both — the section used
-   * to state its own absence in a longer paragraph of its own writing, and two
-   * sentences making one claim differently is how a screen starts to read as
-   * though two people wrote it.
-   *
-   * Worded as a consequence, never as a scold: an empty section is a to-do,
-   * and a workspace on day one has one for every section it is offered.
-   */
-  whenEmpty: string
   /**
    * Which parts of the app read it — the honesty rule from CON-226 §9, kept on
    * the table so a section cannot quietly claim a reader it does not have.
@@ -122,59 +102,36 @@ export type BrandSectionInfo = {
 export const BRAND_SECTIONS: BrandSectionInfo[] = [
   {
     id: 'voices',
-    label: 'Voices',
     icon: ChatCircleDotsIcon,
     tone: 'var(--brand-voices)',
-    description:
-      'A voice is three to eight real posts you would be happy to have written, and the app writes from those rather than from an adjective. Several is normal: sarcastic commentary and the company page are not two tones of one personality.',
-    whenEmpty:
-      'No voice of its own — everything generated here sounds generated.',
     readBy: ['plan', 'post'],
     shown: true,
   },
   {
     id: 'audiences',
-    label: 'Audiences',
     icon: UsersThreeIcon,
     tone: 'var(--brand-audiences)',
-    description:
-      'Who the posts are written to, described by what follows from it: where they read, what makes them scroll past, and what they need before they believe a number. Every campaign asks who this is for, and this is where the answer comes from.',
-    whenEmpty: 'Nobody in particular is being written to.',
     readBy: ['plan', 'post'],
     shown: true,
   },
   {
     id: 'guardrails',
-    label: 'Guardrails',
     icon: ShieldIcon,
     tone: 'var(--brand-guardrails)',
-    description:
-      'What is true, what may be claimed, and what may never be. These are the rules nobody opts out of — they hold for every generated post whichever voice wrote it, and the more convincing the voice, the more convincing the invention they exist to stop.',
-    whenEmpty: 'Nothing is off limits. Any voice here may promise anything.',
     readBy: [],
     shown: true,
   },
   {
     id: 'look',
-    label: 'Look',
     icon: SwatchesIcon,
     tone: 'var(--brand-look)',
-    description:
-      'Logos with a declared job, colours with roles, type, and imagery to work from. Enough for the app to make a picture that looks like yours without stopping to ask which of four files goes in the corner.',
-    whenEmpty:
-      'No logo, no colours, no type — generated images land wherever the model puts them.',
     readBy: [],
     shown: false,
   },
   {
     id: 'templates',
-    label: 'Templates',
     icon: FrameCornersIcon,
     tone: 'var(--brand-templates)',
-    description:
-      'A full-canvas frame per platform and per ratio — not a layout engine, which is why nothing here reflows. A set that misses a ratio its platform posts in is unusable there, so the screen leads with platforms rather than with sets.',
-    whenEmpty:
-      'Pictures go out bare. Nothing marks one as yours once it has left the app.',
     readBy: [],
     shown: false,
   },
@@ -182,6 +139,38 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
 
 export function brandSection(id: BrandSectionId): BrandSectionInfo {
   return BRAND_SECTIONS.find((s) => s.id === id)!
+}
+
+/**
+ * What a section is called and what it is for, in the active language.
+ *
+ * Three strings rather than three call sites, because the places that want one
+ * of them want all three: the Overview's card and the section's own intro card
+ * are two renderings of the same entry, and splitting them into
+ * `brandSectionLabel` / `brandSectionDescription` would be three chances to
+ * read a different section's copy into one card.
+ *
+ * - `label` — sentence case. It heads the Overview's card *and* the intro card
+ *   of the page that card opens, so arriving somewhere confirms you clicked the
+ *   right thing rather than making you check.
+ * - `description` — what the material has to be, not what the screen does. "A
+ *   voice is three to eight real posts" is the sentence somebody arriving on an
+ *   empty section needs; "here you can manage your voices" is not a sentence at
+ *   all.
+ * - `whenEmpty` — what the section's absence costs, in one line, worded as a
+ *   consequence and never as a scold. Two places read it and both get the same
+ *   string: the Overview card with no rows to show, and the intro card while
+ *   the section is empty.
+ */
+export function brandSectionCopy(
+  t: TFunction,
+  id: BrandSectionId,
+): { label: string; description: string; whenEmpty: string } {
+  return {
+    label: t(`brand.sections.${id}.label` as const),
+    description: t(`brand.sections.${id}.description` as const),
+    whenEmpty: t(`brand.sections.${id}.whenEmpty` as const),
+  }
 }
 
 /**
