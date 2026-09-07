@@ -2308,28 +2308,38 @@ export const en = {
       title: 'No campaigns yet',
       subtitle: 'Create your first campaign to get started',
     },
-    archivedTitle: 'Archived campaigns',
+    /** The drawer at the foot of the list, not a second view of the screen. */
+    archivedSection: 'Archived campaigns',
     archivedError: 'Failed to load archived campaigns',
-    showArchived: 'Show archived campaigns',
-    showActive: 'Back to active campaigns',
     archivedOn: 'Archived {{archivedOn}}',
     unarchive: 'UNARCHIVE',
-    archivedEmpty: {
-      title: 'Nothing is archived',
-      subtitle:
-        'Archiving a campaign takes it off the list without deleting anything. Its posts, schedule and content stay exactly as they are.',
-    },
-    archiveCard: {
-      title: 'Archive',
-      body: 'Takes this campaign off the Campaigns list and stops it being offered anywhere new work is filed. Nothing is deleted, and you can bring it back at any time.',
-      action: 'ARCHIVE CAMPAIGN',
-      confirm: 'Archive {{name}}? You can bring it back from the archive.',
-    },
+    archivedEmpty:
+      'Nothing is archived. Archiving a campaign takes it off the list without deleting anything — its posts, schedule and content stay exactly as they are.',
+    /**
+     * One card holds both ways of stopping a campaign, so its own copy stays
+     * general and each modal carries the consequences of the button that
+     * opened it — read where they are acted on rather than skipped on the way
+     * down the page.
+     */
     dangerZone: {
       title: 'Danger Zone',
-      body: 'Deleting a campaign removes its posts and schedule. This cannot be undone — archive it instead if you only want it off the list.',
-      action: 'DELETE CAMPAIGN',
-      confirm: 'Delete {{name}}? This cannot be undone.',
+      body: 'Two ways to stop running this campaign. Archiving keeps everything and can be undone; deleting removes the campaign and its posts for good.',
+      archive: {
+        action: 'ARCHIVE CAMPAIGN',
+        confirmTitle: 'Archive {{name}}?',
+        confirmBody:
+          'The campaign comes off the Campaigns list and stops being offered anywhere new work is filed. Nothing is deleted — its posts, schedule, brief and content stay exactly as they are — and you can bring it back from the archive at any time.',
+        keep: 'KEEP IT ACTIVE',
+        confirm: 'ARCHIVE CAMPAIGN',
+      },
+      delete: {
+        action: 'DELETE CAMPAIGN',
+        confirmTitle: 'Delete {{name}}?',
+        confirmBody:
+          'The campaign, its posts and its schedule are removed, and nothing in the app can bring them back. Posts that have already been published stay live on the social networks. Archive it instead if you only want it off the list.',
+        keep: 'KEEP CAMPAIGN',
+        confirm: 'DELETE CAMPAIGN',
+      },
     },
   },
 
