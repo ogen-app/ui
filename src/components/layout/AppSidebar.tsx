@@ -228,18 +228,22 @@ function HeaderMark({
   return (
     <div className="relative flex min-w-0 items-center">
       {/* In the gutter, which is 24px of the header's own padding and the only
-          room there is to the left of the mark without moving it. Gone on the
-          collapsed rail, where there is no gutter at all — there the mark is
-          the way back, which is what its own link is for.
+          room there is to the left of the mark without moving it. Pushed to
+          the outer half of it — 18px out, which leaves 6px between the caret's
+          box and the rail's edge and the same 2px between it and the mark: as
+          far from the mark as the gutter allows while still reading as an edge
+          with a margin rather than one flush against it.
 
-          Faded out over the rail's own 200ms rather than switched off, so it
-          leaves with the width instead of a frame before it, and made
-          unclickable with it: a caret at zero opacity is still a link, and the
-          collapsed rail would have an invisible way out sitting on its edge. */}
+          It stays through the collapse. The gutter does not narrow with the
+          rail: the padding is the same 24px at 88px as at 280px, so the caret
+          keeps the position it already had and the way out of the level is in
+          one place at both widths. Collapsed, it is also the only control that
+          says so — the name and window are gone by then, and a mark that
+          silently doubles as back is a thing you have to have discovered. */}
       <Link
         to="/campaigns"
         aria-label={t('nav.backToWorkspace')}
-        className="absolute -left-2 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-sm text-tertiary-foreground transition-[color,opacity] duration-200 ease-linear hover:text-sidebar-primary-foreground lg:-left-5 group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0"
+        className="absolute -left-1.5 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-sm text-tertiary-foreground transition-colors hover:text-sidebar-primary-foreground lg:-left-[18px]"
       >
         <CaretLeftIcon weight="bold" className="size-4" />
       </Link>
@@ -247,8 +251,9 @@ function HeaderMark({
         <TooltipTrigger asChild>
           {/* Focusable, because collapsed this mark is the only thing naming
               the campaign and a tooltip nobody can reach by keyboard is not a
-              label. It goes back rather than nowhere: on the collapsed rail
-              the back control is hidden, so the mark has to be it. */}
+              label. It goes back rather than nowhere — the same destination as
+              the caret beside it, so whichever of the two the pointer lands on
+              does the same thing. */}
           <Link
             to="/campaigns"
             aria-label={t('nav.backToWorkspace')}
