@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowSquareOutIcon,
@@ -16,12 +16,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { NavGlyph } from '@/components/layout/nav/NavGlyph'
-import { useWorkspaceDestinations } from '@/components/layout/nav/workspaceDestinations'
+import { useWorkspaceMenuEntries } from '@/components/layout/nav/workspaceDestinations'
 import { WorkspaceMark } from '@/components/layout/WorkspaceMark'
 import { useWorkspace } from '@/hooks/useWorkspaces'
 import { useAuthStore } from '@/stores/authStore'
-import { cn } from '@/lib'
 import { ROLE_LABEL_KEYS, type Workspace } from '@/types/workspace'
 
 /** TODO: placeholder — no help site exists yet. Point at the real one when it does. */
@@ -31,124 +29,75 @@ const HELP_URL = 'https://getogen.com/help'
  * The bottom of the rail: who and where you are, and — once you are inside a
  * campaign — the workspace you left to get there.
  *
- * **Why this slot changes with the level and the strip above it does not.**
- * The utilities are the same three things wherever you are standing. This is
- * the opposite: at level 0 the workspace *is* the rail, so the slot only has
- * to say which workspace and who is in it; at level 1 the rail belongs to a
- * campaign, and the workspace has gone from being the context to being
- * somewhere you can get back to. A slot that carried the same block at both
- * levels would be claiming the level change did not happen.
+ * **The block itself does not change with the level.** Two cuts tried to make
+ * it: one shrank it to a bare avatar and spent the room on the workspace's
+ * destinations as glyphs, the next kept the mark and put the glyphs beside it.
+ * Both failed the same way — the glyphs cannot survive the collapsed rail,
+ * where there is one 20px column and a second vertical run of marks under the
+ * utilities reads as five of one kind of thing. A row that is only there at
+ * one of the two widths is not a place to put a destination.
  *
- * The account does not move for it. Profile, workspace and log out are the one
- * part of the nav scoped to neither a workspace nor a campaign, so they are
- * the wrong thing to spend on a level change — at level 1 the block shrinks to
- * its mark and the destinations take the room it gives up. Everything it held
- * is still one click away, in a menu that has grown the workspace's own
- * destinations above it.
+ * So the block stays as it is at level 0, and what changes is only the menu:
+ * at level 1 it grows the whole of level 0 above the account block — modules,
+ * Foundation and the workspace's settings — which is the one form that is
+ * identical at both widths.
  */
 export function NavAccount({ level }: { level: 0 | 1 }) {
-  const { t } = useTranslation()
-  const { pathname } = useLocation()
   const { user } = useAuthStore()
   const workspace = useWorkspace()
-  const destinations = useWorkspaceDestinations()
+  const destinations = useWorkspaceMenuEntries()
 
   const initials =
     `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`.toUpperCase() || '?'
   const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
 
-  if (level === 0) {
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <div
-            role="button"
-            tabIndex={0}
-            className="flex w-full cursor-pointer select-none items-center justify-start gap-6 overflow-hidden p-0"
-          >
-            {/* The workspace's mark, not the user's portrait. Every item above
-                it belongs to that workspace, and this is the one slot that
-                survives the collapsed rail — so it carries the fact that
-                changes rather than the one that never does. Who you are is in
-                the menu behind it. */}
-            {workspace ? (
-              <WorkspaceMark
-                id={workspace.id}
-                name={workspace.name}
-                className="size-10 text-sm"
-              />
-            ) : (
-              <Avatar className="size-10 shrink-0">
-                <AvatarFallback>{initials}</AvatarFallback>
-              </Avatar>
-            )}
-            <div className="flex w-[168px] shrink-0 flex-col items-start transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
-              <p className="w-full truncate text-left text-sm font-regular">
-                {fullName}
-              </p>
-              {/* The workspace, not the email: the email never changes and is
-                  one click away in the menu, while the workspace changes what
-                  every other screen is showing. */}
-              <p className="w-full truncate text-left text-xs text-tertiary-foreground">
-                {workspace?.name ?? user?.email}
-              </p>
-            </div>
-          </div>
-        </DropdownMenuTrigger>
-        <AccountMenu
-          initials={initials}
-          fullName={fullName}
-          email={user?.email}
-          workspace={workspace}
-        />
-      </DropdownMenu>
-    )
-  }
+  // The workspace's mark, not the user's portrait. Every item above it belongs
+  // to that workspace — including, at level 1, the campaign — and this is the
+  // one slot that survives the collapsed rail, so it carries the fact that
+  // changes rather than the one that never does. Who you are is in the menu
+  // behind it.
+  const mark = workspace ? (
+    <WorkspaceMark
+      id={workspace.id}
+      name={workspace.name}
+      className="size-10 text-sm"
+    />
+  ) : (
+    <Avatar className="size-10 shrink-0">
+      <AvatarFallback>{initials}</AvatarFallback>
+    </Avatar>
+  )
 
   return (
-    <div className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col">
-      {/* The workspace's modules, carried into the campaign. Hidden on the
-          collapsed rail rather than stacked: the rail is one 20px column
-          there, and a second vertical run of glyphs under the utilities would
-          read as six of one kind of thing. Collapsed, the mark below is the
-          only way back out, which is what its menu is for. */}
-      <div className="flex items-center gap-1 group-data-[collapsible=icon]:hidden">
-        {destinations.map((destination) => (
-          <NavGlyph
-            key={destination.id}
-            label={destination.label}
-            icon={destination.icon}
-            to={destination.to}
-            isActive={destination.isActive(pathname)}
-          />
-        ))}
-      </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            aria-label={t('nav.account')}
-            className={cn(
-              'ml-auto flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md',
-              'hover:bg-sidebar-secondary group-data-[collapsible=icon]:ml-0',
-            )}
-          >
-            <Avatar className="size-6 shrink-0">
-              <AvatarFallback className="text-[10px]">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-          </button>
-        </DropdownMenuTrigger>
-        <AccountMenu
-          initials={initials}
-          fullName={fullName}
-          email={user?.email}
-          workspace={workspace}
-          destinations={destinations}
-        />
-      </DropdownMenu>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <div
+          role="button"
+          tabIndex={0}
+          className="flex w-full cursor-pointer select-none items-center justify-start gap-6 overflow-hidden p-0"
+        >
+          {mark}
+          <div className="flex w-[168px] shrink-0 flex-col items-start transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
+            <p className="w-full truncate text-left text-sm font-regular">
+              {fullName}
+            </p>
+            {/* The workspace, not the email: the email never changes and is
+                one click away in the menu, while the workspace changes what
+                every other screen is showing. */}
+            <p className="w-full truncate text-left text-xs text-tertiary-foreground">
+              {workspace?.name ?? user?.email}
+            </p>
+          </div>
+        </div>
+      </DropdownMenuTrigger>
+      <AccountMenu
+        initials={initials}
+        fullName={fullName}
+        email={user?.email}
+        workspace={workspace}
+        destinations={level === 1 ? destinations : []}
+      />
+    </DropdownMenu>
   )
 }
 
@@ -174,7 +123,7 @@ function AccountMenu({
   fullName: string
   email: string | undefined
   workspace: Workspace | undefined
-  destinations?: ReturnType<typeof useWorkspaceDestinations>
+  destinations?: ReturnType<typeof useWorkspaceMenuEntries>
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()

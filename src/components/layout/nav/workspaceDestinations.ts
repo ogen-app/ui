@@ -1,6 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import {
+  BellSimpleIcon,
   ChartLineUpIcon,
+  GearSixIcon,
+  PaletteIcon,
   TargetIcon,
   ToolboxIcon,
   type Icon,
@@ -12,11 +15,11 @@ import { useFeatureFlag } from '@/config/featureFlags'
  * The workspace's destinations — level 0's list, in one table.
  *
  * One table because the same set is drawn twice under the drill-down: as rows
- * on level 0, and as the glyph row (and menu) that carries the workspace into
- * level 1, where the rail belongs to a campaign. Two hand-maintained copies of
- * a nav is how a module ends up reachable from one level and not the other,
- * which is precisely the kind of asymmetry the user reads as a bug in their
- * own memory rather than in ours.
+ * on level 0, and as the menu that carries the workspace into level 1, where
+ * the rail belongs to a campaign. Two hand-maintained copies of a nav is how a
+ * module ends up reachable from one level and not the other, which is
+ * precisely the kind of asymmetry the user reads as a bug in their own memory
+ * rather than in ours.
  *
  * `to` is the router's own union rather than a string, for the reason spelled
  * out on `AppSidebarButtonMenu`: a `string` here is the one place in the app
@@ -76,4 +79,57 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
   }
 
   return destinations
+}
+
+/**
+ * Everything level 0 offers, for the menu behind the workspace mark at level 1.
+ *
+ * The modules above, then the utilities the footer draws — Foundation,
+ * Activity and the workspace's own settings. Inside a campaign that footer is
+ * showing *this campaign's* settings, so this menu is the only way back to the
+ * workspace's; the other two are duplicated from rows that are still on
+ * screen, and deliberately, because a menu called Workspace that holds some of
+ * the workspace is worse than one that repeats itself. Read it as "the level
+ * you came from, whole".
+ *
+ * Flags again read once, here, for the reason above: a feature that is off is
+ * absent from the menu and the rail together or the two disagree.
+ */
+export function useWorkspaceMenuEntries(): WorkspaceDestination[] {
+  const { t } = useTranslation()
+  const destinations = useWorkspaceDestinations()
+  const brandEnabled = useFeatureFlag('brand-materials')
+  const activityEnabled = useFeatureFlag('activity')
+
+  const entries = [...destinations]
+
+  if (brandEnabled) {
+    entries.push({
+      id: 'foundation',
+      label: t('nav.foundation'),
+      icon: PaletteIcon,
+      to: '/foundation',
+      isActive: (p) => p.startsWith('/foundation'),
+    })
+  }
+
+  if (activityEnabled) {
+    entries.push({
+      id: 'activity',
+      label: t('nav.activity'),
+      icon: BellSimpleIcon,
+      to: '/activity',
+      isActive: (p) => p.startsWith('/activity'),
+    })
+  }
+
+  entries.push({
+    id: 'workspace-settings',
+    label: t('nav.workspaceSettings'),
+    icon: GearSixIcon,
+    to: '/workspace-settings',
+    isActive: (p) => p.startsWith('/workspace-settings'),
+  })
+
+  return entries
 }
