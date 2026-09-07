@@ -2,10 +2,10 @@ import { useLocation, type LinkProps } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { SidebarMenuSkeleton } from '@/components/ui/sidebar'
-import { usePostsPlace } from '@/hooks/usePostsPlace'
+import { useCalendarPlace } from '@/hooks/usePostsPlace'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { cn } from '@/lib'
 import { formatDate } from '@/lib/intl'
-import { postsPlaceLink } from '@/lib/postsPlace'
 import {
   CAMPAIGN_SECTIONS,
   type CampaignSectionId,
@@ -13,8 +13,8 @@ import {
 import type { Campaign } from '@/types/campaigns'
 
 /**
- * Where each section goes, less Posts, which needs a date in its path and is
- * built beside it.
+ * Where each section goes, less the calendar, which needs a date in its path
+ * and is built beside it.
  *
  * `satisfies` is what makes this worth writing out: every value is checked
  * against the router's own union, so a route that moves takes this table down
@@ -22,28 +22,43 @@ import type { Campaign } from '@/types/campaigns'
  */
 const SECTION_PATH = {
   overview: '/campaigns/$campaignId/overview',
-  analytics: '/campaigns/$campaignId/analytics',
   strategy: '/campaigns/$campaignId/strategy',
+  ideas: '/campaigns/$campaignId/ideas',
+  posts: '/campaigns/$campaignId/list',
+  analytics: '/campaigns/$campaignId/analytics',
   content: '/campaigns/$campaignId/content',
+  activity: '/campaigns/$campaignId/activity',
   settings: '/campaigns/$campaignId/settings',
-} satisfies Record<Exclude<CampaignSectionId, 'posts'>, LinkProps['to']>
+} satisfies Record<Exclude<CampaignSectionId, 'calendar'>, LinkProps['to']>
 
 /**
  * Level 1 — one campaign, in the rail's whole width.
  *
- * These are the sections the rail drew before, at the same routes, less
- * Settings — which is a utility rather than a place, and sits in the footer
- * where the workspace's own gear sits at level 0. What changed for the rest is
- * that they are no longer nested under a module row of the same name: the
- * campaign has the level to itself, so "Analytics" here can only mean this
- * campaign's, and the indent that used to carry that meaning is gone along
- * with the ambiguity it was patching.
+ * **The same rail as the workspace's, narrowed.** Every row here answers to a
+ * row up there: Overview to Inbox, Ideas to Ideas, Posts to Campaigns,
+ * Calendar to Calendar, Analytics to Analytics — and the footer's three to the
+ * workspace's three (`NavUtilityStrip`). Nothing at this level points out of
+ * the campaign, and that is the change: the rail used to carry the workspace's
+ * own Foundation and Activity into a campaign, so the level was never quite
+ * the campaign's and a row could take you somewhere the campaign wasn't. Going
+ * in narrows the same menu now, and coming out is the caret, the mark or the
+ * account menu — three deliberate ways, none of them a row you might take by
+ * accident.
+ *
+ * Strategy is the one row with no workspace twin, because a campaign commits
+ * to a window, a rate and a spend and a workspace commits to nothing.
+ *
+ * Posts and Calendar are two rows over the same posts, which they were not
+ * before: one row led to whichever arrangement you last used, so the calendar
+ * and the table were a thing you had to know to switch between. The table is
+ * where posts are worked on and the calendar is where they are placed — two
+ * jobs, and now two ways in.
  *
  * The block at the top is the argument for the level existing at all. A
  * campaign is a commitment — a window and a rate — and that is true of the
  * campaign and of nothing else in the app; every section below is read against
  * it. Which is also why it is stated in the rail rather than on one of the
- * sections, where five of the six would be reading it second-hand.
+ * sections, where the others would be reading it second-hand.
  */
 export function CampaignLevel({
   campaignId,
@@ -54,32 +69,39 @@ export function CampaignLevel({
 }) {
   const { t } = useTranslation()
   const { pathname } = useLocation()
-  const place = usePostsPlace(campaignId)
+  // The calendar's own remembered position, not the posts' — this row names
+  // the calendar, so it opens one whatever arrangement the user last chose.
+  const calendar = useCalendarPlace(campaignId)
+  const ideasEnabled = useFeatureFlag('ideas')
 
-  // Everything unrecognised is the calendar, which is what Posts opens — so
-  // each real section has to be named before that fallback is reached.
+  // `/list` is the Posts row's route and carries no word of its own that the
+  // others don't, so it is the fallback rather than a case of its own.
   const activeSection: CampaignSectionId = pathname.includes('/overview')
     ? 'overview'
-    : pathname.includes('/analytics')
-      ? 'analytics'
-      : pathname.includes('/strategy')
-        ? 'strategy'
-        : pathname.includes('/content')
-          ? 'content'
-          : pathname.includes('/settings')
-            ? 'settings'
-            : 'posts'
+    : pathname.includes('/strategy')
+      ? 'strategy'
+      : pathname.includes('/ideas')
+        ? 'ideas'
+        : pathname.includes('/calendar')
+          ? 'calendar'
+          : pathname.includes('/analytics')
+            ? 'analytics'
+            : pathname.includes('/content')
+              ? 'content'
+              : pathname.includes('/activity')
+                ? 'activity'
+                : pathname.includes('/settings')
+                  ? 'settings'
+                  : 'posts'
 
-  // Posts lands wherever the user last left this campaign's posts — the week
-  // or month they had navigated to, or the table. The row is labelled Posts,
-  // not Calendar, so it restores the arrangement as well as the date; the
-  // entry points that name the calendar restore only the date. See
-  // `lib/postsPlace`.
   const sectionLink = (
     id: CampaignSectionId,
   ): { to: LinkProps['to']; params: LinkProps['params'] } =>
-    id === 'posts'
-      ? postsPlaceLink(campaignId, place)
+    id === 'calendar'
+      ? {
+          to: '/campaigns/$campaignId/calendar/$anchor/$view',
+          params: { campaignId, anchor: calendar.anchor, view: calendar.view },
+        }
       : { to: SECTION_PATH[id], params: { campaignId } }
 
   return (
@@ -123,12 +145,15 @@ export function CampaignLevel({
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4 lg:px-6 group-data-[collapsible=icon]:items-center">
-        {/* Every section but Settings, which is in the footer with the
-            workspace's own gear — see `NavUtilityStrip`. Filtered here rather
-            than removed from the table, because the Overview still draws a
-            card for it and a section is one entry wherever it appears. */}
-        {CAMPAIGN_SECTIONS.filter((section) => section.id !== 'settings').map(
+        {/* The level's own rows. The utilities are filtered out by their own
+            field rather than by name here — they are drawn in the footer by
+            `NavUtilityStrip`, and a section is one entry wherever it appears. */}
+        {CAMPAIGN_SECTIONS.filter((section) => !section.utility).map(
           (section) => {
+            // Gated here as well as on the route: with the flag off the
+            // campaign must have no Ideas at all, and a row that redirects is
+            // worse than no row.
+            if (section.id === 'ideas' && !ideasEnabled) return null
             const link = sectionLink(section.id)
             return (
               <AppSidebarButtonMenu

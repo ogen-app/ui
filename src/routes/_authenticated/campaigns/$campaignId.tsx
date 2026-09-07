@@ -21,16 +21,32 @@ export const Route = createFileRoute('/_authenticated/campaigns/$campaignId')({
 // Section slug (from the URL) → title suffix. The header title and its icon
 // set depend on the selected secondary-nav element.
 const SECTIONS = [
-  { slug: '/list', label: 'List' },
+  // `/list` is the Posts row's route — the table is where posts are worked on,
+  // and the calendar is the row beside it. The title says Posts because the
+  // rail does; nothing outside the URL calls this a list.
+  { slug: '/list', label: 'Posts' },
   { slug: '/strategy', label: 'Strategy' },
+  { slug: '/ideas', label: 'Ideas' },
   { slug: '/content', label: 'Content' },
+  { slug: '/activity', label: 'Activity' },
   { slug: '/settings', label: 'Settings' },
   { slug: '/overview', label: 'Overview' },
   { slug: '/analytics', label: 'Analytics' },
 ] as const
 
-/** Sections that read as a document: one scroll container, fading header. */
-const DOCUMENT_SECTIONS: readonly string[] = ['Overview', 'Analytics']
+/**
+ * Sections that read as a document: one scroll container, fading header.
+ *
+ * The fallback below is the calendar's shell, which is right for a grid and
+ * wrong for everything else — so a new section that is neither a document nor
+ * a form has to be named here, or it inherits a calendar's header actions.
+ */
+const DOCUMENT_SECTIONS: readonly string[] = [
+  'Overview',
+  'Analytics',
+  'Ideas',
+  'Activity',
+]
 
 function CampaignLayout() {
   const { campaignId } = Route.useParams()

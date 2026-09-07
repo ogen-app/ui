@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
-import { TargetIcon } from '@phosphor-icons/react'
+import { TrayIcon } from '@phosphor-icons/react'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { useTasks } from '@/hooks/useTasks'
 import { openTasks } from '@/lib/tasks'
 
 /**
- * The Tasks row, directly under Activity.
+ * The Inbox row — the workspace's open tasks, at the top of the rail.
  *
  * Its own component so the feature's query mounts with the feature: with the
  * flag off this never renders, so nothing is fetched for a screen nobody can
@@ -16,8 +16,11 @@ import { openTasks } from '@/lib/tasks'
  * let each carry the one that belongs to it. A sum was never possible anyway —
  * reading the feed clears one and does nothing to the other.
  *
- * A target, not a checkbox: the mark should say what the module is *for* — the
- * things to aim at — rather than repeat the control every card carries.
+ * A tray rather than the target it used to wear, and Inbox rather than Tasks.
+ * The row is the level's first slot — the one place addressed to *you* — and
+ * one level down that same slot is the campaign's Overview. Naming it for the
+ * slot is what makes the pair legible; the module behind it is still Tasks,
+ * and says so everywhere else (`/tasks`, `useTasks`, its own flag).
  */
 export function TasksSidebarItem({ isActive }: { isActive: boolean }) {
   const { t } = useTranslation()
@@ -26,8 +29,8 @@ export function TasksSidebarItem({ isActive }: { isActive: boolean }) {
 
   return (
     <AppSidebarButtonMenu
-      icon={<TargetIcon weight="regular" className="size-5 flex-none" />}
-      text={t('nav.tasks')}
+      icon={<TrayIcon weight="regular" className="size-5 flex-none" />}
+      text={t('nav.inbox')}
       isActive={isActive}
       to="/tasks"
       counts={[{ value: open }]}

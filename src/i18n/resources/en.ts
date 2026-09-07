@@ -216,11 +216,20 @@ export const en = {
 
   nav: {
     activity: 'Activity',
-    tasks: 'Tasks',
+    /**
+     * The module is Tasks — its board, its flag and its endpoint all say so.
+     * The rail says Inbox, because the row's job at level 0 is to be the one
+     * place addressed to *you*, and its twin one level down is the campaign's
+     * Overview. "Tasks" named the contents; "Inbox" names the slot, and the
+     * slot is what the two levels have in common.
+     */
+    inbox: 'Inbox',
     /** The count beside the Activity row, read out rather than seen. */
     activityUnread_one: '{{count}} unread entry',
     activityUnread_other: '{{count}} unread entries',
     campaigns: 'Campaigns',
+    ideas: 'Ideas',
+    calendar: 'Calendar',
     /** CON-237. Behind the `analytics-overview` flag — hidden while it is off. */
     analytics: 'Analytics',
     /**
@@ -256,15 +265,46 @@ export const en = {
     workspaceScope: 'Workspace',
     /** A campaign with no start or end date, in the rail's window line. */
     campaignNoWindow: 'No dates set',
+    /**
+     * Level 1's rows, each the campaign-narrowed twin of a level 0 row:
+     * Inbox → Overview, Ideas → Campaign ideas, Campaigns → Posts, Calendar →
+     * Calendar, Analytics → Campaign analytics.
+     *
+     * Which are prefixed and which are not is the pairing, not inconsistency.
+     * A row keeps its bare name where the level already makes it unambiguous —
+     * a campaign's Overview and Posts have no workspace-level namesake to be
+     * confused with. It takes "Campaign" where the same word names a
+     * destination one level up, so that a person who has both in their head
+     * can tell which of the two they are looking at.
+     */
     campaign: {
       overview: 'Overview',
-      // Named for where it goes, not for what it holds: this row opens the
-      // calendar, and "Posts" alone read like a list.
-      posts: 'Posts calendar',
-      analytics: 'Analytics',
       strategy: 'Strategy',
-      content: 'Content',
-      settings: 'Settings',
+      ideas: 'Campaign ideas',
+      // The table, not the grid: this is the row that opens the place posts
+      // are actually worked on, and the calendar is now its own row below.
+      posts: 'Posts',
+      calendar: 'Calendar',
+      analytics: 'Campaign analytics',
+      /**
+       * The campaign's content bank. Named for the footer slot it now shares
+       * with the workspace's Foundation rather than for the page's own word:
+       * this level's version of "everything the campaign writes from".
+       */
+      assets: 'Campaign assets',
+      activity: 'Campaign activity',
+      settings: 'Campaign settings',
+    },
+  },
+
+  ideas: {
+    stub: {
+      workspaceTitle: 'Ideas will live here',
+      workspaceBody:
+        'Everything worth making that no campaign has claimed yet — kept in one place, so a thought survives the week you had it in.',
+      campaignTitle: 'This campaign\u2019s ideas will live here',
+      campaignBody:
+        'The same module, narrowed to this campaign: what it could still say, before any of it is a post.',
     },
   },
 
@@ -353,6 +393,11 @@ export const en = {
    * to a noun.
    */
   activity: {
+    stub: {
+      campaignTitle: 'This campaign\u2019s activity will live here',
+      campaignBody:
+        'The same feed as the workspace\u2019s, narrowed to what happened inside this campaign.',
+    },
     title: 'Activity',
     /** Capitals are the copy, as on every other list's header action. */
     markAllRead: 'MARK ALL READ',
@@ -466,7 +511,10 @@ export const en = {
      * Capitals are the copy, as with every other button in the app.
      */
     openOverview: 'OPEN OVERVIEW',
-    openPosts: 'OPEN CALENDAR',
+    openPosts: 'OPEN POSTS',
+    openIdeas: 'OPEN IDEAS',
+    openCalendar: 'OPEN CALENDAR',
+    openActivity: 'OPEN ACTIVITY',
     openAnalytics: 'OPEN ANALYTICS',
     openStrategy: 'OPEN STRATEGY',
     openContent: 'OPEN CONTENT',
@@ -481,6 +529,11 @@ export const en = {
   },
 
   calendar: {
+    stub: {
+      workspaceTitle: 'Every campaign, on one calendar',
+      workspaceBody:
+        'The view each campaign already has, with the filter taken off — what the whole workspace is publishing, and when.',
+    },
     /**
      * The header's counter button: the posts that have no date on them yet.
      * `unscheduled` is the visible label beside the glyph and is a button, so

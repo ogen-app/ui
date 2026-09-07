@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next'
 import {
   BellSimpleIcon,
+  CalendarDotsIcon,
   ChartLineUpIcon,
   GearSixIcon,
+  LightbulbIcon,
   PaletteIcon,
-  TargetIcon,
   ToolboxIcon,
+  TrayIcon,
   type Icon,
 } from '@phosphor-icons/react'
 import type { LinkProps } from '@tanstack/react-router'
@@ -20,6 +22,14 @@ import { useFeatureFlag } from '@/config/featureFlags'
  * module ends up reachable from one level and not the other, which is
  * precisely the kind of asymmetry the user reads as a bug in their own memory
  * rather than in ours.
+ *
+ * Every row here has a campaign-scoped twin one level down — see
+ * `lib/campaignSections`, which is the same list narrowed. The pairing is the
+ * design: Inbox → Overview, Ideas → Campaign ideas, Campaigns → Posts,
+ * Calendar → Calendar, Analytics → Campaign analytics, and in the footer
+ * Foundation → Campaign assets, Activity → Campaign activity, Workspace
+ * settings → Campaign settings. Adding a module to one level without the
+ * other breaks the thing the two levels are teaching.
  *
  * `to` is the router's own union rather than a string, for the reason spelled
  * out on `AppSidebarButtonMenu`: a `string` here is the one place in the app
@@ -40,20 +50,36 @@ export type WorkspaceDestination = {
 
 export function useWorkspaceDestinations(): WorkspaceDestination[] {
   const { t } = useTranslation()
-  const tasksEnabled = useFeatureFlag('tasks')
+  const inboxEnabled = useFeatureFlag('tasks')
+  const ideasEnabled = useFeatureFlag('ideas')
+  const calendarEnabled = useFeatureFlag('workspace-calendar')
   const analyticsEnabled = useFeatureFlag('analytics-overview')
 
   const destinations: WorkspaceDestination[] = []
 
   // First, because it is what is being asked of you — the one destination
-  // whose contents are addressed to the person reading the rail.
-  if (tasksEnabled) {
+  // whose contents are addressed to the person reading the rail. Inside a
+  // campaign the same slot is that campaign's Overview.
+  if (inboxEnabled) {
     destinations.push({
-      id: 'tasks',
-      label: t('nav.tasks'),
-      icon: TargetIcon,
+      id: 'inbox',
+      label: t('nav.inbox'),
+      icon: TrayIcon,
       to: '/tasks',
       isActive: (p) => p.startsWith('/tasks'),
+    })
+  }
+
+  // Before Campaigns, because it is the earlier state of the same material:
+  // an idea is what a campaign is made out of, and the order of the rail is
+  // the order the work happens in.
+  if (ideasEnabled) {
+    destinations.push({
+      id: 'ideas',
+      label: t('nav.ideas'),
+      icon: LightbulbIcon,
+      to: '/ideas',
+      isActive: (p) => p.startsWith('/ideas'),
     })
   }
 
@@ -67,6 +93,16 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
     // the same place — which is the conflation the drill-down exists to undo.
     isActive: (p) => p === '/campaigns',
   })
+
+  if (calendarEnabled) {
+    destinations.push({
+      id: 'calendar',
+      label: t('nav.calendar'),
+      icon: CalendarDotsIcon,
+      to: '/calendar',
+      isActive: (p) => p.startsWith('/calendar'),
+    })
+  }
 
   if (analyticsEnabled) {
     destinations.push({

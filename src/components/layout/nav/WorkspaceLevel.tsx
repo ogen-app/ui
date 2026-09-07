@@ -14,7 +14,7 @@ import { TasksSidebarItem } from '@/components/tasks/TasksSidebarItem'
  * Picking a campaign is the list screen's job (`/campaigns`); going into one
  * is a level change, and a level change replaces this.
  *
- * Tasks is the one row drawn by its own component rather than from the table,
+ * Inbox is the one row drawn by its own component rather than from the table,
  * because it carries a figure and that figure costs a query. Rendering it here
  * and only here is what keeps the query at level 0: the glyph the workspace
  * takes into a campaign has no room for a count, so it needs no request.
@@ -26,7 +26,7 @@ export function WorkspaceLevel() {
   return (
     <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-0 lg:px-6 group-data-[collapsible=icon]:items-center">
       {destinations.map((destination) =>
-        destination.id === 'tasks' ? (
+        destination.id === 'inbox' ? (
           <TasksSidebarItem
             key={destination.id}
             isActive={destination.isActive(pathname)}

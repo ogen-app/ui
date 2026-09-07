@@ -186,10 +186,12 @@ export const es: Translation = {
 
   nav: {
     activity: 'Actividad',
-    tasks: 'Tareas',
+    inbox: 'Bandeja',
     activityUnread_one: '{{count}} entrada sin leer',
     activityUnread_other: '{{count}} entradas sin leer',
     campaigns: 'Campañas',
+    ideas: 'Ideas',
+    calendar: 'Calendario',
     analytics: 'Analíticas',
     foundation: 'Fundamentos',
     workspaceSettings: 'Ajustes del espacio',
@@ -205,11 +207,25 @@ export const es: Translation = {
     campaignNoWindow: 'Sin fechas',
     campaign: {
       overview: 'Resumen',
-      posts: 'Calendario de publicaciones',
-      analytics: 'Analíticas',
       strategy: 'Estrategia',
-      content: 'Contenido',
-      settings: 'Ajustes',
+      ideas: 'Ideas de la campaña',
+      posts: 'Publicaciones',
+      calendar: 'Calendario',
+      analytics: 'Analíticas de la campaña',
+      assets: 'Recursos de la campaña',
+      activity: 'Actividad de la campaña',
+      settings: 'Ajustes de la campaña',
+    },
+  },
+
+  ideas: {
+    stub: {
+      workspaceTitle: 'Aquí vivirán las ideas',
+      workspaceBody:
+        'Todo lo que vale la pena crear y que aún no pertenece a ninguna campaña, en un solo sitio.',
+      campaignTitle: 'Aquí vivirán las ideas de esta campaña',
+      campaignBody:
+        'El mismo módulo, reducido a esta campaña: lo que aún podría decir, antes de que nada sea una publicación.',
     },
   },
 
@@ -274,6 +290,11 @@ export const es: Translation = {
   },
 
   activity: {
+    stub: {
+      campaignTitle: 'Aquí vivirá la actividad de esta campaña',
+      campaignBody:
+        'El mismo historial que el del espacio de trabajo, reducido a lo que ocurrió dentro de esta campaña.',
+    },
     title: 'Actividad',
     markAllRead: 'MARCAR TODO COMO LEÍDO',
     loadFailed: 'No se pudo cargar la actividad',
@@ -334,7 +355,10 @@ export const es: Translation = {
 
   campaignOverview: {
     openOverview: 'ABRIR RESUMEN',
-    openPosts: 'ABRIR CALENDARIO',
+    openPosts: 'ABRIR PUBLICACIONES',
+    openIdeas: 'ABRIR IDEAS',
+    openCalendar: 'ABRIR CALENDARIO',
+    openActivity: 'ABRIR ACTIVIDAD',
     openAnalytics: 'ABRIR ANALÍTICAS',
     openStrategy: 'ABRIR ESTRATEGIA',
     openContent: 'ABRIR CONTENIDO',
@@ -343,6 +367,11 @@ export const es: Translation = {
   },
 
   calendar: {
+    stub: {
+      workspaceTitle: 'Todas las campañas en un calendario',
+      workspaceBody:
+        'La misma vista que ya tiene cada campaña, sin el filtro: qué publica todo el espacio de trabajo, y cuándo.',
+    },
     unscheduled: 'SIN PROGRAMAR',
     unscheduledPosts: 'Publicaciones sin programar',
     settings: 'Ajustes del calendario',

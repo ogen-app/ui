@@ -589,6 +589,33 @@ const FEATURE_FLAGS = {
    * the feature on.
    */
   'workspace-tiers': false,
+
+  /**
+   * Ideas — the module between a brief and a post, at both levels.
+   *
+   * A stub, and deliberately a whole one: the nav it completes is the point of
+   * it. The workspace level answers "what could we make", the campaign level
+   * answers it for one campaign, and until this shipped the rail had a gap
+   * where every other module has a pair. What is behind the flag is two pages
+   * that say what they will hold and nothing else.
+   *
+   * There is no backend at all — no model, no endpoint. Switch this on when an
+   * idea is a row, not before: a page that cannot persist what you type into
+   * it is worse than one that admits it isn't built.
+   */
+  ideas: false,
+
+  /**
+   * The workspace's calendar — every campaign's posts on one grid.
+   *
+   * The campaign already has one (`/campaigns/:id/calendar`), which is the
+   * whole feature *for one campaign*; this is the same view with the filter
+   * taken off, and it is the workspace's twin of it in the rail. A stub for
+   * now, because "every campaign's posts" is a query nobody has written: the
+   * posts endpoint is campaign-scoped, so this needs either a workspace-wide
+   * range query or N of them, and N grows with the workspace.
+   */
+  'workspace-calendar': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS
