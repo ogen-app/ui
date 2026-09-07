@@ -19,9 +19,11 @@ type Pending = 'archive' | 'delete' | null
  * option. That reasoning made the wrong trade: it left someone who wanted rid
  * of a campaign scanning two cards to find out which one they meant, and the
  * card that offered the *reversible* answer was the one they had already
- * scrolled past. Both actions live here, and the ordering does the teaching —
- * archive first, and the delete is the only one wearing the destructive
- * button.
+ * scrolled past. Both actions live here, archive first, and both wear the
+ * destructive button: what they have in common is that they take a campaign
+ * out of circulation, and the card is titled Danger Zone. Which of the two is
+ * reversible is a fact about consequences, and consequences are stated in the
+ * modals rather than encoded in a button colour nobody reads that closely.
  *
  * The card's own copy is deliberately one generalised sentence. Consequences
  * belong on the click, not on the page: stated up here they are read once and
@@ -79,7 +81,7 @@ export function CampaignDangerZone({ campaign }: { campaign: Campaign }) {
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
-              variant="outline"
+              variant="destructiveInverted"
               onClick={() => setPending('archive')}
             >
               <ArchiveIcon />
@@ -108,7 +110,7 @@ export function CampaignDangerZone({ campaign }: { campaign: Campaign }) {
         closeOnEscape={!busy}
       >
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-secondary-foreground">
+          <p className="text-sm text-primary-foreground">
             {t('campaigns.dangerZone.archive.confirmBody')}
           </p>
           <div className="flex justify-end gap-2">
@@ -120,7 +122,12 @@ export function CampaignDangerZone({ campaign }: { campaign: Campaign }) {
             >
               {t('campaigns.dangerZone.archive.keep')}
             </Button>
-            <Button type="button" onClick={handleArchive} loading={archiving}>
+            <Button
+              type="button"
+              variant="destructiveInverted"
+              onClick={handleArchive}
+              loading={archiving}
+            >
               <span>{t('campaigns.dangerZone.archive.confirm')}</span>
             </Button>
           </div>
@@ -139,7 +146,7 @@ export function CampaignDangerZone({ campaign }: { campaign: Campaign }) {
           {/* No mention of the row the server keeps as its own safety net:
               saying it is retained reads as "recoverable", and nothing in the
               app or on the API can bring it back. */}
-          <p className="text-sm text-secondary-foreground">
+          <p className="text-sm text-primary-foreground">
             {t('campaigns.dangerZone.delete.confirmBody')}
           </p>
           <div className="flex justify-end gap-2">

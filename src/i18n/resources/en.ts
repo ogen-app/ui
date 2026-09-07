@@ -2314,7 +2314,7 @@ export const en = {
     archivedOn: 'Archived {{archivedOn}}',
     unarchive: 'UNARCHIVE',
     archivedEmpty:
-      'Nothing is archived. Archiving a campaign takes it off the list without deleting anything — its posts, schedule and content stay exactly as they are.',
+      'Nothing is archived. Archiving a campaign takes it off the list without deleting anything: its posts, schedule and content stay exactly as they are.',
     /**
      * One card holds both ways of stopping a campaign, so its own copy stays
      * general and each modal carries the consequences of the button that
@@ -2328,7 +2328,7 @@ export const en = {
         action: 'ARCHIVE CAMPAIGN',
         confirmTitle: 'Archive {{name}}?',
         confirmBody:
-          'The campaign comes off the Campaigns list and stops being offered anywhere new work is filed. Nothing is deleted — its posts, schedule, brief and content stay exactly as they are — and you can bring it back from the archive at any time.',
+          'The campaign comes off the Campaigns list and stops being offered anywhere new work is filed. Nothing is deleted. Its posts, schedule, brief and content stay exactly as they are, and you can bring it back from the archive at any time.',
         keep: 'KEEP IT ACTIVE',
         confirm: 'ARCHIVE CAMPAIGN',
       },

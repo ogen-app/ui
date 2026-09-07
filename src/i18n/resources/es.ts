@@ -1670,7 +1670,7 @@ export const es: Translation = {
         action: 'ARCHIVAR CAMPAÑA',
         confirmTitle: '¿Archivar {{name}}?',
         confirmBody:
-          'La campaña sale de la lista de campañas y deja de ofrecerse allí donde se archiva trabajo nuevo. No se borra nada —sus publicaciones, su calendario, su brief y su contenido siguen tal cual— y puedes recuperarla desde el archivo cuando quieras.',
+          'La campaña sale de la lista de campañas y deja de ofrecerse allí donde se archiva trabajo nuevo. No se borra nada. Sus publicaciones, su calendario, su brief y su contenido siguen tal cual, y puedes recuperarla desde el archivo cuando quieras.',
         keep: 'MANTENERLA ACTIVA',
         confirm: 'ARCHIVAR CAMPAÑA',
       },
