@@ -13,7 +13,7 @@ import {
   postGoalTotal,
   type GoalCadence,
 } from '@/lib/postGoal'
-import type { SettingsFormValues } from './schema'
+import type { StrategyFormValues } from './schema'
 
 const CADENCE_OPTIONS = [
   { id: 'week', displayValue: 'Every week' },
@@ -34,7 +34,7 @@ const CADENCE_OPTIONS = [
  * it is and everything below it only exists once there is a goal to describe.
  */
 export function PostGoalCard() {
-  const form = useFormContext<SettingsFormValues>()
+  const form = useFormContext<StrategyFormValues>()
   const count = form.watch('estimated_post_count')
   const cadence = form.watch('goal_cadence')
   const startDate = form.watch('start_date')

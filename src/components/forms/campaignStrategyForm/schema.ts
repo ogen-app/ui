@@ -15,15 +15,27 @@ const numericString = z
   .refine((v) => v === '' || Number.isFinite(Number(v)), 'Must be a number')
 
 /**
- * The campaign settings page's form values.
+ * The Strategy page's form values — the campaign's commitments, in one form.
  *
- * It lives here rather than in `CampaignSettingsForm` because the Goals and
- * Scheduling cards read the same form through `useFormContext` — they edit
- * campaign columns like every other field on the page, and are applied together
- * by the header's Save.
+ * Every column here is something the campaign promises: what it says, who it
+ * says it to, over what window, at what rate, on which channels, for how much.
+ * The columns that are *about the record* rather than the commitment — its
+ * name, its tags, whether it is archived — are the Settings page's, and are
+ * deliberately absent: two forms editing one field is how a page ends up
+ * saving a stale copy of it.
+ *
+ * It lives here rather than in `CampaignStrategyForm` because the Messaging,
+ * Goal and Scheduling cards read the same form through `useFormContext` — they
+ * edit campaign columns like every other field on the page, and are applied
+ * together by the header's Save.
  */
-export const settingsSchema = z.object({
-  name: z.string(),
+export const strategySchema = z.object({
+  // What the campaign says. Rewritten wholesale by `enrichBrief` — see the
+  // assistant handling in `CampaignStrategyForm`.
+  description: z.string(),
+  target_persona: z.string(),
+  key_messages: z.string(),
+  tone_guidelines: z.string(),
   campaign_type_id: z.string().min(1, 'Campaign type is required'),
   start_date: z.string().nullable(),
   end_date: z.string().nullable(),
@@ -37,7 +49,6 @@ export const settingsSchema = z.object({
   budget: numericString,
   currency: z.string(),
   language: z.string(),
-  tag_ids: z.array(z.string()),
   target_platforms: z.array(
     z.object({
       id: z.string(),
@@ -46,7 +57,7 @@ export const settingsSchema = z.object({
   ),
 })
 
-export type SettingsFormValues = z.infer<typeof settingsSchema>
+export type StrategyFormValues = z.infer<typeof strategySchema>
 
 /**
  * The campaign as the form holds it. The scheduling fields fall back to the
@@ -54,9 +65,12 @@ export type SettingsFormValues = z.infer<typeof settingsSchema>
  * an empty one means an old row the migration hasn't been read back through
  * yet, not "unset".
  */
-export function settingsDefaultValues(campaign: Campaign): SettingsFormValues {
+export function strategyDefaultValues(campaign: Campaign): StrategyFormValues {
   return {
-    name: campaign.name,
+    description: campaign.description,
+    target_persona: campaign.target_persona,
+    key_messages: campaign.key_messages,
+    tone_guidelines: campaign.tone_guidelines,
     campaign_type_id: campaign.campaign_type_id,
     start_date: campaign.start_date,
     end_date: campaign.end_date,
@@ -75,7 +89,6 @@ export function settingsDefaultValues(campaign: Campaign): SettingsFormValues {
     budget: campaign.budget == null ? '' : String(campaign.budget),
     currency: campaign.currency,
     language: campaign.language,
-    tag_ids: campaign.tag_ids ?? [],
     target_platforms: campaign.target_platforms ?? [],
   }
 }

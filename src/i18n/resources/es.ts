@@ -207,7 +207,7 @@ export const es: Translation = {
       overview: 'Resumen',
       posts: 'Calendario de publicaciones',
       analytics: 'Analíticas',
-      brief: 'Briefing',
+      strategy: 'Estrategia',
       content: 'Contenido',
       settings: 'Ajustes',
     },
@@ -336,7 +336,7 @@ export const es: Translation = {
     openOverview: 'ABRIR RESUMEN',
     openPosts: 'ABRIR CALENDARIO',
     openAnalytics: 'ABRIR ANALÍTICAS',
-    openBrief: 'ABRIR BRIEFING',
+    openStrategy: 'ABRIR ESTRATEGIA',
     openContent: 'ABRIR CONTENIDO',
     openSettings: 'ABRIR AJUSTES',
     noDate: 'Sin fecha',
@@ -1626,6 +1626,13 @@ export const es: Translation = {
       title: 'No hay nada archivado',
       subtitle:
         'Archivar una campaña la quita de la lista sin borrar nada. Sus publicaciones, su calendario y su contenido siguen tal cual.',
+    },
+    strategy: {
+      commitment: 'El compromiso',
+      spend: 'Presupuesto e idioma',
+    },
+    settings: {
+      record: 'El registro',
     },
     archiveCard: {
       title: 'Archivar',

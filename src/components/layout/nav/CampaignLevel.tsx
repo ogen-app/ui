@@ -23,7 +23,7 @@ import type { Campaign } from '@/types/campaigns'
 const SECTION_PATH = {
   overview: '/campaigns/$campaignId/overview',
   analytics: '/campaigns/$campaignId/analytics',
-  brief: '/campaigns/$campaignId/brief',
+  strategy: '/campaigns/$campaignId/strategy',
   content: '/campaigns/$campaignId/content',
   settings: '/campaigns/$campaignId/settings',
 } satisfies Record<Exclude<CampaignSectionId, 'posts'>, LinkProps['to']>
@@ -62,8 +62,8 @@ export function CampaignLevel({
     ? 'overview'
     : pathname.includes('/analytics')
       ? 'analytics'
-      : pathname.includes('/brief')
-        ? 'brief'
+      : pathname.includes('/strategy')
+        ? 'strategy'
         : pathname.includes('/content')
           ? 'content'
           : pathname.includes('/settings')

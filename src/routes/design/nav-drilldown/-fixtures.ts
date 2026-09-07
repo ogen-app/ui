@@ -140,7 +140,7 @@ export const L1_SECTIONS: RailItem[] = [
     label: 'Strategy',
     icon: NotepadIcon,
     build: 'fe',
-    tone: 'var(--nav-brief)',
+    tone: 'var(--nav-strategy)',
     note: 'Brief + Settings merged. Every field already exists on models.Campaign. Renders the Foundation inheritance — brand_voice_id is nullable and falls back to the workspace default.',
   },
   {
@@ -206,7 +206,7 @@ export const TODAY_SECTIONS: RailItem[] = [
     label: 'Brief',
     icon: NotepadIcon,
     build: 'now',
-    tone: 'var(--nav-brief)',
+    tone: 'var(--nav-strategy)',
   },
   {
     id: 'content',

@@ -79,8 +79,12 @@ export function briefPosture(
 
 /** Where an attention item / failed setup check sends the user to fix it. */
 export type FixTarget =
-  | 'brief'
-  | 'settings'
+  // One target where there were two: the brief's words and the campaign's
+  // dates, goal and channels are one page now (`campaignStrategyForm`), so a
+  // check that used to send the user to one of them sends them to the same
+  // place regardless of which half it was reading. Settings is not a fix
+  // target at all any more — nothing on it can make a campaign ready.
+  | 'strategy'
   | 'workspace-settings'
   | 'posts'
   | 'content'
@@ -172,7 +176,7 @@ function channelsCheck(channels: ChannelReadiness): SetupCheck {
       label: 'No channels selected',
       detail:
         'Channels decide where this campaign publishes and which post formats it can use.',
-      fix: 'settings',
+      fix: 'strategy',
     }
   }
 
@@ -196,7 +200,7 @@ function channelsCheck(channels: ChannelReadiness): SetupCheck {
       label: `No post type selected for ${missingPostTypes.join(', ')}`,
       detail:
         'Post types tell Ogen what to write — a text post, an image post, a carousel.',
-      fix: 'settings',
+      fix: 'strategy',
     }
   }
 
@@ -212,7 +216,7 @@ function channelsCheck(channels: ChannelReadiness): SetupCheck {
       ready.length === selected.length
         ? publishing
         : `${publishing} (${selected.length - ready.length} of ${selected.length} not ready)`,
-    fix: 'settings',
+    fix: 'strategy',
   }
 }
 
@@ -237,7 +241,7 @@ export function setupChecks(
         : halfDates
           ? 'Only one of start and end is set; both bound the schedule.'
           : 'Dates bound the campaign — scheduling and pace are measured against them.',
-      fix: 'settings',
+      fix: 'strategy',
     },
     channelsCheck(channelReadiness(campaign, platformViews)),
   ]
@@ -604,7 +608,7 @@ export function attentionItems(
       severity: 'todo',
       label: `No post type selected for ${channels.missingPostTypes.join(', ')}`,
       actionLabel: 'Choose post types',
-      fix: 'settings',
+      fix: 'strategy',
     })
   }
 
@@ -740,7 +744,7 @@ export function attentionItems(
       severity: 'todo',
       label: 'The brief is not filled in',
       actionLabel: 'Start the brief',
-      fix: 'brief',
+      fix: 'strategy',
     })
   } else if (brief.state === 'partial') {
     items.push({
@@ -748,7 +752,7 @@ export function attentionItems(
       severity: 'todo',
       label: `Brief is missing: ${brief.missing.map((f) => BRIEF_FIELD_LABELS[f].toLowerCase()).join(', ')}`,
       actionLabel: 'Complete the brief',
-      fix: 'brief',
+      fix: 'strategy',
     })
   }
 
@@ -758,7 +762,7 @@ export function attentionItems(
       severity: 'todo',
       label: 'Campaign dates are not set',
       actionLabel: 'Set dates',
-      fix: 'settings',
+      fix: 'strategy',
     })
   }
 
@@ -770,7 +774,7 @@ export function attentionItems(
       severity: 'todo',
       label: 'No channels selected',
       actionLabel: 'Choose channels',
-      fix: 'settings',
+      fix: 'strategy',
     })
   }
 

@@ -11,7 +11,7 @@ import {
  * The campaign's sections, as the app names and marks them.
  *
  * One table because a section has one name and one glyph wherever it appears:
- * the sidebar's rows and the Overview's cards are two views of the same six
+ * the sidebar's rows and the Overview's cards are two views of the same
  * things, and a card headed "Setup" over a nav row reading "Settings" makes the
  * user work out that they are the same place. Renaming one now renames both.
  *
@@ -19,8 +19,8 @@ import {
  * a component, and a constant built at import time would freeze whichever
  * language loaded first.
  *
- * `tone` is the glyph's permanent colour (see `--nav-*` in index.css). Six
- * otherwise-identical line glyphs are hard to tell apart at 16px, and the hue
+ * `tone` is the glyph's permanent colour (see `--nav-*` in index.css). A
+ * handful of otherwise-identical line glyphs are hard to tell apart at 16px, and the hue
  * is what you actually aim at once you've used the app for a day. It stays on
  * the icon and nowhere else — the selected row is grey like every other, so
  * colour means "which section" and never "you are here". Settings has none by
@@ -36,6 +36,13 @@ export const CAMPAIGN_SECTIONS = [
     tone: 'var(--nav-overview)',
   },
   {
+    id: 'strategy',
+    labelKey: 'nav.campaign.strategy',
+    openKey: 'campaignOverview.openStrategy',
+    icon: NotepadIcon,
+    tone: 'var(--nav-strategy)',
+  },
+  {
     id: 'posts',
     labelKey: 'nav.campaign.posts',
     openKey: 'campaignOverview.openPosts',
@@ -48,13 +55,6 @@ export const CAMPAIGN_SECTIONS = [
     openKey: 'campaignOverview.openAnalytics',
     icon: ChartLineUpIcon,
     tone: 'var(--nav-analytics)',
-  },
-  {
-    id: 'brief',
-    labelKey: 'nav.campaign.brief',
-    openKey: 'campaignOverview.openBrief',
-    icon: NotepadIcon,
-    tone: 'var(--nav-brief)',
   },
   {
     id: 'content',

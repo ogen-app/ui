@@ -22,7 +22,7 @@ export const Route = createFileRoute('/_authenticated/campaigns/$campaignId')({
 // set depend on the selected secondary-nav element.
 const SECTIONS = [
   { slug: '/list', label: 'List' },
-  { slug: '/brief', label: 'Brief' },
+  { slug: '/strategy', label: 'Strategy' },
   { slug: '/content', label: 'Content' },
   { slug: '/settings', label: 'Settings' },
   { slug: '/overview', label: 'Overview' },
@@ -82,16 +82,16 @@ function CampaignLayout() {
 
   // Each shell fades its section in (`page-content-motion`), keyed by the
   // section so the fade replays on the way from one to the next rather than
-  // once per campaign. Sections are a swap of the whole column — six different
-  // documents behind one header — and switching between them without it is a
+  // once per campaign. Sections are a swap of the whole column — several
+  // different documents behind one header — and switching between them without it is a
   // hard cut. Keyed by section rather than by route, so paging through the
   // calendar's weeks stays instant: the anchor changes, the section doesn't.
   //
-  // Brief and Settings edit inline and commit through the bottom save bar, so
-  // they get the settings-page shell: one scroll container owning the sticky
-  // header, whose title fades out on scroll, inside a positioned wrapper the
-  // bar can anchor to without scrolling away with the cards.
-  if (section === 'Brief' || section === 'Settings') {
+  // Strategy and Settings edit inline and commit through the bottom save bar,
+  // so they get the settings-page shell: one scroll container owning the
+  // sticky header, whose title fades out on scroll, inside a positioned
+  // wrapper the bar can anchor to without scrolling away with the cards.
+  if (section === 'Strategy' || section === 'Settings') {
     return (
       <PageContainer variant={'fullFlex'}>
         <SettingsSaveProvider>

@@ -49,7 +49,7 @@ import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './
 import { Route as AuthenticatedCampaignsCampaignIdOverviewRouteImport } from './routes/_authenticated/campaigns/$campaignId/overview'
 import { Route as AuthenticatedCampaignsCampaignIdListRouteImport } from './routes/_authenticated/campaigns/$campaignId/list'
 import { Route as AuthenticatedCampaignsCampaignIdContentRouteImport } from './routes/_authenticated/campaigns/$campaignId/content'
-import { Route as AuthenticatedCampaignsCampaignIdBriefRouteImport } from './routes/_authenticated/campaigns/$campaignId/brief'
+import { Route as AuthenticatedCampaignsCampaignIdStrategyRouteImport } from './routes/_authenticated/campaigns/$campaignId/strategy'
 import { Route as AuthenticatedCampaignsCampaignIdAnalyticsRouteImport } from './routes/_authenticated/campaigns/$campaignId/analytics'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/index'
 import { Route as AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/posts/$postId'
@@ -278,10 +278,10 @@ const AuthenticatedCampaignsCampaignIdContentRoute =
     path: '/content',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
-const AuthenticatedCampaignsCampaignIdBriefRoute =
-  AuthenticatedCampaignsCampaignIdBriefRouteImport.update({
-    id: '/brief',
-    path: '/brief',
+const AuthenticatedCampaignsCampaignIdStrategyRoute =
+  AuthenticatedCampaignsCampaignIdStrategyRouteImport.update({
+    id: '/strategy',
+    path: '/strategy',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdAnalyticsRoute =
@@ -347,7 +347,7 @@ export interface FileRoutesByFullPath {
   '/auth/reset/': typeof AuthResetIndexRoute
   '/design/nav-drilldown/': typeof DesignNavDrilldownIndexRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
-  '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
+  '/campaigns/$campaignId/strategy': typeof AuthenticatedCampaignsCampaignIdStrategyRoute
   '/campaigns/$campaignId/content': typeof AuthenticatedCampaignsCampaignIdContentRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
@@ -391,7 +391,7 @@ export interface FileRoutesByTo {
   '/auth/reset': typeof AuthResetIndexRoute
   '/design/nav-drilldown': typeof DesignNavDrilldownIndexRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
-  '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
+  '/campaigns/$campaignId/strategy': typeof AuthenticatedCampaignsCampaignIdStrategyRoute
   '/campaigns/$campaignId/content': typeof AuthenticatedCampaignsCampaignIdContentRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
@@ -440,7 +440,7 @@ export interface FileRoutesById {
   '/auth/reset/': typeof AuthResetIndexRoute
   '/design/nav-drilldown/': typeof DesignNavDrilldownIndexRoute
   '/_authenticated/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
-  '/_authenticated/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
+  '/_authenticated/campaigns/$campaignId/strategy': typeof AuthenticatedCampaignsCampaignIdStrategyRoute
   '/_authenticated/campaigns/$campaignId/content': typeof AuthenticatedCampaignsCampaignIdContentRoute
   '/_authenticated/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/_authenticated/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
@@ -489,7 +489,7 @@ export interface FileRouteTypes {
     | '/auth/reset/'
     | '/design/nav-drilldown/'
     | '/campaigns/$campaignId/analytics'
-    | '/campaigns/$campaignId/brief'
+    | '/campaigns/$campaignId/strategy'
     | '/campaigns/$campaignId/content'
     | '/campaigns/$campaignId/list'
     | '/campaigns/$campaignId/overview'
@@ -533,7 +533,7 @@ export interface FileRouteTypes {
     | '/auth/reset'
     | '/design/nav-drilldown'
     | '/campaigns/$campaignId/analytics'
-    | '/campaigns/$campaignId/brief'
+    | '/campaigns/$campaignId/strategy'
     | '/campaigns/$campaignId/content'
     | '/campaigns/$campaignId/list'
     | '/campaigns/$campaignId/overview'
@@ -581,7 +581,7 @@ export interface FileRouteTypes {
     | '/auth/reset/'
     | '/design/nav-drilldown/'
     | '/_authenticated/campaigns/$campaignId/analytics'
-    | '/_authenticated/campaigns/$campaignId/brief'
+    | '/_authenticated/campaigns/$campaignId/strategy'
     | '/_authenticated/campaigns/$campaignId/content'
     | '/_authenticated/campaigns/$campaignId/list'
     | '/_authenticated/campaigns/$campaignId/overview'
@@ -895,11 +895,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdContentRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
-    '/_authenticated/campaigns/$campaignId/brief': {
-      id: '/_authenticated/campaigns/$campaignId/brief'
-      path: '/brief'
-      fullPath: '/campaigns/$campaignId/brief'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdBriefRouteImport
+    '/_authenticated/campaigns/$campaignId/strategy': {
+      id: '/_authenticated/campaigns/$campaignId/strategy'
+      path: '/strategy'
+      fullPath: '/campaigns/$campaignId/strategy'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdStrategyRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
     '/_authenticated/campaigns/$campaignId/analytics': {
@@ -986,7 +986,7 @@ const AuthenticatedFoundationRouteWithChildren =
 
 interface AuthenticatedCampaignsCampaignIdRouteChildren {
   AuthenticatedCampaignsCampaignIdAnalyticsRoute: typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
-  AuthenticatedCampaignsCampaignIdBriefRoute: typeof AuthenticatedCampaignsCampaignIdBriefRoute
+  AuthenticatedCampaignsCampaignIdStrategyRoute: typeof AuthenticatedCampaignsCampaignIdStrategyRoute
   AuthenticatedCampaignsCampaignIdContentRoute: typeof AuthenticatedCampaignsCampaignIdContentRoute
   AuthenticatedCampaignsCampaignIdListRoute: typeof AuthenticatedCampaignsCampaignIdListRoute
   AuthenticatedCampaignsCampaignIdOverviewRoute: typeof AuthenticatedCampaignsCampaignIdOverviewRoute
@@ -1000,8 +1000,8 @@ const AuthenticatedCampaignsCampaignIdRouteChildren: AuthenticatedCampaignsCampa
   {
     AuthenticatedCampaignsCampaignIdAnalyticsRoute:
       AuthenticatedCampaignsCampaignIdAnalyticsRoute,
-    AuthenticatedCampaignsCampaignIdBriefRoute:
-      AuthenticatedCampaignsCampaignIdBriefRoute,
+    AuthenticatedCampaignsCampaignIdStrategyRoute:
+      AuthenticatedCampaignsCampaignIdStrategyRoute,
     AuthenticatedCampaignsCampaignIdContentRoute:
       AuthenticatedCampaignsCampaignIdContentRoute,
     AuthenticatedCampaignsCampaignIdListRoute:

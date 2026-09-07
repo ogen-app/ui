@@ -1,0 +1,427 @@
+import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+
+import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
+import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { useCampaignTypes, useUpdateCampaign } from '@/hooks/useCampaigns'
+import {
+  CampaignTypeCard,
+  CampaignTypePicker,
+} from '@/components/campaigns/CampaignTypePicker'
+import { SettingsCard } from '@/components/settings/SettingsCard'
+import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
+import { registerPendingSave } from '@/lib/pendingSaves.ts'
+import { cn } from '@/lib'
+import {
+  selectCampaignRunning,
+  useAssistantStore,
+} from '@/stores/assistantStore'
+import type {
+  Campaign,
+  CampaignPlatform,
+  CampaignType,
+} from '@/types/campaigns'
+import { toNumberOrNull, toISODateTime } from './shared'
+import { campaignToPayload } from '@/lib/campaignPayload'
+import { AccountsControl } from './AccountsControl'
+import { PlatformsControl } from './PlatformsControl'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { MessagingCard } from './MessagingCard'
+import { PostGoalCard } from './PostGoalCard'
+import { SchedulingCard } from './SchedulingCard'
+import { CampaignBrandCard } from '@/components/brand/CampaignBrandCard'
+import {
+  strategyDefaultValues,
+  strategySchema,
+  type StrategyFormValues,
+} from './schema'
+
+/**
+ * The chosen type out of the fetched list. Falls back to the campaign's own
+ * hydrated relation at the call site, so the card names the type on the first
+ * frame instead of reading "No type set" until the list arrives.
+ */
+function typeById(
+  types: CampaignType[] | undefined,
+  id: string,
+): CampaignType | undefined {
+  return types?.find((t) => t.id === id)
+}
+
+type Props = {
+  campaign: Campaign
+}
+
+/**
+ * Strategy — everything the campaign commits to, on one page.
+ *
+ * **The merge this is.** Brief and Settings were two screens over one row,
+ * split along how the fields are typed rather than what they mean: the brief
+ * asked what the campaign says, and settings asked what it is configured with,
+ * and both were answering "what is this campaign meant to do". Reading either
+ * alone told you half of what the assistant plans against. They are one page
+ * now, in the order the campaign is actually decided — what it says, what kind
+ * of thing it is, over what window, at what rate, when it goes out, on which
+ * channels, for how much.
+ *
+ * What did not come along is everything that is about the record rather than
+ * the commitment — its name, its tags, archiving and deleting it. Those are the
+ * Settings page's, on the footer's gear, where the workspace's own settings sit
+ * at level 0.
+ *
+ * One form, one Save. The cards read it through `useFormContext` and the
+ * header's Save applies the lot, so a page that says "unsaved changes" means
+ * all of them.
+ */
+export function CampaignStrategyForm({ campaign }: Props) {
+  const form = useForm<StrategyFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(strategySchema as any),
+    defaultValues: strategyDefaultValues(campaign),
+  })
+
+  const { t } = useTranslation()
+  const { data: types, isLoading: typesLoading } = useCampaignTypes()
+
+  // The type is stated, not offered — the chooser only appears once the user
+  // asks for it by name.
+  const [changingType, setChangingType] = useState(false)
+
+  // No autosave here: edits mark the page dirty and are applied by the
+  // header's Save button (settingsSave context), like the settings page.
+  const { isDirty } = form.formState
+  const { mutateAsync: updateCampaign } = useUpdateCampaign()
+  const save = useCallback(async () => {
+    const v = form.getValues()
+    const payload = campaignToPayload(campaign, {
+      description: v.description,
+      target_persona: v.target_persona,
+      key_messages: v.key_messages,
+      tone_guidelines: v.tone_guidelines,
+      campaign_type_id: v.campaign_type_id,
+      start_date: toISODateTime(v.start_date),
+      end_date: toISODateTime(v.end_date),
+      estimated_post_count: toNumberOrNull(v.estimated_post_count),
+      goal_cadence: v.goal_cadence,
+      publishing_time: v.publishing_time,
+      timezone: v.timezone,
+      publishing_days: v.publishing_days,
+      spread_minutes: v.spread_minutes,
+      budget: toNumberOrNull(v.budget),
+      currency: v.currency,
+      language: v.language,
+      target_platforms: v.target_platforms,
+    })
+    await updateCampaign({ id: campaign.id, payload })
+    // Re-baseline so the form is pristine against what was just saved.
+    form.reset(v)
+  }, [campaign, form, updateCampaign])
+  useRegisterSettingsSave('campaign-strategy', isDirty, save)
+
+  /**
+   * Adding or removing a platform persists on the spot. It builds on the
+   * server's campaign rather than the form's values, so pending edits to the
+   * other fields stay pending — this toggle must not smuggle them out. Only
+   * target_platforms is re-baselined, leaving the rest dirty.
+   */
+  const { mutate: updateCampaignNow } = useUpdateCampaign({
+    errorTitle: 'Unable to update platforms',
+  })
+  const commitPlatforms = useCallback(
+    (next: CampaignPlatform[]) => {
+      const previous = form.getValues('target_platforms')
+      form.setValue('target_platforms', next)
+      updateCampaignNow(
+        {
+          id: campaign.id,
+          payload: campaignToPayload(campaign, { target_platforms: next }),
+        },
+        {
+          onSuccess: () =>
+            form.resetField('target_platforms', { defaultValue: next }),
+          onError: () => {
+            // The optimistic setValue above must not outlive a rejected
+            // request: left in place (and dirty), the header's Save would
+            // quietly push the very change the server just refused.
+            // The toast is the hook's `errorTitle`, not ours — CON-164.
+            form.resetField('target_platforms', { defaultValue: previous })
+          },
+        },
+      )
+    },
+    [campaign, form, updateCampaignNow],
+  )
+
+  // Watched rather than read from the campaign: adding a platform persists
+  // immediately, so the heading's warning has to clear on the click.
+  const targetPlatforms = form.watch('target_platforms')
+  const noPlatforms = targetPlatforms.length === 0
+
+  // A card behind a flag that is off simply means the page doesn't offer those
+  // fields — the values it holds are still the campaign's own, and Save
+  // round-trips them untouched.
+  const accountsEnabled = useFeatureFlag('campaign-accounts')
+  const brandBinds = useFeatureFlag('brand-materials')
+
+  // `enrichBrief` rewrites all four messaging fields, and `setCampaignDates` /
+  // `redistributePosts` rewrite the window and the schedule (CON-112 §6.5,
+  // CON-115) — which is now one page, so it is held read-only for the length
+  // of a turn as a whole.
+  const assistantRunning = useAssistantStore(selectCampaignRunning(campaign.id))
+
+  // Land pending edits before the turn starts: the tools above overwrite the
+  // very columns this form is holding, so anything unsaved would be lost to a
+  // rewrite the user did not see happen.
+  const flushIfDirty = useCallback(async () => {
+    if (!form.formState.isDirty) return
+    try {
+      await save()
+    } catch {
+      // Toasted by the mutation-cache default (CON-164); swallowed here so a
+      // rejection can't escape into the assistant turn awaiting this flush.
+    }
+  }, [form, save])
+  useEffect(
+    () => registerPendingSave(campaign.id, flushIfDirty),
+    [campaign.id, flushIfDirty],
+  )
+
+  // Adopt whatever the server holds whenever it changes and there is nothing
+  // of the user's to lose. Deliberately not gated on the turn *finishing*: the
+  // status flip and the refetch are separate renders in either order, so a
+  // one-shot transition can fire before the new values have arrived and reset
+  // the form to the ones the assistant just replaced.
+  useEffect(() => {
+    if (!form.formState.isDirty) form.reset(strategyDefaultValues(campaign))
+  }, [campaign, form])
+
+  return (
+    <Form {...form}>
+      <form noValidate autoComplete="off">
+        <fieldset
+          disabled={assistantRunning}
+          className={cn(
+            'flex flex-col gap-8 pb-10 transition-opacity',
+            assistantRunning && 'opacity-60',
+          )}
+        >
+          {/* What the campaign says, first: every card under it is a
+              constraint on how much of it goes out and where, and reads as
+              bookkeeping without the claim it is serving. */}
+          <MessagingCard campaign={campaign} />
+
+          <SettingsCard title={t('campaigns.strategy.commitment')}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+              <FormField
+                control={form.control}
+                name="start_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start date</FormLabel>
+                    <DatePicker value={field.value} onChange={field.onChange} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="end_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End date</FormLabel>
+                    <DatePicker value={field.value} onChange={field.onChange} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* The type used to own a card at the top of the page, which put
+                the campaign's least changeable decision above its name. It
+                belongs with the rest of what the campaign *is* — stated, not
+                offered, because it picks the phase plan every post is written
+                against and switching it mid-campaign is something the product
+                means to restrict. */}
+              <FormField
+                control={form.control}
+                name="campaign_type_id"
+                render={({ field }) => (
+                  <FormItem className="lg:col-span-2">
+                    <FormLabel>Campaign type</FormLabel>
+                    {changingType ? (
+                      <div className="flex flex-col gap-3">
+                        <CampaignTypePicker
+                          types={types ?? []}
+                          value={field.value}
+                          onChange={(id) => {
+                            field.onChange(id)
+                            setChangingType(false)
+                          }}
+                          disabled={typesLoading}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="self-start"
+                          onClick={() => setChangingType(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <CampaignTypeCard
+                        type={
+                          typeById(types, field.value) ?? campaign.campaign_type
+                        }
+                        action={
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={typesLoading}
+                            onClick={() => setChangingType(true)}
+                          >
+                            CHANGE
+                          </Button>
+                        }
+                      />
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </SettingsCard>
+
+          {/* How much the campaign should produce, then when it goes out. The
+            post target used to sit in Advanced next to budget and language,
+            where it read as trivia rather than as the rate the assistant plans
+            against. */}
+          <PostGoalCard />
+
+          <SchedulingCard />
+
+          {/* The same control the messaging card's fields defer to, from the
+              same file: with Brand on, persona and tone are chosen here rather
+              than written above. */}
+          {brandBinds && <CampaignBrandCard campaignId={campaign.id} />}
+
+          <SettingsCard
+            title={
+              <>
+                <span className="truncate">
+                  {accountsEnabled
+                    ? 'Accounts & Post Types'
+                    : 'Platforms & Post Types'}
+                </span>
+                {/* After the heading, not before it: the dot comes and goes, and
+                  leading it would shift the title sideways as platforms are
+                  added. Same warning tone as the summary line inside. */}
+                {noPlatforms && (
+                  <span
+                    className="size-2 shrink-0 rounded-full bg-warning"
+                    role="img"
+                    aria-label={
+                      accountsEnabled
+                        ? 'No accounts selected'
+                        : 'No platforms selected'
+                    }
+                  />
+                )}
+              </>
+            }
+          >
+            {accountsEnabled ? (
+              // Outside the form field: the account choice is stored beside the
+              // campaign rather than on it, and it writes `target_platforms`
+              // itself through `commitPlatforms`.
+              <AccountsControl
+                campaignId={campaign.id}
+                targetPlatforms={campaign.target_platforms}
+                onCommitPlatforms={commitPlatforms}
+              />
+            ) : (
+              <FormField
+                control={form.control}
+                name="target_platforms"
+                render={({ field }) => (
+                  <FormItem>
+                    <PlatformsControl
+                      value={field.value}
+                      onChange={field.onChange}
+                      onCommitPlatforms={commitPlatforms}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </SettingsCard>
+
+          {/* What it costs and what language it speaks: commitments too, and
+              the reason they are last rather than on the settings page —
+              budget is a spend the campaign is planned against, not a property
+              of the record like its name. */}
+          <SettingsCard title={t('campaigns.strategy.spend')}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+              <FormField
+                control={form.control}
+                name="budget"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Budget</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        placeholder="e.g. 5000"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Currency</FormLabel>
+                    <FormControl>
+                      <Input placeholder="USD" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Language</FormLabel>
+                    <FormControl>
+                      <Input placeholder="en" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </SettingsCard>
+        </fieldset>
+      </form>
+    </Form>
+  )
+}

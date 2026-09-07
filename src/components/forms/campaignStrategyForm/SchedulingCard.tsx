@@ -13,7 +13,7 @@ import {
   type WeekdayToken,
 } from '@/lib/campaignScheduling'
 import { describeTimeZone, timeZoneNames } from '@/lib/timeZones'
-import type { SettingsFormValues } from './schema'
+import type { StrategyFormValues } from './schema'
 
 // The server's own token order is Monday-first, which is also how a publishing
 // week reads even where the calendar starts on Sunday — so the picker walks the
@@ -55,7 +55,7 @@ const SPREAD_OPTIONS = [
  * places each generated draft.
  */
 export function SchedulingCard() {
-  const form = useFormContext<SettingsFormValues>()
+  const form = useFormContext<StrategyFormValues>()
   const publishingTime = form.watch('publishing_time')
   const timezone = form.watch('timezone')
   const spreadMinutes = form.watch('spread_minutes')

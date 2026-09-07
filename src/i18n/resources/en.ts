@@ -262,7 +262,7 @@ export const en = {
       // calendar, and "Posts" alone read like a list.
       posts: 'Posts calendar',
       analytics: 'Analytics',
-      brief: 'Brief',
+      strategy: 'Strategy',
       content: 'Content',
       settings: 'Settings',
     },
@@ -468,7 +468,7 @@ export const en = {
     openOverview: 'OPEN OVERVIEW',
     openPosts: 'OPEN CALENDAR',
     openAnalytics: 'OPEN ANALYTICS',
-    openBrief: 'OPEN BRIEF',
+    openStrategy: 'OPEN STRATEGY',
     openContent: 'OPEN CONTENT',
     openSettings: 'OPEN SETTINGS',
 
@@ -2266,6 +2266,15 @@ export const en = {
       title: 'Nothing is archived',
       subtitle:
         'Archiving a campaign takes it off the list without deleting anything. Its posts, schedule and content stay exactly as they are.',
+    },
+    // The two campaign section pages the drill-down left behind Strategy and
+    // Settings — card headings, so they name what the card is a group of.
+    strategy: {
+      commitment: 'The commitment',
+      spend: 'Spend & language',
+    },
+    settings: {
+      record: 'The record',
     },
     archiveCard: {
       title: 'Archive',

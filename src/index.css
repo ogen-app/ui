@@ -379,7 +379,7 @@
   --nav-overview: oklch(0.54 0.11 214); /* cyan */
   --nav-posts: oklch(0.52 0.15 342); /* pink */
   --nav-analytics: oklch(0.52 0.13 150); /* green */
-  --nav-brief: oklch(0.55 0.14 66); /* amber */
+  --nav-strategy: oklch(0.55 0.14 66); /* amber */
   --nav-content: oklch(0.5 0.16 300); /* violet */
 
   /* Brand's five sections, on the same footing as `--nav-*` above: five fixed
