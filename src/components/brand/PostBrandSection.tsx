@@ -1,23 +1,18 @@
 import { ArrowCounterClockwiseIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { TextSelect } from '@/components/ui/text-select'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  useBrand,
-  useCampaignBrand,
-  usePostBrand,
-  useSavePostBrand,
-} from '@/hooks/useBrand'
+import { useBrand, useSetPostBrand } from '@/hooks/useBrand'
+import { useCampaign } from '@/hooks/useCampaigns'
 import type { Post } from '@/types/posts'
 import {
   EMPTY_CAMPAIGN_BRAND,
-  EMPTY_POST_BRAND,
-  castOf,
   resolveAudience,
   resolveVoice,
   type BindingSource,
 } from './binding'
-import type { PostBrand } from './types'
+import type { CampaignBrand, PostBrand } from './types'
 
 /**
  * What this post is written in (§8, innermost level).
@@ -38,12 +33,19 @@ import type { PostBrand } from './types'
  * are genuinely different — a post pinned to the voice the campaign happens to
  * use today keeps that voice when the campaign moves on, and that is sometimes
  * exactly what somebody means.
+ *
+ * **Not disabled on a submitted post**, unlike everything else the post screen
+ * offers. CON-251 freezes what would diverge from the copy that has already
+ * left Ogen — the body, the media, the sources — and a binding is none of
+ * those. It is an input to the next generation, so setting it on a published
+ * post is how you say *write the next one like this*, and the server's own
+ * `/brand` endpoint runs no publish gate for the same reason.
  */
 export function PostBrandSection({ post }: { post: Post }) {
+  const { t } = useTranslation()
   const { data: brand, isLoading } = useBrand()
-  const { data: campaignBound } = useCampaignBrand(post.campaign_id)
-  const { data: postBound } = usePostBrand(post.id)
-  const { mutate: save } = useSavePostBrand(post.id)
+  const { data: campaign } = useCampaign(post.campaign_id)
+  const { mutate: save } = useSetPostBrand(post.id)
 
   if (isLoading || !brand) {
     return <Skeleton className="h-10 w-full" />
@@ -52,26 +54,38 @@ export function PostBrandSection({ post }: { post: Post }) {
   if (brand.voices.length === 0 && brand.audiences.length === 0) {
     return (
       <p className="text-xs text-tertiary-foreground">
-        This workspace has no voices or audiences yet.
+        {t('brand.binding.emptyShort')}
       </p>
     )
   }
 
-  const campaign = campaignBound ?? EMPTY_CAMPAIGN_BRAND
-  const bound: PostBrand = postBound ?? EMPTY_POST_BRAND
+  // The campaign is a second query and may not have landed yet. Resolving
+  // against a stated empty rather than waiting is deliberate: the post's own
+  // refs are already here, and a post that has chosen resolves to its own
+  // choice at every level anyway. Only the inherited case moves, from `none` to
+  // `campaign`, which is a line of explanatory text rather than a wrong value.
+  const campaignBound: CampaignBrand = campaign
+    ? {
+        voiceId: campaign.brand_voice_id,
+        audienceId: campaign.brand_audience_id,
+      }
+    : EMPTY_CAMPAIGN_BRAND
 
-  const voice = resolveVoice(brand, campaign, bound, post.updated_at)
-  const audience = resolveAudience(brand, campaign, bound)
+  const bound: PostBrand = {
+    voiceId: post.brand_voice_id,
+    audienceId: post.brand_audience_id,
+  }
 
-  // The campaign's cast first, then everything else. A campaign's choice is a
-  // recommendation rather than a fence: the case for picking outside it is a
-  // one-off post that does not belong to the campaign's register, which is
+  const voice = resolveVoice(brand, campaignBound, bound)
+  const audience = resolveAudience(brand, campaignBound, bound)
+
+  // Every voice in the library, not the campaign's alone. A campaign's choice
+  // is a recommendation rather than a fence: the case for picking outside it is
+  // a one-off post that does not belong to the campaign's register, which is
   // exactly the case a per-post override exists for. Fencing it would send
-  // people to the campaign settings to widen a cast for one post, and they
-  // would never narrow it again.
-  const cast = castOf(brand, campaign)
-  const rest = brand.voices.filter((v) => !cast.some((c) => c.id === v.id))
-  const voiceOptions = [...cast, ...rest].map((v) => ({
+  // people to the campaign settings to change it for one post, and they would
+  // never change it back.
+  const voiceOptions = brand.voices.map((v) => ({
     id: v.id,
     displayValue: v.name,
   }))
@@ -84,44 +98,33 @@ export function PostBrandSection({ post }: { post: Post }) {
   return (
     <div className="flex flex-col gap-4">
       <Field
-        label="Voice"
+        label={t('brand.binding.voice')}
         source={voice.source}
-        overridden={bound.voice?.id != null}
-        onReset={() => save({ ...bound, voice: null })}
-        // Below the source line rather than above it: the first question is
-        // where this voice came from, and the offer only makes sense once that
-        // is answered. Not a warning either — the post's text was written and
-        // stands, and the voice is an input to the next generation.
-        note={
-          voice.stale
-            ? `${voice.voice?.name} has changed since this was written — worth regenerating.`
-            : null
-        }
+        overridden={bound.voiceId != null}
+        onReset={() => save({ brand_voice_id: null })}
       >
         <TextSelect
           variant="default"
           value={voice.voice?.id ?? ''}
-          onValueChange={(id) =>
-            save({ ...bound, voice: { id, delta: bound.voice?.delta ?? null } })
-          }
+          onValueChange={(id) => save({ brand_voice_id: id })}
           elements={voiceOptions}
-          placeholder="No voice"
+          placeholder={t('brand.binding.noVoice')}
           disabled={voiceOptions.length === 0}
         />
       </Field>
 
       <Field
-        label="Audience"
+        label={t('brand.binding.audience')}
         source={audience.source}
         overridden={bound.audienceId != null}
-        onReset={() => save({ ...bound, audienceId: null })}
+        onReset={() => save({ brand_audience_id: null })}
       >
         <TextSelect
           variant="default"
           value={audience.audience?.id ?? ''}
-          onValueChange={(id) => save({ ...bound, audienceId: id })}
+          onValueChange={(id) => save({ brand_audience_id: id })}
           elements={audienceOptions}
-          placeholder="No audience"
+          placeholder={t('brand.binding.noAudience')}
           disabled={audienceOptions.length === 0}
         />
       </Field>
@@ -129,22 +132,27 @@ export function PostBrandSection({ post }: { post: Post }) {
   )
 }
 
-const SOURCE_LINE: Record<BindingSource, string | null> = {
-  post: 'Set on this post',
-  campaign: 'From the campaign',
-  library: "The workspace's default",
-  // Nothing was resolved, and the select already says "No voice" — a line
-  // underneath repeating it in other words would be the screen talking to
-  // itself.
+/**
+ * Which level supplied the value, in words.
+ *
+ * A table of keys rather than of sentences, translated where it is used — the
+ * module-level `const` that held the English would freeze whichever language
+ * loaded first. `none` has no line: the select already says "No voice", and a
+ * line underneath repeating it in other words would be the screen talking to
+ * itself.
+ */
+const SOURCE_LINE = {
+  post: 'brand.binding.sourcePost',
+  campaign: 'brand.binding.sourceCampaign',
+  library: 'brand.binding.sourceLibrary',
   none: null,
-}
+} as const satisfies Record<BindingSource, string | null>
 
 function Field({
   label,
   source,
   overridden,
   onReset,
-  note,
   children,
 }: {
   label: string
@@ -152,10 +160,10 @@ function Field({
   /** Whether this post pinned the value, which is the only undoable state. */
   overridden: boolean
   onReset: () => void
-  /** Sits under the source line. For anything the resolution wants to offer. */
-  note?: string | null
   children: React.ReactNode
 }) {
+  const { t } = useTranslation()
+  const line = SOURCE_LINE[source]
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
@@ -166,20 +174,15 @@ function Field({
             variant="ghost"
             size="sm"
             onClick={onReset}
-            title="Go back to what the campaign says"
+            title={t('brand.binding.resetHint')}
           >
             <ArrowCounterClockwiseIcon className="size-3.5" />
-            <span>RESET</span>
+            <span>{t('brand.binding.reset')}</span>
           </Button>
         )}
       </div>
       {children}
-      {SOURCE_LINE[source] && (
-        <p className="text-xs text-tertiary-foreground">
-          {SOURCE_LINE[source]}
-        </p>
-      )}
-      {note && <p className="text-xs text-tertiary-foreground">{note}</p>}
+      {line && <p className="text-xs text-tertiary-foreground">{t(line)}</p>}
     </div>
   )
 }

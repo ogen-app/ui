@@ -1,10 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   deleteAudience,
-  getCampaignBrand,
-  getPostBrand,
-  saveCampaignBrand,
-  savePostBrand,
   deleteGuardrails,
   deleteVoice,
   getBrand,
@@ -12,13 +8,14 @@ import {
   saveGuardrails,
   saveVoice,
 } from '@/services/api/brand'
+import { setPostBrand } from '@/services/api/posts'
+import { postKey } from '@/hooks/usePost'
+import { landSavedPost } from '@/lib/postCache'
 import type {
   BrandAudience,
   BrandData,
   BrandGuardrails,
   BrandVoice,
-  CampaignBrand,
-  PostBrand,
 } from '@/components/brand/types'
 
 /**
@@ -213,63 +210,53 @@ export function useDeleteGuardrails() {
 
 /* -- Binding ---------------------------------------------------------------
  *
- * A campaign's share of the library, and a post's overrides on top of it (§8).
+ * A campaign's choice out of the library, and a post's override on top of it,
+ * are **not queries in this file any more.** CON-245 put all four ids on the
+ * campaign and post rows, so `useCampaign` and `usePost` already carry them —
+ * two more queries keyed by the same ids would be a second copy of a field the
+ * caller is holding, with its own staleness.
  *
- * Separate queries from `useBrand` rather than fields on it, because they have
- * different lifetimes and different scopes: the library is one object per
- * workspace that every Brand screen wants, and a binding is one small row that
- * only the campaign or post looking at it wants. Folding them together would
- * mean a post editor refetching every voice, audience and template in the
- * workspace to find out which voice it is in.
- *
- * These are the hooks with the shortest life in this file. When CON-228 lands
- * the binding rides the campaign and post payloads, and these fold into
- * `useCampaign` and `usePost` — see the note in `services/api/brand`.
+ * What is left is one write. The campaign's goes through `useUpdateCampaign`
+ * with `campaignToPayload(campaign, { brand_voice_id })`, because a campaign
+ * has no targeted sub-action and its PUT reads the refs presence-aware. A
+ * post's has one, and is below.
  */
 
-export const CAMPAIGN_BRAND_KEY = (campaignId: string) =>
-  ['brand', 'campaign', campaignId] as const
-
-export const POST_BRAND_KEY = (postId: string) =>
-  ['brand', 'post', postId] as const
-
-export function useCampaignBrand(campaignId: string | undefined) {
-  return useQuery({
-    queryKey: CAMPAIGN_BRAND_KEY(campaignId ?? ''),
-    queryFn: () => getCampaignBrand(campaignId!),
-    enabled: !!campaignId,
-    staleTime: FIVE_MINUTES,
-  })
-}
-
-export function useSaveCampaignBrand(campaignId: string) {
+/**
+ * Sets a post's voice or audience, in place.
+ *
+ * A mutation of its own rather than part of the editor's autosave: the picker
+ * writes two ids through a targeted endpoint that touches nothing else, and
+ * routing it through the document would make choosing a voice a content edit —
+ * which a submitted post refuses (CON-251) and which would be wrong anyway,
+ * since a binding is an input to the *next* generation rather than a change to
+ * what is written.
+ *
+ * The server answers with the whole post, so the cache takes it: the panel is
+ * edited in place and a refetch round-trip would paint one frame of the
+ * pre-save selection, which reads as the click not having landed. `postKey` is
+ * the editor's own entry, and the list caches follow through `landSavedPost` —
+ * the post row shows nothing about a binding today, but the two caches
+ * disagreeing about a post is how they start drifting.
+ */
+export function useSetPostBrand(postId: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (value: CampaignBrand) => saveCampaignBrand(campaignId, value),
-    onSuccess: (saved) => {
-      // Written straight into the cache, like `useSaveVoice`: the pickers are
-      // edited in place and a refetch round-trip would paint one frame of the
-      // pre-save selection, which reads as the click not having landed.
-      qc.setQueryData(CAMPAIGN_BRAND_KEY(campaignId), saved)
+    mutationFn: (refs: PostBrandRefs) => setPostBrand(postId, refs),
+    meta: { errorTitle: 'Unable to set the voice' },
+    onSuccess: async (saved) => {
+      qc.setQueryData(postKey(postId), saved)
+      await landSavedPost(qc, saved)
     },
   })
 }
 
-export function usePostBrand(postId: string | undefined) {
-  return useQuery({
-    queryKey: POST_BRAND_KEY(postId ?? ''),
-    queryFn: () => getPostBrand(postId!),
-    enabled: !!postId,
-    staleTime: FIVE_MINUTES,
-  })
-}
-
-export function useSavePostBrand(postId: string) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (value: PostBrand) => savePostBrand(postId, value),
-    onSuccess: (saved) => {
-      qc.setQueryData(POST_BRAND_KEY(postId), saved)
-    },
-  })
+/**
+ * What one write may say. Both optional, and that is the contract rather than a
+ * convenience: omitting a ref leaves it alone server-side, so a voice change
+ * cannot silently clear the audience beside it.
+ */
+export type PostBrandRefs = {
+  brand_voice_id?: string | null
+  brand_audience_id?: string | null
 }

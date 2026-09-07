@@ -1605,6 +1605,30 @@ export const es: Translation = {
     },
   },
 
+  brand: {
+    binding: {
+      voice: 'Voz',
+      audience: 'Audiencia',
+      campaignVoiceHint:
+        'La voz en la que escribe esta campaña. Las publicaciones se abren con ella y pueden cambiarse una a una; déjala sin definir para usar la del espacio de trabajo.',
+      campaignAudienceHint:
+        'A quién se dirige esta campaña. Una publicación que se dirija a otra persona lo indica en la propia publicación.',
+      noVoice: 'Sin voz',
+      noAudience: 'Sin audiencia',
+      sourcePost: 'Definida en esta publicación',
+      sourceCampaign: 'De la campaña',
+      sourceLibrary: 'La predeterminada del espacio de trabajo',
+      reset: 'RESTABLECER',
+      resetHint: 'Volver a lo que dice la campaña',
+      emptyTitle: 'Voz y audiencia',
+      emptyBody:
+        'Este espacio de trabajo aún no tiene voces ni audiencias. Se escriben una vez y todas las campañas se basan en ellas.',
+      emptyShort: 'Este espacio de trabajo aún no tiene voces ni audiencias.',
+      openBrand: 'Abrir Marca',
+      saveError: 'No se pudo guardar la voz de la campaña',
+    },
+  },
+
   campaigns: {
     title: 'Campañas',
     add: 'AÑADIR CAMPAÑA',

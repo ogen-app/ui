@@ -893,6 +893,62 @@ is *right*: a thread really does go out as one post with every file on it.
 `TwitterPreview` / `ThreadsPreview` / `PostPreviewPanel`, and the
 `thread-sequence` flag.
 
+## A brand binding is four ids, resolved and never copied {#brand-binding}
+
+**Decision.** What voice a post is written in is **not stored on the post**. Four
+nullable ids are — `brand_voice_id` and `brand_audience_id` on the campaign and
+the same pair on the post (CON-245) — and the answer is *resolved* from them on
+every read: post → campaign → the library's default voice for a voice, and post
+→ campaign → nothing for an audience. `components/brand/binding.ts` is the whole
+walk, and it exists to mirror `brandresolve` on the server.
+
+**Why the server's walk is the authority.** The generation flows obey
+`brandresolve`, not us. A screen that named a voice the generator would not have
+used is worse than a screen that says nothing, because it is confidently wrong
+about the one question the feature exists to answer. So when the two disagree,
+this one is the bug. The asymmetry in the walks is the clearest example: an
+audience deliberately has **no** library step, even though "no audience means
+generating for nobody" is a decent argument, because a default collapses a choice
+whose answer is genuinely different per campaign. That case is CON-263's to make,
+on the server, and the client's job is to follow.
+
+**Why the client is narrower than the design doc.** `docs/brand-materials.md` §8
+describes a *cast* of voices per campaign, a local delta on every reference, and
+a staleness read that offers to regenerate. The client modelled all three for a
+while and the server shipped none of them: CON-245 §4 locked v1 to a single
+campaign voice, and §13 lists the delta and the snapshot column as deferred. What
+that produced was a campaign settings card offering a multi-select whose extra
+entries no generator would ever read, and a post section offering a "this voice
+has changed" note computed from a timestamp comparison the server does not make
+— which is precisely the *material nothing reads* failure CON-226 §9 names, built
+by us. Narrowing to the four columns is not a downgrade of the design; it is the
+client saying only what is true. The richer model comes back when the columns do.
+
+**Why the refs are presence-aware, and what follows.** All four are read
+presence-aware on their PUTs: omitted leaves the stored value alone, present
+replaces, `null` clears. That is what lets `campaignToPayload` and
+`postToPayload` — both whole-resource builders that otherwise have to name every
+field or the server defaults it away — deliberately *not* carry them. Restating a
+ref means an autosave writes back whichever binding the record held when it was
+fetched, over a choice made in the picker since; the same race CON-233 fixed for
+the asset sets, fixed the same way. A campaign's binding is therefore written by
+passing an override to `campaignToPayload`, and a post's by `setPostBrand`
+against `PUT /api/posts/:id/brand`, a targeted sub-action that touches the two
+columns and nothing else.
+
+**Why the lock does not reach it.** `setPostBrand` works on a `scheduled` or
+`published` post, alone among the post's controls. CON-251 freezes what would
+diverge from the copy that has already left Ogen — body, media, sources — and a
+binding is not one of those: it is an input to the *next* generation, so setting
+it on a published post is how somebody says *write the next one like this*. The
+server agrees, and runs no publish gate on that endpoint.
+
+**Where.** `components/brand/{binding,types}.ts` (+ tests),
+`components/brand/{CampaignBrandCard,PostBrandSection}.tsx`,
+`hooks/useBrand.ts` (`useSetPostBrand`), `services/api/posts.ts`
+(`setPostBrand`), `lib/campaignPayload.ts`, and the `brand.binding.*` catalogue
+entries — the two pickers are converted, the eleven library screens are not.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain

@@ -92,6 +92,8 @@ function makePost(overrides: Partial<Post> = {}): Post {
     scheduled_at: null,
     published_at: null,
     published_url: '',
+    brand_voice_id: null,
+    brand_audience_id: null,
     status: 'draft',
     cta_type: 'none',
     cta_url: '',

@@ -113,6 +113,18 @@ export type Campaign = {
   target_persona: string
   key_messages: string
   tone_guidelines: string
+  /**
+   * The Brand voice and audience this campaign writes in (CON-245), or `null`
+   * where it has not chosen. Both supersede the legacy prose above rather than
+   * joining it: the server injects a resolved voice *instead of*
+   * `tone_guidelines`, and a resolved audience instead of `target_persona`, so
+   * that a stale prose line cannot contradict the voice.
+   *
+   * Read them through `components/brand/binding`, never directly — a reference
+   * to a deleted entry has to fall through to the level below it.
+   */
+  brand_voice_id: string | null
+  brand_audience_id: string | null
   use_assets: boolean
   asset_ids: string[]
   target_platforms: CampaignPlatform[]
@@ -170,6 +182,18 @@ export type CreateCampaignPayload = {
   target_persona?: string
   key_messages?: string
   tone_guidelines?: string
+  /**
+   * The Brand refs are **presence-aware** (CON-245), like the two document
+   * fields below them and unlike everything else here: leaving one out keeps
+   * whatever the campaign already has, sending `null` clears it.
+   *
+   * That is why `campaignToPayload` does not round-trip them the way it
+   * round-trips the rest — an ordinary save omits them and cannot clobber a
+   * binding written from another screen. Pass one as an override to change it,
+   * which is the only thing that should ever set it.
+   */
+  brand_voice_id?: string | null
+  brand_audience_id?: string | null
   /**
    * Deliberately no `use_assets` / `asset_ids`. The campaign's documents are
    * attached and detached through the CON-233 membership endpoints, which are
