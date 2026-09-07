@@ -63,6 +63,20 @@ export type Post = {
    * also why it is not among the fields CON-251's content lock freezes.
    */
   published_url: string
+  /**
+   * This post's own Brand voice and audience (CON-245), or `null` where it
+   * takes the campaign's. `brand_voice_id` is also written *for* the post by
+   * the generation flows — `content_plan` picks a voice per post as it plans —
+   * so a post can arrive already bound without anyone having chosen here.
+   *
+   * Read-only through this type: both are written by `setPostBrand`
+   * (`PUT /api/posts/:id/brand`) and deliberately absent from `PostPayload`.
+   * The whole-post PUT reads them presence-aware, so an autosave that omits
+   * them leaves the binding alone — which is the point of the targeted
+   * endpoint, and why the picker never has to round-trip the post.
+   */
+  brand_voice_id: string | null
+  brand_audience_id: string | null
   created_by: string
   created_at: string
   updated_at: string

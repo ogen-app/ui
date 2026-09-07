@@ -2264,6 +2264,41 @@ export const en = {
    * is a safety net for us, not an undo for the user, and hinting at one would
    * be a promise nothing in the product can keep.
    */
+  /**
+   * The Brand *binding* — the pickers a campaign and a post use to choose out
+   * of the workspace's library (CON-245). Only the binding: the Brand screens
+   * themselves are still hard-coded English and are legacy to be converted,
+   * not a precedent (CON-174).
+   *
+   * The two hints are the load-bearing strings. Each says how many may be
+   * picked and what happens when nothing is, because both controls clear on a
+   * second click and neither has a "None" row to make that visible — a picker
+   * that silently means "the workspace default" has to say so somewhere.
+   */
+  brand: {
+    binding: {
+      voice: 'Voice',
+      audience: 'Audience',
+      campaignVoiceHint:
+        'The voice this campaign writes in. Posts open in it and can be changed one by one; leave it unset to use the workspace default.',
+      campaignAudienceHint:
+        'Who this campaign is written to. A post that addresses somebody else says so on the post.',
+      noVoice: 'No voice',
+      noAudience: 'No audience',
+      sourcePost: 'Set on this post',
+      sourceCampaign: 'From the campaign',
+      sourceLibrary: "The workspace's default",
+      reset: 'RESET',
+      resetHint: 'Go back to what the campaign says',
+      emptyTitle: 'Voice and audience',
+      emptyBody:
+        'This workspace has no voices or audiences yet. They are written once and every campaign draws on them.',
+      emptyShort: 'This workspace has no voices or audiences yet.',
+      openBrand: 'Open Brand',
+      saveError: 'Unable to save the campaign voice',
+    },
+  },
+
   campaigns: {
     title: 'Campaigns',
     add: 'ADD CAMPAIGN',

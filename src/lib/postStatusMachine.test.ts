@@ -38,6 +38,8 @@ function post(overrides: Partial<Post> = {}): Post {
     scheduled_at: '2099-01-01T00:00:00Z',
     published_at: null,
     published_url: '',
+    brand_voice_id: null,
+    brand_audience_id: null,
     status: 'ready_for_publish',
     cta_type: 'none',
     cta_url: '',

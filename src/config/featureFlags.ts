@@ -382,25 +382,31 @@ const FEATURE_FLAGS = {
    * that removes Brand from the app.
    *
    * **What is on with it, and what is not.** Voices, Audiences and Guardrails
-   * are complete: written here, stored server-side, and — as CON-245 lands —
-   * read by the flows that write posts. Look and Templates are **not offered**
-   * (`shown` in `lib/brandSections`): their endpoints exist and their screens
-   * render, but nothing writes them from the UI and the image flows that would
-   * consume them are CON-105/CON-132. Two Overview cards that cannot be filled
-   * in and would change nothing if they were teach the user that the screen is
-   * a mock-up, which is the one thing this module cannot afford to say.
+   * are complete: written here, stored server-side, and — since CON-245 — read
+   * by the flows that write posts. The binding is real too: a campaign's voice
+   * and audience ride its own PUT, a post's go through `PUT /api/posts/:id/
+   * brand`, and the `localStorage` stub that stood in for all four is deleted.
+   * Look and Templates are **not offered** (`shown` in `lib/brandSections`):
+   * their endpoints exist and their screens render, but nothing writes them
+   * from the UI and the image flows that would consume them are
+   * CON-105/CON-132. Two Overview cards that cannot be filled in and would
+   * change nothing if they were teach the user that the screen is a mock-up,
+   * which is the one thing this module cannot afford to say.
    *
-   * `usage` counts and `summary` lines arrive as zeroes and empty strings until
-   * CON-245 and the summary job land. That is not a bug to hide: the screens
-   * already draw "nothing has been written in this" as a designed state, and it
-   * is true.
+   * `summary` lines still arrive empty until the generation job ships, and
+   * `postsBehind` is still `0` — it needs the per-post voice-version snapshot
+   * CON-245 §13 deferred. `usage` is real now. Those are not bugs to hide: the
+   * screens already draw "nothing has been written in this" as a designed
+   * state, and it is true.
    *
-   * **Outstanding: the copy is still not in the i18n catalogue.** It was
-   * deferred at the 2026-08-28 merge on the argument that the wording was being
-   * argued alongside the shape and cataloguing it meant retranslating on every
-   * iteration — with the conversion promised before this flag flipped. The flag
-   * has flipped first. The debt is real and it is the whole module's user-facing
-   * text; it does not block anyone from using Brand in English.
+   * **Outstanding: most of the copy is still not in the i18n catalogue.** It
+   * was deferred at the 2026-08-28 merge on the argument that the wording was
+   * being argued alongside the shape and cataloguing it meant retranslating on
+   * every iteration — with the conversion promised before this flag flipped.
+   * The flag has flipped first. The binding pickers came into the catalogue
+   * with the CON-245 narrowing (`brand.binding.*`) because their copy was
+   * being rewritten anyway; the eleven library screens are the rest of the
+   * debt. It does not block anyone from using Brand in English.
    *
    * The argument this is built from: `docs/brand-materials.md`.
    */
