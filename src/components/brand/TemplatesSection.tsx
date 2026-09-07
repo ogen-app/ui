@@ -3,10 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { brandSectionCopy } from '@/lib/brandSections'
 import { formatList } from '@/lib/intl'
 import { AddButton, BrandSection, EntryCard, Gap, OriginLine } from './shell'
-import type { BrandTemplate } from './types'
-
-/** Every ratio a template is expected to cover before it can be used everywhere. */
-export const EXPECTED_RATIOS = ['1:1', '4:5', '9:16', '16:9']
+import { EXPECTED_RATIOS, type BrandTemplate } from './types'
 
 /**
  * What ships instead of an image editor.

@@ -10,8 +10,7 @@ import { formatList } from '@/lib/intl'
 import { PLATFORMS } from '@/lib/platformDictionary'
 import { cn } from '@/lib'
 import { AddButton, Gap } from './shell'
-import { EXPECTED_RATIOS } from './TemplatesSection'
-import type { BrandTemplate } from './types'
+import { EXPECTED_RATIOS, type BrandTemplate } from './types'
 
 /**
  * Templates — the section that made Brand a place rather than a page.

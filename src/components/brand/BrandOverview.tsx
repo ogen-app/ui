@@ -14,11 +14,14 @@ import {
   type BrandSectionInfo,
 } from '@/lib/brandSections'
 import { FirstRun } from './FirstRun'
-import { sampleCount, usageLine } from './format'
+import { defaultVoiceLabel, sampleCount, usageLine } from './format'
 import { DefaultStar, WholeBrandOffer } from './shell'
-import { defaultVoiceLabel } from './VoicesSection'
-import { EXPECTED_RATIOS } from './TemplatesSection'
-import { isBrandEmpty, MIN_VOICE_SAMPLES, type BrandData } from './types'
+import {
+  EXPECTED_RATIOS,
+  isBrandEmpty,
+  MIN_VOICE_SAMPLES,
+  type BrandData,
+} from './types'
 
 /**
  * Brand's main screen: what is in each section, and the way into it.

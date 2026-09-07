@@ -15,7 +15,7 @@ import {
   audienceStarterCopy,
   audienceStarterDraft,
   type AudienceStarter,
-} from './AudiencesSection'
+} from './starters'
 import type { BrandAudience, BrandUsage } from './types'
 
 /**

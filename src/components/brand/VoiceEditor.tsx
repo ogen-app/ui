@@ -32,7 +32,7 @@ import {
   voiceStarterCopy,
   voiceStarterDraft,
   type VoiceStarter,
-} from './VoicesSection'
+} from './starters'
 import {
   MIN_VOICE_SAMPLES,
   type BrandUsage,

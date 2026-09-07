@@ -1,13 +1,7 @@
-import {
-  LightningIcon,
-  SmileyIcon,
-  TextAlignLeftIcon,
-  type Icon,
-} from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { brandSection } from '@/lib/brandSections'
-import { sampleCount, usageLine } from './format'
+import { defaultVoiceLabel, sampleCount, usageLine } from './format'
 import {
   AddEntryCard,
   BrandLibrary,
@@ -18,6 +12,7 @@ import {
   StarterCard,
   StarterGroup,
 } from './shell'
+import { VOICE_STARTERS, voiceStarterCopy } from './starters'
 import { MIN_VOICE_SAMPLES, type BrandVoice, type VoiceRules } from './types'
 
 /**
@@ -90,115 +85,6 @@ export function VoicesSection({
       )}
     </BrandLibrary>
   )
-}
-
-/**
- * The three we offer for a cold start.
- *
- * Three and not thirty. A library that needs a search box has failed — picking
- * between twelve near-identical descriptions is the same paralysis as the blank
- * box, one step later. These are far enough apart that the choice is obvious in
- * one read, and each one is **forked on pick**, so improving ours never rewrites
- * anybody's.
- *
- * Their job is to be replaced. If a workspace still sounds like the preset it
- * picked six months on, that is the failure, not the success — which is why the
- * screen keeps asking for samples afterwards.
- */
-export type VoiceStarterId = 'plain' | 'warm' | 'sharp'
-
-/**
- * **Behaviour only — every word of a starter is in the catalogue.**
- *
- * The card's title and blurb are obviously copy. So is the draft, and that one
- * is worth stating: forking a starter writes its name, its use and its two
- * prose habits into the workspace's own library, so a Spanish workspace handed
- * the English version has been given material it must rewrite before it can use
- * it — which is the opposite of what a starting point is for. Only the five
- * rule *enums* are language-free, and they are what is left here.
- */
-export type VoiceStarter = {
-  id: VoiceStarterId
-  icon: Icon
-  /** The five stored enums. `opening` and `closing` are prose — see `voiceStarterDraft`. */
-  rules: Omit<VoiceRules, 'opening' | 'closing'>
-}
-
-export const VOICE_STARTERS: VoiceStarter[] = [
-  {
-    id: 'plain',
-    icon: TextAlignLeftIcon,
-    rules: {
-      formality: 'neutral',
-      person: 'we',
-      emoji: 'never',
-      hashtags: 'never',
-      length: 'short',
-    },
-  },
-  {
-    id: 'warm',
-    icon: SmileyIcon,
-    rules: {
-      formality: 'casual',
-      person: 'i',
-      emoji: 'sparingly',
-      hashtags: 'few',
-      length: 'medium',
-    },
-  },
-  {
-    id: 'sharp',
-    icon: LightningIcon,
-    rules: {
-      formality: 'neutral',
-      person: 'i',
-      emoji: 'never',
-      hashtags: 'few',
-      length: 'medium',
-    },
-  },
-]
-
-/** The starter a `?from=` on the editor route names, if it names one at all. */
-export function voiceStarter(id: string | undefined): VoiceStarter | null {
-  return VOICE_STARTERS.find((s) => s.id === id) ?? null
-}
-
-/** The card: what this starter is, in one line each. */
-export function voiceStarterCopy(
-  t: TFunction,
-  starter: VoiceStarter,
-): { title: string; body: string } {
-  return {
-    title: t(`brand.voices.starters.${starter.id}.title` as const),
-    body: t(`brand.voices.starters.${starter.id}.body` as const),
-  }
-}
-
-/**
- * What picking it actually puts in the editor — a name, a use, and a set of
- * rules, and **no samples**.
- *
- * That last part is the honest half of forking a template and the reason the
- * editor says so out loud: a starter is a set of habits, and habits are not a
- * voice. Prefilling samples would hand somebody three posts written for a
- * business that is not theirs, which is the one thing worse here than an empty
- * box.
- */
-export function voiceStarterDraft(
-  t: TFunction,
-  starter: VoiceStarter,
-): Pick<BrandVoice, 'name' | 'whenToUse' | 'rules'> {
-  return {
-    name: t(`brand.voices.starters.${starter.id}.name` as const),
-    whenToUse: t(`brand.voices.starters.${starter.id}.whenToUse` as const),
-    rules: {
-      ...starter.rules,
-      opening: t(`brand.voices.starters.${starter.id}.opening` as const),
-      closing: t(`brand.voices.starters.${starter.id}.closing` as const),
-    },
-  }
 }
 
 /**
@@ -345,20 +231,6 @@ function VoiceCard({
       </footer>
     </LibraryCard>
   )
-}
-
-/**
- * What the star on a voice actually says, in a sentence, for anybody who is not
- * looking at the colour.
- *
- * Two readings rather than one, because the interesting state is the second: a
- * default voice with nothing behind it is the case where the whole library is
- * decorative, and "default" on its own would report that as success.
- */
-export function defaultVoiceLabel(t: TFunction, voice: BrandVoice): string {
-  return voice.samples.length >= MIN_VOICE_SAMPLES
-    ? t('brand.voices.defaultBacked')
-    : t('brand.voices.defaultThin')
 }
 
 /**

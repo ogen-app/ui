@@ -4,11 +4,8 @@ import { i18next, loadLocaleResources } from '@/i18n'
 import { brandSectionCopy } from '@/lib/brandSections'
 import type { Campaign } from '@/types/campaigns'
 import type { Post } from '@/types/posts'
-import {
-  VoicesSection,
-  voiceStarterDraft,
-  VOICE_STARTERS,
-} from './VoicesSection'
+import { VoicesSection } from './VoicesSection'
+import { voiceStarterDraft, VOICE_STARTERS } from './starters'
 import type { BrandData, BrandVoice } from './types'
 
 /**

@@ -1,10 +1,3 @@
-import {
-  ArrowUUpLeftIcon,
-  HandshakeIcon,
-  MegaphoneIcon,
-  type Icon,
-} from '@phosphor-icons/react'
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { brandSection } from '@/lib/brandSections'
 import { usageLine } from './format'
@@ -17,6 +10,7 @@ import {
   StarterCard,
   StarterGroup,
 } from './shell'
+import { AUDIENCE_STARTERS, audienceStarterCopy } from './starters'
 import type { BrandAudience } from './types'
 
 /**
@@ -84,64 +78,6 @@ export function AudiencesSection({
       )}
     </BrandLibrary>
   )
-}
-
-/**
- * The three we offer for a cold start, and they are deliberately not three
- * demographics.
- *
- * A starter audience with an age and a country in it would be a guess about
- * somebody else's business, and a wrong guess is worse here than a blank —
- * people accept a plausible-looking description and stop thinking. So each
- * starter is a *relationship* instead: everyone has these three, they are
- * answerable without inventing anything, and each one narrows on its own.
- */
-export type AudienceStarterId = 'customers' | 'nearly' | 'advisers'
-
-/** Behaviour only — the glyph. Every word is in the catalogue. */
-export type AudienceStarter = {
-  id: AudienceStarterId
-  icon: Icon
-}
-
-export const AUDIENCE_STARTERS: AudienceStarter[] = [
-  { id: 'customers', icon: HandshakeIcon },
-  { id: 'nearly', icon: ArrowUUpLeftIcon },
-  { id: 'advisers', icon: MegaphoneIcon },
-]
-
-/** The starter a `?from=` on the editor route names, if it names one at all. */
-export function audienceStarter(
-  id: string | undefined,
-): AudienceStarter | null {
-  return AUDIENCE_STARTERS.find((s) => s.id === id) ?? null
-}
-
-/** The card: what this relationship is, in one line each. */
-export function audienceStarterCopy(
-  t: TFunction,
-  starter: AudienceStarter,
-): { title: string; body: string } {
-  return {
-    title: t(`brand.audiences.starters.${starter.id}.title` as const),
-    body: t(`brand.audiences.starters.${starter.id}.body` as const),
-  }
-}
-
-/**
- * What picking it puts in the editor, which is **a name and nothing else**.
- *
- * Voices' starters hand over a set of rules as well, because a register can be
- * described without knowing whose it is. Nothing equivalent exists here: where
- * somebody reads and what loses them are facts about actual people, and a
- * prefilled guess at them is the fantasy this section was built to prevent,
- * arriving with our name on it. The editor says so out loud when it opens.
- */
-export function audienceStarterDraft(
-  t: TFunction,
-  starter: AudienceStarter,
-): Pick<BrandAudience, 'name'> {
-  return { name: t(`brand.audiences.starters.${starter.id}.name` as const) }
 }
 
 /** Two cards, not three — the page's intro card states the absence. */

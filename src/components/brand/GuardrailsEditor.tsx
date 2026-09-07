@@ -6,14 +6,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react'
-import {
-  PlusIcon,
-  ScalesIcon,
-  SealCheckIcon,
-  StorefrontIcon,
-  XIcon,
-  type Icon,
-} from '@phosphor-icons/react'
+import { PlusIcon, XIcon } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -29,6 +22,12 @@ import {
   ForkedNote,
 } from './editor'
 import { StarterCard, StarterGroup } from './shell'
+import {
+  GUARDRAIL_STARTERS,
+  guardrailStarterCopy,
+  guardrailStarterDraft,
+  type GuardrailStarter,
+} from './starters'
 import type { BrandGuardrails } from './types'
 
 /**
@@ -683,83 +682,4 @@ function BarNote({ children }: { children: ReactNode }) {
   return (
     <span className="px-1 text-xs text-tertiary-foreground">{children}</span>
   )
-}
-
-/* -------------------------------------------------------------- the starters */
-
-/**
- * One of ours, offered for a cold start.
- *
- * **A template can say what you may never claim. It cannot say what is true.**
- * That split is the whole of what a starter hands over: "no result may be
- * promised" is a rule about a *kind* of business and holds for every firm in
- * it, while the fee, the licence number and the settlement time are facts about
- * one company that nobody outside it can guess. So `neverClaim` and
- * `bannedWords` arrive filled and `facts` arrives empty, and the screen says so
- * on the way in rather than leaving somebody to notice.
- *
- * The alternative — plausible placeholder facts — is the worst thing this
- * module could ship. An invented rule reads exactly like a checked one, and
- * this is the section people will trust without re-reading.
- */
-export type GuardrailStarterId = 'regulated' | 'product' | 'plain'
-
-/** Behaviour only — the glyph. Every word is in the catalogue. */
-export type GuardrailStarter = {
-  id: GuardrailStarterId
-  icon: Icon
-}
-
-/**
- * The three shapes the rules take, rather than thirty industries in a dropdown
- * — what you may not promise, what you may not claim exists, and what you may
- * not overstate. Every business is mostly one of them.
- *
- * Forked on pick, and every sentence in it is meant to be edited: a guardrail
- * nobody has read is the one kind of entry here that is worse than an empty
- * section, because it is the one people will trust.
- */
-export const GUARDRAIL_STARTERS: GuardrailStarter[] = [
-  { id: 'regulated', icon: ScalesIcon },
-  { id: 'product', icon: StorefrontIcon },
-  { id: 'plain', icon: SealCheckIcon },
-]
-
-/** The card: which shape the rules take, in one line each. */
-export function guardrailStarterCopy(
-  t: TFunction,
-  starter: GuardrailStarter,
-): { title: string; body: string } {
-  return {
-    title: t(`brand.guardrails.starters.${starter.id}.title` as const),
-    body: t(`brand.guardrails.starters.${starter.id}.body` as const),
-  }
-}
-
-/**
- * What it hands over. Never `facts`, and never the disclaimer.
- *
- * Two lists, read out of the catalogue with `returnObjects` rather than
- * numbered into `neverClaim1…4`: these are lists of whole sentences, and
- * numbering them would fix their length in the schema for every language that
- * follows. Copied out of the catalogue rather than handed over by reference,
- * because what comes back is the workspace's own draft from here on and a
- * screen editing it must not be editing the catalogue.
- */
-export function guardrailStarterDraft(
-  t: TFunction,
-  starter: GuardrailStarter,
-): Pick<BrandGuardrails, 'neverClaim' | 'bannedWords'> {
-  return {
-    neverClaim: [
-      ...t(`brand.guardrails.starters.${starter.id}.neverClaim` as const, {
-        returnObjects: true,
-      }),
-    ],
-    bannedWords: [
-      ...t(`brand.guardrails.starters.${starter.id}.bannedWords` as const, {
-        returnObjects: true,
-      }),
-    ],
-  }
 }

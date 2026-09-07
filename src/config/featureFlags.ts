@@ -419,6 +419,12 @@ const FEATURE_FLAGS = {
    * own library — an English draft handed to a Spanish workspace is something
    * they must rewrite before they can use it.
    *
+   * All three starter sets now live in `components/brand/starters.ts` rather
+   * than in the sections that render them. Taking the words out is what made
+   * them one object described three times instead of part of any one screen —
+   * and it gave those screens their fast refresh back, which is what
+   * `react-refresh/only-export-components` was asking for all along.
+   *
    * The argument this is built from: `docs/brand-materials.md`.
    */
   'brand-materials': true,
