@@ -2258,28 +2258,31 @@ export const es: Translation = {
       title: 'Todavía no hay campañas',
       subtitle: 'Crea tu primera campaña para empezar',
     },
-    archivedTitle: 'Campañas archivadas',
+    archivedSection: 'Campañas archivadas',
     archivedError: 'No se pudieron cargar las campañas archivadas',
-    showArchived: 'Ver las campañas archivadas',
-    showActive: 'Volver a las campañas activas',
     archivedOn: 'Archivada el {{archivedOn}}',
     unarchive: 'DESARCHIVAR',
-    archivedEmpty: {
-      title: 'No hay nada archivado',
-      subtitle:
-        'Archivar una campaña la quita de la lista sin borrar nada. Sus publicaciones, su calendario y su contenido siguen tal cual.',
-    },
-    archiveCard: {
-      title: 'Archivar',
-      body: 'Quita esta campaña de la lista de campañas y deja de ofrecerla allí donde se archiva trabajo nuevo. No se borra nada, y puedes recuperarla cuando quieras.',
-      action: 'ARCHIVAR CAMPAÑA',
-      confirm: '¿Archivar {{name}}? Podrás recuperarla desde el archivo.',
-    },
+    archivedEmpty:
+      'No hay nada archivado. Archivar una campaña la quita de la lista sin borrar nada: sus publicaciones, su calendario y su contenido siguen tal cual.',
     dangerZone: {
       title: 'Zona de peligro',
-      body: 'Eliminar una campaña borra sus publicaciones y su calendario. Esto no se puede deshacer: archívala si solo quieres quitarla de la lista.',
-      action: 'ELIMINAR CAMPAÑA',
-      confirm: '¿Eliminar {{name}}? Esto no se puede deshacer.',
+      body: 'Dos maneras de dejar de ejecutar esta campaña. Archivarla lo conserva todo y se puede deshacer; eliminarla borra la campaña y sus publicaciones para siempre.',
+      archive: {
+        action: 'ARCHIVAR CAMPAÑA',
+        confirmTitle: '¿Archivar {{name}}?',
+        confirmBody:
+          'La campaña sale de la lista de campañas y deja de ofrecerse allí donde se archiva trabajo nuevo. No se borra nada. Sus publicaciones, su calendario, su brief y su contenido siguen tal cual, y puedes recuperarla desde el archivo cuando quieras.',
+        keep: 'MANTENERLA ACTIVA',
+        confirm: 'ARCHIVAR CAMPAÑA',
+      },
+      delete: {
+        action: 'ELIMINAR CAMPAÑA',
+        confirmTitle: '¿Eliminar {{name}}?',
+        confirmBody:
+          'Se borran la campaña, sus publicaciones y su calendario, y nada en la aplicación puede recuperarlos. Las publicaciones ya publicadas siguen activas en las redes sociales. Archívala si solo quieres quitarla de la lista.',
+        keep: 'MANTENER CAMPAÑA',
+        confirm: 'ELIMINAR CAMPAÑA',
+      },
     },
   },
 
