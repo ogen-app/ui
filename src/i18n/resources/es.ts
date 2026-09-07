@@ -193,6 +193,7 @@ export const es: Translation = {
     analytics: 'Analíticas',
     foundation: 'Fundamentos',
     workspaceSettings: 'Ajustes del espacio',
+    campaignSettings: 'Ajustes de la campaña',
     profile: 'Perfil',
     help: 'Ayuda y soporte',
     logOut: 'Cerrar sesión',
@@ -200,7 +201,6 @@ export const es: Translation = {
     switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
     backToWorkspace: 'Volver al espacio de trabajo',
-    account: 'Cuenta',
     workspaceScope: 'Espacio de trabajo',
     campaignNoWindow: 'Sin fechas',
     campaign: {

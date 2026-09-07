@@ -53,8 +53,9 @@ import type { Campaign } from '@/types/campaigns'
  * the rail drawing a campaign the page is no longer showing.
  *
  * The bands, top to bottom: a header that changes with the level, the levels
- * themselves, then a footer of two parts — a utility strip that never changes
- * (`NavUtilityStrip`) and an identity slot that does (`NavAccount`).
+ * themselves, then a footer of two parts — the utilities, whose destinations
+ * survive the drill but whose shape does not (`NavUtilityStrip`), and an
+ * identity slot that changes outright (`NavAccount`).
  */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state, isMobile, setOpen, toggleSidebar } = useSidebar()
@@ -84,6 +85,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         className={'select-none group-data-[side=left]:border-r border-border'}
         {...props}
       >
+        {/* The campaign's identity colour as a rule down the whole rail, in
+            the hue its mark already wears — the level's edge, so it runs the
+            full height of the level, past the header above the sections and
+            the footer below them. It is absolute against the sidebar's own
+            fixed container rather than against anything inside it, which is
+            the only way to reach both.
+
+            Static: it belongs to the level the way the level's rows do, and a
+            bar that draws itself on arrival would turn a property of the place
+            into an event that happened — one more thing moving during the only
+            moment the user is working out where they landed.
+
+            It survives the collapse, where it is worth more than at full
+            width: a 48px rail has room for the campaign's mark and six glyphs
+            and nothing else, so the rule is most of what is left saying you
+            are inside something rather than at the top level. */}
+        {level === 1 && campaignId && (
+          <span
+            aria-hidden
+            style={{ background: identityColorVar(campaignId) }}
+            className="absolute left-0 top-0 h-full w-[3px]"
+          />
+        )}
+
         <SidebarHeader>
           <div className="flex items-center justify-between">
             {isMobile ? (
@@ -143,7 +168,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             as three separate footers. */}
         <SidebarFooter className="lg:gap-4">
           <LiveStatus isCollapsed={isCollapsed} />
-          <NavUtilityStrip />
+          <NavUtilityStrip level={level} campaignId={campaignId} />
           <NavAccount level={level} />
         </SidebarFooter>
         <SidebarRail />
@@ -167,6 +192,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  * a collapse — the name and window below are the first things a 48px rail
  * loses, and the mark plus its tooltip are what is left saying which campaign
  * you are in.
+ *
+ * The mark takes the logo's place exactly — same left edge, same size, same
+ * line — and the caret is absolutely placed in the gutter beside it rather
+ * than laid out before it. In the flow it would push the mark 32px right, so
+ * the one element the eye uses to know which level it is looking at would also
+ * be the one that moved, and the two levels would no longer line up anywhere.
+ * Out of the flow, the only thing that changes between them is the mark
+ * itself.
  */
 function HeaderMark({
   level,
@@ -193,18 +226,18 @@ function HeaderMark({
   const name = campaign?.name.trim() || t('nav.untitledCampaign')
 
   return (
-    <div className="flex min-w-0 items-center gap-1">
-      <Button
-        variant="ghost"
-        size="smIcon"
-        asChild
+    <div className="relative flex min-w-0 items-center">
+      {/* In the gutter, which is 24px of the header's own padding and the only
+          room there is to the left of the mark without moving it. Hidden on
+          the collapsed rail, where there is no gutter at all — there the mark
+          is the way back, which is what its own link is for. */}
+      <Link
+        to="/campaigns"
         aria-label={t('nav.backToWorkspace')}
-        className="-ml-1.5 flex-none text-tertiary-foreground hover:text-sidebar-primary-foreground group-data-[collapsible=icon]:hidden"
+        className="absolute -left-2 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-sm text-tertiary-foreground transition-colors hover:text-sidebar-primary-foreground lg:-left-5 group-data-[collapsible=icon]:hidden"
       >
-        <Link to="/campaigns">
-          <CaretLeftIcon weight="bold" className="size-4" />
-        </Link>
-      </Button>
+        <CaretLeftIcon weight="bold" className="size-4" />
+      </Link>
       <Tooltip delayDuration={400}>
         <TooltipTrigger asChild>
           {/* Focusable, because collapsed this mark is the only thing naming

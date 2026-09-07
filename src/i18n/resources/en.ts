@@ -233,6 +233,13 @@ export const en = {
      */
     foundation: 'Foundation',
     workspaceSettings: 'Workspace Settings',
+    /**
+     * The same footer slot as `workspaceSettings`, for the level below it.
+     * Named in full rather than left as "Settings": the row sits under
+     * Foundation, which is workspace-wide, so the word that says which of
+     * the two scopes this one belongs to is the one that has to be there.
+     */
+    campaignSettings: 'Campaign Settings',
     profile: 'Profile',
     help: 'Help and support',
     logOut: 'Log out',
@@ -242,8 +249,6 @@ export const en = {
     untitledCampaign: 'Untitled campaign',
     /** The way out of a campaign, on the header caret and on the mark beside it. */
     backToWorkspace: 'Back to workspace',
-    /** The mark that opens the account menu once the rail is inside a campaign. */
-    account: 'Account',
     /**
      * Heads the workspace's destinations where they appear inside the account
      * menu — level 1's way back to a module without leaving the campaign first.

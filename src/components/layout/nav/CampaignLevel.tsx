@@ -4,7 +4,6 @@ import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { SidebarMenuSkeleton } from '@/components/ui/sidebar'
 import { usePostsPlace } from '@/hooks/usePostsPlace'
 import { formatDate } from '@/lib/intl'
-import { identityColorVar } from '@/lib/identity'
 import { postsPlaceLink } from '@/lib/postsPlace'
 import {
   CAMPAIGN_SECTIONS,
@@ -31,11 +30,13 @@ const SECTION_PATH = {
 /**
  * Level 1 — one campaign, in the rail's whole width.
  *
- * These are the same six sections the rail drew before, at the same routes.
- * What changed is that they are no longer nested under a module row of the
- * same name: the campaign has the level to itself, so "Analytics" here can
- * only mean this campaign's, and the indent that used to carry that meaning is
- * gone along with the ambiguity it was patching.
+ * These are the sections the rail drew before, at the same routes, less
+ * Settings — which is a utility rather than a place, and sits in the footer
+ * where the workspace's own gear sits at level 0. What changed for the rest is
+ * that they are no longer nested under a module row of the same name: the
+ * campaign has the level to itself, so "Analytics" here can only mean this
+ * campaign's, and the indent that used to carry that meaning is gone along
+ * with the ambiguity it was patching.
  *
  * The block at the top is the argument for the level existing at all. A
  * campaign is a commitment — a window and a rate — and that is true of the
@@ -81,19 +82,10 @@ export function CampaignLevel({
       : { to: SECTION_PATH[id], params: { campaignId } }
 
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden">
-      {/* The campaign's identity colour as a rule down the level, in the hue
-          its mark already wears. Static: it belongs to the level the way the
-          level's rows do, and a bar that draws itself on arrival would turn a
-          property of the place into an event that happened — one more thing
-          moving during the only moment the user is working out where they
-          landed. */}
-      <span
-        aria-hidden
-        style={{ background: identityColorVar(campaignId) }}
-        className="absolute left-0 top-0 h-full w-[3px] group-data-[collapsible=icon]:hidden"
-      />
-
+    // The identity rule that runs beside this level is drawn by `AppSidebar`,
+    // not here: it has to span the header and the footer too, and nothing
+    // inside a pane can reach them.
+    <div className="flex flex-1 flex-col overflow-hidden">
       <div className="shrink-0 px-3 pb-4 lg:px-6 group-data-[collapsible=icon]:hidden">
         {campaign ? (
           <>
@@ -110,29 +102,35 @@ export function CampaignLevel({
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4 lg:px-6 group-data-[collapsible=icon]:items-center">
-        {CAMPAIGN_SECTIONS.map((section) => {
-          const link = sectionLink(section.id)
-          return (
-            <AppSidebarButtonMenu
-              key={section.id}
-              icon={
-                // The same 20px slot every row uses, so the labels line up;
-                // only the glyph inside is smaller. `tone` is the section's
-                // permanent hue — see `lib/campaignSections`.
-                <span
-                  className="flex size-5 flex-none items-center justify-center"
-                  style={{ color: section.tone }}
-                >
-                  <section.icon className="size-4" />
-                </span>
-              }
-              text={t(section.labelKey)}
-              isActive={activeSection === section.id}
-              to={link.to}
-              params={link.params}
-            />
-          )
-        })}
+        {/* Every section but Settings, which is in the footer with the
+            workspace's own gear — see `NavUtilityStrip`. Filtered here rather
+            than removed from the table, because the Overview still draws a
+            card for it and a section is one entry wherever it appears. */}
+        {CAMPAIGN_SECTIONS.filter((section) => section.id !== 'settings').map(
+          (section) => {
+            const link = sectionLink(section.id)
+            return (
+              <AppSidebarButtonMenu
+                key={section.id}
+                icon={
+                  // The same 20px slot every row uses, so the labels line up;
+                  // only the glyph inside is smaller. `tone` is the section's
+                  // permanent hue — see `lib/campaignSections`.
+                  <span
+                    className="flex size-5 flex-none items-center justify-center"
+                    style={{ color: section.tone }}
+                  >
+                    <section.icon className="size-4" />
+                  </span>
+                }
+                text={t(section.labelKey)}
+                isActive={activeSection === section.id}
+                to={link.to}
+                params={link.params}
+              />
+            )
+          },
+        )}
       </nav>
     </div>
   )
