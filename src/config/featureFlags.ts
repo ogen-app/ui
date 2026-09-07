@@ -539,6 +539,54 @@ const FEATURE_FLAGS = {
   'calendar-card-images': false,
 
   /**
+   * **Auto post type** — the post works out its own format from what is in it,
+   * instead of asking the author to name one first.
+   *
+   * Picking between "Text post" and "Image post" is not a decision anybody sets
+   * out to make; it is what a post already *is* once the words and the files
+   * are there. So Auto is the default, the app reads the body and the
+   * attachments and names the format itself, and re-names it as the post
+   * changes — attach a picture to a text post and it becomes an image post
+   * without anyone touching the picker.
+   *
+   * **Not waiting on an endpoint.** Auto is the empty `platform_post_type` a
+   * post is already created with (`useAddPost` sends a campaign and a date and
+   * nothing else); the resolution is derived on every render and written to the
+   * record as the post leaves `draft`, which is as long as the server will hold
+   * an empty type. Nothing new is stored and no column
+   * is missing. The flag is here because this changes what that empty string
+   * *means* on four surfaces that have always read it as "broken" — the checks
+   * bar, the quick-settings picker, the calendar card and `hasVisibleProblem` —
+   * and because the ladder itself is a claim about the server that has not met
+   * a running one.
+   *
+   * **What to look at when it does**, in the order that decides whether it
+   * ships:
+   *
+   * 1. **The seeded rules are the whole input.** `lib/postTypeAuto` walks
+   *    `GET /api/platforms/:id/post-type-rules` and picks the loosest rung the
+   *    post already satisfies, so a rule that is seeded loosely — a
+   *    `max_content_chars` of 0, an `allowed_kinds` nobody filled in — makes
+   *    Auto choose a type the server then refuses at schedule time. The fit
+   *    predicate mirrors `platforms.ValidatePostType`; it has been read off the
+   *    Go source, never exercised against it.
+   * 2. **`text-post` is the rung everything rests on**, and CON-206 plans to
+   *    merge it into `image-post` with `min_attachments: 0`. That does not
+   *    break Auto — the walk would simply stop one rung earlier — but it
+   *    changes what every post resolves to, so the two want testing together.
+   * 3. **A chain is deliberately not an answer yet.** `thread` is only a rung
+   *    while `thread-sequence` is on, because until the submit path sends
+   *    `threadItems` a thread publishes as one post with the whole body in it
+   *    (CON-196) — so resolving to it would quietly truncate. With both flags
+   *    off, three thousand characters on X reports "too long", which is right.
+   *
+   * With this off, the empty post type means exactly what it always did: a
+   * `fail` in the checks bar, a warning mark on the card, and a picker that
+   * asks. A post that already carries a type is untouched either way.
+   */
+  'post-type-auto': false,
+
+  /**
    * Deleting one saved version of a post, from the version-history panel
    * (CON-168). Off until the API grows `DELETE /api/posts/:id/versions/
    * :versionId` — `handlers/posts.go` registers `GET`/`POST` on `/versions`

@@ -332,6 +332,19 @@ export type TransitionContext = {
    * connected accounts (`usePublishingAccount`).
    */
   account: Pick<PublishingAccountResolution, 'ambiguous' | 'mismatched'>
+  /**
+   * The format the post will publish as, when that is not what the record says.
+   *
+   * An automatic post carries no slug and resolves one from its body and its
+   * files (`lib/postTypeAuto`); the record only gains it as the transition is
+   * made. Reading `platform_post_type` here would block every such post from
+   * the very move that writes the answer down — so the resolution is handed in,
+   * and an unresolvable post is blocked exactly as an unchosen one is.
+   *
+   * Defaults to the post's own type, which is what every caller but the editor
+   * means.
+   */
+  postType?: string
 }
 
 // Mirrors the server's pre-transition rules. Returns blockers the UI
@@ -363,7 +376,7 @@ export function getTransitionBlockers(
     if (!post.platform_id) {
       blockers.push({ field: 'platform_id', message: 'Pick a platform first' })
     }
-    if (!post.platform_post_type) {
+    if (!(context.postType ?? post.platform_post_type)) {
       blockers.push({
         field: 'platform_post_type',
         message: 'Pick a post type first',

@@ -183,6 +183,29 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (CON-165): the server defaults it away on silence and *preserves*
   `used_asset_ids`, so the two fields are opposites and a builder that treats
   them alike is wrong about one of them.
+- **A post's type is a default, not a question** (`post-type-auto`, off). *Auto*
+  is the empty `platform_post_type` every post is **already** created with —
+  `useAddPost` sends a campaign and a date and nothing else — so the feature
+  stores nothing and waits on no endpoint; it reads a state that already existed
+  as an intention rather than as an omission. While a post is automatic the
+  format is derived on every render from the body and the attachments
+  (`lib/postTypeAuto`), and the slug is written to the record on the way **out
+  of `draft`** — every edge, not just the committing ones. That boundary is the
+  server's and not a judgement call: `requirePlatformIfNotDraft` refuses a PUT
+  carrying an empty type under any other status, so a post that crossed it still
+  automatic could not be saved again at all. Hence `canBeAutomatic`, read in both
+  directions — the picker offers *Auto* (and its older twin, the deselect row)
+  only to a draft, and the transition out is what pins. Pinning is one-way:
+  reopen to draft and the post keeps the slug it resolved to.
+  The ladder is `text-post → image-post → carousel → video → reel → short →
+  thread`, loosest first, bounded by what the *campaign* enables — Auto can only
+  land somewhere the picker would have offered. It never chooses Story, Article
+  or Link post (editorial decisions the content cannot imply) nor a
+  `whitelist_only` type (no rule to test). **`thread` is a rung only while
+  `thread-sequence` is on**: until the submit path sends `threadItems` a thread
+  publishes as one post, so resolving to it would quietly truncate. With the
+  flag off the empty slug means what it always did — a `fail` in the checks bar
+  and a mark on the card. See `docs/technical-decisions.md#auto-post-type`.
 - **A campaign is archived or deleted — it has no status** (CON-156). `draft`
   and `active` both meant active and nothing ever showed either, so the client
   no longer models `status` at all and the server creates every campaign

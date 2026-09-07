@@ -1627,6 +1627,44 @@ export const en = {
     noPostType: 'No post type',
 
     /**
+     * **Auto** — the post works out its own format from what is in it, rather
+     * than asking the author to name one first (`lib/postTypeAuto`).
+     *
+     * `autoResolved` carries both halves on purpose: *Auto* is the state the
+     * picker is in, and the format beside it is what the post would publish as
+     * right now. Dropping either one loses something — the first, and the
+     * author cannot see the decision without opening the menu; the second, and
+     * it reads as a type somebody chose.
+     *
+     * The format name itself is not translated. Post-type labels are FE-owned
+     * and deliberately English everywhere they appear (`platformDictionary`),
+     * so this places one rather than composing it.
+     */
+    postType: {
+      auto: 'Auto',
+      autoResolved: 'Auto · {{type}}',
+      /** Beside *Auto* in the menu: what choosing it means, in three words. */
+      autoHint: 'From the post',
+      /** The check row's own label, replacing the legacy English one. */
+      checkLabel: 'Post type',
+      autoPending: 'Working out the format…',
+      /**
+       * Why no format fits. Each names a different thing to change, and only
+       * the first two are things the author changes by editing — so none of
+       * them says "pick a post type", which is the one thing they did not do
+       * wrong.
+       */
+      autoUnfit: {
+        tooLong:
+          'Too long for any format on this campaign — the longest takes {{limit}} characters',
+        mediaKind: 'Nothing this campaign publishes takes the files attached',
+        tooMany: 'Too many files for any format on this campaign',
+        noCandidates:
+          'This campaign enables no format that can be chosen automatically',
+      },
+    },
+
+    /**
      * The post editor's back arrow. Names the destination generically because
      * it is not always the same one — it returns to whichever arrangement of
      * the campaign's posts the user came from, calendar or table.

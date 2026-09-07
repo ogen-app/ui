@@ -1380,6 +1380,25 @@ export const es: Translation = {
     noAccount: 'Sin cuenta',
     noPostType: 'Sin tipo de publicación',
 
+    postType: {
+      auto: 'Automático',
+      // El nombre del formato no se traduce: las etiquetas de tipo de
+      // publicación son del front-end y están en inglés en toda la app.
+      autoResolved: 'Automático · {{type}}',
+      autoHint: 'Según la publicación',
+      checkLabel: 'Tipo de publicación',
+      autoPending: 'Determinando el formato…',
+      autoUnfit: {
+        tooLong:
+          'Demasiado largo para cualquier formato de esta campaña: el más amplio admite {{limit}} caracteres',
+        mediaKind:
+          'Ningún formato que publique esta campaña admite los archivos adjuntos',
+        tooMany: 'Demasiados archivos para cualquier formato de esta campaña',
+        noCandidates:
+          'Esta campaña no habilita ningún formato que pueda elegirse automáticamente',
+      },
+    },
+
     backToPosts: 'Volver a las publicaciones',
 
     hasProblem: 'Esta publicación tiene un problema',
