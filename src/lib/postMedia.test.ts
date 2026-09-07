@@ -49,6 +49,7 @@ function rule(
     min_attachments: 1,
     max_attachments: null,
     max_content_chars: null,
+    segmented: false,
     ...overrides,
   }
 }
@@ -60,6 +61,7 @@ function makeAttachment(
     id: Math.random().toString(36).slice(2),
     post_id: 'p1',
     position: 0,
+    segment_index: null,
     mime_type: 'image/jpeg',
     size_bytes: 1024,
     width: 1080,
@@ -88,6 +90,7 @@ function makePost(overrides: Partial<Post> = {}): Post {
     social_account_id: 'acc-1',
     title: '',
     content: 'Hello',
+    thread_segments: [],
     media_urls: [],
     scheduled_at: null,
     published_at: null,

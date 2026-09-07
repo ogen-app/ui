@@ -11,12 +11,28 @@ export type PlatformValidationError = {
   expected: string
   actual: string
   message: string
+  /**
+   * The 0-based message of a thread this failure belongs to (CON-284), so the
+   * composer can point at the one that is wrong. Absent for whole-post
+   * failures and for every post that is not a thread.
+   */
+  segment?: number
 }
 
 export type PostAttachment = {
   id: string
   post_id: string
   position: number
+  /**
+   * Which message of a threaded post carries this file (CON-284), 0-based.
+   * `null` for every attachment of an ordinary post — and the server refuses a
+   * non-null one there with a 422, so a post leaving the `thread` type has to
+   * null these before it saves.
+   *
+   * `position` still orders the media *within* a message, so the two are not
+   * alternatives: a thread's attachments carry both.
+   */
+  segment_index: number | null
   mime_type: string
   size_bytes: number
   // Frame size for video, pixel size for images; 0 for PDFs.

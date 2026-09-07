@@ -27,6 +27,7 @@ function rule(over: Partial<ResolvedPostTypeRule> = {}): ResolvedPostTypeRule {
     min_attachments: 0,
     max_attachments: null,
     max_content_chars: null,
+    segmented: false,
     ...over,
   }
 }
@@ -63,9 +64,15 @@ const X_RULES: PostTypeRuleView[] = [
       max_content_chars: 280,
     }),
   ),
+  // `segmented` is the server's mark for a type that publishes as a chain
+  // (CON-284), and `max_content_chars` is then the *per-message* ceiling.
   view(
     'thread',
-    rule({ allowed_kinds: ['image', 'video'], max_content_chars: 280 }),
+    rule({
+      allowed_kinds: ['image', 'video'],
+      max_content_chars: 280,
+      segmented: true,
+    }),
   ),
 ]
 
@@ -81,7 +88,6 @@ function onX(
     attachments,
     candidates,
     rules: X_RULES,
-    zernioId: 'twitter',
   })
 }
 
@@ -140,7 +146,6 @@ describe('the ladder', () => {
       attachments: files('video/mp4'),
       candidates: [...X_SLUGS, 'reel'],
       rules,
-      zernioId: 'twitter',
     })
     expect(resolution).toEqual({ state: 'resolved', slug: 'video' })
   })
@@ -167,7 +172,6 @@ describe('the ladder', () => {
       attachments: files('video/mp4'),
       candidates: ['reel', 'image-post'],
       rules,
-      zernioId: 'instagram',
     })
     expect(resolution).toEqual({ state: 'resolved', slug: 'reel' })
   })
@@ -182,7 +186,6 @@ describe('the ladder', () => {
         attachments: [],
         candidates: ['article', 'story', 'link-post'],
         rules,
-        zernioId: 'linkedin',
       }),
     ).toEqual({ state: 'unfit', reason: 'no-candidates', limit: null })
   })
@@ -196,7 +199,6 @@ describe('the ladder', () => {
         attachments: [],
         candidates: ['text-post'],
         rules: [view('text-post', null)],
-        zernioId: 'twitter',
       }),
     ).toEqual({ state: 'unfit', reason: 'no-candidates', limit: null })
   })
@@ -222,7 +224,6 @@ describe('the ladder', () => {
         attachments: [],
         candidates: X_SLUGS,
         rules: undefined,
-        zernioId: 'twitter',
       }),
     ).toEqual({ state: 'pending' })
   })
@@ -260,15 +261,24 @@ describe('a chain', () => {
     })
   })
 
-  it('is not offered on a network that has no chain', () => {
+  it('is not offered where the server has not marked the type segmented', () => {
+    // The platform can carry the slug and still not chain — which is what the
+    // seed looked like on Threads until CON-284 taught it the word. The client
+    // used to keep a hard-coded list of Zernio ids to answer this; now the rule
+    // says so, and the one that says `segmented` is the one carrying the
+    // per-message limit, so the two can never drift apart.
     vi.mocked(isFeatureEnabled).mockReturnValue(true)
 
+    const notSegmented = X_RULES.map((v) =>
+      v.slug === 'thread'
+        ? view('thread', rule({ max_content_chars: 280, segmented: false }))
+        : v,
+    )
     const resolution = resolveAutoPostType({
       content: 'a'.repeat(3000),
       attachments: [],
       candidates: ['text-post', 'thread'],
-      rules: X_RULES,
-      zernioId: 'linkedin',
+      rules: notSegmented,
     })
     expect(resolution).toEqual({
       state: 'unfit',

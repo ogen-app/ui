@@ -56,6 +56,7 @@ function makePost(overrides: Partial<Post> = {}): Post {
     social_account_id: '',
     title: '',
     content: '',
+    thread_segments: [],
     media_urls: [],
     scheduled_at: null,
     published_at: null,

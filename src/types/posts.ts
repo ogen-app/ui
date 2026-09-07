@@ -12,6 +12,16 @@ export type PostStatus =
 
 export type PostCTAType = 'link' | 'button' | 'none'
 
+/**
+ * One message of a thread (CON-284). Index 0 is the root and the rest become
+ * replies in order.
+ *
+ * An object rather than a bare string because the column is `jsonb` and the
+ * server reads `{content}` — per-message media is *not* in here, it is the
+ * attachments' `segment_index`.
+ */
+export type ThreadSegment = { content: string }
+
 export type Post = {
   id: string
   campaign_id: string
@@ -25,6 +35,18 @@ export type Post = {
   social_account_id: string
   title: string
   content: string
+  /**
+   * The ordered messages this post publishes as, when it is a thread (CON-284)
+   * — `[]` for every ordinary post, and for a thread nobody has saved yet.
+   *
+   * **Derived, not authored.** The words live in `content`, exactly as they do
+   * for every other post type, and the chain is cut out of it on the way to
+   * the server (`lib/threadSequence`). So this field is what *goes out* rather
+   * than what is being written: nothing renders from it, and the editor never
+   * reads it back. That is what keeps one body the single copy of the post's
+   * words — see `docs/technical-decisions.md#thread-sequence`.
+   */
+  thread_segments: ThreadSegment[]
   media_urls: string[]
   scheduled_at: string | null
   published_at: string | null
@@ -161,6 +183,14 @@ export type PostPayload = {
   social_account_id?: string
   title?: string
   content?: string
+  /**
+   * The derived chain (CON-284). A plain full-replace field, not a
+   * presence-aware one: what is sent is what is stored, and the server forces
+   * it to `[]` for any post that is not a `thread`. So it is safe to send on
+   * every save — including a save that is switching the post *away* from
+   * `thread`, which is how the segments get cleared.
+   */
+  thread_segments?: ThreadSegment[]
   media_urls?: string[]
   scheduled_at?: string | null
   published_at?: string | null

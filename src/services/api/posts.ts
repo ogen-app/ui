@@ -339,11 +339,22 @@ export function restorePost(
  * `createPost` still sends the field (`PostPayload` keeps it optional): a post
  * being created has no stored set to preserve, and duplicating one carries its
  * reading list over.
+ *
+ * `thread_segments` (CON-284) is listed for the same reason `published_url` is,
+ * and against the same instinct — it looks derived, so it looks omissible. The
+ * server defaults it away on silence, so a payload without it turns a thread
+ * back into a single post. That would not happen in the editor, which rewrites
+ * the field on every keystroke; it would happen on a **calendar drag**, an
+ * unschedule or a convert-to-manual, none of which know a thread from a photo.
+ * Round-tripping the stored chain is what makes those callers safe, and the
+ * editor overriding it — by keeping `doc.thread_segments` derived from the body
+ * — is what keeps it true.
  */
 export function postToPayload(post: Post): PostPayload {
   return {
     campaign_id: post.campaign_id,
     published_url: post.published_url,
+    thread_segments: post.thread_segments,
     platform_id: post.platform_id,
     platform_post_type: post.platform_post_type,
     social_account_id: post.social_account_id,

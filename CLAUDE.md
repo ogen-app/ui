@@ -202,10 +202,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   land somewhere the picker would have offered. It never chooses Story, Article
   or Link post (editorial decisions the content cannot imply) nor a
   `whitelist_only` type (no rule to test). **`thread` is a rung only while
-  `thread-sequence` is on**: until the submit path sends `threadItems` a thread
-  publishes as one post, so resolving to it would quietly truncate. With the
-  flag off the empty slug means what it always did — a `fail` in the checks bar
-  and a mark on the card. See `docs/technical-decisions.md#auto-post-type`.
+  `thread-sequence` is on**, and only where the post-type rule says
+  `segmented` — that pair replaced a hard-coded list of networks. With the flag
+  off the empty slug means what it always did — a `fail` in the checks bar and
+  a mark on the card. The ladder is also what a *pinned* thread demotes through
+  when its body comes to one message (`demotedFrom`), with the chain rung
+  barred so it cannot resolve straight back. See
+  `docs/technical-decisions.md#auto-post-type`.
 - **A campaign is archived or deleted — it has no status** (CON-156). `draft`
   and `active` both meant active and nothing ever showed either, so the client
   no longer models `status` at all and the server creates every campaign
@@ -605,30 +608,37 @@ still hard-coded English (CON-174) · **English is the only released language**:
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
 
-**A thread publishes as one post, not as a thread** (CON-196,
-`thread-sequence`, off). X has offered a `thread` post type all along and the
-preview card has always drawn a chain, but `SubmitRequest` in the Go repo's
-`publishers/zernio/posts.go` carries no `platformSpecificData`, so nothing ever
-sent Zernio's `threadItems` — the whole body goes out as a single post. Behind
-the flag the chain is **derived from the body** rather than composed in
-separate inputs: the editor stays the one Markdown card every post type uses, a
-`---` divider is a break, blank lines are the break where the body has no
-divider, and anything still past the per-post ceiling is cut to fit. So there
-is no "this post is too long" to report — it is cut instead — and `content` is
-never rewritten, which is why nothing outside the flag is touched. The one
-thing a body cannot say is which post carries which file, so that map alone
-sits in the tenant key/value store and is chosen on each thumbnail in the media
-card. Threads gains the type too (Zernio takes the same field on both).
-**Waiting on** that field in the submit path, **the same split implemented
-server-side** (the words live only in `content`, so the publisher must cut it
-the way `splitBody`/`splitToLimit` do), a home for the media assignment,
-`thread` added to `threads` in `publishers/zernio/platforms.go` — a submit
-blocker only, because while the flag is on `aheadOfPublishers` lets it stand in
-for the slug the publisher has not learned yet — and
-**attachment validation counted per item** — the server measures files against
-the post, so five images spread over three posts still warns "platform allows
-up to 4". That message is passed through as written because until the publisher
-splits it is right. See `docs/technical-decisions.md#thread-sequence`.
+**A thread publishes as one post, not as a thread** (CON-196/CON-284,
+`thread-sequence`, off). Behind the flag the chain is **derived from the body**
+rather than composed in separate inputs: the editor stays the one Markdown card
+every post type uses, a `---` divider is a break, blank lines are the break
+where the body has no divider, and anything still past the per-message ceiling
+is cut to fit — never leaving a scrap behind, which is why `splitToLimit` takes
+the *last* cut in the middle rather than at the ceiling. So there is no "this
+post is too long" to report, and a chain that comes to one message is not a
+failure either: it publishes as an ordinary post, and `demotedFrom`
+(`lib/postTypeAuto`) picks which one on the way out of draft.
+
+The back end shipped its half (ogen#140): `posts.thread_segments` stores the
+chain the client derives, `post_attachments.segment_index` stores which message
+carries which file, the submit path fills Zernio's `threadItems`, the post-type
+rule carries `segmented` (which replaced a hard-coded list of chain-capable
+networks here), and attachment validation counts per message. `thread` is on
+the Threads entry in `supportedPlatforms` too, so `aheadOfPublishers` is gone
+with the vocabulary gap it covered. Two consequences worth knowing:
+`thread_segments` is **listed** in `postToPayload` rather than omitted — the
+server defaults it away on silence, so a calendar drag would otherwise turn a
+thread back into a post — and `segment_index` is written by its own
+presence-aware PATCH, never alongside `position`.
+
+**Waiting on one line.** `handlers/posts.go` restamps `content` from
+`thread_segments[0]` on every thread save. That is the one assumption the two
+sides do not share: here `content` is the authoring truth and the chain is
+derived from it, so the restamp replaces the body with its own first message
+and costs every screen that reads a post's words without knowing about threads
+(calendar card, posts table, search, versions, the assistant). The ask is to
+store `content` as sent; `RootContent()` stays right where it is already used,
+at submit time. See `docs/technical-decisions.md#thread-sequence`.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's

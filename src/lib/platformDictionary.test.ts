@@ -191,17 +191,28 @@ describe('flagged post types', () => {
       return buildPlatformView(platform, info)
     }
 
-    it('stands in for the slug the publisher has not learned yet', () => {
-      const view = threadsView(['text-post', 'image-post'])
+    it('takes the slug from the publisher, like every other type', () => {
+      // CON-284 added `thread` to the Threads entry in the Go repo's
+      // `supportedPlatforms`, so the honest intersection now includes it and
+      // the flag is the only gate left. This used to need a stand-in, because
+      // intersecting with a publisher that had never heard the word hid the
+      // feature from the network it is named after.
+      const view = threadsView(['text-post', 'image-post', 'thread'])
       expect(view.allowed.map((pt) => pt.slug)).toContain('thread')
-      // Available, not dormant: the publisher is connected, and the only
-      // thing it is missing is a word for what we are asking it to send.
       expect(view.available.map((pt) => pt.slug)).toContain('thread')
       expect(view.unavailable.map((pt) => pt.slug)).not.toContain('thread')
     })
 
+    it('drops the type where the publisher does not declare it', () => {
+      // No more standing in: a slug the server has genuinely withdrawn — or
+      // never had — disappears from the app, flag or no flag.
+      const view = threadsView(['text-post', 'image-post'])
+      expect(view.allowed.map((pt) => pt.slug)).not.toContain('thread')
+      expect(view.available.map((pt) => pt.slug)).not.toContain('thread')
+    })
+
     it('still waits on the connection, like every other type', () => {
-      const view = threadsView(['text-post'], false)
+      const view = threadsView(['text-post', 'thread'], false)
       expect(view.allowed.map((pt) => pt.slug)).toContain('thread')
       expect(view.available).toEqual([])
       expect(view.unavailable.map((pt) => pt.slug)).toContain('thread')

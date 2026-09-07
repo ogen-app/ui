@@ -33,6 +33,7 @@ function post(overrides: Partial<Post> = {}): Post {
     social_account_id: '',
     title: '',
     content: 'Hello',
+    thread_segments: [],
     media_urls: [],
     // Far enough out that the future-date rule never trips these cases.
     scheduled_at: '2099-01-01T00:00:00Z',

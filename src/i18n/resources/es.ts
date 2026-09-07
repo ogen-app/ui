@@ -1345,8 +1345,6 @@ export const es: Translation = {
       mediaOnLabel:
         'Este archivo va en la publicación {{position}}: elige otra',
 
-      saveFailed: 'No se pudo guardar qué publicación lleva cada archivo.',
-
       postCount_one: '{{count}} publicación',
       postCount_other: '{{count}} publicaciones',
 
@@ -1358,6 +1356,13 @@ export const es: Translation = {
           'La publicación {{positions}} lleva más archivos de los que admite una publicación',
         issues_other:
           'Las publicaciones {{positions}} llevan más archivos de los que admite una publicación',
+        singular: 'Un solo mensaje, así que se publica como una publicación.',
+        singularAs:
+          'Un solo mensaje, así que se publica como una publicación de tipo {{type}}.',
+        runts_one:
+          'La publicación {{positions}} es muy corta: ¿es un salto involuntario?',
+        runts_other:
+          'Las publicaciones {{positions}} son muy cortas: ¿son saltos involuntarios?',
       },
 
       previewNote:

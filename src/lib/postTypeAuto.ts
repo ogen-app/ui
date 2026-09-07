@@ -34,7 +34,7 @@
  */
 import { isFeatureEnabled } from '@/config/featureFlags'
 import { charCount, markdownToSocialText } from '@/lib/socialText'
-import { SEQUENCE_SLUG, supportsSequence } from '@/lib/threadSequence'
+import { publishesAsChain, SEQUENCE_SLUG } from '@/lib/threadSequence'
 import {
   attachmentKind,
   type AttachmentKind,
@@ -171,25 +171,29 @@ export type ResolveAutoInput = {
   candidates: string[]
   /** The platform's own rules; `undefined` while the query is in flight. */
   rules: PostTypeRuleView[] | undefined
-  /** The platform's Zernio id, for whether a chain is a real answer here. */
-  zernioId: string | undefined
+  /**
+   * Bars the chain rung, so the walk answers with the ordinary format this
+   * post already is. Set by `demotedFrom` and by nothing else.
+   */
+  excludeChain?: boolean
 }
 
 /**
  * Whether a chain is something Auto is allowed to resolve *to*.
  *
  * Not the same question as whether the platform offers the slug. X has offered
- * `thread` all along, and until the submit path sends `threadItems` a thread
- * publishes as one post with the whole body in it (CON-196). So the one reason
- * a chain is the right answer to three thousand characters — that it splits —
- * is not true yet, and resolving to it would quietly produce a post that goes
- * out truncated. Behind the flag it splits, and then it is the right answer.
+ * `thread` all along, and a thread only publishes as a chain because the
+ * client cuts one and CON-284's `thread_segments` carries it; the server marks
+ * the types that work that way `segmented`, which is what this reads. Behind
+ * the flag it splits, and then a chain is the right answer to a body no single
+ * post can hold.
  *
  * Choosing `thread` by hand is untouched either way: that is what pinning a
  * type means, and it behaves exactly as it did before this module existed.
  */
-function chainResolvable(zernioId: string | undefined): boolean {
-  return isFeatureEnabled('thread-sequence') && supportsSequence(zernioId)
+function chainResolvable(rules: PostTypeRuleView[] | undefined): boolean {
+  if (!isFeatureEnabled('thread-sequence')) return false
+  return publishesAsChain(rules?.find((r) => r.slug === SEQUENCE_SLUG)?.rule)
 }
 
 /**
@@ -255,12 +259,12 @@ function takesTheseFiles(
  * and the platform rather than on how a campaign happens to list its types.
  */
 export function resolveAutoPostType(input: ResolveAutoInput): AutoResolution {
-  const { content, attachments, candidates, rules, zernioId } = input
+  const { content, attachments, candidates, rules, excludeChain } = input
   if (!rules) return { state: 'pending' }
 
   const shape = postShape(content, attachments)
   const offered = new Set(candidates)
-  const chain = chainResolvable(zernioId)
+  const chain = !excludeChain && chainResolvable(rules)
 
   // Rule-less types are dropped rather than treated as permissive. A
   // whitelist-only slug is one Ogen enforces nothing for, so "it fits" would
@@ -322,4 +326,33 @@ export function effectivePostType(
 ): string {
   if (!isAutoPostType(stored)) return stored
   return resolution?.state === 'resolved' ? resolution.slug : AUTO_POST_TYPE
+}
+
+/**
+ * The ordinary format a thread that came to one message should publish as, or
+ * `null` when it should stay a thread.
+ *
+ * **A thread of one is a post**, and that is a fact about the platforms rather
+ * than a convenience: X and Threads have no such object, and CON-284's
+ * `thread_segment_count` refuses a chain under two messages at the publish
+ * gate. So a post pinned to `thread` whose body never grew past one message
+ * has to leave with a different slug, and the honest one is the format it
+ * already is — the same ladder walk Auto makes, with the chain rung barred so
+ * it cannot resolve straight back.
+ *
+ * Only a *pinned* thread needs this. An automatic post never had the problem:
+ * `thread` is the ladder's last rung, so a body that fits in one post is
+ * claimed by `text-post` long before the walk reaches it.
+ *
+ * `null` on anything it cannot answer — a chain with two messages, a resolution
+ * that is pending or unfit, a post that is not a thread. Leaving the slug alone
+ * is always the safe half: the gate then says what is wrong in the server's own
+ * words, which beats this module inventing a format nobody asked for.
+ */
+export function demotedFrom(
+  input: ResolveAutoInput & { storedType: string; singular: boolean },
+): string | null {
+  if (input.storedType !== SEQUENCE_SLUG || !input.singular) return null
+  const ordinary = resolveAutoPostType({ ...input, excludeChain: true })
+  return ordinary.state === 'resolved' ? ordinary.slug : null
 }

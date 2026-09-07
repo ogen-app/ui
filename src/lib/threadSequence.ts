@@ -1,6 +1,6 @@
 /**
  * Thread sequences — a post that publishes as a *chain* of posts rather than
- * one (CON-196).
+ * one (CON-196 / CON-284).
  *
  * X and Threads both take one: Zernio calls it `platformSpecificData.
  * threadItems`, "the first item is the root post and subsequent items become
@@ -9,7 +9,7 @@
  * **The thread is the body, and nothing else.** The post is written in the one
  * Markdown editor every other post type uses, and the chain is *derived* from
  * it on every keystroke — there is no second copy of the words, no per-post
- * input, and nothing to keep in step. Two rules produce it:
+ * input, and nothing to keep in step. Three rules produce it:
  *
  * 1. **A divider is a break.** A `---` line is a real block in the editor, so
  *    the author sees the seam they typed. Where the body has dividers, they
@@ -17,19 +17,30 @@
  * 2. **With no divider, blank lines are the breaks** — the convention the
  *    preview card has drawn since it learned about threads, and how people
  *    write threads in practice.
+ * 3. **Whatever is still past the per-post ceiling is cut to fit**, on a
+ *    sentence boundary where there is one, and never leaving a scrap behind —
+ *    see `splitToLimit`.
  *
- * Then whatever is still past the platform's per-post ceiling is cut to fit,
- * on a sentence boundary where there is one. That last step is why a thread
- * has no "too long" state to report: the length problem is solved rather than
- * flagged, and what the author sees in the preview is what publishes.
+ * That third step is why a thread has no "too long" state to report: the
+ * length problem is solved rather than flagged, and what the author sees in
+ * the preview is what publishes. It is also why the server's
+ * `max_content_chars` failure never fires for a thread — we do not send an
+ * over-length message for it to refuse.
+ *
+ * **What crosses the wire is the derivation, not the source.** CON-284 shipped
+ * `posts.thread_segments`, so the chain we cut here is sent with the post and
+ * the publisher no longer has to re-derive anything. The words still live in
+ * `content` and are still authored there; `thread_segments` is egress.
  *
  * The one thing a body cannot express is **which post carries which file**, so
- * that — and only that — is stored: `ThreadAssignment`, a map from attachment
- * id to the post it rides. Attachments stay post-level rows, and a file nobody
- * assigned rides the first post, which is what the X card always drew.
+ * that — and only that — is stored per attachment, as CON-284's `segment_index`.
+ * A file with no index rides the first post, which is what the X card always
+ * drew.
  */
 import { charCount, markdownToSocialText, splitThread } from '@/lib/socialText'
 import { attachmentKind, type PostAttachment } from '@/types/attachments'
+import type { ThreadSegment } from '@/types/posts'
+import type { ResolvedPostTypeRule } from '@/types/validation'
 
 /**
  * The post-type slug a sequence publishes under. The same one X has always
@@ -38,18 +49,13 @@ import { attachmentKind, type PostAttachment } from '@/types/attachments'
 export const SEQUENCE_SLUG = 'thread'
 
 /**
- * Zernio's ids for the networks that take `threadItems`. The overview table at
- * docs.zernio.com/platforms lists only X, but the Threads platform page
- * documents a "Thread Sequence" content type with the identical field, so both
- * are here. LinkedIn, Facebook, Instagram and YouTube have no equivalent.
- */
-const SEQUENCE_NETWORKS: ReadonlySet<string> = new Set(['twitter', 'threads'])
-
-/**
- * A ceiling of ours, not the platforms'. Zernio documents no maximum item
- * count for either network, and neither does Meta — but a body that splits
- * into fifty posts is a mistake rather than a thread, and it is better to say
- * so than to publish it.
+ * A ceiling of ours *and* the server's: `platforms.MaxThreadSegments` is the
+ * same 25 (CON-284 §6.5). Zernio documents no maximum item count for either
+ * network and neither does Meta, but a body that splits into fifty posts is a
+ * mistake rather than a thread.
+ *
+ * Keep the two in step — going over is one of the two `thread_segment_count`
+ * failures, and it is the only one we can still produce.
  */
 export const MAX_THREAD_POSTS = 25
 
@@ -71,28 +77,41 @@ const FENCE = /^\s*(```|~~~)/
  */
 const MIN_FILL = 0.6
 
+/**
+ * Under this share of the ceiling, a post our splitter produced is a scrap
+ * rather than a message — see `splitToLimit`, which is the only thing that
+ * reads it.
+ */
+const RUNT_FRACTION = 0.2
+
+/**
+ * Under this many characters, a message the *author* made is worth mentioning.
+ *
+ * Deliberately tiny, and deliberately not the fraction above. A short closing
+ * line is a real thing people write, so the only runt worth a word is the one
+ * nobody could have meant — a divider typed one line early, a stray character
+ * after the last one. Reported, never refused: the server takes any non-empty
+ * message, and second-guessing a two-word sign-off would be worse than the
+ * slip it catches.
+ */
+const RUNT_REPORT_CHARS = 3
+
 /** Which rule produced the breaks — what the note under the editor reports. */
 export type SplitRule = 'divider' | 'blank-line'
 
 /**
- * Which post of the thread carries an attachment, by attachment id. 0-based,
- * and absent means the first post.
+ * Whether this post type publishes as a chain.
  *
- * The only part of a thread that is stored, because it is the only part the
- * body cannot say. Everything else is derived from `content`.
+ * The server's answer, off the post-type rule (CON-284's `segmented`), rather
+ * than the hard-coded set of Zernio ids this used to keep. It is the thing
+ * that taught Threads the slug, so a third network that learns it needs no
+ * release here — and the rule that says `segmented` is the same one carrying
+ * the per-message `max_content_chars`, so the two can never disagree.
  */
-export type ThreadAssignment = Record<string, number>
-
-export function supportsSequence(zernioId: string | undefined): boolean {
-  return !!zernioId && SEQUENCE_NETWORKS.has(zernioId)
-}
-
-/** Whether this (platform, post type) pair publishes as a chain. */
-export function isSequencePost(
-  zernioId: string | undefined,
-  postType: string,
+export function publishesAsChain(
+  rule: ResolvedPostTypeRule | null | undefined,
 ): boolean {
-  return postType === SEQUENCE_SLUG && supportsSequence(zernioId)
+  return rule?.segmented === true
 }
 
 /**
@@ -190,6 +209,15 @@ function cutPoint(text: string, limit: number): number {
  * One part of the body, cut into posts that fit. Returns the part unchanged
  * when it already does, or when there is no ceiling to fit it to — a limit
  * still loading (`undefined`) must never produce a split that then moves.
+ *
+ * **A cut never leaves a scrap.** Filling each post to the ceiling and letting
+ * the remainder fall where it may is what produces a chain ending in four
+ * words: 290 characters against X's 280 would go out as a full post and then a
+ * post reading "and that's why." So when what is left is barely over one
+ * post's worth, the cut falls in the *middle* instead and the pair comes out
+ * even. This is the sanity check the derivation needs, and it belongs here
+ * rather than in a pass afterwards — by the time two posts exist, the
+ * information needed to balance them (that they were one part) is gone.
  */
 export function splitToLimit(
   text: string,
@@ -197,10 +225,16 @@ export function splitToLimit(
 ): string[] {
   if (limit == null || limit <= 0 || charCount(text) <= limit) return [text]
 
+  const runt = limit * RUNT_FRACTION
   const out: string[] = []
   let rest = text
   while (charCount(rest) > limit && out.length < MAX_THREAD_POSTS) {
-    const cut = cutPoint(rest, limit)
+    const total = charCount(rest)
+    // Barely over: this is the last cut, so take it in the middle rather than
+    // at the ceiling. Both halves clear the limit comfortably — `total` is
+    // under `limit * (1 + RUNT_FRACTION)` for this branch to be taken at all.
+    const target = total - limit < runt ? Math.ceil(total / 2) : limit
+    const cut = cutPoint(rest, target)
     const head = rest.slice(0, cut).trimEnd()
     // A cut that consumed nothing would spin forever; it can only happen on
     // leading whitespace, which the trim below eats anyway.
@@ -222,6 +256,11 @@ export type ThreadPost<T> = {
   count: number
   /** True when the ceiling cut this post out of a longer part of the body. */
   autoSplit: boolean
+  /**
+   * Short enough to be a slip rather than a message (`RUNT_REPORT_CHARS`).
+   * Only ever the author's doing — `splitToLimit` no longer produces one.
+   */
+  runt: boolean
   attachments: T[]
   images: number
   videos: number
@@ -252,6 +291,15 @@ export type ThreadPlan<T> = {
   pending: boolean
   /** The body needs more posts than a thread holds; the tail is not shown. */
   overflowed: boolean
+  /**
+   * The body came to one message, so there is no chain here.
+   *
+   * Not a failure — it is the ordinary state of a thread somebody has started
+   * writing, and the server would refuse it only at the publish gate
+   * (`thread_segment_count` wants 2..25). What it means is that the post
+   * publishes as a *post*: see `demotedFrom` in `lib/postTypeAuto`.
+   */
+  singular: boolean
 }
 
 export type PlanThreadInput<T> = {
@@ -259,11 +307,11 @@ export type PlanThreadInput<T> = {
   content: string
   /** The post's attachments, in the order they publish (`position`). */
   attachments: T[]
-  /** Which post carries which file. `{}` puts everything on the first. */
-  assignment: ThreadAssignment
   /**
-   * The platform's character ceiling, which is per *post* here. `null` is a
-   * platform with no limit; `undefined` is one still loading.
+   * The platform's character ceiling, which is per *post* here — the server
+   * marks the rule `segmented` and puts the per-message limit on
+   * `max_content_chars`. `null` is a platform with no limit; `undefined` is
+   * one still loading.
    */
   charLimit: number | null | undefined
   /** Images one post may carry: 4 on X, 10 on Threads. */
@@ -272,18 +320,24 @@ export type PlanThreadInput<T> = {
   videoCap: number | null | undefined
 }
 
+/** What `planThread` needs off an attachment. */
+type PlannableAttachment = Pick<
+  PostAttachment,
+  'id' | 'mime_type' | 'segment_index'
+>
+
 /**
  * The whole chain, derived from the body in one pass.
  *
- * The editor's note, the preview's cards and the pre-publish row all read this
- * one result, so "how many posts is this, and which one is the problem" has
- * exactly one answer on the screen.
+ * The editor's note, the preview's cards, the pre-publish row and the payload
+ * that goes to the server all read this one result, so "how many posts is
+ * this, and which one is the problem" has exactly one answer on the screen and
+ * the same one on the wire.
  */
-export function planThread<T extends Pick<PostAttachment, 'id' | 'mime_type'>>(
+export function planThread<T extends PlannableAttachment>(
   input: PlanThreadInput<T>,
 ): ThreadPlan<T> {
-  const { content, attachments, assignment, charLimit, imageCap, videoCap } =
-    input
+  const { content, attachments, charLimit, imageCap, videoCap } = input
 
   const { parts, rule } = splitBody(content)
 
@@ -298,13 +352,15 @@ export function planThread<T extends Pick<PostAttachment, 'id' | 'mime_type'>>(
   const overflowed = texts.length > MAX_THREAD_POSTS
   const kept = overflowed ? texts.slice(0, MAX_THREAD_POSTS) : texts
 
-  // Every file lands on a post that exists: an assignment outliving the post
-  // it named (the author deleted a paragraph) rides the last one rather than
-  // jumping back to the top, which is where the reader last saw it.
+  // Every file lands on a post that exists: an index outliving the post it
+  // named (the author deleted a paragraph) rides the last one rather than
+  // jumping back to the top, which is where the reader last saw it. The
+  // server clamps nothing — it refuses an out-of-range `segment_index` with a
+  // 422 — so this is also what keeps a stale index off the wire.
   const last = kept.length - 1
   const buckets: T[][] = kept.map(() => [])
   for (const attachment of attachments) {
-    const wanted = assignment[attachment.id] ?? 0
+    const wanted = attachment.segment_index ?? 0
     const index = Math.min(Math.max(wanted, 0), Math.max(last, 0))
     buckets[index]?.push(attachment)
   }
@@ -322,11 +378,17 @@ export function planThread<T extends Pick<PostAttachment, 'id' | 'mime_type'>>(
     if (imageCap != null && images > imageCap) issues.push('too-many-images')
     if (videoCap != null && videos > videoCap) issues.push('too-many-videos')
 
+    const count = charCount(entry.text)
+
     return {
       position: i + 1,
       text: entry.text,
-      count: charCount(entry.text),
+      count,
       autoSplit: entry.autoSplit,
+      // A part the ceiling cut can no longer be short, so a runt here is
+      // always something the author typed — which is why it is worth saying
+      // rather than fixing.
+      runt: count > 0 && count < RUNT_REPORT_CHARS,
       attachments: carried,
       images,
       videos,
@@ -340,6 +402,10 @@ export function planThread<T extends Pick<PostAttachment, 'id' | 'mime_type'>>(
     parts: parts.length,
     pending: charLimit === undefined,
     overflowed,
+    // An empty body derives one empty post, which is a post nobody has written
+    // rather than a chain — the same answer, and the one that keeps a new
+    // thread out of the publish gate's way.
+    singular: posts.filter((p) => p.text.trim().length > 0).length < 2,
   }
 }
 
@@ -353,72 +419,22 @@ export function autoSplitCount<T>(plan: ThreadPlan<T>): number {
   return plan.posts.filter((p) => p.autoSplit).length
 }
 
-/**
- * Parses the stored assignment, or `{}` when there is nothing usable there.
- *
- * Never throws and never half-trusts a row: the value comes out of a
- * workspace-wide key/value store that anything can write, and the worst case
- * of ignoring it is that files ride the first post — which is where they rode
- * before anyone assigned them.
- */
-export function parseAssignment(raw: string | null): ThreadAssignment {
-  if (!raw) return {}
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (
-      typeof parsed !== 'object' ||
-      parsed === null ||
-      Array.isArray(parsed)
-    ) {
-      return {}
-    }
-    const out: ThreadAssignment = {}
-    for (const [id, value] of Object.entries(
-      parsed as Record<string, unknown>,
-    )) {
-      if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
-        out[id] = value
-      }
-    }
-    return out
-  } catch {
-    return {}
-  }
+/** The 1-based positions of any message too short to have been meant. */
+export function runtPositions<T>(plan: ThreadPlan<T>): number[] {
+  return plan.posts.filter((p) => p.runt).map((p) => p.position)
 }
 
 /**
- * Moves one attachment onto a post of the chain.
+ * The chain as the server stores it (CON-284).
  *
- * Putting a file back on the first post *records* it there rather than
- * forgetting it: an explicit choice should survive the next edit that changes
- * how the body splits, and a file is only unassigned because nobody has had
- * the conversation about it yet.
+ * The one place a `ThreadSegment[]` is built, and it is built from the plan
+ * rather than from the body a second time — so what is sent is by construction
+ * the chain the author was shown. A post that came to one message sends `[]`:
+ * it is not a thread, and `demotedFrom` will have moved its slug too.
  */
-export function assignAttachment(
-  assignment: ThreadAssignment,
-  attachmentId: string,
-  index: number,
-): ThreadAssignment {
-  if (index < 0) return assignment
-  return { ...assignment, [attachmentId]: index }
-}
-
-/**
- * The assignment with entries for files that are no longer on the post taken
- * out. Deleting a file from the media card knows nothing about the thread, so
- * a stale entry is the normal state rather than a corruption.
- *
- * Returns the same object when there is nothing to drop — this runs on every
- * render, and a fresh one would re-run every memo below it.
- */
-export function reconcileAssignment(
-  assignment: ThreadAssignment,
-  attachments: Pick<PostAttachment, 'id'>[],
-): ThreadAssignment {
-  const live = new Set(attachments.map((a) => a.id))
-  const ids = Object.keys(assignment)
-  if (ids.every((id) => live.has(id))) return assignment
-  const out: ThreadAssignment = {}
-  for (const id of ids) if (live.has(id)) out[id] = assignment[id]
-  return out
+export function threadSegments<T>(plan: ThreadPlan<T>): ThreadSegment[] {
+  if (plan.singular) return []
+  return plan.posts
+    .filter((p) => p.text.trim().length > 0)
+    .map((p) => ({ content: p.text }))
 }

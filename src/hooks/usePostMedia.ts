@@ -4,17 +4,17 @@ import { useCampaignPostTypes } from '@/hooks/useCampaignPostTypes'
 import { usePlatforms } from '@/hooks/usePlatforms'
 import { usePostAttachments } from '@/hooks/usePostAttachments'
 import { findRule, usePostTypeRules } from '@/hooks/usePostTypeRules'
-import { getPlatformInfo } from '@/lib/platformDictionary'
 import { resolveCharLimit, titleLimitFor } from '@/lib/platformLimits'
 import { mediaPolicy, type MediaPolicy } from '@/lib/postMedia'
 import {
+  demotedFrom,
   effectivePostType,
   isAutoPostType,
   resolveAutoPostType,
   type AutoResolution,
 } from '@/lib/postTypeAuto'
 import { evaluatePost, type PostCheck } from '@/lib/postValidation'
-import { isSequencePost } from '@/lib/threadSequence'
+import { planThread, publishesAsChain } from '@/lib/threadSequence'
 import type { Post } from '@/types/posts'
 
 /**
@@ -47,7 +47,6 @@ export function usePostMedia(post: Post) {
   // the author could have chosen themselves.
   const autoEnabled = useFeatureFlag('post-type-auto')
   const candidates = useCampaignPostTypes(post.campaign_id, post.platform_id)
-  const zernioId = getPlatformInfo(post.platform_id)?.zernioId
 
   const auto: AutoResolution | null = useMemo(() => {
     if (!autoEnabled || !isAutoPostType(post.platform_post_type)) return null
@@ -56,7 +55,6 @@ export function usePostMedia(post: Post) {
       attachments: media.attachments,
       candidates: candidates.map((pt) => pt.slug),
       rules,
-      zernioId,
     })
   }, [
     autoEnabled,
@@ -65,7 +63,6 @@ export function usePostMedia(post: Post) {
     media.attachments,
     candidates,
     rules,
-    zernioId,
   ])
 
   const postType = effectivePostType(post.platform_post_type, auto)
@@ -74,15 +71,19 @@ export function usePostMedia(post: Post) {
   const rule = ruleView?.rule ?? null
   const platform = platforms?.find((p) => p.id === post.platform_id)
 
-  // Thread sequences (CON-196) — a post that publishes as a chain rather than
-  // one post. Derived from the effective type, so an automatic post that
-  // resolved to `thread` renders as the chain it will publish as. The flag
-  // withdraws the type from every picker, so with it off this is false for
-  // every post, *including* one already saved as a `thread`: that post keeps
-  // rendering as the single body it was written in, which is exactly what it
-  // still publishes as until the submit path sends `threadItems`.
+  // Thread sequences (CON-196 / CON-284) — a post that publishes as a chain
+  // rather than one post. Two facts, and they arrive from different places:
+  // the *type* is the effective one, so an automatic post that resolved to
+  // `thread` renders as the chain it will publish as; and whether that type is
+  // a chain at all is the server's `segmented`, read off the very rule that
+  // carries the per-message character limit below.
+  //
+  // The flag withdraws the type from every picker, so with it off this is
+  // false for every post, *including* one already saved as a `thread`: that
+  // post keeps rendering as the single body it was written in, which is what
+  // it still publishes as while nothing sends `thread_segments`.
   const sequenceEnabled = useFeatureFlag('thread-sequence')
-  const sequence = sequenceEnabled && isSequencePost(zernioId, postType)
+  const sequence = sequenceEnabled && publishesAsChain(rule)
 
   const policy: MediaPolicy = useMemo(
     () => mediaPolicy(post.platform_id, rule, platform),
@@ -137,6 +138,58 @@ export function usePostMedia(post: Post) {
     ],
   )
 
+  // The chain, derived from the body on every keystroke — and here rather than
+  // in the route because every input it takes is already joined in this hook:
+  // the body, the attachments, the per-message ceiling and the platform's media
+  // caps. The route reads it for the note, the preview and the checks bar, and
+  // writes it to `thread_segments` (CON-284).
+  const plan = useMemo(
+    () =>
+      planThread({
+        // `''` rather than skipping the call: a plan for a post that is not a
+        // chain is an empty one, which is what every reader downstream already
+        // renders as "nothing to say here".
+        content: sequence ? post.content : '',
+        attachments: media.attachments,
+        charLimit: maxContentChars,
+        imageCap: policy.image?.maxPerPost,
+        videoCap: policy.video?.maxPerPost,
+      }),
+    [sequence, post.content, media.attachments, maxContentChars, policy],
+  )
+
+  /**
+   * The ordinary slug a one-message thread has to leave as, or `null`.
+   *
+   * Only ever answers for a post *pinned* to `thread` — an automatic one never
+   * reaches the chain rung with a body that fits in a single post. `null` while
+   * the plan is pending, so a resolution is never pinned off a chain that has
+   * not been split yet.
+   */
+  const demotedType = useMemo(
+    () =>
+      sequence && !plan.pending
+        ? demotedFrom({
+            content: post.content,
+            attachments: media.attachments,
+            candidates: candidates.map((pt) => pt.slug),
+            rules,
+            storedType: post.platform_post_type,
+            singular: plan.singular,
+          })
+        : null,
+    [
+      sequence,
+      plan.pending,
+      plan.singular,
+      post.content,
+      post.platform_post_type,
+      media.attachments,
+      candidates,
+      rules,
+    ],
+  )
+
   return {
     ...media,
     policy,
@@ -150,5 +203,9 @@ export function usePostMedia(post: Post) {
     auto,
     /** This post publishes as a chain rather than as one post. */
     sequence,
+    /** The chain this post's body comes to. Empty when it is not one. */
+    plan,
+    /** What a thread of one message publishes as instead — see `demotedFrom`. */
+    demotedType,
   }
 }

@@ -1770,8 +1770,6 @@ export const en = {
       mediaOn: 'Post {{position}}',
       mediaOnLabel: 'This file rides post {{position}} — pick another',
 
-      saveFailed: 'Could not save which post carries which file.',
-
       postCount_one: '{{count}} post',
       postCount_other: '{{count}} posts',
 
@@ -1788,6 +1786,22 @@ export const en = {
         issues_one: 'Post {{positions}} carries more media than one post takes',
         issues_other:
           'Posts {{positions}} carry more media than one post takes',
+        /**
+         * Not a failure. A chain of one is what the platforms call a post, and
+         * publishing writes it as one — so this row says what will happen
+         * rather than what is wrong. `singularAs` names the format; the bare
+         * one is for the rare case where nothing on the campaign fits it.
+         */
+        singular: 'One message, so this publishes as a single post.',
+        singularAs: 'One message, so this publishes as a single {{type}} post.',
+        /**
+         * A warning, never a refusal — the platforms take a two-character
+         * message, and the author may have meant it. Almost always a divider
+         * typed one line early.
+         */
+        runts_one: 'Post {{positions}} is very short — is that a stray break?',
+        runts_other:
+          'Posts {{positions}} are very short — are those stray breaks?',
       },
 
       /**

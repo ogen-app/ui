@@ -2,21 +2,20 @@ import { describe, expect, it } from 'vitest'
 
 import {
   MAX_THREAD_POSTS,
-  assignAttachment,
   autoSplitCount,
-  isSequencePost,
-  parseAssignment,
   planThread,
-  reconcileAssignment,
+  publishesAsChain,
+  runtPositions,
   splitBody,
   splitToLimit,
-  supportsSequence,
   threadHasIssues,
-  type ThreadAssignment,
+  threadSegments,
 } from './threadSequence.ts'
+import type { ResolvedPostTypeRule } from '@/types/validation'
 
-function att(id: string, mime = 'image/jpeg') {
-  return { id, mime_type: mime }
+/** An attachment, optionally pinned to a message of the chain. */
+function att(id: string, mime = 'image/jpeg', segment: number | null = null) {
+  return { id, mime_type: mime, segment_index: segment }
 }
 
 const LIMITS = { charLimit: 280, imageCap: 4, videoCap: 1 }
@@ -24,8 +23,7 @@ const LIMITS = { charLimit: 280, imageCap: 4, videoCap: 1 }
 function plan(
   content: string,
   extra: {
-    attachments?: { id: string; mime_type: string }[]
-    assignment?: ThreadAssignment
+    attachments?: ReturnType<typeof att>[]
     charLimit?: number | null | undefined
   } = {},
 ) {
@@ -33,23 +31,34 @@ function plan(
     ...LIMITS,
     content,
     attachments: extra.attachments ?? [],
-    assignment: extra.assignment ?? {},
     ...('charLimit' in extra ? { charLimit: extra.charLimit } : {}),
   })
 }
 
-describe('supportsSequence / isSequencePost', () => {
-  it('covers the two networks Zernio takes threadItems for', () => {
-    expect(supportsSequence('twitter')).toBe(true)
-    expect(supportsSequence('threads')).toBe(true)
-    expect(supportsSequence('linkedin')).toBe(false)
-    expect(supportsSequence(undefined)).toBe(false)
+function rule(over: Partial<ResolvedPostTypeRule> = {}): ResolvedPostTypeRule {
+  return {
+    requires_content: false,
+    allowed_kinds: [],
+    min_attachments: 0,
+    max_attachments: null,
+    max_content_chars: 280,
+    segmented: false,
+    ...over,
+  }
+}
+
+describe('publishesAsChain', () => {
+  it("is the server's answer, not a list of networks we keep", () => {
+    // CON-284 put `segmented` on the post-type rule. The client used to hold a
+    // hard-coded set of Zernio ids, which is what went stale the moment the
+    // server taught Threads the slug.
+    expect(publishesAsChain(rule({ segmented: true }))).toBe(true)
+    expect(publishesAsChain(rule())).toBe(false)
   })
 
-  it('is the pair, not either half', () => {
-    expect(isSequencePost('twitter', 'thread')).toBe(true)
-    expect(isSequencePost('twitter', 'text-post')).toBe(false)
-    expect(isSequencePost('linkedin', 'thread')).toBe(false)
+  it('decides nothing while the rule is missing', () => {
+    expect(publishesAsChain(null)).toBe(false)
+    expect(publishesAsChain(undefined)).toBe(false)
   })
 })
 
@@ -164,32 +173,35 @@ describe('planThread', () => {
     expect(result.posts[1].attachments).toEqual([])
   })
 
-  it('honours an assignment', () => {
+  it('honours the segment_index stored on the attachment', () => {
     const result = plan('One\n\nTwo', {
-      attachments: [att('1'), att('2')],
-      assignment: { '2': 1 },
+      attachments: [att('1'), att('2', 'image/jpeg', 1)],
     })
     expect(result.posts[0].attachments.map((a) => a.id)).toEqual(['1'])
     expect(result.posts[1].attachments.map((a) => a.id)).toEqual(['2'])
   })
 
   it('gives a file the last post when the post it named is gone', () => {
+    // The author deleted a paragraph and the index outlived it. Riding the
+    // last post is where the reader last saw the file — and clamping here is
+    // also what keeps an out-of-range index off the wire, which the server
+    // refuses with a 422 rather than clamping itself.
     const result = plan('Only one post now', {
-      attachments: [att('1')],
-      assignment: { '1': 6 },
+      attachments: [att('1', 'image/jpeg', 6)],
     })
     expect(result.posts[0].attachments.map((a) => a.id)).toEqual(['1'])
   })
 
   it('applies the image cap per post, not to the thread', () => {
-    const attachments = ['1', '2', '3', '4', '5'].map((id) => att(id))
-    const spread = plan('One\n\nTwo', {
-      attachments,
-      assignment: { '4': 1, '5': 1 },
-    })
+    const attachments = ['1', '2', '3', '4', '5'].map((id, i) =>
+      att(id, 'image/jpeg', i >= 3 ? 1 : 0),
+    )
+    const spread = plan('One\n\nTwo', { attachments })
     expect(spread.posts.every((p) => p.issues.length === 0)).toBe(true)
 
-    const piled = plan('One\n\nTwo', { attachments })
+    const piled = plan('One\n\nTwo', {
+      attachments: ['1', '2', '3', '4', '5'].map((id) => att(id)),
+    })
     expect(piled.posts[0].issues).toContain('too-many-images')
   })
 
@@ -220,41 +232,94 @@ describe('planThread', () => {
   })
 })
 
-describe('parseAssignment', () => {
-  it('reads back what was written', () => {
-    expect(parseAssignment('{"a":2}')).toEqual({ a: 2 })
+describe('the no-scrap rule', () => {
+  it('never ends a cut part on a handful of words', () => {
+    // The bug this exists for: filling each post to the ceiling and letting
+    // the remainder fall where it may publishes a full post followed by a post
+    // reading "and that is why." Barely-over bodies get an even pair instead.
+    const body = 'word '.repeat(58).trim() // ~289 chars, just past 280
+    const parts = splitToLimit(body, 280)
+    expect(parts).toHaveLength(2)
+    for (const part of parts) {
+      expect(part.length).toBeGreaterThan(280 * 0.2)
+      expect(part.length).toBeLessThanOrEqual(280)
+    }
   })
 
-  it('treats nothing and junk alike as never-written', () => {
-    expect(parseAssignment(null)).toEqual({})
-    expect(parseAssignment('')).toEqual({})
-    expect(parseAssignment('not json')).toEqual({})
-    expect(parseAssignment('[1,2]')).toEqual({})
+  it('still fills to the ceiling when there is a real post left over', () => {
+    // The balancing is for the *last* cut only — a long body should not come
+    // out as a dozen half-empty posts.
+    const parts = splitToLimit('word '.repeat(300).trim(), 280)
+    expect(parts.length).toBeGreaterThan(3)
+    // Every part but the last two is a full post's worth.
+    for (const part of parts.slice(0, -2)) {
+      expect(part.length).toBeGreaterThan(280 * 0.6)
+    }
   })
 
-  it('drops entries that are not a post index', () => {
-    expect(parseAssignment('{"a":"1","b":-1,"c":1.5,"d":0}')).toEqual({ d: 0 })
+  it('leaves a part that already fits exactly alone', () => {
+    expect(splitToLimit('x'.repeat(280), 280)).toEqual(['x'.repeat(280)])
   })
 })
 
-describe('assignAttachment / reconcileAssignment', () => {
-  it('records a file on the first post rather than forgetting it', () => {
-    expect(assignAttachment({ a: 2 }, 'a', 0)).toEqual({ a: 0 })
+describe('runts', () => {
+  it('names a message too short to have been meant', () => {
+    // Only ever the author's doing — a divider typed a line early. The
+    // splitter cannot produce one any more.
+    const result = plan(
+      'A real first message\n\n---\n\nx\n\n---\n\nAnd a third',
+    )
+    expect(runtPositions(result)).toEqual([2])
   })
 
-  it('ignores an index that is not a post', () => {
-    const current = { a: 1 }
-    expect(assignAttachment(current, 'a', -1)).toBe(current)
+  it('does not flag a short closing line', () => {
+    // "Thanks for reading." is a thing people write, and refusing it would be
+    // worse than the slip the check is for.
+    const result = plan('A real first message\n\n---\n\nThanks for reading.')
+    expect(runtPositions(result)).toEqual([])
+  })
+})
+
+describe('singular', () => {
+  it('is true for a body that fits in one message', () => {
+    // Not a failure: a chain of one is what the platforms call a post, and
+    // `demotedFrom` is what moves the slug for it.
+    expect(plan('Just the one thing to say').singular).toBe(true)
   })
 
-  it('drops entries for files that are gone', () => {
-    expect(reconcileAssignment({ a: 1, b: 2 }, [att('a')])).toEqual({ a: 1 })
+  it('is true for an empty body', () => {
+    expect(plan('').singular).toBe(true)
   })
 
-  it('returns the very same object when there is nothing to fix', () => {
-    // Identity, not equality: this runs on every render, and a fresh object
-    // would re-run every memo downstream of it.
-    const current = { a: 1 }
-    expect(reconcileAssignment(current, [att('a')])).toBe(current)
+  it('is false once there is a second message', () => {
+    expect(plan('One\n\nTwo').singular).toBe(false)
+  })
+})
+
+describe('threadSegments', () => {
+  it('is the chain the author was shown, message for message', () => {
+    // Built from the plan rather than from the body a second time, so what
+    // goes to the server is by construction what the preview drew.
+    const result = plan('One\n\nTwo\n\nThree')
+    expect(threadSegments(result)).toEqual([
+      { content: 'One' },
+      { content: 'Two' },
+      { content: 'Three' },
+    ])
+  })
+
+  it('sends nothing for a post that came to one message', () => {
+    // `[]` is what the server stores for anything that is not a thread, so it
+    // is both "no chain" and the tidy-up after a demotion.
+    expect(threadSegments(plan('Just the one'))).toEqual([])
+  })
+
+  it('carries the cut copy, not the uncut body', () => {
+    const result = plan('word '.repeat(300).trim())
+    const segments = threadSegments(result)
+    expect(segments.length).toBe(result.posts.length)
+    for (const segment of segments) {
+      expect(segment.content.length).toBeLessThanOrEqual(280)
+    }
   })
 })

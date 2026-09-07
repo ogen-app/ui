@@ -45,10 +45,6 @@ export type PlatformPostType = {
    * through, applied to the one thing a platform's vocabulary can be
    * half-built in.
    *
-   * While it is *on* the flag also stands in for the publisher's vocabulary,
-   * which is `aheadOfPublishers` below — a type the server has not learned to
-   * name yet is exactly what running ahead behind a flag is for.
-   *
    * Only for types that are *new*. A type the app already offered must not
    * acquire one: withdrawing it would change how the app behaves with the flag
    * off, which is the one thing a flag may never do.
@@ -144,11 +140,9 @@ export const PLATFORMS: PlatformInfo[] = [
       //
       // Flagged where X's is not, because this one is new: X has offered
       // `thread` all along and taking it away would be a change with the flag
-      // off. The flag is also the *only* gate this one has, because
-      // `supportedPlatforms` in the Go repo lists `thread` for `twitter` only
-      // — so the publisher will not report it here until the slug lands, and
-      // `aheadOfPublishers` lets the flag answer in its place rather than
-      // hiding the feature from the network it is named after.
+      // off. The publisher declares the slug here too since CON-284, so the
+      // flag is the only gate it needs — the stand-in that used to answer in
+      // the publisher's place is gone with the vocabulary gap it covered.
       { slug: 'thread', label: 'Thread', flag: 'thread-sequence' },
     ],
   },
@@ -220,8 +214,10 @@ function unionSupportedSlugs(
 
 // A resolved view of a platform: the dictionary metadata joined with the
 // publisher state from the API. The post-type universe is bounded by what at
-// least one publisher supports — dictionary-only entries are excluded, with
-// the one deliberate exception `aheadOfPublishers` names.
+// least one publisher supports — dictionary-only entries are excluded, with no
+// exceptions. There was one, for the stretch when this build knew `thread` on
+// Threads and the publisher did not; CON-284 taught it the word, and the
+// stand-in came out with the gap.
 export type PlatformView = {
   platform: Platform
   info: PlatformInfo
@@ -234,26 +230,6 @@ export type PlatformView = {
   publishers: PlatformPublisher[]
   connectedPublishers: PlatformPublisher[]
   connectedPublisherName: string | null
-}
-
-/**
- * Whether a released-but-flagged type may stand in for a slug no publisher has
- * declared.
- *
- * A flag means this build is ahead of the API — and on Threads the publisher's
- * *vocabulary* is part of what the API cannot back yet: `supportedPlatforms` in
- * the Go repo lists `thread` for `twitter` only. Intersecting with it would
- * hide the feature from a network it was written for, which is the opposite of
- * what running ahead behind a flag is for. So while the flag is on, the
- * platform's own state answers in the slug's place: a publisher exists, so the
- * type is allowed; that publisher is connected, so it is available.
- *
- * Narrow on purpose. It costs nothing with the flag off — `released` has
- * already dropped the type by then — and it never touches an unflagged one, so
- * a slug the server has genuinely withdrawn still disappears from the app.
- */
-function aheadOfPublishers(pt: PlatformPostType): boolean {
-  return pt.flag !== undefined
 }
 
 export function buildPlatformView(
@@ -271,16 +247,8 @@ export function buildPlatformView(
   const released = info.postTypes.filter(
     (pt) => !pt.flag || isFeatureEnabled(pt.flag),
   )
-  const allowed = released.filter(
-    (pt) =>
-      allowedSlugs.has(pt.slug) ||
-      (aheadOfPublishers(pt) && publishers.length > 0),
-  )
-  const available = allowed.filter(
-    (pt) =>
-      availableSlugs.has(pt.slug) ||
-      (aheadOfPublishers(pt) && connectedPublishers.length > 0),
-  )
+  const allowed = released.filter((pt) => allowedSlugs.has(pt.slug))
+  const available = allowed.filter((pt) => availableSlugs.has(pt.slug))
   const unavailable = allowed.filter((pt) => !available.includes(pt))
   return {
     platform,
