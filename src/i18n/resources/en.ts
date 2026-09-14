@@ -1729,29 +1729,24 @@ export const en = {
        * dismissed.
        */
       explainer:
-        'This publishes as a chain of posts, each replying to the one before it. Type --- on its own line wherever you want a break; with no divider anywhere, blank lines are the breaks. Anything still past the character limit is cut to fit.',
+        'This publishes as a chain of posts, each replying to the one before it. Type --- on its own line wherever you want a break, and those are the breaks — exactly where you put them, however long each post comes out. With no divider anywhere, it is broken up for you to fit the character limit.',
 
       /**
-       * The note under the editor: what the body will publish as. Two
-       * sentences, never one assembled from clauses — only the second has a
-       * limit in it, and only sometimes.
+       * The note under the editor: what the body will publish as.
+       *
+       * Two sentences and never a third assembled from clauses, because the
+       * two are alternatives rather than halves — a body either carries
+       * dividers, in which case the limit did not come into it, or it carries
+       * none and the limit is the only thing that broke it.
        */
       splitByDivider_one:
         'Publishes as {{count}} post, broken where you put a divider.',
       splitByDivider_other:
         'Publishes as {{count}} posts, broken where you put a divider.',
-      splitByBlankLine_one:
-        'Publishes as {{count}} post, broken at blank lines.',
-      splitByBlankLine_other:
-        'Publishes as {{count}} posts, broken at blank lines.',
-      splitAutoCut_one:
-        '{{count}} of them came from copy cut at {{limit}} characters.',
-      splitAutoCut_other:
-        '{{count}} of them came from copy cut at {{limit}} characters.',
       splitByLimit_one:
-        'Publishes as {{count}} post, cut to fit {{limit}} characters.',
+        'Publishes as {{count}} post, broken up to fit {{limit}} characters.',
       splitByLimit_other:
-        'Publishes as {{count}} posts, cut to fit {{limit}} characters.',
+        'Publishes as {{count}} posts, broken up to fit {{limit}} characters.',
       /**
        * One post, and therefore no rule to name: the body has no divider and
        * no blank line, or it has one and still fits. How to make a second post
@@ -1774,15 +1769,24 @@ export const en = {
       postCount_other: '{{count}} posts',
 
       /**
-       * The row this adds to the pre-publish bar. Length is not among the
-       * things it can fail on: copy past the ceiling is cut to fit as the
-       * chain is built, so what is left is the media, which only the author
-       * can move.
+       * The row this adds to the pre-publish bar.
+       *
+       * Length and media are separate failures rather than one "these posts
+       * have a problem", because they are separate jobs: one is rewriting a
+       * message, the other is moving a file to a different one.
        */
       check: {
         label: 'Thread',
         pending: 'Checking…',
         overflow: 'More than {{max}} posts',
+        /**
+         * Only reachable for a body broken with dividers — where there are
+         * none the split is made to fit, so nothing can come out over the
+         * limit. Your breaks are kept as written, which is why this is
+         * reported rather than quietly re-cut.
+         */
+        tooLong_one: 'Post {{positions}} is over {{limit}} characters',
+        tooLong_other: 'Posts {{positions}} are over {{limit}} characters',
         issues_one: 'Post {{positions}} carries more media than one post takes',
         issues_other:
           'Posts {{positions}} carry more media than one post takes',

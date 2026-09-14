@@ -15,6 +15,7 @@ import {
 } from '@/lib/postTypeAuto'
 import { evaluatePost, type PostCheck } from '@/lib/postValidation'
 import { planThread, publishesAsChain } from '@/lib/threadSequence'
+import { useThreadPreview } from '@/hooks/useThreadPreview'
 import type { Post } from '@/types/posts'
 
 /**
@@ -138,24 +139,31 @@ export function usePostMedia(post: Post) {
     ],
   )
 
-  // The chain, derived from the body on every keystroke — and here rather than
-  // in the route because every input it takes is already joined in this hook:
-  // the body, the attachments, the per-message ceiling and the platform's media
-  // caps. The route reads it for the note, the preview and the checks bar, and
-  // writes it to `thread_segments` (CON-284).
+  // Where the body breaks is the server's answer, asked of the body in the
+  // editor rather than the one on the row (CON-284 R2). `enabled` is what keeps
+  // every other post type off the endpoint entirely.
+  const { preview, stale: previewStale } = useThreadPreview({
+    content: post.content,
+    platformId: post.platform_id,
+    enabled: sequence,
+  })
+
+  // The chain — here rather than in the route because every input it takes is
+  // already joined in this hook: the server's messages, the attachments and the
+  // platform's media caps. The route reads it for the note, the preview card
+  // and the checks bar. Nothing writes it back: `thread_segments` is derived
+  // server-side and ignored on a write.
   const plan = useMemo(
     () =>
       planThread({
-        // `''` rather than skipping the call: a plan for a post that is not a
-        // chain is an empty one, which is what every reader downstream already
-        // renders as "nothing to say here".
-        content: sequence ? post.content : '',
+        chain: sequence,
+        content: post.content,
+        preview,
         attachments: media.attachments,
-        charLimit: maxContentChars,
         imageCap: policy.image?.maxPerPost,
         videoCap: policy.video?.maxPerPost,
       }),
-    [sequence, post.content, media.attachments, maxContentChars, policy],
+    [sequence, post.content, preview, media.attachments, policy],
   )
 
   /**
@@ -205,6 +213,8 @@ export function usePostMedia(post: Post) {
     sequence,
     /** The chain this post's body comes to. Empty when it is not one. */
     plan,
+    /** The plan describes an older body than the editor holds. */
+    previewStale,
     /** What a thread of one message publishes as instead — see `demotedFrom`. */
     demotedType,
   }

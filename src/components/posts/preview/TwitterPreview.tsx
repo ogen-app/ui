@@ -36,9 +36,16 @@ import type { PreviewAuthor, PreviewMediaItem, PreviewProps } from './types.ts'
  *
  * Where those posts come from depends on whether the sequence feature is on.
  * With it on the editor hands them over (`sequence`), each with the media it
- * carries. Without it, the card falls back to splitting the body at blank
- * lines — a guess, but the honest one: that is also what the single block of
- * `content` would have to be split on by anything downstream.
+ * carries — the server's own split, asked for through
+ * `POST /api/posts/thread/preview`, so the card draws what will publish.
+ *
+ * Without it the card falls back to splitting the body at blank lines, and that
+ * fallback is now known to be **wrong**: `platforms.SplitThread` breaks at
+ * hyphen dividers, or packs to the ceiling where there are none, and never at
+ * every blank line. It stays anyway, because it is what this card has drawn
+ * since long before any of it shipped and a flag may not change what happens
+ * when it is off. It goes when the flag does — at which point `sequence` is
+ * always present and this branch is unreachable.
  *
  * The avatar sits in its own column with everything else indented past it,
  * which is X's layout and the reason its text measure is narrower than the

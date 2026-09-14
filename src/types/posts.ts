@@ -1,3 +1,4 @@
+import type { PlatformValidationError } from '@/types/attachments'
 import type { Campaign, PublisherAccount } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
 
@@ -22,6 +23,39 @@ export type PostCTAType = 'link' | 'button' | 'none'
  */
 export type ThreadSegment = { content: string }
 
+/**
+ * One message of a split the server has worked out but not stored
+ * (`POST /api/posts/thread/preview`).
+ *
+ * `char_count` is code points, the platforms' own unit and the one
+ * `max_content_chars` is measured in — so it is taken from the answer rather
+ * than recounted here, where a different idea of a character would show a
+ * count the publish gate disagrees with.
+ */
+export type ThreadPreviewSegment = { content: string; char_count: number }
+
+/**
+ * What a body would publish as, asked of the server before anything is saved
+ * (CON-284 R2).
+ *
+ * The endpoint runs the same `SplitThread` the write path runs and then the
+ * same publish gate, so this is not an approximation of the outcome — it *is*
+ * the outcome, minus the persisting. Attachments are deliberately not
+ * considered: a preview knows nothing about which message carries which file,
+ * so per-message media rules stay this client's job (`lib/threadSequence`).
+ */
+export type ThreadPreview = {
+  segments: ThreadPreviewSegment[]
+  /**
+   * The per-message ceiling the split was packed to. `0` means the server had
+   * none to use — a draft with no platform picked yet — in which case the body
+   * comes back whole unless it carries dividers.
+   */
+  limit: number
+  valid: boolean
+  errors: PlatformValidationError[]
+}
+
 export type Post = {
   id: string
   campaign_id: string
@@ -39,12 +73,17 @@ export type Post = {
    * The ordered messages this post publishes as, when it is a thread (CON-284)
    * — `[]` for every ordinary post, and for a thread nobody has saved yet.
    *
-   * **Derived, not authored.** The words live in `content`, exactly as they do
-   * for every other post type, and the chain is cut out of it on the way to
-   * the server (`lib/threadSequence`). So this field is what *goes out* rather
-   * than what is being written: nothing renders from it, and the editor never
-   * reads it back. That is what keeps one body the single copy of the post's
-   * words — see `docs/technical-decisions.md#thread-sequence`.
+   * **Read-only, and the server's own arithmetic.** The words live in
+   * `content`, exactly as they do for every other post type; the server splits
+   * that body on every write and stores the result here (R2's `SplitThread`).
+   * Sending it back is not an error — it is *ignored* — so it is absent from
+   * `PostPayload` altogether, which is the honest shape: there is no way for
+   * this client to disagree with the server about where the breaks fall.
+   *
+   * What it is good for is reading: it is the only account of the split that
+   * cannot drift, and `POST /api/posts/thread/preview` answers the same
+   * question for a body that has not been saved yet. See
+   * `docs/technical-decisions.md#thread-sequence`.
    */
   thread_segments: ThreadSegment[]
   media_urls: string[]
@@ -183,14 +222,6 @@ export type PostPayload = {
   social_account_id?: string
   title?: string
   content?: string
-  /**
-   * The derived chain (CON-284). A plain full-replace field, not a
-   * presence-aware one: what is sent is what is stored, and the server forces
-   * it to `[]` for any post that is not a `thread`. So it is safe to send on
-   * every save — including a save that is switching the post *away* from
-   * `thread`, which is how the segments get cleared.
-   */
-  thread_segments?: ThreadSegment[]
   media_urls?: string[]
   scheduled_at?: string | null
   published_at?: string | null

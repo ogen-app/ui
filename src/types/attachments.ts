@@ -25,9 +25,18 @@ export type PostAttachment = {
   position: number
   /**
    * Which message of a threaded post carries this file (CON-284), 0-based.
-   * `null` for every attachment of an ordinary post — and the server refuses a
-   * non-null one there with a 422, so a post leaving the `thread` type has to
-   * null these before it saves.
+   *
+   * **`null` means the root**, not "unassigned" — R2 made that the server's own
+   * reading, so an attachment nobody has moved publishes on message one without
+   * this client ever writing an index. That is the ordinary state: the delimited
+   * body says where the messages break but cannot say which carries which file,
+   * so only a file the author *moves* gets a number.
+   *
+   * On a post that is not a thread it is always `null`, and the server answers
+   * **422** to any attempt to set one there — on the upload and on the PATCH
+   * alike. A post leaving the `thread` type keeps whatever indices it had:
+   * nothing reads them off an ordinary post, and they are what bring the
+   * assignments back if it becomes a thread again.
    *
    * `position` still orders the media *within* a message, so the two are not
    * alternatives: a thread's attachments carry both.

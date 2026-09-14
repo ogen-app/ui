@@ -1,4 +1,9 @@
-import type { Post, PostPayload, PostStatus } from '@/types/posts'
+import type {
+  Post,
+  PostPayload,
+  PostStatus,
+  ThreadPreview,
+} from '@/types/posts'
 import { apiJson, apiVoid } from './http'
 
 const BASE = '/api/posts'
@@ -26,6 +31,34 @@ export function listPosts(): Promise<Post[]> {
 
 export function getPost(id: string): Promise<Post> {
   return apiJson<Post>(`${BASE}/${id}`, 'Unable to fetch post')
+}
+
+/**
+ * What `content` would publish as on `platformId`, without saving it
+ * (CON-284 R2).
+ *
+ * Stateless, and it takes a body rather than a post id on purpose: the
+ * question is asked of what is in the editor right now, which is usually
+ * several keystrokes ahead of the stored row.
+ *
+ * This is the client's *only* account of where a thread breaks. The splitting
+ * rules live in one place — `platforms.SplitThread` — and this is how we read
+ * them, rather than by keeping a second copy here that a server deploy could
+ * silently disagree with. That mattered even before R2 shipped: the rules are
+ * particular (three-or-more **hyphens** alone on a line is a divider, `***` is
+ * not; with no divider the body is packed to the ceiling rather than broken at
+ * every blank line), and a client that guessed differently would draw a
+ * preview of a thread nobody is going to publish.
+ */
+export function previewThread(
+  content: string,
+  platformId: string,
+): Promise<ThreadPreview> {
+  return apiJson<ThreadPreview>(
+    `${BASE}/thread/preview`,
+    'Unable to preview the thread',
+    { method: 'POST', body: { content, platform_id: platformId } },
+  )
 }
 
 export function createPost(payload: PostPayload): Promise<Post> {
@@ -340,21 +373,20 @@ export function restorePost(
  * being created has no stored set to preserve, and duplicating one carries its
  * reading list over.
  *
- * `thread_segments` (CON-284) is listed for the same reason `published_url` is,
- * and against the same instinct — it looks derived, so it looks omissible. The
- * server defaults it away on silence, so a payload without it turns a thread
- * back into a single post. That would not happen in the editor, which rewrites
- * the field on every keystroke; it would happen on a **calendar drag**, an
- * unschedule or a convert-to-manual, none of which know a thread from a photo.
- * Round-tripping the stored chain is what makes those callers safe, and the
- * editor overriding it — by keeping `doc.thread_segments` derived from the body
- * — is what keeps it true.
+ * `thread_segments` (CON-284) is in neither camp, because it is no longer a
+ * field this client writes at all. R2 made `content` the thread's canonical
+ * body and the segments the server's arithmetic over it, so a write carrying
+ * them is ignored rather than obeyed. It is absent here for the plainest
+ * reason available: sending it would change nothing. That also retires the
+ * hazard it used to pose — a **calendar drag**, an unschedule or a
+ * convert-to-manual can no longer turn a thread back into a single post by
+ * omitting a field they know nothing about, because the body they *do* carry
+ * is now the whole of the thread.
  */
 export function postToPayload(post: Post): PostPayload {
   return {
     campaign_id: post.campaign_id,
     published_url: post.published_url,
-    thread_segments: post.thread_segments,
     platform_id: post.platform_id,
     platform_post_type: post.platform_post_type,
     social_account_id: post.social_account_id,

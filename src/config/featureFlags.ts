@@ -451,60 +451,57 @@ const FEATURE_FLAGS = {
    * order", each item carrying its own text and its own media
    * (docs.zernio.com/platforms/threads, /platforms/twitter).
    *
-   * **The back end shipped this** (ogen#140), and four of the five things this
-   * flag used to be waiting on are done: the submit path fills `threadItems`,
-   * `posts.thread_segments` stores the chain, `post_attachments.segment_index`
-   * stores which message carries which file, `thread` is on the Threads entry
-   * in `supportedPlatforms`, and attachment validation counts per message. The
-   * client was re-pointed at all of it — the hard-coded list of chain-capable
-   * networks is now the rule's `segmented`, the media assignment is a column
-   * rather than a tenant key/value row, and `aheadOfPublishers` is gone with
-   * the vocabulary gap it covered.
+   * **The back end shipped this twice, and the second time it agreed with us.**
    *
-   * **Waiting on one thing, and it is one line.**
+   * R1 (ogen#140) stored a thread as `posts.thread_segments`, an array the
+   * client authored message by message, and restamped `content` from the first
+   * of them on every save. That last line was the one assumption the two sides
+   * did not share: here the chain is *derived from the body*, so `content` is
+   * the source and the restamp replaced it with message one. It would have cost
+   * every reader that does not know about threads — the calendar card, the
+   * posts table, search, versions, the assistant — a one-message post.
    *
-   * `handlers/posts.go` restamps the body from the first message whenever a
-   * thread is saved:
+   * **R2 (ogen#144, merged 2026-09-10) inverted it.** `posts.content` is now
+   * the canonical thread body, exactly as typed, and `thread_segments` is the
+   * server's own arithmetic over it, recomputed on every write by
+   * `platforms.SplitThread`. That is the model this client already had, so what
+   * changed here is not the shape of the feature but *who owns the cut*:
    *
-   * ```go
-   * post.ThreadSegments = nullThreadSegments(r.ThreadSegments)
-   * if len(post.ThreadSegments) > 0 {
-   *     post.Content = post.ThreadSegments.RootContent()
-   * }
-   * ```
+   * - `thread_segments` is **ignored** on a write, so `postToPayload` no longer
+   *   carries it and the editor no longer keeps it in step. Saving the body is
+   *   saving the thread.
+   * - The splitter that used to live in `lib/threadSequence` is **gone**, and
+   *   `POST /api/posts/thread/preview` answers in its place
+   *   (`useThreadPreview`). That was not tidying: ours broke at every blank
+   *   line and took `***` as a divider, and the server does neither, so the two
+   *   disagreed about most bodies — and the server's is the one that publishes.
+   * - `segment_index` is optional, with NULL meaning the root message, so a
+   *   file nobody moved needs no index written for it.
    *
-   * That is the one assumption the two sides do not share. Here the chain is
-   * **derived from the body** (`lib/threadSequence`) — one Markdown editor,
-   * dividers as the breaks, blank lines where there are none, anything past the
-   * per-message ceiling cut to fit — and `thread_segments` is what that
-   * derivation *produces*, not where the words live. With the restamp in place,
-   * saving a thread replaces `content` with message one and the rest of the
-   * body is gone on the next read. It also costs everything that reads a post's
-   * words without knowing about threads: the calendar card, the posts table,
-   * search, versions and the assistant would each see a one-message post.
-   *
-   * So: **store `content` as sent.** The server's own reason for the mirror —
-   * "content stays populated for list/preview/analytics" — is better served by
-   * the whole thread than by its first message, and `RootContent()` is still
-   * exactly right where it is already used, at submit time, for the top-level
-   * `content` and the CON-129 dedupe key.
+   * One consequence worth knowing before this goes on: **a message can be too
+   * long again**. In manual mode — any body carrying divider lines — the
+   * author's breaks are obeyed and the ceiling is not applied, so an over-long
+   * message is reported rather than cut. The old promise that a thread has no
+   * length state to report belonged to the splitter that left.
    *
    * With this off, Threads does not offer the type (`buildPlatformView` and
-   * `releasedPostTypes` both drop it), nothing derives a chain, and no save
-   * carries segments — `postToPayload` round-trips the stored `[]`. X keeps
-   * offering `thread`, as it always has: withdrawing it would be a change with
-   * the flag off, which a flag may never make. An existing X `thread` post
-   * therefore behaves identically either way, because a thread is the same one
-   * Markdown body as every other post type; all the flag adds is the note under
-   * the editor, the per-thumbnail picker and the row in the pre-publish bar.
+   * `releasedPostTypes` both drop it), nothing asks for a preview, and no save
+   * behaves differently from any other post type. X keeps offering `thread`, as
+   * it always has: withdrawing it would be a change with the flag off, which a
+   * flag may never make. An existing X `thread` post therefore behaves
+   * identically either way, because a thread is the same one Markdown body as
+   * every other post type; all the flag adds is the note under the editor, the
+   * per-thumbnail picker and the row in the pre-publish bar.
    *
    * Nothing outside the flag reads anything new: `doc.content` is still the
    * post's words, unchanged and un-rewritten, so the calendar, the posts table,
    * search and the assistant are untouched by this.
    *
-   * Switch this on once the restamp is gone, and re-test against the real
-   * thing — the media assignment is the half most likely to need a pass, since
-   * `segment_index` is the piece with no client-side history at all.
+   * **Waiting on nothing — only on a run against a live API.** Every contract
+   * this needs is merged; none of it has been exercised against a running
+   * server. Switch this on after that pass, and start it at the two pieces with
+   * no client-side history: the preview endpoint under a fast typist, and
+   * `segment_index` on the upload and its PATCH.
    */
   'thread-sequence': false,
 

@@ -585,8 +585,9 @@ images upload, store as `IMG` and open on their own screen (CON-246), but the
 server renders no smaller copy, so the list's preview cell draws the full file
 scaled into 40px; `thumbnail_url` is preferred wherever it appears, so nothing
 here changes when that job lands. The other half still missing is the bridge
-that attaches a bank image to a post (CON-16) — which is what the alt text is
-being collected for · **the React Compiler lint rules are warnings, not errors** —
+that attaches a bank image to a post — **CON-290**, since CON-16 was cancelled
+once CON-246 shipped, and unowned as of 2026-09-08 — which is what the alt text
+is being collected for · **the React Compiler lint rules are warnings, not errors** —
 `react-hooks` v7 reports 123 of them against code that predates it, and each is
 a judgement call about a component rather than a mechanical fix
 ([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n converts whole screens in some
@@ -611,34 +612,49 @@ picker shows one option.
 **A thread publishes as one post, not as a thread** (CON-196/CON-284,
 `thread-sequence`, off). Behind the flag the chain is **derived from the body**
 rather than composed in separate inputs: the editor stays the one Markdown card
-every post type uses, a `---` divider is a break, blank lines are the break
-where the body has no divider, and anything still past the per-message ceiling
-is cut to fit — never leaving a scrap behind, which is why `splitToLimit` takes
-the *last* cut in the middle rather than at the ceiling. So there is no "this
-post is too long" to report, and a chain that comes to one message is not a
-failure either: it publishes as an ordinary post, and `demotedFrom`
-(`lib/postTypeAuto`) picks which one on the way out of draft.
+every post type uses, and the breaks come out of the words. A chain that comes
+to one message is not a failure — it publishes as an ordinary post, and
+`demotedFrom` (`lib/postTypeAuto`) picks which one on the way out of draft.
 
-The back end shipped its half (ogen#140): `posts.thread_segments` stores the
-chain the client derives, `post_attachments.segment_index` stores which message
-carries which file, the submit path fills Zernio's `threadItems`, the post-type
-rule carries `segmented` (which replaced a hard-coded list of chain-capable
-networks here), and attachment validation counts per message. `thread` is on
-the Threads entry in `supportedPlatforms` too, so `aheadOfPublishers` is gone
-with the vocabulary gap it covered. Two consequences worth knowing:
-`thread_segments` is **listed** in `postToPayload` rather than omitted — the
-server defaults it away on silence, so a calendar drag would otherwise turn a
-thread back into a post — and `segment_index` is written by its own
-presence-aware PATCH, never alongside `position`.
+**The split is the server's, and that is the whole shape of this feature.**
+R1 (ogen#140) had the client author `thread_segments` message by message and
+restamped `content` from the first of them; R2 (ogen#144, merged 2026-09-10)
+inverted it, which is the model this client already had. `posts.content` is now
+canonical — literally what the author typed, `---` lines and all — and
+`thread_segments` is `platforms.SplitThread` run over it on every write. Four
+rules follow, and each of them is a thing not to undo:
 
-**Waiting on one line.** `handlers/posts.go` restamps `content` from
-`thread_segments[0]` on every thread save. That is the one assumption the two
-sides do not share: here `content` is the authoring truth and the chain is
-derived from it, so the restamp replaces the body with its own first message
-and costs every screen that reads a post's words without knowing about threads
-(calendar card, posts table, search, versions, the assistant). The ask is to
-store `content` as sent; `RootContent()` stays right where it is already used,
-at submit time. See `docs/technical-decisions.md#thread-sequence`.
+- **Never send `thread_segments`.** A write carrying it is ignored, so
+  `postToPayload` omits it and nothing on the screen keeps it in step. Saving
+  the body *is* saving the thread — which also means a calendar drag or an
+  unschedule can no longer flatten a thread by omitting a field it knows
+  nothing about.
+- **Never re-implement the split.** `POST /api/posts/thread/preview` is the
+  client's only account of where a body breaks (`useThreadPreview`), and
+  `lib/threadSequence` now places files on the messages that come back rather
+  than cutting any itself. The splitter it used to hold broke at every blank
+  line and took `***` as a divider; the server does neither — three or more
+  **hyphens** alone on a line, and with no divider anywhere the body is packed
+  to the ceiling. Two implementations in two languages is exactly what R2's
+  explicit-segments design exists to avoid.
+- **A message can be too long.** In manual mode the ceiling is not applied at
+  all, so an over-long message is reported (`max_content_chars` with a
+  `segment`) rather than cut. Length verdicts come off `preview.errors`, never
+  from a count taken here.
+- **`segment_index` is optional and NULL means the root.** A file nobody moved
+  needs no index written for it. The server still answers **422** to setting one
+  on a post that is not a `thread`, on the upload and the PATCH alike, and that
+  PATCH is presence-aware — never send `segment_index` alongside `position`.
+
+The rest of the back end's half is unchanged from R1: the submit path fills
+Zernio's `threadItems`, the post-type rule carries `segmented` (which replaced a
+hard-coded list of chain-capable networks here), attachment validation counts
+per message, and `thread` is on the Threads entry in `supportedPlatforms`, so
+`aheadOfPublishers` is gone with the vocabulary gap it covered.
+
+**Waiting on nothing but a run against a live API** — every contract is merged,
+and none of it has been exercised against a running server. See
+`docs/technical-decisions.md#thread-sequence`.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's

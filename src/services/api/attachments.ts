@@ -20,9 +20,14 @@ type UploadOptions = {
   onProgress?: (percent: number) => void
   signal?: AbortSignal
   /**
-   * Which message of a thread the file lands on (CON-284), 0-based. Omit for
-   * an ordinary post — the server answers **422** to a `segment_index` on one,
-   * so this may only be set when the post's type is already `thread`.
+   * Which message of a thread the file lands on (CON-284), 0-based.
+   *
+   * Omit for an ordinary post — the server answers **422** to a `segment_index`
+   * on one, so this may only be set when the post's type is already `thread`.
+   * Omitting it on a *thread* is fine too, and is the usual case: R2 reads a
+   * NULL index as the root message, so a file uploaded without one publishes on
+   * message one rather than failing the gate for want of a number the author
+   * was never asked for.
    */
   segmentIndex?: number
 }
@@ -179,6 +184,11 @@ export async function uploadVideoAttachment(
  * a stale index on an ordinary post is harmless (the publish gate only reads
  * them for threads), so nothing sweeps them, and promoting a post back to
  * `thread` finds its old assignments still in place.
+ *
+ * On a thread, `null` is not "no message" — it is the root (CON-284 R2). So
+ * this is a two-way move rather than an assign-and-clear: sending `null` puts
+ * the file back on message one, which is where an unassigned file was
+ * publishing all along.
  */
 export function setAttachmentSegment(
   postId: string,
