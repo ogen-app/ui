@@ -268,16 +268,52 @@ Decisions worth knowing:
 - **`id:` is parsed and unused on `/api/events`.** The hub reserves the field
   and ignores what is sent back, so there is nothing to resume into. The
   notification stream is where replay actually happens.
-- **A user gets 10 concurrent hub subscriptions, across both streams**
-  (`eventhub.Config.MaxSubscribersPerUser`), and a dead connection keeps its
-  slot until the next heartbeat write fails — up to 20s. So a reload orphans
-  two slots where it used to orphan one, and both streams answer 429 until
-  they free. Reproduced on `/api/events` alone, so it predates the second
-  stream; the shared backoff rides it out. A cheaper reap, or a cap counted
-  per topic rather than per user, would remove the wait.
+- **A healthy connection now ends twice an hour, and this side cannot tell that
+  from an outage.** The 30-minute lifetime (CON-286, below) closes the stream
+  cleanly, which is exactly what a drop looks like from here — so every recycle
+  runs the full reconnect path: `flushAllPendingSaves`, the whole of
+  `RECONCILE_FILTERS`, and `LiveStatus` showing *"Catching up… / Refreshing what
+  changed while the connection was down"* when nothing was down. The cost is
+  bounded — `invalidateQueries` only refetches queries that are mounted, and
+  `attempts` resets on open so the *"Reconnecting…"* half stays quiet — but a
+  recovery affordance built for an outage is now on a timer. The fix is to
+  measure the gap rather than count the reconnect: a close that was clean, with
+  no watchdog silence, reopening inside a couple of seconds, has missed at most
+  a second of an at-most-once bus and should skip both the reconcile and the
+  badge. That trade — a ~1s hole twice an hour against 48 catch-ups a day — is
+  the thing to decide, and it is ours to decide alone; no server change can tell
+  us, short of a frame announcing the recycle before the close.
+- **Past the cap, eviction rotates rather than settles.** The 10 subscriptions
+  are per *user* across both streams and every device, so the ceiling is 10 tabs
+  today and **5 once `activity` turns the second stream on**. Above it, each
+  tab's reconnect evicts another tab's stream, which reconnects a second later
+  and evicts a third, indefinitely — with a full reconcile in each victim. It is
+  strictly better than the wedge it replaced, and oldest-first at least evicts
+  the connection nearest its own recycle, but nothing damps it. Asked on CON-286
+  for a cap of ≥ 2 × expected tabs before Activity ships; Serhii offered the
+  constant.
 
 ### Closed since
 
+- **Ten leaked slots killed both streams for a user, permanently** (CON-286).
+  The cap was never reclaimed on a client that vanished without a clean close:
+  `SetBodyStreamWriter`'s goroutine only exits on a write *error*, and the 8-byte
+  heartbeat keeps succeeding into the kernel buffer of a half-dead socket, so the
+  goroutine parked forever holding its slot and the `defer unsubscribe()` — which
+  was already the first statement in both handlers — never ran. Measured on the
+  local API: 328 connects against 318 disconnects, the first `429` six minutes
+  after boot and the same user still saturated 39 hours later. Fixed by
+  [ogen#142](https://github.com/ogen-app/ogen/pull/142) (merged 2026-09-08) in
+  two layers: the hub now **evicts the user's oldest subscriber** at the cap
+  instead of refusing the newcomer — so a reload always opens, and closing the
+  evicted channel unparks that zombie's goroutine — and every connection on both
+  streams gets a **hard ~30-minute lifetime** (`defaultStreamLifetime`), a reaper
+  keyed on age rather than on a write succeeding. **The client needed no change**
+  and got none: a clean server close already falls into the same retry tail as a
+  drop (`streamConnection.ts`), the notification stream already sends
+  `Last-Event-ID` fresh per attempt so the recycle's gap replays, and
+  `/api/events` already reconciles over REST because it has nothing to replay.
+  What the fix did leave behind is the two entries above.
 - **A run that outlives the tab has no UI.** Closed by CON-242: the notification
   table records what finished, `GET /api/notifications/stream` replays it from
   `Last-Event-ID`, and Activity renders it (`docs/activity.md`). The hub still
