@@ -3,10 +3,10 @@ import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { AccountAvatar } from '@/components/ui/account-avatar'
 import { formatNumber } from '@/lib/intl'
-import { resolvePlatformInfo } from '@/lib/platformDictionary'
 import { PaceBar, RankBar } from './charts'
 import { InsightLine } from './ComparisonSections'
 import { Picker } from './ComparisonBar'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import {
   availableCriteria,
   criterionHeldOut,
@@ -251,7 +251,7 @@ function PostRow({
 }) {
   const { t } = useTranslation()
   const ratio = typical !== undefined && typical > 0 ? value / typical : null
-  const platform = resolvePlatformInfo(post.account.platform)
+  const platform = usePlatformCatalog().resolve(post.account.platform)
 
   /*
     Top-aligned, not centred. The three things a reader compares down the list —

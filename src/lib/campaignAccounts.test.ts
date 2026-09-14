@@ -13,14 +13,15 @@ import {
 } from './campaignAccounts.ts'
 import {
   buildPlatformView,
-  getPlatformInfo,
+  getPlatformByZernioId,
   type PlatformView,
 } from './platformDictionary.ts'
-import type { Platform, PublisherAccount } from '@/types/campaigns'
+import { makePlatform } from './platformFixtures.ts'
+import type { PublisherAccount } from '@/types/campaigns'
 
-const FACEBOOK = 'zBU1zqVICGfk'
-const LINKEDIN = 'AXqWG7U2qnpt'
-const INSTAGRAM = 'rzgpTkARLH0L'
+const FACEBOOK = 'facebook'
+const LINKEDIN = 'linkedin'
+const INSTAGRAM = 'instagram'
 
 function account(id: string, username: string): PublisherAccount {
   return {
@@ -33,19 +34,19 @@ function account(id: string, username: string): PublisherAccount {
   }
 }
 
-/** A platform view carrying `accounts` behind one connected publisher. */
-function view(platformId: string, accounts: PublisherAccount[]): PlatformView {
-  const info = getPlatformInfo(platformId)!
-  const platform: Platform = {
-    id: platformId,
+/**
+ * A platform view carrying `accounts` behind one connected publisher.
+ *
+ * The slug doubles as the row's sqid here. Nothing in this file resolves one
+ * into the other — the views are handed to `accountRows` already joined — so a
+ * second identifier would only be a second thing to keep in step.
+ */
+function view(zernioId: string, accounts: PublisherAccount[]): PlatformView {
+  const info = getPlatformByZernioId(zernioId)!
+  const platform = makePlatform({
+    id: zernioId,
+    zernio_id: zernioId,
     name: info.name,
-    post_types: {},
-    cadence: '',
-    constraints: '',
-    text_constraints: { max_content_chars: 0, max_title_chars: 0 },
-    video_constraints: {} as Platform['video_constraints'],
-    created_at: '',
-    updated_at: '',
     publishers: [
       {
         id: 'zernio',
@@ -57,7 +58,7 @@ function view(platformId: string, accounts: PublisherAccount[]): PlatformView {
         accounts,
       },
     ],
-  }
+  })
   return buildPlatformView(platform, info)
 }
 
