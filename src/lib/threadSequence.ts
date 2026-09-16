@@ -42,6 +42,7 @@
  * A file with no index rides the root, which is what the X card always drew and
  * what R2 made the server's own default.
  */
+import { charCount, markdownToSocialText } from '@/lib/socialText'
 import { attachmentKind, type PostAttachment } from '@/types/attachments'
 import type { ThreadPreview } from '@/types/posts'
 import type { ResolvedPostTypeRule } from '@/types/validation'
@@ -139,12 +140,25 @@ export function splitRuleFor(content: string): SplitRule {
 export type ThreadPost<T> = {
   /** 1-based, because the chain is counted the way the reader will read it. */
   position: number
-  /** The plain text this post publishes, as the server split it. */
+  /**
+   * What this post *looks* like: the server's segment, flattened the way every
+   * other post type's body is flattened for a preview
+   * (`markdownToSocialText`). Display only — see `count`.
+   */
   text: string
   /**
-   * Code points, the platforms' own unit — taken from the server's count
-   * rather than recounted, so the number on screen is the one the gate
-   * measured.
+   * Code points, taken from the server's count rather than recounted off
+   * `text`, so the number on screen is the one the publish gate measured.
+   *
+   * **It does not count `text`, and that is deliberate.** The server measures
+   * the raw Markdown (`utf8.RuneCountInString` over the stored segment) and
+   * publishes it unflattened, so `**bold**` is eight characters against the
+   * ceiling and not four. Counting the flattened copy here would show a
+   * thread fitting that the gate is about to refuse — the exact class of
+   * disagreement the preview endpoint exists to end. Note this makes the
+   * thread counter stricter than the single-post one elsewhere in the app,
+   * which counts flattened text; that one is the one that disagrees with the
+   * server, and it predates this.
    */
   count: number
   /** Short enough to be a slip rather than a message (`RUNT_CHARS`). */
@@ -266,6 +280,8 @@ export function planThread<T extends PlannableAttachment>(
   )
 
   const posts = segments.map((segment, i) => {
+    const text = markdownToSocialText(segment.content)
+    const visible = charCount(text)
     const carried = buckets[i] ?? []
     const images = carried.filter(
       (a) => attachmentKind(a.mime_type) === 'image',
@@ -281,9 +297,17 @@ export function planThread<T extends PlannableAttachment>(
 
     return {
       position: i + 1,
-      text: segment.content,
+      // Flattened here and nowhere else: the segments arrive as the Markdown
+      // the author typed, and the preview cards draw plain text. Doing it once,
+      // on the way out of this function, is what keeps the cards and the media
+      // picker's excerpts reading the same words.
+      text,
       count: segment.char_count,
-      runt: segment.char_count > 0 && segment.char_count < RUNT_CHARS,
+      // Measured on the flattened copy, unlike `count`, because this is a
+      // question about what the author can see: `**x**` is five characters to
+      // the ceiling and one word to a reader, and it is the reader's view that
+      // decides whether a message looks like a slip.
+      runt: visible > 0 && visible < RUNT_CHARS,
       attachments: carried,
       images,
       videos,

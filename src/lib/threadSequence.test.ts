@@ -143,6 +143,23 @@ describe('planThread', () => {
     expect(result.posts[0].count).toBe(2)
   })
 
+  it('flattens the Markdown for display but counts the raw segment', () => {
+    // The server splits and measures the body as typed, and publishes it that
+    // way too — `**bold**` is eight characters against the ceiling. The card
+    // draws plain text like every other post type, so the two differ on
+    // purpose: `text` is what it looks like, `count` is what the gate said.
+    const result = plan(['**bold**'])
+    expect(result.posts[0].text).toBe('bold')
+    expect(result.posts[0].count).toBe(8)
+  })
+
+  it('judges a runt on what a reader sees, not on the markup', () => {
+    // `**x**` is five characters to the ceiling and one to a reader, and it is
+    // the reader's view that decides whether a message looks like a slip.
+    const result = plan(['A real first message', '**x**'])
+    expect(runtPositions(result)).toEqual([2])
+  })
+
   it('is empty and settled for a post that is not a chain', () => {
     // Not pending: nothing is waiting on an answer nobody asked for, and a
     // pending plan would stall `demotedFrom` for every ordinary post.

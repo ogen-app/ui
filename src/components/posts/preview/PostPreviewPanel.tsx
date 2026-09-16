@@ -225,9 +225,10 @@ export function PostPreviewPanel({
   const previewSequence = useMemo(() => {
     if (!sequence) return undefined
     return sequence.posts.map((post) => ({
-      // Already flattened: `planThread` runs the body through
-      // `markdownToSocialText` before it cuts it, so this is the text the
-      // network receives, cut where the network will see it cut.
+      // Already flattened: the segments arrive from the server as the Markdown
+      // the author typed, and `planThread` runs each through
+      // `markdownToSocialText` on the way out — so this is plain text, cut
+      // where the server cut it.
       text: post.text,
       media: toPreviewMedia(post.attachments),
     }))
