@@ -15,9 +15,11 @@ Zernio run centrally "under the hood"** — their keys are platform-managed, not
 tenant-configured (CON-97 §10.3, CON-99); tenants still connect their own social
 accounts. The front-end multi-tenancy cutover landed 2026-07 (real
 `current_user` identity, workspace settings, per-instance API-key config
-removed — see [`docs/onboarding.md`](./docs/onboarding.md)). **Current
-front-end priority:** the **Post Assistant + post-editing UIs** (CON-42/61).
-Content-Bank AI images are secondary. See
+removed — see [`docs/onboarding.md`](./docs/onboarding.md)). The Post Assistant
+UI that used to be named here as the current priority **shipped** — CON-61
+closed 2026-08-05, and CON-42 is the backend Genkit flow behind it. **Current
+front-end priority:** the **campaign-scoped Content Bank** (CON-210), then the
+two analytics surfaces waiting on their live-API pass (CON-175/250). See
 [`docs/product.md`](./docs/product.md#direction--current-priorities).
 
 - **Product & domain:** [`docs/product.md`](./docs/product.md)
@@ -30,6 +32,8 @@ Content-Bank AI images are secondary. See
 - **Every event and notification — trigger, transport, recipients:**
   [`docs/events.md`](./docs/events.md)
 - **Tasks — proposal:** [`docs/tasks.md`](./docs/tasks.md)
+- **What the front end is waiting on from the API:**
+  [`docs/open-questions.md`](./docs/open-questions.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
@@ -242,6 +246,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   or seed `useCampaign`. `DELETE` is a soft delete server-side, but that row is
   our safety net and not an undo: there is no restore anywhere, so never write
   copy that hints at one.
+  **On screen the archive is a drawer, not a view.** It is a `Collapse` closed
+  at the foot of the Campaigns list, below the active cards — deliberately no
+  longer an icon in the top-right, because that corner switches between two
+  ways of looking at the same work and this is a small pile at the end of the
+  list. It renders only when there is something in it (the two exceptions, and
+  why, are on the component). The `?archived=true` search param survives with a
+  new job: it *opens* the drawer on arrival, which is what archiving redirects
+  to, so the campaign that just left the list is seen landing in the pile
+  rather than appearing deleted.
+  **Archive and delete sit together in one Danger Zone**, and the card's copy
+  is general — each button opens a modal carrying its own consequences, which
+  is where someone about to act will actually read them.
 - **The campaign's `estimated_post_count` is a rate, not a total.** Since
   CON-182 it means "this many posts per `goal_cadence` period" (`week`/`month`),
   and the server backfilled every campaign to `month` — so an old total of 12 on
@@ -631,10 +647,10 @@ behaviour only), `/workspaces`,
 `/invite`, `/plans` with the Plan & billing card, and the flag-gated Tasks and
 Activity features. Islands only: the post editor (`posts.*` — status and
 publish labels, the published link, sources, notes, quality, versions,
-duplicate and the performance card), the Campaigns list (the archive view, the
-posts toolbar and the empty state) and the Content Bank (the image screen, the
-tagging and selection dialogs, the delete confirmation, the upload refusals and
-the list and page chrome). Everything else is
+duplicate and the performance card), the Campaigns list (the archive drawer and
+its Danger Zone, the posts toolbar and the empty state) and the Content Bank
+(the image screen, the tagging and selection dialogs, the delete confirmation,
+the upload refusals and the list and page chrome). Everything else is
 still hard-coded English (CON-174) · **English is the only released language**: Spanish is
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
