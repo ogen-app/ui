@@ -281,9 +281,11 @@ describe('an announced recycle', () => {
   it('backs off normally when the replacement will not open', async () => {
     const { open, calls } = controllableOpen()
     const states: string[] = []
+    const opens: boolean[] = []
     const conn = createStreamConnection({
       open,
       onState: (s) => states.push(s.status),
+      onOpen: ({ afterRecycle }) => opens.push(afterRecycle),
       backoffMs: [1_000],
     })
     conn.subscribe()
@@ -299,6 +301,11 @@ describe('an announced recycle', () => {
 
     expect(calls).toHaveLength(3)
     expect(states).toEqual(['connecting', 'open', 'reconnecting'])
+
+    // The gap stopped being a handover the moment the replacement failed, so
+    // the connection that finally opens must reconcile out loud.
+    calls[2].hooks.opened()
+    expect(opens).toEqual([false, false])
   })
 
   it('does not reopen a stream the last subscriber has released', async () => {
