@@ -73,12 +73,18 @@ const FEATURE_FLAGS = {
    *    the tag is `nullzero,autoincrement`, and the new test reads `seq` off a
    *    row coming *back* rather than off the inserted model, which is why the
    *    original suite stayed green. The client was written for that server and
-   *    needs no change, so what is left is rule 4 rather than work: open the
-   *    inbox against it once and confirm the three things the 0 made
-   *    unobservable — replay advancing across a reconnect, `mark-all-read`'s
-   *    `before` actually bounding (the client sends the highest seq it has
-   *    been shown, and a real bound is what stops it marking a row that
-   *    arrived after the click), and paging past page one.
+   *    needs no change, so what is left is rule 4 rather than work — and two
+   *    of the three things the 0 made unobservable were confirmed on
+   *    2026-09-07 against a freshly restarted API. **Replay** advances across a
+   *    reconnect: a cursor replays strictly `>` itself, ascending; an
+   *    unparseable one is live-only with 200 rather than a 400; one ahead of
+   *    the log replays nothing without error. **`mark-all-read`'s `before`**
+   *    really bounds: `{before: n}` leaves the row at `n+1` unread, `{before:
+   *    n+1}` includes it, `{}` is unbounded — which is what stops the click
+   *    marking a row that arrived after it. Still unobserved, because it needs
+   *    a triggerable producer rather than a fixed server: **live push**, and
+   *    with it the replay→live dedup (`n.Seq <= lastSentSeq`). Paging past page
+   *    one is untested too.
    * 2. **Fan-out — decided 2026-09-06, unimplemented.** Every producer writes
    *    to the thing's `created_by` (`submit_post_to_zernio.go`), so a post
    *    failing to publish is news to whoever made it and to nobody else. The
@@ -146,7 +152,8 @@ const FEATURE_FLAGS = {
    * cursor. Nothing in `lib/streamConnection` listens for it yet. Handling it
    * is not a blocker for turning this flag on — the recovery is correct, only
    * noisy — but it is the honest version, and it gets noisier the moment a
-   * second stream per tab is what this flag switches on.
+   * second stream per tab is what this flag switches on. `docs/sse.md`
+   * carries the measurements.
    *
    * The daily report is the half that was never a stand-in: it is a count over
    * posts, correct as computed, and it is untouched by all of the above.
