@@ -73,14 +73,16 @@ Kept for one cycle so nobody re-raises them, then deleted.
   every device: at two streams per tab, `activity` on made ten *five tabs*, and
   past the cap evict-oldest does not settle, it rotates. The permanent 429
   lockout is gone, and a persistent reconnect loop now means a real outage
-  rather than this bug. **Two consequences are ours, not the server's**, and
-  neither is written down yet: a clean close mid-session is now *expected*
-  periodically, and ogen#152 added a frame announcing it —
-  `event: recycle`, `data: {"reason":"lifetime"}`, deliberately **without an
-  `id:` line** so it does not advance the replay cursor. Nothing in
-  `lib/streamConnection.ts` listens for it, so every recycle still runs the full
-  recovery path and shows *"Catching up…"* when nothing was down — twice an hour,
-  per tab. Handling it is the last of this, and it is client work.
+  rather than this bug. **Two consequences were ours, not the server's**: a
+  clean close mid-session is now *expected* periodically, and ogen#152 added a
+  frame announcing it — `event: recycle`, `data: {"reason":"lifetime"}`,
+  deliberately **without an `id:` line** so it does not advance the replay
+  cursor. Both are handled now: `lib/streamConnection.ts` treats an announced
+  close as a handover — reconnect at once, no backoff, no failure counted, and
+  the status holds at `open` — so *"Catching up…"* is back to meaning the
+  connection was down. The events bus still reconciles either way, because a
+  round-trip gap on a bus that keeps no log is still a gap; it just no longer
+  says so.
 - **N4 — the three fields with no wire source.** `matured` and the performers'
   `curve`/`typical` are served by CON-250 under other names (`still_counting`,
   and a per-platform p25/p50/p75 curve), so they are a renaming pass on this

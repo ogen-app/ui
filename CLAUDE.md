@@ -418,6 +418,17 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   copy comes from the **catalogue**, keyed off `type` + `data`, never from the
   `title`/`body` the server composes; those are the fallback for a `type` this
   build predates (`lib/notifications.ts`, `docs/activity.md`).
+- **A close the server announced is a handover, not a drop.** Both streams are
+  closed every 30 minutes to reclaim their slot (CON-286) and send
+  `event: recycle` — no `id:` line, so it never moves the replay cursor —
+  immediately before doing it. Each service reports it through `onRecycle`, and
+  `lib/streamConnection` reconnects on the spot: no backoff step, no failure
+  counted, and the status holds at `open`, because `LiveStatus` draws its
+  warning from `reconnecting` and one that appears twice an hour teaches people
+  to read past the one that matters. What the announcement does **not** buy is
+  skipping recovery: the events bus keeps no log, so a round trip is still a
+  gap and `reconcile` still runs — `announce: false` silences the banner, never
+  the refetch.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).

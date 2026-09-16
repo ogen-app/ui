@@ -10,6 +10,16 @@ export type AppEventHandlers = {
   onEvent: (event: AppEvent) => void
   /** Fires on any traffic, heartbeats included. Feeds the silence watchdog. */
   onActivity?: () => void
+  /**
+   * The server is closing this connection on purpose (CON-286's 30-minute
+   * lifetime ceiling). Sent immediately before the close, and deliberately
+   * **without an `id:` line** so it cannot advance a replay cursor.
+   *
+   * Not an app event: it carries no envelope and says nothing about the
+   * workspace. Its `data` names a reason, which is deliberately not read —
+   * there is one answer to all of them, which is to reconnect at once.
+   */
+  onRecycle?: () => void
 }
 
 /**
@@ -41,6 +51,13 @@ export async function streamAppEvents(
   await readSSEStream(
     res.body,
     (frame) => {
+      // Before the envelope parse, because `{"reason":"lifetime"}` is a
+      // perfectly good JSON object and would otherwise be dispatched as an
+      // event named `recycle` with every field empty.
+      if (frame.event === 'recycle') {
+        handlers.onRecycle?.()
+        return
+      }
       const event = parseEnvelope(frame.data)
       // The envelope repeats the name in `type`, but the frame's `event:` is
       // the field the protocol guarantees, so it wins on disagreement.

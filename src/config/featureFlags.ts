@@ -131,22 +131,23 @@ const FEATURE_FLAGS = {
    * **10 → 30**, because ten counted across both streams and every device made
    * this feature's second stream the difference between ten tabs and five.
    *
-   * What that leaves is **ours**. A clean close mid-session is now expected
-   * rather than exceptional — twice an hour per tab, plus any eviction — and a
-   * clean close is exactly what a dropped connection looks like, so every
-   * recycle currently runs the full recovery path: flush autosaves, invalidate
-   * the routing table, and show *"Catching up…"* when nothing was down.
-   * ogen#152 shipped the one thing that can tell them apart, a frame sent
-   * before the close:
+   * What that left was **ours**, and it is handled. A clean close mid-session
+   * is now expected rather than exceptional — twice an hour per tab, plus any
+   * eviction — and a clean close is exactly what a dropped connection looks
+   * like, so every recycle used to run the full recovery path and say
+   * *"Catching up…"* when nothing was down. ogen#152 ships the one thing that
+   * can tell them apart, a frame sent before the close:
    *
    *     event: recycle
    *     data: {"reason":"lifetime"}
    *
    * deliberately with **no `id:` line**, so it does not advance the replay
-   * cursor. Nothing in `lib/streamConnection` listens for it yet. Handling it
-   * is not a blocker for turning this flag on — the recovery is correct, only
-   * noisy — but it is the honest version, and it gets noisier the moment a
-   * second stream per tab is what this flag switches on.
+   * cursor. Both services now report it (`onRecycle`) and
+   * `lib/streamConnection` reconnects on the spot: no backoff, no failure
+   * counted, no `reconnecting` status. The events bus still reconciles —
+   * announced or not, it keeps no log and the gap is real — but quietly. So
+   * this feature's second stream per tab doubles a handover nobody sees rather
+   * than a warning nobody should have been shown.
    *
    * The daily report is the half that was never a stand-in: it is a count over
    * posts, correct as computed, and it is untouched by all of the above.
