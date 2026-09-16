@@ -93,10 +93,14 @@ export function PlansPage() {
   }
 
   const held = plan.data.tier
-  const offered = tiers.data.filter((tier) => tier.available)
-  // A tier the workspace holds but that is no longer sold will not be in the
-  // list above. That is the expected case, not an error — hence the label
-  // rather than a fallback that tried to render it as a fourth card.
+  // `GET /api/public/pricing` publishes only purchasable versions, so this
+  // filter is a guard rather than a selection — it keeps a card off the screen
+  // that could not be chosen if the endpoint ever sends one.
+  const offered = tiers.data.filter((tier) => tier.purchasable)
+  // A version the workspace holds but that is no longer sold will not be in the
+  // list above — and neither is the internal `default` tier every workspace sits
+  // on today. That is the expected case, not an error: hence the label, rather
+  // than a fallback that tried to render the held version as one more card.
   const retired = !offered.some((tier) => tier.id === held.id)
 
   return (

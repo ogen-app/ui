@@ -34,6 +34,12 @@ export function apiUrl(path: string): string {
  *
  * The public invite routes are here for a different reason: the token names the
  * workspace, and the person holding it is not yet a member of anything.
+ *
+ * `/api/public/*` is a third reason again. Those routes are about no workspace
+ * at all — the price list is the same list a logged-out visitor reads — and the
+ * server caches them at the edge for everyone at once. A request varying by a
+ * header the response does not depend on is a cache split per workspace, for an
+ * answer that is identical in all of them.
  */
 function isAccountScoped(path: string): boolean {
   // Compare against the path only — a query string never changes which
@@ -45,7 +51,8 @@ function isAccountScoped(path: string): boolean {
     p === '/api/current_user' ||
     p === '/api/sessions' ||
     p.startsWith('/api/sessions/') ||
-    p.startsWith('/api/invitations/accept/')
+    p.startsWith('/api/invitations/accept/') ||
+    p.startsWith('/api/public/')
   )
 }
 

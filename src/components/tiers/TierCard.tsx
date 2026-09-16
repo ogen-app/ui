@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
 import { formatNumber } from '@/lib/intl'
+import { displayPrice, toMajorUnits } from '@/lib/tierPrice'
 import { tierFeatures } from '@/lib/tierFeatures'
 import { cn } from '@/lib'
 import { TierFeatureList } from './TierFeatureList'
@@ -33,28 +34,31 @@ type Props = {
 export function TierCard({ tier, current, scheduled, onChoose, busy }: Props) {
   const { t, i18n } = useTranslation()
 
-  // Built here rather than in a helper taking `t`: the catalogue's key type is
-  // what makes a missing translation a compile error, and passing `t` out
-  // through a `(key: string) => string` parameter is exactly what throws that
-  // away. Same reason the Zod schemas are `(t) => schema` factories.
+  // Which row to show is `displayPrice`'s rule; wording it is this component's,
+  // and the wording is built here rather than in a helper taking `t`: the
+  // catalogue's key type is what makes a missing translation a compile error,
+  // and passing `t` out through a `(key: string) => string` parameter is exactly
+  // what throws that away. Same reason the Zod schemas are `(t) => schema`
+  // factories.
+  const rate = displayPrice(tier.prices)
   let price: string | null = null
-  if (tier.price) {
-    if (tier.price.amount === 0) {
+  if (rate) {
+    if (rate.amount === 0) {
       price = t('tiers.priceFree')
     } else {
       const written = formatNumber(
-        tier.price.amount / 100,
+        toMajorUnits(rate.amount, rate.currency, i18n.language),
         // The currency comes off the tier; the client never picks one. Whole
         // units only — a price list showing "49.00" reads like an invoice.
         {
           style: 'currency',
-          currency: tier.price.currency,
+          currency: rate.currency,
           maximumFractionDigits: 0,
         },
         i18n.language,
       )
       price =
-        tier.price.period === 'year'
+        rate.interval === 'year'
           ? t('tiers.priceYear', { price: written })
           : t('tiers.price', { price: written })
     }
@@ -69,8 +73,9 @@ export function TierCard({ tier, current, scheduled, onChoose, busy }: Props) {
     >
       <header className="flex flex-col gap-2 min-w-0">
         <div className="flex items-center justify-between gap-3 min-w-0">
-          {/* Server copy, in whatever language the tier list was written in —
-              see `services/api/tiers.ts`. */}
+          {/* Not a catalogue key and not translated: a tier's name is data, and
+              today it is a title-cased slug because the payload carries no name
+              at all — see `nameFromSlug` in `services/api/entitlements.ts`. */}
           <h3 className="text-lg font-display font-medium tracking-tight min-w-0 truncate">
             {tier.name}
           </h3>
@@ -81,9 +86,12 @@ export function TierCard({ tier, current, scheduled, onChoose, busy }: Props) {
         </div>
         {/* Omitted rather than faked while pricing is undecided: a plan card
             that says nothing about money is honest, and one that says "$0" is
-            not. */}
+            not. There is a real difference between a free tier — priced, at
+            zero — and an unpriced one, and only the first gets a line. */}
         {price && <p className="text-sm font-medium">{price}</p>}
-        <p className="text-[13px] text-tertiary-foreground">{tier.tagline}</p>
+        {/* No tagline: the catalog has no per-tier line of copy, and the line
+            that used to sit here came off an endpoint that never existed. See
+            `types/tiers.ts`. */}
       </header>
 
       <TierFeatureList features={tierFeatures(tier)} />

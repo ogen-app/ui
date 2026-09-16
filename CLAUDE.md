@@ -852,13 +852,21 @@ PlanSection`) and **`/plans`** behind its CHANGE PLAN. Choosing a tier
 re-answers every `useEntitlement` in the app, which is how the gating gets
 looked at before the API exists.
 
-**The plan read has landed, and it is not the one this client designed**
+**Both plan reads have landed, and neither is the one this client designed**
 (CON-243, PR ogen#150). `GET /api/me/entitlements` answers — the invented
 `GET /api/entitlements` 404s and is gone — with a resolved tier **version**:
 `tier_id` + `version_id`, an immutable allowance set, price rows in `net_minor`
 minor units, and every entitlement enriched with the server's feature catalog
-(name, description, category, `is_material`, `reset`). Three consequences that
-are each a thing not to undo:
+(name, description, category, `is_material`, `reset`). **`GET /api/public/pricing`
+answers with the identical record**, one per purchasable version, in place of the
+invented `GET /api/tiers`. That identity is load-bearing: a version is one
+artifact, so there is one wire type (`TierVersionBody`) and one parser, and
+`tiers.ts` calls `entitlements.ts`'s rather than keeping a second copy — two
+parsers are how a price list and the lock on a button end up disagreeing about
+what a limit is. `TierVersion` is the half they share; `TierSnapshot` adds the
+subscription fields a *held* version has and `Tier` adds the allowances.
+
+Four things about the pair that are each a thing not to undo:
 
 - **The keys are the server's, verbatim.** `team_seats`, `active_campaigns`,
   `plan_runs_per_month` — not the `seats`/`campaigns`/`content_plan_runs` this
@@ -878,20 +886,33 @@ are each a thing not to undo:
   supplies held-still counters meanwhile, applied in `getWorkspacePlan` and
   deliberately not in `fetchWorkspacePlan` — so no test of the wire can agree
   with something the endpoint never said.
-- **The subscription half is not on this read.** No display name (derived from
+- **The subscription half is not on either read.** No display name (derived from
   the slug until the server sends one), no `effective_from`, no renewal, no
   scheduled change — Ogen holds no subscription state by design (CON-243 §5).
-  Screens omit those lines rather than softening them.
+  Screens omit those lines rather than softening them. The price list drops a
+  `tagline` for the same reason: the catalog has no per-tier line of copy, and a
+  table of taglines keyed on a tier slug goes blank for the first tier published
+  without telling this build.
+- **The price list publishes only what is purchasable, and it is public.** A
+  superseded version somebody is grandfathered onto is not in it, and neither is
+  the internal `default` tier every workspace sits on — so `/plans` renders the
+  tier in force from `WorkspacePlan` and never by looking its id up in the list;
+  a lookup that missed would blank out the name of the plan somebody is paying
+  for. It is also unauthenticated and cached at the edge, so `/api/public/*` is
+  in `isAccountScoped` (`base.ts`) and goes out with **no `X-Workspace-Id`** —
+  varying a CDN-cached route by a header the answer does not depend on splits the
+  cache per workspace for nothing. A version is priced as a *list* (currency ×
+  interval × country); which row a card shows is `lib/tierPrice.ts`, never a
+  `[0]`, and `net_minor` is divided by the currency's own exponent rather than by
+  100 — JPY has no minor unit.
 
-**Still waiting on** a usage read, a tier name on the payload, `GET /api/tiers`
-(what shipped instead is the unauthenticated `GET /api/public/pricing`, which
-carries only *purchasable* tiers — so the version a workspace is grandfathered
-onto is never in it), `POST /api/workspace/plan` (no counterpart at all: a
-version is assigned by an operator through Harbor's gRPC `PlanAdminService`,
-CON-294), `GET /api/billing` / `POST /api/billing/portal`, published Pro and Max
-versions, and a `suspended` flag on the resources a downgrade makes read-only.
-Contracts live in `services/api/entitlements.ts`, `tiers.ts` and `billing.ts`,
-all asserted by their tests against the *wire* path (`fetchWorkspacePlan`,
+**Still waiting on** a usage read, a tier name on the payload,
+`POST /api/workspace/plan` (no counterpart at all: a version is assigned by an
+operator through Harbor's gRPC `PlanAdminService`, CON-294), `GET /api/billing` /
+`POST /api/billing/portal`, published Pro and Max versions, and a `suspended`
+flag on the resources a downgrade makes read-only. Contracts live in
+`services/api/entitlements.ts`, `tiers.ts` and `billing.ts`, all asserted by
+their tests against the *wire* path (`fetchWorkspacePlan`, `fetchTiers`,
 `fetchBilling`) so the stub can't make a contract go dark.
 
 **`/plans` deliberately sits outside `_authenticated`**, like `/workspaces`: it
@@ -919,7 +940,12 @@ tab synchronously on the click (a `window.open` after an `await` is blocked).
 The stub is `services/api/tiers.stub.ts` — a JSON seed of the decided tier
 matrix plus `localStorage`, with `STUBBED` switching the call sites, and it
 answers the billing read too (no provider is connected, so: no subscription and
-no portal). It does two things the client is forbidden to do, and says so:
+no portal). It now stands in for an *action* rather than for the server's
+answers, both reads having landed, which raises what it owes them: its Trial row
+is the published `ttv-trial-v1` verbatim — ids, price and all fifteen
+allowances — and `stubListTiers` filters the superseded version out, because the
+endpoint publishes no such row. It does two things the client is forbidden to do,
+and says so:
 it **ranks** tiers (to decide upgrade from downgrade, hence `direction` on the
 wire) and it **reads the clock** (to date the renewal, which is also the
 boundary a downgrade lands on). Neither may leak out — `rank` is stripped before

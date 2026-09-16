@@ -63,6 +63,13 @@ describe('workspaceHeader', () => {
     })
   })
 
+  it('leaves the public routes unscoped — they are about no workspace', () => {
+    // The price list is the same list a logged-out visitor reads, and the server
+    // caches it at the edge. A header the answer does not vary by would split
+    // that cache per workspace for nothing.
+    expect(workspaceHeader('/api/public/pricing')).toEqual({})
+  })
+
   it('ignores the query string when deciding', () => {
     expect(workspaceHeader('/api/workspaces?include=counts')).toEqual({})
   })

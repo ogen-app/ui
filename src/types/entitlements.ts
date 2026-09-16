@@ -216,8 +216,23 @@ export type TierVersionPrice = {
   countryCode: string | null
 }
 
-/** The tier in force, as the server resolved it. */
-export type TierSnapshot = {
+/**
+ * One immutable tier version — what CON-243 made the unit of pricing.
+ *
+ * The same artifact answers two questions, which is why this is its own type.
+ * `GET /api/me/entitlements` sends the version a workspace is *on*; each row of
+ * `GET /api/public/pricing` is a version it could *move to*. The rows are the
+ * same shape on the wire and parse through the same function — what differs is
+ * only what is wrapped around them: a plan adds the subscription half
+ * (`TierSnapshot`), a catalogue entry adds the allowances (`Tier` in
+ * `types/tiers.ts`).
+ *
+ * Two fields the wire carries and this does not. `version` is a number that
+ * orders versions of one tier, and `status` orders their lifecycle — both are
+ * ranking material, and the rule this whole seam rests on is that the client
+ * ranks nothing. Neither has a rendering that wants them.
+ */
+export type TierVersion = {
   /**
    * The tier *version*'s stable id (`version_id`). Opaque: never parsed, never
    * compared, never used to look anything up on the client.
@@ -262,8 +277,26 @@ export type TierSnapshot = {
   /**
    * What the version costs. Empty when nothing is priced — which is the answer
    * for the internal tier, where the server sends `prices: null`.
+   *
+   * A list rather than a price, because one version can be priced in several
+   * currencies, at both intervals, and per country. Which of them a card shows
+   * is a decision with its own rules — `lib/tierPrice.ts`, not a `[0]` at the
+   * call site.
    */
   prices: TierVersionPrice[]
+}
+
+/**
+ * The tier in force for this workspace: the version, plus everything true about
+ * holding it.
+ *
+ * None of the four fields below comes off `GET /api/me/entitlements`, and that
+ * is the point of keeping them on this type rather than on `TierVersion` —
+ * they are facts about a *subscription*, which Ogen does not hold (CON-243 §5).
+ * They are filled by the stub today and by the billing read when Lemon Squeezy
+ * lands.
+ */
+export type TierSnapshot = TierVersion & {
   /**
    * When this version came into force for this workspace. Display only.
    *
@@ -281,13 +314,6 @@ export type TierSnapshot = {
    * is *called*: "Max, billed monthly" is the answer to "what am I on", and
    * every member is entitled to it. The card's last four digits are not, and
    * that is the line `/api/billing` sits on the other side of.
-   *
-   * **Always `null` from the real endpoint.** This and the two below are the
-   * *subscription* half of a plan, and CON-243 §5 is explicit that Ogen holds no
-   * subscription state — status, current period and payment method belong to the
-   * payment provider, which is not connected. They stay in the type because the
-   * plan card renders all three and the stub still answers them; they will be
-   * filled by the billing read when Lemon Squeezy lands, not by this one.
    */
   billingPeriod: 'month' | 'year' | null
   /**

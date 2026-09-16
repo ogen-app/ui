@@ -6,6 +6,7 @@ import type {
   CatalogEntry,
   RawEntitlement,
   TierSnapshot,
+  TierVersion,
   TierVersionPrice,
   WorkspacePlan,
 } from '@/types/entitlements'
@@ -116,7 +117,16 @@ export type EntitlementBody = {
   value?: number | boolean | null
 }
 
-export type PlanBody = {
+/**
+ * One tier version as the server sends it — the body of the plan read, and also
+ * one row of `GET /api/public/pricing`.
+ *
+ * The two endpoints send the identical shape, which is not a coincidence: a
+ * version is one immutable artifact and both reads hand back the same record.
+ * Hence one wire type and one parser, used from `tiers.ts` as well as here. A
+ * second copy of this shape is a second thing to keep in step with the server.
+ */
+export type TierVersionBody = {
   tier_id: string
   version_id: string
   version?: number
@@ -153,7 +163,15 @@ function priceFromWire(body: PriceBody): TierVersionPrice {
   }
 }
 
-function tierFromWire(body: PlanBody): TierSnapshot {
+/**
+ * The version itself — the half both reads share.
+ *
+ * Exported because `tiers.ts` parses the same rows off `/api/public/pricing`.
+ * What each caller wraps around it differs; what a version *is* does not, and
+ * deriving the name in two places is how two screens end up calling one tier two
+ * things.
+ */
+export function versionFromWire(body: TierVersionBody): TierVersion {
   return {
     id: body.version_id,
     tierId: body.tier_id,
@@ -161,7 +179,13 @@ function tierFromWire(body: PlanBody): TierSnapshot {
     purchasable: body.purchasable === true,
     changeReason: body.change_reason ?? '',
     prices: (body.prices ?? []).map(priceFromWire),
-    // The three the payload does not carry. Null rather than a default: there is
+  }
+}
+
+function snapshotFromWire(body: TierVersionBody): TierSnapshot {
+  return {
+    ...versionFromWire(body),
+    // The four the payload does not carry. Null rather than a default: there is
     // no neutral billing period, and a start date or a renewal invented here
     // would be printed as though somebody had looked it up.
     effectiveFrom: null,
@@ -214,12 +238,28 @@ export function entitlementFromWire(body: EntitlementBody): RawEntitlement {
   return entry
 }
 
-export function planFromWire(body: PlanBody): WorkspacePlan {
+/**
+ * The array as a map, keyed the server's way.
+ *
+ * Exported alongside `versionFromWire` for the same reason: the pricing list's
+ * rows carry the identical array, and a key dropped or renamed on the way in is
+ * a gate that silently stops gating.
+ */
+export function entitlementsFromWire(
+  body: TierVersionBody,
+): Record<string, RawEntitlement> {
   const entitlements: Record<string, RawEntitlement> = {}
   for (const entry of body.entitlements ?? []) {
     if (entry.key) entitlements[entry.key] = entitlementFromWire(entry)
   }
-  return { tier: tierFromWire(body), entitlements }
+  return entitlements
+}
+
+export function planFromWire(body: TierVersionBody): WorkspacePlan {
+  return {
+    tier: snapshotFromWire(body),
+    entitlements: entitlementsFromWire(body),
+  }
 }
 
 /**
@@ -235,7 +275,7 @@ export function planFromWire(body: PlanBody): WorkspacePlan {
  * said.
  */
 export function fetchWorkspacePlan(): Promise<WorkspacePlan> {
-  return apiJson<PlanBody>(
+  return apiJson<TierVersionBody>(
     '/api/me/entitlements',
     'Unable to read your plan',
   ).then(planFromWire)

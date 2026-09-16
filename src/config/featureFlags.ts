@@ -371,17 +371,21 @@ const FEATURE_FLAGS = {
    * workspace, and it would be wrong here even once the endpoint exists. This
    * flag switches off *the asking*, not the answer.
    *
-   * **The plan read has landed** (CON-243, 2026-09-16).
+   * **Both reads have landed and both are wired** (CON-243, 2026-09-16).
    * `GET /api/me/entitlements` answers on the local API and on
    * `api.dev.getogen.com` with a resolved tier *version* — its immutable
    * allowance set, its price rows, and each entitlement enriched with the
-   * feature catalog's own metadata. `services/api/entitlements.ts` is written
-   * against the payload as observed, and its test's fixtures are trimmed from
-   * real responses rather than invented. The keys changed wholesale with it:
-   * the catalog says `team_seats` and `active_campaigns` where this build used
-   * to say `seats` and `campaigns`, and `entitlements.seed.test.ts` is what
-   * keeps the two in step — under default-allow a stale key does not fail, it
-   * silently unlocks.
+   * feature catalog's own metadata. `GET /api/public/pricing` answers with the
+   * same record, one per purchasable version, unauthenticated and cached at the
+   * edge; it replaced a `GET /api/tiers` that was designed here and 404s. The
+   * rows are the same shape, so there is one wire type and one parser
+   * (`services/api/entitlements.ts`), and `tiers.ts` calls it rather than
+   * keeping a second copy to drift. Both are written against the payload as
+   * observed, and both tests' fixtures are trimmed from real responses rather
+   * than invented. The keys changed wholesale with all this: the catalog says
+   * `team_seats` and `active_campaigns` where this build used to say `seats` and
+   * `campaigns`, and `entitlements.seed.test.ts` is what keeps the two in step —
+   * under default-allow a stale key does not fail, it silently unlocks.
    *
    * **Waiting on, in the order it matters:**
    *
@@ -402,7 +406,9 @@ const FEATURE_FLAGS = {
    *    no payment provider is connected, so `prices` on the plan is the only
    *    money the app can see.
    * 5. **Pro and Max.** `GET /api/public/pricing` publishes exactly one tier
-   *    today — `trial` v1 — so there is no comparison to draw yet.
+   *    today — `trial` v1, at €0/month — so there is no comparison to draw yet.
+   *    The stub carries that version verbatim, ids and all, and proposes the
+   *    other two off the decided matrix.
    *
    * And one thing that belongs elsewhere: a downgrade suspends rather than
    * deletes, and the server picks which campaign goes read-only — so the

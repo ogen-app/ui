@@ -17,11 +17,14 @@ import { ENTITLEMENTS_KEY } from './useEntitlements'
 export const TIERS_KEY = ['tiers'] as const
 
 /**
- * The plans on offer, plus the versions that are not.
+ * The plans on offer — and only those: `GET /api/public/pricing` publishes
+ * purchasable versions, so the one a grandfathered workspace holds is not in
+ * here and must be rendered from `useWorkspacePlan` instead.
  *
  * `staleTime: Infinity` — the tier list is editorial data that changes when
  * somebody edits it, not while you are looking at it, and a refetch mid-read
- * would reshuffle the cards under the cursor.
+ * would reshuffle the cards under the cursor. The endpoint is cached at the edge
+ * for the same reason, one layer down.
  */
 export function useTiers() {
   const gated = useFeatureFlag('workspace-tiers')

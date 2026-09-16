@@ -17,12 +17,12 @@ import type { Tier } from '@/types/tiers'
 
 function tier(entitlements: Tier['entitlements']): Tier {
   return {
-    id: 'tier_test',
+    id: 'ttv-test-v1',
+    tierId: 'test',
     name: 'Test',
-    tagline: '',
-    effectiveFrom: '2026-08-01T00:00:00Z',
-    price: null,
-    available: true,
+    purchasable: true,
+    changeReason: '',
+    prices: [],
     entitlements,
   }
 }

@@ -3,7 +3,8 @@ import type { RawEntitlement, WorkspacePlan } from '@/types/entitlements'
 import type { Tier } from '@/types/tiers'
 
 /**
- * A tier list and a plan, with no server behind either (CON-232).
+ * A tier list and a plan, standing in for a plan change nobody can make
+ * (CON-232, CON-243).
  *
  * **This whole file is scaffolding.** It exists so the plan screen and the
  * entitlement seam can be built and driven before there is any way to *choose* a
@@ -11,6 +12,16 @@ import type { Tier } from '@/types/tiers'
  * is the only way to see whether the gating reads right. Delete it, and the
  * `STUBBED` branch in `tiers.ts` and `entitlements.ts`, on the commit that wires
  * the real endpoints.
+ *
+ * **Both reads it answers now exist**, which is new and is why what follows
+ * matters more than it used to. `GET /api/me/entitlements` and
+ * `GET /api/public/pricing` are live, so the only thing missing is the *write* —
+ * a workspace's version is assigned by an operator through Harbor (CON-294), and
+ * there is no self-serve change. The stub is therefore no longer a substitute
+ * for the server's answers but a substitute for an action, and it has to agree
+ * with the server about everything it is not substituting for: Trial below is
+ * the published version, ids and all. Two published tiers short of a comparison
+ * screen is the other reason it is still switched on.
  *
  * A JSON seed plus `localStorage`, not a fetch-level mock: the request layer
  * stays honest, so nothing can pass a test against an interceptor and then fail
@@ -66,23 +77,30 @@ type SeedTier = Tier & {
   /**
    * How often this tier bills — `null` for the free one.
    *
-   * Stub-only, like `rank`, and stripped by `toBody` for the same reason: the
+   * Stub-only, like `rank`, and stripped by `toTier` for the same reason: the
    * *tier list* says what a tier costs, while how often a given workspace is
    * charged is a property of its subscription. On the real thing this comes off
-   * the subscription, which is why it is reported on the plan
-   * (`billing_period`) rather than on the catalogue entry.
+   * the subscription, which is why it is reported on the plan rather than on the
+   * catalogue entry.
    */
   billingPeriod: 'month' | 'year' | null
 }
 
 /**
- * **Trial's numbers are the server's; Pro's and Max's are not yet.**
+ * **Trial is the published version, copied; Pro and Max are proposals.**
  *
  * `GET /api/public/pricing` publishes exactly one tier today — `trial` v1 — so
- * the Trial row below was read off the live endpoint and matches it key for key.
+ * the Trial row below is that version: its `version_id`, its `tier_id`, its one
+ * price row and its fifteen allowances, read off the live endpoint and matching
+ * it key for key. A stub that agreed with the server about everything except the
+ * ids would be useless the moment `STUBBED` flips.
+ *
  * Pro and Max have no published version, so theirs are the decided matrix
  * (2026-08-19) and CON-243 §11 mapped onto the server's key names: a proposal,
- * not a reading. Re-sync both the day their versions are published, and take
+ * not a reading. Their ids follow the server's `ttv-<tier>-v<n>` convention for
+ * the same reason, and they are priced at nothing — **`prices: []` is "nobody
+ * has decided", which is not the same as free** and renders as no line rather
+ * than as €0. Re-sync the day their versions are published, and take
  * `entitlements.seed.json` with them.
  *
  * Two keys in §11's sketch have no stated Pro/Max value anywhere —
@@ -93,12 +111,14 @@ const TIERS: readonly SeedTier[] = [
   {
     rank: 0,
     billingPeriod: null,
-    id: 'tier_trial_2026_08_01',
-    name: 'Ogen Trial',
-    tagline: 'Enough to see whether Ogen works for you.',
-    effectiveFrom: '2026-08-01T00:00:00Z',
-    price: null,
-    available: true,
+    id: 'ttv-trial-v1',
+    tierId: 'trial',
+    name: 'Trial',
+    purchasable: true,
+    changeReason: 'Initial published version.',
+    prices: [
+      { amount: 0, currency: 'EUR', interval: 'month', countryCode: null },
+    ],
     entitlements: {
       workspaces: { limit: 1, reset: 'standing' },
       team_seats: { limit: 1, reset: 'standing' },
@@ -114,17 +134,21 @@ const TIERS: readonly SeedTier[] = [
       content_bank_assets: { limit: 10, reset: 'standing' },
       web_page_imports: { limit: 3, reset: 'standing' },
       multiple_accounts_per_platform: { allowed: false },
+      // In the catalog, on every tier, and gated by nobody — its own description
+      // ends "never gated". It is here so that Trial matches the published
+      // version key for key; no screen asks about it.
+      semantic_grounding: { allowed: true },
     },
   },
   {
     rank: 1,
     billingPeriod: 'month',
-    id: 'tier_pro_2026_08_01',
-    name: 'Ogen Pro',
-    tagline: 'One brand, run properly, with a couple of people on it.',
-    effectiveFrom: '2026-08-01T00:00:00Z',
-    price: null,
-    available: true,
+    id: 'ttv-pro-v1',
+    tierId: 'pro',
+    name: 'Pro',
+    purchasable: true,
+    changeReason: 'Initial published version.',
+    prices: [],
     entitlements: {
       workspaces: { limit: 1, reset: 'standing' },
       team_seats: { limit: 3, reset: 'standing' },
@@ -140,17 +164,18 @@ const TIERS: readonly SeedTier[] = [
       content_bank_assets: { limit: 100, reset: 'standing' },
       web_page_imports: { limit: 25, reset: 'standing' },
       multiple_accounts_per_platform: { allowed: false },
+      semantic_grounding: { allowed: true },
     },
   },
   {
     rank: 2,
     billingPeriod: 'month',
-    id: 'tier_max_2026_08_01',
-    name: 'Ogen Max',
-    tagline: 'Every part of it, at the size an agency works at.',
-    effectiveFrom: '2026-08-01T00:00:00Z',
-    price: null,
-    available: true,
+    id: 'ttv-max-v1',
+    tierId: 'max',
+    name: 'Max',
+    purchasable: true,
+    changeReason: 'Initial published version.',
+    prices: [],
     entitlements: {
       workspaces: { limit: 5, reset: 'standing' },
       team_seats: { limit: null, reset: 'standing' },
@@ -166,22 +191,28 @@ const TIERS: readonly SeedTier[] = [
       content_bank_assets: { limit: null, reset: 'standing' },
       web_page_imports: { limit: null, reset: 'standing' },
       multiple_accounts_per_platform: { allowed: true },
+      semantic_grounding: { allowed: true },
     },
   },
   {
     /**
-     * A superseded version, kept in the seed on purpose: a workspace that
-     * bought it stays on it, so the screen has to render a current plan that is
-     * not among the ones on offer. Ranked with the Pro that replaced it.
+     * A superseded version, kept in the seed on purpose: a workspace that bought
+     * it stays on it, so the screen has to render a current plan that is not
+     * among the ones on offer. Ranked with the Pro that replaced it.
+     *
+     * `stubListTiers` leaves it out, because `GET /api/public/pricing` does —
+     * only purchasable versions are published. Reaching it means being *put* on
+     * it, which is what the endpoint has no counterpart for (Harbor does it) and
+     * what a hand-edited `stub-plan` key does here.
      */
     rank: 1,
     billingPeriod: 'month',
-    id: 'tier_pro_2026_01_01',
-    name: 'Ogen Pro',
-    tagline: 'One brand, run properly, with a couple of people on it.',
-    effectiveFrom: '2026-01-01T00:00:00Z',
-    price: null,
-    available: false,
+    id: 'ttv-pro-v0',
+    tierId: 'pro',
+    name: 'Pro',
+    purchasable: false,
+    changeReason: 'Superseded by v1.',
+    prices: [],
     entitlements: {
       workspaces: { limit: 1, reset: 'standing' },
       team_seats: { limit: 2, reset: 'standing' },
@@ -197,6 +228,7 @@ const TIERS: readonly SeedTier[] = [
       content_bank_assets: { limit: 50, reset: 'standing' },
       web_page_imports: { limit: 25, reset: 'standing' },
       multiple_accounts_per_platform: { allowed: false },
+      semantic_grounding: { allowed: true },
     },
   },
 ]
@@ -209,7 +241,7 @@ const TIERS: readonly SeedTier[] = [
  * tuned the numbers to make a lock appear.
  */
 
-const DEFAULT_TIER_ID = 'tier_trial_2026_08_01'
+const DEFAULT_TIER_ID = 'ttv-trial-v1'
 
 type Selection = {
   tierId: string
@@ -316,8 +348,17 @@ function toTier(tier: SeedTier): Tier {
   return rest
 }
 
+/**
+ * The purchasable versions, which is what `GET /api/public/pricing` publishes.
+ *
+ * The superseded one is filtered out here rather than left out of the table, so
+ * that a plan *on* it still resolves to its allowances — that is the whole point
+ * of keeping it. A list that included it would be a list the real endpoint
+ * cannot produce, and the plan screen's "no longer offered" case would be
+ * exercised by nothing.
+ */
 export function stubListTiers(): Promise<Tier[]> {
-  return Promise.resolve(TIERS.map(toTier))
+  return Promise.resolve(TIERS.filter((tier) => tier.purchasable).map(toTier))
 }
 
 /**
@@ -416,13 +457,11 @@ function stubPlanFrom(
   return {
     tier: {
       id: tier.id,
-      // The stub's ids are whole versions, so there is no separate tier slug to
-      // report. It is opaque either way, and nothing ranks it.
-      tierId: tier.id,
+      tierId: tier.tierId,
       name: tier.name,
-      purchasable: tier.available,
-      changeReason: '',
-      prices: [],
+      purchasable: tier.purchasable,
+      changeReason: tier.changeReason,
+      prices: tier.prices,
       effectiveFrom: selection.since,
       // Nothing renews while no provider is connected — nobody is billed
       // monthly and no invoice is coming, whatever the tier's price says. Same

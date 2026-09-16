@@ -14,10 +14,10 @@ import {
  * become its acceptance criteria rather than dead scaffolding.
  */
 
-const TRIAL = 'tier_trial_2026_08_01'
-const PRO = 'tier_pro_2026_08_01'
-const MAX = 'tier_max_2026_08_01'
-const LEGACY_PRO = 'tier_pro_2026_01_01'
+const TRIAL = 'ttv-trial-v1'
+const PRO = 'ttv-pro-v1'
+const MAX = 'ttv-max-v1'
+const LEGACY_PRO = 'ttv-pro-v0'
 
 const AUGUST = new Date('2026-08-22T12:00:00Z')
 
@@ -26,16 +26,29 @@ beforeEach(() => {
 })
 
 describe('the tier list', () => {
-  it('keeps a superseded version in the list, marked unbuyable', () => {
-    // A workspace keeps the version it bought, so the plan screen routinely
-    // has to name a tier nobody can buy today.
+  it('publishes only what can be bought, like the endpoint does', () => {
+    // `GET /api/public/pricing` carries purchasable versions and nothing else,
+    // so a superseded one is absent rather than present-and-flagged. The plan
+    // screen's "no longer offered" case is therefore reached by the held version
+    // missing from this list — see below — and not by a flag on a card.
     return stubListTiers().then((tiers) => {
-      const legacy = tiers.find((tier) => tier.id === LEGACY_PRO)
-      expect(legacy?.available).toBe(false)
-      expect(
-        tiers.filter((tier) => tier.available).map((tier) => tier.id),
-      ).toEqual([TRIAL, PRO, MAX])
+      expect(tiers.map((tier) => tier.id)).toEqual([TRIAL, PRO, MAX])
+      expect(tiers.every((tier) => tier.purchasable)).toBe(true)
     })
+  })
+
+  it('still resolves a plan on a version it no longer lists', async () => {
+    // A workspace keeps the version it bought. If the superseded row went out of
+    // the table along with the list, a plan on it would resolve to no allowances
+    // at all — which reads as a broken app rather than as an old plan.
+    localStorage.setItem(
+      'stub-plan',
+      JSON.stringify({ tierId: LEGACY_PRO, since: '2026-01-01T00:00:00Z' }),
+    )
+    const plan = await stubWorkspacePlan(AUGUST)
+    expect(plan.tier.id).toBe(LEGACY_PRO)
+    expect(plan.tier.purchasable).toBe(false)
+    expect(plan.entitlements.active_campaigns.limit).toBe(3)
   })
 
   it('never hands the client a way to rank tiers', () => {
@@ -43,6 +56,26 @@ describe('the tier list', () => {
     // `direction` arrives on the wire instead of being worked out here.
     return stubListTiers().then((tiers) => {
       for (const tier of tiers) expect(tier).not.toHaveProperty('rank')
+    })
+  })
+
+  it('names the tier a version belongs to, separately from the version', () => {
+    // Two versions of Pro share `tierId` and share nothing else. The client
+    // ranks neither, but a screen that wanted to group versions by tier has the
+    // only field that can do it.
+    return stubListTiers().then((tiers) => {
+      expect(tiers.map((tier) => tier.tierId)).toEqual(['trial', 'pro', 'max'])
+    })
+  })
+
+  it('prices the trial at zero and leaves the undecided tiers unpriced', () => {
+    // Free is `amount: 0`; undecided is no row at all, and the card draws no
+    // price line for the second. Conflating them puts "Free" on Max.
+    return stubListTiers().then((tiers) => {
+      expect(tiers[0].prices).toEqual([
+        { amount: 0, currency: 'EUR', interval: 'month', countryCode: null },
+      ])
+      expect(tiers[1].prices).toEqual([])
     })
   })
 })
