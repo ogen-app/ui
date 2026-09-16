@@ -125,9 +125,12 @@ describe('connectedAccounts', () => {
 })
 
 // A post type this build has written but not released (CON-196). The gate is
-// on the entry rather than on the slug, which is the part worth pinning: X has
-// offered `thread` since long before sequences, and a flag that withdrew it
-// would change how the app behaves with the feature off.
+// on the entry rather than on the slug — which used to matter because X's
+// `thread` was unflagged and Threads' was not. Both carry the flag as of
+// 2026-09-16: R2 is deployed and splits every thread body server-side, so
+// leaving X's open offered a type the server would refuse or re-cut without
+// the author being able to steer it. The per-entry gate is still the right
+// shape; it just has nothing asymmetric left to express.
 describe('flagged post types', () => {
   it('withholds a flagged type even when a publisher supports it', () => {
     const [view] = buildPlatformViews([
@@ -140,11 +143,22 @@ describe('flagged post types', () => {
     expect(view.available.map((pt) => pt.slug)).not.toContain('thread')
   })
 
-  it('leaves an unflagged type of the same slug alone', () => {
+  it('withholds it on X as well, publisher or no publisher', () => {
+    // X's publisher has always supported `thread`; that is exactly why this
+    // needs pinning. The release gate runs before the publisher gate, so
+    // support is not enough to bring the type back while the flag is off.
     const [view] = buildPlatformViews([
       apiPlatform(TWITTER, ['text-post', 'thread']),
     ])
-    expect(view.allowed.map((pt) => pt.slug)).toEqual(['text-post', 'thread'])
+    expect(view.allowed.map((pt) => pt.slug)).toEqual(['text-post'])
+  })
+
+  it('still names an existing thread post, having stopped offering the type', () => {
+    // The label comes off the whole dictionary rather than the released slice,
+    // so a post already carrying the slug reads as "Thread" rather than
+    // falling back to the raw value. Withdrawing a type may not rename what
+    // was made with it.
+    expect(getPostTypeLabel(TWITTER, 'thread')).toBe('Thread')
   })
 
   // The editor's picker does not go through `buildPlatformView` — it asks the
@@ -155,7 +169,9 @@ describe('flagged post types', () => {
     expect(releasedPostTypes(THREADS).map((pt) => pt.slug)).not.toContain(
       'thread',
     )
-    expect(releasedPostTypes(TWITTER).map((pt) => pt.slug)).toContain('thread')
+    expect(releasedPostTypes(TWITTER).map((pt) => pt.slug)).not.toContain(
+      'thread',
+    )
   })
 
   it('has no types for a platform it does not know', () => {

@@ -484,14 +484,25 @@ const FEATURE_FLAGS = {
    * message is reported rather than cut. The old promise that a thread has no
    * length state to report belonged to the splitter that left.
    *
-   * With this off, Threads does not offer the type (`buildPlatformView` and
-   * `releasedPostTypes` both drop it), nothing asks for a preview, and no save
-   * behaves differently from any other post type. X keeps offering `thread`, as
-   * it always has: withdrawing it would be a change with the flag off, which a
-   * flag may never make. An existing X `thread` post therefore behaves
-   * identically either way, because a thread is the same one Markdown body as
-   * every other post type; all the flag adds is the note under the editor, the
-   * per-thumbnail picker and the row in the pre-publish bar.
+   * With this off, **neither X nor Threads offers the type**
+   * (`buildPlatformView` and `releasedPostTypes` drop it on both), nothing asks
+   * for a preview, and no save behaves differently from any other post type.
+   *
+   * X's was unflagged until 2026-09-16, on the rule that a flag may not change
+   * what happens when it is off — the app had always offered it. That rule was
+   * retired here deliberately, because the state it protects no longer exists:
+   * R2 is **deployed**, so the server derives `thread_segments` from the body
+   * and gates on them whatever this build does. "As before" is therefore not
+   * ours to preserve, and what was left in its place was worse than the type's
+   * absence — a body under the ceiling is refused as a thread of one with no
+   * row on screen explaining it, and a longer one is packed into a chain by
+   * length that the author cannot steer, because their dividers never arrive.
+   *
+   * An existing `thread` post is not renamed or rewritten: `getPostTypeLabel`
+   * reads the whole dictionary rather than the released slice, and a thread is
+   * the same one Markdown body as every other post type. Only the picker stops
+   * offering the type. What the flag adds on top is the note under the editor,
+   * the per-thumbnail picker and the row in the pre-publish bar.
    *
    * Nothing outside the flag reads anything new: `doc.content` is still the
    * post's words, unchanged and un-rewritten, so the calendar, the posts table,

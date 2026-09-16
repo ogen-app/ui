@@ -659,7 +659,17 @@ and normalises a typed `---` to it, so no author can put a hyphen rule in the
 body. Every thread this client can author therefore comes back from the preview
 endpoint as **one** message with a literal `***` inside it. Raised on CON-284,
 asking the server to widen the test to the CommonMark thematic break; do not
-normalise it here. See `docs/technical-decisions.md#thread-sequence`.
+normalise it here.
+
+**So `thread` is now flagged on X as well as on Threads**, and that is knowingly
+a change with the flag off — the one thing the flag rule forbids. It was taken
+because R2 is *deployed*: the server splits and gates every thread body whatever
+this build does, so "behaves as before" stopped being available, and what was
+left was a type that fails as a thread of one with nothing on screen saying so,
+or chains by a length the author cannot steer. Nothing is renamed — an existing
+thread post keeps its label, only the picker stops offering the slug. Both go
+back on together when the divider fix lands. See
+`docs/technical-decisions.md#thread-sequence`.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's

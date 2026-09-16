@@ -955,9 +955,16 @@ splitter they described always cut to fit. Length verdicts now come off
   slug. The rule that says `segmented` is the same one carrying the per-message
   `max_content_chars`, so the two can never drift apart.
 - **The post type is gated on its dictionary entry, not on the slug.**
-  `PlatformPostType.flag` withholds *Threads'* `thread`, which is new. X's is
-  untouched, because the app has always offered it and a flag may never change
-  what happens when it is off. There was briefly a second gate — `aheadOfPublishers`,
+  `PlatformPostType.flag` withholds `thread` on *both* networks as of
+  2026-09-16. Threads' was flagged from the start, being new. X's was
+  deliberately left open on the rule that a flag may not change what happens
+  when it is off — and was closed once R2 went out to the shared dev
+  environment, because that rule protects a state which no longer exists: the
+  server splits and gates every thread body regardless of this build, so the
+  choice was never "as before" but between a type that half-works and no type.
+  Withdrawing it renames nothing — `getPostTypeLabel` reads the whole
+  dictionary, so an existing thread post keeps its label; only the picker stops
+  offering the slug. There was briefly a second gate — `aheadOfPublishers`,
   which let the flag stand in while `supportedPlatforms` listed `thread` for
   `twitter` only. CON-284 added the word, so the honest intersection works again
   and the stand-in is gone with the gap it covered.
