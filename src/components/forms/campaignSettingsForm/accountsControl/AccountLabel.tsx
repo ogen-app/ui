@@ -54,7 +54,7 @@ export function AccountLabel({
   // Set in Workspace Settings, not here: this is the workspace's decision
   // showing through, so the campaign can see how its posts will go out without
   // having to leave the page to find out.
-  const autoPublish = useAutoPublishState(view.platform.id)
+  const autoPublish = useAutoPublishState(view.info.zernioId)
 
   return (
     <div className="min-w-0 flex items-center gap-3">

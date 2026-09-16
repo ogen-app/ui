@@ -5,7 +5,7 @@ import type { Post } from '@/types/posts'
 import { useAddPost } from '@/hooks/usePosts'
 import { useCalendarDrop } from '@/hooks/useCalendarDrop'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
-import { usePlatformViews } from '@/hooks/usePlatforms'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { resolveForPlatform } from '@/lib/publishingAccount'
 import { hasVisibleProblem } from '@/lib/postValidation'
 import { MonthDensity } from './MonthDensity'
@@ -85,7 +85,8 @@ function MonthlyCalendarComponent({
   const { dragOverKey, laneHandlers } = useCalendarDrop(campaignId, posts)
   // One read of the cached platform list for the whole grid, as in the week —
   // the cards call the hook form for themselves and get the same answer.
-  const platformViews = usePlatformViews()
+  const { views: platformViews, resolve: resolvePlatform } =
+    usePlatformCatalog()
 
   const weeks = useMemo(
     () => monthWeeks(anchor, firstDayOfWeek, hiddenDays),
@@ -187,6 +188,7 @@ function MonthlyCalendarComponent({
                       post.social_account_id,
                       post.social_account,
                     ),
+                    resolvePlatform(post.platform_id),
                   ),
                 hasImage: Boolean(post.media_urls[0]),
               }))

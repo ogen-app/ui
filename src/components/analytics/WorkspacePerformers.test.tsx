@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { QueryWrapper } from '@/test/queryWrapper'
 import { describe, expect, it, vi } from 'vitest'
 import { t } from '@/test/i18n'
 import { WorkspacePerformersView } from './WorkspacePerformers'
@@ -73,6 +74,7 @@ function renderBoard(
       by="against_typical"
       onChangeBasis={vi.fn()}
     />,
+    { wrapper: QueryWrapper },
   )
 }
 

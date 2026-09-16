@@ -6,13 +6,9 @@ import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
 import { HelpTrigger } from '@/components/help/HelpTrigger'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { useCampaignPostTypes } from '@/hooks/useCampaignPostTypes'
-import { usePlatformViews } from '@/hooks/usePlatforms'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
-import {
-  PLATFORMS,
-  getPlatformInfo,
-  releasedPostTypes,
-} from '@/lib/platformDictionary'
+import { releasedPostTypes } from '@/lib/platformDictionary'
 import { canBeAutomatic, isAutoPostType } from '@/lib/postTypeAuto'
 import {
   canEditPublishingAccount,
@@ -91,15 +87,16 @@ export function PostQuickSettingsBar({
   className,
 }: Props) {
   const autoPostType = useFeatureFlag('post-type-auto')
-  const platform = getPlatformInfo(doc.platform_id)
+  const catalog = usePlatformCatalog()
+  const platform = catalog.resolve(doc.platform_id)
   const { data: campaign, isLoading: campaignPending } = useCampaign(
     doc.campaign_id,
   )
   // The same source the route resolves the method against, so the two can't
   // disagree. `unknown` holds the picker: "manual publish" is a promise about
   // what happens to this post, and it waits until we can keep it.
-  const autoPublish = useAutoPublishState(doc.platform_id)
-  const views = usePlatformViews()
+  const autoPublish = useAutoPublishState(platform?.zernioId)
+  const views = catalog.views
   const flashing = useAttentionFlash(attention)
   // A copy of this post already exists outside Ogen, so the channel it went
   // out on is history rather than a setting (CON-251). The account slot was
@@ -139,9 +136,14 @@ export function PostQuickSettingsBar({
   // While it is loading the triggers are disabled (`campaignPending` below),
   // so the unfiltered fallback is what an *errored* campaign leaves behind —
   // an over-wide menu beats no menu once there is nothing left to wait for.
+  //
+  // Drawn from the views rather than the dictionary since CON-292: the picker
+  // stores a sqid, which only the server's row carries, and a platform an
+  // operator has disabled should stop being offered — both of which the view
+  // answers and a bare dictionary entry cannot.
   const campaignPlatforms = campaign
-    ? PLATFORMS.filter((p) => (campaignPostTypes.get(p.id)?.size ?? 0) > 0)
-    : PLATFORMS
+    ? views.filter((v) => (campaignPostTypes.get(v.platform.id)?.size ?? 0) > 0)
+    : views
   // Shared with the Auto resolver rather than computed here, so the format a
   // post arrives at on its own is always one this menu would have offered.
   const campaignTypes = useCampaignPostTypes(doc.campaign_id, doc.platform_id)
@@ -183,8 +185,8 @@ export function PostQuickSettingsBar({
       // otherwise prefer the campaign's first enabled type for it. Both
       // sides read the selectable list, so switching platforms can never
       // land the post on a video type the picker would not have offered.
-      const next = getPlatformInfo(platformId)
-      const types = releasedPostTypes(platformId)
+      const next = catalog.resolve(platformId)
+      const types = releasedPostTypes(next)
       if (next && !types.some((t) => t.slug === d.platform_post_type)) {
         const camp = campaignPostTypes.get(platformId)
         const preferred = types.find((t) => camp?.has(t.slug)) ?? types[0]

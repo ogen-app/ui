@@ -7,6 +7,7 @@ import {
   type CheckStatus,
   type PostCheck,
 } from './postValidation.ts'
+import { getPlatformByZernioId } from './platformDictionary.ts'
 import type { Post } from '@/types/posts'
 
 vi.mock('@/config/featureFlags', () => ({
@@ -213,13 +214,13 @@ describe('checksSummary', () => {
   })
 })
 
-/** LinkedIn, from the dictionary — the only field `hasVisibleProblem` looks up. */
-const LINKEDIN = 'AXqWG7U2qnpt'
+/** LinkedIn, from the dictionary — the caller resolves it and passes it in. */
+const LINKEDIN = getPlatformByZernioId('linkedin')
 
 function post(over: Partial<Post> = {}): Post {
   return {
     status: 'draft',
-    platform_id: LINKEDIN,
+    platform_id: 'plat-linkedin',
     platform_post_type: 'text-post',
     ...over,
   } as Post
@@ -230,13 +231,13 @@ const RESOLVED = { ambiguous: false, mismatched: false }
 
 describe('hasVisibleProblem', () => {
   it('flags a post with no platform, whatever else is true of it', () => {
-    expect(hasVisibleProblem(post({ platform_id: '' }), RESOLVED)).toBe(true)
+    expect(hasVisibleProblem(post(), RESOLVED, undefined)).toBe(true)
   })
 
   it('flags an unset post type while nothing is deciding it', () => {
-    expect(hasVisibleProblem(post({ platform_post_type: '' }), RESOLVED)).toBe(
-      true,
-    )
+    expect(
+      hasVisibleProblem(post({ platform_post_type: '' }), RESOLVED, LINKEDIN),
+    ).toBe(true)
   })
 
   it('stands down on an unset post type once Auto is released', () => {
@@ -246,35 +247,45 @@ describe('hasVisibleProblem', () => {
     // attachments, and the list payload carries none.
     vi.mocked(isFeatureEnabled).mockReturnValue(true)
 
-    expect(hasVisibleProblem(post({ platform_post_type: '' }), RESOLVED)).toBe(
-      false,
-    )
+    expect(
+      hasVisibleProblem(post({ platform_post_type: '' }), RESOLVED, LINKEDIN),
+    ).toBe(false)
   })
 
   it('still flags a missing platform when Auto is released', () => {
     // Auto answers one of the two questions the card asks, and only that one.
     vi.mocked(isFeatureEnabled).mockReturnValue(true)
 
-    expect(hasVisibleProblem(post({ platform_id: '' }), RESOLVED)).toBe(true)
+    expect(hasVisibleProblem(post(), RESOLVED, undefined)).toBe(true)
   })
 
   it('flags an outcome that already went wrong, before anything else', () => {
-    expect(hasVisibleProblem(post({ status: 'failed' }), RESOLVED)).toBe(true)
-    expect(hasVisibleProblem(post({ status: 'not_published' }), RESOLVED)).toBe(
-      true,
-    )
+    expect(
+      hasVisibleProblem(post({ status: 'failed' }), RESOLVED, LINKEDIN),
+    ).toBe(true)
+    expect(
+      hasVisibleProblem(post({ status: 'not_published' }), RESOLVED, LINKEDIN),
+    ).toBe(true)
   })
 
   it('flags an account resolution the server would refuse', () => {
     expect(
-      hasVisibleProblem(post(), { ambiguous: true, mismatched: false }),
+      hasVisibleProblem(
+        post(),
+        { ambiguous: true, mismatched: false },
+        LINKEDIN,
+      ),
     ).toBe(true)
     expect(
-      hasVisibleProblem(post(), { ambiguous: false, mismatched: true }),
+      hasVisibleProblem(
+        post(),
+        { ambiguous: false, mismatched: true },
+        LINKEDIN,
+      ),
     ).toBe(true)
   })
 
   it('is silent on a post that is merely unfinished', () => {
-    expect(hasVisibleProblem(post(), RESOLVED)).toBe(false)
+    expect(hasVisibleProblem(post(), RESOLVED, LINKEDIN)).toBe(false)
   })
 })

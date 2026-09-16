@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useCampaign } from '@/hooks/useCampaigns'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import {
   releasedPostTypes,
   type PlatformPostType,
@@ -30,14 +31,16 @@ export function useCampaignPostTypes(
   platformId: string,
 ): PlatformPostType[] {
   const { data: campaign } = useCampaign(campaignId)
+  const { resolve } = usePlatformCatalog()
+  const info = resolve(platformId)
 
   return useMemo(() => {
-    const released = releasedPostTypes(platformId)
+    const released = releasedPostTypes(info)
     if (!campaign) return released
     const enabled = new Set(
       campaign.target_platforms?.find((tp) => tp.id === platformId)
         ?.post_types ?? [],
     )
     return released.filter((pt) => enabled.has(pt.slug))
-  }, [campaign, platformId])
+  }, [campaign, platformId, info])
 }

@@ -2,12 +2,12 @@ import { useTranslation } from 'react-i18next'
 import { AccountAvatar } from '@/components/ui/account-avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatNumber } from '@/lib/intl'
-import { resolvePlatformInfo } from '@/lib/platformDictionary'
 import { PaceBar, RankBar } from './charts'
 import { InsightLine } from './ComparisonSections'
 import { Picker } from './ComparisonBar'
 import { Basis, NotYet, SectionCard } from './shell'
 import { periodPhrase } from './format'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import {
   basisLabel,
   PERFORMER_BASES,
@@ -278,7 +278,7 @@ function PostList({
 
 function PostRow({ row, leader }: { row: PerformerRowView; leader: number }) {
   const { t } = useTranslation()
-  const platform = resolvePlatformInfo(row.platform)
+  const platform = usePlatformCatalog().resolve(row.platform)
 
   /*
     Top-aligned, not centred. The three things a reader compares down the list —

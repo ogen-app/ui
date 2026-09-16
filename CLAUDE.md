@@ -26,6 +26,7 @@ two analytics surfaces waiting on their live-API pass (CON-175/250). See
 - **Front-end architecture:** [`docs/architecture.md`](./docs/architecture.md)
 - **Technical decisions & rationale:** [`docs/technical-decisions.md`](./docs/technical-decisions.md)
 - **Onboarding, auth & tenancy flow:** [`docs/onboarding.md`](./docs/onboarding.md)
+- **Adding a platform — the support checklist:** [`docs/platform-support.md`](./docs/platform-support.md)
 - **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
 - **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
 - **Activity feed & daily report — proposal:** [`docs/activity.md`](./docs/activity.md)
@@ -101,6 +102,24 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **`src/lib/*` mirrors Go server rules** (`postStatusMachine`, `assetStatus`,
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.
+- **A platform is identified by `zernio_id`, never by its sqid** (CON-292). The
+  catalogue is the operator's now — rows are added and enabled in Harbor, and a
+  sqid is minted there, so it cannot be known at build time and nothing is filed
+  under it. It addresses a *row*; `zernio_id` names a *network*, and every table
+  we own is keyed by it: `lib/platformDictionary`, `lib/platformMedia`,
+  `PLATFORM_FOLDS`, the preview's `RENDERERS`, the auto-publish allowlist,
+  `supportsSequence`. Code holding a sqid — `post.platform_id`, a campaign's
+  `target_platforms[].id`, an analytics key — translates through
+  **`usePlatformCatalog().resolve`**, which takes either; that hook is the only
+  place the two meet, and it is a hook because the translation needs the fetched
+  list. **The dictionary is a gate, not a fallback**: `buildPlatformViews` drops
+  a row this build ships no support for (and says so in dev), because a network
+  with no mark, no preview, no fold and no media rules is broken in five places
+  rather than merely plain. So support ships first and the operator's toggle
+  comes after — that is what makes a launch need no deploy. What "support" means
+  is the checklist in [`docs/platform-support.md`](./docs/platform-support.md);
+  the silent one is `lib/platformMedia`, where a missing row means *no* image
+  checks rather than permissive ones.
 - **A post's permalink survives publication and is not frozen with the rest**
   (CON-165). `published_url` is on `PostPayload` and must stay there: the PUT
   assigns it unconditionally, so an autosave that omits it clears the link on
@@ -679,6 +698,20 @@ for the slug the publisher has not learned yet — and
 the post, so five images spread over three posts still warns "platform allows
 up to 4". That message is passed through as written because until the publisher
 splits it is right. See `docs/technical-decisions.md#thread-sequence`.
+
+**Two operator-tunable server limits are mirrored on the client with nothing to
+sync them** (CON-292). `platform_global_limits` is a single row an operator can
+edit in Harbor, and no REST endpoint serves it — so `MAX_ALT_TEXT_CHARS`
+(`lib/assetStatus.ts`) and `MAX_THREAD_POSTS` (`lib/threadSequence.ts`) are
+copies that match the seed today and cannot notice when it changes. Lower
+`max_thread_segments` to 10 and the editor keeps cutting at 25, then the publish
+is rejected. The fix is for both to ride along on `GET /api/platforms`; until
+then, changing one is a coordinated change rather than a config edit.
+`MAX_VIDEO_UPLOAD_BYTES` is *not* one of these — it is deliberately ours and
+below the server's ceiling, so it wins on purpose. The same ticket left the six
+existing platforms' constraint jsonb untouched, so `lib/platformMedia.ts`'s
+override table cannot be retired either, and an operator editing Instagram's
+image cap changes nothing the editor checks.
 
 **The help centre waits on content, not on an endpoint** (`help-center`,
 CON-173). The drawer, its triggers and the `#help/<key>` deep link are built;

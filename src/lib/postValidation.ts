@@ -4,7 +4,7 @@ import type {
   PostAttachmentWithValidation,
 } from '@/types/attachments'
 import { isFeatureEnabled } from '@/config/featureFlags'
-import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
+import { getPostTypeLabel, type PlatformInfo } from '@/lib/platformDictionary'
 import {
   mediaNoun,
   strandedAttachments,
@@ -30,6 +30,14 @@ export type PostCheck = {
 
 export type EvaluateInput = {
   post: Post
+  /**
+   * The post's platform, already resolved from `post.platform_id` by the
+   * caller (`usePlatformCatalog().resolve`). Undefined means no platform is
+   * picked, this build does not support the one that is, or the platform list
+   * has not loaded — all three are "we cannot say what this publishes as", and
+   * the platform check fails on each.
+   */
+  platform: PlatformInfo | undefined
   policy: MediaPolicy
   attachments: PostAttachmentWithValidation[]
   /** False while the attachment list or the post-type rules are in flight. */
@@ -63,6 +71,7 @@ export type EvaluateInput = {
 export function evaluatePost(input: EvaluateInput): PostCheck[] {
   const {
     post,
+    platform,
     policy,
     requiresContent,
     maxContentChars,
@@ -71,7 +80,6 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
   } = input
   const checks: PostCheck[] = []
 
-  const platform = getPlatformInfo(post.platform_id)
   checks.push({
     id: 'platform',
     label: 'Platform',
@@ -80,7 +88,7 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
   })
 
   const typeLabel = post.platform_post_type
-    ? getPostTypeLabel(post.platform_id, post.platform_post_type)
+    ? getPostTypeLabel(platform, post.platform_post_type)
     : ''
   checks.push({
     id: 'post-type',
@@ -297,12 +305,24 @@ export function hasVisibleProblem(
    * platform auto-resolves and publishes fine, so it is not a problem to flag.
    */
   account: Pick<PublishingAccountResolution, 'ambiguous' | 'mismatched'>,
+  /**
+   * The post's resolved platform — the same `usePlatformCatalog().resolve` the
+   * editor uses. A card cannot look this up itself since CON-292: the sqid on
+   * the post only addresses a row, and translating one needs the platform list.
+   *
+   * A caller that has not loaded that list yet passes `undefined` and gets a
+   * mark. That is the right way round for this function — it understates by
+   * design, but "no channel" is the one gap it has always been willing to flag,
+   * and a card that settles a beat later is better than one that stays silent
+   * about a post that cannot publish.
+   */
+  platform: PlatformInfo | undefined,
 ): boolean {
   // The publish already went wrong, or the window passed without it going out.
   if (post.status === 'failed' || post.status === 'not_published') return true
   // Nothing can publish without a channel, a shape to publish in, and an
   // account resolution the server would accept.
-  if (!getPlatformInfo(post.platform_id)) return true
+  if (!platform) return true
   // An empty post type is a gap only while nothing is deciding it. With Auto
   // released it is the *default* state of a draft, and the card has no way to
   // resolve it — the answer needs the attachments, which the list payload does

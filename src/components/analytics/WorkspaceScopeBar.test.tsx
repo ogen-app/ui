@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { QueryWrapper } from '@/test/queryWrapper'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { WorkspaceScopeBar } from './WorkspaceScopeBar'
@@ -34,6 +35,7 @@ function setup(props: Partial<Parameters<typeof WorkspaceScopeBar>[0]> = {}) {
       onWindowChange={vi.fn()}
       {...props}
     />,
+    { wrapper: QueryWrapper },
   )
   return { onPlatformChange }
 }
