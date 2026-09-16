@@ -214,6 +214,9 @@ export function createStreamConnection(
 
   function scheduleRetry(): void {
     if (subscribers === 0) return
+    // Entering backoff means the handover failed: the gap is now an outage,
+    // however it started, so whatever opens next must reconcile out loud.
+    replacingRecycled = false
     const step = backoff[Math.min(attempts, backoff.length - 1)]
     attempts += 1
     report('reconnecting')
