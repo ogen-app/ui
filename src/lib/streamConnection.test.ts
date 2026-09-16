@@ -194,6 +194,149 @@ describe('reconnecting', () => {
   })
 })
 
+describe('an announced recycle', () => {
+  /**
+   * The server closes every connection after 30 minutes to reclaim its slot
+   * (CON-286) and says so in a frame first. The whole point of the frame is
+   * that the close it precedes must not be handled as an outage — so these
+   * cover the three things that would otherwise happen twice an hour, per tab:
+   * a backoff wait before the stream comes back, a failure counted against a
+   * connection that never failed, and a `reconnecting` status the rail draws a
+   * warning from.
+   */
+  it('reopens immediately, without a backoff step', async () => {
+    const { open, calls } = controllableOpen()
+    const conn = createStreamConnection({
+      open,
+      onState: () => {},
+      backoffMs: [30_000],
+    })
+    conn.subscribe()
+    calls[0].hooks.opened()
+
+    calls[0].hooks.recycling()
+    calls[0].end()
+    // No timer advanced: the replacement is opened on the spot, not after the
+    // 30 seconds a real drop would have waited.
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(calls).toHaveLength(2)
+  })
+
+  it('holds the status at open and counts no failure', async () => {
+    const { open, calls } = controllableOpen()
+    const states: { status: string; attempts: number }[] = []
+    const conn = createStreamConnection({
+      open,
+      onState: (s) => states.push({ ...s }),
+      backoffMs: [1_000],
+    })
+    conn.subscribe()
+    calls[0].hooks.opened()
+
+    calls[0].hooks.recycling()
+    calls[0].end()
+    await vi.advanceTimersByTimeAsync(0)
+    calls[1].hooks.opened()
+
+    expect(states.map((s) => s.status)).toEqual([
+      'connecting',
+      'open',
+      // Nothing between them: `reconnecting` is what `LiveStatus` warns from.
+      'open',
+    ])
+    expect(states[states.length - 1].attempts).toBe(0)
+  })
+
+  it('tells the caller the gap was a handover, once', async () => {
+    const { open, calls } = controllableOpen()
+    const opens: { reconnected: boolean; afterRecycle: boolean }[] = []
+    const conn = createStreamConnection({
+      open,
+      onState: () => {},
+      onOpen: (info) => opens.push(info),
+      backoffMs: [1_000],
+    })
+    conn.subscribe()
+    calls[0].hooks.opened()
+
+    calls[0].hooks.recycling()
+    calls[0].end()
+    await vi.advanceTimersByTimeAsync(0)
+    calls[1].hooks.opened()
+
+    // An ordinary drop after it: the flag belongs to one connection, and a
+    // recycle an hour ago must not quiet the banner for a real outage now.
+    calls[1].end()
+    await vi.advanceTimersByTimeAsync(1_000)
+    calls[2].hooks.opened()
+
+    expect(opens).toEqual([
+      { reconnected: false, afterRecycle: false },
+      { reconnected: true, afterRecycle: true },
+      { reconnected: true, afterRecycle: false },
+    ])
+  })
+
+  it('backs off normally when the replacement will not open', async () => {
+    const { open, calls } = controllableOpen()
+    const states: string[] = []
+    const conn = createStreamConnection({
+      open,
+      onState: (s) => states.push(s.status),
+      backoffMs: [1_000],
+    })
+    conn.subscribe()
+    calls[0].hooks.opened()
+
+    calls[0].hooks.recycling()
+    calls[0].end()
+    await vi.advanceTimersByTimeAsync(0)
+    // The recycle was honest and the API then went down — the announcement
+    // covers one close, never the state of the server after it.
+    calls[1].fail()
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    expect(calls).toHaveLength(3)
+    expect(states).toEqual(['connecting', 'open', 'reconnecting'])
+  })
+
+  it('does not reopen a stream the last subscriber has released', async () => {
+    const { open, calls } = controllableOpen()
+    const conn = createStreamConnection({ open, onState: () => {} })
+    const release = conn.subscribe()
+    calls[0].hooks.opened()
+
+    calls[0].hooks.recycling()
+    release()
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(calls).toHaveLength(1)
+  })
+
+  it('forgets a pending handover when the tab re-pins', async () => {
+    // The workspace switch aborts mid-handover. What opens next is the first
+    // connection to somewhere else, and its caller has to reconcile out loud.
+    const { open, calls } = controllableOpen()
+    const opens: boolean[] = []
+    const conn = createStreamConnection({
+      open,
+      onState: () => {},
+      onOpen: ({ afterRecycle }) => opens.push(afterRecycle),
+    })
+    conn.subscribe()
+    calls[0].hooks.opened()
+
+    calls[0].hooks.recycling()
+    calls[0].end()
+    await vi.advanceTimersByTimeAsync(0)
+    conn.restart()
+    calls[2].hooks.opened()
+
+    expect(opens).toEqual([false, false])
+  })
+})
+
 describe('the silence watchdog', () => {
   it('drops a connection that has gone quiet', async () => {
     const { open, calls } = controllableOpen()
