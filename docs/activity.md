@@ -288,16 +288,14 @@ without the other.
   (`lib/notifications.ts`), which is the honest shape of the compromise: a
   producer can ship before its copy does, and its rows are untranslatable until
   a key is added.
-- **`eventhub` leaks subscriber slots, and both streams die when ten are
-  held.** The cap is 10 per user across `/api/events` *and*
-  `/api/notifications/stream`. Measured on the local API 2026-09-06: 328
-  connects against 318 disconnects, ten ids never released, saturated six
-  minutes after boot and still saturated 39 hours later — 1283 × `429
-  eventhub: subscriber limit exceeded for user`. The client is behaving; the
-  slots are not reclaimed. A user in that state gets no live updates and no
-  notifications until the API restarts, which is the whole feed. Not this
-  feature's bug, but the thing most likely to make it look broken. Filed as
-  **CON-286**.
+- **`eventhub` leaked subscriber slots — fixed** (CON-286). The cap was 10 per
+  user across `/api/events` *and* `/api/notifications/stream`, and slots were
+  never reclaimed: measured on the local API 2026-09-06, ten ids never
+  released, saturated six minutes after boot and still saturated 39 hours
+  later. ogen#142 made the cap self-healing (oldest subscription evicted at
+  the limit, ~30-minute connection lifetime) and ogen#152 raised it to 30.
+  What remains ours is the `event: recycle` frame nothing listens for yet —
+  the `activity` flag comment and `docs/sse.md` carry it.
 - **Event naming is still mixed** — dotted (`zernio.sync.ok`) and snake_case
   (`post_cloned`), matched literally in `lib/eventRouting.ts`. The notification
   vocabulary settled on dotted (`post.publish_failed`), so the hub is now the
