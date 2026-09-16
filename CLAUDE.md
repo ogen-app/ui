@@ -15,9 +15,11 @@ Zernio run centrally "under the hood"** — their keys are platform-managed, not
 tenant-configured (CON-97 §10.3, CON-99); tenants still connect their own social
 accounts. The front-end multi-tenancy cutover landed 2026-07 (real
 `current_user` identity, workspace settings, per-instance API-key config
-removed — see [`docs/onboarding.md`](./docs/onboarding.md)). **Current
-front-end priority:** the **Post Assistant + post-editing UIs** (CON-42/61).
-Content-Bank AI images are secondary. See
+removed — see [`docs/onboarding.md`](./docs/onboarding.md)). The Post Assistant
+UI that used to be named here as the current priority **shipped** — CON-61
+closed 2026-08-05, and CON-42 is the backend Genkit flow behind it. **Current
+front-end priority:** the **campaign-scoped Content Bank** (CON-210), then the
+two analytics surfaces waiting on their live-API pass (CON-175/250). See
 [`docs/product.md`](./docs/product.md#direction--current-priorities).
 
 - **Product & domain:** [`docs/product.md`](./docs/product.md)
@@ -28,6 +30,8 @@ Content-Bank AI images are secondary. See
 - **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
 - **Activity feed & daily report — proposal:** [`docs/activity.md`](./docs/activity.md)
 - **Tasks — proposal:** [`docs/tasks.md`](./docs/tasks.md)
+- **What the front end is waiting on from the API:**
+  [`docs/open-questions.md`](./docs/open-questions.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
