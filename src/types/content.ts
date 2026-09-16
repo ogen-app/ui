@@ -5,11 +5,7 @@ export type Tag = {
 }
 
 export type AssetStatus =
-  | 'pending'
-  | 'processing'
-  | 'ready'
-  | 'partial'
-  | 'failed'
+  'pending' | 'processing' | 'ready' | 'partial' | 'failed'
 
 /**
  * What kind of thing the document is, as the backend labels it.

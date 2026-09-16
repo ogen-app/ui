@@ -1,16 +1,14 @@
-import { StarIcon, UsersThreeIcon, WaveformIcon } from '@phosphor-icons/react'
+import { UsersThreeIcon, WaveformIcon } from '@phosphor-icons/react'
 import { Link } from '@tanstack/react-router'
-import { Checkbox } from '@/components/ui/checkbox'
+import { useTranslation } from 'react-i18next'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
-import {
-  useCampaignBrand,
-  useBrand,
-  useSaveCampaignBrand,
-} from '@/hooks/useBrand'
-import { EMPTY_CAMPAIGN_BRAND } from './binding'
-import type { BrandAudience, BrandVoice, CampaignBrand } from './types'
+import { campaignToPayload } from '@/lib/campaignPayload'
+import { useBrand } from '@/hooks/useBrand'
+import { useCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
+import type { UpdateCampaignPayload } from '@/types/campaigns'
+import type { BrandAudience, BrandVoice } from './types'
 
 /**
  * What this campaign draws on out of the workspace's Brand (§8, middle level).
@@ -28,42 +26,36 @@ import type { BrandAudience, BrandVoice, CampaignBrand } from './types'
  * campaign* is arguing, which is not brand material and has no library entry
  * behind it.
  *
- * **It saves on the spot**, not through the page's Save button, following
- * `PlatformsControl` — the control writes to its own store rather than to the
- * campaign payload, and a selection that sat dirty until an unrelated Save
- * would be a lie about where it lives.
+ * **One voice, not a cast.** The card offered several for a while, on the
+ * argument that the plan generator assigns a voice per post as it plans — which
+ * it does. But it picks from the *whole library* biased toward the campaign's
+ * one voice (CON-245 FR4), and there has never been a column for a cast. A
+ * multi-select whose extra entries no generator reads is the picker-with-no-
+ * consumer failure CON-226 §9 names, and it was ours. If the cast lands
+ * server-side, §13 is where it comes back.
  *
- * Nothing here reaches the generator yet: CON-245 is the API that would read a
- * voice, and until it exists this records the choice and no more. That is the
- * honest state, and the reason `brand-materials` is still off.
+ * **It saves on the spot**, not through the page's Save button, following
+ * `PlatformsControl` — a selection that sat dirty until an unrelated Save would
+ * be a lie about where it lives. The write is a whole-campaign PUT with the one
+ * ref as an override: the refs are presence-aware, so nothing else in the
+ * payload can be clobbered by it and it cannot clobber a binding set elsewhere.
  */
 export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
+  const { t } = useTranslation()
   const { data: brand, isLoading } = useBrand()
-  const { data: bound } = useCampaignBrand(campaignId)
-  const { mutate: save } = useSaveCampaignBrand(campaignId)
+  const { data: campaign } = useCampaign(campaignId)
+  const { mutate: update } = useUpdateCampaign({
+    errorTitle: t('brand.binding.saveError'),
+  })
 
-  const value = bound ?? EMPTY_CAMPAIGN_BRAND
-
-  if (isLoading || !brand) return null
+  if (isLoading || !brand || !campaign) return null
 
   const empty = brand.voices.length === 0 && brand.audiences.length === 0
   if (empty) return <NothingToPickFrom />
 
-  function set(next: Partial<CampaignBrand>) {
-    save({ ...value, ...next })
-  }
-
-  function toggleVoice(id: string) {
-    const inCast = value.voiceIds.includes(id)
-    const voiceIds = inCast
-      ? value.voiceIds.filter((v) => v !== id)
-      : [...value.voiceIds, id]
-    // Dropping the voice that was the default leaves the campaign stating a
-    // default it no longer casts — which resolves as though nothing was said,
-    // silently. Clearing it here makes the fallback visible instead.
-    const defaultVoiceId =
-      value.defaultVoiceId === id && inCast ? null : value.defaultVoiceId
-    set({ voiceIds, defaultVoiceId })
+  function set(refs: Partial<UpdateCampaignPayload>) {
+    if (!campaign) return
+    update({ id: campaignId, payload: campaignToPayload(campaign, refs) })
   }
 
   return (
@@ -71,27 +63,28 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
       title={
         <>
           <WaveformIcon className="size-5 text-tertiary-foreground" />
-          Voice
+          {t('brand.binding.voice')}
         </>
       }
     >
       <p className="text-sm text-tertiary-foreground">
-        The voices this campaign writes in. Posts open in the default one and
-        can be changed individually.
+        {t('brand.binding.campaignVoiceHint')}
       </p>
       <div className="flex flex-col">
         {brand.voices.map((voice) => (
           <VoiceRow
             key={voice.id}
             voice={voice}
-            picked={value.voiceIds.includes(voice.id)}
-            isDefault={value.defaultVoiceId === voice.id}
-            // With one voice cast there is nothing to choose between, and the
-            // resolution already treats it as the default. A star on a list of
-            // one is a control whose only state is on.
-            showDefault={value.voiceIds.length > 1}
-            onToggle={() => toggleVoice(voice.id)}
-            onMakeDefault={() => set({ defaultVoiceId: voice.id })}
+            picked={campaign.brand_voice_id === voice.id}
+            // Clicking the chosen one again clears it, so "the workspace's
+            // default" stays reachable without a None row that would sit in the
+            // list pretending to be a voice.
+            onPick={() =>
+              set({
+                brand_voice_id:
+                  campaign.brand_voice_id === voice.id ? null : voice.id,
+              })
+            }
           />
         ))}
       </div>
@@ -99,26 +92,24 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
       <div className="mt-2 flex items-center gap-2">
         <UsersThreeIcon className="size-5 text-tertiary-foreground" />
         <h3 className="text-xl font-display font-medium tracking-tight">
-          Audience
+          {t('brand.binding.audience')}
         </h3>
       </div>
       <p className="text-sm text-tertiary-foreground">
-        Who this campaign is written to. One — a post that addresses somebody
-        else says so on the post.
+        {t('brand.binding.campaignAudienceHint')}
       </p>
       <div className="flex flex-col">
         {brand.audiences.map((audience) => (
           <AudienceRow
             key={audience.id}
             audience={audience}
-            picked={value.audienceId === audience.id}
-            // Clicking the chosen one again clears it, so "nobody in
-            // particular" stays reachable without a None row that would sit in
-            // the list pretending to be an audience.
+            picked={campaign.brand_audience_id === audience.id}
             onPick={() =>
               set({
-                audienceId:
-                  value.audienceId === audience.id ? null : audience.id,
+                brand_audience_id:
+                  campaign.brand_audience_id === audience.id
+                    ? null
+                    : audience.id,
               })
             }
           />
@@ -136,15 +127,15 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
  * it. Saying where it lives is the whole job here.
  */
 function NothingToPickFrom() {
+  const { t } = useTranslation()
   return (
-    <SettingsCard title="Voice and audience">
+    <SettingsCard title={t('brand.binding.emptyTitle')}>
       <p className="text-sm text-tertiary-foreground">
-        This workspace has no voices or audiences yet. They are written once and
-        every campaign draws on them.
+        {t('brand.binding.emptyBody')}
       </p>
       <div>
         <Button asChild variant="secondary" size="sm">
-          <Link to="/brand">Open Brand</Link>
+          <Link to="/brand">{t('brand.binding.openBrand')}</Link>
         </Button>
       </div>
     </SettingsCard>
@@ -153,36 +144,25 @@ function NothingToPickFrom() {
 
 /** Shared row chrome: the picked state is a surface, not a tick in a column. */
 const ROW =
-  'flex items-start gap-3 border-b border-tertiary px-3 py-3 last:border-b-0 text-left'
+  'flex items-start gap-3 border-b border-tertiary px-3 py-3 last:border-b-0 text-left w-full'
 
 function VoiceRow({
   voice,
   picked,
-  isDefault,
-  showDefault,
-  onToggle,
-  onMakeDefault,
+  onPick,
 }: {
   voice: BrandVoice
   picked: boolean
-  isDefault: boolean
-  showDefault: boolean
-  onToggle: () => void
-  onMakeDefault: () => void
+  onPick: () => void
 }) {
   return (
-    <div className={cn(ROW, picked && 'bg-secondary')}>
-      <Checkbox
-        checked={picked}
-        onCheckedChange={onToggle}
-        aria-label={`Use ${voice.name} in this campaign`}
-        className="mt-0.5"
-      />
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex min-w-0 flex-1 flex-col gap-0.5 text-left"
-      >
+    <button
+      type="button"
+      onClick={onPick}
+      aria-pressed={picked}
+      className={cn(ROW, picked && 'bg-secondary')}
+    >
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-sm font-medium">{voice.name}</span>
         {/* `whenToUse` and not `summary`: the question on this screen is which
             voice this campaign wants, and that is what `whenToUse` answers.
@@ -193,32 +173,8 @@ function VoiceRow({
             {voice.whenToUse}
           </span>
         )}
-      </button>
-      {picked && showDefault && (
-        <button
-          type="button"
-          onClick={onMakeDefault}
-          aria-pressed={isDefault}
-          aria-label={`Make ${voice.name} the default for new posts`}
-          title={
-            isDefault
-              ? 'Posts open in this voice'
-              : 'Make default for new posts'
-          }
-          className="mt-0.5 shrink-0"
-        >
-          <StarIcon
-            weight={isDefault ? 'fill' : 'regular'}
-            className={cn(
-              'size-4',
-              isDefault
-                ? 'text-primary-foreground'
-                : 'text-tertiary-foreground',
-            )}
-          />
-        </button>
-      )}
-    </div>
+      </span>
+    </button>
   )
 }
 
@@ -236,7 +192,7 @@ function AudienceRow({
       type="button"
       onClick={onPick}
       aria-pressed={picked}
-      className={cn(ROW, 'w-full', picked && 'bg-secondary')}
+      className={cn(ROW, picked && 'bg-secondary')}
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-sm font-medium">{audience.name}</span>

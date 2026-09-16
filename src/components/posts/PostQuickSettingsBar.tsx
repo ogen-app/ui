@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
 import { useCampaign } from '@/hooks/useCampaigns'
+import { useCampaignPostTypes } from '@/hooks/useCampaignPostTypes'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import {
@@ -10,6 +12,7 @@ import {
   getPlatformInfo,
   releasedPostTypes,
 } from '@/lib/platformDictionary'
+import { canBeAutomatic, isAutoPostType } from '@/lib/postTypeAuto'
 import {
   canEditPublishingAccount,
   isSubmitted,
@@ -41,6 +44,13 @@ type Props = {
    * header has no button to offer (CON-149).
    */
   onAddPostLink: () => void
+  /**
+   * The format an automatic post would publish as right now, resolved by the
+   * route's one `usePostMedia`. Read only while the post carries no slug of its
+   * own — the bar shows it beside *Auto* so the decision is visible without
+   * opening the menu.
+   */
+  resolvedPostType?: string
   className?: string
 }
 
@@ -76,8 +86,10 @@ export function PostQuickSettingsBar({
   publishMethod,
   onPublishMethodChange,
   onAddPostLink,
+  resolvedPostType,
   className,
 }: Props) {
+  const autoPostType = useFeatureFlag('post-type-auto')
   const platform = getPlatformInfo(doc.platform_id)
   const { data: campaign, isLoading: campaignPending } = useCampaign(
     doc.campaign_id,
@@ -93,6 +105,12 @@ export function PostQuickSettingsBar({
   // already doing this — `canEditPublishingAccount` is the same rule — and the
   // two pickers beside it now read the same way.
   const locked = isSubmitted(doc.status)
+  // The empty slug is a draft's privilege (`canBeAutomatic`), so a post that
+  // has left `draft` cannot be talked back into having no format — not into
+  // Auto, and not through the deselect row this picker has always offered. That
+  // second one predates the feature and failed the same way: the save that
+  // followed could only ever be refused.
+  const clearable = canBeAutomatic(doc.status)
 
   // platform id → post-type slugs enabled on this campaign.
   const campaignPostTypes = useMemo(
@@ -123,15 +141,9 @@ export function PostQuickSettingsBar({
   const campaignPlatforms = campaign
     ? PLATFORMS.filter((p) => (campaignPostTypes.get(p.id)?.size ?? 0) > 0)
     : PLATFORMS
-  // `releasedPostTypes` and not `platform.postTypes`: the campaign filter is
-  // the wrong thing to lean on for the release gate, because the fallback
-  // above deliberately drops it — and because a campaign row could name a
-  // slug this build has not released.
-  const campaignTypes = releasedPostTypes(doc.platform_id).filter(
-    (t) =>
-      !campaign ||
-      (campaignPostTypes.get(doc.platform_id)?.has(t.slug) ?? false),
-  )
+  // Shared with the Auto resolver rather than computed here, so the format a
+  // post arrives at on its own is always one this menu would have offered.
+  const campaignTypes = useCampaignPostTypes(doc.campaign_id, doc.platform_id)
 
   // The publishing account comes from the backend: one of the connected
   // publisher's accounts for the attached platform, not the app user. Shared
@@ -162,6 +174,10 @@ export function PostQuickSettingsBar({
         d.platform_post_type = ''
         return
       }
+      // An automatic post carries no slug and wants none: picking one here
+      // would answer a question the author deliberately left open, and the
+      // resolver re-answers it against the new platform's rules anyway.
+      if (autoPostType && isAutoPostType(d.platform_post_type)) return
       // Keep the post type when the new platform supports the same slug,
       // otherwise prefer the campaign's first enabled type for it. Both
       // sides read the selectable list, so switching platforms can never
@@ -265,6 +281,9 @@ export function PostQuickSettingsBar({
               connectedSlugs={
                 connectedPostTypes.get(doc.platform_id) ?? EMPTY_SLUGS
               }
+              auto={autoPostType && clearable}
+              clearable={clearable}
+              resolved={resolvedPostType}
               disabled={campaignPending}
               readOnly={locked}
               onSelect={selectPostType}

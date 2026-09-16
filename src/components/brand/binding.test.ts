@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   EMPTY_CAMPAIGN_BRAND,
   EMPTY_POST_BRAND,
-  castOf,
   resolveAudience,
   resolveVoice,
 } from './binding'
@@ -63,26 +62,6 @@ function brandWith(over: Partial<BrandData> = {}): BrandData {
   }
 }
 
-describe('castOf', () => {
-  it('keeps the order the voices were picked in, not the library order', () => {
-    const brand = brandWith({ voices: [voice('a'), voice('b'), voice('c')] })
-    const cast = castOf(brand, {
-      ...EMPTY_CAMPAIGN_BRAND,
-      voiceIds: ['c', 'a'],
-    })
-    expect(cast.map((v) => v.id)).toEqual(['c', 'a'])
-  })
-
-  it('drops a reference to a deleted voice rather than reporting a gap', () => {
-    const brand = brandWith({ voices: [voice('a')] })
-    const cast = castOf(brand, {
-      ...EMPTY_CAMPAIGN_BRAND,
-      voiceIds: ['a', 'gone'],
-    })
-    expect(cast.map((v) => v.id)).toEqual(['a'])
-  })
-})
-
 describe('resolveVoice', () => {
   const brand = brandWith({
     voices: [
@@ -95,59 +74,52 @@ describe('resolveVoice', () => {
   it('takes the post’s own choice first, and says so', () => {
     const got = resolveVoice(
       brand,
-      { voiceIds: ['friday'], defaultVoiceId: 'friday', audienceId: null },
-      { voice: { id: 'formal', delta: null }, audienceId: null },
+      { voiceId: 'friday', audienceId: null },
+      { voiceId: 'formal', audienceId: null },
     )
     expect(got.voice?.id).toBe('formal')
     expect(got.source).toBe('post')
   })
 
-  it('falls back to the campaign default when the post has not chosen', () => {
+  it('falls back to the campaign’s when the post has not chosen', () => {
     const got = resolveVoice(
       brand,
-      {
-        voiceIds: ['friday', 'formal'],
-        defaultVoiceId: 'friday',
-        audienceId: null,
-      },
+      { voiceId: 'friday', audienceId: null },
       EMPTY_POST_BRAND,
     )
     expect(got.voice?.id).toBe('friday')
     expect(got.source).toBe('campaign')
   })
 
-  it('treats a cast of one as the campaign’s default even unstated', () => {
-    const got = resolveVoice(
-      brand,
-      { voiceIds: ['formal'], defaultVoiceId: null, audienceId: null },
-      EMPTY_POST_BRAND,
-    )
-    expect(got.voice?.id).toBe('formal')
-    expect(got.source).toBe('campaign')
-  })
-
-  it('hands a cast of two with no stated default to the library', () => {
-    const got = resolveVoice(
-      brand,
-      {
-        voiceIds: ['friday', 'formal'],
-        defaultVoiceId: null,
-        audienceId: null,
-      },
-      EMPTY_POST_BRAND,
-    )
+  it('falls back to the library’s default when neither has chosen', () => {
+    const got = resolveVoice(brand, EMPTY_CAMPAIGN_BRAND, EMPTY_POST_BRAND)
     expect(got.voice?.id).toBe('house')
     expect(got.source).toBe('library')
   })
 
+  // Both levels fall *through* a dead reference rather than resolving to
+  // nothing. The server never sees this state — its FKs are ON DELETE SET NULL
+  // — so this is the window between a voice being deleted and the campaign or
+  // post being refetched, and behaving like "never chose" is what keeps that
+  // window from reading as a broken campaign.
   it('falls through a campaign pointing at a deleted voice', () => {
     const got = resolveVoice(
       brand,
-      { voiceIds: [], defaultVoiceId: 'gone', audienceId: null },
+      { voiceId: 'gone', audienceId: null },
       EMPTY_POST_BRAND,
     )
     expect(got.voice?.id).toBe('house')
     expect(got.source).toBe('library')
+  })
+
+  it('falls through a post pointing at a deleted voice, to the campaign', () => {
+    const got = resolveVoice(
+      brand,
+      { voiceId: 'friday', audienceId: null },
+      { voiceId: 'gone', audienceId: null },
+    )
+    expect(got.voice?.id).toBe('friday')
+    expect(got.source).toBe('campaign')
   })
 
   it('resolves to nothing when the library is empty', () => {
@@ -160,67 +132,27 @@ describe('resolveVoice', () => {
     expect(got.source).toBe('none')
   })
 
-  it('keeps a delta that names no voice, as the post’s own', () => {
-    const got = resolveVoice(brandWith(), EMPTY_CAMPAIGN_BRAND, {
-      voice: { id: null, delta: 'Drier than usual.' },
-      audienceId: null,
-    })
+  it('resolves to nothing when a library with voices has no default', () => {
+    const got = resolveVoice(
+      brandWith({ voices: [voice('friday'), voice('formal')] }),
+      EMPTY_CAMPAIGN_BRAND,
+      EMPTY_POST_BRAND,
+    )
     expect(got.voice).toBeNull()
-    expect(got.delta).toBe('Drier than usual.')
+    expect(got.source).toBe('none')
+  })
+
+  // The pin is the whole point of an override: a post that names the same
+  // voice its campaign happens to name today is *not* in the same state as one
+  // that inherited it, and only the first survives the campaign moving on.
+  it('reports a post pinned to the campaign’s own voice as the post’s', () => {
+    const got = resolveVoice(
+      brand,
+      { voiceId: 'friday', audienceId: null },
+      { voiceId: 'friday', audienceId: null },
+    )
+    expect(got.voice?.id).toBe('friday')
     expect(got.source).toBe('post')
-  })
-
-  it('carries the post’s delta over an inherited voice', () => {
-    const got = resolveVoice(
-      brand,
-      { voiceIds: ['friday'], defaultVoiceId: 'friday', audienceId: null },
-      { voice: { id: null, delta: 'Shorter.' }, audienceId: null },
-    )
-    // The delta is the post's, the voice is the campaign's — the two levels do
-    // not have to agree on where they came from.
-    expect(got.delta).toBe('Shorter.')
-  })
-
-  it('marks a voice edited after the post was written as stale', () => {
-    const edited = brandWith({
-      voices: [
-        voice('house', {
-          isDefault: true,
-          updatedAt: '2026-03-01T00:00:00.000Z',
-        }),
-      ],
-    })
-    const got = resolveVoice(
-      edited,
-      EMPTY_CAMPAIGN_BRAND,
-      EMPTY_POST_BRAND,
-      '2026-02-01T00:00:00.000Z',
-    )
-    expect(got.stale).toBe(true)
-  })
-
-  it('is not stale when the post is the newer of the two', () => {
-    const got = resolveVoice(
-      brand,
-      EMPTY_CAMPAIGN_BRAND,
-      EMPTY_POST_BRAND,
-      '2026-06-01T00:00:00.000Z',
-    )
-    expect(got.stale).toBe(false)
-  })
-
-  it('claims nothing about staleness without the post’s date', () => {
-    const edited = brandWith({
-      voices: [
-        voice('house', {
-          isDefault: true,
-          updatedAt: '2099-01-01T00:00:00.000Z',
-        }),
-      ],
-    })
-    expect(
-      resolveVoice(edited, EMPTY_CAMPAIGN_BRAND, EMPTY_POST_BRAND).stale,
-    ).toBe(false)
   })
 })
 
@@ -233,7 +165,7 @@ describe('resolveAudience', () => {
     const got = resolveAudience(
       brand,
       { ...EMPTY_CAMPAIGN_BRAND, audienceId: 'founders' },
-      { voice: null, audienceId: 'cfos' },
+      { voiceId: null, audienceId: 'cfos' },
     )
     expect(got.audience?.id).toBe('cfos')
     expect(got.source).toBe('post')

@@ -99,6 +99,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **`src/lib/*` mirrors Go server rules** (`postStatusMachine`, `assetStatus`,
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.
+- **A post's permalink survives publication and is not frozen with the rest**
+  (CON-165). `published_url` is on `PostPayload` and must stay there: the PUT
+  assigns it unconditionally, so an autosave that omits it clears the link on
+  every published post. It is deliberately outside CON-251's content lock —
+  recording a link is a post-publish act — which is what lets
+  `PublishedUrlDialog` save one Zernio cannot verify, on a post that has
+  already published as well as one about to. That path must always pass the
+  typed URL through; it used to discard it, and nothing in the product asks for
+  it a second time.
 - **Video uploads take a different path from images and PDFs** — presign →
   direct PUT to storage → finalize, so multi-hundred-megabyte files never
   buffer in the API. Routed by kind inside `usePostAttachments.upload`; the
@@ -178,6 +187,29 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (CON-165): the server defaults it away on silence and *preserves*
   `used_asset_ids`, so the two fields are opposites and a builder that treats
   them alike is wrong about one of them.
+- **A post's type is a default, not a question** (`post-type-auto`, off). *Auto*
+  is the empty `platform_post_type` every post is **already** created with —
+  `useAddPost` sends a campaign and a date and nothing else — so the feature
+  stores nothing and waits on no endpoint; it reads a state that already existed
+  as an intention rather than as an omission. While a post is automatic the
+  format is derived on every render from the body and the attachments
+  (`lib/postTypeAuto`), and the slug is written to the record on the way **out
+  of `draft`** — every edge, not just the committing ones. That boundary is the
+  server's and not a judgement call: `requirePlatformIfNotDraft` refuses a PUT
+  carrying an empty type under any other status, so a post that crossed it still
+  automatic could not be saved again at all. Hence `canBeAutomatic`, read in both
+  directions — the picker offers *Auto* (and its older twin, the deselect row)
+  only to a draft, and the transition out is what pins. Pinning is one-way:
+  reopen to draft and the post keeps the slug it resolved to.
+  The ladder is `text-post → image-post → carousel → video → reel → short →
+  thread`, loosest first, bounded by what the *campaign* enables — Auto can only
+  land somewhere the picker would have offered. It never chooses Story, Article
+  or Link post (editorial decisions the content cannot imply) nor a
+  `whitelist_only` type (no rule to test). **`thread` is a rung only while
+  `thread-sequence` is on**: until the submit path sends `threadItems` a thread
+  publishes as one post, so resolving to it would quietly truncate. With the
+  flag off the empty slug means what it always did — a `fail` in the checks bar
+  and a mark on the card. See `docs/technical-decisions.md#auto-post-type`.
 - **A campaign is archived or deleted — it has no status** (CON-156). `draft`
   and `active` both meant active and nothing ever showed either, so the client
   no longer models `status` at all and the server creates every campaign
@@ -235,7 +267,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   mapper without either of them holding a frozen label. **Coverage comes in two
   shapes**, and the difference is what you need to know before opening a file.
   Some screens are converted whole: the auth screens, sidebar, Profile,
-  Workspace Settings, the campaign calendar, the analytics surfaces,
+  Workspace Settings, the campaign calendar, the analytics surfaces, **Brand**,
   `/workspaces`, `/invite`, `/plans` with the Plan & billing card and the
   entitlement renderings, and the two flag-gated features written catalogued
   from the start (Tasks, Activity). Others hold **islands** of catalogued copy
@@ -261,9 +293,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   the deploy that releases it. The gate sits on those entry points, not on
   `setLocale`, so the switching machinery stays exercised by its tests while
   nothing but English is released. Spanish is complete and gated today.
-- **Dates, times and numbers go through `lib/intl.ts`** — `formatDate`,
-  `formatNumber`, `formatRelative` — never `toLocaleDateString(undefined, …)`
-  or a bare `new Intl.DateTimeFormat`. The bare forms mean the *browser's*
+- **Dates, times, numbers and joined lists go through `lib/intl.ts`** —
+  `formatDate`, `formatNumber`, `formatRelative`, `formatList` — never
+  `toLocaleDateString(undefined, …)`, a bare `new Intl.DateTimeFormat`, or a
+  hand-rolled `slice(0, -1).join(', ') + ' and '`, which is an English list
+  formatter wearing no label (Spanish turns *and* into *e* before an i- sound,
+  and neither the conjunction nor the serial comma is ours to hard-code).
+  The bare forms mean the *browser's*
   language, and the app's is a separate choice the user makes in Workspace
   Settings; a Spanish UI printing "Aug 20" is the same bug as an English one
   printing "20 ago". These helpers read the active language at call time and
@@ -385,13 +421,37 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
+- **A Brand binding is four nullable ids, and the client only ever sets them**
+  (CON-245). `brand_voice_id` and `brand_audience_id` sit on the campaign and on
+  the post; *which* voice a post is actually written in is resolved — post →
+  campaign → the library's default voice, and for an audience post → campaign
+  and then nothing, because the workspace step is voices-only. That walk lives
+  in `components/brand/binding.ts` and mirrors `brandresolve` on the server,
+  which is what the generation flows obey; when the two disagree, ours is wrong.
+  Never resolve inline at a call site, and always show `source` beside a
+  resolved value — an inherited voice in a bare picker reads as *no voice*, and
+  the repair everyone reaches for pins it onto every post and kills the
+  campaign-level control. The model is deliberately **narrower than
+  `docs/brand-materials.md` §8**: no cast of voices, no local delta, no
+  staleness read, because the server shipped none of the three (CON-245 §13 is
+  where they would come back) and a picker whose extra choices no generator
+  reads is worse than no picker. **All four refs are presence-aware on their
+  PUTs**, which is why `campaignToPayload` and `postToPayload` both leave them
+  out — restating one lets an autosave undo a choice made a moment ago. A
+  campaign's is written by passing an override to `campaignToPayload`; a post's
+  goes through `setPostBrand` (`PUT /api/posts/:id/brand`), which is *not*
+  blocked on a submitted post: a binding is an input to the next generation, not
+  a change to what already went out, so CON-251's lock does not reach it. See
+  `docs/technical-decisions.md#brand-binding`.
 - **A feature waiting on the back end is stubbed with a JSON seed, never with
   MSW.** When a flagged feature needs data the server cannot answer for yet,
   write the normal `services/api/<thing>.ts` with the signatures the endpoint
   will have, and back them with a `.seed.json` plus `localStorage` and a small
-  delay — `services/api/brand.ts` is the pattern. A service worker buys wire
-  fidelity for a contract nobody has agreed, and the mock ends up inventing the
-  API; a plain module is one readable file, and swapping each body for an
+  delay — `services/api/tiers.stub.ts` is the pattern today, and
+  `services/api/brand.ts` was the worked example until CON-245 took the last of
+  it out. A service worker buys wire fidelity for a contract nobody has agreed,
+  and the mock ends up inventing the API; a plain module is one readable file,
+  and swapping each body for an
   `apiJson` call leaves the hook, the routes and the components untouched. Rules
   that make it safe: the stub is reached only through its hook, its doc comment
   names what it is, and it stays behind the feature's flag like everything else
@@ -535,7 +595,10 @@ places and only islands in others.** Converted whole: the auth screens,
 sidebar, Profile, Workspace Settings, the campaign calendar (its week, month
 and list views, the cards, both rail panels and the posts table), the
 analytics surfaces (the workspace dashboard, the campaign composition, a
-post's own numbers and the three view mappers behind them), `/workspaces`,
+post's own numbers and the three view mappers behind them), Brand (the
+Overview, all five sections, the three editors and the routes — plus the two
+tables behind them, `lib/brandSections` and the starters, which now carry
+behaviour only), `/workspaces`,
 `/invite`, `/plans` with the Plan & billing card, and the flag-gated Tasks and
 Activity features. Islands only: the post editor (`posts.*` — status and
 publish labels, the published link, sources, notes, quality, versions,

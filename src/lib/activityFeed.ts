@@ -38,10 +38,7 @@ import type { AppNotification } from '@/types/notifications'
  * thing to list, which is the whole argument for having a report.
  */
 export type ActivityEventKind =
-  | 'published'
-  | 'failed'
-  | 'not_published'
-  | 'created'
+  'published' | 'failed' | 'not_published' | 'created'
 
 export type PostEvent = {
   kind: ActivityEventKind
@@ -271,26 +268,24 @@ export function dailyReports(
   }
 
   return [...days.entries()]
-    .map(
-      ([date, draft]): DailyReport => ({
-        date,
-        lastEventAt: draft.lastEventAt.toISOString(),
-        counts: draft.counts,
-        total: draft.total,
-        publishedByChannel: [...draft.byChannel.entries()]
-          .map(([platformId, count]) => ({ platformId, count }))
-          .sort(
-            (a, b) =>
-              b.count - a.count || a.platformId.localeCompare(b.platformId),
-          ),
-        campaigns: [...draft.byCampaign.entries()]
-          .map(([campaignId, entry]) => ({ campaignId, ...entry }))
-          .sort(
-            (a, b) =>
-              b.total - a.total || a.campaignId.localeCompare(b.campaignId),
-          ),
-      }),
-    )
+    .map(([date, draft]): DailyReport => ({
+      date,
+      lastEventAt: draft.lastEventAt.toISOString(),
+      counts: draft.counts,
+      total: draft.total,
+      publishedByChannel: [...draft.byChannel.entries()]
+        .map(([platformId, count]) => ({ platformId, count }))
+        .sort(
+          (a, b) =>
+            b.count - a.count || a.platformId.localeCompare(b.platformId),
+        ),
+      campaigns: [...draft.byCampaign.entries()]
+        .map(([campaignId, entry]) => ({ campaignId, ...entry }))
+        .sort(
+          (a, b) =>
+            b.total - a.total || a.campaignId.localeCompare(b.campaignId),
+        ),
+    }))
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 

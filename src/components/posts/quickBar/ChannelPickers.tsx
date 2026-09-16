@@ -105,11 +105,44 @@ export function PlatformPicker({
   )
 }
 
+/**
+ * What the trigger says while the post is deciding for itself.
+ *
+ * Two things at once, and both are load-bearing: *Auto* is the state the picker
+ * is in, and the format beside it is what the post would publish as right now.
+ * Showing only the first leaves the author unable to see what Auto decided
+ * without opening the menu; showing only the second is indistinguishable from
+ * a type somebody chose, which is exactly the difference the picker exists to
+ * report.
+ */
+function AutoLabel({
+  platform,
+  resolved,
+}: {
+  platform: PlatformInfo
+  /** The slug Auto landed on, or '' while it is pending or nothing fits. */
+  resolved: string
+}) {
+  const { t } = useTranslation()
+  return (
+    <span className="truncate">
+      {resolved
+        ? t('posts.postType.autoResolved', {
+            type: getPostTypeLabel(platform.id, resolved),
+          })
+        : t('posts.postType.auto')}
+    </span>
+  )
+}
+
 export function PostTypePicker({
   platform,
   selected,
   types,
   connectedSlugs,
+  auto,
+  clearable,
+  resolved,
   disabled,
   readOnly,
   onSelect,
@@ -122,12 +155,33 @@ export function PostTypePicker({
   types: PlatformPostType[]
   /** The subset a *connected* publisher supports; the rest are flagged. */
   connectedSlugs: ReadonlySet<string>
+  /**
+   * Auto is available, so the empty slug means "the post decides" rather than
+   * "nobody has chosen". With this false the picker is what it always was: an
+   * unset type is a gap, and the trigger warns about it.
+   *
+   * Implies `clearable`: offering Auto is offering the empty slug.
+   */
+  auto?: boolean
+  /**
+   * The empty slug may be written at all. False once the post has left `draft`,
+   * where the server requires a concrete type on every PUT — so neither Auto
+   * nor the deselect row is offered there, and a post cannot be talked back
+   * into having no format at a point where saving it would fail.
+   */
+  clearable?: boolean
+  /** What Auto resolved to; only read when `auto` and nothing is `selected`. */
+  resolved?: string
   disabled?: boolean
   /** The post is submitted: show what it went out as, offer nothing. */
   readOnly?: boolean
   onSelect: (slug: string) => void
 }) {
   const { t } = useTranslation()
+  // Auto never renders read-only, and doesn't have to: leaving `draft` writes
+  // the resolution down, so every post the read-only branch ever sees has a
+  // slug of its own.
+  const automatic = !!auto && !selected
 
   if (readOnly) {
     return (
@@ -146,7 +200,9 @@ export function PostTypePicker({
   return (
     <DropdownMenu>
       <QuickBarTrigger label="Change post type" disabled={disabled}>
-        {selected ? (
+        {automatic ? (
+          <AutoLabel platform={platform} resolved={resolved ?? ''} />
+        ) : selected ? (
           <span>{getPostTypeLabel(platform.id, selected)}</span>
         ) : (
           <>
@@ -159,6 +215,19 @@ export function PostTypePicker({
         <CaretDownIcon className="size-3 text-tertiary-foreground" />
       </QuickBarTrigger>
       <DropdownMenuContent align="start">
+        {auto && (
+          <>
+            <DropdownMenuItem onSelect={() => onSelect('')}>
+              <span className={cn(automatic && 'font-medium')}>
+                {t('posts.postType.auto')}
+              </span>
+              <span className="ml-auto pl-4 text-xs text-tertiary-foreground">
+                {t('posts.postType.autoHint')}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         {types.map((t) => (
           <DropdownMenuItem key={t.slug} onSelect={() => onSelect(t.slug)}>
             <span className={cn(t.slug === selected && 'font-medium')}>
@@ -177,7 +246,11 @@ export function PostTypePicker({
         {types.length === 0 && (
           <InfoRow>No post types on this campaign</InfoRow>
         )}
-        {selected && (
+        {/* With Auto offered above, the empty slug is already reachable as a
+            choice — a second row meaning the same thing would read as two
+            different ones. Gone entirely once the post has left `draft`: the
+            save that followed could only fail. */}
+        {selected && !auto && clearable && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => onSelect('')}>

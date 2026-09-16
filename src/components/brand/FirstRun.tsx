@@ -6,6 +6,7 @@ import {
   SparkleIcon,
   StackIcon,
 } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { cn } from '@/lib'
 
@@ -66,19 +67,15 @@ export function FirstRun({
   /** Straight to the empty sections, for someone who wants to type. */
   onManual?: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="mx-auto flex w-full max-w-content flex-col gap-6 rounded-lg bg-primary p-6">
       <header className="flex max-w-2xl flex-col gap-2">
         <h2 className="font-display text-2xl font-medium leading-8 tracking-tight">
-          Everything generated here sounds like everything else generated
-          anywhere
+          {t('brand.firstRun.title')}
         </h2>
         <p className="text-sm leading-5 text-secondary-foreground">
-          People use social media to be distinct — that is what branding is for.
-          Generated content has no voice of its own and nothing stopping it from
-          reading like the rest of the feed. This is where you keep the material
-          that makes yours yours: how you sound, who you are talking to, and
-          what you may never claim.
+          {t('brand.firstRun.body')}
         </p>
       </header>
 
@@ -90,32 +87,32 @@ export function FirstRun({
       <div className="grid grid-cols-1 gap-3">
         <Onramp
           icon={<PencilSimpleIcon />}
-          title="Fill it in yourself"
-          body="Straight to the three sections, empty. The fastest path when you already know how you sound and only need somewhere to put it."
+          title={t('brand.firstRun.manual.title')}
+          body={t('brand.firstRun.manual.body')}
           onClick={onManual}
         />
         <Onramp
           icon={<SparkleIcon />}
-          title="Build it with Ogen"
-          body="Answer a handful of questions and Ogen drafts the whole thing with you — the path that works when none of this is written down anywhere, and the only one that needs no website, no archive and no file."
+          title={t('brand.firstRun.guided.title')}
+          body={t('brand.firstRun.guided.body')}
           comingSoon
         />
         <Onramp
           icon={<GlobeIcon />}
-          title="Read it off your website"
-          body="Point us at your site and we propose the whole thing in one step — voice samples from your own copy, the disclaimer you already run, and the product facts behind every claim."
+          title={t('brand.firstRun.website.title')}
+          body={t('brand.firstRun.website.body')}
           comingSoon
         />
         <Onramp
           icon={<ChatCircleTextIcon />}
-          title="Learn it from your posts"
-          body="The voice you already have, in your own words. Fix what's wrong rather than inventing something from scratch."
+          title={t('brand.firstRun.posts.title')}
+          body={t('brand.firstRun.posts.body')}
           comingSoon
         />
         <Onramp
           icon={<StackIcon />}
-          title="Start from a template"
-          body="A short setup that walks the whole brand one question at a time — voice, audience and the things you can never claim. Individual starter voices and audiences already exist inside those two sections; what is coming is doing all three in one pass."
+          title={t('brand.firstRun.template.title')}
+          body={t('brand.firstRun.template.body')}
           comingSoon
         />
       </div>
@@ -145,6 +142,7 @@ function Onramp({
   comingSoon?: boolean
   onClick?: () => void
 }) {
+  const { t } = useTranslation()
   const content = (
     <>
       <span
@@ -175,7 +173,7 @@ function Onramp({
         {content}
         <StatusBadge
           tone="neutral"
-          label="COMING SOON"
+          label={t('brand.shell.comingSoon')}
           className="ml-auto shrink-0 pl-3 pt-0.5"
         />
       </div>

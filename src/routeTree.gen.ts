@@ -9,84 +9,59 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as FlagsRouteImport } from './routes/flags'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as WorkspacesIndexRouteImport } from './routes/workspaces/index'
-import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unavailable/index'
-import { Route as PlansIndexRouteImport } from './routes/plans/index'
-import { Route as InviteIndexRouteImport } from './routes/invite/index'
-import { Route as AuthIndexRouteImport } from './routes/auth/index'
+import { Route as FlagsRouteImport } from './routes/flags'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
-import { Route as AuthenticatedBrandRouteImport } from './routes/_authenticated/brand'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
-import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
-import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
-import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
-import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
-import { Route as AuthForgotIndexRouteImport } from './routes/auth/forgot/index'
-import { Route as AuthenticatedWorkspaceSettingsIndexRouteImport } from './routes/_authenticated/workspace-settings/index'
-import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
-import { Route as AuthenticatedContentBankIndexRouteImport } from './routes/_authenticated/content-bank/index'
-import { Route as AuthenticatedCampaignsIndexRouteImport } from './routes/_authenticated/campaigns/index'
-import { Route as AuthenticatedBrandIndexRouteImport } from './routes/_authenticated/brand/index'
-import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics/index'
+import { Route as AuthenticatedBrandRouteImport } from './routes/_authenticated/brand'
+import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
+import { Route as AuthIndexRouteImport } from './routes/auth/index'
+import { Route as InviteIndexRouteImport } from './routes/invite/index'
+import { Route as PlansIndexRouteImport } from './routes/plans/index'
+import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unavailable/index'
+import { Route as WorkspacesIndexRouteImport } from './routes/workspaces/index'
 import { Route as AuthenticatedActivityIndexRouteImport } from './routes/_authenticated/activity/index'
-import { Route as AuthenticatedContentBankAssetIdRouteImport } from './routes/_authenticated/content-bank/$assetId'
-import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
-import { Route as AuthenticatedBrandVoicesRouteImport } from './routes/_authenticated/brand/voices'
-import { Route as AuthenticatedBrandTemplatesRouteImport } from './routes/_authenticated/brand/templates'
-import { Route as AuthenticatedBrandLookRouteImport } from './routes/_authenticated/brand/look'
-import { Route as AuthenticatedBrandGuardrailsRouteImport } from './routes/_authenticated/brand/guardrails'
-import { Route as AuthenticatedBrandAudiencesRouteImport } from './routes/_authenticated/brand/audiences'
 import { Route as AuthenticatedActivityDateRouteImport } from './routes/_authenticated/activity/$date'
-import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
-import { Route as AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport } from './routes/_authenticated/workspace-settings/connect.$connectionId'
-import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
-import { Route as AuthenticatedCampaignsCampaignIdOverviewRouteImport } from './routes/_authenticated/campaigns/$campaignId/overview'
-import { Route as AuthenticatedCampaignsCampaignIdListRouteImport } from './routes/_authenticated/campaigns/$campaignId/list'
-import { Route as AuthenticatedCampaignsCampaignIdContentRouteImport } from './routes/_authenticated/campaigns/$campaignId/content'
-import { Route as AuthenticatedCampaignsCampaignIdBriefRouteImport } from './routes/_authenticated/campaigns/$campaignId/brief'
-import { Route as AuthenticatedCampaignsCampaignIdAnalyticsRouteImport } from './routes/_authenticated/campaigns/$campaignId/analytics'
-import { Route as AuthenticatedBrandVoicesVoiceIdRouteImport } from './routes/_authenticated/brand_/voices/$voiceId'
+import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics/index'
+import { Route as AuthenticatedBrandIndexRouteImport } from './routes/_authenticated/brand/index'
+import { Route as AuthenticatedBrandAudiencesRouteImport } from './routes/_authenticated/brand/audiences'
+import { Route as AuthenticatedBrandGuardrailsRouteImport } from './routes/_authenticated/brand/guardrails'
+import { Route as AuthenticatedBrandLookRouteImport } from './routes/_authenticated/brand/look'
+import { Route as AuthenticatedBrandTemplatesRouteImport } from './routes/_authenticated/brand/templates'
+import { Route as AuthenticatedBrandVoicesRouteImport } from './routes/_authenticated/brand/voices'
+import { Route as AuthenticatedCampaignsIndexRouteImport } from './routes/_authenticated/campaigns/index'
+import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
+import { Route as AuthenticatedContentBankIndexRouteImport } from './routes/_authenticated/content-bank/index'
+import { Route as AuthenticatedContentBankAssetIdRouteImport } from './routes/_authenticated/content-bank/$assetId'
+import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
+import { Route as AuthenticatedWorkspaceSettingsIndexRouteImport } from './routes/_authenticated/workspace-settings/index'
+import { Route as AuthForgotIndexRouteImport } from './routes/auth/forgot/index'
+import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
+import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
+import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
+import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
 import { Route as AuthenticatedBrandAudiencesAudienceIdRouteImport } from './routes/_authenticated/brand_/audiences/$audienceId'
+import { Route as AuthenticatedBrandVoicesVoiceIdRouteImport } from './routes/_authenticated/brand_/voices/$voiceId'
+import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
+import { Route as AuthenticatedCampaignsCampaignIdAnalyticsRouteImport } from './routes/_authenticated/campaigns/$campaignId/analytics'
+import { Route as AuthenticatedCampaignsCampaignIdBriefRouteImport } from './routes/_authenticated/campaigns/$campaignId/brief'
+import { Route as AuthenticatedCampaignsCampaignIdContentRouteImport } from './routes/_authenticated/campaigns/$campaignId/content'
+import { Route as AuthenticatedCampaignsCampaignIdListRouteImport } from './routes/_authenticated/campaigns/$campaignId/list'
+import { Route as AuthenticatedCampaignsCampaignIdOverviewRouteImport } from './routes/_authenticated/campaigns/$campaignId/overview'
+import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
+import { Route as AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport } from './routes/_authenticated/workspace-settings/connect.$connectionId'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/index'
-import { Route as AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/posts/$postId'
 import { Route as AuthenticatedCampaignsCampaignIdContentAssetIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/content/$assetId'
+import { Route as AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/posts/$postId'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarAnchorViewRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/$anchor/$view'
 
-const FlagsRoute = FlagsRouteImport.update({
-  id: '/flags',
-  path: '/flags',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspacesIndexRoute = WorkspacesIndexRouteImport.update({
-  id: '/workspaces/',
-  path: '/workspaces/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServerUnavailableIndexRoute = ServerUnavailableIndexRouteImport.update({
-  id: '/server-unavailable/',
-  path: '/server-unavailable/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlansIndexRoute = PlansIndexRouteImport.update({
-  id: '/plans/',
-  path: '/plans/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InviteIndexRoute = InviteIndexRouteImport.update({
-  id: '/invite/',
-  path: '/invite/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthIndexRoute = AuthIndexRouteImport.update({
-  id: '/auth/',
-  path: '/auth/',
+const FlagsRoute = FlagsRouteImport.update({
+  id: '/flags',
+  path: '/flags',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -94,9 +69,9 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
+const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedBrandRoute = AuthenticatedBrandRouteImport.update({
@@ -104,58 +79,52 @@ const AuthenticatedBrandRoute = AuthenticatedBrandRouteImport.update({
   path: '/brand',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
-  id: '/activity',
-  path: '/activity',
+const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthResetIndexRoute = AuthResetIndexRouteImport.update({
-  id: '/auth/reset/',
-  path: '/auth/reset/',
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: '/auth/',
+  path: '/auth/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
-  id: '/auth/register/',
-  path: '/auth/register/',
+const InviteIndexRoute = InviteIndexRouteImport.update({
+  id: '/invite/',
+  path: '/invite/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthLogoutIndexRoute = AuthLogoutIndexRouteImport.update({
-  id: '/auth/logout/',
-  path: '/auth/logout/',
+const PlansIndexRoute = PlansIndexRouteImport.update({
+  id: '/plans/',
+  path: '/plans/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
-  id: '/auth/login/',
-  path: '/auth/login/',
+const ServerUnavailableIndexRoute = ServerUnavailableIndexRouteImport.update({
+  id: '/server-unavailable/',
+  path: '/server-unavailable/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthForgotIndexRoute = AuthForgotIndexRouteImport.update({
-  id: '/auth/forgot/',
-  path: '/auth/forgot/',
+const WorkspacesIndexRoute = WorkspacesIndexRouteImport.update({
+  id: '/workspaces/',
+  path: '/workspaces/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedWorkspaceSettingsIndexRoute =
-  AuthenticatedWorkspaceSettingsIndexRouteImport.update({
-    id: '/workspace-settings/',
-    path: '/workspace-settings/',
-    getParentRoute: () => AuthenticatedRoute,
+const AuthenticatedActivityIndexRoute =
+  AuthenticatedActivityIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedActivityRoute,
   } as any)
-const AuthenticatedProfileIndexRoute =
-  AuthenticatedProfileIndexRouteImport.update({
-    id: '/profile/',
-    path: '/profile/',
-    getParentRoute: () => AuthenticatedRoute,
+const AuthenticatedActivityDateRoute =
+  AuthenticatedActivityDateRouteImport.update({
+    id: '/$date',
+    path: '/$date',
+    getParentRoute: () => AuthenticatedActivityRoute,
   } as any)
-const AuthenticatedContentBankIndexRoute =
-  AuthenticatedContentBankIndexRouteImport.update({
-    id: '/content-bank/',
-    path: '/content-bank/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedCampaignsIndexRoute =
-  AuthenticatedCampaignsIndexRouteImport.update({
-    id: '/campaigns/',
-    path: '/campaigns/',
+const AuthenticatedAnalyticsIndexRoute =
+  AuthenticatedAnalyticsIndexRouteImport.update({
+    id: '/analytics/',
+    path: '/analytics/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedBrandIndexRoute = AuthenticatedBrandIndexRouteImport.update({
@@ -163,22 +132,39 @@ const AuthenticatedBrandIndexRoute = AuthenticatedBrandIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedBrandRoute,
 } as any)
-const AuthenticatedAnalyticsIndexRoute =
-  AuthenticatedAnalyticsIndexRouteImport.update({
-    id: '/analytics/',
-    path: '/analytics/',
-    getParentRoute: () => AuthenticatedRoute,
+const AuthenticatedBrandAudiencesRoute =
+  AuthenticatedBrandAudiencesRouteImport.update({
+    id: '/audiences',
+    path: '/audiences',
+    getParentRoute: () => AuthenticatedBrandRoute,
   } as any)
-const AuthenticatedActivityIndexRoute =
-  AuthenticatedActivityIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedActivityRoute,
+const AuthenticatedBrandGuardrailsRoute =
+  AuthenticatedBrandGuardrailsRouteImport.update({
+    id: '/guardrails',
+    path: '/guardrails',
+    getParentRoute: () => AuthenticatedBrandRoute,
   } as any)
-const AuthenticatedContentBankAssetIdRoute =
-  AuthenticatedContentBankAssetIdRouteImport.update({
-    id: '/content-bank/$assetId',
-    path: '/content-bank/$assetId',
+const AuthenticatedBrandLookRoute = AuthenticatedBrandLookRouteImport.update({
+  id: '/look',
+  path: '/look',
+  getParentRoute: () => AuthenticatedBrandRoute,
+} as any)
+const AuthenticatedBrandTemplatesRoute =
+  AuthenticatedBrandTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthenticatedBrandRoute,
+  } as any)
+const AuthenticatedBrandVoicesRoute =
+  AuthenticatedBrandVoicesRouteImport.update({
+    id: '/voices',
+    path: '/voices',
+    getParentRoute: () => AuthenticatedBrandRoute,
+  } as any)
+const AuthenticatedCampaignsIndexRoute =
+  AuthenticatedCampaignsIndexRouteImport.update({
+    id: '/campaigns/',
+    path: '/campaigns/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdRoute =
@@ -187,81 +173,71 @@ const AuthenticatedCampaignsCampaignIdRoute =
     path: '/campaigns/$campaignId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedBrandVoicesRoute =
-  AuthenticatedBrandVoicesRouteImport.update({
-    id: '/voices',
-    path: '/voices',
-    getParentRoute: () => AuthenticatedBrandRoute,
+const AuthenticatedContentBankIndexRoute =
+  AuthenticatedContentBankIndexRouteImport.update({
+    id: '/content-bank/',
+    path: '/content-bank/',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedBrandTemplatesRoute =
-  AuthenticatedBrandTemplatesRouteImport.update({
-    id: '/templates',
-    path: '/templates',
-    getParentRoute: () => AuthenticatedBrandRoute,
+const AuthenticatedContentBankAssetIdRoute =
+  AuthenticatedContentBankAssetIdRouteImport.update({
+    id: '/content-bank/$assetId',
+    path: '/content-bank/$assetId',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedBrandLookRoute = AuthenticatedBrandLookRouteImport.update({
-  id: '/look',
-  path: '/look',
-  getParentRoute: () => AuthenticatedBrandRoute,
+const AuthenticatedProfileIndexRoute =
+  AuthenticatedProfileIndexRouteImport.update({
+    id: '/profile/',
+    path: '/profile/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWorkspaceSettingsIndexRoute =
+  AuthenticatedWorkspaceSettingsIndexRouteImport.update({
+    id: '/workspace-settings/',
+    path: '/workspace-settings/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthForgotIndexRoute = AuthForgotIndexRouteImport.update({
+  id: '/auth/forgot/',
+  path: '/auth/forgot/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedBrandGuardrailsRoute =
-  AuthenticatedBrandGuardrailsRouteImport.update({
-    id: '/guardrails',
-    path: '/guardrails',
-    getParentRoute: () => AuthenticatedBrandRoute,
+const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
+  id: '/auth/login/',
+  path: '/auth/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLogoutIndexRoute = AuthLogoutIndexRouteImport.update({
+  id: '/auth/logout/',
+  path: '/auth/logout/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
+  id: '/auth/register/',
+  path: '/auth/register/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthResetIndexRoute = AuthResetIndexRouteImport.update({
+  id: '/auth/reset/',
+  path: '/auth/reset/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBrandAudiencesAudienceIdRoute =
+  AuthenticatedBrandAudiencesAudienceIdRouteImport.update({
+    id: '/brand_/audiences/$audienceId',
+    path: '/brand/audiences/$audienceId',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedBrandAudiencesRoute =
-  AuthenticatedBrandAudiencesRouteImport.update({
-    id: '/audiences',
-    path: '/audiences',
-    getParentRoute: () => AuthenticatedBrandRoute,
-  } as any)
-const AuthenticatedActivityDateRoute =
-  AuthenticatedActivityDateRouteImport.update({
-    id: '/$date',
-    path: '/$date',
-    getParentRoute: () => AuthenticatedActivityRoute,
+const AuthenticatedBrandVoicesVoiceIdRoute =
+  AuthenticatedBrandVoicesVoiceIdRouteImport.update({
+    id: '/brand_/voices/$voiceId',
+    path: '/brand/voices/$voiceId',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdIndexRoute =
   AuthenticatedCampaignsCampaignIdIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
-  } as any)
-const AuthenticatedWorkspaceSettingsConnectConnectionIdRoute =
-  AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport.update({
-    id: '/workspace-settings/connect/$connectionId',
-    path: '/workspace-settings/connect/$connectionId',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedCampaignsCampaignIdSettingsRoute =
-  AuthenticatedCampaignsCampaignIdSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
-  } as any)
-const AuthenticatedCampaignsCampaignIdOverviewRoute =
-  AuthenticatedCampaignsCampaignIdOverviewRouteImport.update({
-    id: '/overview',
-    path: '/overview',
-    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
-  } as any)
-const AuthenticatedCampaignsCampaignIdListRoute =
-  AuthenticatedCampaignsCampaignIdListRouteImport.update({
-    id: '/list',
-    path: '/list',
-    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
-  } as any)
-const AuthenticatedCampaignsCampaignIdContentRoute =
-  AuthenticatedCampaignsCampaignIdContentRouteImport.update({
-    id: '/content',
-    path: '/content',
-    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
-  } as any)
-const AuthenticatedCampaignsCampaignIdBriefRoute =
-  AuthenticatedCampaignsCampaignIdBriefRouteImport.update({
-    id: '/brief',
-    path: '/brief',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdAnalyticsRoute =
@@ -270,16 +246,40 @@ const AuthenticatedCampaignsCampaignIdAnalyticsRoute =
     path: '/analytics',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
-const AuthenticatedBrandVoicesVoiceIdRoute =
-  AuthenticatedBrandVoicesVoiceIdRouteImport.update({
-    id: '/brand_/voices/$voiceId',
-    path: '/brand/voices/$voiceId',
-    getParentRoute: () => AuthenticatedRoute,
+const AuthenticatedCampaignsCampaignIdBriefRoute =
+  AuthenticatedCampaignsCampaignIdBriefRouteImport.update({
+    id: '/brief',
+    path: '/brief',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
-const AuthenticatedBrandAudiencesAudienceIdRoute =
-  AuthenticatedBrandAudiencesAudienceIdRouteImport.update({
-    id: '/brand_/audiences/$audienceId',
-    path: '/brand/audiences/$audienceId',
+const AuthenticatedCampaignsCampaignIdContentRoute =
+  AuthenticatedCampaignsCampaignIdContentRouteImport.update({
+    id: '/content',
+    path: '/content',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdListRoute =
+  AuthenticatedCampaignsCampaignIdListRouteImport.update({
+    id: '/list',
+    path: '/list',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdOverviewRoute =
+  AuthenticatedCampaignsCampaignIdOverviewRouteImport.update({
+    id: '/overview',
+    path: '/overview',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdSettingsRoute =
+  AuthenticatedCampaignsCampaignIdSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedWorkspaceSettingsConnectConnectionIdRoute =
+  AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport.update({
+    id: '/workspace-settings/connect/$connectionId',
+    path: '/workspace-settings/connect/$connectionId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdCalendarIndexRoute =
@@ -288,16 +288,16 @@ const AuthenticatedCampaignsCampaignIdCalendarIndexRoute =
     path: '/calendar/',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
-const AuthenticatedCampaignsCampaignIdPostsPostIdRoute =
-  AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport.update({
-    id: '/campaigns/$campaignId_/posts/$postId',
-    path: '/campaigns/$campaignId/posts/$postId',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedCampaignsCampaignIdContentAssetIdRoute =
   AuthenticatedCampaignsCampaignIdContentAssetIdRouteImport.update({
     id: '/campaigns/$campaignId_/content/$assetId',
     path: '/campaigns/$campaignId/content/$assetId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdPostsPostIdRoute =
+  AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport.update({
+    id: '/campaigns/$campaignId_/posts/$postId',
+    path: '/campaigns/$campaignId/posts/$postId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute =
@@ -600,13 +600,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/flags': {
-      id: '/flags'
-      path: '/flags'
-      fullPath: '/flags'
-      preLoaderRoute: typeof FlagsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -614,39 +607,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/workspaces/': {
-      id: '/workspaces/'
-      path: '/workspaces'
-      fullPath: '/workspaces/'
-      preLoaderRoute: typeof WorkspacesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/server-unavailable/': {
-      id: '/server-unavailable/'
-      path: '/server-unavailable'
-      fullPath: '/server-unavailable/'
-      preLoaderRoute: typeof ServerUnavailableIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plans/': {
-      id: '/plans/'
-      path: '/plans'
-      fullPath: '/plans/'
-      preLoaderRoute: typeof PlansIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invite/': {
-      id: '/invite/'
-      path: '/invite'
-      fullPath: '/invite/'
-      preLoaderRoute: typeof InviteIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/': {
-      id: '/auth/'
-      path: '/auth'
-      fullPath: '/auth/'
-      preLoaderRoute: typeof AuthIndexRouteImport
+    '/flags': {
+      id: '/flags'
+      path: '/flags'
+      fullPath: '/flags'
+      preLoaderRoute: typeof FlagsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -656,11 +621,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/tasks': {
-      id: '/_authenticated/tasks'
-      path: '/tasks'
-      fullPath: '/tasks'
-      preLoaderRoute: typeof AuthenticatedTasksRouteImport
+    '/_authenticated/activity': {
+      id: '/_authenticated/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AuthenticatedActivityRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/brand': {
@@ -670,74 +635,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrandRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/activity': {
-      id: '/_authenticated/activity'
-      path: '/activity'
-      fullPath: '/activity'
-      preLoaderRoute: typeof AuthenticatedActivityRouteImport
+    '/_authenticated/tasks': {
+      id: '/_authenticated/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AuthenticatedTasksRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/auth/reset/': {
-      id: '/auth/reset/'
-      path: '/auth/reset'
-      fullPath: '/auth/reset/'
-      preLoaderRoute: typeof AuthResetIndexRouteImport
+    '/auth/': {
+      id: '/auth/'
+      path: '/auth'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/register/': {
-      id: '/auth/register/'
-      path: '/auth/register'
-      fullPath: '/auth/register/'
-      preLoaderRoute: typeof AuthRegisterIndexRouteImport
+    '/invite/': {
+      id: '/invite/'
+      path: '/invite'
+      fullPath: '/invite/'
+      preLoaderRoute: typeof InviteIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/logout/': {
-      id: '/auth/logout/'
-      path: '/auth/logout'
-      fullPath: '/auth/logout/'
-      preLoaderRoute: typeof AuthLogoutIndexRouteImport
+    '/plans/': {
+      id: '/plans/'
+      path: '/plans'
+      fullPath: '/plans/'
+      preLoaderRoute: typeof PlansIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/login/': {
-      id: '/auth/login/'
-      path: '/auth/login'
-      fullPath: '/auth/login/'
-      preLoaderRoute: typeof AuthLoginIndexRouteImport
+    '/server-unavailable/': {
+      id: '/server-unavailable/'
+      path: '/server-unavailable'
+      fullPath: '/server-unavailable/'
+      preLoaderRoute: typeof ServerUnavailableIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/forgot/': {
-      id: '/auth/forgot/'
-      path: '/auth/forgot'
-      fullPath: '/auth/forgot/'
-      preLoaderRoute: typeof AuthForgotIndexRouteImport
+    '/workspaces/': {
+      id: '/workspaces/'
+      path: '/workspaces'
+      fullPath: '/workspaces/'
+      preLoaderRoute: typeof WorkspacesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/workspace-settings/': {
-      id: '/_authenticated/workspace-settings/'
-      path: '/workspace-settings'
-      fullPath: '/workspace-settings/'
-      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/_authenticated/activity/': {
+      id: '/_authenticated/activity/'
+      path: '/'
+      fullPath: '/activity/'
+      preLoaderRoute: typeof AuthenticatedActivityIndexRouteImport
+      parentRoute: typeof AuthenticatedActivityRoute
     }
-    '/_authenticated/profile/': {
-      id: '/_authenticated/profile/'
-      path: '/profile'
-      fullPath: '/profile/'
-      preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/_authenticated/activity/$date': {
+      id: '/_authenticated/activity/$date'
+      path: '/$date'
+      fullPath: '/activity/$date'
+      preLoaderRoute: typeof AuthenticatedActivityDateRouteImport
+      parentRoute: typeof AuthenticatedActivityRoute
     }
-    '/_authenticated/content-bank/': {
-      id: '/_authenticated/content-bank/'
-      path: '/content-bank'
-      fullPath: '/content-bank/'
-      preLoaderRoute: typeof AuthenticatedContentBankIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/campaigns/': {
-      id: '/_authenticated/campaigns/'
-      path: '/campaigns'
-      fullPath: '/campaigns/'
-      preLoaderRoute: typeof AuthenticatedCampaignsIndexRouteImport
+    '/_authenticated/analytics/': {
+      id: '/_authenticated/analytics/'
+      path: '/analytics'
+      fullPath: '/analytics/'
+      preLoaderRoute: typeof AuthenticatedAnalyticsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/brand/': {
@@ -747,53 +705,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrandIndexRouteImport
       parentRoute: typeof AuthenticatedBrandRoute
     }
-    '/_authenticated/analytics/': {
-      id: '/_authenticated/analytics/'
-      path: '/analytics'
-      fullPath: '/analytics/'
-      preLoaderRoute: typeof AuthenticatedAnalyticsIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/activity/': {
-      id: '/_authenticated/activity/'
-      path: '/'
-      fullPath: '/activity/'
-      preLoaderRoute: typeof AuthenticatedActivityIndexRouteImport
-      parentRoute: typeof AuthenticatedActivityRoute
-    }
-    '/_authenticated/content-bank/$assetId': {
-      id: '/_authenticated/content-bank/$assetId'
-      path: '/content-bank/$assetId'
-      fullPath: '/content-bank/$assetId'
-      preLoaderRoute: typeof AuthenticatedContentBankAssetIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/campaigns/$campaignId': {
-      id: '/_authenticated/campaigns/$campaignId'
-      path: '/campaigns/$campaignId'
-      fullPath: '/campaigns/$campaignId'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/brand/voices': {
-      id: '/_authenticated/brand/voices'
-      path: '/voices'
-      fullPath: '/brand/voices'
-      preLoaderRoute: typeof AuthenticatedBrandVoicesRouteImport
-      parentRoute: typeof AuthenticatedBrandRoute
-    }
-    '/_authenticated/brand/templates': {
-      id: '/_authenticated/brand/templates'
-      path: '/templates'
-      fullPath: '/brand/templates'
-      preLoaderRoute: typeof AuthenticatedBrandTemplatesRouteImport
-      parentRoute: typeof AuthenticatedBrandRoute
-    }
-    '/_authenticated/brand/look': {
-      id: '/_authenticated/brand/look'
-      path: '/look'
-      fullPath: '/brand/look'
-      preLoaderRoute: typeof AuthenticatedBrandLookRouteImport
+    '/_authenticated/brand/audiences': {
+      id: '/_authenticated/brand/audiences'
+      path: '/audiences'
+      fullPath: '/brand/audiences'
+      preLoaderRoute: typeof AuthenticatedBrandAudiencesRouteImport
       parentRoute: typeof AuthenticatedBrandRoute
     }
     '/_authenticated/brand/guardrails': {
@@ -803,67 +719,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrandGuardrailsRouteImport
       parentRoute: typeof AuthenticatedBrandRoute
     }
-    '/_authenticated/brand/audiences': {
-      id: '/_authenticated/brand/audiences'
-      path: '/audiences'
-      fullPath: '/brand/audiences'
-      preLoaderRoute: typeof AuthenticatedBrandAudiencesRouteImport
+    '/_authenticated/brand/look': {
+      id: '/_authenticated/brand/look'
+      path: '/look'
+      fullPath: '/brand/look'
+      preLoaderRoute: typeof AuthenticatedBrandLookRouteImport
       parentRoute: typeof AuthenticatedBrandRoute
     }
-    '/_authenticated/activity/$date': {
-      id: '/_authenticated/activity/$date'
-      path: '/$date'
-      fullPath: '/activity/$date'
-      preLoaderRoute: typeof AuthenticatedActivityDateRouteImport
-      parentRoute: typeof AuthenticatedActivityRoute
+    '/_authenticated/brand/templates': {
+      id: '/_authenticated/brand/templates'
+      path: '/templates'
+      fullPath: '/brand/templates'
+      preLoaderRoute: typeof AuthenticatedBrandTemplatesRouteImport
+      parentRoute: typeof AuthenticatedBrandRoute
+    }
+    '/_authenticated/brand/voices': {
+      id: '/_authenticated/brand/voices'
+      path: '/voices'
+      fullPath: '/brand/voices'
+      preLoaderRoute: typeof AuthenticatedBrandVoicesRouteImport
+      parentRoute: typeof AuthenticatedBrandRoute
+    }
+    '/_authenticated/campaigns/': {
+      id: '/_authenticated/campaigns/'
+      path: '/campaigns'
+      fullPath: '/campaigns/'
+      preLoaderRoute: typeof AuthenticatedCampaignsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/campaigns/$campaignId': {
+      id: '/_authenticated/campaigns/$campaignId'
+      path: '/campaigns/$campaignId'
+      fullPath: '/campaigns/$campaignId'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/content-bank/': {
+      id: '/_authenticated/content-bank/'
+      path: '/content-bank'
+      fullPath: '/content-bank/'
+      preLoaderRoute: typeof AuthenticatedContentBankIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/content-bank/$assetId': {
+      id: '/_authenticated/content-bank/$assetId'
+      path: '/content-bank/$assetId'
+      fullPath: '/content-bank/$assetId'
+      preLoaderRoute: typeof AuthenticatedContentBankAssetIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/profile/': {
+      id: '/_authenticated/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/workspace-settings/': {
+      id: '/_authenticated/workspace-settings/'
+      path: '/workspace-settings'
+      fullPath: '/workspace-settings/'
+      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/auth/forgot/': {
+      id: '/auth/forgot/'
+      path: '/auth/forgot'
+      fullPath: '/auth/forgot/'
+      preLoaderRoute: typeof AuthForgotIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/login/': {
+      id: '/auth/login/'
+      path: '/auth/login'
+      fullPath: '/auth/login/'
+      preLoaderRoute: typeof AuthLoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/logout/': {
+      id: '/auth/logout/'
+      path: '/auth/logout'
+      fullPath: '/auth/logout/'
+      preLoaderRoute: typeof AuthLogoutIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/register/': {
+      id: '/auth/register/'
+      path: '/auth/register'
+      fullPath: '/auth/register/'
+      preLoaderRoute: typeof AuthRegisterIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/reset/': {
+      id: '/auth/reset/'
+      path: '/auth/reset'
+      fullPath: '/auth/reset/'
+      preLoaderRoute: typeof AuthResetIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/brand_/audiences/$audienceId': {
+      id: '/_authenticated/brand_/audiences/$audienceId'
+      path: '/brand/audiences/$audienceId'
+      fullPath: '/brand/audiences/$audienceId'
+      preLoaderRoute: typeof AuthenticatedBrandAudiencesAudienceIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/brand_/voices/$voiceId': {
+      id: '/_authenticated/brand_/voices/$voiceId'
+      path: '/brand/voices/$voiceId'
+      fullPath: '/brand/voices/$voiceId'
+      preLoaderRoute: typeof AuthenticatedBrandVoicesVoiceIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/campaigns/$campaignId/': {
       id: '/_authenticated/campaigns/$campaignId/'
       path: '/'
       fullPath: '/campaigns/$campaignId/'
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdIndexRouteImport
-      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
-    }
-    '/_authenticated/workspace-settings/connect/$connectionId': {
-      id: '/_authenticated/workspace-settings/connect/$connectionId'
-      path: '/workspace-settings/connect/$connectionId'
-      fullPath: '/workspace-settings/connect/$connectionId'
-      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/campaigns/$campaignId/settings': {
-      id: '/_authenticated/campaigns/$campaignId/settings'
-      path: '/settings'
-      fullPath: '/campaigns/$campaignId/settings'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdSettingsRouteImport
-      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
-    }
-    '/_authenticated/campaigns/$campaignId/overview': {
-      id: '/_authenticated/campaigns/$campaignId/overview'
-      path: '/overview'
-      fullPath: '/campaigns/$campaignId/overview'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdOverviewRouteImport
-      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
-    }
-    '/_authenticated/campaigns/$campaignId/list': {
-      id: '/_authenticated/campaigns/$campaignId/list'
-      path: '/list'
-      fullPath: '/campaigns/$campaignId/list'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdListRouteImport
-      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
-    }
-    '/_authenticated/campaigns/$campaignId/content': {
-      id: '/_authenticated/campaigns/$campaignId/content'
-      path: '/content'
-      fullPath: '/campaigns/$campaignId/content'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdContentRouteImport
-      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
-    }
-    '/_authenticated/campaigns/$campaignId/brief': {
-      id: '/_authenticated/campaigns/$campaignId/brief'
-      path: '/brief'
-      fullPath: '/campaigns/$campaignId/brief'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdBriefRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
     '/_authenticated/campaigns/$campaignId/analytics': {
@@ -873,18 +845,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdAnalyticsRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
-    '/_authenticated/brand_/voices/$voiceId': {
-      id: '/_authenticated/brand_/voices/$voiceId'
-      path: '/brand/voices/$voiceId'
-      fullPath: '/brand/voices/$voiceId'
-      preLoaderRoute: typeof AuthenticatedBrandVoicesVoiceIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/_authenticated/campaigns/$campaignId/brief': {
+      id: '/_authenticated/campaigns/$campaignId/brief'
+      path: '/brief'
+      fullPath: '/campaigns/$campaignId/brief'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdBriefRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
-    '/_authenticated/brand_/audiences/$audienceId': {
-      id: '/_authenticated/brand_/audiences/$audienceId'
-      path: '/brand/audiences/$audienceId'
-      fullPath: '/brand/audiences/$audienceId'
-      preLoaderRoute: typeof AuthenticatedBrandAudiencesAudienceIdRouteImport
+    '/_authenticated/campaigns/$campaignId/content': {
+      id: '/_authenticated/campaigns/$campaignId/content'
+      path: '/content'
+      fullPath: '/campaigns/$campaignId/content'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdContentRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/list': {
+      id: '/_authenticated/campaigns/$campaignId/list'
+      path: '/list'
+      fullPath: '/campaigns/$campaignId/list'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdListRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/overview': {
+      id: '/_authenticated/campaigns/$campaignId/overview'
+      path: '/overview'
+      fullPath: '/campaigns/$campaignId/overview'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdOverviewRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/settings': {
+      id: '/_authenticated/campaigns/$campaignId/settings'
+      path: '/settings'
+      fullPath: '/campaigns/$campaignId/settings'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdSettingsRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/workspace-settings/connect/$connectionId': {
+      id: '/_authenticated/workspace-settings/connect/$connectionId'
+      path: '/workspace-settings/connect/$connectionId'
+      fullPath: '/workspace-settings/connect/$connectionId'
+      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/campaigns/$campaignId/calendar/': {
@@ -894,18 +894,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
-    '/_authenticated/campaigns/$campaignId_/posts/$postId': {
-      id: '/_authenticated/campaigns/$campaignId_/posts/$postId'
-      path: '/campaigns/$campaignId/posts/$postId'
-      fullPath: '/campaigns/$campaignId/posts/$postId'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/campaigns/$campaignId_/content/$assetId': {
       id: '/_authenticated/campaigns/$campaignId_/content/$assetId'
       path: '/campaigns/$campaignId/content/$assetId'
       fullPath: '/campaigns/$campaignId/content/$assetId'
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdContentAssetIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/campaigns/$campaignId_/posts/$postId': {
+      id: '/_authenticated/campaigns/$campaignId_/posts/$postId'
+      path: '/campaigns/$campaignId/posts/$postId'
+      fullPath: '/campaigns/$campaignId/posts/$postId'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view': {

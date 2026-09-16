@@ -91,8 +91,7 @@ function detectUploadKind(filename: string): UploadKind | null {
 }
 
 export type UploadValidation =
-  | { ok: true; kind: UploadKind }
-  | { ok: false; error: string }
+  { ok: true; kind: UploadKind } | { ok: false; error: string }
 
 /**
  * Client-side guard that mirrors the backend's accepted types and size caps so

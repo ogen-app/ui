@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { BrandBackButton, BrandPage } from '@/components/brand/detail'
 import { AudienceEditor } from '@/components/brand/AudienceEditor'
-import { audienceStarter } from '@/components/brand/AudiencesSection'
+import { audienceStarter } from '@/components/brand/starters'
 import { isFeatureEnabled } from '@/config/featureFlags'
 import { useBrand, useDeleteAudience, useSaveAudience } from '@/hooks/useBrand'
 import { toast } from '@/stores/toastStore'
@@ -39,6 +40,7 @@ export const Route = createFileRoute(
 })
 
 function AudienceEditorPage() {
+  const { t } = useTranslation()
   const { audienceId } = Route.useParams()
   const { from } = Route.useSearch()
   const navigate = useNavigate()
@@ -60,7 +62,12 @@ function AudienceEditorPage() {
    */
   const header = (
     <PageHeader
-      back={<BrandBackButton to="/brand/audiences" label="Back to audiences" />}
+      back={
+        <BrandBackButton
+          to="/brand/audiences"
+          label={t('brand.detail.backToAudiences')}
+        />
+      }
     />
   )
 
@@ -75,7 +82,7 @@ function AudienceEditorPage() {
           onSave={(written) => {
             save.mutate(written, {
               onSuccess: () => {
-                toast.success(`${written.name} is in the library.`)
+                toast.success(t('brand.detail.created', { name: written.name }))
                 back()
               },
             })
@@ -95,13 +102,15 @@ function AudienceEditorPage() {
       return (
         <Static header={header}>
           <PageError
-            subHeader="NOT FOUND"
-            errorType="NOT FOUND"
-            header="No such audience"
-            message="It may have been deleted, or the link may be to another workspace."
+            subHeader={t('errors.notFound.type')}
+            errorType={t('errors.notFound.type')}
+            header={t('brand.detail.noAudienceHeader')}
+            message={t('brand.detail.missingMessage')}
             action={
               <Button variant="ghost" size="sm" onClick={back}>
-                <span className="uppercase">Back to audiences</span>
+                <span className="uppercase">
+                  {t('brand.detail.backToAudiences')}
+                </span>
               </Button>
             }
           />
@@ -117,7 +126,7 @@ function AudienceEditorPage() {
         onSave={(written) => {
           save.mutate(written, {
             onSuccess: () => {
-              toast.success(`${written.name} saved.`)
+              toast.success(t('brand.detail.saved', { name: written.name }))
               back()
             },
           })
@@ -125,7 +134,7 @@ function AudienceEditorPage() {
         onDelete={() => {
           remove.mutate(audience.id, {
             onSuccess: () => {
-              toast.success(`${audience.name} was deleted.`)
+              toast.success(t('brand.detail.deleted', { name: audience.name }))
               back()
             },
           })

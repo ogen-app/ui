@@ -3,14 +3,7 @@ import type {
   BrandData,
   BrandGuardrails,
   BrandVoice,
-  CampaignBrand,
-  PostBrand,
 } from '@/components/brand/types'
-import {
-  EMPTY_CAMPAIGN_BRAND,
-  EMPTY_POST_BRAND,
-} from '@/components/brand/binding'
-import { getActiveWorkspaceId } from '@/lib/activeWorkspace'
 import { apiJson, apiVoid } from './http'
 
 /**
@@ -29,11 +22,24 @@ import { apiJson, apiVoid } from './http'
  * `id`, `updatedAt`, `summary`, `usage`, `postsBehind` and `origin` are
  * server-owned: ignored on write, authoritative on the way back. So the editors
  * may keep assembling a whole entity without having to know which of its fields
- * they are actually allowed to set. Two of them are not yet real — `summary`
- * answers `""` until the generation job ships, and `usage` / `postsBehind`
- * answer `0` until CON-245 puts a voice reference on posts. Those are the same
- * states the screens already draw for material nothing has been written in, so
- * they read as an honest empty rather than as a bug.
+ * they are actually allowed to set. Two of them are still not real — `summary`
+ * answers `""` until the generation job ships, and `postsBehind` answers `0`
+ * because it needs a per-post snapshot of the voice's version that CON-245 §13
+ * deferred. `usage` **is** real now: CON-245 put the refs on campaigns and
+ * posts and counts against them. Those are the same states the screens already
+ * draw for material nothing has been written in, so they read as an honest
+ * empty rather than as a bug.
+ *
+ * ## The binding is not here any more
+ *
+ * A campaign's and a post's choice out of the library used to be four faked
+ * functions at the bottom of this file, over `localStorage`, because there were
+ * no columns to put them in. CON-245 added all four
+ * (`campaigns.brand_voice_id`, `brand_audience_id`, and the same pair on
+ * `posts`), so they now ride the resources that own them: a campaign's on the
+ * campaign PUT, a post's on `setPostBrand` in `services/api/posts`. That was
+ * always the plan for them — *deleted rather than rewritten* — and it is why
+ * the hooks folded into `useCampaign` and `usePost` at the same time.
  *
  * `origin` is **write-once**: set on create, preserved verbatim on every
  * replace. That is what keeps *forked, never linked* honest — improving a
@@ -158,106 +164,4 @@ export function deleteGuardrails(): Promise<void> {
   return apiVoid('/api/brand/guardrails', 'Unable to clear the guardrails', {
     method: 'DELETE',
   })
-}
-
-/* -- Binding — still a stub ------------------------------------------------
- *
- * What a campaign and a post have chosen out of the library (§8). CON-228
- * deliberately left this out: it is the *consumer* half, and it belongs to
- * CON-245, which is open and unmerged. So `Campaign` and `Post` still have no
- * column to put this in, and the four functions below keep faking one.
- *
- * **This is the last of the stub, and it is shaped differently from what is
- * above.** A voice is its own resource with its own endpoint. A campaign's
- * binding is not — CON-245 makes it two nullable columns on the campaign and
- * two on the post (`brand_voice_id`, `brand_audience_id`), written by
- * `PUT /api/campaigns/:id`, `PUT /api/posts/:id`, or the targeted
- * `PUT /api/posts/:id/brand`. So these take an id and a whole value rather than
- * pretending to be REST, and when CON-245 lands they are deleted rather than
- * rewritten: the hooks fold into `useCampaign` and `usePost`.
- *
- * Kept in its own storage key rather than inside `BrandData`, because per-row
- * bindings were never part of what the workspace-level fetch answers.
- */
-
-/**
- * Long enough to see, short enough not to be in the way. Not zero, and that is
- * the point of the number: a promise that resolves immediately hides every
- * loading state the pickers have.
- */
-const LATENCY_MS = 220
-
-function settle<T>(value: T): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), LATENCY_MS))
-}
-
-type BindingStore = {
-  campaigns: Record<string, CampaignBrand>
-  posts: Record<string, PostBrand>
-}
-
-const EMPTY_STORE: BindingStore = { campaigns: {}, posts: {} }
-
-function bindingKey(): string {
-  return `ogen.brand.binding.${getActiveWorkspaceId() ?? 'default'}`
-}
-
-function readBindings(): BindingStore {
-  try {
-    const stored = localStorage.getItem(bindingKey())
-    if (stored)
-      return { ...EMPTY_STORE, ...(JSON.parse(stored) as BindingStore) }
-  } catch {
-    // An unreadable stub answers with nothing bound, which every screen already
-    // draws. A corrupt fake is a nuisance; a campaign that will not open until
-    // you clear storage by hand is a bug report about one.
-  }
-  return structuredClone(EMPTY_STORE)
-}
-
-function writeBindings(store: BindingStore): void {
-  try {
-    localStorage.setItem(bindingKey(), JSON.stringify(store))
-  } catch {
-    // Quota or private mode. Lost on the next read; the screen still shows what
-    // the mutation returned.
-  }
-}
-
-/**
- * A campaign's share of the library.
- *
- * Answers with a stated empty rather than `null` for a campaign nobody has
- * bound. "Has chosen nothing" is a real, common and perfectly valid state — it
- * is what every campaign that existed before this feature is in — and making
- * callers distinguish it from "no row" would be a distinction with no consumer.
- */
-export function getCampaignBrand(campaignId: string): Promise<CampaignBrand> {
-  return settle(readBindings().campaigns[campaignId] ?? EMPTY_CAMPAIGN_BRAND)
-}
-
-export function saveCampaignBrand(
-  campaignId: string,
-  value: CampaignBrand,
-): Promise<CampaignBrand> {
-  const store = readBindings()
-  writeBindings({
-    ...store,
-    campaigns: { ...store.campaigns, [campaignId]: value },
-  })
-  return settle(value)
-}
-
-/** One post's overrides. Empty is the state almost every post stays in. */
-export function getPostBrand(postId: string): Promise<PostBrand> {
-  return settle(readBindings().posts[postId] ?? EMPTY_POST_BRAND)
-}
-
-export function savePostBrand(
-  postId: string,
-  value: PostBrand,
-): Promise<PostBrand> {
-  const store = readBindings()
-  writeBindings({ ...store, posts: { ...store.posts, [postId]: value } })
-  return settle(value)
 }

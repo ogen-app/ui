@@ -274,8 +274,7 @@ export type Suggestion = {
   keyword: string
   negated: boolean
 } & (
-  | { kind: 'facet'; hint: string }
-  | { kind: 'value'; id: string; label: string }
+  { kind: 'facet'; hint: string } | { kind: 'value'; id: string; label: string }
 )
 
 /** Enough of a facet's values to show what it holds, without wrapping the row. */

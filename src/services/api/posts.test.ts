@@ -1,5 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { addPostAssets, postToPayload, removePostAsset } from './posts'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  addPostAssets,
+  postToPayload,
+  removePostAsset,
+  setPostBrand,
+} from './posts'
 import type { Post } from '@/types/posts'
 
 function makePost(overrides: Partial<Post> = {}): Post {
@@ -15,6 +20,8 @@ function makePost(overrides: Partial<Post> = {}): Post {
     scheduled_at: null,
     published_at: '2026-09-01T10:00:00Z',
     published_url: 'https://linkedin.com/feed/update/123',
+    brand_voice_id: null,
+    brand_audience_id: null,
     status: 'published',
     cta_type: 'none',
     cta_url: '',
@@ -91,6 +98,67 @@ describe('postToPayload', () => {
     const payload = postToPayload(makePost())
     expect('publisher_post_id' in payload).toBe(false)
     expect('id' in payload).toBe(false)
+  })
+
+  /**
+   * The mirror image of the permalink rule above, and the reason the two can
+   * sit in one builder: `published_url` has to be *present* because the handler
+   * assigns it unconditionally, and the brand refs have to be *absent* because
+   * the handler reads them presence-aware (CON-245). Sending them would let an
+   * autosave restate a binding the picker changed a moment ago — the same race
+   * the targeted `/brand` endpoint exists to avoid.
+   */
+  it('leaves the brand refs out — the PUT reads them presence-aware', () => {
+    const payload = postToPayload(
+      makePost({ brand_voice_id: 'v1', brand_audience_id: 'a1' }),
+    )
+    expect('brand_voice_id' in payload).toBe(false)
+    expect('brand_audience_id' in payload).toBe(false)
+  })
+})
+
+describe('setPostBrand', () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => makePost(),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('PUTs the targeted sub-action, not the whole post', async () => {
+    await setPostBrand('po1', { brand_voice_id: 'v1' })
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/posts/po1/brand')
+    expect(init.method).toBe('PUT')
+  })
+
+  /**
+   * The contract that makes the two controls independent: a voice change sends
+   * only `brand_voice_id`, and the server leaves the audience alone. Sending
+   * both every time would make "change the voice" clear an audience somebody
+   * set in another tab.
+   */
+  it('sends only the ref that changed', async () => {
+    await setPostBrand('po1', { brand_voice_id: 'v1' })
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body).toEqual({ brand_voice_id: 'v1' })
+    expect('brand_audience_id' in body).toBe(false)
+  })
+
+  /** `null` is a value here, not an omission — it is how a reset clears one. */
+  it('sends an explicit null to clear a ref', async () => {
+    await setPostBrand('po1', { brand_audience_id: null })
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body).toEqual({ brand_audience_id: null })
   })
 })
 

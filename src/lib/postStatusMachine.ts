@@ -92,10 +92,7 @@ export type PostStatusActionKind = 'user' | 'system'
 //     call — including the fallback to a plain PUT when the user can't
 //     supply a link (Zernio cannot verify LinkedIn personal accounts).
 export type PostStatusActionMechanism =
-  | 'transition'
-  | 'schedule'
-  | 'cancel'
-  | 'verify'
+  'transition' | 'schedule' | 'cancel' | 'verify'
 
 type ActionMeta = {
   // ALL CAPS form, used as the prominent header button label.
@@ -320,10 +317,7 @@ export function isPublishMethodEdge(from: PostStatus, to: PostStatus): boolean {
 
 export type PostStatusBlocker = {
   field:
-    | 'platform_id'
-    | 'platform_post_type'
-    | 'scheduled_at'
-    | 'social_account_id'
+    'platform_id' | 'platform_post_type' | 'scheduled_at' | 'social_account_id'
   message: string
 }
 
@@ -338,6 +332,19 @@ export type TransitionContext = {
    * connected accounts (`usePublishingAccount`).
    */
   account: Pick<PublishingAccountResolution, 'ambiguous' | 'mismatched'>
+  /**
+   * The format the post will publish as, when that is not what the record says.
+   *
+   * An automatic post carries no slug and resolves one from its body and its
+   * files (`lib/postTypeAuto`); the record only gains it as the transition is
+   * made. Reading `platform_post_type` here would block every such post from
+   * the very move that writes the answer down — so the resolution is handed in,
+   * and an unresolvable post is blocked exactly as an unchosen one is.
+   *
+   * Defaults to the post's own type, which is what every caller but the editor
+   * means.
+   */
+  postType?: string
 }
 
 // Mirrors the server's pre-transition rules. Returns blockers the UI
@@ -369,7 +376,7 @@ export function getTransitionBlockers(
     if (!post.platform_id) {
       blockers.push({ field: 'platform_id', message: 'Pick a platform first' })
     }
-    if (!post.platform_post_type) {
+    if (!(context.postType ?? post.platform_post_type)) {
       blockers.push({
         field: 'platform_post_type',
         message: 'Pick a post type first',
