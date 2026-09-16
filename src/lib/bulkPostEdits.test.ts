@@ -26,6 +26,8 @@ function post(
     scheduled_at,
     published_at: null,
     published_url: '',
+    brand_voice_id: null,
+    brand_audience_id: null,
     status,
     cta_type: '' as Post['cta_type'],
     cta_url: '',

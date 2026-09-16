@@ -893,6 +893,151 @@ is *right*: a thread really does go out as one post with every file on it.
 `TwitterPreview` / `ThreadsPreview` / `PostPreviewPanel`, and the
 `thread-sequence` flag.
 
+## The post picks its own type, and the empty slug is how it says so {#auto-post-type}
+
+**Decision.** *Auto* is the default post type, and it is the empty
+`platform_post_type` a post is **already** created with. While a post is
+automatic the format is derived on every render from the body and the
+attachments (`lib/postTypeAuto`); the slug is written to the record only when
+the post is committed. Behind `post-type-auto`, off.
+
+**Why.** Choosing between "Text post" and "Image post" is the first thing the
+editor asks and the last thing an author has an opinion about. Those are not
+two things somebody sets out to write — they are what a post already *is* once
+the words and the files are there. Attaching a picture to a text post and then
+being told the post type is wrong is the app asking the user to restate
+something it can see.
+
+**Why no new storage.** `useAddPost` creates a post with a campaign and a date
+and nothing else, so every post starts life at `platform_post_type: ''`. That
+state already existed and already meant "nobody has chosen"; the only change is
+reading it as an intention rather than as an omission. Nothing waits on the back
+end — no column, no key/value row, no endpoint.
+
+Two consequences follow from storing nothing, and both are deliberate:
+
+- **The resolution is written down only when it has to be, and `draft` is where
+  it has to be.** A draft holds the empty slug for its whole life; the record
+  gains a concrete type on the way out. The pin rides `changeDoc`, one
+  synchronous write into the same pending edit the transition flushes first: no
+  extra round trip, and no window where the record and the request disagree
+  about what the post is.
+- **Pinning is one-way.** Reopen a post to draft and it keeps the slug it
+  resolved to, because there is nowhere to record that it used to be automatic.
+  Choosing *Auto* again sets the empty slug back. A stored bit would survive
+  that, and it would cost the column this design does without.
+
+**Where the boundary is, and why it isn't a judgement call.** The first cut of
+this drew the line at *committing* the post — scheduled or marked published,
+which is also when CON-251 locks the content, so nothing afterwards could move
+the answer. That reasoning is sound and the line was in the wrong place. The
+server's `requirePlatformIfNotDraft` (`src/handlers/posts.go`) refuses a PUT
+carrying an empty `platform_post_type` under **every** status but `draft`, so an
+automatic post that got as far as `ready_for_publish` could not be saved again at
+all — not the transition, and not the next keystroke's autosave.
+
+Two things came out of that, and both read the same predicate,
+`canBeAutomatic(status)`, from opposite ends:
+
+- **Every edge out of `draft` pins**, not a list of the final ones. The
+  manual-publish SCHEDULE is the one that proved it: unlike its auto-publish
+  twin it is a plain status PUT rather than the schedule endpoint (see
+  [Scheduling](#schedule-endpoint)), so a pin list written in terms of
+  "scheduling" missed it entirely and the request went out with no type on it.
+- **The picker offers the empty slug only to a draft.** Auto is not in the menu
+  once the post is out — and neither is the *Deselect post type* row, which
+  predates this feature and had always failed the same way, quietly, on any
+  non-draft post.
+
+**The ladder.** `text-post → image-post → carousel → video → reel → short →
+thread`, least demanding first, so the winner is the *loosest* type the post
+already satisfies and escalation falls out of the same walk. `video` precedes
+the short forms because that is the plain reading of "there is a video here"; a
+platform offering only `reel` or `short` reaches them because the rung above was
+never a candidate. Candidates are what the **campaign** enables, so Auto can
+only ever land on a format the picker itself would have offered.
+
+**What it will not choose.** Story, Article and Link post are editorial
+decisions the content cannot imply, and a `whitelist_only` type has no rule to
+test — "it fits" would mean "we have no idea", which is the one answer Auto must
+not give. All of them stay in the picker and pin the post when chosen.
+
+**A chain is deliberately not an answer yet.** `thread` is a rung only while
+`thread-sequence` is on. X has offered the slug all along, and until the submit
+path sends `threadItems` a thread publishes as one post with the whole body in
+it (see [above](#thread-sequence)) — so the one reason a chain answers three
+thousand characters, that it splits, is not true. With both flags off that post
+reports "too long", which is right. Choosing `thread` by hand is untouched.
+
+**When nothing fits** the checks bar says which wall was hit — too long (with
+the longest ceiling any candidate would have taken), the wrong kind of file, too
+many files, or a campaign enabling no automatic format — never "pick a post
+type", which is the one thing the author did not do wrong. That row is built in
+the route rather than in `evaluatePost`, which is a pure module with no `t`; it
+is the same arrangement the thread row uses.
+
+**Where.** `lib/postTypeAuto.ts` (+ test), `hooks/useCampaignPostTypes.ts`, the
+resolution in `hooks/usePostMedia.ts`, the *Auto* entry in
+`quickBar/ChannelPickers.tsx`, the pin and the unfit row in the post route,
+`hasVisibleProblem` in `lib/postValidation.ts`, `PostCard`'s label, and the
+`post-type-auto` flag.
+
+## A brand binding is four ids, resolved and never copied {#brand-binding}
+
+**Decision.** What voice a post is written in is **not stored on the post**. Four
+nullable ids are — `brand_voice_id` and `brand_audience_id` on the campaign and
+the same pair on the post (CON-245) — and the answer is *resolved* from them on
+every read: post → campaign → the library's default voice for a voice, and post
+→ campaign → nothing for an audience. `components/brand/binding.ts` is the whole
+walk, and it exists to mirror `brandresolve` on the server.
+
+**Why the server's walk is the authority.** The generation flows obey
+`brandresolve`, not us. A screen that named a voice the generator would not have
+used is worse than a screen that says nothing, because it is confidently wrong
+about the one question the feature exists to answer. So when the two disagree,
+this one is the bug. The asymmetry in the walks is the clearest example: an
+audience deliberately has **no** library step, even though "no audience means
+generating for nobody" is a decent argument, because a default collapses a choice
+whose answer is genuinely different per campaign. That case is CON-263's to make,
+on the server, and the client's job is to follow.
+
+**Why the client is narrower than the design doc.** `docs/brand-materials.md` §8
+describes a *cast* of voices per campaign, a local delta on every reference, and
+a staleness read that offers to regenerate. The client modelled all three for a
+while and the server shipped none of them: CON-245 §4 locked v1 to a single
+campaign voice, and §13 lists the delta and the snapshot column as deferred. What
+that produced was a campaign settings card offering a multi-select whose extra
+entries no generator would ever read, and a post section offering a "this voice
+has changed" note computed from a timestamp comparison the server does not make
+— which is precisely the *material nothing reads* failure CON-226 §9 names, built
+by us. Narrowing to the four columns is not a downgrade of the design; it is the
+client saying only what is true. The richer model comes back when the columns do.
+
+**Why the refs are presence-aware, and what follows.** All four are read
+presence-aware on their PUTs: omitted leaves the stored value alone, present
+replaces, `null` clears. That is what lets `campaignToPayload` and
+`postToPayload` — both whole-resource builders that otherwise have to name every
+field or the server defaults it away — deliberately *not* carry them. Restating a
+ref means an autosave writes back whichever binding the record held when it was
+fetched, over a choice made in the picker since; the same race CON-233 fixed for
+the asset sets, fixed the same way. A campaign's binding is therefore written by
+passing an override to `campaignToPayload`, and a post's by `setPostBrand`
+against `PUT /api/posts/:id/brand`, a targeted sub-action that touches the two
+columns and nothing else.
+
+**Why the lock does not reach it.** `setPostBrand` works on a `scheduled` or
+`published` post, alone among the post's controls. CON-251 freezes what would
+diverge from the copy that has already left Ogen — body, media, sources — and a
+binding is not one of those: it is an input to the *next* generation, so setting
+it on a published post is how somebody says *write the next one like this*. The
+server agrees, and runs no publish gate on that endpoint.
+
+**Where.** `components/brand/{binding,types}.ts` (+ tests),
+`components/brand/{CampaignBrandCard,PostBrandSection}.tsx`,
+`hooks/useBrand.ts` (`useSetPostBrand`), `services/api/posts.ts`
+(`setPostBrand`), `lib/campaignPayload.ts`, and the `brand.binding.*` catalogue
+entries — the two pickers are converted, the eleven library screens are not.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain

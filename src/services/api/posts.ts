@@ -124,6 +124,32 @@ export function schedulePost(
 }
 
 /**
+ * Sets a post's own Brand voice and audience (CON-245).
+ *
+ * A targeted write rather than a field on the whole-post PUT, for the reason
+ * every sub-action on this resource exists: the picker holds two ids and has no
+ * business restating the body, the schedule and the status to change one of
+ * them. It touches only the two columns — no status machine, no publish gate —
+ * and answers with the updated post.
+ *
+ * **Presence-aware, and both halves are independent.** An omitted field leaves
+ * the stored ref alone; an explicit `null` clears it. So "reset the voice to
+ * whatever the campaign says" is `{ brand_voice_id: null }` and says nothing
+ * about the audience, which is exactly how the two controls behave on screen.
+ * That is also why `postToPayload` carries neither: an autosave omits them and
+ * cannot undo a choice made in the panel beside it.
+ */
+export function setPostBrand(
+  id: string,
+  refs: { brand_voice_id?: string | null; brand_audience_id?: string | null },
+): Promise<Post> {
+  return apiJson<Post>(`${BASE}/${id}/brand`, 'Unable to set the voice', {
+    method: 'PUT',
+    body: refs,
+  })
+}
+
+/**
  * Requests cancellation of a Scheduled post. The server enqueues a Zernio
  * cancel job and returns 202 immediately; the post stays in `scheduled`
  * until the worker confirms, then transitions to `target`. Callers should

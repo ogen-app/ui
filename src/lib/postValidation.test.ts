@@ -1,11 +1,23 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   checksSummary,
   foldChecks,
+  hasVisibleProblem,
   worstStatus,
   type CheckStatus,
   type PostCheck,
 } from './postValidation.ts'
+import type { Post } from '@/types/posts'
+
+vi.mock('@/config/featureFlags', () => ({
+  isFeatureEnabled: vi.fn(() => false),
+}))
+
+const { isFeatureEnabled } = await import('@/config/featureFlags')
+
+afterEach(() => {
+  vi.mocked(isFeatureEnabled).mockReturnValue(false)
+})
 
 function check(status: CheckStatus, id: string = status): PostCheck {
   return { id, label: id, status }
@@ -198,5 +210,71 @@ describe('checksSummary', () => {
     expect(checksSummary([check('fail', 'a'), check('pending', 'b')])).toBe(
       '1 issue to fix',
     )
+  })
+})
+
+/** LinkedIn, from the dictionary — the only field `hasVisibleProblem` looks up. */
+const LINKEDIN = 'AXqWG7U2qnpt'
+
+function post(over: Partial<Post> = {}): Post {
+  return {
+    status: 'draft',
+    platform_id: LINKEDIN,
+    platform_post_type: 'text-post',
+    ...over,
+  } as Post
+}
+
+/** What a post with a single connected account resolves to. */
+const RESOLVED = { ambiguous: false, mismatched: false }
+
+describe('hasVisibleProblem', () => {
+  it('flags a post with no platform, whatever else is true of it', () => {
+    expect(hasVisibleProblem(post({ platform_id: '' }), RESOLVED)).toBe(true)
+  })
+
+  it('flags an unset post type while nothing is deciding it', () => {
+    expect(hasVisibleProblem(post({ platform_post_type: '' }), RESOLVED)).toBe(
+      true,
+    )
+  })
+
+  it('stands down on an unset post type once Auto is released', () => {
+    // Auto makes the empty slug the *default* state of a draft rather than a
+    // gap, and every new post starts there — a mark on all of them would stop
+    // meaning anything. The card cannot resolve it either: that needs the
+    // attachments, and the list payload carries none.
+    vi.mocked(isFeatureEnabled).mockReturnValue(true)
+
+    expect(hasVisibleProblem(post({ platform_post_type: '' }), RESOLVED)).toBe(
+      false,
+    )
+  })
+
+  it('still flags a missing platform when Auto is released', () => {
+    // Auto answers one of the two questions the card asks, and only that one.
+    vi.mocked(isFeatureEnabled).mockReturnValue(true)
+
+    expect(hasVisibleProblem(post({ platform_id: '' }), RESOLVED)).toBe(true)
+  })
+
+  it('flags an outcome that already went wrong, before anything else', () => {
+    expect(hasVisibleProblem(post({ status: 'failed' }), RESOLVED)).toBe(true)
+    expect(hasVisibleProblem(post({ status: 'not_published' }), RESOLVED)).toBe(
+      true,
+    )
+  })
+
+  it('flags an account resolution the server would refuse', () => {
+    expect(
+      hasVisibleProblem(post(), { ambiguous: true, mismatched: false }),
+    ).toBe(true)
+    expect(
+      hasVisibleProblem(post(), { ambiguous: false, mismatched: true }),
+    ).toBe(true)
+  })
+
+  it('is silent on a post that is merely unfinished', () => {
+    expect(hasVisibleProblem(post(), RESOLVED)).toBe(false)
   })
 })

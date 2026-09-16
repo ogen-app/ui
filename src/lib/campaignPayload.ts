@@ -12,13 +12,20 @@ import type { Campaign, UpdateCampaignPayload } from '@/types/campaigns'
  * Dropping `publishing_days` here does not preserve the campaign's publishing
  * days, it resets them to all seven.
  *
- * With two exceptions, and they are exceptions because the server made them
- * ones: `use_assets` and `asset_ids` are presence-aware since CON-233, so
- * omitting them leaves the campaign's documents alone. They are omitted on
- * purpose. Membership has its own endpoints now, and a brief autosave that
- * restated the set — from whatever snapshot the form was built on — would put
- * an old copy of it back over an attach that had just landed. Nothing here may
+ * With four exceptions, and they are exceptions because the server made them
+ * ones — it reads all four presence-aware, so omitting one is what preserves
+ * it. Their absence below is deliberate in both cases, for the same reason:
+ * an ordinary autosave would restate whatever the snapshot its form was built
+ * on happened to hold, over a change that had landed since.
+ *
+ * `use_assets` and `asset_ids` since CON-233 — membership has its own atomic
+ * endpoints now, and a restated set would undo an attach. Nothing here may
  * name them again; see `lib/campaignMembership`.
+ *
+ * `brand_voice_id` and `brand_audience_id` since CON-245 — present replaces,
+ * `null` clears, and a restated binding would write back over a choice made in
+ * the Brand card. Pass one as an override to change it, which
+ * `CampaignBrandCard` is the only thing that does.
  */
 export function campaignToPayload(
   campaign: Campaign,

@@ -37,13 +37,8 @@ import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { usePanelScope } from '@/hooks/usePanelScope'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { charCount } from '@/lib/socialText'
-import { getPlatformInfo } from '@/lib/platformDictionary'
-import {
-  MAX_THREAD_POSTS,
-  isSequencePost,
-  planThread,
-} from '@/lib/threadSequence'
-import { useFeatureFlag } from '@/config/featureFlags'
+import { MAX_THREAD_POSTS, planThread } from '@/lib/threadSequence'
+import { canBeAutomatic, type UnfitReason } from '@/lib/postTypeAuto'
 import { useThreadSequence } from '@/hooks/useThreadSequence'
 import type { PostCheck } from '@/lib/postValidation'
 import { useCampaign } from '@/hooks/useCampaigns'
@@ -145,6 +140,23 @@ function excerpt(text: string): string {
   return flat.length > 48 ? `${flat.slice(0, 47)}…` : flat
 }
 
+/**
+ * Why Auto found no format, as catalogue keys.
+ *
+ * A table of *keys* rather than of copy, so it can sit at module scope without
+ * freezing whichever language loaded first — the sentences are looked up at the
+ * point of use, on every render.
+ */
+const UNFIT_KEY = {
+  'too-long': 'posts.postType.autoUnfit.tooLong',
+  'media-kind': 'posts.postType.autoUnfit.mediaKind',
+  'too-many': 'posts.postType.autoUnfit.tooMany',
+  'no-candidates': 'posts.postType.autoUnfit.noCandidates',
+  // `satisfies` rather than an annotation: the reasons stay exhaustively
+  // checked, and the values keep their literal types so `t` can still tell
+  // these are real catalogue keys.
+} as const satisfies Record<UnfitReason, string>
+
 type PostEditorSurfaceProps = {
   doc: Post
   changeDoc: (fn: (p: Post) => void) => void
@@ -208,22 +220,17 @@ function PostEditorSurface({
     doc.platform_id,
   )
 
-  // Thread sequences (CON-196) — a post that publishes as a chain rather than
-  // one post. The flag withdraws the type from every picker, so with it off
-  // this is false for every post, *including* one already saved as a `thread`:
-  // that post keeps rendering as the single body it was written in, which is
-  // exactly what it still publishes as until the submit path sends
-  // `threadItems`.
-  const sequenceEnabled = useFeatureFlag('thread-sequence')
-  const platformInfo = getPlatformInfo(doc.platform_id)
-  const isSequence =
-    sequenceEnabled &&
-    isSequencePost(platformInfo?.zernioId, doc.platform_post_type)
-
   // Attachments, the platform's post-type rules and the checks derived from
   // both. Called once here because the media card and the validations
-  // section are two views of the same state (and share upload progress).
-  const media = usePostMedia(doc, isSequence)
+  // section are two views of the same state (and share upload progress) — and
+  // because it is where the post's *effective* type is decided: an automatic
+  // post carries no slug, and the format it publishes as is derived from the
+  // body and the attachments this hook already holds (`lib/postTypeAuto`).
+  const media = usePostMedia(doc)
+  // Whether this post publishes as a chain rather than as one post (CON-196).
+  // Derived from the effective type, so an automatic post that resolved to
+  // `thread` renders as the chain it will publish as.
+  const isSequence = media.sequence
 
   // Which of the platform's connected accounts this post publishes as
   // (CON-150). Resolved here because two consumers must agree: the
@@ -235,18 +242,67 @@ function PostEditorSurface({
     doc.social_account,
   )
 
+  // Leaving `draft` is where an automatic post's format stops being derived and
+  // becomes a fact about the record.
+  //
+  // A draft holds the empty slug for its whole life and the resolution is
+  // worked out on every render, which is what keeps it in step with the words.
+  // The server has no such notion, and draws the line in exactly one place:
+  // `requirePlatformIfNotDraft` rejects any PUT carrying an empty post type
+  // under any status but `draft`. So that edge is the last moment the slug can
+  // be written, not merely a good one — a post that crossed it still empty
+  // could not be saved again at all.
+  //
+  // Written through `changeDoc` rather than a PUT of its own, deliberately.
+  // That is one synchronous write into the same pending edit `schedule` flushes
+  // first, so the slug rides the autosave the user's last keystroke was already
+  // going to send — no extra round trip, and no window where the record and the
+  // schedule request disagree about what this post is.
+  const pinResolvedPostType = useCallback(() => {
+    if (media.auto?.state !== 'resolved') return
+    const slug = media.auto.slug
+    changeDoc((d) => {
+      d.platform_post_type = slug
+    })
+  }, [media.auto, changeDoc])
+
+  const scheduleResolved = useCallback(() => {
+    pinResolvedPostType()
+    return schedule()
+  }, [pinResolvedPostType, schedule])
+
+  const transitionResolved = useCallback(
+    (next: PostStatus, extra?: TransitionExtras) => {
+      // Every edge but the way back in, rather than a list of the ones that
+      // commit the post: the server's rule is about the status the PUT carries,
+      // not about how final it is, so MARK AS READY and the manual-publish
+      // SCHEDULE (a plain PUT, unlike its auto-publish twin) need the slug just
+      // as much as publishing does. Reopening to draft must not pin — that move
+      // exists to make the post editable again, and freezing its format on the
+      // way back in would be the opposite.
+      if (!canBeAutomatic(next)) {
+        pinResolvedPostType()
+      }
+      return transitionStatus(next, extra)
+    },
+    [pinResolvedPostType, transitionStatus],
+  )
+
   // Called once, here, and shared: the header button and the badge menu must
   // see the same in-flight guard, or one could fire a second transition
   // while the other's request is still open.
   const { buttons, back, pending } = usePostStatusActions({
     post: doc,
-    transitionStatus,
-    schedule,
+    transitionStatus: transitionResolved,
+    schedule: scheduleResolved,
     cancelScheduled,
     requestVerification: () => setPublishedUrlOpen(true),
     cancelling,
     publishMethod: effectivePublishMethod,
-    context: { account },
+    // The effective type, not the record's: an automatic post has no slug until
+    // this very transition writes one, so reading the record would disable the
+    // button that does the writing.
+    context: { account, postType: media.postType },
   })
   // Null unless something really is going to publish the post — see
   // `publishTiming` for which statuses those are.
@@ -475,11 +531,36 @@ function PostEditorSurface({
   // Length is deliberately not among the things it can fail on: a part of the
   // body past the ceiling is cut to fit rather than reported, so what is left
   // is the media the author has to move themselves.
+  //
+  // The post-type row is *replaced* rather than appended to for the same
+  // reason. `evaluatePost` is handed the effective slug, so an automatic post
+  // that resolved reads as the format it publishes as and needs nothing here;
+  // one that did not falls back to the empty slug and would report "Pick a post
+  // type", which is the one thing the author did not do wrong. What they need
+  // instead is which wall the post hit, and only `lib/postTypeAuto` knows that.
+  const autoChecks = useMemo<PostCheck[]>(() => {
+    const auto = media.auto
+    if (!auto || auto.state === 'resolved') return media.checks
+    return media.checks.map((check) =>
+      check.id === 'post-type'
+        ? {
+            ...check,
+            label: t('posts.postType.checkLabel'),
+            status: auto.state === 'pending' ? 'pending' : 'fail',
+            detail:
+              auto.state === 'pending'
+                ? t('posts.postType.autoPending')
+                : t(UNFIT_KEY[auto.reason], { limit: auto.limit ?? 0 }),
+          }
+        : check,
+    )
+  }, [media.auto, media.checks, t])
+
   const checks = useMemo<PostCheck[]>(() => {
-    if (!isSequence) return media.checks
+    if (!isSequence) return autoChecks
     const failing = plan.posts.filter((p) => p.issues.length > 0)
     return [
-      ...media.checks,
+      ...autoChecks,
       {
         id: 'thread-sequence',
         label: t('posts.sequence.check.label'),
@@ -500,7 +581,7 @@ function PostEditorSurface({
               : t('posts.sequence.postCount', { count: plan.posts.length }),
       },
     ]
-  }, [isSequence, media.checks, plan, t])
+  }, [isSequence, autoChecks, plan, t])
 
   const handleDownloadMarkdown = useCallback(
     () => downloadMarkdown(doc.title, doc.content, 'post'),
@@ -552,6 +633,7 @@ function PostEditorSurface({
                 publishMethod={effectivePublishMethod}
                 onPublishMethodChange={setPublishMethod}
                 onAddPostLink={() => setPublishedUrlOpen(true)}
+                resolvedPostType={media.postType}
               />
             </div>
             {/* Between the bar and the checks: below the status badge that is
@@ -710,6 +792,7 @@ function PostEditorSurface({
                refresh timer. */
             <PostPreviewPanel
               doc={doc}
+              postType={media.postType}
               attachments={media.attachments}
               sequence={isSequence ? plan : undefined}
               onClose={closeRightPanel}
@@ -768,8 +851,15 @@ function PostEditorSurface({
         // The server allows it: CON-251's lock covers the fields that would
         // diverge from what went out, and the permalink is deliberately not
         // one of them — recording a link is a post-publish act.
+        //
+        // Through `transitionResolved` rather than `transitionStatus` because
+        // the first of those two states is an edge out of drafting like any
+        // other: an automatic post reaching `published` here still has to
+        // write its slug down, and the PUT would be refused without it. On a
+        // post that is already published the pin is a no-op — it resolved on
+        // the way in.
         saveUnverified={(url) =>
-          transitionStatus(
+          transitionResolved(
             'published',
             url ? { published_url: url } : undefined,
           )

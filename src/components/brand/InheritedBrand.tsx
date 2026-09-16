@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ArrowUpRightIcon, StarIcon } from '@phosphor-icons/react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
+import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { Collapse } from '@/components/ui/collapse'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { useBrand, useCampaignBrand } from '@/hooks/useBrand'
-import { brandSection } from '@/lib/brandSections'
+import { useBrand } from '@/hooks/useBrand'
+import { useCampaign } from '@/hooks/useCampaigns'
+import { brandSectionCopy } from '@/lib/brandSections'
 import { cn } from '@/lib'
-import { EMPTY_CAMPAIGN_BRAND, castOf } from './binding'
 import type { BrandAudience, BrandGuardrails, BrandVoice } from './types'
 
 /**
@@ -41,35 +43,34 @@ import type { BrandAudience, BrandGuardrails, BrandVoice } from './types'
  * missing.
  */
 export function InheritedBrand({ campaignId }: { campaignId: string }) {
+  const { t } = useTranslation()
   const enabled = useFeatureFlag('brand-materials')
   const { data: brand } = useBrand()
-  const { data: bound } = useCampaignBrand(campaignId)
+  // The binding is two columns on the campaign row (CON-245), so it arrives
+  // with the campaign rather than from a query of its own.
+  const { data: campaign } = useCampaign(campaignId)
 
   // Nothing at all rather than a shell while it loads: this sits above a table
   // that is the reason the page was opened, and a band that appears a beat
   // later shoves it down.
-  if (!enabled || !brand) return null
+  if (!enabled || !brand || !campaign) return null
 
-  const chosen = bound ?? EMPTY_CAMPAIGN_BRAND
-  const cast = castOf(brand, chosen)
+  const voice =
+    brand.voices.find((v) => v.id === campaign.brand_voice_id) ?? null
   const audience =
-    brand.audiences.find((a) => a.id === chosen.audienceId) ?? null
+    brand.audiences.find((a) => a.id === campaign.brand_audience_id) ?? null
   const { guardrails } = brand
 
   return (
     <div className="border-b border-tertiary px-3 lg:px-6">
       <Collapse
         title="From the workspace"
-        description={summarise(guardrails, cast, audience)}
+        description={summarise(t, guardrails, voice, audience)}
         className="mx-auto w-full max-w-content"
       >
         <div className="flex flex-col gap-6 pb-5 pt-2">
           <GuardrailsPanel guardrails={guardrails} />
-          <VoicePanel
-            campaignId={campaignId}
-            cast={cast}
-            defaultVoiceId={chosen.defaultVoiceId}
-          />
+          <VoicePanel campaignId={campaignId} voice={voice} />
           <AudiencePanel campaignId={campaignId} audience={audience} />
         </div>
       </Collapse>
@@ -87,21 +88,16 @@ export function InheritedBrand({ campaignId }: { campaignId: string }) {
  * because nothing on screen said otherwise.
  */
 function summarise(
+  t: TFunction,
   guardrails: BrandGuardrails | null,
-  cast: BrandVoice[],
+  voice: BrandVoice | null,
   audience: BrandAudience | null,
 ): string {
   const rules = guardrails
     ? `${countRules(guardrails)} guardrails apply to every post here`
-    : brandSection('guardrails').whenEmpty
-  const voice =
-    cast.length === 0
-      ? 'no voice chosen'
-      : cast.length === 1
-        ? cast[0].name
-        : `${cast.length} voices`
+    : brandSectionCopy(t, 'guardrails').whenEmpty
   const who = audience ? audience.name : 'nobody in particular'
-  return `${rules} · ${voice} · written to ${who}`
+  return `${rules} · ${voice ? voice.name : 'no voice chosen'} · written to ${who}`
 }
 
 /** Every statement the guardrails make, as one number. The disclaimer counts. */
@@ -120,7 +116,8 @@ function GuardrailsPanel({
 }: {
   guardrails: BrandGuardrails | null
 }) {
-  const section = brandSection('guardrails')
+  const { t } = useTranslation()
+  const section = brandSectionCopy(t, 'guardrails')
   return (
     <Panel
       title="Guardrails"
@@ -175,57 +172,33 @@ function GuardrailsPanel({
 
 function VoicePanel({
   campaignId,
-  cast,
-  defaultVoiceId,
+  voice,
 }: {
   campaignId: string
-  cast: BrandVoice[]
-  defaultVoiceId: string | null
+  voice: BrandVoice | null
 }) {
   return (
     <Panel
       title="Voice"
-      note="Chosen for this campaign out of the workspace's voices. Posts open in the default one and can be changed individually."
+      note="Chosen for this campaign out of the workspace's voices. A post can be written in another one, and says so on the post."
       // Strategy, not Foundation: this is the one thing on the band the
       // campaign decided, and the place it decided it is where its window, its
       // rate and its channels are decided too.
       edit={<StrategyLink campaignId={campaignId} />}
     >
-      {cast.length === 0 ? (
+      {!voice ? (
         <Absent>
           No voice chosen — posts here are written in the workspace default.
         </Absent>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {cast.map((voice) => (
-            <li key={voice.id} className="flex items-start gap-2">
-              {cast.length > 1 && (
-                <StarIcon
-                  weight={voice.id === defaultVoiceId ? 'fill' : 'regular'}
-                  className={cn(
-                    'mt-0.5 size-4 shrink-0',
-                    voice.id === defaultVoiceId
-                      ? 'text-primary-foreground'
-                      : 'text-tertiary',
-                  )}
-                  aria-label={
-                    voice.id === defaultVoiceId
-                      ? 'Posts open in this voice'
-                      : undefined
-                  }
-                />
-              )}
-              <span className="flex min-w-0 flex-col">
-                <span className="text-sm font-medium">{voice.name}</span>
-                {voice.whenToUse && (
-                  <span className="text-xs text-tertiary-foreground">
-                    {voice.whenToUse}
-                  </span>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="flex min-w-0 flex-col">
+          <span className="text-sm font-medium">{voice.name}</span>
+          {voice.whenToUse && (
+            <span className="text-xs text-tertiary-foreground">
+              {voice.whenToUse}
+            </span>
+          )}
+        </div>
       )}
     </Panel>
   )

@@ -2,7 +2,12 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    // `ES2021.Intl` and nothing else off ES2021: it is what declares
+    // `Intl.ListFormat`, which `lib/intl.ts` needs to join a list the way the
+    // active language joins one. Narrowed to the Intl slice on purpose — the rest
+    // of ES2021 is not being opted into here, only the type declarations for a
+    // formatter every browser we target has shipped since 2021.
+    "lib": ["ES2020", "ES2021.Intl", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",

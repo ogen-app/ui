@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CheckIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,7 +10,7 @@ import { TextSelect } from '@/components/ui/text-select'
 import { FactsTable } from '@/components/tables/factsTable'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { BarStatus } from '@/components/page-primitives/PageActionBar'
-import { brandSection } from '@/lib/brandSections'
+import { brandSectionCopy } from '@/lib/brandSections'
 import { BrandEditorFrame, EditorCard, EditorIntro, Field } from './editor'
 import {
   FACT_KINDS,
@@ -80,6 +81,7 @@ export function FactsEditor({
   facts: BrandFact[]
   onSave?: (facts: BrandFact[]) => void
 }) {
+  const { t } = useTranslation()
   const today = todayISO()
   const [draft, setDraft] = useState<BrandFact[]>(facts)
   /** Which ledger is on screen. `'all'` is a view, never a value on a row. */
@@ -90,7 +92,10 @@ export function FactsEditor({
     isNew: boolean
   } | null>(null)
 
-  const info = brandSection('facts')
+  // The section's own three strings, from the catalogue develop moved them
+  // into (CON-227). The ledger's own copy below is still English in place —
+  // see the note on `brand-materials`.
+  const info = brandSectionCopy(t, 'facts')
   const shown =
     view === 'all' ? draft : draft.filter((fact) => fact.subject === view)
   const dirty = signature(draft) !== signature(facts)

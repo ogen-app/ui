@@ -1,9 +1,4 @@
-import {
-  ArrowUUpLeftIcon,
-  HandshakeIcon,
-  MegaphoneIcon,
-  type Icon,
-} from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { brandSection } from '@/lib/brandSections'
 import { usageLine } from './format'
 import {
@@ -15,6 +10,7 @@ import {
   StarterCard,
   StarterGroup,
 } from './shell'
+import { AUDIENCE_STARTERS, audienceStarterCopy } from './starters'
 import type { BrandAudience } from './types'
 
 /**
@@ -53,17 +49,21 @@ export function AudiencesSection({
   /** Fork one of ours. */
   onStart?: (starterId: string) => void
 }) {
+  const { t } = useTranslation()
   const empty = audiences.length === 0
 
   return (
     <BrandLibrary
       add={
         empty ? (
-          <PlainActionCard label="DESCRIBE ONE YOURSELF" onClick={onAdd} />
+          <PlainActionCard
+            label={t('brand.audiences.describeYourself')}
+            onClick={onAdd}
+          />
         ) : (
           <AddEntryCard
-            label="ADD AUDIENCE"
-            hint="Another one, for the posts the others are not written to."
+            label={t('brand.audiences.add')}
+            hint={t('brand.audiences.addHint')}
             onClick={onAdd}
           />
         )
@@ -80,86 +80,32 @@ export function AudiencesSection({
   )
 }
 
-/**
- * The three we offer for a cold start, and they are deliberately not three
- * demographics.
- *
- * A starter audience with an age and a country in it would be a guess about
- * somebody else's business, and a wrong guess is worse here than a blank —
- * people accept a plausible-looking description and stop thinking. So each
- * starter is a *relationship* instead: everyone has these three, they are
- * answerable without inventing anything, and each one narrows on its own.
- */
-export type AudienceStarter = {
-  id: string
-  icon: Icon
-  title: string
-  body: string
-  /**
-   * What picking it puts in the editor, which is **a name and nothing else**.
-   *
-   * Voices' starters hand over a set of rules as well, because a register can
-   * be described without knowing whose it is. Nothing equivalent exists here:
-   * where somebody reads and what loses them are facts about actual people, and
-   * a prefilled guess at them is the fantasy this section was built to prevent,
-   * arriving with our name on it. The editor says so out loud when it opens.
-   */
-  draft: Pick<BrandAudience, 'name'>
-}
-
-export const AUDIENCE_STARTERS: AudienceStarter[] = [
-  {
-    id: 'customers',
-    icon: HandshakeIcon,
-    title: 'The people who already buy from you',
-    body: 'Described as they actually are, not as the deck describes them. The easiest one to get right and the one most often skipped.',
-    draft: { name: 'People who already buy from us' },
-  },
-  {
-    id: 'nearly',
-    icon: ArrowUUpLeftIcon,
-    title: 'The people who nearly bought',
-    body: 'They know the category, they looked at you, and they chose somebody else. What they needed and did not get is the whole brief.',
-    draft: { name: 'People who nearly bought' },
-  },
-  {
-    id: 'advisers',
-    icon: MegaphoneIcon,
-    title: 'The people who recommend you',
-    body: 'They never buy anything. They pass your name on, and they need something quotable to pass on with it.',
-    draft: { name: 'People who recommend us' },
-  },
-]
-
-/** The starter a `?from=` on the editor route names, if it names one at all. */
-export function audienceStarter(
-  id: string | undefined,
-): AudienceStarter | null {
-  return AUDIENCE_STARTERS.find((s) => s.id === id) ?? null
-}
-
 /** Two cards, not three — the page's intro card states the absence. */
 function AudiencesEmpty({
   onStart,
 }: {
   onStart?: (starterId: string) => void
 }) {
+  const { t } = useTranslation()
   const { tone } = brandSection('audiences')
   return (
     <StarterGroup
-      title="Start from a template"
-      body="Three every business has, so none of them needs inventing. Pick one and fill in what follows from it."
+      title={t('brand.audiences.starterGroupTitle')}
+      body={t('brand.audiences.starterGroupBody')}
     >
-      {AUDIENCE_STARTERS.map((starter) => (
-        <StarterCard
-          key={starter.id}
-          icon={starter.icon}
-          tone={tone}
-          title={starter.title}
-          body={starter.body}
-          onClick={onStart ? () => onStart(starter.id) : undefined}
-        />
-      ))}
+      {AUDIENCE_STARTERS.map((starter) => {
+        const copy = audienceStarterCopy(t, starter)
+        return (
+          <StarterCard
+            key={starter.id}
+            icon={starter.icon}
+            tone={tone}
+            title={copy.title}
+            body={copy.body}
+            onClick={onStart ? () => onStart(starter.id) : undefined}
+          />
+        )
+      })}
     </StarterGroup>
   )
 }
@@ -171,6 +117,7 @@ function AudienceCard({
   audience: BrandAudience
   onOpen?: (id: string) => void
 }) {
+  const { t } = useTranslation()
   return (
     <LibraryCard onClick={onOpen ? () => onOpen(audience.id) : undefined}>
       <header className="flex min-w-0 flex-col gap-1">
@@ -188,9 +135,18 @@ function AudienceCard({
           full-width card that emptiness is three visible gaps rather than a
           shorter paragraph. */}
       <dl className="flex flex-col gap-1.5 text-sm leading-5">
-        <Consequence label="Reads on" value={audience.readsOn} />
-        <Consequence label="Scrolls past" value={audience.scrollsPastWhen} />
-        <Consequence label="Believes you when" value={audience.believesWhen} />
+        <Consequence
+          label={t('brand.audiences.readsOn')}
+          value={audience.readsOn}
+        />
+        <Consequence
+          label={t('brand.audiences.scrollsPast')}
+          value={audience.scrollsPastWhen}
+        />
+        <Consequence
+          label={t('brand.audiences.believesWhen')}
+          value={audience.believesWhen}
+        />
       </dl>
 
       {/* Same block as the voice card's: what it has done, then where it came
@@ -199,7 +155,7 @@ function AudienceCard({
           set differently read as two screens built by two people. */}
       <footer>
         <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
-          <li>{usageLine(audience.usage)}</li>
+          <li>{usageLine(t, audience.usage)}</li>
           <li>
             <OriginLine origin={audience.origin} />
           </li>
@@ -210,11 +166,16 @@ function AudienceCard({
 }
 
 function Consequence({ label, value }: { label: string; value: string }) {
+  const { t } = useTranslation()
   return (
     <div className="flex gap-3">
       <dt className="w-36 shrink-0 text-tertiary-foreground">{label}</dt>
       <dd className="min-w-0">
-        {value || <span className="text-tertiary-foreground">— not said</span>}
+        {value || (
+          <span className="text-tertiary-foreground">
+            {t('brand.audiences.notSaid')}
+          </span>
+        )}
       </dd>
     </div>
   )

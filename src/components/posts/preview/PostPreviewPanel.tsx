@@ -107,11 +107,20 @@ function toPreviewMedia(
  */
 export function PostPreviewPanel({
   doc,
+  postType: postTypeProp,
   attachments,
   sequence,
   onClose,
 }: {
   doc: Post
+  /**
+   * The format to preview as, when it is not the one on the record. An
+   * automatic post carries no slug and the route resolves one from the body
+   * and the files (`lib/postTypeAuto`) — previewing such a post as a plain feed
+   * card would show a Story or a Short as something it is not. Defaults to the
+   * post's own type, which is what every caller but the editor passes.
+   */
+  postType?: string
   /**
    * Passed in rather than fetched: the route already holds the one
    * `usePostMedia` instance, and these carry presigned URLs that the query
@@ -192,12 +201,12 @@ export function PostPreviewPanel({
     limit,
     titleLimit,
     ready: limitsReady,
-  } = useCharLimit(doc.platform_id, doc.platform_post_type)
+  } = useCharLimit(doc.platform_id, postTypeProp ?? doc.platform_post_type)
 
   // Two post types are not a feed card at all, and previewing them as one
   // said something untrue: a story publishes no caption, and a thread's
   // character limit is per post rather than for the whole text.
-  const postType = doc.platform_post_type
+  const postType = postTypeProp ?? doc.platform_post_type
   const isStory =
     postType === 'story' &&
     !!platform &&

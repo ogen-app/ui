@@ -382,25 +382,48 @@ const FEATURE_FLAGS = {
    * that removes Brand from the app.
    *
    * **What is on with it, and what is not.** Voices, Audiences and Guardrails
-   * are complete: written here, stored server-side, and — as CON-245 lands —
-   * read by the flows that write posts. Look and Templates are **not offered**
-   * (`shown` in `lib/brandSections`): their endpoints exist and their screens
-   * render, but nothing writes them from the UI and the image flows that would
-   * consume them are CON-105/CON-132. Two Overview cards that cannot be filled
-   * in and would change nothing if they were teach the user that the screen is
-   * a mock-up, which is the one thing this module cannot afford to say.
+   * are complete: written here, stored server-side, and — since CON-245 — read
+   * by the flows that write posts. The binding is real too: a campaign's voice
+   * and audience ride its own PUT, a post's go through `PUT /api/posts/:id/
+   * brand`, and the `localStorage` stub that stood in for all four is deleted.
+   * Look and Templates are **not offered** (`shown` in `lib/brandSections`):
+   * their endpoints exist and their screens render, but nothing writes them
+   * from the UI and the image flows that would consume them are
+   * CON-105/CON-132. Two Overview cards that cannot be filled in and would
+   * change nothing if they were teach the user that the screen is a mock-up,
+   * which is the one thing this module cannot afford to say.
    *
-   * `usage` counts and `summary` lines arrive as zeroes and empty strings until
-   * CON-245 and the summary job land. That is not a bug to hide: the screens
-   * already draw "nothing has been written in this" as a designed state, and it
-   * is true.
+   * `summary` lines still arrive empty until the generation job ships, and
+   * `postsBehind` is still `0` — it needs the per-post voice-version snapshot
+   * CON-245 §13 deferred. `usage` is real now. Those are not bugs to hide: the
+   * screens already draw "nothing has been written in this" as a designed
+   * state, and it is true.
    *
-   * **Outstanding: the copy is still not in the i18n catalogue.** It was
-   * deferred at the 2026-08-28 merge on the argument that the wording was being
-   * argued alongside the shape and cataloguing it meant retranslating on every
-   * iteration — with the conversion promised before this flag flipped. The flag
-   * has flipped first. The debt is real and it is the whole module's user-facing
-   * text; it does not block anyone from using Brand in English.
+   * **i18n is done.** It was deferred at the 2026-08-28 merge on the argument
+   * that the wording was being argued alongside the shape and cataloguing it
+   * meant retranslating on every iteration — with the conversion promised
+   * before this flag flipped. The flag flipped first, and the debt was paid
+   * after: the binding pickers came in with the CON-245 narrowing
+   * (`brand.binding.*`), and the eleven library screens followed. Every string
+   * in `components/brand/*`, in the Brand routes and in the two tables behind
+   * them (`lib/brandSections`, the starters) is a catalogue entry, and
+   * `components/brand/localisation.test.tsx` renders in Spanish and asserts on
+   * what comes out — which is the only way to tell a converted component from
+   * one whose literals happen to be English.
+   *
+   * Two things that conversion moved rather than merely translated, worth
+   * knowing before editing either: `BRAND_SECTIONS` carries **behaviour only**
+   * now (glyph, hue, readers, whether it is offered) and its words are
+   * `brand.sections.<id>.*`; and a starter's *draft* is catalogued along with
+   * its card, because forking one writes that material into the workspace's
+   * own library — an English draft handed to a Spanish workspace is something
+   * they must rewrite before they can use it.
+   *
+   * All three starter sets now live in `components/brand/starters.ts` rather
+   * than in the sections that render them. Taking the words out is what made
+   * them one object described three times instead of part of any one screen —
+   * and it gave those screens their fast refresh back, which is what
+   * `react-refresh/only-export-components` was asking for all along.
    *
    * The argument this is built from: `docs/brand-materials.md`.
    */
@@ -536,6 +559,54 @@ const FEATURE_FLAGS = {
    * been seen with an actual picture in it.
    */
   'calendar-card-images': false,
+
+  /**
+   * **Auto post type** — the post works out its own format from what is in it,
+   * instead of asking the author to name one first.
+   *
+   * Picking between "Text post" and "Image post" is not a decision anybody sets
+   * out to make; it is what a post already *is* once the words and the files
+   * are there. So Auto is the default, the app reads the body and the
+   * attachments and names the format itself, and re-names it as the post
+   * changes — attach a picture to a text post and it becomes an image post
+   * without anyone touching the picker.
+   *
+   * **Not waiting on an endpoint.** Auto is the empty `platform_post_type` a
+   * post is already created with (`useAddPost` sends a campaign and a date and
+   * nothing else); the resolution is derived on every render and written to the
+   * record as the post leaves `draft`, which is as long as the server will hold
+   * an empty type. Nothing new is stored and no column
+   * is missing. The flag is here because this changes what that empty string
+   * *means* on four surfaces that have always read it as "broken" — the checks
+   * bar, the quick-settings picker, the calendar card and `hasVisibleProblem` —
+   * and because the ladder itself is a claim about the server that has not met
+   * a running one.
+   *
+   * **What to look at when it does**, in the order that decides whether it
+   * ships:
+   *
+   * 1. **The seeded rules are the whole input.** `lib/postTypeAuto` walks
+   *    `GET /api/platforms/:id/post-type-rules` and picks the loosest rung the
+   *    post already satisfies, so a rule that is seeded loosely — a
+   *    `max_content_chars` of 0, an `allowed_kinds` nobody filled in — makes
+   *    Auto choose a type the server then refuses at schedule time. The fit
+   *    predicate mirrors `platforms.ValidatePostType`; it has been read off the
+   *    Go source, never exercised against it.
+   * 2. **`text-post` is the rung everything rests on**, and CON-206 plans to
+   *    merge it into `image-post` with `min_attachments: 0`. That does not
+   *    break Auto — the walk would simply stop one rung earlier — but it
+   *    changes what every post resolves to, so the two want testing together.
+   * 3. **A chain is deliberately not an answer yet.** `thread` is only a rung
+   *    while `thread-sequence` is on, because until the submit path sends
+   *    `threadItems` a thread publishes as one post with the whole body in it
+   *    (CON-196) — so resolving to it would quietly truncate. With both flags
+   *    off, three thousand characters on X reports "too long", which is right.
+   *
+   * With this off, the empty post type means exactly what it always did: a
+   * `fail` in the checks bar, a warning mark on the card, and a picker that
+   * asks. A post that already carries a type is untouched either way.
+   */
+  'post-type-auto': false,
 
   /**
    * Deleting one saved version of a post, from the version-history panel
