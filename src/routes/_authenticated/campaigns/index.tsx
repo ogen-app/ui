@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button.tsx'
 import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
@@ -7,17 +7,19 @@ import { PageLoader } from '@/components/page-primitives/PageLoader.tsx'
 import { PageError } from '@/components/page-primitives/PageError.tsx'
 import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState.tsx'
-import { ArchiveIcon, PlusIcon } from '@phosphor-icons/react'
+import { PlusIcon } from '@phosphor-icons/react'
 import { ArchivedCampaigns } from '@/components/campaigns/ArchivedCampaigns.tsx'
 import { CampaignCard } from '@/components/campaigns/CampaignCard.tsx'
 import { CreateCampaignDialog } from '@/components/campaigns/CreateCampaignDialog.tsx'
 import { useCampaigns } from '@/hooks/useCampaigns.ts'
-import { cn } from '@/lib'
 
 /**
- * Which list is on screen lives in the address (CON-156), not in state: the
- * archive is a place you can be sent to and can link someone to, and coming
- * back from a campaign you just unarchived should land where you were.
+ * There is one campaigns list, with the archive as a drawer at the foot of it
+ * (CON-156). `?archived=true` opens that drawer on arrival rather than
+ * selecting a second view: it is what archiving a campaign redirects to, so
+ * the campaign that just left this list can be seen arriving in the pile below
+ * it instead of appearing to have been deleted. Still in the address rather
+ * than in state because it is a place you can send someone to.
  */
 type CampaignsSearch = { archived?: boolean }
 
@@ -31,14 +33,13 @@ export const Route = createFileRoute('/_authenticated/campaigns/')({
 
 function Campaigns() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { archived = false } = Route.useSearch()
   const { data: campaigns, isLoading, isError } = useCampaigns()
   const [creating, setCreating] = useState(false)
 
   const hasCampaigns = !!(campaigns && campaigns.length > 0)
 
-  if (isLoading && !archived) {
+  if (isLoading) {
     return (
       <PageContainer>
         <PageLoader />
@@ -46,7 +47,7 @@ function Campaigns() {
     )
   }
 
-  if (isError && !archived) {
+  if (isError) {
     return (
       <PageContainer>
         <PageError header={t('campaigns.error')} />
@@ -62,48 +63,16 @@ function Campaigns() {
     <PageContainer variant="fullFlex" className="page-content-motion">
       <div className="h-0 grow overflow-y-auto flex flex-col">
         <PageHeader
-          title={archived ? t('campaigns.archivedTitle') : t('campaigns.title')}
+          title={t('campaigns.title')}
           actions={
-            <div className="flex items-center gap-4">
-              {/* Top-right is views only, and this is a view: the same
-                  campaigns screen showing the set that has been put away.
-                  Creating is not offered from inside the archive — the new
-                  campaign would appear in a list you are not looking at. */}
-              <Button
-                variant="headerIcon"
-                size="excluded"
-                className={cn(archived && 'text-accent hover:text-accent')}
-                aria-label={
-                  archived
-                    ? t('campaigns.showActive')
-                    : t('campaigns.showArchived')
-                }
-                aria-pressed={archived}
-                onClick={() =>
-                  void navigate({
-                    to: '/campaigns',
-                    search: archived ? {} : { archived: true },
-                  })
-                }
-              >
-                <ArchiveIcon
-                  weight={archived ? 'fill' : 'regular'}
-                  className="size-5"
-                />
-              </Button>
-              {!archived && (
-                <Button onClick={() => setCreating(true)} size="lg">
-                  <PlusIcon className="size-4" />
-                  <span>{t('campaigns.add')}</span>
-                </Button>
-              )}
-            </div>
+            <Button onClick={() => setCreating(true)} size="lg">
+              <PlusIcon className="size-4" />
+              <span>{t('campaigns.add')}</span>
+            </Button>
           }
         />
-        {archived ? (
-          <ArchivedCampaigns />
-        ) : hasCampaigns ? (
-          <ul className="flex flex-col gap-3 px-3 lg:px-6 pt-4 pb-10">
+        {hasCampaigns ? (
+          <ul className="flex flex-col gap-3 px-3 lg:px-6 pt-4">
             {campaigns!.map((campaign) => (
               <li key={campaign.id}>
                 <CampaignCard campaign={campaign} />
@@ -127,6 +96,16 @@ function Campaigns() {
             />
           </div>
         )}
+        {/* After both branches: a workspace whose only campaigns are archived
+            still has to be able to reach them, and the empty state's `grow`
+            leaves this sitting at the bottom of the screen where it belongs.
+            The inner column is `CampaignCard`'s own, so the drawer lines up
+            with the cards it continues rather than spanning the page. */}
+        <div className="px-3 lg:px-6 pt-2 pb-10">
+          <div className="w-full max-w-content mx-auto">
+            <ArchivedCampaigns defaultOpen={archived} />
+          </div>
+        </div>
       </div>
       <CreateCampaignDialog
         open={creating}
