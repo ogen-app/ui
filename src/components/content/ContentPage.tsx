@@ -218,25 +218,14 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     })
   }
 
-  /*
-   * Deleting the row deletes the document, everywhere.
-   *
-   * The detach only names the campaign whose page this is, because that is the
-   * only membership list this page can see. Other campaigns keep the id, which
-   * is harmless — `campaignAssets` matches ids against documents that exist, so
-   * an id with nothing behind it simply doesn't appear — and it stops being a
-   * question at all once the backend scopes assets properly (CON-210 phase 2).
-   */
-  const handleDelete = (id: string) => {
-    deleteAsset.mutate(id, {
-      onSuccess: () => {
-        if (campaign) void removeFromCampaign(campaign.id, [id])
-      },
-    })
-  }
-
   /**
-   * The same delete, over a selection.
+   * Deleting documents deletes them everywhere, and this is the only way in.
+   *
+   * One entry point for both gestures — a row's bin and a whole ticked
+   * selection — because a row is a selection of one. The single-row path that
+   * used to sit beside this one skipped the confirmation as well as the
+   * detach, which is how the cheapest click on the screen became the only
+   * unrecoverable one.
    *
    * The requests fan out and any of them can fail, so the detach and the toast
    * are built from what actually succeeded: `allSettled`, then the membership
@@ -244,6 +233,12 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
    * than called per row because the answer for one document depends on the
    * others — detaching the last one is what turns a campaign's generation off
    * (see `lib/campaignMembership`).
+   *
+   * The detach only names the campaign whose page this is, because that is the
+   * only membership list this page can see. Other campaigns keep the id, which
+   * is harmless — `campaignAssets` matches ids against documents that exist, so
+   * an id with nothing behind it simply doesn't appear — and it stops being a
+   * question at all once the backend scopes assets properly (CON-210 phase 2).
    *
    * Failures raise their own toasts through the mutation cache, so nothing is
    * said about them here beyond leaving them out of the count.
@@ -255,9 +250,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     const gone = ids.filter((_, i) => results[i].status === 'fulfilled')
     if (gone.length === 0) return
     if (campaign) void removeFromCampaign(campaign.id, gone)
-    toast.success(
-      `${gone.length} ${gone.length === 1 ? 'document' : 'documents'} deleted`,
-    )
+    toast.success(t('content.delete.done', { count: gone.length }))
   }
 
   const scopeName = campaign
@@ -346,7 +339,6 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             campaignId={campaignId}
             assets={shown}
             uploads={uploads}
-            onDelete={handleDelete}
             onDeleteMany={handleDeleteMany}
             onWrite={handleCreate}
             onUpload={() => setUploadModalOpen(true)}

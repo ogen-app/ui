@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from './lib/queryClient'
 import { routeTree } from './routeTree.gen'
 import { Toaster } from './components/ui/toaster'
+import { HelpDrawer } from './components/help/HelpDrawer'
 import { LocaleSwitchOverlay } from './components/layout/LocaleSwitchOverlay'
 import { FLAG_IDS } from './config/featureFlags'
 import { DEV_TOOLS, bootstrapFlagOverrides } from './config/flagOverrides'
@@ -59,6 +60,10 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
       <Toaster />
+      {/* Mounted beside the router, not inside it: the drawer outlives any
+          route, and navigating the app must never close the help you opened
+          to read while doing it. */}
+      <HelpDrawer />
       <LocaleSwitchOverlay />
       <Suspense fallback={null}>
         <OverrideMarker />

@@ -91,7 +91,7 @@ Performers:
 | `PerformersView.posts` — every post in the period | `best` + `worst`, capped at `limit` | The middle is never sent; `total_posts` is the count |
 | `PerformersView.curve {sample, confidence, floor}` | — | The maturation curve is internal to the server's scoring |
 | `PerformersView.typical` | — | `against_typical` is already normalised; there is no absolute typical per criterion |
-| `PerformerCriterionId` — `pace`, `save_rate`, `follow_rate` | `by` — `against_typical`, `interactions` | `save_rate`/`follow_rate` are unserviceable; `interactions` is missing from the FE |
+| `PerformerCriterionId` — `pace`, `reach`, `engagement_rate` | `by` — `against_typical`, `interactions` | `save_rate`/`follow_rate` were unserviceable and are now **deleted** (2026-09-06); `interactions` is missing from the FE |
 
 *Resolved, differently from the overview.* The overview's card fitted the wire
 and was reused behind a mapper (`lib/analyticsOverviewView` → `NowSection`). The
@@ -146,9 +146,15 @@ Four things the card decides that the table does not:
   each is measured against named once per column. `1.6×` beside `0.66×` makes
   the reader convert one of them.
 
-The three rows with no wire source at all (`matured`, `curve`/`typical`,
-`save_rate`/`follow_rate`) are design decisions to revisit, not fields to
-request.
+The three rows with no wire source at all were design decisions to revisit
+rather than fields to request, and all three have since been decided.
+`matured` and `curve`/`typical` are served by CON-250 under other names —
+`still_counting` and a per-platform p25/p50/p75 curve — so they become a
+renaming pass on this side when ogen#130 merges. `save_rate` and `follow_rate`
+were **deleted** on 2026-09-06: `/performers` reports neither saves nor
+follows, so `availableCriteria` filtered both out of every render they ever
+had. Saves are the one worth re-adding if the field reaches the ranked rows;
+follows per post is not merely unserved but doubtfully attributable.
 
 ### 2.3 The post surface has no *series* endpoint
 

@@ -974,24 +974,6 @@ export const es: Translation = {
         heldOut_other:
           '{{count}} publicaciones las vio muy poca gente como para que una tasa signifique algo, o no reportaron interacciones.',
       },
-      save_rate: {
-        label: 'Guardados',
-        rawLabel: 'Guardados',
-        suffix: 'por cada 1.000 alcanzadas',
-        heldOut_one:
-          'Una publicación no reportó guardados, o la vio muy poca gente como para dividir.',
-        heldOut_other:
-          '{{count}} publicaciones no reportaron guardados, o las vio muy poca gente como para dividir.',
-      },
-      follow_rate: {
-        label: 'Seguimientos',
-        rawLabel: 'Seguimientos',
-        suffix: 'por cada 1.000 alcanzadas',
-        heldOut_one:
-          'Una publicación no reportó seguimientos, o la vio muy poca gente como para dividir.',
-        heldOut_other:
-          '{{count}} publicaciones no reportaron seguimientos, o las vio muy poca gente como para dividir.',
-      },
     },
 
     quality: {
@@ -2258,28 +2240,31 @@ export const es: Translation = {
       title: 'Todavía no hay campañas',
       subtitle: 'Crea tu primera campaña para empezar',
     },
-    archivedTitle: 'Campañas archivadas',
+    archivedSection: 'Campañas archivadas',
     archivedError: 'No se pudieron cargar las campañas archivadas',
-    showArchived: 'Ver las campañas archivadas',
-    showActive: 'Volver a las campañas activas',
     archivedOn: 'Archivada el {{archivedOn}}',
     unarchive: 'DESARCHIVAR',
-    archivedEmpty: {
-      title: 'No hay nada archivado',
-      subtitle:
-        'Archivar una campaña la quita de la lista sin borrar nada. Sus publicaciones, su calendario y su contenido siguen tal cual.',
-    },
-    archiveCard: {
-      title: 'Archivar',
-      body: 'Quita esta campaña de la lista de campañas y deja de ofrecerla allí donde se archiva trabajo nuevo. No se borra nada, y puedes recuperarla cuando quieras.',
-      action: 'ARCHIVAR CAMPAÑA',
-      confirm: '¿Archivar {{name}}? Podrás recuperarla desde el archivo.',
-    },
+    archivedEmpty:
+      'No hay nada archivado. Archivar una campaña la quita de la lista sin borrar nada: sus publicaciones, su calendario y su contenido siguen tal cual.',
     dangerZone: {
       title: 'Zona de peligro',
-      body: 'Eliminar una campaña borra sus publicaciones y su calendario. Esto no se puede deshacer: archívala si solo quieres quitarla de la lista.',
-      action: 'ELIMINAR CAMPAÑA',
-      confirm: '¿Eliminar {{name}}? Esto no se puede deshacer.',
+      body: 'Dos maneras de dejar de ejecutar esta campaña. Archivarla lo conserva todo y se puede deshacer; eliminarla borra la campaña y sus publicaciones para siempre.',
+      archive: {
+        action: 'ARCHIVAR CAMPAÑA',
+        confirmTitle: '¿Archivar {{name}}?',
+        confirmBody:
+          'La campaña sale de la lista de campañas y deja de ofrecerse allí donde se archiva trabajo nuevo. No se borra nada. Sus publicaciones, su calendario, su brief y su contenido siguen tal cual, y puedes recuperarla desde el archivo cuando quieras.',
+        keep: 'MANTENERLA ACTIVA',
+        confirm: 'ARCHIVAR CAMPAÑA',
+      },
+      delete: {
+        action: 'ELIMINAR CAMPAÑA',
+        confirmTitle: '¿Eliminar {{name}}?',
+        confirmBody:
+          'Se borran la campaña, sus publicaciones y su calendario, y nada en la aplicación puede recuperarlos. Las publicaciones ya publicadas siguen activas en las redes sociales. Archívala si solo quieres quitarla de la lista.',
+        keep: 'MANTENER CAMPAÑA',
+        confirm: 'ELIMINAR CAMPAÑA',
+      },
     },
   },
 
@@ -2316,6 +2301,26 @@ export const es: Translation = {
       delete: 'ELIMINAR',
     },
 
+    delete: {
+      titleNamed: '¿Eliminar «{{title}}»?',
+      title_one: '¿Eliminar este documento?',
+      title_other: '¿Eliminar {{count}} documentos?',
+      bodyCampaign_one:
+        'Este documento se eliminará de forma permanente y esta campaña dejará de escribir a partir de él. Esto no se puede deshacer.',
+      bodyCampaign_other:
+        'Estos documentos se eliminarán de forma permanente y esta campaña dejará de escribir a partir de ellos. Esto no se puede deshacer.',
+      bodyBank_one:
+        'Este documento se eliminará de forma permanente y cualquier campaña que lo use dejará de escribir a partir de él. Esto no se puede deshacer.',
+      bodyBank_other:
+        'Estos documentos se eliminarán de forma permanente y cualquier campaña que los use dejará de escribir a partir de ellos. Esto no se puede deshacer.',
+      keep_one: 'CONSERVAR DOCUMENTO',
+      keep_other: 'CONSERVAR DOCUMENTOS',
+      confirm_one: 'ELIMINAR DOCUMENTO',
+      confirm_other: 'ELIMINAR {{count}} DOCUMENTOS',
+      done_one: '{{count}} documento eliminado',
+      done_other: '{{count}} documentos eliminados',
+    },
+
     tagging: {
       action: 'ETIQUETAR',
       title_one: 'Etiquetar este documento',
@@ -2342,10 +2347,37 @@ export const es: Translation = {
     pdfNote: 'Los PDF se leen en segundo plano, así que terminan después.',
     browse: 'Suelta los archivos aquí o haz clic para elegirlos',
     remove: 'Quitar {{name}}',
+    failed: 'No se ha podido subir',
     cancel: 'CANCELAR',
     submit: 'SUBIR',
     submitCount: 'SUBIR ({{n}})',
     dropInto: 'Añadir a {{scope}}',
+    duplicate: 'Ya está en el banco de contenido como «{{title}}»',
+
+    errors: {
+      type: 'Solo se aceptan archivos .md, .pdf e imágenes.',
+      unsupportedType:
+        'El contenido de este archivo no es de un tipo que podamos leer. Las imágenes tienen que ser JPEG, PNG, WebP o GIF.',
+      tooBig: 'Este archivo supera el límite de {{limit}}.',
+      dimensions:
+        'Esta imagen es demasiado grande para guardarla: el límite es {{max}}.',
+      empty: 'Este archivo está vacío.',
+      notPdf: 'Este archivo no es un PDF legible.',
+      notConfigured: 'Este servidor todavía no puede guardar imágenes.',
+      undecodable: 'No se ha podido leer esta imagen; puede que esté dañada.',
+      server: 'Algo ha fallado al guardar este archivo. Inténtalo de nuevo.',
+    },
+  },
+
+  help: {
+    title: 'Ayuda',
+    back: 'Atrás',
+    related: 'Relacionado',
+    notFound: 'Todavía no hemos escrito este artículo.',
+    resize: 'Cambiar el ancho del panel de ayuda',
+    trigger: {
+      label: '¿Qué es esto?',
+    },
   },
 
   errors: {

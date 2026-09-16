@@ -3,6 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
+import { HelpTrigger } from '@/components/help/HelpTrigger'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { useCampaignPostTypes } from '@/hooks/useCampaignPostTypes'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
@@ -229,6 +230,7 @@ export function PostQuickSettingsBar({
             onChange={setScheduledAt}
             onAddPostLink={onAddPostLink}
           />
+          <HelpTrigger topic="post.schedule" />
           {/* Only where the fork is still ahead of the post. Once it's
               scheduled the status itself records which way it went, and
               SchedulingDetails spells it out ("Auto-publishes …"). */}
@@ -252,7 +254,11 @@ export function PostQuickSettingsBar({
         {/* flex, not a plain block: the badge is inline-flex, so a block
             parent gives it a line box at the bar's 24px line-height and the
             row renders 24.5px against its 20px siblings. */}
-        <div className="shrink-0 flex items-center">
+        <div className="shrink-0 flex items-center gap-1.5">
+          {/* Beside the status it explains, not in the corner: the badge is
+              the thing people ask about. Renders nothing until an article
+              claims the topic. */}
+          <HelpTrigger topic="post.status" />
           <PostStatusBadge
             status={doc.status}
             className="text-sm text-primary-foreground"

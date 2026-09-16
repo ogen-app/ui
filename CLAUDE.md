@@ -15,9 +15,11 @@ Zernio run centrally "under the hood"** — their keys are platform-managed, not
 tenant-configured (CON-97 §10.3, CON-99); tenants still connect their own social
 accounts. The front-end multi-tenancy cutover landed 2026-07 (real
 `current_user` identity, workspace settings, per-instance API-key config
-removed — see [`docs/onboarding.md`](./docs/onboarding.md)). **Current
-front-end priority:** the **Post Assistant + post-editing UIs** (CON-42/61).
-Content-Bank AI images are secondary. See
+removed — see [`docs/onboarding.md`](./docs/onboarding.md)). The Post Assistant
+UI that used to be named here as the current priority **shipped** — CON-61
+closed 2026-08-05, and CON-42 is the backend Genkit flow behind it. **Current
+front-end priority:** the **campaign-scoped Content Bank** (CON-210), then the
+two analytics surfaces waiting on their live-API pass (CON-175/250). See
 [`docs/product.md`](./docs/product.md#direction--current-priorities).
 
 - **Product & domain:** [`docs/product.md`](./docs/product.md)
@@ -28,7 +30,11 @@ Content-Bank AI images are secondary. See
 - **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
 - **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
 - **Activity feed & daily report — proposal:** [`docs/activity.md`](./docs/activity.md)
+- **Every event and notification — trigger, transport, recipients:**
+  [`docs/events.md`](./docs/events.md)
 - **Tasks — proposal:** [`docs/tasks.md`](./docs/tasks.md)
+- **What the front end is waiting on from the API:**
+  [`docs/open-questions.md`](./docs/open-questions.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
@@ -160,6 +166,29 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `remove`, plus `add`, so the client never has to say what an asset already
   carries and two people filing at once don't overwrite each other. The server
   refuses a tag named in both lists rather than picking a winner.
+- **Deleting a document asks, from every way in.** The row's bin, the selection
+  bar and the document's own screen all reach a confirmation that *names* what
+  it is about to delete — one title, or a count. The bin used to delete on one
+  click, on the argument that a row is one of twenty and a mistake is visible
+  immediately; the second half is false, because nothing in the product undoes
+  this. Route a new entry point through `DeleteDocumentsDialog`
+  (`ContentList` holds the state; a single row is a selection of one) rather
+  than calling the mutation, and never add a second path that skips the asking.
+- **A duplicate upload is warned about before it happens, not after.** The
+  server dedupes an identical **image** by checksum within the workspace and
+  answers with the asset it already has — no new row, no changed timestamp —
+  so the upload's entire visible effect is that nothing happens. `UploadModal`
+  hashes each staged image (`lib/fileChecksum`, `crypto.subtle`) and names the
+  document it would resolve to. Images only: nothing else carries a checksum,
+  so a second PDF really is a second document and warning about one would be a
+  promise the server doesn't keep.
+- **An upload refusal is the server's prose, worded by the client.** The upload
+  endpoint answers 201 and reports each file's fate as an English sentence —
+  some of it Go, package prefix and all — so `lib/uploadError` matches the
+  conditions onto catalogue copy and lifts the caps out of the message rather
+  than restating them. Add a case there, not a literal at the call site; an
+  unmatched message falls through to a fallback that strips the package name.
+  The real fix is a per-result `code` on the API (`docs/open-questions.md` S4).
 - **A campaign update is a whole-resource PUT, and the server defaults every
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of
@@ -236,6 +265,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   or seed `useCampaign`. `DELETE` is a soft delete server-side, but that row is
   our safety net and not an undo: there is no restore anywhere, so never write
   copy that hints at one.
+  **On screen the archive is a drawer, not a view.** It is a `Collapse` closed
+  at the foot of the Campaigns list, below the active cards — deliberately no
+  longer an icon in the top-right, because that corner switches between two
+  ways of looking at the same work and this is a small pile at the end of the
+  list. It renders only when there is something in it (the two exceptions, and
+  why, are on the component). The `?archived=true` search param survives with a
+  new job: it *opens* the drawer on arrival, which is what archiving redirects
+  to, so the campaign that just left the list is seen landing in the pile
+  rather than appearing deleted.
+  **Archive and delete sit together in one Danger Zone**, and the card's copy
+  is general — each button opens a modal carrying its own consequences, which
+  is where someone about to act will actually read them.
 - **The campaign's `estimated_post_count` is a rate, not a total.** Since
   CON-182 it means "this many posts per `goal_cadence` period" (`week`/`month`),
   and the server backfilled every campaign to `month` — so an old total of 12 on
@@ -389,9 +430,17 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   browser and behind the same gate.** `?analytics=demo` (or the panel at
   `/flags`) points `/overview`, `/performers` and `/learnings` at
   `services/api/analytics.demo.ts`, because a local API answers
-  `available: false` for all three — nothing in a dev database has been through
-  a refresh sweep — so the cards are otherwise only ever seen in their setup
-  state. `empty` and `unavailable` produce the other two answers the endpoints
+  `available: false` for all three — so the cards are otherwise only ever seen
+  in their setup state. The reason is **not** that the figures are thin: the
+  analytics tables live in a *separate* database (the backend keeps its own
+  `migrations_analytics/` tree, and `20260729000001_drop_post_analytics`
+  removed them from the main one), and `ANALYTICS_DSN` is unset in the local
+  stack — which `config.go` documents as the graceful-disable default. So there
+  is nothing to sweep, rather than nothing swept yet. Wiring one up needs no
+  TimescaleDB and no second container: every Timescale block in those
+  migrations is guarded by `IF EXISTS (… 'timescaledb')`, the API embeds and
+  applies them at boot, and they track their state in `bun_migrations_analytics`
+  precisely so the schema can share the dev Postgres with the control plane. `empty` and `unavailable` produce the other two answers the endpoints
   give. It is **not** the `STUBBED` pattern: these endpoints exist and ship, so
   the demo is off by default even in dev, has to be asked for, folds away
   entirely without `VITE_DEV_TOOLS=1`, and is announced in the corner for as
@@ -617,9 +666,10 @@ behaviour only), `/workspaces`,
 `/invite`, `/plans` with the Plan & billing card, and the flag-gated Tasks and
 Activity features. Islands only: the post editor (`posts.*` — status and
 publish labels, the published link, sources, notes, quality, versions,
-duplicate and the performance card), the Campaigns list (the archive view, the
-posts toolbar and the empty state) and the Content Bank (the image screen, the
-tagging and selection dialogs, the list and page chrome). Everything else is
+duplicate and the performance card), the Campaigns list (the archive drawer and
+its Danger Zone, the posts toolbar and the empty state) and the Content Bank
+(the image screen, the tagging and selection dialogs, the delete confirmation,
+the upload refusals and the list and page chrome). Everything else is
 still hard-coded English (CON-174) · **English is the only released language**: Spanish is
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
@@ -662,6 +712,27 @@ below the server's ceiling, so it wins on purpose. The same ticket left the six
 existing platforms' constraint jsonb untouched, so `lib/platformMedia.ts`'s
 override table cannot be retired either, and an operator editing Instagram's
 image cap changes nothing the editor checks.
+
+**The help centre waits on content, not on an endpoint** (`help-center`,
+CON-173). The drawer, its triggers and the `#help/<key>` deep link are built;
+`services/help` serves fixtures. There is no API in the way — articles live in
+the Sanity project `getogen.com` already runs, and the app reads the **public
+`production` dataset** — so switching on is: seed `production`, register the
+app's origins for CORS (**without** credentials; it only ever reads), and
+replace the two functions in `services/help/index.ts` with the GROQ query. The
+starter articles were bootstrapped into the private `staging` dataset, which a
+browser cannot authenticate against, and that is the whole of why the flag is
+off. Three things to keep hold of when it lands. Help content must **never** go
+through `services/api/http.ts` — every request in there carries
+`credentials: 'include'`, and Sanity is a third party. An article is identified
+by a language-independent `key` and cross-linked by reference rather than by
+title, so a translation cannot break a link; the catalogue holds only the
+drawer's own chrome (`help.*`), because prose is content and belongs in the
+CMS. And the trigger is the feature's only presence on ordinary screens, so it
+reads the flag and passes it to `useHelpTopicMap({ enabled })` — an
+unconditional read would open a cross-origin request from the post editor for a
+drawer that cannot be opened, which fixtures hide right up until the deploy
+that swaps them out.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's
