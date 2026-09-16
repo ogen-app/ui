@@ -260,23 +260,69 @@ Decisions worth knowing:
 ### Still open
 
 - **The naming conventions are still mixed** — dotted (`zernio.sync.ok`) and
-  snake_case (`post_cloned`). `eventRouting.ts` matches both literally. Worth
-  settling backend-side rather than normalising at this boundary forever.
+  snake_case (`post_cloned`). `eventRouting.ts` matches both literally. Raised
+  on CON-285, whose FR7 already rules the *notification* vocabulary dotted: the
+  bus is that same decision applied to a different file, and it is a backend
+  rename rather than a normalisation this boundary should carry forever. The
+  one thing this side cannot absorb is a **silent** rename — a type nothing
+  matches is not an error here, it is a cache that quietly stops invalidating.
 - **Topics are `all`.** Narrowing to the mounted screens would mean
   re-subscribing on every navigation for no privacy gain, since the server
   already scopes to the tenant. Revisit if event volume grows.
 - **`id:` is parsed and unused on `/api/events`.** The hub reserves the field
   and ignores what is sent back, so there is nothing to resume into. The
   notification stream is where replay actually happens.
-- **A user gets 10 concurrent hub subscriptions, across both streams**
-  (`eventhub.Config.MaxSubscribersPerUser`), and a dead connection keeps its
-  slot until the next heartbeat write fails — up to 20s. So a reload orphans
-  two slots where it used to orphan one, and both streams answer 429 until
-  they free. Reproduced on `/api/events` alone, so it predates the second
-  stream; the shared backoff rides it out. A cheaper reap, or a cap counted
-  per topic rather than per user, would remove the wait.
+- **An eviction is still indistinguishable from an outage**, and only an
+  eviction: the 30-minute recycle announces itself now (below), but a
+  connection dropped to make room for another one is closed without a word,
+  because from the hub's side there is nothing left to write to. It is the
+  right recovery — the victim genuinely did lose its stream — so this is a note
+  rather than a gap. It only bites above the cap, where evictions rotate, and
+  the cap is now 30.
 
 ### Closed since
+
+- **Ten leaked slots killed both streams for a user, permanently** (CON-286).
+  The cap was never reclaimed from a client that vanished without a clean
+  close: `SetBodyStreamWriter`'s goroutine only exits on a write *error*, and
+  an 8-byte heartbeat keeps succeeding into the kernel buffer of a half-dead
+  socket — so the goroutine parked forever holding its slot, and the
+  `defer unsubscribe()` that was already the first statement in both handlers
+  never ran. Measured on the local API: 328 connects against 318 disconnects,
+  the first `429` six minutes after boot, the same user still saturated 39
+  hours later. [ogen#142](https://github.com/ogen-app/ogen/pull/142) (merged
+  2026-09-08) fixed it in two layers — at the cap the hub **evicts the user's
+  oldest** subscriber rather than refusing the newcomer, so a reload always
+  opens and closing the evicted channel unparks that zombie's goroutine; and
+  every connection on both streams gets a hard **~30-minute lifetime**, a
+  reaper keyed on age rather than on a write failing.
+  [ogen#152](https://github.com/ogen-app/ogen/pull/152) (2026-09-14) then
+  raised the cap **10 → 30**: the ten were counted per *user* across both
+  streams and every device, so `activity`'s second stream per tab would have
+  made ten tabs five, and past the cap eviction does not settle — each tab's
+  reconnect evicts another's.
+- **A healthy connection ending twice an hour looked like an outage.** The
+  lifetime above closes the stream cleanly, which is exactly what a drop looks
+  like from here, so every recycle ran the full reconnect path —
+  `flushAllPendingSaves`, the whole of `RECONCILE_FILTERS`, and `LiveStatus`
+  reading *"Catching up… / Refreshing what changed while the connection was
+  down"* when nothing had been down. ogen#152 shipped the only thing that can
+  tell them apart, written immediately before the close and deliberately
+  carrying **no `id:` line** so it cannot advance the replay cursor:
+
+  ```
+  event: recycle
+  data: {"reason":"lifetime"}
+  ```
+
+  Both services now report it (`onRecycle`) and `lib/streamConnection` treats
+  the close as a **handover**: reconnect on the spot, no backoff step, no
+  failure counted, and the status holds at `open` rather than passing through
+  `reconnecting`, which is what the indicator warns from. The reconcile itself
+  still runs on `/api/events` — announced or not, this bus keeps no log, so the
+  round trip is a gap an event can fall into — it just runs silently. The
+  notification stream loses nothing either way, since its cursor replays what
+  landed while it was away.
 
 - **A run that outlives the tab has no UI.** Closed by CON-242: the notification
   table records what finished, `GET /api/notifications/stream` replays it from
