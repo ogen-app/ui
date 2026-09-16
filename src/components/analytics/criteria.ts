@@ -67,7 +67,7 @@ export interface Criterion {
 export const MIN_REACH_FOR_RATE = 300
 
 const rate =
-  (measure: 'interactions' | 'saves' | 'followers', per: number) =>
+  (measure: 'interactions', per: number) =>
   (post: RankedPost): number | null => {
     const reach = post.metrics.reach ?? 0
     const earned = post.metrics[measure]
@@ -112,27 +112,7 @@ export const CRITERIA: Criterion[] = [
     value: rate('interactions', 1),
     qualifier: 'reach',
   },
-  {
-    id: 'save_rate',
-    format: (_t, v) => rounded(v),
-    value: rate('saves', 1_000),
-    qualifier: 'reach',
-  },
-  {
-    id: 'follow_rate',
-    format: (_t, v) => rounded(v),
-    value: rate('followers', 1_000),
-    qualifier: 'reach',
-  },
 ]
-
-/** One decimal, in the active language's own notation. */
-function rounded(value: number): string {
-  return formatNumber(value, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  })
-}
 
 /**
  * The least a view has to carry to be ranked: the posts, and whether there is a

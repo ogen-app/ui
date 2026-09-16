@@ -79,30 +79,37 @@ const FEATURE_FLAGS = {
    *    `before` actually bounding (the client sends the highest seq it has
    *    been shown, and a real bound is what stops it marking a row that
    *    arrived after the click), and paging past page one.
-   * 2. **Fan-out.** Every producer writes to the thing's `created_by`
-   *    (`submit_post_to_zernio.go`), so a post failing to publish is news to
-   *    whoever made it and to nobody else. The derived entry it replaced was
-   *    visible to the whole workspace, so turning this on as it stands
-   *    *narrows* who hears about a failure. `notify.EmitToUsers` already
-   *    exists and the connection-expiry producer reaches every owner with it —
-   *    this is a decision at one call site, not a missing capability.
-   * 3. **`post.published` is emitted, and CON-224 said it must not be.**
-   *    Successful auto-publishing is the highest-volume thing that happens, and
-   *    rolling it into one computed daily entry is the argument the whole
-   *    report rests on — a workspace posting three times a day across five
-   *    channels writes fifteen "it worked" rows, which is how a badge stops
-   *    being read. The client does *not* filter them: the count comes from the
-   *    server, and a feed hiding rows the badge still counts is worse than a
-   *    noisy feed. It needs deciding at the emit site.
+   * 2. **Fan-out — decided 2026-09-06, unimplemented.** Every producer writes
+   *    to the thing's `created_by` (`submit_post_to_zernio.go`), so a post
+   *    failing to publish is news to whoever made it and to nobody else. The
+   *    derived entry it replaced was visible to the whole workspace, so
+   *    turning this on as it stands *narrows* who hears about a failure. The
+   *    ruling matches CON-285 FR8: **`post.publish_failed` goes to the
+   *    workspace** — a failed publish is workspace business, not the author's
+   *    private problem. `notify.EmitToUsers` already exists and the
+   *    connection-expiry producer reaches every owner with it, so this is one
+   *    call site, not a missing capability.
+   * 3. **`post.published` — decided 2026-09-06: it stays, workspace-wide.**
+   *    CON-224 said it must not be emitted, and the volume argument is real:
+   *    a workspace posting three times a day across five channels writes
+   *    fifteen "it worked" rows, times the member count once fan-out lands,
+   *    which is how a badge stops being read. It is kept anyway, because the
+   *    opposite failure is worse — people schedule posts and then hear
+   *    nothing, and a system silent when publishing works is indistinguishable
+   *    from one whose scheduler is broken. Muting a channel is a user's
+   *    choice; never recording the fact is ours. The volume belongs to
+   *    notification preferences and digests (CON-242 §12).
    * 4. **A producer for "never published".** `not_published` is a real outcome
    *    with no notification type, so it now leaves no record at all. It is
    *    counted in the day's report and nowhere else.
    *
-   * 1 is now the cheapest of the four and nothing else is blocked on it; 2 and
-   * 3 are the ones that decide whether this reads as better than Phase 1 or
-   * worse, since as it stands a post's author hears about every success and
-   * nobody else hears about the failures. None of them is a reason to change
-   * the client.
+   * 2 and 3 are answered and now wait on CON-285 with the rest of the producer
+   * set; neither is a reason to change the client, since the feed renders
+   * whatever rows arrive and `post.*` copy is already in the catalogue. 1 is
+   * the cheapest of what is left and nothing else is blocked on it. The whole
+   * recipient taxonomy — every type, its trigger, its transport and who hears
+   * it — is written out in `docs/events.md` rather than reconstructed from
+   * here.
    *
    * **Answered since:** whether the `/api/events` crash reaches this stream —
    * it does not, and it no longer reaches `/api/events` either. CON-158
@@ -112,26 +119,34 @@ const FEATURE_FLAGS = {
    * writer. Re-read against `ogen` `main` 2026-09-05; finding 5 in
    * `docs/sse.md` carries the diagnosis and the fix.
    *
-   * One thing the pass turned up that is **not** this feature's fault, but is
-   * made twice as likely by it, and is worse than it first read: `eventhub`
-   * caps a user at 10 concurrent subscriptions across *both* streams, and the
-   * slots **leak**. This was written as "a dropped connection holds its slot
-   * until the server's next heartbeat write notices (20s)… the backoff rides
-   * it out". It does not. Measured against the local API on 2026-09-06: 328
-   * `subscriber connected` against 318 `subscriber disconnected`, with exactly
-   * ten ids connected and never released — saturated six minutes after the
-   * container booted and still saturated 39 hours later, 1283 × `429
-   * eventhub: subscriber limit exceeded for user`. `lib/streamConnection` is
-   * doing its job (backoff caps at 30s and retries, which is exactly the
-   * cadence in the log); there is simply nothing to reconnect to.
+   * **Also fixed since — CON-286, the `eventhub` subscriber leak**, which this
+   * feature did not cause but made twice as likely: a user was capped at 10
+   * concurrent subscriptions across *both* streams and the slots were never
+   * reclaimed, so ten leaked connections wedged both streams shut permanently
+   * — no cross-tab invalidation and no notifications until the API restarted.
+   * ogen#142 made the cap self-healing (at the limit the hub evicts the user's
+   * **oldest** subscription rather than refusing the newcomer, so a reload
+   * always opens a stream) and added a hard **30-minute connection lifetime**
+   * to reclaim what a dead client leaves behind; ogen#152 raised the cap
+   * **10 → 30**, because ten counted across both streams and every device made
+   * this feature's second stream the difference between ten tabs and five.
    *
-   * So the failure is not degraded live updates, it is **none** — no cross-tab
-   * invalidation and no notifications, permanently, for that user until the
-   * API restarts. A reload orphaning two slots where it used to orphan one is
-   * what makes the ten fill twice as fast. Fixing the reap is the ask; a
-   * tighter cap alone would make it worse. It also blocks the last of the
-   * round trip in 1 above, since the replay cannot be watched on a stream that
-   * never opens.
+   * What that leaves is **ours**. A clean close mid-session is now expected
+   * rather than exceptional — twice an hour per tab, plus any eviction — and a
+   * clean close is exactly what a dropped connection looks like, so every
+   * recycle currently runs the full recovery path: flush autosaves, invalidate
+   * the routing table, and show *"Catching up…"* when nothing was down.
+   * ogen#152 shipped the one thing that can tell them apart, a frame sent
+   * before the close:
+   *
+   *     event: recycle
+   *     data: {"reason":"lifetime"}
+   *
+   * deliberately with **no `id:` line**, so it does not advance the replay
+   * cursor. Nothing in `lib/streamConnection` listens for it yet. Handling it
+   * is not a blocker for turning this flag on — the recovery is correct, only
+   * noisy — but it is the honest version, and it gets noisier the moment a
+   * second stream per tab is what this flag switches on.
    *
    * The daily report is the half that was never a stand-in: it is a count over
    * posts, correct as computed, and it is untouched by all of the above.
@@ -236,12 +251,15 @@ const FEATURE_FLAGS = {
    * The two workspace-wide surfaces (`components/analytics`) needed no campaign
    * dimension and have shipped ahead of this one: `analytics-overview` is on,
    * with the mappers from these wire shapes onto the view models written and
-   * tested. Three of their fields still have no wire source at all — per-post
-   * `matured`, the performers' `curve`/`typical`, and the `save_rate` and
-   * `follow_rate` criteria (`/performers` reports no saves or follows) — and
-   * each surface states that where it would otherwise draw them. This flag is
-   * waiting on the campaign dimension, nothing else.
-   * See `docs/analytics-contract.md`.
+   * tested. Two of their fields still have no wire source — per-post `matured`
+   * and the performers' `curve`/`typical` — and each surface states that where
+   * it would otherwise draw them; CON-250 serves both under other names
+   * (`still_counting`, and a p25/p50/p75 curve), so that is a renaming pass
+   * once ogen#130 merges rather than an ask. The third, the `save_rate` and
+   * `follow_rate` criteria, was **deleted** on 2026-09-06 instead of left
+   * waiting: `/performers` reports neither, so both were filtered out of every
+   * render they ever had. This flag is waiting on the campaign dimension
+   * (CON-288), nothing else. See `docs/analytics-contract.md`.
    */
   'campaign-analytics': false,
 

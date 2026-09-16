@@ -1273,24 +1273,6 @@ export const en = {
         heldOut_other:
           '{{count}} posts were seen by too few people for a rate to mean anything, or reported no interactions.',
       },
-      save_rate: {
-        label: 'Saves',
-        rawLabel: 'Saves',
-        suffix: 'per 1,000 reached',
-        heldOut_one:
-          'One post did not report saves, or was seen by too few people to divide.',
-        heldOut_other:
-          '{{count}} posts did not report saves, or were seen by too few people to divide.',
-      },
-      follow_rate: {
-        label: 'Follows',
-        rawLabel: 'Follows',
-        suffix: 'per 1,000 reached',
-        heldOut_one:
-          'One post did not report follows, or was seen by too few people to divide.',
-        heldOut_other:
-          '{{count}} posts did not report follows, or were seen by too few people to divide.',
-      },
     },
 
     quality: {

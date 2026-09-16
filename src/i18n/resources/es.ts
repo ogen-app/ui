@@ -974,24 +974,6 @@ export const es: Translation = {
         heldOut_other:
           '{{count}} publicaciones las vio muy poca gente como para que una tasa signifique algo, o no reportaron interacciones.',
       },
-      save_rate: {
-        label: 'Guardados',
-        rawLabel: 'Guardados',
-        suffix: 'por cada 1.000 alcanzadas',
-        heldOut_one:
-          'Una publicación no reportó guardados, o la vio muy poca gente como para dividir.',
-        heldOut_other:
-          '{{count}} publicaciones no reportaron guardados, o las vio muy poca gente como para dividir.',
-      },
-      follow_rate: {
-        label: 'Seguimientos',
-        rawLabel: 'Seguimientos',
-        suffix: 'por cada 1.000 alcanzadas',
-        heldOut_one:
-          'Una publicación no reportó seguimientos, o la vio muy poca gente como para dividir.',
-        heldOut_other:
-          '{{count}} publicaciones no reportaron seguimientos, o las vio muy poca gente como para dividir.',
-      },
     },
 
     quality: {

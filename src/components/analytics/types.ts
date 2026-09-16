@@ -514,13 +514,18 @@ export type PacePlacement = 'ahead' | 'usual' | 'behind'
  * What "best" and "worst" are being measured by. The rules behind each one live
  * in `criteria.ts`; the ids are here because the view carries a typical value
  * keyed by them.
+ *
+ * There were two more — `save_rate` and `follow_rate` — and they were deleted
+ * rather than left waiting (2026-09-06). `/performers` reports neither saves
+ * nor follows, so `availableCriteria` filtered both out of every render they
+ * ever had; keeping them meant carrying a vocabulary, two catalogue entries and
+ * a translation for questions the product could not answer. Saves are the one
+ * worth having back — the data exists on `post_analytics_current` and CON-250
+ * surfaces it per post — and re-adding a criterion here is a small change once
+ * the field is on the ranked rows. Follows per post is not merely unserved but
+ * doubtfully attributable, and is not coming back.
  */
-export type PerformerCriterionId =
-  | 'pace'
-  | 'reach'
-  | 'engagement_rate'
-  | 'save_rate'
-  | 'follow_rate'
+export type PerformerCriterionId = 'pace' | 'reach' | 'engagement_rate'
 
 /**
  * The connected account a post went out on.
