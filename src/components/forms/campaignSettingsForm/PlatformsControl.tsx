@@ -384,7 +384,7 @@ function PlatformLabel({
   // Set in Workspace Settings, not here: this is the workspace's decision
   // showing through, so the campaign can see how its posts will go out
   // without having to leave the page to find out.
-  const autoPublish = useAutoPublishState(view.platform.id)
+  const autoPublish = useAutoPublishState(view.info.zernioId)
 
   return (
     // The logo alone carries "not targeted yet". The text used to fade with
