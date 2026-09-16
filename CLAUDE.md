@@ -850,15 +850,49 @@ surfaces talk *about* the plan rather than being gated by it: the **Plan &
 billing card** in Workspace Settings (`components/workspace-settings/
 PlanSection`) and **`/plans`** behind its CHANGE PLAN. Choosing a tier
 re-answers every `useEntitlement` in the app, which is how the gating gets
-looked at before the API exists. **Waiting on** `GET /api/entitlements`,
-`GET /api/tiers`, `POST /api/workspace/plan`, `GET /api/billing` and
-`POST /api/billing/portal` — contracts in `services/api/entitlements.ts`,
-`tiers.ts` and `billing.ts`, all asserted by their tests, and all tested
-against the *wire* path (`fetchWorkspacePlan`, `fetchBilling`) so the stub
-can't make a contract go dark. CON-208 (tenant tiers and groups) and CON-86
-(usage metering) are done server-side, so the tiers and the counters exist;
-what is missing is a workspace-scoped REST read that puts them together, plus a
-`suspended` flag on the resources a downgrade makes read-only.
+looked at before the API exists.
+
+**The plan read has landed, and it is not the one this client designed**
+(CON-243, PR ogen#150). `GET /api/me/entitlements` answers — the invented
+`GET /api/entitlements` 404s and is gone — with a resolved tier **version**:
+`tier_id` + `version_id`, an immutable allowance set, price rows in `net_minor`
+minor units, and every entitlement enriched with the server's feature catalog
+(name, description, category, `is_material`, `reset`). Three consequences that
+are each a thing not to undo:
+
+- **The keys are the server's, verbatim.** `team_seats`, `active_campaigns`,
+  `plan_runs_per_month` — not the `seats`/`campaigns`/`content_plan_runs` this
+  build used to ask about. That rename had no visible symptom, which is the
+  point: under default-allow an unknown key does not fail, it silently unlocks
+  the feature it was meant to gate. `services/api/entitlements.seed.json` holds
+  a verbatim copy of the catalog and its test asserts every `EntitlementKey`
+  against it, so the next rename fails loudly. Re-sync it by re-reading
+  `GET /api/public/pricing`, never by editing it to make the test pass.
+- **Allowances arrive with no tally.** There is no usage read anywhere on the
+  API and CON-243 has one as explicitly future, so `Usage.used` is
+  `number | null` and `null` means *uncounted* — a third thing beside unlimited
+  (`limit: null`) and ungated (key absent). Never default it to `0`: that is a
+  claim nobody made, and it unlocks a control that may well be exhausted. An
+  uncounted limit therefore cannot produce `denied: 'limit'`, which is the
+  resolve-towards-offering rule the whole file follows. `entitlements.seed.ts`
+  supplies held-still counters meanwhile, applied in `getWorkspacePlan` and
+  deliberately not in `fetchWorkspacePlan` — so no test of the wire can agree
+  with something the endpoint never said.
+- **The subscription half is not on this read.** No display name (derived from
+  the slug until the server sends one), no `effective_from`, no renewal, no
+  scheduled change — Ogen holds no subscription state by design (CON-243 §5).
+  Screens omit those lines rather than softening them.
+
+**Still waiting on** a usage read, a tier name on the payload, `GET /api/tiers`
+(what shipped instead is the unauthenticated `GET /api/public/pricing`, which
+carries only *purchasable* tiers — so the version a workspace is grandfathered
+onto is never in it), `POST /api/workspace/plan` (no counterpart at all: a
+version is assigned by an operator through Harbor's gRPC `PlanAdminService`,
+CON-294), `GET /api/billing` / `POST /api/billing/portal`, published Pro and Max
+versions, and a `suspended` flag on the resources a downgrade makes read-only.
+Contracts live in `services/api/entitlements.ts`, `tiers.ts` and `billing.ts`,
+all asserted by their tests against the *wire* path (`fetchWorkspacePlan`,
+`fetchBilling`) so the stub can't make a contract go dark.
 
 **`/plans` deliberately sits outside `_authenticated`**, like `/workspaces`: it
 reads as a full-screen modal — one X, top right — because it is a detour every

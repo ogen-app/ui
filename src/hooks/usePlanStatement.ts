@@ -12,12 +12,16 @@ import type { TierSnapshot } from '@/types/entitlements'
  * description. What must not vary between surfaces is the wording, and that
  * is what lives here.
  *
- * **What happens next has three answers, in this order.** A scheduled change
+ * **What happens next has four answers, in this order.** A scheduled change
  * outranks a renewal, because "you move to Trial on the 22nd" is the news, and
  * a workspace with a downgrade pending would otherwise be told its plan
  * auto-renews — which is the opposite of what is about to happen. Then a
  * renewal date, if there is one. Then, for a tier nobody pays for, the day it
- * started, which is all there is to say.
+ * started. Then **nothing at all**, which is the honest answer against the real
+ * endpoint: `GET /api/me/entitlements` carries no start date, no renewal and no
+ * pending change (CON-243), so a workspace reading its own plan today gets the
+ * headline and silence underneath. The alternative was a sentence built on a
+ * date nobody sent.
  *
  * Every date here is display data. Nothing branches on one: the *fact* of a
  * scheduled change and its direction both come off the server, and the clock
@@ -69,8 +73,12 @@ export function usePlanStatement(tier: TierSnapshot | undefined) {
     }
   }
 
-  return {
-    headline,
-    timing: t('tiers.since', { when: formatDay(tier.effectiveFrom, locale) }),
+  if (tier.effectiveFrom) {
+    return {
+      headline,
+      timing: t('tiers.since', { when: formatDay(tier.effectiveFrom, locale) }),
+    }
   }
+
+  return { headline, timing: null }
 }

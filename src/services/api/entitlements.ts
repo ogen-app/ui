@@ -1,24 +1,27 @@
 import { apiJson } from './http'
+import { withSeededUsage } from './entitlements.seed'
 import { STUBBED, stubWorkspacePlan } from './tiers.stub'
-import { usagePeriod } from '@/lib/entitlements'
+import { usageReset } from '@/lib/entitlements'
 import type {
+  CatalogEntry,
   RawEntitlement,
-  ScheduledTierChange,
   TierSnapshot,
+  TierVersionPrice,
   WorkspacePlan,
 } from '@/types/entitlements'
 
 /**
- * The workspace's tier and what it allows (CON-232).
+ * The workspace's tier version and what it allows (CON-232, CON-243).
  *
- * **Nothing on the API answers this yet.** This file is the contract the client
- * is written against, the way `emailPreferences.ts` was — its test asserts the
- * shape, so the two move together, and the feature stays behind the
- * `workspace-tiers` flag until the endpoint exists.
+ * **This endpoint exists and is deployed** — on the local API and on
+ * `api.dev.getogen.com`. What follows is the contract as *observed*, not as
+ * proposed: the file previously described a `GET /api/entitlements` that was
+ * invented here and that the server answers 404 for. CON-243 shipped something
+ * differently shaped, and this is it.
  *
  * ## The contract
  *
- *     GET /api/entitlements
+ *     GET /api/me/entitlements
  *
  * Flat and workspace-scoped, like `/api/tenants/current` and `/api/users`: it
  * takes no workspace id and answers for whichever workspace the request's
@@ -27,70 +30,61 @@ import type {
  * why a button is locked.
  *
  *     200 {
- *       "tier": {
- *         "id": "tier_pro_2026_01_01",
- *         "name": "Pro",
- *         "effective_from": "2026-01-01T00:00:00Z",
- *         "billing_period": "month",
- *         "renews_at": "2026-09-22T00:00:00Z",
- *         "scheduled_change": {
- *           "id": "tier_trial_2026_09_01",
- *           "name": "Trial",
- *           "effective_from": "2026-09-14T00:00:00Z",
- *           "direction": "downgrade"
- *         }
- *       },
- *       "entitlements": {
- *         "campaigns":         {"limit": 5,  "used": 3},
- *         "content_plan_runs": {"limit": 10, "used": 7,
- *                               "period": "month",
- *                               "resets_at": "2026-09-01T00:00:00Z"},
- *         "media_storage_bytes": {"limit": 1073741824, "used": 402653184},
- *         "multiple_accounts_per_platform": {"allowed": false},
- *         "seats": {"limit": null, "used": 4}
- *       }
+ *       "tier_id": "trial",
+ *       "version_id": "ttv-trial-v1",
+ *       "version": 1,
+ *       "status": "active",
+ *       "purchasable": true,
+ *       "change_reason": "Initial published version.",
+ *       "prices": [
+ *         {"currency": "EUR", "billing_interval": "month", "net_minor": 0}
+ *       ],
+ *       "entitlements": [
+ *         {"key": "team_seats", "name": "Team seats & invitations",
+ *          "category": "workspace_team", "linear_issue": "CON-26",
+ *          "status": "live", "value_type": "numeric", "is_material": true,
+ *          "reset": "standing", "description": "Owner / member roles, email invites.",
+ *          "value": 1}
+ *       ]
  *     }
  *
- * ### What each part has to hold, and why
+ * ### What each part holds, and what it does not
  *
- * **`tier` is a resolved snapshot, not a lookup key.** Tiers are versioned and
- * their contents are configurable, and a workspace keeps the version it bought
- * — so `name` is a label two different workspaces can share while holding
- * different allowances. The client must never map a name to a number, which
- * means the server has to send the numbers. `id` names the *version*; the
- * client treats it as opaque.
+ * **It answers with a tier *version*, and that is the whole design.** CON-243
+ * made a tier's price and entitlement set an immutable versioned artifact, and a
+ * workspace is bound to one of them over a time range. `version_id` names the
+ * artifact, `tier_id` names the tier it belongs to; the client treats both as
+ * opaque and ranks neither.
  *
- * **`billing_period` and `renews_at` are here, and the card is not.** They are
- * half of what the plan is *called* — "Max, billed monthly, renews on the 22nd"
- * — and every member is entitled to that. What a member is not entitled to is
- * the price, the card and the invoices, which is why those sit behind the
- * owner-only `/api/billing` instead (see `billing.ts`). Both are `null` on a
- * tier nobody pays for, and `renews_at` is `null` again once a subscription is
- * cancelled: it then has an *end* date, which is the billing payload's to
- * report because "renews on the 22nd" and "ends on the 22nd" must not be the
- * same sentence.
+ * **Entitlements are an array of catalog entries, not a map of verdicts.** Each
+ * carries the feature's own metadata — name, description, category,
+ * `is_material` — alongside the one thing that varies by tier, `value`. That is
+ * more than this client asked for and it is worth having: it is what lets a
+ * comparison table render a feature the build has never heard of.
  *
- * **`scheduled_change` is required, not derivable.** A downgrade takes effect
- * at the next billing boundary rather than on the click, so two tiers are live
- * at once: the one in force and the one coming. The client cannot work the
- * second one out from dates, and must not try — that would make a wrong system
- * clock into a billing decision. `direction` comes from the server too, because
- * only the server knows how its configurable tiers rank, and "Pro starts on the
- * 14th" and "you drop to Trial on the 14th" are different warnings.
+ * **`value` is typed by `value_type`.** `boolean` is a verdict, `numeric` is an
+ * allowance, and **`null` on a numeric is unlimited**. A key absent from the
+ * array is ungated, which is a third thing again — the distinction the whole
+ * seam rests on, and the server keeps it.
  *
- * **Every limit ships with its counter.** A limit alone can only be enforced
- * after the fact: the client could say "5 campaigns" but not "you have 5", so
- * it could only apologise after the click instead of disabling the control.
- * CON-86 already meters this. `used` in the same object beats a second endpoint
- * that would have to be kept in step with this one.
+ * **`reset` is the catalog's word, not a billing period**: `standing` for a
+ * ceiling that never refills, `monthly`, `total` for a lifetime cap (Trial's 15
+ * posts), `per_post`. Narrowed by `usageReset`, because the catalog is edited
+ * server-side and will grow a word before a deployed client hears of it.
  *
- * **`limit: null` is unlimited, and the field's absence is not.** Absence
- * already means ungated — a key the settings don't mention is a feature nobody
- * decided to charge for, and the client allows it. Unlimited has to be said out
- * loud or the UI cannot print the word for the tier that paid for it.
+ * **There are no counters, and that is the gap that matters.** Nothing on the
+ * API reports what a workspace has *used* — CON-243 has a usage read as
+ * explicitly future — so a limit arrives with nothing to measure it against.
+ * `entitlements.seed.ts` supplies held-still ones meanwhile, applied in
+ * `getWorkspacePlan` and deliberately not here; `Usage.used` is `number | null`
+ * so the day it lands, nothing changes but the parse.
  *
- * **Unknown keys are ignored, missing keys are allowed.** The tier list is
- * edited by hand and will grow keys before a deployed client hears of them.
+ * **There is no name, no start date, and no scheduled change.** The payload
+ * carries no display name for the tier (raised on CON-243; Serhii offered to
+ * add one), no `effective_from` — the date lives in `tenant_tier_assignments`,
+ * which this read does not expose — and no pending-change state, because a
+ * version is assigned by an operator through Harbor rather than announced in
+ * advance. `name` is derived from the slug below; the other two are `null`.
  *
  * ### The half that does not live here
  *
@@ -102,105 +96,165 @@ import type {
  * tab. See `Suspension` in `types/entitlements.ts`.
  */
 
-type ScheduledChangeBody = {
-  id: string
-  name: string
-  effective_from: string
-  direction: 'upgrade' | 'downgrade'
+type PriceBody = {
+  currency: string
+  billing_interval: 'month' | 'year'
+  net_minor: number
+  country_code?: string | null
 }
 
 export type EntitlementBody = {
-  allowed?: boolean
-  limit?: number | null
-  used?: number
-  period?: string | null
-  resets_at?: string | null
+  key: string
+  name?: string
+  category?: string
+  linear_issue?: string
+  status?: string
+  value_type?: string
+  is_material?: boolean
+  reset?: string | null
+  description?: string
+  value?: number | boolean | null
 }
 
 export type PlanBody = {
-  tier: {
-    id: string
-    name: string
-    effective_from: string
-    billing_period?: 'month' | 'year' | null
-    renews_at?: string | null
-    scheduled_change?: ScheduledChangeBody | null
-  }
-  entitlements?: Record<string, EntitlementBody> | null
+  tier_id: string
+  version_id: string
+  version?: number
+  status?: string
+  purchasable?: boolean
+  change_reason?: string | null
+  prices?: PriceBody[] | null
+  entitlements?: EntitlementBody[] | null
 }
 
-function scheduledFromWire(body: ScheduledChangeBody): ScheduledTierChange {
+/**
+ * A readable name for a tier the server did not name.
+ *
+ * Derived rather than looked up in a table, on purpose: a table of tier names
+ * held on the client is editorial copy that can go stale against the tier list
+ * and then disagree with the invoice. A title-cased slug cannot — it is wrong
+ * only in the way the slug is wrong, and it disappears entirely the day the
+ * payload carries a real one.
+ */
+function nameFromSlug(tierId: string): string {
+  return tierId
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+function priceFromWire(body: PriceBody): TierVersionPrice {
   return {
-    id: body.id,
-    name: body.name,
-    effectiveFrom: body.effective_from,
-    direction: body.direction,
+    amount: body.net_minor,
+    currency: body.currency,
+    interval: body.billing_interval,
+    countryCode: body.country_code ?? null,
   }
 }
 
-function tierFromWire(body: PlanBody['tier']): TierSnapshot {
+function tierFromWire(body: PlanBody): TierSnapshot {
   return {
-    id: body.id,
+    id: body.version_id,
+    tierId: body.tier_id,
+    name: nameFromSlug(body.tier_id),
+    purchasable: body.purchasable === true,
+    changeReason: body.change_reason ?? '',
+    prices: (body.prices ?? []).map(priceFromWire),
+    // The three the payload does not carry. Null rather than a default: there is
+    // no neutral billing period, and a start date or a renewal invented here
+    // would be printed as though somebody had looked it up.
+    effectiveFrom: null,
+    billingPeriod: null,
+    renewsAt: null,
+    scheduled: null,
+  }
+}
+
+function catalogFromWire(body: EntitlementBody): CatalogEntry | undefined {
+  if (body.name === undefined) return undefined
+  return {
     name: body.name,
-    effectiveFrom: body.effective_from,
-    // Both absent on a free tier, and absent is the answer rather than a
-    // default: there is no such thing as a neutral billing period, and a
-    // renewal date invented for a plan nobody pays for would be printed.
-    billingPeriod: body.billing_period ?? null,
-    renewsAt: body.renews_at ?? null,
-    scheduled: body.scheduled_change
-      ? scheduledFromWire(body.scheduled_change)
-      : null,
+    description: body.description ?? '',
+    category: body.category ?? '',
+    isMaterial: body.is_material === true,
   }
 }
 
 /**
- * Camel-cases one entry and keeps `undefined` meaning *unsaid*.
+ * One catalog entry as an allowance, keeping every absence meaning *unsaid*.
  *
- * The distinction is load-bearing on both fields: an absent `allowed` is a
- * metered key stating a limit rather than a verdict, and an absent `limit` is
- * an unmetered one — while `limit: null` is unlimited. Defaulting either to a
- * value here would erase the difference before `resolveEntitlement` sees it.
+ * The three kinds of absence the seam rests on all survive this: a key missing
+ * from the array never reaches here at all (ungated), a `boolean` entry states
+ * `allowed` and no `limit` (unmetered), and `limit: null` is unlimited. `used`
+ * is set to `null` rather than left off — the key *is* metered, it has simply
+ * never been counted, and those are different facts.
  */
 export function entitlementFromWire(body: EntitlementBody): RawEntitlement {
   const entry: RawEntitlement = {}
-  if (body.allowed !== undefined) entry.allowed = body.allowed
-  if (body.limit !== undefined) entry.limit = body.limit
-  if (body.used !== undefined) entry.used = body.used
-  if (body.period !== undefined) entry.period = usagePeriod(body.period)
-  if (body.resets_at !== undefined) entry.resetsAt = body.resets_at
+  const catalog = catalogFromWire(body)
+  if (catalog) entry.catalog = catalog
+
+  if (body.value_type === 'boolean') {
+    // A verdict, with nothing to meter. An unset value reads as granted, the
+    // same way an absent key does — this file never narrows towards denial.
+    entry.allowed = body.value !== false
+    return entry
+  }
+
+  // Numeric, or a `value_type` this build has not heard of that still sent a
+  // number. Anything else is metadata about a feature with no allowance stated,
+  // which is ungated and says so by carrying neither field.
+  if (typeof body.value === 'number' || body.value === null) {
+    entry.limit = body.value
+    entry.used = null
+    entry.reset = usageReset(body.reset)
+    entry.resetsAt = null
+  }
   return entry
 }
 
 export function planFromWire(body: PlanBody): WorkspacePlan {
   const entitlements: Record<string, RawEntitlement> = {}
-  for (const [key, value] of Object.entries(body.entitlements ?? {})) {
-    entitlements[key] = entitlementFromWire(value)
+  for (const entry of body.entitlements ?? []) {
+    if (entry.key) entitlements[entry.key] = entitlementFromWire(entry)
   }
-  return { tier: tierFromWire(body.tier), entitlements }
+  return { tier: tierFromWire(body), entitlements }
 }
 
 /**
  * The request itself, kept as its own function so the contract above stays
  * asserted while the stub is standing in for it (`entitlements.test.ts` drives
  * this one). Without the split, switching the app onto the stub would quietly
- * stop testing the shape we are asking the back end for — which is the one
- * thing this file exists to hold still.
+ * stop testing the shape the server actually sends — which is the one thing
+ * this file exists to hold still.
+ *
+ * It returns the payload as it arrives, counters and all — which is to say
+ * without any. Seeding those is `getWorkspacePlan`'s job, one layer out, so
+ * that no test of this function can agree with something the endpoint never
+ * said.
  */
 export function fetchWorkspacePlan(): Promise<WorkspacePlan> {
   return apiJson<PlanBody>(
-    '/api/entitlements',
+    '/api/me/entitlements',
     'Unable to read your plan',
   ).then(planFromWire)
 }
 
 /**
- * The `STUBBED` branch is scaffolding: `tiers.stub.ts` answers this off a JSON
- * seed and `localStorage` so the plan screen can drive the gating before the
- * endpoint exists. It returns the same wire body and goes through the same
- * parser, so the only thing the real endpoint changes is which branch runs.
- * See `tiers.stub.ts`.
+ * The plan the app reads.
+ *
+ * Two pieces of scaffolding sit here, and they come out on different days.
+ * `STUBBED` points the call at `tiers.stub.ts`, which answers a whole tier
+ * matrix off a JSON seed so the plan screen can be driven before there is any
+ * way to *change* tier — there is no plan-selection endpoint, only Harbor.
+ * `withSeededUsage` fills in the counters the real endpoint does not send.
+ *
+ * The second outlives the first: once the stub goes, the app reads the server's
+ * real allowances and still has no tally to put beside them until the usage read
+ * lands. See `entitlements.seed.ts`.
  */
 export function getWorkspacePlan(): Promise<WorkspacePlan> {
-  return STUBBED ? stubWorkspacePlan().then(planFromWire) : fetchWorkspacePlan()
+  const plan = STUBBED ? stubWorkspacePlan() : fetchWorkspacePlan()
+  return plan.then(withSeededUsage)
 }

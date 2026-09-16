@@ -1,20 +1,32 @@
 import type { BillingBody } from './billing'
-import type { EntitlementBody, PlanBody } from './entitlements'
-import type { TierBody } from './tiers'
+import type { RawEntitlement, WorkspacePlan } from '@/types/entitlements'
+import type { Tier } from '@/types/tiers'
 
 /**
  * A tier list and a plan, with no server behind either (CON-232).
  *
  * **This whole file is scaffolding.** It exists so the plan screen and the
- * entitlement seam can be built and driven before `GET /api/entitlements` and
- * `GET /api/tiers` answer — pick a tier here and every gated surface in the app
- * changes with it, which is the only way to see whether the gating reads right.
- * Delete it, and the `STUBBED` branch in `tiers.ts` and `entitlements.ts`, on
- * the commit that wires the real endpoints.
+ * entitlement seam can be built and driven before there is any way to *choose* a
+ * tier — pick one here and every gated surface in the app changes with it, which
+ * is the only way to see whether the gating reads right. Delete it, and the
+ * `STUBBED` branch in `tiers.ts` and `entitlements.ts`, on the commit that wires
+ * the real endpoints.
  *
  * A JSON seed plus `localStorage`, not a fetch-level mock: the request layer
  * stays honest, so nothing can pass a test against an interceptor and then fail
  * against the server. Same shape the rest of the stubs in this app take.
+ *
+ * **It answers with `WorkspacePlan`, not with a wire body, and that changed with
+ * CON-243.** It used to emit the payload of `GET /api/entitlements` and go
+ * through the real parser, which was the better arrangement while that endpoint
+ * was a proposal. It turned out not to exist: what shipped is
+ * `GET /api/me/entitlements`, whose body is a tier *version* and has no room for
+ * the three things this stub exists to exercise — a billing period, a renewal
+ * date and a scheduled downgrade. A stub emitting the real body could not
+ * express the states the plan screen was built to show, so it produces the
+ * client-side type instead. The wire stays honest a different way: the contract
+ * test drives `fetchWorkspacePlan` against the real payload, which is exactly
+ * the reason that function is split out from `getWorkspacePlan`.
  *
  * Two things it deliberately does that the client must never do:
  *
@@ -49,7 +61,7 @@ const GB = 1024 * MB
  * key left out entirely would be ungated. Nothing here is left out — a tier
  * list that is silent about a feature is a decision nobody made.
  */
-type SeedTier = TierBody & {
+type SeedTier = Tier & {
   rank: number
   /**
    * How often this tier bills — `null` for the free one.
@@ -63,6 +75,20 @@ type SeedTier = TierBody & {
   billingPeriod: 'month' | 'year' | null
 }
 
+/**
+ * **Trial's numbers are the server's; Pro's and Max's are not yet.**
+ *
+ * `GET /api/public/pricing` publishes exactly one tier today — `trial` v1 — so
+ * the Trial row below was read off the live endpoint and matches it key for key.
+ * Pro and Max have no published version, so theirs are the decided matrix
+ * (2026-08-19) and CON-243 §11 mapped onto the server's key names: a proposal,
+ * not a reading. Re-sync both the day their versions are published, and take
+ * `entitlements.seed.json` with them.
+ *
+ * Two keys in §11's sketch have no stated Pro/Max value anywhere —
+ * `content_bank_assets` and `web_page_imports` — so the numbers here are ours,
+ * and are the first thing to check against whatever gets published.
+ */
 const TIERS: readonly SeedTier[] = [
   {
     rank: 0,
@@ -70,21 +96,23 @@ const TIERS: readonly SeedTier[] = [
     id: 'tier_trial_2026_08_01',
     name: 'Ogen Trial',
     tagline: 'Enough to see whether Ogen works for you.',
-    effective_from: '2026-08-01T00:00:00Z',
+    effectiveFrom: '2026-08-01T00:00:00Z',
     price: null,
     available: true,
     entitlements: {
-      seats: { limit: 1 },
-      social_accounts: { limit: 2 },
-      campaigns: { limit: 1 },
+      workspaces: { limit: 1, reset: 'standing' },
+      team_seats: { limit: 1, reset: 'standing' },
+      connected_accounts: { limit: 2, reset: 'standing' },
+      active_campaigns: { limit: 1, reset: 'standing' },
+      all_campaign_types: { allowed: false },
       custom_campaign_types: { allowed: false },
-      content_plan_runs: { limit: 3, period: 'month' },
-      post_assistant: { allowed: true },
-      post_quality_reviews: { limit: 1, period: 'post' },
-      post_versions: { limit: 3 },
-      media_storage_bytes: { limit: 100 * MB },
-      brand_personas: { allowed: false },
-      brand_voices: { allowed: false },
+      plan_runs_per_month: { limit: 3, reset: 'monthly' },
+      assistant_multiplier: { limit: 1, reset: 'standing' },
+      quality_reviews_per_post: { limit: 1, reset: 'per_post' },
+      posts_total: { limit: 15, reset: 'total' },
+      media_storage_bytes: { limit: 100 * MB, reset: 'standing' },
+      content_bank_assets: { limit: 10, reset: 'standing' },
+      web_page_imports: { limit: 3, reset: 'standing' },
       multiple_accounts_per_platform: { allowed: false },
     },
   },
@@ -94,21 +122,23 @@ const TIERS: readonly SeedTier[] = [
     id: 'tier_pro_2026_08_01',
     name: 'Ogen Pro',
     tagline: 'One brand, run properly, with a couple of people on it.',
-    effective_from: '2026-08-01T00:00:00Z',
+    effectiveFrom: '2026-08-01T00:00:00Z',
     price: null,
     available: true,
     entitlements: {
-      seats: { limit: 3 },
-      social_accounts: { limit: 6 },
-      campaigns: { limit: 5 },
+      workspaces: { limit: 1, reset: 'standing' },
+      team_seats: { limit: 3, reset: 'standing' },
+      connected_accounts: { limit: 6, reset: 'standing' },
+      active_campaigns: { limit: 5, reset: 'standing' },
+      all_campaign_types: { allowed: true },
       custom_campaign_types: { allowed: false },
-      content_plan_runs: { limit: 10, period: 'month' },
-      post_assistant: { allowed: true },
-      post_quality_reviews: { limit: 5, period: 'post' },
-      post_versions: { limit: null },
-      media_storage_bytes: { limit: GB },
-      brand_personas: { limit: 1 },
-      brand_voices: { limit: 1 },
+      plan_runs_per_month: { limit: 10, reset: 'monthly' },
+      assistant_multiplier: { limit: 5, reset: 'standing' },
+      quality_reviews_per_post: { limit: 5, reset: 'per_post' },
+      posts_total: { limit: null, reset: 'total' },
+      media_storage_bytes: { limit: GB, reset: 'standing' },
+      content_bank_assets: { limit: 100, reset: 'standing' },
+      web_page_imports: { limit: 25, reset: 'standing' },
       multiple_accounts_per_platform: { allowed: false },
     },
   },
@@ -118,21 +148,23 @@ const TIERS: readonly SeedTier[] = [
     id: 'tier_max_2026_08_01',
     name: 'Ogen Max',
     tagline: 'Every part of it, at the size an agency works at.',
-    effective_from: '2026-08-01T00:00:00Z',
+    effectiveFrom: '2026-08-01T00:00:00Z',
     price: null,
     available: true,
     entitlements: {
-      seats: { limit: null },
-      social_accounts: { limit: 30 },
-      campaigns: { limit: null },
+      workspaces: { limit: 5, reset: 'standing' },
+      team_seats: { limit: null, reset: 'standing' },
+      connected_accounts: { limit: 30, reset: 'standing' },
+      active_campaigns: { limit: null, reset: 'standing' },
+      all_campaign_types: { allowed: true },
       custom_campaign_types: { allowed: true },
-      content_plan_runs: { limit: 100, period: 'month' },
-      post_assistant: { allowed: true },
-      post_quality_reviews: { limit: 10, period: 'post' },
-      post_versions: { limit: null },
-      media_storage_bytes: { limit: 10 * GB },
-      brand_personas: { limit: null },
-      brand_voices: { limit: null },
+      plan_runs_per_month: { limit: 100, reset: 'monthly' },
+      assistant_multiplier: { limit: 20, reset: 'standing' },
+      quality_reviews_per_post: { limit: 10, reset: 'per_post' },
+      posts_total: { limit: null, reset: 'total' },
+      media_storage_bytes: { limit: 10 * GB, reset: 'standing' },
+      content_bank_assets: { limit: null, reset: 'standing' },
+      web_page_imports: { limit: null, reset: 'standing' },
       multiple_accounts_per_platform: { allowed: true },
     },
   },
@@ -147,45 +179,35 @@ const TIERS: readonly SeedTier[] = [
     id: 'tier_pro_2026_01_01',
     name: 'Ogen Pro',
     tagline: 'One brand, run properly, with a couple of people on it.',
-    effective_from: '2026-01-01T00:00:00Z',
+    effectiveFrom: '2026-01-01T00:00:00Z',
     price: null,
     available: false,
     entitlements: {
-      seats: { limit: 2 },
-      social_accounts: { limit: 4 },
-      campaigns: { limit: 3 },
+      workspaces: { limit: 1, reset: 'standing' },
+      team_seats: { limit: 2, reset: 'standing' },
+      connected_accounts: { limit: 4, reset: 'standing' },
+      active_campaigns: { limit: 3, reset: 'standing' },
+      all_campaign_types: { allowed: true },
       custom_campaign_types: { allowed: false },
-      content_plan_runs: { limit: 10, period: 'month' },
-      post_assistant: { allowed: true },
-      post_quality_reviews: { limit: 5, period: 'post' },
-      post_versions: { limit: null },
-      media_storage_bytes: { limit: GB },
-      brand_personas: { limit: 1 },
-      brand_voices: { limit: 1 },
+      plan_runs_per_month: { limit: 10, reset: 'monthly' },
+      assistant_multiplier: { limit: 5, reset: 'standing' },
+      quality_reviews_per_post: { limit: 5, reset: 'per_post' },
+      posts_total: { limit: null, reset: 'total' },
+      media_storage_bytes: { limit: GB, reset: 'standing' },
+      content_bank_assets: { limit: 50, reset: 'standing' },
+      web_page_imports: { limit: 25, reset: 'standing' },
       multiple_accounts_per_platform: { allowed: false },
     },
   },
 ]
 
-/**
- * What the workspace has spent, held still.
- *
- * Fixed rather than counted off the real campaigns and assets, because the
- * point of the stub is the *gating*, and a counter that moves with the fixtures
- * would make every tier read the same. These numbers are chosen to straddle the
- * tiers: three campaigns is over Trial's limit and inside Pro's, seven plan
- * runs is inside Pro's ten and over Trial's three — so switching tier flips
- * real surfaces between allowed, denied-by-limit and denied-by-tier.
+/*
+ * The counters this stub used to hold are gone — they live in
+ * `entitlements.seed.json` now, and `getWorkspacePlan` applies them to whichever
+ * branch answered. Two tables of what a workspace has spent, one for the stub
+ * and one for the real endpoint, would have drifted the first time somebody
+ * tuned the numbers to make a lock appear.
  */
-const USED: Readonly<Record<string, number>> = {
-  seats: 2,
-  social_accounts: 3,
-  campaigns: 3,
-  content_plan_runs: 7,
-  post_quality_reviews: 1,
-  post_versions: 2,
-  media_storage_bytes: 384 * MB,
-}
 
 const DEFAULT_TIER_ID = 'tier_trial_2026_08_01'
 
@@ -286,16 +308,16 @@ function reconcile(selection: Selection, now: Date): Selection {
   })
 }
 
-function toBody(tier: SeedTier): TierBody {
+function toTier(tier: SeedTier): Tier {
   // Neither leaves this file. `rank` because the client is not allowed to order
   // tiers, `billingPeriod` because it belongs to a subscription rather than to
   // the price list.
-  const { rank: _rank, billingPeriod: _billingPeriod, ...body } = tier
-  return body
+  const { rank: _rank, billingPeriod: _billingPeriod, ...rest } = tier
+  return rest
 }
 
-export function stubListTiers(): Promise<TierBody[]> {
-  return Promise.resolve(TIERS.map(toBody))
+export function stubListTiers(): Promise<Tier[]> {
+  return Promise.resolve(TIERS.map(toTier))
 }
 
 /**
@@ -310,7 +332,7 @@ export function stubListTiers(): Promise<TierBody[]> {
 export function stubSelectTier(
   tierId: string,
   now: Date = new Date(),
-): Promise<PlanBody> {
+): Promise<WorkspacePlan> {
   const target = tierById(tierId)
   // A change already due has landed by the time this click happens, so the
   // ranks below compare against the tier the workspace is actually on — not
@@ -342,7 +364,9 @@ export function stubSelectTier(
   return Promise.resolve(stubPlanFrom(write(next), now))
 }
 
-export function stubWorkspacePlan(now: Date = new Date()): Promise<PlanBody> {
+export function stubWorkspacePlan(
+  now: Date = new Date(),
+): Promise<WorkspacePlan> {
   return Promise.resolve(stubPlanFrom(reconcile(read(), now), now))
 }
 
@@ -356,31 +380,33 @@ export function stubResetPlan(): void {
 }
 
 /**
- * The tier's allowances plus what has been spent against them — the join the
- * endpoint has to do, and the reason the counters can't be a second call.
+ * Stamps the reset date onto the allowances that have one.
+ *
+ * The counters that used to be joined on here are `withSeededUsage`'s job now
+ * (`entitlements.seed.ts`), applied one layer out so the stub and the real
+ * endpoint are counted from the same table. What is left is the date, which only
+ * the stub can supply: it is the renewal, and the real endpoint reports no
+ * renewal at all.
  */
-function withUsage(
-  entitlements: Record<string, EntitlementBody>,
+function withResetDate(
+  entitlements: Record<string, RawEntitlement>,
   resetsAt: string,
-): Record<string, EntitlementBody> {
-  const merged: Record<string, EntitlementBody> = {}
+): Record<string, RawEntitlement> {
+  const merged: Record<string, RawEntitlement> = {}
   for (const [key, entry] of Object.entries(entitlements)) {
-    // A boolean entry carries no allowance, so there is nothing to count
-    // against it. `limit: null` is unlimited and still worth counting — the
-    // meter says "4" rather than "4 of ∞".
-    const metered = entry.limit !== undefined
-    merged[key] = metered
-      ? {
-          ...entry,
-          used: USED[key] ?? 0,
-          ...(entry.period ? { resets_at: resetsAt } : {}),
-        }
-      : entry
+    // Only an allowance that actually refills has a date to give. A `standing`
+    // ceiling and a lifetime `total` never return to zero, and a boolean carries
+    // no allowance at all.
+    merged[key] =
+      entry.reset === 'monthly' ? { ...entry, resetsAt } : { ...entry }
   }
   return merged
 }
 
-function stubPlanFrom(selection: Selection, now: Date = new Date()): PlanBody {
+function stubPlanFrom(
+  selection: Selection,
+  now: Date = new Date(),
+): WorkspacePlan {
   const tier = tierById(selection.tierId) ?? TIERS[0]
   const scheduledTier = selection.scheduled
     ? tierById(selection.scheduled.tierId)
@@ -390,28 +416,34 @@ function stubPlanFrom(selection: Selection, now: Date = new Date()): PlanBody {
   return {
     tier: {
       id: tier.id,
+      // The stub's ids are whole versions, so there is no separate tier slug to
+      // report. It is opaque either way, and nothing ranks it.
+      tierId: tier.id,
       name: tier.name,
-      effective_from: selection.since,
+      purchasable: tier.available,
+      changeReason: '',
+      prices: [],
+      effectiveFrom: selection.since,
       // Nothing renews while no provider is connected — nobody is billed
       // monthly and no invoice is coming, whatever the tier's price says. Same
       // rule as `stubBilling`: reporting a period and a date here put "It
       // auto-renews on…" on the card directly above "Nothing is being charged
       // for this workspace." The billed states live on `/design/plan-billing`.
-      billing_period: null,
-      renews_at: null,
-      scheduled_change:
+      billingPeriod: null,
+      renewsAt: null,
+      scheduled:
         selection.scheduled && scheduledTier
           ? {
               id: scheduledTier.id,
               name: scheduledTier.name,
-              effective_from: selection.scheduled.effectiveFrom,
+              effectiveFrom: selection.scheduled.effectiveFrom,
               // Ranked here because the server ranks it there.
               direction:
                 scheduledTier.rank > tier.rank ? 'upgrade' : 'downgrade',
             }
           : null,
     },
-    entitlements: withUsage(tier.entitlements ?? {}, renewsAt),
+    entitlements: withResetDate(tier.entitlements, renewsAt),
   }
 }
 

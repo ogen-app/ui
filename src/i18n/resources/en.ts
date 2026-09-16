@@ -2451,15 +2451,24 @@ export const en = {
     resets: 'Your allowance goes back to full on {{when}}.',
 
     /**
-     * The meter. Each period is a whole sentence: where "this month" sits in
+     * The meter. Each reset is a whole sentence: where "this month" sits in
      * the line is a different answer in every language, and gluing it onto a
      * stem would decide that in English for everyone.
+     *
+     * The four are the server's own reset words (CON-243). `usage` covers
+     * `standing` — a ceiling that never refills has no period to name — and a
+     * reset word this build has not heard of, which is true either way.
      */
     usage: '{{used}} of {{limit}}',
-    usageDay: '{{used}} of {{limit}} today',
     usageMonth: '{{used}} of {{limit}} this month',
+    usageTotal: '{{used}} of {{limit}} used',
     usagePost: '{{used}} of {{limit}} on this post',
-    usagePublish: '{{used}} of {{limit}} for this publish',
+    /**
+     * The limit with no tally beside it — which is most of them, because the
+     * API ships allowances and no usage read (CON-243). Saying "0 of 5" instead
+     * would be a claim that nothing has been used, made by nobody.
+     */
+    limitOnly: '{{limit}} included',
     /** For the tier that paid to have no number here. */
     unlimited: 'Unlimited',
 
@@ -2644,12 +2653,16 @@ export const en = {
     changedNow: "You're now on {{name}}.",
     changeCancelled: 'That change has been called off.',
 
-    /** How a tier states an allowance, as opposed to how a meter spends one. */
+    /**
+     * How a tier states an allowance, as opposed to how a meter spends one.
+     * Keyed off the server's reset words (CON-243); `limitFlat` covers
+     * `standing` — a ceiling with no period to name — and any word this build
+     * has not heard of.
+     */
     limitFlat: '{{value}}',
-    limitDay: '{{value}} per day',
     limitMonth: '{{value}} per month',
+    limitTotal: '{{value}} in total',
     limitPost: '{{value}} per post',
-    limitPublish: '{{value}} per publish',
     included: 'Included',
     excluded: 'Not included',
 
@@ -2663,17 +2676,18 @@ export const en = {
      * price list and on the lock that mentions it.
      */
     features: {
-      seats: 'Team members',
-      social_accounts: 'Connected accounts',
+      team_seats: 'Team members',
+      workspaces: 'Workspaces',
+      connected_accounts: 'Connected accounts',
       multiple_accounts_per_platform: 'Several accounts on one platform',
-      campaigns: 'Campaigns',
+      active_campaigns: 'Campaigns',
+      all_campaign_types: 'All campaign types',
       custom_campaign_types: 'Custom campaign types',
-      content_plan_runs: 'Content plan runs',
-      post_assistant: 'Post Assistant',
-      post_quality_reviews: 'Post quality reviews',
-      post_versions: 'Version history',
-      brand_personas: 'Brand personas',
-      brand_voices: 'Brand voices',
+      plan_runs_per_month: 'Content plan runs',
+      quality_reviews_per_post: 'Post quality reviews',
+      posts_total: 'Posts',
+      content_bank_assets: 'Content bank documents',
+      web_page_imports: 'Web page imports',
       media_storage_bytes: 'Media storage',
     },
   },

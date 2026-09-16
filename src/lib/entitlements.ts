@@ -14,7 +14,7 @@ import type {
   Entitlement,
   RawEntitlement,
   Usage,
-  UsagePeriod,
+  UsageReset,
   WorkspacePlan,
 } from '@/types/entitlements'
 
@@ -32,40 +32,46 @@ export const UNGATED: Entitlement = Object.freeze({
 
 const PENDING: Entitlement = Object.freeze({ state: 'pending' })
 
-/** The periods this build knows how to name. Anything else is not guessed at. */
-const KNOWN_PERIODS: readonly UsagePeriod[] = [
-  'day',
-  'month',
-  'post',
-  'publish',
+/** The reset words this build knows how to name. Anything else is not guessed at. */
+const KNOWN_RESETS: readonly UsageReset[] = [
+  'standing',
+  'monthly',
+  'total',
+  'per_post',
 ]
 
 /**
- * Narrows the server's period word, dropping one this build has never heard of.
+ * Narrows the server's reset word, dropping one this build has never heard of.
  *
- * The tier list is edited by hand, so a new period will exist before the client
- * knows it. Losing the phrase "this month" off a meter is a small cost; putting
- * the wrong one there is not.
+ * The feature catalog is edited server-side, so a new word will exist before the
+ * client knows it. Losing the phrase "this month" off a meter is a small cost;
+ * putting the wrong one there is not.
  */
-export function usagePeriod(value: unknown): UsagePeriod | null {
-  return KNOWN_PERIODS.includes(value as UsagePeriod)
-    ? (value as UsagePeriod)
+export function usageReset(value: unknown): UsageReset | null {
+  return KNOWN_RESETS.includes(value as UsageReset)
+    ? (value as UsageReset)
     : null
 }
 
 /**
  * The metered half of an entry, or null when the key is a plain yes/no.
  *
- * A key that states neither a limit nor a use is not metered — `post_assistant`
- * and `multiple_accounts_per_platform` are verdicts, and inventing `0 of ∞` for
- * them would put a meter on screens that have nothing to measure.
+ * A key that states neither a limit nor a use is not metered —
+ * `multiple_accounts_per_platform` and the campaign-type keys are verdicts, and
+ * inventing `0 of ∞` for them would put a meter on screens that have nothing to
+ * measure.
+ *
+ * `used` passes through as `null` rather than falling back to zero. The server
+ * ships allowances and no tally, so nearly every entry arrives uncounted, and
+ * "0 of 5" is not a cautious reading of that — it is a claim that nothing has
+ * been used, which unlocks a control that may well be exhausted.
  */
 function toUsage(entry: RawEntitlement): Usage | null {
   if (entry.limit === undefined && entry.used === undefined) return null
   return {
     limit: entry.limit ?? null,
-    used: entry.used ?? 0,
-    period: usagePeriod(entry.period),
+    used: entry.used ?? null,
+    reset: usageReset(entry.reset),
     resetsAt: entry.resetsAt ?? null,
   }
 }
@@ -87,6 +93,16 @@ function toUsage(entry: RawEntitlement): Usage | null {
  * `used >= limit` rather than `>`: a limit of 5 means five may exist, so the
  * sixth is refused while five are held — the check answers "may I add one
  * more", which is what every call site is actually asking.
+ *
+ * **An uncounted limit cannot deny.** With no tally there is no way to know
+ * whether the allowance is spent, and the rule the whole file follows applies:
+ * every ambiguous case resolves towards offering the feature. The server refuses
+ * what isn't granted — it answers 402 with the numbers attached — so the cost of
+ * being wrong this way is a denial arriving one click later than it might have,
+ * against the cost the other way, which is a paying workspace locked out of
+ * something it has not used. The usage is still carried on the `allowed` answer,
+ * so a meter beside the control can say the limit even while it cannot say the
+ * tally.
  */
 export function resolveEntitlement(
   key: string,
@@ -100,14 +116,26 @@ export function resolveEntitlement(
 
   const usage = toUsage(entry)
   if (!usage) return UNGATED
-  if (usage.limit !== null && usage.used >= usage.limit) {
+  if (
+    usage.limit !== null &&
+    usage.used !== null &&
+    usage.used >= usage.limit
+  ) {
     return { state: 'denied', reason: 'limit', usage }
   }
   return { state: 'allowed', usage }
 }
 
-/** How many are left, or null when the allowance is unlimited. */
+/**
+ * How many are left, or null when that cannot be said.
+ *
+ * Null covers both an unlimited allowance and an uncounted one, because the
+ * caller does the same thing with either: it has no number to print. Which of
+ * the two it is stays readable on the `Usage` itself — `limit === null` is
+ * unlimited, `used === null` is uncounted — for the one caller that needs to
+ * word them differently.
+ */
 export function remaining(usage: Usage): number | null {
-  if (usage.limit === null) return null
+  if (usage.limit === null || usage.used === null) return null
   return Math.max(0, usage.limit - usage.used)
 }

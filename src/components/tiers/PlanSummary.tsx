@@ -45,11 +45,18 @@ export function PlanSummary({ tier, retired, onCancelChange, busy }: Props) {
           </h2>
           {retired && <Chip variant="muted">{t('tiers.retired')}</Chip>}
         </div>
-        <p className="text-[13px] text-tertiary-foreground">
-          {t('tiers.since', {
-            when: formatDay(tier.effectiveFrom, i18n.language),
-          })}
-        </p>
+        {/*
+          Omitted rather than softened when the date is missing, which it is
+          against the real endpoint: `GET /api/me/entitlements` does not carry
+          one (CON-243). "On this plan since —" is worse than no line at all.
+        */}
+        {tier.effectiveFrom && (
+          <p className="text-[13px] text-tertiary-foreground">
+            {t('tiers.since', {
+              when: formatDay(tier.effectiveFrom, i18n.language),
+            })}
+          </p>
+        )}
       </div>
 
       {tier.scheduled && (

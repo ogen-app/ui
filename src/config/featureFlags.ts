@@ -371,27 +371,44 @@ const FEATURE_FLAGS = {
    * workspace, and it would be wrong here even once the endpoint exists. This
    * flag switches off *the asking*, not the answer.
    *
-   * **Waiting on:** `GET /api/entitlements` — the resolved tier plus its
-   * allowances, contract written out in `services/api/entitlements.ts` and
-   * asserted by its test. CON-208 (tenant tiers and groups) and CON-86 (usage
-   * metering and per-tenant cost limits) are both done server-side, so the
-   * tiers and the counters exist; what is missing is a workspace-scoped REST
-   * read that puts them together. Three things it must carry that are easy to
-   * leave out:
+   * **The plan read has landed** (CON-243, 2026-09-16).
+   * `GET /api/me/entitlements` answers on the local API and on
+   * `api.dev.getogen.com` with a resolved tier *version* — its immutable
+   * allowance set, its price rows, and each entitlement enriched with the
+   * feature catalog's own metadata. `services/api/entitlements.ts` is written
+   * against the payload as observed, and its test's fixtures are trimmed from
+   * real responses rather than invented. The keys changed wholesale with it:
+   * the catalog says `team_seats` and `active_campaigns` where this build used
+   * to say `seats` and `campaigns`, and `entitlements.seed.test.ts` is what
+   * keeps the two in step — under default-allow a stale key does not fail, it
+   * silently unlocks.
    *
-   * 1. **The resolved numbers, not a tier name.** Tiers are versioned and
-   *    configurable and a workspace keeps the version it bought, so the name is
-   *    a label two workspaces can share while holding different allowances.
-   * 2. **`scheduled_change`.** A downgrade lands at the next billing boundary,
-   *    so the workspace is on one tier while another is already bought. The
-   *    client cannot derive it and must not try.
-   * 3. **`used` beside every `limit`.** Without the counter the UI can only
-   *    apologise after the click instead of disabling the control.
+   * **Waiting on, in the order it matters:**
+   *
+   * 1. **A usage read.** Nothing on the API reports what a workspace has *used*,
+   *    and CON-243 has one as explicitly future — so every allowance arrives
+   *    with nothing to measure it against, and the UI can only apologise after
+   *    the click instead of disabling the control. `entitlements.seed.ts` holds
+   *    held-still counters meanwhile; `Usage.used` is `number | null` so the day
+   *    it lands nothing changes but the parse.
+   * 2. **A tier display name on the payload.** It carries `tier_id` and no name;
+   *    Serhii flagged the omission himself and offered to add one. Derived from
+   *    the slug until then.
+   * 3. **A way to change plan.** `POST /api/workspace/plan` does not exist and
+   *    has no counterpart: a workspace's version is assigned by an operator
+   *    through Harbor's gRPC `PlanAdminService` (CON-294). `/plans`' CHANGE PLAN
+   *    is the stub end to end.
+   * 4. **Billing.** `GET /api/billing` and `POST /api/billing/portal` 404, and
+   *    no payment provider is connected, so `prices` on the plan is the only
+   *    money the app can see.
+   * 5. **Pro and Max.** `GET /api/public/pricing` publishes exactly one tier
+   *    today — `trial` v1 — so there is no comparison to draw yet.
    *
    * And one thing that belongs elsewhere: a downgrade suspends rather than
    * deletes, and the server picks which campaign goes read-only — so the
-   * `suspended` flag has to ride on the resource. The client must never work it
-   * out by counting, or it picks a different victim than the server did.
+   * `suspended` flag has to ride on the resource. There is no such flag on the
+   * API yet either. The client must never work it out by counting, or it picks
+   * a different victim than the server did.
    *
    * With this off nothing asks, nothing renders a lock, and every feature is
    * available exactly as it was before tiers existed.
@@ -400,7 +417,10 @@ const FEATURE_FLAGS = {
    * commit.** The plan screen and the billing card are driven by a
    * `localStorage` stub (`services/api/tiers.stub.ts`) so the tier
    * differentiation can be built and reviewed; a stub is not a reason to ship
-   * the feature on.
+   * the feature on. `STUBBED` still switches the call sites, and it stays on for
+   * now — not because the plan read is missing, but because there is no way to
+   * *change* plan and only one tier is published, so the screen behind CHANGE
+   * PLAN would be one nameless card that no button can move you off.
    */
   'workspace-tiers': false,
 

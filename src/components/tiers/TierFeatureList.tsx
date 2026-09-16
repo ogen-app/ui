@@ -5,10 +5,11 @@ import {
   formatStorage,
   isByteKey,
   type TierFeature,
+  type TierFeatureKey,
   type TierFeatureValue,
 } from '@/lib/tierFeatures'
 import { cn } from '@/lib'
-import type { EntitlementKey, UsagePeriod } from '@/types/entitlements'
+import type { UsageReset } from '@/types/entitlements'
 
 /**
  * What a tier allows, feature by feature — the body of a plan card.
@@ -52,7 +53,7 @@ function FeatureValue({
   featureKey,
   value,
 }: {
-  featureKey: EntitlementKey
+  featureKey: TierFeatureKey
   value: TierFeatureValue
 }) {
   const { t, i18n } = useTranslation()
@@ -65,25 +66,25 @@ function FeatureValue({
   const written = isByteKey(featureKey)
     ? formatStorage(value.limit, write)
     : write(value.limit)
-  return <>{t(limitKey(value.period), { value: written })}</>
+  return <>{t(limitKey(value.reset), { value: written })}</>
 }
 
 /**
  * How a tier *states* an allowance, which is not how a meter spends one: "10
- * per month" against "7 of 10 this month". Same periods, different sentences,
- * and each one whole — where the period sits in the line is a different answer
- * in every language.
+ * per month" against "7 of 10 this month". Same reset words, different
+ * sentences, and each one whole — where the period sits in the line is a
+ * different answer in every language.
  */
-function limitKey(period: UsagePeriod | null) {
-  switch (period) {
-    case 'day':
-      return 'tiers.limitDay' as const
-    case 'month':
+function limitKey(reset: UsageReset | null) {
+  switch (reset) {
+    case 'monthly':
       return 'tiers.limitMonth' as const
-    case 'post':
+    case 'total':
+      return 'tiers.limitTotal' as const
+    case 'per_post':
       return 'tiers.limitPost' as const
-    case 'publish':
-      return 'tiers.limitPublish' as const
+    // `standing` and an unrecognised word both land here: a ceiling that never
+    // refills is stated as the bare number, which is what it is.
     default:
       return 'tiers.limitFlat' as const
   }
