@@ -73,12 +73,18 @@ const FEATURE_FLAGS = {
    *    the tag is `nullzero,autoincrement`, and the new test reads `seq` off a
    *    row coming *back* rather than off the inserted model, which is why the
    *    original suite stayed green. The client was written for that server and
-   *    needs no change, so what is left is rule 4 rather than work: open the
-   *    inbox against it once and confirm the three things the 0 made
-   *    unobservable — replay advancing across a reconnect, `mark-all-read`'s
-   *    `before` actually bounding (the client sends the highest seq it has
-   *    been shown, and a real bound is what stops it marking a row that
-   *    arrived after the click), and paging past page one.
+   *    needs no change, so what is left is rule 4 rather than work — and two
+   *    of the three things the 0 made unobservable were confirmed on
+   *    2026-09-07 against a freshly restarted API. **Replay** advances across a
+   *    reconnect: a cursor replays strictly `>` itself, ascending; an
+   *    unparseable one is live-only with 200 rather than a 400; one ahead of
+   *    the log replays nothing without error. **`mark-all-read`'s `before`**
+   *    really bounds: `{before: n}` leaves the row at `n+1` unread, `{before:
+   *    n+1}` includes it, `{}` is unbounded — which is what stops the click
+   *    marking a row that arrived after it. Still unobserved, because it needs
+   *    a triggerable producer rather than a fixed server: **live push**, and
+   *    with it the replay→live dedup (`n.Seq <= lastSentSeq`). Paging past page
+   *    one is untested too.
    * 2. **Fan-out.** Every producer writes to the thing's `created_by`
    *    (`submit_post_to_zernio.go`), so a post failing to publish is news to
    *    whoever made it and to nobody else. The derived entry it replaced was
@@ -112,14 +118,23 @@ const FEATURE_FLAGS = {
    * writer. Re-read against `ogen` `main` 2026-09-05; finding 5 in
    * `docs/sse.md` carries the diagnosis and the fix.
    *
-   * One thing the pass turned up that is **not** this feature's fault, but is
-   * made twice as likely by it: `eventhub` caps a user at 10 concurrent
-   * subscriptions across *both* streams, and a dropped connection holds its
-   * slot until the server's next heartbeat write notices (20s). A reload
-   * therefore orphans two slots where it used to orphan one, and both streams
-   * answer 429 and back off until the slots free — reproduced on `/api/events`
-   * as well, so it predates this. The backoff rides it out; a tighter cap or a
-   * faster reap would not have to.
+   * One thing the pass turned up that is **not** this feature's fault, and is
+   * now half fixed. `eventhub` leaked subscriber slots until both streams
+   * answered 429 for that user permanently — ten leaked, and the same user was
+   * still saturated 39 hours after the first one (CON-286). ogen#142 closed it
+   * on 2026-09-08: at the cap the hub evicts the user's *oldest* subscriber
+   * instead of refusing the newcomer, and every connection on both streams is
+   * recycled after ~30 minutes, a reaper keyed on age rather than on a write
+   * failing. The client needed no change and got none.
+   *
+   * What is left *is* this feature's business: the cap is 10 per **user across
+   * both streams and every device**, so switching this on halves the tabs a
+   * person can keep open before evictions start rotating — 10 today, 5 with
+   * this on, and past that each tab's reconnect evicts another's. Ask for a
+   * higher cap before turning this on rather than after. `docs/sse.md` carries
+   * the measurements and the other consequence: a 30-minute recycle is
+   * indistinguishable from an outage here, so it runs the whole reconcile path
+   * twice an hour.
    *
    * The daily report is the half that was never a stand-in: it is a count over
    * posts, correct as computed, and it is untouched by all of the above.
