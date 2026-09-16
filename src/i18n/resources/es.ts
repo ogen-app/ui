@@ -2316,6 +2316,26 @@ export const es: Translation = {
       delete: 'ELIMINAR',
     },
 
+    delete: {
+      titleNamed: '¿Eliminar «{{title}}»?',
+      title_one: '¿Eliminar este documento?',
+      title_other: '¿Eliminar {{count}} documentos?',
+      bodyCampaign_one:
+        'Este documento se eliminará de forma permanente y esta campaña dejará de escribir a partir de él. Esto no se puede deshacer.',
+      bodyCampaign_other:
+        'Estos documentos se eliminarán de forma permanente y esta campaña dejará de escribir a partir de ellos. Esto no se puede deshacer.',
+      bodyBank_one:
+        'Este documento se eliminará de forma permanente y cualquier campaña que lo use dejará de escribir a partir de él. Esto no se puede deshacer.',
+      bodyBank_other:
+        'Estos documentos se eliminarán de forma permanente y cualquier campaña que los use dejará de escribir a partir de ellos. Esto no se puede deshacer.',
+      keep_one: 'CONSERVAR DOCUMENTO',
+      keep_other: 'CONSERVAR DOCUMENTOS',
+      confirm_one: 'ELIMINAR DOCUMENTO',
+      confirm_other: 'ELIMINAR {{count}} DOCUMENTOS',
+      done_one: '{{count}} documento eliminado',
+      done_other: '{{count}} documentos eliminados',
+    },
+
     tagging: {
       action: 'ETIQUETAR',
       title_one: 'Etiquetar este documento',
@@ -2342,10 +2362,26 @@ export const es: Translation = {
     pdfNote: 'Los PDF se leen en segundo plano, así que terminan después.',
     browse: 'Suelta los archivos aquí o haz clic para elegirlos',
     remove: 'Quitar {{name}}',
+    failed: 'No se ha podido subir',
     cancel: 'CANCELAR',
     submit: 'SUBIR',
     submitCount: 'SUBIR ({{n}})',
     dropInto: 'Añadir a {{scope}}',
+    duplicate: 'Ya está en el banco de contenido como «{{title}}»',
+
+    errors: {
+      type: 'Solo se aceptan archivos .md, .pdf e imágenes.',
+      unsupportedType:
+        'El contenido de este archivo no es de un tipo que podamos leer. Las imágenes tienen que ser JPEG, PNG, WebP o GIF.',
+      tooBig: 'Este archivo supera el límite de {{limit}}.',
+      dimensions:
+        'Esta imagen es demasiado grande para guardarla: el límite es {{max}}.',
+      empty: 'Este archivo está vacío.',
+      notPdf: 'Este archivo no es un PDF legible.',
+      notConfigured: 'Este servidor todavía no puede guardar imágenes.',
+      undecodable: 'No se ha podido leer esta imagen; puede que esté dañada.',
+      server: 'Algo ha fallado al guardar este archivo. Inténtalo de nuevo.',
+    },
   },
 
   errors: {

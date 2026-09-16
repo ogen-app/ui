@@ -27,6 +27,8 @@ Content-Bank AI images are secondary. See
 - **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
 - **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
 - **Activity feed & daily report — proposal:** [`docs/activity.md`](./docs/activity.md)
+- **Every event and notification — trigger, transport, recipients:**
+  [`docs/events.md`](./docs/events.md)
 - **Tasks — proposal:** [`docs/tasks.md`](./docs/tasks.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
@@ -141,6 +143,29 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `remove`, plus `add`, so the client never has to say what an asset already
   carries and two people filing at once don't overwrite each other. The server
   refuses a tag named in both lists rather than picking a winner.
+- **Deleting a document asks, from every way in.** The row's bin, the selection
+  bar and the document's own screen all reach a confirmation that *names* what
+  it is about to delete — one title, or a count. The bin used to delete on one
+  click, on the argument that a row is one of twenty and a mistake is visible
+  immediately; the second half is false, because nothing in the product undoes
+  this. Route a new entry point through `DeleteDocumentsDialog`
+  (`ContentList` holds the state; a single row is a selection of one) rather
+  than calling the mutation, and never add a second path that skips the asking.
+- **A duplicate upload is warned about before it happens, not after.** The
+  server dedupes an identical **image** by checksum within the workspace and
+  answers with the asset it already has — no new row, no changed timestamp —
+  so the upload's entire visible effect is that nothing happens. `UploadModal`
+  hashes each staged image (`lib/fileChecksum`, `crypto.subtle`) and names the
+  document it would resolve to. Images only: nothing else carries a checksum,
+  so a second PDF really is a second document and warning about one would be a
+  promise the server doesn't keep.
+- **An upload refusal is the server's prose, worded by the client.** The upload
+  endpoint answers 201 and reports each file's fate as an English sentence —
+  some of it Go, package prefix and all — so `lib/uploadError` matches the
+  conditions onto catalogue copy and lifts the caps out of the message rather
+  than restating them. Add a case there, not a literal at the call site; an
+  unmatched message falls through to a fallback that strips the package name.
+  The real fix is a per-result `code` on the API (`docs/open-questions.md` S4).
 - **A campaign update is a whole-resource PUT, and the server defaults every
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of
@@ -370,9 +395,17 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   browser and behind the same gate.** `?analytics=demo` (or the panel at
   `/flags`) points `/overview`, `/performers` and `/learnings` at
   `services/api/analytics.demo.ts`, because a local API answers
-  `available: false` for all three — nothing in a dev database has been through
-  a refresh sweep — so the cards are otherwise only ever seen in their setup
-  state. `empty` and `unavailable` produce the other two answers the endpoints
+  `available: false` for all three — so the cards are otherwise only ever seen
+  in their setup state. The reason is **not** that the figures are thin: the
+  analytics tables live in a *separate* database (the backend keeps its own
+  `migrations_analytics/` tree, and `20260729000001_drop_post_analytics`
+  removed them from the main one), and `ANALYTICS_DSN` is unset in the local
+  stack — which `config.go` documents as the graceful-disable default. So there
+  is nothing to sweep, rather than nothing swept yet. Wiring one up needs no
+  TimescaleDB and no second container: every Timescale block in those
+  migrations is guarded by `IF EXISTS (… 'timescaledb')`, the API embeds and
+  applies them at boot, and they track their state in `bun_migrations_analytics`
+  precisely so the schema can share the dev Postgres with the control plane. `empty` and `unavailable` produce the other two answers the endpoints
   give. It is **not** the `STUBBED` pattern: these endpoints exist and ship, so
   the demo is off by default even in dev, has to be asked for, folds away
   entirely without `VITE_DEV_TOOLS=1`, and is announced in the corner for as
@@ -600,7 +633,8 @@ Activity features. Islands only: the post editor (`posts.*` — status and
 publish labels, the published link, sources, notes, quality, versions,
 duplicate and the performance card), the Campaigns list (the archive view, the
 posts toolbar and the empty state) and the Content Bank (the image screen, the
-tagging and selection dialogs, the list and page chrome). Everything else is
+tagging and selection dialogs, the delete confirmation, the upload refusals and
+the list and page chrome). Everything else is
 still hard-coded English (CON-174) · **English is the only released language**: Spanish is
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
