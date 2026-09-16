@@ -94,6 +94,13 @@ const RUNT_CHARS = 3
  * generous here would describe a body as hand-broken when the server is about
  * to pack it by length.
  *
+ * **Which means it answers `auto` for every body this editor can produce**, and
+ * that is a server bug rather than a reason to loosen this. BlockNote writes a
+ * divider back as `***` and normalises a typed `---` into one, so no hyphen
+ * rule ever reaches `content`; CON-284 asks for `isRuleLine` to widen to the
+ * CommonMark thematic break. When it does, widen this with it — in step, and
+ * not before, because the note must describe the cut that is about to happen.
+ *
  * This is a one-line test and not the splitting algorithm, which is why it is
  * allowed to live on this side at all — see the module note.
  */

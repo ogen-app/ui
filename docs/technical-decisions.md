@@ -867,11 +867,17 @@ splitter they described always cut to fit. Length verdicts now come off
 - **A divider is a real block, not a convention.** BlockNote parses `---` into
   a `divider` block, so the author sees the seam they typed as a line across the
   editor. That is why it is the primary rule: the split is visible in the
-  document rather than inferred from whitespace. **Watch the serialisation** —
-  BlockNote writes a divider back as `***`, which `SplitThread` does *not* read
-  as one, so a body whose dividers round-trip through that path is packed by
-  length instead of broken where the author put the seams. Not yet exercised
-  against a live API; it is the first thing to check on that pass.
+  document rather than inferred from whitespace. **And the serialisation breaks
+  it today.** BlockNote writes a divider back as `***` — its Markdown serialiser
+  emits `mdast-util-to-markdown`'s default rule marker, and normalises a typed
+  `---` to the same thing — while `SplitThread` reads hyphens only. Confirmed
+  against the live R2 build on 2026-09-16: `One\n\n---\n\nTwo` previews as two
+  segments, `One\n\n***\n\nTwo` as one. Since the editor is the only way to
+  author a body, *every* thread this client can produce is a single message with
+  a literal `***` in it. Raised on CON-284; the fix asked for is the server
+  widening `isRuleLine` to the CommonMark thematic break. **Do not normalise it
+  here** — that re-adds the delimiter opinion R2 removed, and `content` is the
+  canonical stored body, so it would mean rewriting what the author typed.
 - **A body with no divider is packed to the ceiling**, preferring a paragraph
   break, then a line break, then a sentence, then a word, never mid-word. It is
   *not* broken at every blank line — that was this client's old rule and it is
@@ -956,11 +962,19 @@ splitter they described always cut to fit. Length verdicts now come off
   `twitter` only. CON-284 added the word, so the honest intersection works again
   and the stand-in is gone with the gap it covered.
 
-**Waiting on** nothing on the back end — every contract this section describes
-is merged. What has *not* happened is a run against a live API: nothing here has
-been exercised against a running server. Start that pass at the pieces with no
-client-side history — the preview endpoint under a fast typist, the `***`
-serialisation noted above, and `segment_index` on the upload and its PATCH — and
+**Waiting on** the divider fix above. The live run happened on 2026-09-16 and
+the preview endpoint itself behaved exactly as specified — it was the editor's
+`***` that came out wrong, which no contract had ever written down. Two other
+findings came off the same pass and neither blocks this flag. **`char_count`
+measures the raw Markdown**, so `[Ogen](https://getogen.com)` spends 27 of X's
+280 and `## Title` spends 8 for five visible characters; and the auto-split packs
+by those same counts, so it will cut *inside* a markup run — `**` + 280 `a`s +
+`**` comes back as a 280-character message with the bold never closed and a
+second message reading `aa**`, both passing the gate. Whether that is a counting
+bug or evidence the submit path publishes raw Markdown to Zernio is the server's
+to answer; it is also not thread-specific, since every post type measures
+`post.Content` the same way. Both are on CON-284. What is still unexercised here
+is `segment_index` on the upload and its PATCH — start the next pass there, and
 only then decide the flag's fate.
 
 **Where.** `lib/threadSequence.ts` (+ test), `hooks/useThreadPreview.ts`,

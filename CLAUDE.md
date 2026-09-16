@@ -652,9 +652,14 @@ hard-coded list of chain-capable networks here), attachment validation counts
 per message, and `thread` is on the Threads entry in `supportedPlatforms`, so
 `aheadOfPublishers` is gone with the vocabulary gap it covered.
 
-**Waiting on nothing but a run against a live API** — every contract is merged,
-and none of it has been exercised against a running server. See
-`docs/technical-decisions.md#thread-sequence`.
+**Waiting on one server fix.** The live run happened on 2026-09-16 and found it:
+`platforms.isRuleLine` takes three or more **hyphens**, but the divider this app
+writes is `***` — BlockNote's Markdown serialiser emits the default rule marker
+and normalises a typed `---` to it, so no author can put a hyphen rule in the
+body. Every thread this client can author therefore comes back from the preview
+endpoint as **one** message with a literal `***` inside it. Raised on CON-284,
+asking the server to widen the test to the CommonMark thematic break; do not
+normalise it here. See `docs/technical-decisions.md#thread-sequence`.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's

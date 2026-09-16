@@ -497,9 +497,30 @@ const FEATURE_FLAGS = {
    * post's words, unchanged and un-rewritten, so the calendar, the posts table,
    * search and the assistant are untouched by this.
    *
-   * **Waiting on nothing — only on a run against a live API.** Every contract
-   * this needs is merged; none of it has been exercised against a running
-   * server. Switch this on after that pass, and start it at the two pieces with
+   * **Waiting on one server fix** (raised on CON-284, 2026-09-16, after the
+   * first run against the live R2 build). `platforms.isRuleLine` accepts three
+   * or more **hyphens** and nothing else, but the divider this app writes is
+   * `***`: the body is authored in BlockNote, whose Markdown serialiser emits
+   * `mdast-util-to-markdown`'s default rule marker — and it normalises a typed
+   * `---` to `***` as well, so there is no way for an author to get a hyphen
+   * rule into the body at all. Verified end to end: `One\n\n---\n\nTwo` comes
+   * back from the preview endpoint as two segments, `One\n\n***\n\nTwo` as one.
+   * Every thread this client can author is therefore a single message with a
+   * literal `***` in the middle of it. The ask is to widen `isRuleLine` to the
+   * CommonMark thematic break (`-`, `*` or `_`); normalising here instead was
+   * refused on purpose, because it would put an opinion about delimiters back
+   * in the client that R2 had just taken out, and `content` is now the stored
+   * canonical body — we would be rewriting what the author typed.
+   *
+   * Also raised there, and **not** blocking this flag: `char_count` measures
+   * the raw Markdown, so `[Ogen](https://getogen.com)` costs 27 of 280 and the
+   * auto-split will cut inside a markup run (`**`+280×`a`+`**` splits into an
+   * unclosed message and an orphaned `aa**`). Whether that is a counting bug or
+   * evidence we publish raw Markdown to Zernio is the server's to answer, and
+   * it is not thread-specific — every post type measures `post.Content` the
+   * same way.
+   *
+   * Switch this on once the divider lands, and re-test from the two pieces with
    * no client-side history: the preview endpoint under a fast typist, and
    * `segment_index` on the upload and its PATCH.
    */

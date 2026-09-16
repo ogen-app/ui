@@ -114,6 +114,11 @@ describe('splitRuleFor', () => {
     // nothing else, so a body broken with `***` is packed by length instead.
     // Being generous here would print "broken at your dividers" over a thread
     // the server is about to cut somewhere else entirely.
+    //
+    // Note this is the case the editor actually produces — BlockNote serialises
+    // every divider, including a typed `---`, as `***` — so until CON-284's
+    // `isRuleLine` fix lands these two lines describe every real body. Widen
+    // them together with the server, never ahead of it.
     expect(splitRuleFor('One\n\n***\n\nTwo')).toBe('auto')
     expect(splitRuleFor('One\n\n___\n\nTwo')).toBe('auto')
   })
