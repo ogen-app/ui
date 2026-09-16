@@ -35,3 +35,26 @@ export function calculateTotal<TData extends Record<string, unknown>>(
       return ''
   }
 }
+
+/**
+ * `01 Aug 26` — a date in a table.
+ *
+ * Pinned to en-GB rather than the browser's locale: day-first is the format
+ * asked for, and an en-US visitor would otherwise read "Aug 01, 26". The app
+ * has no date-format convention yet and the tables are where two of them met —
+ * settled here, once, so a stamp means the same thing in every column of every
+ * table rather than per file.
+ *
+ * Returns null for a date that isn't set or can't be read, so a cell decides
+ * for itself what an unset date should say.
+ */
+export function tableDate(value: string | null | undefined): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: '2-digit',
+  })
+}

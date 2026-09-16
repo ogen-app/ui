@@ -15,7 +15,13 @@ import {
   type Icon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { formatDate } from '@/lib/intl'
+import {
+  useGuardrailsStance,
+  useSetGuardrailsStance,
+} from '@/hooks/useGuardrailsStance'
 import type { BarStatus } from '@/components/page-primitives/PageActionBar'
 import { brandSection } from '@/lib/brandSections'
 import { cn } from '@/lib'
@@ -84,9 +90,19 @@ import type { BrandGuardrails } from './types'
  *   everybody has learned from every tag field — because five words typed into
  *   a textarea are five words nobody can count or delete one of.
  *
+ * ## Facts are not here any more
+ *
+ * They were the first of five lists and they were the odd one out. The other
+ * four are *rules*: true because somebody decided them, changed when somebody
+ * decides otherwise. A fact is a *record* — it came from somewhere, it went in
+ * on a date, and most facts go off on their own — and none of that fits a list
+ * of sentences. It has its own section and its own table now
+ * (`FactsSection`), and this screen still carries the statements through
+ * untouched on the way to the server, because they travel on the same record.
+ *
  * ## One list per card, and one heading style on the screen
  *
- * Five cards: facts, may claim, never claim, banned words, disclaimer. They
+ * Four cards: may claim, never claim, banned words, disclaimer. They
  * were three — claims and wording each holding two lists under a sub-heading —
  * and grouping them was the wrong trade. A sub-heading is a second heading
  * style, and a second heading style has to be invented, given a size, a weight
@@ -193,6 +209,8 @@ export function GuardrailsEditor({
         </ForkedNote>
       )}
 
+      {!guardrails && <StanceCard />}
+
       {/* Offered while the screen is still blank, and withdrawn by the first
           keystroke — see the note on starters above. */}
       {!guardrails && !dirty && (
@@ -217,18 +235,6 @@ export function GuardrailsEditor({
       )}
 
       <EditorCard
-        title="Facts"
-        hint="What is true, so it stops being invented. Figures, dates, what the product does and what it costs — the things a generator otherwise fills in plausibly."
-      >
-        <StatementList
-          items={draft.facts}
-          onChange={(facts) => set('facts', facts)}
-          placeholder="Support answers within one working day, every day of the week."
-          addLabel="Add a fact"
-        />
-      </EditorCard>
-
-      <EditorCard
         title="May claim"
         hint="Claims already checked, in the form they were checked in. This is what stops a sentence that took a lawyer an hour being written from scratch every time."
       >
@@ -236,7 +242,7 @@ export function GuardrailsEditor({
           items={draft.mayClaim}
           onChange={(mayClaim) => set('mayClaim', mayClaim)}
           placeholder="That setup takes two weeks, start to finish."
-          addLabel="Add a claim"
+          addLabel="ADD A CLAIM"
         />
       </EditorCard>
 
@@ -254,7 +260,7 @@ export function GuardrailsEditor({
           items={draft.neverClaim}
           onChange={(neverClaim) => set('neverClaim', neverClaim)}
           placeholder="That the result is guaranteed, in any form."
-          addLabel="Add a rule"
+          addLabel="ADD A RULE"
           tone="hard"
         />
       </EditorCard>
@@ -285,12 +291,73 @@ export function GuardrailsEditor({
         <DangerCard
           noun="GUARDRAILS"
           name="Guardrails"
-          cost="The section goes back to empty: no stated facts, nothing sanctioned and nothing off limits, for every voice in the workspace. Posts already published are untouched — their text was written and it stands."
+          cost="The section goes back to empty: nothing sanctioned and nothing off limits, for every voice in the workspace. It takes the facts ledger with it — the statements are stored on this same record — so anything the app knows to be true goes too. Posts already published are untouched: their text was written and it stands."
           onDelete={onDelete}
         />
       )}
     </BrandEditorFrame>
   )
+}
+
+/**
+ * The one question this screen could not answer: *is it empty because nobody
+ * has decided, or because somebody decided nothing is needed?*
+ *
+ * Both were `guardrails: null`, and the app read every one of them as the
+ * first — a red rail and *nothing is off limits*, on a workspace that may have
+ * looked at the question and correctly concluded it has no claims to restrict.
+ * A warning that cannot be answered is a warning people learn to scroll past,
+ * which is the worst thing that could happen to this particular section.
+ *
+ * So the decision is a control, and taking it is one gesture. It saves on the
+ * spot rather than through the bar at the foot of the screen, following
+ * `PlatformsControl`: the bar commits the *rules*, and a stance that sat dirty
+ * next to four empty lists would be waiting on a save that has nothing to save.
+ *
+ * It is only ever offered while the section is empty. Written rules are the
+ * stance, stated in more detail than a switch can hold — and saving them clears
+ * this, so the two can never disagree.
+ *
+ * **The storage is temporary and per browser.** See `readStance` in
+ * `services/api/brandLocal`: there is no column for this, the empty `PUT` is
+ * refused by design, and a decision a workspace takes cannot live in one
+ * person's browser for long.
+ */
+function StanceCard() {
+  const { data: stance } = useGuardrailsStance()
+  const { mutate: decide } = useSetGuardrailsStance()
+  const decided = stance?.none ?? false
+
+  return (
+    <EditorCard
+      title="Nothing to restrict?"
+      hint="Some workspaces have no claims worth guarding — no regulated product, no figures, nothing a post could promise. Saying so is a different answer from leaving this empty, and the difference is what the rest of the app reads."
+    >
+      <div className="flex items-start gap-3">
+        <Switch
+          checked={decided}
+          onCheckedChange={(next) => decide(next)}
+          aria-label="This workspace has decided it needs no guardrails"
+          className="mt-1"
+        />
+        <div className="flex flex-col gap-1">
+          <span className="text-sm leading-5">
+            This workspace has decided it needs no guardrails.
+          </span>
+          <span className="text-sm leading-5 text-tertiary-foreground">
+            {decided
+              ? `Recorded${stanceDate(stance?.decidedAt)}. Foundation says the decision was taken rather than warning that nothing is off limits — and writing a single rule below takes it back.`
+              : 'Until this is answered, Foundation reads the section as unfinished and says so on every visit.'}
+          </span>
+        </div>
+      </div>
+    </EditorCard>
+  )
+}
+
+function stanceDate(iso: string | null | undefined): string {
+  const shown = iso ? formatDate(iso, { day: 'numeric', month: 'long' }) : null
+  return shown ? ` on ${shown}` : ''
 }
 
 /* ------------------------------------------------------------ the controls */
@@ -324,7 +391,11 @@ function StatementList({
   items: string[]
   onChange: (next: string[]) => void
   placeholder: string
-  /** `Add a fact`, `Add a rule` — the noun belongs to the list. */
+  /**
+   * `ADD A CLAIM`, `ADD A RULE` — the noun belongs to the list, and the
+   * capitals to the app: every other action label in Ogen is set in them, and
+   * this control was the one that read as a link.
+   */
   addLabel: string
   /** `hard` marks the list whose rules bite, matching the section's red rule. */
   tone?: 'normal' | 'hard'
@@ -426,11 +497,17 @@ function StatementList({
         ))}
       </ul>
 
-      <div className="flex flex-wrap items-center gap-3 pl-3.5">
+      {/* The button sits on the statements' own left edge — the bullet is 6px
+          and the gap 8px, so 14px is where every row's text begins — and the
+          hint sits under it rather than beside it. Beside, it was ranged off
+          the button's inner padding and lined up with nothing on the card: two
+          different type sizes on one line, neither of them on the column the
+          rest of the card is set to. */}
+      <div className="flex flex-col gap-1 pl-3.5">
         <Button
           variant="ghost"
           size="sm"
-          className="px-2 text-secondary-foreground"
+          className="w-fit px-2 text-secondary-foreground"
           onClick={() => put([...rows, ''], rows.length)}
         >
           <PlusIcon />
@@ -440,7 +517,7 @@ function StatementList({
             obviously has been — a keyboard hint repeated beside every list on
             the screen is three copies of one sentence. */}
         {rows.length <= 1 && (
-          <span className="text-xs text-tertiary-foreground">
+          <span className="pl-2 text-xs leading-4 text-tertiary-foreground">
             Enter starts the next one. Paste a list to add all of it at once.
           </span>
         )}
@@ -556,6 +633,10 @@ function draftFrom(
 ): Draft {
   if (guardrails) {
     return {
+      // Carried, never shown. The facts ledger is its own section and its own
+      // table now, but the statements are stored on this record — so a save
+      // from this screen has to hand back the ones it was given or it deletes
+      // a section it does not draw.
       facts: guardrails.facts,
       mayClaim: guardrails.mayClaim,
       neverClaim: guardrails.neverClaim,

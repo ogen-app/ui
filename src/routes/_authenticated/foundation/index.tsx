@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { BrandOverview } from '@/components/brand/BrandOverview'
 import { BrandPage } from '@/components/brand/detail'
 import { useBrand } from '@/hooks/useBrand'
+import { useFacts } from '@/hooks/useFacts'
+import { useGuardrailsStance } from '@/hooks/useGuardrailsStance'
 import { useAssets } from '@/hooks/useContent'
 
 /**
@@ -39,6 +41,11 @@ function BrandOverviewPage() {
   // about, so the hub waits on both: a card that renders "nothing to write
   // from" for the length of a second query is worse than a skeleton.
   const { data: assets } = useAssets()
+  // Both of these are views over data the hub already has, or over storage
+  // that answers instantly — neither adds a wait to the screen. See
+  // `services/api/brandLocal` for what the second one is standing in for.
+  const { facts } = useFacts()
+  const { data: stance } = useGuardrailsStance()
 
   return (
     <BrandPage>
@@ -64,6 +71,8 @@ function BrandOverviewPage() {
                   : { isPending: true }
               }
               sources={assets}
+              facts={facts}
+              stance={stance}
               onOpen={(id) => navigate({ to: `/foundation/${id}` })}
             />
           </div>

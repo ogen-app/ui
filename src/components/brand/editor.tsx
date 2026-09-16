@@ -206,6 +206,7 @@ export function EditorCard({
   title,
   hint,
   action,
+  wide = false,
   children,
 }: {
   title: string
@@ -225,10 +226,27 @@ export function EditorCard({
    * that would not fit.
    */
   action?: ReactNode
+  /**
+   * Wider than the reading column, for a card whose content is a table.
+   *
+   * The 740px measure is a measure for *prose and fields* — it is why the
+   * editors are readable — and a ledger with seven columns in it cannot be
+   * asked to live inside one: at that width the columns fall back to their
+   * minimums and the expiry date, which is the column the screen is opened to
+   * read, sits off the right edge behind a scrollbar. So the table's card
+   * breaks out of the column the way a full-bleed figure does, centred on the
+   * same axis, and everything around it stays at the reading width.
+   */
+  wide?: boolean
   children: ReactNode
 }) {
   return (
-    <section className={cn(COLUMN, 'flex flex-col gap-5 bg-primary px-6 py-6')}>
+    <section
+      className={cn(
+        'mx-auto flex w-full flex-col gap-5 bg-primary px-6 py-6',
+        wide ? 'max-w-6xl' : 'max-w-content',
+      )}
+    >
       <header className="flex items-start justify-between gap-4">
         <div className="flex max-w-2xl flex-col gap-1">
           <h2 className="font-display text-lg font-medium leading-6 tracking-tight">

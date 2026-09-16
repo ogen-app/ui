@@ -38,6 +38,7 @@ import { Route as AuthenticatedFoundationVoicesRouteImport } from './routes/_aut
 import { Route as AuthenticatedFoundationTemplatesRouteImport } from './routes/_authenticated/foundation/templates'
 import { Route as AuthenticatedFoundationSourcesRouteImport } from './routes/_authenticated/foundation/sources'
 import { Route as AuthenticatedFoundationLookRouteImport } from './routes/_authenticated/foundation/look'
+import { Route as AuthenticatedFoundationFactsRouteImport } from './routes/_authenticated/foundation/facts'
 import { Route as AuthenticatedFoundationGuardrailsRouteImport } from './routes/_authenticated/foundation/guardrails'
 import { Route as AuthenticatedFoundationAudiencesRouteImport } from './routes/_authenticated/foundation/audiences'
 import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
@@ -215,6 +216,12 @@ const AuthenticatedFoundationLookRoute =
     path: '/look',
     getParentRoute: () => AuthenticatedFoundationRoute,
   } as any)
+const AuthenticatedFoundationFactsRoute =
+  AuthenticatedFoundationFactsRouteImport.update({
+    id: '/facts',
+    path: '/facts',
+    getParentRoute: () => AuthenticatedFoundationRoute,
+  } as any)
 const AuthenticatedFoundationGuardrailsRoute =
   AuthenticatedFoundationGuardrailsRouteImport.update({
     id: '/guardrails',
@@ -356,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/activity/$date': typeof AuthenticatedActivityDateRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   '/foundation/audiences': typeof AuthenticatedFoundationAudiencesRoute
+  '/foundation/facts': typeof AuthenticatedFoundationFactsRoute
   '/foundation/guardrails': typeof AuthenticatedFoundationGuardrailsRoute
   '/foundation/look': typeof AuthenticatedFoundationLookRoute
   '/foundation/sources': typeof AuthenticatedFoundationSourcesRoute
@@ -404,6 +412,7 @@ export interface FileRoutesByTo {
   '/workspaces': typeof WorkspacesIndexRoute
   '/activity/$date': typeof AuthenticatedActivityDateRoute
   '/foundation/audiences': typeof AuthenticatedFoundationAudiencesRoute
+  '/foundation/facts': typeof AuthenticatedFoundationFactsRoute
   '/foundation/guardrails': typeof AuthenticatedFoundationGuardrailsRoute
   '/foundation/look': typeof AuthenticatedFoundationLookRoute
   '/foundation/sources': typeof AuthenticatedFoundationSourcesRoute
@@ -457,6 +466,7 @@ export interface FileRoutesById {
   '/_authenticated/activity/$date': typeof AuthenticatedActivityDateRoute
   '/_authenticated/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
   '/_authenticated/foundation/audiences': typeof AuthenticatedFoundationAudiencesRoute
+  '/_authenticated/foundation/facts': typeof AuthenticatedFoundationFactsRoute
   '/_authenticated/foundation/guardrails': typeof AuthenticatedFoundationGuardrailsRoute
   '/_authenticated/foundation/look': typeof AuthenticatedFoundationLookRoute
   '/_authenticated/foundation/sources': typeof AuthenticatedFoundationSourcesRoute
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/activity/$date'
     | '/campaigns/$campaignId'
     | '/foundation/audiences'
+    | '/foundation/facts'
     | '/foundation/guardrails'
     | '/foundation/look'
     | '/foundation/sources'
@@ -558,6 +569,7 @@ export interface FileRouteTypes {
     | '/workspaces'
     | '/activity/$date'
     | '/foundation/audiences'
+    | '/foundation/facts'
     | '/foundation/guardrails'
     | '/foundation/look'
     | '/foundation/sources'
@@ -610,6 +622,7 @@ export interface FileRouteTypes {
     | '/_authenticated/activity/$date'
     | '/_authenticated/campaigns/$campaignId'
     | '/_authenticated/foundation/audiences'
+    | '/_authenticated/foundation/facts'
     | '/_authenticated/foundation/guardrails'
     | '/_authenticated/foundation/look'
     | '/_authenticated/foundation/sources'
@@ -869,6 +882,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFoundationLookRouteImport
       parentRoute: typeof AuthenticatedFoundationRoute
     }
+    '/_authenticated/foundation/facts': {
+      id: '/_authenticated/foundation/facts'
+      path: '/facts'
+      fullPath: '/foundation/facts'
+      preLoaderRoute: typeof AuthenticatedFoundationFactsRouteImport
+      parentRoute: typeof AuthenticatedFoundationRoute
+    }
     '/_authenticated/foundation/guardrails': {
       id: '/_authenticated/foundation/guardrails'
       path: '/guardrails'
@@ -1036,6 +1056,7 @@ const AuthenticatedActivityRouteWithChildren =
 
 interface AuthenticatedFoundationRouteChildren {
   AuthenticatedFoundationAudiencesRoute: typeof AuthenticatedFoundationAudiencesRoute
+  AuthenticatedFoundationFactsRoute: typeof AuthenticatedFoundationFactsRoute
   AuthenticatedFoundationGuardrailsRoute: typeof AuthenticatedFoundationGuardrailsRoute
   AuthenticatedFoundationLookRoute: typeof AuthenticatedFoundationLookRoute
   AuthenticatedFoundationSourcesRoute: typeof AuthenticatedFoundationSourcesRoute
@@ -1048,6 +1069,7 @@ const AuthenticatedFoundationRouteChildren: AuthenticatedFoundationRouteChildren
   {
     AuthenticatedFoundationAudiencesRoute:
       AuthenticatedFoundationAudiencesRoute,
+    AuthenticatedFoundationFactsRoute: AuthenticatedFoundationFactsRoute,
     AuthenticatedFoundationGuardrailsRoute:
       AuthenticatedFoundationGuardrailsRoute,
     AuthenticatedFoundationLookRoute: AuthenticatedFoundationLookRoute,

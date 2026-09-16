@@ -411,6 +411,7 @@
   --brand-look: oklch(0.55 0.14 66); /* amber */
   --brand-templates: oklch(0.54 0.11 214); /* cyan */
   --brand-sources: oklch(0.53 0.14 300); /* purple */
+  --brand-facts: oklch(0.5 0.12 190); /* teal */
 
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);

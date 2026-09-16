@@ -10,6 +10,7 @@ import {
   useDeleteGuardrails,
   useSaveGuardrails,
 } from '@/hooks/useBrand'
+import { useSetGuardrailsStance } from '@/hooks/useGuardrailsStance'
 import { toast } from '@/stores/toastStore'
 
 /**
@@ -48,6 +49,7 @@ function GuardrailsPage() {
   const { data, isPending, isError } = useBrand()
   const save = useSaveGuardrails()
   const remove = useDeleteGuardrails()
+  const { mutate: decide } = useSetGuardrailsStance()
   const [deletions, setDeletions] = useState(0)
 
   const header = <PageHeader back={<BrandBackButton />} />
@@ -86,6 +88,10 @@ function GuardrailsPage() {
         onSave={(written) => {
           save.mutate(written, {
             onSuccess: () => {
+              // Written rules are the stance, said in more detail than the
+              // switch can hold — so the switch cannot be left standing beside
+              // them saying the opposite. See `StanceCard`.
+              decide(false)
               toast.success(
                 guardrails
                   ? 'The guardrails are saved.'

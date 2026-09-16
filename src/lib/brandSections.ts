@@ -2,6 +2,7 @@ import {
   CardsThreeIcon,
   ChatCircleDotsIcon,
   FrameCornersIcon,
+  SealCheckIcon,
   ShieldIcon,
   SwatchesIcon,
   UsersThreeIcon,
@@ -43,7 +44,13 @@ import type { BrandConsumer } from '@/components/brand/types'
  * this file as describing the module rather than the current menu.
  */
 export type BrandSectionId =
-  'voices' | 'audiences' | 'guardrails' | 'sources' | 'look' | 'templates'
+  | 'voices'
+  | 'audiences'
+  | 'guardrails'
+  | 'facts'
+  | 'sources'
+  | 'look'
+  | 'templates'
 
 export type BrandSectionInfo = {
   id: BrandSectionId
@@ -152,6 +159,18 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     description:
       'What is true, what may be claimed, and what may never be. These are the rules nobody opts out of — they hold for every generated post whichever voice wrote it, and the more convincing the voice, the more convincing the invention they exist to stop.',
     whenEmpty: 'Nothing is off limits. Any voice here may promise anything.',
+    readBy: [],
+    shown: true,
+  },
+  {
+    id: 'facts',
+    label: 'Facts',
+    icon: SealCheckIcon,
+    tone: 'var(--brand-facts)',
+    description:
+      'What is true — about this business, about the problems its readers have, and about the openings nobody has taken — one statement at a time, with where it came from and the date it stops being repeatable. Everything a generated post states as a figure comes from here, or is invented.',
+    whenEmpty:
+      'Nothing is stated as true. Every figure in every post is invention, written confidently.',
     readBy: [],
     shown: true,
   },
