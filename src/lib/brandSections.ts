@@ -10,6 +10,7 @@ import {
 } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import type { BrandConsumer } from '@/components/brand/types'
+import { isFeatureEnabled } from '@/config/featureFlags'
 
 /**
  * Brand's sections, as the app names and marks them.
@@ -134,7 +135,10 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     icon: SealCheckIcon,
     tone: 'var(--brand-facts)',
     readBy: [],
-    shown: true,
+    // The ledger's metadata is a localStorage stand-in until the backend ask
+    // lands — see the `facts-ledger` flag. Off, the statements stay a card
+    // inside guardrails and this section is not offered.
+    shown: isFeatureEnabled('facts-ledger'),
   },
   {
     id: 'sources',

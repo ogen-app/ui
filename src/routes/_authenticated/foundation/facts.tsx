@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { isFeatureEnabled } from '@/config/featureFlags'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
@@ -21,6 +22,13 @@ import { toast } from '@/stores/toastStore'
  * that, and the metadata that has nowhere to travel yet, are reconciled.
  */
 export const Route = createFileRoute('/_authenticated/foundation/facts')({
+  // While `facts-ledger` is off the statements live where they always did —
+  // the guardrails editor — and this table's metadata has no backend home.
+  beforeLoad: () => {
+    if (!isFeatureEnabled('facts-ledger')) {
+      throw redirect({ to: '/foundation/guardrails' })
+    }
+  },
   component: FactsPage,
 })
 

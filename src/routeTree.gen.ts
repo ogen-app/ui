@@ -42,7 +42,6 @@ import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
 import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
-import { Route as DesignNavDrilldownIndexRouteImport } from './routes/design/nav-drilldown/index'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
 import { Route as AuthenticatedCampaignsCampaignIdActivityRouteImport } from './routes/_authenticated/campaigns/$campaignId/activity'
 import { Route as AuthenticatedCampaignsCampaignIdAnalyticsRouteImport } from './routes/_authenticated/campaigns/$campaignId/analytics'
@@ -241,11 +240,6 @@ const AuthResetIndexRoute = AuthResetIndexRouteImport.update({
   path: '/auth/reset/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DesignNavDrilldownIndexRoute = DesignNavDrilldownIndexRouteImport.update({
-  id: '/design/nav-drilldown/',
-  path: '/design/nav-drilldown/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedCampaignsCampaignIdIndexRoute =
   AuthenticatedCampaignsCampaignIdIndexRouteImport.update({
     id: '/',
@@ -382,7 +376,6 @@ export interface FileRoutesByFullPath {
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
-  '/design/nav-drilldown/': typeof DesignNavDrilldownIndexRoute
   '/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/campaigns/$campaignId/foundation': typeof AuthenticatedCampaignsCampaignIdFoundationRoute
@@ -431,7 +424,6 @@ export interface FileRoutesByTo {
   '/auth/logout': typeof AuthLogoutIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
   '/auth/reset': typeof AuthResetIndexRoute
-  '/design/nav-drilldown': typeof DesignNavDrilldownIndexRoute
   '/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/campaigns/$campaignId/foundation': typeof AuthenticatedCampaignsCampaignIdFoundationRoute
@@ -485,7 +477,6 @@ export interface FileRoutesById {
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
-  '/design/nav-drilldown/': typeof DesignNavDrilldownIndexRoute
   '/_authenticated/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/_authenticated/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/_authenticated/campaigns/$campaignId/foundation': typeof AuthenticatedCampaignsCampaignIdFoundationRoute
@@ -539,7 +530,6 @@ export interface FileRouteTypes {
     | '/auth/logout/'
     | '/auth/register/'
     | '/auth/reset/'
-    | '/design/nav-drilldown/'
     | '/campaigns/$campaignId/activity'
     | '/campaigns/$campaignId/analytics'
     | '/campaigns/$campaignId/foundation'
@@ -588,7 +578,6 @@ export interface FileRouteTypes {
     | '/auth/logout'
     | '/auth/register'
     | '/auth/reset'
-    | '/design/nav-drilldown'
     | '/campaigns/$campaignId/activity'
     | '/campaigns/$campaignId/analytics'
     | '/campaigns/$campaignId/foundation'
@@ -641,7 +630,6 @@ export interface FileRouteTypes {
     | '/auth/logout/'
     | '/auth/register/'
     | '/auth/reset/'
-    | '/design/nav-drilldown/'
     | '/_authenticated/campaigns/$campaignId/activity'
     | '/_authenticated/campaigns/$campaignId/analytics'
     | '/_authenticated/campaigns/$campaignId/foundation'
@@ -674,7 +662,6 @@ export interface RootRouteChildren {
   AuthLogoutIndexRoute: typeof AuthLogoutIndexRoute
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
   AuthResetIndexRoute: typeof AuthResetIndexRoute
-  DesignNavDrilldownIndexRoute: typeof DesignNavDrilldownIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -908,13 +895,6 @@ declare module '@tanstack/react-router' {
       path: '/auth/reset'
       fullPath: '/auth/reset/'
       preLoaderRoute: typeof AuthResetIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/design/nav-drilldown/': {
-      id: '/design/nav-drilldown/'
-      path: '/design/nav-drilldown'
-      fullPath: '/design/nav-drilldown/'
-      preLoaderRoute: typeof DesignNavDrilldownIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/campaigns/$campaignId/': {
@@ -1195,7 +1175,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLogoutIndexRoute: AuthLogoutIndexRoute,
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,
   AuthResetIndexRoute: AuthResetIndexRoute,
-  DesignNavDrilldownIndexRoute: DesignNavDrilldownIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

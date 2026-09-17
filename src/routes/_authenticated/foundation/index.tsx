@@ -8,6 +8,7 @@ import { useBrand } from '@/hooks/useBrand'
 import { useFacts } from '@/hooks/useFacts'
 import { useGuardrailsStance } from '@/hooks/useGuardrailsStance'
 import { useAssets } from '@/hooks/useContent'
+import { useFeatureFlag } from '@/config/featureFlags'
 
 /**
  * `/foundation` — the Overview, and **the main Brand screen**.
@@ -46,6 +47,9 @@ function BrandOverviewPage() {
   // `services/api/brandLocal` for what the second one is standing in for.
   const { facts } = useFacts()
   const { data: stance } = useGuardrailsStance()
+  // Off: the Facts card is not among the sections (`brandSections`), and the
+  // guardrails card must not read a stance one browser decided for itself.
+  const ledger = useFeatureFlag('facts-ledger')
 
   return (
     <BrandPage>
@@ -71,8 +75,8 @@ function BrandOverviewPage() {
                   : { isPending: true }
               }
               sources={assets}
-              facts={facts}
-              stance={stance}
+              facts={ledger ? facts : []}
+              stance={ledger ? stance : undefined}
               onOpen={(id) => navigate({ to: `/foundation/${id}` })}
             />
           </div>

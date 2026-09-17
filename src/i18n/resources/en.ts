@@ -2974,6 +2974,12 @@ export const en = {
       starterGroupTitle: 'Start from a template',
       starterGroupBody:
         'Three shapes the rules take, rather than thirty industries. Pick the closest and it fills the lists below — every line is meant to be read and edited, because this is the one section people will trust.',
+      facts: 'Facts',
+      factsHint:
+        'What is true, so it stops being invented. Figures, dates, what the product does and what it costs — the things a generator otherwise fills in plausibly.',
+      factsPlaceholder:
+        'Support answers within one working day, every day of the week.',
+      addFact: 'Add a fact',
       mayClaim: 'May claim',
       mayClaimHint:
         'Claims already checked, in the form they were checked in. This is what stops a sentence that took a lawyer an hour being written from scratch every time.',
