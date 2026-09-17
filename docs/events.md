@@ -34,14 +34,13 @@ Both share only the machinery for staying open (`lib/streamConnection`:
 backoff, silence watchdog, subscriber counting) and the one frame parser
 (`lib/sse.ts`).
 
-> **Closed defect, affecting both** (CON-286). `eventhub` capped a user at 10
-> concurrent subscriptions across both streams and never reclaimed the slots,
-> so ten leaks silenced both until the API restarted. ogen#142 made the cap
-> self-healing — the oldest subscription is evicted at the limit, and every
-> connection is recycled after ~30 minutes — and ogen#152 raised the cap to 30
-> and announced each recycle with an `event: recycle` frame. Nothing in
-> `lib/streamConnection` listens for that frame yet, so a recycle still runs
-> the full reconnect path. See `docs/sse.md` for what remains.
+> **Both are closed by the server every 30 minutes** to reclaim their slot, and
+> say so first — `event: recycle`, deliberately without an `id:` line. That is a
+> handover rather than a drop: `lib/streamConnection` reconnects on the spot and
+> the status holds at `open`. The per-user cap is **30** across both streams and
+> every device. Was CON-286, where it was a leak that killed both streams for a
+> user permanently; fixed 2026-09-08 and 2026-09-14, recorded in
+> [`sse.md`](./sse.md).
 
 ---
 

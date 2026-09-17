@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
 import { ZIndex } from '@/config/zIndex'
 import { useBulkTagAssets } from '@/hooks/useContent'
+import { uploadErrorMessage } from '@/lib/uploadError'
 import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
 import type { Asset } from '@/types/content'
@@ -34,8 +35,12 @@ type Props = {
   assets: Asset[]
   /** Files still in transit to this scope, or refused on the way. */
   uploads: UploadItem[]
-  onDelete: (id: string) => void
-  /** Deletes a whole selection, and resolves once every one has settled. */
+  /**
+   * Deletes documents, and resolves once every one has settled. One path for
+   * both ways in: the row's bin confirms the same dialog the selection does,
+   * so a single row is a selection of one rather than a second code path that
+   * skips the asking.
+   */
   onDeleteMany: (ids: string[]) => Promise<void>
   onWrite: () => void
   onUpload: () => void
@@ -62,7 +67,6 @@ export function ContentList({
   campaignId,
   assets,
   uploads,
-  onDelete,
   onDeleteMany,
   onWrite,
   onUpload,
@@ -71,7 +75,18 @@ export function ContentList({
   const { t } = useTranslation()
   const [filter, setFilter] = useState<Filter>(EMPTY_FILTER)
   const [ticked, setTicked] = useState<Set<string>>(new Set())
-  const [confirming, setConfirming] = useState(false)
+  /**
+   * What the dialog is currently asking about, and which gesture asked.
+   *
+   * The documents rather than their ids, because the dialog names a single one
+   * — and held here rather than read back off `ticked`, because the row's bin
+   * confirms a document that may not be ticked at all. `fromSelection` is what
+   * keeps a row delete from quietly clearing a selection somebody built.
+   */
+  const [confirming, setConfirming] = useState<{
+    assets: Asset[]
+    fromSelection: boolean
+  } | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [tagging, setTagging] = useState(false)
 
@@ -125,12 +140,16 @@ export function ContentList({
       return next
     })
 
-  const handleDeleteSelected = async () => {
+  const handleDeleteConfirmed = async () => {
+    if (!confirming) return
     setDeleting(true)
-    await onDeleteMany(selected.map((a) => a.id))
+    await onDeleteMany(confirming.assets.map((a) => a.id))
     setDeleting(false)
-    setConfirming(false)
-    setTicked(new Set())
+    // Only the selection's own delete empties it. A row's bin leaves the ticks
+    // where they are — the effect above drops the one that is now gone, if it
+    // was among them.
+    if (confirming.fromSelection) setTicked(new Set())
+    setConfirming(null)
   }
 
   /**
@@ -185,7 +204,9 @@ export function ContentList({
         <AssetsTable
           assets={visible}
           campaignId={campaignId}
-          onDelete={onDelete}
+          onDelete={(asset) =>
+            setConfirming({ assets: [asset], fromSelection: false })
+          }
           selectedIds={ticked}
           onToggleRow={toggleRow}
           onToggleAll={toggleAll}
@@ -210,7 +231,9 @@ export function ContentList({
           busy={deleting || bulkTag.isPending}
           onClear={() => setTicked(new Set())}
           onTag={() => setTagging(true)}
-          onDelete={() => setConfirming(true)}
+          onDelete={() =>
+            setConfirming({ assets: selected, fromSelection: true })
+          }
         />
       )}
 
@@ -223,11 +246,11 @@ export function ContentList({
       />
 
       <DeleteDocumentsDialog
-        count={selected.length}
+        assets={confirming?.assets ?? []}
         campaignId={campaignId}
-        isOpen={confirming}
-        onClose={() => setConfirming(false)}
-        onConfirm={() => void handleDeleteSelected()}
+        isOpen={confirming !== null}
+        onClose={() => setConfirming(null)}
+        onConfirm={() => void handleDeleteConfirmed()}
         deleting={deleting}
       />
     </div>
@@ -401,6 +424,7 @@ function EmptyBank({
  * where the file was dropped and where the user is looking.
  */
 function UploadingRows({ uploads }: { uploads: UploadItem[] }) {
+  const { t } = useTranslation()
   const retry = useUploadStore((s) => s.retry)
   const remove = useUploadStore((s) => s.remove)
 
@@ -412,14 +436,22 @@ function UploadingRows({ uploads }: { uploads: UploadItem[] }) {
           className="flex items-center gap-3 bg-secondary px-3 py-2"
         >
           <UploadSimpleIcon className="size-4 shrink-0 text-tertiary-foreground" />
-          <span className="min-w-0 flex-1 truncate text-sm">
-            {file.filename}
-          </span>
+          {/* The reason sits under the name rather than beside it. Worded
+              refusals are sentences now (`lib/uploadError`), and a sentence on
+              the same line squeezed the filename — which is the half that says
+              *which* file is being talked about. */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm">{file.filename}</span>
+            {file.phase === 'failed' && (
+              <span className="truncate text-xs text-destructive">
+                {file.error
+                  ? uploadErrorMessage(t, file.error)
+                  : t('uploads.failed')}
+              </span>
+            )}
+          </div>
           {file.phase === 'failed' ? (
             <>
-              <span className="shrink-0 text-xs text-destructive">
-                {file.error ?? 'Upload failed'}
-              </span>
               <Button
                 variant="ghost"
                 size="xsIcon"

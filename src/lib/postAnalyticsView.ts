@@ -31,7 +31,7 @@ import type {
 /** What the post itself knows about the publication, from its own document. */
 export type PostFacts = {
   title: string
-  /** Our platform id or the wire slug — `resolvePlatformInfo` takes either. */
+  /** A row sqid or the wire slug — `usePlatformCatalog().resolve` takes either. */
   platform: string
   /** Reel, Single image, Carousel — the post type, already labelled. */
   format: string

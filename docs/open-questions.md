@@ -33,7 +33,6 @@ or work everyone agrees about that nobody has raised.
 | # | Ask | Why it is still open |
 | --- | --- | --- |
 | **B3** | **A `suspended` flag** on the resources a downgrade makes read-only. | **Which** to suspend was decided 2026-09-16: **the most recent survives** — newest-first by `created_at` up to the new tier's allowance, the rest suspend. Still open because nothing implements it and it has no ticket. The rule has to be applied *by the server*: the client must never work it out by counting against a limit, or it picks a different victim than the server did and a different one per tab. |
-| **S4** | **A stable `code` on each upload result**, beside the prose `error` it already carries. | Agreed 2026-09-16 as backend work; **no ticket yet**. `POST …/assets/upload` answers 201 and words every refusal as English prose — some of it Go, verbatim: `imageprobe: unsupported media type: text/plain; charset=utf-8`. With no code to switch on, the client matches the sentence to translate it (`lib/uploadError`). That degrades safely — an unrecognised message falls through to the fallback, minus the package prefix — but a rewording server-side silently drops a refusal back to untranslated English. One enum field closes it for good. |
 | **X2** | **`updated_by` exists nowhere**, so "who edited this" is unanswerable. | Named as out of scope in CON-285 and never raised on its own. **Deferred 2026-09-16** — wanted eventually, not now. Kept here rather than deleted because it is the reason a whole class of feed entry — teammate activity — cannot be built at any price, and because the column's value is the history it accumulates: the day it is added is the day that history starts. |
 
 ## §2 — Tracked
@@ -54,6 +53,7 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 | P1 | **A thread publishes as one post** — `SubmitRequest` carries no `platformSpecificData`, so `threadItems` is never sent. The client is already built behind the flag. | CON-284 (BE), CON-196 (FE) | `thread-sequence` |
 | P2 | **Attachment validation counted per post rather than per item** — deferred deliberately. Until the publisher splits, "platform allows up to 4" is a true statement about what gets submitted; a client-side per-item count would be a more precise lie. | folded into CON-284 | `thread-sequence` |
 | P3 | **No thumbnail on the post list payload**, so a calendar card has never shown a picture. | CON-247 | `calendar-card-images` |
+| S4 | **A stable `code` on each upload result**, beside the prose `error` it already carries. `POST …/assets/upload` answers 201 and words every refusal as English prose — some of it Go, verbatim: `imageprobe: unsupported media type: text/plain; charset=utf-8` — so the client matches the sentence to translate it (`lib/uploadError`). Raised 2026-09-16 on the image service rather than as its own issue: §18's verdict table and `rejected_reason` are the field, and CON-281 **deletes `imageprobe`**, which replaces every string matched today in one deploy — silently, since a miss is a fallback and not an error. | CON-281 | — |
 | S1 | **A content-bank image has no thumbnail**, so the list's preview cell downloads the full file to draw it at 40px. Raised on the image service rather than as its own issue: it is one more output of a pipeline that already writes a normalized derivative. `assetPreview` prefers `thumbnail_url` already, so the client changes nothing when it lands. | CON-281 | — |
 | S2 | **The bridge that attaches a bank image to a post.** Both sides were built expecting it — `asset_files`' columns are named to match `post_attachments` for the field copy, and the alt text CON-246 collects has no other consumer. The client picker wants CON-210 first, so it is scoped against a campaign rather than the workspace. | **CON-290** | — |
 | S3 | **Campaign-scoped assets**, with the workspace bank staying on as workspace-wide knowledge storage (CON-211). | CON-210 | — |
@@ -73,14 +73,16 @@ Kept for one cycle so nobody re-raises them, then deleted.
   every device: at two streams per tab, `activity` on made ten *five tabs*, and
   past the cap evict-oldest does not settle, it rotates. The permanent 429
   lockout is gone, and a persistent reconnect loop now means a real outage
-  rather than this bug. **Two consequences are ours, not the server's**, and
-  neither is written down yet: a clean close mid-session is now *expected*
-  periodically, and ogen#152 added a frame announcing it —
-  `event: recycle`, `data: {"reason":"lifetime"}`, deliberately **without an
-  `id:` line** so it does not advance the replay cursor. Nothing in
-  `lib/streamConnection.ts` listens for it, so every recycle still runs the full
-  recovery path and shows *"Catching up…"* when nothing was down — twice an hour,
-  per tab. Handling it is the last of this, and it is client work.
+  rather than this bug. **Two consequences were ours, not the server's**: a
+  clean close mid-session is now *expected* periodically, and ogen#152 added a
+  frame announcing it — `event: recycle`, `data: {"reason":"lifetime"}`,
+  deliberately **without an `id:` line** so it does not advance the replay
+  cursor. Both are handled now: `lib/streamConnection.ts` treats an announced
+  close as a handover — reconnect at once, no backoff, no failure counted, and
+  the status holds at `open` — so *"Catching up…"* is back to meaning the
+  connection was down. The events bus still reconciles either way, because a
+  round-trip gap on a bus that keeps no log is still a gap; it just no longer
+  says so.
 - **N4 — the three fields with no wire source.** `matured` and the performers'
   `curve`/`typical` are served by CON-250 under other names (`still_counting`,
   and a per-platform p25/p50/p75 curve), so they are a renaming pass on this

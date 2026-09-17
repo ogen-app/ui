@@ -541,7 +541,7 @@ export interface PostAccount {
   name: string
   /** Profile picture. Absent falls back to an initial — see `AccountAvatar`. */
   avatarUrl?: string
-  /** Our platform id, or the wire slug — see `resolvePlatformInfo`. */
+  /** A row sqid or Zernio's wire slug — see `usePlatformCatalog().resolve`. */
   platform: string
 }
 
@@ -729,7 +729,7 @@ export interface QualityView {
  * looking at a third of Facebook".
  */
 export interface PlatformOption {
-  /** Our platform id, or the wire slug — see `resolvePlatformInfo`. */
+  /** A row sqid or Zernio's wire slug — see `usePlatformCatalog().resolve`. */
   id: string
   label: string
   /** Connected accounts. `0` means the platform is offered but not wired up. */
@@ -980,7 +980,7 @@ export interface PostPerformanceView {
 export interface PostIdentity {
   /** The post's own title, or the first line of its caption. */
   title: string
-  /** Platform slug or sqid — anything `resolvePlatformInfo` answers to. */
+  /** Platform slug or row sqid — either is fine; `resolve` takes both. */
   platform: string
   /** The handle it actually went out as. "Instagram" is not an account. */
   account: string

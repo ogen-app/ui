@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { isAutoPublishAllowed, resolvePublishMethod } from './autoPublish.ts'
 
 // Platform Sqids from platformDictionary.ts.
-const LINKEDIN = 'AXqWG7U2qnpt'
-const FACEBOOK = 'zBU1zqVICGfk'
-const INSTAGRAM = 'rzgpTkARLH0L'
+const LINKEDIN = 'linkedin'
+const FACEBOOK = 'facebook'
+const INSTAGRAM = 'instagram'
 
 // The workspace allows LinkedIn to publish on its own; Facebook is manual only.
 const ALLOWLIST = ['linkedin']

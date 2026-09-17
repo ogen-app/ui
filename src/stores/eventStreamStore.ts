@@ -84,6 +84,7 @@ const connection = createStreamConnection({
           if (!signal.aborted) handleEvent(event)
         },
         onActivity: hooks.activity,
+        onRecycle: hooks.recycling,
       },
       signal,
     ),
@@ -96,8 +97,8 @@ const connection = createStreamConnection({
         ? { status, attempts, reconciling: false }
         : { status, attempts },
     ),
-  onOpen: ({ reconnected }) => {
-    if (reconnected) void reconcile()
+  onOpen: ({ reconnected, afterRecycle }) => {
+    if (reconnected) void reconcile({ announce: !afterRecycle })
   },
 })
 
@@ -128,9 +129,16 @@ export function reconnectEvents(): void {
  * Refetch after a gap, since there is nothing to replay. Pending edits are
  * written first so the refetch can't briefly restore pre-edit content over
  * what the user is typing.
+ *
+ * `announce` is about the banner, never about the work: an announced recycle
+ * (CON-286) still leaves a gap the width of a round trip, and this bus keeps no
+ * log, so the refetch runs either way. What it does not do is say *"Catching
+ * up…"* about a handover the user could not have noticed — the banner's whole
+ * job is to warn that what's on screen may be stale, and one that appears twice
+ * an hour when nothing is wrong teaches people to read past the one that isn't.
  */
-async function reconcile(): Promise<void> {
-  set({ reconciling: true })
+async function reconcile({ announce }: { announce: boolean }): Promise<void> {
+  if (announce) set({ reconciling: true })
   try {
     await flushAllPendingSaves()
     await Promise.all(
@@ -139,7 +147,7 @@ async function reconcile(): Promise<void> {
       ),
     )
   } finally {
-    set({ reconciling: false })
+    if (announce) set({ reconciling: false })
   }
 }
 

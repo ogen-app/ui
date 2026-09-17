@@ -1,7 +1,26 @@
-// Local mapping of platform IDs (sqids from the backend) to user-facing
-// display info. The API is queried for IDs, publishers, cadence, and
-// constraints, but display names and post-type labels live here so we
-// fully control the wording the user sees.
+// The platforms this build supports, keyed by Zernio's wire slug.
+//
+// The API is queried for rows, publishers, cadence and constraints, but display
+// names, marks and post-type labels live here so we fully control the wording
+// and the look. Since CON-292 the catalogue itself is the operator's — rows are
+// added and enabled in Harbor, not in a migration we ship — so this table is
+// what decides whether the app can *render* one of them.
+//
+// It is deliberately a gate and not a fallback. A platform this build has never
+// heard of is not half-supported: it would reach the app with no mark, no
+// preview frame, no caption fold, no media rules and no analytics mapping, and
+// would be broken in five places at once rather than merely plain. So
+// `buildPlatformViews` drops an unknown row (and says so in dev), and the way to
+// launch a network is to ship its support here first and have an operator flip
+// `enabled` after — a one-toggle launch, no deploy. `docs/platform-support.md`
+// is the checklist of what "support" means.
+//
+// **Keyed by `zernio_id`, never by sqid.** A row's sqid is minted by the server,
+// so for a platform an operator creates it is unknowable at build time; filing
+// this table under it is what used to make pre-built support undiscoverable. The
+// rest of the app already agreed — preview renderers, `PLATFORM_FOLDS`, the
+// auto-publish allowlist, connect links and `supportsSequence` are all keyed by
+// slug — so this was the last table out of step.
 //
 // `postTypes` lists only the slugs a publisher can actually send. The
 // platforms table seeds a far wider vocabulary — 46 slugs, including polls,
@@ -22,7 +41,10 @@ import {
   FacebookLogoIcon,
   InstagramLogoIcon,
   LinkedinLogoIcon,
+  PinterestLogoIcon,
+  RedditLogoIcon,
   ThreadsLogoIcon,
+  TiktokLogoIcon,
   XLogoIcon,
   YoutubeLogoIcon,
 } from '@phosphor-icons/react'
@@ -57,26 +79,27 @@ export type PlatformPostType = {
 }
 
 export type PlatformInfo = {
-  id: string
+  // Zernio's wire identifier for this platform (e.g. "twitter" for X) — the
+  // value POST /api/integrations/zernio/connect-links expects, the `zernio_id`
+  // column on the platform row, and the key this whole table is filed under.
+  //
+  // There is deliberately no sqid here. The row carries it, and it is the
+  // server's to mint; see the file header.
+  zernioId: string
   name: string
   icon: Icon
   // Official brand color, hard-coded so the icon renders in its native hue
   // wherever it appears across the app.
   color: string
-  // Zernio's wire identifier for this platform (e.g. "twitter" for X) —
-  // the value POST /api/integrations/zernio/connect-links expects. Mirrors
-  // the backend allowlist in publishers/zernio/platforms.go.
-  zernioId: string
   postTypes: PlatformPostType[]
 }
 
 export const PLATFORMS: PlatformInfo[] = [
   {
-    id: 'AXqWG7U2qnpt',
+    zernioId: 'linkedin',
     name: 'LinkedIn',
     icon: LinkedinLogoIcon,
     color: '#0A66C2',
-    zernioId: 'linkedin',
     postTypes: [
       { slug: 'text-post', label: 'Text post' },
       { slug: 'image-post', label: 'Image post' },
@@ -88,22 +111,20 @@ export const PLATFORMS: PlatformInfo[] = [
     ],
   },
   {
-    id: '8S8bWQTG6qD',
+    zernioId: 'youtube',
     name: 'YouTube',
     icon: YoutubeLogoIcon,
     color: '#FF0000',
-    zernioId: 'youtube',
     postTypes: [
       { slug: 'video', label: 'Video' },
       { slug: 'short', label: 'Short' },
     ],
   },
   {
-    id: 'zBU1zqVICGfk',
+    zernioId: 'facebook',
     name: 'Facebook',
     icon: FacebookLogoIcon,
     color: '#1877F2',
-    zernioId: 'facebook',
     postTypes: [
       { slug: 'text-post', label: 'Text post' },
       { slug: 'image-post', label: 'Image post' },
@@ -113,11 +134,10 @@ export const PLATFORMS: PlatformInfo[] = [
     ],
   },
   {
-    id: '81mUCmc2xsKd',
+    zernioId: 'twitter',
     name: 'X (Twitter)',
     icon: XLogoIcon,
     color: '#000000',
-    zernioId: 'twitter',
     postTypes: [
       { slug: 'text-post', label: 'Text post' },
       { slug: 'image-post', label: 'Image post' },
@@ -126,11 +146,10 @@ export const PLATFORMS: PlatformInfo[] = [
     ],
   },
   {
-    id: 'pQ4yxT3SuE57',
+    zernioId: 'threads',
     name: 'Threads',
     icon: ThreadsLogoIcon,
     color: '#000000',
-    zernioId: 'threads',
     postTypes: [
       { slug: 'text-post', label: 'Text post' },
       { slug: 'image-post', label: 'Image post' },
@@ -153,11 +172,10 @@ export const PLATFORMS: PlatformInfo[] = [
     ],
   },
   {
-    id: 'rzgpTkARLH0L',
+    zernioId: 'instagram',
     name: 'Instagram',
     icon: InstagramLogoIcon,
     color: '#E4405F',
-    zernioId: 'instagram',
     postTypes: [
       // No text-post: Instagram publishes nothing without media, and the
       // platforms table has never seeded the slug for it.
@@ -167,46 +185,64 @@ export const PLATFORMS: PlatformInfo[] = [
       { slug: 'story', label: 'Story' },
     ],
   },
+  // The three below are seeded `enabled = false` (CON-292 §19.2) and reach no
+  // tenant until an operator turns one on. They are here rather than added with
+  // the toggle because that is the order this table exists to enforce: support
+  // ships first, the switch comes after. Labels are ours, not the seeded
+  // `post_types` wording — a picker row is not the place for "(up to 35
+  // images)".
+  {
+    zernioId: 'tiktok',
+    name: 'TikTok',
+    icon: TiktokLogoIcon,
+    color: '#000000',
+    postTypes: [
+      { slug: 'video', label: 'Video' },
+      { slug: 'image-post', label: 'Photo' },
+      { slug: 'carousel', label: 'Photo carousel' },
+    ],
+  },
+  {
+    zernioId: 'pinterest',
+    name: 'Pinterest',
+    icon: PinterestLogoIcon,
+    color: '#E60023',
+    postTypes: [
+      { slug: 'image-post', label: 'Image Pin' },
+      { slug: 'video', label: 'Video Pin' },
+    ],
+  },
+  {
+    zernioId: 'reddit',
+    name: 'Reddit',
+    icon: RedditLogoIcon,
+    color: '#FF4500',
+    postTypes: [
+      { slug: 'text-post', label: 'Text post' },
+      { slug: 'link-post', label: 'Link post' },
+      { slug: 'image-post', label: 'Image post' },
+      { slug: 'carousel', label: 'Gallery' },
+      { slug: 'video', label: 'Video' },
+    ],
+  },
 ]
-
-const BY_ID: Map<string, PlatformInfo> = new Map(
-  PLATFORMS.map((p) => [p.id, p]),
-)
-
-export function getPlatformInfo(id: string): PlatformInfo | undefined {
-  return BY_ID.get(id)
-}
 
 const BY_ZERNIO_ID: Map<string, PlatformInfo> = new Map(
   PLATFORMS.map((p) => [p.zernioId, p]),
 )
 
 /**
- * The platform behind one of Zernio's wire ids (`twitter`, `linkedin`, …).
+ * The display metadata for one of Zernio's wire ids (`twitter`, `linkedin`, …),
+ * or undefined for a network this build does not support.
  *
- * The connect flow speaks Zernio's vocabulary end to end — it is what
- * `connect-links` takes, what the backend redirects back with, and what the
- * pending connection reports — so the surfaces that meet it need a way home to
- * our own name and mark. Undefined for a platform Zernio supports and we don't
- * yet name, which callers should render as the raw id rather than nothing.
+ * The one lookup into this table, and the only identifier it answers to. A sqid
+ * names a *row*, not a network — start from `usePlatformCatalog().resolve` when
+ * that is all you hold.
  */
 export function getPlatformByZernioId(
   zernioId: string,
 ): PlatformInfo | undefined {
   return BY_ZERNIO_ID.get(zernioId)
-}
-
-/**
- * A platform by either of the identifiers it travels under — our sqid, or the
- * wire slug ("linkedin", "twitter").
- *
- * For the surfaces that are handed platforms by something other than
- * /api/platforms: analytics keys its per-platform figures by slug, and a UI
- * that can only resolve sqids ends up drawing a logo for some platforms and a
- * placeholder for the rest of the same row.
- */
-export function resolvePlatformInfo(id: string): PlatformInfo | undefined {
-  return BY_ID.get(id) ?? BY_ZERNIO_ID.get(id)
 }
 
 function unionSupportedSlugs(
@@ -308,10 +344,28 @@ export function connectedAccounts(view: PlatformView): PublisherAccount[] {
   return view.connectedPublishers.flatMap((p) => p.accounts)
 }
 
+/**
+ * The rows this build can render, in the order the server sent them.
+ *
+ * A row whose `zernio_id` is not in `PLATFORMS` is dropped — see the file
+ * header for why that is the design and not a gap. It is the one outcome here
+ * that looks identical to a bug from the outside, so it is announced in dev:
+ * the likeliest cause by far is a `zernio_id` in Harbor that does not match the
+ * slug this build shipped support under, and that is a two-minute fix once
+ * somebody can see it.
+ */
 export function buildPlatformViews(platforms: Platform[]): PlatformView[] {
   return platforms.flatMap((platform) => {
-    const info = getPlatformInfo(platform.id)
-    return info ? [buildPlatformView(platform, info)] : []
+    const info = getPlatformByZernioId(platform.zernio_id)
+    if (!info) {
+      if (import.meta.env.DEV) {
+        console.warn(
+          `[platforms] ignoring "${platform.name}" (zernio_id "${platform.zernio_id}", id ${platform.id}): this build ships no support for it. Add it to PLATFORMS in lib/platformDictionary.ts — see docs/platform-support.md.`,
+        )
+      }
+      return []
+    }
+    return [buildPlatformView(platform, info)]
   })
 }
 
@@ -325,17 +379,17 @@ export function buildPlatformViews(platforms: Platform[]): PlatformView[] {
  * as unconnected rather than hidden. That picker still must not offer an
  * unreleased type, so it takes the release gate by itself.
  */
-export function releasedPostTypes(platformId: string): PlatformPostType[] {
+export function releasedPostTypes(
+  info: PlatformInfo | undefined,
+): PlatformPostType[] {
   return (
-    getPlatformInfo(platformId)?.postTypes.filter(
-      (pt) => !pt.flag || isFeatureEnabled(pt.flag),
-    ) ?? []
+    info?.postTypes.filter((pt) => !pt.flag || isFeatureEnabled(pt.flag)) ?? []
   )
 }
 
-export function getPostTypeLabel(platformId: string, slug: string): string {
-  return (
-    getPlatformInfo(platformId)?.postTypes.find((pt) => pt.slug === slug)
-      ?.label ?? slug
-  )
+export function getPostTypeLabel(
+  info: PlatformInfo | undefined,
+  slug: string,
+): string {
+  return info?.postTypes.find((pt) => pt.slug === slug)?.label ?? slug
 }

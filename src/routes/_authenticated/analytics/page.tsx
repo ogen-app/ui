@@ -61,8 +61,11 @@ export function AnalyticsPage() {
  */
 function Live() {
   const [window, setWindow] = useState<string>(DEFAULT_OVERVIEW_WINDOW)
-  // Our platform id, not the wire slug — the marks are drawn from the app's own
-  // dictionary, and the slug is worked out on the way to the request.
+  // Zernio's wire slug, which since CON-292 is the one identifier both ends
+  // understand: the dictionary that draws the marks is filed under it, and the
+  // board is the read the server narrows by it. It used to be our sqid, with a
+  // translation on the way to the request — but a sqid is a row address the
+  // server mints, and it was never the thing either side was naming.
   const [platform, setPlatform] = useState<string | undefined>(undefined)
   // The board's own control, held here because it is a query parameter rather
   // than a view of what is already loaded — the server ranks and sends two
@@ -76,16 +79,13 @@ function Live() {
 
   const views = usePlatformViews()
   const platforms = views.map((view) => ({
-    id: view.info.id,
+    id: view.info.zernioId,
     label: view.info.name,
     accounts: connectedAccounts(view).length,
   }))
-  // The board is the only read the server will narrow, and it takes Zernio's
-  // slug rather than ours — `twitter` where the app says `x`.
-  const wireSlug = views.find((v) => v.info.id === platform)?.info.zernioId
 
   const overview = useAnalyticsOverview(window)
-  const performers = useAnalyticsPerformers(window, by, wireSlug)
+  const performers = useAnalyticsPerformers(window, by, platform)
   const learnings = useAnalyticsLearnings(metric)
 
   // Whether a filter the two standing cards cannot honour is on screen at all.

@@ -11,7 +11,8 @@ import { useFeatureFlag } from '@/config/featureFlags'
 import { cn, formatTitle } from '@/lib'
 import { formatDate } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
-import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
+import { getPostTypeLabel } from '@/lib/platformDictionary'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { hasVisibleProblem } from '@/lib/postValidation'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
@@ -217,7 +218,7 @@ function PostCardComponent({
   const { t, i18n } = useTranslation()
   const autoPostType = useFeatureFlag('post-type-auto')
   const title = formatTitle(post.title)
-  const platformInfo = getPlatformInfo(post.platform_id)
+  const platformInfo = usePlatformCatalog().resolve(post.platform_id)
   // Fall back to a neutral, "undefined"-feeling dashed circle (in the muted
   // tertiary color, not a warning hue) when no platform is assigned.
   const PlatformIcon = platformInfo?.icon ?? CircleDashedIcon
@@ -229,7 +230,7 @@ function PostCardComponent({
     ? t('posts.noPlatform')
     : autoPostType && !post.platform_post_type
       ? t('posts.postType.auto')
-      : getPostTypeLabel(post.platform_id, post.platform_post_type)
+      : getPostTypeLabel(platformInfo, post.platform_post_type)
   const statusLabel = postStatusLabel(t, post.status)
   const borderColor = STATUS_ACCENT_COLOR[post.status] ?? 'border-l-border'
   // The calendar lays posts out by scheduled_at; show that time (or the
@@ -260,7 +261,7 @@ function PostCardComponent({
     post.social_account_id,
     post.social_account,
   )
-  const problem = hasVisibleProblem(post, account)
+  const problem = hasVisibleProblem(post, account, platformInfo)
 
   // Dragging rewrites scheduled_at, which is locked while `scheduled`
   // (the Zernio submission owns the publish time) and once `published`.

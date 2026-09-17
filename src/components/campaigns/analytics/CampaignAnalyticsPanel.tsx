@@ -17,7 +17,7 @@ import {
   type MeasuredPost,
 } from '@/lib/campaignAnalytics.ts'
 import { formatTitle } from '@/lib'
-import { getPlatformInfo } from '@/lib/platformDictionary.ts'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { relativeTime } from '@/lib/relativeTime.ts'
 import type { Post } from '@/types/posts'
 
@@ -210,13 +210,14 @@ function RankedPosts({
   campaignId: string
   posts: MeasuredPost<Post>[]
 }) {
+  const { resolve: resolvePlatform } = usePlatformCatalog()
   if (posts.length === 0) return null
 
   return (
     <OverviewCard title="Best performing">
       <ul className="flex flex-col">
         {posts.map(({ post, metrics }) => {
-          const info = getPlatformInfo(post.platform_id)
+          const info = resolvePlatform(post.platform_id)
           return (
             <li key={post.id}>
               <LineItem

@@ -288,15 +288,19 @@ without the other.
   (`lib/notifications.ts`), which is the honest shape of the compromise: a
   producer can ship before its copy does, and its rows are untranslatable until
   a key is added.
-- **`eventhub` leaked subscriber slots — fixed** (CON-286). The cap was 10 per
-  user across `/api/events` *and* `/api/notifications/stream`, and slots were
-  never reclaimed: measured on the local API 2026-09-06, ten ids never
-  released, saturated six minutes after boot and still saturated 39 hours
-  later. ogen#142 made the cap self-healing (oldest subscription evicted at
-  the limit, ~30-minute connection lifetime) and ogen#152 raised it to 30.
-  What remains ours is the `event: recycle` frame nothing listens for yet —
-  the `activity` flag comment and `docs/sse.md` carry it.
+- ~~**`eventhub` leaks subscriber slots, and both streams die when ten are
+  held**~~ — closed 2026-09-14. This was the thing most likely to make the feed
+  look broken on arrival: the cap counted 10 per user across both streams and
+  every device, and the slots were never reclaimed, so a user got no live
+  updates and no notifications until the API restarted. CON-286 fixed it in two
+  server releases — evict-oldest plus a 30-minute connection lifetime
+  (ogen#142), then the cap raised to **30** (ogen#152), which is what makes
+  room for this feature's second stream per tab. The lifetime announces itself
+  (`event: recycle`) and the client treats that close as a handover, so a
+  feed that is quiet now means quiet rather than wedged. See
+  [`sse.md`](./sse.md).
 - **Event naming is still mixed** — dotted (`zernio.sync.ok`) and snake_case
   (`post_cloned`), matched literally in `lib/eventRouting.ts`. The notification
   vocabulary settled on dotted (`post.publish_failed`), so the hub is now the
-  odd one out.
+  odd one out. Raised on CON-285 2026-09-16; the rename is backend work and the
+  client changes nothing but the literals.
