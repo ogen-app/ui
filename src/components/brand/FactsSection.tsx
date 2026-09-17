@@ -1,6 +1,12 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react'
+import {
+  CheckIcon,
+  MagnifyingGlassIcon,
+  PlusIcon,
+  TrashIcon,
+  XIcon,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ModalContainer } from '@/components/ui/modal'
@@ -9,15 +15,17 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { TextSelect } from '@/components/ui/text-select'
 import { FactsTable } from '@/components/tables/factsTable'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import type { BarStatus } from '@/components/page-primitives/PageActionBar'
+import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { brandSectionCopy } from '@/lib/brandSections'
-import { BrandEditorFrame, EditorCard, EditorIntro, Field } from './editor'
+import { BrandBackButton } from './detail'
+import { Field } from './editor'
 import {
   FACT_KINDS,
   FACT_SUBJECTS,
   emptyFact,
   countBySubject,
   factKind,
+  factMatches,
   factSubject,
   todayISO,
   type BrandFact,
@@ -67,42 +75,104 @@ import {
  * A tab is a filter and a **seed**: the add button under the Problems tab adds
  * a problem, and says so.
  *
- * The modal also buys a real cancel. The open row wrote straight into the
- * ledger draft — leaving it "undone" was an edit, and there was nothing to
- * press to take it back. A modal holds its own copy: **CANCEL** puts the fact
- * back, and a fact added and thought better of leaves nothing behind.
+ * ## It is laid out as a table page, not as an editor
+ *
+ * The other Brand sections are documents: a column of cards, a scroller, an
+ * intro card at the top saying what the section is for. This one is a list of
+ * records, so it is arranged the way the app's other lists of records are —
+ * posts, documents. Title and the one way in at the top right, a toolbar under
+ * it holding what narrows the list, and the table taking every pixel left over
+ * and scrolling inside itself.
+ *
+ * Two things went in that rearrangement, both because the table below them said
+ * it better. The **intro card** answered "what is this for" at paragraph length
+ * immediately above a ledger of dated statements, which is the answer; the
+ * sentence still exists, on the Overview card that opens this page, where
+ * somebody who has not come in yet is the one reading it. And the **card
+ * around the table** was a white surface with its own heading inside a page
+ * that had just been given one — two headers, one screen.
+ *
+ * The search box is what a page-height table needs and a twelve-row box did
+ * not: see `LedgerSearch`.
+ *
+ * ## A row saves itself, so there is no commit bar
+ *
+ * Every other Brand screen is a document with a `PageActionBar` under it: a
+ * voice is one thing being written, the fields are paragraphs of it, and
+ * SAVE VOICE is the moment somebody means all of them at once. A ledger is not
+ * one thing. Its unit is the row, and a row is already edited in a modal that
+ * opens, asks six questions and ends in a button — which *is* a commit, with
+ * its own scope and its own cancel.
+ *
+ * A bar under that measured the whole ledger and said *Unsaved changes* about
+ * a table whose rows had each been individually finished, which is the wrong
+ * question asked twice: it made somebody who had just pressed ADD FACT press
+ * SAVE THE LEDGER to mean it, and left the two disagreeing in between. So the
+ * modal writes through — **DONE saves, the trash saves, and nothing on this
+ * screen is pending.**
+ *
+ * That makes the modal's **CANCEL** the real safeguard, and it is: it holds
+ * its own copy of the fact, so closing by any of the four ways a modal closes
+ * leaves the row exactly as it was and a fact added and thought better of
+ * leaves nothing behind.
+ *
+ * Removing is not confirmed, which is the app's rule for a row in a list —
+ * see `DeleteAssetDialog`, where it is written down: the mistake is one row
+ * among twenty and it is visible the instant it happens.
  */
-export function FactsEditor({
-  header,
+export function FactsLedger({
   facts,
   onSave,
 }: {
-  header?: ReactNode
   facts: BrandFact[]
   onSave?: (facts: BrandFact[]) => void
 }) {
   const { t } = useTranslation()
   const today = todayISO()
-  const [draft, setDraft] = useState<BrandFact[]>(facts)
+  /**
+   * The ledger on screen — the saved one, one row ahead of the server.
+   *
+   * Every change here is written through immediately, so this is not a draft;
+   * it is what the save was, held locally because the mutation only puts the
+   * new list in the cache when the response comes back. Without it the row
+   * somebody just finished would sit unchanged behind a closed modal for the
+   * length of a round trip, which reads as a save that did not take.
+   */
+  const [ledger, setLedger] = useState<BrandFact[]>(facts)
+  /**
+   * …and re-seeded whenever the server's list changes, which is the
+   * documented way to reset state from a prop. `facts` is memoised on the
+   * statements, so this fires when a save lands (agreeing with what we already
+   * show) or when something else refetches — never on an unrelated render.
+   */
+  const [seeded, setSeeded] = useState<BrandFact[]>(facts)
+  if (seeded !== facts) {
+    setSeeded(facts)
+    setLedger(facts)
+  }
   /** Which ledger is on screen. `'all'` is a view, never a value on a row. */
   const [view, setView] = useState<LedgerView>('all')
+  /** What is typed in the box, unparsed — see `factMatches`. */
+  const [query, setQuery] = useState('')
   /** The row open in the modal, and whether it is in the ledger yet. */
   const [editing, setEditing] = useState<{
     fact: BrandFact
     isNew: boolean
   } | null>(null)
 
-  // The section's own three strings, from the catalogue develop moved them
-  // into (CON-227). The ledger's own copy below is still English in place —
-  // see the note on `brand-materials`.
+  // The section's label, from the catalogue develop moved it into (CON-227) —
+  // the page's title, and the only thing left of the intro card. The ledger's
+  // own copy below is still English in place; see the note on
+  // `brand-materials`.
   const info = brandSectionCopy(t, 'facts')
-  const shown =
-    view === 'all' ? draft : draft.filter((fact) => fact.subject === view)
-  const dirty = signature(draft) !== signature(facts)
-  const stated = draft.filter((fact) => fact.statement.trim().length > 0)
+  const narrowed = view !== 'all' || query.trim() !== ''
+  const shown = ledger.filter(
+    (fact) =>
+      (view === 'all' || fact.subject === view) && factMatches(fact, query),
+  )
 
   const open = (id: string) => {
-    const fact = draft.find((row) => row.id === id)
+    const fact = ledger.find((row) => row.id === id)
     if (fact) setEditing({ fact, isNew: false })
   }
 
@@ -115,80 +185,117 @@ export function FactsEditor({
       // Minted off the length rather than off the wire, which has no id for a
       // fact at all — see `BrandFact.id`. Prefixed differently from the ids the
       // service mints so a fresh row cannot collide with a stored one.
-      fact: emptyFact(`new-${draft.length}-${Date.now()}`, today, adding),
+      fact: emptyFact(`new-${ledger.length}-${Date.now()}`, today, adding),
       isNew: true,
     })
 
+  /**
+   * Show it and store it, in that order — the one path every change takes.
+   *
+   * A statement-less row is dropped from what is sent, which is the same rule
+   * the modal enforces on its commit button; it cannot get here, and the save
+   * strips it anyway (`useSaveFacts`). The endpoint takes the whole ledger, so
+   * "save this row" is a write of all of them either way — what is atomic is
+   * the gesture, not the request.
+   */
+  const write = (rows: BrandFact[]) => {
+    setLedger(rows)
+    onSave?.(rows.filter((fact) => fact.statement.trim().length > 0))
+  }
+
   const commit = (fact: BrandFact, isNew: boolean) => {
-    setDraft((rows) =>
+    write(
       isNew
-        ? [...rows, fact]
-        : rows.map((row) => (row.id === fact.id ? fact : row)),
+        ? [...ledger, fact]
+        : ledger.map((row) => (row.id === fact.id ? fact : row)),
     )
     setEditing(null)
   }
 
   const remove = (id: string) => {
-    setDraft((rows) => rows.filter((row) => row.id !== id))
+    write(ledger.filter((row) => row.id !== id))
     setEditing(null)
   }
 
   return (
-    <BrandEditorFrame
-      header={header}
-      contentKey={`facts-${dirty ? 'dirty' : 'clean'}`}
-      dirty={dirty}
-      status={barStatus(dirty, facts.length > 0)}
-      commitLabel={facts.length > 0 ? 'Save the ledger' : 'Start the ledger'}
-      cancelLabel="Discard changes"
-      onCancel={() => {
-        setDraft(facts)
-        setEditing(null)
-      }}
-      onSave={() => onSave?.(stated)}
-    >
-      <EditorIntro
-        section="facts"
+    // The page's own shape, not `BrandEditorFrame`: that frame is a scroller
+    // with a commit bar anchored under it, and this screen has neither. A
+    // table cannot be nested in something that grows — it would grow with it
+    // instead of taking the height left over — so the header stays put, the
+    // toolbar stays put, and the table scrolls inside itself, which is the
+    // arrangement the posts and documents lists are in.
+    <div className="flex h-full min-h-0 flex-col">
+      <PageHeader
+        back={<BrandBackButton />}
+        // The section's name, where the posts list puts the campaign's. The
+        // intro card that used to say it — and say what the section is for
+        // at paragraph length — sat directly above the table and argued with
+        // it: a page whose subject is a ledger of what is true does not open
+        // by explaining itself, and the sentence is still on the Overview's
+        // card, which is where somebody deciding whether to come in reads
+        // it.
         title={info.label}
-        body={info.description}
-        missing={facts.length > 0 ? undefined : info.whenEmpty}
-      />
-
-      <EditorCard
-        // The one card in Brand wider than the reading column — see `wide`.
-        wide
-        title="The ledger"
-        hint="One statement per row, written the way it should be repeated. The dates are the point of the table: a figure nobody has re-checked since it went in is the thing this section exists to make visible."
-      >
-        {draft.length > 0 && (
-          <LedgerTabs view={view} onChange={setView} facts={draft} />
-        )}
-        {shown.length === 0 ? (
-          <p className="border-l-2 border-quaternary pl-3 text-sm leading-5 text-tertiary-foreground">
-            {emptyLine(view, draft.length > 0)}
-          </p>
-        ) : (
-          <FactsTable
-            facts={shown}
-            today={today}
-            // Under a tab, every row would say the same word — see the prop.
-            showSubject={view === 'all'}
-            onEdit={open}
-            onRemove={remove}
-          />
-        )}
-        <div className="flex flex-col gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-fit px-2 text-secondary-foreground"
-            onClick={add}
-          >
+        // Top right, the way every other table page in the app offers its
+        // one way in. It follows the tab, so under Problems it adds a
+        // problem and says so.
+        actions={
+          <Button size="lg" onClick={add}>
             <PlusIcon />
             <span>{ADD_COPY[adding].button}</span>
           </Button>
-        </div>
-      </EditorCard>
+        }
+      />
+
+      <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 pb-4 lg:px-6">
+        {ledger.length === 0 ? (
+          // No toolbar over an empty ledger: three tabs reading zero and a box
+          // to search nothing with is chrome around an absence. What the absence
+          // costs is the only thing worth saying, and the header holds the one
+          // thing to do about it.
+          <p className="max-w-content border-l-2 border-quaternary pl-3 text-sm leading-5 text-tertiary-foreground">
+            {emptyLine('all', false)}
+          </p>
+        ) : (
+          <>
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 py-2">
+              <LedgerTabs view={view} onChange={setView} facts={ledger} />
+              <LedgerSearch value={query} onChange={setQuery} />
+            </div>
+            {shown.length === 0 && view !== 'all' && query.trim() === '' ? (
+              // An empty *ledger* the table cannot speak for: the shared empty
+              // state is about a filter somebody can relax, and a workspace with
+              // no problems on file has nothing to relax — it has something to
+              // write.
+              <p className="max-w-content border-l-2 border-quaternary pl-3 text-sm leading-5 text-tertiary-foreground">
+                {emptyLine(view, true)}
+              </p>
+            ) : (
+              <div className="grid min-h-0 flex-1 overflow-hidden">
+                <FactsTable
+                  facts={shown}
+                  today={today}
+                  // Under a tab, every row would say the same word — see the prop.
+                  showSubject={view === 'all'}
+                  onEdit={open}
+                  onRemove={remove}
+                  // Only ever empty here because the search emptied it, so the
+                  // way out is to undo the search — and the tab with it, since
+                  // a query that matches nothing under Problems may well match
+                  // something in the ledger.
+                  onEmptyStateAction={
+                    narrowed
+                      ? () => {
+                          setQuery('')
+                          setView('all')
+                        }
+                      : undefined
+                  }
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {editing && (
         <FactModal
@@ -202,7 +309,49 @@ export function FactsEditor({
           onRemove={() => remove(editing.fact.id)}
         />
       )}
-    </BrandEditorFrame>
+    </div>
+  )
+}
+
+/**
+ * The box that narrows the ledger by what a statement says.
+ *
+ * The app's search field — the one the content bank's picker uses — rather
+ * than a filter of its own: a ledger that grows past a screen is searched for
+ * a sentence somebody half remembers, and the columns already answer
+ * everything a structured filter would ask. It narrows the *tab* you are on,
+ * which is why the table's way out of an empty result clears both.
+ */
+function LedgerSearch({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (next: string) => void
+}) {
+  return (
+    <div className="flex h-10 w-full max-w-72 shrink-0 items-center gap-2 border-b-2 border-quaternary bg-input-secondary px-3">
+      <MagnifyingGlassIcon className="size-4 shrink-0 text-secondary-foreground" />
+      <Input
+        variant="search"
+        inputSize="default"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Search statements"
+        aria-label="Search the facts ledger"
+        className="px-0"
+      />
+      {value !== '' && (
+        <Button
+          variant="ghost"
+          size="xsIcon"
+          aria-label="Clear search"
+          onClick={() => onChange('')}
+        >
+          <XIcon />
+        </Button>
+      )}
+    </div>
   )
 }
 
@@ -298,9 +447,11 @@ function emptyLine(view: LedgerView, hasFacts: boolean): string {
 /**
  * One fact, open. Six fields, in the order somebody fills them.
  *
- * It edits a copy, and hands it back only on **DONE** — so the ledger behind
- * it is unchanged while the modal is open, and closing by any of the four ways
- * a modal closes leaves the fact as it was.
+ * It edits a copy, and hands it back only on **SAVE** — so the row behind it
+ * is unchanged while the modal is open, and closing by any of the four ways a
+ * modal closes leaves the fact as it was. With no commit bar on the screen
+ * this is the only thing standing between a half-changed date and the ledger,
+ * which is why the modal owns the copy rather than writing as you type.
  */
 function FactModal({
   fact,
@@ -425,12 +576,11 @@ function FactModal({
             </Button>
           )}
           <div className="ml-auto flex items-center gap-2">
-            {/* Said here rather than in a toast on save: the row is the unit
-                somebody thinks in, and the bar at the foot of the screen is
-                what actually commits it. */}
-            <span className="mr-2 text-xs text-tertiary-foreground">
-              Nothing is stored until the ledger is saved.
-            </span>
+            {/* Nothing here says when it will be stored. It used to — there
+                was a bar under the screen the row was waiting on, and the
+                sentence existed to say so. The button below is the save now,
+                and a note explaining that a save saves is a screen talking
+                about itself. */}
             <Button variant="ghost" size="sm" onClick={onClose}>
               <span>CANCEL</span>
             </Button>
@@ -443,54 +593,14 @@ function FactModal({
               <CheckIcon />
               {/* Named from the subject it opened as, like the title — the
                   button that ends a sentence the heading started must not
-                  call it something else. */}
-              <span>{isNew ? ADD_COPY[fact.subject].commit : 'DONE'}</span>
+                  call it something else. `SAVE` rather than the `DONE` it said
+                  while a bar downstairs did the saving: this is the press that
+                  stores the row, and it should say the word. */}
+              <span>{isNew ? ADD_COPY[fact.subject].commit : 'SAVE'}</span>
             </Button>
           </div>
         </div>
       </div>
     </ModalContainer>
-  )
-}
-
-/**
- * What is stated, as one comparable value. Over the *stated* rows so the two
- * things that are not edits do not read as ones: a blank row somebody opened
- * and abandoned, and the order the service happens to mint ids in.
- */
-function signature(facts: BrandFact[]): string {
-  return JSON.stringify(
-    facts
-      .filter((fact) => fact.statement.trim().length > 0)
-      .map((fact) => [
-        fact.statement.trim(),
-        fact.kind,
-        fact.source.trim(),
-        fact.addedAt,
-        fact.checkedAt,
-        fact.expiresAt,
-      ]),
-  )
-}
-
-function barStatus(dirty: boolean, exists: boolean): BarStatus | undefined {
-  if (dirty) {
-    return {
-      key: 'dirty',
-      full: <BarNote>Unsaved changes</BarNote>,
-      compact: <BarNote>Unsaved</BarNote>,
-    }
-  }
-  if (!exists) return undefined
-  return {
-    key: 'saved',
-    full: <BarNote>Saved</BarNote>,
-    compact: <BarNote>Saved</BarNote>,
-  }
-}
-
-function BarNote({ children }: { children: ReactNode }) {
-  return (
-    <span className="px-1 text-xs text-tertiary-foreground">{children}</span>
   )
 }

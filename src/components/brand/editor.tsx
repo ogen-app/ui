@@ -114,6 +114,7 @@ export function BrandEditorFrame({
   children: ReactNode
 }) {
   const { t } = useTranslation()
+  const column = cn('flex flex-col gap-3 px-3 lg:px-6', PAGE_ACTION_BAR_INSET)
   return (
     <div className="relative flex h-full min-h-0 flex-col">
       <ScrollArea
@@ -122,14 +123,7 @@ export function BrandEditorFrame({
         scrollHideDelay={350}
       >
         {header}
-        <div
-          className={cn(
-            'flex flex-col gap-3 px-3 lg:px-6',
-            PAGE_ACTION_BAR_INSET,
-          )}
-        >
-          {children}
-        </div>
+        <div className={column}>{children}</div>
       </ScrollArea>
 
       <PageActionBar contentKey={contentKey} blocker={blocker} status={status}>
@@ -215,7 +209,6 @@ export function EditorCard({
   title,
   hint,
   action,
-  wide = false,
   children,
 }: {
   title: string
@@ -235,27 +228,10 @@ export function EditorCard({
    * that would not fit.
    */
   action?: ReactNode
-  /**
-   * Wider than the reading column, for a card whose content is a table.
-   *
-   * The 740px measure is a measure for *prose and fields* — it is why the
-   * editors are readable — and a ledger with seven columns in it cannot be
-   * asked to live inside one: at that width the columns fall back to their
-   * minimums and the expiry date, which is the column the screen is opened to
-   * read, sits off the right edge behind a scrollbar. So the table's card
-   * breaks out of the column the way a full-bleed figure does, centred on the
-   * same axis, and everything around it stays at the reading width.
-   */
-  wide?: boolean
   children: ReactNode
 }) {
   return (
-    <section
-      className={cn(
-        'mx-auto flex w-full flex-col gap-5 bg-primary px-6 py-6',
-        wide ? 'max-w-6xl' : 'max-w-content',
-      )}
-    >
+    <section className="mx-auto flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6">
       <header className="flex items-start justify-between gap-4">
         <div className="flex max-w-2xl flex-col gap-1">
           <h2 className="font-display text-lg font-medium leading-6 tracking-tight">

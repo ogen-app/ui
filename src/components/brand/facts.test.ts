@@ -4,6 +4,8 @@ import {
   countBySubject,
   daysBetween,
   emptyFact,
+  expiryDistance,
+  factMatches,
   factStatus,
   factTally,
   todayISO,
@@ -121,5 +123,71 @@ describe('emptyFact', () => {
     expect(emptyFact('new-0', TODAY, 'opportunity').kind).toBe('judgement')
     expect(emptyFact('new-0', TODAY, 'problem').kind).toBe('measured')
     expect(emptyFact('new-0', TODAY).kind).toBe('measured')
+  })
+})
+
+describe('factMatches', () => {
+  const row = fact({
+    statement: 'Half of family offices still reconcile in spreadsheets.',
+    source: 'Wealth Briefing survey, 2026',
+  })
+
+  it('matches nothing away — an empty box is not a filter', () => {
+    expect(factMatches(row, '')).toBe(true)
+    expect(factMatches(row, '   ')).toBe(true)
+  })
+
+  it('reads the statement and the source, whatever the case', () => {
+    expect(factMatches(row, 'SPREADSHEETS')).toBe(true)
+    expect(factMatches(row, 'wealth briefing')).toBe(true)
+  })
+
+  // Nobody types a search expecting the word order to be the part that
+  // matters, and a single substring match makes it the part that matters.
+  it('takes the words in any order, across both fields', () => {
+    expect(factMatches(row, 'family spreadsheets')).toBe(true)
+    expect(factMatches(row, 'spreadsheets survey')).toBe(true)
+  })
+
+  it('needs every word', () => {
+    expect(factMatches(row, 'family transcripts')).toBe(false)
+  })
+
+  // The kind and the subject are a column and a tab. A query aimed at a
+  // sentence about a problem must not return every problem on file.
+  it('does not read the axes the table already filters on', () => {
+    expect(factMatches(fact({ subject: 'problem' }), 'problem')).toBe(false)
+    expect(factMatches(fact({ kind: 'judgement' }), 'judgement')).toBe(false)
+  })
+})
+
+describe('expiryDistance', () => {
+  it('counts days while days are the honest unit', () => {
+    expect(expiryDistance(12)).toEqual({ value: 12, unit: 'day' })
+    expect(expiryDistance(59)).toEqual({ value: 59, unit: 'day' })
+  })
+
+  // The threshold is two months rather than one: everything from six weeks up
+  // would otherwise round to "next month", which says less than the day count
+  // it replaced.
+  it('switches to months only once a month count can say two', () => {
+    expect(expiryDistance(60)).toEqual({ value: 2, unit: 'month' })
+    expect(expiryDistance(300)).toEqual({ value: 10, unit: 'month' })
+  })
+
+  it('counts years past two of them, rather than reading out 47 months', () => {
+    expect(expiryDistance(800)).toEqual({ value: 2, unit: 'year' })
+    expect(expiryDistance(1461)).toEqual({ value: 4, unit: 'year' })
+  })
+
+  // Signed, because the column's loudest row is a fact already being repeated
+  // past its date — and `Intl.RelativeTimeFormat` reads the sign, not a flag.
+  it('keeps the sign, so an expired fact reads as the past', () => {
+    expect(expiryDistance(-3)).toEqual({ value: -3, unit: 'day' })
+    expect(expiryDistance(-200)).toEqual({ value: -7, unit: 'month' })
+  })
+
+  it('reads today as zero days — the day it goes off, not a month either way', () => {
+    expect(expiryDistance(0)).toEqual({ value: 0, unit: 'day' })
   })
 })
