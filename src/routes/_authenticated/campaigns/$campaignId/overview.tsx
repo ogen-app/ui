@@ -1,11 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { AnalyticsModule } from '@/components/campaigns/overview/AnalyticsModule.tsx'
+import { StrategyModule } from '@/components/campaigns/overview/StrategyModule.tsx'
 import { DocumentsModule } from '@/components/campaigns/overview/DocumentsModule.tsx'
 import { AttentionRail } from '@/components/campaigns/overview/AttentionRail.tsx'
-import { BriefModule } from '@/components/campaigns/overview/BriefModule.tsx'
 import { ContentModule } from '@/components/campaigns/overview/ContentModule.tsx'
-import { SetupModule } from '@/components/campaigns/overview/SetupModule.tsx'
 import { useCampaign, useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { useCampaignPosts } from '@/hooks/usePosts.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
@@ -161,9 +160,8 @@ function CampaignOverviewScreen() {
           rather than by where they are in the pipeline. The card reads its own
           flag and renders nothing while `campaign-analytics` is off. */}
       <AnalyticsModule campaignId={campaignId} />
-      <BriefModule campaign={campaign} />
+      <StrategyModule campaign={campaign} platformViews={platformViews} />
       <DocumentsModule campaign={campaign} />
-      <SetupModule campaign={campaign} platformViews={platformViews} />
     </div>
   )
 }

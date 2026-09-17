@@ -9,7 +9,8 @@ import { PostStatusBadge } from '@/components/posts/PostStatusBadge.tsx'
 import { useAddPost } from '@/hooks/usePosts.ts'
 import { cn, formatTitle } from '@/lib'
 import { contentSnapshot } from '@/lib/campaignReadiness.ts'
-import { getPlatformInfo } from '@/lib/platformDictionary.ts'
+import type { PlatformInfo } from '@/lib/platformDictionary.ts'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { relativeTime } from '@/lib/relativeTime.ts'
 import { formatDate } from '@/lib/intl'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore.ts'
@@ -34,6 +35,7 @@ export function ContentModule({
   const campaignId = campaign.id
   const addPost = useAddPost(campaignId)
   const [platformId, setPlatformId] = useState<string>(ALL)
+  const { resolve: resolvePlatform } = usePlatformCatalog()
 
   const askFor = useAssistantStore((s) => s.askFor)
   const openRightPanel = useSettingsStore((s) => s.openRightPanel)
@@ -81,10 +83,15 @@ export function ContentModule({
   // receive content, so it isn't a place to look at content; whatever it has
   // still counts under "All platforms". Whether an account is connected is a
   // workspace matter and doesn't belong in this decision.
+  //
+  // Each channel carries both halves: the tab's value is the campaign's
+  // platform id (a sqid, which is also what the post rows are filtered by),
+  // while the mark and the name come from the dictionary, which is filed under
+  // `zernio_id`. Neither identifier can stand in for the other since CON-292.
   const channels = campaign.target_platforms.flatMap((tp) => {
     if (tp.post_types.length === 0) return []
-    const info = getPlatformInfo(tp.id)
-    return info ? [info] : []
+    const info = resolvePlatform(tp.id)
+    return info ? [{ id: tp.id, info }] : []
   })
 
   const selected = channels.find((c) => c.id === platformId)
@@ -114,15 +121,15 @@ export function ContentModule({
             <TabsTrigger variant="segmented" value={ALL} className="px-3">
               All platforms
             </TabsTrigger>
-            {channels.map((channel) => (
+            {channels.map(({ id, info }) => (
               <TabsTrigger
-                key={channel.id}
+                key={id}
                 variant="segmented"
-                value={channel.id}
+                value={id}
                 className="gap-1.5 px-3"
               >
-                <channel.icon className="size-4 shrink-0" />
-                {channel.name}
+                <info.icon className="size-4 shrink-0" />
+                {info.name}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -142,7 +149,7 @@ export function ContentModule({
             goal (CON-156), so nothing is measured against it for now. */}
         <StatTile
           value={snapshot.total}
-          label={selected ? `on ${selected.name}` : 'Total'}
+          label={selected ? `on ${selected.info.name}` : 'Total'}
         />
       </div>
 
@@ -171,7 +178,7 @@ export function ContentModule({
 
       {snapshot.total === 0 && (
         <p className="text-sm text-secondary-foreground">
-          Nothing on {selected?.name} yet.
+          Nothing on {selected?.info.name} yet.
         </p>
       )}
     </OverviewCard>
@@ -187,8 +194,7 @@ export function ContentModule({
  * difference is the size, which is fixed here rather than sized to the card —
  * these rows are a list, not a column of cards that get narrower.
  */
-function platformIndicator(platformId: string): LineItemIndicator {
-  const info = getPlatformInfo(platformId)
+function platformIndicator(info: PlatformInfo | undefined): LineItemIndicator {
   const Mark = info?.icon ?? CircleDashedIcon
   return {
     kind: 'custom',
@@ -214,6 +220,7 @@ function PostList({
   timeOf: (post: Post) => string | null
 }) {
   const { t, i18n } = useTranslation()
+  const { resolve: resolvePlatform } = usePlatformCatalog()
   return (
     <div className="flex flex-col gap-1">
       <h3 className="text-xs text-tertiary-foreground">{heading}</h3>
@@ -224,7 +231,7 @@ function PostList({
             <li key={post.id}>
               <LineItem
                 asChild
-                indicator={platformIndicator(post.platform_id)}
+                indicator={platformIndicator(resolvePlatform(post.platform_id))}
                 label={formatTitle(post.title, 'Untitled post')}
                 trailing={
                   <>

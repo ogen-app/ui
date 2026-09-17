@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { QueryWrapper } from '@/test/queryWrapper'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { i18next, loadLocaleResources } from '@/i18n'
 import { buildPostPerformanceView } from '@/lib/postAnalyticsView'
@@ -83,7 +84,9 @@ afterAll(async () => {
 describe('the post surface in Spanish', () => {
   it('draws its headings and notes from the catalogue', () => {
     const view = buildPostPerformanceView(i18next.t, SNAPSHOT, FACTS, NOW)
-    render(<PostAnalyticsSurface view={view} />)
+    render(<PostAnalyticsSurface view={view} />, {
+      wrapper: QueryWrapper,
+    })
 
     expect(screen.getByText('La publicación')).toBeInTheDocument()
     expect(screen.getByText('Resumen de rendimiento')).toBeInTheDocument()
@@ -95,7 +98,9 @@ describe('the post surface in Spanish', () => {
 
   it('names the measures and their comparisons in Spanish', () => {
     const view = buildPostPerformanceView(i18next.t, SNAPSHOT, FACTS, NOW)
-    render(<PostAnalyticsSurface view={view} />)
+    render(<PostAnalyticsSurface view={view} />, {
+      wrapper: QueryWrapper,
+    })
 
     // The tile labels come from `analytics.measures`, the card headings from
     // the same place — so one assertion covers the split that the behavioural
@@ -112,7 +117,9 @@ describe('the post surface in Spanish', () => {
 
   it('leaves no English behind on the card the user reads first', () => {
     const view = buildPostPerformanceView(i18next.t, SNAPSHOT, FACTS, NOW)
-    const { container } = render(<PostAnalyticsSurface view={view} />)
+    const { container } = render(<PostAnalyticsSurface view={view} />, {
+      wrapper: QueryWrapper,
+    })
 
     // The words that were literals in components before this pass. Any one of
     // them surviving a language switch means a `t()` was missed.

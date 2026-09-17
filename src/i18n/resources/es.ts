@@ -185,29 +185,47 @@ export const es: Translation = {
   },
 
   nav: {
-    modules: 'Módulos',
     activity: 'Actividad',
-    tasks: 'Tareas',
+    inbox: 'Bandeja',
     activityUnread_one: '{{count}} entrada sin leer',
     activityUnread_other: '{{count}} entradas sin leer',
     campaigns: 'Campañas',
-    contentBank: 'Banco de contenido',
+    ideas: 'Ideas',
+    calendar: 'Calendario',
     analytics: 'Analíticas',
-    brand: 'Marca',
+    foundation: 'Fundamentos',
     workspaceSettings: 'Ajustes del espacio',
+    campaignSettings: 'Ajustes de la campaña',
     profile: 'Perfil',
     help: 'Ayuda y soporte',
     logOut: 'Cerrar sesión',
     closeSidebar: 'Cerrar la barra lateral',
     switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
+    backToWorkspace: 'Volver al espacio de trabajo',
+    workspaceScope: 'Espacio de trabajo',
+    campaignNoWindow: 'Sin fechas',
     campaign: {
       overview: 'Resumen',
-      posts: 'Calendario de publicaciones',
+      strategy: 'Estrategia',
+      ideas: 'Ideas',
+      posts: 'Publicaciones',
+      calendar: 'Calendario',
       analytics: 'Analíticas',
-      brief: 'Briefing',
-      content: 'Contenido',
+      foundation: 'Fundamentos',
+      activity: 'Actividad',
       settings: 'Ajustes',
+    },
+  },
+
+  ideas: {
+    stub: {
+      workspaceTitle: 'Aquí vivirán las ideas',
+      workspaceBody:
+        'Todo lo que vale la pena crear y que aún no pertenece a ninguna campaña, en un solo sitio.',
+      campaignTitle: 'Aquí vivirán las ideas de esta campaña',
+      campaignBody:
+        'El mismo módulo, reducido a esta campaña: lo que aún podría decir, antes de que nada sea una publicación.',
     },
   },
 
@@ -272,6 +290,11 @@ export const es: Translation = {
   },
 
   activity: {
+    stub: {
+      campaignTitle: 'Aquí vivirá la actividad de esta campaña',
+      campaignBody:
+        'El mismo historial que el del espacio de trabajo, reducido a lo que ocurrió dentro de esta campaña.',
+    },
     title: 'Actividad',
     markAllRead: 'MARCAR TODO COMO LEÍDO',
     loadFailed: 'No se pudo cargar la actividad',
@@ -332,15 +355,23 @@ export const es: Translation = {
 
   campaignOverview: {
     openOverview: 'ABRIR RESUMEN',
-    openPosts: 'ABRIR CALENDARIO',
+    openPosts: 'ABRIR PUBLICACIONES',
+    openIdeas: 'ABRIR IDEAS',
+    openCalendar: 'ABRIR CALENDARIO',
+    openActivity: 'ABRIR ACTIVIDAD',
     openAnalytics: 'ABRIR ANALÍTICAS',
-    openBrief: 'ABRIR BRIEFING',
-    openContent: 'ABRIR CONTENIDO',
+    openStrategy: 'ABRIR ESTRATEGIA',
+    openFoundation: 'ABRIR FUNDAMENTOS',
     openSettings: 'ABRIR AJUSTES',
     noDate: 'Sin fecha',
   },
 
   calendar: {
+    stub: {
+      workspaceTitle: 'Todas las campañas en un calendario',
+      workspaceBody:
+        'La misma vista que ya tiene cada campaña, sin el filtro: qué publica todo el espacio de trabajo, y cuándo.',
+    },
     unscheduled: 'SIN PROGRAMAR',
     unscheduledPosts: 'Publicaciones sin programar',
     settings: 'Ajustes del calendario',
@@ -973,24 +1004,6 @@ export const es: Translation = {
           'Una publicación la vio muy poca gente como para que una tasa signifique algo, o no reportó interacciones.',
         heldOut_other:
           '{{count}} publicaciones las vio muy poca gente como para que una tasa signifique algo, o no reportaron interacciones.',
-      },
-      save_rate: {
-        label: 'Guardados',
-        rawLabel: 'Guardados',
-        suffix: 'por cada 1.000 alcanzadas',
-        heldOut_one:
-          'Una publicación no reportó guardados, o la vio muy poca gente como para dividir.',
-        heldOut_other:
-          '{{count}} publicaciones no reportaron guardados, o las vio muy poca gente como para dividir.',
-      },
-      follow_rate: {
-        label: 'Seguimientos',
-        rawLabel: 'Seguimientos',
-        suffix: 'por cada 1.000 alcanzadas',
-        heldOut_one:
-          'Una publicación no reportó seguimientos, o la vio muy poca gente como para dividir.',
-        heldOut_other:
-          '{{count}} publicaciones no reportaron seguimientos, o las vio muy poca gente como para dividir.',
       },
     },
 
@@ -1644,7 +1657,12 @@ export const es: Translation = {
       emptyBody:
         'Este espacio de trabajo aún no tiene voces ni audiencias. Se escriben una vez y todas las campañas se basan en ellas.',
       emptyShort: 'Este espacio de trabajo aún no tiene voces ni audiencias.',
-      openBrand: 'Abrir Marca',
+      openBrand: 'Abrir Fundamentos',
+      alsoApplies:
+        'Los límites del espacio de trabajo también se aplican a todas las publicaciones de aquí, sea quien sea la voz que escriba. No se eligen por campaña y no se pueden anular.',
+      alsoAppliesEmpty:
+        'El espacio de trabajo no ha indicado ningún límite, así que nada está descartado: cualquier voz de aquí puede prometer lo que sea, con las palabras que sea.',
+      seeEverything: 'Ver todo aquello a partir de lo que escribe esta campaña',
       saveError: 'No se pudo guardar la voz de la campaña',
     },
 
@@ -1668,6 +1686,20 @@ export const es: Translation = {
           'Qué es cierto, qué se puede afirmar y qué no se puede afirmar nunca. Son las reglas de las que nadie se libra: valen para toda publicación generada, sea cual sea la voz que la escribió, y cuanto más convincente es la voz, más convincente resulta la invención que estas reglas existen para evitar.',
         whenEmpty:
           'Nada está prohibido. Cualquier voz de aquí puede prometer lo que sea.',
+      },
+      facts: {
+        label: 'Datos',
+        description:
+          'Lo que es cierto —de este negocio, de los problemas que tiene quien lo lee y de los huecos que nadie ha ocupado— afirmación por afirmación, con su procedencia y la fecha en la que deja de poder repetirse. Toda cifra que afirme una publicación generada sale de aquí, o es inventada.',
+        whenEmpty:
+          'No se afirma nada como cierto. Toda cifra de toda publicación es invención, escrita con aplomo.',
+      },
+      sources: {
+        label: 'Fuentes',
+        description:
+          'Los documentos a partir de los que escribe el espacio de trabajo: briefings, transcripciones, páginas de producto, cualquier cosa ya escrita. Cada campaña adjunta los que usa; esto son todos, incluidos los que ninguna campaña ha reclamado.',
+        whenEmpty:
+          'No hay nada a partir de lo que escribir salvo el briefing. Toda publicación generada es invención.',
       },
       look: {
         label: 'Aspecto',
@@ -1712,14 +1744,25 @@ export const es: Translation = {
       originPostCount_other: '{{count}} publicaciones',
       offer: {
         dismiss: 'No volver a ofrecer esto',
-        title: 'Lee el resto de tu sitio web',
-        body: 'Una sola pasada rellena {{fills}}, a partir de tus propios textos y no de una plantilla. Ves todo lo que propone antes de que se guarde nada.',
-        fallback:
-          'Si no hay nada de esto escrito en ningún sitio, Ogen te hará unas cuantas preguntas y lo redactará contigo. Y si lo hay —un dosier de marca, un PDF de tono de voz, una guía de estilo antigua—, funciona igual de bien que el sitio web.',
+        title: 'Rellénalo con lo que ya tienes',
+        body: 'Una sola pasada rellena {{fills}}, a partir de tus propias palabras y no de una plantilla, y ves todo lo que propone antes de que se guarde nada.',
+        website: {
+          title: 'Leerlo de tu sitio web',
+          body: 'Muestras de voz de tus propios textos, el aviso legal que ya publicas y los datos de producto que respaldan cada afirmación.',
+        },
+        document: {
+          title: 'Sacarlo de un documento',
+          body: 'Un dosier de marca, un PDF de tono de voz, una guía de estilo antigua. Da igual en qué se escribiera: funciona igual de bien que el sitio web.',
+        },
+        questions: {
+          title: 'Responder unas cuantas preguntas',
+          body: 'Para cuando no hay nada escrito en ningún sitio. Ogen lo redacta contigo y tú lo corriges.',
+        },
         fills: {
           voices: 'voces',
           audiences: 'audiencias',
           guardrails: 'límites',
+          facts: 'los datos',
         },
       },
     },
@@ -1733,8 +1776,6 @@ export const es: Translation = {
       bannedWordCount: '{{count}} palabras',
       written: 'escrito',
       guardrails: {
-        facts: 'Datos',
-        factsEmpty: 'Cada cifra y cada detalle de producto se inventa de cero.',
         mayClaim: 'Se puede afirmar',
         mayClaimEmpty:
           'Nada tiene una formulación que sepamos que es seguro repetir.',
@@ -1755,7 +1796,7 @@ export const es: Translation = {
     },
 
     detail: {
-      back: 'Volver a Marca',
+      back: 'Volver a Fundamentos',
       backToVoices: 'Volver a las voces',
       backToAudiences: 'Volver a las audiencias',
       errorHeader: 'No se pudo cargar Marca',
@@ -2150,7 +2191,7 @@ export const es: Translation = {
         'Afirmaciones ya revisadas, con la formulación con la que se revisaron. Esto es lo que evita que una frase que le costó una hora a un abogado se reescriba desde cero cada vez.',
       mayClaimPlaceholder:
         'Que la puesta en marcha lleva dos semanas, de principio a fin.',
-      addClaim: 'Añadir una afirmación',
+      addClaim: 'AÑADIR UNA AFIRMACIÓN',
       neverClaim: 'No se puede afirmar nunca',
       neverClaimHint:
         'Escribe la afirmación en sí y no el tema: «cualquier resultado garantizado, en cualquier forma» y no «resultados». Un tema es algo que evitar mencionar; una afirmación es algo con lo que se puede contrastar una frase.',
@@ -2158,7 +2199,7 @@ export const es: Translation = {
         'Todavía no hay nada prohibido. Cualquier voz del espacio de trabajo puede prometer lo que sea, con las palabras que sea.',
       neverClaimPlaceholder:
         'Que el resultado está garantizado, en cualquier forma.',
-      addRule: 'Añadir una regla',
+      addRule: 'AÑADIR UNA REGLA',
       bannedWords: 'Palabras prohibidas',
       bannedWordsHint:
         'Palabras que no pueden aparecer nunca, en ninguna voz. Escribe una y pulsa Intro; las comas y las listas pegadas se separan en palabras sueltas.',
@@ -2259,28 +2300,38 @@ export const es: Translation = {
       title: 'Todavía no hay campañas',
       subtitle: 'Crea tu primera campaña para empezar',
     },
-    archivedTitle: 'Campañas archivadas',
+    archivedSection: 'Campañas archivadas',
     archivedError: 'No se pudieron cargar las campañas archivadas',
-    showArchived: 'Ver las campañas archivadas',
-    showActive: 'Volver a las campañas activas',
     archivedOn: 'Archivada el {{archivedOn}}',
     unarchive: 'DESARCHIVAR',
-    archivedEmpty: {
-      title: 'No hay nada archivado',
-      subtitle:
-        'Archivar una campaña la quita de la lista sin borrar nada. Sus publicaciones, su calendario y su contenido siguen tal cual.',
+    archivedEmpty:
+      'No hay nada archivado. Archivar una campaña la quita de la lista sin borrar nada: sus publicaciones, su calendario y su contenido siguen tal cual.',
+    strategy: {
+      commitment: 'El compromiso',
+      spend: 'Presupuesto e idioma',
     },
-    archiveCard: {
-      title: 'Archivar',
-      body: 'Quita esta campaña de la lista de campañas y deja de ofrecerla allí donde se archiva trabajo nuevo. No se borra nada, y puedes recuperarla cuando quieras.',
-      action: 'ARCHIVAR CAMPAÑA',
-      confirm: '¿Archivar {{name}}? Podrás recuperarla desde el archivo.',
+    settings: {
+      record: 'El registro',
     },
     dangerZone: {
       title: 'Zona de peligro',
-      body: 'Eliminar una campaña borra sus publicaciones y su calendario. Esto no se puede deshacer: archívala si solo quieres quitarla de la lista.',
-      action: 'ELIMINAR CAMPAÑA',
-      confirm: '¿Eliminar {{name}}? Esto no se puede deshacer.',
+      body: 'Dos maneras de dejar de ejecutar esta campaña. Archivarla lo conserva todo y se puede deshacer; eliminarla borra la campaña y sus publicaciones para siempre.',
+      archive: {
+        action: 'ARCHIVAR CAMPAÑA',
+        confirmTitle: '¿Archivar {{name}}?',
+        confirmBody:
+          'La campaña sale de la lista de campañas y deja de ofrecerse allí donde se archiva trabajo nuevo. No se borra nada. Sus publicaciones, su calendario, su brief y su contenido siguen tal cual, y puedes recuperarla desde el archivo cuando quieras.',
+        keep: 'MANTENERLA ACTIVA',
+        confirm: 'ARCHIVAR CAMPAÑA',
+      },
+      delete: {
+        action: 'ELIMINAR CAMPAÑA',
+        confirmTitle: '¿Eliminar {{name}}?',
+        confirmBody:
+          'Se borran la campaña, sus publicaciones y su calendario, y nada en la aplicación puede recuperarlos. Las publicaciones ya publicadas siguen activas en las redes sociales. Archívala si solo quieres quitarla de la lista.',
+        keep: 'MANTENER CAMPAÑA',
+        confirm: 'ELIMINAR CAMPAÑA',
+      },
     },
   },
 
@@ -2317,6 +2368,26 @@ export const es: Translation = {
       delete: 'ELIMINAR',
     },
 
+    delete: {
+      titleNamed: '¿Eliminar «{{title}}»?',
+      title_one: '¿Eliminar este documento?',
+      title_other: '¿Eliminar {{count}} documentos?',
+      bodyCampaign_one:
+        'Este documento se eliminará de forma permanente y esta campaña dejará de escribir a partir de él. Esto no se puede deshacer.',
+      bodyCampaign_other:
+        'Estos documentos se eliminarán de forma permanente y esta campaña dejará de escribir a partir de ellos. Esto no se puede deshacer.',
+      bodyBank_one:
+        'Este documento se eliminará de forma permanente y cualquier campaña que lo use dejará de escribir a partir de él. Esto no se puede deshacer.',
+      bodyBank_other:
+        'Estos documentos se eliminarán de forma permanente y cualquier campaña que los use dejará de escribir a partir de ellos. Esto no se puede deshacer.',
+      keep_one: 'CONSERVAR DOCUMENTO',
+      keep_other: 'CONSERVAR DOCUMENTOS',
+      confirm_one: 'ELIMINAR DOCUMENTO',
+      confirm_other: 'ELIMINAR {{count}} DOCUMENTOS',
+      done_one: '{{count}} documento eliminado',
+      done_other: '{{count}} documentos eliminados',
+    },
+
     tagging: {
       action: 'ETIQUETAR',
       title_one: 'Etiquetar este documento',
@@ -2343,10 +2414,37 @@ export const es: Translation = {
     pdfNote: 'Los PDF se leen en segundo plano, así que terminan después.',
     browse: 'Suelta los archivos aquí o haz clic para elegirlos',
     remove: 'Quitar {{name}}',
+    failed: 'No se ha podido subir',
     cancel: 'CANCELAR',
     submit: 'SUBIR',
     submitCount: 'SUBIR ({{n}})',
     dropInto: 'Añadir a {{scope}}',
+    duplicate: 'Ya está en el banco de contenido como «{{title}}»',
+
+    errors: {
+      type: 'Solo se aceptan archivos .md, .pdf e imágenes.',
+      unsupportedType:
+        'El contenido de este archivo no es de un tipo que podamos leer. Las imágenes tienen que ser JPEG, PNG, WebP o GIF.',
+      tooBig: 'Este archivo supera el límite de {{limit}}.',
+      dimensions:
+        'Esta imagen es demasiado grande para guardarla: el límite es {{max}}.',
+      empty: 'Este archivo está vacío.',
+      notPdf: 'Este archivo no es un PDF legible.',
+      notConfigured: 'Este servidor todavía no puede guardar imágenes.',
+      undecodable: 'No se ha podido leer esta imagen; puede que esté dañada.',
+      server: 'Algo ha fallado al guardar este archivo. Inténtalo de nuevo.',
+    },
+  },
+
+  help: {
+    title: 'Ayuda',
+    back: 'Atrás',
+    related: 'Relacionado',
+    notFound: 'Todavía no hemos escrito este artículo.',
+    resize: 'Cambiar el ancho del panel de ayuda',
+    trigger: {
+      label: '¿Qué es esto?',
+    },
   },
 
   errors: {

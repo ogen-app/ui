@@ -1,7 +1,4 @@
-import {
-  getPlatformByZernioId,
-  getPlatformInfo,
-} from '@/lib/platformDictionary'
+import { getPlatformByZernioId } from '@/lib/platformDictionary'
 import type { AppNotification } from '@/types/notifications'
 
 /**
@@ -126,21 +123,18 @@ function notificationVars(
 }
 
 /**
- * A platform's display name, from whichever of the two vocabularies the wire
- * used.
+ * A platform's display name, from the wire slug a notification carries.
  *
- * The producers are spread across the codebase and there is no guarantee they
- * all speak our ids: the connect flow speaks Zernio's (`linkedin`) end to end,
- * while our own records carry ours. Anything unrecognised is passed through as
- * it arrived — naming a channel we don't know beats saying "a post failed
- * somewhere".
+ * Anything unrecognised is passed through as it arrived — naming a channel we
+ * don't know beats saying "a post failed somewhere". That now covers a
+ * notification whose `platform` is a sqid rather than a slug: this is a pure
+ * formatter with no platform list to translate from, and a rendered sqid is
+ * ugly where the old lookup would have rendered a name. No producer is known to
+ * send one, and every event this file handles is raised beside a Zernio call —
+ * but if one turns up, the fix is at the producer, not a fetch in here.
  */
 export function channelName(platform: string): string {
-  return (
-    getPlatformInfo(platform)?.name ??
-    getPlatformByZernioId(platform)?.name ??
-    platform
-  )
+  return getPlatformByZernioId(platform)?.name ?? platform
 }
 
 /** Where a notification goes when it is clicked. */
@@ -186,7 +180,7 @@ export function notificationTarget(
         : null
     case 'asset':
       return id
-        ? { to: '/content-bank/$assetId', params: { assetId: id } }
+        ? { to: '/foundation/sources/$assetId', params: { assetId: id } }
         : null
     case 'social_account':
       // No route addresses one connection: they are a section of Workspace

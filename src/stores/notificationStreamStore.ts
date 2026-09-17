@@ -60,8 +60,15 @@ const connection = createStreamConnection({
       signal,
       // Read per attempt, not closed over: the cursor moves with every frame
       // and is thrown away entirely when the tab re-pins to another workspace.
-      // Absent on a first connect, which the server reads as "live from now" —
-      // correct, because the page that fills the cache is fetched over REST.
+      //
+      // Absent only until a tab's first frame lands — `landLiveNotification`
+      // seeds the page cache whether or not Activity has ever been opened, so
+      // the stream keeps its own cursor from then on without the feed's help.
+      // Before that there is nothing to replay *from* and the server reads the
+      // silence as "live from now". What makes that safe is `reconcile()`
+      // below, not REST-on-mount: a reconnect invalidates the inbox either
+      // way, so a row created during a cold gap is fetched rather than pushed.
+      // Late, never lost.
       { lastEventId: cursor() ?? undefined },
     ),
   onState: (state) => useNotificationStreamStore.setState(state),
@@ -82,6 +89,10 @@ function cursor(): number | null {
  * weekend — comes back with a cursor the server will not fully honour. The
  * replay covers the common short gap instantly; this covers the rest, and the
  * two agree because both are deduped by id on the way into the cache.
+ *
+ * It is also the *whole* of the catch-up whenever the cursor was absent — a tab
+ * that had received no frames before it dropped — which is why this runs on
+ * every reconnect rather than only when a cursor was sent.
  *
  * No `flushAllPendingSaves` here, unlike the events bus: nothing in this cache
  * is edited by hand, so there is no in-flight write for a refetch to overwrite.

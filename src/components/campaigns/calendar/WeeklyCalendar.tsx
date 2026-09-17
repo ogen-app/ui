@@ -10,7 +10,7 @@ import { useAddPost } from '@/hooks/usePosts'
 import { useCalendarDrop } from '@/hooks/useCalendarDrop'
 import { comparePostOrder } from '@/lib/postOrder'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
-import { usePlatformViews } from '@/hooks/usePlatforms'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { resolveForPlatform } from '@/lib/publishingAccount'
 import { hasVisibleProblem } from '@/lib/postValidation'
 import { isDateLocked } from './LockMark'
@@ -74,7 +74,8 @@ function WeeklyCalendarComponent({
   const { dragOverKey, laneHandlers } = useCalendarDrop(campaignId, posts)
   // One read of the cached platform list for the whole grid; the cards call
   // the hook form for themselves and get the same answer.
-  const platformViews = usePlatformViews()
+  const { views: platformViews, resolve: resolvePlatform } =
+    usePlatformCatalog()
 
   const days = useMemo(
     () => visibleWeekDays(anchor, firstDayOfWeek, hiddenDays),
@@ -155,6 +156,7 @@ function WeeklyCalendarComponent({
                 post.social_account_id,
                 post.social_account,
               ),
+              resolvePlatform(post.platform_id),
             ),
           // Truthiness, exactly as the card decides whether to draw the band
           // (`media_urls[0]` there too) — `length > 0` would charge a 100px
@@ -182,7 +184,16 @@ function WeeklyCalendarComponent({
             laneHeight !== null && stackHeight(rung, facts, fields) > available,
         }
       }),
-    [days, today, postsByDay, laneHeight, platformViews, fields, i18n.language],
+    [
+      days,
+      today,
+      postsByDay,
+      laneHeight,
+      platformViews,
+      resolvePlatform,
+      fields,
+      i18n.language,
+    ],
   )
 
   return (

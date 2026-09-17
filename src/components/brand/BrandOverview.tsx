@@ -1,12 +1,27 @@
 import { useState, type ReactNode } from 'react'
-import { CaretRightIcon } from '@phosphor-icons/react'
+import {
+  CaretRightIcon,
+  ChatTeardropTextIcon,
+  ClockCountdownIcon,
+  PaletteIcon,
+  ProhibitIcon,
+  SealCheckIcon,
+  ShieldCheckIcon,
+  TextAaIcon,
+  WarningIcon,
+  type Icon,
+} from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
-import { LineItem } from '@/components/ui/line-item'
+import { LineItem, type LineItemIndicator } from '@/components/ui/line-item'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { formatList } from '@/lib/intl'
+import { AssetKindTally } from '@/components/content/AssetKindTally'
+import { formatDate, formatList } from '@/lib/intl'
+import { cn } from '@/lib'
+import type { Asset } from '@/types/content'
+import type { GuardrailsStance } from '@/services/api/brandLocal'
 import {
   brandSectionCopy,
   SHOWN_BRAND_SECTIONS,
@@ -14,8 +29,15 @@ import {
   type BrandSectionInfo,
 } from '@/lib/brandSections'
 import { FirstRun } from './FirstRun'
+import {
+  FACT_SUBJECTS,
+  countBySubject,
+  factTally,
+  todayISO,
+  type BrandFact,
+} from './facts'
 import { defaultVoiceLabel, sampleCount, usageLine } from './format'
-import { DefaultStar, WholeBrandOffer } from './shell'
+import { BrandIntro, DefaultStar, WholeBrandOffer } from './shell'
 import {
   EXPECTED_RATIOS,
   isBrandEmpty,
@@ -59,13 +81,46 @@ import {
  * means the same thing: there is something behind this, not "this is correct".
  * Deliberately no red anywhere — an empty section is a to-do, and a brand-new
  * workspace would otherwise look broken in five places at once.
+ *
+ * **Sources is the exception to rule 2, and it is the rule's own limit.** The
+ * five library sections hold things somebody wrote one at a time, so naming
+ * them is naming all of them. Documents arrive by the hundred, and a card that
+ * listed the five most recently changed was answering a question nobody asked
+ * — it counts instead (`AssetKindTally`). The list is one click below, which is
+ * where a name is worth reading.
  */
 export function BrandOverview({
   state,
+  sources = [],
+  facts = [],
+  stance,
   showWhenEmpty = false,
   onOpen,
 }: {
   state: BrandOverviewState
+  /**
+   * The workspace's documents (CON-211), which are Brand's sixth section and
+   * the one whose contents do not come from `useBrand`.
+   *
+   * Passed in rather than fetched here for the reason the rest of this screen
+   * takes `state`: it is a rendering of what is in the brand, and a component
+   * that fetches half of what it draws cannot be put in a harness or shown a
+   * fixture. The route owns both queries.
+   */
+  sources?: Asset[]
+  /**
+   * The ledger, already assembled — `useFacts`. Passed in for the same reason
+   * `sources` is: the statements are on `BrandData`, the dates around them are
+   * not, and a card that reached for them itself could not be shown a fixture.
+   */
+  facts?: BrandFact[]
+  /**
+   * Whether the workspace has decided it needs no guardrails — the answer
+   * `guardrails: null` cannot give on its own. See `readStance`; like `sources`
+   * it is passed in rather than read here, so this screen stays a rendering of
+   * what it is given.
+   */
+  stance?: GuardrailsStance
   /** Skips the first-run takeover — the escape hatch, and the harness. */
   showWhenEmpty?: boolean
   onOpen?: (id: BrandSectionId) => void
@@ -86,18 +141,84 @@ export function BrandOverview({
     )
   }
 
+  const card = (section: BrandSectionInfo) => (
+    <SectionCard
+      key={section.id}
+      section={section}
+      rows={
+        section.id === 'sources'
+          ? []
+          : sectionRows(t, section.id, data, facts, stance)
+      }
+      // Sources is the one section a list of rows is the wrong shape for
+      // — see `AssetKindTally`. Empty, it falls through to the section's
+      // `whenEmpty` line like every other card.
+      body={
+        section.id === 'sources' && sources.length > 0 ? (
+          <AssetKindTally assets={sources} />
+        ) : undefined
+      }
+      onOpen={onOpen}
+    />
+  )
+
   return (
     <Wrapper>
+      <FoundationIntro />
+      {/* Sources leads, immediately under the sentence explaining the screen,
+          because it is the one section whose contents somebody already has.
+          The other four are written — a voice is composed, an audience is
+          described, a rule is decided — and a workspace on day one has none of
+          them; documents exist before the app does. It also sets up the card
+          under it: the offer is to read the rest of the brand out of exactly
+          this material. */}
+      {SOURCES_FIRST.lead.map(card)}
       <WholeBrandOffer fills={missingSectionNames(t, data)} />
-      {SHOWN_BRAND_SECTIONS.map((section) => (
-        <SectionCard
-          key={section.id}
-          section={section}
-          rows={sectionRows(t, section.id, data)}
-          onOpen={onOpen}
-        />
-      ))}
+      {SOURCES_FIRST.rest.map(card)}
     </Wrapper>
+  )
+}
+
+/**
+ * The cards, split around the offer that sits between them. By id rather than
+ * by index, so the screen's one exception to the section table's order is
+ * stated rather than counted.
+ */
+const SOURCES_FIRST = {
+  lead: SHOWN_BRAND_SECTIONS.filter((section) => section.id === 'sources'),
+  rest: SHOWN_BRAND_SECTIONS.filter((section) => section.id !== 'sources'),
+}
+
+/**
+ * The card the screen opens with, and the only one on it that goes nowhere.
+ *
+ * Every other card here is a door, and a screen made entirely of doors never
+ * says what the building is. Somebody arriving at Foundation for the first time
+ * is looking at six things they have not heard the app use before — a voice, an
+ * audience, guardrails, facts, sources — and the six cards under this one can
+ * each say what *they* are while none of them can say why they are together.
+ *
+ * So: the same card a section opens with (`BrandIntro`), at the top of the hub.
+ * **It cannot be closed and it carries nothing to click.** Both are deliberate.
+ * A dismissible explanation is one the next person to join the workspace never
+ * sees, and this is the screen where the next person is exactly who needs it; a
+ * button on it would make it the seventh door and put the offer that *is* a
+ * door (`WholeBrandOffer`, directly below) in competition with the sentence
+ * explaining the screen.
+ */
+function FoundationIntro() {
+  return (
+    <BrandIntro
+      icon={PaletteIcon}
+      // Not "Foundation": the page header two lines above says that, and the
+      // hub keeps its header title where the section screens gave theirs up —
+      // it is a top-level destination and the only one that would be untitled.
+      // So the card's heading does the other half of the job and says what the
+      // word means.
+      title="What the app writes from"
+      body="The voices it writes in, who it is written to, what may never be claimed, what is true, and the documents it draws on — one place for all five. It is written once for the workspace, and every campaign and every post inherits it."
+      heading="h2"
+    />
   )
 }
 
@@ -105,38 +226,49 @@ export type BrandOverviewState =
   { isPending: true; data?: undefined } | { isPending: false; data: BrandData }
 
 /**
- * One thing the section holds, as one row.
+ * One thing a section holds, as one row — **and every row on this screen is
+ * built the same way**, which is the point of the shape rather than a
+ * coincidence of it.
  *
- * `done` is "there is something behind this", never "this is right" — a voice
- * with three samples is ticked whether or not the samples are any good, because
- * the screen can honestly know the first and cannot know the second.
+ * The cards had drifted into four grammars. A voice row was a name, a
+ * description, a counts line and a star with the word "default" beside it in
+ * the right margin; an audience row was three of those four; a guardrail row
+ * was a label with a bare number opposite it, set in a different size and a
+ * different colour from either. Five type treatments down one column, and the
+ * eye has to work out for each card which of them it is reading.
+ *
+ * So there is one row now and it has four slots, in one order:
+ *
+ * 1. **A mark**, always — see `mark`.
+ * 2. **A label**: what this thing is called.
+ * 3. **Details**: one line saying what it actually is, or what its absence
+ *    costs. Same size and colour on every card.
+ * 4. **Meta**: the counts, on the third line and never in the right margin. A
+ *    margin number has to be short enough to fit, which is what produced a bare
+ *    `3` in a column where every other row ended in a word.
+ *
+ * Nothing carries a right margin any more. `LineItem`'s `trailing` slot is
+ * where the last two type styles were living, and the one thing it held that
+ * was worth keeping — the default star — belongs at the front of the row
+ * instead, where the tick it replaces was.
  */
 type BrandRow = {
   key: string
-  done: boolean
+  /**
+   * The 16px slot at the head of the row, and never empty.
+   *
+   * A tick for a slot that is either filled or not, the section's own glyph for
+   * a row that is a *kind* of thing rather than a task (the guardrail lists,
+   * the fact kinds — where an empty circle would have meant "unticked" about
+   * something nobody ticks), and the default star where an entry is the one the
+   * app falls back to.
+   */
+  mark: LineItemIndicator
   label: string
   /** One line under the label: what this thing actually is. */
   details?: string
-  /**
-   * The counts, on a third line — samples, usage, coverage.
-   *
-   * Its presence is also what makes the row an *entry* rather than a *task*
-   * (see `LineItemVariant`), and the two go together rather than being two
-   * settings: a row that names a thing from the library is the row that has
-   * counts to report, and a row that names a slot of a singleton is the row
-   * that has one number for the margin.
-   */
+  /** The counts, on a third line — samples, usage, coverage, dates. */
   meta?: string
-  /**
-   * The right margin: one number for a slot row, and — on the voices — the
-   * default star.
-   *
-   * A node rather than a string because of that star. It is the same mark the
-   * section screens and both editors carry, and the whole point of it is that
-   * the fact looks identical in all four places; a second rendering of "this is
-   * the default" invented for the index would be the fifth.
-   */
-  trailing?: ReactNode
 }
 
 /**
@@ -157,10 +289,18 @@ type BrandRow = {
 function SectionCard({
   section,
   rows,
+  body,
   onOpen,
 }: {
   section: BrandSectionInfo
   rows: BrandRow[]
+  /**
+   * Drawn instead of the rows, for a section a list is the wrong shape for.
+   * Only Sources has one: a library of four voices is listed, a library of
+   * four hundred documents is counted, and the five titles that happened to
+   * change last were a sample nobody asked it for.
+   */
+  body?: ReactNode
   onOpen?: (id: BrandSectionId) => void
 }) {
   const { t } = useTranslation()
@@ -206,19 +346,25 @@ function SectionCard({
           )
         }
       >
-        {rows.length === 0 ? (
+        {body ? (
+          body
+        ) : rows.length === 0 ? (
           <p className="text-sm text-secondary-foreground">{copy.whenEmpty}</p>
         ) : (
           <ul className="flex flex-col">
             {rows.map((row) => (
               <li key={row.key}>
+                {/* `entry` on every row, including the ones that name a slot
+                    rather than a library entry. The variant used to be chosen
+                    per row from whether it happened to carry counts, which
+                    made the type on a card depend on how much the card had to
+                    say. */}
                 <LineItem
-                  variant={row.meta ? 'entry' : 'task'}
-                  indicator={{ kind: 'task', done: row.done }}
+                  variant="entry"
+                  indicator={row.mark}
                   label={row.label}
                   details={row.details}
                   meta={row.meta}
-                  trailing={row.trailing}
                 />
               </li>
             ))}
@@ -284,37 +430,54 @@ function sectionRows(
   t: TFunction,
   id: BrandSectionId,
   data: BrandData,
+  facts: BrandFact[],
+  stance?: GuardrailsStance,
 ): BrandRow[] {
   switch (id) {
+    // The documents are not in `BrandData`, and they are not rows either —
+    // the caller draws the card's body from its own query and never reaches
+    // this arm. Present so the switch stays exhaustive, which is what makes a
+    // seventh section a compile error here rather than a blank card.
+    case 'sources':
+      return []
+
     case 'voices':
       return data.voices.map((voice) => {
         // The samples are the voice, so they are what the tick is about. A
         // named voice with nothing behind it generates exactly what no voice
         // would, and it is the failure this row exists to make visible.
-        const done = voice.samples.length >= MIN_VOICE_SAMPLES
+        const backed = voice.samples.length >= MIN_VOICE_SAMPLES
         return {
           key: voice.id,
-          done,
+          // The star stands *in place of* the tick rather than beside it in
+          // the margin, and it says both things at once: filled and green when
+          // the default has what it takes to be one, hollow when it has not.
+          // A default voice with nothing behind it is the worst state this
+          // library has — everything falls back to an entry that changes
+          // nothing — and it is now legible without reading a word.
+          mark: voice.isDefault
+            ? {
+                kind: 'custom',
+                node: (
+                  <DefaultStar
+                    backed={backed}
+                    label={defaultVoiceLabel(t, voice)}
+                    word={false}
+                  />
+                ),
+              }
+            : { kind: 'task', done: backed },
           label: voice.name,
           // No description when there is nothing to describe it by, rather than
           // a sentence explaining the absence. Three template voices in a row
           // each explaining their own emptiness reads as a rendering bug — the
           // same failure the guardrail rails had — and the row already says it
-          // twice over: an empty tick, and `no samples, never used` in the
-          // margin.
+          // twice over: an empty tick, and `no samples, never used` below.
           details: voice.summary || undefined,
           meta: [
             sampleCount(t, voice.samples.length),
             usageLine(t, voice.usage),
           ].join(t('brand.facts.separator')),
-          // The star takes the same reading the tick does, which is the point
-          // of putting them on one row: a grey star beside an empty tick is the
-          // library's worst state — everything falls back to this entry, and
-          // this entry has nothing in it — and it is legible without reading a
-          // word.
-          trailing: voice.isDefault ? (
-            <DefaultStar backed={done} label={defaultVoiceLabel(t, voice)} />
-          ) : undefined,
         }
       })
 
@@ -325,53 +488,120 @@ function sectionRows(
         key: audience.id,
         // Named is not described. The tick is the three consequence lines,
         // because those are what make an audience usable rather than a label.
-        done: Boolean(
-          audience.readsOn && audience.scrollsPastWhen && audience.believesWhen,
-        ),
+        mark: {
+          kind: 'task',
+          done: Boolean(
+            audience.readsOn &&
+            audience.scrollsPastWhen &&
+            audience.believesWhen,
+          ),
+        },
         label: audience.name,
         details: audience.summary || undefined,
         meta: usageLine(t, audience.usage),
       }))
 
+    case 'facts': {
+      if (facts.length === 0) return []
+      const tally = factTally(facts, todayISO())
+      // One line per ledger — what this business knows about itself, what it
+      // knows is wrong out there, and what it thinks that leaves open. The
+      // breakdown used to be by `FACT_KIND`, and that is the wrong axis for
+      // this card: how checkable a statement is matters while somebody is
+      // writing it, and a card on the hub answers *what has this workspace
+      // written down*. The kinds are a column on the table and a picker in the
+      // modal, which is where they are read.
+      //
+      // All three are drawn even at zero, the way the guardrails card draws
+      // `Never claim` when it is empty: a ledger with twelve facts about
+      // itself and no problems on file is writing about nobody, and that is
+      // only visible if the empty line is there to read.
+      const rows: BrandRow[] = FACT_SUBJECTS.map((subject) => ({
+        key: subject.id,
+        // The subject's own glyph, not a tick: these rows are a breakdown of
+        // what is in the ledger, and there is nothing about "5 problems" that
+        // is either done or not done.
+        mark: glyph(subject.icon),
+        label: subject.plural,
+        // No `details`: the line under a voice or an audience says what *that
+        // entry* is, and the equivalent here would be the definition of the
+        // axis — three sentences of vocabulary on a card whose job is to say
+        // how big the ledger is. They belong beside the picker that sets it,
+        // and that is where they are.
+        meta: statedCount(t, countBySubject(facts, subject.id)),
+      }))
+      // The only row here that can be bad, so it is the only one that is not a
+      // count of what exists. A ledger's size is not a finding; a statement the
+      // app is still repeating past its expiry date is.
+      if (tally.expired > 0 || tally.due > 0) {
+        rows.push({
+          key: 'freshness',
+          mark: glyph(
+            tally.expired > 0 ? WarningIcon : ClockCountdownIcon,
+            true,
+          ),
+          label: tally.expired > 0 ? 'Past its date' : 'Needs re-checking',
+          details:
+            tally.expired > 0
+              ? 'Still being repeated in everything generated here.'
+              : 'Expires soon — cheap to confirm now, wrong the moment it lapses.',
+          meta: [
+            tally.expired > 0 ? `${tally.expired} expired` : null,
+            tally.due > 0 ? `${tally.due} within a month` : null,
+          ]
+            .filter(Boolean)
+            .join(', '),
+        })
+      }
+      return rows
+    }
+
     case 'guardrails': {
       const g = data.guardrails
-      if (!g) return []
+      // The distinction the section could not draw until there was somewhere
+      // to record it: a workspace that decided it needs no rules gets a row
+      // saying so, and one that has never answered falls through to the card's
+      // empty state, which is written as an unfinished to-do. See `readStance`.
+      if (!g) {
+        return stance?.none
+          ? [
+              {
+                key: 'stance',
+                mark: glyph(ShieldCheckIcon),
+                label: 'Nothing to restrict, deliberately',
+                details:
+                  'Somebody looked at this and decided the workspace has no claims worth guarding.',
+                meta: decidedLine(stance.decidedAt),
+              },
+            ]
+          : []
+      }
       return [
         {
-          key: 'facts',
-          done: g.facts.length > 0,
-          label: t('brand.overview.guardrails.facts'),
-          details:
-            g.facts.length === 0
-              ? t('brand.overview.guardrails.factsEmpty')
-              : undefined,
-          trailing: statedCount(t, g.facts.length),
-        },
-        {
           key: 'may',
-          done: g.mayClaim.length > 0,
+          mark: glyph(SealCheckIcon),
           label: t('brand.overview.guardrails.mayClaim'),
           details:
             g.mayClaim.length === 0
               ? t('brand.overview.guardrails.mayClaimEmpty')
               : undefined,
-          trailing: statedCount(t, g.mayClaim.length),
+          meta: statedCount(t, g.mayClaim.length),
         },
         {
           key: 'never',
-          done: g.neverClaim.length > 0,
+          mark: glyph(ProhibitIcon, g.neverClaim.length === 0),
           label: t('brand.overview.guardrails.neverClaim'),
           details:
             g.neverClaim.length === 0
               ? t('brand.overview.guardrails.neverClaimEmpty')
               : undefined,
-          trailing: statedCount(t, g.neverClaim.length),
+          meta: statedCount(t, g.neverClaim.length),
         },
         {
           key: 'banned',
-          done: g.bannedWords.length > 0,
+          mark: glyph(TextAaIcon),
           label: t('brand.overview.guardrails.bannedWords'),
-          trailing:
+          meta:
             g.bannedWords.length > 0
               ? t('brand.overview.bannedWordCount', {
                   count: g.bannedWords.length,
@@ -380,10 +610,10 @@ function sectionRows(
         },
         {
           key: 'disclaimer',
-          done: g.disclaimer.trim().length > 0,
+          mark: glyph(ChatTeardropTextIcon),
           label: t('brand.overview.guardrails.disclaimer'),
           details: g.disclaimer.trim() || undefined,
-          trailing: g.disclaimer.trim()
+          meta: g.disclaimer.trim()
             ? t('brand.overview.written')
             : t('brand.overview.none'),
         },
@@ -396,18 +626,18 @@ function sectionRows(
       return [
         {
           key: 'logos',
-          done: l.logos.length > 0,
+          mark: { kind: 'task', done: l.logos.length > 0 },
           label: t('brand.look.logoSlot'),
-          trailing:
+          meta:
             l.logos.length > 0
               ? t('brand.overview.logosWithJobs', { count: l.logos.length })
               : t('brand.overview.none'),
         },
         {
           key: 'palette',
-          done: l.palette.length > 0,
+          mark: { kind: 'task', done: l.palette.length > 0 },
           label: t('brand.look.paletteSlot'),
-          trailing:
+          meta:
             l.palette.length > 0
               ? t('brand.overview.coloursWithRoles', {
                   count: l.palette.length,
@@ -416,20 +646,20 @@ function sectionRows(
         },
         {
           key: 'type',
-          done: l.typefaces.length > 0,
+          mark: { kind: 'task', done: l.typefaces.length > 0 },
           label: t('brand.look.typeSlot'),
           // The customer's own typeface names, joined the way the language
           // joins a list rather than by a hard-coded comma.
-          trailing:
+          meta:
             l.typefaces.length > 0
               ? formatList(l.typefaces)
               : t('brand.overview.none'),
         },
         {
           key: 'imagery',
-          done: l.referenceImages.length > 0,
+          mark: { kind: 'task', done: l.referenceImages.length > 0 },
           label: t('brand.look.referenceSlot'),
-          trailing: countOrNone(t, l.referenceImages.length),
+          meta: countOrNone(t, l.referenceImages.length),
         },
       ]
     }
@@ -443,7 +673,7 @@ function sectionRows(
           // One PNG per ratio is the price of not reflowing, so a missing ratio
           // is not cosmetic — it is the set being unusable wherever that ratio
           // is what gets posted.
-          done: covered === EXPECTED_RATIOS.length,
+          mark: { kind: 'task', done: covered === EXPECTED_RATIOS.length },
           label: template.name,
           details: template.isDefault
             ? t('brand.overview.templates.isDefault')
@@ -461,15 +691,44 @@ function sectionRows(
   }
 }
 
+/**
+ * A row marked by what it *is* rather than by whether it is done.
+ *
+ * Ink is the same as an unticked row's, so a card of glyphs and a card of ticks
+ * sit at the same weight down the column — except where the finding is the
+ * absence itself, which is the one place this screen spends a colour.
+ */
+function glyph(Glyph: Icon, alarming = false): LineItemIndicator {
+  return {
+    kind: 'custom',
+    node: (
+      <Glyph
+        className={cn(
+          'size-4',
+          alarming ? 'text-destructive' : 'text-senary-foreground',
+        )}
+        aria-hidden
+      />
+    ),
+  }
+}
+
+/** When the decision was taken — the whole content of a stance. */
+function decidedLine(iso: string | null): string {
+  const shown = iso
+    ? formatDate(iso, { day: 'numeric', month: 'long', year: 'numeric' })
+    : null
+  return shown ? `Decided ${shown}` : 'Decided'
+}
+
 function countOrNone(t: TFunction, n: number): string {
   return n > 0 ? String(n) : t('brand.overview.none')
 }
 
 /**
- * A count with its unit, because a bare "3" in the right margin is a number
- * nobody can price. Every other row on this screen ends in a word — "2 with
- * jobs", "4 of 4 ratios", "never used" — and the guardrail rows read as a
- * spreadsheet without one.
+ * A count with its unit, because a bare "3" is a number nobody can price. Every
+ * other line on this screen ends in a word — "4 of 4 ratios", "never used" —
+ * and these rows read as a spreadsheet without one.
  */
 function statedCount(t: TFunction, n: number): string {
   return n > 0
@@ -491,6 +750,12 @@ function missingSectionNames(t: TFunction, data: BrandData): string[] {
   if (data.audiences.length === 0)
     missing.push(t('brand.shell.offer.fills.audiences'))
   if (!data.guardrails) missing.push(t('brand.shell.offer.fills.guardrails'))
+  // Named separately from the guardrails it is stored with, because a website
+  // read fills the two from different halves of a site — the rules off the
+  // small print, the facts off the product pages — and a workspace that has
+  // written rules and stated nothing true is the common case, not the odd one.
+  if ((data.guardrails?.facts.length ?? 0) === 0)
+    missing.push(t('brand.shell.offer.fills.facts'))
   // No `look` here while the section is not offered — the card would promise to
   // fill something the user has no way to see or check afterwards.
   return missing

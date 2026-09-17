@@ -22,7 +22,7 @@ const EVERY_STATUS: PostStatus[] = [
 ]
 
 // Platform Sqid from platformDictionary.ts.
-const LINKEDIN = 'AXqWG7U2qnpt'
+const LINKEDIN = 'linkedin'
 
 function post(overrides: Partial<Post> = {}): Post {
   return {

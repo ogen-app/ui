@@ -1,4 +1,9 @@
-import { UsersThreeIcon, WaveformIcon } from '@phosphor-icons/react'
+import {
+  ArrowUpRightIcon,
+  ShieldIcon,
+  UsersThreeIcon,
+  WaveformIcon,
+} from '@phosphor-icons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { SettingsCard } from '@/components/settings/SettingsCard'
@@ -33,6 +38,16 @@ import type { BrandAudience, BrandVoice } from './types'
  * multi-select whose extra entries no generator reads is the picker-with-no-
  * consumer failure CON-226 §9 names, and it was ours. If the cast lands
  * server-side, §13 is where it comes back.
+ *
+ * **The guardrails are named here and not offered.** They are the third piece
+ * of brand material and the only one with no question attached: they apply to
+ * every generation whichever voice is picked, so there is nothing to select and
+ * nothing to override, and a control for them on this screen would imply a
+ * campaign could opt out of the claims it is allowed to make. What was wrong
+ * was going from *unpickable* to *unmentioned* — a rule nobody can see is a
+ * rule nobody believes is running. So the card ends by saying they exist and
+ * pointing at the campaign's Foundation page, which is where everything this
+ * campaign writes from can be read in full (`InheritedBrand`).
  *
  * **It saves on the spot**, not through the page's Save button, following
  * `PlatformsControl` — a selection that sat dirty until an unrelated Save would
@@ -115,7 +130,54 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
           />
         ))}
       </div>
+
+      <WhatAlsoApplies
+        campaignId={campaignId}
+        hasGuardrails={brand.guardrails !== null}
+      />
     </SettingsCard>
+  )
+}
+
+/**
+ * The card's last word: what this campaign is also written under, that nothing
+ * above it chose.
+ *
+ * A paragraph and a link, deliberately not a control and deliberately not a
+ * fourth section — the moment it looks like one, somebody goes looking for the
+ * checkbox that turns it off. The wording changes with whether anything is
+ * stated, because the two facts are opposite in kind: rules in force are a
+ * constraint, and no rules at all is a gap worth the same one line.
+ */
+function WhatAlsoApplies({
+  campaignId,
+  hasGuardrails,
+}: {
+  campaignId: string
+  hasGuardrails: boolean
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="mt-1 flex flex-col gap-2 border-t border-tertiary pt-4">
+      <p className="flex gap-2 text-sm text-tertiary-foreground">
+        <ShieldIcon className="mt-0.5 size-4 shrink-0" />
+        <span>
+          {hasGuardrails
+            ? t('brand.binding.alsoApplies')
+            : t('brand.binding.alsoAppliesEmpty')}
+        </span>
+      </p>
+      <div>
+        <Link
+          to="/campaigns/$campaignId/foundation"
+          params={{ campaignId }}
+          className="inline-flex items-center gap-1 text-sm text-secondary-foreground hover:text-foreground"
+        >
+          {t('brand.binding.seeEverything')}
+          <ArrowUpRightIcon className="size-3.5" />
+        </Link>
+      </div>
+    </div>
   )
 }
 
@@ -135,7 +197,7 @@ function NothingToPickFrom() {
       </p>
       <div>
         <Button asChild variant="secondary" size="sm">
-          <Link to="/brand">{t('brand.binding.openBrand')}</Link>
+          <Link to="/foundation">{t('brand.binding.openBrand')}</Link>
         </Button>
       </div>
     </SettingsCard>

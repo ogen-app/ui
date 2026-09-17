@@ -26,12 +26,24 @@ export function videoConstraints(
   }
 }
 
-/** A platform row (LinkedIn by default) with every field the type demands. */
+/**
+ * A platform row (LinkedIn by default) with every field the type demands.
+ *
+ * The sqid is arbitrary and deliberately not one of the seeded ones: nothing in
+ * the app is filed under a sqid since CON-292, so a test that depends on a
+ * particular one is testing something that no longer exists. `zernio_id` is the
+ * field to override when a test means "this is Instagram".
+ */
 export function makePlatform(overrides: Partial<Platform> = {}): Platform {
   return {
-    id: 'AXqWG7U2qnpt',
+    id: 'plat-1',
     name: 'LinkedIn',
+    zernio_id: 'linkedin',
+    enabled: true,
+    connect_supported: true,
     post_types: {},
+    supported_post_types: [],
+    sort_order: 0,
     cadence: '',
     constraints: '',
     text_constraints: { max_content_chars: 0, max_title_chars: 0 },

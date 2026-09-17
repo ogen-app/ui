@@ -30,18 +30,29 @@ import { useUploadStore } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
 import type { Campaign } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
+import { InheritedBrand } from '@/components/brand/InheritedBrand'
 import { AddWebPageModal } from './AddWebPageModal'
 import { ContentList } from './ContentList'
 
 /**
  * Documents, in the scope that holds them.
  *
- * Two screens, one component: a campaign's Content page (CON-210), and the
- * workspace-wide Content Bank behind it. They are the same page because they
+ * Two screens, one component: a campaign's Foundation page (CON-210), and the
+ * workspace-wide bank behind it — Foundation's Sources section (CON-211). They
+ * are the same page because they
  * are the same job — see what is here, put something in, open it, delete it —
  * and the only honest difference is what "here" means. `campaign === null` is
  * the workspace, and every place that matters says so out loud rather than
  * quietly reusing the campaign's words.
+ *
+ * **In a campaign it is the section's whole page, and the documents are the
+ * lower half of it.** `/campaigns/:id/foundation` is the level-1 twin of
+ * `/foundation`, and up there the word covers the guardrails, the voices and
+ * the audiences as well as the documents. So the campaign's version leads with
+ * what it inherits — read-only, collapsed, `InheritedBrand` — and the table
+ * below is what the campaign has put in itself. The workspace's bank shows no
+ * such band: it *is* the place those things are edited, one click away in its
+ * own Overview.
  *
  * The page owns its header and its drop target rather than taking the layout's,
  * because both name a destination: a file dropped anywhere on it joins *this*
@@ -167,13 +178,13 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             const attached = await addToCampaign(campaign.id, [asset.id])
             if (!attached) return
             navigate({
-              to: '/campaigns/$campaignId/content/$assetId',
+              to: '/campaigns/$campaignId/foundation/$assetId',
               params: { campaignId: campaign.id, assetId: asset.id },
             })
             return
           }
           navigate({
-            to: '/content-bank/$assetId',
+            to: '/foundation/sources/$assetId',
             params: { assetId: asset.id },
           })
         },
@@ -218,25 +229,14 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     })
   }
 
-  /*
-   * Deleting the row deletes the document, everywhere.
-   *
-   * The detach only names the campaign whose page this is, because that is the
-   * only membership list this page can see. Other campaigns keep the id, which
-   * is harmless — `campaignAssets` matches ids against documents that exist, so
-   * an id with nothing behind it simply doesn't appear — and it stops being a
-   * question at all once the backend scopes assets properly (CON-210 phase 2).
-   */
-  const handleDelete = (id: string) => {
-    deleteAsset.mutate(id, {
-      onSuccess: () => {
-        if (campaign) void removeFromCampaign(campaign.id, [id])
-      },
-    })
-  }
-
   /**
-   * The same delete, over a selection.
+   * Deleting documents deletes them everywhere, and this is the only way in.
+   *
+   * One entry point for both gestures — a row's bin and a whole ticked
+   * selection — because a row is a selection of one. The single-row path that
+   * used to sit beside this one skipped the confirmation as well as the
+   * detach, which is how the cheapest click on the screen became the only
+   * unrecoverable one.
    *
    * The requests fan out and any of them can fail, so the detach and the toast
    * are built from what actually succeeded: `allSettled`, then the membership
@@ -244,6 +244,12 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
    * than called per row because the answer for one document depends on the
    * others — detaching the last one is what turns a campaign's generation off
    * (see `lib/campaignMembership`).
+   *
+   * The detach only names the campaign whose page this is, because that is the
+   * only membership list this page can see. Other campaigns keep the id, which
+   * is harmless — `campaignAssets` matches ids against documents that exist, so
+   * an id with nothing behind it simply doesn't appear — and it stops being a
+   * question at all once the backend scopes assets properly (CON-210 phase 2).
    *
    * Failures raise their own toasts through the mutation cache, so nothing is
    * said about them here beyond leaving them out of the count.
@@ -255,9 +261,7 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     const gone = ids.filter((_, i) => results[i].status === 'fulfilled')
     if (gone.length === 0) return
     if (campaign) void removeFromCampaign(campaign.id, gone)
-    toast.success(
-      `${gone.length} ${gone.length === 1 ? 'document' : 'documents'} deleted`,
-    )
+    toast.success(t('content.delete.done', { count: gone.length }))
   }
 
   const scopeName = campaign
@@ -276,11 +280,11 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
     >
       <PageHeader
         // In a campaign, the shape the layout builds for every other section:
-        // `${campaign} ${section}`. The section is Content rather than Assets —
-        // "assets" is the workspace pile's word for things filed away
-        // centrally, and what a campaign holds is just its content. The pile
-        // keeps its own name, because that is what it is.
-        title={campaign ? `${scopeName} Content` : 'Content Bank'}
+        // `${campaign} ${section}`, with the section named as the rail names
+        // it. In the workspace this is one of Foundation's sections rather
+        // than a section of its own, and Sources is what the Overview's card
+        // that opens it says.
+        title={campaign ? `${scopeName} Foundation` : 'Sources'}
         actions={
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -328,9 +332,14 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
         }
       />
 
-      {/* The campaign layout's body box: fixed height, no page scroll — the
-          table virtualises against this and scrolls itself. */}
-      <div className="grid h-full overflow-hidden px-3 lg:px-6">
+      {campaign && <InheritedBrand campaignId={campaign.id} />}
+
+      {/* The campaign layout's body box: no page scroll — the table
+          virtualises against this and scrolls itself. `flex-1` over a fixed
+          `h-full`, because the band above it is a sibling whose height
+          changes: `h-full` measures the whole column and would push the
+          table's last rows under the fold every time somebody opened it. */}
+      <div className="grid min-h-0 flex-1 overflow-hidden px-3 lg:px-6">
         {isLoading ? (
           <PageLoader />
         ) : isError ? (
@@ -346,7 +355,6 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             campaignId={campaignId}
             assets={shown}
             uploads={uploads}
-            onDelete={handleDelete}
             onDeleteMany={handleDeleteMany}
             onWrite={handleCreate}
             onUpload={() => setUploadModalOpen(true)}

@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
-import { resolvePlatformInfo } from '@/lib/platformDictionary'
 import { Picker } from './ComparisonBar'
 import type { PlatformOption } from './types'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 
 /**
  * What the dashboard is counting, and over what window.
@@ -121,7 +121,7 @@ function PlatformMark({
   onSelect: () => void
 }) {
   const { t } = useTranslation()
-  const info = resolvePlatformInfo(platform.id)
+  const info = usePlatformCatalog().resolve(platform.id)
   const Icon = info?.icon
   const accounts = t('analytics.scopeBar.accounts', {
     count: platform.accounts,

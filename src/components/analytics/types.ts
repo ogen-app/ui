@@ -514,9 +514,18 @@ export type PacePlacement = 'ahead' | 'usual' | 'behind'
  * What "best" and "worst" are being measured by. The rules behind each one live
  * in `criteria.ts`; the ids are here because the view carries a typical value
  * keyed by them.
+ *
+ * There were two more — `save_rate` and `follow_rate` — and they were deleted
+ * rather than left waiting (2026-09-06). `/performers` reports neither saves
+ * nor follows, so `availableCriteria` filtered both out of every render they
+ * ever had; keeping them meant carrying a vocabulary, two catalogue entries and
+ * a translation for questions the product could not answer. Saves are the one
+ * worth having back — the data exists on `post_analytics_current` and CON-250
+ * surfaces it per post — and re-adding a criterion here is a small change once
+ * the field is on the ranked rows. Follows per post is not merely unserved but
+ * doubtfully attributable, and is not coming back.
  */
-export type PerformerCriterionId =
-  'pace' | 'reach' | 'engagement_rate' | 'save_rate' | 'follow_rate'
+export type PerformerCriterionId = 'pace' | 'reach' | 'engagement_rate'
 
 /**
  * The connected account a post went out on.
@@ -532,7 +541,7 @@ export interface PostAccount {
   name: string
   /** Profile picture. Absent falls back to an initial — see `AccountAvatar`. */
   avatarUrl?: string
-  /** Our platform id, or the wire slug — see `resolvePlatformInfo`. */
+  /** A row sqid or Zernio's wire slug — see `usePlatformCatalog().resolve`. */
   platform: string
 }
 
@@ -720,7 +729,7 @@ export interface QualityView {
  * looking at a third of Facebook".
  */
 export interface PlatformOption {
-  /** Our platform id, or the wire slug — see `resolvePlatformInfo`. */
+  /** A row sqid or Zernio's wire slug — see `usePlatformCatalog().resolve`. */
   id: string
   label: string
   /** Connected accounts. `0` means the platform is offered but not wired up. */
@@ -971,7 +980,7 @@ export interface PostPerformanceView {
 export interface PostIdentity {
   /** The post's own title, or the first line of its caption. */
   title: string
-  /** Platform slug or sqid — anything `resolvePlatformInfo` answers to. */
+  /** Platform slug or row sqid — either is fine; `resolve` takes both. */
   platform: string
   /** The handle it actually went out as. "Instagram" is not an account. */
   account: string

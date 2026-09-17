@@ -53,6 +53,7 @@ import { usePostNotes } from '@/hooks/usePostNotes'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
 import { useDuplicatePost } from '@/hooks/usePosts'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import { usePostArrowNavigation } from '@/hooks/usePostNavigation'
 import { usePublishStatus } from '@/hooks/usePublishStatus'
@@ -213,10 +214,13 @@ function PostEditorSurface({
   // the state says "auto" and the platform says otherwise.
   const { data: autoPublishAllowlist, isPending: allowlistPending } =
     useAutoPublishAllowlist()
+  // The allowlist is kept by `zernio_id` (CON-292); the post holds a row sqid,
+  // so the catalog translates before the two are compared.
+  const { row: platformRow } = usePlatformCatalog()
   const effectivePublishMethod = resolvePublishMethod(
     publishMethod,
     autoPublishAllowlist,
-    doc.platform_id,
+    platformRow(doc.platform_id)?.zernio_id,
   )
 
   // Attachments, the platform's post-type rules and the checks derived from

@@ -2,7 +2,7 @@ import { useMemo, type JSX, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount.ts'
-import { getPlatformInfo } from '@/lib/platformDictionary.ts'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { getPlatformMedia } from '@/lib/platformMedia.ts'
 import { relativeTime } from '@/lib/relativeTime.ts'
 import { formatNumber } from '@/lib/intl'
@@ -138,7 +138,7 @@ export function PostPreviewPanel({
   sequence?: ThreadPlan<PostAttachmentWithValidation>
   onClose?: () => void
 }) {
-  const platform = getPlatformInfo(doc.platform_id)
+  const platform = usePlatformCatalog().resolve(doc.platform_id)
   // Renders as the account the post actually publishes as — including a
   // disconnected one on a post that already went out, which is the only
   // honest byline for it.
@@ -239,7 +239,8 @@ export function PostPreviewPanel({
   // preview would promise a slide the network will drop. Videos ride along:
   // the image cap is about images, and the video rules live server-side
   // (`video_constraints`), enforced by the Validations panel.
-  const imageCap = getPlatformMedia(doc.platform_id).image?.maxPerPost ?? null
+  const imageCap =
+    getPlatformMedia(platform?.zernioId ?? '').image?.maxPerPost ?? null
   const publishable = useMemo(() => {
     if (imageCap === null) return media
     let images = 0

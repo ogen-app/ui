@@ -37,10 +37,14 @@ import type {
  *   becoming a zero, because "you have never posted then" and "you post then
  *   and it does nothing" are opposite findings that a shared scale would draw
  *   identically.
- * - **The hours are UTC.** The server buckets on a fixed display timezone
- *   (default UTC) and sends no offset, so every slot label says so. Shifting
- *   them into the reader's zone would need the offset that applied on each
- *   post's own date, which an aggregate over a year of posts cannot recover.
+ * - **The hours are UTC**, by convention rather than by a field: the back end
+ *   works in UTC and the client renders local, decided 2026-09-06. So the
+ *   labels say UTC because that is what the buckets are, not as a hedge against
+ *   not knowing. Shifting them into the reader's zone is still refused, and for
+ *   a reason the convention does not touch — it would need the offset that
+ *   applied on each post's own date, which an aggregate over a year of posts
+ *   cannot recover. A slot is the only figure on these surfaces that stays in
+ *   UTC; everything with a real timestamp goes through `lib/intl`.
  * - **Three scalars, not a list of milestones.** `t50/t75/t95_hours` are
  *   assembled into the marks the curve draws.
  * - **There is no confidence enum**, and none is invented. The server enforces

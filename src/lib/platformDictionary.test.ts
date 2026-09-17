@@ -2,26 +2,29 @@ import { afterEach, describe, expect, it } from 'vitest'
 import type { Platform, PublisherAccount } from '@/types/campaigns'
 import { clearFlagOverrides, setFlagOverride } from '@/config/flagOverrides.ts'
 import { makePlatform } from './platformFixtures.ts'
+import { getPlatformMedia } from './platformMedia.ts'
 import {
   PLATFORMS,
   buildPlatformView,
   buildPlatformViews,
   connectedAccounts,
-  getPlatformInfo,
+  getPlatformByZernioId,
   getPostTypeLabel,
   releasedPostTypes,
 } from './platformDictionary.ts'
 
-// Sqids from the dictionary itself.
-const YOUTUBE = '8S8bWQTG6qD'
-const INSTAGRAM = 'rzgpTkARLH0L'
-const LINKEDIN = 'AXqWG7U2qnpt'
-const TWITTER = '81mUCmc2xsKd'
-const THREADS = 'pQ4yxT3SuE57'
+// Zernio wire slugs — what the dictionary is keyed by (CON-292). The fixtures
+// below reuse each as its row's sqid too; nothing here joins the two.
+const YOUTUBE = 'youtube'
+const INSTAGRAM = 'instagram'
+const LINKEDIN = 'linkedin'
+const TWITTER = 'twitter'
+const THREADS = 'threads'
 
-function apiPlatform(id: string, supported: string[]): Platform {
+function apiPlatform(zernioId: string, supported: string[]): Platform {
   return makePlatform({
-    id,
+    id: zernioId,
+    zernio_id: zernioId,
     name: 'whatever the API calls it',
     publishers: [
       {
@@ -42,8 +45,10 @@ function apiPlatform(id: string, supported: string[]): Platform {
 describe('video ungating (CON-148/163)', () => {
   it('offers YouTube alongside the other platforms', () => {
     expect(PLATFORMS.some((p) => p.zernioId === 'youtube')).toBe(true)
-    expect(getPlatformInfo(YOUTUBE)?.name).toBe('YouTube')
-    expect(getPostTypeLabel(YOUTUBE, 'short')).toBe('Short')
+    expect(getPlatformByZernioId(YOUTUBE)?.name).toBe('YouTube')
+    expect(getPostTypeLabel(getPlatformByZernioId(YOUTUBE), 'short')).toBe(
+      'Short',
+    )
   })
 
   it('builds a view for it when the API returns it', () => {
@@ -63,6 +68,78 @@ describe('video ungating (CON-148/163)', () => {
       'carousel',
       'reel',
     ])
+  })
+})
+
+// CON-292 made the catalogue the operator's: rows are added and enabled in
+// Harbor, and their sqids are minted there. So the join has to be `zernio_id`
+// or pre-built support for a platform somebody adds later is unreachable.
+describe('the operator-controlled catalogue (CON-292)', () => {
+  it('joins a row to its support by zernio_id, whatever its sqid is', () => {
+    // The sqid here is one no build could have hardcoded — which is the case
+    // this is about. What makes it resolve is the slug beside it.
+    const [view] = buildPlatformViews([
+      makePlatform({
+        id: 'a-sqid-minted-after-this-build-shipped',
+        zernio_id: 'linkedin',
+        name: 'LinkedIn',
+      }),
+    ])
+    expect(view.info.name).toBe('LinkedIn')
+    expect(view.platform.id).toBe('a-sqid-minted-after-this-build-shipped')
+  })
+
+  it('drops a row this build ships no support for', () => {
+    // Deliberate, not a gap: a network with no mark, no preview frame, no
+    // caption fold and no media rules is broken in five places rather than
+    // merely plain. The order is the launch order — support first, toggle
+    // second.
+    const views = buildPlatformViews([
+      apiPlatform(LINKEDIN, ['text-post']),
+      makePlatform({ id: 'p9', zernio_id: 'bluesky', name: 'Bluesky' }),
+    ])
+    expect(views.map((v) => v.info.zernioId)).toEqual(['linkedin'])
+  })
+
+  it('keeps the order the server sent, which is the operator’s', () => {
+    const views = buildPlatformViews([
+      apiPlatform(THREADS, ['text-post']),
+      apiPlatform(LINKEDIN, ['text-post']),
+      apiPlatform(YOUTUBE, ['video']),
+    ])
+    expect(views.map((v) => v.info.zernioId)).toEqual([
+      'threads',
+      'linkedin',
+      'youtube',
+    ])
+  })
+
+  // Seeded disabled by the same migration, so each is a one-toggle launch
+  // rather than a deploy. They reach no tenant until an operator says so —
+  // the list endpoint filters on `enabled`, which is why nothing here has to.
+  it.each(['tiktok', 'pinterest', 'reddit'])(
+    'ships support for %s ahead of its switch',
+    (slug) => {
+      const info = getPlatformByZernioId(slug)
+      expect(info).toBeDefined()
+      expect(info!.postTypes.length).toBeGreaterThan(0)
+      // A mark of its own: the neutral fallback is what an *unknown* platform
+      // would get, and these are not unknown.
+      expect(info!.icon).toBeDefined()
+    },
+  )
+
+  // The half of "support" that fails silently. `getPlatformMedia` answers `{}`
+  // for a platform with no row, and an empty policy means the editor runs *no*
+  // image checks rather than permissive ones — so a launch that forgot this
+  // table would let an oversized file through to a publish-time rejection.
+  it('carries media rules for every platform it offers', () => {
+    const missing = PLATFORMS.filter(
+      (p) => !getPlatformMedia(p.zernioId).image,
+    ).map((p) => p.zernioId)
+    // YouTube publishes video only — it takes no images, so it has no row and
+    // wants none.
+    expect(missing).toEqual(['youtube'])
   })
 })
 
@@ -93,7 +170,7 @@ function linkedInView(accounts: PublisherAccount[]) {
       },
     ],
   })
-  const info = getPlatformInfo(LINKEDIN)
+  const info = getPlatformByZernioId(LINKEDIN)
   if (!info) throw new Error('LinkedIn missing from the dictionary')
   return buildPlatformView(platform, info)
 }
@@ -166,16 +243,18 @@ describe('flagged post types', () => {
   // hiding them. So the release gate has to exist on its own, or the flag
   // leaks through the one menu that can actually set the post type.
   it("withholds a flagged type from the editor's picker too", () => {
-    expect(releasedPostTypes(THREADS).map((pt) => pt.slug)).not.toContain(
-      'thread',
-    )
-    expect(releasedPostTypes(TWITTER).map((pt) => pt.slug)).not.toContain(
-      'thread',
-    )
+    expect(
+      releasedPostTypes(getPlatformByZernioId(THREADS)).map((pt) => pt.slug),
+    ).not.toContain('thread')
+    expect(
+      releasedPostTypes(getPlatformByZernioId(TWITTER)).map((pt) => pt.slug),
+    ).not.toContain('thread')
   })
 
   it('has no types for a platform it does not know', () => {
-    expect(releasedPostTypes('not-a-platform')).toEqual([])
+    expect(releasedPostTypes(getPlatformByZernioId('not-a-platform'))).toEqual(
+      [],
+    )
   })
 
   // The other half of the same gate, and the point of the feature: with the
@@ -202,7 +281,7 @@ describe('flagged post types', () => {
           },
         ],
       })
-      const info = getPlatformInfo(THREADS)
+      const info = getPlatformByZernioId(THREADS)
       if (!info) throw new Error('Threads missing from the dictionary')
       return buildPlatformView(platform, info)
     }
@@ -236,7 +315,7 @@ describe('flagged post types', () => {
 
     it('invents nothing for a platform with no publisher at all', () => {
       setFlagOverride('thread-sequence', true)
-      const info = getPlatformInfo(THREADS)
+      const info = getPlatformByZernioId(THREADS)
       if (!info) throw new Error('Threads missing from the dictionary')
       const view = buildPlatformView(makePlatform({ id: THREADS }), info)
       expect(view.allowed).toEqual([])

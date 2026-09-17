@@ -72,9 +72,37 @@ export type VideoConstraints = {
 }
 
 export type Platform = {
+  /**
+   * The row's sqid. Minted by the server — for a platform an operator adds in
+   * Harbor it cannot be known at build time, which is why nothing in this app
+   * is filed under it. It addresses a row; `zernio_id` identifies a network.
+   */
   id: string
   name: string
+  /**
+   * Zernio's wire slug (`twitter`, `linkedin`, …) — the stable key every piece
+   * of our own display metadata and per-network behaviour is filed under
+   * (CON-292). See `lib/platformDictionary`.
+   */
+  zernio_id: string
+  /**
+   * Whether an operator has turned this platform on. The list endpoint already
+   * filters to enabled rows, so this is `true` for everything we receive there
+   * — it is on the type because the detail route does not filter, and because
+   * a post scheduled before a platform was disabled still refers to it.
+   */
+  enabled: boolean
+  /** Whether an account can be connected for it. */
+  connect_supported: boolean
   post_types: Record<string, string>
+  /**
+   * The subset of `post_types` Zernio can actually publish. Narrower than the
+   * seeded vocabulary, and narrower again once `lib/platformDictionary` has had
+   * its say — that table bounds it to what this build can also *render*.
+   */
+  supported_post_types: string[]
+  /** Operator-controlled display order; the list endpoint is already sorted. */
+  sort_order: number
   cadence: string
   /** Prose, shown as-is in workspace settings. Not machine-readable. */
   constraints: string

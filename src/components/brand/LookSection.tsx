@@ -38,7 +38,7 @@ export function LookSection({
       readBy={[]}
       action={
         // Only when there is somewhere for it to go: the route renders this
-        // without an editor to open (`/brand/look`), and an EDIT that does
+        // without an editor to open (`/foundation/look`), and an EDIT that does
         // nothing is worse than none.
         look && onEdit ? (
           <Button variant="outline" size="sm" onClick={onEdit}>

@@ -1,14 +1,11 @@
-import { useCallback, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 
 import { Input } from '@/components/ui/input'
-import { DatePicker } from '@/components/ui/date-picker'
 import { TagsInput } from '@/components/ui/tags-input'
-import { Button } from '@/components/ui/button'
-import { ArchiveIcon, TrashIcon } from '@phosphor-icons/react'
 import {
   Form,
   FormControl,
@@ -17,103 +14,67 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {
-  useArchiveCampaign,
-  useCampaignTypes,
-  useDeleteCampaign,
-  useUpdateCampaign,
-} from '@/hooks/useCampaigns'
-import {
-  CampaignTypeCard,
-  CampaignTypePicker,
-} from '@/components/campaigns/CampaignTypePicker'
+import { useUpdateCampaign } from '@/hooks/useCampaigns'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
-import { cn } from '@/lib'
-import {
-  selectCampaignRunning,
-  useAssistantStore,
-} from '@/stores/assistantStore'
-import type {
-  Campaign,
-  CampaignPlatform,
-  CampaignType,
-} from '@/types/campaigns'
-import { toNumberOrNull, toISODateTime } from '../campaignBriefForm/shared'
 import { campaignToPayload } from '@/lib/campaignPayload'
-import { AccountsControl } from './AccountsControl'
-import { PlatformsControl } from './PlatformsControl'
-import { useFeatureFlag } from '@/config/featureFlags'
-import { PostGoalCard } from './PostGoalCard'
-import { SchedulingCard } from './SchedulingCard'
-import { CampaignBrandCard } from '@/components/brand/CampaignBrandCard'
-import {
-  settingsDefaultValues,
-  settingsSchema,
-  type SettingsFormValues,
-} from './schema'
+import { CampaignDangerZone } from './CampaignDangerZone'
+import type { Campaign } from '@/types/campaigns'
 
 /**
- * The chosen type out of the fetched list. Falls back to the campaign's own
- * hydrated relation at the call site, so the card names the type on the first
- * frame instead of reading "No type set" until the list arrives.
+ * The record's own fields — what the campaign is filed as, not what it is for.
  */
-function typeById(
-  types: CampaignType[] | undefined,
-  id: string,
-): CampaignType | undefined {
-  return types?.find((t) => t.id === id)
-}
+const settingsSchema = z.object({
+  name: z.string(),
+  tag_ids: z.array(z.string()),
+})
+
+type SettingsFormValues = z.infer<typeof settingsSchema>
 
 type Props = {
   campaign: Campaign
 }
 
 /**
- * Campaign settings, laid out like the Workspace Settings page (titled
- * sections over full-width cards). Fields are edited inline and applied
- * together by the header's Save button (settingsSave context), same as the
- * brief form.
+ * Campaign settings — what you do *to* the campaign.
+ *
+ * **Why so little is here.** Everything that says what the campaign is meant
+ * to achieve — its messaging, window, type, post goal, schedule, channels and
+ * budget — moved to Strategy, which is a section of the campaign rather than a
+ * utility. What is left is the record: what it is called, how it is filed, and
+ * the two ways to stop it existing. That is the same kind of thing the
+ * workspace's own settings hold, which is why this page answers to the same
+ * gear in the rail's footer at both levels.
+ *
+ * The name is here rather than on Strategy on purpose. Renaming is the one
+ * edit that changes nothing about what the campaign does — every other screen
+ * would still plan, generate and schedule identically — so it belongs with
+ * archive and delete, beside the other operations on the row.
+ *
+ * Both ways to stop the campaign live in `CampaignDangerZone` — archive and
+ * delete side by side, each behind its own modal (CON-156's drawer rework
+ * decided that arrangement, and this page inherits it rather than relitigating
+ * where archive belongs).
  */
 export function CampaignSettingsForm({ campaign }: Props) {
+  const { t } = useTranslation()
   const form = useForm<SettingsFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(settingsSchema as any),
-    defaultValues: settingsDefaultValues(campaign),
+    defaultValues: { name: campaign.name, tag_ids: campaign.tag_ids ?? [] },
   })
 
-  const { t } = useTranslation()
-  const { data: types, isLoading: typesLoading } = useCampaignTypes()
-  const { mutate: deleteCampaign, isPending: deleting } = useDeleteCampaign()
-  const { mutate: archiveCampaign, isPending: archiving } = useArchiveCampaign()
-  const navigate = useNavigate()
-
-  // The type is stated, not offered — the chooser only appears once the user
-  // asks for it by name.
-  const [changingType, setChangingType] = useState(false)
-
   // No autosave here: edits mark the page dirty and are applied by the
-  // header's Save button (settingsSave context), like the brief form.
+  // header's Save button (settingsSave context), like the strategy page.
   const { isDirty } = form.formState
   const { mutateAsync: updateCampaign } = useUpdateCampaign()
   const save = useCallback(async () => {
     const v = form.getValues()
     const payload = campaignToPayload(campaign, {
+      // A blank name would leave the campaign with no handle anywhere it is
+      // listed; the space is what the server accepts as "untitled".
       name: v.name.trim() === '' ? ' ' : v.name,
-      campaign_type_id: v.campaign_type_id,
-      start_date: toISODateTime(v.start_date),
-      end_date: toISODateTime(v.end_date),
-      estimated_post_count: toNumberOrNull(v.estimated_post_count),
-      goal_cadence: v.goal_cadence,
-      publishing_time: v.publishing_time,
-      timezone: v.timezone,
-      publishing_days: v.publishing_days,
-      spread_minutes: v.spread_minutes,
-      budget: toNumberOrNull(v.budget),
-      currency: v.currency,
-      language: v.language,
       tag_ids: v.tag_ids,
-      target_platforms: v.target_platforms,
     })
     await updateCampaign({ id: campaign.id, payload })
     // Re-baseline so the form is pristine against what was just saved.
@@ -121,104 +82,11 @@ export function CampaignSettingsForm({ campaign }: Props) {
   }, [campaign, form, updateCampaign])
   useRegisterSettingsSave('campaign-settings', isDirty, save)
 
-  /**
-   * Adding or removing a platform persists on the spot. It builds on the
-   * server's campaign rather than the form's values, so pending edits to the
-   * other fields stay pending — this toggle must not smuggle them out. Only
-   * target_platforms is re-baselined, leaving the rest dirty.
-   */
-  const { mutate: updateCampaignNow } = useUpdateCampaign({
-    errorTitle: 'Unable to update platforms',
-  })
-  const commitPlatforms = useCallback(
-    (next: CampaignPlatform[]) => {
-      const previous = form.getValues('target_platforms')
-      form.setValue('target_platforms', next)
-      updateCampaignNow(
-        {
-          id: campaign.id,
-          payload: campaignToPayload(campaign, { target_platforms: next }),
-        },
-        {
-          onSuccess: () =>
-            form.resetField('target_platforms', { defaultValue: next }),
-          onError: () => {
-            // The optimistic setValue above must not outlive a rejected
-            // request: left in place (and dirty), the header's Save would
-            // quietly push the very change the server just refused.
-            // The toast is the hook's `errorTitle`, not ours — CON-164.
-            form.resetField('target_platforms', { defaultValue: previous })
-          },
-        },
-      )
-    },
-    [campaign, form, updateCampaignNow],
-  )
-
-  // Watched rather than read from the campaign: adding a platform persists
-  // immediately, so the heading's warning has to clear on the click.
-  const targetPlatforms = form.watch('target_platforms')
-  const noPlatforms = targetPlatforms.length === 0
-
-  // A card behind a flag that is off simply means the page doesn't offer those
-  // fields — the values it holds are still the campaign's own, and Save
-  // round-trips them untouched.
-  const accountsEnabled = useFeatureFlag('campaign-accounts')
-  const brandBinds = useFeatureFlag('brand-materials')
-
-  // `setCampaignDates` / `redistributePosts` rewrite these fields server-side
-  // (CON-115), so the form is held read-only for the length of a turn. Unsaved
-  // edits stay in the form (header save) and are not flushed by the turn.
-  const assistantRunning = useAssistantStore(selectCampaignRunning(campaign.id))
-
-  const displayName = () =>
-    campaign.name.trim() === '' ? t('campaigns.untitled') : `"${campaign.name}"`
-
-  const handleDelete = () => {
-    if (
-      !window.confirm(
-        t('campaigns.dangerZone.confirm', { name: displayName() }),
-      )
-    )
-      return
-    deleteCampaign(campaign.id, {
-      onSuccess: () => {
-        navigate({ to: '/campaigns' })
-      },
-    })
-  }
-
-  /**
-   * Archiving leaves the campaign whole, so it asks once and then leaves —
-   * for the archive rather than the campaigns list, because the campaign is
-   * about to vanish from that list and landing on the screen that no longer
-   * shows it reads as a delete.
-   */
-  const handleArchive = () => {
-    if (
-      !window.confirm(
-        t('campaigns.archiveCard.confirm', { name: displayName() }),
-      )
-    )
-      return
-    archiveCampaign(campaign.id, {
-      onSuccess: () => {
-        navigate({ to: '/campaigns', search: { archived: true } })
-      },
-    })
-  }
-
   return (
     <Form {...form}>
       <form noValidate autoComplete="off">
-        <fieldset
-          disabled={assistantRunning}
-          className={cn(
-            'flex flex-col gap-8 pb-10 transition-opacity',
-            assistantRunning && 'opacity-60',
-          )}
-        >
-          <SettingsCard title="Basic">
+        <fieldset className="flex flex-col gap-8 pb-10">
+          <SettingsCard title={t('campaigns.settings.record')}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
               <FormField
                 control={form.control}
@@ -240,28 +108,6 @@ export function CampaignSettingsForm({ campaign }: Props) {
               />
               <FormField
                 control={form.control}
-                name="start_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start date</FormLabel>
-                    <DatePicker value={field.value} onChange={field.onChange} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="end_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End date</FormLabel>
-                    <DatePicker value={field.value} onChange={field.onChange} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="tag_ids"
                 render={({ field }) => (
                   <FormItem className="lg:col-span-2">
@@ -271,222 +117,10 @@ export function CampaignSettingsForm({ campaign }: Props) {
                   </FormItem>
                 )}
               />
-              {/* The type used to own a card at the top of the page, which put
-                the campaign's least changeable decision above its name. It
-                belongs with the rest of what the campaign *is* — stated, not
-                offered, because it picks the phase plan every post is written
-                against and switching it mid-campaign is something the product
-                means to restrict. */}
-              <FormField
-                control={form.control}
-                name="campaign_type_id"
-                render={({ field }) => (
-                  <FormItem className="lg:col-span-2">
-                    <FormLabel>Campaign type</FormLabel>
-                    {changingType ? (
-                      <div className="flex flex-col gap-3">
-                        <CampaignTypePicker
-                          types={types ?? []}
-                          value={field.value}
-                          onChange={(id) => {
-                            field.onChange(id)
-                            setChangingType(false)
-                          }}
-                          disabled={typesLoading}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="self-start"
-                          onClick={() => setChangingType(false)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    ) : (
-                      <CampaignTypeCard
-                        type={
-                          typeById(types, field.value) ?? campaign.campaign_type
-                        }
-                        action={
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={typesLoading}
-                            onClick={() => setChangingType(true)}
-                          >
-                            CHANGE
-                          </Button>
-                        }
-                      />
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
           </SettingsCard>
 
-          {/* How much the campaign should produce, then when it goes out. The
-            post target used to sit in Advanced next to budget and language,
-            where it read as trivia rather than as the rate the assistant plans
-            against. */}
-          <PostGoalCard />
-
-          <SchedulingCard />
-
-          {/* The same control the brief renders, from the same file. Two
-              screens ask this from different directions — what the campaign
-              says, and what it is configured with — and both are fair places
-              to answer it. What must not happen is two implementations. */}
-          {brandBinds && <CampaignBrandCard campaignId={campaign.id} />}
-
-          <SettingsCard title="Advanced">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-              <FormField
-                control={form.control}
-                name="budget"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Budget</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        placeholder="e.g. 5000"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="currency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Currency</FormLabel>
-                    <FormControl>
-                      <Input placeholder="USD" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="language"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Language</FormLabel>
-                    <FormControl>
-                      <Input placeholder="en" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </SettingsCard>
-
-          <SettingsCard
-            title={
-              <>
-                <span className="truncate">
-                  {accountsEnabled
-                    ? 'Accounts & Post Types'
-                    : 'Platforms & Post Types'}
-                </span>
-                {/* After the heading, not before it: the dot comes and goes, and
-                  leading it would shift the title sideways as platforms are
-                  added. Same warning tone as the summary line inside. */}
-                {noPlatforms && (
-                  <span
-                    className="size-2 shrink-0 rounded-full bg-warning"
-                    role="img"
-                    aria-label={
-                      accountsEnabled
-                        ? 'No accounts selected'
-                        : 'No platforms selected'
-                    }
-                  />
-                )}
-              </>
-            }
-          >
-            {accountsEnabled ? (
-              // Outside the form field: the account choice is stored beside the
-              // campaign rather than on it, and it writes `target_platforms`
-              // itself through `commitPlatforms`.
-              <AccountsControl
-                campaignId={campaign.id}
-                targetPlatforms={campaign.target_platforms}
-                onCommitPlatforms={commitPlatforms}
-              />
-            ) : (
-              <FormField
-                control={form.control}
-                name="target_platforms"
-                render={({ field }) => (
-                  <FormItem>
-                    <PlatformsControl
-                      value={field.value}
-                      onChange={field.onChange}
-                      onCommitPlatforms={commitPlatforms}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </SettingsCard>
-
-          {/* Archiving is not in the Danger Zone, and that is the point of it
-              existing: it is the reversible way to stop running a campaign,
-              and putting it under a red heading beside a delete would teach
-              people to avoid the safe option. It comes first because it is
-              what most people who arrive here wanting rid of a campaign
-              actually want. */}
-          <SettingsCard title={t('campaigns.archiveCard.title')}>
-            <div className="flex flex-col gap-3 items-start">
-              <p className="max-w-150 text-sm text-tertiary-foreground">
-                {t('campaigns.archiveCard.body')}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleArchive}
-                loading={archiving}
-              >
-                <ArchiveIcon />
-                <span>{t('campaigns.archiveCard.action')}</span>
-              </Button>
-            </div>
-          </SettingsCard>
-
-          <SettingsCard title={t('campaigns.dangerZone.title')}>
-            <div className="flex flex-col gap-3 items-start">
-              {/* No mention of the row the server keeps as its own safety net:
-                  saying it is retained reads as "recoverable", and nothing in
-                  the app or on the API can bring it back. */}
-              <p className="max-w-150 text-sm text-tertiary-foreground">
-                {t('campaigns.dangerZone.body')}
-              </p>
-              <Button
-                type="button"
-                variant="destructiveInverted"
-                onClick={handleDelete}
-                loading={deleting}
-              >
-                <TrashIcon />
-                {/* Literal caps, not `uppercase` — see CLAUDE.md on destructive labels. */}
-                <span>{t('campaigns.dangerZone.action')}</span>
-              </Button>
-            </div>
-          </SettingsCard>
+          <CampaignDangerZone campaign={campaign} />
         </fieldset>
       </form>
     </Form>

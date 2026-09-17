@@ -11,11 +11,15 @@ import {
   hasVisibleProblem,
   worstStatus,
 } from './postValidation.ts'
+import { getPlatformByZernioId } from './platformDictionary.ts'
 
-// Platform Sqids from platformDictionary.ts.
-const INSTAGRAM = 'rzgpTkARLH0L'
-const LINKEDIN = 'AXqWG7U2qnpt'
-const YOUTUBE = '8S8bWQTG6qD'
+// Zernio wire slugs — what `platformDictionary` and `platformMedia` are keyed
+// by since CON-292. A post's `platform_id` is a sqid and no longer resolves
+// against either; the caller translates one to the other.
+const INSTAGRAM = 'instagram'
+const LINKEDIN = 'linkedin'
+const YOUTUBE = 'youtube'
+const LINKEDIN_INFO = getPlatformByZernioId(LINKEDIN)
 
 /** The seeded LinkedIn video rules, verbatim from the CON-148 migration. */
 const linkedInVideo: VideoConstraints = {
@@ -34,7 +38,6 @@ function platform(
   video_constraints: VideoConstraints = videoConstraints(),
 ): Platform {
   return makePlatform({
-    id: LINKEDIN,
     text_constraints: { max_content_chars: 3000, max_title_chars: 0 },
     video_constraints,
   })
@@ -209,7 +212,7 @@ describe('strandedAttachments', () => {
 })
 
 describe('checkFile', () => {
-  const X = '81mUCmc2xsKd'
+  const X = 'twitter'
   const imageRule = rule({ min_attachments: 0, allowed_kinds: ['image'] })
 
   function file(name: string, type: string, bytes: number): File {
@@ -305,6 +308,9 @@ describe('checkFile', () => {
 
 describe('evaluatePost', () => {
   const base = {
+    // Resolved by the caller since CON-292 — the dictionary is filed under
+    // `zernio_id` and only the platform list can translate a post's sqid.
+    platform: getPlatformByZernioId(INSTAGRAM),
     ready: true,
     postValidation: [],
     requiresContent: false,
@@ -569,35 +575,53 @@ describe('hasVisibleProblem', () => {
   const resolved = { ambiguous: false, mismatched: false }
 
   it('stays quiet on a post that is merely unfinished', () => {
-    expect(hasVisibleProblem(makePost({ status: 'draft' }), resolved)).toBe(
-      false,
-    )
-    expect(hasVisibleProblem(makePost({ status: 'scheduled' }), resolved)).toBe(
-      false,
-    )
-    expect(hasVisibleProblem(makePost({ status: 'published' }), resolved)).toBe(
-      false,
-    )
+    expect(
+      hasVisibleProblem(makePost({ status: 'draft' }), resolved, LINKEDIN_INFO),
+    ).toBe(false)
+    expect(
+      hasVisibleProblem(
+        makePost({ status: 'scheduled' }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
+    ).toBe(false)
+    expect(
+      hasVisibleProblem(
+        makePost({ status: 'published' }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
+    ).toBe(false)
   })
 
   it('flags a publish that went wrong or never went out', () => {
-    expect(hasVisibleProblem(makePost({ status: 'failed' }), resolved)).toBe(
-      true,
-    )
     expect(
-      hasVisibleProblem(makePost({ status: 'not_published' }), resolved),
+      hasVisibleProblem(
+        makePost({ status: 'failed' }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
+    ).toBe(true)
+    expect(
+      hasVisibleProblem(
+        makePost({ status: 'not_published' }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
     ).toBe(true)
   })
 
   it('flags a post that has nowhere to go', () => {
-    expect(hasVisibleProblem(makePost({ platform_id: '' }), resolved)).toBe(
-      true,
-    )
+    // `undefined` is what the caller's `resolve` answers for all three reasons
+    // a platform can fail to come back: none is set, the id names no row, or
+    // the row is for a network this build ships no support for.
+    expect(hasVisibleProblem(makePost(), resolved, undefined)).toBe(true)
     expect(
-      hasVisibleProblem(makePost({ platform_id: 'not-a-platform' }), resolved),
-    ).toBe(true)
-    expect(
-      hasVisibleProblem(makePost({ platform_post_type: '' }), resolved),
+      hasVisibleProblem(
+        makePost({ platform_post_type: '' }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
     ).toBe(true)
   })
 
@@ -606,16 +630,24 @@ describe('hasVisibleProblem', () => {
     // `checkAccountSelection`: an empty id on a single-account platform
     // auto-resolves and publishes fine, so the card must not flag it.
     const empty = makePost({ social_account_id: '' })
-    expect(hasVisibleProblem(empty, resolved)).toBe(false)
+    expect(hasVisibleProblem(empty, resolved, LINKEDIN_INFO)).toBe(false)
     expect(
-      hasVisibleProblem(empty, { ambiguous: true, mismatched: false }),
+      hasVisibleProblem(
+        empty,
+        { ambiguous: true, mismatched: false },
+        LINKEDIN_INFO,
+      ),
     ).toBe(true)
     // A chosen account the platform no longer has.
     expect(
-      hasVisibleProblem(makePost({ social_account_id: 'gone' }), {
-        ambiguous: false,
-        mismatched: true,
-      }),
+      hasVisibleProblem(
+        makePost({ social_account_id: 'gone' }),
+        {
+          ambiguous: false,
+          mismatched: true,
+        },
+        LINKEDIN_INFO,
+      ),
     ).toBe(true)
   })
 
@@ -623,7 +655,11 @@ describe('hasVisibleProblem', () => {
     // The guarantee the calendar leans on: hundreds of cards, zero extra
     // requests. A post whose *only* fault needs those fetches stays clean.
     expect(
-      hasVisibleProblem(makePost({ content: '', media_urls: [] }), resolved),
+      hasVisibleProblem(
+        makePost({ content: '', media_urls: [] }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
     ).toBe(false)
   })
 })

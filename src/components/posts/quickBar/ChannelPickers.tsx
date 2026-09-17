@@ -6,7 +6,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
-import type { PlatformInfo, PlatformPostType } from '@/lib/platformDictionary'
+import type {
+  PlatformInfo,
+  PlatformPostType,
+  PlatformView,
+} from '@/lib/platformDictionary'
 import { getPostTypeLabel } from '@/lib/platformDictionary'
 import { cn } from '@/lib'
 import { InfoRow, QuickBarTrigger, WarningHint } from './parts'
@@ -36,8 +40,14 @@ export function PlatformPicker({
 }: {
   /** The one currently on the post, or undefined while none is chosen. */
   platform: PlatformInfo | undefined
-  /** What this campaign allows — already filtered by the caller. */
-  platforms: PlatformInfo[]
+  /**
+   * What this campaign allows — already filtered by the caller.
+   *
+   * Views rather than bare dictionary entries, because what this picker *writes*
+   * is `post.platform_id`, and since CON-292 only the server's row carries that
+   * sqid. The view holds both halves: the row to store, the info to draw.
+   */
+  platforms: PlatformView[]
   disabled?: boolean
   /** The post is submitted: show what it went out as, offer nothing. */
   readOnly?: boolean
@@ -81,11 +91,15 @@ export function PlatformPicker({
         <CaretDownIcon className="size-3 text-tertiary-foreground" />
       </QuickBarTrigger>
       <DropdownMenuContent align="start">
-        {platforms.map((p) => (
-          <DropdownMenuItem key={p.id} onSelect={() => onSelect(p.id)}>
-            <p.icon size={16} weight="fill" color={p.color} />
-            <span className={cn(p.id === platform?.id && 'font-medium')}>
-              {p.name}
+        {platforms.map(({ platform: row, info }) => (
+          <DropdownMenuItem key={row.id} onSelect={() => onSelect(row.id)}>
+            <info.icon size={16} weight="fill" color={info.color} />
+            <span
+              className={cn(
+                info.zernioId === platform?.zernioId && 'font-medium',
+              )}
+            >
+              {info.name}
             </span>
           </DropdownMenuItem>
         ))}
@@ -128,7 +142,7 @@ function AutoLabel({
     <span className="truncate">
       {resolved
         ? t('posts.postType.autoResolved', {
-            type: getPostTypeLabel(platform.id, resolved),
+            type: getPostTypeLabel(platform, resolved),
           })
         : t('posts.postType.auto')}
     </span>
@@ -187,7 +201,7 @@ export function PostTypePicker({
     return (
       <span className="truncate">
         {selected ? (
-          getPostTypeLabel(platform.id, selected)
+          getPostTypeLabel(platform, selected)
         ) : (
           <span className="text-tertiary-foreground">
             {t('posts.noPostType')}
@@ -203,7 +217,7 @@ export function PostTypePicker({
         {automatic ? (
           <AutoLabel platform={platform} resolved={resolved ?? ''} />
         ) : selected ? (
-          <span>{getPostTypeLabel(platform.id, selected)}</span>
+          <span>{getPostTypeLabel(platform, selected)}</span>
         ) : (
           <>
             <WarningHint

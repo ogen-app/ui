@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { useCampaignPostTypes } from '@/hooks/useCampaignPostTypes'
-import { usePlatforms } from '@/hooks/usePlatforms'
+import { usePlatformCatalog, usePlatforms } from '@/hooks/usePlatforms'
 import { usePostAttachments } from '@/hooks/usePostAttachments'
 import { findRule, usePostTypeRules } from '@/hooks/usePostTypeRules'
 import { resolveCharLimit, titleLimitFor } from '@/lib/platformLimits'
@@ -41,13 +41,18 @@ export function usePostMedia(post: Post) {
     post.platform_id,
   )
   // Reference data behind `staleTime: Infinity` — shared with every other
-  // reader of the platforms query, so this costs no extra fetch.
-  const { data: platforms, isLoading: platformsLoading } = usePlatforms()
+  // reader of the platforms query, so this costs no extra fetch. The catalog
+  // reads the same query; `usePlatforms` is here only for the loading flag,
+  // which several checks below hold themselves pending on.
+  const { isLoading: platformsLoading } = usePlatforms()
+  const catalog = usePlatformCatalog()
 
   // The same list the picker offers, so the format Auto lands on is always one
   // the author could have chosen themselves.
   const autoEnabled = useFeatureFlag('post-type-auto')
   const candidates = useCampaignPostTypes(post.campaign_id, post.platform_id)
+  const info = catalog.resolve(post.platform_id)
+  const zernioId = info?.zernioId
 
   const auto: AutoResolution | null = useMemo(() => {
     if (!autoEnabled || !isAutoPostType(post.platform_post_type)) return null
@@ -70,7 +75,7 @@ export function usePostMedia(post: Post) {
 
   const ruleView = findRule(rules, postType)
   const rule = ruleView?.rule ?? null
-  const platform = platforms?.find((p) => p.id === post.platform_id)
+  const platform = catalog.row(post.platform_id)
 
   // Thread sequences (CON-196 / CON-284) — a post that publishes as a chain
   // rather than one post. Two facts, and they arrive from different places:
@@ -87,8 +92,8 @@ export function usePostMedia(post: Post) {
   const sequence = sequenceEnabled && publishesAsChain(rule)
 
   const policy: MediaPolicy = useMemo(
-    () => mediaPolicy(post.platform_id, rule, platform),
-    [post.platform_id, rule, platform],
+    () => mediaPolicy(zernioId, rule, platform),
+    [zernioId, rule, platform],
   )
 
   const ready = !media.loading && !rulesLoading && !platformsLoading
@@ -117,6 +122,7 @@ export function usePostMedia(post: Post) {
     () =>
       evaluatePost({
         post: evaluated,
+        platform: info,
         policy,
         attachments: media.attachments,
         ready,
@@ -128,6 +134,7 @@ export function usePostMedia(post: Post) {
       }),
     [
       evaluated,
+      info,
       policy,
       media.attachments,
       media.postValidation,

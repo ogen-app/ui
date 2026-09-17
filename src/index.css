@@ -379,8 +379,19 @@
   --nav-overview: oklch(0.54 0.11 214); /* cyan */
   --nav-posts: oklch(0.52 0.15 342); /* pink */
   --nav-analytics: oklch(0.52 0.13 150); /* green */
-  --nav-brief: oklch(0.55 0.14 66); /* amber */
-  --nav-content: oklch(0.5 0.16 300); /* violet */
+  --nav-strategy: oklch(0.55 0.14 66); /* amber */
+  --nav-foundation: oklch(0.5 0.16 300); /* violet */
+  --nav-ideas: oklch(0.53 0.16 285); /* indigo */
+  --nav-calendar: oklch(0.56 0.13 100); /* olive */
+
+  /* The 120° rule above is the target and no longer reachable: the campaign's
+     rail went from four coloured rows to six, and six hues cannot sit 120°
+     apart on a wheel with red and the teal accent cut out of it. Two adjacent
+     pairs are closer than the rule asks — ideas/posts (285 vs 342) and
+     calendar/analytics (100 vs 150) — and both are separated by lightness and
+     by a glyph that isn't a near-twin. Adding a seventh coloured row is what
+     this stops working at; the footer's utilities take no hue at all, which is
+     part of why they are down there. */
 
   /* Brand's five sections, on the same footing as `--nav-*` above: five fixed
      places, one permanent hue each, so five otherwise-identical line glyphs are
@@ -399,6 +410,8 @@
   --brand-guardrails: oklch(0.52 0.15 342); /* pink */
   --brand-look: oklch(0.55 0.14 66); /* amber */
   --brand-templates: oklch(0.54 0.11 214); /* cyan */
+  --brand-sources: oklch(0.53 0.14 300); /* purple */
+  --brand-facts: oklch(0.5 0.12 190); /* teal */
 
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);

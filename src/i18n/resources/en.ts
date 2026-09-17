@@ -215,19 +215,40 @@ export const en = {
   },
 
   nav: {
-    modules: 'Modules',
     activity: 'Activity',
-    tasks: 'Tasks',
+    /**
+     * The module is Tasks — its board, its flag and its endpoint all say so.
+     * The rail says Inbox, because the row's job at level 0 is to be the one
+     * place addressed to *you*, and its twin one level down is the campaign's
+     * Overview. "Tasks" named the contents; "Inbox" names the slot, and the
+     * slot is what the two levels have in common.
+     */
+    inbox: 'Inbox',
     /** The count beside the Activity row, read out rather than seen. */
     activityUnread_one: '{{count}} unread entry',
     activityUnread_other: '{{count}} unread entries',
     campaigns: 'Campaigns',
-    contentBank: 'Content Bank',
+    ideas: 'Ideas',
+    calendar: 'Calendar',
     /** CON-237. Behind the `analytics-overview` flag — hidden while it is off. */
     analytics: 'Analytics',
-    /** CON-227. Behind the `brand-materials` flag — hidden while it is off. */
-    brand: 'Brand',
+    /**
+     * CON-227. Behind the `brand-materials` flag — hidden while it is off.
+     *
+     * Foundation rather than Brand: the section holds the voices, audiences,
+     * guardrails and source documents every campaign writes from, and only one
+     * of those four is what anyone means by a brand. The flag, the module
+     * folder and the `/api/brand` resource keep the server's word.
+     */
+    foundation: 'Foundation',
     workspaceSettings: 'Workspace Settings',
+    /**
+     * The same footer slot as `workspaceSettings`, for the level below it.
+     * Named in full rather than left as "Settings": the row sits under
+     * Foundation, which is workspace-wide, so the word that says which of
+     * the two scopes this one belongs to is the one that has to be there.
+     */
+    campaignSettings: 'Campaign Settings',
     profile: 'Profile',
     help: 'Help and support',
     logOut: 'Log out',
@@ -235,15 +256,58 @@ export const en = {
     /** Both halves of what the /workspaces page offers, in one row. */
     switchWorkspace: 'Create or switch',
     untitledCampaign: 'Untitled campaign',
+    /** The way out of a campaign, on the header caret and on the mark beside it. */
+    backToWorkspace: 'Back to workspace',
+    /**
+     * Heads the workspace's destinations where they appear inside the account
+     * menu — level 1's way back to a module without leaving the campaign first.
+     */
+    workspaceScope: 'Workspace',
+    /** A campaign with no start or end date, in the rail's window line. */
+    campaignNoWindow: 'No dates set',
+    /**
+     * Level 1's rows, each the campaign-narrowed twin of a level 0 row:
+     * Inbox → Overview, Ideas → Ideas, Campaigns → Posts, Calendar → Calendar,
+     * Analytics → Analytics, Foundation → Foundation.
+     *
+     * **No row says "Campaign".** They were prefixed for a while, on the
+     * argument that "Campaign analytics" tells you which of the two you are
+     * looking at. It does — and it says it eight times down a rail that has
+     * already said it once, in the campaign's own name at the top of the
+     * level. The word that disambiguates is up there and it is the campaign's
+     * actual name, which is better than the noun. What is left is a rail whose
+     * rows read as the workspace's, which is the point: going in narrows the
+     * same menu rather than opening a different one.
+     */
     campaign: {
       overview: 'Overview',
-      // Named for where it goes, not for what it holds: this row opens the
-      // calendar, and "Posts" alone read like a list.
-      posts: 'Posts calendar',
+      strategy: 'Strategy',
+      ideas: 'Ideas',
+      // The table, not the grid: this is the row that opens the place posts
+      // are actually worked on, and the calendar is now its own row below.
+      posts: 'Posts',
+      calendar: 'Calendar',
       analytics: 'Analytics',
-      brief: 'Brief',
-      content: 'Content',
+      /**
+       * The workspace's Foundation, narrowed — the same word at both levels
+       * rather than a second name for it. The page holds the same kinds of
+       * thing scoped to one campaign: the brand material it draws on, and the
+       * documents it writes from.
+       */
+      foundation: 'Foundation',
+      activity: 'Activity',
       settings: 'Settings',
+    },
+  },
+
+  ideas: {
+    stub: {
+      workspaceTitle: 'Ideas will live here',
+      workspaceBody:
+        'Everything worth making that no campaign has claimed yet — kept in one place, so a thought survives the week you had it in.',
+      campaignTitle: 'This campaign\u2019s ideas will live here',
+      campaignBody:
+        'The same module, narrowed to this campaign: what it could still say, before any of it is a post.',
     },
   },
 
@@ -332,6 +396,11 @@ export const en = {
    * to a noun.
    */
   activity: {
+    stub: {
+      campaignTitle: 'This campaign\u2019s activity will live here',
+      campaignBody:
+        'The same feed as the workspace\u2019s, narrowed to what happened inside this campaign.',
+    },
     title: 'Activity',
     /** Capitals are the copy, as on every other list's header action. */
     markAllRead: 'MARK ALL READ',
@@ -445,10 +514,13 @@ export const en = {
      * Capitals are the copy, as with every other button in the app.
      */
     openOverview: 'OPEN OVERVIEW',
-    openPosts: 'OPEN CALENDAR',
+    openPosts: 'OPEN POSTS',
+    openIdeas: 'OPEN IDEAS',
+    openCalendar: 'OPEN CALENDAR',
+    openActivity: 'OPEN ACTIVITY',
     openAnalytics: 'OPEN ANALYTICS',
-    openBrief: 'OPEN BRIEF',
-    openContent: 'OPEN CONTENT',
+    openStrategy: 'OPEN STRATEGY',
+    openFoundation: 'OPEN FOUNDATION',
     openSettings: 'OPEN SETTINGS',
 
     /**
@@ -460,6 +532,11 @@ export const en = {
   },
 
   calendar: {
+    stub: {
+      workspaceTitle: 'Every campaign, on one calendar',
+      workspaceBody:
+        'The view each campaign already has, with the filter taken off — what the whole workspace is publishing, and when.',
+    },
     /**
      * The header's counter button: the posts that have no date on them yet.
      * `unscheduled` is the visible label beside the glyph and is a button, so
@@ -1272,24 +1349,6 @@ export const en = {
           'One post was seen by too few people for a rate to mean anything, or reported no interactions.',
         heldOut_other:
           '{{count}} posts were seen by too few people for a rate to mean anything, or reported no interactions.',
-      },
-      save_rate: {
-        label: 'Saves',
-        rawLabel: 'Saves',
-        suffix: 'per 1,000 reached',
-        heldOut_one:
-          'One post did not report saves, or was seen by too few people to divide.',
-        heldOut_other:
-          '{{count}} posts did not report saves, or were seen by too few people to divide.',
-      },
-      follow_rate: {
-        label: 'Follows',
-        rawLabel: 'Follows',
-        suffix: 'per 1,000 reached',
-        heldOut_one:
-          'One post did not report follows, or was seen by too few people to divide.',
-        heldOut_other:
-          '{{count}} posts did not report follows, or were seen by too few people to divide.',
       },
     },
 
@@ -2312,7 +2371,12 @@ export const en = {
       emptyBody:
         'This workspace has no voices or audiences yet. They are written once and every campaign draws on them.',
       emptyShort: 'This workspace has no voices or audiences yet.',
-      openBrand: 'Open Brand',
+      openBrand: 'Open Foundation',
+      alsoApplies:
+        'The workspace’s guardrails also apply to every post here, whichever voice writes it. They are not chosen per campaign and cannot be overridden.',
+      alsoAppliesEmpty:
+        'The workspace has stated no guardrails, so nothing is off limits — any voice here may promise anything, in any words.',
+      seeEverything: 'See everything this campaign writes from',
       saveError: 'Unable to save the campaign voice',
     },
 
@@ -2349,6 +2413,20 @@ export const en = {
           'What is true, what may be claimed, and what may never be. These are the rules nobody opts out of — they hold for every generated post whichever voice wrote it, and the more convincing the voice, the more convincing the invention they exist to stop.',
         whenEmpty:
           'Nothing is off limits. Any voice here may promise anything.',
+      },
+      facts: {
+        label: 'Facts',
+        description:
+          'What is true — about this business, about the problems its readers have, and about the openings nobody has taken — one statement at a time, with where it came from and the date it stops being repeatable. Everything a generated post states as a figure comes from here, or is invented.',
+        whenEmpty:
+          'Nothing is stated as true. Every figure in every post is invention, written confidently.',
+      },
+      sources: {
+        label: 'Sources',
+        description:
+          'The documents the workspace writes from — briefs, transcripts, product pages, anything already written down. A campaign attaches the ones it draws on; this is all of them, including the ones no campaign has claimed yet.',
+        whenEmpty:
+          'Nothing to write from but the brief. Every generated post is invention.',
       },
       look: {
         label: 'Look',
@@ -2411,10 +2489,20 @@ export const en = {
       originPostCount_other: '{{count}} posts',
       offer: {
         dismiss: "Don't offer this again",
-        title: 'Read the rest off your website',
-        body: 'One pass fills {{fills}} — from your own copy, not from a template. You see everything it proposes before any of it is saved.',
-        fallback:
-          'If none of it is written down anywhere, Ogen will ask you a handful of questions and draft it with you. If it is — a brand deck, a tone-of-voice PDF, an old style guide — that works as well as the site does.',
+        title: 'Fill this in from what you already have',
+        body: 'One pass fills {{fills}} — from your own words, not from a template, and you see everything it proposes before any of it is saved.',
+        website: {
+          title: 'Read it off your website',
+          body: 'Voice samples from your own copy, the disclaimer you already run, and the product facts behind every claim.',
+        },
+        document: {
+          title: 'Take it from a document',
+          body: 'A brand deck, a tone-of-voice PDF, an old style guide. Whatever it was written in works as well as the site does.',
+        },
+        questions: {
+          title: 'Answer a handful of questions',
+          body: 'For when none of it is written down anywhere. Ogen drafts it with you and you correct it.',
+        },
         /**
          * The sections named *inside* `body`, which is why these are their own
          * keys rather than `sections.<id>.label`. A heading and a noun in the
@@ -2427,6 +2515,7 @@ export const en = {
           voices: 'voices',
           audiences: 'audiences',
           guardrails: 'guardrails',
+          facts: 'the facts',
         },
       },
     },
@@ -2448,8 +2537,6 @@ export const en = {
       bannedWordCount: '{{count}} words',
       written: 'written',
       guardrails: {
-        facts: 'Facts',
-        factsEmpty: 'Every number and product detail is invented fresh.',
         mayClaim: 'May claim',
         mayClaimEmpty: 'Nothing has a form we know is safe to repeat.',
         neverClaim: 'Never claim',
@@ -2470,10 +2557,10 @@ export const en = {
 
     /** The section screen's chrome — `detail.tsx` and the routes under it. */
     detail: {
-      back: 'Back to Brand',
+      back: 'Back to Foundation',
       backToVoices: 'Back to voices',
       backToAudiences: 'Back to audiences',
-      errorHeader: 'Brand could not be loaded',
+      errorHeader: 'Foundation could not be loaded',
       errorMessage:
         "The workspace's voices, audiences and guardrails are not reachable right now. Everything else in the app is unaffected.",
       guardrailsErrorHeader: 'Guardrails could not be loaded',
@@ -2515,7 +2602,7 @@ export const en = {
       },
       template: {
         title: 'Start from a template',
-        body: 'A short setup that walks the whole brand one question at a time — voice, audience and the things you can never claim. Individual starter voices and audiences already exist inside those two sections; what is coming is doing all three in one pass.',
+        body: 'A short setup that walks the whole foundation one question at a time — voice, audience and the things you can never claim. Individual starter voices and audiences already exist inside those two sections; what is coming is doing all three in one pass.',
       },
     },
 
@@ -2897,14 +2984,14 @@ export const en = {
       mayClaimHint:
         'Claims already checked, in the form they were checked in. This is what stops a sentence that took a lawyer an hour being written from scratch every time.',
       mayClaimPlaceholder: 'That setup takes two weeks, start to finish.',
-      addClaim: 'Add a claim',
+      addClaim: 'ADD A CLAIM',
       neverClaim: 'Never claim',
       neverClaimHint:
         'Write the claim itself rather than the topic — “any guaranteed outcome, in any form” rather than “results”. A topic is something to avoid mentioning; a claim is something a sentence can be checked against.',
       neverClaimEmpty:
         'Nothing is off limits yet. Every voice in the workspace may promise anything, in any words.',
       neverClaimPlaceholder: 'That the result is guaranteed, in any form.',
-      addRule: 'Add a rule',
+      addRule: 'ADD A RULE',
       bannedWords: 'Banned words',
       bannedWordsHint:
         'Words that may never appear, in any voice. Type one and press Enter; commas and pasted lists split into separate words.',
@@ -2925,7 +3012,7 @@ export const en = {
       /** The `name` in the delete dialog's title — a singleton has no name of its own. */
       dangerName: 'Guardrails',
       deleteCost:
-        'The section goes back to empty: no stated facts, nothing sanctioned and nothing off limits, for every voice in the workspace. Posts already published are untouched — their text was written and it stands.',
+        'The section goes back to empty: nothing sanctioned and nothing off limits, for every voice in the workspace. It takes the facts ledger with it — the statements are stored on this same record — so anything the app knows to be true goes too. Posts already published are untouched: their text was written and it stands.',
       /**
        * The three starters. `neverClaim` and `bannedWords` are arrays in the
        * catalogue and read with `returnObjects` — they are lists of whole
@@ -3030,28 +3117,47 @@ export const en = {
       title: 'No campaigns yet',
       subtitle: 'Create your first campaign to get started',
     },
-    archivedTitle: 'Archived campaigns',
+    /** The drawer at the foot of the list, not a second view of the screen. */
+    archivedSection: 'Archived campaigns',
     archivedError: 'Failed to load archived campaigns',
-    showArchived: 'Show archived campaigns',
-    showActive: 'Back to active campaigns',
     archivedOn: 'Archived {{archivedOn}}',
     unarchive: 'UNARCHIVE',
-    archivedEmpty: {
-      title: 'Nothing is archived',
-      subtitle:
-        'Archiving a campaign takes it off the list without deleting anything. Its posts, schedule and content stay exactly as they are.',
+    archivedEmpty:
+      'Nothing is archived. Archiving a campaign takes it off the list without deleting anything: its posts, schedule and content stay exactly as they are.',
+    // The two campaign section pages the drill-down left behind Strategy and
+    // Settings — card headings, so they name what the card is a group of.
+    strategy: {
+      commitment: 'The commitment',
+      spend: 'Spend & language',
     },
-    archiveCard: {
-      title: 'Archive',
-      body: 'Takes this campaign off the Campaigns list and stops it being offered anywhere new work is filed. Nothing is deleted, and you can bring it back at any time.',
-      action: 'ARCHIVE CAMPAIGN',
-      confirm: 'Archive {{name}}? You can bring it back from the archive.',
+    settings: {
+      record: 'The record',
     },
+    /**
+     * One card holds both ways of stopping a campaign, so its own copy stays
+     * general and each modal carries the consequences of the button that
+     * opened it — read where they are acted on rather than skipped on the way
+     * down the page.
+     */
     dangerZone: {
       title: 'Danger Zone',
-      body: 'Deleting a campaign removes its posts and schedule. This cannot be undone — archive it instead if you only want it off the list.',
-      action: 'DELETE CAMPAIGN',
-      confirm: 'Delete {{name}}? This cannot be undone.',
+      body: 'Two ways to stop running this campaign. Archiving keeps everything and can be undone; deleting removes the campaign and its posts for good.',
+      archive: {
+        action: 'ARCHIVE CAMPAIGN',
+        confirmTitle: 'Archive {{name}}?',
+        confirmBody:
+          'The campaign comes off the Campaigns list and stops being offered anywhere new work is filed. Nothing is deleted. Its posts, schedule, brief and content stay exactly as they are, and you can bring it back from the archive at any time.',
+        keep: 'KEEP IT ACTIVE',
+        confirm: 'ARCHIVE CAMPAIGN',
+      },
+      delete: {
+        action: 'DELETE CAMPAIGN',
+        confirmTitle: 'Delete {{name}}?',
+        confirmBody:
+          'The campaign, its posts and its schedule are removed, and nothing in the app can bring them back. Posts that have already been published stay live on the social networks. Archive it instead if you only want it off the list.',
+        keep: 'KEEP CAMPAIGN',
+        confirm: 'DELETE CAMPAIGN',
+      },
     },
   },
 
@@ -3113,6 +3219,40 @@ export const en = {
     },
 
     /**
+     * Confirmation for deleting documents — one row's bin, or a whole ticked
+     * selection. Both, now: the row used to delete on one click, on the
+     * argument that a mistake among twenty rows is visible immediately. It
+     * isn't. There is no undo anywhere in the product and the bin sits inches
+     * from the row click that opens the document, so the cheapest gesture on
+     * the screen was also the only unrecoverable one.
+     *
+     * A single row is named, because the dialog can be: it is the one fact
+     * that tells a misclick from the delete that was meant. A selection says
+     * how many instead — the names would be a list, and the count is what the
+     * reader checks against what they think they ticked.
+     */
+    delete: {
+      titleNamed: 'Delete "{{title}}"?',
+      title_one: 'Delete this document?',
+      title_other: 'Delete {{count}} documents?',
+      /** What else stops working, which is the part a list can't show. */
+      bodyCampaign_one:
+        'This document will be permanently deleted, and this campaign will stop writing from it. This cannot be undone.',
+      bodyCampaign_other:
+        'These documents will be permanently deleted, and this campaign will stop writing from them. This cannot be undone.',
+      bodyBank_one:
+        'This document will be permanently deleted, and any campaign using it will stop writing from it. This cannot be undone.',
+      bodyBank_other:
+        'These documents will be permanently deleted, and any campaign using them will stop writing from them. This cannot be undone.',
+      keep_one: 'KEEP DOCUMENT',
+      keep_other: 'KEEP DOCUMENTS',
+      confirm_one: 'DELETE DOCUMENT',
+      confirm_other: 'DELETE {{count}} DOCUMENTS',
+      done_one: '{{count}} document deleted',
+      done_other: '{{count}} documents deleted',
+    },
+
+    /**
      * Filing a selection of documents under tags (CON-279).
      *
      * `addHelp` says what happens to a document that already carries the tag,
@@ -3156,6 +3296,8 @@ export const en = {
     pdfNote: 'PDFs are read in the background, so they finish after upload.',
     browse: 'Drop files here or click to browse',
     remove: 'Remove {{name}}',
+    /** Last resort: the request died without the server wording anything. */
+    failed: 'Upload failed',
     cancel: 'CANCEL',
     submit: 'UPLOAD',
     /** The count is what makes the button worth reading twice before clicking. */
@@ -3163,6 +3305,66 @@ export const en = {
     /** Named while a drag is over the page — the one moment the destination
         can be stated without being asked for. */
     dropInto: 'Add these to {{scope}}',
+    /**
+     * A staged image whose bytes are already in the workspace (CON-246
+     * R-Dedup). It names the document rather than saying "duplicate", because
+     * the useful half is *which* one — the file may have been filed under a
+     * name the uploader would never have searched for.
+     *
+     * Stated before the upload, not after, which is the whole reason it
+     * exists: the server answers a byte-identical image with the asset it
+     * already has, so uploading one is indistinguishable from nothing
+     * happening. It is a warning and not a refusal — in a campaign the upload
+     * still does something, it attaches that existing document here.
+     *
+     * Images only. The server dedupes nothing else, so a second copy of a PDF
+     * really is a second document.
+     */
+    duplicate: 'Already in the content bank as "{{title}}"',
+
+    /**
+     * Why a file was refused.
+     *
+     * The server composes these as prose and the client matches on it
+     * (`lib/uploadError`) — see that module for why, and for what is being
+     * asked of the API instead. Each one says what to do about it where there
+     * is anything to do, and admits it is our fault where there isn't.
+     */
+    errors: {
+      type: 'Only .md, .pdf and image files are accepted.',
+      /** The name said one thing and the bytes were another. */
+      unsupportedType:
+        "This file's contents aren't a kind we can read. Images have to be JPEG, PNG, WebP or GIF.",
+      /** The cap is the server's own, lifted out of its message. */
+      tooBig: 'This file is over the {{limit}} limit.',
+      dimensions: 'This image is too big to store — the limit is {{max}}.',
+      empty: 'This file is empty.',
+      notPdf: "This isn't a readable PDF.",
+      /** A deployment fault: the bucket isn't configured. */
+      notConfigured: "This server can't store images yet.",
+      undecodable: "This image couldn't be read — it may be damaged.",
+      /** Our side failed. Nothing about the file is wrong. */
+      server: 'Something went wrong saving this file. Try again.',
+    },
+  },
+
+  /**
+   * The help drawer's own chrome (CON-173) — and only that.
+   *
+   * Article titles and prose are **content**, not catalogue entries: they live
+   * in the CMS, are translated there, and arrive already in the reader's
+   * language. Putting them here would mean a deploy to fix a typo and a
+   * catalogue the size of a manual.
+   */
+  help: {
+    title: 'Help',
+    back: 'Back',
+    related: 'Related',
+    notFound: "We haven't written this one yet.",
+    resize: 'Resize the help panel',
+    trigger: {
+      label: 'What is this?',
+    },
   },
 
   errors: {

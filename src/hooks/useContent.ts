@@ -31,10 +31,15 @@ const PROCESSING_POLL_MS = 3000
  * that started processing somewhere else — another tab, another campaign, or
  * before this page was open.
  */
-export function useAssets() {
+export function useAssets({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: ASSETS_KEY,
     queryFn: listAssets,
+    // Off means "don't fetch for my sake", never "don't answer": a disabled
+    // query still reads whatever the cache holds, which is what lets the
+    // upload modal check for duplicates on a screen that has the list open
+    // without pulling it down on one that doesn't.
+    enabled,
     refetchInterval: (query) =>
       query.state.data?.some(
         (asset) => retrievability(asset.status) === 'waiting',

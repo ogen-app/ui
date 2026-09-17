@@ -87,7 +87,7 @@ function makeView(
   accounts: { is_active: boolean }[] = [],
 ): PlatformView {
   const platform = { id, name } as Platform
-  const info = { id, name } as PlatformInfo
+  const info = { zernioId: id, name } as PlatformInfo
   const publisher = {
     id: `${id}-pub`,
     name: `${name} publisher`,
@@ -270,7 +270,7 @@ describe('setupChecks', () => {
     const check = channelsCheck(campaign, views)
     expect(check.ok).toBe(false)
     expect(check.label).toBe('No post type selected for LinkedIn')
-    expect(check.fix).toBe('settings')
+    expect(check.fix).toBe('strategy')
   })
 
   it('does not review connected channels the campaign did not select', () => {
@@ -541,7 +541,7 @@ describe('attentionItems', () => {
     const item = attentionItems(campaign, healthyPosts(), connected, NOW).find(
       (i) => i.id === 'no-post-types',
     )
-    expect(item).toMatchObject({ severity: 'todo', fix: 'settings' })
+    expect(item).toMatchObject({ severity: 'todo', fix: 'strategy' })
     expect(item!.label).toBe('No post type selected for LinkedIn')
   })
 
