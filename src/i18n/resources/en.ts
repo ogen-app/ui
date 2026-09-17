@@ -300,15 +300,71 @@ export const en = {
     },
   },
 
+  /**
+   * Ideas: a backlog anyone can add a line to, and the three answers triage
+   * gives it. The verdicts are nouns for the piles (`verdict.*`) and verbs for
+   * the controls (`action.*`) — the same word does not do both jobs in every
+   * language, and a button reading "Yes" beside a tab reading "Yes" is only
+   * accidentally right in English.
+   */
   ideas: {
-    stub: {
-      workspaceTitle: 'Ideas will live here',
-      workspaceBody:
-        'Everything worth making that no campaign has claimed yet — kept in one place, so a thought survives the week you had it in.',
-      campaignTitle: 'This campaign\u2019s ideas will live here',
-      campaignBody:
-        'The same module, narrowed to this campaign: what it could still say, before any of it is a post.',
+    capture: {
+      placeholder: 'What could we make?',
+      /** The field carries no visible label — the placeholder is the prompt. */
+      label: 'Write down an idea',
+      submit: 'ADD IDEA',
     },
+    /** The verdicts as the piles they name. */
+    verdict: {
+      yes: 'Yes',
+      later: 'Not now',
+      no: 'No',
+    },
+    /** The same verdicts as the controls that give them. */
+    action: {
+      yes: 'Yes',
+      later: 'Not now',
+      no: 'No',
+      undecide: 'Put this back with the undecided',
+      close: 'Close this idea',
+      delete: 'DELETE IDEA',
+    },
+    horizon: {
+      week: 'Ask me in a week',
+      month: 'Ask me in a month',
+      quarter: 'Ask me in three months',
+    },
+    pile: {
+      /** Not "Inbox": the rail already has one of those, and it holds tasks. */
+      waiting: 'Undecided',
+    },
+    pileEmpty: {
+      waiting: 'Everything here has been answered.',
+      yes: 'Nothing has been accepted yet.',
+      later: 'Nothing is postponed.',
+      no: 'Nothing has been turned down.',
+    },
+    /** Said on a postponed idea whose day has come round. */
+    backFrom: 'back again',
+    field: {
+      title: 'The idea',
+      note: 'Notes',
+      notePlaceholder: 'Anything worth remembering about it',
+      noCampaign: 'No campaign',
+    },
+    /** An idea's own history, joined — never a sentence built from fragments. */
+    record: {
+      captured: 'Captured on {{at}}',
+      decided: '{{verdict}} on {{at}}',
+      returns: 'Comes back on {{at}}',
+    },
+    empty: {
+      title: 'Nothing written down yet.',
+      subtitle:
+        'Anything worth making, however half-formed. Deciding about it is a separate job, and it can wait.',
+    },
+    loadFailed: 'Unable to load ideas',
+    saveFailed: 'Could not save that. Your ideas are unchanged.',
   },
 
   /**

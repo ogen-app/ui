@@ -1145,6 +1145,105 @@ server agrees, and runs no publish gate on that endpoint.
 (`setPostBrand`), `lib/campaignPayload.ts`, and the `brand.binding.*` catalogue
 entries — the two pickers are converted, the eleven library screens are not.
 
+## An idea is a question, and triage is the list rather than a board {#ideas-triage}
+
+**Decision.** Ideas (`ideas`, off) is a backlog with one capture field, three
+verdicts given on the row itself, and four counts to switch piles by. It is
+deliberately **not** a kanban board, which is what the module was first
+imagined as — and, after one pass, deliberately not a separate answering mode
+either.
+
+**Why not a board.** A kanban is a good picture of *work in flight*: a handful
+of cards, each in a stage, moved left to right as somebody does something to
+them. An idea backlog is neither. It is one undifferentiated pile that has to
+be free to add to, and that occasionally gets *answered* — and those two halves
+pull in opposite directions. Capture wants no structure at all; triage wants
+one idea at a time and nothing else on screen. A board splits the difference
+badly in both directions: the undecided column grows to two hundred cards
+nobody scrolls, and every single decision costs a find, a grab, an aim and a
+drop — four acts of precision to say a word. So the piles survive as counts you
+switch between, and the decision is a click on the row it is about.
+
+**Three verdicts, not two.** *Yes*, *not now*, *no*. Two would force every
+"good, but not this quarter" into one of the other piles, and both are lies:
+under *yes* it pollutes the list of things actually being made, under *no* a
+good idea is thrown away for its timing.
+
+**`later` carries a date, and that is the whole point of it.** A maybe-pile
+with no wake-up is an archive people feel better about, and the reason this
+module exists at all is that thoughts do not survive the week they were had in.
+So a postponement names the day it returns, and on that day the idea is back in
+the inbox to be asked again. Two consequences worth stating because both are
+easy to get wrong:
+
+- **Waking is derived, never stored.** A woken idea is still `later` in the
+  database; "back in the inbox" is `remind_at <= now`, read at query time. The
+  alternative needs a sweep, which makes an idea's return depend on a job
+  having run rather than on the date somebody gave it.
+- **Every other verdict clears `remind_at`.** Postpone to next month, archive
+  this afternoon, and a surviving wake-up pulls the idea back out of the
+  archive on a day nobody chose. Asserted on both sides of the seam
+  (`lib/ideas.test.ts`, `services/api/ideas.stub.test.ts`) because the client
+  agreeing about it is not the same as the store agreeing.
+
+**Every decision is reversible, and that is what makes the speed safe.** Triage
+is only fast if a wrong answer costs nothing, so `no` archives rather than
+deletes and a decided row carries its undo beside it — in the pile it landed
+in, where somebody who has just mis-clicked is looking. Deletion exists, is
+final, and is reachable only from an opened row. Answering a dozen ideas
+quickly and destroying one are not gestures that belong a pixel apart.
+
+**The counts always sum to the list.** Undecided / yes / later / no, each idea
+in exactly one, which is why a woken postponement counts as undecided and not
+also as later. Tabs whose figures do not add up are a screen people stop
+trusting long before they report it.
+
+**And not a separate triage mode either — that was the first draft, and it did
+not earn its keep.** It was a full-screen session: the undecided queue taken as
+a snapshot, one idea at a time in a large typeface, answered with `y`/`l`/`n`,
+`u` to take the last one back, a counter going down. It reads well as a
+description and it was the wrong shape, because **the decision was never the
+slow part.** Reading the line is, and the line is already legible in the list.
+What the mode actually added was a place to go and come back from, a second set
+of controls to keep in step with the row's, a snapshot that could disagree with
+what was on screen while somebody else captured into it, and five single-letter
+claims on the app's keyboard — for a screen most people would open a handful of
+times a month. Cut, along with the `y`/`l`/`n`/`u`/`Escape` entries that had
+been added to `Hotkey` in `lib/hotkeys.ts`; that union is back to the two arrow
+keys.
+
+What survives the cut is the argument it was making. Triage still must not cost
+a drag — it costs a click, on the row, in the pile you are already looking at.
+The module gets faster from here by making the *list* better (what is in the
+undecided pile, in what order, how much of the idea you can read without
+opening it), never by adding a second place to be.
+
+**One component, both levels.** The campaign's Ideas page is `IdeasSurface`
+with `campaignId` set — the same rows filtered, and captures made there filed
+to that campaign. `campaign_id` is a filter and not a scope, so an idea moved
+onto a campaign keeps the verdict and the history it already had instead of
+becoming a second row somewhere else.
+
+**Waiting on `/api/ideas`.** No table, no endpoint, no column. The contract is
+written out in `services/api/ideas.ts` and answered by a `localStorage` stub —
+a plain module, not MSW, per the rule above. The stub is why the flag stays
+off: it is per browser, so the shared backlog this module is entirely about is
+shared with nobody, and a teammate opening the same workspace sees an empty
+list. That is a worse lie than an unbuilt page. It also seeds **nothing** — the
+other stub in this app seeds a tier matrix, which is reference data somebody
+decided, whereas an idea is a person's own sentence and inventing a backlog
+would put words in a workspace's mouth indistinguishable from its own.
+
+**What a *yes* leads to is the open half.** Today: an accepted idea can be
+filed onto a campaign, and that is all. Promotion — an idea becoming a post or
+a brief — wants `POST /api/ideas/:id/promote` rather than the client creating
+the post and hoping the link survives.
+
+**Where.** `lib/ideas.ts` (+ test), `services/api/ideas.ts`,
+`services/api/ideas.stub.ts` (+ test), `hooks/useIdeas.ts`,
+`components/ideas/*`, the two `ideas` routes, and the `ideas.*` catalogue
+entries in both languages.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain

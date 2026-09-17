@@ -219,14 +219,57 @@ export const es: Translation = {
   },
 
   ideas: {
-    stub: {
-      workspaceTitle: 'Aquí vivirán las ideas',
-      workspaceBody:
-        'Todo lo que vale la pena crear y que aún no pertenece a ninguna campaña, en un solo sitio.',
-      campaignTitle: 'Aquí vivirán las ideas de esta campaña',
-      campaignBody:
-        'El mismo módulo, reducido a esta campaña: lo que aún podría decir, antes de que nada sea una publicación.',
+    capture: {
+      placeholder: '¿Qué podríamos crear?',
+      label: 'Anota una idea',
+      submit: 'AÑADIR IDEA',
     },
+    verdict: {
+      yes: 'Sí',
+      later: 'Ahora no',
+      no: 'No',
+    },
+    action: {
+      yes: 'Sí',
+      later: 'Ahora no',
+      no: 'No',
+      undecide: 'Devolver a las pendientes de decidir',
+      close: 'Cerrar esta idea',
+      delete: 'ELIMINAR IDEA',
+    },
+    horizon: {
+      week: 'Recuérdamelo en una semana',
+      month: 'Recuérdamelo en un mes',
+      quarter: 'Recuérdamelo en tres meses',
+    },
+    pile: {
+      waiting: 'Sin decidir',
+    },
+    pileEmpty: {
+      waiting: 'Ya se ha respondido a todo lo que había aquí.',
+      yes: 'Todavía no se ha aceptado ninguna.',
+      later: 'No hay ninguna aplazada.',
+      no: 'No se ha descartado ninguna.',
+    },
+    backFrom: 'ha vuelto',
+    field: {
+      title: 'La idea',
+      note: 'Notas',
+      notePlaceholder: 'Lo que convenga recordar sobre ella',
+      noCampaign: 'Sin campaña',
+    },
+    record: {
+      captured: 'Anotada el {{at}}',
+      decided: '{{verdict}} el {{at}}',
+      returns: 'Vuelve el {{at}}',
+    },
+    empty: {
+      title: 'Todavía no has anotado nada.',
+      subtitle:
+        'Cualquier cosa que valga la pena crear, por poco formada que esté. Decidir sobre ella es otro trabajo y puede esperar.',
+    },
+    loadFailed: 'No se pudieron cargar las ideas',
+    saveFailed: 'No se pudo guardar. Tus ideas no han cambiado.',
   },
 
   tasks: {
