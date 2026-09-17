@@ -1,10 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowCounterClockwiseIcon } from '@phosphor-icons/react'
-import { PageError } from '@/components/page-primitives/PageError'
-import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState'
-import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { Button } from '@/components/ui/button'
+import { Collapse } from '@/components/ui/collapse'
 import { CampaignIcon } from '@/components/layout/CampaignIcon'
 import {
   useArchivedCampaigns,
@@ -16,7 +14,24 @@ import { identityAbbr, identityColorVar } from '@/lib/identity'
 import type { Campaign } from '@/types/campaigns'
 
 /**
- * The campaigns that have been put away (CON-156).
+ * The campaigns that have been put away (CON-156), as a closed drawer at the
+ * foot of the Campaigns list.
+ *
+ * It used to be a second view of this screen, reached by an icon in the top
+ * right — which is a corner reserved for views, so the icon was in the right
+ * place and still wrong. A view switch is for two ways of looking at the same
+ * work, and this is not that: the archive is a small pile at the end of the
+ * list, and sending someone to a separate screen to see it cost them the
+ * active campaigns they were looking at, for a set most people open once and
+ * never again. Here the list simply continues, and closed is the resting
+ * state.
+ *
+ * Absent rather than present-and-empty when there is nothing archived — a
+ * drawer that opens onto "nothing here" is a row of furniture that has never
+ * held anything. The exceptions are the two states where hiding it would
+ * mislead: `defaultOpen` (the address asked for it, having just sent a
+ * campaign in) and a failed fetch, where vanishing would tell someone who just
+ * archived a campaign that it was deleted instead.
  *
  * Deliberately not `CampaignCard`. The card scores a campaign — posts due,
  * gaps in its setup, what needs attention — and every one of those is a claim
@@ -26,35 +41,46 @@ import type { Campaign } from '@/types/campaigns'
  * away, and how to get it back.
  *
  * The name still links through: archiving hides a campaign, it does not close
- * it, and looking at what a finished campaign did is most of the reason to keep
- * one.
+ * it, and looking at what a finished campaign did is most of the reason to
+ * keep one.
  */
-export function ArchivedCampaigns() {
+export function ArchivedCampaigns({
+  defaultOpen = false,
+}: {
+  defaultOpen?: boolean
+}) {
   const { t, i18n } = useTranslation()
   const { data: campaigns, isLoading, isError } = useArchivedCampaigns()
 
-  if (isLoading) return <PageLoader />
-  if (isError) return <PageError header={t('campaigns.archivedError')} />
-
-  if (!campaigns || campaigns.length === 0) {
-    return (
-      <div className="grow grid px-3 lg:px-6 pb-6">
-        <PageGridEmptyState
-          title={t('campaigns.archivedEmpty.title')}
-          subtitle={t('campaigns.archivedEmpty.subtitle')}
-        />
-      </div>
-    )
-  }
+  const count = campaigns?.length ?? 0
+  if (isLoading && !defaultOpen) return null
+  if (!isError && count === 0 && !defaultOpen) return null
 
   return (
-    <ul className="flex flex-col gap-px px-3 lg:px-6 pt-4 pb-10">
-      {campaigns.map((campaign) => (
-        <li key={campaign.id}>
-          <ArchivedRow campaign={campaign} locale={i18n.language} />
-        </li>
-      ))}
-    </ul>
+    <Collapse
+      title={t('campaigns.archivedSection')}
+      // No count while the answer isn't known yet, rather than a confident 0.
+      meta={isLoading || isError ? undefined : count}
+      defaultOpen={defaultOpen}
+    >
+      {isError ? (
+        <p className="py-2 text-sm text-warning">
+          {t('campaigns.archivedError')}
+        </p>
+      ) : count === 0 ? (
+        <p className="max-w-150 py-2 text-sm text-tertiary-foreground">
+          {t('campaigns.archivedEmpty')}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-px pt-1">
+          {campaigns!.map((campaign) => (
+            <li key={campaign.id}>
+              <ArchivedRow campaign={campaign} locale={i18n.language} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </Collapse>
   )
 }
 

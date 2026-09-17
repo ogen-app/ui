@@ -91,7 +91,7 @@ Performers:
 | `PerformersView.posts` — every post in the period | `best` + `worst`, capped at `limit` | The middle is never sent; `total_posts` is the count |
 | `PerformersView.curve {sample, confidence, floor}` | — | The maturation curve is internal to the server's scoring |
 | `PerformersView.typical` | — | `against_typical` is already normalised; there is no absolute typical per criterion |
-| `PerformerCriterionId` — `pace`, `save_rate`, `follow_rate` | `by` — `against_typical`, `interactions` | `save_rate`/`follow_rate` were unserviceable and are now **deleted** (2026-09-06); `interactions` is missing from the FE |
+| `PerformerCriterionId` — `pace`, `reach`, `engagement_rate` | `by` — `against_typical`, `interactions` | `save_rate`/`follow_rate` were unserviceable and are now **deleted** (2026-09-06); `interactions` is missing from the FE |
 
 *Resolved, differently from the overview.* The overview's card fitted the wire
 and was reused behind a mapper (`lib/analyticsOverviewView` → `NowSection`). The

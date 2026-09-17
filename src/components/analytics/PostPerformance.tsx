@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
-import { resolvePlatformInfo } from '@/lib/platformDictionary'
 import { EmptyChart, PostSeriesChart } from './charts'
 import { Segmented } from './ComparisonBar'
 import { InsightLine } from './ComparisonSections'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import {
   bucketSeries,
   delta,
@@ -93,7 +93,7 @@ const MEASURE_ORDER: MeasureId[] = [
  */
 export function PostIdentityCard({ post }: { post: PostIdentity }) {
   const { t } = useTranslation()
-  const info = resolvePlatformInfo(post.platform)
+  const info = usePlatformCatalog().resolve(post.platform)
   const Icon = info?.icon
 
   return (

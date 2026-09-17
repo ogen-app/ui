@@ -28,11 +28,11 @@ export type AutoPublishState = 'allowed' | 'manual' | 'unknown'
  * can't be dropped the way a companion `isPending` flag can.
  */
 export function useAutoPublishState(
-  platformId: string | null | undefined,
+  zernioId: string | null | undefined,
 ): AutoPublishState {
   const { data, isPending } = useAutoPublishAllowlist()
   if (isPending) return 'unknown'
-  return isAutoPublishAllowed(data, platformId) ? 'allowed' : 'manual'
+  return isAutoPublishAllowed(data, zernioId) ? 'allowed' : 'manual'
 }
 
 /**

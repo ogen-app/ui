@@ -56,7 +56,7 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
   // halves of one state, and `unknown` has to reach both. Worse than looking
   // wrong, a click on ALLOW before the list lands would write this platform
   // over the stored one, since the toggle replaces the whole thing.
-  const state = useAutoPublishState(platform.id)
+  const state = useAutoPublishState(info.zernioId)
   const allowed = state === 'allowed'
 
   const [checking, setChecking] = useState(false)

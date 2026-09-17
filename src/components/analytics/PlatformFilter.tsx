@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
-import { resolvePlatformInfo } from '@/lib/platformDictionary'
 import { Picker } from './ComparisonBar'
 import type { Period, PlatformOption } from './types'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 
 /**
  * The bar that says what is being counted, and over what window.
@@ -141,7 +141,7 @@ function PlatformMark({
   onToggle: () => void
 }) {
   const { t } = useTranslation()
-  const info = resolvePlatformInfo(platform.id)
+  const info = usePlatformCatalog().resolve(platform.id)
   const Icon = info?.icon
   const connected = platform.accounts > 0
   const accounts = t('analytics.scopeBar.accounts', {

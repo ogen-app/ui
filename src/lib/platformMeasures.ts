@@ -31,7 +31,7 @@ export type WireMeasure = keyof AnalyticsMetrics
 
 /**
  * Per platform, the measures believed **not** to be reported at all, keyed by
- * the wire slug (`resolvePlatformInfo` answers to these).
+ * the wire slug (`usePlatformCatalog().resolve` answers to these).
  *
  * A platform absent from this table reports everything — the right default for
  * one we have not looked at, because it errs towards showing a figure we have

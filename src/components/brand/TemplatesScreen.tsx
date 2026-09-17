@@ -174,7 +174,7 @@ function PlatformRail({
       <RailGroup label={t('brand.templates.connectedGroup')}>
         {connected.map((p) => (
           <PlatformRow
-            key={p.id}
+            key={p.zernioId}
             name={p.name}
             color={p.color}
             icon={p.icon}
@@ -189,7 +189,7 @@ function PlatformRail({
       <RailGroup label={t('brand.templates.notConnectedGroup')}>
         {notConnected.map((p) => (
           <PlatformRow
-            key={p.id}
+            key={p.zernioId}
             name={p.name}
             color={p.color}
             icon={p.icon}

@@ -170,7 +170,13 @@ type AssetsTableProps = {
    * the workspace bank, where a document is opened without one.
    */
   campaignId: string | null
-  onDelete: (id: string) => void
+  /**
+   * Asks for the row's document to be deleted — it does not delete it. The
+   * list answers with a confirmation naming the document (CON-246 follow-up);
+   * the whole asset goes up rather than its id because that dialog needs the
+   * title to name it.
+   */
+  onDelete: (asset: Asset) => void
   /**
    * Offered by the shared empty state as RESET FILTERS. There is no
    * `emptyStateMessage` here on purpose: `TableEmptyState` draws its own
@@ -405,7 +411,7 @@ function AssetsTableComponent({
               aria-label={`Delete ${formatTitle(row.title)}`}
               onClick={(e) => {
                 e.stopPropagation()
-                onDelete(row.id)
+                onDelete(row)
               }}
             >
               <TrashIcon className="size-4 text-tertiary-foreground hover:text-destructive" />

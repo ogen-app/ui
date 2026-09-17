@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getAsset } from '@/services/api/content'
+import { uploadErrorMessage } from '@/lib/uploadError'
 import { Button } from '@/components/ui/button'
 import { ArrowsLeftRightIcon, XIcon } from '@phosphor-icons/react'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
@@ -26,6 +28,7 @@ const POLL_MS = 2000
  * the store and refreshing the asset list once it settles.
  */
 export function UploadRow({ item }: { item: UploadItem }) {
+  const { t } = useTranslation()
   const setStatus = useUploadStore((s) => s.setStatus)
   const remove = useUploadStore((s) => s.remove)
   const retry = useUploadStore((s) => s.retry)
@@ -96,7 +99,9 @@ export function UploadRow({ item }: { item: UploadItem }) {
       )}
 
       {item.phase === 'failed' && item.error && (
-        <span className="text-xs text-destructive">{item.error}</span>
+        <span className="text-xs text-destructive">
+          {uploadErrorMessage(t, item.error)}
+        </span>
       )}
     </div>
   )

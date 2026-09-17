@@ -1,12 +1,12 @@
-import { getPlatformInfo } from '@/lib/platformDictionary'
 import type { PublishMethod } from '@/lib/postStatusMachine'
 
 /**
  * Whether the workspace lets this platform publish on its own.
  *
- * The allowlist is keyed by Zernio platform id ("linkedin"), while posts and
- * campaigns carry our platform Sqid, so every read has to go through the
- * dictionary. Workspace-scoped: the same answer holds for every campaign.
+ * The allowlist is keyed by Zernio platform id ("linkedin"), and so is this —
+ * callers holding a post's or campaign's sqid translate first, through
+ * `usePlatformCatalog().resolve`. Workspace-scoped: the same answer holds for
+ * every campaign.
  *
  * Mirrors the server's routing decision in the schedule endpoint. The server
  * remains the source of truth — it re-checks on every schedule, and a post the
@@ -16,11 +16,10 @@ import type { PublishMethod } from '@/lib/postStatusMachine'
  */
 export function isAutoPublishAllowed(
   allowlist: string[] | undefined,
-  platformId: string | null | undefined,
+  zernioId: string | null | undefined,
 ): boolean {
-  if (!allowlist || !platformId) return false
-  const info = getPlatformInfo(platformId)
-  return info ? allowlist.includes(info.zernioId) : false
+  if (!allowlist || !zernioId) return false
+  return allowlist.includes(zernioId)
 }
 
 /**
@@ -35,8 +34,8 @@ export function isAutoPublishAllowed(
 export function resolvePublishMethod(
   current: PublishMethod,
   allowlist: string[] | undefined,
-  platformId: string | null | undefined,
+  zernioId: string | null | undefined,
 ): PublishMethod {
   if (current === 'manual') return 'manual'
-  return isAutoPublishAllowed(allowlist, platformId) ? 'auto' : 'manual'
+  return isAutoPublishAllowed(allowlist, zernioId) ? 'auto' : 'manual'
 }
