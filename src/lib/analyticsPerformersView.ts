@@ -33,9 +33,12 @@ import type {
  *   means the card cannot count what it left out for lacking data — it can only
  *   count what the server chose not to send, which is a different sentence and
  *   is the one {@link buildPerformersView} produces.
- * - **Two of the harness's five criteria are gone.** `/performers` reports no
- *   saves and no follows, so `save_rate` and `follow_rate` have no numerator
- *   and are not offered; `interactions`, which the harness never had, is.
+ * - **Two of the harness's five criteria are gone, and now deleted.**
+ *   `/performers` reports no saves and no follows, so `save_rate` and
+ *   `follow_rate` never had a numerator; `availableCriteria` filtered them out
+ *   of every render they ever had, which made them a vocabulary and two
+ *   translations for questions the product could not ask. Removed 2026-09-06.
+ *   `interactions`, which the harness never had, is offered instead.
  * - **The multiplier arrives per row, already normalised.** The harness divided
  *   a figure by a workspace typical to get one. Here `against_typical` *is* the
  *   ratio, and `direction` is the server's own verdict on it — so the bar is

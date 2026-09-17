@@ -1,5 +1,4 @@
 import { useCallback } from 'react'
-import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -7,8 +6,6 @@ import { z } from 'zod'
 
 import { Input } from '@/components/ui/input'
 import { TagsInput } from '@/components/ui/tags-input'
-import { Button } from '@/components/ui/button'
-import { ArchiveIcon, TrashIcon } from '@phosphor-icons/react'
 import {
   Form,
   FormControl,
@@ -17,14 +14,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {
-  useArchiveCampaign,
-  useDeleteCampaign,
-  useUpdateCampaign,
-} from '@/hooks/useCampaigns'
+import { useUpdateCampaign } from '@/hooks/useCampaigns'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { campaignToPayload } from '@/lib/campaignPayload'
+import { CampaignDangerZone } from './CampaignDangerZone'
 import type { Campaign } from '@/types/campaigns'
 
 /**
@@ -56,18 +50,19 @@ type Props = {
  * edit that changes nothing about what the campaign does — every other screen
  * would still plan, generate and schedule identically — so it belongs with
  * archive and delete, beside the other operations on the row.
+ *
+ * Both ways to stop the campaign live in `CampaignDangerZone` — archive and
+ * delete side by side, each behind its own modal (CON-156's drawer rework
+ * decided that arrangement, and this page inherits it rather than relitigating
+ * where archive belongs).
  */
 export function CampaignSettingsForm({ campaign }: Props) {
+  const { t } = useTranslation()
   const form = useForm<SettingsFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(settingsSchema as any),
     defaultValues: { name: campaign.name, tag_ids: campaign.tag_ids ?? [] },
   })
-
-  const { t } = useTranslation()
-  const { mutate: deleteCampaign, isPending: deleting } = useDeleteCampaign()
-  const { mutate: archiveCampaign, isPending: archiving } = useArchiveCampaign()
-  const navigate = useNavigate()
 
   // No autosave here: edits mark the page dirty and are applied by the
   // header's Save button (settingsSave context), like the strategy page.
@@ -86,43 +81,6 @@ export function CampaignSettingsForm({ campaign }: Props) {
     form.reset(v)
   }, [campaign, form, updateCampaign])
   useRegisterSettingsSave('campaign-settings', isDirty, save)
-
-  const displayName = () =>
-    campaign.name.trim() === '' ? t('campaigns.untitled') : `"${campaign.name}"`
-
-  const handleDelete = () => {
-    if (
-      !window.confirm(
-        t('campaigns.dangerZone.confirm', { name: displayName() }),
-      )
-    )
-      return
-    deleteCampaign(campaign.id, {
-      onSuccess: () => {
-        navigate({ to: '/campaigns' })
-      },
-    })
-  }
-
-  /**
-   * Archiving leaves the campaign whole, so it asks once and then leaves —
-   * for the archive rather than the campaigns list, because the campaign is
-   * about to vanish from that list and landing on the screen that no longer
-   * shows it reads as a delete.
-   */
-  const handleArchive = () => {
-    if (
-      !window.confirm(
-        t('campaigns.archiveCard.confirm', { name: displayName() }),
-      )
-    )
-      return
-    archiveCampaign(campaign.id, {
-      onSuccess: () => {
-        navigate({ to: '/campaigns', search: { archived: true } })
-      },
-    })
-  }
 
   return (
     <Form {...form}>
@@ -162,49 +120,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
             </div>
           </SettingsCard>
 
-          {/* Archiving is not in the Danger Zone, and that is the point of it
-              existing: it is the reversible way to stop running a campaign,
-              and putting it under a red heading beside a delete would teach
-              people to avoid the safe option. It comes first because it is
-              what most people who arrive here wanting rid of a campaign
-              actually want. */}
-          <SettingsCard title={t('campaigns.archiveCard.title')}>
-            <div className="flex flex-col gap-3 items-start">
-              <p className="max-w-150 text-sm text-tertiary-foreground">
-                {t('campaigns.archiveCard.body')}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleArchive}
-                loading={archiving}
-              >
-                <ArchiveIcon />
-                <span>{t('campaigns.archiveCard.action')}</span>
-              </Button>
-            </div>
-          </SettingsCard>
-
-          <SettingsCard title={t('campaigns.dangerZone.title')}>
-            <div className="flex flex-col gap-3 items-start">
-              {/* No mention of the row the server keeps as its own safety net:
-                  saying it is retained reads as "recoverable", and nothing in
-                  the app or on the API can bring it back. */}
-              <p className="max-w-150 text-sm text-tertiary-foreground">
-                {t('campaigns.dangerZone.body')}
-              </p>
-              <Button
-                type="button"
-                variant="destructiveInverted"
-                onClick={handleDelete}
-                loading={deleting}
-              >
-                <TrashIcon />
-                {/* Literal caps, not `uppercase` — see CLAUDE.md on destructive labels. */}
-                <span>{t('campaigns.dangerZone.action')}</span>
-              </Button>
-            </div>
-          </SettingsCard>
+          <CampaignDangerZone campaign={campaign} />
         </fieldset>
       </form>
     </Form>

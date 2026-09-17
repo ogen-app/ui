@@ -86,7 +86,7 @@ function makeView(
   accounts: { is_active: boolean }[] = [],
 ): PlatformView {
   const platform = { id, name } as Platform
-  const info = { id, name } as PlatformInfo
+  const info = { zernioId: id, name } as PlatformInfo
   const publisher = {
     id: `${id}-pub`,
     name: `${name} publisher`,

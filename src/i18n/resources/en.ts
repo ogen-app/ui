@@ -1350,24 +1350,6 @@ export const en = {
         heldOut_other:
           '{{count}} posts were seen by too few people for a rate to mean anything, or reported no interactions.',
       },
-      save_rate: {
-        label: 'Saves',
-        rawLabel: 'Saves',
-        suffix: 'per 1,000 reached',
-        heldOut_one:
-          'One post did not report saves, or was seen by too few people to divide.',
-        heldOut_other:
-          '{{count}} posts did not report saves, or were seen by too few people to divide.',
-      },
-      follow_rate: {
-        label: 'Follows',
-        rawLabel: 'Follows',
-        suffix: 'per 1,000 reached',
-        heldOut_one:
-          'One post did not report follows, or was seen by too few people to divide.',
-        heldOut_other:
-          '{{count}} posts did not report follows, or were seen by too few people to divide.',
-      },
     },
 
     quality: {
@@ -3117,17 +3099,13 @@ export const en = {
       title: 'No campaigns yet',
       subtitle: 'Create your first campaign to get started',
     },
-    archivedTitle: 'Archived campaigns',
+    /** The drawer at the foot of the list, not a second view of the screen. */
+    archivedSection: 'Archived campaigns',
     archivedError: 'Failed to load archived campaigns',
-    showArchived: 'Show archived campaigns',
-    showActive: 'Back to active campaigns',
     archivedOn: 'Archived {{archivedOn}}',
     unarchive: 'UNARCHIVE',
-    archivedEmpty: {
-      title: 'Nothing is archived',
-      subtitle:
-        'Archiving a campaign takes it off the list without deleting anything. Its posts, schedule and content stay exactly as they are.',
-    },
+    archivedEmpty:
+      'Nothing is archived. Archiving a campaign takes it off the list without deleting anything: its posts, schedule and content stay exactly as they are.',
     // The two campaign section pages the drill-down left behind Strategy and
     // Settings — card headings, so they name what the card is a group of.
     strategy: {
@@ -3137,17 +3115,31 @@ export const en = {
     settings: {
       record: 'The record',
     },
-    archiveCard: {
-      title: 'Archive',
-      body: 'Takes this campaign off the Campaigns list and stops it being offered anywhere new work is filed. Nothing is deleted, and you can bring it back at any time.',
-      action: 'ARCHIVE CAMPAIGN',
-      confirm: 'Archive {{name}}? You can bring it back from the archive.',
-    },
+    /**
+     * One card holds both ways of stopping a campaign, so its own copy stays
+     * general and each modal carries the consequences of the button that
+     * opened it — read where they are acted on rather than skipped on the way
+     * down the page.
+     */
     dangerZone: {
       title: 'Danger Zone',
-      body: 'Deleting a campaign removes its posts and schedule. This cannot be undone — archive it instead if you only want it off the list.',
-      action: 'DELETE CAMPAIGN',
-      confirm: 'Delete {{name}}? This cannot be undone.',
+      body: 'Two ways to stop running this campaign. Archiving keeps everything and can be undone; deleting removes the campaign and its posts for good.',
+      archive: {
+        action: 'ARCHIVE CAMPAIGN',
+        confirmTitle: 'Archive {{name}}?',
+        confirmBody:
+          'The campaign comes off the Campaigns list and stops being offered anywhere new work is filed. Nothing is deleted. Its posts, schedule, brief and content stay exactly as they are, and you can bring it back from the archive at any time.',
+        keep: 'KEEP IT ACTIVE',
+        confirm: 'ARCHIVE CAMPAIGN',
+      },
+      delete: {
+        action: 'DELETE CAMPAIGN',
+        confirmTitle: 'Delete {{name}}?',
+        confirmBody:
+          'The campaign, its posts and its schedule are removed, and nothing in the app can bring them back. Posts that have already been published stay live on the social networks. Archive it instead if you only want it off the list.',
+        keep: 'KEEP CAMPAIGN',
+        confirm: 'DELETE CAMPAIGN',
+      },
     },
   },
 
@@ -3209,6 +3201,40 @@ export const en = {
     },
 
     /**
+     * Confirmation for deleting documents — one row's bin, or a whole ticked
+     * selection. Both, now: the row used to delete on one click, on the
+     * argument that a mistake among twenty rows is visible immediately. It
+     * isn't. There is no undo anywhere in the product and the bin sits inches
+     * from the row click that opens the document, so the cheapest gesture on
+     * the screen was also the only unrecoverable one.
+     *
+     * A single row is named, because the dialog can be: it is the one fact
+     * that tells a misclick from the delete that was meant. A selection says
+     * how many instead — the names would be a list, and the count is what the
+     * reader checks against what they think they ticked.
+     */
+    delete: {
+      titleNamed: 'Delete "{{title}}"?',
+      title_one: 'Delete this document?',
+      title_other: 'Delete {{count}} documents?',
+      /** What else stops working, which is the part a list can't show. */
+      bodyCampaign_one:
+        'This document will be permanently deleted, and this campaign will stop writing from it. This cannot be undone.',
+      bodyCampaign_other:
+        'These documents will be permanently deleted, and this campaign will stop writing from them. This cannot be undone.',
+      bodyBank_one:
+        'This document will be permanently deleted, and any campaign using it will stop writing from it. This cannot be undone.',
+      bodyBank_other:
+        'These documents will be permanently deleted, and any campaign using them will stop writing from them. This cannot be undone.',
+      keep_one: 'KEEP DOCUMENT',
+      keep_other: 'KEEP DOCUMENTS',
+      confirm_one: 'DELETE DOCUMENT',
+      confirm_other: 'DELETE {{count}} DOCUMENTS',
+      done_one: '{{count}} document deleted',
+      done_other: '{{count}} documents deleted',
+    },
+
+    /**
      * Filing a selection of documents under tags (CON-279).
      *
      * `addHelp` says what happens to a document that already carries the tag,
@@ -3252,6 +3278,8 @@ export const en = {
     pdfNote: 'PDFs are read in the background, so they finish after upload.',
     browse: 'Drop files here or click to browse',
     remove: 'Remove {{name}}',
+    /** Last resort: the request died without the server wording anything. */
+    failed: 'Upload failed',
     cancel: 'CANCEL',
     submit: 'UPLOAD',
     /** The count is what makes the button worth reading twice before clicking. */
@@ -3259,6 +3287,66 @@ export const en = {
     /** Named while a drag is over the page — the one moment the destination
         can be stated without being asked for. */
     dropInto: 'Add these to {{scope}}',
+    /**
+     * A staged image whose bytes are already in the workspace (CON-246
+     * R-Dedup). It names the document rather than saying "duplicate", because
+     * the useful half is *which* one — the file may have been filed under a
+     * name the uploader would never have searched for.
+     *
+     * Stated before the upload, not after, which is the whole reason it
+     * exists: the server answers a byte-identical image with the asset it
+     * already has, so uploading one is indistinguishable from nothing
+     * happening. It is a warning and not a refusal — in a campaign the upload
+     * still does something, it attaches that existing document here.
+     *
+     * Images only. The server dedupes nothing else, so a second copy of a PDF
+     * really is a second document.
+     */
+    duplicate: 'Already in the content bank as "{{title}}"',
+
+    /**
+     * Why a file was refused.
+     *
+     * The server composes these as prose and the client matches on it
+     * (`lib/uploadError`) — see that module for why, and for what is being
+     * asked of the API instead. Each one says what to do about it where there
+     * is anything to do, and admits it is our fault where there isn't.
+     */
+    errors: {
+      type: 'Only .md, .pdf and image files are accepted.',
+      /** The name said one thing and the bytes were another. */
+      unsupportedType:
+        "This file's contents aren't a kind we can read. Images have to be JPEG, PNG, WebP or GIF.",
+      /** The cap is the server's own, lifted out of its message. */
+      tooBig: 'This file is over the {{limit}} limit.',
+      dimensions: 'This image is too big to store — the limit is {{max}}.',
+      empty: 'This file is empty.',
+      notPdf: "This isn't a readable PDF.",
+      /** A deployment fault: the bucket isn't configured. */
+      notConfigured: "This server can't store images yet.",
+      undecodable: "This image couldn't be read — it may be damaged.",
+      /** Our side failed. Nothing about the file is wrong. */
+      server: 'Something went wrong saving this file. Try again.',
+    },
+  },
+
+  /**
+   * The help drawer's own chrome (CON-173) — and only that.
+   *
+   * Article titles and prose are **content**, not catalogue entries: they live
+   * in the CMS, are translated there, and arrive already in the reader's
+   * language. Putting them here would mean a deploy to fix a typo and a
+   * catalogue the size of a manual.
+   */
+  help: {
+    title: 'Help',
+    back: 'Back',
+    related: 'Related',
+    notFound: "We haven't written this one yet.",
+    resize: 'Resize the help panel',
+    trigger: {
+      label: 'What is this?',
+    },
   },
 
   errors: {

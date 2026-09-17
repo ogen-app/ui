@@ -169,6 +169,15 @@ export const ZIndex = {
    */
   bottomPanel: 250,
 
+  /**
+   * Contextual help drawer (CON-173)
+   * Used for: HelpDrawer - the standalone drawer over the whole app.
+   * Above every sheet and modal, because help is opened *from* those and has
+   * to cover what it explains. Still below the popover layer, so its own
+   * dropdowns and tooltips land on top of it rather than underneath.
+   */
+  helpDrawer: 260,
+
   // ============================================================================
   // POPOVER LAYER (300-399)
   // Floating UI elements: dropdowns, tooltips, popovers, context menus

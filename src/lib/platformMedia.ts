@@ -12,12 +12,20 @@
 // FOLLOW-UP: verify each row against the live platform APIs and move the
 // authoritative copy back to the platform rows, then delete this file.
 //
+// CON-292 did not close that. It made the platform catalogue operator-editable
+// but left the existing rows' constraint jsonb untouched, so the disagreements
+// above still stand and this table still wins — which now has a second cost:
+// lowering Instagram's image cap in Harbor changes nothing the editor checks.
+// The three platforms CON-292 seeded are the exception and are carried here
+// verbatim from that migration, whose values were verified against
+// docs.zernio.com on 2026-09-10 — the same source this table is drawn from.
+//
 // Video is deliberately absent, for the opposite reason: its rules were
 // seeded by CON-148 from the same Zernio docs this table is sourced from, so
 // there is nothing to override. `lib/platformVideo.ts` reads them off
 // `GET /api/platforms` and applies Ogen's own ingest budget on top.
 //
-// Keyed by platform Sqid — see `platformDictionary.ts`.
+// Keyed by `zernio_id` — see `platformDictionary.ts`.
 
 export type ImageMediaConstraints = {
   maxFileSizeBytes: number
@@ -52,7 +60,7 @@ const MB = 1024 * 1024
 const PLATFORM_MEDIA: Record<string, PlatformMediaConstraints> = {
   // LinkedIn — up to 20 images per post; the carousel format is a PDF
   // document, not a multi-image post.
-  AXqWG7U2qnpt: {
+  linkedin: {
     image: {
       maxFileSizeBytes: 8 * MB,
       allowedMimes: ['image/jpeg', 'image/png', 'image/gif'],
@@ -68,7 +76,7 @@ const PLATFORM_MEDIA: Record<string, PlatformMediaConstraints> = {
   },
   // Facebook — WebP is converted to JPEG on the way in; 4 MB is the size
   // Facebook rejects above in practice, well under its documented limit.
-  zBU1zqVICGfk: {
+  facebook: {
     image: {
       maxFileSizeBytes: 4 * MB,
       allowedMimes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
@@ -84,7 +92,7 @@ const PLATFORM_MEDIA: Record<string, PlatformMediaConstraints> = {
   // NOT ENFORCED: one animated GIF consumes all four image slots, so a GIF
   // plus three images passes here and Zernio rejects it. Expressing that
   // needs a per-kind slot cost these constraints have no room for — CON-123.
-  '81mUCmc2xsKd': {
+  twitter: {
     image: {
       maxFileSizeBytes: 1 * MB,
       maxGifFileSizeBytes: 15 * MB,
@@ -94,7 +102,7 @@ const PLATFORM_MEDIA: Record<string, PlatformMediaConstraints> = {
     },
   },
   // Threads — carousels cap at 10; images are auto-compressed above 8 MB.
-  pQ4yxT3SuE57: {
+  threads: {
     image: {
       maxFileSizeBytes: 8 * MB,
       allowedMimes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
@@ -104,7 +112,7 @@ const PLATFORM_MEDIA: Record<string, PlatformMediaConstraints> = {
   },
   // Instagram — JPEG/PNG only, carousels cap at 10, and every slide is
   // cropped to the first slide's aspect ratio.
-  rzgpTkARLH0L: {
+  instagram: {
     image: {
       maxFileSizeBytes: 8 * MB,
       allowedMimes: ['image/jpeg', 'image/png'],
@@ -112,10 +120,52 @@ const PLATFORM_MEDIA: Record<string, PlatformMediaConstraints> = {
       maxPerPost: 10,
     },
   },
+  // The three below agree with their seeded rows rather than correcting them —
+  // see the CON-292 paragraph in the header. They are copied here anyway because
+  // an absent entry means *no image checks at all*, which is a worse answer than
+  // a duplicated one.
+  //
+  // TikTok — photo carousels go to 35 images, which is far and away the widest
+  // any platform allows.
+  tiktok: {
+    image: {
+      maxFileSizeBytes: 20 * MB,
+      allowedMimes: ['image/jpeg', 'image/png', 'image/webp'],
+      animatedGifSupported: false,
+      maxPerPost: 35,
+    },
+  },
+  // Pinterest — one image per pin; there is no carousel format.
+  pinterest: {
+    image: {
+      maxFileSizeBytes: 32 * MB,
+      allowedMimes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+      animatedGifSupported: true,
+      maxPerPost: 1,
+    },
+  },
+  // Reddit — a gallery takes 2–20 images; a single image post is the same
+  // upload with one.
+  reddit: {
+    image: {
+      maxFileSizeBytes: 20 * MB,
+      allowedMimes: ['image/jpeg', 'image/png', 'image/gif'],
+      animatedGifSupported: true,
+      maxPerPost: 20,
+    },
+  },
 }
 
-export function getPlatformMedia(platformId: string): PlatformMediaConstraints {
-  return PLATFORM_MEDIA[platformId] ?? {}
+/**
+ * The media rules for a network, by `zernio_id`.
+ *
+ * Empty for a platform with no entry — which, since this table gates the
+ * editor's image checks, means *unchecked* rather than *unlimited*. Anything
+ * added to `lib/platformDictionary` needs a row here too; see
+ * `docs/platform-support.md`.
+ */
+export function getPlatformMedia(zernioId: string): PlatformMediaConstraints {
+  return PLATFORM_MEDIA[zernioId] ?? {}
 }
 
 /**

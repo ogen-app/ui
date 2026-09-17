@@ -56,18 +56,19 @@ export type MediaPolicy = {
 const SUPPORTED_KINDS: AttachmentKind[] = ['image', 'pdf', 'video']
 
 /**
- * Resolves the policy for a post. `rule` is the server's rule for the
- * selected post type — `null` while it loads, or for whitelist-only types
- * (event, live-video) where Ogen enforces nothing. `platform` is the row from
- * `usePlatforms()`, which carries the server-owned video rules; `undefined`
- * while it loads.
+ * Resolves the policy for a post. `zernioId` names the network whose media
+ * rules apply — our own table is filed under it (CON-292), so a caller holding
+ * a sqid translates first. `rule` is the server's rule for the selected post
+ * type — `null` while it loads, or for whitelist-only types (event, live-video)
+ * where Ogen enforces nothing. `platform` is the row from `usePlatforms()`,
+ * which carries the server-owned video rules; `undefined` while it loads.
  */
 export function mediaPolicy(
-  platformId: string,
+  zernioId: string | undefined,
   rule: ResolvedPostTypeRule | null | undefined,
   platform?: Platform,
 ): MediaPolicy {
-  const media = getPlatformMedia(platformId)
+  const media = getPlatformMedia(zernioId ?? '')
   const video = resolveVideoConstraints(platform)
 
   // The per-post cap for the kinds this type actually takes. The server has

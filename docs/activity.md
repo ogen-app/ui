@@ -259,11 +259,14 @@ Two consequences worth stating rather than discovering:
 - **The feed starts empty.** Nothing was recorded before the table existed, so
   the entries only go back as far as CON-242's deploy. The reports do not — they
   are computed from posts and reach as far back as the posts do.
-- **A recorded row has one recipient.** The producers write to the thing's
-  `created_by`, so a post failing is news to whoever made it and to nobody else,
-  where the derived entry was visible to the whole workspace. That is a fan-out
-  question for the back end, not something to paper over here; it is written up
-  in the `activity` flag's comment.
+- **A recorded row has one recipient, and that is now known to be wrong.** The
+  producers write to the thing's `created_by`, so a post failing is news to
+  whoever made it and to nobody else, where the derived entry was visible to
+  the whole workspace. Decided 2026-09-06, matching CON-285 FR8: **exceptions
+  fan out to the workspace and resolutions go to the initiator**, so
+  `post.publish_failed` and `post.published` both widen. It is a producer-side
+  change and nothing here moves. The full recipient table — every type, shipped
+  and planned — is [`events.md`](./events.md).
 
 Both phases sit behind one flag in `config/featureFlags.ts`; Phase 1 can flip on
 without Phase 2. **Tasks are a separate feature with a separate flag** (CON-234,
@@ -285,6 +288,14 @@ without the other.
   (`lib/notifications.ts`), which is the honest shape of the compromise: a
   producer can ship before its copy does, and its rows are untranslatable until
   a key is added.
+- **`eventhub` leaked subscriber slots — fixed** (CON-286). The cap was 10 per
+  user across `/api/events` *and* `/api/notifications/stream`, and slots were
+  never reclaimed: measured on the local API 2026-09-06, ten ids never
+  released, saturated six minutes after boot and still saturated 39 hours
+  later. ogen#142 made the cap self-healing (oldest subscription evicted at
+  the limit, ~30-minute connection lifetime) and ogen#152 raised it to 30.
+  What remains ours is the `event: recycle` frame nothing listens for yet —
+  the `activity` flag comment and `docs/sse.md` carry it.
 - **Event naming is still mixed** — dotted (`zernio.sync.ok`) and snake_case
   (`post_cloned`), matched literally in `lib/eventRouting.ts`. The notification
   vocabulary settled on dotted (`post.publish_failed`), so the hub is now the
