@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib'
+import { useEntitlement } from '@/hooks/useEntitlements'
 import { campaignTypeInfo } from '@/lib/campaignTypeDictionary'
 import type { CampaignType } from '@/types/campaigns'
 
@@ -13,6 +14,16 @@ import type { CampaignType } from '@/types/campaigns'
 
 /** The type a campaign gets unless the user picks otherwise. */
 export const DEFAULT_CAMPAIGN_TYPE = 'evergreen'
+
+/**
+ * Whether a type is that default.
+ *
+ * By name rather than by id, like `orderCampaignTypes` beside it: ids are the
+ * workspace's rows and differ per tenant, the name is the vocabulary.
+ */
+function isDefaultType(type: CampaignType): boolean {
+  return type.name.toLowerCase() === DEFAULT_CAMPAIGN_TYPE
+}
 
 /**
  * Evergreen first, then the API's own order. It is the default, and a default
@@ -69,6 +80,20 @@ function TypeCardBody({ type }: { type: CampaignType }) {
  * sentence, which is how the description ended up in a `title` tooltip that
  * only a mouse could find (and only by hovering something with no sign it was
  * hoverable).
+ *
+ * **A tier that allows evergreen only makes this a shorter list, not a list of
+ * locks** (CON-232). The whole disposition for `all_campaign_types` is *hide*:
+ * somebody is mid-decision here, and a row they cannot pick is noise laid
+ * across the four they can — the card carries a name, an icon and a sentence,
+ * all of which would still be there arguing for a choice that is not on offer.
+ * The place to sell a campaign type is the plan screen, which is where its
+ * description belongs and where it already is.
+ *
+ * The one type that survives the filter regardless is the one already chosen. A
+ * campaign that holds a type its tier no longer includes keeps it — the tier
+ * decides what may be *picked*, never what exists — and a picker that dropped
+ * the current value would show a campaign with no type selected and offer to
+ * silently change it on the next save.
  */
 export function CampaignTypePicker({
   types,
@@ -83,13 +108,19 @@ export function CampaignTypePicker({
   disabled?: boolean
   className?: string
 }) {
+  const everyType = useEntitlement('all_campaign_types')
+  const evergreenOnly = everyType.state === 'denied'
+  const offered = orderCampaignTypes(types).filter(
+    (type) => !evergreenOnly || isDefaultType(type) || type.id === value,
+  )
+
   return (
     <div
       className={cn('grid grid-cols-1 gap-3', className)}
       role="radiogroup"
       aria-label="Campaign type"
     >
-      {orderCampaignTypes(types).map((type) => {
+      {offered.map((type) => {
         const selected = value === type.id
         return (
           <button

@@ -10,7 +10,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib'
 
 type AssistantComposerProps = {
-  onSend: (text: string) => void
+  /**
+   * Returns whether the message was taken. `false` means the box keeps what is
+   * in it — the panel can refuse a send (the workspace's assistant allowance is
+   * spent, CON-232), and a refusal that also swallowed the instruction the user
+   * had just written would be a second, worse failure on top of the first.
+   */
+  onSend: (text: string) => boolean
   /** A turn is in flight: the send button becomes a stop button. */
   running?: boolean
   onCancel?: () => void
@@ -71,8 +77,7 @@ export function AssistantComposer({
 
   const submit = () => {
     if (!canSend) return
-    onSend(draft)
-    setDraft('')
+    if (onSend(draft)) setDraft('')
     inputRef.current?.focus()
   }
 

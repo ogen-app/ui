@@ -27,6 +27,12 @@ import { toast } from '@/stores/toastStore.ts'
 import { isSubmitted } from '@/lib/postStatusMachine.ts'
 import { cn } from '@/lib'
 import { formatBytes } from '@/lib/platformMedia.ts'
+// Not the one above it: that formatter tops out at MB because it measures one
+// file against a platform's cap, and a workspace's storage allowance is a
+// figure with a G in it.
+import { formatBytes as formatStorage } from '@/lib/assetStatus.ts'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog.tsx'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
 import { formatTimecode } from '@/lib/platformVideo.ts'
 import {
   acceptAttribute,
@@ -97,6 +103,7 @@ export function PostMediaCard({
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [overIndex, setOverIndex] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
+  const storage = useUpgradeGate('media_storage_bytes')
 
   // Attachments freeze once a copy of the post exists outside Ogen, so the
   // card becomes a read-only record (CON-251). `published` was always frozen —
@@ -317,7 +324,12 @@ export function PostMediaCard({
         {canAdd && !collapsed && (
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
+            // The gate is wrapped inside the handler rather than around it:
+            // built during render, the closure reads `inputRef.current` where
+            // the compiler cannot see that it only ever runs on a click.
+            onClick={() => {
+              storage.intent(() => inputRef.current?.click())()
+            }}
             className={cn(
               'flex size-32 flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors',
               'bg-tertiary hover:bg-quaternary',
@@ -351,6 +363,10 @@ export function PostMediaCard({
           e.target.value = ''
         }}
       />
+
+      {/* Answered before the picker opens rather than after the file is chosen:
+          a workspace out of storage should not be asked which file to send. */}
+      <UpgradeDialog gate={storage} format={formatStorage} />
     </div>
   )
 }

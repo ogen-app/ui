@@ -417,7 +417,12 @@ const FEATURE_FLAGS = {
    * a different victim than the server did.
    *
    * With this off nothing asks, nothing renders a lock, and every feature is
-   * available exactly as it was before tiers existed.
+   * available exactly as it was before tiers existed. That is now a claim about
+   * a dozen screens rather than about two: **the gating is wired** (CON-232),
+   * and `useEntitlement` returning `UNGATED` with the flag down is the single
+   * thing keeping all of it inert. Every call site goes through the hook — none
+   * reads `FEATURE_FLAGS` or the plan itself — so there is one place that
+   * behaviour can be checked and one place it could be broken.
    *
    * **What it does not switch off is being refused** (CON-295). The server
    * enforces whether or not this client asked first — 402 `entitlement_exceeded`

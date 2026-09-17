@@ -2496,6 +2496,15 @@ export const en = {
 
     /** Capitalised like every other action label in the app. */
     upgrade: 'UPGRADE',
+    /**
+     * The way out of the upgrade dialog, said rather than implied.
+     *
+     * Not "Cancel": nothing is being cancelled, and the word belongs to the
+     * action the user was refused. "Not now" is also the truthful half of what
+     * they are choosing — the limit is still there, and often the thing to do
+     * about it is to go back and delete one, which is behind this dialog.
+     */
+    notNow: 'Not now',
 
     /**
      * A downgrade suspends; it never deletes. The body's first job is that

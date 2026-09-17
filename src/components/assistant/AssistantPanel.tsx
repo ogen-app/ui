@@ -7,6 +7,8 @@ import {
 } from 'react'
 import { ListBulletsIcon } from '@phosphor-icons/react'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import { Logo } from '@/components/Logo'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/styles'
@@ -39,6 +41,10 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
   const send = useAssistantStore((s) => s.send)
   const cancel = useAssistantStore((s) => s.cancel)
   const scrollRef = useRef<HTMLDivElement>(null)
+  // Gated on the send, not on opening the panel. The assistant is the rail's
+  // floor — it is open before anyone decides to use it — so "opened it" is not
+  // a moment of intent here the way it is for a button. Sending is.
+  const gate = useUpgradeGate('assistant_multiplier')
 
   // A starter fills the composer rather than sending: every campaign
   // capability except the reviews writes, so the user gets the last word.
@@ -173,7 +179,11 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
               />
             )}
             <AssistantComposer
-              onSend={(text) => void send(thread.id, text)}
+              onSend={(text) =>
+                gate.intent(() => {
+                  void send(thread.id, text)
+                })()
+              }
               running={running}
               onCancel={() => cancel(thread.id)}
               placeholder={
@@ -185,6 +195,9 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
               onToggleSuggestions={() => setSuggesting((s) => !s)}
               suggestionsOpen={suggesting}
             />
+            {/* No meter: the assistant's allowance is a token budget wearing a
+                multiplier, so its numbers are true and unprintable. */}
+            <UpgradeDialog gate={gate} hideUsage />
           </div>
         )
       }

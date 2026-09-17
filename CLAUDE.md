@@ -951,11 +951,30 @@ wire) and it **reads the clock** (to date the renewal, which is also the
 boundary a downgrade lands on). Neither may leak out — `rank` is stripped before
 anything leaves the file, and its test asserts that.
 
-No feature is gated yet. Which of hide / lock / lock-with-upgrade each key gets
-is decided and recorded on `EntitlementKey` in `types/entitlements.ts`; wiring
-the call sites is the remaining half. An entitlement nothing consults is the
-same as no entitlement — but note the flag now also switches on a screen, so it
-stays **off** on `develop` until the endpoints answer.
+**The call sites are wired, and the flag is the only thing holding them**
+(CON-232). Twelve of the fourteen keys are consulted at the control they govern;
+which of hide / lock / lock-with-upgrade each one gets is decided and recorded on
+`EntitlementKey` in `types/entitlements.ts`, along with the reason the other two
+are not wired — `custom_campaign_types` has no authoring screen to hide, and
+`workspaces` is an *account* allowance that only a *workspace*-scoped read can
+answer, so it is left to the server. Everything goes through `useEntitlement`,
+which returns `UNGATED` while the flag is down; nothing reads `FEATURE_FLAGS` or
+the plan directly. The flag stays **off** on `develop` — it also switches on a
+screen, and there is still no way to change plan.
+
+**Selling is one behaviour, not eleven.** The sell disposition is always the
+same moment — a control the user just clicked — so it is one hook and one
+rendering: `useUpgradeGate(key)` wraps the action (`gate.intent(run)`) and
+`<UpgradeDialog gate={gate} />` answers a refusal with the callout and a way to
+`/plans`. The wrapped handler *returns whether it ran*, which is what lets the
+assistant's composer keep a draft it was about to clear. Hiding and locking
+deliberately get no such wrapper: hiding means reaching the `<li>`, the
+separator and the empty state, and locking means the control staying put — both
+are the call site's, which is the whole reason the seam is a hook. Two gestures
+are ungated on purpose and say so where they live: dropping files onto the
+Content Bank, and click-to-create on a calendar day. Neither has a control to
+hang an explanation on, and the server's own refusal already arrives as a
+sentence (CON-295).
 
 **Series and content formats are two flags, and the split is the design**
 (CON-264, `series` and `content-formats`, both off). The word people arrive with

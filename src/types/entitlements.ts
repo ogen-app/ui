@@ -120,6 +120,24 @@ export type EntitlementKey =
  * Note that none of the three is a property of the *key*: the same entitlement
  * can hide in a dropdown and sell on a button. Where a key appears in two
  * places, this is the disposition for its primary one.
+ *
+ * **Twelve of the fourteen are wired; two are not, and each for a stated
+ * reason.**
+ *
+ * - `custom_campaign_types` has no surface. Authoring a bespoke campaign type
+ *   is not something this build can do from any screen, so there is no control
+ *   to hide. It stays in the union because the key is real and the gate is
+ *   one line the day the authoring screen exists.
+ * - `workspaces` is an **account** allowance answered by a **workspace** read.
+ *   `GET /api/me/entitlements` is scoped by `X-Workspace-Id`, so the only
+ *   figure the client can obtain is whatever the tab's current workspace
+ *   happens to grant — and an account holding two workspaces on two tiers has
+ *   no client-side answer to which of them governs creating a third. Guessing
+ *   is precisely the tier arithmetic this whole seam refuses to do, so
+ *   `/workspaces` offers the button and lets the server answer: a 402 there
+ *   arrives as a sentence under the action's own name (CON-295), which is the
+ *   same thing the dialog would have said and is additionally true. Revisit
+ *   when an account-scoped read exists.
  */
 
 /**

@@ -9,10 +9,21 @@ type Denied = Extract<Entitlement, { state: 'denied' }>
 
 type Props = {
   entitlement: Denied
-  /** See `NoticeShell` — omitted until there is a billing screen to send them to. */
+  /**
+   * See `NoticeShell`. `UpgradeDialog` omits it and carries its own buttons
+   * instead; an inline callout that wants one passes it.
+   */
   onUpgrade?: () => void
   /** Passed through to the meter; see `UsageMeter`. */
   format?: (value: number) => string
+  /**
+   * Drop the meter and keep the rest — for an allowance whose figures are true
+   * but unpublishable. The Post Assistant is the case it exists for: its
+   * entitlement is a token budget expressed as a multiplier, so the server
+   * sends numbers like any other key and none of them mean what a meter would
+   * claim they mean.
+   */
+  hideUsage?: boolean
   className?: string
 }
 
@@ -39,6 +50,7 @@ export function UpgradeCallout({
   entitlement,
   onUpgrade,
   format,
+  hideUsage = false,
   className,
 }: Props) {
   const { t, i18n } = useTranslation()
@@ -68,11 +80,13 @@ export function UpgradeCallout({
       className={className}
     >
       <div className="flex flex-col gap-0.5">
-        <UsageMeter
-          usage={usage}
-          format={format}
-          className="text-tertiary-foreground"
-        />
+        {!hideUsage && (
+          <UsageMeter
+            usage={usage}
+            format={format}
+            className="text-tertiary-foreground"
+          />
+        )}
         {usage.resetsAt && (
           <span>
             {t('tiers.resets', {

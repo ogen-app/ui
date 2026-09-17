@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { TFunction } from 'i18next'
 import {
   UPLOAD_ACCEPT,
+  formatBytes,
   uploadLimitLines,
   validateUploadFile,
 } from './assetStatus'
@@ -112,5 +113,17 @@ describe('validateUploadFile', () => {
   // (CON-16 open question 3).
   it('refuses SVG, which imageprobe does not accept', () => {
     expect(validateUploadFile(file('logo.svg', 1024)).ok).toBe(false)
+  })
+})
+
+describe('formatBytes', () => {
+  it('names the unit the figure is actually in', () => {
+    // It measured one file against a per-file cap until the storage allowance
+    // started coming through it (CON-232), and an allowance is where the units
+    // run out: a plan granting ten gigabytes read "10240.0 MB".
+    expect(formatBytes(900)).toBe('900 B')
+    expect(formatBytes(2 * 1024)).toBe('2 KB')
+    expect(formatBytes(1.4 * 1024 * 1024)).toBe('1.4 MB')
+    expect(formatBytes(10 * 1024 * 1024 * 1024)).toBe('10.0 GB')
   })
 })

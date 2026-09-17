@@ -18,8 +18,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { UploadModal } from '@/components/uploads/UploadModal'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import { useAssets, useCreateAsset, useDeleteAsset } from '@/hooks/useContent'
-import { uploadLimitLines } from '@/lib/assetStatus'
+import { formatBytes, uploadLimitLines } from '@/lib/assetStatus'
 import {
   addToCampaign,
   removeFromCampaign,
@@ -90,6 +92,22 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
   const openingWebPage = useRef(false)
   const [isDragging, setIsDragging] = useState(false)
   const dragDepth = useRef(0)
+
+  /*
+   * ADD CONTENT is one button over three allowances, because the three things
+   * it offers cost different things: a note is a row in the bank, a file is
+   * bytes of storage, and a web page is an import somebody has to crawl. They
+   * are gated where they are chosen rather than on the trigger — a menu that
+   * opened onto an upgrade dialog would refuse the two choices that were still
+   * available along with the one that wasn't.
+   *
+   * Dropping files onto the page is deliberately not gated. It is a gesture
+   * with no control to attach an explanation to, and the server's own refusal
+   * already arrives as a sentence under the upload's name (CON-295).
+   */
+  const docGate = useUpgradeGate('content_bank_assets')
+  const uploadGate = useUpgradeGate('media_storage_bytes')
+  const webPageGate = useUpgradeGate('web_page_imports')
 
   /** The campaign's documents, or — in the bank — every document there is. */
   const shown = useMemo(
@@ -193,6 +211,12 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
       },
     )
   }
+
+  // Wrapped once each, so the header menu and the empty state's buttons — which
+  // are handed these same three — answer a denial identically.
+  const write = docGate.intent(handleCreate)
+  const upload = uploadGate.intent(() => setUploadModalOpen(true))
+  const addWebPage = webPageGate.intent(() => setWebPageModalOpen(true))
 
   /**
    * A page the backend has accepted for scraping, joining this scope.
@@ -311,22 +335,21 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
                 e.preventDefault()
               }}
             >
-              <DropdownMenuItem size="lg" onClick={handleCreate}>
+              <DropdownMenuItem size="lg" onClick={write}>
                 <FileTextIcon />
                 <span>Write a note</span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                size="lg"
-                onClick={() => setUploadModalOpen(true)}
-              >
+              <DropdownMenuItem size="lg" onClick={upload}>
                 <UploadSimpleIcon />
                 <span>Upload file</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 size="lg"
                 onClick={() => {
+                  // Set either way: what it suppresses is the menu handing
+                  // focus back, and a modal is opening in both outcomes.
                   openingWebPage.current = true
-                  setWebPageModalOpen(true)
+                  addWebPage()
                 }}
               >
                 <GlobeSimpleIcon />
@@ -366,9 +389,9 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             assets={shown}
             uploads={uploads}
             onDeleteMany={handleDeleteMany}
-            onWrite={handleCreate}
-            onUpload={() => setUploadModalOpen(true)}
-            onAddWebPage={() => setWebPageModalOpen(true)}
+            onWrite={write}
+            onUpload={upload}
+            onAddWebPage={addWebPage}
           />
         )}
       </div>
@@ -403,6 +426,12 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
         destination={campaign ? 'campaign' : 'bank'}
         onSubmitted={handleWebPage}
       />
+
+      <UpgradeDialog gate={docGate} />
+      {/* The one allowance measured in bytes, so it brings its own formatter:
+          "402653184 of 1073741824" is true and unreadable. */}
+      <UpgradeDialog gate={uploadGate} format={formatBytes} />
+      <UpgradeDialog gate={webPageGate} />
     </div>
   )
 }

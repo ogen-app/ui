@@ -1800,6 +1800,7 @@ export const es: Translation = {
     unlimited: 'Sin límite',
 
     upgrade: 'MEJORAR PLAN',
+    notNow: 'Ahora no',
 
     suspended: 'Solo lectura',
     suspendedBody:

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button.tsx'
 import { StatusBadge } from '@/components/ui/status-badge.tsx'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge.tsx'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog.tsx'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
 import { useAddPost } from '@/hooks/usePosts.ts'
 import { cn, formatTitle } from '@/lib'
 import { contentSnapshot } from '@/lib/campaignReadiness.ts'
@@ -36,6 +38,8 @@ export function ContentModule({
   const addPost = useAddPost(campaignId)
   const [platformId, setPlatformId] = useState<string>(ALL)
   const { resolve: resolvePlatform } = usePlatformCatalog()
+  const postGate = useUpgradeGate('posts_total')
+  const planGate = useUpgradeGate('plan_runs_per_month')
 
   const askFor = useAssistantStore((s) => s.askFor)
   const openRightPanel = useSettingsStore((s) => s.openRightPanel)
@@ -43,6 +47,11 @@ export function ContentModule({
   // The campaign's thread is already open — the layout starts it on arrival —
   // so this only has to point the panel at it with the ask written out. It
   // stops there: generating writes posts, so the send is the user's.
+  //
+  // Gated here rather than on that send. The run is spent when the assistant
+  // is asked, but this is the click that *means* it — and writing the ask into
+  // a composer the user is then refused at is a worse answer than declining to
+  // write it. The assistant's own send has its own allowance.
   const generatePlan = () => {
     openRightPanel('assistant')
     askFor(
@@ -65,15 +74,25 @@ export function ContentModule({
               Wrapped, not passed bare: useAddPost takes an optional Date for
               the calendar's click-to-create, so onClick={addPost} would hand
               it a MouseEvent. */}
-          <Button variant="defaultInverted" size="xl" onClick={() => addPost()}>
+          <Button
+            variant="defaultInverted"
+            size="xl"
+            onClick={postGate.intent(() => addPost())}
+          >
             <PlusIcon />
             <span>ADD POST</span>
           </Button>
-          <Button variant="outline" size="xl" onClick={generatePlan}>
+          <Button
+            variant="outline"
+            size="xl"
+            onClick={planGate.intent(generatePlan)}
+          >
             <SparkleIcon />
             <span>GENERATE WITH OGEN</span>
           </Button>
         </CallToAction>
+        <UpgradeDialog gate={postGate} />
+        <UpgradeDialog gate={planGate} />
       </OverviewCard>
     )
   }

@@ -137,10 +137,19 @@ export function statusToBadge(status: AssetStatus): {
   return STATUS_BADGE[status] ?? { tone: 'neutral', label: status }
 }
 
-/** Compact human-readable file size, e.g. "1.4 MB". */
+/**
+ * Compact human-readable file size, e.g. "1.4 MB".
+ *
+ * It climbs to GB because it is no longer only ever shown a file: the
+ * `media_storage_bytes` allowance goes through here too (CON-232), and a plan
+ * that grants ten gigabytes reading "10240.0 MB" is a number the reader has to
+ * do arithmetic on to recognise.
+ */
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   const kb = bytes / 1024
   if (kb < 1024) return `${Math.round(kb)} KB`
-  return `${(kb / 1024).toFixed(1)} MB`
+  const mb = kb / 1024
+  if (mb < 1024) return `${mb.toFixed(1)} MB`
+  return `${(mb / 1024).toFixed(1)} GB`
 }
