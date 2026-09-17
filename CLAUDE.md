@@ -250,10 +250,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   land somewhere the picker would have offered. It never chooses Story, Article
   or Link post (editorial decisions the content cannot imply) nor a
   `whitelist_only` type (no rule to test). **`thread` is a rung only while
-  `thread-sequence` is on**: until the submit path sends `threadItems` a thread
-  publishes as one post, so resolving to it would quietly truncate. With the
-  flag off the empty slug means what it always did — a `fail` in the checks bar
-  and a mark on the card. See `docs/technical-decisions.md#auto-post-type`.
+  `thread-sequence` is on**, and only where the post-type rule says
+  `segmented` — that pair replaced a hard-coded list of networks. With the flag
+  off the empty slug means what it always did — a `fail` in the checks bar and
+  a mark on the card. The ladder is also what a *pinned* thread demotes through
+  when its body comes to one message (`demotedFrom`), with the chain rung
+  barred so it cannot resolve straight back. See
+  `docs/technical-decisions.md#auto-post-type`.
 - **A campaign is archived or deleted — it has no status** (CON-156). `draft`
   and `active` both meant active and nothing ever showed either, so the client
   no longer models `status` at all and the server creates every campaign
@@ -650,8 +653,9 @@ images upload, store as `IMG` and open on their own screen (CON-246), but the
 server renders no smaller copy, so the list's preview cell draws the full file
 scaled into 40px; `thumbnail_url` is preferred wherever it appears, so nothing
 here changes when that job lands. The other half still missing is the bridge
-that attaches a bank image to a post (CON-16) — which is what the alt text is
-being collected for · **the React Compiler lint rules are warnings, not errors** —
+that attaches a bank image to a post — **CON-290**, since CON-16 was cancelled
+once CON-246 shipped, and unowned as of 2026-09-08 — which is what the alt text
+is being collected for · **the React Compiler lint rules are warnings, not errors** —
 `react-hooks` v7 reports 123 of them against code that predates it, and each is
 a judgement call about a component rather than a mechanical fix
 ([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n converts whole screens in some
@@ -674,30 +678,67 @@ still hard-coded English (CON-174) · **English is the only released language**:
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
 
-**A thread publishes as one post, not as a thread** (CON-196,
-`thread-sequence`, off). X has offered a `thread` post type all along and the
-preview card has always drawn a chain, but `SubmitRequest` in the Go repo's
-`publishers/zernio/posts.go` carries no `platformSpecificData`, so nothing ever
-sent Zernio's `threadItems` — the whole body goes out as a single post. Behind
-the flag the chain is **derived from the body** rather than composed in
-separate inputs: the editor stays the one Markdown card every post type uses, a
-`---` divider is a break, blank lines are the break where the body has no
-divider, and anything still past the per-post ceiling is cut to fit. So there
-is no "this post is too long" to report — it is cut instead — and `content` is
-never rewritten, which is why nothing outside the flag is touched. The one
-thing a body cannot say is which post carries which file, so that map alone
-sits in the tenant key/value store and is chosen on each thumbnail in the media
-card. Threads gains the type too (Zernio takes the same field on both).
-**Waiting on** that field in the submit path, **the same split implemented
-server-side** (the words live only in `content`, so the publisher must cut it
-the way `splitBody`/`splitToLimit` do), a home for the media assignment,
-`thread` added to `threads` in `publishers/zernio/platforms.go` — a submit
-blocker only, because while the flag is on `aheadOfPublishers` lets it stand in
-for the slug the publisher has not learned yet — and
-**attachment validation counted per item** — the server measures files against
-the post, so five images spread over three posts still warns "platform allows
-up to 4". That message is passed through as written because until the publisher
-splits it is right. See `docs/technical-decisions.md#thread-sequence`.
+**A thread publishes as one post, not as a thread** (CON-196/CON-284,
+`thread-sequence`, off). Behind the flag the chain is **derived from the body**
+rather than composed in separate inputs: the editor stays the one Markdown card
+every post type uses, and the breaks come out of the words. A chain that comes
+to one message is not a failure — it publishes as an ordinary post, and
+`demotedFrom` (`lib/postTypeAuto`) picks which one on the way out of draft.
+
+**The split is the server's, and that is the whole shape of this feature.**
+R1 (ogen#140) had the client author `thread_segments` message by message and
+restamped `content` from the first of them; R2 (ogen#144, merged 2026-09-10)
+inverted it, which is the model this client already had. `posts.content` is now
+canonical — literally what the author typed, `---` lines and all — and
+`thread_segments` is `platforms.SplitThread` run over it on every write. Four
+rules follow, and each of them is a thing not to undo:
+
+- **Never send `thread_segments`.** A write carrying it is ignored, so
+  `postToPayload` omits it and nothing on the screen keeps it in step. Saving
+  the body *is* saving the thread — which also means a calendar drag or an
+  unschedule can no longer flatten a thread by omitting a field it knows
+  nothing about.
+- **Never re-implement the split.** `POST /api/posts/thread/preview` is the
+  client's only account of where a body breaks (`useThreadPreview`), and
+  `lib/threadSequence` now places files on the messages that come back rather
+  than cutting any itself. The splitter it used to hold broke at every blank
+  line and took `***` as a divider; the server does neither — three or more
+  **hyphens** alone on a line, and with no divider anywhere the body is packed
+  to the ceiling. Two implementations in two languages is exactly what R2's
+  explicit-segments design exists to avoid.
+- **A message can be too long.** In manual mode the ceiling is not applied at
+  all, so an over-long message is reported (`max_content_chars` with a
+  `segment`) rather than cut. Length verdicts come off `preview.errors`, never
+  from a count taken here.
+- **`segment_index` is optional and NULL means the root.** A file nobody moved
+  needs no index written for it. The server still answers **422** to setting one
+  on a post that is not a `thread`, on the upload and the PATCH alike, and that
+  PATCH is presence-aware — never send `segment_index` alongside `position`.
+
+The rest of the back end's half is unchanged from R1: the submit path fills
+Zernio's `threadItems`, the post-type rule carries `segmented` (which replaced a
+hard-coded list of chain-capable networks here), attachment validation counts
+per message, and `thread` is on the Threads entry in `supportedPlatforms`, so
+`aheadOfPublishers` is gone with the vocabulary gap it covered.
+
+**Waiting on one server fix.** The live run happened on 2026-09-16 and found it:
+`platforms.isRuleLine` takes three or more **hyphens**, but the divider this app
+writes is `***` — BlockNote's Markdown serialiser emits the default rule marker
+and normalises a typed `---` to it, so no author can put a hyphen rule in the
+body. Every thread this client can author therefore comes back from the preview
+endpoint as **one** message with a literal `***` inside it. Raised on CON-284,
+asking the server to widen the test to the CommonMark thematic break; do not
+normalise it here.
+
+**So `thread` is now flagged on X as well as on Threads**, and that is knowingly
+a change with the flag off — the one thing the flag rule forbids. It was taken
+because R2 is *deployed*: the server splits and gates every thread body whatever
+this build does, so "behaves as before" stopped being available, and what was
+left was a type that fails as a thread of one with nothing on screen saying so,
+or chains by a length the author cannot steer. Nothing is renamed — an existing
+thread post keeps its label, only the picker stops offering the slug. Both go
+back on together when the divider fix lands. See
+`docs/technical-decisions.md#thread-sequence`.
 
 **Two operator-tunable server limits are mirrored on the client with nothing to
 sync them** (CON-292). `platform_global_limits` is a single row an operator can

@@ -777,11 +777,17 @@ it. Same rule as always: a flag is not a permission.
 
 **Decision.** On X and Threads, a `thread` post is written in the same single
 Markdown editor as every other post type, and the chain it publishes as is
-**derived from the body on every keystroke** — never stored, never edited
-separately. A `---` divider is a break; with no divider in the body, blank lines
-are; anything still past the platform's per-post ceiling is cut to fit. The only
-thing stored beside the body is which post carries which file. Behind the
-`thread-sequence` flag (CON-196).
+**derived from the body** — never authored separately, never a second copy of
+the words. A `---` divider is a break; with no divider in the body it is broken
+up to fit the platform's per-post ceiling. The only thing stored beside the body
+is which post carries which file. Behind the `thread-sequence` flag (CON-196).
+
+**And the derivation is the server's** (CON-284 R2, ogen#144). `posts.content`
+is canonical and `thread_segments` is `platforms.SplitThread` run over it on
+every write; this client reads the result through
+`POST /api/posts/thread/preview` rather than cutting anything itself. The
+authoring model below is unchanged — it is the one the back end adopted — but
+every sentence about *where* the cut is made now describes a server rule.
 
 **Why.** Zernio publishes a chain from `platformSpecificData.threadItems` on
 both networks: "the first item is the root post and subsequent items become
@@ -802,48 +808,131 @@ a difference that belongs at the publish boundary. It also put the words in two
 places — the items and the `content` written back from them — and a screen whose
 two copies must be kept in step is a screen with a bug waiting in it.
 
-Deriving the chain removes both problems and one more: **there is no "this post
-is too long" state left.** A part past the ceiling is cut rather than reported,
-so the app fixes the thing it used to complain about, and the preview shows
-exactly where.
+Deriving the chain removes both problems: one copy of the words, and the same
+screen every other post type gets.
 
-**What it is not.** It is not the blank-line splitting the X preview card has
-always drawn, even though blank lines are still the fallback rule. That was a
-guess about what the publisher would do, and the guess was wrong: nothing in the
-Go repo has ever sent `threadItems`, so a `thread` post publishes as one post
-with the whole body in it. The card's note said the publisher did the splitting;
-it never did, and that sentence is gone.
+**What it is not.** It is not the blank-line splitting the X preview card used
+to draw. That was a guess about what the publisher would do, and the guess was
+wrong twice over: for years nothing in the Go repo sent `threadItems`, so a
+`thread` post published as one post with the whole body in it — and when the
+splitting finally arrived it did not work that way either (see below). The
+card's note said the publisher did the splitting; it never did, and that
+sentence is gone.
+
+**What the back end shipped, in two passes.** R1 (ogen#140) added
+`posts.thread_segments` — an ordered `jsonb` array of `{content}` — plus
+`post_attachments.segment_index`, `segmented` on the post-type rule, a `segment`
+field on each validation error, and the `threadItems` mapping in the submit
+path. It took *explicit* segments from the client and restamped `content` from
+the first of them, which reversed which field was the truth: here `content` is
+what the author typed, so saving a thread would have replaced the body with its
+own first message and dropped every thread-unaware reader (calendar card, posts
+table, search, versions, the assistant) to one message with it.
+
+**R2 (ogen#144, merged 2026-09-10) inverted that**, and inverted it toward this
+section rather than away from it. `content` is canonical; `thread_segments` is
+derived server-side on every write; a client-sent array is ignored; and
+`POST /api/posts/thread/preview` runs the same split and the same publish gate
+without persisting, so the composer can show the outcome before saving.
+`RootContent()` survives where it was always right — at submit time, for
+Zernio's top-level `content` and the CON-129 dedupe key.
+
+**Which moved the cut, and that is the part worth reading twice.** This client
+used to own the splitting, and its rules were not the server's: it broke at
+every blank line and accepted `***` and `___` as dividers. `SplitThread` takes
+three or more **hyphens** alone on a line and nothing else, and with no divider
+present it *packs* the body to the per-message ceiling — preferring a paragraph
+break, then a line break, then a sentence, then a word — rather than breaking at
+every blank line. A short two-paragraph body is two messages under the old
+client rule and **one segment** under the server's, which then fails the min-2
+publish gate. So the local splitter was deleted rather than corrected: two
+implementations of one cutting algorithm in two languages is the thing the
+whole design exists to avoid, and the one that publishes should be the one that
+is asked.
+
+The cost is a round trip, and it is smaller than it looks: the preview is a pure
+function of (body, platform), so it is cached per body forever and a keystroke
+that lands back on a body already asked about answers from memory
+(`useThreadPreview`).
+
+**One thing R2 gave back: a message can be too long.** In manual mode the
+ceiling is not applied at all — the author's breaks are obeyed exactly — so an
+over-long message is reported (`max_content_chars` carrying a `segment`) instead
+of being cut. Earlier drafts of this section promised the opposite, because the
+splitter they described always cut to fit. Length verdicts now come off
+`preview.errors`, never from a count taken client-side.
 
 **How.**
 
 - **A divider is a real block, not a convention.** BlockNote parses `---` into
-  a `divider` block and serialises it back as `***`, so the author sees the seam
-  they typed as a line across the editor. That is why it is the primary rule:
-  the split is visible in the document rather than inferred from whitespace.
-- **Blank lines are the fallback, and only the fallback.** A body with a divider
-  anywhere in it splits *only* at dividers, which is what makes multi-paragraph
-  posts expressible. A body with none splits at blank lines, which is the
-  convention the preview has always drawn and how people write threads.
-- **The ceiling cuts what is left**, on the last sentence end that leaves the
-  post reasonably full (`MIN_FILL`), else a line break, else a word. An unbroken
-  token longer than the limit — a URL, a pasted key — is cut where the limit
-  falls, because there is nowhere better.
-- **`lib/threadSequence.ts` owns every rule**, pure and tested, and one
-  `planThread` call produces the whole chain. The note under the editor, both
-  preview cards and the pre-publish row read that one result, so the screen
-  cannot disagree with itself about how many posts this is.
-- **Attachments stay post-level rows.** `ThreadAssignment` maps an attachment id
-  to a post index, so `post_attachments` needs no column and no migration. The
-  rule that makes it safe: *a file with no entry rides the first post.* Uploading
-  from the media card, from the assistant, or from an older client needs to know
-  nothing about threads and the file still publishes — and it is what the X card
-  always drew, where the lead post carries the media. An entry naming a post that
-  no longer exists rides the last one, where the reader last saw it.
-- **The assignment lives in the tenant key/value store** under
-  `thread-sequence.<postId>` (`useThreadSequence`), the same stand-in
-  `campaign-accounts` uses while waiting for its column, with the same limits:
-  workspace-wide, whole-value writes, last write wins. Losing it is survivable
-  by design — see the rule above.
+  a `divider` block, so the author sees the seam they typed as a line across the
+  editor. That is why it is the primary rule: the split is visible in the
+  document rather than inferred from whitespace. **And the serialisation breaks
+  it today.** BlockNote writes a divider back as `***` — its Markdown serialiser
+  emits `mdast-util-to-markdown`'s default rule marker, and normalises a typed
+  `---` to the same thing — while `SplitThread` reads hyphens only. Confirmed
+  against the live R2 build on 2026-09-16: `One\n\n---\n\nTwo` previews as two
+  segments, `One\n\n***\n\nTwo` as one. Since the editor is the only way to
+  author a body, *every* thread this client can produce is a single message with
+  a literal `***` in it. Raised on CON-284; the fix asked for is the server
+  widening `isRuleLine` to the CommonMark thematic break. **Do not normalise it
+  here** — that re-adds the delimiter opinion R2 removed, and `content` is the
+  canonical stored body, so it would mean rewriting what the author typed.
+- **A body with no divider is packed to the ceiling**, preferring a paragraph
+  break, then a line break, then a sentence, then a word, never mid-word. It is
+  *not* broken at every blank line — that was this client's old rule and it is
+  gone. A body that already fits comes back as one segment, which is correct: a
+  one-message body is not a thread.
+- **Only one predicate about the split lives on this side.** `splitRuleFor`
+  answers "did the author break this themselves", by the same hyphens-only test
+  the server uses, and it exists solely to choose which sentence the note under
+  the editor prints. Being generous there would describe a body as hand-broken
+  when the server is about to cut it somewhere else entirely — so it mirrors
+  `platforms.isRuleLine` exactly, and it is the only thing in this file allowed
+  to have an opinion about delimiters.
+- **A message the author made short is mentioned, never refused**
+  (`runtPositions`), because a two-word sign-off is a real thing people write
+  and the platforms take it. `SplitThread` drops *empty* chunks, so a stray
+  divider costs nothing — but a divider with a typo's worth of text after it is
+  a real segment, which is exactly the accident this catches.
+- **A chain of one is a post, not an error.** The platforms have no
+  one-message thread and the publish gate refuses one (`thread_segment_count`
+  wants 2–25), so a post *pinned* to `thread` whose body never grew leaves draft
+  with an ordinary slug — the same ladder walk Auto makes, chain rung barred
+  (`demotedFrom`). An automatic post never had the problem: `thread` is the
+  ladder's last rung, so a body that fits in one is claimed by `text-post` long
+  before the walk reaches it. The checks bar says so as a `pass`, not a `fail`;
+  a format changing under the author is only acceptable if they were told.
+- **`lib/threadSequence.ts` owns what is left**, pure and tested, and one
+  `planThread` call produces the whole chain: the server's messages with this
+  post's files placed on them and their per-message media verdicts. The note
+  under the editor, both preview cards and the pre-publish row read that one
+  result, so the screen cannot disagree with itself about how many posts this
+  is — and now cannot disagree with the publish gate either, since the messages
+  and their length verdicts both came from it. Its splitting tests went to
+  `split_test.go` with the algorithm; a copy kept here would have gone on
+  passing against rules the publisher had stopped following.
+- **Attachments stay post-level rows**, and carry `segment_index` (CON-284) —
+  the column that replaced the map this feature used to keep in the tenant
+  key/value store. The rule that makes it safe is unchanged, and **R2 made it
+  the server's too**: *a file with no index rides the root.* A NULL
+  `segment_index` on a thread now means message one rather than failing the
+  gate, so uploading from the media card, from the assistant, or from an older
+  client needs to know nothing about threads and the file still publishes — and
+  it is what the X card always drew, where the lead post carries the media. An
+  index naming a post that no longer exists rides the last one, where the reader
+  last saw it; the clamp is the client's, because the server refuses an
+  out-of-range index with a 422 rather than clamping it.
+- **`segment_index` is written on its own**, by a presence-aware PATCH, never
+  alongside `position`. The two are independent — `position` orders media
+  *within* a message — so a reorder must not restate an assignment it was not
+  asked to change. The server still answers 422 to a non-null index on a post
+  that is not a `thread`, on the upload and the PATCH alike; R2 relaxed the
+  other direction only. Demotion therefore writes nothing at all — the server
+  clears the segments itself once the type stops being `thread` — and the
+  indices are left in place: nothing reads them off an ordinary post, and
+  leaving them is what brings the assignments back if the body grows a second
+  message again.
 - **The media card is where a file's post is chosen**, because it is where the
   files are. Each thumbnail carries one picker naming the post it rides; the
   card's total cap is dropped for a thread, since `policy.max` is what *one*
@@ -853,41 +942,52 @@ it never did, and that sentence is gone.
   keeps reading exactly the field it already reads. This is the largest
   behavioural difference from the first build, and the reason the flag now
   changes nothing outside its own screen.
+- **`thread_segments` is not sent at all.** Under R1 it had to be *round-tripped*
+  in `postToPayload` — the server defaulted it away on silence, so a calendar
+  drag or an unschedule would have flattened a thread by omitting a field it
+  knew nothing about. R2 retired both the field and the hazard: a write carrying
+  it is ignored, and the body those callers *do* carry is now the whole of the
+  thread. It is absent from `PostPayload` for the plainest reason available —
+  sending it would change nothing.
+- **Whether a type chains is the server's answer**, off the rule's `segmented`
+  (`publishesAsChain`). The client used to keep a hard-coded set of Zernio ids,
+  which is precisely what went stale the moment the server taught Threads the
+  slug. The rule that says `segmented` is the same one carrying the per-message
+  `max_content_chars`, so the two can never drift apart.
 - **The post type is gated on its dictionary entry, not on the slug.**
-  `PlatformPostType.flag` withholds *Threads'* `thread`, which is new. X's is
-  untouched, because the app has always offered it and a flag may never change
-  what happens when it is off.
-- **While it is on, that flag also stands in for the publisher's vocabulary.**
-  `buildPlatformView` intersects the dictionary with the slugs a publisher
-  reports, and `supportedPlatforms` in the Go repo lists `thread` for `twitter`
-  only — so the honest intersection hides the feature from the network it is
-  named after until the server learns one word. `aheadOfPublishers` lets the
-  flag answer in the slug's place: a publisher exists, so the type is allowed;
-  it is connected, so it is available. Scoped to *flagged* types, so a slug the
-  server genuinely withdraws still disappears from the app, and with the flag
-  off the publisher is the whole answer exactly as before. The same trade every
-  flagged feature here makes — the UI is reviewable before the endpoint answers
-  — applied to a vocabulary rather than to a route.
+  `PlatformPostType.flag` withholds `thread` on *both* networks as of
+  2026-09-16. Threads' was flagged from the start, being new. X's was
+  deliberately left open on the rule that a flag may not change what happens
+  when it is off — and was closed once R2 went out to the shared dev
+  environment, because that rule protects a state which no longer exists: the
+  server splits and gates every thread body regardless of this build, so the
+  choice was never "as before" but between a type that half-works and no type.
+  Withdrawing it renames nothing — `getPostTypeLabel` reads the whole
+  dictionary, so an existing thread post keeps its label; only the picker stops
+  offering the slug. There was briefly a second gate — `aheadOfPublishers`,
+  which let the flag stand in while `supportedPlatforms` listed `thread` for
+  `twitter` only. CON-284 added the word, so the honest intersection works again
+  and the stand-in is gone with the gap it covered.
 
-**The consequence to hand the back end:** because the words live only in
-`content`, the publisher has to cut it the same way before filling
-`threadItems`, or what goes out is not what the author was shown. That is the
-`src/lib/*` arrangement this repo already runs on — the Go rule is the source of
-truth, ours mirrors it — and `splitBody`/`splitToLimit` are written to port,
-with their tests as the specification.
+**Waiting on** the divider fix above. The live run happened on 2026-09-16 and
+the preview endpoint itself behaved exactly as specified — it was the editor's
+`***` that came out wrong, which no contract had ever written down. Two other
+findings came off the same pass and neither blocks this flag. **`char_count`
+measures the raw Markdown**, so `[Ogen](https://getogen.com)` spends 27 of X's
+280 and `## Title` spends 8 for five visible characters; and the auto-split packs
+by those same counts, so it will cut *inside* a markup run — `**` + 280 `a`s +
+`**` comes back as a 280-character message with the bold never closed and a
+second message reading `aa**`, both passing the gate. Whether that is a counting
+bug or evidence the submit path publishes raw Markdown to Zernio is the server's
+to answer; it is also not thread-specific, since every post type measures
+`post.Content` the same way. Both are on CON-284. What is still unexercised here
+is `segment_index` on the upload and its PATCH — start the next pass there, and
+only then decide the flag's fate.
 
-**Waiting on** the back end: `SubmitRequest` (`publishers/zernio/posts.go`) has
-no `platformSpecificData` at all, so nothing sends the chain yet; the same split
-implemented server-side; a home for the media assignment; `thread` added to
-Threads in `publishers/zernio/platforms.go`, which lists it for `twitter` only
-— a *submit* blocker rather than a UI one, since the flag stands in for the
-missing slug; and **attachment validation counted per item** — the server measures the files
-against the post, so a thread spreading five images over three posts still comes
-back "post has 5 image attachments; platform allows up to 4". We pass
-`platform_validation` through as written, because until the publisher splits it
-is *right*: a thread really does go out as one post with every file on it.
-
-**Where.** `lib/threadSequence.ts` (+ test), `hooks/useThreadSequence.ts`,
+**Where.** `lib/threadSequence.ts` (+ test), `hooks/useThreadPreview.ts`,
+`previewThread` in `services/api/posts.ts`, `lib/postTypeAuto.ts`
+(`demotedFrom`), the `plan` and `demotedType` in `hooks/usePostMedia.ts`,
+`setAttachmentSegment` in `services/api/attachments.ts`,
 `components/posts/sequence/ThreadSplitNote.tsx`, the `thread` branch in
 `PostMediaCard`, the `sequence` branch in `lib/postValidation.ts`,
 `TwitterPreview` / `ThreadsPreview` / `PostPreviewPanel`, and the
@@ -962,12 +1062,19 @@ decisions the content cannot imply, and a `whitelist_only` type has no rule to
 test — "it fits" would mean "we have no idea", which is the one answer Auto must
 not give. All of them stay in the picker and pin the post when chosen.
 
-**A chain is deliberately not an answer yet.** `thread` is a rung only while
-`thread-sequence` is on. X has offered the slug all along, and until the submit
-path sends `threadItems` a thread publishes as one post with the whole body in
-it (see [above](#thread-sequence)) — so the one reason a chain answers three
-thousand characters, that it splits, is not true. With both flags off that post
-reports "too long", which is right. Choosing `thread` by hand is untouched.
+**A chain is an answer only where it really chains.** `thread` is a rung while
+`thread-sequence` is on *and* the platform's rule says `segmented` — the
+server's own mark for a type that publishes as an ordered list of messages (see
+[above](#thread-sequence)). Both halves are needed: the flag says this build has
+released the chain, and `segmented` says this network takes one. With the flag
+off a three-thousand-character post reports "too long", which is right, because
+nothing is splitting it. Choosing `thread` by hand is untouched.
+
+**And the ladder runs backwards too.** A post *pinned* to `thread` whose body
+comes to a single message publishes as an ordinary post, so `demotedFrom` walks
+the same rungs with the chain barred to find which one. Only a pinned post needs
+it — `thread` is the ladder's last rung, so an automatic post with a body that
+fits in one was claimed by `text-post` long before the walk got there.
 
 **When nothing fits** the checks bar says which wall was hit — too long (with
 the longest ceiling any candidate would have taken), the wrong kind of file, too

@@ -37,9 +37,9 @@ import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { usePanelScope } from '@/hooks/usePanelScope'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { charCount } from '@/lib/socialText'
-import { MAX_THREAD_POSTS, planThread } from '@/lib/threadSequence'
+import { MAX_THREAD_POSTS, runtPositions } from '@/lib/threadSequence'
+import { getPostTypeLabel } from '@/lib/platformDictionary'
 import { canBeAutomatic, type UnfitReason } from '@/lib/postTypeAuto'
-import { useThreadSequence } from '@/hooks/useThreadSequence'
 import type { PostCheck } from '@/lib/postValidation'
 import { useCampaign } from '@/hooks/useCampaigns'
 import {
@@ -217,7 +217,7 @@ function PostEditorSurface({
     useAutoPublishAllowlist()
   // The allowlist is kept by `zernio_id` (CON-292); the post holds a row sqid,
   // so the catalog translates before the two are compared.
-  const { row: platformRow } = usePlatformCatalog()
+  const { row: platformRow, resolve: platformInfo } = usePlatformCatalog()
   const effectivePublishMethod = resolvePublishMethod(
     publishMethod,
     autoPublishAllowlist,
@@ -262,13 +262,33 @@ function PostEditorSurface({
   // first, so the slug rides the autosave the user's last keystroke was already
   // going to send — no extra round trip, and no window where the record and the
   // schedule request disagree about what this post is.
+  //
+  // A thread that came to one message leaves by the same door, for the mirror
+  // reason (CON-284): the platforms have no such object, and the publish gate
+  // refuses a chain under two messages. So the slug it leaves with is the
+  // ordinary format the post already is — and that is the whole of it, because
+  // the segments are the server's own arithmetic over the body and it clears
+  // them itself the moment the type stops being `thread`. The attachments keep
+  // their `segment_index`: nothing reads it off a post that is not a thread,
+  // and leaving it is what brings the assignments back if the body grows a
+  // second message again. Note the server still refuses to *write* one onto a
+  // post that is not a thread — R2 relaxed the other direction, where a thread
+  // attachment no longer has to carry one — so this is stale data left in
+  // place deliberately, not a field being set.
   const pinResolvedPostType = useCallback(() => {
+    const demoted = media.demotedType
+    if (demoted) {
+      changeDoc((d) => {
+        d.platform_post_type = demoted
+      })
+      return
+    }
     if (media.auto?.state !== 'resolved') return
     const slug = media.auto.slug
     changeDoc((d) => {
       d.platform_post_type = slug
     })
-  }, [media.auto, changeDoc])
+  }, [media.auto, media.demotedType, changeDoc])
 
   const scheduleResolved = useCallback(() => {
     pinResolvedPostType()
@@ -473,37 +493,19 @@ function PostEditorSurface({
     [changeDoc],
   )
 
-  // The one thing a thread stores: which post of the chain carries which file.
-  // The words are not here — they are `doc.content`, and the chain is derived
-  // from it below, so there is no second copy to keep in step.
-  const sequence = useThreadSequence(doc.id, {
-    enabled: isSequence,
-    attachments: media.attachments,
-  })
-
-  // The chain itself, worked out from the body on every keystroke. Every
-  // ceiling here is per post, because each post of a chain *is* a post on the
-  // platform: the character limit the server resolved, and the platform's own
-  // per-post media caps.
-  const plan = useMemo(
-    () =>
-      planThread({
-        content: isSequence ? doc.content : '',
-        attachments: media.attachments,
-        assignment: sequence.assignment,
-        charLimit: media.maxContentChars,
-        imageCap: media.policy.image?.maxPerPost,
-        videoCap: media.policy.video?.maxPerPost,
-      }),
-    [
-      isSequence,
-      doc.content,
-      media.attachments,
-      sequence.assignment,
-      media.maxContentChars,
-      media.policy,
-    ],
-  )
+  // The chain — worked out in `usePostMedia`, which asks the server where the
+  // body breaks and places this post's files on the messages that come back.
+  // Which post carries which file is the one thing a body cannot say, so it is
+  // the one thing stored: `segment_index` on the attachment row (CON-284),
+  // which is what replaced the map this feature used to keep in the tenant
+  // key/value store.
+  //
+  // Nothing writes the chain back. R2 made `content` the thread's canonical
+  // body and `thread_segments` the server's arithmetic over it, so the effect
+  // that used to keep the two in step here is gone — along with the hazard it
+  // carried, of a save landing a chain cut against a body the server had not
+  // been told about yet. Saving the body *is* saving the thread now.
+  const plan = media.plan
 
   // What the media card's per-thumbnail picker offers. Excerpts rather than
   // numbers alone: telling post 4 from post 5 by counting paragraphs back in
@@ -514,27 +516,27 @@ function PostEditorSurface({
         ? {
             excerpts: plan.posts.map((p) => excerpt(p.text)),
             indexFor: (id: string) =>
-              // Never -1: `planThread` puts every live attachment on a post,
-              // and an unassigned one on the first.
+              // Read off the plan rather than off `segment_index` directly, so
+              // the picker shows where the file *will* publish: an index left
+              // behind by a deleted paragraph is clamped onto the last post,
+              // and showing the stored number would name a message that is no
+              // longer there.
               Math.max(
                 0,
                 plan.posts.findIndex((p) =>
                   p.attachments.some((a) => a.id === id),
                 ),
               ),
-            assign: sequence.assign,
+            assign: (attachmentId: string, index: number) =>
+              media.assignSegment({ attachmentId, segmentIndex: index }),
           }
         : undefined,
-    [isSequence, plan, sequence.assign],
+    [isSequence, plan, media],
   )
 
   // Appended here rather than inside `evaluatePost`, which is a pure module
   // with no `t` — and this row is new copy, so it belongs in the catalogue
   // (CLAUDE.md) rather than beside that file's legacy English.
-  //
-  // Length is deliberately not among the things it can fail on: a part of the
-  // body past the ceiling is cut to fit rather than reported, so what is left
-  // is the media the author has to move themselves.
   //
   // The post-type row is *replaced* rather than appended to for the same
   // reason. `evaluatePost` is handed the effective slug, so an automatic post
@@ -562,30 +564,123 @@ function PostEditorSurface({
 
   const checks = useMemo<PostCheck[]>(() => {
     if (!isSequence) return autoChecks
-    const failing = plan.posts.filter((p) => p.issues.length > 0)
-    return [
-      ...autoChecks,
-      {
-        id: 'thread-sequence',
-        label: t('posts.sequence.check.label'),
-        status: plan.pending
-          ? 'pending'
-          : plan.overflowed || failing.length > 0
-            ? 'fail'
-            : 'pass',
-        detail: plan.pending
-          ? t('posts.sequence.check.pending')
-          : plan.overflowed
-            ? t('posts.sequence.check.overflow', { max: MAX_THREAD_POSTS })
-            : failing.length > 0
-              ? t('posts.sequence.check.issues', {
-                  count: failing.length,
-                  positions: failing.map((p) => p.position).join(', '),
-                })
-              : t('posts.sequence.postCount', { count: plan.posts.length }),
-      },
-    ]
-  }, [isSequence, autoChecks, plan, t])
+    const tooLong = plan.posts.filter((p) => p.issues.includes('too-long'))
+    const overloaded = plan.posts.filter((p) =>
+      p.issues.some((i) => i !== 'too-long'),
+    )
+    const runts = runtPositions(plan)
+
+    // Ordered by what the author has to do about it: the messages that are
+    // wrong (too long, or carrying more media than one post may), the chain
+    // that is too long to be one, and two states that are not failures at all.
+    //
+    // Length is among them again, and it is the server's finding rather than
+    // this screen's. In manual mode — any body with divider lines in it —
+    // `SplitThread` obeys the author's breaks and does not apply the ceiling,
+    // so a message over it is reported instead of cut. The splitter this
+    // client used to run always cut to fit, which is why this row used to say
+    // length could never fail.
+    const row: PostCheck = plan.pending
+      ? {
+          id: 'thread-sequence',
+          label: t('posts.sequence.check.label'),
+          status: 'pending',
+          detail: t('posts.sequence.check.pending'),
+        }
+      : plan.overflowed
+        ? {
+            id: 'thread-sequence',
+            label: t('posts.sequence.check.label'),
+            status: 'fail',
+            detail: t('posts.sequence.check.overflow', {
+              max: MAX_THREAD_POSTS,
+            }),
+          }
+        : // Length before media, and separately from it, because the two are
+          // different jobs: one is rewriting a message, the other is dragging a
+          // file to another one. A single row reading "these posts have a
+          // problem" would make the author open each to find out which.
+          tooLong.length > 0
+          ? {
+              id: 'thread-sequence',
+              label: t('posts.sequence.check.label'),
+              status: 'fail',
+              // A rule with no positive ceiling can still report length — the
+              // server measured, we just cannot name the number, so the copy
+              // must not read "over 0 characters".
+              detail:
+                plan.charLimit && plan.charLimit > 0
+                  ? t('posts.sequence.check.tooLong', {
+                      count: tooLong.length,
+                      positions: tooLong.map((p) => p.position).join(', '),
+                      limit: plan.charLimit,
+                    })
+                  : t('posts.sequence.check.tooLongNoLimit', {
+                      count: tooLong.length,
+                      positions: tooLong.map((p) => p.position).join(', '),
+                    }),
+            }
+          : overloaded.length > 0
+            ? {
+                id: 'thread-sequence',
+                label: t('posts.sequence.check.label'),
+                status: 'fail',
+                detail: t('posts.sequence.check.issues', {
+                  count: overloaded.length,
+                  positions: overloaded.map((p) => p.position).join(', '),
+                }),
+              }
+            : // Not a failure: a thread of one message is an ordinary post, and
+              // the transition out of draft writes it as one. Saying so here is
+              // what stops the format changing under the author without warning.
+              plan.singular
+              ? {
+                  id: 'thread-sequence',
+                  label: t('posts.sequence.check.label'),
+                  status: 'pass',
+                  detail: media.demotedType
+                    ? t('posts.sequence.check.singularAs', {
+                        // The platform's label, not the slug — the author has
+                        // never seen `text-post` anywhere else on this screen.
+                        type: getPostTypeLabel(
+                          platformInfo(doc.platform_id),
+                          media.demotedType,
+                        ),
+                      })
+                    : t('posts.sequence.check.singular'),
+                }
+              : // A warning rather than a refusal: the server takes any non-empty
+                // message, and a two-character one is far more likely a divider
+                // typed a line early than something meant.
+                runts.length > 0
+                ? {
+                    id: 'thread-sequence',
+                    label: t('posts.sequence.check.label'),
+                    status: 'warn',
+                    detail: t('posts.sequence.check.runts', {
+                      count: runts.length,
+                      positions: runts.join(', '),
+                    }),
+                  }
+                : {
+                    id: 'thread-sequence',
+                    label: t('posts.sequence.check.label'),
+                    status: 'pass',
+                    detail: t('posts.sequence.postCount', {
+                      count: plan.posts.length,
+                    }),
+                  }
+
+    return [...autoChecks, row]
+  }, [
+    isSequence,
+    autoChecks,
+    plan,
+    media.demotedType,
+    platformInfo,
+    doc.platform_id,
+    t,
+  ])
 
   const handleDownloadMarkdown = useCallback(
     () => downloadMarkdown(doc.title, doc.content, 'post'),
@@ -702,10 +797,7 @@ function PostEditorSurface({
                   busy={assistantRunning}
                 />
                 {isSequence && (
-                  <ThreadSplitNote
-                    plan={plan}
-                    charLimit={media.maxContentChars}
-                  />
+                  <ThreadSplitNote plan={plan} stale={media.previewStale} />
                 )}
               </div>
             </div>

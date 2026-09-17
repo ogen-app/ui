@@ -22,6 +22,7 @@ function post(
     social_account_id: '',
     title: id,
     content: '',
+    thread_segments: [],
     media_urls: [],
     scheduled_at,
     published_at: null,

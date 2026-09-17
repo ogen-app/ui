@@ -1330,24 +1330,16 @@ export const es: Translation = {
 
     sequence: {
       explainer:
-        'Esto se publica como una cadena de publicaciones, cada una respondiendo a la anterior. Escribe --- en una línea aparte donde quieras un corte; si no hay ningún divisor, los cortes son las líneas en blanco. Lo que siga pasándose del límite de caracteres se recorta para que quepa.',
+        'Esto se publica como una cadena de publicaciones, cada una respondiendo a la anterior. Escribe --- en una línea aparte donde quieras un corte: ahí van los cortes, exactamente donde los pongas y por larga que salga cada publicación. Si no hay ningún divisor, se reparte solo para caber en el límite de caracteres.',
 
       splitByDivider_one:
         'Se publica como {{count}} publicación, cortada donde pusiste un divisor.',
       splitByDivider_other:
         'Se publica como {{count}} publicaciones, cortadas donde pusiste un divisor.',
-      splitByBlankLine_one:
-        'Se publica como {{count}} publicación, cortada en las líneas en blanco.',
-      splitByBlankLine_other:
-        'Se publica como {{count}} publicaciones, cortadas en las líneas en blanco.',
-      splitAutoCut_one:
-        '{{count}} de ellas salieron de texto cortado en {{limit}} caracteres.',
-      splitAutoCut_other:
-        '{{count}} de ellas salieron de texto cortado en {{limit}} caracteres.',
       splitByLimit_one:
-        'Se publica como {{count}} publicación, recortada para caber en {{limit}} caracteres.',
+        'Se publica como {{count}} publicación, repartida para caber en {{limit}} caracteres.',
       splitByLimit_other:
-        'Se publica como {{count}} publicaciones, recortadas para caber en {{limit}} caracteres.',
+        'Se publica como {{count}} publicaciones, repartidas para caber en {{limit}} caracteres.',
       splitSingle: 'Se publica como una sola publicación.',
       splitPending: 'Calculando en cuántas publicaciones se divide esto…',
       splitOverflow:
@@ -1358,8 +1350,6 @@ export const es: Translation = {
       mediaOnLabel:
         'Este archivo va en la publicación {{position}}: elige otra',
 
-      saveFailed: 'No se pudo guardar qué publicación lleva cada archivo.',
-
       postCount_one: '{{count}} publicación',
       postCount_other: '{{count}} publicaciones',
 
@@ -1367,10 +1357,24 @@ export const es: Translation = {
         label: 'Hilo',
         pending: 'Comprobando…',
         overflow: 'Más de {{max}} publicaciones',
+        tooLong_one:
+          'La publicación {{positions}} pasa de {{limit}} caracteres',
+        tooLong_other:
+          'Las publicaciones {{positions}} pasan de {{limit}} caracteres',
+        tooLongNoLimit_one:
+          'La publicación {{positions}} supera el límite de longitud de la plataforma',
+        tooLongNoLimit_other:
+          'Las publicaciones {{positions}} superan el límite de longitud de la plataforma',
         issues_one:
           'La publicación {{positions}} lleva más archivos de los que admite una publicación',
         issues_other:
           'Las publicaciones {{positions}} llevan más archivos de los que admite una publicación',
+        singular: 'Un solo mensaje, así que se publica como una publicación.',
+        singularAs: 'Un solo mensaje, así que se publica como «{{type}}».',
+        runts_one:
+          'La publicación {{positions}} es muy corta: ¿es un salto involuntario?',
+        runts_other:
+          'Las publicaciones {{positions}} son muy cortas: ¿son saltos involuntarios?',
       },
 
       previewNote:

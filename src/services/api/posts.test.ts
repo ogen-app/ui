@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   addPostAssets,
   postToPayload,
+  previewThread,
   removePostAsset,
   setPostBrand,
 } from './posts'
@@ -16,6 +17,7 @@ function makePost(overrides: Partial<Post> = {}): Post {
     social_account_id: '',
     title: 'Launch day',
     content: 'We shipped it.',
+    thread_segments: [],
     media_urls: [],
     scheduled_at: null,
     published_at: '2026-09-01T10:00:00Z',
@@ -98,6 +100,92 @@ describe('postToPayload', () => {
     const payload = postToPayload(makePost())
     expect('publisher_post_id' in payload).toBe(false)
     expect('id' in payload).toBe(false)
+  })
+
+  it('never sends the thread segments back', () => {
+    // A third case, and a third reason (CON-284 R2). `published_url` must be
+    // present or it is lost; `used_asset_ids` must be absent or it is
+    // restated; `thread_segments` must be absent because it is *derived* —
+    // the server splits `content` on every write and ignores what a client
+    // sends. Under R1 this field had to be round-tripped instead, to stop a
+    // calendar drag flattening a thread, so an old copy of this builder looks
+    // deliberately wrong rather than merely out of date.
+    const payload = postToPayload(
+      makePost({
+        platform_post_type: 'thread',
+        thread_segments: [{ content: 'One' }, { content: 'Two' }],
+      }),
+    )
+    expect('thread_segments' in payload).toBe(false)
+    expect(payload.content).toBe('We shipped it.')
+  })
+})
+
+/**
+ * The composer's only account of where a body breaks, so the request shape is
+ * worth pinning: it takes the body in the editor rather than a post id,
+ * because the question is asked several keystrokes ahead of the stored row.
+ */
+describe('previewThread', () => {
+  it('posts the body and the platform, and returns the split', async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(200, {
+        segments: [
+          { content: 'One', char_count: 3 },
+          { content: 'Two', char_count: 3 },
+        ],
+        limit: 280,
+        valid: true,
+        errors: [],
+      }),
+    )
+
+    const result = await previewThread('One\n\n---\n\nTwo', 'p1')
+
+    expect(result.segments).toHaveLength(2)
+    expect(result.limit).toBe(280)
+    expect(result.valid).toBe(true)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(String(url)).toContain('/api/posts/thread/preview')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body)).toEqual({
+      content: 'One\n\n---\n\nTwo',
+      platform_id: 'p1',
+    })
+  })
+
+  it('carries the per-message failures back, with the message they name', async () => {
+    // `segment` is what lets the composer point at the message that is wrong
+    // rather than at the thread. Only reachable for a hand-broken body: with
+    // no divider the split is made to fit, so nothing comes out over the
+    // limit.
+    stubFetch(
+      jsonResponse(200, {
+        segments: [
+          { content: 'Short', char_count: 5 },
+          { content: 'x'.repeat(400), char_count: 400 },
+        ],
+        limit: 280,
+        valid: false,
+        errors: [
+          {
+            platform: 'p1',
+            attachment_id: '',
+            rule: 'max_content_chars',
+            expected: '280',
+            actual: '400',
+            message: 'segment 1 exceeds 280',
+            segment: 1,
+          },
+        ],
+      }),
+    )
+
+    const result = await previewThread('Short\n\n---\n\nlong', 'p1')
+
+    expect(result.valid).toBe(false)
+    expect(result.errors[0].segment).toBe(1)
   })
 
   /**

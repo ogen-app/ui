@@ -17,6 +17,17 @@ export type ResolvedPostTypeRule = {
    * Counted in Unicode code points, matching the server-side check.
    */
   max_content_chars: number | null
+  /**
+   * This type publishes as an ordered list of messages rather than one body
+   * (CON-284 — the `thread` type on X and Threads). `max_content_chars` then
+   * carries the **per-message** ceiling, not a whole-post one.
+   *
+   * This is the answer to "does this post publish as a chain", and it replaced
+   * a hard-coded set of Zernio platform ids we used to keep here. The server
+   * knows which platforms took the slug — it is the thing that added it to
+   * Threads — so asking it means a third network needs no client release.
+   */
+  segmented: boolean
 }
 
 export type PostTypeRuleView = {

@@ -4,6 +4,7 @@ import {
   deleteAttachment,
   listAttachments,
   reorderAttachment,
+  setAttachmentSegment,
   uploadAttachment,
   uploadVideoAttachment,
 } from '@/services/api/attachments'
@@ -32,9 +33,7 @@ const PRESIGN_REFRESH_MS = 10 * 60 * 1000
 
 /**
  * What an upload run produced. `ids` are the attachments the server created,
- * in the order the files were sent — a thread sequence claims them for the
- * post of the chain the upload was started from (`useThreadSequence`), which
- * it cannot do from a count.
+ * in the order the files were sent.
  */
 export type UploadResult = {
   uploaded: number
@@ -72,7 +71,7 @@ export function usePostAttachments(postId: string) {
    * order the user picked the files in.
    */
   const upload = useCallback(
-    async (files: File[]): Promise<UploadResult> => {
+    async (files: File[], segmentIndex?: number): Promise<UploadResult> => {
       const errors: string[] = []
       const ids: string[] = []
       for (const [i, file] of files.entries()) {
@@ -87,6 +86,7 @@ export function usePostAttachments(postId: string) {
               ? uploadVideoAttachment
               : uploadAttachment
           const created = await send(postId, file, {
+            segmentIndex,
             onProgress: (percent) =>
               setPending((p) =>
                 p.map((u) => (u.key === key ? { ...u, percent } : u)),
@@ -173,6 +173,46 @@ export function usePostAttachments(postId: string) {
     onSettled: invalidate,
   })
 
+  /**
+   * Moves one file onto another message of a thread (CON-284).
+   *
+   * Optimistic, unlike `remove`: this is the media card's one-click picker, and
+   * a thumbnail that stays put until the round-trip lands reads as a click that
+   * missed. The rollback is the whole error path — the toast comes from
+   * `meta.errorTitle`, as everywhere else here.
+   */
+  const assignSegment = useMutation({
+    meta: { errorTitle: 'Unable to move this to another message' },
+    mutationFn: ({
+      attachmentId,
+      segmentIndex,
+    }: {
+      attachmentId: string
+      segmentIndex: number | null
+    }) => setAttachmentSegment(postId, attachmentId, segmentIndex),
+    onMutate: async ({ attachmentId, segmentIndex }) => {
+      await qc.cancelQueries({ queryKey: postAttachmentsKey(postId) })
+      const previous = qc.getQueryData<AttachmentListResponse>(
+        postAttachmentsKey(postId),
+      )
+      if (previous) {
+        qc.setQueryData<AttachmentListResponse>(postAttachmentsKey(postId), {
+          ...previous,
+          attachments: previous.attachments.map((a) =>
+            a.id === attachmentId ? { ...a, segment_index: segmentIndex } : a,
+          ),
+        })
+      }
+      return { previous }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        qc.setQueryData(postAttachmentsKey(postId), ctx.previous)
+      }
+    },
+    onSettled: invalidate,
+  })
+
   return {
     attachments: query.data?.attachments ?? [],
     /** Post-level rule failures (count cap, image+PDF mix). */
@@ -185,5 +225,6 @@ export function usePostAttachments(postId: string) {
     removing: remove.isPending,
     reorder: reorder.mutate,
     reordering: reorder.isPending,
+    assignSegment: assignSegment.mutate,
   }
 }

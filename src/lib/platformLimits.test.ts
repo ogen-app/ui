@@ -19,6 +19,7 @@ function rule(max_content_chars: number | null): ResolvedPostTypeRule {
     min_attachments: 0,
     max_attachments: null,
     max_content_chars,
+    segmented: false,
   }
 }
 

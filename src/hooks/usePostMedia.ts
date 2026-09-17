@@ -7,13 +7,15 @@ import { findRule, usePostTypeRules } from '@/hooks/usePostTypeRules'
 import { resolveCharLimit, titleLimitFor } from '@/lib/platformLimits'
 import { mediaPolicy, type MediaPolicy } from '@/lib/postMedia'
 import {
+  demotedFrom,
   effectivePostType,
   isAutoPostType,
   resolveAutoPostType,
   type AutoResolution,
 } from '@/lib/postTypeAuto'
 import { evaluatePost, type PostCheck } from '@/lib/postValidation'
-import { isSequencePost } from '@/lib/threadSequence'
+import { planThread, publishesAsChain } from '@/lib/threadSequence'
+import { useThreadPreview } from '@/hooks/useThreadPreview'
 import type { Post } from '@/types/posts'
 
 /**
@@ -59,7 +61,6 @@ export function usePostMedia(post: Post) {
       attachments: media.attachments,
       candidates: candidates.map((pt) => pt.slug),
       rules,
-      zernioId,
     })
   }, [
     autoEnabled,
@@ -68,7 +69,6 @@ export function usePostMedia(post: Post) {
     media.attachments,
     candidates,
     rules,
-    zernioId,
   ])
 
   const postType = effectivePostType(post.platform_post_type, auto)
@@ -77,15 +77,19 @@ export function usePostMedia(post: Post) {
   const rule = ruleView?.rule ?? null
   const platform = catalog.row(post.platform_id)
 
-  // Thread sequences (CON-196) — a post that publishes as a chain rather than
-  // one post. Derived from the effective type, so an automatic post that
-  // resolved to `thread` renders as the chain it will publish as. The flag
-  // withdraws the type from every picker, so with it off this is false for
-  // every post, *including* one already saved as a `thread`: that post keeps
-  // rendering as the single body it was written in, which is exactly what it
-  // still publishes as until the submit path sends `threadItems`.
+  // Thread sequences (CON-196 / CON-284) — a post that publishes as a chain
+  // rather than one post. Two facts, and they arrive from different places:
+  // the *type* is the effective one, so an automatic post that resolved to
+  // `thread` renders as the chain it will publish as; and whether that type is
+  // a chain at all is the server's `segmented`, read off the very rule that
+  // carries the per-message character limit below.
+  //
+  // The flag withdraws the type from every picker, so with it off this is
+  // false for every post, *including* one already saved as a `thread`: that
+  // post keeps rendering as the single body it was written in, which is what
+  // it still publishes as while nothing sends `thread_segments`.
   const sequenceEnabled = useFeatureFlag('thread-sequence')
-  const sequence = sequenceEnabled && isSequencePost(zernioId, postType)
+  const sequence = sequenceEnabled && publishesAsChain(rule)
 
   const policy: MediaPolicy = useMemo(
     () => mediaPolicy(zernioId, rule, platform),
@@ -142,6 +146,68 @@ export function usePostMedia(post: Post) {
     ],
   )
 
+  // Where the body breaks is the server's answer, asked of the body in the
+  // editor rather than the one on the row (CON-284 R2). `enabled` is what keeps
+  // every other post type off the endpoint entirely.
+  const { preview, stale: previewStale } = useThreadPreview({
+    content: post.content,
+    platformId: post.platform_id,
+    enabled: sequence,
+  })
+
+  // The chain — here rather than in the route because every input it takes is
+  // already joined in this hook: the server's messages, the attachments and the
+  // platform's media caps. The route reads it for the note, the preview card
+  // and the checks bar. Nothing writes it back: `thread_segments` is derived
+  // server-side and ignored on a write.
+  const plan = useMemo(
+    () =>
+      planThread({
+        chain: sequence,
+        content: post.content,
+        preview,
+        attachments: media.attachments,
+        imageCap: policy.image?.maxPerPost,
+        videoCap: policy.video?.maxPerPost,
+      }),
+    [sequence, post.content, preview, media.attachments, policy],
+  )
+
+  /**
+   * The ordinary slug a one-message thread has to leave as, or `null`.
+   *
+   * Only ever answers for a post *pinned* to `thread` — an automatic one never
+   * reaches the chain rung with a body that fits in a single post. `null` while
+   * the plan is pending *or stale*, so a resolution is never pinned off a chain
+   * that has not been split yet — nor off one split from a body the editor has
+   * already moved past, whose `singular` may describe a post this one no longer
+   * is.
+   */
+  const demotedType = useMemo(
+    () =>
+      sequence && !plan.pending && !previewStale
+        ? demotedFrom({
+            content: post.content,
+            attachments: media.attachments,
+            candidates: candidates.map((pt) => pt.slug),
+            rules,
+            storedType: post.platform_post_type,
+            singular: plan.singular,
+          })
+        : null,
+    [
+      sequence,
+      plan.pending,
+      previewStale,
+      plan.singular,
+      post.content,
+      post.platform_post_type,
+      media.attachments,
+      candidates,
+      rules,
+    ],
+  )
+
   return {
     ...media,
     policy,
@@ -155,5 +221,11 @@ export function usePostMedia(post: Post) {
     auto,
     /** This post publishes as a chain rather than as one post. */
     sequence,
+    /** The chain this post's body comes to. Empty when it is not one. */
+    plan,
+    /** The plan describes an older body than the editor holds. */
+    previewStale,
+    /** What a thread of one message publishes as instead — see `demotedFrom`. */
+    demotedType,
   }
 }

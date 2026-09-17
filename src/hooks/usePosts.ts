@@ -50,6 +50,8 @@ function draftPost(streamed: StreamedPost, campaignId: string): Post {
     ...streamed,
     campaign_id: campaignId,
     social_account_id: '',
+    // A streamed draft is being written, not published — it has no chain yet.
+    thread_segments: [],
     media_urls: [],
     published_at: null,
     published_url: '',

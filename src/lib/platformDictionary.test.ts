@@ -202,9 +202,12 @@ describe('connectedAccounts', () => {
 })
 
 // A post type this build has written but not released (CON-196). The gate is
-// on the entry rather than on the slug, which is the part worth pinning: X has
-// offered `thread` since long before sequences, and a flag that withdrew it
-// would change how the app behaves with the feature off.
+// on the entry rather than on the slug — which used to matter because X's
+// `thread` was unflagged and Threads' was not. Both carry the flag as of
+// 2026-09-16: R2 is deployed and splits every thread body server-side, so
+// leaving X's open offered a type the server would refuse or re-cut without
+// the author being able to steer it. The per-entry gate is still the right
+// shape; it just has nothing asymmetric left to express.
 describe('flagged post types', () => {
   it('withholds a flagged type even when a publisher supports it', () => {
     const [view] = buildPlatformViews([
@@ -217,11 +220,24 @@ describe('flagged post types', () => {
     expect(view.available.map((pt) => pt.slug)).not.toContain('thread')
   })
 
-  it('leaves an unflagged type of the same slug alone', () => {
+  it('withholds it on X as well, publisher or no publisher', () => {
+    // X's publisher has always supported `thread`; that is exactly why this
+    // needs pinning. The release gate runs before the publisher gate, so
+    // support is not enough to bring the type back while the flag is off.
     const [view] = buildPlatformViews([
       apiPlatform(TWITTER, ['text-post', 'thread']),
     ])
-    expect(view.allowed.map((pt) => pt.slug)).toEqual(['text-post', 'thread'])
+    expect(view.allowed.map((pt) => pt.slug)).toEqual(['text-post'])
+  })
+
+  it('still names an existing thread post, having stopped offering the type', () => {
+    // The label comes off the whole dictionary rather than the released slice,
+    // so a post already carrying the slug reads as "Thread" rather than
+    // falling back to the raw value. Withdrawing a type may not rename what
+    // was made with it.
+    expect(getPostTypeLabel(getPlatformByZernioId(TWITTER), 'thread')).toBe(
+      'Thread',
+    )
   })
 
   // The editor's picker does not go through `buildPlatformView` — it asks the
@@ -234,7 +250,7 @@ describe('flagged post types', () => {
     ).not.toContain('thread')
     expect(
       releasedPostTypes(getPlatformByZernioId(TWITTER)).map((pt) => pt.slug),
-    ).toContain('thread')
+    ).not.toContain('thread')
   })
 
   it('has no types for a platform it does not know', () => {
@@ -272,17 +288,28 @@ describe('flagged post types', () => {
       return buildPlatformView(platform, info)
     }
 
-    it('stands in for the slug the publisher has not learned yet', () => {
-      const view = threadsView(['text-post', 'image-post'])
+    it('takes the slug from the publisher, like every other type', () => {
+      // CON-284 added `thread` to the Threads entry in the Go repo's
+      // `supportedPlatforms`, so the honest intersection now includes it and
+      // the flag is the only gate left. This used to need a stand-in, because
+      // intersecting with a publisher that had never heard the word hid the
+      // feature from the network it is named after.
+      const view = threadsView(['text-post', 'image-post', 'thread'])
       expect(view.allowed.map((pt) => pt.slug)).toContain('thread')
-      // Available, not dormant: the publisher is connected, and the only
-      // thing it is missing is a word for what we are asking it to send.
       expect(view.available.map((pt) => pt.slug)).toContain('thread')
       expect(view.unavailable.map((pt) => pt.slug)).not.toContain('thread')
     })
 
+    it('drops the type where the publisher does not declare it', () => {
+      // No more standing in: a slug the server has genuinely withdrawn — or
+      // never had — disappears from the app, flag or no flag.
+      const view = threadsView(['text-post', 'image-post'])
+      expect(view.allowed.map((pt) => pt.slug)).not.toContain('thread')
+      expect(view.available.map((pt) => pt.slug)).not.toContain('thread')
+    })
+
     it('still waits on the connection, like every other type', () => {
-      const view = threadsView(['text-post'], false)
+      const view = threadsView(['text-post', 'thread'], false)
       expect(view.allowed.map((pt) => pt.slug)).toContain('thread')
       expect(view.available).toEqual([])
       expect(view.unavailable.map((pt) => pt.slug)).toContain('thread')

@@ -485,85 +485,100 @@ const FEATURE_FLAGS = {
   'email-preferences': false,
 
   /**
-   * **Thread sequences** (CON-196) — a post on X or Threads that publishes as
-   * a chain of connected posts rather than one.
+   * **Thread sequences** (CON-196 / CON-284) — a post on X or Threads that
+   * publishes as a chain of connected posts rather than one.
    *
-   * Zernio takes one on both networks as
-   * `platformSpecificData.threadItems`: "the first item is the root post and
-   * subsequent items become replies in order", each item carrying its own text
-   * and its own media (docs.zernio.com/platforms/threads, /platforms/twitter).
-   * That is the format this is built against, and it is the whole reason the
-   * feature can exist at all.
+   * Zernio takes one on both networks as `platformSpecificData.threadItems`:
+   * "the first item is the root post and subsequent items become replies in
+   * order", each item carrying its own text and its own media
+   * (docs.zernio.com/platforms/threads, /platforms/twitter).
    *
-   * **Waiting on four things, all server-side.**
+   * **The back end shipped this twice, and the second time it agreed with us.**
    *
-   * 1. **The field.** `SubmitRequest` in `publishers/zernio/posts.go` has no
-   *    `platformSpecificData` at all, and nothing in the Go repo mentions
-   *    `threadItems` — so an X `thread` post today is submitted as one blob of
-   *    top-level `content` and publishes as a single post. The chain the
-   *    preview card draws has never been what goes out. This is the one that
-   *    makes the feature real; the rest is bookkeeping.
-   * 2. **The same split, server-side.** The thread is *derived* from the body
-   *    (`lib/threadSequence`) rather than stored as a list, which is the whole
-   *    shape of the feature: one Markdown editor, dividers as the breaks,
-   *    blank lines where there are none, and anything still past the per-post
-   *    ceiling cut to fit. So the publisher has to cut `content` the same way
-   *    before it fills `threadItems`, or what goes out is not what the author
-   *    was shown. That is the `src/lib/*` arrangement this repo already runs on
-   *    — the Go rule is the source of truth and ours mirrors it — and
-   *    `splitBody`/`splitToLimit` are written to be portable for exactly that
-   *    reason. Its tests are the specification.
-   * 3. **A home for the media assignment.** *Which post carries which file* is
-   *    the one thing a body cannot say, so it is the one thing stored: a map
-   *    from attachment id to post index, under `thread-sequence.<postId>` in
-   *    the tenant key/value store (`useThreadSequence`), the same stand-in
-   *    `campaign-accounts` uses while waiting for its column. What that cannot
-   *    do: the row is workspace-wide like every other settings key, and two
-   *    people moving files on the same post in the same second means the later
-   *    write wins. Losing it entirely is survivable by design — an attachment
-   *    with no entry rides the first post, which is where every file rode
-   *    before this existed.
-   * 4. **The slug on Threads.** `supportedPlatforms` in
-   *    `publishers/zernio/platforms.go` lists `thread` for `twitter` only, so
-   *    a Threads thread cannot actually be *submitted* until it is added
-   *    there. The UI no longer waits on it: `buildPlatformView` intersects our
-   *    dictionary with what a publisher reports, and `aheadOfPublishers`
-   *    (`lib/platformDictionary`) lets this flag answer in the missing slug's
-   *    place while it is on — because the honest intersection hides the
-   *    feature from the network it is named after for as long as the server
-   *    takes to learn one word, which is the opposite of what running ahead
-   *    behind a flag is for. The stand-in is itself flag-scoped: with this
-   *    off the publisher is the whole answer, exactly as before.
-   * 5. **Media validation counted per item.** Found testing the real screen:
-   *    the server validates attachments against the *post*, so five images
-   *    spread three-one-one over a chain still comes back as "post has 5 image
-   *    attachments; platform allows up to 4" — a warning the author cannot act
-   *    on, because no post of the thread is over. Our own count row already
-   *    stands down for a thread (`mediaChecks`) and the per-post verdict comes
-   *    from `planThread`, but `platform_validation` is the server's and is
-   *    passed through as written — deliberately, because it is right *today*:
-   *    until (1) lands, a thread really does publish as one post with every
-   *    file on it. It has to become per-item at the same time the split does,
-   *    or the flag turns on a screen with a permanent false alarm.
+   * R1 (ogen#140) stored a thread as `posts.thread_segments`, an array the
+   * client authored message by message, and restamped `content` from the first
+   * of them on every save. That last line was the one assumption the two sides
+   * did not share: here the chain is *derived from the body*, so `content` is
+   * the source and the restamp replaced it with message one. It would have cost
+   * every reader that does not know about threads — the calendar card, the
+   * posts table, search, versions, the assistant — a one-message post.
    *
-   * With this off, Threads does not offer the type (`buildPlatformView` and
-   * `releasedPostTypes` both drop it), nothing reads the settings key, and the
-   * editor is what it always was. X keeps offering `thread`, as it always has
-   * — withdrawing it would be a change with the flag off, which a flag may
-   * never make. An existing X `thread` post therefore behaves identically
-   * either way, because a thread is the same one Markdown body as every other
-   * post type; all the flag adds is the note under the editor, the
-   * per-thumbnail picker and the row in the pre-publish bar.
+   * **R2 (ogen#144, merged 2026-09-10) inverted it.** `posts.content` is now
+   * the canonical thread body, exactly as typed, and `thread_segments` is the
+   * server's own arithmetic over it, recomputed on every write by
+   * `platforms.SplitThread`. That is the model this client already had, so what
+   * changed here is not the shape of the feature but *who owns the cut*:
+   *
+   * - `thread_segments` is **ignored** on a write, so `postToPayload` no longer
+   *   carries it and the editor no longer keeps it in step. Saving the body is
+   *   saving the thread.
+   * - The splitter that used to live in `lib/threadSequence` is **gone**, and
+   *   `POST /api/posts/thread/preview` answers in its place
+   *   (`useThreadPreview`). That was not tidying: ours broke at every blank
+   *   line and took `***` as a divider, and the server does neither, so the two
+   *   disagreed about most bodies — and the server's is the one that publishes.
+   * - `segment_index` is optional, with NULL meaning the root message, so a
+   *   file nobody moved needs no index written for it.
+   *
+   * One consequence worth knowing before this goes on: **a message can be too
+   * long again**. In manual mode — any body carrying divider lines — the
+   * author's breaks are obeyed and the ceiling is not applied, so an over-long
+   * message is reported rather than cut. The old promise that a thread has no
+   * length state to report belonged to the splitter that left.
+   *
+   * With this off, **neither X nor Threads offers the type**
+   * (`buildPlatformView` and `releasedPostTypes` drop it on both), nothing asks
+   * for a preview, and this client sends the same PUT it sends for any other
+   * post type. What the flag cannot switch off is the server: a post already
+   * stored as a `thread` still has `thread_segments` recomputed and validated
+   * by R2 on every save, whatever this build shows.
+   *
+   * X's was unflagged until 2026-09-16, on the rule that a flag may not change
+   * what happens when it is off — the app had always offered it. That rule was
+   * retired here deliberately, because the state it protects no longer exists:
+   * R2 is **deployed**, so the server derives `thread_segments` from the body
+   * and gates on them whatever this build does. "As before" is therefore not
+   * ours to preserve, and what was left in its place was worse than the type's
+   * absence — a body under the ceiling is refused as a thread of one with no
+   * row on screen explaining it, and a longer one is packed into a chain by
+   * length that the author cannot steer, because their dividers never arrive.
+   *
+   * An existing `thread` post is not renamed or rewritten: `getPostTypeLabel`
+   * reads the whole dictionary rather than the released slice, and a thread is
+   * the same one Markdown body as every other post type. Only the picker stops
+   * offering the type. What the flag adds on top is the note under the editor,
+   * the per-thumbnail picker and the row in the pre-publish bar.
    *
    * Nothing outside the flag reads anything new: `doc.content` is still the
    * post's words, unchanged and un-rewritten, so the calendar, the posts table,
    * search and the assistant are untouched by this.
    *
-   * Switch this on once the submit path sends `threadItems`, splits the body
-   * the way we do and names the slug on `threads`, then re-test the whole path
-   * against the real thing — the media assignment is the half most likely to
-   * need a pass, and (5) is the one that shows up as a warning rather than as
-   * a wrong post.
+   * **Waiting on one server fix** (raised on CON-284, 2026-09-16, after the
+   * first run against the live R2 build). `platforms.isRuleLine` accepts three
+   * or more **hyphens** and nothing else, but the divider this app writes is
+   * `***`: the body is authored in BlockNote, whose Markdown serialiser emits
+   * `mdast-util-to-markdown`'s default rule marker — and it normalises a typed
+   * `---` to `***` as well, so there is no way for an author to get a hyphen
+   * rule into the body at all. Verified end to end: `One\n\n---\n\nTwo` comes
+   * back from the preview endpoint as two segments, `One\n\n***\n\nTwo` as one.
+   * Every thread this client can author is therefore a single message with a
+   * literal `***` in the middle of it. The ask is to widen `isRuleLine` to the
+   * CommonMark thematic break (`-`, `*` or `_`); normalising here instead was
+   * refused on purpose, because it would put an opinion about delimiters back
+   * in the client that R2 had just taken out, and `content` is now the stored
+   * canonical body — we would be rewriting what the author typed.
+   *
+   * Also raised there, and **not** blocking this flag: `char_count` measures
+   * the raw Markdown, so `[Ogen](https://getogen.com)` costs 27 of 280 and the
+   * auto-split will cut inside a markup run (`**`+280×`a`+`**` splits into an
+   * unclosed message and an orphaned `aa**`). Whether that is a counting bug or
+   * evidence we publish raw Markdown to Zernio is the server's to answer, and
+   * it is not thread-specific — every post type measures `post.Content` the
+   * same way.
+   *
+   * Switch this on once the divider lands, and re-test from the two pieces with
+   * no client-side history: the preview endpoint under a fast typist, and
+   * `segment_index` on the upload and its PATCH.
    */
   'thread-sequence': false,
 
