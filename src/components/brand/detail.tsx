@@ -160,10 +160,10 @@ export function BrandPage({ children }: { children: ReactNode }) {
  * its screen *is* its editor and there is no level below it to come back from.
  */
 export function BrandBackButton({
-  to = '/brand',
+  to = '/foundation',
   label,
 }: {
-  to?: '/brand' | '/brand/voices' | '/brand/audiences'
+  to?: '/foundation' | '/foundation/voices' | '/foundation/audiences'
   /**
    * Overrides the destination's name for a caller one level deeper. Defaulted
    * inside rather than in the signature: a default argument is evaluated once
@@ -290,5 +290,11 @@ function isSectionEmpty(section: BrandSectionId, data: BrandData): boolean {
       return data.look === null
     case 'templates':
       return data.templates.length === 0
+    case 'facts':
+      return (data.guardrails?.facts.length ?? 0) === 0
+    // Never asked: `/foundation/sources` is the Content page rather than a
+    // `BrandDetail`, so it has no intro card to qualify.
+    case 'sources':
+      return false
   }
 }

@@ -145,7 +145,7 @@ describe('notificationTarget', () => {
         row({ entity_type: 'asset', entity_id: 'a9' }),
         nowhere,
       ),
-    ).toEqual({ to: '/content-bank/$assetId', params: { assetId: 'a9' } })
+    ).toEqual({ to: '/foundation/sources/$assetId', params: { assetId: 'a9' } })
   })
 
   it('goes nowhere for an entity kind this build does not place', () => {

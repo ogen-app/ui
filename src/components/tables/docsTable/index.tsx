@@ -22,6 +22,7 @@ import { extentLabel } from '@/lib/assetExtent'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 import { relativeTime } from '@/lib/relativeTime'
 import { cn, formatTitle } from '@/lib'
+import { tableDate } from '../utils'
 
 /*
  * The campaign's document list.
@@ -56,22 +57,6 @@ const ROW_HEIGHT = 56
 const CELL = 'flex h-full items-center px-3'
 
 type AssetRow = Asset & Record<string, unknown>
-
-/**
- * `01 Aug 26`.
- *
- * Pinned to en-GB rather than the browser's locale: day-first is the format
- * asked for, and an en-US visitor would otherwise read "Aug 01, 26". The app
- * has no date-format convention yet and this is the first place two of them
- * meet — worth settling once, everywhere, rather than here.
- */
-function stamp(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: '2-digit',
-  })
-}
 
 /**
  * A tag on a row, in the row's own voice.
@@ -280,11 +265,11 @@ function AssetsTableComponent({
           // the URL so its back caret and its delete know where they are.
           const open = campaignId
             ? ({
-                to: '/campaigns/$campaignId/content/$assetId',
+                to: '/campaigns/$campaignId/foundation/$assetId',
                 params: { campaignId, assetId: row.id },
               } as const)
             : ({
-                to: '/content-bank/$assetId',
+                to: '/foundation/sources/$assetId',
                 params: { assetId: row.id },
               } as const)
           return (
@@ -340,7 +325,7 @@ function AssetsTableComponent({
               {/* The exact date for reconciling against something outside the
                   app, the distance for the question people actually ask. */}
               <span className="table-text tabular-nums">
-                {stamp(row.updated_at)}
+                {tableDate(row.updated_at)}
               </span>
               <span className="text-xs text-tertiary-foreground">
                 {relativeTime(row.updated_at)}

@@ -464,6 +464,11 @@ const FEATURE_FLAGS = {
    *
    * The argument this is built from: `docs/brand-materials.md`.
    */
+  // The id keeps the server's word, as do `components/brand`, `useBrand` and
+  // the `/api/brand` resource it all talks to. Only the user's word changed:
+  // the module is called Foundation, because the voices, audiences,
+  // guardrails and source documents every campaign writes from are not all
+  // one thing, and only one of the four is what anyone means by a brand.
   'brand-materials': true,
 
   /**
@@ -692,6 +697,57 @@ const FEATURE_FLAGS = {
    * the feature on.
    */
   'workspace-tiers': false,
+
+  /**
+   * Ideas — the module between a brief and a post, at both levels.
+   *
+   * A stub, and deliberately a whole one: the nav it completes is the point of
+   * it. The workspace level answers "what could we make", the campaign level
+   * answers it for one campaign, and until this shipped the rail had a gap
+   * where every other module has a pair. What is behind the flag is two pages
+   * that say what they will hold and nothing else.
+   *
+   * There is no backend at all — no model, no endpoint. Switch this on when an
+   * idea is a row, not before: a page that cannot persist what you type into
+   * it is worse than one that admits it isn't built.
+   */
+  ideas: false,
+
+  /**
+   * The workspace's calendar — every campaign's posts on one grid.
+   *
+   * The campaign already has one (`/campaigns/:id/calendar`), which is the
+   * whole feature *for one campaign*; this is the same view with the filter
+   * taken off, and it is the workspace's twin of it in the rail. A stub for
+   * now, because "every campaign's posts" is a query nobody has written: the
+   * posts endpoint is campaign-scoped, so this needs either a workspace-wide
+   * range query or N of them, and N grows with the workspace.
+   */
+  'workspace-calendar': false,
+
+  /**
+   * The facts ledger — `/foundation/facts` and the guardrails stance.
+   *
+   * The statements are real (`guardrails.facts` on the wire, same field the
+   * generator reads), but everything the ledger adds *around* them lives in a
+   * `localStorage` sidecar (`services/api/brandLocal.ts`): the subject/kind
+   * filing, the source, and — the point of the table — the added/checked/
+   * expires dates. An expiry date one browser wide is decoration, and the
+   * "no guardrails by design" stance is a decision a workspace takes, not a
+   * preference a browser holds.
+   *
+   * Off: facts stay editable as the plain statement list inside the
+   * guardrails editor, exactly as before the ledger existed, and the stance
+   * UI does not render. On: the guardrails editor hands the statements to the
+   * ledger and shows the stance.
+   *
+   * **Waiting on** a backend home for the metadata (columns beside
+   * `guardrails.facts`, or a table of its own) and a stance field —
+   * `PUT /api/brand/guardrails` 422s an all-empty body precisely so `DELETE`
+   * stays the only route to `null`, which is why "empty by design" has
+   * nowhere to be recorded today.
+   */
+  'facts-ledger': false,
 
   /**
    * The contextual help centre (CON-173) — the drawer, its triggers and the

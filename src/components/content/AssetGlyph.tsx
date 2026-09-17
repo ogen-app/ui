@@ -1,23 +1,20 @@
-import {
-  FilePdfIcon,
-  GlobeSimpleIcon,
-  ImageSquareIcon,
-  NoteIcon,
-} from '@phosphor-icons/react'
-import { assetCategory } from '@/lib/assetCategory'
+import { assetKind } from '@/lib/assetKind'
 import { cn } from '@/lib'
 import type { Asset } from '@/types/content'
+import { ASSET_KIND_ICON } from './assetKindIcons'
 
 /**
  * What kind of document this is, before its title.
  *
- * A scraped page is text as far as the categories go, but where it came from
- * is the one thing about it a reader can't infer from the title, so it gets
- * its own glyph rather than the note's (CON-222).
+ * A scraped page is text as far as reading it goes, but where it came from is
+ * the one thing about it a reader can't infer from the title, so it gets its
+ * own glyph rather than the note's (CON-222).
  *
  * Shared by every list that names documents — the content table, and a post's
  * Sources card — because the kind of a thing should not depend on which screen
- * is asking.
+ * is asking. The glyph itself comes from the same table the Foundation cards
+ * count with (`assetKindIcons`), so a kind looks the same whether it is drawn
+ * once beside a title or summed into "12 PDFs".
  */
 export function AssetGlyph({
   asset,
@@ -26,15 +23,7 @@ export function AssetGlyph({
   asset: Pick<Asset, 'type'>
   className?: string
 }) {
-  const category = assetCategory(asset)
-  const Icon =
-    asset.type === 'URL'
-      ? GlobeSimpleIcon
-      : category === 'files'
-        ? FilePdfIcon
-        : category === 'imagery'
-          ? ImageSquareIcon
-          : NoteIcon
+  const Icon = ASSET_KIND_ICON[assetKind(asset)]
   return (
     <span
       className={cn(

@@ -4,7 +4,7 @@ import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { useNotificationUnreadCount } from '@/hooks/useNotifications'
 
 /**
- * The Activity row, first in the sidebar's Modules section.
+ * The Activity row, in the workspace level's utility band.
  *
  * Its own component so the feature's query mounts with the feature: with the
  * flag off this never renders, so nothing is fetched for a feature nobody can
@@ -16,6 +16,10 @@ import { useNotificationUnreadCount } from '@/hooks/useNotifications'
  * is for views of the object on screen (CON-178), and the right rail is
  * panel-scoped per screen with the assistant as its floor. Activity is global
  * and belongs where the other global destinations are.
+ *
+ * Inside a campaign the same destination is a glyph instead
+ * (`ActivityNavGlyph`) — see `NavUtilityStrip` for why the band changes shape
+ * with the level and this component does not follow it there.
  */
 export function ActivitySidebarItem({ isActive }: { isActive: boolean }) {
   const { t } = useTranslation()

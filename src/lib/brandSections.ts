@@ -1,6 +1,8 @@
 import {
+  CardsThreeIcon,
   ChatCircleDotsIcon,
   FrameCornersIcon,
+  SealCheckIcon,
   ShieldIcon,
   SwatchesIcon,
   UsersThreeIcon,
@@ -8,6 +10,7 @@ import {
 } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import type { BrandConsumer } from '@/components/brand/types'
+import { isFeatureEnabled } from '@/config/featureFlags'
 
 /**
  * Brand's sections, as the app names and marks them.
@@ -26,7 +29,7 @@ import type { BrandConsumer } from '@/components/brand/types'
  * card can *summarise* any of those. It cannot be where the work happens.
  *
  * So Brand is a **hub and five drilldowns**, not a page and not five tabs. The
- * Overview is the screen `/brand` opens on and the only thing the sidebar
+ * Overview is the screen `/foundation` opens on and the only thing the sidebar
  * points at; each section is a page you go *into*, with one way back. It was
  * tabs for a while — first a bar under the header, then pills on the header
  * line — and both versions had the same fault, which is that a tab bar is
@@ -43,7 +46,13 @@ import type { BrandConsumer } from '@/components/brand/types'
  * this file as describing the module rather than the current menu.
  */
 export type BrandSectionId =
-  'voices' | 'audiences' | 'guardrails' | 'look' | 'templates'
+  | 'voices'
+  | 'audiences'
+  | 'guardrails'
+  | 'facts'
+  | 'sources'
+  | 'look'
+  | 'templates'
 
 /**
  * **This table carries behaviour only — the words are in the catalogue.**
@@ -119,6 +128,23 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     icon: ShieldIcon,
     tone: 'var(--brand-guardrails)',
     readBy: [],
+    shown: true,
+  },
+  {
+    id: 'facts',
+    icon: SealCheckIcon,
+    tone: 'var(--brand-facts)',
+    readBy: [],
+    // The ledger's metadata is a localStorage stand-in until the backend ask
+    // lands — see the `facts-ledger` flag. Off, the statements stay a card
+    // inside guardrails and this section is not offered.
+    shown: isFeatureEnabled('facts-ledger'),
+  },
+  {
+    id: 'sources',
+    icon: CardsThreeIcon,
+    tone: 'var(--brand-sources)',
+    readBy: ['plan', 'post'],
     shown: true,
   },
   {

@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
 import {
   CaretRightIcon,
+  ChatCircleTextIcon,
   GlobeIcon,
   PencilSimpleIcon,
   PlusIcon,
+  StackIcon,
   StarIcon,
   XIcon,
   type Icon,
@@ -233,13 +235,20 @@ const OFFER_NOTE_ID = 'brand-read-from-website'
  * missing, and gone once nothing is — an offer that outlives its usefulness is
  * how a screen starts nagging.
  *
- * **Built like the section cards, not like a banner.** The first cut was a thin
- * strip: a small bold line, a grey caption and a button pushed to the right
- * margin. Every other card on this screen leads with a chip, a display heading
- * and body copy at full strength, so the one card carrying the best thing the
- * screen can do for you was also the one that looked like an advert. Same
- * anatomy as `LibraryEmpty` now, for the same reason: this is a card offering
- * to do something, and the explanation is most of it.
+ * **Built like the starter groups, not like a banner and not like a hero.**
+ * It has been both. As a thin strip it read as an advert; as a full card with a
+ * 24px display heading it read as the most important thing on a screen whose
+ * actual content is the six sections under it, and it was the one card carrying
+ * nothing you can do today. What it is, exactly, is *a set of routes into
+ * filling this in* — which is the thing `StarterGroup` already draws, one
+ * heading and a stack of tiles, on both empty sections. Same object, same
+ * furniture: the eye reads it as an offer rather than as an announcement, and
+ * the screen has one fewer card shape in it.
+ *
+ * The tiles are **descriptions, not disabled buttons** (see `StarterCard`), and
+ * the group says COMING SOON once rather than three times. Naming all three
+ * routes is worth a card even while none of them is built: the reason people
+ * abandon this screen is the belief that they have to write it all themselves.
  *
  * **And it can be closed for good.** Not the `Explainer` contract — that one
  * bans anything the user needs while working. It is safe to lose because it is
@@ -253,17 +262,6 @@ const OFFER_NOTE_ID = 'brand-read-from-website'
  * route back is `resetAllSettings`, which resets everything else too. That is
  * acceptable for a card offering a shortcut and would not be for one carrying a
  * feature, so it is worth revisiting when these paths actually work.
- *
- * ## Which, today, they do not — so the buttons are gone
- *
- * It carried three: ask Ogen, point us at your site, upload a document. None
- * has an endpoint behind it, and three disabled buttons under a paragraph is a
- * worse lie than no buttons at all — disabled reads as *not right now*, as
- * something a permission or a missing field is withholding, and people click it
- * to find out which. The card keeps the offer as a sentence and says COMING
- * SOON once. The order those three paths belong in is argued in `FirstRun`,
- * where they are still on screen as rows; when they work, that is the file that
- * changes first and this one follows.
  */
 export function WholeBrandOffer({
   fills,
@@ -283,12 +281,11 @@ export function WholeBrandOffer({
     <section
       className={cn(
         COLUMN,
-        'relative flex flex-col gap-5 bg-primary px-6 py-6',
+        'relative flex flex-col gap-4 bg-primary px-6 py-6',
       )}
     >
-      {/* Parked in the corner. It was there to stay out of the action row;
-          with the actions gone it is the only control on the card, and the
-          corner is still where a dismissal belongs. */}
+      {/* Parked in the corner. It is the only control on the card, and the
+          corner is where a dismissal belongs. */}
       <Button
         variant="ghost"
         size="smIcon"
@@ -299,18 +296,11 @@ export function WholeBrandOffer({
         <XIcon />
       </Button>
 
-      {/* Tinted like every other card's chip, not filled. The accent fill was
-          earned by this being the screen's one promoted action; with the
-          actions gone it would be the loudest mark on the page attached to the
-          one thing you cannot do. */}
-      <header className="flex max-w-2xl flex-col gap-3 pr-10">
-        <span className="flex size-10 items-center justify-center rounded-md bg-secondary">
-          <GlobeIcon className="size-6" />
-        </span>
+      <header className="flex max-w-2xl flex-col gap-1 pr-10">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h2 className="font-display text-2xl font-medium leading-8 tracking-tight">
+          <h3 className="font-display text-lg font-medium leading-6 tracking-tight">
             {t('brand.shell.offer.title')}
-          </h2>
+          </h3>
           {/* Beside the heading, because with the buttons gone the tag is
               the card's whole state — the difference between an offer and a
               notice is that one of them can be taken. */}
@@ -321,17 +311,30 @@ export function WholeBrandOffer({
             rule that Spanish does not follow. `i18n.language` is passed rather
             than read inside, so the switch that re-renders this component is
             the same one that changes the join. */}
-        <p className="text-sm leading-5">
+        <p className="text-sm leading-5 text-secondary-foreground">
           {t('brand.shell.offer.body', {
             fills: formatList(fills, 'conjunction', i18n.language),
           })}
         </p>
-        {/* Both halves of the offer are the explanation, so both are set the
-            same. This one was a tertiary footnote *under* the buttons, which
-            put the answer to "what if I have neither" after the point at which
-            somebody with neither has already given up on the card. */}
-        <p className="text-sm leading-5">{t('brand.shell.offer.fallback')}</p>
       </header>
+
+      <div className="grid gap-3">
+        <StarterCard
+          icon={GlobeIcon}
+          title={t('brand.shell.offer.website.title')}
+          body={t('brand.shell.offer.website.body')}
+        />
+        <StarterCard
+          icon={StackIcon}
+          title={t('brand.shell.offer.document.title')}
+          body={t('brand.shell.offer.document.body')}
+        />
+        <StarterCard
+          icon={ChatCircleTextIcon}
+          title={t('brand.shell.offer.questions.title')}
+          body={t('brand.shell.offer.questions.body')}
+        />
+      </div>
     </section>
   )
 }
@@ -536,6 +539,7 @@ export function BrandIntro({
   body,
   missing,
   readBy,
+  heading = 'h1',
   wide,
 }: {
   icon: Icon
@@ -549,8 +553,22 @@ export function BrandIntro({
    * worth saying once there is one.
    */
   missing?: string
-  /** The honesty line's answer — see `ReadBy`. */
-  readBy: BrandConsumer[]
+  /**
+   * `h2`, for the one place this card is not the page's own title: the
+   * Foundation hub keeps a titled page header, and a second `h1` under it is
+   * two documents in one screen as far as anything reading the outline is
+   * concerned.
+   */
+  heading?: 'h1' | 'h2'
+  /**
+   * The honesty line's answer — see `ReadBy`.
+   *
+   * Optional, for the one card that is not a section: the Foundation hub's own
+   * leading card explains the whole screen, and "nothing reads this yet" under
+   * it would be a claim about six sections at once, three of which it would be
+   * wrong about.
+   */
+  readBy?: BrandConsumer[]
   /**
    * Span the panel instead of the column.
    *
@@ -561,6 +579,7 @@ export function BrandIntro({
    */
   wide?: boolean
 }) {
+  const Heading = heading
   return (
     <div
       className={cn(
@@ -574,9 +593,9 @@ export function BrandIntro({
       {/* The measure is on the text, never on the card: every card in the
           column shares one edge, and one that stops short of it reads as a
           different kind of card rather than as a shorter one. */}
-      <h1 className="max-w-2xl font-display text-2xl font-medium leading-8 tracking-tight">
+      <Heading className="max-w-2xl font-display text-2xl font-medium leading-8 tracking-tight">
         {title}
-      </h1>
+      </Heading>
       <p className="max-w-2xl text-sm leading-5">{body}</p>
       {missing && (
         <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">
@@ -585,7 +604,7 @@ export function BrandIntro({
       )}
       {/* Renders nothing on a wired section, and costs no gap when it does:
           `ReadBy` returns null rather than an empty node. */}
-      <ReadBy consumers={readBy} />
+      {readBy && <ReadBy consumers={readBy} />}
     </div>
   )
 }
@@ -692,21 +711,49 @@ export function StarterCard({
   tone?: string
   title: string
   body: string
+  /**
+   * Absent renders the tile as a **description rather than a control**: same
+   * box, same glyph, no hover, no cursor, not focusable. That is what the
+   * whole-brand offer needs — three routes worth naming, none of them built —
+   * and it is a better answer than a disabled button, which reads as *not right
+   * now* and gets clicked to find out which permission is withholding it.
+   */
   onClick?: () => void
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group flex cursor-pointer items-center gap-3 rounded-md border border-quaternary px-4 py-4 text-left transition-colors hover:border-foreground hover:bg-secondary"
-    >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary transition-colors group-hover:bg-primary">
+  const inner = (
+    <>
+      <span
+        className={cn(
+          'flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary transition-colors',
+          onClick && 'group-hover:bg-primary',
+        )}
+      >
         <Glyph className="size-6" style={{ color: tone }} />
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="text-base font-medium">{title}</span>
         <span className="text-sm text-secondary-foreground">{body}</span>
       </span>
+    </>
+  )
+
+  const box =
+    'flex items-center gap-3 rounded-md border border-quaternary px-4 py-4 text-left'
+
+  if (!onClick) {
+    return <div className={cn(box, 'border-dashed')}>{inner}</div>
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        box,
+        'group cursor-pointer transition-colors hover:border-foreground hover:bg-secondary',
+      )}
+    >
+      {inner}
     </button>
   )
 }
@@ -814,12 +861,23 @@ export function EntryCard({
 export function DefaultStar({
   backed,
   label,
+  word = true,
   className,
 }: {
   /** Whether the entry has the material behind it that makes it worth being the default. */
   backed: boolean
   /** The whole fact, for a screen reader — the visible word is only one of it. */
   label: string
+  /**
+   * Whether to print `default` beside the mark.
+   *
+   * `false` on the Overview, where the star has taken the row's leading slot:
+   * it is 16px wide, the label column starts after it, and a word in there
+   * would push every name on the card out of line with every other card's. The
+   * sentence still goes to a screen reader through `label` — which is the half
+   * that was doing the work.
+   */
+  word?: boolean
   /** Type for the mark; it inherits nothing of its own. See `OriginLine`. */
   className?: string
 }) {
@@ -829,15 +887,20 @@ export function DefaultStar({
       aria-label={label}
       className={cn('flex shrink-0 items-center gap-1.5', className)}
     >
+      {/* Filled and green when the entry has what it takes to be the default,
+          hollow when it has not. Weight carries the same fact the colour does,
+          which is what makes it legible where the mark stands alone — on the
+          Overview it has replaced the row's tick, and a grey filled star there
+          would read as a decoration rather than as a finding. */}
       <StarIcon
-        weight="fill"
+        weight={backed ? 'fill' : 'regular'}
         aria-hidden
         className={cn(
           'size-4',
           backed ? 'text-positive' : 'text-senary-foreground',
         )}
       />
-      {t('brand.shell.default')}
+      {word && t('brand.shell.default')}
     </span>
   )
 }

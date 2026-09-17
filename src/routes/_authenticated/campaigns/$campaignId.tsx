@@ -21,16 +21,32 @@ export const Route = createFileRoute('/_authenticated/campaigns/$campaignId')({
 // Section slug (from the URL) → title suffix. The header title and its icon
 // set depend on the selected secondary-nav element.
 const SECTIONS = [
-  { slug: '/list', label: 'List' },
-  { slug: '/brief', label: 'Brief' },
-  { slug: '/content', label: 'Content' },
+  // `/list` is the Posts row's route — the table is where posts are worked on,
+  // and the calendar is the row beside it. The title says Posts because the
+  // rail does; nothing outside the URL calls this a list.
+  { slug: '/list', label: 'Posts' },
+  { slug: '/strategy', label: 'Strategy' },
+  { slug: '/ideas', label: 'Ideas' },
+  { slug: '/foundation', label: 'Foundation' },
+  { slug: '/activity', label: 'Activity' },
   { slug: '/settings', label: 'Settings' },
   { slug: '/overview', label: 'Overview' },
   { slug: '/analytics', label: 'Analytics' },
 ] as const
 
-/** Sections that read as a document: one scroll container, fading header. */
-const DOCUMENT_SECTIONS: readonly string[] = ['Overview', 'Analytics']
+/**
+ * Sections that read as a document: one scroll container, fading header.
+ *
+ * The fallback below is the calendar's shell, which is right for a grid and
+ * wrong for everything else — so a new section that is neither a document nor
+ * a form has to be named here, or it inherits a calendar's header actions.
+ */
+const DOCUMENT_SECTIONS: readonly string[] = [
+  'Overview',
+  'Analytics',
+  'Ideas',
+  'Activity',
+]
 
 function CampaignLayout() {
   const { campaignId } = Route.useParams()
@@ -82,16 +98,16 @@ function CampaignLayout() {
 
   // Each shell fades its section in (`page-content-motion`), keyed by the
   // section so the fade replays on the way from one to the next rather than
-  // once per campaign. Sections are a swap of the whole column — six different
-  // documents behind one header — and switching between them without it is a
+  // once per campaign. Sections are a swap of the whole column — several
+  // different documents behind one header — and switching between them without it is a
   // hard cut. Keyed by section rather than by route, so paging through the
   // calendar's weeks stays instant: the anchor changes, the section doesn't.
   //
-  // Brief and Settings edit inline and commit through the bottom save bar, so
-  // they get the settings-page shell: one scroll container owning the sticky
-  // header, whose title fades out on scroll, inside a positioned wrapper the
-  // bar can anchor to without scrolling away with the cards.
-  if (section === 'Brief' || section === 'Settings') {
+  // Strategy and Settings edit inline and commit through the bottom save bar,
+  // so they get the settings-page shell: one scroll container owning the
+  // sticky header, whose title fades out on scroll, inside a positioned
+  // wrapper the bar can anchor to without scrolling away with the cards.
+  if (section === 'Strategy' || section === 'Settings') {
     return (
       <PageContainer variant={'fullFlex'}>
         <SettingsSaveProvider>
@@ -118,10 +134,11 @@ function CampaignLayout() {
     )
   }
 
-  // Content owns its whole page: its header carries an action that only means
-  // something there (add *to this campaign*), and the page is one big drop
-  // target, which a shared header sitting outside it could not be.
-  if (section === 'Content') {
+  // Foundation owns its whole page: its header carries an action that only
+  // means something there (add *to this campaign*), the page is one big drop
+  // target — neither of which a shared header sitting outside it could do —
+  // and it opens with a band of what the campaign inherits from the workspace.
+  if (section === 'Foundation') {
     return (
       <PageContainer variant={'fullFlex'}>
         <Outlet />

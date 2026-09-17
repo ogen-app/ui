@@ -269,7 +269,7 @@ describe('setupChecks', () => {
     const check = channelsCheck(campaign, views)
     expect(check.ok).toBe(false)
     expect(check.label).toBe('No post type selected for LinkedIn')
-    expect(check.fix).toBe('settings')
+    expect(check.fix).toBe('strategy')
   })
 
   it('does not review connected channels the campaign did not select', () => {
@@ -540,7 +540,7 @@ describe('attentionItems', () => {
     const item = attentionItems(campaign, healthyPosts(), connected, NOW).find(
       (i) => i.id === 'no-post-types',
     )
-    expect(item).toMatchObject({ severity: 'todo', fix: 'settings' })
+    expect(item).toMatchObject({ severity: 'todo', fix: 'strategy' })
     expect(item!.label).toBe('No post type selected for LinkedIn')
   })
 

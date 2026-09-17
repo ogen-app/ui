@@ -27,7 +27,7 @@ export type CardLink = {
 /**
  * One module card on the Campaign Overview screen. Capped at the shared
  * content-column width and centred, so the screen reads as one column like
- * the Brief and Settings pages rather than stretching to the viewport.
+ * the Strategy and Settings pages rather than stretching to the viewport.
  *
  * A card that has somewhere to go says so with a button, not with a header that
  * lights up: a tinted header row is a hit area you have to discover by sweeping
@@ -157,10 +157,10 @@ export function SectionLink({
   // it (`posts`) is the one that means the table.
   const calendar = useCalendarPlace(campaignId)
   switch (target) {
-    case 'brief':
+    case 'strategy':
       return (
         <Link
-          to="/campaigns/$campaignId/brief"
+          to="/campaigns/$campaignId/strategy"
           params={params}
           className={className}
           {...named}
@@ -168,21 +168,10 @@ export function SectionLink({
           {children}
         </Link>
       )
-    case 'settings':
+    case 'foundation':
       return (
         <Link
-          to="/campaigns/$campaignId/settings"
-          params={params}
-          className={className}
-          {...named}
-        >
-          {children}
-        </Link>
-      )
-    case 'content':
-      return (
-        <Link
-          to="/campaigns/$campaignId/content"
+          to="/campaigns/$campaignId/foundation"
           params={params}
           className={className}
           {...named}
@@ -238,7 +227,7 @@ export function SectionLink({
  * list is. The lift on hover is the affordance; there is no tint, because a
  * card that fills with grey reads as selected rather than as clickable.
  *
- * `aria-label` names the link "OPEN BRIEF" instead of letting it read out as
+ * `aria-label` names the link "OPEN STRATEGY" instead of letting it read out as
  * its own contents — title, badge and summary line in one breath. The contents
  * are still there to browse; this is just the name.
  */
