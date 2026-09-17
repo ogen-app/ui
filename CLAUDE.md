@@ -1003,6 +1003,41 @@ and what the nav rule would prefer over a level-1 card with no level-0 row.
 `CampaignSeriesCard` takes a campaign and nothing else, so making that move is a
 re-parent plus two nav rows rather than a rewrite.
 
+**Being refused is the half that is live, and it is not behind the flag**
+(CON-295). The server enforces whether or not this client asks first: it answers
+**402 `entitlement_exceeded`** with `feature`, `limit` and `current`, and **403
+`feature_not_available`** with `feature`. Both are read into an
+`EntitlementError` (`services/api/errors.ts`) that every `apiJson`/`apiVoid`
+caller already catches as an `ApiError`. Four things about that path:
+
+- **The code is never shown.** `error` on those two bodies is an identifier, and
+  the global mutation toast renders `error.message` as its title — so before
+  this, a refused create toasted the word `entitlement_exceeded`. The message
+  falls back to the caller's own sentence ("Unable to create the campaign") and
+  the *reason* goes underneath it, translated, in `lib/queryClient.ts`.
+  `services/api/*` holds no copy and has no `t`; that handler is the first place
+  up the stack that renders, which is why it reads the language off the i18next
+  instance rather than taking a `TFunction`.
+- **A feature-gated 403 must not reach `handleForbidden`.** 403 is also what an
+  owner-only route tells a member and what a tab pinned to a departed workspace
+  gets, so `staleWorkspace` verifies the pin with a request. A tier that switches
+  a feature off would otherwise fire one on every click of the control it hides.
+  The status alone decides nothing: the code has to agree, both ways.
+- **No cache invalidation rides along.** Refetching the plan after a quota
+  refusal is the obvious repair and would change nothing — the API ships
+  allowances and no tally, so the entry comes back with the same limit and the
+  same uncounted `used`. Add one when a usage read exists.
+- **The near-limit warnings are notifications, one sentence per feature.**
+  `entitlement.limit_approaching` / `limit_reached` carry the key, the counts and
+  the band crossed; `lib/notifications.ts` maps each capped feature to its own
+  pair of sentences (`ENTITLEMENT_COPY_KEY`) and states the figures, with
+  `media_storage_bytes` rendered through `formatStorage` rather than printed as
+  nine digits of bytes. A feature missing from that table — or a row missing its
+  figures — falls back to the server's English title like any other unknown row.
+
+The toast carries the numbers under a title that already names the action; the
+feed row stands alone, so its sentence names the feature *and* the numbers.
+
 ## Global rules
 
 Do not keep backwards compatibility unless explicitly required.

@@ -1,7 +1,9 @@
 import { MutationCache, QueryClient } from '@tanstack/react-query'
 
 import { toast } from '@/stores/toastStore'
+import { i18next } from '@/i18n'
 import { isSessionExpiring } from '@/lib/sessionExpiry'
+import { EntitlementError } from '@/services/api/errors'
 
 const FIVE_MINUTES = 1000 * 60 * 5
 
@@ -78,11 +80,14 @@ export const queryClient = new QueryClient({
       const message =
         error instanceof Error && error.message
           ? error.message
-          : 'Something went wrong'
+          : i18next.t('common.somethingWentWrong')
       const title = meta?.errorTitle ?? message
       toast.error(title, {
-        // No echo when the override says the same thing as the message.
-        description: title === message ? undefined : message,
+        // Why, under what: a plan refusal replaces the echoed message with the
+        // reason, which is the only part the title cannot already say. No echo
+        // otherwise, when an override says the same thing as the message.
+        description:
+          denialReason(error) ?? (title === message ? undefined : message),
       })
     },
   }),
@@ -116,3 +121,26 @@ export const queryClient = new QueryClient({
 })
 
 export const QUERY_FIVE_MINUTES = FIVE_MINUTES
+
+/**
+ * The sentence under the toast when the workspace's plan is why a write was
+ * refused, or undefined when it wasn't (CON-295).
+ *
+ * The translating happens here rather than in `services/api/errors.ts` because
+ * a service has no `t` and no business holding copy — what it throws is the
+ * refusal, typed. This is the first place up the stack that renders, which is
+ * also why it reads the language off the i18next instance instead of taking a
+ * `TFunction`: nothing here is a component, and the handler is called once per
+ * failure rather than once per render, so there is nothing to freeze.
+ *
+ * The cap is asked for as `count` and only when the server sent one. It is the
+ * plural selector, not decoration — and an absent one takes the flat sentence,
+ * because a limit printed as `undefined` would be worse than a vaguer one.
+ */
+function denialReason(error: unknown): string | undefined {
+  if (!(error instanceof EntitlementError)) return undefined
+  if (error.reason === 'tier') return i18next.t('tiers.deniedTier')
+  return error.limit === null
+    ? i18next.t('tiers.deniedLimitFlat')
+    : i18next.t('tiers.deniedLimit', { count: error.limit })
+}

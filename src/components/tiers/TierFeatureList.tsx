@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import { formatNumber } from '@/lib/intl'
 import {
+  featureLabel,
   formatStorage,
   isByteKey,
   type TierFeature,
@@ -29,7 +30,7 @@ export function TierFeatureList({ features }: { features: TierFeature[] }) {
           className="flex items-baseline justify-between gap-4 text-[13px] min-w-0"
         >
           <span className="text-tertiary-foreground min-w-0">
-            {t(`tiers.features.${feature.key}` as const)}
+            {featureLabel(t, feature.key)}
           </span>
           <span
             className={cn(

@@ -1,7 +1,7 @@
 import { handleUnauthorized } from '@/lib/sessionExpiry'
 import { handleForbidden } from '@/lib/staleWorkspace'
 import { apiUrl, workspaceHeader } from './base'
-import { ApiError, errorMessage } from './errors'
+import { EntitlementError, apiErrorFrom } from './errors'
 
 type ApiRequestOptions = {
   method?: string
@@ -36,6 +36,10 @@ async function send(
   }
   const res = await fetch(apiUrl(path), init)
   if (!res.ok) {
+    // Built before the two recovery hooks fire, because it is what tells a
+    // feature-gated 403 apart from the other kinds — and because the body can
+    // only be read once, so the message and the reason come out together.
+    const error = await apiErrorFrom(res, fallbackError)
     // A 401 from an in-app request means the session died under us — recover
     // globally rather than letting each caller render "authentication
     // required" as if it were a problem with what the user just did. The
@@ -46,8 +50,20 @@ async function send(
     // to one it no longer belongs to. `handleForbidden` checks before it acts,
     // because 403 is also the ordinary answer to a member calling an
     // owner-only route. See `lib/staleWorkspace.ts`.
-    if (res.status === 403 && 'X-Workspace-Id' in scope) handleForbidden()
-    throw new ApiError(res.status, await errorMessage(res, fallbackError))
+    //
+    // A third kind joined those two in CON-295: `feature_not_available`, which
+    // is the plan talking and says nothing about the pin. It is excluded here
+    // rather than left to be verified and dismissed — the verification is a
+    // request, and a tier that hides a feature would set one off on every click
+    // of the control it hides.
+    if (
+      res.status === 403 &&
+      'X-Workspace-Id' in scope &&
+      !(error instanceof EntitlementError)
+    ) {
+      handleForbidden()
+    }
+    throw error
   }
   return res
 }

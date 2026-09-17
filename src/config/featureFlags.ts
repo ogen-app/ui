@@ -419,6 +419,15 @@ const FEATURE_FLAGS = {
    * With this off nothing asks, nothing renders a lock, and every feature is
    * available exactly as it was before tiers existed.
    *
+   * **What it does not switch off is being refused** (CON-295). The server
+   * enforces whether or not this client asked first — 402 `entitlement_exceeded`
+   * and 403 `feature_not_available` — and reading those is not a tiers feature,
+   * it is the app declining to show a machine code to a user. So it ships
+   * unflagged: `EntitlementError` in `services/api/errors.ts`, the reason under
+   * the mutation toast, and the two `entitlement.limit_*` notifications. All of
+   * it is dormant on a workspace whose plan denies nothing, which is every
+   * workspace today.
+   *
    * **Turn it on locally to look at it, and turn it back off before you
    * commit.** The plan screen and the billing card are driven by a
    * `localStorage` stub (`services/api/tiers.stub.ts`) so the tier

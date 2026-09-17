@@ -2451,6 +2451,28 @@ export const en = {
     resets: 'Your allowance goes back to full on {{when}}.',
 
     /**
+     * The same two refusals, arriving from the server instead of being
+     * predicted here (CON-295). The API answers 402 `entitlement_exceeded` or
+     * 403 `feature_not_available`, and these are what the mutation toast says
+     * in place of that identifier.
+     *
+     * They go in the toast's *description*, under a title that already names
+     * the action that failed — which is why neither names the feature. The noun
+     * is on screen already, and putting it here would have to survive
+     * `media_storage_bytes`, whose allowance is a byte count: "you've used all
+     * 1073741824" is a true sentence nobody can read.
+     *
+     * `deniedLimit` takes the server's cap as `{{count}}` so the singular is a
+     * sentence rather than a "1". The tier refusal carries no number at all —
+     * a capability that is switched off has nothing to count.
+     */
+    deniedTier: "This isn't included in your plan.",
+    deniedLimit_one: "You've used the one that your plan allows.",
+    deniedLimit_other: "You've used all {{count}} that your plan allows.",
+    /** The quota refusal with no cap on it — a malformed body, and rare. */
+    deniedLimitFlat: "You've used everything your plan allows here.",
+
+    /**
      * The meter. Each reset is a whole sentence: where "this month" sits in
      * the line is a different answer in every language, and gluing it onto a
      * stem would decide that in English for everyone.

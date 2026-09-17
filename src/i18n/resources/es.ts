@@ -1787,6 +1787,11 @@ export const es: Translation = {
     limitReached: 'Has alcanzado tu límite',
     resets: 'Tu cuota vuelve a estar completa el {{when}}.',
 
+    deniedTier: 'Esto no está incluido en tu plan.',
+    deniedLimit_one: 'Ya has usado el único que permite tu plan.',
+    deniedLimit_other: 'Ya has usado los {{count}} que permite tu plan.',
+    deniedLimitFlat: 'Ya has usado todo lo que tu plan permite aquí.',
+
     usage: '{{used}} de {{limit}}',
     usageMonth: '{{used}} de {{limit}} este mes',
     usageTotal: '{{used}} de {{limit}} usados',
