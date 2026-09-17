@@ -31,6 +31,7 @@ import { toast } from '@/stores/toastStore'
 import type { Campaign } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
 import { InheritedBrand } from '@/components/brand/InheritedBrand'
+import { CampaignSeriesBand } from '@/components/series/CampaignSeriesBand'
 import { AddWebPageModal } from './AddWebPageModal'
 import { ContentList } from './ContentList'
 
@@ -333,6 +334,11 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
       />
 
       {campaign && <InheritedBrand campaignId={campaign.id} />}
+      {/* Under the inherited band and above the documents, which is the order
+          of the page's three answers to "what does this campaign write from":
+          what it was given, what it makes on a rhythm, what it has filed. Draws
+          nothing with the `series` flag off. */}
+      {campaign && <CampaignSeriesBand campaign={campaign} />}
 
       {/* The campaign layout's body box: no page scroll — the table
           virtualises against this and scrolls itself. `flex-1` over a fixed

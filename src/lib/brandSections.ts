@@ -2,6 +2,7 @@ import {
   CardsThreeIcon,
   ChatCircleDotsIcon,
   FrameCornersIcon,
+  RepeatIcon,
   SealCheckIcon,
   ShieldIcon,
   SwatchesIcon,
@@ -50,6 +51,7 @@ export type BrandSectionId =
   | 'audiences'
   | 'guardrails'
   | 'facts'
+  | 'series'
   | 'sources'
   | 'look'
   | 'templates'
@@ -139,6 +141,18 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     // lands — see the `facts-ledger` flag. Off, the statements stay a card
     // inside guardrails and this section is not offered.
     shown: isFeatureEnabled('facts-ledger'),
+  },
+  {
+    id: 'series',
+    icon: RepeatIcon,
+    tone: 'var(--brand-series)',
+    // Nothing reads a series yet — no generator takes one, and analytics cannot
+    // group by a column that does not exist. `[]` is the honest answer and the
+    // reason the flag is off: this section is a filing cabinet until the plan
+    // and the numbers consult it, which is exactly what CON-226 §9 says is
+    // worse than no section at all.
+    readBy: [],
+    shown: isFeatureEnabled('series'),
   },
   {
     id: 'sources',

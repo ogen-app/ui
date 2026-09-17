@@ -306,7 +306,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
             post target used to sit in Advanced next to budget and language,
             where it read as trivia rather than as the rate the assistant plans
             against. */}
-          <PostGoalCard />
+          <PostGoalCard campaignId={campaign.id} />
 
           <SchedulingCard />
 

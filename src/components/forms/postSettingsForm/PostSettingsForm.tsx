@@ -34,6 +34,7 @@ import type { Post } from '@/types/posts'
 import { CampaignPostTypeSelect } from './CampaignPostTypeSelect'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { PostBrandSection } from '@/components/brand/PostBrandSection'
+import { PostFormatSection } from '@/components/formats/PostFormatSection'
 
 const NO_PHASE = '__none__'
 
@@ -75,6 +76,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
   )
   const [deleteOpen, setDeleteOpen] = useState(false)
   const brandBinds = useFeatureFlag('brand-materials')
+  const formatsEnabled = useFeatureFlag('content-formats')
 
   const platformId = form.watch('platform_id')
   const platformPostType = form.watch('platform_post_type')
@@ -248,6 +250,19 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
               <div className="pt-2 pb-4">
                 <PostBrandSection post={doc} />
               </div>
+            </Collapse>
+          )}
+
+          {/* Beside voice and sources for the same reason they are beside each
+              other: this says what shape the post takes, which is the same
+              class of decision as what it is written in and written from.
+              Deliberately nowhere near the post-type picker — that one is the
+              platform container (carousel, reel) and this is the rhetorical
+              shape, and putting them side by side would invite the reading
+              that one overrides the other. */}
+          {formatsEnabled && (
+            <Collapse title="FORMAT" defaultOpen>
+              <PostFormatSection postId={doc.id} />
             </Collapse>
           )}
 

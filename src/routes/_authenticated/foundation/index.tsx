@@ -8,6 +8,7 @@ import { useBrand } from '@/hooks/useBrand'
 import { useFacts } from '@/hooks/useFacts'
 import { useGuardrailsStance } from '@/hooks/useGuardrailsStance'
 import { useAssets } from '@/hooks/useContent'
+import { useSeriesLibrary } from '@/hooks/useSeries'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { fetched } from '@/lib/fetched'
 
@@ -55,6 +56,9 @@ function BrandOverviewPage() {
   // Off: the Facts card is not among the sections (`brandSections`), and the
   // guardrails card must not read a stance one browser decided for itself.
   const ledger = useFeatureFlag('facts-ledger')
+  // Off: the Series card is not among the sections (`brandSections`), so this
+  // query never runs and the hub is byte-for-byte what it was before CON-264.
+  const { data: series } = useSeriesLibrary()
 
   return (
     <BrandPage>
@@ -77,6 +81,12 @@ function BrandOverviewPage() {
               brand={fetched(brand)}
               sources={fetched(assets)}
               facts={ledger ? facts : []}
+              // The library only — a campaign's own series is bounded by it and
+              // is not something another campaign can pick up, so listing one
+              // on the workspace hub would overstate what is there.
+              series={(series ?? []).filter(
+                (entry) => entry.scope.kind === 'workspace',
+              )}
               stance={ledger ? stance : undefined}
               onOpen={(id) => navigate({ to: `/foundation/${id}` })}
             />

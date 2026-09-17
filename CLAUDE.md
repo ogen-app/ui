@@ -874,6 +874,46 @@ the call sites is the remaining half. An entitlement nothing consults is the
 same as no entitlement — but note the flag now also switches on a screen, so it
 stays **off** on `develop` until the endpoints answer.
 
+**Series and content formats are two flags, and the split is the design**
+(CON-264, `series` and `content-formats`, both off). The word people arrive with
+is *content pillar*, which means at least four different things; what is modelled
+is the **recurring named segment with a recipe** — the only reading a generator
+can act on and the only one analytics can group by. A broad theme collapses into
+it without a second table ("People who made an impact" is a series with a
+person-shaped subject slot). Two lines to keep sharp. A **series is durable**,
+re-read every time it produces a post, which is what makes it Foundation
+material; an **idea is inventory**, captured and spent, which is why Ideas is its
+own module. And a series carries **no tone** — how it sounds is the voice's job,
+and a second place to say it is a conflict the generator would have to resolve.
+
+The definition is the workspace's (`/foundation/series`) and the **run is the
+campaign's**, which is where all the work happens: a campaign picks series up and
+gives each one a rhythm on its own Foundation page. Strategy prints the
+arithmetic and owns none of it — **the mix is derived, never typed**
+(`lib/seriesPlan`), because a mix you type is a plan you have broken by week two
+and a mix you derive is a fact. A campaign may define a series locally and
+promote it once it proves it recurs, which is what fills the library from use.
+
+Formats are a **vocabulary, not a library**: a fixed table in
+`lib/contentFormats.ts` and a picker, with no page, no CRUD and no empty state. A
+bare label already carries a recipe because the vocabulary is shared with the
+model, which is why it needs no instruction field and why it is a separate flag —
+it pays off in a workspace that has never opened the Series page. It is **not**
+`platform_post_type`: that is the container (carousel, reel, thread), this is the
+rhetorical shape, and the two never decide the same thing. Optional everywhere,
+and nothing warns about a post without one.
+
+**Waiting on** a `brand_series` table; `series_ids` plus a per-series rhythm on
+the campaign, **attached and detached rather than restated** for the reason
+CON-233 gives about `asset_ids`; a nullable `series_id` and `content_format` on
+the post; and analytics grouped by both. Until then series live in
+`services/api/series.ts` (a stub in the shape the endpoints will have) and a
+post's format in a `localStorage` sidecar (`services/api/contentLocal.ts`) —
+both **per browser**, which is what the flags are holding. One consequence worth
+recording: if this survives review, the campaign's Foundation page wants the
+same hub-and-sections shape the workspace's has, and `CampaignSeriesBand`
+becomes the section rather than the band it is today.
+
 ## Global rules
 
 Do not keep backwards compatibility unless explicitly required.

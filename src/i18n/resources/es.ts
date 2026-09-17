@@ -272,6 +272,163 @@ export const es: Translation = {
     saveFailed: 'No se pudo guardar. Tus ideas no han cambiado.',
   },
 
+  series: {
+    library: {
+      add: 'AÑADIR SERIE',
+      addHint: 'Otra cosa que este espacio de trabajo hace una y otra vez.',
+      writeYourOwn: 'Escribe la tuya',
+      starterGroupTitle: 'Tres para empezar',
+      starterGroupBody:
+        'Cada una es un ejemplo trabajado de lo más difícil de inventar desde un formulario en blanco: la receta. Toma una y reescríbela hasta que sea tuya.',
+      noRecipe:
+        'Aún sin receta: esto agrupa publicaciones, pero nada se construye a partir de ello.',
+    },
+    rhythm: {
+      occasional: 'Ocasional',
+      perWeek_one: 'Una vez por semana',
+      perWeek_other: '{{count}} veces por semana',
+      perMonth_one: 'Una vez al mes',
+      perMonth_other: '{{count}} veces al mes',
+    },
+    supply: {
+      selfOption: 'Aporta su propio tema',
+      ideaOption: 'Espera una idea',
+      selfLine: 'Aporta su propio tema',
+      ideaLine: 'Espera una idea',
+    },
+    usage: '{{drafts}} en borrador, {{published}} publicadas',
+    plan: {
+      noGoal:
+        'Esta campaña no tiene objetivo de publicaciones, así que no hay nada con lo que comparar estas series.',
+      ok: '{{total}} publicaciones previstas · {{claimed}} de series · {{open}} libres',
+      over: '{{total}} publicaciones previstas y las series reclaman {{claimed}}: {{over}} más de las que la campaña tiene previstas.',
+      undated:
+        '{{total}} publicaciones por período · {{claimed}} de series. Define las fechas de la campaña para planificar todo el recorrido.',
+    },
+    campaign: {
+      title: 'Series',
+      empty:
+        'Esta campaña no ejecuta ninguna. Añade una y reservará sus huecos en cada período automáticamente.',
+      addPlaceholder: 'Añadir una serie',
+      writeOne: 'ESCRIBIR UNA',
+      localOnly: 'solo esta campaña',
+      promote: 'A la biblioteca',
+      promoteHint:
+        'Lleva esta serie a la biblioteca del espacio de trabajo para que otras campañas también puedan ejecutarla.',
+      remove: 'Dejar de ejecutar {{name}}',
+      claim_one: '{{count}} publicación',
+      claim_other: '{{count}} publicaciones',
+      claimsNone: 'sin huecos fijos',
+    },
+    detail: {
+      back: 'Volver a series',
+      created: '{{name}} creada',
+      saved: '{{name}} guardada',
+      deleted: '{{name}} eliminada',
+      notFoundHeader: 'No existe esa serie',
+    },
+    editor: {
+      titleNew: 'Una serie nueva',
+      titleEdit: 'Esta serie',
+      intro:
+        'Una serie es una instrucción permanente: cómo se llama y cómo se construye la siguiente. Escribe la receta como se la explicarías a quien te sustituya.',
+      identityCard: 'Qué es',
+      nameLabel: 'Nombre',
+      nameHint:
+        'Aquello por lo que un lector la reconocería. Si nadie la llamaría de ninguna manera, es un tema y no una serie.',
+      namePlaceholder: 'p. ej. Resumen semanal de noticias',
+      promiseLabel: 'La promesa',
+      promiseHint: 'Una línea: qué se lleva alguien cada vez que se publica.',
+      promisePlaceholder:
+        'p. ej. La semana en un minuto, con lo que de verdad importa',
+      recipeCard: 'Cómo se construye',
+      recipeHint:
+        'La estructura, con tus palabras. Es lo que hace que la décima salga tan bien como la primera, y lo que un generador puede seguir.',
+      recipePlaceholder:
+        'p. ej. Abre con la noticia más importante. Tres más, una línea cada una. Cierra con lo que habrá que vigilar la semana que viene.',
+      runningCard: 'Cómo se ejecuta',
+      supplyLabel: 'De dónde sale el tema',
+      supplyHint:
+        'Una fecha o las noticias de la semana son un tema que la serie ya tiene. Un perfil no: espera a que alguien nombre a una persona.',
+      formatLabel: 'Forma',
+      formatHint:
+        'La forma que toman sus publicaciones. Las publicaciones la heredan.',
+      rhythmLabel: 'Ritmo sugerido',
+      rhythmHint:
+        'Un punto de partida cuando una campaña la adopta. Cada campaña define el suyo, así que dos pueden ejecutarla a ritmos distintos.',
+      needsName: 'Ponle nombre a la serie',
+      create: 'CREAR SERIE',
+      save: 'GUARDAR SERIE',
+      dangerNoun: 'SERIE',
+      deleteCost:
+        'Las publicaciones ya escritas conservan su texto. Todas las campañas que la ejecutan se detienen y el plan recupera sus huecos.',
+    },
+    starters: {
+      'this-day': {
+        title: 'Un día como hoy en ___',
+        body: 'Se ejecuta siempre sin que nadie la alimente: la fecha es el tema.',
+        name: 'Un día como hoy en ___',
+        promise: 'Algo que pasó hoy y por qué todavía importa.',
+        recipe:
+          'Busca un hecho fechado hoy en el sector. Dos párrafos breves de contexto: qué estaba en juego y qué cambió. Cierra con la lección que sigue vigente. Nunca más de un hecho.',
+      },
+      'weekly-digest': {
+        title: 'Resumen semanal de noticias',
+        body: 'El ritmo está en el nombre. Se alimenta sola y es el hábito más fácil de construir.',
+        name: 'Resumen semanal de noticias',
+        promise: 'La semana en un minuto, con lo que de verdad importa.',
+        recipe:
+          'Empieza por la noticia más importante y di sin rodeos por qué importa. Tres más, una línea cada una. Cierra con lo que habrá que vigilar la semana que viene. Sin enlaces en el cuerpo.',
+      },
+      people: {
+        title: 'Gente que dejó huella',
+        body: 'No puede ejecutarse hasta que alguien nombre a una persona: el ejemplo de serie que alimenta la cola de ideas.',
+        name: 'Gente que dejó huella',
+        promise: 'Una persona, una decisión y algo que cambió para todos.',
+        recipe:
+          'Abre con la decisión, no con la biografía. Cuenta cómo era el mundo antes y después. Una frase sobre en qué se equivocó, para que se lea como una persona y no como una estatua.',
+      },
+    },
+  },
+
+  formats: {
+    none: 'Sin forma',
+    postHint:
+      'Opcional. Qué forma toma esta publicación, aparte del tipo de publicación de la plataforma.',
+    'how-to': {
+      label: 'Cómo se hace',
+      hint: 'Pasos que alguien puede seguir para obtener un resultado.',
+    },
+    explainer: {
+      label: 'Explicación',
+      hint: 'Por qué algo funciona como funciona.',
+    },
+    listicle: {
+      label: 'Lista',
+      hint: 'Un conjunto numerado, cada punto se sostiene solo.',
+    },
+    story: {
+      label: 'Relato',
+      hint: 'Algo que ocurrió, contado en orden.',
+    },
+    digest: {
+      label: 'Resumen',
+      hint: 'Varios elementos recopilados de un período.',
+    },
+    opinion: {
+      label: 'Opinión',
+      hint: 'Una postura, argumentada.',
+    },
+    question: {
+      label: 'Preguntas y respuestas',
+      hint: 'Una pregunta respondida, o planteada al público.',
+    },
+    announcement: {
+      label: 'Anuncio',
+      hint: 'Noticias sobre nosotros, dichas una vez y con claridad.',
+    },
+  },
+
   tasks: {
     title: 'Tareas',
     add: 'AÑADIR TAREA',
@@ -1739,6 +1896,13 @@ export const es: Translation = {
           'Lo que es cierto —de este negocio, de los problemas que tiene quien lo lee y de los huecos que nadie ha ocupado— afirmación por afirmación, con su procedencia y la fecha en la que deja de poder repetirse. Toda cifra que afirme una publicación generada sale de aquí, o es inventada.',
         whenEmpty:
           'No se afirma nada como cierto. Toda cifra de toda publicación es invención, escrita con aplomo.',
+      },
+      series: {
+        label: 'Series',
+        description:
+          'Lo que este espacio de trabajo hace una y otra vez: un resumen semanal, un perfil dos veces al mes. Cada una es un nombre que el público reconoce y una receta para construir la siguiente, de modo que la décima salga tan bien como la primera y nadie empiece desde una página en blanco.',
+        whenEmpty:
+          'Nada se repite. Cada publicación empieza de cero y nada puede medirse como serie.',
       },
       sources: {
         label: 'Fuentes',

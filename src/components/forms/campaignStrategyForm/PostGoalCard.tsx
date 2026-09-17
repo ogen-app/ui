@@ -14,6 +14,61 @@ import {
   type GoalCadence,
 } from '@/lib/postGoal'
 import type { StrategyFormValues } from './schema'
+import { useTranslation } from 'react-i18next'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { useCampaignSeries } from '@/hooks/useSeries'
+import { seriesPlan } from '@/lib/seriesPlan'
+import { planLine } from '@/components/series/format'
+
+/**
+ * What the campaign's series already claim of its goal (CON-264).
+ *
+ * Reads the live form values rather than the saved campaign, so the line moves
+ * with the rate somebody is typing — a share computed against the stored goal
+ * would contradict the total printed directly above it for as long as the form
+ * stayed dirty.
+ *
+ * Silent when the campaign runs no series: a line reading *0 of 12 spoken for*
+ * on every campaign in the workspace is furniture, not information.
+ */
+function SeriesShareLine({
+  campaignId,
+  postsPerPeriod,
+  cadence,
+  startDate,
+  endDate,
+}: {
+  campaignId: string
+  postsPerPeriod: number | null
+  cadence: GoalCadence
+  startDate: string | null
+  endDate: string | null
+}) {
+  const { t } = useTranslation()
+  const enabled = useFeatureFlag('series')
+  const { data } = useCampaignSeries(campaignId)
+
+  if (!enabled || !data || data.runs.length === 0) return null
+
+  const plan = seriesPlan({
+    postsPerPeriod,
+    cadence,
+    startDate,
+    endDate,
+    runs: data.runs,
+  })
+
+  return (
+    <p
+      className={cn(
+        'text-sm',
+        plan.over > 0 ? 'text-warning' : 'text-foreground',
+      )}
+    >
+      {planLine(t, plan)}
+    </p>
+  )
+}
 
 const CADENCE_OPTIONS = [
   { id: 'week', displayValue: 'Every week' },
@@ -33,7 +88,7 @@ const CADENCE_OPTIONS = [
  * normal campaign, not one with an empty field in it, so the button says which
  * it is and everything below it only exists once there is a goal to describe.
  */
-export function PostGoalCard() {
+export function PostGoalCard({ campaignId }: { campaignId: string }) {
   const form = useFormContext<StrategyFormValues>()
   const count = form.watch('estimated_post_count')
   const cadence = form.watch('goal_cadence')
@@ -159,6 +214,23 @@ export function PostGoalCard() {
                   total,
                 )}
               </p>
+
+              {/* How much of that the campaign's series already account for —
+                  the second half of the same sentence, so it sits under the
+                  total rather than in a card of its own.
+
+                  **Strategy prints this and owns none of it.** The rhythms are
+                  set per series on the campaign's Foundation page; a control
+                  here would be a second way to decide one number. Draws
+                  nothing when the `series` flag is off or the campaign runs
+                  none. */}
+              <SeriesShareLine
+                campaignId={campaignId}
+                postsPerPeriod={Number.isFinite(perPeriod) ? perPeriod : null}
+                cadence={cadence}
+                startDate={startDate}
+                endDate={endDate}
+              />
             </div>
           </div>
         </div>
