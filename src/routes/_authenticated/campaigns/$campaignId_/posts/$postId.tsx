@@ -672,7 +672,15 @@ function PostEditorSurface({
                   }
 
     return [...autoChecks, row]
-  }, [isSequence, autoChecks, plan, media.demotedType, platformInfo, doc.platform_id, t])
+  }, [
+    isSequence,
+    autoChecks,
+    plan,
+    media.demotedType,
+    platformInfo,
+    doc.platform_id,
+    t,
+  ])
 
   const handleDownloadMarkdown = useCallback(
     () => downloadMarkdown(doc.title, doc.content, 'post'),
