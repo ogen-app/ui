@@ -1768,6 +1768,7 @@ export const es: Translation = {
 
     overview: {
       nothingReads: 'Todavía nada lee esto',
+      unreadable: 'No se ha podido cargar lo que hay aquí.',
       stated: '{{count}} indicados',
       none: 'ninguno',
       logosWithJobs: '{{count}} con función',

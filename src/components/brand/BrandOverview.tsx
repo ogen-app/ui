@@ -20,6 +20,7 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { AssetKindTally } from '@/components/content/AssetKindTally'
 import { formatDate, formatList } from '@/lib/intl'
 import { cn } from '@/lib'
+import type { Fetched } from '@/lib/fetched'
 import type { Asset } from '@/types/content'
 import type { GuardrailsStance } from '@/services/api/brandLocal'
 import {
@@ -90,24 +91,28 @@ import {
  * where a name is worth reading.
  */
 export function BrandOverview({
-  state,
-  sources = [],
+  brand,
+  sources = { status: 'ready', data: [] },
   facts = [],
   stance,
   showWhenEmpty = false,
   onOpen,
 }: {
-  state: BrandOverviewState
+  /** The five written sections, as the one query they come from — `useBrand`. */
+  brand: Fetched<BrandData>
   /**
    * The workspace's documents (CON-211), which are Brand's sixth section and
    * the one whose contents do not come from `useBrand`.
    *
    * Passed in rather than fetched here for the reason the rest of this screen
-   * takes `state`: it is a rendering of what is in the brand, and a component
+   * takes `brand`: it is a rendering of what is in the brand, and a component
    * that fetches half of what it draws cannot be put in a harness or shown a
    * fixture. The route owns both queries.
+   *
+   * Its own `Fetched` because it is its own fetch — and the only one on this
+   * screen that can be waiting or lost while everything else is drawn.
    */
-  sources?: Asset[]
+  sources?: Fetched<Asset[]>
   /**
    * The ledger, already assembled — `useFacts`. Passed in for the same reason
    * `sources` is: the statements are on `BrandData`, the dates around them are
@@ -128,10 +133,23 @@ export function BrandOverview({
   const { t } = useTranslation()
   const [skippedFirstRun, setSkippedFirstRun] = useState(false)
 
-  if (state.isPending) return <OverviewSkeleton />
+  // The brand query still holds the whole screen while it is in flight, and it
+  // is the one query that should: what it settles is not six cards' contents
+  // but *which screen this is* — an empty brand is the first-run takeover, and
+  // six labelled cards appearing for a moment before a takeover replaces them
+  // is worse than a placeholder that promises nothing. Its five sections are
+  // one fetch anyway, so there is no card here that could have drawn sooner.
+  if (brand.status === 'pending') return <OverviewSkeleton />
 
-  const { data } = state
-  const firstRun = isBrandEmpty(data) && !showWhenEmpty && !skippedFirstRun
+  // `status === 'ready'`, not merely "no data": a brand we failed to read is
+  // not an empty one, and offering to write a brand from scratch is the wrong
+  // answer to a fetch that fell over. A failure lands on the cards instead,
+  // one line per card, where it can say which part is missing.
+  const firstRun =
+    brand.status === 'ready' &&
+    isBrandEmpty(brand.data) &&
+    !showWhenEmpty &&
+    !skippedFirstRun
 
   if (firstRun) {
     return (
@@ -141,23 +159,41 @@ export function BrandOverview({
     )
   }
 
+  /**
+   * What one card has to draw, which is its own query's state and not the
+   * screen's. Sources is the only card that can differ from the other five —
+   * see `Fetched`.
+   */
+  const contents = (section: BrandSectionInfo): Fetched<SectionContents> => {
+    if (section.id === 'sources') {
+      if (sources.status !== 'ready') return sources
+      return {
+        status: 'ready',
+        // Sources is the one section a list of rows is the wrong shape for
+        // — see `AssetKindTally`. Empty, it falls through to the section's
+        // `whenEmpty` line like every other card.
+        data: {
+          rows: [],
+          body:
+            sources.data.length > 0 ? (
+              <AssetKindTally assets={sources.data} />
+            ) : undefined,
+        },
+      }
+    }
+
+    if (brand.status !== 'ready') return brand
+    return {
+      status: 'ready',
+      data: { rows: sectionRows(t, section.id, brand.data, facts, stance) },
+    }
+  }
+
   const card = (section: BrandSectionInfo) => (
     <SectionCard
       key={section.id}
       section={section}
-      rows={
-        section.id === 'sources'
-          ? []
-          : sectionRows(t, section.id, data, facts, stance)
-      }
-      // Sources is the one section a list of rows is the wrong shape for
-      // — see `AssetKindTally`. Empty, it falls through to the section's
-      // `whenEmpty` line like every other card.
-      body={
-        section.id === 'sources' && sources.length > 0 ? (
-          <AssetKindTally assets={sources} />
-        ) : undefined
-      }
+      contents={contents(section)}
       onOpen={onOpen}
     />
   )
@@ -173,7 +209,13 @@ export function BrandOverview({
           under it: the offer is to read the rest of the brand out of exactly
           this material. */}
       {SOURCES_FIRST.lead.map(card)}
-      <WholeBrandOffer fills={missingSectionNames(t, data)} />
+      {/* Nothing to offer to fill when we could not read what is already
+          there — `fills` empty is how this card hides itself. */}
+      <WholeBrandOffer
+        fills={
+          brand.status === 'ready' ? missingSectionNames(t, brand.data) : []
+        }
+      />
       {SOURCES_FIRST.rest.map(card)}
     </Wrapper>
   )
@@ -222,8 +264,8 @@ function FoundationIntro() {
   )
 }
 
-export type BrandOverviewState =
-  { isPending: true; data?: undefined } | { isPending: false; data: BrandData }
+/** What a card draws once its query has answered: rows, or Sources' tally. */
+type SectionContents = { rows: BrandRow[]; body?: ReactNode }
 
 /**
  * One thing a section holds, as one row — **and every row on this screen is
@@ -288,19 +330,17 @@ type BrandRow = {
  */
 function SectionCard({
   section,
-  rows,
-  body,
+  contents,
   onOpen,
 }: {
   section: BrandSectionInfo
-  rows: BrandRow[]
   /**
-   * Drawn instead of the rows, for a section a list is the wrong shape for.
-   * Only Sources has one: a library of four voices is listed, a library of
-   * four hundred documents is counted, and the five titles that happened to
-   * change last were a sample nobody asked it for.
+   * The card's own material, and whether it has arrived. The frame around it —
+   * hue, heading, caret, the door — is drawn from the section table and needs
+   * no fetch at all, which is what makes waiting and failing card-sized
+   * problems rather than screen-sized ones.
    */
-  body?: ReactNode
+  contents: Fetched<SectionContents>
   onOpen?: (id: BrandSectionId) => void
 }) {
   const { t } = useTranslation()
@@ -346,32 +386,79 @@ function SectionCard({
           )
         }
       >
-        {body ? (
-          body
-        ) : rows.length === 0 ? (
-          <p className="text-sm text-secondary-foreground">{copy.whenEmpty}</p>
-        ) : (
-          <ul className="flex flex-col">
-            {rows.map((row) => (
-              <li key={row.key}>
-                {/* `entry` on every row, including the ones that name a slot
-                    rather than a library entry. The variant used to be chosen
-                    per row from whether it happened to carry counts, which
-                    made the type on a card depend on how much the card had to
-                    say. */}
-                <LineItem
-                  variant="entry"
-                  indicator={row.mark}
-                  label={row.label}
-                  details={row.details}
-                  meta={row.meta}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
+        <CardContents contents={contents} whenEmpty={copy.whenEmpty} />
       </SettingsCard>
     </Opens>
+  )
+}
+
+/**
+ * Inside the card: the rows, the bars standing in for them, or the one line
+ * that says they are not coming.
+ *
+ * **The card keeps its caret in all three.** A section whose contents this
+ * screen could not read is still a section, and the screen behind the door
+ * fetches for itself, says more about the failure than a line in a card can,
+ * and is the only place anything can be done about it — so the door stays open
+ * while this card admits it has nothing to show.
+ *
+ * The placeholder is two bars rather than a copy of whatever would land there.
+ * Only Sources ever reaches this state, and its content is a row of tiles
+ * whose number is exactly what we are waiting to find out; mocking up three of
+ * them would be guessing at the answer in the shape of the answer.
+ */
+function CardContents({
+  contents,
+  whenEmpty,
+}: {
+  contents: Fetched<SectionContents>
+  /** The section's own line for "there is nothing in here yet". */
+  whenEmpty: string
+}) {
+  const { t } = useTranslation()
+
+  if (contents.status === 'pending') {
+    return (
+      <div className="flex flex-col gap-2" aria-hidden>
+        <Skeleton className="h-5 w-3/5" />
+        <Skeleton className="h-5 w-2/5" />
+      </div>
+    )
+  }
+
+  if (contents.status === 'error') {
+    return (
+      <p className="text-sm text-secondary-foreground">
+        {t('brand.overview.unreadable')}
+      </p>
+    )
+  }
+
+  const { rows, body } = contents.data
+
+  if (body) return <>{body}</>
+  if (rows.length === 0) {
+    return <p className="text-sm text-secondary-foreground">{whenEmpty}</p>
+  }
+
+  return (
+    <ul className="flex flex-col">
+      {rows.map((row) => (
+        <li key={row.key}>
+          {/* `entry` on every row, including the ones that name a slot rather
+              than a library entry. The variant used to be chosen per row from
+              whether it happened to carry counts, which made the type on a
+              card depend on how much the card had to say. */}
+          <LineItem
+            variant="entry"
+            indicator={row.mark}
+            label={row.label}
+            details={row.details}
+            meta={row.meta}
+          />
+        </li>
+      ))}
+    </ul>
   )
 }
 

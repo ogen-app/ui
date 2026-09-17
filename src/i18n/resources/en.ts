@@ -2511,6 +2511,13 @@ export const en = {
        * words.
        */
       nothingReads: 'Nothing reads this yet',
+      /**
+       * A card whose contents did not load — see `CardContents`. Names the
+       * card rather than the app: the other five are drawn from a second
+       * query and are on the screen beside it, so "Foundation could not be
+       * loaded" would be false about everything the user can see.
+       */
+      unreadable: 'What is in here could not be loaded.',
       /** The right margin of a row that counts a list. */
       stated: '{{count}} stated',
       none: 'none',
