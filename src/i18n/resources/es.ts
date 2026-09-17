@@ -1361,13 +1361,16 @@ export const es: Translation = {
           'La publicación {{positions}} pasa de {{limit}} caracteres',
         tooLong_other:
           'Las publicaciones {{positions}} pasan de {{limit}} caracteres',
+        tooLongNoLimit_one:
+          'La publicación {{positions}} supera el límite de longitud de la plataforma',
+        tooLongNoLimit_other:
+          'Las publicaciones {{positions}} superan el límite de longitud de la plataforma',
         issues_one:
           'La publicación {{positions}} lleva más archivos de los que admite una publicación',
         issues_other:
           'Las publicaciones {{positions}} llevan más archivos de los que admite una publicación',
         singular: 'Un solo mensaje, así que se publica como una publicación.',
-        singularAs:
-          'Un solo mensaje, así que se publica como una publicación de tipo {{type}}.',
+        singularAs: 'Un solo mensaje, así que se publica como «{{type}}».',
         runts_one:
           'La publicación {{positions}} es muy corta: ¿es un salto involuntario?',
         runts_other:

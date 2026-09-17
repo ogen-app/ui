@@ -1846,6 +1846,14 @@ export const en = {
          */
         tooLong_one: 'Post {{positions}} is over {{limit}} characters',
         tooLong_other: 'Posts {{positions}} are over {{limit}} characters',
+        /**
+         * The same finding when the rule carries no positive ceiling to name
+         * — never print "over 0 characters".
+         */
+        tooLongNoLimit_one:
+          "Post {{positions}} is over the platform's length limit",
+        tooLongNoLimit_other:
+          "Posts {{positions}} are over the platform's length limit",
         issues_one: 'Post {{positions}} carries more media than one post takes',
         issues_other:
           'Posts {{positions}} carry more media than one post takes',
@@ -1856,7 +1864,8 @@ export const en = {
          * one is for the rare case where nothing on the campaign fits it.
          */
         singular: 'One message, so this publishes as a single post.',
-        singularAs: 'One message, so this publishes as a single {{type}} post.',
+        /** `type` is the platform's own label ("Text post"), never a slug. */
+        singularAs: 'One message, so this publishes as a single {{type}}.',
         /**
          * A warning, never a refusal — the platforms take a two-character
          * message, and the author may have meant it. Almost always a divider

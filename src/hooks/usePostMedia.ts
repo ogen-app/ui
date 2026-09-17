@@ -178,12 +178,14 @@ export function usePostMedia(post: Post) {
    *
    * Only ever answers for a post *pinned* to `thread` — an automatic one never
    * reaches the chain rung with a body that fits in a single post. `null` while
-   * the plan is pending, so a resolution is never pinned off a chain that has
-   * not been split yet.
+   * the plan is pending *or stale*, so a resolution is never pinned off a chain
+   * that has not been split yet — nor off one split from a body the editor has
+   * already moved past, whose `singular` may describe a post this one no longer
+   * is.
    */
   const demotedType = useMemo(
     () =>
-      sequence && !plan.pending
+      sequence && !plan.pending && !previewStale
         ? demotedFrom({
             content: post.content,
             attachments: media.attachments,
@@ -196,6 +198,7 @@ export function usePostMedia(post: Post) {
     [
       sequence,
       plan.pending,
+      previewStale,
       plan.singular,
       post.content,
       post.platform_post_type,

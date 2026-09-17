@@ -235,7 +235,9 @@ describe('flagged post types', () => {
     // so a post already carrying the slug reads as "Thread" rather than
     // falling back to the raw value. Withdrawing a type may not rename what
     // was made with it.
-    expect(getPostTypeLabel(TWITTER, 'thread')).toBe('Thread')
+    expect(getPostTypeLabel(getPlatformByZernioId(TWITTER), 'thread')).toBe(
+      'Thread',
+    )
   })
 
   // The editor's picker does not go through `buildPlatformView` — it asks the

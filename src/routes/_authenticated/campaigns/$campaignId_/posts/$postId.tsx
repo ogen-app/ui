@@ -38,6 +38,7 @@ import { usePanelScope } from '@/hooks/usePanelScope'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { charCount } from '@/lib/socialText'
 import { MAX_THREAD_POSTS, runtPositions } from '@/lib/threadSequence'
+import { getPostTypeLabel } from '@/lib/platformDictionary'
 import { canBeAutomatic, type UnfitReason } from '@/lib/postTypeAuto'
 import type { PostCheck } from '@/lib/postValidation'
 import { useCampaign } from '@/hooks/useCampaigns'
@@ -216,7 +217,7 @@ function PostEditorSurface({
     useAutoPublishAllowlist()
   // The allowlist is kept by `zernio_id` (CON-292); the post holds a row sqid,
   // so the catalog translates before the two are compared.
-  const { row: platformRow } = usePlatformCatalog()
+  const { row: platformRow, resolve: platformInfo } = usePlatformCatalog()
   const effectivePublishMethod = resolvePublishMethod(
     publishMethod,
     autoPublishAllowlist,
@@ -604,11 +605,20 @@ function PostEditorSurface({
               id: 'thread-sequence',
               label: t('posts.sequence.check.label'),
               status: 'fail',
-              detail: t('posts.sequence.check.tooLong', {
-                count: tooLong.length,
-                positions: tooLong.map((p) => p.position).join(', '),
-                limit: plan.charLimit ?? 0,
-              }),
+              // A rule with no positive ceiling can still report length — the
+              // server measured, we just cannot name the number, so the copy
+              // must not read "over 0 characters".
+              detail:
+                plan.charLimit && plan.charLimit > 0
+                  ? t('posts.sequence.check.tooLong', {
+                      count: tooLong.length,
+                      positions: tooLong.map((p) => p.position).join(', '),
+                      limit: plan.charLimit,
+                    })
+                  : t('posts.sequence.check.tooLongNoLimit', {
+                      count: tooLong.length,
+                      positions: tooLong.map((p) => p.position).join(', '),
+                    }),
             }
           : overloaded.length > 0
             ? {
@@ -630,7 +640,12 @@ function PostEditorSurface({
                   status: 'pass',
                   detail: media.demotedType
                     ? t('posts.sequence.check.singularAs', {
-                        type: media.demotedType,
+                        // The platform's label, not the slug — the author has
+                        // never seen `text-post` anywhere else on this screen.
+                        type: getPostTypeLabel(
+                          platformInfo(doc.platform_id),
+                          media.demotedType,
+                        ),
                       })
                     : t('posts.sequence.check.singular'),
                 }
@@ -657,7 +672,7 @@ function PostEditorSurface({
                   }
 
     return [...autoChecks, row]
-  }, [isSequence, autoChecks, plan, media.demotedType, t])
+  }, [isSequence, autoChecks, plan, media.demotedType, platformInfo, doc.platform_id, t])
 
   const handleDownloadMarkdown = useCallback(
     () => downloadMarkdown(doc.title, doc.content, 'post'),

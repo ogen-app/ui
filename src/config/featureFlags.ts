@@ -528,7 +528,10 @@ const FEATURE_FLAGS = {
    *
    * With this off, **neither X nor Threads offers the type**
    * (`buildPlatformView` and `releasedPostTypes` drop it on both), nothing asks
-   * for a preview, and no save behaves differently from any other post type.
+   * for a preview, and this client sends the same PUT it sends for any other
+   * post type. What the flag cannot switch off is the server: a post already
+   * stored as a `thread` still has `thread_segments` recomputed and validated
+   * by R2 on every save, whatever this build shows.
    *
    * X's was unflagged until 2026-09-16, on the rule that a flag may not change
    * what happens when it is off — the app had always offered it. That rule was
