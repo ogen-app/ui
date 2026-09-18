@@ -104,28 +104,33 @@ describe('publishesAsChain', () => {
 })
 
 describe('splitRuleFor', () => {
-  it('reads a hyphen rule line as the author breaking the body', () => {
+  it('reads a thematic break as the author breaking the body', () => {
     expect(splitRuleFor('One\n\n---\n\nTwo')).toBe('divider')
     expect(splitRuleFor('-----')).toBe('divider')
   })
 
-  it('does not accept the other horizontal rules Markdown does', () => {
-    // The narrowness is the point: `platforms.isRuleLine` takes hyphens and
-    // nothing else, so a body broken with `***` is packed by length instead.
-    // Being generous here would print "broken at your dividers" over a thread
-    // the server is about to cut somewhere else entirely.
-    //
-    // Note this is the case the editor actually produces — BlockNote serialises
-    // every divider, including a typed `---`, as `***` — so until CON-284's
-    // `isRuleLine` fix lands these two lines describe every real body. Widen
-    // them together with the server, never ahead of it.
-    expect(splitRuleFor('One\n\n***\n\nTwo')).toBe('auto')
-    expect(splitRuleFor('One\n\n___\n\nTwo')).toBe('auto')
+  it('takes the other two markers, which is what the editor writes', () => {
+    // BlockNote serialises every divider — including a typed `---` — as `***`,
+    // so this is the case every real body hits. `isRuleLine` read hyphens only
+    // until ogen#156, which is why no authored thread ever split; the two
+    // widened together and must stay in step.
+    expect(splitRuleFor('One\n\n***\n\nTwo')).toBe('divider')
+    expect(splitRuleFor('One\n\n___\n\nTwo')).toBe('divider')
+  })
+
+  it('allows spaces between the markers, as CommonMark does', () => {
+    expect(splitRuleFor('One\n\n- - -\n\nTwo')).toBe('divider')
+  })
+
+  it('refuses mixed markers', () => {
+    // The server requires one repeated character; `-*-` is ordinary text to it.
+    expect(splitRuleFor('One\n\n-*-\n\nTwo')).toBe('auto')
   })
 
   it('does not read a rule with anything else on the line', () => {
     expect(splitRuleFor('--- and then')).toBe('auto')
     expect(splitRuleFor('--')).toBe('auto')
+    expect(splitRuleFor('**bold**')).toBe('auto')
   })
 
   it('calls a body with no rule line a packed one', () => {

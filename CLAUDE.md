@@ -231,7 +231,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (CON-165): the server defaults it away on silence and *preserves*
   `used_asset_ids`, so the two fields are opposites and a builder that treats
   them alike is wrong about one of them.
-- **A post's type is a default, not a question** (`post-type-auto`, off). *Auto*
+- **A post's type is a default, not a question** (`post-type-auto`, on). *Auto*
   is the empty `platform_post_type` every post is **already** created with —
   `useAddPost` sends a campaign and a date and nothing else — so the feature
   stores nothing and waits on no endpoint; it reads a state that already existed
@@ -249,11 +249,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   thread`, loosest first, bounded by what the *campaign* enables — Auto can only
   land somewhere the picker would have offered. It never chooses Story, Article
   or Link post (editorial decisions the content cannot imply) nor a
-  `whitelist_only` type (no rule to test). **`thread` is a rung only while
-  `thread-sequence` is on**, and only where the post-type rule says
-  `segmented` — that pair replaced a hard-coded list of networks. With the flag
-  off the empty slug means what it always did — a `fail` in the checks bar and
-  a mark on the card. The ladder is also what a *pinned* thread demotes through
+  `whitelist_only` type (no rule to test). **`thread` is a rung wherever the
+  post-type rule says `segmented`** — the server's own answer, which replaced a
+  hard-coded list of chain-capable networks here. Switch `post-type-auto` off
+  and the empty slug means what it always did — a `fail` in the checks bar and a
+  mark on the card. The ladder is also what a *pinned* thread demotes through
   when its body comes to one message (`demotedFrom`), with the chain rung
   barred so it cannot resolve straight back. See
   `docs/technical-decisions.md#auto-post-type`.
@@ -328,8 +328,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   Some screens are converted whole: the auth screens, sidebar, Profile,
   Workspace Settings, the campaign calendar, the analytics surfaces, **Brand**,
   `/workspaces`, `/invite`, `/plans` with the Plan & billing card and the
-  entitlement renderings, and the two flag-gated features written catalogued
-  from the start (Tasks, Activity). Others hold **islands** of catalogued copy
+  entitlement renderings, Activity, and Tasks, which was written catalogued
+  from the start behind its flag. Others hold **islands** of catalogued copy
   inside hard-coded English, because a PR converted the strings it touched and
   correctly left the rest alone — the post editor, the Campaigns list and the
   Content Bank are all islands today. So a literal sitting beside a `t()` call
@@ -706,8 +706,8 @@ post's own numbers and the three view mappers behind them), Brand (the
 Overview, all five sections, the three editors and the routes — plus the two
 tables behind them, `lib/brandSections` and the starters, which now carry
 behaviour only), `/workspaces`,
-`/invite`, `/plans` with the Plan & billing card, and the flag-gated Tasks and
-Activity features. Islands only: the post editor (`posts.*` — status and
+`/invite`, `/plans` with the Plan & billing card, Activity, and the flag-gated
+Tasks. Islands only: the post editor (`posts.*` — status and
 publish labels, the published link, sources, notes, quality, versions,
 duplicate and the performance card), the Campaigns list (the archive drawer and
 its Danger Zone, the posts toolbar and the empty state) and the Content Bank
@@ -717,12 +717,13 @@ still hard-coded English (CON-174) · **English is the only released language**:
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
 
-**A thread publishes as one post, not as a thread** (CON-196/CON-284,
-`thread-sequence`, off). Behind the flag the chain is **derived from the body**
-rather than composed in separate inputs: the editor stays the one Markdown card
-every post type uses, and the breaks come out of the words. A chain that comes
-to one message is not a failure — it publishes as an ordinary post, and
-`demotedFrom` (`lib/postTypeAuto`) picks which one on the way out of draft.
+**A thread is one body with breaks in it** (CON-196/CON-284). The chain is
+**derived from the body** rather than composed in separate inputs: the editor
+stays the one Markdown card every post type uses, and the breaks come out of the
+words. A chain that comes to one message is not a failure — it publishes as an
+ordinary post, and `demotedFrom` (`lib/postTypeAuto`) picks which one on the way
+out of draft. Shipped unflagged on 2026-09-18; `thread` is offered on X and on
+Threads wherever the publisher declares the slug.
 
 **The split is the server's, and that is the whole shape of this feature.**
 R1 (ogen#140) had the client author `thread_segments` message by message and
@@ -741,10 +742,10 @@ rules follow, and each of them is a thing not to undo:
   client's only account of where a body breaks (`useThreadPreview`), and
   `lib/threadSequence` now places files on the messages that come back rather
   than cutting any itself. The splitter it used to hold broke at every blank
-  line and took `***` as a divider; the server does neither — three or more
-  **hyphens** alone on a line, and with no divider anywhere the body is packed
-  to the ceiling. Two implementations in two languages is exactly what R2's
-  explicit-segments design exists to avoid.
+  line and took `***` as a divider; the server breaks on a CommonMark thematic
+  break — three or more of a single `-`, `*` or `_` alone on a line — and with
+  no divider anywhere packs the body to the ceiling. Two implementations in two
+  languages is exactly what R2's explicit-segments design exists to avoid.
 - **A message can be too long.** In manual mode the ceiling is not applied at
   all, so an over-long message is reported (`max_content_chars` with a
   `segment`) rather than cut. Length verdicts come off `preview.errors`, never
@@ -760,23 +761,18 @@ hard-coded list of chain-capable networks here), attachment validation counts
 per message, and `thread` is on the Threads entry in `supportedPlatforms`, so
 `aheadOfPublishers` is gone with the vocabulary gap it covered.
 
-**Waiting on one server fix.** The live run happened on 2026-09-16 and found it:
-`platforms.isRuleLine` takes three or more **hyphens**, but the divider this app
-writes is `***` — BlockNote's Markdown serialiser emits the default rule marker
-and normalises a typed `---` to it, so no author can put a hyphen rule in the
-body. Every thread this client can author therefore comes back from the preview
-endpoint as **one** message with a literal `***` inside it. Raised on CON-284,
-asking the server to widen the test to the CommonMark thematic break; do not
-normalise it here.
-
-**So `thread` is now flagged on X as well as on Threads**, and that is knowingly
-a change with the flag off — the one thing the flag rule forbids. It was taken
-because R2 is *deployed*: the server splits and gates every thread body whatever
-this build does, so "behaves as before" stopped being available, and what was
-left was a type that fails as a thread of one with nothing on screen saying so,
-or chains by a length the author cannot steer. Nothing is renamed — an existing
-thread post keeps its label, only the picker stops offering the slug. Both go
-back on together when the divider fix lands. See
+**The one thing that held this back was the divider, and it is fixed.** The
+live run on 2026-09-16 found `platforms.isRuleLine` taking three or more
+**hyphens** while the divider this app writes is `***` — BlockNote's Markdown
+serialiser emits the default rule marker and normalises a typed `---` to it, so
+no author could put a hyphen rule in the body, and every authored thread came
+back from the preview endpoint as one message with a literal `***` in the middle
+of it. ogen#156 (merged 2026-09-16) widened the test to the CommonMark thematic
+break and, in the same commit, made `char_count` measure the *visible* text
+(`FlattenSocialText`/`VisibleLen`, a port of `lib/socialText.ts`) rather than the
+raw Markdown — so `**bold**` no longer spends 8 characters and the auto-split no
+longer cuts through a markup run. Both halves were the ask; neither is
+normalised on this side. The flag came out on 2026-09-18. See
 `docs/technical-decisions.md#thread-sequence`.
 
 **Two operator-tunable server limits are mirrored on the client with nothing to

@@ -3,6 +3,7 @@ import type { Platform, PublisherAccount } from '@/types/campaigns'
 import { clearFlagOverrides, setFlagOverride } from '@/config/flagOverrides.ts'
 import { makePlatform } from './platformFixtures.ts'
 import { getPlatformMedia } from './platformMedia.ts'
+import type { PlatformInfo } from './platformDictionary.ts'
 import {
   PLATFORMS,
   buildPlatformView,
@@ -201,56 +202,75 @@ describe('connectedAccounts', () => {
   })
 })
 
-// A post type this build has written but not released (CON-196). The gate is
-// on the entry rather than on the slug — which used to matter because X's
-// `thread` was unflagged and Threads' was not. Both carry the flag as of
-// 2026-09-16: R2 is deployed and splits every thread body server-side, so
-// leaving X's open offered a type the server would refuse or re-cut without
-// the author being able to steer it. The per-entry gate is still the right
-// shape; it just has nothing asymmetric left to express.
-describe('flagged post types', () => {
-  it('withholds a flagged type even when a publisher supports it', () => {
-    const [view] = buildPlatformViews([
-      apiPlatform(THREADS, ['text-post', 'image-post', 'thread']),
-    ])
-    expect(view.allowed.map((pt) => pt.slug)).toEqual([
-      'text-post',
-      'image-post',
-    ])
-    expect(view.available.map((pt) => pt.slug)).not.toContain('thread')
-  })
+// A post type this build has written but not released. The gate is on the
+// entry rather than on the slug, so one network can offer a type while another
+// is still holding it back.
+//
+// No entry carries a flag today: `thread` was the last and it was released on
+// both X and Threads once ogen#156 fixed CON-284's divider. So the gate is
+// exercised against an entry built here, borrowing an unrelated flag id — what
+// is under test is the mechanism, not which feature happens to use it.
+describe('the release gate', () => {
+  afterEach(() => clearFlagOverrides())
 
-  it('withholds it on X as well, publisher or no publisher', () => {
-    // X's publisher has always supported `thread`; that is exactly why this
-    // needs pinning. The release gate runs before the publisher gate, so
-    // support is not enough to bring the type back while the flag is off.
-    const [view] = buildPlatformViews([
-      apiPlatform(TWITTER, ['text-post', 'thread']),
-    ])
-    expect(view.allowed.map((pt) => pt.slug)).toEqual(['text-post'])
-  })
+  const unreleased: PlatformInfo = {
+    zernioId: 'threads',
+    name: 'Threads',
+    icon: PLATFORMS[0].icon,
+    color: '#000000',
+    postTypes: [
+      { slug: 'text-post', label: 'Text post' },
+      { slug: 'half-built', label: 'Half-built', flag: 'tasks' },
+    ],
+  }
 
-  it('still names an existing thread post, having stopped offering the type', () => {
-    // The label comes off the whole dictionary rather than the released slice,
-    // so a post already carrying the slug reads as "Thread" rather than
-    // falling back to the raw value. Withdrawing a type may not rename what
-    // was made with it.
-    expect(getPostTypeLabel(getPlatformByZernioId(TWITTER), 'thread')).toBe(
-      'Thread',
+  function view(supported: string[]) {
+    return buildPlatformView(
+      makePlatform({
+        id: THREADS,
+        publishers: [
+          {
+            id: 'pub1',
+            name: 'Zernio',
+            state: 'ok',
+            connected: true,
+            supported_post_types: supported,
+            accounts: [],
+          },
+        ],
+      }),
+      unreleased,
     )
+  }
+
+  it('withholds a flagged type even when a publisher supports it', () => {
+    const v = view(['text-post', 'half-built'])
+    expect(v.allowed.map((pt) => pt.slug)).toEqual(['text-post'])
+    expect(v.available.map((pt) => pt.slug)).not.toContain('half-built')
   })
 
   // The editor's picker does not go through `buildPlatformView` — it asks the
   // campaign which types it offers, and shows the unconnected ones rather than
   // hiding them. So the release gate has to exist on its own, or the flag
   // leaks through the one menu that can actually set the post type.
-  it("withholds a flagged type from the editor's picker too", () => {
-    expect(
-      releasedPostTypes(getPlatformByZernioId(THREADS)).map((pt) => pt.slug),
-    ).not.toContain('thread')
-    expect(
-      releasedPostTypes(getPlatformByZernioId(TWITTER)).map((pt) => pt.slug),
-    ).not.toContain('thread')
+  it("withholds it from the editor's picker too", () => {
+    expect(releasedPostTypes(unreleased).map((pt) => pt.slug)).not.toContain(
+      'half-built',
+    )
+  })
+
+  it('lets the publisher answer once the flag is on', () => {
+    setFlagOverride('tasks', true)
+    const v = view(['text-post', 'half-built'])
+    expect(v.allowed.map((pt) => pt.slug)).toContain('half-built')
+    expect(v.available.map((pt) => pt.slug)).toContain('half-built')
+  })
+
+  it('still drops it where the publisher does not declare it', () => {
+    setFlagOverride('tasks', true)
+    expect(view(['text-post']).allowed.map((pt) => pt.slug)).not.toContain(
+      'half-built',
+    )
   })
 
   it('has no types for a platform it does not know', () => {
@@ -258,78 +278,36 @@ describe('flagged post types', () => {
       [],
     )
   })
+})
 
-  // The other half of the same gate, and the point of the feature: with the
-  // flag on, Threads has to offer the type its publisher has never heard of.
-  // `supportedPlatforms` in the Go repo lists `thread` for `twitter` only, so
-  // intersecting with the publisher would hide CON-196 from the network it is
-  // named after — for exactly as long as the server takes to learn the slug,
-  // which is what running ahead behind a flag exists to avoid.
-  describe('with the flag on', () => {
-    afterEach(() => clearFlagOverrides())
-
-    function threadsView(supported: string[], connected = true) {
-      setFlagOverride('thread-sequence', true)
-      const platform = makePlatform({
-        id: THREADS,
-        publishers: [
-          {
-            id: 'pub1',
-            name: 'Zernio',
-            state: 'ok',
-            connected,
-            supported_post_types: supported,
-            accounts: [],
-          },
-        ],
-      })
-      const info = getPlatformByZernioId(THREADS)
-      if (!info) throw new Error('Threads missing from the dictionary')
-      return buildPlatformView(platform, info)
+// `thread` is released on both networks again (CON-284 / ogen#156). The
+// publisher is the whole answer for it now, exactly as for every other type.
+describe('thread, released', () => {
+  it('is offered on X and on Threads when the publisher declares it', () => {
+    for (const id of [TWITTER, THREADS]) {
+      const [v] = buildPlatformViews([apiPlatform(id, ['text-post', 'thread'])])
+      expect(v.allowed.map((pt) => pt.slug)).toContain('thread')
+      expect(v.available.map((pt) => pt.slug)).toContain('thread')
     }
+  })
 
-    it('takes the slug from the publisher, like every other type', () => {
-      // CON-284 added `thread` to the Threads entry in the Go repo's
-      // `supportedPlatforms`, so the honest intersection now includes it and
-      // the flag is the only gate left. This used to need a stand-in, because
-      // intersecting with a publisher that had never heard the word hid the
-      // feature from the network it is named after.
-      const view = threadsView(['text-post', 'image-post', 'thread'])
-      expect(view.allowed.map((pt) => pt.slug)).toContain('thread')
-      expect(view.available.map((pt) => pt.slug)).toContain('thread')
-      expect(view.unavailable.map((pt) => pt.slug)).not.toContain('thread')
-    })
+  it('disappears where the publisher has withdrawn the slug', () => {
+    const [v] = buildPlatformViews([apiPlatform(THREADS, ['text-post'])])
+    expect(v.allowed.map((pt) => pt.slug)).not.toContain('thread')
+  })
 
-    it('drops the type where the publisher does not declare it', () => {
-      // No more standing in: a slug the server has genuinely withdrawn — or
-      // never had — disappears from the app, flag or no flag.
-      const view = threadsView(['text-post', 'image-post'])
-      expect(view.allowed.map((pt) => pt.slug)).not.toContain('thread')
-      expect(view.available.map((pt) => pt.slug)).not.toContain('thread')
-    })
+  it("reaches the editor's picker on both", () => {
+    expect(
+      releasedPostTypes(getPlatformByZernioId(TWITTER)).map((pt) => pt.slug),
+    ).toContain('thread')
+    expect(
+      releasedPostTypes(getPlatformByZernioId(THREADS)).map((pt) => pt.slug),
+    ).toContain('thread')
+  })
 
-    it('still waits on the connection, like every other type', () => {
-      const view = threadsView(['text-post', 'thread'], false)
-      expect(view.allowed.map((pt) => pt.slug)).toContain('thread')
-      expect(view.available).toEqual([])
-      expect(view.unavailable.map((pt) => pt.slug)).toContain('thread')
-    })
-
-    it('invents nothing for a platform with no publisher at all', () => {
-      setFlagOverride('thread-sequence', true)
-      const info = getPlatformByZernioId(THREADS)
-      if (!info) throw new Error('Threads missing from the dictionary')
-      const view = buildPlatformView(makePlatform({ id: THREADS }), info)
-      expect(view.allowed).toEqual([])
-    })
-
-    it('does not stand in for an unflagged type', () => {
-      setFlagOverride('thread-sequence', true)
-      // X's `thread` carries no flag, so the publisher is still the whole
-      // answer for it: a server that stopped reporting the slug really has
-      // withdrawn it, and the app has to follow.
-      const [view] = buildPlatformViews([apiPlatform(TWITTER, ['text-post'])])
-      expect(view.allowed.map((pt) => pt.slug)).toEqual(['text-post'])
-    })
+  it('names an existing thread post', () => {
+    expect(getPostTypeLabel(getPlatformByZernioId(TWITTER), 'thread')).toBe(
+      'Thread',
+    )
   })
 })

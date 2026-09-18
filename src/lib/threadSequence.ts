@@ -83,28 +83,27 @@ export const MAX_THREAD_POSTS = 25
 const RUNT_CHARS = 3
 
 /**
- * A divider line, matching `platforms.isRuleLine` exactly: three or more
- * **hyphens** alone on a line, and nothing else.
+ * A divider line, matching `platforms.isRuleLine` exactly: a CommonMark
+ * thematic break — three or more of a **single** marker character (`-`, `*` or
+ * `_`), alone on the line, with optional spaces between them.
  *
- * Narrower than Markdown's own idea of a thematic break, and narrower than
- * what this file used to accept — `***` and `___` are horizontal rules to a
- * Markdown parser but are ordinary text to the server's splitter. Mirroring
- * the server rather than the Markdown spec is the whole point: this predicate
- * only decides which *sentence* the note under the editor prints, so being
- * generous here would describe a body as hand-broken when the server is about
- * to pack it by length.
+ * Mirroring the server rather than the Markdown spec is the whole point: this
+ * predicate only decides which *sentence* the note under the editor prints, so
+ * being generous here would describe a body as hand-broken when the server is
+ * about to pack it by length. The two happen to agree now, and that is a fact
+ * about `isRuleLine` rather than a licence to follow the spec.
  *
- * **Which means it answers `auto` for every body this editor can produce**, and
- * that is a server bug rather than a reason to loosen this. BlockNote writes a
- * divider back as `***` and normalises a typed `---` into one, so no hyphen
- * rule ever reaches `content`; CON-284 asks for `isRuleLine` to widen to the
- * CommonMark thematic break. When it does, widen this with it — in step, and
- * not before, because the note must describe the cut that is about to happen.
+ * It read hyphens only until 2026-09-16, which meant it answered `auto` for
+ * every body this editor can produce: BlockNote writes a divider back as `***`
+ * and normalises a typed `---` into one, so no hyphen rule ever reached
+ * `content`. ogen#156 widened `isRuleLine`, and this widened in step — mixed
+ * markers (`-*-`) and any line carrying other characters (`**bold**`) are
+ * still not rules, on both sides.
  *
  * This is a one-line test and not the splitting algorithm, which is why it is
  * allowed to live on this side at all — see the module note.
  */
-const DIVIDER = /^-{3,}$/
+const DIVIDER = /^([-*_])(?:[ \t]*\1){2,}[ \t]*$/
 
 /**
  * Which rule produced the breaks — what the note under the editor reports.
@@ -157,15 +156,13 @@ export type ThreadPost<T> = {
    * Code points, taken from the server's count rather than recounted off
    * `text`, so the number on screen is the one the publish gate measured.
    *
-   * **It does not count `text`, and that is deliberate.** The server measures
-   * the raw Markdown (`utf8.RuneCountInString` over the stored segment) and
-   * publishes it unflattened, so `**bold**` is eight characters against the
-   * ceiling and not four. Counting the flattened copy here would show a
-   * thread fitting that the gate is about to refuse — the exact class of
-   * disagreement the preview endpoint exists to end. Note this makes the
-   * thread counter stricter than the single-post one elsewhere in the app,
-   * which counts flattened text; that one is the one that disagrees with the
-   * server, and it predates this.
+   * It is the **visible** length since ogen#156: `char_count` is
+   * `platforms.VisibleLen` over the segment, a Go port of this app's own
+   * `markdownToSocialText`, and the same number `validateThread` enforces. So
+   * `**bold**` spends four characters rather than eight, and the auto-split no
+   * longer cuts through a markup run. Recounting here would still be wrong —
+   * two implementations of one measurement is what the preview endpoint exists
+   * to end — but the two now agree by construction rather than by luck.
    */
   count: number
   /** Short enough to be a slip rather than a message (`RUNT_CHARS`). */
@@ -310,10 +307,10 @@ export function planThread<T extends PlannableAttachment>(
       // picker's excerpts reading the same words.
       text,
       count: segment.char_count,
-      // Measured on the flattened copy, unlike `count`, because this is a
-      // question about what the author can see: `**x**` is five characters to
-      // the ceiling and one word to a reader, and it is the reader's view that
-      // decides whether a message looks like a slip.
+      // Recounted locally rather than read off `count`, although the two
+      // measure the same thing now: this asks what the author can see, which is
+      // a question about the flattened copy whatever the ceiling happens to be
+      // counting this month.
       runt: visible > 0 && visible < RUNT_CHARS,
       attachments: carried,
       images,

@@ -616,13 +616,21 @@ describe('hasVisibleProblem', () => {
     // a platform can fail to come back: none is set, the id names no row, or
     // the row is for a network this build ships no support for.
     expect(hasVisibleProblem(makePost(), resolved, undefined)).toBe(true)
+  })
+
+  it('leaves an empty post type alone, because Auto is deciding it', () => {
+    // The default state of every new draft since `post-type-auto` shipped. The
+    // card cannot resolve it — the answer needs the attachments, which the list
+    // payload does not carry — so it stands down rather than marking every post
+    // anyone has just created. An unresolvable one is reported in the editor's
+    // checks bar instead.
     expect(
       hasVisibleProblem(
         makePost({ platform_post_type: '' }),
         resolved,
         LINKEDIN_INFO,
       ),
-    ).toBe(true)
+    ).toBe(false)
   })
 
   it('follows the status machine on accounts: resolution, not presence', () => {

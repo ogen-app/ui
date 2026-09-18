@@ -15,14 +15,14 @@ import { isFeatureEnabled } from './featureFlags'
  * half is a build-time fold, asserted by the build rather than here: see
  * `docs/technical-decisions.md#staging-flag-overrides`.
  */
-const KNOWN = ['tasks', 'activity', 'brand-materials']
+const KNOWN = ['tasks', 'ideas', 'activity']
 
 /**
  * Two of those ship off and one ships on, which is what the resolver's second
  * case needs — forcing a flag *off* is only testable against a flag the build
- * has on. On-flags are retired as their features settle, so when
- * `brand-materials` goes, this moves to whichever one is on at the time; it is
- * the only thing here that cares which flag it names.
+ * has on. On-flags are retired as their features settle, so when `activity`
+ * goes, this moves to whichever one is on at the time; it is the only thing
+ * here that cares which flag it names.
  */
 
 function visit(url: string) {
@@ -71,30 +71,30 @@ describe('the resolver', () => {
   })
 
   it('can force a flag off that the build has on', () => {
-    expect(isFeatureEnabled('brand-materials')).toBe(true)
-    setFlagOverride('brand-materials', false)
-    expect(isFeatureEnabled('brand-materials')).toBe(false)
+    expect(isFeatureEnabled('activity')).toBe(true)
+    setFlagOverride('activity', false)
+    expect(isFeatureEnabled('activity')).toBe(false)
   })
 })
 
 describe('?ff=', () => {
   it('forces the names it lists and strips itself from the address bar', () => {
-    visit('/campaigns?ff=tasks,-brand-materials')
+    visit('/campaigns?ff=tasks,-activity')
     bootstrapFlagOverrides(KNOWN)
 
     expect(readFlagOverrides()).toEqual({
       tasks: true,
-      'brand-materials': false,
+      activity: false,
     })
     expect(window.location.search).toBe('')
   })
 
   it('merges into what is already stored, so bookmarks compose', () => {
     setFlagOverride('tasks', true)
-    visit('/campaigns?ff=activity')
+    visit('/campaigns?ff=ideas')
     bootstrapFlagOverrides(KNOWN)
 
-    expect(readFlagOverrides()).toEqual({ tasks: true, activity: true })
+    expect(readFlagOverrides()).toEqual({ tasks: true, ideas: true })
   })
 
   it('clears everything when given no names', () => {
@@ -143,7 +143,7 @@ describe('a corrupted key', () => {
 
 describe('serializeFlagOverrides', () => {
   it('round-trips through the query parameter', () => {
-    const set = { tasks: true, activity: false }
+    const set = { tasks: true, ideas: false }
     visit(`/campaigns?ff=${serializeFlagOverrides(set)}`)
     bootstrapFlagOverrides(KNOWN)
 

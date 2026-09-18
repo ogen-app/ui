@@ -41,7 +41,6 @@ export function NavUtilityStrip({
 }) {
   const { t } = useTranslation()
   const { pathname } = useLocation()
-  const brandEnabled = useFeatureFlag('brand-materials')
   const activityEnabled = useFeatureFlag('activity')
 
   const gear = <GearSixIcon weight="regular" className="size-5 flex-none" />
@@ -49,11 +48,10 @@ export function NavUtilityStrip({
   if (level === 1 && campaignId) {
     return (
       <div className="flex flex-col gap-1">
-        {/* Foundation, narrowed to this campaign. Not behind
-            `brand-materials`, though half of what the page shows is: the
-            campaign's own documents ship regardless, so the slot is filled at
-            this level even when the workspace has no brand material at all.
-            The inherited half hides itself (`InheritedBrand`). */}
+        {/* Foundation, narrowed to this campaign. The campaign's own
+            documents are the half that is always there; the inherited half
+            hides itself when the workspace has written none
+            (`InheritedBrand`). */}
         <AppSidebarButtonMenu
           icon={<PaletteIcon weight="regular" className="size-5 flex-none" />}
           text={t('nav.campaign.foundation')}
@@ -92,16 +90,12 @@ export function NavUtilityStrip({
 
   return (
     <div className="flex flex-col gap-1">
-      {/* Gated here as well as on the route: with the flag off the app must
-          have no Foundation at all. */}
-      {brandEnabled && (
-        <AppSidebarButtonMenu
-          icon={<PaletteIcon weight="regular" className="size-5 flex-none" />}
-          text={t('nav.foundation')}
-          isActive={pathname.startsWith('/foundation')}
-          to="/foundation"
-        />
-      )}
+      <AppSidebarButtonMenu
+        icon={<PaletteIcon weight="regular" className="size-5 flex-none" />}
+        text={t('nav.foundation')}
+        isActive={pathname.startsWith('/foundation')}
+        to="/foundation"
+      />
       {activityEnabled && (
         <ActivitySidebarItem isActive={pathname.startsWith('/activity')} />
       )}
