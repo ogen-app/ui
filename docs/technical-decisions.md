@@ -1207,6 +1207,24 @@ in exactly one, which is why a woken postponement counts as undecided and not
 also as later. Tabs whose figures do not add up are a screen people stop
 trusting long before they report it.
 
+**The rail carries one of those four, and it is the undecided one.** The
+sidebar's Ideas row shows what is still a question — its own component
+(`IdeasSidebarItem`) for the same reason the Inbox row has one: the figure
+costs a query, and a row that fetches must not exist while the flag is off. The
+backlog's *size* is deliberately not what is drawn there. A backlog is meant to
+be long — that is the difference between this module and the Inbox above it —
+so a total would only ever climb and would never be a reason to click, where
+the unanswered falls as people triage and reaches zero when the pile has been
+answered. It counts a woken postponement, because the piles have to agree: a
+rail saying three over a screen showing four is the same broken arithmetic one
+surface further out.
+
+It is the workspace's figure and it stays at level 0. Going into a campaign
+narrows the rail to that campaign's sections, and none of them carries a count
+— the drill-down's glyph has no room for one, and a per-campaign query mounted
+by the rail would be a request per campaign anybody visits, for a number the
+Ideas page itself states the moment it opens.
+
 **And not a separate triage mode either — that was the first draft, and it did
 not earn its keep.** It was a full-screen session: the undecided queue taken as
 a snapshot, one idea at a time in a large typeface, answered with `y`/`l`/`n`,
@@ -1250,8 +1268,9 @@ the post and hoping the link survives.
 
 **Where.** `lib/ideas.ts` (+ test), `services/api/ideas.ts`,
 `services/api/ideas.stub.ts` (+ test), `hooks/useIdeas.ts`,
-`components/ideas/*`, the two `ideas` routes, and the `ideas.*` catalogue
-entries in both languages.
+`components/ideas/*` (the rail's row included), its wiring in
+`components/layout/nav/WorkspaceLevel.tsx`, the two `ideas` routes, and the
+`ideas.*` catalogue entries in both languages.
 
 ## Two form systems, on purpose
 

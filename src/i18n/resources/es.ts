@@ -269,6 +269,8 @@ export const es: Translation = {
       subtitle:
         'Cualquier cosa que valga la pena crear, por poco formada que esté. Decidir sobre ella es otro trabajo y puede esperar.',
     },
+    undecidedCount_one: '{{count}} idea sin decidir',
+    undecidedCount_other: '{{count}} ideas sin decidir',
     loadFailed: 'No se pudieron cargar las ideas',
     saveFailed: 'No se pudo guardar. Tus ideas no han cambiado.',
   },

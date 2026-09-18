@@ -653,6 +653,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   decided row carries its undo — which is what makes one-click triage safe;
   deleting is final and reachable only from an opened row. The four counts
   always sum to the list, so a woken idea is undecided and **not** also later.
+  **The rail's Ideas row draws the undecided count and never the backlog's
+  size** (`IdeasSidebarItem`, level 0 only): the pile is meant to be long, so a
+  total would only ever climb, and the figure worth acting on is the one that
+  falls as people answer.
   **The screen is one column wide throughout**, first run included: an empty
   state that was full-bleed while the list replacing it was narrow moved the
   page sideways under the person who filed the first idea. One component serves

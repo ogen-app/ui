@@ -371,6 +371,15 @@ export const en = {
       subtitle:
         'Anything worth making, however half-formed. Deciding about it is a separate job, and it can wait.',
     },
+    /**
+     * The figure on the sidebar's Ideas row, read out rather than seen.
+     *
+     * Undecided and not the backlog's size: a backlog is meant to be long, so
+     * the number worth a slot in the rail is the one that goes down when
+     * somebody answers a row. Same word as the pile it counts.
+     */
+    undecidedCount_one: '{{count}} undecided idea',
+    undecidedCount_other: '{{count}} undecided ideas',
     loadFailed: 'Unable to load ideas',
     saveFailed: 'Could not save that. Your ideas are unchanged.',
   },
