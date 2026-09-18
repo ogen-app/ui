@@ -92,7 +92,7 @@ export type FixTarget =
   | 'strategy'
   | 'workspace-settings'
   | 'posts'
-  | 'foundation'
+  | 'assets'
   // No attention rule points here — analytics reports, it never asks for a
   // fix. It is a target so the Overview's Analytics card can use the same
   // header link as every other module.

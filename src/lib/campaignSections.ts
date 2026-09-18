@@ -3,10 +3,10 @@ import {
   CalendarDotsIcon,
   CardsIcon,
   ChartLineUpIcon,
+  FilesIcon,
   GearSixIcon,
   LightbulbIcon,
   NotepadIcon,
-  PaletteIcon,
   TrayIcon,
 } from '@phosphor-icons/react'
 
@@ -20,8 +20,9 @@ import {
  *
  * **Each of these is a workspace module, narrowed.** The campaign level is not
  * a different menu, it is the same menu with the scope changed — Inbox becomes
- * this campaign's Overview, Ideas becomes this campaign's ideas, Campaigns
- * becomes its Posts, Calendar its calendar, Analytics its numbers. Reading the
+ * this campaign's Overview, Ideas becomes this campaign's ideas, Assets its own
+ * documents, Campaigns becomes its Posts, Calendar its calendar, Analytics its
+ * numbers. Reading the
  * two levels side by side is how a person learns that going into a campaign
  * narrows what they are looking at rather than taking them somewhere else, and
  * that only works while the rows keep answering to each other. A section here
@@ -30,7 +31,12 @@ import {
  *
  * Strategy is the one deliberate exception: a campaign commits to a window, a
  * rate and a spend, and a workspace commits to nothing, so there is no row it
- * could narrow from.
+ * could narrow from. The exception in the other direction is Foundation, which
+ * is level 0's and has no row here: a campaign does not keep voices or
+ * guardrails of its own, it points at the workspace's, and that pointing is a
+ * card on Strategy (`CampaignBrandCard`). The row that used to sit here was
+ * this campaign's documents wearing Foundation's name, and they are Assets
+ * now.
  *
  * Labels are catalogue keys rather than strings — `t` is only available inside
  * a component, and a constant built at import time would freeze whichever
@@ -78,6 +84,18 @@ export const CAMPAIGN_SECTIONS = [
     utility: false,
   },
   {
+    // Above Posts, mirroring Assets above Campaigns at level 0 — the material
+    // before the work made from it. Its own glyph rather than Foundation's
+    // palette: this row is the documents, which is all the page it opens has
+    // ever been.
+    id: 'assets',
+    labelKey: 'nav.campaign.assets',
+    openKey: 'campaignOverview.openAssets',
+    icon: FilesIcon,
+    tone: 'var(--nav-assets)',
+    utility: false,
+  },
+  {
     id: 'posts',
     labelKey: 'nav.campaign.posts',
     openKey: 'campaignOverview.openPosts',
@@ -103,24 +121,6 @@ export const CAMPAIGN_SECTIONS = [
     icon: ChartLineUpIcon,
     tone: 'var(--nav-analytics)',
     utility: false,
-  },
-  {
-    // The workspace's Foundation, narrowed — and named for it, down to the
-    // URL. It was the campaign's Content page, holding its documents and
-    // nothing else, which made the pairing with Foundation a half-truth: up
-    // there the word covers the guardrails, the voices and the audiences as
-    // well as the documents. So this is now one place per campaign for
-    // everything it writes from — what it inherits from the workspace, read
-    // only, and what it has put in itself.
-    id: 'foundation',
-    labelKey: 'nav.campaign.foundation',
-    openKey: 'campaignOverview.openFoundation',
-    // Foundation's own glyph, as Overview takes Inbox's: the pair is the
-    // point, and two different marks over the same word at two levels is the
-    // reader's problem to solve rather than ours.
-    icon: PaletteIcon,
-    tone: 'var(--nav-foundation)',
-    utility: true,
   },
   {
     id: 'activity',

@@ -46,8 +46,11 @@ import type { BrandAudience, BrandVoice } from './types'
  * campaign could opt out of the claims it is allowed to make. What was wrong
  * was going from *unpickable* to *unmentioned* — a rule nobody can see is a
  * rule nobody believes is running. So the card ends by saying they exist and
- * pointing at the campaign's Foundation page, which is where everything this
- * campaign writes from can be read in full (`InheritedBrand`).
+ * pointing at the workspace's Foundation, which is where they are written. It
+ * pointed at the campaign's own Foundation page until that page became Assets:
+ * the guardrails were never the campaign's to begin with, and a link to the
+ * one place they can be read in full is the honest version of the same
+ * sentence.
  *
  * **It saves on the spot**, not through the page's Save button, following
  * `PlatformsControl` — a selection that sat dirty until an unrelated Save would
@@ -131,10 +134,7 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
         ))}
       </div>
 
-      <WhatAlsoApplies
-        campaignId={campaignId}
-        hasGuardrails={brand.guardrails !== null}
-      />
+      <WhatAlsoApplies hasGuardrails={brand.guardrails !== null} />
     </SettingsCard>
   )
 }
@@ -149,13 +149,7 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
  * stated, because the two facts are opposite in kind: rules in force are a
  * constraint, and no rules at all is a gap worth the same one line.
  */
-function WhatAlsoApplies({
-  campaignId,
-  hasGuardrails,
-}: {
-  campaignId: string
-  hasGuardrails: boolean
-}) {
+function WhatAlsoApplies({ hasGuardrails }: { hasGuardrails: boolean }) {
   const { t } = useTranslation()
   return (
     <div className="mt-1 flex flex-col gap-2 border-t border-tertiary pt-4">
@@ -169,8 +163,7 @@ function WhatAlsoApplies({
       </p>
       <div>
         <Link
-          to="/campaigns/$campaignId/foundation"
-          params={{ campaignId }}
+          to="/foundation"
           className="inline-flex items-center gap-1 text-sm text-secondary-foreground hover:text-foreground"
         >
           {t('brand.binding.seeEverything')}

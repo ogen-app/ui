@@ -168,10 +168,10 @@ export function SectionLink({
           {children}
         </Link>
       )
-    case 'foundation':
+    case 'assets':
       return (
         <Link
-          to="/campaigns/$campaignId/foundation"
+          to="/campaigns/$campaignId/assets"
           params={params}
           className={className}
           {...named}

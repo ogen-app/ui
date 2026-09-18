@@ -7,15 +7,16 @@ import { ASSET_KIND_ICON, assetKindNoun } from './assetKindIcons'
 /**
  * A library of documents as a row of tiles: how many of each kind is in it.
  *
- * **For the preview cards only** — Foundation's Sources card at the workspace
- * level, and the campaign's Foundation card on its Overview. Both used to list
- * documents by name, five of them, the way the Voices and Audiences cards list
- * theirs. That reads well for a library of four and stops being true at forty:
- * the five newest titles are not a picture of a bank, they are a sample nobody
- * asked for, and the card had grown a footnote saying as much. Kinds and counts
- * are the one summary that stays true at both sizes and does not need a
- * caveat — and they answer the question a preview is actually asked, which is
- * *what sort of thing is in there*, not *which five changed last*.
+ * **For the preview cards only** — the campaign's Assets card on its Overview,
+ * and Foundation's documents card until the documents left Foundation for
+ * `/assets`. Both listed documents by name, five of them, the way the Voices
+ * and Audiences cards list theirs. That reads well for a library of four and
+ * stops being true at forty: the five newest titles are not a picture of a
+ * bank, they are a sample nobody asked for, and the card had grown a footnote
+ * saying as much. Kinds and counts are the one summary that stays true at both
+ * sizes and does not need a caveat — and they answer the question a preview is
+ * actually asked, which is *what sort of thing is in there*, not *which five
+ * changed last*.
  *
  * **Tiles rather than a line of text**, and that is the difference between this
  * card and the two above it. Voices and audiences are things somebody wrote, so

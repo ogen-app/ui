@@ -22,11 +22,11 @@ export function UploadTracker() {
   const pathname = useLocation({ select: (l) => l.pathname })
 
   // Which list is on screen, and therefore already reporting its own uploads:
-  // a campaign's Content page, or the workspace bank (whose uploads carry no
+  // a campaign's Assets page, or the workspace bank (whose uploads carry no
   // campaign at all).
   const openCampaign =
-    pathname.match(/^\/campaigns\/([^/]+)\/content$/)?.[1] ?? null
-  const bankOpen = pathname === '/foundation/sources'
+    pathname.match(/^\/campaigns\/([^/]+)\/assets$/)?.[1] ?? null
+  const bankOpen = pathname === '/assets'
   const items =
     openCampaign !== null || bankOpen
       ? all.filter((it) => it.campaignId !== openCampaign)

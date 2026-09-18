@@ -1264,7 +1264,7 @@ schemas are `t`-taking factories — see [i18n](#i18n)) vs `components/ui/form.t
 - **`page.tsx` is ignored by the router** (`routeFileIgnorePattern`). The
   `index.tsx` (routing) / `page.tsx` (presentation) split is intentional — don't
   put `createFileRoute` in a `page.tsx`.
-- **Trailing-underscore segments** (`$campaignId_`, `content-bank_`) escape the
+- **Trailing-underscore segments** (`$campaignId_`, `foundation_`) escape the
   parent layout so a child can render fullscreen. Removing the underscore
   re-nests it under the tab bar.
 - **Auth is guarded only at the root**, not on `_authenticated`. Adding a

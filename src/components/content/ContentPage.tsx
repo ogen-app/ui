@@ -30,29 +30,27 @@ import { useUploadStore } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
 import type { Campaign } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
-import { InheritedBrand } from '@/components/brand/InheritedBrand'
 import { AddWebPageModal } from './AddWebPageModal'
 import { ContentList } from './ContentList'
 
 /**
  * Documents, in the scope that holds them.
  *
- * Two screens, one component: a campaign's Foundation page (CON-210), and the
- * workspace-wide bank behind it — Foundation's Sources section (CON-211). They
- * are the same page because they
+ * Two screens, one component: a campaign's Assets page (CON-210) and the
+ * workspace-wide bank behind it at `/assets` (CON-211). They are the same page
+ * because they
  * are the same job — see what is here, put something in, open it, delete it —
  * and the only honest difference is what "here" means. `campaign === null` is
  * the workspace, and every place that matters says so out loud rather than
  * quietly reusing the campaign's words.
  *
- * **In a campaign it is the section's whole page, and the documents are the
- * lower half of it.** `/campaigns/:id/foundation` is the level-1 twin of
- * `/foundation`, and up there the word covers the guardrails, the voices and
- * the audiences as well as the documents. So the campaign's version leads with
- * what it inherits — read-only, collapsed, `InheritedBrand` — and the table
- * below is what the campaign has put in itself. The workspace's bank shows no
- * such band: it *is* the place those things are edited, one click away in its
- * own Overview.
+ * **In a campaign it is the whole page, and it used not to be.** The campaign's
+ * copy was headed Foundation and led with a read-only band of what the campaign
+ * inherited — its voice, its audience, the guardrails — with the table beneath
+ * it. That made the page two things and its row's name true of neither: the
+ * inherited half is the workspace's material, chosen on the campaign's Strategy
+ * page (`CampaignBrandCard`) and edited in the workspace's own Foundation. What
+ * is left at both levels is the list, which is what anybody opening it came for.
  *
  * The page owns its header and its drop target rather than taking the layout's,
  * because both name a destination: a file dropped anywhere on it joins *this*
@@ -178,13 +176,13 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             const attached = await addToCampaign(campaign.id, [asset.id])
             if (!attached) return
             navigate({
-              to: '/campaigns/$campaignId/foundation/$assetId',
+              to: '/campaigns/$campaignId/assets/$assetId',
               params: { campaignId: campaign.id, assetId: asset.id },
             })
             return
           }
           navigate({
-            to: '/foundation/sources/$assetId',
+            to: '/assets/$assetId',
             params: { assetId: asset.id },
           })
         },
@@ -281,10 +279,13 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
       <PageHeader
         // In a campaign, the shape the layout builds for every other section:
         // `${campaign} ${section}`, with the section named as the rail names
-        // it. In the workspace this is one of Foundation's sections rather
-        // than a section of its own, and Sources is what the Overview's card
-        // that opens it says.
-        title={campaign ? `${scopeName} Foundation` : 'Sources'}
+        // it. In the workspace the rail's own row is the whole address, so the
+        // title is the module's name and nothing else.
+        title={
+          campaign
+            ? t('content.page.campaignTitle', { campaign: scopeName })
+            : t('content.page.title')
+        }
         actions={
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -332,13 +333,10 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
         }
       />
 
-      {campaign && <InheritedBrand campaignId={campaign.id} />}
-
       {/* The campaign layout's body box: no page scroll — the table
           virtualises against this and scrolls itself. `flex-1` over a fixed
-          `h-full`, because the band above it is a sibling whose height
-          changes: `h-full` measures the whole column and would push the
-          table's last rows under the fold every time somebody opened it. */}
+          `h-full`, which measures the whole column with the header in it and
+          would push the table's last rows under the fold. */}
       <div className="grid min-h-0 flex-1 overflow-hidden px-3 lg:px-6">
         {isLoading ? (
           <PageLoader />

@@ -179,9 +179,7 @@ export function notificationTarget(
         ? { to: '/campaigns/$campaignId/overview', params: { campaignId: id } }
         : null
     case 'asset':
-      return id
-        ? { to: '/foundation/sources/$assetId', params: { assetId: id } }
-        : null
+      return id ? { to: '/assets/$assetId', params: { assetId: id } } : null
     case 'social_account':
       // No route addresses one connection: they are a section of Workspace
       // Settings, which is where reconnecting happens anyway.
