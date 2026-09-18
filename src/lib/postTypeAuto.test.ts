@@ -98,6 +98,14 @@ describe('postShape', () => {
     expect(shape.kinds.sort()).toEqual(['image', 'video'])
     expect(shape.count).toBe(3)
   })
+
+  it('reads a body of nothing but whitespace and rules as empty', () => {
+    // Which is what makes `chars === 0` an exact mirror of the server's
+    // `requires_content` test: both flatteners trim, so neither can see a body
+    // that is long and empty at the same time.
+    expect(postShape('   \n\n   ', []).chars).toBe(0)
+    expect(postShape('***', []).chars).toBe(0)
+  })
 })
 
 describe('the ladder', () => {

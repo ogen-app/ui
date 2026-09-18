@@ -206,6 +206,9 @@ function fits(
   shape: PostShape,
   sequence: boolean,
 ): boolean {
+  // `chars` is the flattened body and `markdownToSocialText` trims, so zero is
+  // the same answer the server's `strings.TrimSpace(FlattenSocialText(…))`
+  // gives — a body of nothing but spaces or rule lines is empty on both sides.
   if (rule.requires_content && shape.chars === 0) return false
 
   if (rule.allowed_kinds.length > 0) {

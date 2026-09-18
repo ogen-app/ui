@@ -1007,7 +1007,7 @@ entries in `lib/platformDictionary.ts`.
 `platform_post_type` a post is **already** created with. While a post is
 automatic the format is derived on every render from the body and the
 attachments (`lib/postTypeAuto`); the slug is written to the record only when
-the post is committed. Behind `post-type-auto`, off.
+the post is committed. On since 2026-09-18, behind `post-type-auto` until then.
 
 **Why.** Choosing between "Text post" and "Image post" is the first thing the
 editor asks and the last thing an author has an opinion about. Those are not
@@ -1096,7 +1096,7 @@ is the same arrangement the thread row uses.
 resolution in `hooks/usePostMedia.ts`, the *Auto* entry in
 `quickBar/ChannelPickers.tsx`, the pin and the unfit row in the post route,
 `hasVisibleProblem` in `lib/postValidation.ts`, `PostCard`'s label, and the
-`post-type-auto` flag.
+`post-type-auto` flag, which is still in the record for one cycle.
 
 ## A brand binding is four ids, resolved and never copied {#brand-binding}
 

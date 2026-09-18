@@ -273,44 +273,60 @@ const FEATURE_FLAGS = {
    * changes — attach a picture to a text post and it becomes an image post
    * without anyone touching the picker.
    *
-   * **Not waiting on an endpoint.** Auto is the empty `platform_post_type` a
-   * post is already created with (`useAddPost` sends a campaign and a date and
-   * nothing else); the resolution is derived on every render and written to the
-   * record as the post leaves `draft`, which is as long as the server will hold
-   * an empty type. Nothing new is stored and no column
-   * is missing. The flag is here because this changes what that empty string
-   * *means* on four surfaces that have always read it as "broken" — the checks
-   * bar, the quick-settings picker, the calendar card and `hasVisibleProblem` —
-   * and because the ladder itself is a claim about the server that has not met
-   * a running one.
+   * **On.** Nothing was ever waiting on an endpoint: Auto is the empty
+   * `platform_post_type` a post is already created with (`useAddPost` sends a
+   * campaign and a date and nothing else); the resolution is derived on every
+   * render and written to the record as the post leaves `draft`, which is as
+   * long as the server will hold an empty type. Nothing new is stored and no
+   * column is missing. The flag existed because this changes what that empty
+   * string *means* on four surfaces that had always read it as "broken" — the
+   * checks bar, the quick-settings picker, the calendar card and
+   * `hasVisibleProblem` — and because the ladder was a claim about the server
+   * read off the Go source rather than exercised against it.
    *
-   * **What to look at when it does**, in the order that decides whether it
-   * ships:
+   * **That claim was checked against `ogen` `origin/main` before this went on**,
+   * and two of the three worries on the old list turned out not to exist:
    *
-   * 1. **The seeded rules are the whole input.** `lib/postTypeAuto` walks
-   *    `GET /api/platforms/:id/post-type-rules` and picks the loosest rung the
-   *    post already satisfies, so a rule that is seeded loosely — a
-   *    `max_content_chars` of 0, an `allowed_kinds` nobody filled in — makes
-   *    Auto choose a type the server then refuses at schedule time. The fit
-   *    predicate mirrors `platforms.ValidatePostType`; it has been read off the
-   *    Go source, never exercised against it.
-   * 2. **`text-post` is the rung everything rests on**, and CON-206 plans to
-   *    merge it into `image-post` with `min_attachments: 0`. That does not
-   *    break Auto — the walk would simply stop one rung earlier — but it
-   *    changes what every post resolves to, so the two want testing together.
-   * 3. **A chain is now a rung.** `thread` is one wherever the post-type rule
-   *    says `segmented`, which is the server's own answer — R2 splits every
-   *    thread body on write (CON-284), so resolving to it truncates nothing.
-   *    That rung arrived with the thread flag's removal rather than with this
-   *    feature, so it is the newest thing here and the least exercised: with
-   *    this flag off, three thousand characters on X still reports "too long",
-   *    which is also right.
+   * 1. **The rules are not seeded.** `postTypeRules` in
+   *    `domain/platforms/post_types.go` is a hard-coded table keyed by slug, and
+   *    `ResolvePostTypeRules` projects it onto the wire — so a rule "seeded
+   *    loosely" is not a thing that can happen to `allowed_kinds`, `min_` or
+   *    `max_attachments`. What *is* per-platform is which slugs are offered and
+   *    the three constraint blocks the sentinels resolve against. And
+   *    `max_content_chars` cannot arrive as `0`: `resolveMaxContentChars`
+   *    returns a value only when the limit is positive, so unbounded is `null`
+   *    on the wire and nowhere else.
+   * 2. **`fits` mirrors `ValidatePostType`, with one rule deliberately left
+   *    out.** CON-148's `requires_video_title` refuses an untitled video on a
+   *    platform whose `video_constraints` ask for one. That is YouTube alone,
+   *    and YouTube offers `video` and `short` — both video-kind, both bound by
+   *    it — so no choice Auto can make avoids the rule and modelling it would
+   *    change no answer. If a platform ever offers a titled video type beside
+   *    an untitled non-video one, this is the line to add.
+   *    `max_title_chars` is out for the same reason: it fails every candidate
+   *    equally, so it is not a choice.
+   * 3. **`requires_content` is an exact mirror**, which is not obvious from
+   *    the two sources: the server trims before testing for empty
+   *    (`strings.TrimSpace(FlattenSocialText(…))`) and the character ceiling
+   *    does not (`VisibleLen`), so a whitespace-only body looks like it could
+   *    be long and empty at once. It cannot — both flatteners end in a trim, so
+   *    `shape.chars === 0` answers the same question. Tested on this side.
    *
-   * With this off, the empty post type means exactly what it always did: a
-   * `fail` in the checks bar, a warning mark on the card, and a picker that
-   * asks. A post that already carries a type is untouched either way.
+   * **What is left is a live run**, and two things to watch when it happens:
+   *
+   * - **`text-post` is the rung everything rests on**, and CON-206 plans to
+   *   merge it into `image-post` with `min_attachments: 0`. That does not break
+   *   Auto — the walk would stop one rung earlier — but it changes what every
+   *   post resolves to, so the two want testing together.
+   * - **The chain rung is the newest thing here.** `thread` is a rung wherever
+   *   the rule says `segmented`, which arrived with the `thread-sequence` flag's
+   *   removal rather than with this feature, so the two shipped in the same
+   *   window and neither has watched the other choose.
+   *
+   * A post that already carries a type is untouched, and pinning is still
+   * one-way: reopen to draft and it keeps the slug it resolved to.
    */
-  'post-type-auto': false,
+  'post-type-auto': true,
 
   /**
    * Deleting one saved version of a post, from the version-history panel

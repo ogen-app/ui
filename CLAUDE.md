@@ -231,7 +231,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (CON-165): the server defaults it away on silence and *preserves*
   `used_asset_ids`, so the two fields are opposites and a builder that treats
   them alike is wrong about one of them.
-- **A post's type is a default, not a question** (`post-type-auto`, off). *Auto*
+- **A post's type is a default, not a question** (`post-type-auto`, on). *Auto*
   is the empty `platform_post_type` every post is **already** created with —
   `useAddPost` sends a campaign and a date and nothing else — so the feature
   stores nothing and waits on no endpoint; it reads a state that already existed
@@ -251,9 +251,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   or Link post (editorial decisions the content cannot imply) nor a
   `whitelist_only` type (no rule to test). **`thread` is a rung wherever the
   post-type rule says `segmented`** — the server's own answer, which replaced a
-  hard-coded list of chain-capable networks here. With `post-type-auto` off the
-  empty slug means what it always did — a `fail` in the checks bar and a mark on
-  the card. The ladder is also what a *pinned* thread demotes through
+  hard-coded list of chain-capable networks here. Switch `post-type-auto` off
+  and the empty slug means what it always did — a `fail` in the checks bar and a
+  mark on the card. The ladder is also what a *pinned* thread demotes through
   when its body comes to one message (`demotedFrom`), with the chain rung
   barred so it cannot resolve straight back. See
   `docs/technical-decisions.md#auto-post-type`.
