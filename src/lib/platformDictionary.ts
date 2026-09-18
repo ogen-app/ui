@@ -138,24 +138,11 @@ export const PLATFORMS: PlatformInfo[] = [
       { slug: 'text-post', label: 'Text post' },
       { slug: 'image-post', label: 'Image post' },
       { slug: 'video', label: 'Video' },
-      // Flagged as of 2026-09-16, and this one *is* a change with the flag off
-      // — X has offered `thread` since long before CON-284. It is made
-      // deliberately, because the thing the rule protects is already gone: R2
-      // shipped and is deployed, so the server derives `thread_segments` from
-      // the body on every write and gates on them, whatever this build thinks.
-      // What "as before" means for an X thread is therefore no longer
-      // available to us. Left unflagged the type is worse than absent: a short
-      // body is refused by the gate as a thread of one, with no row on screen
-      // saying so, while a long one is packed into a chain by length the author
-      // cannot steer — their dividers never arrive, since BlockNote writes
-      // `***` and `isRuleLine` reads hyphens.
-      //
-      // So the type comes out until it works, and goes back on with the flag
-      // once CON-284's divider fix lands. An existing `thread` post is
-      // untouched: `getPostTypeLabel` reads the whole dictionary rather than
-      // the released slice, so it still renders as "Thread" — only the picker
-      // stops *offering* it.
-      { slug: 'thread', label: 'Thread', flag: 'thread-sequence' },
+      // Withdrawn for three weeks over CON-284's divider mismatch — the
+      // composer writes `***` and the server's `isRuleLine` read hyphens, so
+      // every authored break collapsed into one message. ogen#156 widened it
+      // to the CommonMark thematic break and the type came back.
+      { slug: 'thread', label: 'Thread' },
     ],
   },
   {
@@ -174,12 +161,11 @@ export const PLATFORMS: PlatformInfo[] = [
       // single screen. Zernio takes the identical `threadItems` on both
       // (CON-196).
       //
-      // Flagged since it was added, and X's is flagged too as of 2026-09-16 —
-      // see the note there for why that one was worth a change with the flag
-      // off. The publisher declares the slug here since CON-284, so the flag is
-      // the only gate it needs — the stand-in that used to answer in the
-      // publisher's place is gone with the vocabulary gap it covered.
-      { slug: 'thread', label: 'Thread', flag: 'thread-sequence' },
+      // The publisher declares the slug since CON-284, so the ordinary
+      // publisher gate is the only one it needs — the stand-in that used to
+      // answer in the publisher's place is gone with the vocabulary gap it
+      // covered.
+      { slug: 'thread', label: 'Thread' },
     ],
   },
   {

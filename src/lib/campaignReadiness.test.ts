@@ -131,27 +131,29 @@ const filledBrief = {
 }
 
 describe('briefPosture', () => {
-  it('is empty when every field is blank (incl. whitespace-only)', () => {
-    const posture = briefPosture(makeCampaign({ description: '   ' }))
+  it('is empty when both fields are blank (incl. whitespace-only)', () => {
+    const posture = briefPosture(
+      makeCampaign({ description: '   ', key_messages: '' }),
+    )
     expect(posture.state).toBe('empty')
-    expect(posture.missing).toHaveLength(4)
+    expect(posture.missing).toEqual(['description', 'key_messages'])
   })
 
-  it('is partial when some fields are filled', () => {
+  it('is partial when one of the two is filled', () => {
     const posture = briefPosture(
-      makeCampaign({ description: 'x', key_messages: 'y' }),
+      makeCampaign({ description: '', key_messages: 'It is faster.' }),
     )
     expect(posture.state).toBe('partial')
-    expect(posture.missing).toEqual(['target_persona', 'tone_guidelines'])
+    expect(posture.missing).toEqual(['description'])
   })
 
-  it('is complete when all fields are filled', () => {
+  it('is complete when both are filled', () => {
     expect(briefPosture(makeCampaign(filledBrief)).state).toBe('complete')
   })
 
-  it('stops counting persona and tone once Brand answers them', () => {
-    // Both boxes are gone from the screen with the flag on, so a campaign that
-    // never filled them is not incomplete — it is bound instead.
+  it('does not count persona and tone, which Brand answers', () => {
+    // Neither box is on any screen — they are the campaign's audience and
+    // voice now — so a campaign that never filled them is not incomplete.
     const posture = briefPosture(
       makeCampaign({
         description: 'A launch.',
@@ -159,19 +161,9 @@ describe('briefPosture', () => {
         target_persona: '',
         tone_guidelines: '',
       }),
-      true,
     )
     expect(posture.state).toBe('complete')
     expect(posture.missing).toEqual([])
-  })
-
-  it('still reports what is left of the brief when bound', () => {
-    const posture = briefPosture(
-      makeCampaign({ description: '', key_messages: 'It is faster.' }),
-      true,
-    )
-    expect(posture.state).toBe('partial')
-    expect(posture.missing).toEqual(['description'])
   })
 })
 

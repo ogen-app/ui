@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Button } from '@/components/ui/button'
 import { TrashIcon } from '@phosphor-icons/react'
@@ -32,7 +31,6 @@ import {
 } from '@/lib/postSchedule'
 import type { Post } from '@/types/posts'
 import { CampaignPostTypeSelect } from './CampaignPostTypeSelect'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { PostBrandSection } from '@/components/brand/PostBrandSection'
 
 const NO_PHASE = '__none__'
@@ -41,7 +39,6 @@ const schema = z.object({
   platform_id: z.string(),
   platform_post_type: z.string(),
   scheduled_at: z.string().nullable(),
-  target_audience_notes: z.string(),
   campaign_type_phase_id: z.string(),
 })
 
@@ -52,7 +49,6 @@ function docToFormValues(doc: Post): FormValues {
     platform_id: doc.platform_id,
     platform_post_type: doc.platform_post_type,
     scheduled_at: doc.scheduled_at,
-    target_audience_notes: doc.target_audience_notes,
     campaign_type_phase_id: doc.campaign_type_phase_id ?? NO_PHASE,
   }
 }
@@ -74,7 +70,6 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
     doc.campaign_id,
   )
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const brandBinds = useFeatureFlag('brand-materials')
 
   const platformId = form.watch('platform_id')
   const platformPostType = form.watch('platform_post_type')
@@ -106,9 +101,6 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
             break
           case 'scheduled_at':
             d.scheduled_at = values.scheduled_at ?? null
-            break
-          case 'target_audience_notes':
-            d.target_audience_notes = values.target_audience_notes ?? ''
             break
           case 'campaign_type_phase_id':
             d.campaign_type_phase_id =
@@ -243,13 +235,11 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
               in is the same class of thing as what it is written from, and
               burying it would make an inherited voice something you have to go
               looking for to discover. */}
-          {brandBinds && (
-            <Collapse title="VOICE & AUDIENCE" defaultOpen>
-              <div className="pt-2 pb-4">
-                <PostBrandSection post={doc} />
-              </div>
-            </Collapse>
-          )}
+          <Collapse title="VOICE & AUDIENCE" defaultOpen>
+            <div className="pt-2 pb-4">
+              <PostBrandSection post={doc} />
+            </div>
+          </Collapse>
 
           <Collapse title="ADVANCED">
             <div className="flex flex-col gap-4 pt-2 pb-4">
@@ -277,35 +267,6 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                   </FormItem>
                 )}
               />
-              {/* Answered by the post's audience once Brand is on. The stored
-                  value is left untouched rather than cleared — the box going
-                  away is a change to this panel, not permission to delete what
-                  somebody wrote. */}
-              {!brandBinds && (
-                <FormField
-                  control={form.control}
-                  name="target_audience_notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Target audience notes</FormLabel>
-                      <FormControl>
-                        {/* readOnly, not disabled: the Textarea renders a
-                            read-only value as plain content rather than dimming
-                            it, which is what these notes become once the post
-                            has gone out. */}
-                        <Textarea
-                          placeholder={
-                            locked ? undefined : 'Who should this reach?'
-                          }
-                          readOnly={locked}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
             </div>
           </Collapse>
 

@@ -38,6 +38,7 @@
     "@radix-ui/react-tabs": "^1.1.21",
     "@radix-ui/react-toast": "^1.2.23",
     "@radix-ui/react-tooltip": "^1.2.16",
+    "@sentry/react": "^10.75.0",
     "@tailwindcss/vite": "^4.1.11",
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-router": "^1.170.35",
@@ -58,6 +59,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@sentry/vite-plugin": "^5.4.0",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/router-vite-plugin": "^1.167.37",
     "@testing-library/dom": "^10.4.1",

@@ -7,8 +7,8 @@ import type { Campaign } from '@/types/campaigns'
 import { CollapsedCard } from './OverviewCard.tsx'
 
 /**
- * The Foundation row on the campaign Overview: what this campaign has been
- * given to write from.
+ * The Assets row on the campaign Overview: what this campaign has been given
+ * to write from.
  *
  * It used to report which of three source modes the campaign was in. There are
  * no modes any more (CON-210) — a campaign owns a set of documents, and the
@@ -20,25 +20,23 @@ import { CollapsedCard } from './OverviewCard.tsx'
  * "Content" while it was about posts; that card is titled from the table too
  * now, and says Posts.
  *
- * **It is the level-1 twin of Foundation's Sources card**, and it says the same
- * thing the same way: the kinds of document that are in there and how many of
- * each (`AssetKindTally`). The counts are the whole body, and the one line of
+ * **It is the level-1 twin of the workspace's Assets module**, and it says the
+ * same thing the same way: the kinds of document that are in there and how many
+ * of each (`AssetKindTally`). The counts are the whole body, and the one line of
  * prose that used to be here has gone — the badge says how much, the row says
  * what sort, and a sentence saying it is what the campaign writes from is the
  * card's own title read twice.
  *
- * **Still counts documents, though the page it opens now holds more than
- * documents.** The rest of that page — the guardrails, the voice and the
- * audience — is either the workspace's or already stated on the Strategy card
- * above, and a count of things this campaign did not choose is not a reading of
- * how ready it is.
+ * It counted documents while the page it opened was headed Foundation and held
+ * the campaign's inherited brand on top of them; the page is the documents now
+ * and nothing else, so the card and its destination finally say the same word.
  */
 export function DocumentsModule({ campaign }: { campaign: Campaign }) {
   // The badge is counted from the campaign alone, so it is right before the
   // asset list arrives — and an id whose asset has since been deleted still
   // counts in it, until the page below is opened. The breakdown needs the
-  // documents themselves, so it waits; the query is the one the Foundation
-  // page and the workspace bank already share, so this is usually a cache read
+  // documents themselves, so it waits; the query is the one the Assets page
+  // and the workspace bank already share, so this is usually a cache read
   // rather than a fetch this screen paid for.
   const count = campaign.asset_ids.length
   const { data: assets } = useAssets()
@@ -49,14 +47,10 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
   // the opposite of the truth. Opening the page below pins it to a real set.
   if (seedsWholeBank(campaign)) {
     return (
-      <CollapsedCard
-        section="foundation"
-        target="foundation"
-        campaignId={campaign.id}
-      >
+      <CollapsedCard section="assets" target="assets" campaignId={campaign.id}>
         <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
-          This campaign still draws on the whole content bank — open Foundation
-          to see its documents.
+          This campaign still draws on the whole content bank — open Assets to
+          see its documents.
         </span>
       </CollapsedCard>
     )
@@ -64,11 +58,7 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
 
   if (count === 0) {
     return (
-      <CollapsedCard
-        section="foundation"
-        target="foundation"
-        campaignId={campaign.id}
-      >
+      <CollapsedCard section="assets" target="assets" campaignId={campaign.id}>
         <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
           This campaign writes from its brief alone.
         </span>
@@ -78,8 +68,8 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
 
   return (
     <CollapsedCard
-      section="foundation"
-      target="foundation"
+      section="assets"
+      target="assets"
       campaignId={campaign.id}
       status={
         <StatusBadge

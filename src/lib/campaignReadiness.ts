@@ -26,53 +26,39 @@ function channelNameOf(view: PlatformView | undefined): string {
 
 // --- Brief ------------------------------------------------------------------
 
-export type BriefField =
-  'description' | 'target_persona' | 'key_messages' | 'tone_guidelines'
+export type BriefField = 'description' | 'key_messages'
 
 export const BRIEF_FIELD_LABELS: Record<BriefField, string> = {
   description: 'Description',
-  target_persona: 'Target persona',
   key_messages: 'Key messages',
-  tone_guidelines: 'Tone guidelines',
 }
 
-const BRIEF_FIELDS: BriefField[] = [
-  'description',
-  'target_persona',
-  'key_messages',
-  'tone_guidelines',
-]
-
 /**
- * What the brief still asks for once Brand supplies the rest (CON-226 §8).
+ * What the brief asks for, now that Brand supplies the rest (CON-226 §8).
  *
- * `target_persona` and `tone_guidelines` are answered by the campaign's
- * audience and voice, and their boxes are gone from the screen — so counting
- * them would report every campaign as permanently incomplete against fields
- * nobody can fill. `key_messages` stays: it is what *this* campaign argues,
- * which is not brand material.
+ * The campaign row still carries `target_persona` and `tone_guidelines`, and
+ * they are still round-tripped on save — but they are answered by the
+ * campaign's audience and voice and no screen offers a box for them, so
+ * counting them would report every campaign as permanently incomplete against
+ * fields nobody can fill. `key_messages` stays: it is what *this* campaign
+ * argues, which is not brand material.
  *
- * This does not yet count *having* a voice as part of readiness. It should —
- * an unbound campaign is exactly as incomplete as one with no tone written —
- * but the binding lives outside the campaign until CON-228, and reaching for
- * it here would make a pure derivation fetch.
+ * This does not count *having* a voice as part of readiness. It should — an
+ * unbound campaign is exactly as incomplete as one with no tone written — but
+ * the binding would make a pure derivation fetch, so it is the attention rail's
+ * job rather than this one's.
  */
-const BOUND_BRIEF_FIELDS: BriefField[] = ['description', 'key_messages']
+const BRIEF_FIELDS: BriefField[] = ['description', 'key_messages']
 
 export type BriefPosture = {
   state: 'empty' | 'partial' | 'complete'
   missing: BriefField[]
 }
 
-export function briefPosture(
-  campaign: Campaign,
-  /** Whether Brand answers the persona and tone fields — the flag, passed in. */
-  brandBinds = false,
-): BriefPosture {
-  const fields = brandBinds ? BOUND_BRIEF_FIELDS : BRIEF_FIELDS
-  const missing = fields.filter((f) => campaign[f].trim() === '')
+export function briefPosture(campaign: Campaign): BriefPosture {
+  const missing = BRIEF_FIELDS.filter((f) => campaign[f].trim() === '')
   const state =
-    missing.length === fields.length
+    missing.length === BRIEF_FIELDS.length
       ? 'empty'
       : missing.length > 0
         ? 'partial'
@@ -92,7 +78,7 @@ export type FixTarget =
   | 'strategy'
   | 'workspace-settings'
   | 'posts'
-  | 'foundation'
+  | 'assets'
   // No attention rule points here — analytics reports, it never asks for a
   // fix. It is a target so the Overview's Analytics card can use the same
   // header link as every other module.

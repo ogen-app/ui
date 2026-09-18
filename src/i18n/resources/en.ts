@@ -229,24 +229,32 @@ export const en = {
     activityUnread_other: '{{count}} unread entries',
     campaigns: 'Campaigns',
     ideas: 'Ideas',
+    /**
+     * The workspace's documents — the row above Campaigns, and the module the
+     * content bank became. Assets rather than Documents because the list holds
+     * pictures and web pages as well as notes and PDFs, and rather than
+     * Sources because that word named it while it was a section of Foundation
+     * and described its job there rather than what is in it.
+     */
+    assets: 'Assets',
     calendar: 'Calendar',
     /** CON-237. Behind the `analytics-overview` flag — hidden while it is off. */
     analytics: 'Analytics',
     /**
      * CON-227. Behind the `brand-materials` flag — hidden while it is off.
      *
-     * Foundation rather than Brand: the section holds the voices, audiences,
-     * guardrails and source documents every campaign writes from, and only one
-     * of those four is what anyone means by a brand. The flag, the module
-     * folder and the `/api/brand` resource keep the server's word.
+     * Foundation rather than Brand: the section holds the voices, audiences
+     * and guardrails every campaign writes from, and only one of those three
+     * is what anyone means by a brand. The flag, the module folder and the
+     * `/api/brand` resource keep the server's word.
      */
     foundation: 'Foundation',
     workspaceSettings: 'Workspace Settings',
     /**
      * The same footer slot as `workspaceSettings`, for the level below it.
-     * Named in full rather than left as "Settings": the row sits under
-     * Foundation, which is workspace-wide, so the word that says which of
-     * the two scopes this one belongs to is the one that has to be there.
+     * Named in full rather than left as "Settings": the footer carries rows
+     * of both scopes, so the word that says which one this belongs to is the
+     * one that has to be there.
      */
     campaignSettings: 'Campaign Settings',
     profile: 'Profile',
@@ -267,8 +275,9 @@ export const en = {
     campaignNoWindow: 'No dates set',
     /**
      * Level 1's rows, each the campaign-narrowed twin of a level 0 row:
-     * Inbox → Overview, Ideas → Ideas, Campaigns → Posts, Calendar → Calendar,
-     * Analytics → Analytics, Foundation → Foundation.
+     * Inbox → Overview, Ideas → Ideas, Assets → Assets, Campaigns → Posts,
+     * Calendar → Calendar, Analytics → Analytics. Foundation is the one level
+     * 0 row with no twin — see `lib/campaignSections`.
      *
      * **No row says "Campaign".** They were prefixed for a while, on the
      * argument that "Campaign analytics" tells you which of the two you are
@@ -283,18 +292,17 @@ export const en = {
       overview: 'Overview',
       strategy: 'Strategy',
       ideas: 'Ideas',
+      /**
+       * The workspace's Assets, narrowed — the same word at both levels rather
+       * than a second name for it. The page holds this campaign's own
+       * documents and nothing else.
+       */
+      assets: 'Assets',
       // The table, not the grid: this is the row that opens the place posts
       // are actually worked on, and the calendar is now its own row below.
       posts: 'Posts',
       calendar: 'Calendar',
       analytics: 'Analytics',
-      /**
-       * The workspace's Foundation, narrowed — the same word at both levels
-       * rather than a second name for it. The page holds the same kinds of
-       * thing scoped to one campaign: the brand material it draws on, and the
-       * documents it writes from.
-       */
-      foundation: 'Foundation',
       activity: 'Activity',
       settings: 'Settings',
     },
@@ -471,21 +479,32 @@ export const en = {
     markAllRead: 'MARK ALL READ',
     loadFailed: 'Unable to load activity',
     /**
-     * One of the feed's two sources failed while the other answered. The feed
-     * still renders what arrived; this names the half that is missing so a
-     * quiet page cannot be mistaken for a quiet workspace.
+     * One of the feed's sources failed while another answered. The feed still
+     * renders what arrived; these name what is missing, so a quiet page cannot
+     * be mistaken for a quiet workspace. Keyed by the source so the screen can
+     * print one line per failure — `lib/activityFeed`'s three inputs fail
+     * independently.
      */
-    notificationsUnavailable:
-      'Notifications could not be loaded — showing the daily reports only.',
-    summariesUnavailable:
-      'Campaign summaries could not be loaded — entries may be missing their links and the daily reports are unavailable.',
+    unavailable: {
+      notifications:
+        'Notifications could not be loaded — showing the daily reports only.',
+      reports:
+        'The daily reports could not be loaded — showing what was recorded as it happened.',
+      /**
+       * The summaries carry no entries of their own: they are how a post
+       * notification finds the campaign that holds it, so losing them costs
+       * destinations rather than rows.
+       */
+      links:
+        'Campaign summaries could not be loaded — some entries may not link to what they are about.',
+    },
     /**
-     * Said under the last day card when the recorded half came back a full
-     * page. Names which half ran out — the day reports below it are computed
-     * from posts and go back as far as the posts do.
+     * Said under the last day card when a source came back at its ceiling.
+     * Both halves have one — the recorded page and the run of days — so the
+     * sentence names both rather than implying either goes further.
      */
     truncated:
-      'Showing the most recent 100 entries. The daily reports below go back further.',
+      'Showing the most recent {{entries}} entries and the last {{days}} days that had anything on them.',
     empty: {
       title: 'Nothing has happened yet',
       subtitle:
@@ -525,12 +544,33 @@ export const en = {
         'Your {{channel}} connection needs reconnecting',
       postPublished: 'A {{channel}} post was published',
       postPublishFailed: 'A {{channel}} post failed to publish',
+      /**
+       * Says nothing about the channel on purpose: this producer carries a
+       * platform sqid rather than a network, and it is not ours to resolve
+       * here — see `lib/notifications`.
+       */
+      postManualPublishDue: 'A post is due to be published by hand',
       assetReady: 'A document finished processing',
       assetIngestFailed: 'A document could not be processed',
+      /**
+       * A page we went and read, not a file somebody handed over — which is
+       * why the server splits these off from `asset.*` at all.
+       */
+      urlAssetCrawled: 'A link has been read',
+      urlAssetFailed: 'A link could not be read',
       /** The count is the point — it is what says whether the plan is worth opening. */
       campaignContentPlanReady_one: 'A content plan is ready — {{count}} post',
       campaignContentPlanReady_other:
         'A content plan is ready — {{count}} posts',
+      contentPlanFailed: 'A content plan could not be generated',
+      /**
+       * The post and the campaign assistant share one sentence: the row links
+       * to whichever it was, and only the person who started the run is told.
+       */
+      assistantCompleted: 'The assistant finished your request',
+      assistantFailed: 'The assistant could not finish your request',
+      assessmentCompleted: 'A quality assessment is ready',
+      assessmentFailed: 'A quality assessment could not be finished',
     },
     report: {
       /**
@@ -541,28 +581,53 @@ export const en = {
       label: {
         published: 'Published',
         failed: 'Failed',
-        notPublished: 'Never published',
         created: 'Created',
+        campaigns: 'Campaigns',
       },
       published_one: '{{count}} post published',
       published_other: '{{count}} posts published',
-      failed_one: '{{count}} post failed to publish',
-      failed_other: '{{count}} posts failed to publish',
-      notPublished_one: '{{count}} post was never published',
-      notPublished_other: '{{count}} posts were never published',
+      /**
+       * Covers both ways a post can fail to go out. The server counts them in
+       * one bucket, because the reader's question is the same for either; which
+       * one each post was is on its own row, under `status`.
+       */
+      failed_one: '{{count}} post did not go out',
+      failed_other: '{{count}} posts did not go out',
       created_one: '{{count}} post created',
       created_other: '{{count}} posts created',
+      campaignsCreated_one: '{{count}} campaign started',
+      campaignsCreated_other: '{{count}} campaigns started',
+      /** How many of the day's new posts were given a date. */
+      scheduled_one: '{{count}} scheduled',
+      scheduled_other: '{{count}} scheduled',
       byChannel: 'Published by channel',
-      byCampaign: 'By campaign',
+      didNotGoOut: 'Did not go out',
+      createdBy: 'Written by',
+      campaignsStarted: 'Campaigns started',
+      /** Which of the two a post row was — the distinction the tile merges. */
+      status: {
+        failed: 'Failed to publish',
+        notPublished: 'Never published',
+      },
+      /**
+       * A post survives the membership that wrote it, so a count can name an
+       * author the workspace no longer has. The number is real; only the name
+       * is gone.
+       */
+      formerMember: 'Someone who has left',
+      /** `created_by` was never recorded — an older post, or one the server made. */
+      noAuthor: 'Not recorded',
+      loading: 'Counting up the day…',
+      loadFailed: 'This report could not be loaded.',
       nothing: 'Nothing happened on this day.',
       /**
-       * What the report counted and what it could not — it is computed from
-       * the workspace's posts, so it knows nothing about the AI runs, uploads
-       * or connection health that the feed will carry once the server records
-       * them.
+       * What the report counted and by whose midnight. The zone is named
+       * because it is the one thing about these figures a reader could
+       * reasonably disagree with — it is the browser's, and a laptop that
+       * travelled reports a different day than the one it left.
        */
       coverage:
-        'Counted from this workspace’s posts, by your local calendar day.',
+        'Counted from this workspace’s posts, by the calendar day in {{zone}}.',
     },
   },
 
@@ -585,7 +650,7 @@ export const en = {
     openActivity: 'OPEN ACTIVITY',
     openAnalytics: 'OPEN ANALYTICS',
     openStrategy: 'OPEN STRATEGY',
-    openFoundation: 'OPEN FOUNDATION',
+    openAssets: 'OPEN ASSETS',
     openSettings: 'OPEN SETTINGS',
 
     /**
@@ -1014,6 +1079,8 @@ export const en = {
           'Something went wrong connecting your account. Please try again.',
         upstream:
           'We couldn’t reach the platform. Please try again in a moment.',
+        permission:
+          'We couldn’t connect a page or profile. Reconnect and make sure you allow access to a page or profile you manage.',
         noTargets:
           'This account doesn’t have any pages or profiles we can publish to.',
         generic: 'We couldn’t connect your account. Please try again.',
@@ -2495,13 +2562,6 @@ export const en = {
         whenEmpty:
           'Nothing is stated as true. Every figure in every post is invention, written confidently.',
       },
-      sources: {
-        label: 'Sources',
-        description:
-          'The documents the workspace writes from — briefs, transcripts, product pages, anything already written down. A campaign attaches the ones it draws on; this is all of them, including the ones no campaign has claimed yet.',
-        whenEmpty:
-          'Nothing to write from but the brief. Every generated post is invention.',
-      },
       look: {
         label: 'Look',
         description:
@@ -3244,6 +3304,18 @@ export const en = {
 
   content: {
     /**
+     * The documents list, at both scopes — `ContentPage` is one component and
+     * two screens. The workspace's title is the module's name on its own,
+     * because the rail's row is the whole address; the campaign's takes the
+     * shape every other campaign section uses, `${campaign} ${section}`, so
+     * the page says whose documents these are.
+     */
+    page: {
+      title: 'Assets',
+      campaignTitle: '{{campaign}} Assets',
+    },
+
+    /**
      * Shown in place of the editor for an asset this build can't open — in
      * practice, one whose `type` the server added after this version shipped
      * (CON-16 R32). It has to explain itself without naming the kind, because
@@ -3462,6 +3534,13 @@ export const en = {
       message: "The app can't connect to the server right now.",
       messageSecondLine: 'It may be restarting or temporarily offline.',
       type: 'OFFLINE',
+    },
+    crash: {
+      code: '500',
+      title: 'Something went wrong',
+      message: 'The app hit an unexpected error. Reloading usually fixes it.',
+      type: 'ERROR',
+      reload: 'Reload',
     },
   },
 }

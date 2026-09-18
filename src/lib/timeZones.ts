@@ -34,6 +34,29 @@ export function describeTimeZone(timeZone: string): string {
   return offset ? `${name} (${offset})` : name
 }
 
+/**
+ * The zone this browser is in, as an IANA name.
+ *
+ * Which is a *request parameter* rather than a display choice: the daily report
+ * is cut into local days by the server (CON-285), and this is the only thing
+ * that tells it where midnight falls. Not the workspace's zone and not a
+ * campaign's — the question the report answers is "what happened today", and
+ * today belongs to whoever is reading.
+ *
+ * Falls back to `UTC` rather than to an empty string: the endpoints answer 400
+ * to a zone they cannot load, and a report cut somewhere is better than a
+ * screen that fails. A runtime without `Intl` is not one this app runs in, but
+ * `resolvedOptions().timeZone` is typed as a `string` while older engines
+ * really did return undefined.
+ */
+export function browserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  } catch {
+    return 'UTC'
+  }
+}
+
 let cached: string[] | null = null
 
 /**

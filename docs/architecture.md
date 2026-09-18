@@ -33,7 +33,7 @@ src/
     layout/        App chrome: AppSidebar, RightSidebar, AppAuth, LiveStatus.
     tables/        VirtualTable engine + postsTable / docsTable + column-width solver.
     forms/         Feature forms (campaign, post, auth) — see Forms.
-    assistant/ campaigns/ posts/ content-bank/ uploads/ workspace-settings/ profile/ settings/
+    assistant/ campaigns/ posts/ content/ brand/ uploads/ workspace-settings/ profile/ settings/
   hooks/           TanStack Query hooks + UI hooks (useOverlay, usePanelScope).
   services/api/    The API client: base + http helpers + one module per resource.
   stores/          Zustand stores (assistant, auth, eventStream, settings, toast, upload).
@@ -76,14 +76,16 @@ the global right-rail section.
 
 **Layout-escape idiom.** A trailing underscore on a path segment breaks a route
 out of its parent layout. `campaigns/$campaignId_/posts/$postId.tsx` renders the
-post editor fullscreen (no campaign tab bar); `content-bank_/$assetId.tsx` does
-the same for the asset editor.
+post editor fullscreen (no campaign tab bar); `$campaignId_/assets/$assetId.tsx`
+does the same for a campaign document. The workspace's copy of that screen
+(`assets/$assetId.tsx`) needs no underscore — `/assets` is a destination rather
+than a layout, so there is nothing above it to escape.
 
 **URL is the source of truth for tab state.** Active tabs are derived from the
 pathname via `useRouterState({ select })` rather than local state (see
-`$campaignId.tsx`, `content-bank.tsx`). Routes normalize their own params — e.g.
-the calendar route's `beforeLoad` validates `$anchor`/`$view` and redirects
-malformed URLs to the current week.
+`$campaignId.tsx`). Routes normalize their own params — e.g. the calendar
+route's `beforeLoad` validates `$anchor`/`$view` and redirects malformed URLs
+to the current week.
 
 ## Data fetching — TanStack Query
 

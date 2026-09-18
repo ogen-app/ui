@@ -116,6 +116,29 @@ Add the custom domain (e.g. `app.getogen.com`) on the service. Keeping it on the
 same registrable domain as the API keeps cookies same-site. See the API deploy
 runbook (ogen CON-95) for the backend side.
 
+### Error monitoring & tracing (Sentry, CON-304)
+
+Off unless a DSN is set (fail-open) — dev and any build without `VITE_SENTRY_DSN`
+behave exactly as before. When on, the SDK captures unhandled UI errors and
+React render crashes, starts a browser trace per page load / navigation, and
+propagates `sentry-trace`/`baggage` **to the API origin only** so the browser
+span is the parent of the server trace. No session replay; request bodies, query
+strings and PII are scrubbed — only the user id and a `tenant_id` tag are sent.
+
+Build variables (`Dockerfile` args → Railway build variables):
+
+| Variable | Default | Notes |
+|---|---|---|
+| `VITE_SENTRY_DSN` | empty | Empty ⇒ telemetry off. Set to turn it on. |
+| `VITE_SENTRY_ENVIRONMENT` | `production` | Sentry environment tag. |
+| `VITE_SENTRY_TRACES_SAMPLE_RATE` | `0.1` | Head sample rate, `0`–`1`. Errors are always sent. |
+| `VITE_APP_RELEASE` | empty | Release tag — use the commit SHA, matching the API's `SENTRY_RELEASE`. |
+| `SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `SENTRY_PROJECT` | empty | **Build-time only**, for source-map upload. No `VITE_` prefix, so never bundled; the build stage is discarded before the runtime image. Empty ⇒ no upload and no maps emitted. |
+
+Cross-origin deploys (`VITE_API_URL` set) also need the API to allow the
+`sentry-trace` and `baggage` request headers via CORS — see ogen CON-303. The
+default same-origin Caddy proxy needs no CORS change.
+
 Locally:
 
 ```bash

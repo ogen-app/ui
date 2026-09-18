@@ -52,10 +52,10 @@ export function DeleteAssetDialog({
         // This route would 404 on the deleted id, so leaving is not optional.
         void (campaignId
           ? navigate({
-              to: '/campaigns/$campaignId/foundation',
+              to: '/campaigns/$campaignId/assets',
               params: { campaignId },
             })
-          : navigate({ to: '/foundation/sources' }))
+          : navigate({ to: '/assets' }))
       },
       // No onError: the mutation cache raises the API's own message.
     })

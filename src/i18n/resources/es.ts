@@ -191,6 +191,7 @@ export const es: Translation = {
     activityUnread_other: '{{count}} entradas sin leer',
     campaigns: 'Campañas',
     ideas: 'Ideas',
+    assets: 'Recursos',
     calendar: 'Calendario',
     analytics: 'Analíticas',
     foundation: 'Fundamentos',
@@ -209,10 +210,10 @@ export const es: Translation = {
       overview: 'Resumen',
       strategy: 'Estrategia',
       ideas: 'Ideas',
+      assets: 'Recursos',
       posts: 'Publicaciones',
       calendar: 'Calendario',
       analytics: 'Analíticas',
-      foundation: 'Fundamentos',
       activity: 'Actividad',
       settings: 'Ajustes',
     },
@@ -343,12 +344,16 @@ export const es: Translation = {
     title: 'Actividad',
     markAllRead: 'MARCAR TODO COMO LEÍDO',
     loadFailed: 'No se pudo cargar la actividad',
-    notificationsUnavailable:
-      'No se pudieron cargar las notificaciones; solo se muestran los informes diarios.',
-    summariesUnavailable:
-      'No se pudieron cargar los resúmenes de campaña; algunas entradas pueden no tener enlace y los informes diarios no están disponibles.',
+    unavailable: {
+      notifications:
+        'No se pudieron cargar las notificaciones; solo se muestran los informes diarios.',
+      reports:
+        'No se pudieron cargar los informes diarios; solo se muestra lo que quedó registrado cuando ocurrió.',
+      links:
+        'No se pudieron cargar los resúmenes de campaña; puede que algunas entradas no enlacen con aquello de lo que hablan.',
+    },
     truncated:
-      'Mostrando las 100 entradas más recientes. Los informes diarios de abajo llegan más atrás.',
+      'Mostrando las {{entries}} entradas más recientes y los últimos {{days}} días con algo que contar.',
     empty: {
       title: 'Todavía no ha pasado nada',
       subtitle:
@@ -368,33 +373,53 @@ export const es: Translation = {
       connectionActionRequired: 'Tu conexión con {{channel}} debe reconectarse',
       postPublished: 'Se publicó una publicación de {{channel}}',
       postPublishFailed: 'No se pudo publicar una publicación de {{channel}}',
+      postManualPublishDue: 'Hay una publicación pendiente de publicar a mano',
       assetReady: 'Un documento terminó de procesarse',
       assetIngestFailed: 'No se pudo procesar un documento',
+      urlAssetCrawled: 'Se terminó de leer un enlace',
+      urlAssetFailed: 'No se pudo leer un enlace',
       campaignContentPlanReady_one:
         'Hay un plan de contenido listo — {{count}} publicación',
       campaignContentPlanReady_other:
         'Hay un plan de contenido listo — {{count}} publicaciones',
+      contentPlanFailed: 'No se pudo generar un plan de contenido',
+      assistantCompleted: 'El asistente terminó tu solicitud',
+      assistantFailed: 'El asistente no pudo terminar tu solicitud',
+      assessmentCompleted: 'Hay una evaluación de calidad lista',
+      assessmentFailed: 'No se pudo completar una evaluación de calidad',
     },
     report: {
       label: {
         published: 'Publicadas',
         failed: 'Fallidas',
-        notPublished: 'Nunca publicadas',
         created: 'Creadas',
+        campaigns: 'Campañas',
       },
       published_one: '{{count}} publicación publicada',
       published_other: '{{count}} publicaciones publicadas',
-      failed_one: '{{count}} publicación no se pudo publicar',
-      failed_other: '{{count}} publicaciones no se pudieron publicar',
-      notPublished_one: '{{count}} publicación nunca se publicó',
-      notPublished_other: '{{count}} publicaciones nunca se publicaron',
+      failed_one: '{{count}} publicación no llegó a salir',
+      failed_other: '{{count}} publicaciones no llegaron a salir',
       created_one: '{{count}} publicación creada',
       created_other: '{{count}} publicaciones creadas',
+      campaignsCreated_one: '{{count}} campaña empezada',
+      campaignsCreated_other: '{{count}} campañas empezadas',
+      scheduled_one: '{{count}} programada',
+      scheduled_other: '{{count}} programadas',
       byChannel: 'Publicado por canal',
-      byCampaign: 'Por campaña',
+      didNotGoOut: 'No llegaron a salir',
+      createdBy: 'Escritas por',
+      campaignsStarted: 'Campañas empezadas',
+      status: {
+        failed: 'No se pudo publicar',
+        notPublished: 'Nunca se publicó',
+      },
+      formerMember: 'Alguien que ya no está',
+      noAuthor: 'Sin registrar',
+      loading: 'Contando el día…',
+      loadFailed: 'No se pudo cargar este informe.',
       nothing: 'Ese día no pasó nada.',
       coverage:
-        'Calculado a partir de las publicaciones de este espacio, según tu día natural local.',
+        'Calculado a partir de las publicaciones de este espacio, según el día natural en {{zone}}.',
     },
   },
 
@@ -406,7 +431,7 @@ export const es: Translation = {
     openActivity: 'ABRIR ACTIVIDAD',
     openAnalytics: 'ABRIR ANALÍTICAS',
     openStrategy: 'ABRIR ESTRATEGIA',
-    openFoundation: 'ABRIR FUNDAMENTOS',
+    openAssets: 'ABRIR RECURSOS',
     openSettings: 'ABRIR AJUSTES',
     noDate: 'Sin fecha',
   },
@@ -713,6 +738,8 @@ export const es: Translation = {
         mismatch: 'Algo ha fallado al conectar tu cuenta. Inténtalo de nuevo.',
         upstream:
           'No hemos podido contactar con la plataforma. Inténtalo dentro de un momento.',
+        permission:
+          'No hemos podido conectar una página o perfil. Vuelve a conectar y asegúrate de permitir el acceso a una página o perfil que gestiones.',
         noTargets:
           'Esta cuenta no tiene páginas ni perfiles en los que podamos publicar.',
         generic: 'No hemos podido conectar tu cuenta. Inténtalo de nuevo.',
@@ -1742,13 +1769,6 @@ export const es: Translation = {
         whenEmpty:
           'No se afirma nada como cierto. Toda cifra de toda publicación es invención, escrita con aplomo.',
       },
-      sources: {
-        label: 'Fuentes',
-        description:
-          'Los documentos a partir de los que escribe el espacio de trabajo: briefings, transcripciones, páginas de producto, cualquier cosa ya escrita. Cada campaña adjunta los que usa; esto son todos, incluidos los que ninguna campaña ha reclamado.',
-        whenEmpty:
-          'No hay nada a partir de lo que escribir salvo el briefing. Toda publicación generada es invención.',
-      },
       look: {
         label: 'Aspecto',
         description:
@@ -2385,6 +2405,11 @@ export const es: Translation = {
   },
 
   content: {
+    page: {
+      title: 'Recursos',
+      campaignTitle: 'Recursos de {{campaign}}',
+    },
+
     unsupported: {
       title: 'Esto no es un documento',
       body: 'Esta versión de la aplicación no sabe mostrar este tipo de recurso. No se ha cambiado nada: sigue aquí, y una versión más reciente lo abrirá.',
@@ -2511,6 +2536,14 @@ export const es: Translation = {
       messageSecondLine:
         'Puede que se esté reiniciando o que esté temporalmente sin servicio.',
       type: 'SIN CONEXIÓN',
+    },
+    crash: {
+      code: '500',
+      title: 'Algo salió mal',
+      message:
+        'La aplicación tuvo un error inesperado. Recargar suele solucionarlo.',
+      type: 'ERROR',
+      reload: 'Recargar',
     },
   },
 }

@@ -11,8 +11,8 @@ function parse(...chunks: string[]): SSEFrame[] {
 
 describe('createSSEParser', () => {
   it('reads the shape the backend actually emits', () => {
-    expect(parse('id: abc\nevent: post_scheduled\ndata: {"a":1}\n\n')).toEqual([
-      { event: 'post_scheduled', data: '{"a":1}', id: 'abc', retry: null },
+    expect(parse('id: abc\nevent: post.scheduled\ndata: {"a":1}\n\n')).toEqual([
+      { event: 'post.scheduled', data: '{"a":1}', id: 'abc', retry: null },
     ])
   })
 

@@ -132,6 +132,8 @@ function connectErrorCopy(code: string, t: TFunction): string {
       return t('workspaceSettings.connect.errors.mismatch')
     case 'upstream':
       return t('workspaceSettings.connect.errors.upstream')
+    case 'permission':
+      return t('workspaceSettings.connect.errors.permission')
     case 'no_targets':
       return t('workspaceSettings.connect.errors.noTargets')
     default:

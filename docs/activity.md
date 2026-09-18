@@ -9,14 +9,16 @@ reasoning — what the surface is for, what it
 deliberately is not, and which decisions are load-bearing enough that changing
 one means revisiting the rest.
 
-**What exists today:** Phase 2, behind the `activity` flag. The sidebar item
-with its count, `/activity`, the day cards and the full-screen report at
-`/activity/$date` are built; the feed reads the recorded notifications CON-242
-landed (`GET /api/notifications`, live over
-`GET /api/notifications/stream`), and the day reports are still computed from
-the batched campaign summaries. `lib/activityFeed.ts` is the whole rule set,
-pure and tested. What is left before the flag can flip is in the flag's own
-comment — it is about coverage on the *server* side, not about this screen.
+**What exists today:** Phase 2, on since 2026-09-18. The sidebar item with its
+count, `/activity`, the day cards and the full-screen report at `/activity/$date`
+are built; the feed reads the recorded notifications CON-242 landed (`GET
+/api/notifications`, live over `GET /api/notifications/stream`), and the day
+reports come off the server (`GET /api/activity/report/:date?tz=`,
+`GET /api/activity/reports`). What is left in `lib/activityFeed.ts` is the rule
+set that orders and groups the two — pure and tested, as it was; the arithmetic
+that used to sit beside it is described under [The report](#the-report). What is
+known and not yet handled is in the flag's own comment, and it is about coverage
+on the *server* side rather than about this screen.
 
 **Tasks are a separate feature** (CON-234, [`tasks.md`](./tasks.md)), a module
 of their own next door in the rail rather than a card on this screen. "Edges and
@@ -157,30 +159,55 @@ full-screen report.
 **Always computed, never written.** Deterministic counts: *"6 posts published: 3
 LinkedIn, 2 Instagram, 1 X. 4 created by Ana. 1 failed."* Always correct, always
 instant, no running cost. If an AI narrative is ever wanted it sits on top of
-these numbers rather than replacing them.
+these numbers rather than replacing them. That part has not changed; **where**
+the counting happens has.
 
-### It needs no backend
+### It moved to the server, and the timezone is why
 
-`useCampaignSummaries` already returns, in one batched request the Campaigns
-list makes anyway, every post in the workspace with `status`, `published_at`,
-`scheduled_at`, `created_at`, `updated_at` and `platform_id`. The report is a
-**pure function over data already fetched** — the same shape
-`campaignReadiness` has, and it belongs in `src/lib/` on the same terms: pure,
-`now` injected, no fetching inside it, unit-tested for the populated and the
-empty day.
+This proposal specified the report as a pure function over
+`useCampaignSummaries` — every post in the workspace, in one batched request the
+Campaigns list makes anyway, with no new endpoint at all. The argument for it
+was the day boundary: the report is cut into *local* calendar days, and there
+was no timezone to hand the server, the same reason the clock-dependent
+readiness rules stayed client-side
+([`technical-decisions.md#batched-summaries`](./technical-decisions.md#batched-summaries)).
 
-Two consequences:
+**CON-285 reversed it** (decided 2026-09-04, shipped 2026-09-17), and answered
+the boundary by asking for it: `tz` is a **required** IANA parameter on both
+endpoints and a missing or unloadable one is a 400 rather than a quiet UTC day.
+`lib/timeZones.ts`'s `browserTimeZone()` is what the client sends, and it is the
+same zone `dayKey` groups the feed's cards by — those two disagreeing is the one
+way a notification could land under the wrong day's heading.
 
-- Any historical day is available as long as its posts are, and the report can
-  never drift from the data. Better than a stored digest, not worse.
-- **The day boundary is the client's local one.** There is no timezone to hand
-  the server — the same reason the clock-dependent readiness rules stayed
-  client-side ([`technical-decisions.md#batched-summaries`](./technical-decisions.md#batched-summaries)).
+What the trade bought is the two things the summaries projection could not
+reach, both of them listed here as "widens later":
 
-What it cannot reach until the backend widens: *why* a post failed (no error
-text in the projection), asset-processing and AI-run history (nothing persists
-them), and workspace-wide authorship (`created_by` is not in `PostSummary` — one
-field). So v1 is honestly a **publishing report** that widens later.
+- **Who created a post.** `created_by` exists on the model but was not in
+  `PostSummary`; CON-285 added it there too, so the report's `by_author`
+  breakdown is real rather than pending. The ids are per-workspace membership
+  ids, the same ones `listMembers` returns — a count against an id nobody
+  matches belongs to somebody who has left, and the screen says so rather than
+  printing a sqid.
+- **Why a post failed.** `failure_reason` rides along the same way. It is Go
+  prose (`"zernio_terminal: rejected"`), not a code, so the report shows it
+  verbatim — the same rule as a notification's server-composed `title`. A
+  per-result code is the ask, and it is the one `lib/uploadError` is already
+  waiting on.
+
+What it cost is the **per-campaign breakdown**, which the computed version had
+for free because it held every post. That was never in the v1 contents above; a
+campaign's own report is the same endpoint with `campaign_id` set, which is the
+shape this proposal asked for anyway — *one implementation, two scopes*.
+
+Two properties survived the move intact, and they are the ones worth checking if
+it is ever revisited: the report is still **recomputed on every call** from live
+post and campaign rows rather than stored as a digest, so it cannot drift from
+the data; and a day with nothing on it is still **absent from the list** while
+answering a **zeroed 200** on its own — so the feed carries no row per silent
+weekend, and a link to a quiet day still renders.
+
+Still out of reach: asset-processing and AI-run history, because nothing
+persists them. So v1 remains honestly a **publishing report**.
 
 ### The boundary with Analytics
 
@@ -244,7 +271,10 @@ thing in the backend issue rather than a footnote.
 **Phase 1 needed no backend.** Sidebar item, `/activity`, computed daily
 reports, the full-screen report view, with the feed's own entries *derived* from
 current post state and unread kept as a last-seen timestamp under
-`userScopedKey('activity')`.
+`userScopedKey('activity')`. Nothing of that half is left: the derived entries
+went with CON-242, the timestamp with them, and the computed report with
+CON-285 — the *screens* are what survived, which is what "needed no backend"
+bought.
 
 **Phase 2 is the live feed**, and it landed with CON-242. Recorded entries
 replaced the derived ones, read state is per row and server-side, and the
@@ -258,7 +288,9 @@ Two consequences worth stating rather than discovering:
 
 - **The feed starts empty.** Nothing was recorded before the table existed, so
   the entries only go back as far as CON-242's deploy. The reports do not — they
-  are computed from posts and reach as far back as the posts do.
+  are counted from posts and reach as far back as the posts do, though the feed
+  asks for one bounded run of days rather than paging, and says on screen where
+  that run stops.
 - **A recorded row has one recipient, and that is now known to be wrong.** The
   producers write to the thing's `created_by`, so a post failing is news to
   whoever made it and to nobody else, where the derived entry was visible to
@@ -296,7 +328,10 @@ without the other.
   the limit, ~30-minute connection lifetime) and ogen#152 raised it to 30.
   What remains ours is the `event: recycle` frame nothing listens for yet —
   the `activity` flag comment and `docs/sse.md` carry it.
-- **Event naming is still mixed** — dotted (`zernio.sync.ok`) and snake_case
-  (`post_cloned`), matched literally in `lib/eventRouting.ts`. The notification
-  vocabulary settled on dotted (`post.publish_failed`), so the hub is now the
-  odd one out.
+- **Event naming is settled — dotted on both streams** (CON-285, ogen#161,
+  2026-09-17). The nine snake_case bus types were renamed
+  (`assistant_completed` → `assistant.completed`, `post_cloned` →
+  `post.cloned`) and `lib/eventRouting.ts` matches the new spellings. The
+  server's persisted taxonomies keep the old ones on purpose, so a
+  `tenant_activity_events` row still reads `post_cloned` — that is history, not
+  a wire name.
