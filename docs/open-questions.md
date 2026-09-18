@@ -21,7 +21,7 @@ contract doc, or the Linear issue. When an entry closes, delete the row — a
 stale question is worse than no list, because it sends someone to re-answer
 something that already has an answer.
 
-Last reviewed 2026-09-16.
+Last reviewed 2026-09-18.
 
 ---
 
@@ -43,11 +43,7 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 
 | # | Waiting on | Ticket | Blocks |
 | --- | --- | --- | --- |
-| A1 | **`post.publish_failed` fans out to the workspace.** Decided 2026-09-06, matching CON-285 FR8. Shipped producers emit to `post.CreatedBy` only — a producer-side `Emit` → `EmitToUsers` change, no client work. | CON-285 | `activity` |
-| A2 | **`post.published` stays, workspace-wide.** Decided 2026-09-06 against the volume argument: people schedule posts and then hear nothing, and a system silent when publishing works is indistinguishable from one whose scheduler is broken. Volume belongs to preferences and digests (CON-242 §12). | CON-285 | `activity` |
-| A3 | The **daily report** endpoints and the **remaining twelve producer types**, including the net-new `post.manual_publish_due` sweep. The client half is **built and waiting** — feed, day cards, `/activity/$date`. | CON-285 | `activity` |
 | A4 | **Copy arrives as prose.** FR7 asks for `type` + `vars`; CON-242 ships a server-composed `title`/`body`. We render from `type` + `data` where we have a key and fall back to English where we don't — so a Spanish workspace reads English for any type this build predates. | CON-285 FR7 | — |
-| X1 | **Event naming is mixed on `/api/events`** — dotted (`zernio.sync.ok`, `asset.updated`) beside snake_case (`post_cloned`, `assistant_completed`), matched literally in `lib/eventRouting.ts`. Raised 2026-09-16 on CON-285, whose FR7 already rules the *notification* vocabulary dotted; the bus is the same decision applied to a different file, and the rename is backend work. Nothing on the client changes except the literals, and no compatibility window is needed — but a **silent** rename is undetectable here, since a renamed type is not an error, it is a cache that stops invalidating. Inventory: [`events.md`](./events.md). | CON-285 | — |
 | N2 | **A campaign dimension** on the dashboard reads. Until then the campaign screen sums one 100-row page client-side, which stops being complete past ~100 measured posts. | **CON-288** | `campaign-analytics` |
 | N3 | **A per-post series** — `GET /api/analytics/posts/:post_id`, returning per-metric running totals on an age-since-publish axis. **Written and in review** (ogen#130); re-test the client against it when it merges, per CLAUDE.md rule 4. | CON-250 | `campaign-analytics` |
 | N5 | **A repeatable `platform` filter** on all three reads, so the scope bar's control reaches more than one card of three and the marks can go back to multi-select. | **CON-289** | — |

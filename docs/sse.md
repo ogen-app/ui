@@ -98,17 +98,20 @@ From `origin/main`. Every publisher and every type:
 
 | Topic | Types |
 | --- | --- |
-| `entity:post:<id>` | `assistant_completed`, `assistant_failed`, `assessment_completed`, `assessment_failed`, `post_cloned`, `post_restored`, `post_scheduled`, `post.analytics.updated` |
-| `entity:campaign:<id>` | `assistant_completed`, `assistant_failed`, `content_plan_completed`, `content_plan_failed` |
+| `entity:post:<id>` | `assistant.completed`, `assistant.failed`, `assessment.completed`, `assessment.failed`, `post.cloned`, `post.restored`, `post.scheduled`, `post.analytics.updated` |
+| `entity:campaign:<id>` | `assistant.completed`, `assistant.failed`, `content_plan.completed`, `content_plan.failed` |
 | `entity:zernio_account:<id>` | `zernio.account.attached`, `zernio.account.attach_failed`, `zernio.account.updated`, `zernio.account.disconnected`, `zernio.account.revived` |
 | `zernio:sync` | `zernio.sync.ok`, `zernio.sync.failed` |
 
 `job:<id>` and `user:<id>` are documented topic shapes with no publisher yet.
 
-Two naming conventions are in play — dotted (`zernio.sync.ok`,
-`post.analytics.updated`) and snake_case (`post_cloned`,
-`assistant_completed`). Worth settling before the UI hard-codes strings
-against both.
+**One naming convention, since CON-285** (ogen#161, 2026-09-17): dotted, here
+and on the notification stream both. The nine snake_case types above were
+renamed in place — `assistant_completed` → `assistant.completed`, `post_cloned`
+→ `post.cloned` — with no compatibility window, because a wire name nobody
+persists needs none. What the server *does* persist keeps the old spelling on
+purpose: `post_logs.event_type` and the `tenant_activity_events` taxonomy still
+read `post_cloned`, so history does not split across two spellings.
 
 ## Findings
 
@@ -259,9 +262,6 @@ Decisions worth knowing:
 
 ### Still open
 
-- **The naming conventions are still mixed** — dotted (`zernio.sync.ok`) and
-  snake_case (`post_cloned`). `eventRouting.ts` matches both literally. Worth
-  settling backend-side rather than normalising at this boundary forever.
 - **Topics are `all`.** Narrowing to the mounted screens would mean
   re-subscribing on every navigation for no privacy gain, since the server
   already scopes to the tenant. Revisit if event volume grows.

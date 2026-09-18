@@ -614,7 +614,7 @@ async function refreshSubject(
       // The flow snapshots the post before it rewrites, so an edited turn
       // leaves a version the history doesn't know about. The broadcast can't
       // cover this: `beginLocalRun` suppresses the actor's own
-      // `assistant_completed`, so for the person who ran the turn — the one
+      // `assistant.completed`, so for the person who ran the turn — the one
       // most likely to have the panel open — nothing else would refresh it.
       await queryClient.invalidateQueries({
         queryKey: postVersionsKey(subject.postId),
