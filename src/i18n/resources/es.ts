@@ -711,6 +711,8 @@ export const es: Translation = {
         mismatch: 'Algo ha fallado al conectar tu cuenta. Inténtalo de nuevo.',
         upstream:
           'No hemos podido contactar con la plataforma. Inténtalo dentro de un momento.',
+        permission:
+          'No hemos podido conectar una página o perfil. Vuelve a conectar y asegúrate de permitir el acceso a una página o perfil que gestiones.',
         noTargets:
           'Esta cuenta no tiene páginas ni perfiles en los que podamos publicar.',
         generic: 'No hemos podido conectar tu cuenta. Inténtalo de nuevo.',
