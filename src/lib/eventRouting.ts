@@ -28,6 +28,16 @@ import type { AppEvent, EventSubject } from '@/types/events'
  * - **Nothing here shows anything.** Toasts are decided in `eventStreamStore`
  *   against a short allowlist, because most of this fires while the user is
  *   already looking at the thing that changed.
+ *
+ * Every type below is matched **literally** against the wire, and since
+ * CON-285 the whole vocabulary is dotted — one convention across this bus and
+ * the notification inbox, where nine snake_case names (`assistant_completed`,
+ * `post_cloned`, …) used to be the odd ones out. That rename had no
+ * compatibility window and needed none, but it is the kind of change to check
+ * against the server rather than assume: a type whose spelling drifts is not
+ * an error here, it is a cache that quietly stops invalidating. The server's
+ * persisted taxonomies (`post_logs.event_type`, the activity events) keep the
+ * snake_case spellings deliberately — only the wire moved.
  */
 
 /**
@@ -79,26 +89,26 @@ export function parseTopic(topic: string): EventSubject {
  * The `localRuns` key this event would duplicate, or null if it can't be a
  * duplicate of anything.
  *
- * Only terminal AI events qualify. `post_scheduled` looks similar but isn't:
+ * Only terminal AI events qualify. `post.scheduled` looks similar but isn't:
  * it is a plain mutation whose initiator already invalidated, so a second
  * invalidation is merely redundant rather than harmful.
  */
 export function localRunKeyFor(event: AppEvent): string | null {
   const subject = parseTopic(event.topic)
   switch (event.type) {
-    case 'assistant_completed':
-    case 'assistant_failed':
+    case 'assistant.completed':
+    case 'assistant.failed':
       if (subject.kind === 'post' || subject.kind === 'campaign') {
         return localRunKey('assistant', subject.id)
       }
       return null
-    case 'assessment_completed':
-    case 'assessment_failed':
+    case 'assessment.completed':
+    case 'assessment.failed':
       return subject.kind === 'post'
         ? localRunKey('assessment', subject.id)
         : null
-    case 'content_plan_completed':
-    case 'content_plan_failed':
+    case 'content_plan.completed':
+    case 'content_plan.failed':
       return subject.kind === 'campaign'
         ? localRunKey('contentPlan', subject.id)
         : null
@@ -138,15 +148,16 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         // The single genuinely new fact in the catalogue.
         case 'post.analytics.updated':
           return [post, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
-        // The clone is a new row, so only the lists change; `subject.id` is
-        // the post it was cloned *from*, which didn't.
-        case 'post_cloned':
+        // The clone is a new row, so only the lists change: `subject.id` is
+        // the *new* post (the source is in `payload.sourcePostId`), and a post
+        // nobody has fetched yet has no cache entry to make stale.
+        case 'post.cloned':
           return [CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
         // A restore writes two versions (the auto-save of unsnapshotted
         // edits, then the copy) — the history is as stale as the post is.
-        case 'post_restored':
+        case 'post.restored':
           return [post, versions, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
-        case 'post_scheduled':
+        case 'post.scheduled':
           return [post, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
         // The post flow snapshots before it rewrites. Only reaches other
         // people's tabs — the actor's own copy is suppressed as a local run,
@@ -155,7 +166,7 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         // tool persists as it runs, and a note-only turn changes neither the
         // body nor the history. Listed unconditionally because the broadcast
         // carries no record of which tools fired.
-        case 'assistant_completed':
+        case 'assistant.completed':
           // The list comes along because the turn may have rewritten the
           // title, and a calendar showing the old one has no other way to
           // find out — there is no `post_updated` in the catalogue. Same rule
@@ -167,13 +178,13 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
             CAMPAIGN_POST_LISTS,
             WORKSPACE_POST_LIST,
           ]
-        case 'assistant_failed':
+        case 'assistant.failed':
           // Notes are written by the tool as it goes, not at the end, so a
           // failed turn can still have left some behind — and a turn that
           // failed part-way can have written the body first.
           return [post, notes, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
-        case 'assessment_completed':
-        case 'assessment_failed':
+        case 'assessment.completed':
+        case 'assessment.failed':
           // Its own namespace, deliberately not nested under the post — see
           // `postAssessmentKey`.
           return [{ queryKey: postAssessmentKey(subject.id) }]
@@ -184,10 +195,10 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
 
     case 'campaign':
       switch (event.type) {
-        case 'assistant_completed':
-        case 'assistant_failed':
-        case 'content_plan_completed':
-        case 'content_plan_failed':
+        case 'assistant.completed':
+        case 'assistant.failed':
+        case 'content_plan.completed':
+        case 'content_plan.failed':
           // The post list and the overview both nest under this key, and a
           // content plan writes posts, so one filter covers all three. The
           // workspace-wide list holds those same posts outside the namespace.

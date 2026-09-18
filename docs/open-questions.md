@@ -21,7 +21,7 @@ contract doc, or the Linear issue. When an entry closes, delete the row — a
 stale question is worse than no list, because it sends someone to re-answer
 something that already has an answer.
 
-Last reviewed 2026-09-16.
+Last reviewed 2026-09-18.
 
 ---
 

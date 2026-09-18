@@ -60,8 +60,10 @@ describe('invalidationsFor', () => {
     expect(hitsPostLists(e)).toBe(true)
   })
 
-  it('refreshes only the lists on a clone — the source post is unchanged', () => {
-    const e = event('entity:post:p1', 'post_cloned')
+  it('refreshes only the lists on a clone — the new post is not in any cache', () => {
+    // The topic names the *clone*, not the post it came from, so there is no
+    // `['post', …]` entry to make stale — only the rows it has to appear in.
+    const e = event('entity:post:p1', 'post.cloned')
     expect(keys(e)).toEqual([undefined, ['posts']])
     expect(hitsPostLists(e)).toBe(true)
   })
@@ -72,11 +74,11 @@ describe('invalidationsFor', () => {
     // `useAssetUsage` keeps counting from stale rows.
     for (const type of [
       'post.analytics.updated',
-      'post_cloned',
-      'post_restored',
-      'post_scheduled',
-      'assistant_completed',
-      'assistant_failed',
+      'post.cloned',
+      'post.restored',
+      'post.scheduled',
+      'assistant.completed',
+      'assistant.failed',
     ]) {
       expect(keys(event('entity:post:p1', type))).toContainEqual(['posts'])
     }
@@ -86,7 +88,7 @@ describe('invalidationsFor', () => {
     // The turn can have rewritten the title, and there is no `post_updated`
     // in the catalogue — this event is the only notice a teammate's tab gets.
     // A failed turn counts: it can have written the body before it gave up.
-    for (const type of ['assistant_completed', 'assistant_failed']) {
+    for (const type of ['assistant.completed', 'assistant.failed']) {
       const e = event('entity:post:p1', type)
       expect(keys(e)).toContainEqual(['post', 'p1'])
       expect(hitsPostLists(e)).toBe(true)
@@ -95,7 +97,7 @@ describe('invalidationsFor', () => {
 
   it('sends an assessment result to its own namespace, not the post', () => {
     // Nesting it under the post would drag it into every autosave refetch.
-    expect(keys(event('entity:post:p1', 'assessment_completed'))).toEqual([
+    expect(keys(event('entity:post:p1', 'assessment.completed'))).toEqual([
       ['postAssessment', 'p1'],
     ])
   })
@@ -103,7 +105,7 @@ describe('invalidationsFor', () => {
   it('refreshes the whole campaign after a campaign-scoped AI run', () => {
     // Posts and overview both nest under this key; the workspace-wide post
     // list holds the same rows outside it, so it comes along by name.
-    expect(keys(event('entity:campaign:c1', 'content_plan_completed'))).toEqual(
+    expect(keys(event('entity:campaign:c1', 'content_plan.completed'))).toEqual(
       [['campaigns', 'c1'], ['posts']],
     )
   })
@@ -161,6 +163,37 @@ describe('invalidationsFor', () => {
     ).toHaveLength(3)
   })
 
+  it('acts on every type the bus actually publishes', () => {
+    // The whole vocabulary, spelled as CON-285 fixed it. This is the one thing
+    // in the file worth pinning: a drifted literal raises nothing and breaks
+    // nothing on screen — it is an invalidation that silently stops happening,
+    // and the symptom is a teammate's tab showing yesterday's post.
+    const published: Array<[string, string]> = [
+      ['entity:post:p1', 'assistant.completed'],
+      ['entity:post:p1', 'assistant.failed'],
+      ['entity:post:p1', 'assessment.completed'],
+      ['entity:post:p1', 'assessment.failed'],
+      ['entity:post:p1', 'post.cloned'],
+      ['entity:post:p1', 'post.restored'],
+      ['entity:post:p1', 'post.scheduled'],
+      ['entity:post:p1', 'post.analytics.updated'],
+      ['entity:campaign:c1', 'assistant.completed'],
+      ['entity:campaign:c1', 'assistant.failed'],
+      ['entity:campaign:c1', 'content_plan.completed'],
+      ['entity:campaign:c1', 'content_plan.failed'],
+      ['entity:asset:a1', 'asset.updated'],
+      ['entity:zernio_account:z1', 'zernio.account.attached'],
+      ['entity:zernio_account:z1', 'zernio.account.attach_failed'],
+      ['entity:zernio_account:z1', 'zernio.account.updated'],
+      ['entity:zernio_account:z1', 'zernio.account.disconnected'],
+      ['entity:zernio_account:z1', 'zernio.account.revived'],
+      ['zernio:sync', 'zernio.sync.failed'],
+    ]
+    for (const [topic, type] of published) {
+      expect(invalidationsFor(event(topic, type))).not.toHaveLength(0)
+    }
+  })
+
   it('does nothing for an event type it does not know', () => {
     expect(
       invalidationsFor(event('entity:post:p1', 'post_teleported')),
@@ -171,30 +204,30 @@ describe('invalidationsFor', () => {
 
 describe('localRunKeyFor', () => {
   it('matches a terminal AI event to the run that would have produced it', () => {
-    expect(localRunKeyFor(event('entity:post:p1', 'assistant_completed'))).toBe(
+    expect(localRunKeyFor(event('entity:post:p1', 'assistant.completed'))).toBe(
       'assistant:p1',
     )
-    expect(localRunKeyFor(event('entity:post:p1', 'assessment_failed'))).toBe(
+    expect(localRunKeyFor(event('entity:post:p1', 'assessment.failed'))).toBe(
       'assessment:p1',
     )
     expect(
-      localRunKeyFor(event('entity:campaign:c1', 'content_plan_completed')),
+      localRunKeyFor(event('entity:campaign:c1', 'content_plan.completed')),
     ).toBe('contentPlan:c1')
   })
 
   it('leaves plain mutations alone', () => {
-    // `post_scheduled` also duplicates the initiator's own invalidation, but
+    // `post.scheduled` also duplicates the initiator's own invalidation, but
     // redundant is not harmful — there is no stream mid-write to protect.
-    expect(localRunKeyFor(event('entity:post:p1', 'post_scheduled'))).toBeNull()
+    expect(localRunKeyFor(event('entity:post:p1', 'post.scheduled'))).toBeNull()
     expect(localRunKeyFor(event('zernio:sync', 'zernio.sync.ok'))).toBeNull()
   })
 
   it('does not match an AI event against the wrong subject kind', () => {
     expect(
-      localRunKeyFor(event('entity:campaign:c1', 'assessment_completed')),
+      localRunKeyFor(event('entity:campaign:c1', 'assessment.completed')),
     ).toBeNull()
     expect(
-      localRunKeyFor(event('entity:post:p1', 'content_plan_completed')),
+      localRunKeyFor(event('entity:post:p1', 'content_plan.completed')),
     ).toBeNull()
   })
 })
