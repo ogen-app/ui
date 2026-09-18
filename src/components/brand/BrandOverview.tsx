@@ -21,6 +21,9 @@ import { formatDate, formatList } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { Fetched } from '@/lib/fetched'
 import type { GuardrailsStance } from '@/services/api/brandLocal'
+import { isFeatureEnabled } from '@/config/featureFlags'
+import { seriesMetaLine } from '@/components/series/format'
+import type { ContentSeries } from '@/components/series/types'
 import {
   brandSectionCopy,
   SHOWN_BRAND_SECTIONS,
@@ -92,12 +95,28 @@ import {
 export function BrandOverview({
   brand,
   facts = [],
+  series = [],
   stance,
   showWhenEmpty = false,
   onOpen,
 }: {
   /** Every section, as the one query they come from — `useBrand`. */
   brand: Fetched<BrandData>
+  /**
+   * The workspace's series (CON-264) — a section whose contents do not come
+   * from `useBrand`, so the route owns the query and this screen stays a
+   * rendering of what it is given.
+   *
+   * A plain list rather than a `Fetched`, for the reason `facts` below is one:
+   * it is read out of `localStorage` until the table exists, so it cannot be in
+   * flight and cannot fail. It becomes a `Fetched` on the day it becomes a
+   * fetch — see the `series` flag.
+   *
+   * **Workspace-scoped entries only.** A series defined inside a campaign is
+   * bounded by it and is not the workspace's yet; listing one here would report
+   * a library that nobody else can pick from. The route filters.
+   */
+  series?: ContentSeries[]
   /**
    * The ledger, already assembled — `useFacts`. Passed in rather than fetched
    * here for the reason the rest of this screen takes `brand`: the statements
@@ -156,7 +175,9 @@ export function BrandOverview({
     if (brand.status !== 'ready') return brand
     return {
       status: 'ready',
-      data: { rows: sectionRows(t, section.id, brand.data, facts, stance) },
+      data: {
+        rows: sectionRows(t, section.id, brand.data, facts, series, stance),
+      },
     }
   }
 
@@ -474,6 +495,7 @@ function sectionRows(
   id: BrandSectionId,
   data: BrandData,
   facts: BrandFact[],
+  series: ContentSeries[],
   stance?: GuardrailsStance,
 ): BrandRow[] {
   switch (id) {
@@ -516,6 +538,27 @@ function sectionRows(
           ].join(t('brand.facts.separator')),
         }
       })
+
+    // The tick is the recipe, for the same reason an audience's is the three
+    // consequence lines: a named series with no instruction behind it is a
+    // grouping key wearing the clothes of a standing order, and that gap is
+    // exactly what this row exists to show. It is not a refusal — a series
+    // saves without one and still groups — which is why the row is unticked
+    // rather than absent.
+    case 'series':
+      return series.map((entry) => ({
+        key: entry.id,
+        mark: { kind: 'task', done: Boolean(entry.recipe.trim()) },
+        label: entry.name,
+        details: entry.promise || undefined,
+        // `isFeatureEnabled` rather than the hook: this is a plain function,
+        // which is exactly the case that accessor exists for. Formats are a
+        // separate flag, so a series carrying one written while it was on must
+        // not print it while it is off.
+        meta: seriesMetaLine(t, entry, {
+          withFormat: isFeatureEnabled('content-formats'),
+        }),
+      }))
 
     // No star on these rows, and the voices above have one — the workspace
     // default stops at voices. See `resolveAudience` in `binding.ts`.

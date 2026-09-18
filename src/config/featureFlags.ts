@@ -491,6 +491,79 @@ const FEATURE_FLAGS = {
    * dataset.
    */
   'help-center': false,
+
+  /**
+   * Series — the recurring things a workspace makes, and what each campaign
+   * runs of them (CON-264).
+   *
+   * A series is a **standing instruction**: a name, and how one is built. "This
+   * day in finance history", "Weekly news digest". It is re-read every time it
+   * produces a post and never finished, which is what makes it Foundation
+   * material rather than an idea — an idea is inventory and gets spent.
+   *
+   * The word people arrive with is *content pillar*, and it means at least four
+   * incompatible things (broad themes, mix ratios, recurring segments, message
+   * pillars). This models the third, because it is the only one a generator can
+   * act on and the only one analytics can group by. A theme collapses into it —
+   * "People who made an impact" is a series with a person-shaped slot — so one
+   * object covers both readings without a second table.
+   *
+   * **The definition is the workspace's, the run is the campaign's.**
+   * `/foundation/series` is the library; a campaign picks from it and gives each
+   * a rhythm on its **Strategy** page (`CampaignSeriesCard`), which is where all
+   * the work happens. A campaign may also define one locally and promote it once
+   * it proves it recurs, so the library fills from use instead of being seeded
+   * with four generic nouns at onboarding.
+   *
+   * That card was a band on the campaign's Foundation page until CON-305, when
+   * the documents became their own module and took the page with them. The mix
+   * is still derived and never typed: rhythms are set per series, the share is
+   * computed against `postGoalTotal`, and the sentence stating it is printed
+   * once, under the post goal. There is deliberately no percentage picker — a
+   * mix you type is a plan you break in week two, and a mix you derive is a
+   * fact.
+   *
+   * **Waiting on** a workspace-scoped `brand_series` table, `series_ids` plus a
+   * per-series rhythm on the campaign — **attached and detached, never
+   * restated**, for the reason CON-233 gives about `asset_ids` — a nullable
+   * `series_id` on the post, and analytics grouped by it, which is the "for
+   * insights" half of the ticket. Everything above the stub in
+   * `services/api/series.stub.ts` is written against the signatures those will
+   * have.
+   */
+  series: false,
+
+  /**
+   * Content formats — how-to, explainer, listicle, digest (CON-264).
+   *
+   * **A vocabulary, not a library.** A fixed table in `lib/contentFormats.ts`
+   * and a picker, with no page, no CRUD, no empty state and no Foundation
+   * section. That is the whole difference between this costing nothing and it
+   * being a second Series.
+   *
+   * A fixed list is enough because a bare format label already carries a recipe
+   * — the vocabulary is shared with the model, so "how-to" implies an opening,
+   * a numbered middle and a takeaway in a way "Education" never implies
+   * anything. It is the one axis here that needs no configuration to be useful,
+   * which is why it is a separate flag: it pays off in a workspace that has
+   * never opened the Series page.
+   *
+   * **Not `platform_post_type`.** That is the container — carousel, reel,
+   * thread — and it is already modelled and already derived (`post-type-auto`).
+   * This is the rhetorical shape, and a how-to can be any container at all. The
+   * two never compete for the same decision.
+   *
+   * Optional everywhere, on purpose: a post may have no format, and nothing
+   * warns about it. Forcing the classification is the mistake CON-210 paid for
+   * with its three-mode source picker.
+   *
+   * **Waiting on** a nullable `content_format` column on the post (and on the
+   * series, when that flag lands — a series pins one and its posts inherit it).
+   * Until then a post's format lives in a `localStorage` sidecar
+   * (`services/api/contentLocal.ts`), which is per browser and must not ship
+   * that way.
+   */
+  'content-formats': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS
