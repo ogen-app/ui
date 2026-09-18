@@ -45,7 +45,6 @@ export function NavUtilityStrip({
 }) {
   const { t } = useTranslation()
   const { pathname } = useLocation()
-  const brandEnabled = useFeatureFlag('brand-materials')
   const activityEnabled = useFeatureFlag('activity')
 
   const gear = <GearSixIcon weight="regular" className="size-5 flex-none" />
@@ -84,16 +83,12 @@ export function NavUtilityStrip({
 
   return (
     <div className="flex flex-col gap-1">
-      {/* Gated here as well as on the route: with the flag off the app must
-          have no Foundation at all. */}
-      {brandEnabled && (
-        <AppSidebarButtonMenu
-          icon={<PaletteIcon weight="regular" className="size-5 flex-none" />}
-          text={t('nav.foundation')}
-          isActive={pathname.startsWith('/foundation')}
-          to="/foundation"
-        />
-      )}
+      <AppSidebarButtonMenu
+        icon={<PaletteIcon weight="regular" className="size-5 flex-none" />}
+        text={t('nav.foundation')}
+        isActive={pathname.startsWith('/foundation')}
+        to="/foundation"
+      />
       {activityEnabled && (
         <ActivitySidebarItem isActive={pathname.startsWith('/activity')} />
       )}

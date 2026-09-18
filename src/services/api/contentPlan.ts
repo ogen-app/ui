@@ -37,7 +37,7 @@ export async function streamDraftPlan(
     throw new Error(await errorMessage(res, FALLBACK_ERROR))
   }
 
-  // The hub announces `content_plan_completed` for this run too. The caller is
+  // The hub announces `content_plan.completed` for this run too. The caller is
   // watching the stream below and reacting to each `post` as it lands, so the
   // broadcast copy is muted while the run is ours (CON-134).
   const endLocalRun = beginLocalRun('contentPlan', campaignId)

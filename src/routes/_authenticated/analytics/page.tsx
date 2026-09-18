@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
 import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
-import { NotYet, SectionCard } from '@/components/analytics/shell'
 import { WorkspaceScopeBar } from '@/components/analytics/WorkspaceScopeBar'
 import { WorkspaceLearningsView } from '@/components/analytics/WorkspaceLearnings'
 import { WorkspaceOverviewView } from '@/components/analytics/WorkspaceOverview'
@@ -15,7 +14,6 @@ import { useAnalyticsPerformers } from '@/hooks/useAnalyticsPerformers.ts'
 import { useAnalyticsLearnings } from '@/hooks/useAnalyticsLearnings.ts'
 import { DEFAULT_PERFORMER_BASIS } from '@/lib/analyticsPerformersView'
 import { DEFAULT_LEARNINGS_METRIC } from '@/lib/analyticsLearningsView'
-import { useFeatureFlag } from '@/config/featureFlags.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { connectedAccounts } from '@/lib/platformDictionary.ts'
 import type { LearningsMetric, PerformerSort } from '@/types/analytics'
@@ -44,22 +42,6 @@ import type { LearningsMetric, PerformerSort } from '@/types/analytics'
  * ignored the control above it would be the worst of the three options.
  */
 export function AnalyticsPage() {
-  const enabled = useFeatureFlag('analytics-overview')
-
-  return (
-    <PageContainer variant="fullFlex" className="page-content-motion">
-      <div className="h-0 grow overflow-y-auto flex flex-col">
-        {enabled ? <Live /> : <ComingSoon />}
-      </div>
-    </PageContainer>
-  )
-}
-
-/**
- * Split from {@link ComingSoon} so an off flag makes no request: the hook
- * mounts with the feature rather than beside it.
- */
-function Live() {
   const [window, setWindow] = useState<string>(DEFAULT_OVERVIEW_WINDOW)
   // Zernio's wire slug, which since CON-292 is the one identifier both ends
   // understand: the dictionary that draws the marks is filed under it, and the
@@ -94,81 +76,41 @@ function Live() {
   const filterable = platforms.filter((p) => p.accounts > 0).length > 1
 
   return (
-    <>
-      <PageHeader title="Analytics" />
-      {/*
-        What happened, then which posts did it, then what holds whatever the
-        period. The order is the order the questions arrive in: the overview's
-        five figures provoke exactly one follow-up and the board is it, and only
-        once you have seen both is "so what should we do differently" a question
-        rather than a slogan. It is last for a second reason — it is the one
-        card the controls above reach least, and the reader meets it having
-        already used them.
-      */}
-      <div className="flex flex-col gap-3 px-3 lg:px-6 pt-4 pb-10">
-        <WorkspaceScopeBar
-          platforms={platforms}
-          platform={platform}
-          onPlatformChange={setPlatform}
-          window={window}
-          windows={OVERVIEW_WINDOWS}
-          onWindowChange={setWindow}
-        />
-        <WorkspaceOverviewView {...overview} everyPlatform={filterable} />
-        <WorkspacePerformersView
-          result={performers}
-          by={by}
-          onChangeBasis={setBy}
-        />
-        <WorkspaceLearningsView
-          result={learnings}
-          metric={metric}
-          onChangeMetric={setMetric}
-          everyPlatform={filterable}
-        />
+    <PageContainer variant="fullFlex" className="page-content-motion">
+      <div className="h-0 grow overflow-y-auto flex flex-col">
+        <PageHeader title="Analytics" />
+        {/*
+          What happened, then which posts did it, then what holds whatever the
+          period. The order is the order the questions arrive in: the overview's
+          five figures provoke exactly one follow-up and the board is it, and only
+          once you have seen both is "so what should we do differently" a question
+          rather than a slogan. It is last for a second reason — it is the one
+          card the controls above reach least, and the reader meets it having
+          already used them.
+        */}
+        <div className="flex flex-col gap-3 px-3 lg:px-6 pt-4 pb-10">
+          <WorkspaceScopeBar
+            platforms={platforms}
+            platform={platform}
+            onPlatformChange={setPlatform}
+            window={window}
+            windows={OVERVIEW_WINDOWS}
+            onWindowChange={setWindow}
+          />
+          <WorkspaceOverviewView {...overview} everyPlatform={filterable} />
+          <WorkspacePerformersView
+            result={performers}
+            by={by}
+            onChangeBasis={setBy}
+          />
+          <WorkspaceLearningsView
+            result={learnings}
+            metric={metric}
+            onChangeMetric={setMetric}
+            everyPlatform={filterable}
+          />
+        </div>
       </div>
-    </>
-  )
-}
-
-/**
- * The page before it measures anything. No numbers and no zeroes — a
- * placeholder that invents figures is worse than an empty page, because the
- * reader can't tell which is which.
- *
- * No period picker either: a control that can only change a sentence is a
- * control that teaches people it does nothing.
- */
-function ComingSoon() {
-  return (
-    <>
-      <PageHeader title="Analytics" />
-      <div className="flex flex-col gap-3 px-3 lg:px-6 pt-4 pb-10">
-        <SectionCard title="What happened">
-          <NotYet title="Not switched on yet">
-            How this workspace's posts did once they went out — reach,
-            interactions, engagement rate, followers and how much you published,
-            each against the stretch before it. Nothing else about the workspace
-            is affected, and the numbers will fill in here on their own once
-            this is switched on.
-          </NotYet>
-        </SectionCard>
-        <SectionCard title="Performers and outliers">
-          <NotYet title="Not switched on yet">
-            Which posts carried the period and which fell behind, each scored
-            against a typical post of yours on the same platform at the same age
-            — so a strong post from this morning isn't buried under older ones
-            that have finished earning.
-          </NotYet>
-        </SectionCard>
-        <SectionCard title="What we've learned" scope="all-time">
-          <NotYet title="Not switched on yet">
-            The hours your posts land best, how long a post keeps earning before
-            its numbers settle, and what the ones that do well have in common —
-            drawn from all of your posts rather than a single period.
-          </NotYet>
-        </SectionCard>
-      </div>
-    </>
+    </PageContainer>
   )
 }

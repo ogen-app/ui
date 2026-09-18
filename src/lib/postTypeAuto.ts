@@ -32,7 +32,6 @@
  * They stay in the picker and pin the post when chosen, which is what choosing
  * one has always meant.
  */
-import { isFeatureEnabled } from '@/config/featureFlags'
 import { charCount, markdownToSocialText } from '@/lib/socialText'
 import { publishesAsChain, SEQUENCE_SLUG } from '@/lib/threadSequence'
 import {
@@ -182,17 +181,15 @@ export type ResolveAutoInput = {
  * Whether a chain is something Auto is allowed to resolve *to*.
  *
  * Not the same question as whether the platform offers the slug. X has offered
- * `thread` all along, and a thread only publishes as a chain because the
- * client cuts one and CON-284's `thread_segments` carries it; the server marks
- * the types that work that way `segmented`, which is what this reads. Behind
- * the flag it splits, and then a chain is the right answer to a body no single
- * post can hold.
+ * `thread` all along, and a thread only publishes as a chain because the server
+ * splits the body into `thread_segments` on every write (CON-284 R2); the types
+ * that work that way are marked `segmented`, which is what this reads. Where it
+ * splits, a chain is the right answer to a body no single post can hold.
  *
  * Choosing `thread` by hand is untouched either way: that is what pinning a
  * type means, and it behaves exactly as it did before this module existed.
  */
 function chainResolvable(rules: PostTypeRuleView[] | undefined): boolean {
-  if (!isFeatureEnabled('thread-sequence')) return false
   return publishesAsChain(rules?.find((r) => r.slug === SEQUENCE_SLUG)?.rule)
 }
 
@@ -209,6 +206,9 @@ function fits(
   shape: PostShape,
   sequence: boolean,
 ): boolean {
+  // `chars` is the flattened body and `markdownToSocialText` trims, so zero is
+  // the same answer the server's `strings.TrimSpace(FlattenSocialText(…))`
+  // gives — a body of nothing but spaces or rule lines is empty on both sides.
   if (rule.requires_content && shape.chars === 0) return false
 
   if (rule.allowed_kinds.length > 0) {

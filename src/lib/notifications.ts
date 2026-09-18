@@ -29,9 +29,16 @@ import type { AppNotification } from '@/types/notifications'
  * The types this build has copy for, mapped to their catalogue leaf under
  * `activity.notification`.
  *
- * Every one of these is a producer wired in CON-242. A type missing from here
- * is not an error — see the fallback above — so the table is allowed to lag the
- * server, and adding to it is the whole job of supporting a new producer.
+ * Every one of these is a wired producer — CON-242 opened the vocabulary and
+ * CON-285 finished it. A type missing from here is not an error — see the
+ * fallback above — so the table is allowed to lag the server, and adding to it
+ * is the whole job of supporting a new producer.
+ *
+ * Three types in `docs/events.md` are still absent on purpose: `video.probed`
+ * / `video.probe_failed` and `post.not_published` have no trigger in the
+ * server, and `zernio.sync_failed` has no per-user recipient. Copy written
+ * ahead of a producer is copy nobody can read, and it rots quietly — the
+ * catalogue is not the place to plan.
  */
 const COPY_KEY = {
   'connection.expiring_soon': 'activity.notification.connectionExpiring',
@@ -39,10 +46,24 @@ const COPY_KEY = {
     'activity.notification.connectionActionRequired',
   'post.published': 'activity.notification.postPublished',
   'post.publish_failed': 'activity.notification.postPublishFailed',
+  'post.manual_publish_due': 'activity.notification.postManualPublishDue',
   'asset.ready': 'activity.notification.assetReady',
   'asset.ingest_failed': 'activity.notification.assetIngestFailed',
+  // A crawled page is an asset like any other, and the server still splits it
+  // off by kind (CON-222) so the sentence can say *link* — "processing" is
+  // what happens to a file you handed over, not to an address we went and read.
+  'url_asset.crawled': 'activity.notification.urlAssetCrawled',
+  'url_asset.failed': 'activity.notification.urlAssetFailed',
   'campaign.content_plan_ready':
     'activity.notification.campaignContentPlanReady',
+  'content_plan.failed': 'activity.notification.contentPlanFailed',
+  // One sentence covers the post and the campaign assistant both: the row
+  // links to whichever it was, and a resolution only ever reaches the person
+  // who started it — so "your request" is true of either.
+  'assistant.completed': 'activity.notification.assistantCompleted',
+  'assistant.failed': 'activity.notification.assistantFailed',
+  'assessment.completed': 'activity.notification.assessmentCompleted',
+  'assessment.failed': 'activity.notification.assessmentFailed',
 } as const satisfies Record<string, string>
 
 /**
@@ -107,6 +128,11 @@ function notificationVars(
   const vars: Record<string, string | number> = {}
   const data = notification.data ?? {}
 
+  // `platform` only. `post.manual_publish_due` carries a `platform_id`, which
+  // is a **sqid** and names a catalogue row rather than a network (CON-292) —
+  // translating one needs the fetched list, which is a hook, which this file
+  // deliberately is not. So that sentence says nothing about the channel; it
+  // is not a lookup waiting to be written here.
   const platform = data.platform
   if (typeof platform === 'string' && platform) {
     vars.channel = channelName(platform)

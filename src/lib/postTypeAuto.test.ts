@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   canBeAutomatic,
   effectivePostType,
@@ -9,16 +9,6 @@ import {
 } from './postTypeAuto'
 import { getAllowedNextStatuses } from '@/lib/postStatusMachine'
 import type { PostTypeRuleView, ResolvedPostTypeRule } from '@/types/validation'
-
-vi.mock('@/config/featureFlags', () => ({
-  isFeatureEnabled: vi.fn(() => false),
-}))
-
-const { isFeatureEnabled } = await import('@/config/featureFlags')
-
-afterEach(() => {
-  vi.mocked(isFeatureEnabled).mockReturnValue(false)
-})
 
 function rule(over: Partial<ResolvedPostTypeRule> = {}): ResolvedPostTypeRule {
   return {
@@ -78,6 +68,9 @@ const X_RULES: PostTypeRuleView[] = [
 
 const X_SLUGS = ['text-post', 'image-post', 'video', 'thread']
 
+/** The same platform with no chain offered — a campaign that withheld it. */
+const FLAT_X_SLUGS = ['text-post', 'image-post', 'video']
+
 function onX(
   content: string,
   attachments: { mime_type: string }[] = [],
@@ -104,6 +97,14 @@ describe('postShape', () => {
     const shape = postShape('', files('image/png', 'image/jpeg', 'video/mp4'))
     expect(shape.kinds.sort()).toEqual(['image', 'video'])
     expect(shape.count).toBe(3)
+  })
+
+  it('reads a body of nothing but whitespace and rules as empty', () => {
+    // Which is what makes `chars === 0` an exact mirror of the server's
+    // `requires_content` test: both flatteners trim, so neither can see a body
+    // that is long and empty at the same time.
+    expect(postShape('   \n\n   ', []).chars).toBe(0)
+    expect(postShape('***', []).chars).toBe(0)
   })
 })
 
@@ -230,20 +231,7 @@ describe('the ladder', () => {
 })
 
 describe('a chain', () => {
-  it('is not an answer while a thread still publishes as one post', () => {
-    // X has offered `thread` all along, and until the submit path sends
-    // `threadItems` the whole body goes out as a single post (CON-196). So
-    // resolving to it would quietly publish a truncated post.
-    expect(onX('a'.repeat(3000), files('image/png', 'image/png'))).toEqual({
-      state: 'unfit',
-      reason: 'too-long',
-      limit: 280,
-    })
-  })
-
-  it('takes a body no single post can hold, once it really splits', () => {
-    vi.mocked(isFeatureEnabled).mockReturnValue(true)
-
+  it('takes a body no single post can hold', () => {
     expect(onX('a'.repeat(3000), files('image/png', 'image/png'))).toEqual({
       state: 'resolved',
       slug: 'thread',
@@ -251,8 +239,6 @@ describe('a chain', () => {
   })
 
   it('still loses to a post that fits in one', () => {
-    vi.mocked(isFeatureEnabled).mockReturnValue(true)
-
     // `thread` is last on the ladder for this reason: a chain is the answer to
     // a body no single post can hold, and a hundred characters is not that.
     expect(onX('a'.repeat(100))).toEqual({
@@ -267,8 +253,6 @@ describe('a chain', () => {
     // used to keep a hard-coded list of Zernio ids to answer this; now the rule
     // says so, and the one that says `segmented` is the one carrying the
     // per-message limit, so the two can never drift apart.
-    vi.mocked(isFeatureEnabled).mockReturnValue(true)
-
     const notSegmented = X_RULES.map((v) =>
       v.slug === 'thread'
         ? view('thread', rule({ max_content_chars: 280, segmented: false }))
@@ -292,7 +276,11 @@ describe('when nothing fits', () => {
   it('quotes the longest body any candidate would have taken', () => {
     // The number the author has to get under. An unbounded candidate would
     // have fitted, so there is always one to quote here.
-    expect(onX('a'.repeat(5000))).toEqual({
+    //
+    // Asked without the chain rung, which takes any length: this is the answer
+    // for a campaign that does not offer `thread`, and for every platform that
+    // has no chain at all.
+    expect(onX('a'.repeat(5000), [], FLAT_X_SLUGS)).toEqual({
       state: 'unfit',
       reason: 'too-long',
       limit: 280,
@@ -310,10 +298,13 @@ describe('when nothing fits', () => {
   })
 
   it('separates too many files from the wrong kind of file', () => {
+    // Without the chain rung again: a chain spreads files across its messages,
+    // so it is the one candidate five images do not overload.
     expect(
       onX(
         'Hi',
         files('image/png', 'image/png', 'image/png', 'image/png', 'image/png'),
+        FLAT_X_SLUGS,
       ),
     ).toEqual({ state: 'unfit', reason: 'too-many', limit: null })
   })

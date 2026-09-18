@@ -367,12 +367,20 @@ export const es: Translation = {
       connectionActionRequired: 'Tu conexión con {{channel}} debe reconectarse',
       postPublished: 'Se publicó una publicación de {{channel}}',
       postPublishFailed: 'No se pudo publicar una publicación de {{channel}}',
+      postManualPublishDue: 'Hay una publicación pendiente de publicar a mano',
       assetReady: 'Un documento terminó de procesarse',
       assetIngestFailed: 'No se pudo procesar un documento',
+      urlAssetCrawled: 'Se terminó de leer un enlace',
+      urlAssetFailed: 'No se pudo leer un enlace',
       campaignContentPlanReady_one:
         'Hay un plan de contenido listo — {{count}} publicación',
       campaignContentPlanReady_other:
         'Hay un plan de contenido listo — {{count}} publicaciones',
+      contentPlanFailed: 'No se pudo generar un plan de contenido',
+      assistantCompleted: 'El asistente terminó tu solicitud',
+      assistantFailed: 'El asistente no pudo terminar tu solicitud',
+      assessmentCompleted: 'Hay una evaluación de calidad lista',
+      assessmentFailed: 'No se pudo completar una evaluación de calidad',
     },
     report: {
       label: {

@@ -68,6 +68,45 @@ describe('notificationCopy', () => {
     expect(copy?.vars).toEqual({ count: 12 })
   })
 
+  it('has copy for every producer the server runs today', () => {
+    // The half CON-285 wired after CON-242 opened the vocabulary. A type
+    // missing from the table is not an error — it renders the server's own
+    // English — which is exactly why it is worth pinning: the failure is
+    // invisible in English and total in every other language.
+    const emitted = [
+      ['post.manual_publish_due', 'postManualPublishDue'],
+      ['url_asset.crawled', 'urlAssetCrawled'],
+      ['url_asset.failed', 'urlAssetFailed'],
+      ['content_plan.failed', 'contentPlanFailed'],
+      ['assistant.completed', 'assistantCompleted'],
+      ['assistant.failed', 'assistantFailed'],
+      ['assessment.completed', 'assessmentCompleted'],
+      ['assessment.failed', 'assessmentFailed'],
+    ]
+    for (const [type, leaf] of emitted) {
+      // `data: null` on purpose: none of these sentences interpolates
+      // anything, so none of them may be gated on a blob that might not come.
+      expect(notificationCopy(row({ type, data: null }))).toEqual({
+        key: `activity.notification.${leaf}`,
+        vars: {},
+      })
+    }
+  })
+
+  it('does not read a platform sqid as a channel name', () => {
+    // `post.manual_publish_due` carries `platform_id` — a catalogue row's id,
+    // not a network (CON-292). Translating one needs the fetched list, so the
+    // sentence says nothing about the channel rather than printing a sqid.
+    expect(
+      notificationCopy(
+        row({
+          type: 'post.manual_publish_due',
+          data: { platform_id: 'Xk3mQ9' },
+        }),
+      ),
+    ).toEqual({ key: 'activity.notification.postManualPublishDue', vars: {} })
+  })
+
   it('falls back to the server title when the sentence cannot be filled', () => {
     // `data` is an unvalidated blob, so a known type can arrive without the
     // value its copy interpolates. Rendering the key anyway would print a

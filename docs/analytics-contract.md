@@ -209,11 +209,10 @@ filters, and only by platform. So:
 2. **A per-post series** (§2.3).
 3. **Live re-test** (§4).
 
-The two workspace-wide surfaces need none of (1), and have shipped first:
-`analytics-overview` is **on**. (3) is still outstanding for them — it is now
-something to check on a live workspace rather than something to wait for, and
-the list of what to look at lives on the flag itself. `campaign-analytics`
-stays off until (1) exists.
+The two workspace-wide surfaces need none of (1), and shipped first — unflagged
+since 2026-09-18. (3) is still outstanding for them: it is something to check on
+a live workspace rather than something to wait for, and §4 below is the list.
+`campaign-analytics` stays off until (1) exists.
 
 ## 4. Only verifiable against a running backend
 

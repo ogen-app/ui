@@ -58,7 +58,6 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
   const inboxEnabled = useFeatureFlag('tasks')
   const ideasEnabled = useFeatureFlag('ideas')
   const calendarEnabled = useFeatureFlag('workspace-calendar')
-  const analyticsEnabled = useFeatureFlag('analytics-overview')
 
   const destinations: WorkspaceDestination[] = []
 
@@ -124,15 +123,13 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
     })
   }
 
-  if (analyticsEnabled) {
-    destinations.push({
-      id: 'analytics',
-      label: t('nav.analytics'),
-      icon: ChartLineUpIcon,
-      to: '/analytics',
-      isActive: (p) => p.startsWith('/analytics'),
-    })
-  }
+  destinations.push({
+    id: 'analytics',
+    label: t('nav.analytics'),
+    icon: ChartLineUpIcon,
+    to: '/analytics',
+    isActive: (p) => p.startsWith('/analytics'),
+  })
 
   return destinations
 }
@@ -154,20 +151,17 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
 export function useWorkspaceMenuEntries(): WorkspaceDestination[] {
   const { t } = useTranslation()
   const destinations = useWorkspaceDestinations()
-  const brandEnabled = useFeatureFlag('brand-materials')
   const activityEnabled = useFeatureFlag('activity')
 
   const entries = [...destinations]
 
-  if (brandEnabled) {
-    entries.push({
-      id: 'foundation',
-      label: t('nav.foundation'),
-      icon: PaletteIcon,
-      to: '/foundation',
-      isActive: (p) => p.startsWith('/foundation'),
-    })
-  }
+  entries.push({
+    id: 'foundation',
+    label: t('nav.foundation'),
+    icon: PaletteIcon,
+    to: '/foundation',
+    isActive: (p) => p.startsWith('/foundation'),
+  })
 
   if (activityEnabled) {
     entries.push({

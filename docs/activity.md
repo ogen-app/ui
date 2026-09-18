@@ -9,14 +9,15 @@ reasoning — what the surface is for, what it
 deliberately is not, and which decisions are load-bearing enough that changing
 one means revisiting the rest.
 
-**What exists today:** Phase 2, behind the `activity` flag. The sidebar item
-with its count, `/activity`, the day cards and the full-screen report at
-`/activity/$date` are built; the feed reads the recorded notifications CON-242
-landed (`GET /api/notifications`, live over
-`GET /api/notifications/stream`), and the day reports are still computed from
-the batched campaign summaries. `lib/activityFeed.ts` is the whole rule set,
-pure and tested. What is left before the flag can flip is in the flag's own
-comment — it is about coverage on the *server* side, not about this screen.
+**What exists today:** Phase 2, on since 2026-09-18. The sidebar item with its
+count, `/activity`, the day cards and the full-screen report at `/activity/$date`
+are built; the feed reads the recorded notifications CON-242 landed (`GET
+/api/notifications`, live over `GET /api/notifications/stream`), and the day
+reports are still computed from the batched campaign summaries — CON-285 gave
+them server-side endpoints (`GET /api/activity/report/:date?tz=`,
+`/api/activity/reports`) and moving onto those is the next step rather than a
+blocker. `lib/activityFeed.ts` is the whole rule set, pure and tested. What is
+known and not yet handled is in the flag's own comment.
 
 **Tasks are a separate feature** (CON-234, [`tasks.md`](./tasks.md)), a module
 of their own next door in the rail rather than a card on this screen. "Edges and
@@ -296,7 +297,10 @@ without the other.
   the limit, ~30-minute connection lifetime) and ogen#152 raised it to 30.
   What remains ours is the `event: recycle` frame nothing listens for yet —
   the `activity` flag comment and `docs/sse.md` carry it.
-- **Event naming is still mixed** — dotted (`zernio.sync.ok`) and snake_case
-  (`post_cloned`), matched literally in `lib/eventRouting.ts`. The notification
-  vocabulary settled on dotted (`post.publish_failed`), so the hub is now the
-  odd one out.
+- **Event naming is settled — dotted on both streams** (CON-285, ogen#161,
+  2026-09-17). The nine snake_case bus types were renamed
+  (`assistant_completed` → `assistant.completed`, `post_cloned` →
+  `post.cloned`) and `lib/eventRouting.ts` matches the new spellings. The
+  server's persisted taxonomies keep the old ones on purpose, so a
+  `tenant_activity_events` row still reads `post_cloned` — that is history, not
+  a wire name.

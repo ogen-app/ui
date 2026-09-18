@@ -524,12 +524,33 @@ export const en = {
         'Your {{channel}} connection needs reconnecting',
       postPublished: 'A {{channel}} post was published',
       postPublishFailed: 'A {{channel}} post failed to publish',
+      /**
+       * Says nothing about the channel on purpose: this producer carries a
+       * platform sqid rather than a network, and it is not ours to resolve
+       * here — see `lib/notifications`.
+       */
+      postManualPublishDue: 'A post is due to be published by hand',
       assetReady: 'A document finished processing',
       assetIngestFailed: 'A document could not be processed',
+      /**
+       * A page we went and read, not a file somebody handed over — which is
+       * why the server splits these off from `asset.*` at all.
+       */
+      urlAssetCrawled: 'A link has been read',
+      urlAssetFailed: 'A link could not be read',
       /** The count is the point — it is what says whether the plan is worth opening. */
       campaignContentPlanReady_one: 'A content plan is ready — {{count}} post',
       campaignContentPlanReady_other:
         'A content plan is ready — {{count}} posts',
+      contentPlanFailed: 'A content plan could not be generated',
+      /**
+       * The post and the campaign assistant share one sentence: the row links
+       * to whichever it was, and only the person who started the run is told.
+       */
+      assistantCompleted: 'The assistant finished your request',
+      assistantFailed: 'The assistant could not finish your request',
+      assessmentCompleted: 'A quality assessment is ready',
+      assessmentFailed: 'A quality assessment could not be finished',
     },
     report: {
       /**
