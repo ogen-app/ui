@@ -311,6 +311,13 @@ preferences. And CON-210 is about to vacate the `/content-bank` nav slot, so
 this is the honest answer to CON-211: the workspace level returns as **Brand**,
 a different kind of thing, not a wider bank.
 
+> **Since shipped:** the documents did move into Brand (as its `sources`
+> section) and have since moved back out to `/assets`, a module of its own
+> above Campaigns. The paragraph above still holds for Brand — what it got
+> wrong is that the bank and the brand could share one screen: everything else
+> in Brand is written once, and a list of four hundred documents is worked in.
+> Brand keeps its own top-level entry, now called Foundation.
+
 The counter-argument is real — it is empty on day one, and an empty top-level
 nav entry is a bad first impression. §9 is the mitigation: first run is "here is
 the Brand we read off your website", not a blank form.

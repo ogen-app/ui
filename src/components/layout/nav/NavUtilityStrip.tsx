@@ -7,17 +7,21 @@ import { useFeatureFlag } from '@/config/featureFlags'
 
 /**
  * The band under the level: the things that are around the work rather than
- * the work, in the same three slots whichever level is on screen.
+ * the work, in the same slots whichever level is on screen.
  *
- * **The slots hold, and their scope changes with the level.** Three rows at
- * both levels, in the same order and the same places — what each one points at
- * is the workspace's at level 0 and this campaign's at level 1:
+ * **The slots hold, and their scope changes with the level.** The same rows in
+ * the same order at both levels — what each one points at is the workspace's
+ * at level 0 and this campaign's at level 1:
  *
- * - Foundation → Foundation: what everything is written from — the
- *   workspace's guardrails, voices and documents up here, and down there the
- *   ones this campaign has drawn on plus its own.
  * - Activity → Activity: what happened, at whichever scope you are standing in.
  * - Workspace settings → Settings: the record you are inside.
+ *
+ * **Foundation is level 0's alone**, which is the one asymmetry in the band. It
+ * had a level-1 row while the campaign's Foundation page was its documents
+ * with a read-only band of inherited brand on top; the documents are Assets
+ * now, a row in the level itself, and what is left of the pairing — which
+ * voice, which audience — is a card on the campaign's Strategy page rather
+ * than a destination.
  *
  * The level-1 rows carry no "Campaign" prefix. The rail has already said which
  * campaign, by name, at the top of the level, and repeating the noun down every
@@ -48,17 +52,6 @@ export function NavUtilityStrip({
   if (level === 1 && campaignId) {
     return (
       <div className="flex flex-col gap-1">
-        {/* Foundation, narrowed to this campaign. The campaign's own
-            documents are the half that is always there; the inherited half
-            hides itself when the workspace has written none
-            (`InheritedBrand`). */}
-        <AppSidebarButtonMenu
-          icon={<PaletteIcon weight="regular" className="size-5 flex-none" />}
-          text={t('nav.campaign.foundation')}
-          isActive={pathname.includes('/foundation')}
-          to="/campaigns/$campaignId/foundation"
-          params={{ campaignId }}
-        />
         {activityEnabled && (
           // Plain, where level 0's row carries an unread count: the count is
           // the workspace's, from an endpoint that takes no campaign, and a

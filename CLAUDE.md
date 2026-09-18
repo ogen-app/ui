@@ -73,8 +73,29 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `beforeLoad`, `validateSearch`); the co-located **`page.tsx` is
   intentionally invisible to the router** and holds the presentational
   component.
-- **Trailing-underscore route segments** (`$campaignId_`, `content-bank_`)
+- **Trailing-underscore route segments** (`$campaignId_`, `foundation_`)
   deliberately escape the parent layout to render fullscreen.
+- **The nav is two levels of one menu, and every row at level 1 answers to a
+  row at level 0** — `layout/nav/workspaceDestinations.ts` is the workspace's
+  list, `lib/campaignSections.ts` is the same list narrowed, and a module added
+  to one without the other is the asymmetry a user reads as a bug in their own
+  memory. Two deliberate exceptions, both stated on those tables: **Strategy**
+  has no workspace twin (a campaign commits to a window and a rate; a workspace
+  commits to nothing), and **Foundation** has no campaign twin (voices,
+  audiences and guardrails are the workspace's, and what a campaign has of them
+  is a *pointer*, chosen on its Strategy page through `CampaignBrandCard`).
+- **Documents are Assets, and Assets is a module rather than a section of
+  Foundation.** `/assets` at level 0, `/campaigns/:id/assets` at level 1, one
+  `ContentPage` behind both (`campaign === null` is the workspace bank). It was
+  `/content-bank`, then Foundation's `sources` section, and the move back out
+  is the same observation twice: every other thing in Foundation is written
+  once and revisited rarely, and this is a working list somebody has open all
+  day. So Foundation's hub has no documents card, `lib/brandSections` has no
+  `sources` entry, and the campaign's Foundation row is gone with the
+  `InheritedBrand` band it used to carry — a campaign's inherited voice and
+  audience are read on Strategy, and the guardrails are read in the workspace's
+  Foundation. Assets is **unflagged**, which also stops the bank disappearing
+  when `brand-materials` is off.
 - **Auth is guarded once, in `routes/__root.tsx`** `beforeLoad` — not on
   `_authenticated`. Distinguish `ServerUnavailableError` (→ `/server-unavailable`)
   from a 401 (→ `/auth/login`).

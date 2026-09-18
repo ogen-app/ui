@@ -24,9 +24,9 @@ const SECTION_PATH = {
   overview: '/campaigns/$campaignId/overview',
   strategy: '/campaigns/$campaignId/strategy',
   ideas: '/campaigns/$campaignId/ideas',
+  assets: '/campaigns/$campaignId/assets',
   posts: '/campaigns/$campaignId/list',
   analytics: '/campaigns/$campaignId/analytics',
-  foundation: '/campaigns/$campaignId/foundation',
   activity: '/campaigns/$campaignId/activity',
   settings: '/campaigns/$campaignId/settings',
 } satisfies Record<Exclude<CampaignSectionId, 'calendar'>, LinkProps['to']>
@@ -35,15 +35,19 @@ const SECTION_PATH = {
  * Level 1 — one campaign, in the rail's whole width.
  *
  * **The same rail as the workspace's, narrowed.** Every row here answers to a
- * row up there: Overview to Inbox, Ideas to Ideas, Posts to Campaigns,
- * Calendar to Calendar, Analytics to Analytics — and the footer's three to the
- * workspace's three (`NavUtilityStrip`). Nothing at this level points out of
- * the campaign, and that is the change: the rail used to carry the workspace's
- * own Foundation and Activity into a campaign, so the level was never quite
- * the campaign's and a row could take you somewhere the campaign wasn't. Going
- * in narrows the same menu now, and coming out is the caret, the mark or the
- * account menu — three deliberate ways, none of them a row you might take by
- * accident.
+ * row up there: Overview to Inbox, Ideas to Ideas, Assets to Assets, Posts to
+ * Campaigns, Calendar to Calendar, Analytics to Analytics — and the footer's
+ * two to the workspace's (`NavUtilityStrip`). Nothing at this level points out
+ * of the campaign, and that is the change: the rail used to carry the
+ * workspace's own Foundation and Activity into a campaign, so the level was
+ * never quite the campaign's and a row could take you somewhere the campaign
+ * wasn't. Going in narrows the same menu now, and coming out is the caret, the
+ * mark or the account menu — three deliberate ways, none of them a row you
+ * might take by accident.
+ *
+ * Foundation is the one workspace row with nothing down here, since the
+ * campaign's documents became Assets: what a campaign has of the workspace's
+ * brand material is a pointer, and pointers are chosen on Strategy.
  *
  * Strategy is the one row with no workspace twin, because a campaign commits
  * to a window, a rate and a spend and a workspace commits to nothing.
@@ -82,12 +86,12 @@ export function CampaignLevel({
       ? 'strategy'
       : pathname.includes('/ideas')
         ? 'ideas'
-        : pathname.includes('/calendar')
-          ? 'calendar'
-          : pathname.includes('/analytics')
-            ? 'analytics'
-            : pathname.includes('/foundation')
-              ? 'foundation'
+        : pathname.includes('/assets')
+          ? 'assets'
+          : pathname.includes('/calendar')
+            ? 'calendar'
+            : pathname.includes('/analytics')
+              ? 'analytics'
               : pathname.includes('/activity')
                 ? 'activity'
                 : pathname.includes('/settings')

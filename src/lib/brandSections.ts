@@ -1,5 +1,4 @@
 import {
-  CardsThreeIcon,
   ChatCircleDotsIcon,
   FrameCornersIcon,
   SealCheckIcon,
@@ -40,19 +39,20 @@ import { isFeatureEnabled } from '@/config/featureFlags'
  * halfway through.
  *
  * A voice goes one level deeper again (`brand_/voices/$voiceId`), on the
- * trailing-underscore escape the asset editor uses.
+ * trailing-underscore escape.
+ *
+ * **The documents are not one of these.** They were, as `sources`, on the
+ * argument that material the app writes from is what this table is for. What
+ * that missed is that every other section here is written once and revisited
+ * rarely, while the documents are a working list somebody has open all day —
+ * so they are their own level-0 module at `/assets`, with a campaign-scoped
+ * twin, and this table is back to the things a brand is made of.
  *
  * **Three of the five are offered today** — see `shown`, and read the rest of
  * this file as describing the module rather than the current menu.
  */
 export type BrandSectionId =
-  | 'voices'
-  | 'audiences'
-  | 'guardrails'
-  | 'facts'
-  | 'sources'
-  | 'look'
-  | 'templates'
+  'voices' | 'audiences' | 'guardrails' | 'facts' | 'look' | 'templates'
 
 /**
  * **This table carries behaviour only — the words are in the catalogue.**
@@ -139,13 +139,6 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     // lands — see the `facts-ledger` flag. Off, the statements stay a card
     // inside guardrails and this section is not offered.
     shown: isFeatureEnabled('facts-ledger'),
-  },
-  {
-    id: 'sources',
-    icon: CardsThreeIcon,
-    tone: 'var(--brand-sources)',
-    readBy: ['plan', 'post'],
-    shown: true,
   },
   {
     id: 'look',
