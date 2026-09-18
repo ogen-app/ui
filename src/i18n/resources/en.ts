@@ -1034,6 +1034,8 @@ export const en = {
           'Something went wrong connecting your account. Please try again.',
         upstream:
           'We couldn’t reach the platform. Please try again in a moment.',
+        permission:
+          'We couldn’t connect a page or profile. Reconnect and make sure you allow access to a page or profile you manage.',
         noTargets:
           'This account doesn’t have any pages or profiles we can publish to.',
         generic: 'We couldn’t connect your account. Please try again.',
