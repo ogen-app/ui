@@ -11,6 +11,18 @@ interface ImportMetaEnv {
    * only; anything else, including omitting it, folds them out of the bundle.
    */
   readonly VITE_DEV_TOOLS?: string
+
+  /**
+   * Sentry error monitoring + tracing (CON-304). Empty ⇒ telemetry off
+   * (fail-open); dev is unaffected. See `observability/sentry.ts`.
+   */
+  readonly VITE_SENTRY_DSN?: string
+  /** Sentry environment tag, e.g. `production`. Defaults to `development`. */
+  readonly VITE_SENTRY_ENVIRONMENT?: string
+  /** Browser-trace head sample rate, `0`–`1`. Defaults to `0.1`. */
+  readonly VITE_SENTRY_TRACES_SAMPLE_RATE?: string
+  /** Release tag (build SHA), aligned with the API's `SENTRY_RELEASE`. */
+  readonly VITE_APP_RELEASE?: string
 }
 
 interface ImportMeta {
