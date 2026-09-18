@@ -15,7 +15,6 @@ import type { PlatformView } from '@/lib/platformDictionary'
 import type { Campaign } from '@/types/campaigns'
 import { CallToAction } from './CallToAction.tsx'
 import { CollapsedCard, OverviewCard, SectionLink } from './OverviewCard.tsx'
-import { useFeatureFlag } from '@/config/featureFlags'
 
 /**
  * The Strategy card — is this campaign decided?
@@ -39,9 +38,9 @@ export function StrategyModule({
   campaign: Campaign
   platformViews: PlatformView[]
 }) {
-  // With Brand on, persona and tone are chosen rather than written, so the
+  // Persona and tone are chosen in Foundation rather than written here, so the
   // brief is measured against what is left of it.
-  const posture = briefPosture(campaign, useFeatureFlag('brand-materials'))
+  const posture = briefPosture(campaign)
   const checks = setupChecks(campaign, platformViews)
   const [aiModalOpen, setAiModalOpen] = useState(false)
 

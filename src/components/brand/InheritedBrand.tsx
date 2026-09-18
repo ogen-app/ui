@@ -4,7 +4,6 @@ import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { Collapse } from '@/components/ui/collapse'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useBrand } from '@/hooks/useBrand'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { brandSectionCopy } from '@/lib/brandSections'
@@ -44,7 +43,6 @@ import type { BrandAudience, BrandGuardrails, BrandVoice } from './types'
  */
 export function InheritedBrand({ campaignId }: { campaignId: string }) {
   const { t } = useTranslation()
-  const enabled = useFeatureFlag('brand-materials')
   const { data: brand } = useBrand()
   // The binding is two columns on the campaign row (CON-245), so it arrives
   // with the campaign rather than from a query of its own.
@@ -53,7 +51,7 @@ export function InheritedBrand({ campaignId }: { campaignId: string }) {
   // Nothing at all rather than a shell while it loads: this sits above a table
   // that is the reason the page was opened, and a band that appears a beat
   // later shoves it down.
-  if (!enabled || !brand || !campaign) return null
+  if (!brand || !campaign) return null
 
   const voice =
     brand.voices.find((v) => v.id === campaign.brand_voice_id) ?? null

@@ -801,11 +801,11 @@ button cannot escape onto a real screen.
   editors already give, with the same sentence about what it costs. A list may
   delete a row on one click; a thing that fills the screen and may have just
   been written gets asked about.
-- **The flag is on for iteration and has to go back off.** `brand-materials` is
-  `true` on this branch only. Nothing here is backed by a server: a workspace's
-  voices would live in one browser, on one machine, and vanish with its site
-  data. Switching it on for anyone but the person working on it would be
-  shipping a feature that quietly forgets.
+- **The flag is gone.** It was `true` on the working branch only for as long as
+  nothing here was backed by a server — a workspace's voices living in one
+  browser, on one machine, vanishing with its site data. CON-228 shipped the
+  store and the endpoints, the flag went on for `develop` on 2026-09-02, and it
+  was deleted with its off-branch on 2026-09-18.
 
 ## 18. What using it changed about the chrome
 

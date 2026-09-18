@@ -44,8 +44,11 @@ the ones to actually check.
 3. **Caption fold** — `PLATFORM_FOLDS` in `lib/socialText.ts`: where the network
    hides the rest of a caption behind "see more". Absent means the preview never
    folds.
-4. **Sequences** — `SEQUENCE_NETWORKS` in `lib/threadSequence.ts`, only if the
-   network publishes chains. Behind `thread-sequence`.
+4. **Sequences** — nothing to add. Whether a network publishes chains is the
+   post-type rule's `segmented`, read off `GET /api/platforms/:id/
+   post-type-rules`; the hard-coded list this step used to name is gone
+   (CON-284). Offer the `thread` slug in the platform's `postTypes` and the
+   rest follows.
 5. **Media rules** — a row in `lib/platformMedia.ts`. This one fails *silently*:
    `getPlatformMedia` answers `{}` for a platform it has never heard of, and an
    empty policy means the editor runs **no** image checks at all rather than

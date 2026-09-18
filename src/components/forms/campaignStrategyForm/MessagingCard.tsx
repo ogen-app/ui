@@ -14,7 +14,6 @@ import { SettingsCard } from '@/components/settings/SettingsCard.tsx'
 import { BRIEF_FIELD_LABELS, briefPosture } from '@/lib/campaignReadiness.ts'
 import { useSettingsStore } from '@/stores/settingsStore.ts'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore.ts'
-import { useFeatureFlag } from '@/config/featureFlags'
 import type { Campaign } from '@/types/campaigns'
 import type { StrategyFormValues } from './schema'
 
@@ -32,10 +31,6 @@ import type { StrategyFormValues } from './schema'
  */
 export function MessagingCard({ campaign }: { campaign: Campaign }) {
   const form = useFormContext<StrategyFormValues>()
-  // Whether Brand answers persona and tone. Read once and threaded through
-  // rather than checked at each site, so the two boxes and the card they are
-  // replaced by can never both be on screen.
-  const brandBinds = useFeatureFlag('brand-materials')
 
   return (
     <SettingsCard
@@ -60,28 +55,6 @@ export function MessagingCard({ campaign }: { campaign: Campaign }) {
             </FormItem>
           )}
         />
-        {/* Answered by the campaign's audience once Brand is on — see
-            `CampaignBrandCard`. The value is still round-tripped on save
-            rather than cleared: the box going away is a change to this
-            screen, not permission to delete what somebody wrote. */}
-        {!brandBinds && (
-          <FormField
-            control={form.control}
-            name="target_persona"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Target persona</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="Who are we talking to? Role, goals, pain points."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
         <FormField
           control={form.control}
           name="key_messages"
@@ -98,25 +71,6 @@ export function MessagingCard({ campaign }: { campaign: Campaign }) {
             </FormItem>
           )}
         />
-        {/* Answered by the campaign's voice. Same treatment. */}
-        {!brandBinds && (
-          <FormField
-            control={form.control}
-            name="tone_guidelines"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tone guidelines</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="Voice, style, words to use and avoid."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
       </div>
     </SettingsCard>
   )
@@ -141,7 +95,7 @@ function GenerateBriefAction({ campaign }: { campaign: Campaign }) {
   // The ask names the fields still missing, so it must not ask for the two
   // that are no longer on the screen — the tool would write them and nothing
   // would show what changed.
-  const posture = briefPosture(campaign, useFeatureFlag('brand-materials'))
+  const posture = briefPosture(campaign)
 
   const ask = () => {
     openRightPanel('assistant')

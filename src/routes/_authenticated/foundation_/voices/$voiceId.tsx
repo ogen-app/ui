@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { PageError } from '@/components/page-primitives/PageError'
@@ -8,7 +8,6 @@ import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { BrandBackButton, BrandPage } from '@/components/brand/detail'
 import { VoiceEditor } from '@/components/brand/VoiceEditor'
 import { voiceStarter } from '@/components/brand/starters'
-import { isFeatureEnabled } from '@/config/featureFlags'
 import { useBrand, useDeleteVoice, useSaveVoice } from '@/hooks/useBrand'
 import { toast } from '@/stores/toastStore'
 
@@ -43,11 +42,6 @@ import { toast } from '@/stores/toastStore'
 export const Route = createFileRoute(
   '/_authenticated/foundation_/voices/$voiceId',
 )({
-  beforeLoad: () => {
-    if (!isFeatureEnabled('brand-materials')) {
-      throw redirect({ to: '/campaigns' })
-    }
-  },
   /**
    * Which starter this was forked from, when arriving from an empty library.
    *

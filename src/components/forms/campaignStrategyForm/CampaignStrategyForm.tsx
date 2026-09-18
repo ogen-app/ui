@@ -172,7 +172,6 @@ export function CampaignStrategyForm({ campaign }: Props) {
   // fields — the values it holds are still the campaign's own, and Save
   // round-trips them untouched.
   const accountsEnabled = useFeatureFlag('campaign-accounts')
-  const brandBinds = useFeatureFlag('brand-materials')
 
   // `enrichBrief` rewrites all four messaging fields, and `setCampaignDates` /
   // `redistributePosts` rewrite the window and the schedule (CON-112 §6.5,
@@ -313,7 +312,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
           {/* The same control the messaging card's fields defer to, from the
               same file: with Brand on, persona and tone are chosen here rather
               than written above. */}
-          {brandBinds && <CampaignBrandCard campaignId={campaign.id} />}
+          <CampaignBrandCard campaignId={campaign.id} />
 
           <SettingsCard
             title={
