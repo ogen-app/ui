@@ -11,7 +11,7 @@ This file is the whole. It is a **catalogue, not a design doc**: the reasoning
 for a rule lives in [`activity.md`](./activity.md) and the flag comments, and
 the wire detail lives in [`sse.md`](./sse.md).
 
-Last reviewed 2026-09-06.
+Last reviewed 2026-09-18.
 
 ---
 
@@ -26,9 +26,19 @@ Last reviewed 2026-09-06.
 | **Client action** | `invalidateQueries`; two types also toast | Renders a feed row and counts toward the unread badge |
 | **If it is missed** | Nothing is lost — the recovery path is a refetch | The row is still there on next load |
 
-So the same fact cannot be a topic on both, and the choice of transport *is* the
-choice of who hears it. A cache hint goes on the first; something a person must
-not miss goes on the second.
+So the choice of transport *is* the choice of who hears it, and of whether they
+can still hear it tomorrow. A cache hint goes on the first; something a person
+must not miss goes on the second. Neither can stand in for the other, which is
+the rule — not that a fact may only be on one of them.
+
+Since CON-285 spelled both vocabularies the same way, a few names now appear on
+**both** streams — `assistant.completed` is a bus event *and* a notification
+type. That is not a contradiction and not duplication to remove: the bus copy
+says *every tab in this workspace should refetch that post*, and it is gone the
+moment nobody is listening; the inbox copy says *the run you started finished*,
+to one person, and it is still there next week. Same fact, two jobs. The client
+handles them in two files that never meet — `lib/eventRouting.ts` and
+`lib/notifications.ts`.
 
 Both share only the machinery for staying open (`lib/streamConnection`:
 backoff, silence watchdog, subscriber counting) and the one frame parser
@@ -59,14 +69,14 @@ cache the running flow is still writing loses the newer copy.
 
 | Topic | Type | Trigger | Client does |
 | --- | --- | --- | --- |
-| `entity:post:<id>` | `assistant_completed` / `assistant_failed` | A post-assistant run ends | Invalidate the post; muted for the tab that started it |
-| | `assessment_completed` / `assessment_failed` | A quality assessment ends | Invalidate the post's quality; muted for the starting tab |
-| | `post_cloned` | A post is duplicated | Invalidate the campaign's post list |
-| | `post_restored` | A post version is restored | Invalidate the post |
-| | `post_scheduled` | A post is scheduled | Invalidate the post and its campaign's list |
+| `entity:post:<id>` | `assistant.completed` / `assistant.failed` | A post-assistant run ends | Invalidate the post; muted for the tab that started it |
+| | `assessment.completed` / `assessment.failed` | A quality assessment ends | Invalidate the post's quality; muted for the starting tab |
+| | `post.cloned` | A post is duplicated | Invalidate the campaign's post list. The topic names the **clone**, not its source — `payload.sourcePostId` is the post it came from |
+| | `post.restored` | A post version is restored | Invalidate the post |
+| | `post.scheduled` | A post is scheduled | Invalidate the post and its campaign's list |
 | | `post.analytics.updated` | The Zernio refresh sweep writes new figures for the post | Invalidate that post's analytics |
-| `entity:campaign:<id>` | `assistant_completed` / `assistant_failed` | A campaign-assistant run ends | Invalidate the campaign; muted for the starting tab |
-| | `content_plan_completed` / `content_plan_failed` | Content-plan generation ends | Invalidate the campaign's posts |
+| `entity:campaign:<id>` | `assistant.completed` / `assistant.failed` | A campaign-assistant run ends | Invalidate the campaign; muted for the starting tab |
+| | `content_plan.completed` / `content_plan.failed` | Content-plan generation ends | Invalidate the campaign's posts |
 | `entity:zernio_account:<id>` | `zernio.account.attached` / `.updated` / `.revived` | A social account is connected or changes state | Invalidate the accounts list |
 | | `zernio.account.attach_failed` | Connecting an account failed | **Toasts** — unexpected, actionable, invisible on whatever screen you are on |
 | | `zernio.account.disconnected` | An account was disconnected | **Toasts**, same reason |
@@ -77,10 +87,19 @@ cache the running flow is still writing loses the newer copy.
 notification service took for waking live streams; `job:<id>` still has no
 publisher.
 
-**Naming is mixed** — dotted (`zernio.sync.ok`, `post.analytics.updated`) and
-snake_case (`post_cloned`, `assistant_completed`), matched literally in
-`eventRouting.ts`. The notification vocabulary settled on dotted, so the hub is
-the odd one out. Open question X1.
+**Naming is settled: dotted, on both streams.** Nine bus types were snake_case
+until CON-285 (ogen#161, 2026-09-17) renamed them — `assistant_completed` →
+`assistant.completed`, `post_cloned` → `post.cloned`, and so on — so one
+convention now spans the bus and the inbox and no future type has to guess. It
+was a coordinated wire change with no compatibility window on either side: the
+client matches these literally, and a drifted literal raises nothing and breaks
+nothing on screen, it is an invalidation that silently stops happening.
+
+The server's **persisted** taxonomies did not move: `post_logs.event_type` and
+the `tenant_activity_events` rows (CON-125) keep `post_cloned` /
+`post_restored` / `post_scheduled`, because renaming those would split
+backfilled history across two spellings. So the wire name and the history name
+differ on purpose for those three, and neither is wrong.
 
 ---
 
@@ -103,23 +122,39 @@ Two classes, and they fan out differently:
   → **workspace members with access to the subject.** No actor-suppression: an
   exception is not a routine echo of your own click.
 
-**Decided 2026-09-06:** a failed publish is workspace business, not the author's
-private problem — `post.publish_failed` fans out to the workspace, as FR8 says
-and as the Phase 1 derived entry it replaces already did. The shipped producers
-emit to `post.CreatedBy` only, so this is decided-and-unimplemented, tracked on
-CON-285.
+**Decided 2026-09-06, shipped 2026-09-17:** a failed publish is workspace
+business, not the author's private problem. `post.published` and
+`post.publish_failed` now go out through `EmitToUsers` to every workspace
+member (ogen#161), where they used to reach `post.CreatedBy` alone.
 
-### Shipped today (CON-242)
+### Shipped (CON-242, completed by CON-285)
 
-| Type | Class | Trigger | Recipients — shipped | Recipients — decided |
-| --- | --- | --- | --- | --- |
-| `post.published` | Exception¹ | A post reaches `published` | `post.CreatedBy` | **Workspace** |
-| `post.publish_failed` | Exception | Zernio rejects, or the poll lands on `failed` | `post.CreatedBy` | **Workspace** |
-| `asset.ready` | Resolution | An asset finishes processing | Initiator | Initiator ✓ |
-| `asset.ingest_failed` | Resolution | Asset processing failed | Initiator | Initiator ✓ |
-| `campaign.content_plan_ready` | Resolution | Content-plan generation succeeded | Initiator | Initiator ✓ |
-| `connection.expiring_soon` | Exception | The expiry sweep finds a connection near its end | Owners (CON-219) | Owners ✓ |
-| `connection.action_required` | Exception | A connection needs reauthorisation | Owners (CON-219) | Owners ✓ |
+Every row below has a live producer *and* a catalogue key in
+`lib/notifications.ts` — the two halves of supporting a type, and the reason
+adding one is a coordinated change.
+
+| Type | Class | Trigger | Recipients |
+| --- | --- | --- | --- |
+| `post.published` | Exception¹ | A post reaches `published` | **Workspace** |
+| `post.publish_failed` | Exception | Zernio rejects, or the poll lands on `failed` | **Workspace** |
+| `post.manual_publish_due` | Exception | An hourly sweep finds a post in `scheduled_for_manual_publishing` whose `scheduled_at` has passed. `dedupe_key = manual_publish:<post_id>`, so it fires once | **Workspace** |
+| `asset.ready` | Resolution | A non-URL asset finishes processing | Initiator |
+| `asset.ingest_failed` | Resolution | Asset processing failed | Initiator |
+| `url_asset.crawled` | Resolution | A URL asset finishes crawling (CON-222) — branched off `asset.*` by kind so the copy can say *link* | Initiator |
+| `url_asset.failed` | Resolution | The crawl failed | Initiator |
+| `campaign.content_plan_ready` | Resolution | Content-plan generation succeeded | Initiator |
+| `content_plan.failed` | Resolution | Its failure twin | Initiator |
+| `assistant.completed` / `assistant.failed` | Resolution | A post- or campaign-assistant run ends. The campaign flow **skips the success** when the run generated a content plan — `campaign.content_plan_ready` already says that, better | Initiator |
+| `assessment.completed` / `assessment.failed` | Resolution | A post quality assessment ends | Initiator |
+| `connection.expiring_soon` | Exception | The expiry sweep finds a connection near its end | Owners (CON-219) |
+| `connection.action_required` | Exception | A connection needs reauthorisation | Owners (CON-219) |
+
+Nearly all of these carry a `dedupe_key` — usually `<type>:<entity id>`, but
+`manual_publish:<post_id>` and `conn:<account id>:<stage>` for the two that
+predate the convention — which collapses repeats **while the previous row is
+still unread**, so an iterating edit session leaves one row per outcome rather
+than forty (FR7). `campaign.content_plan_ready` is the one without: generating
+a plan is rare and deliberate, and two of them are two facts.
 
 ¹ `post.published` is filed as an exception by its `post.*` prefix, which is
 exactly why it is contentious: it is the highest-volume *success* in the
@@ -129,22 +164,23 @@ trusted to be loud when it doesn't — the silence is indistinguishable from a
 broken scheduler. The volume problem is real and belongs to notification
 preferences and digests (CON-242 §12), not to dropping the event.
 
-### Planned (CON-285, not yet emitted)
+### Named, with nothing to raise them
 
-| Type | Class | Trigger | Recipients |
-| --- | --- | --- | --- |
-| `assistant.completed` / `assistant.failed` | Resolution | A post- or campaign-assistant run ends | Initiator |
-| `content_plan.failed` | Resolution | The failure twin of `campaign.content_plan_ready` | Initiator |
-| `assessment.completed` / `assessment.failed` | Resolution | A post quality assessment ends | Initiator |
-| `url_asset.crawled` / `url_asset.failed` | Resolution | A URL asset finishes crawling (CON-222) — branched off `asset.*` by kind so the copy can differ | Initiator |
-| `video.probed` / `video.probe_failed` | Resolution | A video probe ends (CON-148) — same branch | Initiator |
-| `post.not_published` | Exception | The poll lands on the `not_published` terminal state | Workspace |
-| `post.manual_publish_due` | Exception | **Net-new sweep**: a post in `scheduled_for_manual_publishing` whose `scheduled_at` has passed. Hourly River job, `dedupe_key = manual_publish:<post_id>` so it fires once | Workspace |
-| `zernio.sync_failed` | Exception | A sync pass failed — the durable twin of the bus's `zernio.sync.failed` | Workspace |
+Three types survived CON-285 unimplemented, and each for the same kind of
+reason: the trigger or the recipient does not exist. They are listed so nobody
+re-derives them, **not** as work queued up — and deliberately absent from
+`lib/notifications.ts`, because copy written ahead of a producer is copy nobody
+can read.
 
-Every key here is **API surface**: adding one is a coordinated change, because
-the client renders its copy from the catalogue and a type with no entry falls
-back to the server's English.
+| Type | Why not | What would change it |
+| --- | --- | --- |
+| `video.probed` / `video.probe_failed` | There is no `AssetTypeVideo`. A video is attachment metadata from an external service, with no async event surface to end | CON-148, if video ever becomes an asset kind |
+| `post.not_published` | Nothing in the server transitions a post into `not_published` | A publisher that gives up on a window rather than failing |
+| `zernio.sync_failed` | The only sync failure is a global, tenant-less `list_accounts` call: no tenant, so no recipient. The bus's `zernio.sync.failed` is not affected — it is tenant-scoped and fires today | A per-tenant sync pass, or an operator surface instead of an inbox |
+
+Every key in either table is **API surface**: adding one is a coordinated
+change, because the client renders its copy from the catalogue and a type with
+no entry falls back to the server's English — correct, and untranslated.
 
 ---
 
@@ -165,9 +201,11 @@ back to the server's English.
 - **Everything else routine** goes to the **daily report** rather than the feed
   — deterministic counts for a local day, recomputed from live data, never
   stored and never AI-written. The endpoints are `GET /api/activity/report/:date`
-  and `GET /api/activity/reports`, both requiring an IANA `tz`; neither exists
-  yet (CON-285). The client half is built and waiting behind the `activity`
-  flag.
+  and `GET /api/activity/reports`, both requiring an IANA `tz`, and both
+  **landed 2026-09-17** (ogen#161). The client half was built against an
+  assumed shape and has **not been re-tested against the real one** — which is
+  rule 4 of the flag contract and the remaining work before `activity` can be
+  turned on.
 
 ---
 

@@ -85,37 +85,30 @@ const FEATURE_FLAGS = {
    *    a triggerable producer rather than a fixed server: **live push**, and
    *    with it the replay→live dedup (`n.Seq <= lastSentSeq`). Paging past page
    *    one is untested too.
-   * 2. **Fan-out — decided 2026-09-06, unimplemented.** Every producer writes
-   *    to the thing's `created_by` (`submit_post_to_zernio.go`), so a post
-   *    failing to publish is news to whoever made it and to nobody else. The
-   *    derived entry it replaced was visible to the whole workspace, so
-   *    turning this on as it stands *narrows* who hears about a failure. The
-   *    ruling matches CON-285 FR8: **`post.publish_failed` goes to the
-   *    workspace** — a failed publish is workspace business, not the author's
-   *    private problem. `notify.EmitToUsers` already exists and the
-   *    connection-expiry producer reaches every owner with it, so this is one
-   *    call site, not a missing capability.
-   * 3. **`post.published` — decided 2026-09-06: it stays, workspace-wide.**
-   *    CON-224 said it must not be emitted, and the volume argument is real:
-   *    a workspace posting three times a day across five channels writes
-   *    fifteen "it worked" rows, times the member count once fan-out lands,
-   *    which is how a badge stops being read. It is kept anyway, because the
-   *    opposite failure is worse — people schedule posts and then hear
-   *    nothing, and a system silent when publishing works is indistinguishable
-   *    from one whose scheduler is broken. Muting a channel is a user's
-   *    choice; never recording the fact is ours. The volume belongs to
-   *    notification preferences and digests (CON-242 §12).
-   * 4. **A producer for "never published".** `not_published` is a real outcome
-   *    with no notification type, so it now leaves no record at all. It is
-   *    counted in the day's report and nowhere else.
+   * 2. **The daily report, read against the real endpoints.** `GET
+   *    /api/activity/report/:date` and `/api/activity/reports` landed
+   *    2026-09-17 (ogen#161) — the client half was built against an assumed
+   *    shape, so this is rule 4 and it is the largest piece left.
+   * 3. **A producer for "never published".** `not_published` is a real outcome
+   *    with no notification type, so it leaves no record at all; it is counted
+   *    in the day's report and nowhere else. CON-285 looked and found the
+   *    deeper reason: **nothing in the server transitions a post into that
+   *    state**, so the missing producer is a symptom rather than the gap.
    *
-   * 2 and 3 are answered and now wait on CON-285 with the rest of the producer
-   * set; neither is a reason to change the client, since the feed renders
-   * whatever rows arrive and `post.*` copy is already in the catalogue. 1 is
-   * the cheapest of what is left and nothing else is blocked on it. The whole
-   * recipient taxonomy — every type, its trigger, its transport and who hears
-   * it — is written out in `docs/events.md` rather than reconstructed from
-   * here.
+   * 1 and 2 are both re-tests rather than work, and nothing else is blocked on
+   * either. The whole recipient taxonomy — every type, its trigger, its
+   * transport and who hears it — is written out in `docs/events.md` rather
+   * than reconstructed from here.
+   *
+   * **Settled since, on the server (CON-285, ogen#161, 2026-09-17):** the
+   * producer vocabulary is complete — `assistant.*`, `assessment.*`,
+   * `content_plan.failed`, `url_asset.*` and the net-new
+   * `post.manual_publish_due` sweep all emit, and every one of them has a
+   * catalogue key here (`lib/notifications.ts`). **Fan-out landed with them**:
+   * `post.published` and `post.publish_failed` go to the whole workspace
+   * through `EmitToUsers`, where they used to reach the author alone — which
+   * was the one way turning this flag on could have *narrowed* who hears about
+   * a failure. Both were decided 2026-09-06 and are now simply true.
    *
    * **Answered since:** whether the `/api/events` crash reaches this stream —
    * it does not, and it no longer reaches `/api/events` either. CON-158

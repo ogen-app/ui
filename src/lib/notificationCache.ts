@@ -33,7 +33,12 @@ export const NOTIFICATION_UNREAD_KEY = ['notifications', 'unread'] as const
 /**
  * How many rows the feed asks for.
  *
- * The server's own maximum. A page rather than infinite scroll because the feed
+ * The server's own maximum, and since CON-285 that is a **ceiling rather than
+ * a clamp**: `limit` above 100 is a 400, where it used to be quietly rounded
+ * down. So this number is a contract with the API, not a preference — raising
+ * it stops the feed loading at all.
+ *
+ * A page rather than infinite scroll because the feed
  * has a second source of history behind it — the daily reports, computed from
  * the campaign summaries — so scrolling past the newest hundred *events* does
  * not land on nothing. The screen says when it is showing a full page, which is

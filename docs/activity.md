@@ -296,7 +296,10 @@ without the other.
   the limit, ~30-minute connection lifetime) and ogen#152 raised it to 30.
   What remains ours is the `event: recycle` frame nothing listens for yet —
   the `activity` flag comment and `docs/sse.md` carry it.
-- **Event naming is still mixed** — dotted (`zernio.sync.ok`) and snake_case
-  (`post_cloned`), matched literally in `lib/eventRouting.ts`. The notification
-  vocabulary settled on dotted (`post.publish_failed`), so the hub is now the
-  odd one out.
+- **Event naming is settled — dotted on both streams** (CON-285, ogen#161,
+  2026-09-17). The nine snake_case bus types were renamed
+  (`assistant_completed` → `assistant.completed`, `post_cloned` →
+  `post.cloned`) and `lib/eventRouting.ts` matches the new spellings. The
+  server's persisted taxonomies keep the old ones on purpose, so a
+  `tenant_activity_events` row still reads `post_cloned` — that is history, not
+  a wire name.
