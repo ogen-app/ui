@@ -116,6 +116,64 @@ unmount** so navigation never drops an edit.
 **Where.** `hooks/usePost.ts`. Campaign forms use the analogous autosave in
 `components/forms/campaignBriefForm/shared.ts` (500ms, version-tracked).
 
+## A document set is written through its own endpoints, never through the record {#asset-membership}
+
+**Decision.** Attaching and detaching documents goes through four endpoints of
+their own (CON-233, [ogen#138](https://github.com/ogen-app/ogen/pull/138)) —
+`POST`/`DELETE /api/campaigns/:id/assets` and the same pair on posts — and the
+two id lists they write, `campaigns.asset_ids` and `posts.used_asset_ids`, are
+**absent from the whole-record PUT payloads**. `campaignToPayload` and
+`postToPayload` no longer name them; the server reads them presence-aware and
+drops the omitted column from its `UPDATE`, so an ordinary save leaves the
+stored set alone.
+
+**Why.** Both fields were being written by read-modify-write over a
+whole-resource PUT, which is two bugs. Concurrent writers lost ids — three
+uploads finishing together each wrote the set *it* had read — and the client
+compensated with a promise queue per resource, a re-read immediately before each
+write, and (on posts) a flush-and-verify retry loop. Worse, the field shared a
+payload with the editor's autosave: a keystroke inside the 600ms debounce cloned
+the pre-attach list and its flush put the document straight back off the post.
+None of that is fixable on the client, because the race is between two writers
+of one column. Server-side it is one atomic statement — `jsonb_agg` over the
+union `WITH ORDINALITY`, or `col - id` — so ids keep their order, a repeat add
+is a no-op, and concurrent adds serialize on the row lock.
+
+**The flag is derived, not sent.** `campaigns.use_assets` is maintained by the
+same statement: attaching turns it on, detaching the last document turns it off.
+It cannot be the client's decision. Generation checks the flag *before* the set
+(`resolveAssets` returns early when it is false), so a campaign whose documents
+were attached with the flag left off shows a full list and writes from none of
+it — and `use_assets: true` over an *empty* list is how the server still spells
+"every asset in the workspace", so a client that cleared the set and left the
+flag would hand the campaign the whole workspace bank. Both are invisible on
+screen.
+
+**Consequences.** The per-resource write queues, the pre-write re-reads and the
+retry loop are gone (`lib/campaignMembership.ts`, `lib/postSources.ts`).
+Detaching a source is `removePostAsset`, not a `changeDoc` that rides the
+autosave — the autosave cannot write the field at all now — though the
+optimistic paint still goes through `changeDoc`, because a keystroke inside the
+debounce clones the *pending* copy and a cache-only edit would be dropped. For
+the same reason a save's response is no longer evidence about the set: it
+carries the row as the server read it, *before* an attach that may have landed
+since, so `withHeldSources` (`lib/postCache.ts`) keeps what the cache holds over
+what the PUT answered. Note that `published_url` sits in the same payload and is
+listed rather than omitted (CON-165) — the handler defaults *it* away on
+silence. The two fields are opposites, and a payload builder that treats them
+alike is wrong about one of them.
+
+**What is left.** One read before each campaign write, to catch a campaign still
+in the legacy whole-bank state and pin it to the bank first — otherwise
+attaching one document collapses "everything" to that document. The cache
+answers only the negative (a campaign can leave that state but never enters it),
+so an ordinary set is proof and a cached sentinel is re-read. The pin rides
+along with the write as one union rather than being a step that could be
+skipped. A sentinel campaign over an *empty* workspace is left as it is: there
+is nothing to pin to, and "everything" and "nothing" are the same campaign until
+somebody uploads something — which is the visit that pins it. All of it dies
+with a backfill of those rows.
+
 ## The Campaigns list batches posts instead of moving the rules {#batched-summaries}
 
 **Decision.** The list gets its post data from one shared query —
@@ -161,9 +219,30 @@ is not a promise the post will publish — it understates rather than cries wolf
 
 **Known gap.** The editor's uploads go to the `post_attachments` table, whose
 presigned/thumbnail URLs are hydrated per post at response time. Nothing writes
-`media_urls`, so **the leading image never renders in practice today.** The
-card is built and correct; lighting it up needs the backend to put a thumbnail
-URL on the post list payload. Backend ticket, not a front-end change.
+`media_urls`, so **the leading image never renders in practice today**. The card
+is built and correct; lighting it up needs the backend to put a thumbnail URL on
+the post list payload — **CON-247**, a backend ticket with no front-end change
+expected.
+
+Calendar Settings' *Show cards as image previews* switch is therefore **hidden
+behind `calendar-card-images`**. It was on by default and inert, which is the
+worst of the three states it could be in: an off switch would read as a setting
+to try, an absent one as a feature not built, but a switch already *on* says the
+pictures are missing for some other reason and sends the user looking for it in
+their posts. The preference itself is untouched — still stored, still defaulted
+— so this hides a control rather than changing a setting, and whatever a user
+chose comes back when the flag flips.
+
+There is no client-side workaround, and it is worth writing down which one fails
+and why. `postToPayload` does round-trip `media_urls`, so the front end could in
+principle write a thumbnail URL there on upload — but `PostAttachment.ThumbnailURL`
+is a **presigned GET with a 15-minute TTL** (`PresignedURLTTL`, `handlers/post_attachments.go`),
+so what would be persisted is a URL that is broken by the time anyone reloads.
+The server's own `ListByCampaign` returns bare post rows with no attachment join,
+so the payload has no other image in it either. The fix is one of: hydrate a
+thumbnail onto the post list rows, or serve attachment thumbnails from a public
+key the way `assets` already does (`storage.PublicURL`) so a stored URL would
+keep working.
 
 **Where.** `components/campaigns/calendar/PostCard.tsx`,
 `lib/postValidation.ts` (`hasVisibleProblem`).
@@ -244,6 +323,52 @@ exports `selectActivePanel`, which is how components ask what's open —
 *layout* effect so a reload straight into a post paints the restored panel
 rather than opening it a frame later. Scope and `campaignId` are session-only:
 where you are is not a preference.
+
+## A campaign remembers where you were in its posts {#posts-place}
+
+**Decision.** Each campaign remembers the arrangement its posts were last read
+in and the day the calendar was drawn around — `{ view, anchor, granularity }`
+per campaign id, in `settingsStore` (localStorage). The post editor's back arrow
+and the sidebar's **Posts** row restore all of it, the list included; the entry
+points that name the *calendar* — the overview's calendar card, a bare
+`/campaigns/:id/calendar` URL — restore the date and granularity but never
+redirect to the table.
+
+**Why.** A campaign's posts are usually not in the current week: you plan
+September in August. So "today", which every one of those links used to
+hard-code, is the one week reliably guaranteed to be empty, and each return trip
+through a post cost the user the navigation they had just done.
+
+`granularity` is stored rather than derived because the list is neither
+granularity, and something that opens a calendar after a trip through the table
+still has to pick one — without it, it would guess "week" at someone who reads
+their campaign by the month.
+
+**Why not `history.back()`.** It has nothing to go back to when the post was
+opened from a pasted URL or a new tab, and a button is not a link: the arrow
+would lose middle-click, right-click and the status-bar preview that every other
+navigation in the app has. The cost of keeping a real `<Link>` is that the back
+arrow is two branches, since a `<Link>`'s params are typed off a literal `to`.
+
+**Consequences.** The calendar writes the memory on every anchor change, so
+`rememberVisit` returns its input unchanged when nothing moved and the store
+skips the `set` — otherwise every arrow press would notify the sidebar and the
+post header. The default reads the clock and so is a fresh object each call,
+which is why the hooks subscribe to the stored entry (stable, or `undefined`)
+and derive the default outside the subscription. Views are the only writers: a
+redirect or a programmatic navigation must not be saved as the user's choice.
+Rehydration distrusts the blob — a malformed anchor here would not render wrong,
+it would put the router into `beforeLoad`'s normalising redirect on every
+navigation.
+
+`DeletePostDialog` is deliberately **not** wired to this: after deleting a post
+it lands on the week that post was going out, which is a different and better
+answer than where the user came from.
+
+**Where.** `lib/postsPlace.ts` (pure, with `postsPlace.test.ts`),
+`hooks/usePostsPlace.ts`, `stores/settingsStore.ts` (`rememberPostsPlace`),
+recorded by the two views and read by `PostDetailsHeader`, `AppSidebar`,
+`OverviewCard` and the bare-calendar redirect.
 
 ## The posts table's sort order follows the user, not the device {#posts-table-sort}
 
@@ -454,6 +579,49 @@ would be two sources of truth and no correction.
   there is no separate video-metadata form, because the Zernio submit request
   models nothing else yet (CON-159).
 
+## An asset opens as a document only if we know it is one {#asset-opening}
+
+**Decision.** `AssetDocument` asks `opensAsDocument` (`lib/assetCategory.ts`)
+before it reaches the editor. `null | MD | PDF | URL` are documents; everything
+else — including a `type` this build has never seen — gets `UnsupportedAsset`, a
+read-only state, and loses the "Download as Markdown" item with it.
+
+**Why.** The screen used to treat the editor as its fallback: a URL asset still
+being scraped got `ScrapeState`, and *anything else* got `AssetEditor`. That is
+only safe while every asset is text, and the server's vocabulary grows without
+asking the client — `MD | PDF` became `MD | PDF | URL` in CON-222 and takes
+`IMG` next. `AssetEditor` seeds BlockNote from `asset.content` and autosaves it
+back, so the first asset type whose `content` is not a document is silently
+overwritten by anyone who opens it and types. CON-105 writes image assets with
+`content = "[]"`, which renders as an editable paragraph reading `[]` over a
+field that is meant to hold the image's description (CON-16 D4). Filed as
+CON-235.
+
+Two consequences worth keeping:
+
+- **PDF is a document.** What you edit there is the extracted text, and that
+  text is what the embeddings are built from — so the rule is about the *body*,
+  not about whether bytes sit behind the row.
+- **The fallback is a floor, not a destination.** A kind worth showing properly
+  gets its own view and stops arriving here, and `IMG` is the first to do it:
+  CON-246 settled the DTO field for the original (`AssetFile.url`), so
+  `AssetImageView` renders the picture with its alt text and description beside
+  it. `opensAsDocument` still answers `false` for an image — it is not a
+  document and never opens in the editor — so the two rules compose rather than
+  compete. What reaches `UnsupportedAsset` now is only a kind this build has
+  genuinely never heard of.
+
+**One further consequence, found while wiring that up.** The asset update is a
+whole-resource PUT and the handler assigns `tag_ids` and `alt_text` from the
+request unconditionally, so a payload naming only what changed erases the rest.
+`AssetDocument` had been sending `{title, content}`, which had been silently
+untagging every asset anyone renamed — invisible only because nothing in the app
+sets a tag. Every save now goes through `assetToPayload` (`lib/assetPayload.ts`),
+the same round-trip `campaignToPayload` does for the same reason. The image
+screen debounces the *asset* rather than each field for the matching reason: two
+saves in flight each carry a stale copy of the other's field, and the second to
+land wins.
+
 ## English is bundled, every other language is a chunk {#i18n}
 
 **Decision.** i18next + react-i18next, one namespace, with English statically
@@ -541,14 +709,540 @@ end to end by its tests while nothing but English is out. Per language rather
 than one flag for i18n as a whole, because a locale is finished, reviewed and
 released on its own schedule.
 
-**Scope today (CON-174).** The machinery plus real conversion of the auth
-screens, the sidebar, Profile and Workspace Settings. The rest of the app —
-campaigns, posts, calendar, content bank, the assistant — is still hard-coded
-English and reads correctly, because English is what `t` falls back to.
-Converting a surface is per-area work, not a flag day. Spanish is translated in
-full for those surfaces and gated: with the app only part-converted, choosing
-it today would yield a half-Spanish UI, and the copy has had no native review.
+**Scope today (CON-174).** Converting a surface is per-area work, not a flag
+day, and after four passes the app is in two states rather than one. Converted
+whole: the auth screens, the sidebar, Profile, Workspace Settings, the campaign
+calendar, the analytics surfaces, `/workspaces`, `/invite`, `/plans` with the
+Plan & billing card, and the flag-gated Tasks and Activity features — the last
+two because a feature written after the machinery landed has no reason to be
+written in literals. Converted in **islands**: the post editor, the Campaigns
+list and the Content Bank each hold catalogued copy for the parts a PR touched
+(`posts.*`, `campaigns.*`, `content.*`) inside screens that are otherwise
+hard-coded English. That is the rule working — you move the strings you touch —
+but it means a file can hold both, and neither form is evidence about the one
+next to it. Everything else is still hard-coded English and reads correctly,
+because English is what `t` falls back to. Spanish is translated in full for
+every key that exists and gated: with the app only part-converted, choosing it
+today would yield a half-Spanish UI, and the copy has had no native review.
 Releasing it is `enabled: true`.
+
+## A flag can be forced per browser, on staging only {#staging-flag-overrides}
+
+**Decision.** `useFeatureFlag`/`isFeatureEnabled` resolve
+`readFlagOverrides()[flag] ?? FEATURE_FLAGS[flag]`. The override set lives in
+**localStorage**, is set by a bookmarkable `?ff=tasks,-activity` link or the
+unlisted `/flags` panel, and the whole layer is compiled out of any build that
+was not made with `VITE_DEV_TOOLS=1`.
+
+**Why.** On a shared staging deploy the two audiences want opposite things: the
+back end needs to exercise a half-built feature, and the copy team needs the app
+to look like the app — a copywriter seeing unfinished work costs a round of
+feedback about a decision nobody has made yet. Before this, the only way to give
+one person a different answer was a branch and a deploy of their own, which is
+exactly the tedium that stops people testing.
+
+Four things follow, and each was a wrong answer first:
+
+- **localStorage, not `/api/settings`.** That row is tenant-scoped and readable
+  by the whole workspace ([user-scoped settings](#user-scoped-settings)), so a
+  flag stored there would turn the feature on for the very people it is being
+  kept from. Per-browser is the grain the problem has.
+- **The link is the feature; the panel is for undoing.** `?ff=` is modelled on
+  `?lang=` ([i18n](#i18n)) down to the `replaceState` strip and its position in
+  `main.tsx` — read before `createRouter`, because route guards consult flags in
+  `beforeLoad`. One bookmark per feature, and they compose.
+- **A production build does not contain it.** `DEV_TOOLS` is a build-time
+  constant, so the reader folds to `{}`, the panel's `import()` becomes
+  unreachable and its chunk is never emitted. Verified by grepping `dist/` both
+  ways. This is what makes the promise real: in production, writing the
+  localStorage key by hand does nothing. An unlisted URL is not a security
+  boundary and is not asked to be one — the protection on staging is that seeing
+  unfinished work requires deliberately switching it on.
+- **Overrides announce themselves.** `OverrideMarker` sits above the assistant
+  trigger (the CON-178 bottom-left corner is only empty in the content column —
+  a viewport-fixed badge there lands on the sidebar's account row) whenever
+  any flag is forced. Without it, an override left on weeks ago becomes a bug
+  report nobody else can reproduce.
+
+**Caveat worth knowing.** A flag hides UI, not data. Tasks writes its list into
+the tenant settings row, so a teammate switching it on and creating tasks on
+staging puts that data in the shared workspace — others just have no screen for
+it. Same rule as always: a flag is not a permission.
+
+**Where.** `config/flagOverrides.ts` (+ its test), the resolver in
+`config/featureFlags.ts`, `devtools/FlagsPanel.tsx`, `devtools/OverrideMarker.tsx`,
+`routes/flags.tsx`, the `VITE_DEV_TOOLS` build arg in the `Dockerfile`.
+
+## A thread is the body, split {#thread-sequence}
+
+**Decision.** On X and Threads, a `thread` post is written in the same single
+Markdown editor as every other post type, and the chain it publishes as is
+**derived from the body** — never authored separately, never a second copy of
+the words. A `---` divider is a break; with no divider in the body it is broken
+up to fit the platform's per-post ceiling. The only thing stored beside the body
+is which post carries which file. Behind the `thread-sequence` flag (CON-196).
+
+**And the derivation is the server's** (CON-284 R2, ogen#144). `posts.content`
+is canonical and `thread_segments` is `platforms.SplitThread` run over it on
+every write; this client reads the result through
+`POST /api/posts/thread/preview` rather than cutting anything itself. The
+authoring model below is unchanged — it is the one the back end adopted — but
+every sentence about *where* the cut is made now describes a server rule.
+
+**Why.** Zernio publishes a chain from `platformSpecificData.threadItems` on
+both networks: "the first item is the root post and subsequent items become
+replies in order", and "when `threadItems` is provided, the top-level `content`
+field is used only for display and search purposes, it is **NOT** published"
+(docs.zernio.com/platforms/threads, /platforms/twitter). Once that is the wire
+format, every ceiling is per part of the chain — 280 characters on X, 500 on
+Threads, four images or ten, one video — so the whole body measured against one
+of them fails a thread that is fine and stays silent about the one post that is
+not.
+
+The first build answered that with a per-post editor: numbered rows, each its
+own textarea and its own media, with `content` written back as a derived
+summary. It worked and it was wrong. A thread is not a different kind of
+document, it is a post that gets cut up on the way out, and turning the editor
+into a list of inputs made it a different screen from every other post type for
+a difference that belongs at the publish boundary. It also put the words in two
+places — the items and the `content` written back from them — and a screen whose
+two copies must be kept in step is a screen with a bug waiting in it.
+
+Deriving the chain removes both problems: one copy of the words, and the same
+screen every other post type gets.
+
+**What it is not.** It is not the blank-line splitting the X preview card used
+to draw. That was a guess about what the publisher would do, and the guess was
+wrong twice over: for years nothing in the Go repo sent `threadItems`, so a
+`thread` post published as one post with the whole body in it — and when the
+splitting finally arrived it did not work that way either (see below). The
+card's note said the publisher did the splitting; it never did, and that
+sentence is gone.
+
+**What the back end shipped, in two passes.** R1 (ogen#140) added
+`posts.thread_segments` — an ordered `jsonb` array of `{content}` — plus
+`post_attachments.segment_index`, `segmented` on the post-type rule, a `segment`
+field on each validation error, and the `threadItems` mapping in the submit
+path. It took *explicit* segments from the client and restamped `content` from
+the first of them, which reversed which field was the truth: here `content` is
+what the author typed, so saving a thread would have replaced the body with its
+own first message and dropped every thread-unaware reader (calendar card, posts
+table, search, versions, the assistant) to one message with it.
+
+**R2 (ogen#144, merged 2026-09-10) inverted that**, and inverted it toward this
+section rather than away from it. `content` is canonical; `thread_segments` is
+derived server-side on every write; a client-sent array is ignored; and
+`POST /api/posts/thread/preview` runs the same split and the same publish gate
+without persisting, so the composer can show the outcome before saving.
+`RootContent()` survives where it was always right — at submit time, for
+Zernio's top-level `content` and the CON-129 dedupe key.
+
+**Which moved the cut, and that is the part worth reading twice.** This client
+used to own the splitting, and its rules were not the server's: it broke at
+every blank line and accepted `***` and `___` as dividers. `SplitThread` takes
+three or more **hyphens** alone on a line and nothing else, and with no divider
+present it *packs* the body to the per-message ceiling — preferring a paragraph
+break, then a line break, then a sentence, then a word — rather than breaking at
+every blank line. A short two-paragraph body is two messages under the old
+client rule and **one segment** under the server's, which then fails the min-2
+publish gate. So the local splitter was deleted rather than corrected: two
+implementations of one cutting algorithm in two languages is the thing the
+whole design exists to avoid, and the one that publishes should be the one that
+is asked.
+
+The cost is a round trip, and it is smaller than it looks: the preview is a pure
+function of (body, platform), so it is cached per body forever and a keystroke
+that lands back on a body already asked about answers from memory
+(`useThreadPreview`).
+
+**One thing R2 gave back: a message can be too long.** In manual mode the
+ceiling is not applied at all — the author's breaks are obeyed exactly — so an
+over-long message is reported (`max_content_chars` carrying a `segment`) instead
+of being cut. Earlier drafts of this section promised the opposite, because the
+splitter they described always cut to fit. Length verdicts now come off
+`preview.errors`, never from a count taken client-side.
+
+**How.**
+
+- **A divider is a real block, not a convention.** BlockNote parses `---` into
+  a `divider` block, so the author sees the seam they typed as a line across the
+  editor. That is why it is the primary rule: the split is visible in the
+  document rather than inferred from whitespace. **And the serialisation breaks
+  it today.** BlockNote writes a divider back as `***` — its Markdown serialiser
+  emits `mdast-util-to-markdown`'s default rule marker, and normalises a typed
+  `---` to the same thing — while `SplitThread` reads hyphens only. Confirmed
+  against the live R2 build on 2026-09-16: `One\n\n---\n\nTwo` previews as two
+  segments, `One\n\n***\n\nTwo` as one. Since the editor is the only way to
+  author a body, *every* thread this client can produce is a single message with
+  a literal `***` in it. Raised on CON-284; the fix asked for is the server
+  widening `isRuleLine` to the CommonMark thematic break. **Do not normalise it
+  here** — that re-adds the delimiter opinion R2 removed, and `content` is the
+  canonical stored body, so it would mean rewriting what the author typed.
+- **A body with no divider is packed to the ceiling**, preferring a paragraph
+  break, then a line break, then a sentence, then a word, never mid-word. It is
+  *not* broken at every blank line — that was this client's old rule and it is
+  gone. A body that already fits comes back as one segment, which is correct: a
+  one-message body is not a thread.
+- **Only one predicate about the split lives on this side.** `splitRuleFor`
+  answers "did the author break this themselves", by the same hyphens-only test
+  the server uses, and it exists solely to choose which sentence the note under
+  the editor prints. Being generous there would describe a body as hand-broken
+  when the server is about to cut it somewhere else entirely — so it mirrors
+  `platforms.isRuleLine` exactly, and it is the only thing in this file allowed
+  to have an opinion about delimiters.
+- **A message the author made short is mentioned, never refused**
+  (`runtPositions`), because a two-word sign-off is a real thing people write
+  and the platforms take it. `SplitThread` drops *empty* chunks, so a stray
+  divider costs nothing — but a divider with a typo's worth of text after it is
+  a real segment, which is exactly the accident this catches.
+- **A chain of one is a post, not an error.** The platforms have no
+  one-message thread and the publish gate refuses one (`thread_segment_count`
+  wants 2–25), so a post *pinned* to `thread` whose body never grew leaves draft
+  with an ordinary slug — the same ladder walk Auto makes, chain rung barred
+  (`demotedFrom`). An automatic post never had the problem: `thread` is the
+  ladder's last rung, so a body that fits in one is claimed by `text-post` long
+  before the walk reaches it. The checks bar says so as a `pass`, not a `fail`;
+  a format changing under the author is only acceptable if they were told.
+- **`lib/threadSequence.ts` owns what is left**, pure and tested, and one
+  `planThread` call produces the whole chain: the server's messages with this
+  post's files placed on them and their per-message media verdicts. The note
+  under the editor, both preview cards and the pre-publish row read that one
+  result, so the screen cannot disagree with itself about how many posts this
+  is — and now cannot disagree with the publish gate either, since the messages
+  and their length verdicts both came from it. Its splitting tests went to
+  `split_test.go` with the algorithm; a copy kept here would have gone on
+  passing against rules the publisher had stopped following.
+- **Attachments stay post-level rows**, and carry `segment_index` (CON-284) —
+  the column that replaced the map this feature used to keep in the tenant
+  key/value store. The rule that makes it safe is unchanged, and **R2 made it
+  the server's too**: *a file with no index rides the root.* A NULL
+  `segment_index` on a thread now means message one rather than failing the
+  gate, so uploading from the media card, from the assistant, or from an older
+  client needs to know nothing about threads and the file still publishes — and
+  it is what the X card always drew, where the lead post carries the media. An
+  index naming a post that no longer exists rides the last one, where the reader
+  last saw it; the clamp is the client's, because the server refuses an
+  out-of-range index with a 422 rather than clamping it.
+- **`segment_index` is written on its own**, by a presence-aware PATCH, never
+  alongside `position`. The two are independent — `position` orders media
+  *within* a message — so a reorder must not restate an assignment it was not
+  asked to change. The server still answers 422 to a non-null index on a post
+  that is not a `thread`, on the upload and the PATCH alike; R2 relaxed the
+  other direction only. Demotion therefore writes nothing at all — the server
+  clears the segments itself once the type stops being `thread` — and the
+  indices are left in place: nothing reads them off an ordinary post, and
+  leaving them is what brings the assignments back if the body grows a second
+  message again.
+- **The media card is where a file's post is chosen**, because it is where the
+  files are. Each thumbnail carries one picker naming the post it rides; the
+  card's total cap is dropped for a thread, since `policy.max` is what *one*
+  post takes and a five-post thread holds five times it.
+- **`content` is never rewritten.** The body is what the author typed, and
+  everything downstream — the calendar, the posts table, search, the assistant —
+  keeps reading exactly the field it already reads. This is the largest
+  behavioural difference from the first build, and the reason the flag now
+  changes nothing outside its own screen.
+- **`thread_segments` is not sent at all.** Under R1 it had to be *round-tripped*
+  in `postToPayload` — the server defaulted it away on silence, so a calendar
+  drag or an unschedule would have flattened a thread by omitting a field it
+  knew nothing about. R2 retired both the field and the hazard: a write carrying
+  it is ignored, and the body those callers *do* carry is now the whole of the
+  thread. It is absent from `PostPayload` for the plainest reason available —
+  sending it would change nothing.
+- **Whether a type chains is the server's answer**, off the rule's `segmented`
+  (`publishesAsChain`). The client used to keep a hard-coded set of Zernio ids,
+  which is precisely what went stale the moment the server taught Threads the
+  slug. The rule that says `segmented` is the same one carrying the per-message
+  `max_content_chars`, so the two can never drift apart.
+- **The post type is gated on its dictionary entry, not on the slug.**
+  `PlatformPostType.flag` withholds `thread` on *both* networks as of
+  2026-09-16. Threads' was flagged from the start, being new. X's was
+  deliberately left open on the rule that a flag may not change what happens
+  when it is off — and was closed once R2 went out to the shared dev
+  environment, because that rule protects a state which no longer exists: the
+  server splits and gates every thread body regardless of this build, so the
+  choice was never "as before" but between a type that half-works and no type.
+  Withdrawing it renames nothing — `getPostTypeLabel` reads the whole
+  dictionary, so an existing thread post keeps its label; only the picker stops
+  offering the slug. There was briefly a second gate — `aheadOfPublishers`,
+  which let the flag stand in while `supportedPlatforms` listed `thread` for
+  `twitter` only. CON-284 added the word, so the honest intersection works again
+  and the stand-in is gone with the gap it covered.
+
+**Waiting on** the divider fix above. The live run happened on 2026-09-16 and
+the preview endpoint itself behaved exactly as specified — it was the editor's
+`***` that came out wrong, which no contract had ever written down. Two other
+findings came off the same pass and neither blocks this flag. **`char_count`
+measures the raw Markdown**, so `[Ogen](https://getogen.com)` spends 27 of X's
+280 and `## Title` spends 8 for five visible characters; and the auto-split packs
+by those same counts, so it will cut *inside* a markup run — `**` + 280 `a`s +
+`**` comes back as a 280-character message with the bold never closed and a
+second message reading `aa**`, both passing the gate. Whether that is a counting
+bug or evidence the submit path publishes raw Markdown to Zernio is the server's
+to answer; it is also not thread-specific, since every post type measures
+`post.Content` the same way. Both are on CON-284. What is still unexercised here
+is `segment_index` on the upload and its PATCH — start the next pass there, and
+only then decide the flag's fate.
+
+**Where.** `lib/threadSequence.ts` (+ test), `hooks/useThreadPreview.ts`,
+`previewThread` in `services/api/posts.ts`, `lib/postTypeAuto.ts`
+(`demotedFrom`), the `plan` and `demotedType` in `hooks/usePostMedia.ts`,
+`setAttachmentSegment` in `services/api/attachments.ts`,
+`components/posts/sequence/ThreadSplitNote.tsx`, the `thread` branch in
+`PostMediaCard`, the `sequence` branch in `lib/postValidation.ts`,
+`TwitterPreview` / `ThreadsPreview` / `PostPreviewPanel`, and the
+`thread-sequence` flag.
+
+## The post picks its own type, and the empty slug is how it says so {#auto-post-type}
+
+**Decision.** *Auto* is the default post type, and it is the empty
+`platform_post_type` a post is **already** created with. While a post is
+automatic the format is derived on every render from the body and the
+attachments (`lib/postTypeAuto`); the slug is written to the record only when
+the post is committed. Behind `post-type-auto`, off.
+
+**Why.** Choosing between "Text post" and "Image post" is the first thing the
+editor asks and the last thing an author has an opinion about. Those are not
+two things somebody sets out to write — they are what a post already *is* once
+the words and the files are there. Attaching a picture to a text post and then
+being told the post type is wrong is the app asking the user to restate
+something it can see.
+
+**Why no new storage.** `useAddPost` creates a post with a campaign and a date
+and nothing else, so every post starts life at `platform_post_type: ''`. That
+state already existed and already meant "nobody has chosen"; the only change is
+reading it as an intention rather than as an omission. Nothing waits on the back
+end — no column, no key/value row, no endpoint.
+
+Two consequences follow from storing nothing, and both are deliberate:
+
+- **The resolution is written down only when it has to be, and `draft` is where
+  it has to be.** A draft holds the empty slug for its whole life; the record
+  gains a concrete type on the way out. The pin rides `changeDoc`, one
+  synchronous write into the same pending edit the transition flushes first: no
+  extra round trip, and no window where the record and the request disagree
+  about what the post is.
+- **Pinning is one-way.** Reopen a post to draft and it keeps the slug it
+  resolved to, because there is nowhere to record that it used to be automatic.
+  Choosing *Auto* again sets the empty slug back. A stored bit would survive
+  that, and it would cost the column this design does without.
+
+**Where the boundary is, and why it isn't a judgement call.** The first cut of
+this drew the line at *committing* the post — scheduled or marked published,
+which is also when CON-251 locks the content, so nothing afterwards could move
+the answer. That reasoning is sound and the line was in the wrong place. The
+server's `requirePlatformIfNotDraft` (`src/handlers/posts.go`) refuses a PUT
+carrying an empty `platform_post_type` under **every** status but `draft`, so an
+automatic post that got as far as `ready_for_publish` could not be saved again at
+all — not the transition, and not the next keystroke's autosave.
+
+Two things came out of that, and both read the same predicate,
+`canBeAutomatic(status)`, from opposite ends:
+
+- **Every edge out of `draft` pins**, not a list of the final ones. The
+  manual-publish SCHEDULE is the one that proved it: unlike its auto-publish
+  twin it is a plain status PUT rather than the schedule endpoint (see
+  [Scheduling](#schedule-endpoint)), so a pin list written in terms of
+  "scheduling" missed it entirely and the request went out with no type on it.
+- **The picker offers the empty slug only to a draft.** Auto is not in the menu
+  once the post is out — and neither is the *Deselect post type* row, which
+  predates this feature and had always failed the same way, quietly, on any
+  non-draft post.
+
+**The ladder.** `text-post → image-post → carousel → video → reel → short →
+thread`, least demanding first, so the winner is the *loosest* type the post
+already satisfies and escalation falls out of the same walk. `video` precedes
+the short forms because that is the plain reading of "there is a video here"; a
+platform offering only `reel` or `short` reaches them because the rung above was
+never a candidate. Candidates are what the **campaign** enables, so Auto can
+only ever land on a format the picker itself would have offered.
+
+**What it will not choose.** Story, Article and Link post are editorial
+decisions the content cannot imply, and a `whitelist_only` type has no rule to
+test — "it fits" would mean "we have no idea", which is the one answer Auto must
+not give. All of them stay in the picker and pin the post when chosen.
+
+**A chain is an answer only where it really chains.** `thread` is a rung while
+`thread-sequence` is on *and* the platform's rule says `segmented` — the
+server's own mark for a type that publishes as an ordered list of messages (see
+[above](#thread-sequence)). Both halves are needed: the flag says this build has
+released the chain, and `segmented` says this network takes one. With the flag
+off a three-thousand-character post reports "too long", which is right, because
+nothing is splitting it. Choosing `thread` by hand is untouched.
+
+**And the ladder runs backwards too.** A post *pinned* to `thread` whose body
+comes to a single message publishes as an ordinary post, so `demotedFrom` walks
+the same rungs with the chain barred to find which one. Only a pinned post needs
+it — `thread` is the ladder's last rung, so an automatic post with a body that
+fits in one was claimed by `text-post` long before the walk got there.
+
+**When nothing fits** the checks bar says which wall was hit — too long (with
+the longest ceiling any candidate would have taken), the wrong kind of file, too
+many files, or a campaign enabling no automatic format — never "pick a post
+type", which is the one thing the author did not do wrong. That row is built in
+the route rather than in `evaluatePost`, which is a pure module with no `t`; it
+is the same arrangement the thread row uses.
+
+**Where.** `lib/postTypeAuto.ts` (+ test), `hooks/useCampaignPostTypes.ts`, the
+resolution in `hooks/usePostMedia.ts`, the *Auto* entry in
+`quickBar/ChannelPickers.tsx`, the pin and the unfit row in the post route,
+`hasVisibleProblem` in `lib/postValidation.ts`, `PostCard`'s label, and the
+`post-type-auto` flag.
+
+## A brand binding is four ids, resolved and never copied {#brand-binding}
+
+**Decision.** What voice a post is written in is **not stored on the post**. Four
+nullable ids are — `brand_voice_id` and `brand_audience_id` on the campaign and
+the same pair on the post (CON-245) — and the answer is *resolved* from them on
+every read: post → campaign → the library's default voice for a voice, and post
+→ campaign → nothing for an audience. `components/brand/binding.ts` is the whole
+walk, and it exists to mirror `brandresolve` on the server.
+
+**Why the server's walk is the authority.** The generation flows obey
+`brandresolve`, not us. A screen that named a voice the generator would not have
+used is worse than a screen that says nothing, because it is confidently wrong
+about the one question the feature exists to answer. So when the two disagree,
+this one is the bug. The asymmetry in the walks is the clearest example: an
+audience deliberately has **no** library step, even though "no audience means
+generating for nobody" is a decent argument, because a default collapses a choice
+whose answer is genuinely different per campaign. That case is CON-263's to make,
+on the server, and the client's job is to follow.
+
+**Why the client is narrower than the design doc.** `docs/brand-materials.md` §8
+describes a *cast* of voices per campaign, a local delta on every reference, and
+a staleness read that offers to regenerate. The client modelled all three for a
+while and the server shipped none of them: CON-245 §4 locked v1 to a single
+campaign voice, and §13 lists the delta and the snapshot column as deferred. What
+that produced was a campaign settings card offering a multi-select whose extra
+entries no generator would ever read, and a post section offering a "this voice
+has changed" note computed from a timestamp comparison the server does not make
+— which is precisely the *material nothing reads* failure CON-226 §9 names, built
+by us. Narrowing to the four columns is not a downgrade of the design; it is the
+client saying only what is true. The richer model comes back when the columns do.
+
+**Why the refs are presence-aware, and what follows.** All four are read
+presence-aware on their PUTs: omitted leaves the stored value alone, present
+replaces, `null` clears. That is what lets `campaignToPayload` and
+`postToPayload` — both whole-resource builders that otherwise have to name every
+field or the server defaults it away — deliberately *not* carry them. Restating a
+ref means an autosave writes back whichever binding the record held when it was
+fetched, over a choice made in the picker since; the same race CON-233 fixed for
+the asset sets, fixed the same way. A campaign's binding is therefore written by
+passing an override to `campaignToPayload`, and a post's by `setPostBrand`
+against `PUT /api/posts/:id/brand`, a targeted sub-action that touches the two
+columns and nothing else.
+
+**Why the lock does not reach it.** `setPostBrand` works on a `scheduled` or
+`published` post, alone among the post's controls. CON-251 freezes what would
+diverge from the copy that has already left Ogen — body, media, sources — and a
+binding is not one of those: it is an input to the *next* generation, so setting
+it on a published post is how somebody says *write the next one like this*. The
+server agrees, and runs no publish gate on that endpoint.
+
+**Where.** `components/brand/{binding,types}.ts` (+ tests),
+`components/brand/{CampaignBrandCard,PostBrandSection}.tsx`,
+`hooks/useBrand.ts` (`useSetPostBrand`), `services/api/posts.ts`
+(`setPostBrand`), `lib/campaignPayload.ts`, and the `brand.binding.*` catalogue
+entries — the two pickers are converted, the eleven library screens are not.
+
+## An idea is a question, and triage is the list rather than a board {#ideas-triage}
+
+**Decision.** Ideas (`ideas`, off) is a backlog with one capture field, three
+verdicts given on the row itself, and four counts to switch piles by. It is
+deliberately **not** a kanban board, which is what the module was first
+imagined as — and, after one pass, deliberately not a separate answering mode
+either.
+
+**Why not a board.** A kanban is a good picture of *work in flight*: a handful
+of cards, each in a stage, moved left to right as somebody does something to
+them. An idea backlog is neither. It is one undifferentiated pile that has to
+be free to add to, and that occasionally gets *answered* — and those two halves
+pull in opposite directions. Capture wants no structure at all; triage wants
+one idea at a time and nothing else on screen. A board splits the difference
+badly in both directions: the undecided column grows to two hundred cards
+nobody scrolls, and every single decision costs a find, a grab, an aim and a
+drop — four acts of precision to say a word. So the piles survive as counts you
+switch between, and the decision is a click on the row it is about.
+
+**Three verdicts, not two.** *Yes*, *not now*, *no*. Two would force every
+"good, but not this quarter" into one of the other piles, and both are lies:
+under *yes* it pollutes the list of things actually being made, under *no* a
+good idea is thrown away for its timing.
+
+**`later` carries a date, and that is the whole point of it.** A maybe-pile
+with no wake-up is an archive people feel better about, and the reason this
+module exists at all is that thoughts do not survive the week they were had in.
+So a postponement names the day it returns, and on that day the idea is back in
+the inbox to be asked again. Two consequences worth stating because both are
+easy to get wrong:
+
+- **Waking is derived, never stored.** A woken idea is still `later` in the
+  database; "back in the inbox" is `remind_at <= now`, read at query time. The
+  alternative needs a sweep, which makes an idea's return depend on a job
+  having run rather than on the date somebody gave it.
+- **Every other verdict clears `remind_at`.** Postpone to next month, archive
+  this afternoon, and a surviving wake-up pulls the idea back out of the
+  archive on a day nobody chose. Asserted on both sides of the seam
+  (`lib/ideas.test.ts`, `services/api/ideas.stub.test.ts`) because the client
+  agreeing about it is not the same as the store agreeing.
+
+**Every decision is reversible, and that is what makes the speed safe.** Triage
+is only fast if a wrong answer costs nothing, so `no` archives rather than
+deletes and a decided row carries its undo beside it — in the pile it landed
+in, where somebody who has just mis-clicked is looking. Deletion exists, is
+final, and is reachable only from an opened row. Answering a dozen ideas
+quickly and destroying one are not gestures that belong a pixel apart.
+
+**The counts always sum to the list.** Undecided / yes / later / no, each idea
+in exactly one, which is why a woken postponement counts as undecided and not
+also as later. Tabs whose figures do not add up are a screen people stop
+trusting long before they report it.
+
+**And not a separate triage mode either — that was the first draft, and it did
+not earn its keep.** It was a full-screen session: the undecided queue taken as
+a snapshot, one idea at a time in a large typeface, answered with `y`/`l`/`n`,
+`u` to take the last one back, a counter going down. It reads well as a
+description and it was the wrong shape, because **the decision was never the
+slow part.** Reading the line is, and the line is already legible in the list.
+What the mode actually added was a place to go and come back from, a second set
+of controls to keep in step with the row's, a snapshot that could disagree with
+what was on screen while somebody else captured into it, and five single-letter
+claims on the app's keyboard — for a screen most people would open a handful of
+times a month. Cut, along with the `y`/`l`/`n`/`u`/`Escape` entries that had
+been added to `Hotkey` in `lib/hotkeys.ts`; that union is back to the two arrow
+keys.
+
+What survives the cut is the argument it was making. Triage still must not cost
+a drag — it costs a click, on the row, in the pile you are already looking at.
+The module gets faster from here by making the *list* better (what is in the
+undecided pile, in what order, how much of the idea you can read without
+opening it), never by adding a second place to be.
+
+**One component, both levels.** The campaign's Ideas page is `IdeasSurface`
+with `campaignId` set — the same rows filtered, and captures made there filed
+to that campaign. `campaign_id` is a filter and not a scope, so an idea moved
+onto a campaign keeps the verdict and the history it already had instead of
+becoming a second row somewhere else.
+
+**Waiting on `/api/ideas`.** No table, no endpoint, no column. The contract is
+written out in `services/api/ideas.ts` and answered by a `localStorage` stub —
+a plain module, not MSW, per the rule above. The stub is why the flag stays
+off: it is per browser, so the shared backlog this module is entirely about is
+shared with nobody, and a teammate opening the same workspace sees an empty
+list. That is a worse lie than an unbuilt page. It also seeds **nothing** — the
+other stub in this app seeds a tier matrix, which is reference data somebody
+decided, whereas an idea is a person's own sentence and inventing a backlog
+would put words in a workspace's mouth indistinguishable from its own.
+
+**What a *yes* leads to is the open half.** Today: an accepted idea can be
+filed onto a campaign, and that is all. Promotion — an idea becoming a post or
+a brief — wants `POST /api/ideas/:id/promote` rather than the client creating
+the post and hoping the link survives.
+
+**Where.** `lib/ideas.ts` (+ test), `services/api/ideas.ts`,
+`services/api/ideas.stub.ts` (+ test), `hooks/useIdeas.ts`,
+`components/ideas/*`, the two `ideas` routes, and the `ideas.*` catalogue
+entries in both languages.
 
 ## Two form systems, on purpose
 
@@ -625,7 +1319,12 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
   ready building block; real invitations (email loop) await backend support
   (CON-26).
 - **Dark mode** is scaffolded (`.dark` block) but effectively empty.
-- The **Imagery** Content-Bank tab renders nothing yet (`assetCategory.ts`); AI
-  image generation + storage there is planned but **secondary** (CON-105/88/83).
-- **Lint/format configs** (eslint/prettier/stylelint) are installed but not
-  committed to this repo.
+- **Content-Bank images have no thumbnail.** An image is a first-class asset now
+  (CON-246): it uploads through the same endpoint as `.md` and `.pdf`, stores as
+  `IMG`, and opens on its own screen — see [below](#asset-opening). What the
+  server does not do yet is render a smaller copy, so the list's preview cell
+  draws the full file scaled into 40px. `thumbnail_url` is already preferred
+  everywhere it could appear, so the day that job exists nothing on the client
+  changes. Also missing: the bridge that attaches a bank image to a post as a
+  real `post_attachments` row, which is what the alt text is being collected
+  for. AI image *generation* is planned but **secondary** (CON-105/88/83).

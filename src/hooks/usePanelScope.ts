@@ -45,7 +45,9 @@ export function usePanelScope(scope: PanelScope, campaignId?: string) {
       claims = claims.filter((c) => c.token !== claim.token)
       if (wasTop) {
         const top = claims[claims.length - 1]
-        useSettingsStore.getState().setPanelScope(top?.scope ?? null, top?.campaignId)
+        useSettingsStore
+          .getState()
+          .setPanelScope(top?.scope ?? null, top?.campaignId)
       }
     }
   }, [scope, campaignId])

@@ -1,4 +1,9 @@
-import type { Post, PostPayload, PostStatus } from '@/types/posts'
+import type {
+  Post,
+  PostPayload,
+  PostStatus,
+  ThreadPreview,
+} from '@/types/posts'
 import { apiJson, apiVoid } from './http'
 
 const BASE = '/api/posts'
@@ -8,7 +13,10 @@ const BASE = '/api/posts'
 export type CancelTarget = 'ready_for_publish' | 'draft'
 
 export function listCampaignPosts(campaignId: string): Promise<Post[]> {
-  return apiJson<Post[]>(`/api/campaigns/${campaignId}/posts`, 'Unable to fetch posts')
+  return apiJson<Post[]>(
+    `/api/campaigns/${campaignId}/posts`,
+    'Unable to fetch posts',
+  )
 }
 
 /**
@@ -25,16 +33,95 @@ export function getPost(id: string): Promise<Post> {
   return apiJson<Post>(`${BASE}/${id}`, 'Unable to fetch post')
 }
 
+/**
+ * What `content` would publish as on `platformId`, without saving it
+ * (CON-284 R2).
+ *
+ * Stateless, and it takes a body rather than a post id on purpose: the
+ * question is asked of what is in the editor right now, which is usually
+ * several keystrokes ahead of the stored row.
+ *
+ * This is the client's *only* account of where a thread breaks. The splitting
+ * rules live in one place — `platforms.SplitThread` — and this is how we read
+ * them, rather than by keeping a second copy here that a server deploy could
+ * silently disagree with. That mattered even before R2 shipped: the rules are
+ * particular (three-or-more **hyphens** alone on a line is a divider, `***` is
+ * not; with no divider the body is packed to the ceiling rather than broken at
+ * every blank line), and a client that guessed differently would draw a
+ * preview of a thread nobody is going to publish.
+ */
+export function previewThread(
+  content: string,
+  platformId: string,
+): Promise<ThreadPreview> {
+  return apiJson<ThreadPreview>(
+    `${BASE}/thread/preview`,
+    'Unable to preview the thread',
+    { method: 'POST', body: { content, platform_id: platformId } },
+  )
+}
+
 export function createPost(payload: PostPayload): Promise<Post> {
-  return apiJson<Post>(BASE, 'Unable to create post', { method: 'POST', body: payload })
+  return apiJson<Post>(BASE, 'Unable to create post', {
+    method: 'POST',
+    body: payload,
+  })
 }
 
 export function updatePost(id: string, payload: PostPayload): Promise<Post> {
-  return apiJson<Post>(`${BASE}/${id}`, 'Unable to update post', { method: 'PUT', body: payload })
+  return apiJson<Post>(`${BASE}/${id}`, 'Unable to update post', {
+    method: 'PUT',
+    body: payload,
+  })
 }
 
 export function deletePost(id: string): Promise<void> {
   return apiVoid(`${BASE}/${id}`, 'Unable to delete post', { method: 'DELETE' })
+}
+
+/**
+ * Attaches documents to a post's sources, touching no other field (CON-233).
+ *
+ * One atomic UPDATE of `used_asset_ids` server-side: ids the post already has
+ * keep their position, new ones append in the order given, and two attaches
+ * landing at once both survive — which is what the whole-post PUT could not
+ * promise, since each carried the set as its caller had read it. Adding an id
+ * the post already holds is a no-op.
+ *
+ * 409 while the post is `scheduled` or `published`: sources are locked content
+ * (CON-251), and the endpoint enforces the same lock the PUT does — though a
+ * no-op add is let through. Returns the post hydrated, so `used_assets` comes
+ * back with it and the sources card can name the new document without fetching.
+ */
+export function addPostAssets(id: string, assetIds: string[]): Promise<Post> {
+  return apiJson<Post>(
+    `${BASE}/${id}/assets`,
+    'Unable to add this to the post',
+    {
+      method: 'POST',
+      body: { asset_ids: assetIds },
+    },
+  )
+}
+
+/**
+ * Detaches one document from a post's sources (CON-233). Removing an id the
+ * post does not hold is a no-op, not a 404.
+ *
+ * This is the *only* way a source comes off a post: `used_asset_ids` is no
+ * longer in the PUT payload (see `postToPayload`), so the editor's autosave
+ * cannot write the field at all — which is the point. It used to be able to,
+ * and a keystroke landing during an attach would clone the pre-attach list into
+ * the debounce and put it straight back.
+ *
+ * 409 while the post is `scheduled` or `published`, exactly as the add half.
+ */
+export function removePostAsset(id: string, assetId: string): Promise<Post> {
+  return apiJson<Post>(
+    `${BASE}/${id}/assets/${assetId}`,
+    'Unable to remove this from the post',
+    { method: 'DELETE' },
+  )
 }
 
 export type ScheduleResult = {
@@ -55,10 +142,43 @@ export type ScheduleResult = {
  * the future) and routes auto- vs manual-publish via the allowlist — the
  * returned post carries the routed status.
  */
-export function schedulePost(id: string, scheduledAt: string): Promise<ScheduleResult> {
-  return apiJson<ScheduleResult>(`${BASE}/${id}/schedule`, 'Unable to schedule post', {
-    method: 'POST',
-    body: { scheduled_at: scheduledAt },
+export function schedulePost(
+  id: string,
+  scheduledAt: string,
+): Promise<ScheduleResult> {
+  return apiJson<ScheduleResult>(
+    `${BASE}/${id}/schedule`,
+    'Unable to schedule post',
+    {
+      method: 'POST',
+      body: { scheduled_at: scheduledAt },
+    },
+  )
+}
+
+/**
+ * Sets a post's own Brand voice and audience (CON-245).
+ *
+ * A targeted write rather than a field on the whole-post PUT, for the reason
+ * every sub-action on this resource exists: the picker holds two ids and has no
+ * business restating the body, the schedule and the status to change one of
+ * them. It touches only the two columns — no status machine, no publish gate —
+ * and answers with the updated post.
+ *
+ * **Presence-aware, and both halves are independent.** An omitted field leaves
+ * the stored ref alone; an explicit `null` clears it. So "reset the voice to
+ * whatever the campaign says" is `{ brand_voice_id: null }` and says nothing
+ * about the audience, which is exactly how the two controls behave on screen.
+ * That is also why `postToPayload` carries neither: an autosave omits them and
+ * cannot undo a choice made in the panel beside it.
+ */
+export function setPostBrand(
+  id: string,
+  refs: { brand_voice_id?: string | null; brand_audience_id?: string | null },
+): Promise<Post> {
+  return apiJson<Post>(`${BASE}/${id}/brand`, 'Unable to set the voice', {
+    method: 'PUT',
+    body: refs,
   })
 }
 
@@ -160,11 +280,18 @@ export function listPostVersions(postId: string): Promise<PostVersion[]> {
 }
 
 /** Snapshots the post's *stored* content — flush pending edits before calling. */
-export function createPostVersion(postId: string, note: string): Promise<PostVersion> {
-  return apiJson<PostVersion>(`${BASE}/${postId}/versions`, 'Unable to save a version', {
-    method: 'POST',
-    body: { note },
-  })
+export function createPostVersion(
+  postId: string,
+  note: string,
+): Promise<PostVersion> {
+  return apiJson<PostVersion>(
+    `${BASE}/${postId}/versions`,
+    'Unable to save a version',
+    {
+      method: 'POST',
+      body: { note },
+    },
+  )
 }
 
 /**
@@ -177,7 +304,10 @@ export function createPostVersion(postId: string, note: string): Promise<PostVer
  * currently 404s. Requested on CON-44; the caller is behind the
  * `post-version-delete` flag until it lands.
  */
-export function deletePostVersion(postId: string, versionId: string): Promise<void> {
+export function deletePostVersion(
+  postId: string,
+  versionId: string,
+): Promise<void> {
   return apiVoid(
     `${BASE}/${postId}/versions/${versionId}`,
     'Unable to delete the version',
@@ -197,16 +327,66 @@ export function deletePostVersion(postId: string, versionId: string): Promise<vo
  * Returns the hydrated post, like `updatePost` — the caller can write it
  * straight into the editor's cache entry.
  */
-export function restorePost(postId: string, versionNumber: number): Promise<Post> {
-  return apiJson<Post>(`${BASE}/${postId}/restore`, 'Unable to restore the version', {
-    method: 'POST',
-    body: { version_number: versionNumber },
-  })
+export function restorePost(
+  postId: string,
+  versionNumber: number,
+): Promise<Post> {
+  return apiJson<Post>(
+    `${BASE}/${postId}/restore`,
+    'Unable to restore the version',
+    {
+      method: 'POST',
+      body: { version_number: versionNumber },
+    },
+  )
 }
 
+/**
+ * The post as a whole-resource payload — every field the PUT will otherwise
+ * default away.
+ *
+ * `published_url` is on this list for exactly that reason (CON-165): the
+ * handler assigns it from the request unconditionally, so an autosave that
+ * left it out would clear the permalink of every published post the moment
+ * someone edited it. It is the one field here that is normally the *server's*
+ * to write, which is why it needs saying out loud — `publisher_post_id`, its
+ * neighbour, is deliberately absent because the API does not take it.
+ *
+ * `used_asset_ids` is the one field that is absent on purpose, and this is the
+ * only place that decides so. The server reads it presence-aware since CON-233
+ * — an omitted key leaves the stored set alone, right down to dropping the
+ * column from the UPDATE — so the post's sources now have exactly one writer,
+ * the membership endpoints. Restating them here would put every autosave back
+ * in the race it was in: a keystroke during an attach clones the pre-attach
+ * list into the debounce, and its flush undoes the attach. Note the two fields
+ * are opposites, not a contradiction — the handler defaults `published_url`
+ * away when it is missing and *preserves* `used_asset_ids`, so each is listed
+ * or omitted according to what the server does with silence.
+ *
+ * Two things follow. Attaching and detaching go through `addPostAssets` /
+ * `removePostAsset`, never through `changeDoc` alone — an edit to the field
+ * that only rides the autosave is now discarded. And a status transition can no
+ * longer trip the CON-251 content lock by restating sources it did not mean to
+ * change.
+ *
+ * `createPost` still sends the field (`PostPayload` keeps it optional): a post
+ * being created has no stored set to preserve, and duplicating one carries its
+ * reading list over.
+ *
+ * `thread_segments` (CON-284) is in neither camp, because it is no longer a
+ * field this client writes at all. R2 made `content` the thread's canonical
+ * body and the segments the server's arithmetic over it, so a write carrying
+ * them is ignored rather than obeyed. It is absent here for the plainest
+ * reason available: sending it would change nothing. That also retires the
+ * hazard it used to pose — a **calendar drag**, an unschedule or a
+ * convert-to-manual can no longer turn a thread back into a single post by
+ * omitting a field they know nothing about, because the body they *do* carry
+ * is now the whole of the thread.
+ */
 export function postToPayload(post: Post): PostPayload {
   return {
     campaign_id: post.campaign_id,
+    published_url: post.published_url,
     platform_id: post.platform_id,
     platform_post_type: post.platform_post_type,
     social_account_id: post.social_account_id,
@@ -219,7 +399,6 @@ export function postToPayload(post: Post): PostPayload {
     cta_type: post.cta_type,
     cta_url: post.cta_url,
     target_audience_notes: post.target_audience_notes,
-    used_asset_ids: post.used_asset_ids,
     campaign_type_phase_id: post.campaign_type_phase_id,
   }
 }

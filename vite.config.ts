@@ -1,38 +1,38 @@
 /// <reference types="vitest/config" />
-import { defineConfig, loadEnv } from "vite";
-import { configDefaults } from "vitest/config";
-import react from "@vitejs/plugin-react";
-import path from "path";
-import { fileURLToPath } from "url";
-import tailwindcss from "@tailwindcss/vite";
-import { tanstackRouter } from "@tanstack/router-vite-plugin";
-import svgr from "vite-plugin-svgr";
+import { defineConfig, loadEnv } from 'vite'
+import { configDefaults } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import tailwindcss from '@tailwindcss/vite'
+import { tanstackRouter } from '@tanstack/router-vite-plugin'
+import svgr from 'vite-plugin-svgr'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
-  const env = loadEnv(mode, __dirname, "");
-  const uiPort = Number(env.PORT ?? 9002);
+  const env = loadEnv(mode, __dirname, '')
+  const uiPort = Number(env.PORT ?? 9002)
 
   return {
     plugins: [
       react(),
       svgr({
         svgrOptions: {
-          exportType: "default",
+          exportType: 'default',
         },
       }),
       tanstackRouter({
-        routesDirectory: "./src/routes",
-        generatedRouteTree: "./src/routeTree.gen.ts",
-        routeFileIgnorePattern: "(page\\.tsx$|\\.test\\.(ts|tsx)$)",
+        routesDirectory: './src/routes',
+        generatedRouteTree: './src/routeTree.gen.ts',
+        routeFileIgnorePattern: '(page\\.tsx$|\\.test\\.(ts|tsx)$)',
       }),
       tailwindcss(),
     ],
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src"),
+        '@': path.resolve(__dirname, './src'),
       },
     },
     json: {
@@ -42,12 +42,12 @@ export default defineConfig(({ command, mode }) => {
       // Git worktrees under .claude/worktrees hold whole checkouts of this
       // repo; without this, vitest runs their stale test copies too and the
       // suite reports phantom counts (and phantom failures).
-      exclude: [...configDefaults.exclude, "**/.claude/**"],
+      exclude: [...configDefaults.exclude, '**/.claude/**'],
       // jsdom for everything rather than per-file environments: the pure-logic
       // suite doesn't care, and a component test that silently ran in node
       // fails with "document is not defined" a long way from the cause.
-      environment: "jsdom",
-      setupFiles: ["./src/test/setup.ts"],
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.ts'],
     },
     server: {
       // Polling lets HMR see host edits inside Docker bind mounts (native
@@ -57,7 +57,7 @@ export default defineConfig(({ command, mode }) => {
       // a relaxed interval. A native `pnpm dev` outside Docker leaves `watch`
       // undefined and uses event-based watching, so it doesn't spin a core idle.
       watch:
-        process.env.CHOKIDAR_USEPOLLING === "true"
+        process.env.CHOKIDAR_USEPOLLING === 'true'
           ? {
               usePolling: true,
               interval: 1000,
@@ -66,10 +66,10 @@ export default defineConfig(({ command, mode }) => {
               // excluded by Vite's defaults; listed here in case a bind mount
               // surfaces them — .pnpm-store especially is huge.)
               ignored: [
-                "**/node_modules/**",
-                "**/.pnpm-store/**",
-                "**/dist/**",
-                "**/.git/**",
+                '**/node_modules/**',
+                '**/.pnpm-store/**',
+                '**/dist/**',
+                '**/.git/**',
               ],
             }
           : undefined,
@@ -85,27 +85,27 @@ export default defineConfig(({ command, mode }) => {
       },
       proxy: {
         // Forward API calls to the Go server during development.
-        "/api": {
-          target: env.API_URL ?? "http://localhost:9001",
+        '/api': {
+          target: env.API_URL ?? 'http://localhost:9001',
           changeOrigin: true,
         },
       },
     },
     build: {
-      outDir: "dist",
+      outDir: 'dist',
       emptyOutDir: true,
-      target: "es2022",
-      minify: command === "build" ? "terser" : "esbuild",
+      target: 'es2022',
+      minify: command === 'build' ? 'terser' : 'esbuild',
       terserOptions:
-        command === "build"
+        command === 'build'
           ? ({
               compress: {
                 // Remove console.log in production builds only
                 // Keeps console.info, console.warn, console.error
-                pure_funcs: ["console.log"],
+                pure_funcs: ['console.log'],
               },
             } as Record<string, unknown>)
           : undefined,
     },
-  };
-});
+  }
+})

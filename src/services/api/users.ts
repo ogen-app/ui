@@ -10,40 +10,40 @@
  * the building block for a future "invite teammate" UI.
  */
 
-import type { User, RegisterPayload } from "@/types/user";
-import type { Tenant } from "@/types/tenant";
-import type { WorkspaceRole } from "@/types/workspace";
-import { apiJson } from "./http";
+import type { User, RegisterPayload } from '@/types/user'
+import type { Tenant } from '@/types/tenant'
+import type { WorkspaceRole } from '@/types/workspace'
+import { apiJson } from './http'
 
 /** Wire shape of a user as the backend sends it (single `name` field). */
 export type RawUser = {
-  id: string;
-  name: string;
-  email: string;
+  id: string
+  name: string
+  email: string
   /** CON-26. Backfilled to `owner` for every user that predates it. */
-  role: WorkspaceRole;
-  created_at: string;
-  updated_at: string;
+  role: WorkspaceRole
+  created_at: string
+  updated_at: string
   /** Embedded only by `GET /api/current_user` (CON-97 §7.4) and signup. */
-  tenant?: Tenant;
-};
+  tenant?: Tenant
+}
 
 /** Maps the backend's single `name` into the UI's first/last pair. */
 export function rawUserToUser(raw: RawUser): User {
-  const [firstName = "", ...rest] = raw.name.split(" ");
+  const [firstName = '', ...rest] = raw.name.split(' ')
   return {
     id: raw.id,
     firstName,
-    lastName: rest.join(" "),
+    lastName: rest.join(' '),
     email: raw.email,
     // Signup answers before the column matters and older payloads predate it;
     // `member` is the safe default because it hides controls rather than
     // offering ones the server would refuse.
-    role: raw.role ?? "member",
+    role: raw.role ?? 'member',
     created_at: raw.created_at,
     updated_at: raw.updated_at,
     tenant: raw.tenant,
-  };
+  }
 }
 
 /**
@@ -55,9 +55,9 @@ export function rawUserToUser(raw: RawUser): User {
  * see `updateUser`.
  */
 export type UpdateUserPayload = {
-  name: string;
-  email: string;
-};
+  name: string
+  email: string
+}
 
 /**
  * `PUT /api/users/:id` — updates the signed-in user's own record.
@@ -84,23 +84,27 @@ export async function updateUser(
   // 403. The server syncs name/email onto the account and every membership
   // (CON-147), so which workspace answers doesn't matter; that it's the same
   // one that minted the id does.
-  const raw = await apiJson<RawUser>(`/api/users/${id}`, "Unable to save your profile", {
-    method: "PUT",
-    body: payload,
-    unscoped: true,
-  });
-  return rawUserToUser(raw);
+  const raw = await apiJson<RawUser>(
+    `/api/users/${id}`,
+    'Unable to save your profile',
+    {
+      method: 'PUT',
+      body: payload,
+      unscoped: true,
+    },
+  )
+  return rawUserToUser(raw)
 }
 
 /** `POST /api/users` — adds a user to the caller's tenant (future invite flow). */
 export async function register(payload: RegisterPayload): Promise<User> {
-  const raw = await apiJson<RawUser>("/api/users", "Unable to create account", {
-    method: "POST",
+  const raw = await apiJson<RawUser>('/api/users', 'Unable to create account', {
+    method: 'POST',
     body: {
       name: `${payload.firstName} ${payload.lastName}`.trim(),
       email: payload.email,
       password: payload.password,
     },
-  });
-  return rawUserToUser(raw);
+  })
+  return rawUserToUser(raw)
 }

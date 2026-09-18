@@ -24,8 +24,12 @@ describe('the toast deck', () => {
   })
 
   it('treats a different description as a different toast', () => {
-    toast.error('Unable to schedule', { description: 'Instagram needs an image' })
-    toast.error('Unable to schedule', { description: 'The date is in the past' })
+    toast.error('Unable to schedule', {
+      description: 'Instagram needs an image',
+    })
+    toast.error('Unable to schedule', {
+      description: 'The date is in the past',
+    })
     expect(open()).toHaveLength(2)
   })
 

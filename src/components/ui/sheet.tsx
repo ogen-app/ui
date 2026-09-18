@@ -8,19 +8,28 @@ import { ZIndex } from '@/config/zIndex.ts'
 import { XIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button.tsx'
 
-function Sheet({ modal = true, ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
+function Sheet({
+  modal = true,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" modal={modal} {...props} />
 }
 
-function SheetTrigger({ ...props }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
+function SheetTrigger({
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
 }
 
-function SheetClose({ ...props }: React.ComponentProps<typeof SheetPrimitive.Close>) {
+function SheetClose({
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Close>) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
 }
 
-function SheetPortal({ ...props }: React.ComponentProps<typeof SheetPrimitive.Portal>) {
+function SheetPortal({
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Portal>) {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
 }
 
@@ -34,7 +43,8 @@ const SheetOverlay = React.forwardRef<
     className={cn(
       'fixed inset-0 bg-background/70 backdrop-blur-xs transition-opacity duration-200',
       'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-      className)}
+      className,
+    )}
     style={{ zIndex: ZIndex.sheetOverlay }}
     {...props}
   />
@@ -62,7 +72,7 @@ function SheetContent({
         }
       }
     },
-    [onOpenAutoFocus]
+    [onOpenAutoFocus],
   )
 
   return (
@@ -86,12 +96,14 @@ function SheetContent({
             'data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto',
           side === 'bottom' &&
             'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto',
-          className
+          className,
         )}
         style={{ zIndex: ZIndex.sheetContent }}
         {...props}
       >
-        <SheetPrimitive.Title className="sr-only">{ariaTitle ?? 'Sheet'}</SheetPrimitive.Title>
+        <SheetPrimitive.Title className="sr-only">
+          {ariaTitle ?? 'Sheet'}
+        </SheetPrimitive.Title>
         {children}
         {side === 'fullscreen' ? (
           <SheetPrimitive.Close asChild>
@@ -125,7 +137,10 @@ function SheetHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="sheet-header"
-      className={cn('flex flex-col gap-1.5 px-3 py-3 lg:px-8 lg:py-8 pb-3', className)}
+      className={cn(
+        'flex flex-col gap-1.5 px-3 py-3 lg:px-8 lg:py-8 pb-3',
+        className,
+      )}
       {...props}
     />
   )
@@ -141,13 +156,16 @@ function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Title>) {
+function SheetTitle({
+  className,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Title>) {
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
       className={cn(
         'text-foreground font-display text-xl font-medium tracking-tight truncate leading-8 lg:text-2xl select-none',
-        className
+        className,
       )}
       {...props}
     />

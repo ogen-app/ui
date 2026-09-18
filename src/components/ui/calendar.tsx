@@ -1,9 +1,23 @@
 import * as React from 'react'
-import { CaretDownIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
+import {
+  CaretDownIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+} from '@phosphor-icons/react'
 import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker'
+import { enUS, es } from 'react-day-picker/locale'
 
 import { cn } from '@/lib'
+import { formatDate } from '@/lib/intl'
+import { useLocale } from '@/hooks/useLocale'
+import type { Locale } from '@/i18n/config'
 import { Button, buttonVariants } from '@/components/ui/button'
+
+// The library draws the weekday row and caption itself, so the app's language
+// has to be handed to it as one of its own locale objects — `formatMonthDropdown`
+// below only covers the dropdown. Typed against `Locale` so releasing a
+// language without teaching the date picker its weekdays is a compile error.
+const DAY_PICKER_LOCALES: Record<Locale, typeof enUS> = { en: enUS, es }
 
 function Calendar({
   className,
@@ -21,9 +35,11 @@ function Calendar({
   onClear?: () => void
 }) {
   const defaultClassNames = getDefaultClassNames()
+  const locale = useLocale()
 
   return (
     <DayPicker
+      locale={DAY_PICKER_LOCALES[locale]}
       showOutsideDays={showOutsideDays}
       footer={
         <div className="flex w-full items-center border-t border-t-border">
@@ -54,80 +70,98 @@ function Calendar({
         'bg-popover border-0 group/calendar [--cell-size:--spacing(8)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent',
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
         String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
-        className
+        className,
       )}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) => date.toLocaleString('default', { month: 'short' }),
+        formatMonthDropdown: (date) => formatDate(date, { month: 'short' }),
         ...formatters,
       }}
       classNames={{
         root: cn('w-fit', defaultClassNames.root),
-        months: cn('flex gap-4 flex-col md:flex-row relative px-3 pb-3', defaultClassNames.months),
+        months: cn(
+          'flex gap-4 flex-col md:flex-row relative px-3 pb-3',
+          defaultClassNames.months,
+        ),
         month: cn('flex flex-col w-full gap-4', defaultClassNames.month),
         nav: cn(
           // px-3 matches the `months` padding so the chevrons sit over the first
           // and last day columns; the bottom border stays full-bleed.
           'flex items-center gap-1 w-full absolute top-0 inset-x-0 px-3 justify-between h-10 border-b-quaternary border-b-1 pointer-events-none',
-          defaultClassNames.nav
+          defaultClassNames.nav,
         ),
         button_previous: cn(
           buttonVariants({ variant: buttonVariant }),
           // buttonVariants() defaults to `size: default`, which never sets
           // justify-center (only the *Icon sizes do) — the caret would sit left.
           'size-(--cell-size) justify-center aria-disabled:opacity-50 p-0 select-none pointer-events-auto',
-          defaultClassNames.button_previous
+          defaultClassNames.button_previous,
         ),
         button_next: cn(
           buttonVariants({ variant: buttonVariant }),
           // buttonVariants() defaults to `size: default`, which never sets
           // justify-center (only the *Icon sizes do) — the caret would sit left.
           'size-(--cell-size) justify-center aria-disabled:opacity-50 p-0 select-none pointer-events-auto',
-          defaultClassNames.button_next
+          defaultClassNames.button_next,
         ),
         month_caption: cn(
           'flex items-center justify-center h-10 w-full px-(--cell-size)',
-          defaultClassNames.month_caption
+          defaultClassNames.month_caption,
         ),
         dropdowns: cn(
           'w-full flex items-center text-sm font-medium justify-center h-(--cell-size) gap-1.5',
-          defaultClassNames.dropdowns
+          defaultClassNames.dropdowns,
         ),
         dropdown_root: cn(
           'relative has-focus:border-ring border-0 shadow-lg has-focus:ring-ring/50 has-focus:ring-[3px] rounded-none',
-          defaultClassNames.dropdown_root
+          defaultClassNames.dropdown_root,
         ),
-        dropdown: cn('absolute bg-popover inset-0 opacity-0', defaultClassNames.dropdown),
+        dropdown: cn(
+          'absolute bg-popover inset-0 opacity-0',
+          defaultClassNames.dropdown,
+        ),
         caption_label: cn(
           'select-none font-medium',
           captionLayout === 'label'
             ? 'text-sm'
             : 'rounded-md pl-2 pr-1 flex items-center gap-1 text-sm h-8 [&>svg]:text-tertiary-foreground [&>svg]:size-3.5',
-          defaultClassNames.caption_label
+          defaultClassNames.caption_label,
         ),
         table: 'w-full border-collapse',
         weekdays: cn('flex', defaultClassNames.weekdays),
         weekday: cn(
           'text-tertiary-foreground rounded-md flex-1 font-normal text-[0.8rem] select-none',
-          defaultClassNames.weekday
+          defaultClassNames.weekday,
         ),
         week: cn('flex w-full mt-2', defaultClassNames.week),
-        week_number_header: cn('select-none w-(--cell-size)', defaultClassNames.week_number_header),
+        week_number_header: cn(
+          'select-none w-(--cell-size)',
+          defaultClassNames.week_number_header,
+        ),
         week_number: cn(
           'text-[0.8rem] select-none text-tertiary-foreground',
-          defaultClassNames.week_number
+          defaultClassNames.week_number,
         ),
         day: cn(
           'relative w-full h-full p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md group/day aspect-square select-none',
-          defaultClassNames.day
+          defaultClassNames.day,
         ),
-        range_start: cn('rounded-l-md bg-primary', defaultClassNames.range_start),
-        range_middle: cn('rounded-none bg-secondary', defaultClassNames.range_middle),
+        range_start: cn(
+          'rounded-l-md bg-primary',
+          defaultClassNames.range_start,
+        ),
+        range_middle: cn(
+          'rounded-none bg-secondary',
+          defaultClassNames.range_middle,
+        ),
         range_end: cn('rounded-r-md bg-primary', defaultClassNames.range_end),
-        today: cn('rounded-md data-[selected=true]:rounded-none', defaultClassNames.today),
+        today: cn(
+          'rounded-md data-[selected=true]:rounded-none',
+          defaultClassNames.today,
+        ),
         outside: cn(
           'text-tertiary-foreground aria-selected:text-tertiary-foreground',
-          defaultClassNames.outside
+          defaultClassNames.outside,
         ),
         disabled: cn('text-tertiary-foreground', defaultClassNames.disabled),
         hidden: cn('invisible', defaultClassNames.hidden),
@@ -135,7 +169,14 @@ function Calendar({
       }}
       components={{
         Root: ({ className, rootRef, ...props }) => {
-          return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />
+          return (
+            <div
+              data-slot="calendar"
+              ref={rootRef}
+              className={cn(className)}
+              {...props}
+            />
+          )
         },
         Chevron: ({ className, orientation }) => {
           const ChevronIcon =
@@ -146,7 +187,9 @@ function Calendar({
                 : CaretDownIcon
           // The nav buttons are styled with `buttonVariants` classes rather than
           // the Button component, so they miss its bold IconContext — set it here.
-          return <ChevronIcon weight="bold" className={cn('size-4', className)} />
+          return (
+            <ChevronIcon weight="bold" className={cn('size-4', className)} />
+          )
         },
         DayButton: CalendarDayButton,
         WeekNumber: ({ children, ...props }) => {
@@ -211,7 +254,7 @@ function CalendarDayButton({
         "data-[today=true]:font-bold data-[today=true]:after:content-[''] data-[today=true]:after:absolute data-[today=true]:after:bottom-1.5 data-[today=true]:after:left-1/2 data-[today=true]:after:-translate-x-1/2 data-[today=true]:after:w-[3px] data-[today=true]:after:h-[3px] data-[today=true]:after:bg-foreground",
         'data-[outside=true]:text-tertiary-foreground data-[disabled=true]:text-tertiary-foreground [&[data-selected-single=true][data-today=true]]:after:bg-background [&>span]:text-xs',
         defaultClassNames.day,
-        className
+        className,
       )}
       {...props}
     />

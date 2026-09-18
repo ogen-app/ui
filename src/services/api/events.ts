@@ -62,7 +62,8 @@ function parseEnvelope(data: string): AppEvent | null {
   } catch {
     return null
   }
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+    return null
   const record = parsed as Record<string, unknown>
   return {
     id: typeof record.id === 'string' ? record.id : '',
@@ -72,4 +73,3 @@ function parseEnvelope(data: string): AppEvent | null {
     created_at: typeof record.created_at === 'string' ? record.created_at : '',
   }
 }
-

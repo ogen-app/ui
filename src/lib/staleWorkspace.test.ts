@@ -22,7 +22,9 @@ async function load() {
 function respondWith(workspaces: unknown, ok = true) {
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => ({ ok, json: async () => workspaces }) as unknown as Response),
+    vi.fn(
+      async () => ({ ok, json: async () => workspaces }) as unknown as Response,
+    ),
   )
 }
 
@@ -41,7 +43,8 @@ afterEach(() => {
 
 describe('handleForbidden', () => {
   it('unpins the tab and reloads when the workspace is no longer the account’s', async () => {
-    const { setActiveWorkspaceId, getActiveWorkspaceId, handleForbidden } = await load()
+    const { setActiveWorkspaceId, getActiveWorkspaceId, handleForbidden } =
+      await load()
     setActiveWorkspaceId('ws-gone')
     respondWith([{ id: 'ws-a' }, { id: 'ws-b' }])
 
@@ -51,7 +54,8 @@ describe('handleForbidden', () => {
   })
 
   it('leaves the tab alone when the workspace is still ours — that 403 was a permission', async () => {
-    const { setActiveWorkspaceId, getActiveWorkspaceId, handleForbidden } = await load()
+    const { setActiveWorkspaceId, getActiveWorkspaceId, handleForbidden } =
+      await load()
     setActiveWorkspaceId('ws-a')
     respondWith([{ id: 'ws-a' }])
 

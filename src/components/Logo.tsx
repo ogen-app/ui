@@ -10,7 +10,11 @@ type LogoProps = {
   variant?: 'square' | 'mark'
 }
 
-export function Logo({ className, loading = false, variant = 'square' }: LogoProps) {
+export function Logo({
+  className,
+  loading = false,
+  variant = 'square',
+}: LogoProps) {
   const markColor = variant === 'square' ? '#FFFFFF' : 'currentColor'
   return (
     <svg
@@ -32,7 +36,9 @@ export function Logo({ className, loading = false, variant = 'square' }: LogoPro
       />
       <path
         className={cn(
-          loading ? 'logo-line-loading opacity-100' : 'opacity-0 transition-opacity duration-150',
+          loading
+            ? 'logo-line-loading opacity-100'
+            : 'opacity-0 transition-opacity duration-150',
         )}
         pathLength={1}
         strokeDasharray={1}

@@ -1,4 +1,4 @@
-import { cn } from "@/lib";
+import { cn } from '@/lib'
 
 /**
  * One measured number. A sibling of the Overview's `StatTile` rather than a
@@ -13,16 +13,16 @@ export function MetricTile({
   className,
 }: {
   /** Pre-formatted — the caller decides between `12,043`, `12.0K` and `3.1%`. */
-  value: string;
-  label: string;
+  value: string
+  label: string
   /** Where the number comes from, when that isn't obvious from the label. */
-  hint?: string;
-  className?: string;
+  hint?: string
+  className?: string
 }) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-0.5 rounded-md bg-secondary px-3 py-2.5 min-w-0",
+        'flex flex-col gap-0.5 rounded-md bg-secondary px-3 py-2.5 min-w-0',
         className,
       )}
     >
@@ -33,5 +33,5 @@ export function MetricTile({
         {label}
       </span>
     </div>
-  );
+  )
 }

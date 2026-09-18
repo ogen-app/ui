@@ -1,11 +1,24 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   checksSummary,
   foldChecks,
+  hasVisibleProblem,
   worstStatus,
   type CheckStatus,
   type PostCheck,
 } from './postValidation.ts'
+import { getPlatformByZernioId } from './platformDictionary.ts'
+import type { Post } from '@/types/posts'
+
+vi.mock('@/config/featureFlags', () => ({
+  isFeatureEnabled: vi.fn(() => false),
+}))
+
+const { isFeatureEnabled } = await import('@/config/featureFlags')
+
+afterEach(() => {
+  vi.mocked(isFeatureEnabled).mockReturnValue(false)
+})
 
 function check(status: CheckStatus, id: string = status): PostCheck {
   return { id, label: id, status }
@@ -26,8 +39,12 @@ const HEALTHY_TEXT_POST: PostCheck[] = [
 
 describe('worstStatus', () => {
   it('ranks fail above warn above pending', () => {
-    expect(worstStatus([check('pass'), check('warn'), check('fail')])).toBe('fail')
-    expect(worstStatus([check('pass'), check('pending'), check('warn')])).toBe('warn')
+    expect(worstStatus([check('pass'), check('warn'), check('fail')])).toBe(
+      'fail',
+    )
+    expect(worstStatus([check('pass'), check('pending'), check('warn')])).toBe(
+      'warn',
+    )
     expect(worstStatus([check('pass'), check('pending')])).toBe('pending')
     expect(worstStatus([check('pass')])).toBe('pass')
   })
@@ -50,8 +67,18 @@ describe('foldChecks', () => {
     // platform there is nothing to name, and the post type alone would make a
     // heading that reads as if it were the platform.
     const { heading, rows } = foldChecks([
-      { id: 'platform', label: 'Platform', status: 'fail', detail: 'Pick a platform' },
-      { id: 'post-type', label: 'Post type', status: 'pass', detail: 'Text post' },
+      {
+        id: 'platform',
+        label: 'Platform',
+        status: 'fail',
+        detail: 'Pick a platform',
+      },
+      {
+        id: 'post-type',
+        label: 'Post type',
+        status: 'pass',
+        detail: 'Text post',
+      },
     ])
     expect(heading).toBe('Platform requirements')
     expect(rows.map((r) => r.id)).toEqual(['platform'])
@@ -60,40 +87,61 @@ describe('foldChecks', () => {
   it('names the platform alone when the post type is unpicked', () => {
     const { heading } = foldChecks([
       { id: 'platform', label: 'Platform', status: 'pass', detail: 'LinkedIn' },
-      { id: 'post-type', label: 'Post type', status: 'fail', detail: 'Pick a post type' },
+      {
+        id: 'post-type',
+        label: 'Post type',
+        status: 'fail',
+        detail: 'Pick a post type',
+      },
     ])
     expect(heading).toBe('LinkedIn requirements')
   })
 
   it('keeps a detail-less check that fails or warns', () => {
-    const rows = foldChecks([{ id: 'content', label: 'Copy', status: 'fail' }]).rows
+    const rows = foldChecks([
+      { id: 'content', label: 'Copy', status: 'fail' },
+    ]).rows
     expect(rows.map((r) => r.id)).toEqual(['content'])
   })
 
   it('never folds or drops a warning', () => {
     const warned: PostCheck[] = [
-      { id: 'media-count', label: 'Media', status: 'warn', detail: '3 attached' },
-      { id: 'media-rule-0', label: 'Media rules', status: 'warn', detail: 'GIFs are static' },
+      {
+        id: 'media-count',
+        label: 'Media',
+        status: 'warn',
+        detail: '3 attached',
+      },
+      {
+        id: 'media-rule-0',
+        label: 'Media rules',
+        status: 'warn',
+        detail: 'GIFs are static',
+      },
     ]
-    expect(foldChecks([...HEALTHY_TEXT_POST, ...warned]).rows.map((r) => r.id)).toEqual([
-      'char-limit',
-      'media-count',
-      'media-rule-0',
-    ])
+    expect(
+      foldChecks([...HEALTHY_TEXT_POST, ...warned]).rows.map((r) => r.id),
+    ).toEqual(['char-limit', 'media-count', 'media-rule-0'])
   })
 
   it('keeps a pending check, which has a result still to report', () => {
     const rows = foldChecks([
       { id: 'platform', label: 'Platform', status: 'pass', detail: 'LinkedIn' },
-      { id: 'media-count', label: 'Media', status: 'pending', detail: 'Checking…' },
+      {
+        id: 'media-count',
+        label: 'Media',
+        status: 'pending',
+        detail: 'Checking…',
+      },
     ]).rows
     expect(rows.map((r) => r.id)).toEqual(['media-count'])
   })
 
   it('falls back to the generic heading when neither setting is settled', () => {
-    expect(foldChecks([check('fail', 'platform'), check('fail', 'post-type')]).heading).toBe(
-      'Platform requirements',
-    )
+    expect(
+      foldChecks([check('fail', 'platform'), check('fail', 'post-type')])
+        .heading,
+    ).toBe('Platform requirements')
   })
 })
 
@@ -108,14 +156,22 @@ describe('checksSummary', () => {
     // The icon already carries "something is wrong". Repeating it in words
     // would push the count — the only part that says what to do — toward the
     // end of a line that truncates.
-    expect(checksSummary([check('pass', 'a'), check('warn', 'b')])).toBe('1 issue to look at')
-    expect(checksSummary([check('fail', 'a'), check('pass', 'b')])).toBe('1 issue to fix')
+    expect(checksSummary([check('pass', 'a'), check('warn', 'b')])).toBe(
+      '1 issue to look at',
+    )
+    expect(checksSummary([check('fail', 'a'), check('pass', 'b')])).toBe(
+      '1 issue to fix',
+    )
   })
 
   it('counts failures and warnings separately', () => {
-    expect(checksSummary([check('fail', 'a'), check('fail', 'b'), check('warn', 'c')])).toBe(
-      '2 issues to fix, 1 to look at',
-    )
+    expect(
+      checksSummary([
+        check('fail', 'a'),
+        check('fail', 'b'),
+        check('warn', 'c'),
+      ]),
+    ).toBe('2 issues to fix, 1 to look at')
   })
 
   it('pluralises on the count, not on the status', () => {
@@ -130,7 +186,12 @@ describe('checksSummary', () => {
     // post's — and it would change the moment one is chosen.
     expect(
       checksSummary([
-        { id: 'platform', label: 'Platform', status: 'fail', detail: 'Pick a platform' },
+        {
+          id: 'platform',
+          label: 'Platform',
+          status: 'fail',
+          detail: 'Pick a platform',
+        },
         check('fail', 'post-type'),
         check('warn', 'char-limit'),
       ]),
@@ -147,6 +208,84 @@ describe('checksSummary', () => {
     // `worstStatus` ranks fail above pending, and the copy follows it: what is
     // already known to be broken is worth saying now, and the pending check
     // can only ever add to the count, never clear it.
-    expect(checksSummary([check('fail', 'a'), check('pending', 'b')])).toBe('1 issue to fix')
+    expect(checksSummary([check('fail', 'a'), check('pending', 'b')])).toBe(
+      '1 issue to fix',
+    )
+  })
+})
+
+/** LinkedIn, from the dictionary — the caller resolves it and passes it in. */
+const LINKEDIN = getPlatformByZernioId('linkedin')
+
+function post(over: Partial<Post> = {}): Post {
+  return {
+    status: 'draft',
+    platform_id: 'plat-linkedin',
+    platform_post_type: 'text-post',
+    ...over,
+  } as Post
+}
+
+/** What a post with a single connected account resolves to. */
+const RESOLVED = { ambiguous: false, mismatched: false }
+
+describe('hasVisibleProblem', () => {
+  it('flags a post with no platform, whatever else is true of it', () => {
+    expect(hasVisibleProblem(post(), RESOLVED, undefined)).toBe(true)
+  })
+
+  it('flags an unset post type while nothing is deciding it', () => {
+    expect(
+      hasVisibleProblem(post({ platform_post_type: '' }), RESOLVED, LINKEDIN),
+    ).toBe(true)
+  })
+
+  it('stands down on an unset post type once Auto is released', () => {
+    // Auto makes the empty slug the *default* state of a draft rather than a
+    // gap, and every new post starts there — a mark on all of them would stop
+    // meaning anything. The card cannot resolve it either: that needs the
+    // attachments, and the list payload carries none.
+    vi.mocked(isFeatureEnabled).mockReturnValue(true)
+
+    expect(
+      hasVisibleProblem(post({ platform_post_type: '' }), RESOLVED, LINKEDIN),
+    ).toBe(false)
+  })
+
+  it('still flags a missing platform when Auto is released', () => {
+    // Auto answers one of the two questions the card asks, and only that one.
+    vi.mocked(isFeatureEnabled).mockReturnValue(true)
+
+    expect(hasVisibleProblem(post(), RESOLVED, undefined)).toBe(true)
+  })
+
+  it('flags an outcome that already went wrong, before anything else', () => {
+    expect(
+      hasVisibleProblem(post({ status: 'failed' }), RESOLVED, LINKEDIN),
+    ).toBe(true)
+    expect(
+      hasVisibleProblem(post({ status: 'not_published' }), RESOLVED, LINKEDIN),
+    ).toBe(true)
+  })
+
+  it('flags an account resolution the server would refuse', () => {
+    expect(
+      hasVisibleProblem(
+        post(),
+        { ambiguous: true, mismatched: false },
+        LINKEDIN,
+      ),
+    ).toBe(true)
+    expect(
+      hasVisibleProblem(
+        post(),
+        { ambiguous: false, mismatched: true },
+        LINKEDIN,
+      ),
+    ).toBe(true)
+  })
+
+  it('is silent on a post that is merely unfinished', () => {
+    expect(hasVisibleProblem(post(), RESOLVED, LINKEDIN)).toBe(false)
   })
 })

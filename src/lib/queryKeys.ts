@@ -17,7 +17,8 @@
  * history only changes when a snapshot is taken, a restore lands, or the
  * assistant saves one — all of which say so explicitly.
  */
-export const postVersionsKey = (postId: string) => ['postVersions', postId] as const
+export const postVersionsKey = (postId: string) =>
+  ['postVersions', postId] as const
 
 /**
  * A post's notes (CON-188).
@@ -48,3 +49,12 @@ export const campaignPostsKey = (campaignId: string) =>
  * invalidate it explicitly because they touch a sibling key.
  */
 export const CAMPAIGN_SUMMARIES_KEY = ['campaigns', 'summaries'] as const
+
+/**
+ * Every post in the workspace, hydrated (`GET /api/posts`).
+ *
+ * Deliberately outside `['campaigns', id, 'posts']`: this is the same rows
+ * seen from the other side — a question that spans campaigns rather than one
+ * campaign's list — and nothing should invalidate one by touching the other.
+ */
+export const WORKSPACE_POSTS_KEY = ['posts'] as const

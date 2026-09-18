@@ -1,0 +1,16 @@
+# Baseline for editors that read this before they read .prettierrc — and for
+# the file types Prettier does not own (JSON5, YAML, shell). Prettier remains
+# the authority for everything it formats; keep these two in agreement.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Markdown is hand-wrapped here and two trailing spaces are a hard line break.
+[*.md]
+trim_trailing_whitespace = false

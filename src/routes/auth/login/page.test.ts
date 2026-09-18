@@ -14,16 +14,22 @@ describe('loginSubtitle', () => {
   })
 
   it('explains an arrival from a finished reset', () => {
-    expect(loginSubtitle({ reset: true }, t)).toMatch(/password has been changed/i)
+    expect(loginSubtitle({ reset: true }, t)).toMatch(
+      /password has been changed/i,
+    )
   })
 
   it('prefers the expiry when both flags somehow arrive', () => {
     // Only reachable by a hand-written URL, but the two are not equally
     // urgent: one says you are locked out, the other says you succeeded.
-    expect(loginSubtitle({ expired: true, reset: true }, t)).toMatch(/session expired/i)
+    expect(loginSubtitle({ expired: true, reset: true }, t)).toMatch(
+      /session expired/i,
+    )
   })
 
   it('says the ordinary thing on an ordinary visit', () => {
-    expect(loginSubtitle({}, t)).toBe('Log in to continue managing your content')
+    expect(loginSubtitle({}, t)).toBe(
+      'Log in to continue managing your content',
+    )
   })
 })

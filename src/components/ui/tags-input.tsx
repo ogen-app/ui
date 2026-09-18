@@ -53,17 +53,15 @@ export function TagsInput({
     const selectedSet = new Set(value)
     const all = (tags ?? []).filter((t) => !selectedSet.has(t.id))
     if (q === '') return all.slice(0, 8)
-    return all
-      .filter((t) => t.name.toLowerCase().includes(qLower))
-      .slice(0, 8)
+    return all.filter((t) => t.name.toLowerCase().includes(qLower)).slice(0, 8)
   }, [tags, value, q, qLower])
 
   const exactMatch = React.useMemo(
     () =>
       q === ''
         ? null
-        : (tags ?? []).find((t) => t.name.toLowerCase() === qLower) ?? null,
-    [tags, q, qLower]
+        : ((tags ?? []).find((t) => t.name.toLowerCase() === qLower) ?? null),
+    [tags, q, qLower],
   )
 
   const showCreate = q !== '' && !exactMatch
@@ -110,7 +108,11 @@ export function TagsInput({
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (exactMatch && !value.includes(exactMatch.id) && highlight >= suggestions.length) {
+      if (
+        exactMatch &&
+        !value.includes(exactMatch.id) &&
+        highlight >= suggestions.length
+      ) {
         addId(exactMatch.id)
         setQuery('')
         return
@@ -161,7 +163,7 @@ export function TagsInput({
           FIELD_CLASS,
           'cursor-text',
           'focus-within:border-foreground transition-[border-color] duration-300',
-          disabled && 'opacity-50 pointer-events-none'
+          disabled && 'opacity-50 pointer-events-none',
         )}
         onClick={() => inputRef.current?.focus()}
       >
@@ -206,7 +208,7 @@ export function TagsInput({
         />
       </div>
 
-      {open && (optionCount > 0) && (
+      {open && optionCount > 0 && (
         <ul
           style={{ zIndex: ZIndex.popover }}
           className="absolute left-0 right-0 top-[calc(100%+2px)] bg-popover text-popover-foreground rounded-sm shadow-md py-1 max-h-64 overflow-y-auto"
@@ -224,7 +226,9 @@ export function TagsInput({
                 onMouseEnter={() => setHighlight(i)}
                 className={cn(
                   'w-full text-left text-sm px-2 py-1.5 rounded-sm cursor-pointer',
-                  highlight === i ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'
+                  highlight === i
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-secondary',
                 )}
               >
                 {t.name}
@@ -246,7 +250,7 @@ export function TagsInput({
                   'w-full text-left text-sm px-2 py-1.5 rounded-sm cursor-pointer disabled:opacity-60',
                   highlight === suggestions.length
                     ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-secondary'
+                    : 'hover:bg-secondary',
                 )}
               >
                 Create “{q}”

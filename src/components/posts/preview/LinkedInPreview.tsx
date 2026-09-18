@@ -26,13 +26,24 @@ import type { PreviewProps } from './types.ts'
  * lines and hides the rest behind "…see more", so the first ~210 characters
  * are all most of the feed will ever read.
  */
-export function LinkedInPreview({ text, media, postType, author, timeLabel }: PreviewProps) {
+export function LinkedInPreview({
+  text,
+  media,
+  postType,
+  author,
+  timeLabel,
+}: PreviewProps) {
   const name = author.name ?? 'Your page'
 
   return (
     <PreviewSurface style={{ borderRadius: 8 }}>
       <div className="flex items-start gap-2 px-3 pt-3 pb-1">
-        <PreviewAvatar src={author.avatarUrl} name={name} size={48} background={C.link} />
+        <PreviewAvatar
+          src={author.avatarUrl}
+          name={name}
+          size={48}
+          background={C.link}
+        />
         <div className="min-w-0 flex-1">
           <div
             className="truncate font-semibold"
@@ -41,7 +52,10 @@ export function LinkedInPreview({ text, media, postType, author, timeLabel }: Pr
             {name}
           </div>
           {author.subtitle && (
-            <div className="truncate" style={{ color: C.muted, fontSize: 12, lineHeight: 1.3333 }}>
+            <div
+              className="truncate"
+              style={{ color: C.muted, fontSize: 12, lineHeight: 1.3333 }}
+            >
               {author.subtitle}
             </div>
           )}
@@ -54,7 +68,11 @@ export function LinkedInPreview({ text, media, postType, author, timeLabel }: Pr
             <GlobeIcon className="size-3" weight="fill" aria-hidden />
           </div>
         </div>
-        <DotsThreeIcon className="size-6 shrink-0" style={{ color: C.muted }} aria-hidden />
+        <DotsThreeIcon
+          className="size-6 shrink-0"
+          style={{ color: C.muted }}
+          aria-hidden
+        />
       </div>
 
       <div className="px-3 pb-2 pt-1">
@@ -67,13 +85,29 @@ export function LinkedInPreview({ text, media, postType, author, timeLabel }: Pr
         />
       </div>
 
-      <PreviewMedia items={media} aspect={frameAspect(postType, 1.91)} background="#f3f2ef" />
+      <PreviewMedia
+        items={media}
+        aspect={frameAspect(postType, 1.91)}
+        background="#f3f2ef"
+      />
 
       <ActionRow color={C.action}>
-        <Action icon={<ThumbsUpIcon className="size-5" aria-hidden />} label="Like" />
-        <Action icon={<ChatCircleIcon className="size-5" aria-hidden />} label="Comment" />
-        <Action icon={<RepeatIcon className="size-5" aria-hidden />} label="Repost" />
-        <Action icon={<PaperPlaneTiltIcon className="size-5" aria-hidden />} label="Send" />
+        <Action
+          icon={<ThumbsUpIcon className="size-5" aria-hidden />}
+          label="Like"
+        />
+        <Action
+          icon={<ChatCircleIcon className="size-5" aria-hidden />}
+          label="Comment"
+        />
+        <Action
+          icon={<RepeatIcon className="size-5" aria-hidden />}
+          label="Repost"
+        />
+        <Action
+          icon={<PaperPlaneTiltIcon className="size-5" aria-hidden />}
+          label="Send"
+        />
       </ActionRow>
     </PreviewSurface>
   )

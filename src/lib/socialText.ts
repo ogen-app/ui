@@ -93,15 +93,20 @@ const MASKED = new RegExp(`${MASK}(\\d+)${MASK}`, 'g')
 
 /** Inline Markdown within a single line. */
 function inlineToText(input: string): string {
-  let s = input.replace(ESCAPED, (_m, ch: string) => `${MASK}${ch.charCodeAt(0)}${MASK}`)
+  let s = input.replace(
+    ESCAPED,
+    (_m, ch: string) => `${MASK}${ch.charCodeAt(0)}${MASK}`,
+  )
 
   // Images: the alt text is all a caption can carry.
   s = s.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
 
   // Links: keep the URL — it stays clickable once published and it counts
   // toward the character limit, so hiding it would understate the length.
-  s = s.replace(/\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_m, text: string, url: string) =>
-    !text || text === url ? url : `${text} (${url})`,
+  s = s.replace(
+    /\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,
+    (_m, text: string, url: string) =>
+      !text || text === url ? url : `${text} (${url})`,
   )
   s = s.replace(/<((?:https?|mailto):[^>]+)>/g, '$1') // autolink
 
@@ -112,7 +117,9 @@ function inlineToText(input: string): string {
   s = s.replace(/(?<![_\w])_(?!\s)([^_]+?)(?<!\s)_(?!\w)/g, '$1') // italic _
   s = s.replace(/~~(.+?)~~/g, '$1') // strikethrough
 
-  return s.replace(MASKED, (_m, code: string) => String.fromCharCode(Number(code)))
+  return s.replace(MASKED, (_m, code: string) =>
+    String.fromCharCode(Number(code)),
+  )
 }
 
 /**
@@ -167,11 +174,25 @@ export type ThreadSegment = {
  * and the panel's notes both read from this, so "which post is too long" has
  * exactly one answer.
  */
-export function threadSegments(text: string, limit: number | null): ThreadSegment[] {
-  return splitThread(text).map((segment) => {
-    const count = charCount(segment)
-    return { text: segment, count, over: limit !== null && count > limit }
-  })
+export function threadSegments(
+  text: string,
+  limit: number | null,
+): ThreadSegment[] {
+  return splitThread(text).map((segment) => measureSegment(segment, limit))
+}
+
+/**
+ * The same verdict for a post that is already its own post. A thread sequence
+ * arrives split (CON-196), so there is nothing left to guess at — but its
+ * posts still have to be measured the way `threadSegments` measures a guessed
+ * one, or the card and the notes could disagree.
+ */
+export function measureSegment(
+  text: string,
+  limit: number | null,
+): ThreadSegment {
+  const count = charCount(text)
+  return { text, count, over: limit !== null && count > limit }
 }
 
 /** Splits text at the fold so a preview can render its own "see more". */

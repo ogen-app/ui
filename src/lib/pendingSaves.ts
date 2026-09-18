@@ -13,7 +13,10 @@
 const flushers = new Map<string, Set<() => Promise<void>>>()
 
 /** Registers a flush for a key; returns an unregister for cleanup. */
-export function registerPendingSave(key: string, flush: () => Promise<void>): () => void {
+export function registerPendingSave(
+  key: string,
+  flush: () => Promise<void>,
+): () => void {
   const set = flushers.get(key) ?? new Set<() => Promise<void>>()
   set.add(flush)
   flushers.set(key, set)

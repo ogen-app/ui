@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { LockIcon } from '@phosphor-icons/react'
 import type { PostStatus } from '@/types/posts'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
@@ -38,11 +39,12 @@ type Props = {
  * what it won't let you do.
  */
 export function LockMark({ className }: Props) {
+  const { t } = useTranslation()
   return (
     <LockIcon
       weight="bold"
       className={cn('shrink-0 text-quinary-foreground', className)}
-      aria-label="This post's date is locked"
+      aria-label={t('calendar.dateLocked')}
     />
   )
 }

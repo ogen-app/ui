@@ -27,7 +27,8 @@ export const PREVIEW_FONT =
  * is what makes it read as a preview *of* something.
  */
 export const PREVIEW_BORDER = '#dbdbdb'
-export const PREVIEW_SHADOW = '0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06)'
+export const PREVIEW_SHADOW =
+  '0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06)'
 
 // The card surface itself is PreviewSurface's job, so these carry only what
 // differs per network.
@@ -73,6 +74,8 @@ export const THREADS = {
   surface: '#fafafa',
   dot: '#000000',
   dotMuted: '#d1d1d1',
+  /** Meta's red, for the over-length marker on a post of a thread. */
+  danger: '#ff3040',
 } as const
 
 // YouTube is a watch page rather than a feed card, so it needs two more

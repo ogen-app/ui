@@ -27,7 +27,11 @@ type T = TFunction
  * number, so a generic "{{field}} is required" would be wrong in Spanish
  * before it was wrong anywhere else. The key prefix picks the whole sentence.
  */
-const nameField = (t: T, field: 'firstName' | 'lastName' | 'organizationName', max: number) =>
+const nameField = (
+  t: T,
+  field: 'firstName' | 'lastName' | 'organizationName',
+  max: number,
+) =>
   z
     .string()
     .min(1, t(`validation.${field}.required`))
@@ -83,7 +87,9 @@ export const resetPasswordSchema = (t: T) =>
   z
     .object({
       password: passwordField(t),
-      confirmPassword: z.string().min(1, t('validation.confirmPassword.required')),
+      confirmPassword: z
+        .string()
+        .min(1, t('validation.confirmPassword.required')),
     })
     .refine((v) => v.password === v.confirmPassword, {
       message: t('validation.confirmPassword.mismatch'),
@@ -132,10 +138,22 @@ export const profileSchema = (t: T) =>
  */
 export const passwordRules = (t: T) =>
   [
-    { test: (v: string) => v.length >= 8, label: t('validation.passwordRules.minChars') },
-    { test: (v: string) => /[A-Z]/.test(v), label: t('validation.passwordRules.uppercase') },
-    { test: (v: string) => /[a-z]/.test(v), label: t('validation.passwordRules.lowercase') },
-    { test: (v: string) => /\d/.test(v), label: t('validation.passwordRules.digit') },
+    {
+      test: (v: string) => v.length >= 8,
+      label: t('validation.passwordRules.minChars'),
+    },
+    {
+      test: (v: string) => /[A-Z]/.test(v),
+      label: t('validation.passwordRules.uppercase'),
+    },
+    {
+      test: (v: string) => /[a-z]/.test(v),
+      label: t('validation.passwordRules.lowercase'),
+    },
+    {
+      test: (v: string) => /\d/.test(v),
+      label: t('validation.passwordRules.digit'),
+    },
   ] as const
 
 export type FieldErrors<T> = Partial<Record<keyof T, string>>

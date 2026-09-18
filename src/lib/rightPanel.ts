@@ -61,7 +61,10 @@ export type PanelMemory = {
 }
 
 /** Nothing open anywhere. The floor of the model, and what closing everything reaches. */
-export const EMPTY_PANEL_MEMORY: PanelMemory = { assistantOpen: false, scoped: {} }
+export const EMPTY_PANEL_MEMORY: PanelMemory = {
+  assistantOpen: false,
+  scoped: {},
+}
 
 /**
  * What someone who has never touched the rail gets: the assistant, open.
@@ -71,7 +74,10 @@ export const EMPTY_PANEL_MEMORY: PanelMemory = { assistantOpen: false, scoped: {
  * stays a default rather than a rule: close it once and the memory holds that
  * from then on, everywhere.
  */
-export const DEFAULT_PANEL_MEMORY: PanelMemory = { assistantOpen: true, scoped: {} }
+export const DEFAULT_PANEL_MEMORY: PanelMemory = {
+  assistantOpen: true,
+  scoped: {},
+}
 
 /**
  * The panel on screen: the most specific thing the current screen can actually
@@ -134,7 +140,10 @@ export function openPanel(
  * Close whatever is on screen. An overlay drops back to the assistant; the
  * assistant itself closes the rail. One X, one level at a time.
  */
-export function closePanel(memory: PanelMemory, scope: PanelScope | null): PanelMemory {
+export function closePanel(
+  memory: PanelMemory,
+  scope: PanelScope | null,
+): PanelMemory {
   const active = resolveActivePanel(memory, scope)
   if (active === null) return memory
   if (active === 'assistant') return { ...memory, assistantOpen: false }

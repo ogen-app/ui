@@ -10,35 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as WorkspacesIndexRouteImport } from './routes/workspaces/index'
-import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unavailable/index'
-import { Route as InviteIndexRouteImport } from './routes/invite/index'
-import { Route as AuthIndexRouteImport } from './routes/auth/index'
+import { Route as FlagsRouteImport } from './routes/flags'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedContentBankRouteImport } from './routes/_authenticated/content-bank'
-import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
-import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
-import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
-import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
-import { Route as AuthForgotIndexRouteImport } from './routes/auth/forgot/index'
-import { Route as AuthenticatedWorkspaceSettingsIndexRouteImport } from './routes/_authenticated/workspace-settings/index'
-import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
-import { Route as AuthenticatedContentBankIndexRouteImport } from './routes/_authenticated/content-bank/index'
+import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
+import { Route as AuthenticatedFoundationRouteImport } from './routes/_authenticated/foundation'
+import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
+import { Route as AuthIndexRouteImport } from './routes/auth/index'
+import { Route as InviteIndexRouteImport } from './routes/invite/index'
+import { Route as PlansIndexRouteImport } from './routes/plans/index'
+import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unavailable/index'
+import { Route as WorkspacesIndexRouteImport } from './routes/workspaces/index'
+import { Route as AuthenticatedActivityIndexRouteImport } from './routes/_authenticated/activity/index'
+import { Route as AuthenticatedActivityDateRouteImport } from './routes/_authenticated/activity/$date'
+import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics/index'
+import { Route as AuthenticatedCalendarIndexRouteImport } from './routes/_authenticated/calendar/index'
 import { Route as AuthenticatedCampaignsIndexRouteImport } from './routes/_authenticated/campaigns/index'
-import { Route as AuthenticatedContentBankAssetIdRouteImport } from './routes/_authenticated/content-bank_/$assetId'
-import { Route as AuthenticatedContentBankTextRouteImport } from './routes/_authenticated/content-bank/text'
-import { Route as AuthenticatedContentBankImageryRouteImport } from './routes/_authenticated/content-bank/imagery'
-import { Route as AuthenticatedContentBankFilesRouteImport } from './routes/_authenticated/content-bank/files'
-import { Route as AuthenticatedContentBankAllRouteImport } from './routes/_authenticated/content-bank/all'
 import { Route as AuthenticatedCampaignsCampaignIdRouteImport } from './routes/_authenticated/campaigns/$campaignId'
+import { Route as AuthenticatedFoundationIndexRouteImport } from './routes/_authenticated/foundation/index'
+import { Route as AuthenticatedFoundationAudiencesRouteImport } from './routes/_authenticated/foundation/audiences'
+import { Route as AuthenticatedFoundationFactsRouteImport } from './routes/_authenticated/foundation/facts'
+import { Route as AuthenticatedFoundationGuardrailsRouteImport } from './routes/_authenticated/foundation/guardrails'
+import { Route as AuthenticatedFoundationLookRouteImport } from './routes/_authenticated/foundation/look'
+import { Route as AuthenticatedFoundationSourcesRouteImport } from './routes/_authenticated/foundation/sources'
+import { Route as AuthenticatedFoundationTemplatesRouteImport } from './routes/_authenticated/foundation/templates'
+import { Route as AuthenticatedFoundationVoicesRouteImport } from './routes/_authenticated/foundation/voices'
+import { Route as AuthenticatedIdeasIndexRouteImport } from './routes/_authenticated/ideas/index'
+import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
+import { Route as AuthenticatedWorkspaceSettingsIndexRouteImport } from './routes/_authenticated/workspace-settings/index'
+import { Route as AuthForgotIndexRouteImport } from './routes/auth/forgot/index'
+import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
+import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
+import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
+import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
-import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
-import { Route as AuthenticatedCampaignsCampaignIdOverviewRouteImport } from './routes/_authenticated/campaigns/$campaignId/overview'
-import { Route as AuthenticatedCampaignsCampaignIdListRouteImport } from './routes/_authenticated/campaigns/$campaignId/list'
-import { Route as AuthenticatedCampaignsCampaignIdBriefRouteImport } from './routes/_authenticated/campaigns/$campaignId/brief'
-import { Route as AuthenticatedCampaignsCampaignIdAssetsRouteImport } from './routes/_authenticated/campaigns/$campaignId/assets'
+import { Route as AuthenticatedCampaignsCampaignIdActivityRouteImport } from './routes/_authenticated/campaigns/$campaignId/activity'
 import { Route as AuthenticatedCampaignsCampaignIdAnalyticsRouteImport } from './routes/_authenticated/campaigns/$campaignId/analytics'
+import { Route as AuthenticatedCampaignsCampaignIdFoundationRouteImport } from './routes/_authenticated/campaigns/$campaignId/foundation'
+import { Route as AuthenticatedCampaignsCampaignIdIdeasRouteImport } from './routes/_authenticated/campaigns/$campaignId/ideas'
+import { Route as AuthenticatedCampaignsCampaignIdListRouteImport } from './routes/_authenticated/campaigns/$campaignId/list'
+import { Route as AuthenticatedCampaignsCampaignIdOverviewRouteImport } from './routes/_authenticated/campaigns/$campaignId/overview'
+import { Route as AuthenticatedCampaignsCampaignIdSettingsRouteImport } from './routes/_authenticated/campaigns/$campaignId/settings'
+import { Route as AuthenticatedCampaignsCampaignIdStrategyRouteImport } from './routes/_authenticated/campaigns/$campaignId/strategy'
+import { Route as AuthenticatedFoundationAudiencesAudienceIdRouteImport } from './routes/_authenticated/foundation_/audiences/$audienceId'
+import { Route as AuthenticatedFoundationSourcesAssetIdRouteImport } from './routes/_authenticated/foundation_/sources/$assetId'
+import { Route as AuthenticatedFoundationVoicesVoiceIdRouteImport } from './routes/_authenticated/foundation_/voices/$voiceId'
+import { Route as AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport } from './routes/_authenticated/workspace-settings/connect.$connectionId'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/index'
+import { Route as AuthenticatedCampaignsCampaignIdFoundationAssetIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/foundation/$assetId'
 import { Route as AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/posts/$postId'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarAnchorViewRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/$anchor/$view'
 
@@ -46,24 +64,9 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspacesIndexRoute = WorkspacesIndexRouteImport.update({
-  id: '/workspaces/',
-  path: '/workspaces/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServerUnavailableIndexRoute = ServerUnavailableIndexRouteImport.update({
-  id: '/server-unavailable/',
-  path: '/server-unavailable/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InviteIndexRoute = InviteIndexRouteImport.update({
-  id: '/invite/',
-  path: '/invite/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthIndexRoute = AuthIndexRouteImport.update({
-  id: '/auth/',
-  path: '/auth/',
+const FlagsRoute = FlagsRouteImport.update({
+  id: '/flags',
+  path: '/flags',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -71,54 +74,69 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedContentBankRoute =
-  AuthenticatedContentBankRouteImport.update({
-    id: '/content-bank',
-    path: '/content-bank',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthResetIndexRoute = AuthResetIndexRouteImport.update({
-  id: '/auth/reset/',
-  path: '/auth/reset/',
+const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFoundationRoute = AuthenticatedFoundationRouteImport.update({
+  id: '/foundation',
+  path: '/foundation',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: '/auth/',
+  path: '/auth/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
-  id: '/auth/register/',
-  path: '/auth/register/',
+const InviteIndexRoute = InviteIndexRouteImport.update({
+  id: '/invite/',
+  path: '/invite/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthLogoutIndexRoute = AuthLogoutIndexRouteImport.update({
-  id: '/auth/logout/',
-  path: '/auth/logout/',
+const PlansIndexRoute = PlansIndexRouteImport.update({
+  id: '/plans/',
+  path: '/plans/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
-  id: '/auth/login/',
-  path: '/auth/login/',
+const ServerUnavailableIndexRoute = ServerUnavailableIndexRouteImport.update({
+  id: '/server-unavailable/',
+  path: '/server-unavailable/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthForgotIndexRoute = AuthForgotIndexRouteImport.update({
-  id: '/auth/forgot/',
-  path: '/auth/forgot/',
+const WorkspacesIndexRoute = WorkspacesIndexRouteImport.update({
+  id: '/workspaces/',
+  path: '/workspaces/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedWorkspaceSettingsIndexRoute =
-  AuthenticatedWorkspaceSettingsIndexRouteImport.update({
-    id: '/workspace-settings/',
-    path: '/workspace-settings/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedProfileIndexRoute =
-  AuthenticatedProfileIndexRouteImport.update({
-    id: '/profile/',
-    path: '/profile/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedContentBankIndexRoute =
-  AuthenticatedContentBankIndexRouteImport.update({
+const AuthenticatedActivityIndexRoute =
+  AuthenticatedActivityIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedContentBankRoute,
+    getParentRoute: () => AuthenticatedActivityRoute,
+  } as any)
+const AuthenticatedActivityDateRoute =
+  AuthenticatedActivityDateRouteImport.update({
+    id: '/$date',
+    path: '/$date',
+    getParentRoute: () => AuthenticatedActivityRoute,
+  } as any)
+const AuthenticatedAnalyticsIndexRoute =
+  AuthenticatedAnalyticsIndexRouteImport.update({
+    id: '/analytics/',
+    path: '/analytics/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCalendarIndexRoute =
+  AuthenticatedCalendarIndexRouteImport.update({
+    id: '/calendar/',
+    path: '/calendar/',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCampaignsIndexRoute =
   AuthenticatedCampaignsIndexRouteImport.update({
@@ -126,76 +144,112 @@ const AuthenticatedCampaignsIndexRoute =
     path: '/campaigns/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedContentBankAssetIdRoute =
-  AuthenticatedContentBankAssetIdRouteImport.update({
-    id: '/content-bank_/$assetId',
-    path: '/content-bank/$assetId',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedContentBankTextRoute =
-  AuthenticatedContentBankTextRouteImport.update({
-    id: '/text',
-    path: '/text',
-    getParentRoute: () => AuthenticatedContentBankRoute,
-  } as any)
-const AuthenticatedContentBankImageryRoute =
-  AuthenticatedContentBankImageryRouteImport.update({
-    id: '/imagery',
-    path: '/imagery',
-    getParentRoute: () => AuthenticatedContentBankRoute,
-  } as any)
-const AuthenticatedContentBankFilesRoute =
-  AuthenticatedContentBankFilesRouteImport.update({
-    id: '/files',
-    path: '/files',
-    getParentRoute: () => AuthenticatedContentBankRoute,
-  } as any)
-const AuthenticatedContentBankAllRoute =
-  AuthenticatedContentBankAllRouteImport.update({
-    id: '/all',
-    path: '/all',
-    getParentRoute: () => AuthenticatedContentBankRoute,
-  } as any)
 const AuthenticatedCampaignsCampaignIdRoute =
   AuthenticatedCampaignsCampaignIdRouteImport.update({
     id: '/campaigns/$campaignId',
     path: '/campaigns/$campaignId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedFoundationIndexRoute =
+  AuthenticatedFoundationIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedFoundationRoute,
+  } as any)
+const AuthenticatedFoundationAudiencesRoute =
+  AuthenticatedFoundationAudiencesRouteImport.update({
+    id: '/audiences',
+    path: '/audiences',
+    getParentRoute: () => AuthenticatedFoundationRoute,
+  } as any)
+const AuthenticatedFoundationFactsRoute =
+  AuthenticatedFoundationFactsRouteImport.update({
+    id: '/facts',
+    path: '/facts',
+    getParentRoute: () => AuthenticatedFoundationRoute,
+  } as any)
+const AuthenticatedFoundationGuardrailsRoute =
+  AuthenticatedFoundationGuardrailsRouteImport.update({
+    id: '/guardrails',
+    path: '/guardrails',
+    getParentRoute: () => AuthenticatedFoundationRoute,
+  } as any)
+const AuthenticatedFoundationLookRoute =
+  AuthenticatedFoundationLookRouteImport.update({
+    id: '/look',
+    path: '/look',
+    getParentRoute: () => AuthenticatedFoundationRoute,
+  } as any)
+const AuthenticatedFoundationSourcesRoute =
+  AuthenticatedFoundationSourcesRouteImport.update({
+    id: '/sources',
+    path: '/sources',
+    getParentRoute: () => AuthenticatedFoundationRoute,
+  } as any)
+const AuthenticatedFoundationTemplatesRoute =
+  AuthenticatedFoundationTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthenticatedFoundationRoute,
+  } as any)
+const AuthenticatedFoundationVoicesRoute =
+  AuthenticatedFoundationVoicesRouteImport.update({
+    id: '/voices',
+    path: '/voices',
+    getParentRoute: () => AuthenticatedFoundationRoute,
+  } as any)
+const AuthenticatedIdeasIndexRoute = AuthenticatedIdeasIndexRouteImport.update({
+  id: '/ideas/',
+  path: '/ideas/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProfileIndexRoute =
+  AuthenticatedProfileIndexRouteImport.update({
+    id: '/profile/',
+    path: '/profile/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWorkspaceSettingsIndexRoute =
+  AuthenticatedWorkspaceSettingsIndexRouteImport.update({
+    id: '/workspace-settings/',
+    path: '/workspace-settings/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthForgotIndexRoute = AuthForgotIndexRouteImport.update({
+  id: '/auth/forgot/',
+  path: '/auth/forgot/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
+  id: '/auth/login/',
+  path: '/auth/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLogoutIndexRoute = AuthLogoutIndexRouteImport.update({
+  id: '/auth/logout/',
+  path: '/auth/logout/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRegisterIndexRoute = AuthRegisterIndexRouteImport.update({
+  id: '/auth/register/',
+  path: '/auth/register/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthResetIndexRoute = AuthResetIndexRouteImport.update({
+  id: '/auth/reset/',
+  path: '/auth/reset/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedCampaignsCampaignIdIndexRoute =
   AuthenticatedCampaignsCampaignIdIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
-const AuthenticatedCampaignsCampaignIdSettingsRoute =
-  AuthenticatedCampaignsCampaignIdSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
-  } as any)
-const AuthenticatedCampaignsCampaignIdOverviewRoute =
-  AuthenticatedCampaignsCampaignIdOverviewRouteImport.update({
-    id: '/overview',
-    path: '/overview',
-    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
-  } as any)
-const AuthenticatedCampaignsCampaignIdListRoute =
-  AuthenticatedCampaignsCampaignIdListRouteImport.update({
-    id: '/list',
-    path: '/list',
-    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
-  } as any)
-const AuthenticatedCampaignsCampaignIdBriefRoute =
-  AuthenticatedCampaignsCampaignIdBriefRouteImport.update({
-    id: '/brief',
-    path: '/brief',
-    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
-  } as any)
-const AuthenticatedCampaignsCampaignIdAssetsRoute =
-  AuthenticatedCampaignsCampaignIdAssetsRouteImport.update({
-    id: '/assets',
-    path: '/assets',
+const AuthenticatedCampaignsCampaignIdActivityRoute =
+  AuthenticatedCampaignsCampaignIdActivityRouteImport.update({
+    id: '/activity',
+    path: '/activity',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdAnalyticsRoute =
@@ -204,11 +258,77 @@ const AuthenticatedCampaignsCampaignIdAnalyticsRoute =
     path: '/analytics',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
   } as any)
+const AuthenticatedCampaignsCampaignIdFoundationRoute =
+  AuthenticatedCampaignsCampaignIdFoundationRouteImport.update({
+    id: '/foundation',
+    path: '/foundation',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdIdeasRoute =
+  AuthenticatedCampaignsCampaignIdIdeasRouteImport.update({
+    id: '/ideas',
+    path: '/ideas',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdListRoute =
+  AuthenticatedCampaignsCampaignIdListRouteImport.update({
+    id: '/list',
+    path: '/list',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdOverviewRoute =
+  AuthenticatedCampaignsCampaignIdOverviewRouteImport.update({
+    id: '/overview',
+    path: '/overview',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdSettingsRoute =
+  AuthenticatedCampaignsCampaignIdSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdStrategyRoute =
+  AuthenticatedCampaignsCampaignIdStrategyRouteImport.update({
+    id: '/strategy',
+    path: '/strategy',
+    getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedFoundationAudiencesAudienceIdRoute =
+  AuthenticatedFoundationAudiencesAudienceIdRouteImport.update({
+    id: '/foundation_/audiences/$audienceId',
+    path: '/foundation/audiences/$audienceId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFoundationSourcesAssetIdRoute =
+  AuthenticatedFoundationSourcesAssetIdRouteImport.update({
+    id: '/foundation_/sources/$assetId',
+    path: '/foundation/sources/$assetId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFoundationVoicesVoiceIdRoute =
+  AuthenticatedFoundationVoicesVoiceIdRouteImport.update({
+    id: '/foundation_/voices/$voiceId',
+    path: '/foundation/voices/$voiceId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedWorkspaceSettingsConnectConnectionIdRoute =
+  AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport.update({
+    id: '/workspace-settings/connect/$connectionId',
+    path: '/workspace-settings/connect/$connectionId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCampaignsCampaignIdCalendarIndexRoute =
   AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport.update({
     id: '/calendar/',
     path: '/calendar/',
     getParentRoute: () => AuthenticatedCampaignsCampaignIdRoute,
+  } as any)
+const AuthenticatedCampaignsCampaignIdFoundationAssetIdRoute =
+  AuthenticatedCampaignsCampaignIdFoundationAssetIdRouteImport.update({
+    id: '/campaigns/$campaignId_/foundation/$assetId',
+    path: '/campaigns/$campaignId/foundation/$assetId',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCampaignsCampaignIdPostsPostIdRoute =
   AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport.update({
@@ -225,19 +345,30 @@ const AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
-  '/content-bank': typeof AuthenticatedContentBankRouteWithChildren
+  '/flags': typeof FlagsRoute
+  '/activity': typeof AuthenticatedActivityRouteWithChildren
+  '/foundation': typeof AuthenticatedFoundationRouteWithChildren
+  '/tasks': typeof AuthenticatedTasksRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
+  '/plans/': typeof PlansIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
+  '/activity/$date': typeof AuthenticatedActivityDateRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
-  '/content-bank/all': typeof AuthenticatedContentBankAllRoute
-  '/content-bank/files': typeof AuthenticatedContentBankFilesRoute
-  '/content-bank/imagery': typeof AuthenticatedContentBankImageryRoute
-  '/content-bank/text': typeof AuthenticatedContentBankTextRoute
-  '/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
+  '/foundation/audiences': typeof AuthenticatedFoundationAudiencesRoute
+  '/foundation/facts': typeof AuthenticatedFoundationFactsRoute
+  '/foundation/guardrails': typeof AuthenticatedFoundationGuardrailsRoute
+  '/foundation/look': typeof AuthenticatedFoundationLookRoute
+  '/foundation/sources': typeof AuthenticatedFoundationSourcesRoute
+  '/foundation/templates': typeof AuthenticatedFoundationTemplatesRoute
+  '/foundation/voices': typeof AuthenticatedFoundationVoicesRoute
+  '/activity/': typeof AuthenticatedActivityIndexRoute
+  '/analytics/': typeof AuthenticatedAnalyticsIndexRoute
+  '/calendar/': typeof AuthenticatedCalendarIndexRoute
   '/campaigns/': typeof AuthenticatedCampaignsIndexRoute
-  '/content-bank/': typeof AuthenticatedContentBankIndexRoute
+  '/foundation/': typeof AuthenticatedFoundationIndexRoute
+  '/ideas/': typeof AuthenticatedIdeasIndexRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
   '/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot/': typeof AuthForgotIndexRoute
@@ -245,30 +376,47 @@ export interface FileRoutesByFullPath {
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
+  '/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
-  '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
-  '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
+  '/campaigns/$campaignId/foundation': typeof AuthenticatedCampaignsCampaignIdFoundationRoute
+  '/campaigns/$campaignId/ideas': typeof AuthenticatedCampaignsCampaignIdIdeasRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
   '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
+  '/campaigns/$campaignId/strategy': typeof AuthenticatedCampaignsCampaignIdStrategyRoute
+  '/foundation/audiences/$audienceId': typeof AuthenticatedFoundationAudiencesAudienceIdRoute
+  '/foundation/sources/$assetId': typeof AuthenticatedFoundationSourcesAssetIdRoute
+  '/foundation/voices/$voiceId': typeof AuthenticatedFoundationVoicesVoiceIdRoute
+  '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/campaigns/$campaignId/foundation/$assetId': typeof AuthenticatedCampaignsCampaignIdFoundationAssetIdRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
   '/campaigns/$campaignId/calendar/$anchor/$view': typeof AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute
 }
 export interface FileRoutesByTo {
+  '/flags': typeof FlagsRoute
+  '/tasks': typeof AuthenticatedTasksRoute
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
   '/invite': typeof InviteIndexRoute
+  '/plans': typeof PlansIndexRoute
   '/server-unavailable': typeof ServerUnavailableIndexRoute
   '/workspaces': typeof WorkspacesIndexRoute
-  '/content-bank/all': typeof AuthenticatedContentBankAllRoute
-  '/content-bank/files': typeof AuthenticatedContentBankFilesRoute
-  '/content-bank/imagery': typeof AuthenticatedContentBankImageryRoute
-  '/content-bank/text': typeof AuthenticatedContentBankTextRoute
-  '/content-bank/$assetId': typeof AuthenticatedContentBankAssetIdRoute
+  '/activity/$date': typeof AuthenticatedActivityDateRoute
+  '/foundation/audiences': typeof AuthenticatedFoundationAudiencesRoute
+  '/foundation/facts': typeof AuthenticatedFoundationFactsRoute
+  '/foundation/guardrails': typeof AuthenticatedFoundationGuardrailsRoute
+  '/foundation/look': typeof AuthenticatedFoundationLookRoute
+  '/foundation/sources': typeof AuthenticatedFoundationSourcesRoute
+  '/foundation/templates': typeof AuthenticatedFoundationTemplatesRoute
+  '/foundation/voices': typeof AuthenticatedFoundationVoicesRoute
+  '/activity': typeof AuthenticatedActivityIndexRoute
+  '/analytics': typeof AuthenticatedAnalyticsIndexRoute
+  '/calendar': typeof AuthenticatedCalendarIndexRoute
   '/campaigns': typeof AuthenticatedCampaignsIndexRoute
-  '/content-bank': typeof AuthenticatedContentBankIndexRoute
+  '/foundation': typeof AuthenticatedFoundationIndexRoute
+  '/ideas': typeof AuthenticatedIdeasIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
   '/workspace-settings': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot': typeof AuthForgotIndexRoute
@@ -276,13 +424,20 @@ export interface FileRoutesByTo {
   '/auth/logout': typeof AuthLogoutIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
   '/auth/reset': typeof AuthResetIndexRoute
+  '/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
-  '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
-  '/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
+  '/campaigns/$campaignId/foundation': typeof AuthenticatedCampaignsCampaignIdFoundationRoute
+  '/campaigns/$campaignId/ideas': typeof AuthenticatedCampaignsCampaignIdIdeasRoute
   '/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
   '/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
+  '/campaigns/$campaignId/strategy': typeof AuthenticatedCampaignsCampaignIdStrategyRoute
+  '/foundation/audiences/$audienceId': typeof AuthenticatedFoundationAudiencesAudienceIdRoute
+  '/foundation/sources/$assetId': typeof AuthenticatedFoundationSourcesAssetIdRoute
+  '/foundation/voices/$voiceId': typeof AuthenticatedFoundationVoicesVoiceIdRoute
+  '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/campaigns/$campaignId/foundation/$assetId': typeof AuthenticatedCampaignsCampaignIdFoundationAssetIdRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
   '/campaigns/$campaignId/calendar/$anchor/$view': typeof AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute
@@ -290,20 +445,31 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/_authenticated/content-bank': typeof AuthenticatedContentBankRouteWithChildren
+  '/flags': typeof FlagsRoute
+  '/_authenticated/activity': typeof AuthenticatedActivityRouteWithChildren
+  '/_authenticated/foundation': typeof AuthenticatedFoundationRouteWithChildren
+  '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
+  '/plans/': typeof PlansIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
+  '/_authenticated/activity/$date': typeof AuthenticatedActivityDateRoute
   '/_authenticated/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
-  '/_authenticated/content-bank/all': typeof AuthenticatedContentBankAllRoute
-  '/_authenticated/content-bank/files': typeof AuthenticatedContentBankFilesRoute
-  '/_authenticated/content-bank/imagery': typeof AuthenticatedContentBankImageryRoute
-  '/_authenticated/content-bank/text': typeof AuthenticatedContentBankTextRoute
-  '/_authenticated/content-bank_/$assetId': typeof AuthenticatedContentBankAssetIdRoute
+  '/_authenticated/foundation/audiences': typeof AuthenticatedFoundationAudiencesRoute
+  '/_authenticated/foundation/facts': typeof AuthenticatedFoundationFactsRoute
+  '/_authenticated/foundation/guardrails': typeof AuthenticatedFoundationGuardrailsRoute
+  '/_authenticated/foundation/look': typeof AuthenticatedFoundationLookRoute
+  '/_authenticated/foundation/sources': typeof AuthenticatedFoundationSourcesRoute
+  '/_authenticated/foundation/templates': typeof AuthenticatedFoundationTemplatesRoute
+  '/_authenticated/foundation/voices': typeof AuthenticatedFoundationVoicesRoute
+  '/_authenticated/activity/': typeof AuthenticatedActivityIndexRoute
+  '/_authenticated/analytics/': typeof AuthenticatedAnalyticsIndexRoute
+  '/_authenticated/calendar/': typeof AuthenticatedCalendarIndexRoute
   '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexRoute
-  '/_authenticated/content-bank/': typeof AuthenticatedContentBankIndexRoute
+  '/_authenticated/foundation/': typeof AuthenticatedFoundationIndexRoute
+  '/_authenticated/ideas/': typeof AuthenticatedIdeasIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
   '/_authenticated/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot/': typeof AuthForgotIndexRoute
@@ -311,13 +477,20 @@ export interface FileRoutesById {
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
+  '/_authenticated/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/_authenticated/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
-  '/_authenticated/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
-  '/_authenticated/campaigns/$campaignId/brief': typeof AuthenticatedCampaignsCampaignIdBriefRoute
+  '/_authenticated/campaigns/$campaignId/foundation': typeof AuthenticatedCampaignsCampaignIdFoundationRoute
+  '/_authenticated/campaigns/$campaignId/ideas': typeof AuthenticatedCampaignsCampaignIdIdeasRoute
   '/_authenticated/campaigns/$campaignId/list': typeof AuthenticatedCampaignsCampaignIdListRoute
   '/_authenticated/campaigns/$campaignId/overview': typeof AuthenticatedCampaignsCampaignIdOverviewRoute
   '/_authenticated/campaigns/$campaignId/settings': typeof AuthenticatedCampaignsCampaignIdSettingsRoute
+  '/_authenticated/campaigns/$campaignId/strategy': typeof AuthenticatedCampaignsCampaignIdStrategyRoute
+  '/_authenticated/foundation_/audiences/$audienceId': typeof AuthenticatedFoundationAudiencesAudienceIdRoute
+  '/_authenticated/foundation_/sources/$assetId': typeof AuthenticatedFoundationSourcesAssetIdRoute
+  '/_authenticated/foundation_/voices/$voiceId': typeof AuthenticatedFoundationVoicesVoiceIdRoute
+  '/_authenticated/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/_authenticated/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/_authenticated/campaigns/$campaignId_/foundation/$assetId': typeof AuthenticatedCampaignsCampaignIdFoundationAssetIdRoute
   '/_authenticated/campaigns/$campaignId_/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/_authenticated/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
   '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view': typeof AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute
@@ -326,19 +499,30 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/content-bank'
+    | '/flags'
+    | '/activity'
+    | '/foundation'
+    | '/tasks'
     | '/auth/'
     | '/invite/'
+    | '/plans/'
     | '/server-unavailable/'
     | '/workspaces/'
+    | '/activity/$date'
     | '/campaigns/$campaignId'
-    | '/content-bank/all'
-    | '/content-bank/files'
-    | '/content-bank/imagery'
-    | '/content-bank/text'
-    | '/content-bank/$assetId'
+    | '/foundation/audiences'
+    | '/foundation/facts'
+    | '/foundation/guardrails'
+    | '/foundation/look'
+    | '/foundation/sources'
+    | '/foundation/templates'
+    | '/foundation/voices'
+    | '/activity/'
+    | '/analytics/'
+    | '/calendar/'
     | '/campaigns/'
-    | '/content-bank/'
+    | '/foundation/'
+    | '/ideas/'
     | '/profile/'
     | '/workspace-settings/'
     | '/auth/forgot/'
@@ -346,30 +530,47 @@ export interface FileRouteTypes {
     | '/auth/logout/'
     | '/auth/register/'
     | '/auth/reset/'
+    | '/campaigns/$campaignId/activity'
     | '/campaigns/$campaignId/analytics'
-    | '/campaigns/$campaignId/assets'
-    | '/campaigns/$campaignId/brief'
+    | '/campaigns/$campaignId/foundation'
+    | '/campaigns/$campaignId/ideas'
     | '/campaigns/$campaignId/list'
     | '/campaigns/$campaignId/overview'
     | '/campaigns/$campaignId/settings'
+    | '/campaigns/$campaignId/strategy'
+    | '/foundation/audiences/$audienceId'
+    | '/foundation/sources/$assetId'
+    | '/foundation/voices/$voiceId'
+    | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId/'
+    | '/campaigns/$campaignId/foundation/$assetId'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar/'
     | '/campaigns/$campaignId/calendar/$anchor/$view'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/flags'
+    | '/tasks'
     | '/'
     | '/auth'
     | '/invite'
+    | '/plans'
     | '/server-unavailable'
     | '/workspaces'
-    | '/content-bank/all'
-    | '/content-bank/files'
-    | '/content-bank/imagery'
-    | '/content-bank/text'
-    | '/content-bank/$assetId'
+    | '/activity/$date'
+    | '/foundation/audiences'
+    | '/foundation/facts'
+    | '/foundation/guardrails'
+    | '/foundation/look'
+    | '/foundation/sources'
+    | '/foundation/templates'
+    | '/foundation/voices'
+    | '/activity'
+    | '/analytics'
+    | '/calendar'
     | '/campaigns'
-    | '/content-bank'
+    | '/foundation'
+    | '/ideas'
     | '/profile'
     | '/workspace-settings'
     | '/auth/forgot'
@@ -377,33 +578,51 @@ export interface FileRouteTypes {
     | '/auth/logout'
     | '/auth/register'
     | '/auth/reset'
+    | '/campaigns/$campaignId/activity'
     | '/campaigns/$campaignId/analytics'
-    | '/campaigns/$campaignId/assets'
-    | '/campaigns/$campaignId/brief'
+    | '/campaigns/$campaignId/foundation'
+    | '/campaigns/$campaignId/ideas'
     | '/campaigns/$campaignId/list'
     | '/campaigns/$campaignId/overview'
     | '/campaigns/$campaignId/settings'
+    | '/campaigns/$campaignId/strategy'
+    | '/foundation/audiences/$audienceId'
+    | '/foundation/sources/$assetId'
+    | '/foundation/voices/$voiceId'
+    | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId'
+    | '/campaigns/$campaignId/foundation/$assetId'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar'
     | '/campaigns/$campaignId/calendar/$anchor/$view'
   id:
     | '__root__'
     | '/_authenticated'
-    | '/_authenticated/content-bank'
+    | '/flags'
+    | '/_authenticated/activity'
+    | '/_authenticated/foundation'
+    | '/_authenticated/tasks'
     | '/_authenticated/'
     | '/auth/'
     | '/invite/'
+    | '/plans/'
     | '/server-unavailable/'
     | '/workspaces/'
+    | '/_authenticated/activity/$date'
     | '/_authenticated/campaigns/$campaignId'
-    | '/_authenticated/content-bank/all'
-    | '/_authenticated/content-bank/files'
-    | '/_authenticated/content-bank/imagery'
-    | '/_authenticated/content-bank/text'
-    | '/_authenticated/content-bank_/$assetId'
+    | '/_authenticated/foundation/audiences'
+    | '/_authenticated/foundation/facts'
+    | '/_authenticated/foundation/guardrails'
+    | '/_authenticated/foundation/look'
+    | '/_authenticated/foundation/sources'
+    | '/_authenticated/foundation/templates'
+    | '/_authenticated/foundation/voices'
+    | '/_authenticated/activity/'
+    | '/_authenticated/analytics/'
+    | '/_authenticated/calendar/'
     | '/_authenticated/campaigns/'
-    | '/_authenticated/content-bank/'
+    | '/_authenticated/foundation/'
+    | '/_authenticated/ideas/'
     | '/_authenticated/profile/'
     | '/_authenticated/workspace-settings/'
     | '/auth/forgot/'
@@ -411,13 +630,20 @@ export interface FileRouteTypes {
     | '/auth/logout/'
     | '/auth/register/'
     | '/auth/reset/'
+    | '/_authenticated/campaigns/$campaignId/activity'
     | '/_authenticated/campaigns/$campaignId/analytics'
-    | '/_authenticated/campaigns/$campaignId/assets'
-    | '/_authenticated/campaigns/$campaignId/brief'
+    | '/_authenticated/campaigns/$campaignId/foundation'
+    | '/_authenticated/campaigns/$campaignId/ideas'
     | '/_authenticated/campaigns/$campaignId/list'
     | '/_authenticated/campaigns/$campaignId/overview'
     | '/_authenticated/campaigns/$campaignId/settings'
+    | '/_authenticated/campaigns/$campaignId/strategy'
+    | '/_authenticated/foundation_/audiences/$audienceId'
+    | '/_authenticated/foundation_/sources/$assetId'
+    | '/_authenticated/foundation_/voices/$voiceId'
+    | '/_authenticated/workspace-settings/connect/$connectionId'
     | '/_authenticated/campaigns/$campaignId/'
+    | '/_authenticated/campaigns/$campaignId_/foundation/$assetId'
     | '/_authenticated/campaigns/$campaignId_/posts/$postId'
     | '/_authenticated/campaigns/$campaignId/calendar/'
     | '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view'
@@ -425,8 +651,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  FlagsRoute: typeof FlagsRoute
   AuthIndexRoute: typeof AuthIndexRoute
   InviteIndexRoute: typeof InviteIndexRoute
+  PlansIndexRoute: typeof PlansIndexRoute
   ServerUnavailableIndexRoute: typeof ServerUnavailableIndexRoute
   WorkspacesIndexRoute: typeof WorkspacesIndexRoute
   AuthForgotIndexRoute: typeof AuthForgotIndexRoute
@@ -445,32 +673,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/workspaces/': {
-      id: '/workspaces/'
-      path: '/workspaces'
-      fullPath: '/workspaces/'
-      preLoaderRoute: typeof WorkspacesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/server-unavailable/': {
-      id: '/server-unavailable/'
-      path: '/server-unavailable'
-      fullPath: '/server-unavailable/'
-      preLoaderRoute: typeof ServerUnavailableIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invite/': {
-      id: '/invite/'
-      path: '/invite'
-      fullPath: '/invite/'
-      preLoaderRoute: typeof InviteIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/': {
-      id: '/auth/'
-      path: '/auth'
-      fullPath: '/auth/'
-      preLoaderRoute: typeof AuthIndexRouteImport
+    '/flags': {
+      id: '/flags'
+      path: '/flags'
+      fullPath: '/flags'
+      preLoaderRoute: typeof FlagsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -480,53 +687,165 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/content-bank': {
-      id: '/_authenticated/content-bank'
-      path: '/content-bank'
-      fullPath: '/content-bank'
-      preLoaderRoute: typeof AuthenticatedContentBankRouteImport
+    '/_authenticated/activity': {
+      id: '/_authenticated/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AuthenticatedActivityRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/auth/reset/': {
-      id: '/auth/reset/'
-      path: '/auth/reset'
-      fullPath: '/auth/reset/'
-      preLoaderRoute: typeof AuthResetIndexRouteImport
+    '/_authenticated/foundation': {
+      id: '/_authenticated/foundation'
+      path: '/foundation'
+      fullPath: '/foundation'
+      preLoaderRoute: typeof AuthenticatedFoundationRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tasks': {
+      id: '/_authenticated/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AuthenticatedTasksRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/auth/': {
+      id: '/auth/'
+      path: '/auth'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/register/': {
-      id: '/auth/register/'
-      path: '/auth/register'
-      fullPath: '/auth/register/'
-      preLoaderRoute: typeof AuthRegisterIndexRouteImport
+    '/invite/': {
+      id: '/invite/'
+      path: '/invite'
+      fullPath: '/invite/'
+      preLoaderRoute: typeof InviteIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/logout/': {
-      id: '/auth/logout/'
-      path: '/auth/logout'
-      fullPath: '/auth/logout/'
-      preLoaderRoute: typeof AuthLogoutIndexRouteImport
+    '/plans/': {
+      id: '/plans/'
+      path: '/plans'
+      fullPath: '/plans/'
+      preLoaderRoute: typeof PlansIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/login/': {
-      id: '/auth/login/'
-      path: '/auth/login'
-      fullPath: '/auth/login/'
-      preLoaderRoute: typeof AuthLoginIndexRouteImport
+    '/server-unavailable/': {
+      id: '/server-unavailable/'
+      path: '/server-unavailable'
+      fullPath: '/server-unavailable/'
+      preLoaderRoute: typeof ServerUnavailableIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/forgot/': {
-      id: '/auth/forgot/'
-      path: '/auth/forgot'
-      fullPath: '/auth/forgot/'
-      preLoaderRoute: typeof AuthForgotIndexRouteImport
+    '/workspaces/': {
+      id: '/workspaces/'
+      path: '/workspaces'
+      fullPath: '/workspaces/'
+      preLoaderRoute: typeof WorkspacesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/workspace-settings/': {
-      id: '/_authenticated/workspace-settings/'
-      path: '/workspace-settings'
-      fullPath: '/workspace-settings/'
-      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsIndexRouteImport
+    '/_authenticated/activity/': {
+      id: '/_authenticated/activity/'
+      path: '/'
+      fullPath: '/activity/'
+      preLoaderRoute: typeof AuthenticatedActivityIndexRouteImport
+      parentRoute: typeof AuthenticatedActivityRoute
+    }
+    '/_authenticated/activity/$date': {
+      id: '/_authenticated/activity/$date'
+      path: '/$date'
+      fullPath: '/activity/$date'
+      preLoaderRoute: typeof AuthenticatedActivityDateRouteImport
+      parentRoute: typeof AuthenticatedActivityRoute
+    }
+    '/_authenticated/analytics/': {
+      id: '/_authenticated/analytics/'
+      path: '/analytics'
+      fullPath: '/analytics/'
+      preLoaderRoute: typeof AuthenticatedAnalyticsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/calendar/': {
+      id: '/_authenticated/calendar/'
+      path: '/calendar'
+      fullPath: '/calendar/'
+      preLoaderRoute: typeof AuthenticatedCalendarIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/campaigns/': {
+      id: '/_authenticated/campaigns/'
+      path: '/campaigns'
+      fullPath: '/campaigns/'
+      preLoaderRoute: typeof AuthenticatedCampaignsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/campaigns/$campaignId': {
+      id: '/_authenticated/campaigns/$campaignId'
+      path: '/campaigns/$campaignId'
+      fullPath: '/campaigns/$campaignId'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/foundation/': {
+      id: '/_authenticated/foundation/'
+      path: '/'
+      fullPath: '/foundation/'
+      preLoaderRoute: typeof AuthenticatedFoundationIndexRouteImport
+      parentRoute: typeof AuthenticatedFoundationRoute
+    }
+    '/_authenticated/foundation/audiences': {
+      id: '/_authenticated/foundation/audiences'
+      path: '/audiences'
+      fullPath: '/foundation/audiences'
+      preLoaderRoute: typeof AuthenticatedFoundationAudiencesRouteImport
+      parentRoute: typeof AuthenticatedFoundationRoute
+    }
+    '/_authenticated/foundation/facts': {
+      id: '/_authenticated/foundation/facts'
+      path: '/facts'
+      fullPath: '/foundation/facts'
+      preLoaderRoute: typeof AuthenticatedFoundationFactsRouteImport
+      parentRoute: typeof AuthenticatedFoundationRoute
+    }
+    '/_authenticated/foundation/guardrails': {
+      id: '/_authenticated/foundation/guardrails'
+      path: '/guardrails'
+      fullPath: '/foundation/guardrails'
+      preLoaderRoute: typeof AuthenticatedFoundationGuardrailsRouteImport
+      parentRoute: typeof AuthenticatedFoundationRoute
+    }
+    '/_authenticated/foundation/look': {
+      id: '/_authenticated/foundation/look'
+      path: '/look'
+      fullPath: '/foundation/look'
+      preLoaderRoute: typeof AuthenticatedFoundationLookRouteImport
+      parentRoute: typeof AuthenticatedFoundationRoute
+    }
+    '/_authenticated/foundation/sources': {
+      id: '/_authenticated/foundation/sources'
+      path: '/sources'
+      fullPath: '/foundation/sources'
+      preLoaderRoute: typeof AuthenticatedFoundationSourcesRouteImport
+      parentRoute: typeof AuthenticatedFoundationRoute
+    }
+    '/_authenticated/foundation/templates': {
+      id: '/_authenticated/foundation/templates'
+      path: '/templates'
+      fullPath: '/foundation/templates'
+      preLoaderRoute: typeof AuthenticatedFoundationTemplatesRouteImport
+      parentRoute: typeof AuthenticatedFoundationRoute
+    }
+    '/_authenticated/foundation/voices': {
+      id: '/_authenticated/foundation/voices'
+      path: '/voices'
+      fullPath: '/foundation/voices'
+      preLoaderRoute: typeof AuthenticatedFoundationVoicesRouteImport
+      parentRoute: typeof AuthenticatedFoundationRoute
+    }
+    '/_authenticated/ideas/': {
+      id: '/_authenticated/ideas/'
+      path: '/ideas'
+      fullPath: '/ideas/'
+      preLoaderRoute: typeof AuthenticatedIdeasIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/profile/': {
@@ -536,61 +855,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/content-bank/': {
-      id: '/_authenticated/content-bank/'
-      path: '/'
-      fullPath: '/content-bank/'
-      preLoaderRoute: typeof AuthenticatedContentBankIndexRouteImport
-      parentRoute: typeof AuthenticatedContentBankRoute
-    }
-    '/_authenticated/campaigns/': {
-      id: '/_authenticated/campaigns/'
-      path: '/campaigns'
-      fullPath: '/campaigns/'
-      preLoaderRoute: typeof AuthenticatedCampaignsIndexRouteImport
+    '/_authenticated/workspace-settings/': {
+      id: '/_authenticated/workspace-settings/'
+      path: '/workspace-settings'
+      fullPath: '/workspace-settings/'
+      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/content-bank_/$assetId': {
-      id: '/_authenticated/content-bank_/$assetId'
-      path: '/content-bank/$assetId'
-      fullPath: '/content-bank/$assetId'
-      preLoaderRoute: typeof AuthenticatedContentBankAssetIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/auth/forgot/': {
+      id: '/auth/forgot/'
+      path: '/auth/forgot'
+      fullPath: '/auth/forgot/'
+      preLoaderRoute: typeof AuthForgotIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/content-bank/text': {
-      id: '/_authenticated/content-bank/text'
-      path: '/text'
-      fullPath: '/content-bank/text'
-      preLoaderRoute: typeof AuthenticatedContentBankTextRouteImport
-      parentRoute: typeof AuthenticatedContentBankRoute
+    '/auth/login/': {
+      id: '/auth/login/'
+      path: '/auth/login'
+      fullPath: '/auth/login/'
+      preLoaderRoute: typeof AuthLoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/content-bank/imagery': {
-      id: '/_authenticated/content-bank/imagery'
-      path: '/imagery'
-      fullPath: '/content-bank/imagery'
-      preLoaderRoute: typeof AuthenticatedContentBankImageryRouteImport
-      parentRoute: typeof AuthenticatedContentBankRoute
+    '/auth/logout/': {
+      id: '/auth/logout/'
+      path: '/auth/logout'
+      fullPath: '/auth/logout/'
+      preLoaderRoute: typeof AuthLogoutIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/content-bank/files': {
-      id: '/_authenticated/content-bank/files'
-      path: '/files'
-      fullPath: '/content-bank/files'
-      preLoaderRoute: typeof AuthenticatedContentBankFilesRouteImport
-      parentRoute: typeof AuthenticatedContentBankRoute
+    '/auth/register/': {
+      id: '/auth/register/'
+      path: '/auth/register'
+      fullPath: '/auth/register/'
+      preLoaderRoute: typeof AuthRegisterIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/content-bank/all': {
-      id: '/_authenticated/content-bank/all'
-      path: '/all'
-      fullPath: '/content-bank/all'
-      preLoaderRoute: typeof AuthenticatedContentBankAllRouteImport
-      parentRoute: typeof AuthenticatedContentBankRoute
-    }
-    '/_authenticated/campaigns/$campaignId': {
-      id: '/_authenticated/campaigns/$campaignId'
-      path: '/campaigns/$campaignId'
-      fullPath: '/campaigns/$campaignId'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/auth/reset/': {
+      id: '/auth/reset/'
+      path: '/auth/reset'
+      fullPath: '/auth/reset/'
+      preLoaderRoute: typeof AuthResetIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/campaigns/$campaignId/': {
       id: '/_authenticated/campaigns/$campaignId/'
@@ -599,39 +904,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdIndexRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
-    '/_authenticated/campaigns/$campaignId/settings': {
-      id: '/_authenticated/campaigns/$campaignId/settings'
-      path: '/settings'
-      fullPath: '/campaigns/$campaignId/settings'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdSettingsRouteImport
-      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
-    }
-    '/_authenticated/campaigns/$campaignId/overview': {
-      id: '/_authenticated/campaigns/$campaignId/overview'
-      path: '/overview'
-      fullPath: '/campaigns/$campaignId/overview'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdOverviewRouteImport
-      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
-    }
-    '/_authenticated/campaigns/$campaignId/list': {
-      id: '/_authenticated/campaigns/$campaignId/list'
-      path: '/list'
-      fullPath: '/campaigns/$campaignId/list'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdListRouteImport
-      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
-    }
-    '/_authenticated/campaigns/$campaignId/brief': {
-      id: '/_authenticated/campaigns/$campaignId/brief'
-      path: '/brief'
-      fullPath: '/campaigns/$campaignId/brief'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdBriefRouteImport
-      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
-    }
-    '/_authenticated/campaigns/$campaignId/assets': {
-      id: '/_authenticated/campaigns/$campaignId/assets'
-      path: '/assets'
-      fullPath: '/campaigns/$campaignId/assets'
-      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdAssetsRouteImport
+    '/_authenticated/campaigns/$campaignId/activity': {
+      id: '/_authenticated/campaigns/$campaignId/activity'
+      path: '/activity'
+      fullPath: '/campaigns/$campaignId/activity'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdActivityRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
     '/_authenticated/campaigns/$campaignId/analytics': {
@@ -641,12 +918,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdAnalyticsRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
     }
+    '/_authenticated/campaigns/$campaignId/foundation': {
+      id: '/_authenticated/campaigns/$campaignId/foundation'
+      path: '/foundation'
+      fullPath: '/campaigns/$campaignId/foundation'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdFoundationRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/ideas': {
+      id: '/_authenticated/campaigns/$campaignId/ideas'
+      path: '/ideas'
+      fullPath: '/campaigns/$campaignId/ideas'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdIdeasRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/list': {
+      id: '/_authenticated/campaigns/$campaignId/list'
+      path: '/list'
+      fullPath: '/campaigns/$campaignId/list'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdListRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/overview': {
+      id: '/_authenticated/campaigns/$campaignId/overview'
+      path: '/overview'
+      fullPath: '/campaigns/$campaignId/overview'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdOverviewRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/settings': {
+      id: '/_authenticated/campaigns/$campaignId/settings'
+      path: '/settings'
+      fullPath: '/campaigns/$campaignId/settings'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdSettingsRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId/strategy': {
+      id: '/_authenticated/campaigns/$campaignId/strategy'
+      path: '/strategy'
+      fullPath: '/campaigns/$campaignId/strategy'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdStrategyRouteImport
+      parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/foundation_/audiences/$audienceId': {
+      id: '/_authenticated/foundation_/audiences/$audienceId'
+      path: '/foundation/audiences/$audienceId'
+      fullPath: '/foundation/audiences/$audienceId'
+      preLoaderRoute: typeof AuthenticatedFoundationAudiencesAudienceIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/foundation_/sources/$assetId': {
+      id: '/_authenticated/foundation_/sources/$assetId'
+      path: '/foundation/sources/$assetId'
+      fullPath: '/foundation/sources/$assetId'
+      preLoaderRoute: typeof AuthenticatedFoundationSourcesAssetIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/foundation_/voices/$voiceId': {
+      id: '/_authenticated/foundation_/voices/$voiceId'
+      path: '/foundation/voices/$voiceId'
+      fullPath: '/foundation/voices/$voiceId'
+      preLoaderRoute: typeof AuthenticatedFoundationVoicesVoiceIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/workspace-settings/connect/$connectionId': {
+      id: '/_authenticated/workspace-settings/connect/$connectionId'
+      path: '/workspace-settings/connect/$connectionId'
+      fullPath: '/workspace-settings/connect/$connectionId'
+      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/campaigns/$campaignId/calendar/': {
       id: '/_authenticated/campaigns/$campaignId/calendar/'
       path: '/calendar'
       fullPath: '/campaigns/$campaignId/calendar/'
       preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport
       parentRoute: typeof AuthenticatedCampaignsCampaignIdRoute
+    }
+    '/_authenticated/campaigns/$campaignId_/foundation/$assetId': {
+      id: '/_authenticated/campaigns/$campaignId_/foundation/$assetId'
+      path: '/campaigns/$campaignId/foundation/$assetId'
+      fullPath: '/campaigns/$campaignId/foundation/$assetId'
+      preLoaderRoute: typeof AuthenticatedCampaignsCampaignIdFoundationAssetIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/campaigns/$campaignId_/posts/$postId': {
       id: '/_authenticated/campaigns/$campaignId_/posts/$postId'
@@ -665,35 +1019,61 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedContentBankRouteChildren {
-  AuthenticatedContentBankAllRoute: typeof AuthenticatedContentBankAllRoute
-  AuthenticatedContentBankFilesRoute: typeof AuthenticatedContentBankFilesRoute
-  AuthenticatedContentBankImageryRoute: typeof AuthenticatedContentBankImageryRoute
-  AuthenticatedContentBankTextRoute: typeof AuthenticatedContentBankTextRoute
-  AuthenticatedContentBankIndexRoute: typeof AuthenticatedContentBankIndexRoute
+interface AuthenticatedActivityRouteChildren {
+  AuthenticatedActivityDateRoute: typeof AuthenticatedActivityDateRoute
+  AuthenticatedActivityIndexRoute: typeof AuthenticatedActivityIndexRoute
 }
 
-const AuthenticatedContentBankRouteChildren: AuthenticatedContentBankRouteChildren =
+const AuthenticatedActivityRouteChildren: AuthenticatedActivityRouteChildren = {
+  AuthenticatedActivityDateRoute: AuthenticatedActivityDateRoute,
+  AuthenticatedActivityIndexRoute: AuthenticatedActivityIndexRoute,
+}
+
+const AuthenticatedActivityRouteWithChildren =
+  AuthenticatedActivityRoute._addFileChildren(
+    AuthenticatedActivityRouteChildren,
+  )
+
+interface AuthenticatedFoundationRouteChildren {
+  AuthenticatedFoundationAudiencesRoute: typeof AuthenticatedFoundationAudiencesRoute
+  AuthenticatedFoundationFactsRoute: typeof AuthenticatedFoundationFactsRoute
+  AuthenticatedFoundationGuardrailsRoute: typeof AuthenticatedFoundationGuardrailsRoute
+  AuthenticatedFoundationLookRoute: typeof AuthenticatedFoundationLookRoute
+  AuthenticatedFoundationSourcesRoute: typeof AuthenticatedFoundationSourcesRoute
+  AuthenticatedFoundationTemplatesRoute: typeof AuthenticatedFoundationTemplatesRoute
+  AuthenticatedFoundationVoicesRoute: typeof AuthenticatedFoundationVoicesRoute
+  AuthenticatedFoundationIndexRoute: typeof AuthenticatedFoundationIndexRoute
+}
+
+const AuthenticatedFoundationRouteChildren: AuthenticatedFoundationRouteChildren =
   {
-    AuthenticatedContentBankAllRoute: AuthenticatedContentBankAllRoute,
-    AuthenticatedContentBankFilesRoute: AuthenticatedContentBankFilesRoute,
-    AuthenticatedContentBankImageryRoute: AuthenticatedContentBankImageryRoute,
-    AuthenticatedContentBankTextRoute: AuthenticatedContentBankTextRoute,
-    AuthenticatedContentBankIndexRoute: AuthenticatedContentBankIndexRoute,
+    AuthenticatedFoundationAudiencesRoute:
+      AuthenticatedFoundationAudiencesRoute,
+    AuthenticatedFoundationFactsRoute: AuthenticatedFoundationFactsRoute,
+    AuthenticatedFoundationGuardrailsRoute:
+      AuthenticatedFoundationGuardrailsRoute,
+    AuthenticatedFoundationLookRoute: AuthenticatedFoundationLookRoute,
+    AuthenticatedFoundationSourcesRoute: AuthenticatedFoundationSourcesRoute,
+    AuthenticatedFoundationTemplatesRoute:
+      AuthenticatedFoundationTemplatesRoute,
+    AuthenticatedFoundationVoicesRoute: AuthenticatedFoundationVoicesRoute,
+    AuthenticatedFoundationIndexRoute: AuthenticatedFoundationIndexRoute,
   }
 
-const AuthenticatedContentBankRouteWithChildren =
-  AuthenticatedContentBankRoute._addFileChildren(
-    AuthenticatedContentBankRouteChildren,
+const AuthenticatedFoundationRouteWithChildren =
+  AuthenticatedFoundationRoute._addFileChildren(
+    AuthenticatedFoundationRouteChildren,
   )
 
 interface AuthenticatedCampaignsCampaignIdRouteChildren {
+  AuthenticatedCampaignsCampaignIdActivityRoute: typeof AuthenticatedCampaignsCampaignIdActivityRoute
   AuthenticatedCampaignsCampaignIdAnalyticsRoute: typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
-  AuthenticatedCampaignsCampaignIdAssetsRoute: typeof AuthenticatedCampaignsCampaignIdAssetsRoute
-  AuthenticatedCampaignsCampaignIdBriefRoute: typeof AuthenticatedCampaignsCampaignIdBriefRoute
+  AuthenticatedCampaignsCampaignIdFoundationRoute: typeof AuthenticatedCampaignsCampaignIdFoundationRoute
+  AuthenticatedCampaignsCampaignIdIdeasRoute: typeof AuthenticatedCampaignsCampaignIdIdeasRoute
   AuthenticatedCampaignsCampaignIdListRoute: typeof AuthenticatedCampaignsCampaignIdListRoute
   AuthenticatedCampaignsCampaignIdOverviewRoute: typeof AuthenticatedCampaignsCampaignIdOverviewRoute
   AuthenticatedCampaignsCampaignIdSettingsRoute: typeof AuthenticatedCampaignsCampaignIdSettingsRoute
+  AuthenticatedCampaignsCampaignIdStrategyRoute: typeof AuthenticatedCampaignsCampaignIdStrategyRoute
   AuthenticatedCampaignsCampaignIdIndexRoute: typeof AuthenticatedCampaignsCampaignIdIndexRoute
   AuthenticatedCampaignsCampaignIdCalendarIndexRoute: typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
   AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute: typeof AuthenticatedCampaignsCampaignIdCalendarAnchorViewRoute
@@ -701,18 +1081,22 @@ interface AuthenticatedCampaignsCampaignIdRouteChildren {
 
 const AuthenticatedCampaignsCampaignIdRouteChildren: AuthenticatedCampaignsCampaignIdRouteChildren =
   {
+    AuthenticatedCampaignsCampaignIdActivityRoute:
+      AuthenticatedCampaignsCampaignIdActivityRoute,
     AuthenticatedCampaignsCampaignIdAnalyticsRoute:
       AuthenticatedCampaignsCampaignIdAnalyticsRoute,
-    AuthenticatedCampaignsCampaignIdAssetsRoute:
-      AuthenticatedCampaignsCampaignIdAssetsRoute,
-    AuthenticatedCampaignsCampaignIdBriefRoute:
-      AuthenticatedCampaignsCampaignIdBriefRoute,
+    AuthenticatedCampaignsCampaignIdFoundationRoute:
+      AuthenticatedCampaignsCampaignIdFoundationRoute,
+    AuthenticatedCampaignsCampaignIdIdeasRoute:
+      AuthenticatedCampaignsCampaignIdIdeasRoute,
     AuthenticatedCampaignsCampaignIdListRoute:
       AuthenticatedCampaignsCampaignIdListRoute,
     AuthenticatedCampaignsCampaignIdOverviewRoute:
       AuthenticatedCampaignsCampaignIdOverviewRoute,
     AuthenticatedCampaignsCampaignIdSettingsRoute:
       AuthenticatedCampaignsCampaignIdSettingsRoute,
+    AuthenticatedCampaignsCampaignIdStrategyRoute:
+      AuthenticatedCampaignsCampaignIdStrategyRoute,
     AuthenticatedCampaignsCampaignIdIndexRoute:
       AuthenticatedCampaignsCampaignIdIndexRoute,
     AuthenticatedCampaignsCampaignIdCalendarIndexRoute:
@@ -727,26 +1111,49 @@ const AuthenticatedCampaignsCampaignIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedContentBankRoute: typeof AuthenticatedContentBankRouteWithChildren
+  AuthenticatedActivityRoute: typeof AuthenticatedActivityRouteWithChildren
+  AuthenticatedFoundationRoute: typeof AuthenticatedFoundationRouteWithChildren
+  AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCampaignsCampaignIdRoute: typeof AuthenticatedCampaignsCampaignIdRouteWithChildren
-  AuthenticatedContentBankAssetIdRoute: typeof AuthenticatedContentBankAssetIdRoute
+  AuthenticatedAnalyticsIndexRoute: typeof AuthenticatedAnalyticsIndexRoute
+  AuthenticatedCalendarIndexRoute: typeof AuthenticatedCalendarIndexRoute
   AuthenticatedCampaignsIndexRoute: typeof AuthenticatedCampaignsIndexRoute
+  AuthenticatedIdeasIndexRoute: typeof AuthenticatedIdeasIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
   AuthenticatedWorkspaceSettingsIndexRoute: typeof AuthenticatedWorkspaceSettingsIndexRoute
+  AuthenticatedFoundationAudiencesAudienceIdRoute: typeof AuthenticatedFoundationAudiencesAudienceIdRoute
+  AuthenticatedFoundationSourcesAssetIdRoute: typeof AuthenticatedFoundationSourcesAssetIdRoute
+  AuthenticatedFoundationVoicesVoiceIdRoute: typeof AuthenticatedFoundationVoicesVoiceIdRoute
+  AuthenticatedWorkspaceSettingsConnectConnectionIdRoute: typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
+  AuthenticatedCampaignsCampaignIdFoundationAssetIdRoute: typeof AuthenticatedCampaignsCampaignIdFoundationAssetIdRoute
   AuthenticatedCampaignsCampaignIdPostsPostIdRoute: typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedContentBankRoute: AuthenticatedContentBankRouteWithChildren,
+  AuthenticatedActivityRoute: AuthenticatedActivityRouteWithChildren,
+  AuthenticatedFoundationRoute: AuthenticatedFoundationRouteWithChildren,
+  AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCampaignsCampaignIdRoute:
     AuthenticatedCampaignsCampaignIdRouteWithChildren,
-  AuthenticatedContentBankAssetIdRoute: AuthenticatedContentBankAssetIdRoute,
+  AuthenticatedAnalyticsIndexRoute: AuthenticatedAnalyticsIndexRoute,
+  AuthenticatedCalendarIndexRoute: AuthenticatedCalendarIndexRoute,
   AuthenticatedCampaignsIndexRoute: AuthenticatedCampaignsIndexRoute,
+  AuthenticatedIdeasIndexRoute: AuthenticatedIdeasIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
   AuthenticatedWorkspaceSettingsIndexRoute:
     AuthenticatedWorkspaceSettingsIndexRoute,
+  AuthenticatedFoundationAudiencesAudienceIdRoute:
+    AuthenticatedFoundationAudiencesAudienceIdRoute,
+  AuthenticatedFoundationSourcesAssetIdRoute:
+    AuthenticatedFoundationSourcesAssetIdRoute,
+  AuthenticatedFoundationVoicesVoiceIdRoute:
+    AuthenticatedFoundationVoicesVoiceIdRoute,
+  AuthenticatedWorkspaceSettingsConnectConnectionIdRoute:
+    AuthenticatedWorkspaceSettingsConnectConnectionIdRoute,
+  AuthenticatedCampaignsCampaignIdFoundationAssetIdRoute:
+    AuthenticatedCampaignsCampaignIdFoundationAssetIdRoute,
   AuthenticatedCampaignsCampaignIdPostsPostIdRoute:
     AuthenticatedCampaignsCampaignIdPostsPostIdRoute,
 }
@@ -757,8 +1164,10 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  FlagsRoute: FlagsRoute,
   AuthIndexRoute: AuthIndexRoute,
   InviteIndexRoute: InviteIndexRoute,
+  PlansIndexRoute: PlansIndexRoute,
   ServerUnavailableIndexRoute: ServerUnavailableIndexRoute,
   WorkspacesIndexRoute: WorkspacesIndexRoute,
   AuthForgotIndexRoute: AuthForgotIndexRoute,

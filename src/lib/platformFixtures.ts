@@ -9,7 +9,9 @@ import type { Platform, VideoConstraints } from '@/types/campaigns'
  * The all-zero rule set — with no overrides, exactly how "this platform takes
  * no video" reaches the client (the Go zero value, `IsZero` on the server).
  */
-export function videoConstraints(overrides: Partial<VideoConstraints> = {}): VideoConstraints {
+export function videoConstraints(
+  overrides: Partial<VideoConstraints> = {},
+): VideoConstraints {
   return {
     max_file_size_bytes: 0,
     allowed_formats: [],
@@ -24,12 +26,24 @@ export function videoConstraints(overrides: Partial<VideoConstraints> = {}): Vid
   }
 }
 
-/** A platform row (LinkedIn by default) with every field the type demands. */
+/**
+ * A platform row (LinkedIn by default) with every field the type demands.
+ *
+ * The sqid is arbitrary and deliberately not one of the seeded ones: nothing in
+ * the app is filed under a sqid since CON-292, so a test that depends on a
+ * particular one is testing something that no longer exists. `zernio_id` is the
+ * field to override when a test means "this is Instagram".
+ */
 export function makePlatform(overrides: Partial<Platform> = {}): Platform {
   return {
-    id: 'AXqWG7U2qnpt',
+    id: 'plat-1',
     name: 'LinkedIn',
+    zernio_id: 'linkedin',
+    enabled: true,
+    connect_supported: true,
     post_types: {},
+    supported_post_types: [],
+    sort_order: 0,
     cadence: '',
     constraints: '',
     text_constraints: { max_content_chars: 0, max_title_chars: 0 },

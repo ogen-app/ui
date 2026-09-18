@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react'
 
 /**
  * The one call-to-action shape on the Campaign Overview: why the step matters,
@@ -14,11 +14,11 @@ export function CallToAction({
   children,
 }: {
   /** Line one: why this matters. */
-  headline: ReactNode;
+  headline: ReactNode
   /** Line two: what is missing right now. */
-  support?: ReactNode;
+  support?: ReactNode
   /** The buttons. */
-  children: ReactNode;
+  children: ReactNode
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -30,5 +30,5 @@ export function CallToAction({
       </div>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
-  );
+  )
 }

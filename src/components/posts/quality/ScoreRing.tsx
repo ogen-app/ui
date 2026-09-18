@@ -16,7 +16,14 @@ export function ScoreRing({ pct, band }: { pct: number; band: QualityBand }) {
   return (
     <div className="relative size-16 shrink-0">
       <svg viewBox="0 0 64 64" className="size-full -rotate-90" aria-hidden>
-        <circle cx="32" cy="32" r={r} fill="none" strokeWidth="5" className="stroke-quinary" />
+        <circle
+          cx="32"
+          cy="32"
+          r={r}
+          fill="none"
+          strokeWidth="5"
+          className="stroke-quinary"
+        />
         <circle
           cx="32"
           cy="32"
@@ -55,7 +62,10 @@ export function CompositionBar({ evaluation }: { evaluation: PostEvaluation }) {
   const pct = overallPct(evaluation)
   return (
     <div className="h-2 w-full bg-quinary" aria-hidden>
-      <div className={cn('h-full', BAND_FILL[overallBand(pct)])} style={{ width: `${pct}%` }} />
+      <div
+        className={cn('h-full', BAND_FILL[overallBand(pct)])}
+        style={{ width: `${pct}%` }}
+      />
     </div>
   )
 }

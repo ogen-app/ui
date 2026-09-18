@@ -1,20 +1,24 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation } from '@tanstack/react-query'
 
-import { checkSession, login as loginRequest, invalidateSession } from "@/services/api/sessions";
+import {
+  checkSession,
+  login as loginRequest,
+  invalidateSession,
+} from '@/services/api/sessions'
 import {
   requestPasswordReset,
   resetPassword as resetPasswordRequest,
-} from "@/services/api/passwordReset";
-import { signup as signupRequest } from "@/services/api/tenants";
-import { acceptInvitation } from "@/services/api/invitations";
-import { updateUser } from "@/services/api/users";
-import { listMembers, removeMember } from "@/services/api/workspaces";
-import { setActiveWorkspaceId } from "@/lib/activeWorkspace";
-import { queryClient } from "@/lib/queryClient";
-import type { LoginPayload, Session } from "@/types/session";
-import type { SignupPayload } from "@/types/tenant";
-import type { User } from "@/types/user";
-import { useAuthStore } from "@/stores/authStore";
+} from '@/services/api/passwordReset'
+import { signup as signupRequest } from '@/services/api/tenants'
+import { acceptInvitation } from '@/services/api/invitations'
+import { updateUser } from '@/services/api/users'
+import { listMembers, removeMember } from '@/services/api/workspaces'
+import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
+import { queryClient } from '@/lib/queryClient'
+import type { LoginPayload, Session } from '@/types/session'
+import type { SignupPayload } from '@/types/tenant'
+import type { User } from '@/types/user'
+import { useAuthStore } from '@/stores/authStore'
 
 /**
  * Login mutation. On success it invalidates the cached session probe and
@@ -22,7 +26,7 @@ import { useAuthStore } from "@/stores/authStore";
  * /api/current_user`), hydrating the auth store with the user + tenant.
  */
 export function useLogin() {
-  const setUser = useAuthStore((s) => s.setUser);
+  const setUser = useAuthStore((s) => s.setUser)
   return useMutation<Session, Error, LoginPayload>({
     // The form renders `error` beside the fields it refers to; a toast on top
     // of that would say the same thing twice and further from the inputs.
@@ -36,21 +40,21 @@ export function useLogin() {
       // directions — a pinned workspace the new account can't reach 403s
       // everything, and one it *can* reach silently lands them in the other
       // user's chosen workspace. Drop both; the root guard re-seeds the pin.
-      setActiveWorkspaceId(null);
-      queryClient.clear();
+      setActiveWorkspaceId(null)
+      queryClient.clear()
       // Re-probe through the same cached path the root guard uses: one
       // GET /api/current_user resolves the user + tenant and primes the cache.
-      invalidateSession();
+      invalidateSession()
       try {
-        const user = await checkSession();
-        if (user) setUser(user);
+        const user = await checkSession()
+        if (user) setUser(user)
       } catch {
         // A hiccup here (e.g. transient ServerUnavailableError) must not
         // block the caller-level onSuccess: the login itself succeeded, and
         // the root guard re-probes on the post-login navigation anyway.
       }
     },
-  });
+  })
 }
 
 /**
@@ -61,16 +65,16 @@ export function useLogin() {
  * already carries the new tenant).
  */
 export function useSignup() {
-  const setUser = useAuthStore((s) => s.setUser);
+  const setUser = useAuthStore((s) => s.setUser)
   return useMutation<User, Error, SignupPayload>({
     // Same as login: `AuthRegisterForm` shows `error` inline.
     meta: { errorToast: false },
     mutationFn: signupRequest,
     onSuccess: (user) => {
-      invalidateSession();
-      setUser(user);
+      invalidateSession()
+      setUser(user)
     },
-  });
+  })
 }
 
 /**
@@ -86,7 +90,7 @@ export function useRequestPasswordReset() {
     // `AuthForgotPasswordForm` renders `error.message` under the field.
     meta: { errorToast: false },
     mutationFn: requestPasswordReset,
-  });
+  })
 }
 
 /** Step two: spend the token and set the new password (CON-108). */
@@ -96,7 +100,7 @@ export function useResetPassword() {
     // out of an expired token — which a toast would drop.
     meta: { errorToast: false },
     mutationFn: ({ token, password }) => resetPasswordRequest(token, password),
-  });
+  })
 }
 
 /**
@@ -112,21 +116,25 @@ export function useResetPassword() {
  * asked. The cache goes with it, since it belongs to wherever this tab was.
  */
 export function useAcceptInvitation(token: string) {
-  const setUser = useAuthStore((s) => s.setUser);
-  return useMutation<User, Error, { name: string; password: string } | undefined>({
+  const setUser = useAuthStore((s) => s.setUser)
+  return useMutation<
+    User,
+    Error,
+    { name: string; password: string } | undefined
+  >({
     // The form renders `error` beside the fields, and for a dead token beside
     // the way out of it — which a toast would drop.
     meta: { errorToast: false },
     mutationFn: (payload) => acceptInvitation(token, payload),
     onSuccess: (user) => {
-      invalidateSession();
-      setUser(user);
+      invalidateSession()
+      setUser(user)
       if (user.tenant?.id) {
-        setActiveWorkspaceId(user.tenant.id);
-        queryClient.clear();
+        setActiveWorkspaceId(user.tenant.id)
+        queryClient.clear()
       }
     },
-  });
+  })
 }
 
 /**
@@ -143,7 +151,7 @@ export function useAcceptInvitation(token: string) {
  * out at the next login. The form says so; it can't do better than say so.
  */
 export function useUpdateProfile() {
-  const setUser = useAuthStore((s) => s.setUser);
+  const setUser = useAuthStore((s) => s.setUser)
   return useMutation<
     User,
     Error,
@@ -152,10 +160,10 @@ export function useUpdateProfile() {
     mutationFn: ({ id, firstName, lastName, email }) =>
       updateUser(id, { name: `${firstName} ${lastName}`.trim(), email }),
     onSuccess: (user) => {
-      invalidateSession();
-      setUser(user);
+      invalidateSession()
+      setUser(user)
     },
-  });
+  })
 }
 
 /*
@@ -187,20 +195,20 @@ export function useUpdateProfile() {
  * With no workspace left, that load lands on login via the ordinary 401 path.
  */
 export function useLeaveWorkspace() {
-  const email = useAuthStore((s) => s.user?.email);
+  const email = useAuthStore((s) => s.user?.email)
   return useMutation<void, Error, void>({
     // The dialog renders `error.message` inside itself, which is where the
     // user is looking and where the retry is.
     meta: { errorToast: false },
     mutationFn: async () => {
-      const me = (await listMembers(email ?? "")).find((m) => m.is_self);
-      if (!me) throw new Error("Unable to resolve your membership");
-      await removeMember(me.id);
+      const me = (await listMembers(email ?? '')).find((m) => m.is_self)
+      if (!me) throw new Error('Unable to resolve your membership')
+      await removeMember(me.id)
     },
     onSuccess: () => {
-      invalidateSession();
-      setActiveWorkspaceId(null);
-      window.location.assign("/");
+      invalidateSession()
+      setActiveWorkspaceId(null)
+      window.location.assign('/')
     },
-  });
+  })
 }

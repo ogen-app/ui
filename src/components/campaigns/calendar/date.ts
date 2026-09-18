@@ -1,3 +1,5 @@
+import { formatDate } from '@/lib/intl'
+
 // Date helpers for the campaign calendar.
 //
 // The calendar URL carries a single `anchor` date (YYYY-MM-DD). The visible
@@ -37,13 +39,13 @@ export function visibleWeekDays(
 }
 
 /** Column header, line 1 — e.g. "Monday". */
-export function weekdayLabel(day: Date): string {
-  return day.toLocaleDateString(undefined, { weekday: 'long' })
+export function weekdayLabel(day: Date, locale?: string): string {
+  return formatDate(day, { weekday: 'long' }, locale)
 }
 
 /** Column header for the month grid, where there is no room for "Wednesday". */
-export function weekdayShortLabel(day: Date): string {
-  return day.toLocaleDateString(undefined, { weekday: 'short' })
+export function weekdayShortLabel(day: Date, locale?: string): string {
+  return formatDate(day, { weekday: 'short' }, locale)
 }
 
 /**
@@ -53,7 +55,11 @@ export function weekdayShortLabel(day: Date): string {
  */
 export function addMonths(date: Date, months: number): Date {
   const target = new Date(date.getFullYear(), date.getMonth() + months, 1)
-  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate()
+  const lastDay = new Date(
+    target.getFullYear(),
+    target.getMonth() + 1,
+    0,
+  ).getDate()
   target.setDate(Math.min(date.getDate(), lastDay))
   target.setHours(0, 0, 0, 0)
   return target
@@ -102,7 +108,10 @@ export function monthWeeks(
  * The month grid's column days — one week's worth, in the user's order and
  * minus what they hide. Only the weekday matters; the dates are arbitrary.
  */
-export function monthColumnDays(firstDay: number, hiddenDays: number[] = []): Date[] {
+export function monthColumnDays(
+  firstDay: number,
+  hiddenDays: number[] = [],
+): Date[] {
   // Any week will do as a source of seven weekdays in order; the epoch's
   // first full week is stable and needs no clock read.
   const base = startOfWeek(new Date(2024, 0, 3), firstDay)
@@ -112,13 +121,13 @@ export function monthColumnDays(firstDay: number, hiddenDays: number[] = []): Da
 }
 
 /** The toolbar's heading in month view — e.g. "August 2026". */
-export function monthLabel(day: Date): string {
-  return `${day.toLocaleDateString(undefined, { month: 'long' })} ${day.getFullYear()}`
+export function monthLabel(day: Date, locale?: string): string {
+  return `${formatDate(day, { month: 'long' }, locale)} ${day.getFullYear()}`
 }
 
 /** Column header, line 2 — e.g. "20 July 2026". */
-export function dayLabel(day: Date): string {
-  return `${day.getDate()} ${day.toLocaleDateString(undefined, { month: 'long' })} ${day.getFullYear()}`
+export function dayLabel(day: Date, locale?: string): string {
+  return `${day.getDate()} ${formatDate(day, { month: 'long' }, locale)} ${day.getFullYear()}`
 }
 
 export function isSameDay(a: Date, b: Date): boolean {

@@ -77,7 +77,11 @@ export function AssistantComposer({
   }
 
   return (
-    <div className="relative flex items-end gap-2 bg-primary px-4 py-3">
+    // No fill of its own. The panel's bottom fader is the surface here, and a
+    // slab of `bg-primary` on top of it hides whatever part of the ramp reaches
+    // this row — the fade then appears to start at the composer's top edge
+    // instead of running through it.
+    <div className="relative flex items-end gap-2 px-4 py-3">
       {/* The field's fill. First in the DOM and the only absolute box here, so
           every (position: relative) button above paints over it. At rest it
           stops short of the send button; opening it runs the fill the whole

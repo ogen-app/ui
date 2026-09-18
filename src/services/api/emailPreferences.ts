@@ -1,4 +1,4 @@
-import { apiJson } from "./http";
+import { apiJson } from './http'
 
 /**
  * The signed-in user's marketing-email subscription (CON-155).
@@ -42,30 +42,30 @@ import { apiJson } from "./http";
  */
 export type EmailPreferences = {
   /** False once this address is suppressed from `kind=marketing` mail. */
-  marketing: boolean;
+  marketing: boolean
   /** A bounce or complaint is blocking *all* mail to this address. */
-  deliveryBlocked: boolean;
-};
+  deliveryBlocked: boolean
+}
 
 /** Wire shape, snake_case as the backend sends it. */
 type EmailPreferencesBody = {
-  marketing: boolean;
-  delivery_blocked: boolean;
-};
+  marketing: boolean
+  delivery_blocked: boolean
+}
 
 function preferencesPath(userId: string): string {
-  return `/api/users/${userId}/email-preferences`;
+  return `/api/users/${userId}/email-preferences`
 }
 
 function fromWire(body: EmailPreferencesBody): EmailPreferences {
-  return { marketing: body.marketing, deliveryBlocked: body.delivery_blocked };
+  return { marketing: body.marketing, deliveryBlocked: body.delivery_blocked }
 }
 
 export function getEmailPreferences(userId: string): Promise<EmailPreferences> {
   return apiJson<EmailPreferencesBody>(
     preferencesPath(userId),
-    "Unable to read your email preferences",
-  ).then(fromWire);
+    'Unable to read your email preferences',
+  ).then(fromWire)
 }
 
 /**
@@ -79,7 +79,7 @@ export function setMarketingEmails(
 ): Promise<EmailPreferences> {
   return apiJson<EmailPreferencesBody>(
     preferencesPath(userId),
-    "Unable to update your email preferences",
-    { method: "PUT", body: { marketing } },
-  ).then(fromWire);
+    'Unable to update your email preferences',
+    { method: 'PUT', body: { marketing } },
+  ).then(fromWire)
 }

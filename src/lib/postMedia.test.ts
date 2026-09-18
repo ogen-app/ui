@@ -6,12 +6,20 @@ import type { ResolvedPostTypeRule } from '@/types/validation'
 import { makePlatform, videoConstraints } from './platformFixtures.ts'
 import { MAX_VIDEO_UPLOAD_BYTES } from './platformVideo.ts'
 import { checkFile, mediaPolicy, strandedAttachments } from './postMedia.ts'
-import { evaluatePost, hasVisibleProblem, worstStatus } from './postValidation.ts'
+import {
+  evaluatePost,
+  hasVisibleProblem,
+  worstStatus,
+} from './postValidation.ts'
+import { getPlatformByZernioId } from './platformDictionary.ts'
 
-// Platform Sqids from platformDictionary.ts.
-const INSTAGRAM = 'rzgpTkARLH0L'
-const LINKEDIN = 'AXqWG7U2qnpt'
-const YOUTUBE = '8S8bWQTG6qD'
+// Zernio wire slugs — what `platformDictionary` and `platformMedia` are keyed
+// by since CON-292. A post's `platform_id` is a sqid and no longer resolves
+// against either; the caller translates one to the other.
+const INSTAGRAM = 'instagram'
+const LINKEDIN = 'linkedin'
+const YOUTUBE = 'youtube'
+const LINKEDIN_INFO = getPlatformByZernioId(LINKEDIN)
 
 /** The seeded LinkedIn video rules, verbatim from the CON-148 migration. */
 const linkedInVideo: VideoConstraints = {
@@ -26,21 +34,25 @@ const linkedInVideo: VideoConstraints = {
   requires_video_title: false,
 }
 
-function platform(video_constraints: VideoConstraints = videoConstraints()): Platform {
+function platform(
+  video_constraints: VideoConstraints = videoConstraints(),
+): Platform {
   return makePlatform({
-    id: LINKEDIN,
     text_constraints: { max_content_chars: 3000, max_title_chars: 0 },
     video_constraints,
   })
 }
 
-function rule(overrides: Partial<ResolvedPostTypeRule> = {}): ResolvedPostTypeRule {
+function rule(
+  overrides: Partial<ResolvedPostTypeRule> = {},
+): ResolvedPostTypeRule {
   return {
     requires_content: false,
     allowed_kinds: ['image'],
     min_attachments: 1,
     max_attachments: null,
     max_content_chars: null,
+    segmented: false,
     ...overrides,
   }
 }
@@ -52,6 +64,7 @@ function makeAttachment(
     id: Math.random().toString(36).slice(2),
     post_id: 'p1',
     position: 0,
+    segment_index: null,
     mime_type: 'image/jpeg',
     size_bytes: 1024,
     width: 1080,
@@ -80,9 +93,13 @@ function makePost(overrides: Partial<Post> = {}): Post {
     social_account_id: 'acc-1',
     title: '',
     content: 'Hello',
+    thread_segments: [],
     media_urls: [],
     scheduled_at: null,
     published_at: null,
+    published_url: '',
+    brand_voice_id: null,
+    brand_audience_id: null,
     status: 'draft',
     cta_type: 'none',
     cta_url: '',
@@ -137,7 +154,11 @@ describe('mediaPolicy', () => {
   })
 
   it('flags a video post type against a platform with no video rules', () => {
-    const policy = mediaPolicy(LINKEDIN, rule({ allowed_kinds: ['video'] }), platform())
+    const policy = mediaPolicy(
+      LINKEDIN,
+      rule({ allowed_kinds: ['video'] }),
+      platform(),
+    )
     expect(policy.videoUnsupported).toBe(true)
     expect(policy.video).toBeUndefined()
   })
@@ -171,7 +192,10 @@ describe('mediaPolicy', () => {
 describe('strandedAttachments', () => {
   it('lists everything when the post type takes no media', () => {
     const atts = [makeAttachment(), makeAttachment()]
-    const policy = mediaPolicy(INSTAGRAM, rule({ max_attachments: 0, allowed_kinds: [] }))
+    const policy = mediaPolicy(
+      INSTAGRAM,
+      rule({ max_attachments: 0, allowed_kinds: [] }),
+    )
     expect(strandedAttachments(atts, policy)).toHaveLength(2)
   })
 
@@ -188,7 +212,7 @@ describe('strandedAttachments', () => {
 })
 
 describe('checkFile', () => {
-  const X = '81mUCmc2xsKd'
+  const X = 'twitter'
   const imageRule = rule({ min_attachments: 0, allowed_kinds: ['image'] })
 
   function file(name: string, type: string, bytes: number): File {
@@ -200,33 +224,51 @@ describe('checkFile', () => {
   // oversized image passed the client check and the server's and only failed
   // at publish. CON-123.
   it('rejects a still image over 1 MB on X', () => {
-    const result = checkFile(file('photo.jpg', 'image/jpeg', 3 * 1024 * 1024), mediaPolicy(X, imageRule))
+    const result = checkFile(
+      file('photo.jpg', 'image/jpeg', 3 * 1024 * 1024),
+      mediaPolicy(X, imageRule),
+    )
     expect(result.ok).toBe(false)
   })
 
   it('accepts a still image under 1 MB on X', () => {
-    expect(checkFile(file('photo.jpg', 'image/jpeg', 900 * 1024), mediaPolicy(X, imageRule)).ok).toBe(
-      true,
-    )
+    expect(
+      checkFile(
+        file('photo.jpg', 'image/jpeg', 900 * 1024),
+        mediaPolicy(X, imageRule),
+      ).ok,
+    ).toBe(true)
   })
 
   // GIFs are a separate upload path on X and go to 15 MB, so the 1 MB still
   // limit must not be applied to them.
   it('lets a GIF past the still-image limit, up to its own', () => {
     const policy = mediaPolicy(X, imageRule)
-    expect(checkFile(file('loop.gif', 'image/gif', 5 * 1024 * 1024), policy).ok).toBe(true)
-    expect(checkFile(file('loop.gif', 'image/gif', 20 * 1024 * 1024), policy).ok).toBe(false)
+    expect(
+      checkFile(file('loop.gif', 'image/gif', 5 * 1024 * 1024), policy).ok,
+    ).toBe(true)
+    expect(
+      checkFile(file('loop.gif', 'image/gif', 20 * 1024 * 1024), policy).ok,
+    ).toBe(false)
   })
 
   it('leaves platforms without a separate GIF ceiling alone', () => {
     // Instagram is 8 MB for everything it takes.
     const policy = mediaPolicy(INSTAGRAM, imageRule)
-    expect(checkFile(file('photo.jpg', 'image/jpeg', 3 * 1024 * 1024), policy).ok).toBe(true)
-    expect(checkFile(file('photo.jpg', 'image/jpeg', 9 * 1024 * 1024), policy).ok).toBe(false)
+    expect(
+      checkFile(file('photo.jpg', 'image/jpeg', 3 * 1024 * 1024), policy).ok,
+    ).toBe(true)
+    expect(
+      checkFile(file('photo.jpg', 'image/jpeg', 9 * 1024 * 1024), policy).ok,
+    ).toBe(false)
   })
 
   const videoPolicy = () =>
-    mediaPolicy(LINKEDIN, rule({ allowed_kinds: ['video'] }), platform(linkedInVideo))
+    mediaPolicy(
+      LINKEDIN,
+      rule({ allowed_kinds: ['video'] }),
+      platform(linkedInVideo),
+    )
 
   it('rejects video over Ogen’s budget before the upload starts', () => {
     // The platform would take 5 GB; refusing here saves the user a 600 MB
@@ -239,18 +281,26 @@ describe('checkFile', () => {
   })
 
   it('accepts video inside the budget', () => {
-    expect(checkFile(file('clip.mp4', 'video/mp4', 1024), videoPolicy()).ok).toBe(true)
+    expect(
+      checkFile(file('clip.mp4', 'video/mp4', 1024), videoPolicy()).ok,
+    ).toBe(true)
   })
 
   it('rejects a container the platform does not list', () => {
     // LinkedIn is seeded mp4-only.
-    const result = checkFile(file('clip.mov', 'video/quicktime', 1024), videoPolicy())
+    const result = checkFile(
+      file('clip.mov', 'video/quicktime', 1024),
+      videoPolicy(),
+    )
     expect(result.ok).toBe(false)
     expect(result.ok === false && result.reason).toContain('MOV')
   })
 
   it('rejects video on a post type that takes none', () => {
-    const result = checkFile(file('clip.mp4', 'video/mp4', 1024), mediaPolicy(X, imageRule))
+    const result = checkFile(
+      file('clip.mp4', 'video/mp4', 1024),
+      mediaPolicy(X, imageRule),
+    )
     expect(result.ok).toBe(false)
     expect(result.ok === false && result.reason).toContain("doesn't take video")
   })
@@ -258,6 +308,9 @@ describe('checkFile', () => {
 
 describe('evaluatePost', () => {
   const base = {
+    // Resolved by the caller since CON-292 — the dictionary is filed under
+    // `zernio_id` and only the platform list can translate a post's sqid.
+    platform: getPlatformByZernioId(INSTAGRAM),
     ready: true,
     postValidation: [],
     requiresContent: false,
@@ -267,6 +320,9 @@ describe('evaluatePost', () => {
     maxContentChars: 2200 as number | null | undefined,
     // Instagram publishes no title, which is the common case.
     maxTitleChars: null as number | null | undefined,
+    // Not a thread sequence — Instagram has none, and the length check these
+    // cases exercise is the one a sequence replaces (CON-196).
+    sequence: false,
   }
 
   it('fails the media check below the minimum', () => {
@@ -294,7 +350,10 @@ describe('evaluatePost', () => {
   })
 
   it('warns, but does not fail, when a text post still carries files', () => {
-    const policy = mediaPolicy(INSTAGRAM, rule({ max_attachments: 0, allowed_kinds: [] }))
+    const policy = mediaPolicy(
+      INSTAGRAM,
+      rule({ max_attachments: 0, allowed_kinds: [] }),
+    )
     const checks = evaluatePost({
       ...base,
       post: makePost({ platform_post_type: 'text-post' }),
@@ -323,7 +382,11 @@ describe('evaluatePost', () => {
   it('fails a video post with no title where the platform demands one', () => {
     const checks = evaluatePost({
       ...base,
-      post: makePost({ platform_id: YOUTUBE, platform_post_type: 'video', title: '  ' }),
+      post: makePost({
+        platform_id: YOUTUBE,
+        platform_post_type: 'video',
+        title: '  ',
+      }),
       policy: youTubePolicy(),
       attachments: [makeAttachment({ mime_type: 'video/mp4' })],
     })
@@ -347,7 +410,11 @@ describe('evaluatePost', () => {
   it('raises no title check on a platform that derives one from the caption', () => {
     const checks = evaluatePost({
       ...base,
-      post: makePost({ platform_id: LINKEDIN, platform_post_type: 'video', title: '' }),
+      post: makePost({
+        platform_id: LINKEDIN,
+        platform_post_type: 'video',
+        title: '',
+      }),
       policy: mediaPolicy(
         LINKEDIN,
         rule({ allowed_kinds: ['video'] }),
@@ -427,7 +494,9 @@ describe('evaluatePost', () => {
       attachments: [],
     })
     // Ten surrogate pairs are 20 UTF-16 units and 10 characters to the network.
-    expect(checks.find((c) => c.id === 'char-limit')?.detail).toContain('10 / 2,200')
+    expect(checks.find((c) => c.id === 'char-limit')?.detail).toContain(
+      '10 / 2,200',
+    )
   })
 
   it('holds the length check pending until the limit has loaded', () => {
@@ -506,20 +575,54 @@ describe('hasVisibleProblem', () => {
   const resolved = { ambiguous: false, mismatched: false }
 
   it('stays quiet on a post that is merely unfinished', () => {
-    expect(hasVisibleProblem(makePost({ status: 'draft' }), resolved)).toBe(false)
-    expect(hasVisibleProblem(makePost({ status: 'scheduled' }), resolved)).toBe(false)
-    expect(hasVisibleProblem(makePost({ status: 'published' }), resolved)).toBe(false)
+    expect(
+      hasVisibleProblem(makePost({ status: 'draft' }), resolved, LINKEDIN_INFO),
+    ).toBe(false)
+    expect(
+      hasVisibleProblem(
+        makePost({ status: 'scheduled' }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
+    ).toBe(false)
+    expect(
+      hasVisibleProblem(
+        makePost({ status: 'published' }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
+    ).toBe(false)
   })
 
   it('flags a publish that went wrong or never went out', () => {
-    expect(hasVisibleProblem(makePost({ status: 'failed' }), resolved)).toBe(true)
-    expect(hasVisibleProblem(makePost({ status: 'not_published' }), resolved)).toBe(true)
+    expect(
+      hasVisibleProblem(
+        makePost({ status: 'failed' }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
+    ).toBe(true)
+    expect(
+      hasVisibleProblem(
+        makePost({ status: 'not_published' }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
+    ).toBe(true)
   })
 
   it('flags a post that has nowhere to go', () => {
-    expect(hasVisibleProblem(makePost({ platform_id: '' }), resolved)).toBe(true)
-    expect(hasVisibleProblem(makePost({ platform_id: 'not-a-platform' }), resolved)).toBe(true)
-    expect(hasVisibleProblem(makePost({ platform_post_type: '' }), resolved)).toBe(true)
+    // `undefined` is what the caller's `resolve` answers for all three reasons
+    // a platform can fail to come back: none is set, the id names no row, or
+    // the row is for a network this build ships no support for.
+    expect(hasVisibleProblem(makePost(), resolved, undefined)).toBe(true)
+    expect(
+      hasVisibleProblem(
+        makePost({ platform_post_type: '' }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
+    ).toBe(true)
   })
 
   it('follows the status machine on accounts: resolution, not presence', () => {
@@ -527,20 +630,36 @@ describe('hasVisibleProblem', () => {
     // `checkAccountSelection`: an empty id on a single-account platform
     // auto-resolves and publishes fine, so the card must not flag it.
     const empty = makePost({ social_account_id: '' })
-    expect(hasVisibleProblem(empty, resolved)).toBe(false)
-    expect(hasVisibleProblem(empty, { ambiguous: true, mismatched: false })).toBe(true)
+    expect(hasVisibleProblem(empty, resolved, LINKEDIN_INFO)).toBe(false)
+    expect(
+      hasVisibleProblem(
+        empty,
+        { ambiguous: true, mismatched: false },
+        LINKEDIN_INFO,
+      ),
+    ).toBe(true)
     // A chosen account the platform no longer has.
     expect(
-      hasVisibleProblem(makePost({ social_account_id: 'gone' }), {
-        ambiguous: false,
-        mismatched: true,
-      }),
+      hasVisibleProblem(
+        makePost({ social_account_id: 'gone' }),
+        {
+          ambiguous: false,
+          mismatched: true,
+        },
+        LINKEDIN_INFO,
+      ),
     ).toBe(true)
   })
 
   it('reads only the post row — no attachments, no server rules', () => {
     // The guarantee the calendar leans on: hundreds of cards, zero extra
     // requests. A post whose *only* fault needs those fetches stays clean.
-    expect(hasVisibleProblem(makePost({ content: '', media_urls: [] }), resolved)).toBe(false)
+    expect(
+      hasVisibleProblem(
+        makePost({ content: '', media_urls: [] }),
+        resolved,
+        LINKEDIN_INFO,
+      ),
+    ).toBe(false)
   })
 })

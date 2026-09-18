@@ -14,7 +14,10 @@ function RegisterPage() {
       bottomNav={
         <>
           {t('auth.register.haveAccount')}{' '}
-          <Link to="/auth/login" className="text-primary-foreground font-medium">
+          <Link
+            to="/auth/login"
+            className="text-primary-foreground font-medium"
+          >
             {t('auth.register.logInLink')}
           </Link>
         </>

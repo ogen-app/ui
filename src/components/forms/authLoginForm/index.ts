@@ -1,1 +1,1 @@
-export { AuthLoginForm } from "./AuthLoginForm";
+export { AuthLoginForm } from './AuthLoginForm'

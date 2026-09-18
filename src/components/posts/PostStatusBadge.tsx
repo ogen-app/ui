@@ -1,5 +1,6 @@
+import { useTranslation } from 'react-i18next'
 import type { PostStatus } from '@/types/posts'
-import { POST_STATUS_LABELS } from '@/types/posts'
+import { postStatusLabel } from '@/lib/postStatusLabel'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 
 const POST_STATUS_TONE: Record<PostStatus, StatusTone> = {
@@ -20,9 +21,10 @@ type Props = {
 }
 
 export function PostStatusBadge({ status, className }: Props) {
+  const { t } = useTranslation()
   return (
     <StatusBadge
-      label={POST_STATUS_LABELS[status] ?? status}
+      label={postStatusLabel(t, status)}
       tone={POST_STATUS_TONE[status]}
       className={className}
     />

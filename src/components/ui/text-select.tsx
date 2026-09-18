@@ -20,7 +20,8 @@ const selectViewportPopperStyles =
 const selectItemStyles =
   "focus:bg-primary focus:text-primary-foreground [&_svg:not([class*='text-'])]:text-tertiary-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
 
-const selectScrollButtonStyles = 'flex cursor-default items-center justify-center py-1'
+const selectScrollButtonStyles =
+  'flex cursor-default items-center justify-center py-1'
 
 /** Where an option's label sits inside the popover: viewport `p-1` + item `pl-2`. */
 const ITEM_TEXT_INSET = 12
@@ -37,7 +38,8 @@ const selectTriggerVariants = cva(
           'bg-input border-b-1 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
         primary:
           'bg-input-secondary border-b-2 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
-        ghost: 'border-0 rounded-md bg-transparent px-3 py-1 shadow-none text-sm',
+        ghost:
+          'border-0 rounded-md bg-transparent px-3 py-1 shadow-none text-sm',
         // Reads as text, not as a field: no rule under it and the caret sits
         // against the value. Matches the post quick-settings triggers.
         inline:
@@ -53,7 +55,7 @@ const selectTriggerVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 )
 
 type TextElement = {
@@ -90,10 +92,15 @@ function TextSelect({
   const borderless = variant === 'inline' || variant === 'ghost'
 
   // Left padding of each trigger variant, i.e. where its text starts.
-  const triggerTextInset = variant === 'inline' ? 0 : variant === 'ghost' ? 12 : 16
+  const triggerTextInset =
+    variant === 'inline' ? 0 : variant === 'ghost' ? 12 : 16
 
   return (
-    <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled}>
+    <SelectPrimitive.Root
+      value={value}
+      onValueChange={onValueChange}
+      disabled={disabled}
+    >
       <SelectPrimitive.Trigger
         id={id}
         className={cn(
@@ -101,7 +108,7 @@ function TextSelect({
           borderless
             ? 'justify-start gap-1.5 cursor-pointer'
             : 'justify-between gap-3 pr-2 cursor-pointer',
-          className
+          className,
         )}
       >
         {/* The trigger is as wide as its column, not as wide as its value: a
@@ -122,7 +129,11 @@ function TextSelect({
 
       <SelectPrimitive.Portal>
         <SelectPrimitive.Content
-          className={cn(popoverContentStyles, popoverAnimationStyles, selectContentStyles)}
+          className={cn(
+            popoverContentStyles,
+            popoverAnimationStyles,
+            selectContentStyles,
+          )}
           style={{ zIndex: ZIndex.popover }}
           position="popper"
           // The popover aligns to the trigger's box, but what the eye lines up
@@ -135,7 +146,9 @@ function TextSelect({
             <CaretUpIcon className="size-3" />
           </SelectPrimitive.ScrollUpButton>
 
-          <SelectPrimitive.Viewport className={cn('p-1', selectViewportPopperStyles)}>
+          <SelectPrimitive.Viewport
+            className={cn('p-1', selectViewportPopperStyles)}
+          >
             {elements.map((el) => (
               <TextSelectItem
                 key={el.id}
@@ -148,7 +161,9 @@ function TextSelect({
             ))}
           </SelectPrimitive.Viewport>
 
-          <SelectPrimitive.ScrollDownButton className={selectScrollButtonStyles}>
+          <SelectPrimitive.ScrollDownButton
+            className={selectScrollButtonStyles}
+          >
             <CaretDownIcon className="size-4" />
           </SelectPrimitive.ScrollDownButton>
         </SelectPrimitive.Content>
@@ -161,9 +176,17 @@ type TextSelectItemProps = React.ComponentProps<typeof SelectPrimitive.Item> & {
   isSelected: boolean
 }
 
-function TextSelectItem({ className, children, isSelected: _isSelected, ...props }: TextSelectItemProps) {
+function TextSelectItem({
+  className,
+  children,
+  isSelected: _isSelected,
+  ...props
+}: TextSelectItemProps) {
   return (
-    <SelectPrimitive.Item className={cn(selectItemStyles, className)} {...props}>
+    <SelectPrimitive.Item
+      className={cn(selectItemStyles, className)}
+      {...props}
+    >
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   )

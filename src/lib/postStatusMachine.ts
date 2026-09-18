@@ -5,30 +5,47 @@ import type { Post, PostStatus } from '@/types/posts'
 // server — the server is the source of truth and will reject any edge
 // not listed here with a 400.
 //
-// `scheduled` has four outgoing edges, but they are NOT all the same kind
+// `scheduled` has five outgoing edges, but they are NOT all the same kind
 // of move (see ACTION_META below):
 //   - → published / → failed are driven automatically by the publisher
 //     worker; the user never triggers them.
 //   - → ready_for_publish / → draft are user-requested cancellations that
 //     go through POST /api/posts/:id/cancel (which cancels the Zernio job),
 //     not a plain status PUT — the worker lands the status change later.
-export const POST_STATUS_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
+//   - → scheduled_for_manual_publishing is the server's own convert-to-manual
+//     move (CON-130), taken when a platform's auto-publish allowlist is turned
+//     off under a post that is already scheduled. There is no client route to
+//     it: `cancel` accepts only ready_for_publish or draft as a target.
+//
+// The three edges into `draft` from a status the post can come *back* from —
+// scheduled_for_manual_publishing, failed and not_published — are CON-251's
+// (the last two) and CON-130's (the first). None of those statuses holds a
+// copy outside Ogen: the submission failed, or never left. Reopening them for
+// editing is the point, and reopening as far as `draft` rather than only
+// `ready_for_publish` is the rest of it, because needing the words changed is
+// exactly how a post reaches them.
+const POST_STATUS_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
   draft: ['ready_for_publish'],
   ready_for_publish: ['scheduled', 'scheduled_for_manual_publishing', 'draft'],
-  scheduled: ['failed', 'published', 'ready_for_publish', 'draft'],
-  scheduled_for_manual_publishing: ['published', 'not_published'],
-  failed: ['ready_for_publish'],
+  scheduled: [
+    'failed',
+    'published',
+    'ready_for_publish',
+    'draft',
+    'scheduled_for_manual_publishing',
+  ],
+  scheduled_for_manual_publishing: ['published', 'not_published', 'draft'],
+  failed: ['ready_for_publish', 'draft'],
   published: [],
-  not_published: ['ready_for_publish', 'scheduled_for_manual_publishing'],
+  not_published: [
+    'ready_for_publish',
+    'scheduled_for_manual_publishing',
+    'draft',
+  ],
 }
 
 export function getAllowedNextStatuses(current: PostStatus): PostStatus[] {
   return POST_STATUS_TRANSITIONS[current] ?? []
-}
-
-export function canTransition(from: PostStatus, to: PostStatus): boolean {
-  if (from === to) return true
-  return getAllowedNextStatuses(from).includes(to)
 }
 
 export function isTerminalStatus(status: PostStatus): boolean {
@@ -75,10 +92,7 @@ export type PostStatusActionKind = 'user' | 'system'
 //     call — including the fallback to a plain PUT when the user can't
 //     supply a link (Zernio cannot verify LinkedIn personal accounts).
 export type PostStatusActionMechanism =
-  | 'transition'
-  | 'schedule'
-  | 'cancel'
-  | 'verify'
+  'transition' | 'schedule' | 'cancel' | 'verify'
 
 type ActionMeta = {
   // ALL CAPS form, used as the prominent header button label.
@@ -101,7 +115,23 @@ type ActionMeta = {
   reverse?: true
 }
 
-const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> = {
+// Reopening a post for editing: the same move, in the same words, from every
+// status that has one. Nothing of a post in `ready_for_publish`,
+// `scheduled_for_manual_publishing`, `failed` or `not_published` lives outside
+// Ogen — it was never submitted, or the submission failed — so the document
+// simply goes back to being a draft (CON-130, CON-251). A plain status PUT
+// everywhere: none of these edges has a Zernio job to cancel.
+const BACK_TO_DRAFT: ActionMeta = {
+  buttonLabel: 'BACK TO DRAFT',
+  menuLabel: 'Back to draft',
+  intent: 'secondary',
+  kind: 'user',
+}
+
+const ACTION_META: Record<
+  PostStatus,
+  Partial<Record<PostStatus, ActionMeta>>
+> = {
   draft: {
     ready_for_publish: {
       buttonLabel: 'MARK AS READY',
@@ -132,13 +162,9 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       intent: 'primary',
       kind: 'user',
     },
-    draft: {
-      buttonLabel: 'BACK TO DRAFT',
-      menuLabel: 'Back to draft',
-      intent: 'secondary',
-      kind: 'user',
-      reverse: true,
-    },
+    // The only one of the four that is also the way *back* out of its status:
+    // from `ready_for_publish` there is nowhere else to retreat to.
+    draft: { ...BACK_TO_DRAFT, reverse: true },
   },
   scheduled: {
     // System edges: the publisher worker drives these; never shown as
@@ -176,6 +202,17 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       kind: 'user',
       mechanism: 'cancel',
     },
+    // The server's convert-to-manual move (CON-130), not the user's: it fires
+    // when a platform's auto-publish allowlist is turned off under a post that
+    // is already scheduled. Listed so the machine mirrors the server, `system`
+    // so nothing offers it — the cancel endpoint takes only ready_for_publish
+    // or draft, so there is no request the UI could send for this edge.
+    scheduled_for_manual_publishing: {
+      buttonLabel: 'SWITCH TO MANUAL PUBLISHING',
+      menuLabel: 'Switch to manual publishing',
+      intent: 'secondary',
+      kind: 'system',
+    },
   },
   scheduled_for_manual_publishing: {
     published: {
@@ -197,6 +234,12 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       kind: 'user',
       reverse: true,
     },
+    // Reopening for editing, in all three statuses that carry it (see
+    // BACK_TO_DRAFT). Not `reverse` in any of them: two of the three already
+    // spend that flag on an edge the header shouldn't urge, and a control that
+    // means "back to draft" in one status and something else one status over
+    // is worse than a plain labelled button in all three.
+    draft: BACK_TO_DRAFT,
   },
   failed: {
     ready_for_publish: {
@@ -205,6 +248,7 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       intent: 'primary',
       kind: 'user',
     },
+    draft: BACK_TO_DRAFT,
   },
   published: {},
   not_published: {
@@ -221,10 +265,14 @@ const ACTION_META: Record<PostStatus, Partial<Record<PostStatus, ActionMeta>>> =
       kind: 'user',
       reverse: true,
     },
+    draft: BACK_TO_DRAFT,
   },
 }
 
-export function getActionMeta(from: PostStatus, to: PostStatus): ActionMeta | null {
+export function getActionMeta(
+  from: PostStatus,
+  to: PostStatus,
+): ActionMeta | null {
   return ACTION_META[from]?.[to] ?? null
 }
 
@@ -269,10 +317,7 @@ export function isPublishMethodEdge(from: PostStatus, to: PostStatus): boolean {
 
 export type PostStatusBlocker = {
   field:
-    | 'platform_id'
-    | 'platform_post_type'
-    | 'scheduled_at'
-    | 'social_account_id'
+    'platform_id' | 'platform_post_type' | 'scheduled_at' | 'social_account_id'
   message: string
 }
 
@@ -287,6 +332,19 @@ export type TransitionContext = {
    * connected accounts (`usePublishingAccount`).
    */
   account: Pick<PublishingAccountResolution, 'ambiguous' | 'mismatched'>
+  /**
+   * The format the post will publish as, when that is not what the record says.
+   *
+   * An automatic post carries no slug and resolves one from its body and its
+   * files (`lib/postTypeAuto`); the record only gains it as the transition is
+   * made. Reading `platform_post_type` here would block every such post from
+   * the very move that writes the answer down — so the resolution is handed in,
+   * and an unresolvable post is blocked exactly as an unchosen one is.
+   *
+   * Defaults to the post's own type, which is what every caller but the editor
+   * means.
+   */
+  postType?: string
 }
 
 // Mirrors the server's pre-transition rules. Returns blockers the UI
@@ -318,13 +376,19 @@ export function getTransitionBlockers(
     if (!post.platform_id) {
       blockers.push({ field: 'platform_id', message: 'Pick a platform first' })
     }
-    if (!post.platform_post_type) {
-      blockers.push({ field: 'platform_post_type', message: 'Pick a post type first' })
+    if (!(context.postType ?? post.platform_post_type)) {
+      blockers.push({
+        field: 'platform_post_type',
+        message: 'Pick a post type first',
+      })
     }
   }
   if (next === 'scheduled' || next === 'scheduled_for_manual_publishing') {
     if (!post.scheduled_at) {
-      blockers.push({ field: 'scheduled_at', message: 'Set a publish date first' })
+      blockers.push({
+        field: 'scheduled_at',
+        message: 'Set a publish date first',
+      })
     } else if (new Date(post.scheduled_at).getTime() <= Date.now()) {
       blockers.push({
         field: 'scheduled_at',
@@ -348,14 +412,50 @@ export function getTransitionBlockers(
   return blockers
 }
 
+// Whether a copy of this post already exists outside Ogen (CON-251) — the one
+// question every read-only surface on the post screen asks.
+//
+// `scheduled` means Zernio holds the submission; `published` means the social
+// network holds the post. In both, an edit here changes what Ogen displays and
+// not what went out, so the document is locked and the record stands. The two
+// differ by reversibility rather than permission, which is the caller's
+// business: a scheduled post's lock can name its way out, a published one's
+// cannot.
+//
+// Deliberately NOT `isTerminalStatus`. That is true of `published` alone today,
+// so it would pass every test — and then silently lock the next status anyone
+// gives an empty edge list to.
+//
+// Just as deliberately false for `scheduled_for_manual_publishing`: nothing has
+// been submitted anywhere, and the date is a reminder to a human. `failed` and
+// `not_published` are the copy coming back, which is precisely when an edit is
+// the point.
+//
+// This is also the seam. The day a post is frozen for some other reason — an
+// approval, a channel freeze, a client sign-off — this predicate changes and no
+// call site does.
+//
+// A type predicate rather than a plain boolean so the caller that has to tell
+// the two apart — the notice explaining the lock, which needs a different
+// sentence for each — narrows instead of re-testing the status by hand.
+export type SubmittedStatus = Extract<PostStatus, 'scheduled' | 'published'>
+
+export function isSubmitted(status: PostStatus): status is SubmittedStatus {
+  return status === 'scheduled' || status === 'published'
+}
+
 // Whether scheduled_at may be edited in the current status (settings-form
 // date picker, calendar drag-and-drop). Locked while `scheduled`: the
 // Zernio submission already carries the publish time, so a PUT would only
 // change the displayed date — the post would still publish at the original
 // time. Unschedule first, then re-schedule. Locked once `published`: the
 // date is history.
+//
+// The same rule as the document's, for the same reason, so it is written as
+// the same predicate rather than a second copy of the status list — if the two
+// ever have to diverge, this is the one line that moves.
 export function canEditScheduledAt(status: PostStatus): boolean {
-  return status !== 'scheduled' && status !== 'published'
+  return !isSubmitted(status)
 }
 
 // Whether the publishing account may still be changed (CON-150). Locked for
@@ -365,4 +465,24 @@ export function canEditScheduledAt(status: PostStatus): boolean {
 // out as the original one. Unschedule first. Once `published` it is history.
 export function canEditPublishingAccount(status: PostStatus): boolean {
   return canEditScheduledAt(status)
+}
+
+// Whether this post can have numbers yet — the gate on asking
+// `GET /api/posts/:id/analytics` at all.
+//
+// Deliberately narrower than "submitted". A `scheduled` post has handed a
+// submission to Zernio and still gone out nowhere, so there is nothing to
+// measure and the request could only ever answer 409; the same goes for
+// `scheduled_for_manual_publishing`, where a human has not been yet. Only
+// `published` means a copy of this post exists on a network — whether the
+// publisher put it there or a person did and linked it back with
+// `verify-external`, which is the transition that produces the publisher id
+// the analytics sweep follows.
+//
+// So this is not `isTerminalStatus` and not `isSubmitted`. It agrees with
+// `isTerminalStatus` on every status in the app today, which is exactly why it
+// is written out: the day a second terminal status is added, that one would
+// start claiming numbers it has none of.
+export function canHaveAnalytics(status: PostStatus): boolean {
+  return status === 'published'
 }

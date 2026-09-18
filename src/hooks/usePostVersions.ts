@@ -61,7 +61,8 @@ export function usePostVersions(postId: string): UsePostVersionsResult {
       await flushPendingSave(postId)
       return createPostVersion(postId, note)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: postVersionsKey(postId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: postVersionsKey(postId) }),
   })
 
   const restoreMutation = useMutation({
@@ -70,7 +71,7 @@ export function usePostVersions(postId: string): UsePostVersionsResult {
       await flushPendingSave(postId)
       return restorePost(postId, versionNumber)
     },
-    onSuccess: (post) => {
+    onSuccess: async (post) => {
       // The response is the hydrated post, so the editor can take it directly
       // rather than refetching what we already hold.
       qc.setQueryData(postKey(postId), post)
@@ -80,14 +81,15 @@ export function usePostVersions(postId: string): UsePostVersionsResult {
       // We hold the restored row, so land it rather than invalidate — the
       // list shows the restored title immediately instead of flashing the
       // pre-restore one through a refetch (postCache's own rule).
-      landSavedPost(qc, post)
+      await landSavedPost(qc, post)
     },
   })
 
   const removeMutation = useMutation({
     meta: { errorTitle: 'Unable to delete the version' },
     mutationFn: (version: PostVersion) => deletePostVersion(postId, version.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: postVersionsKey(postId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: postVersionsKey(postId) }),
   })
 
   const { mutateAsync: saveVersion } = saveMutation
@@ -104,7 +106,8 @@ export function usePostVersions(postId: string): UsePostVersionsResult {
     async (versionNumber: number) => {
       await restoreVersion(versionNumber)
       toast.success(`Restored version ${versionNumber}`, {
-        description: 'Saved as a new version — the earlier ones are still here.',
+        description:
+          'Saved as a new version — the earlier ones are still here.',
       })
     },
     [restoreVersion],

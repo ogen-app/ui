@@ -31,7 +31,9 @@ export function PageGridEmptyState({
             <img src={image} alt={imageAlt} className="w-40 h-auto" />
           </div>
           <div className="text-tertiary-foreground text-center space-y-2">
-            <div className={'text-2xl/8 text-foreground font-display font-medium'}>
+            <div
+              className={'text-2xl/8 text-foreground font-display font-medium'}
+            >
               {title}
             </div>
             {subtitle && <div>{subtitle}</div>}

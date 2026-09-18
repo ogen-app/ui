@@ -3,10 +3,16 @@ import type {
   PlatformValidationError,
   PostAttachmentWithValidation,
 } from '@/types/attachments'
-import { getPlatformInfo, getPostTypeLabel } from '@/lib/platformDictionary'
-import { mediaNoun, strandedAttachments, type MediaPolicy } from '@/lib/postMedia'
+import { isFeatureEnabled } from '@/config/featureFlags'
+import { getPostTypeLabel, type PlatformInfo } from '@/lib/platformDictionary'
+import {
+  mediaNoun,
+  strandedAttachments,
+  type MediaPolicy,
+} from '@/lib/postMedia'
 import type { PublishingAccountResolution } from '@/lib/publishingAccount'
 import { charCount, markdownToSocialText } from '@/lib/socialText'
+import { formatNumber } from '@/lib/intl'
 
 /**
  * `fail` blocks publishing (the server would reject it), `warn` is
@@ -24,6 +30,14 @@ export type PostCheck = {
 
 export type EvaluateInput = {
   post: Post
+  /**
+   * The post's platform, already resolved from `post.platform_id` by the
+   * caller (`usePlatformCatalog().resolve`). Undefined means no platform is
+   * picked, this build does not support the one that is, or the platform list
+   * has not loaded — all three are "we cannot say what this publishes as", and
+   * the platform check fails on each.
+   */
+  platform: PlatformInfo | undefined
   policy: MediaPolicy
   attachments: PostAttachmentWithValidation[]
   /** False while the attachment list or the post-type rules are in flight. */
@@ -44,13 +58,28 @@ export type EvaluateInput = {
    * `undefined` while the platform row is in flight.
    */
   maxTitleChars: number | null | undefined
+  /**
+   * The post publishes as a chain rather than one post (CON-196). Every
+   * ceiling this file measures is per published post, and a chain has many —
+   * so the two checks that measure one (length, and the media cap) stand down
+   * here and are answered per post by `planThread`, in the row the route
+   * appends.
+   */
+  sequence: boolean
 }
 
 export function evaluatePost(input: EvaluateInput): PostCheck[] {
-  const { post, policy, requiresContent, maxContentChars, maxTitleChars } = input
+  const {
+    post,
+    platform,
+    policy,
+    requiresContent,
+    maxContentChars,
+    maxTitleChars,
+    sequence,
+  } = input
   const checks: PostCheck[] = []
 
-  const platform = getPlatformInfo(post.platform_id)
   checks.push({
     id: 'platform',
     label: 'Platform',
@@ -59,12 +88,16 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
   })
 
   const typeLabel = post.platform_post_type
-    ? getPostTypeLabel(post.platform_id, post.platform_post_type)
+    ? getPostTypeLabel(platform, post.platform_post_type)
     : ''
   checks.push({
     id: 'post-type',
     label: 'Post type',
-    status: !post.platform_post_type ? 'fail' : policy.videoUnsupported ? 'warn' : 'pass',
+    status: !post.platform_post_type
+      ? 'fail'
+      : policy.videoUnsupported
+        ? 'warn'
+        : 'pass',
     detail: !post.platform_post_type
       ? 'Pick a post type'
       : policy.videoUnsupported
@@ -89,7 +122,9 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
       id: 'video-title',
       label: 'Title',
       status: titled ? 'pass' : 'fail',
-      detail: titled ? undefined : `${platform?.name ?? 'This platform'} rejects a video with no title`,
+      detail: titled
+        ? undefined
+        : `${platform?.name ?? 'This platform'} rejects a video with no title`,
     })
   }
 
@@ -127,28 +162,40 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
         : 'No copy yet',
   })
 
-  const length = charCount(published)
-  if (maxContentChars === undefined) {
-    checks.push({ id: 'char-limit', label: 'Length', status: 'pending', detail: 'Checking…' })
-  } else if (maxContentChars === null) {
-    // No ceiling on this platform — still worth showing the count, since the
-    // check disappearing entirely reads as "not checked".
-    checks.push({
-      id: 'char-limit',
-      label: 'Length',
-      status: 'pass',
-      detail: `${length.toLocaleString()} characters — no limit on this platform`,
-    })
-  } else {
-    const over = length > maxContentChars
-    checks.push({
-      id: 'char-limit',
-      label: 'Length',
-      status: over ? 'fail' : 'pass',
-      detail: over
-        ? `${length.toLocaleString()} / ${maxContentChars.toLocaleString()} characters — ${(length - maxContentChars).toLocaleString()} over`
-        : `${length.toLocaleString()} / ${maxContentChars.toLocaleString()} characters`,
-    })
+  // A thread has no single length to check: the ceiling is per post of the
+  // chain, so measuring the whole body against it is wrong in both directions
+  // — it fails a thread that is fine and says nothing about the one post that
+  // isn't. It cannot fail at all, in fact: `planThread` cuts the body to the
+  // ceiling as it builds the chain (CON-196).
+  if (!sequence) {
+    const length = charCount(published)
+    if (maxContentChars === undefined) {
+      checks.push({
+        id: 'char-limit',
+        label: 'Length',
+        status: 'pending',
+        detail: 'Checking…',
+      })
+    } else if (maxContentChars === null) {
+      // No ceiling on this platform — still worth showing the count, since the
+      // check disappearing entirely reads as "not checked".
+      checks.push({
+        id: 'char-limit',
+        label: 'Length',
+        status: 'pass',
+        detail: `${formatNumber(length)} characters — no limit on this platform`,
+      })
+    } else {
+      const over = length > maxContentChars
+      checks.push({
+        id: 'char-limit',
+        label: 'Length',
+        status: over ? 'fail' : 'pass',
+        detail: over
+          ? `${formatNumber(length)} / ${formatNumber(maxContentChars)} characters — ${formatNumber(length - maxContentChars)} over`
+          : `${formatNumber(length)} / ${formatNumber(maxContentChars)} characters`,
+      })
+    }
   }
 
   checks.push(...mediaChecks(input))
@@ -161,17 +208,28 @@ function mediaChecks({
   attachments,
   ready,
   postValidation,
+  sequence,
 }: EvaluateInput): PostCheck[] {
   const checks: PostCheck[] = []
 
   if (!ready) {
-    return [{ id: 'media-count', label: 'Media', status: 'pending', detail: 'Checking…' }]
+    return [
+      {
+        id: 'media-count',
+        label: 'Media',
+        status: 'pending',
+        detail: 'Checking…',
+      },
+    ]
   }
 
   const count = attachments.length
   if (policy.accepts) {
     const belowMin = count < policy.min
-    const aboveMax = policy.max !== null && count > policy.max
+    // On a thread the cap is what *one post* takes, and the files are spread
+    // across the chain — six images over three posts is legal where six on one
+    // is not. The thread's own row measures them per post.
+    const aboveMax = !sequence && policy.max !== null && count > policy.max
     checks.push({
       id: 'media-count',
       label: 'Media',
@@ -210,7 +268,8 @@ function mediaChecks({
   const fileIssues = new Set<string>()
   for (const e of postValidation) if (e.message) fileIssues.add(e.message)
   for (const a of attachments) {
-    for (const e of a.platform_validation ?? []) if (e.message) fileIssues.add(e.message)
+    for (const e of a.platform_validation ?? [])
+      if (e.message) fileIssues.add(e.message)
   }
   for (const [i, message] of [...fileIssues].entries()) {
     checks.push({
@@ -246,13 +305,33 @@ export function hasVisibleProblem(
    * platform auto-resolves and publishes fine, so it is not a problem to flag.
    */
   account: Pick<PublishingAccountResolution, 'ambiguous' | 'mismatched'>,
+  /**
+   * The post's resolved platform — the same `usePlatformCatalog().resolve` the
+   * editor uses. A card cannot look this up itself since CON-292: the sqid on
+   * the post only addresses a row, and translating one needs the platform list.
+   *
+   * A caller that has not loaded that list yet passes `undefined` and gets a
+   * mark. That is the right way round for this function — it understates by
+   * design, but "no channel" is the one gap it has always been willing to flag,
+   * and a card that settles a beat later is better than one that stays silent
+   * about a post that cannot publish.
+   */
+  platform: PlatformInfo | undefined,
 ): boolean {
   // The publish already went wrong, or the window passed without it going out.
   if (post.status === 'failed' || post.status === 'not_published') return true
   // Nothing can publish without a channel, a shape to publish in, and an
   // account resolution the server would accept.
-  if (!getPlatformInfo(post.platform_id)) return true
-  if (!post.platform_post_type) return true
+  if (!platform) return true
+  // An empty post type is a gap only while nothing is deciding it. With Auto
+  // released it is the *default* state of a draft, and the card has no way to
+  // resolve it — the answer needs the attachments, which the list payload does
+  // not carry. So the mark stands down rather than flagging every new post:
+  // the card understates by design (see the doc comment), and the editor's
+  // checks bar is where an unresolvable one is reported.
+  if (!post.platform_post_type && !isFeatureEnabled('post-type-auto')) {
+    return true
+  }
   if (account.ambiguous || account.mismatched) return true
   return false
 }

@@ -51,7 +51,10 @@ function post(id: string, status: PostStatus = 'published'): Post {
 describe('campaignAnalytics', () => {
   it('ignores measured posts that belong to another campaign', () => {
     const result = campaignAnalytics(
-      [item('a', { impressions: 100 }), item('elsewhere', { impressions: 900 })],
+      [
+        item('a', { impressions: 100 }),
+        item('elsewhere', { impressions: 900 }),
+      ],
       [post('a')],
     )
     expect(result.measured).toBe(1)
@@ -114,7 +117,10 @@ describe('campaignAnalytics', () => {
   })
 
   it('is complete when every published post has numbers', () => {
-    const result = campaignAnalytics([item('a'), item('b')], [post('a'), post('b')])
+    const result = campaignAnalytics(
+      [item('a'), item('b')],
+      [post('a'), post('b')],
+    )
     expect(result.coverage.complete).toBe(true)
   })
 

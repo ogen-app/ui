@@ -1,8 +1,10 @@
 import { memo, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import { CircleDashedIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
-import { getPlatformInfo } from '@/lib/platformDictionary'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
+import { formatDate } from '@/lib/intl'
 import { formatAnchor } from './date'
 import { cn } from '@/lib'
 
@@ -24,6 +26,8 @@ type Props = {
  * contains this day, where the full cards live and drag works as it does now.
  */
 function MonthDensityComponent({ campaignId, day, posts }: Props) {
+  const { t, i18n } = useTranslation()
+  const { resolve } = usePlatformCatalog()
   const groups = useMemo(() => {
     const counts = new Map<string, number>()
     for (const post of posts) {
@@ -36,20 +40,23 @@ function MonthDensityComponent({ campaignId, day, posts }: Props) {
     // at the front. Ids break what's left, so equal counts don't reshuffle
     // between renders.
     return [...counts.entries()]
-      .map(([id, count]) => ({ id, count, info: getPlatformInfo(id) }))
+      .map(([id, count]) => ({ id, count, info: resolve(id) }))
       .sort(
         (a, b) =>
           b.count - a.count ||
           Number(!a.id) - Number(!b.id) ||
           a.id.localeCompare(b.id),
       )
-  }, [posts])
+  }, [posts, resolve])
 
   return (
     <Link
       to="/campaigns/$campaignId/calendar/$anchor/$view"
       params={{ campaignId, anchor: formatAnchor(day), view: 'week' }}
-      title={`${posts.length} posts on ${day.toLocaleDateString()} — open this week`}
+      title={t('calendar.density', {
+        count: posts.length,
+        date: formatDate(day, { dateStyle: 'long' }, i18n.language),
+      })}
       className={cn(
         'flex flex-wrap content-start items-center gap-x-2 gap-y-1 p-1',
         'cursor-pointer transition-colors hover:bg-quaternary',

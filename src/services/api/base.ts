@@ -9,9 +9,9 @@
  * the API must then allow that origin via CORS with credentials
  * (`CORS_ALLOWED_ORIGINS`).
  */
-import { getActiveWorkspaceId } from "@/lib/activeWorkspace";
+import { getActiveWorkspaceId } from '@/lib/activeWorkspace'
 
-const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
+const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
 
 /**
  * Prefixes an app-relative API path (e.g. `/api/posts`) with the configured
@@ -19,7 +19,7 @@ const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
  * working behind the dev/Caddy proxy.
  */
 export function apiUrl(path: string): string {
-  return API_BASE + path;
+  return API_BASE + path
 }
 
 /**
@@ -38,15 +38,15 @@ export function apiUrl(path: string): string {
 function isAccountScoped(path: string): boolean {
   // Compare against the path only — a query string never changes which
   // resource is being addressed.
-  const p = path.split("?")[0];
+  const p = path.split('?')[0]
   return (
-    p === "/api/workspaces" ||
-    p.startsWith("/api/workspaces/") ||
-    p === "/api/current_user" ||
-    p === "/api/sessions" ||
-    p.startsWith("/api/sessions/") ||
-    p.startsWith("/api/invitations/accept/")
-  );
+    p === '/api/workspaces' ||
+    p.startsWith('/api/workspaces/') ||
+    p === '/api/current_user' ||
+    p === '/api/sessions' ||
+    p.startsWith('/api/sessions/') ||
+    p.startsWith('/api/invitations/accept/')
+  )
 }
 
 /**
@@ -57,14 +57,14 @@ function isAccountScoped(path: string): boolean {
  * then falls back to the account's default).
  */
 export function workspaceHeader(path: string): Record<string, string> {
-  if (isAccountScoped(path)) return {};
-  const id = getActiveWorkspaceId();
-  return id ? { "X-Workspace-Id": id } : {};
+  if (isAccountScoped(path)) return {}
+  const id = getActiveWorkspaceId()
+  return id ? { 'X-Workspace-Id': id } : {}
 }
 
-type ScopedInit = Omit<RequestInit, "headers"> & {
-  headers?: Record<string, string>;
-};
+type ScopedInit = Omit<RequestInit, 'headers'> & {
+  headers?: Record<string, string>
+}
 
 /**
  * `fetch` for an app-relative API path: resolves the origin, sends the session
@@ -77,10 +77,13 @@ type ScopedInit = Omit<RequestInit, "headers"> & {
  * cannot quietly go out unscoped, which under CON-147 would land it in
  * whichever workspace the account happens to default to.
  */
-export function scopedFetch(path: string, init: ScopedInit = {}): Promise<Response> {
+export function scopedFetch(
+  path: string,
+  init: ScopedInit = {},
+): Promise<Response> {
   return fetch(apiUrl(path), {
-    credentials: "include",
+    credentials: 'include',
     ...init,
     headers: { ...workspaceHeader(path), ...init.headers },
-  });
+  })
 }

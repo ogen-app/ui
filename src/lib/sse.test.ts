@@ -35,15 +35,18 @@ describe('createSSEParser', () => {
   })
 
   it('accepts a field with no space after the colon', () => {
-    expect(parse('event:step\ndata:{}\n\n')[0]).toMatchObject({ event: 'step', data: '{}' })
+    expect(parse('event:step\ndata:{}\n\n')[0]).toMatchObject({
+      event: 'step',
+      data: '{}',
+    })
   })
 
   it('strips exactly one leading space, so content whitespace survives', () => {
     // A text delta's own indentation is content. The old contentPlan parser
     // trimmed it away.
-    expect(parse('event: content_delta\ndata:   two spaces kept\n\n')[0].data).toBe(
-      '  two spaces kept',
-    )
+    expect(
+      parse('event: content_delta\ndata:   two spaces kept\n\n')[0].data,
+    ).toBe('  two spaces kept')
   })
 
   it('preserves a trailing space in a delta', () => {
@@ -59,9 +62,9 @@ describe('createSSEParser', () => {
   })
 
   it('reassembles a frame split across chunk boundaries', () => {
-    expect(parse('event: comp', 'lete\ndata: {"ok":', 'true}\n', '\n')).toEqual([
-      { event: 'complete', data: '{"ok":true}', id: null, retry: null },
-    ])
+    expect(parse('event: comp', 'lete\ndata: {"ok":', 'true}\n', '\n')).toEqual(
+      [{ event: 'complete', data: '{"ok":true}', id: null, retry: null }],
+    )
   })
 
   it('dispatches every frame in a chunk carrying several', () => {

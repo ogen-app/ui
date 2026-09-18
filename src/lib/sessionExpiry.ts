@@ -29,13 +29,13 @@
  *   store state has no future to protect — and it keeps this module a leaf.
  */
 
-import { AUTH_STORE_PERSIST_KEY } from "@/stores/constants";
+import { AUTH_STORE_PERSIST_KEY } from '@/stores/constants'
 
-let handled = false;
+let handled = false
 
 /** True on the login/register/reset screens, where a 401 is just the answer. */
 function onAuthRoute(): boolean {
-  return window.location.pathname.startsWith("/auth");
+  return window.location.pathname.startsWith('/auth')
 }
 
 /**
@@ -45,21 +45,23 @@ function onAuthRoute(): boolean {
  * is really this one, in its own words, over the top of the explanation.
  */
 export function isSessionExpiring(): boolean {
-  return handled;
+  return handled
 }
 
 export function handleUnauthorized(): void {
-  if (handled || onAuthRoute()) return;
-  handled = true;
+  if (handled || onAuthRoute()) return
+  handled = true
 
   // Drop the persisted user so the reloaded app doesn't paint a signed-in
   // sidebar for the instant before the root guard resolves.
   try {
-    localStorage.removeItem(AUTH_STORE_PERSIST_KEY);
+    localStorage.removeItem(AUTH_STORE_PERSIST_KEY)
   } catch {
     // Private-mode / quota failures must not stop the redirect below.
   }
 
-  const back = window.location.pathname + window.location.search;
-  window.location.assign(`/auth/login?redirect=${encodeURIComponent(back)}&expired=1`);
+  const back = window.location.pathname + window.location.search
+  window.location.assign(
+    `/auth/login?redirect=${encodeURIComponent(back)}&expired=1`,
+  )
 }

@@ -24,7 +24,7 @@ type FormFieldContextValue<
 }
 
 const FormFieldContext = React.createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue
+  {} as FormFieldContextValue,
 )
 
 function FormField<
@@ -43,7 +43,7 @@ type FormItemContextValue = {
 }
 
 const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue
+  {} as FormItemContextValue,
 )
 
 function useFormField() {
@@ -74,7 +74,11 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div data-slot="form-item" className={cn('flex flex-col gap-2', className)} {...props} />
+      <div
+        data-slot="form-item"
+        className={cn('flex flex-col gap-2', className)}
+        {...props}
+      />
     </FormItemContext.Provider>
   )
 }
@@ -143,7 +147,6 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   )
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export {
   useFormField,
   Form,

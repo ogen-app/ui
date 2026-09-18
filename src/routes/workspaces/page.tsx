@@ -78,7 +78,7 @@ export default function WorkspacesPage() {
               {t('workspaces.loadFailed')}
             </Card>
           ) : (
-            <ul className="mt-8 flex flex-col gap-2">
+            <ul className="page-content-motion mt-8 flex flex-col gap-2">
               {workspaces.map((w) => (
                 <li key={w.id}>
                   <WorkspaceCard
@@ -128,13 +128,26 @@ export default function WorkspacesPage() {
         </p>
       </div>
 
-      <CreateWorkspaceDialog isOpen={createOpen} onClose={() => setCreateOpen(false)} />
+      <CreateWorkspaceDialog
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
     </PageContainer>
   )
 }
 
-function Card({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <section className={cn('w-full bg-primary px-10 py-6', className)}>{children}</section>
+function Card({
+  className,
+  children,
+}: {
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className={cn('w-full bg-primary px-10 py-6', className)}>
+      {children}
+    </section>
+  )
 }
 
 function WorkspaceCard({

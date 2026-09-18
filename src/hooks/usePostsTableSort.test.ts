@@ -22,18 +22,24 @@ describe('parsePostsSort', () => {
   it('falls back rather than sorting by a column this build does not have', () => {
     // A renamed or dropped column must not leave the table ordered by nothing
     // while its header shows no sort indicator.
-    expect(parsePostsSort('[{"id":"author","desc":false}]')).toEqual(DEFAULT_POSTS_SORT)
+    expect(parsePostsSort('[{"id":"author","desc":false}]')).toEqual(
+      DEFAULT_POSTS_SORT,
+    )
   })
 
   it('drops only the unrecognised entries from a mixed order', () => {
     expect(
-      parsePostsSort('[{"id":"status","desc":false},{"id":"author","desc":true}]'),
+      parsePostsSort(
+        '[{"id":"status","desc":false},{"id":"author","desc":true}]',
+      ),
     ).toEqual([{ id: 'status', desc: false }])
   })
 
   it('refuses entries of the wrong shape', () => {
     expect(parsePostsSort('[{"id":"title"}]')).toEqual(DEFAULT_POSTS_SORT)
-    expect(parsePostsSort('[{"id":"title","desc":"yes"}]')).toEqual(DEFAULT_POSTS_SORT)
+    expect(parsePostsSort('[{"id":"title","desc":"yes"}]')).toEqual(
+      DEFAULT_POSTS_SORT,
+    )
     expect(parsePostsSort('[null]')).toEqual(DEFAULT_POSTS_SORT)
   })
 
@@ -41,7 +47,9 @@ describe('parsePostsSort', () => {
     // Hand-edited, half-written, or left over from an older shape. None of it
     // may take the campaign's post list down.
     expect(parsePostsSort('not json')).toEqual(DEFAULT_POSTS_SORT)
-    expect(parsePostsSort('{"id":"title","desc":false}')).toEqual(DEFAULT_POSTS_SORT)
+    expect(parsePostsSort('{"id":"title","desc":false}')).toEqual(
+      DEFAULT_POSTS_SORT,
+    )
     expect(parsePostsSort('[]')).toEqual(DEFAULT_POSTS_SORT)
     expect(parsePostsSort('""')).toEqual(DEFAULT_POSTS_SORT)
   })

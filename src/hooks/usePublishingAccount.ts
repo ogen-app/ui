@@ -46,7 +46,12 @@ export function usePublishingAccount(
     // (`deleted_at IS NULL`), the same set the server counts when it decides
     // whether a choice is required; narrowing by `is_active` here would let
     // the UI see one account where the schedule endpoint sees two.
-    const resolved = resolveForPlatform(views, platformId, selectedAccountId, hydrated)
+    const resolved = resolveForPlatform(
+      views,
+      platformId,
+      selectedAccountId,
+      hydrated,
+    )
 
     return {
       ...resolved,

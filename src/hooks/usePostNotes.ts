@@ -9,7 +9,6 @@ import {
   type PostNoteType,
 } from '@/services/api/postNotes'
 import { postNotesKey } from '@/lib/queryKeys'
-import { useSettingsStore } from '@/stores/settingsStore'
 import { toast } from '@/stores/toastStore'
 
 export { postNotesKey }
@@ -97,9 +96,6 @@ export function usePostNotes(postId: string): UsePostNotesResult {
   const remove = useCallback(
     async (note: PostNote) => {
       await removeNote(note)
-      // The pin map is persisted and nothing else ever removes an entry — a
-      // deleted note's pin would sit in localStorage forever.
-      useSettingsStore.getState().clearNotePin(note.id)
       toast.success('Note deleted')
     },
     [removeNote],

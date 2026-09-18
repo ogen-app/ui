@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   cancelPost,
@@ -10,7 +10,11 @@ import {
   type CancelTarget,
 } from '@/services/api/posts'
 import { registerPendingSave } from '@/lib/pendingSaves'
-import { landSavedPost } from '@/lib/postCache'
+import {
+  cachedPostFromList,
+  landSavedPost,
+  withHeldSources,
+} from '@/lib/postCache'
 import type { Post, PostStatus } from '@/types/posts'
 
 const SAVE_DEBOUNCE_MS = 600
@@ -32,12 +36,27 @@ const SCHEDULED_POLL_MS = 5_000
  */
 export const postKey = (id: string) => ['post', id] as const
 
+/**
+ * Fields a status move may carry alongside the status itself.
+ *
+ * One field, and deliberately not `Partial<Post>`: this is the seam for values
+ * that are *part of the move* rather than part of the document, and widening it
+ * would make it a second way to edit a post that skips the debounce, the
+ * generation guard and the editor entirely.
+ *
+ * `published_url` qualifies because a manual publish Zernio cannot verify is
+ * the only chance we get at the permalink (CON-165) — the user has it in their
+ * hand, and the alternative is publishing unlinked, which is invisible to
+ * analytics forever. Recording it in the same PUT that publishes is what keeps
+ * the two from being separately losable.
+ */
+export type TransitionExtras = { published_url?: string }
+
 export type TransitionStatusResult =
   // `notice` is informational feedback about a successful action the user
   // should still be told about — e.g. the server routed a schedule request
   // somewhere other than where the button implied.
-  | { ok: true; post: Post; notice?: string }
-  | { ok: false; error: string }
+  { ok: true; post: Post; notice?: string } | { ok: false; error: string }
 
 /**
  * Outcome of handing the server a manually-published post's URL. `not_found`
@@ -53,7 +72,10 @@ export type VerifyExternalResult =
 type UsePostResult = {
   doc: Post | undefined
   changeDoc: (fn: (p: Post) => void) => void
-  transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
+  transitionStatus: (
+    next: PostStatus,
+    extra?: TransitionExtras,
+  ) => Promise<TransitionStatusResult>
   // Completes a manual publish by verifying the URL the user published at
   // (POST /api/posts/:id/verify-external). The server owns the transition
   // here — it marks the post published only if the URL really resolves to
@@ -84,10 +106,21 @@ type UsePostResult = {
 
 export function usePost(postId: string): UsePostResult {
   const qc = useQueryClient()
+  // Opening a post the campaign list already holds costs no round trip and,
+  // more visibly, no loading state: the route unmounts the whole editor while
+  // `isLoading` is true, which takes the right sidebar's panel scope with it —
+  // so an uncached post used to slide the rail shut and open again on arrival,
+  // while a cached one didn't. Only consulted when `['post', id]` is empty;
+  // Query ignores `initialData` for a key it already has.
+  const seed = useMemo(() => cachedPostFromList(qc, postId), [qc, postId])
   const query = useQuery({
     queryKey: postKey(postId),
     queryFn: () => getPost(postId),
     enabled: !!postId,
+    initialData: seed?.post,
+    // The list's age, not this moment's — a seed older than the 30s staleTime
+    // refetches straight away instead of passing for fresh.
+    initialDataUpdatedAt: seed?.updatedAt,
     refetchInterval: (q) =>
       q.state.data?.status === 'scheduled' ? SCHEDULED_POLL_MS : false,
   })
@@ -147,20 +180,26 @@ export function usePost(postId: string): UsePostResult {
     const genAtFlush = genRef.current
     try {
       // `postId` here is the closure's — the post this flush was armed for.
-      const saved = await saveDoc({ id: postId, next })
+      // The sources come off the cache rather than the response: this PUT no
+      // longer sends `used_asset_ids` (CON-233), so its answer carries the set
+      // as the server read it *before* an attach that may have landed since.
+      const saved = withHeldSources(
+        await saveDoc({ id: postId, next }),
+        qc.getQueryData<Post>(postKey(postId)),
+      )
       if (genRef.current === genAtFlush) {
         qc.setQueryData(postKey(postId), saved)
         // The same row, in the list the calendar reads. Gen-guarded with the
         // write above so two overlapping flushes can't land out of order —
         // the newer one follows within a debounce either way.
-        landSavedPost(qc, saved)
+        await landSavedPost(qc, saved)
       } else if (postId !== postIdRef.current) {
         // The gen counter moved because the editor switched posts and typing
         // resumed — a *different* post's words, so the ordering concern above
         // doesn't apply, and no later flush for this post is coming. The row
         // is keyed by its own id, so land it; only the editor-key write is
         // skipped (that cache already holds this optimistic copy).
-        landSavedPost(qc, saved)
+        await landSavedPost(qc, saved)
       }
     } catch {
       // Toasted by the mutation-cache default under the `errorTitle` above.
@@ -224,7 +263,10 @@ export function usePost(postId: string): UsePostResult {
   // answer; this one no longer pretends. The caller's `pending` flag is what
   // covers the wait, not a badge that might have to be taken back.
   const transitionStatus = useCallback(
-    async (next: PostStatus): Promise<TransitionStatusResult> => {
+    async (
+      next: PostStatus,
+      extra?: TransitionExtras,
+    ): Promise<TransitionStatusResult> => {
       if (timerRef.current) {
         clearTimeout(timerRef.current)
         timerRef.current = null
@@ -238,11 +280,17 @@ export function usePost(postId: string): UsePostResult {
       // showing their words while only the status waits.
       const requested = structuredClone(base)
       requested.status = next
+      if (extra?.published_url !== undefined) {
+        requested.published_url = extra.published_url
+      }
       genRef.current += 1
       const genAtStart = genRef.current
       transitionRef.current = next
       try {
-        const saved = await updatePost(postId, postToPayload(requested))
+        const saved = withHeldSources(
+          await updatePost(postId, postToPayload(requested)),
+          qc.getQueryData<Post>(postKey(postId)),
+        )
         // Gen-guarded like `flush`: an edit made during the round-trip has
         // already written its clone (carrying the requested status, via
         // `transitionRef`) into the cache, and the server's copy must not
@@ -253,7 +301,7 @@ export function usePost(postId: string): UsePostResult {
         // Unguarded, unlike the cache write: the gen counter is about whose
         // *words* are newer, and a status is not something the user can have
         // typed past. The list must show the status the server just confirmed.
-        landSavedPost(qc, saved)
+        await landSavedPost(qc, saved)
         return { ok: true, post: saved }
       } catch (err) {
         // The server refused the move, so any edit stamped with the requested
@@ -269,7 +317,8 @@ export function usePost(postId: string): UsePostResult {
           pendingEdit.status = base.status
         }
         qc.invalidateQueries({ queryKey: postKey(postId) })
-        const message = err instanceof Error ? err.message : 'Unable to update post'
+        const message =
+          err instanceof Error ? err.message : 'Unable to update post'
         return { ok: false, error: message }
       } finally {
         transitionRef.current = null
@@ -294,31 +343,39 @@ export function usePost(postId: string): UsePostResult {
     setSaving(false)
     const base = pending ?? qc.getQueryData<Post>(postKey(postId))
     if (!base) return { ok: false, error: 'Post not loaded' }
-    if (!base.scheduled_at) return { ok: false, error: 'Set a publish date first' }
+    if (!base.scheduled_at)
+      return { ok: false, error: 'Set a publish date first' }
     genRef.current += 1
     try {
       if (pending) {
         await updatePost(postId, postToPayload(pending))
       }
       const result = await schedulePost(postId, base.scheduled_at)
-      qc.setQueryData(postKey(postId), result.post)
-      landSavedPost(qc, result.post)
+      // Same as `flush`: the schedule endpoint reads the post to validate it,
+      // so its copy of the sources is as old as that read.
+      const scheduled = withHeldSources(
+        result.post,
+        qc.getQueryData<Post>(postKey(postId)),
+      )
+      qc.setQueryData(postKey(postId), scheduled)
+      await landSavedPost(qc, scheduled)
       // The user clicked "Schedule" expecting auto-publish, but the
       // allowlist routed the post to manual publishing. The badge flips
       // silently, so attach a notice explaining what happened.
-      if (result.post.status === 'scheduled_for_manual_publishing') {
+      if (scheduled.status === 'scheduled_for_manual_publishing') {
         return {
           ok: true,
-          post: result.post,
+          post: scheduled,
           notice:
             "This platform isn't set up for auto-publishing, so you'll need " +
             'to publish it yourself when the reminder comes up.',
         }
       }
-      return { ok: true, post: result.post }
+      return { ok: true, post: scheduled }
     } catch (err) {
       qc.invalidateQueries({ queryKey: postKey(postId) })
-      const message = err instanceof Error ? err.message : 'Unable to schedule post'
+      const message =
+        err instanceof Error ? err.message : 'Unable to schedule post'
       return { ok: false, error: message }
     }
   }, [postId, qc])
@@ -342,14 +399,15 @@ export function usePost(postId: string): UsePostResult {
         await cancelPost(postId, target)
         const fresh = await getPost(postId)
         qc.setQueryData(postKey(postId), fresh)
-        landSavedPost(qc, fresh)
+        await landSavedPost(qc, fresh)
         // Stay `cancelling`: fresh is still `scheduled` and the worker
         // hasn't landed the transition yet. The effect below clears it
         // once the status actually changes.
         return { ok: true, post: fresh }
       } catch (err) {
         setCancelling(false)
-        const message = err instanceof Error ? err.message : 'Unable to unschedule post'
+        const message =
+          err instanceof Error ? err.message : 'Unable to unschedule post'
         return { ok: false, error: message }
       }
     },
@@ -385,12 +443,14 @@ export function usePost(postId: string): UsePostResult {
         // refetch rather than being reconstructed here.
         const fresh = await getPost(postId)
         qc.setQueryData(postKey(postId), fresh)
-        landSavedPost(qc, fresh)
+        await landSavedPost(qc, fresh)
         return { ok: true, post: fresh }
       } catch (err) {
         qc.invalidateQueries({ queryKey: postKey(postId) })
         const message =
-          err instanceof Error ? err.message : 'Unable to verify the published post'
+          err instanceof Error
+            ? err.message
+            : 'Unable to verify the published post'
         return { ok: false, reason: 'error', error: message }
       }
     },
@@ -428,7 +488,7 @@ export function usePost(postId: string): UsePostResult {
   const polled = query.data
   const scheduledAt = polled?.scheduled_at
   useEffect(() => {
-    if (polled) landSavedPost(qc, polled)
+    if (polled) void landSavedPost(qc, polled)
   }, [qc, status, scheduledAt]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

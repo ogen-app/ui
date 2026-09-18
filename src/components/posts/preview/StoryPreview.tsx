@@ -37,7 +37,12 @@ export function StoryPreview({
   return (
     <PreviewSurface
       className="mx-auto"
-      style={{ borderRadius: 12, background: '#000000', maxWidth: 260, width: '100%' }}
+      style={{
+        borderRadius: 12,
+        background: '#000000',
+        maxWidth: 260,
+        width: '100%',
+      }}
     >
       <div className="relative" style={{ aspectRatio: 9 / 16 }}>
         {url && !failed ? (
@@ -54,7 +59,12 @@ export function StoryPreview({
         ) : (
           <div
             className="flex h-full w-full items-center justify-center px-6 text-center"
-            style={{ background: '#1c1c1e', color: '#a8a8a8', fontSize: 13, lineHeight: 1.4 }}
+            style={{
+              background: '#1c1c1e',
+              color: '#a8a8a8',
+              fontSize: 13,
+              lineHeight: 1.4,
+            }}
           >
             {url
               ? isVideo
@@ -68,18 +78,30 @@ export function StoryPreview({
             unreadable without them, and the networks do the same. */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0"
-          style={{ height: 96, background: 'linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0))' }}
+          style={{
+            height: 96,
+            background: 'linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0))',
+          }}
         />
         <div
           className="pointer-events-none absolute inset-x-0 bottom-0"
-          style={{ height: 96, background: 'linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.45))' }}
+          style={{
+            height: 96,
+            background: 'linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.45))',
+          }}
         />
 
         {/* After the scrims so the bottom gradient does not wash the badge out,
             and lifted clear of the reply bar so the running time never lands on
             "Send message". A story's length is worth seeing: the networks cap a
             single segment, and a file past that gets cut in two. */}
-        {isVideo && <VideoChrome durationMs={item.durationMs} size={44} badgeBottom={48} />}
+        {isVideo && (
+          <VideoChrome
+            durationMs={item.durationMs}
+            size={44}
+            badgeBottom={48}
+          />
+        )}
 
         {/* One segment: the server takes exactly one attachment for a story
             (`platforms.postTypeRules`), so there is never a second bar. */}
@@ -121,7 +143,10 @@ export function StoryPreview({
             {network === 'instagram' ? 'Send message' : 'Reply to story'}
           </div>
           <HeartIcon className="size-5 shrink-0 text-white" aria-hidden />
-          <PaperPlaneTiltIcon className="size-5 shrink-0 text-white" aria-hidden />
+          <PaperPlaneTiltIcon
+            className="size-5 shrink-0 text-white"
+            aria-hidden
+          />
         </div>
       </div>
     </PreviewSurface>

@@ -5,3 +5,5 @@
 # (which is what broke the Docker build).
 allowBuilds:
   esbuild: true
+minimumReleaseAgeExclude:
+  - knip@6.33.0

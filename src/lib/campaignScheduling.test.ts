@@ -13,7 +13,9 @@ describe('publishingDayNumbers', () => {
   it('maps the server tokens onto getDay() numbers', () => {
     // The tokens are Monday-first; getDay() is Sunday-first. Reading one as the
     // other would silently shift the whole week.
-    expect(publishingDayNumbers(['mon', 'wed', 'fri']).sort()).toEqual([1, 3, 5])
+    expect(publishingDayNumbers(['mon', 'wed', 'fri']).sort()).toEqual([
+      1, 3, 5,
+    ])
     expect(publishingDayNumbers(['sun']).sort()).toEqual([0])
     expect(publishingDayNumbers(['sat']).sort()).toEqual([6])
   })
@@ -27,7 +29,9 @@ describe('publishingDayNumbers', () => {
     // nowhere" here would contradict a scheduler that publishes daily.
     expect(publishingDayNumbers([]).sort()).toEqual([0, 1, 2, 3, 4, 5, 6])
     expect(publishingDayNumbers(null).sort()).toEqual([0, 1, 2, 3, 4, 5, 6])
-    expect(publishingDayNumbers(['monday', 'nope']).sort()).toEqual([0, 1, 2, 3, 4, 5, 6])
+    expect(publishingDayNumbers(['monday', 'nope']).sort()).toEqual([
+      0, 1, 2, 3, 4, 5, 6,
+    ])
   })
 })
 

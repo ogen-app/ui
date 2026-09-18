@@ -1,1 +1,1 @@
-export { AuthAcceptInviteForm } from "./AuthAcceptInviteForm";
+export { AuthAcceptInviteForm } from './AuthAcceptInviteForm'

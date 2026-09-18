@@ -80,7 +80,10 @@ export function useCampaignAccounts(
   })
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pending = useRef<{ key: string; value: CampaignAccountTarget[] } | null>(null)
+  const pending = useRef<{
+    key: string
+    value: CampaignAccountTarget[]
+  } | null>(null)
 
   // Held in a ref so `flush` can stay identity-stable: it is the unmount
   // cleanup below, and a callback that changes with the campaign would flush

@@ -95,7 +95,12 @@ export function LeaveWorkspaceDialog({ user, isOpen, onClose }: Props) {
         {error && <p className="text-sm text-destructive">{error.message}</p>}
 
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={isPending}
+          >
             {t('profile.leave.keep')}
           </Button>
           <Button

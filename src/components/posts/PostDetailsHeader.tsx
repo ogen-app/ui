@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import {
   CaretLeftIcon,
   ClockCounterClockwiseIcon,
@@ -17,10 +18,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { formatAnchor } from '@/components/campaigns/calendar/date'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { SaveStatus } from '@/components/page-primitives/SaveStatus'
+import { usePostsPlace } from '@/hooks/usePostsPlace'
 import { cn } from '@/lib'
 
 type Props = {
@@ -41,7 +46,42 @@ type Props = {
 }
 
 /**
- * Post details top bar: back to the campaign calendar on the left, the save
+ * The back arrow, pointed at wherever the user was last reading this campaign's
+ * posts — the week or month they had navigated to, or the table.
+ *
+ * Its own component because that is two different routes, and a `<Link>` gets
+ * its param types from a literal `to`: a union built up and spread in would
+ * type as neither. Two branches is the cost of keeping a real anchor, which is
+ * what makes the arrow middle-clickable and right-clickable like any other
+ * link — the alternative, a button calling `history.back()`, is not a
+ * navigation the browser can offer anything for, and has nowhere to go at all
+ * when the post was opened from a pasted URL.
+ */
+function BackToPosts({ campaignId }: { campaignId: string }) {
+  const { t } = useTranslation()
+  const place = usePostsPlace(campaignId)
+  const label = t('posts.backToPosts')
+
+  return (
+    <Button variant="headerIcon" size="excluded" asChild aria-label={label}>
+      {place.view === 'list' ? (
+        <Link to="/campaigns/$campaignId/list" params={{ campaignId }}>
+          <CaretLeftIcon className="size-5" />
+        </Link>
+      ) : (
+        <Link
+          to="/campaigns/$campaignId/calendar/$anchor/$view"
+          params={{ campaignId, anchor: place.anchor, view: place.view }}
+        >
+          <CaretLeftIcon className="size-5" />
+        </Link>
+      )}
+    </Button>
+  )
+}
+
+/**
+ * Post details top bar: back to the campaign's posts on the left, the save
  * state in the centre, and the view toggles (preview, quality, versions,
  * settings, overflow) on the right. The post title intentionally lives only in
  * the editor below. Composes PageHeader, so the sticky fade-out chrome matches
@@ -67,21 +107,7 @@ export function PostDetailsHeader({
 }: Props) {
   return (
     <PageHeader
-      back={
-        <Button
-          variant="headerIcon"
-          size="excluded"
-          asChild
-          aria-label="Back to campaign calendar"
-        >
-          <Link
-            to="/campaigns/$campaignId/calendar/$anchor/$view"
-            params={{ campaignId, anchor: formatAnchor(new Date()), view: 'week' }}
-          >
-            <CaretLeftIcon className="size-5" />
-          </Link>
-        </Button>
-      }
+      back={<BackToPosts campaignId={campaignId} />}
       center={<SaveStatus saving={saving} />}
       actions={
         <>
@@ -99,7 +125,10 @@ export function PostDetailsHeader({
                     a bold IconContext, which made this read heavier than the
                     cloud/gear/dots beside it. Fills when open, matching the
                     gear next to it. */}
-                <DevicesIcon weight={previewOpen ? 'fill' : 'regular'} className="size-5" />
+                <DevicesIcon
+                  weight={previewOpen ? 'fill' : 'regular'}
+                  className="size-5"
+                />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Preview</TooltipContent>
@@ -114,7 +143,10 @@ export function PostDetailsHeader({
                 aria-label="Quality"
                 aria-expanded={qualityOpen}
               >
-                <GaugeIcon weight={qualityOpen ? 'fill' : 'regular'} className="size-5" />
+                <GaugeIcon
+                  weight={qualityOpen ? 'fill' : 'regular'}
+                  className="size-5"
+                />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Quality</TooltipContent>
@@ -145,7 +177,10 @@ export function PostDetailsHeader({
             aria-label="Post settings"
             aria-expanded={settingsOpen}
           >
-            <GearSixIcon weight={settingsOpen ? 'fill' : 'regular'} className="size-5" />
+            <GearSixIcon
+              weight={settingsOpen ? 'fill' : 'regular'}
+              className="size-5"
+            />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

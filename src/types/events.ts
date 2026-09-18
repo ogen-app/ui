@@ -1,3 +1,5 @@
+import type { StreamConnectionStatus } from '@/lib/streamConnection'
+
 /**
  * The broadcast event stream (`GET /api/events`), CON-134.
  *
@@ -35,17 +37,16 @@ export type AppEvent = {
 export type EventSubject =
   | { kind: 'post'; id: string }
   | { kind: 'campaign'; id: string }
+  | { kind: 'asset'; id: string }
   | { kind: 'zernioAccount'; id: string }
   | { kind: 'zernioSync' }
   | { kind: 'unknown'; topic: string }
 
-/** How the live connection to `/api/events` is currently doing. */
-export type EventStreamStatus =
-  /** Nothing mounted wants the stream (logged out, or before the app renders). */
-  | 'idle'
-  /** First attempt of this session — no data has been missed yet. */
-  | 'connecting'
-  /** Receiving. */
-  | 'open'
-  /** Dropped and retrying. Data is being missed for as long as this lasts. */
-  | 'reconnecting'
+/**
+ * How the live connection to `/api/events` is currently doing.
+ *
+ * The states belong to the connection rather than to this stream — the
+ * notification inbox runs the same four — so they are defined once, where the
+ * machinery that produces them lives.
+ */
+export type EventStreamStatus = StreamConnectionStatus

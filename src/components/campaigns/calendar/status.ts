@@ -1,5 +1,9 @@
 import type { Icon } from '@phosphor-icons/react'
-import { CheckCircleIcon, ClockIcon, PaperPlaneTiltIcon } from '@phosphor-icons/react'
+import {
+  CheckCircleIcon,
+  ClockIcon,
+  PaperPlaneTiltIcon,
+} from '@phosphor-icons/react'
 import type { PostStatus } from '@/types/posts'
 
 /**

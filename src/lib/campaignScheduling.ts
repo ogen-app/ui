@@ -11,7 +11,15 @@
  */
 
 /** The canonical token set, in week order — Monday first, as the server has it. */
-export const WEEKDAY_TOKENS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+export const WEEKDAY_TOKENS = [
+  'mon',
+  'tue',
+  'wed',
+  'thu',
+  'fri',
+  'sat',
+  'sun',
+] as const
 
 export type WeekdayToken = (typeof WEEKDAY_TOKENS)[number]
 
@@ -44,7 +52,9 @@ export function defaultPublishingDays(): WeekdayToken[] {
  * with nowhere to publish. Getting this wrong in the other direction would show
  * a campaign as publishing nowhere while the scheduler publishes it everywhere.
  */
-export function publishingDayNumbers(days: readonly string[] | null | undefined): number[] {
+export function publishingDayNumbers(
+  days: readonly string[] | null | undefined,
+): number[] {
   const out = new Set<number>()
   for (const day of days ?? []) {
     const token = day.trim().toLowerCase() as WeekdayToken
@@ -55,7 +65,9 @@ export function publishingDayNumbers(days: readonly string[] | null | undefined)
 }
 
 /** `getDay()` numbers back to tokens, in the server's week order. */
-export function publishingDayTokens(dayNumbers: readonly number[]): WeekdayToken[] {
+export function publishingDayTokens(
+  dayNumbers: readonly number[],
+): WeekdayToken[] {
   const wanted = new Set(dayNumbers)
   return WEEKDAY_TOKENS.filter((token) => wanted.has(TOKEN_TO_DAY[token]))
 }

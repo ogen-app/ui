@@ -12,7 +12,7 @@ type IntlWithSupportedValues = {
 }
 
 /** "GMT+3", or "" when the zone isn't one this runtime can format. */
-function offsetLabel(timeZone: string): string {
+export function offsetLabel(timeZone: string): string {
   try {
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone,
@@ -45,6 +45,9 @@ export function timeZoneNames(): string[] {
   if (cached) return cached
   const supported = (Intl as IntlWithSupportedValues).supportedValuesOf
   const zones = supported ? supported('timeZone') : []
-  cached = zones.length > 0 ? [...zones].sort() : [Intl.DateTimeFormat().resolvedOptions().timeZone]
+  cached =
+    zones.length > 0
+      ? [...zones].sort()
+      : [Intl.DateTimeFormat().resolvedOptions().timeZone]
   return cached
 }

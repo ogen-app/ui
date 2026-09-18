@@ -27,7 +27,8 @@ function reportFailure(message: string): void {
  * per keystroke pause. The assessment only changes when a run finishes, and a
  * run writes the cache itself.
  */
-export const postAssessmentKey = (postId: string) => ['postAssessment', postId] as const
+export const postAssessmentKey = (postId: string) =>
+  ['postAssessment', postId] as const
 
 type UsePostAssessmentResult = {
   /** The stored assessment, or `null` when the post has never been scored. */
@@ -66,7 +67,8 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
     queryFn: () => getPostAssessment(postId),
     enabled: !!postId,
     // Both are settled facts about the deployment, not transient failures.
-    retry: (count, error) => !(error instanceof QualityUnavailableError) && count < 2,
+    retry: (count, error) =>
+      !(error instanceof QualityUnavailableError) && count < 2,
   })
 
   const [assessing, setAssessing] = useState(false)
@@ -158,7 +160,8 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
           setUnavailableFromRun(true)
           return
         }
-        const message = error instanceof Error ? error.message : 'The assessment failed'
+        const message =
+          error instanceof Error ? error.message : 'The assessment failed'
         setAssessError(message)
         reportFailure(message)
       })
@@ -181,7 +184,8 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
   return {
     assessment: query.data,
     loading: query.isPending,
-    unavailable: query.error instanceof QualityUnavailableError || unavailableFromRun,
+    unavailable:
+      query.error instanceof QualityUnavailableError || unavailableFromRun,
     loadError: loadFailure,
     reload,
     assess,

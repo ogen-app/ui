@@ -113,7 +113,7 @@ export const ZIndex = {
   /**
    * Floating page action bar
    * Used for: PageActionBar — the bottom-centre bar carrying a page's commit
-   * actions. Deliberately the same level as `navigation`, because it shares the
+   * actions — and the content list's selection bar, which shares its line. Deliberately the same level as `navigation`, because it shares the
    * bottom edge of the screen with the assistant trigger and the two must read
    * as one plane rather than one floating over the other.
    */
@@ -169,6 +169,15 @@ export const ZIndex = {
    */
   bottomPanel: 250,
 
+  /**
+   * Contextual help drawer (CON-173)
+   * Used for: HelpDrawer - the standalone drawer over the whole app.
+   * Above every sheet and modal, because help is opened *from* those and has
+   * to cover what it explains. Still below the popover layer, so its own
+   * dropdowns and tooltips land on top of it rather than underneath.
+   */
+  helpDrawer: 260,
+
   // ============================================================================
   // POPOVER LAYER (300-399)
   // Floating UI elements: dropdowns, tooltips, popovers, context menus
@@ -219,6 +228,17 @@ export const ZIndex = {
    * Must cover all UI including popovers during app initialization
    */
   appLoader: 900,
+
+  /**
+   * Staging flag-override marker
+   * Used for: OverrideMarker — the "n flags overridden" badge above the
+   * assistant trigger.
+   * Above everything, including the boot loader, because what it says is true
+   * of whatever is on screen and is most worth knowing when something looks
+   * wrong. Only exists in dev and staging builds; a production bundle drops
+   * the component that reads this.
+   */
+  devToolsMarker: 950,
 } as const
 
 /**

@@ -7,7 +7,12 @@ import {
 import type { ReactNode } from 'react'
 import { effectiveVideoTitle } from '@/lib/platformLimits.ts'
 import { PLATFORM_FOLDS } from '@/lib/socialText.ts'
-import { FoldedText, Frame, PreviewAvatar, PreviewSurface } from './previewParts.tsx'
+import {
+  FoldedText,
+  Frame,
+  PreviewAvatar,
+  PreviewSurface,
+} from './previewParts.tsx'
 import { YOUTUBE as C } from './previewTheme.ts'
 import type { PreviewProps } from './types.ts'
 
@@ -41,7 +46,10 @@ export function YouTubePreview({
 
   return (
     <PreviewSurface style={{ borderRadius: 12 }}>
-      <div className="relative" style={{ aspectRatio: aspect, background: '#000000' }}>
+      <div
+        className="relative"
+        style={{ aspectRatio: aspect, background: '#000000' }}
+      >
         {lead ? (
           /* `fill`: the player div above already fixes the aspect, and Frame
              brings the broken-URL fallback the raw <img> here used to lack. */
@@ -67,7 +75,12 @@ export function YouTubePreview({
       </div>
 
       <div className="flex items-center gap-2 px-3 pt-3">
-        <PreviewAvatar src={author.avatarUrl} name={channel} size={36} background={C.brand} />
+        <PreviewAvatar
+          src={author.avatarUrl}
+          name={channel}
+          size={36}
+          background={C.brand}
+        />
         <div
           className="min-w-0 flex-1 truncate font-semibold"
           style={{ color: C.text, fontSize: 14 }}
@@ -87,7 +100,11 @@ export function YouTubePreview({
         <Chip>
           <ThumbsUpIcon className="size-4" aria-hidden />
           <span
-            style={{ borderLeft: `1px solid #d9d9d9`, paddingLeft: 8, marginLeft: 2 }}
+            style={{
+              borderLeft: `1px solid #d9d9d9`,
+              paddingLeft: 8,
+              marginLeft: 2,
+            }}
           >
             <ThumbsDownIcon className="size-4" aria-hidden />
           </span>
@@ -103,7 +120,10 @@ export function YouTubePreview({
             folds after roughly two lines behind "...more", which is the whole
             reason the first sentence matters here. */}
         <div style={{ background: C.chip, borderRadius: 12, padding: 12 }}>
-          <div className="font-semibold" style={{ color: C.text, fontSize: 14 }}>
+          <div
+            className="font-semibold"
+            style={{ color: C.text, fontSize: 14 }}
+          >
             {timeLabel}
           </div>
           {text.trim() ? (

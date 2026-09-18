@@ -2,7 +2,11 @@ import type { ReactNode } from 'react'
 import { Collapse } from '@/components/ui/collapse'
 import { BAND_TEXT, BAND_FILL, DIMENSION_ICON } from './tokens.ts'
 import { cn } from '@/lib'
-import { scoreBand, suggestionsOf, type QualityDimensionMeta } from '@/lib/postQuality.ts'
+import {
+  scoreBand,
+  suggestionsOf,
+  type QualityDimensionMeta,
+} from '@/lib/postQuality.ts'
 import type { QualityDimension, QualitySeverity } from '@/types/quality'
 
 /**
@@ -61,11 +65,17 @@ export function QualityDimensionCard({
               {meta.label}
               {meta.platformAware && ' · this channel'}
             </p>
-            <h3 className="text-sm font-medium text-foreground">{meta.blurb}</h3>
+            <h3 className="text-sm font-medium text-foreground">
+              {meta.blurb}
+            </h3>
           </div>
         </div>
         <p className="shrink-0 tabular-nums">
-          <span className={cn('text-lg font-display font-medium', BAND_TEXT[band])}>{score}</span>
+          <span
+            className={cn('text-lg font-display font-medium', BAND_TEXT[band])}
+          >
+            {score}
+          </span>
           <span className="text-xs text-tertiary-foreground">/10</span>
         </p>
       </header>
@@ -74,12 +84,16 @@ export function QualityDimensionCard({
         <div className="h-1 w-full bg-quinary">
           <div
             className={cn('h-full', BAND_FILL[band])}
-            style={{ width: `${(Math.min(10, Math.max(0, score)) / 10) * 100}%` }}
+            style={{
+              width: `${(Math.min(10, Math.max(0, score)) / 10) * 100}%`,
+            }}
           />
         </div>
 
         {dimension.rationale && (
-          <p className="text-sm/[1.5] text-secondary-foreground">{dimension.rationale}</p>
+          <p className="text-sm/[1.5] text-secondary-foreground">
+            {dimension.rationale}
+          </p>
         )}
 
         {/* CON-85 makes the model name a weakness for every dimension, even
@@ -89,7 +103,9 @@ export function QualityDimensionCard({
         {dimension.weakness && (
           <section className="flex flex-col gap-0.5">
             <SubHeader>WORTH TIGHTENING</SubHeader>
-            <p className="text-sm/[1.5] text-secondary-foreground">{dimension.weakness}</p>
+            <p className="text-sm/[1.5] text-secondary-foreground">
+              {dimension.weakness}
+            </p>
           </section>
         )}
       </div>
@@ -123,7 +139,9 @@ export function QualityDimensionCard({
                   </span>
                 </div>
                 {suggestion.fix && (
-                  <p className="text-sm/[1.5] text-secondary-foreground">→ {suggestion.fix}</p>
+                  <p className="text-sm/[1.5] text-secondary-foreground">
+                    → {suggestion.fix}
+                  </p>
                 )}
                 {/* The quoted span is the point of a suggestion — it is what
                     makes "tighten the hook" into something you can act on. */}

@@ -1,21 +1,9 @@
 import * as React from 'react'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
-  ArrowSquareOutIcon,
-  ArrowsLeftRightIcon,
-  CalendarDotsIcon,
-  CardsThreeIcon,
   CaretDoubleLeftIcon,
-  ChartLineUpIcon,
-  GearSixIcon,
-  LifebuoyIcon,
-  NotepadIcon,
-  ScanIcon,
-  SidebarIcon,
-  SignOutIcon,
-  ToolboxIcon,
-  UserIcon,
+  CaretLeftIcon,
   XIcon,
 } from '@phosphor-icons/react'
 import {
@@ -23,120 +11,104 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenuSkeleton,
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar.tsx'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { useAuthStore } from '@/stores/authStore'
-import { useCampaigns } from '@/hooks/useCampaigns'
-import { useWorkspace } from '@/hooks/useWorkspaces'
-import { formatAnchor } from '@/components/campaigns/calendar/date'
-import { Logo } from '@/components/Logo'
-import { cn } from '@/lib'
-import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton.tsx'
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { CampaignLevel } from '@/components/layout/nav/CampaignLevel'
+import { NavAccount } from '@/components/layout/nav/NavAccount'
+import { NavPane } from '@/components/layout/nav/NavPane'
+import { NavUtilityStrip } from '@/components/layout/nav/NavUtilityStrip'
+import { WorkspaceLevel } from '@/components/layout/nav/WorkspaceLevel'
 import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
-import { WorkspaceMark } from '@/components/layout/WorkspaceMark.tsx'
 import { LiveStatus } from '@/components/layout/LiveStatus'
-// One categorical scale for campaigns and workspaces alike — the mark is how
-// you recognise a thing, so it can't be per-entity (see lib/identity.ts).
+import { Logo } from '@/components/Logo'
+import { useCampaign } from '@/hooks/useCampaigns'
 import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
-import { ROLE_LABEL_KEYS, type Workspace } from '@/types/workspace'
+import { navLevelOf } from '@/lib/navLevel'
+import { cn } from '@/lib'
+import type { Campaign } from '@/types/campaigns'
 
-/** TODO: placeholder — no help site exists yet. Point at the real one when it does. */
-const HELP_URL = 'https://getogen.com/help'
-
-function SectionLabel({ children, isCollapsed }: { children: React.ReactNode; isCollapsed: boolean }) {
-  return (
-    <div
-      className={cn(
-        'px-1.5 lg:px-2.5 pt-5 pb-1 w-[232px] shrink-0 font-grotesk text-xs/4 font-medium uppercase text-sidebar-secondary-foreground transition-opacity duration-200',
-        isCollapsed && 'opacity-0'
-      )}
-    >
-      {children}
-    </div>
-  )
-}
-
-// Module scope, so the label is a key rather than a string — `t` is only
-// available inside the component, and a constant built at import time would
-// freeze whichever language was loaded first.
-const CAMPAIGN_SUB_ITEMS = [
-  { id: 'overview', labelKey: 'nav.campaign.overview', icon: SidebarIcon },
-  { id: 'posts', labelKey: 'nav.campaign.posts', icon: CalendarDotsIcon },
-  { id: 'analytics', labelKey: 'nav.campaign.analytics', icon: ChartLineUpIcon },
-  { id: 'brief', labelKey: 'nav.campaign.brief', icon: NotepadIcon },
-  { id: 'assets', labelKey: 'nav.campaign.assets', icon: ScanIcon },
-  { id: 'settings', labelKey: 'nav.campaign.settings', icon: GearSixIcon },
-] as const
-
-type CampaignSubItemId = (typeof CAMPAIGN_SUB_ITEMS)[number]['id']
-
-/** The app's main navigation sidebar, including the user/workspace menu. */
+/**
+ * The app's navigation rail — two levels, one at a time.
+ *
+ * **The change this is.** The system has two things called Campaigns: the
+ * collection, which is a module and belongs in a rail, and the instance, which
+ * is an object and has no rail slot of its own. The old sidebar nested one
+ * inside the other, so the instance had to borrow the module's vocabulary and
+ * the rail ended up a replica of itself — an Analytics under an Analytics,
+ * separated by an indent. Here the campaign *replaces* the level instead:
+ * level 0 is the workspace, level 1 is one campaign, and neither ever draws
+ * the other's rows.
+ *
+ * Which level is on screen is read off the URL (`lib/navLevel`) and held
+ * nowhere. A level in state has to be pushed by every navigation that could
+ * change it — the back control, a card on `/campaigns`, a notification opening
+ * a post, the browser's own back button — and the one that gets missed leaves
+ * the rail drawing a campaign the page is no longer showing.
+ *
+ * The bands, top to bottom: a header that changes with the level, the levels
+ * themselves, then a footer of two parts — the utilities, whose destinations
+ * survive the drill but whose shape does not (`NavUtilityStrip`), and an
+ * identity slot that changes outright (`NavAccount`).
+ */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state, isMobile, setOpen, toggleSidebar } = useSidebar()
   const { t } = useTranslation()
-  const location = useLocation()
+  const { pathname } = useLocation()
   const isCollapsed = isMobile ? false : state === 'collapsed'
-  const { user } = useAuthStore()
-  const navigate = useNavigate()
-  const { data: campaigns, isPending: campaignsPending } = useCampaigns()
-  const workspace = useWorkspace()
 
-  const activeCampaignId = location.pathname.match(/^\/campaigns\/([^/]+)/)?.[1] ?? null
-
-  // The heading belongs to whichever of the two bodies below is rendering —
-  // skeleton rows or real ones — so it is written once for both.
-  const showCampaignsGroup = campaignsPending
-    ? !isCollapsed
-    : !!campaigns && campaigns.length > 0
-
-  const handleLogout = () => {
-    navigate({ to: '/auth/logout' })
-  }
-
-  // Everything unrecognised is the calendar, which is what Posts opens — so
-  // each real section has to be named before that fallback is reached.
-  const activeSubItem: CampaignSubItemId | null = !activeCampaignId
-    ? null
-    : location.pathname.includes('/overview')
-      ? 'overview'
-      : location.pathname.includes('/analytics')
-        ? 'analytics'
-        : location.pathname.includes('/brief')
-          ? 'brief'
-          : location.pathname.includes('/assets')
-            ? 'assets'
-            : location.pathname.includes('/settings')
-              ? 'settings'
-              : 'posts'
-
-  // Posts lands on the current week of the calendar; the rest are plain pages.
-  const subItemLink = (campaignId: string, id: CampaignSubItemId): { to: string; params: Record<string, string> } =>
-    id === 'posts'
-      ? {
-          to: '/campaigns/$campaignId/calendar/$anchor/$view',
-          params: { campaignId, anchor: formatAnchor(new Date()), view: 'week' },
-        }
-      : { to: `/campaigns/$campaignId/${id}`, params: { campaignId } }
-
-  const initials =
-    `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`.toUpperCase() || '?'
-  const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
+  const { level, campaignId } = navLevelOf(pathname)
+  // Safe on the empty string — the hook is `enabled: !!id` — and seeded from
+  // the campaigns list cache, so arriving from `/campaigns` draws the name
+  // immediately rather than a skeleton the width of the rail.
+  const { data: campaign } = useCampaign(campaignId ?? '')
 
   return (
     <>
-      <Sidebar collapsible="icon" className={'select-none'} {...props}>
+      {/* The 1px `border` rule is the right panel's divider mirrored: the two
+          rails frame the work area, so they are edged the same way and in the
+          same tone. Desktop only — `className` never reaches the mobile sheet,
+          which floats over the content and needs no seam.
+
+          It has to be written with the same `group-data-[side=left]` prefix the
+          primitive uses to zero the border out: a plain `border-r` is a weaker
+          selector *and* a different key to `twMerge`, so it would lose on both
+          counts instead of replacing it. */}
+      <Sidebar
+        collapsible="icon"
+        className={'select-none group-data-[side=left]:border-r border-border'}
+        {...props}
+      >
+        {/* The campaign's identity colour as a rule down the whole rail, in
+            the hue its mark already wears — the level's edge, so it runs the
+            full height of the level, past the header above the sections and
+            the footer below them. It is absolute against the sidebar's own
+            fixed container rather than against anything inside it, which is
+            the only way to reach both.
+
+            Static: it belongs to the level the way the level's rows do, and a
+            bar that draws itself on arrival would turn a property of the place
+            into an event that happened — one more thing moving during the only
+            moment the user is working out where they landed.
+
+            It survives the collapse, where it is worth more than at full
+            width: a 48px rail has room for the campaign's mark and six glyphs
+            and nothing else, so the rule is most of what is left saying you
+            are inside something rather than at the top level. */}
+        {level === 1 && campaignId && (
+          <span
+            aria-hidden
+            style={{ background: identityColorVar(campaignId) }}
+            className="absolute left-0 top-0 h-full w-[3px]"
+          />
+        )}
+
         <SidebarHeader>
           <div className="flex items-center justify-between">
             {isMobile ? (
@@ -149,12 +121,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <XIcon className="size-5" />
               </Button>
             ) : (
-              <Link
-                to="/"
-                className={cn('flex items-center gap-2 font-semibold text-lg transition-all')}
-              >
-                <Logo className="size-10 shrink-0" />
-              </Link>
+              <HeaderMark
+                level={level}
+                campaignId={campaignId}
+                campaign={campaign}
+              />
             )}
             {isMobile ? (
               <Logo className={'size-8'} />
@@ -164,267 +135,140 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 size="xsIcon"
                 className={cn(
                   'flex group/button h-full transition-all duration-150',
-                  isCollapsed && 'opacity-0 pointer-events-none',
-                  !isCollapsed && 'opacity-100 delay-100'
+                  'group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0',
                 )}
                 onClick={() => setOpen(false)}
               >
-                <CaretDoubleLeftIcon
-                  className="size-3 text-quaternary-foreground group-hover/button:text-primary-foreground transition-colors"
-                />
+                <CaretDoubleLeftIcon className="size-3 text-quaternary-foreground group-hover/button:text-primary-foreground transition-colors" />
               </Button>
             )}
           </div>
         </SidebarHeader>
-        <SidebarContent>
-          <nav
-            className={cn('flex flex-col gap-1 px-3 py-0 lg:px-6', isCollapsed && 'items-center')}
-          >
-            <SectionLabel isCollapsed={isCollapsed}>{t('nav.modules')}</SectionLabel>
-            <AppSidebarButtonMenu
-              icon={
-                <ToolboxIcon weight="regular" className="size-5 flex-none" />
-              }
-              text={t('nav.campaigns')}
-              isActive={location.pathname === '/campaigns'}
-              to="/campaigns"
-            />
-            <AppSidebarButtonMenu
-              icon={
-                <CardsThreeIcon weight="regular" className="size-5 flex-none" />
-              }
-              text={t('nav.contentBank')}
-              isActive={location.pathname.startsWith('/content-bank')}
-              to="/content-bank"
-            />
 
-            {/* The nav is the same on every page, so an empty group here is
-                the first thing you see on a cold load. Three rows hold the
-                space the campaigns will take. */}
-            {showCampaignsGroup && (
-              <SectionLabel isCollapsed={isCollapsed}>{t('nav.campaigns')}</SectionLabel>
-            )}
-            {campaignsPending && !isCollapsed && (
-              <>
-                <SidebarMenuSkeleton showIcon />
-                <SidebarMenuSkeleton showIcon />
-                <SidebarMenuSkeleton showIcon />
-              </>
-            )}
-
-            {campaigns?.map((campaign) => {
-              const isActive = campaign.id === activeCampaignId
-              const name = campaign.name.trim() || t('nav.untitledCampaign')
-              return (
-                <React.Fragment key={campaign.id}>
-                  <AppSidebarButtonMenu
-                    icon={
-                      <CampaignIcon
-                        abbr={identityAbbr(name)}
-                        active={isActive}
-                        color={identityColorVar(campaign.id)}
-                        className="size-5 flex-none"
-                      />
-                    }
-                    text={name}
-                    isActive={isActive}
-                    to="/campaigns/$campaignId"
-                    params={{ campaignId: campaign.id }}
-                  />
-                  {isActive && (
-                    // Sub-items sit flush against each other; the 12px pad
-                    // plus the nav's 4px gap makes 16px before the next
-                    // campaign. The 2px rule closes the sub-menu, so the
-                    // campaign that follows doesn't read as one more of
-                    // its sections.
-                    <div className="flex w-full flex-col gap-0 pb-3 border-b-2 border-quaternary">
-                      {CAMPAIGN_SUB_ITEMS.map((item) => {
-                        const subActive = activeSubItem === item.id
-                        const link = subItemLink(campaign.id, item.id)
-                        return (
-                          <AppSidebarButtonMenu
-                            key={item.id}
-                            icon={
-                              // Same 20px icon slot as top-level items so the labels
-                              // line up; only the glyph inside is smaller.
-                              <span className="flex size-5 flex-none items-center justify-center">
-                                <item.icon className="size-4" />
-                              </span>
-                            }
-                            text={t(item.labelKey)}
-                            isActive={subActive}
-                            to={link.to}
-                            params={link.params}
-                            className="lg:h-8 text-xs"
-                          />
-                        )
-                      })}
-                    </div>
-                  )}
-                </React.Fragment>
-              )
-            })}
-          </nav>
+        {/* `overflow-hidden`, against the primitive's own `overflow-auto`: the
+            panes are absolutely placed and the outgoing one is deliberately
+            32px off the left edge, which an `auto` ancestor would offer to
+            scroll to. Each level scrolls inside itself instead. */}
+        <SidebarContent className="overflow-hidden">
+          {/* Both levels stay mounted through the push — see `NavPane`. */}
+          <div className="relative flex-1 overflow-hidden">
+            <NavPane shown={level === 0} from="left">
+              <WorkspaceLevel />
+            </NavPane>
+            <NavPane shown={level === 1} from="right">
+              {campaignId && (
+                <CampaignLevel campaignId={campaignId} campaign={campaign} />
+              )}
+            </NavPane>
+          </div>
         </SidebarContent>
 
-        <SidebarFooter>
+        {/* Tighter than the primitive's `lg:gap-6`: these three bands are one
+            block — status, utilities, who you are — and 24px between them read
+            as three separate footers. */}
+        <SidebarFooter className="lg:gap-4">
           <LiveStatus isCollapsed={isCollapsed} />
-          <AppSidebarButtonMenu
-            icon={
-              <GearSixIcon weight="regular" className="size-5 flex-none" />
-            }
-            text={t('nav.workspaceSettings')}
-            isActive={location.pathname.startsWith('/workspace-settings')}
-            to="/workspace-settings"
-          />
-          <div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className={cn('flex w-full items-center justify-start gap-6 p-0 cursor-pointer select-none overflow-hidden')}
-                >
-                  {/* The workspace's mark, not the user's portrait. The
-                      sidebar belongs to one workspace at a time — every item
-                      above it is that workspace's — and this is the one slot
-                      that survives the collapsed rail, so it should carry the
-                      fact that changes rather than the one that never does.
-                      Who you are is in the menu behind it. */}
-                  {workspace ? (
-                    <WorkspaceMark
-                      id={workspace.id}
-                      name={workspace.name}
-                      className="size-10 text-sm"
-                    />
-                  ) : (
-                    <Avatar className="size-10 shrink-0">
-                      <AvatarFallback>{initials}</AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div className="flex w-[168px] shrink-0 flex-col items-start transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
-                    <p className="w-full text-sm font-regular truncate text-left">{fullName}</p>
-                    {/* The workspace, not the email: the email never changes
-                        and is one click away in the menu, while the workspace
-                        changes what every other screen is showing. */}
-                    <p className="w-full text-xs text-tertiary-foreground truncate text-left">
-                      {workspace?.name ?? user?.email}
-                    </p>
-                  </div>
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-72 p-2 shadow-md"
-                side="right"
-                align="end"
-                sideOffset={8}
-              >
-                {/* The same block the sidebar shows, in the same type — avatar,
-                    name, email — so opening the menu reads as the trigger
-                    unfolding rather than as a different screen. */}
-                <DropdownMenuLabel
-                  className="flex items-center gap-3 p-2 font-normal tracking-normal"
-                  asChild
-                >
-                  <div>
-                    <Avatar className="size-10 shrink-0">
-                      <AvatarFallback>{initials}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex min-w-0 flex-col">
-                      <p className="truncate text-sm text-primary-foreground">{fullName}</p>
-                      {/* Just the account here. Which workspace you are in is
-                          its own row below, with the role that comes with it. */}
-                      <p className="truncate text-xs text-tertiary-foreground">{user?.email}</p>
-                    </div>
-                  </div>
-                </DropdownMenuLabel>
-
-                <DropdownMenuSeparator className="my-2" />
-
-                <DropdownMenuItem
-                  size="lg"
-                  className="px-2"
-                  onSelect={() => navigate({ to: '/profile' })}
-                >
-                  <UserIcon weight="bold" />
-                  <span>{t('nav.profile')}</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem size="lg" className="px-2" asChild>
-                  {/* A real link, not an onSelect: middle-click and "copy link"
-                      should work on the one row that leaves the app. */}
-                  <a href={HELP_URL} target="_blank" rel="noreferrer noopener">
-                    <LifebuoyIcon weight="bold" />
-                    <span className="flex-1">{t('nav.help')}</span>
-                    <ArrowSquareOutIcon
-                      weight="bold"
-                      className="text-tertiary-foreground"
-                      aria-label={t('common.opensInNewTab')}
-                    />
-                  </a>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="my-2" />
-
-                <CurrentWorkspaceRow
-                  workspace={workspace}
-                  onSelect={() => navigate({ to: '/workspace-settings' })}
-                />
-
-                <DropdownMenuItem
-                  size="lg"
-                  className="px-2"
-                  onSelect={() => navigate({ to: '/workspaces' })}
-                >
-                  <ArrowsLeftRightIcon weight="bold" />
-                  <span>{t('nav.switchWorkspace')}</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="my-2" />
-
-                <DropdownMenuItem onClick={handleLogout} size="lg" className="px-2">
-                  <SignOutIcon weight="bold" />
-                  <span>{t('nav.logOut')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <NavUtilityStrip level={level} campaignId={campaignId} />
+          <NavAccount level={level} />
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-
     </>
   )
 }
 
 /**
- * Where you are and what you are there — and the way into that workspace's
- * settings, which is what the name and the role are both about.
+ * The rail's top-left slot: the product at level 0, the campaign at level 1,
+ * with the way out beside it.
  *
- * Not the switcher: that is its own row below, and it leads to a page rather
- * than a submenu because switching tears the app down (cleared cache, full
- * reload). The role sits here because it is the thing that changes between
- * workspaces and silently explains why a control was missing in one of them.
+ * **Back is chrome, not a row.** A back row inside the nav sits where a
+ * section would, scrolls with them, and reads as one more destination — but
+ * the way out of a level is not a place in it. Up here it is always in the
+ * same spot and never in the list.
+ *
+ * Swapping the logo for the campaign's mark is the loudest thing the rail can
+ * do to say the scope changed: the logo is the one element that never changes,
+ * so changing it is unmistakable. It is also what carries the campaign through
+ * a collapse — the name and window below are the first things a 48px rail
+ * loses, and the mark plus its tooltip are what is left saying which campaign
+ * you are in.
+ *
+ * The mark takes the logo's place exactly — same left edge, same size, same
+ * line — and the caret is absolutely placed in the gutter beside it rather
+ * than laid out before it. In the flow it would push the mark 32px right, so
+ * the one element the eye uses to know which level it is looking at would also
+ * be the one that moved, and the two levels would no longer line up anywhere.
+ * Out of the flow, the only thing that changes between them is the mark
+ * itself.
  */
-function CurrentWorkspaceRow({
-  workspace,
-  onSelect,
+function HeaderMark({
+  level,
+  campaignId,
+  campaign,
 }: {
-  workspace: Workspace | undefined
-  onSelect: () => void
+  level: 0 | 1
+  campaignId: string | null
+  campaign: Campaign | undefined
 }) {
   const { t } = useTranslation()
-  if (!workspace) return null
+
+  if (level === 0 || !campaignId) {
+    return (
+      <Link
+        to="/"
+        className="flex items-center gap-2 text-lg font-semibold transition-all"
+      >
+        <Logo className="size-10 shrink-0" />
+      </Link>
+    )
+  }
+
+  const name = campaign?.name.trim() || t('nav.untitledCampaign')
 
   return (
-    <DropdownMenuItem className="gap-3 px-2 py-2" onSelect={onSelect}>
-      <WorkspaceMark id={workspace.id} name={workspace.name} className="size-10 text-sm" />
-      <div className="flex min-w-0 flex-col">
-        <p className="truncate text-sm">{workspace.name}</p>
-        <p className="truncate text-xs text-tertiary-foreground">
-          {t(ROLE_LABEL_KEYS[workspace.role])}
-        </p>
-      </div>
-    </DropdownMenuItem>
+    <div className="relative flex min-w-0 items-center">
+      {/* In the gutter, which is 24px of the header's own padding and the only
+          room there is to the left of the mark without moving it. Pushed to
+          the outer half of it — 18px out, which leaves 6px between the caret's
+          box and the rail's edge and the same 2px between it and the mark: as
+          far from the mark as the gutter allows while still reading as an edge
+          with a margin rather than one flush against it.
+
+          It stays through the collapse. The gutter does not narrow with the
+          rail: the padding is the same 24px at 88px as at 280px, so the caret
+          keeps the position it already had and the way out of the level is in
+          one place at both widths. Collapsed, it is also the only control that
+          says so — the name and window are gone by then, and a mark that
+          silently doubles as back is a thing you have to have discovered. */}
+      <Link
+        to="/campaigns"
+        aria-label={t('nav.backToWorkspace')}
+        className="absolute -left-1.5 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-sm text-tertiary-foreground transition-colors hover:text-sidebar-primary-foreground lg:-left-[18px]"
+      >
+        <CaretLeftIcon weight="bold" className="size-4" />
+      </Link>
+      <Tooltip delayDuration={400}>
+        <TooltipTrigger asChild>
+          {/* Focusable, because collapsed this mark is the only thing naming
+              the campaign and a tooltip nobody can reach by keyboard is not a
+              label. It goes back rather than nowhere — the same destination as
+              the caret beside it, so whichever of the two the pointer lands on
+              does the same thing. */}
+          <Link
+            to="/campaigns"
+            aria-label={t('nav.backToWorkspace')}
+            className="flex-none rounded-sm"
+          >
+            <CampaignIcon
+              abbr={identityAbbr(name)}
+              color={identityColorVar(campaignId)}
+              active
+              className="size-10"
+            />
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right">{name}</TooltipContent>
+      </Tooltip>
+    </div>
   )
 }

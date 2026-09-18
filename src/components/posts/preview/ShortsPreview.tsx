@@ -9,7 +9,12 @@ import {
 } from '@phosphor-icons/react'
 import { effectiveVideoTitle } from '@/lib/platformLimits.ts'
 import { formatTimecode } from '@/lib/platformVideo.ts'
-import { FoldedText, PlayMark, PreviewAvatar, PreviewSurface } from './previewParts.tsx'
+import {
+  FoldedText,
+  PlayMark,
+  PreviewAvatar,
+  PreviewSurface,
+} from './previewParts.tsx'
 import type { PreviewProps } from './types.ts'
 
 /**
@@ -38,7 +43,13 @@ const SHORTS_FOLD = 60
  * Capped narrow for the same reason `StoryPreview` is — at the rail's full
  * width a 9:16 card runs past the fold of the panel itself.
  */
-export function ShortsPreview({ text, title, media, author, timeLabel }: PreviewProps) {
+export function ShortsPreview({
+  text,
+  title,
+  media,
+  author,
+  timeLabel,
+}: PreviewProps) {
   const [failed, setFailed] = useState(false)
   const channel = author.username ?? author.name ?? 'yourchannel'
   const item = media[0]
@@ -53,7 +64,12 @@ export function ShortsPreview({ text, title, media, author, timeLabel }: Preview
       /* Wider than a story's 260: the rail takes a strip off the right that a
          story does not have, and at 260 the channel handle truncated to
          nothing. */
-      style={{ borderRadius: 12, background: '#000000', maxWidth: 300, width: '100%' }}
+      style={{
+        borderRadius: 12,
+        background: '#000000',
+        maxWidth: 300,
+        width: '100%',
+      }}
     >
       <div className="relative" style={{ aspectRatio: 9 / 16 }}>
         {item && !failed ? (
@@ -67,7 +83,12 @@ export function ShortsPreview({ text, title, media, author, timeLabel }: Preview
         ) : (
           <div
             className="flex h-full w-full items-center justify-center px-6 text-center"
-            style={{ background: '#1c1c1e', color: '#a8a8a8', fontSize: 13, lineHeight: 1.4 }}
+            style={{
+              background: '#1c1c1e',
+              color: '#a8a8a8',
+              fontSize: 13,
+              lineHeight: 1.4,
+            }}
           >
             {item
               ? isVideo
@@ -81,7 +102,10 @@ export function ShortsPreview({ text, title, media, author, timeLabel }: Preview
             without it, and YouTube does the same. */}
         <div
           className="pointer-events-none absolute inset-x-0 bottom-0"
-          style={{ height: 200, background: 'linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.65))' }}
+          style={{
+            height: 200,
+            background: 'linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.65))',
+          }}
         />
 
         {isVideo && <PlayMark size={44} />}
@@ -123,7 +147,10 @@ export function ShortsPreview({ text, title, media, author, timeLabel }: Preview
 
         {/* Right padding clears the rail — text running under those buttons is
             exactly the mistake this preview exists to show. */}
-        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-3 pb-3" style={{ paddingRight: 52 }}>
+        <div
+          className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-3 pb-3"
+          style={{ paddingRight: 52 }}
+        >
           <div className="flex items-center gap-2">
             <PreviewAvatar
               src={author.avatarUrl}
@@ -152,13 +179,24 @@ export function ShortsPreview({ text, title, media, author, timeLabel }: Preview
             moreLabel="more"
             color="#ffffff"
             moreColor="rgba(255,255,255,0.7)"
-            style={{ fontSize: 13, lineHeight: 1.3846, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+            style={{
+              fontSize: 13,
+              lineHeight: 1.3846,
+              textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+            }}
           />
 
           {/* The sound row. Every Short has one, and on an upload it is the
               video's own audio — there is no track to name. */}
-          <div className="flex items-center gap-1.5" style={{ color: '#ffffff' }}>
-            <MusicNotesIcon className="size-3 shrink-0" weight="fill" aria-hidden />
+          <div
+            className="flex items-center gap-1.5"
+            style={{ color: '#ffffff' }}
+          >
+            <MusicNotesIcon
+              className="size-3 shrink-0"
+              weight="fill"
+              aria-hidden
+            />
             <span
               className="min-w-0 truncate"
               style={{ fontSize: 11, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}

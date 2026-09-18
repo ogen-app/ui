@@ -15,17 +15,26 @@ Zernio run centrally "under the hood"** — their keys are platform-managed, not
 tenant-configured (CON-97 §10.3, CON-99); tenants still connect their own social
 accounts. The front-end multi-tenancy cutover landed 2026-07 (real
 `current_user` identity, workspace settings, per-instance API-key config
-removed — see [`docs/onboarding.md`](./docs/onboarding.md)). **Current
-front-end priority:** the **Post Assistant + post-editing UIs** (CON-42/61).
-Content-Bank AI images are secondary. See
+removed — see [`docs/onboarding.md`](./docs/onboarding.md)). The Post Assistant
+UI that used to be named here as the current priority **shipped** — CON-61
+closed 2026-08-05, and CON-42 is the backend Genkit flow behind it. **Current
+front-end priority:** the **campaign-scoped Content Bank** (CON-210), then the
+two analytics surfaces waiting on their live-API pass (CON-175/250). See
 [`docs/product.md`](./docs/product.md#direction--current-priorities).
 
 - **Product & domain:** [`docs/product.md`](./docs/product.md)
 - **Front-end architecture:** [`docs/architecture.md`](./docs/architecture.md)
 - **Technical decisions & rationale:** [`docs/technical-decisions.md`](./docs/technical-decisions.md)
 - **Onboarding, auth & tenancy flow:** [`docs/onboarding.md`](./docs/onboarding.md)
+- **Adding a platform — the support checklist:** [`docs/platform-support.md`](./docs/platform-support.md)
 - **Campaign "needs attention" rule set:** [`docs/attention-rules.md`](./docs/attention-rules.md)
 - **Campaign stages — how they work & proposal:** [`docs/campaign-stages.md`](./docs/campaign-stages.md)
+- **Activity feed & daily report — proposal:** [`docs/activity.md`](./docs/activity.md)
+- **Every event and notification — trigger, transport, recipients:**
+  [`docs/events.md`](./docs/events.md)
+- **Tasks — proposal:** [`docs/tasks.md`](./docs/tasks.md)
+- **What the front end is waiting on from the API:**
+  [`docs/open-questions.md`](./docs/open-questions.md)
 - **Run & deploy:** [`README.md`](./README.md)
 
 Requirements live in Linear under the **`CON-`** project (the app's internal
@@ -35,11 +44,21 @@ name is "Content Control Center"). There is no PRD checked into this repo.
 
 ```bash
 pnpm install
-pnpm dev        # Vite dev server on http://localhost:9002, proxies /api → :9001
-pnpm build      # tsc (type-check) && vite build → dist/
-pnpm preview    # serve the production build
-pnpm lint       # eslint . --ext ts,tsx
+pnpm dev           # Vite dev server on http://localhost:9002, proxies /api → :9001
+pnpm build         # tsc (type-check) && vite build → dist/
+pnpm preview       # serve the production build
+
+pnpm typecheck     # tsc --noEmit
+pnpm lint          # eslint .            (--fix to repair what is mechanical)
+pnpm format        # prettier --write .  (format:check to only report)
+pnpm test          # vitest run
+pnpm knip          # unused files, exports and dependencies — a report, not a gate
 ```
+
+CI runs every one of those except `knip` on each PR into `develop`
+(`.github/workflows/ci.yml`). What each tool is for, and why some rules are
+warnings rather than errors:
+[`docs/quality-tooling.md`](./docs/quality-tooling.md).
 
 Run the API separately from the `ogen` repo (`make run`) or via
 `docker compose up`. See [`docs/architecture.md`](./docs/architecture.md#build--tooling).
@@ -83,6 +102,33 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **`src/lib/*` mirrors Go server rules** (`postStatusMachine`, `assetStatus`,
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.
+- **A platform is identified by `zernio_id`, never by its sqid** (CON-292). The
+  catalogue is the operator's now — rows are added and enabled in Harbor, and a
+  sqid is minted there, so it cannot be known at build time and nothing is filed
+  under it. It addresses a *row*; `zernio_id` names a *network*, and every table
+  we own is keyed by it: `lib/platformDictionary`, `lib/platformMedia`,
+  `PLATFORM_FOLDS`, the preview's `RENDERERS`, the auto-publish allowlist,
+  `supportsSequence`. Code holding a sqid — `post.platform_id`, a campaign's
+  `target_platforms[].id`, an analytics key — translates through
+  **`usePlatformCatalog().resolve`**, which takes either; that hook is the only
+  place the two meet, and it is a hook because the translation needs the fetched
+  list. **The dictionary is a gate, not a fallback**: `buildPlatformViews` drops
+  a row this build ships no support for (and says so in dev), because a network
+  with no mark, no preview, no fold and no media rules is broken in five places
+  rather than merely plain. So support ships first and the operator's toggle
+  comes after — that is what makes a launch need no deploy. What "support" means
+  is the checklist in [`docs/platform-support.md`](./docs/platform-support.md);
+  the silent one is `lib/platformMedia`, where a missing row means *no* image
+  checks rather than permissive ones.
+- **A post's permalink survives publication and is not frozen with the rest**
+  (CON-165). `published_url` is on `PostPayload` and must stay there: the PUT
+  assigns it unconditionally, so an autosave that omits it clears the link on
+  every published post. It is deliberately outside CON-251's content lock —
+  recording a link is a post-publish act — which is what lets
+  `PublishedUrlDialog` save one Zernio cannot verify, on a post that has
+  already published as well as one about to. That path must always pass the
+  typed URL through; it used to discard it, and nothing in the product asks for
+  it a second time.
 - **Video uploads take a different path from images and PDFs** — presign →
   direct PUT to storage → finalize, so multi-hundred-megabyte files never
   buffer in the API. Routed by kind inside `usePostAttachments.upload`; the
@@ -92,12 +138,148 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`MAX_VIDEO_UPLOAD_BYTES`) is ours, and always wins over the seeded ceiling.
   A probed-but-zero `duration_ms` means video-service was down, not a
   zero-length file. See `docs/technical-decisions.md#video-ingest`.
+- **An asset only opens in the editor if `opensAsDocument` says it is one.**
+  `AssetDocument`'s editor is the last branch, never the fallback: `null | MD |
+  PDF | URL` are documents, and anything else — a `type` the build predates —
+  gets the read-only `UnsupportedAsset`. Never restore "everything else gets
+  `AssetEditor`". It seeds BlockNote from `content` and autosaves it back, so
+  the first type whose `content` isn't a document is overwritten by anyone who
+  opens it and types (CON-235; `IMG`'s `content` is its description). PDF *is*
+  a document — its extracted text is what the embeddings are built from. An
+  image is not, and has its own screen rather than the fallback
+  (`AssetImageView`, CON-246), so `UnsupportedAsset` is now only reached by a
+  kind this build has never heard of. See
+  `docs/technical-decisions.md#asset-opening`.
+- **An asset update is presence-aware, and a campaign's is not.** Since CON-279
+  the asset PUT reads `alt_text` and `tag_ids` as optional: omit one and the
+  stored value is left alone, send it — including `""` or `[]` — and it is
+  replaced. So a screen sends the fields it owns and nothing else: the document
+  editor sends `{title, content}`, the image screen sends the four fields it
+  shows. `assetToPayload` is gone with the bug it existed for; do not
+  reintroduce a helper that round-trips fields the screen cannot see, because
+  that is exactly what put a stale copy of the tags back over a bulk re-tag.
+  The image screen still debounces the whole asset rather than each field, for
+  the unrelated reason that two saves in flight each carry a stale copy of the
+  other's field.
+- **Tags are filed over a selection, not on a row** (`POST
+  /api/content-bank/assets/tags`, CON-279). Each asset keeps what it has, minus
+  `remove`, plus `add`, so the client never has to say what an asset already
+  carries and two people filing at once don't overwrite each other. The server
+  refuses a tag named in both lists rather than picking a winner.
+- **Deleting a document asks, from every way in.** The row's bin, the selection
+  bar and the document's own screen all reach a confirmation that *names* what
+  it is about to delete — one title, or a count. The bin used to delete on one
+  click, on the argument that a row is one of twenty and a mistake is visible
+  immediately; the second half is false, because nothing in the product undoes
+  this. Route a new entry point through `DeleteDocumentsDialog`
+  (`ContentList` holds the state; a single row is a selection of one) rather
+  than calling the mutation, and never add a second path that skips the asking.
+- **A duplicate upload is warned about before it happens, not after.** The
+  server dedupes an identical **image** by checksum within the workspace and
+  answers with the asset it already has — no new row, no changed timestamp —
+  so the upload's entire visible effect is that nothing happens. `UploadModal`
+  hashes each staged image (`lib/fileChecksum`, `crypto.subtle`) and names the
+  document it would resolve to. Images only: nothing else carries a checksum,
+  so a second PDF really is a second document and warning about one would be a
+  promise the server doesn't keep.
+- **An upload refusal is the server's prose, worded by the client.** The upload
+  endpoint answers 201 and reports each file's fate as an English sentence —
+  some of it Go, package prefix and all — so `lib/uploadError` matches the
+  conditions onto catalogue copy and lifts the caps out of the message rather
+  than restating them. Add a case there, not a literal at the call site; an
+  unmatched message falls through to a fallback that strips the package name.
+  The real fix is a per-result `code` on the API (`docs/open-questions.md` S4).
 - **A campaign update is a whole-resource PUT, and the server defaults every
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of
   the CON-181/182 columns. Always build the payload through `campaignToPayload`
-  (`campaignBriefForm/shared.ts`), which round-trips the server's own values and
-  takes only the fields you mean to change as overrides.
+  (`lib/campaignPayload.ts`), which round-trips the server's own values and
+  takes only the fields you mean to change as overrides. Two fields are the
+  exception, and the payload leaves them out on purpose: `use_assets` and
+  `asset_ids` are presence-aware since CON-233, so omitting them is what
+  preserves them — see the next bullet.
+- **A campaign's documents are attached and detached, never restated**
+  (CON-233). `POST /api/campaigns/:id/assets` unions ids in; `DELETE
+  …/assets/:assetId` takes one out; both are a single atomic UPDATE of one
+  column, both answer with the campaign, and both derive `use_assets` from the
+  set they leave behind — so the client never computes that flag and never
+  writes an empty list, which the server still reads as *every asset in the
+  workspace*. This is why `campaignToPayload` omits the pair: an autosave that
+  restated the set from the snapshot its form was built on would put a stale
+  copy back over an attach that had just landed. It is also why
+  `lib/campaignMembership` no longer has a write queue, a pre-write re-read or
+  a whole-record PUT — the server serialises these across tabs and users, which
+  is further than a queue in one tab could reach. The one thing that module
+  still does by hand is the pre-CON-210 whole-bank state (`use_assets: true`
+  over an empty set, meaning everything): the endpoints can only union and
+  subtract, so an attach to a campaign in that state has to carry the bank
+  along or it would silently narrow the campaign to the one new document.
+- **A post's sources are the same rule, one field over** (CON-233). `POST` and
+  `DELETE /api/posts/:id/assets` own `used_asset_ids`, and `postToPayload`
+  omits it — so the editor's autosave can no longer write the field at all,
+  which is the point: it used to, and a keystroke inside the 600ms debounce
+  cloned the pre-attach list and its flush undid the attach. Attach and detach
+  through `attachToPost`/`detachFromPost` (`lib/postSources`), never through
+  `changeDoc` alone — but keep painting through `changeDoc`, because a cache-only
+  edit is dropped by that same clone. Two consequences worth knowing: a save's
+  *response* is no longer evidence about the set either (it carries the row as
+  the server read it, before any attach that landed since — hence
+  `withHeldSources` in `lib/postCache`, applied at all three write sites in
+  `usePost`), and both endpoints answer **409 while the post is `scheduled` or
+  `published`**, sources being locked content under CON-251. Note
+  `published_url` is in that same payload and is listed rather than omitted
+  (CON-165): the server defaults it away on silence and *preserves*
+  `used_asset_ids`, so the two fields are opposites and a builder that treats
+  them alike is wrong about one of them.
+- **A post's type is a default, not a question** (`post-type-auto`, off). *Auto*
+  is the empty `platform_post_type` every post is **already** created with —
+  `useAddPost` sends a campaign and a date and nothing else — so the feature
+  stores nothing and waits on no endpoint; it reads a state that already existed
+  as an intention rather than as an omission. While a post is automatic the
+  format is derived on every render from the body and the attachments
+  (`lib/postTypeAuto`), and the slug is written to the record on the way **out
+  of `draft`** — every edge, not just the committing ones. That boundary is the
+  server's and not a judgement call: `requirePlatformIfNotDraft` refuses a PUT
+  carrying an empty type under any other status, so a post that crossed it still
+  automatic could not be saved again at all. Hence `canBeAutomatic`, read in both
+  directions — the picker offers *Auto* (and its older twin, the deselect row)
+  only to a draft, and the transition out is what pins. Pinning is one-way:
+  reopen to draft and the post keeps the slug it resolved to.
+  The ladder is `text-post → image-post → carousel → video → reel → short →
+  thread`, loosest first, bounded by what the *campaign* enables — Auto can only
+  land somewhere the picker would have offered. It never chooses Story, Article
+  or Link post (editorial decisions the content cannot imply) nor a
+  `whitelist_only` type (no rule to test). **`thread` is a rung only while
+  `thread-sequence` is on**, and only where the post-type rule says
+  `segmented` — that pair replaced a hard-coded list of networks. With the flag
+  off the empty slug means what it always did — a `fail` in the checks bar and
+  a mark on the card. The ladder is also what a *pinned* thread demotes through
+  when its body comes to one message (`demotedFrom`), with the chain rung
+  barred so it cannot resolve straight back. See
+  `docs/technical-decisions.md#auto-post-type`.
+- **A campaign is archived or deleted — it has no status** (CON-156). `draft`
+  and `active` both meant active and nothing ever showed either, so the client
+  no longer models `status` at all and the server creates every campaign
+  active. What replaced it is a lifecycle with its own endpoints: `POST
+  …/:id/archive` and `…/unarchive` (204, idempotent, deliberately not a field on
+  the PUT so archiving can't ride along with an edit), and `GET /api/campaigns`
+  which returns the active set unless asked for `?archived=true`. The two lists
+  are separate query keys — an archived campaign must never reach the sidebar
+  or seed `useCampaign`. `DELETE` is a soft delete server-side, but that row is
+  our safety net and not an undo: there is no restore anywhere, so never write
+  copy that hints at one.
+  **On screen the archive is a drawer, not a view.** It is a `Collapse` closed
+  at the foot of the Campaigns list, below the active cards — deliberately no
+  longer an icon in the top-right, because that corner switches between two
+  ways of looking at the same work and this is a small pile at the end of the
+  list. It renders only when there is something in it (the two exceptions, and
+  why, are on the component). The `?archived=true` search param survives with a
+  new job: it *opens* the drawer on arrival, which is what archiving redirects
+  to, so the campaign that just left the list is seen landing in the pile
+  rather than appearing deleted.
+  **Archive and delete sit together in one Danger Zone**, and the card's copy
+  is general — each button opens a modal carrying its own consequences, which
+  is where someone about to act will actually read them.
 - **The campaign's `estimated_post_count` is a rate, not a total.** Since
   CON-182 it means "this many posts per `goal_cadence` period" (`week`/`month`),
   and the server backfilled every campaign to `month` — so an old total of 12 on
@@ -120,7 +302,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   hidden text. Editing a screen that still holds hard-coded English? Move the
   strings you touch into the catalogue rather than adding a literal beside them.
   Genuinely exempt: developer-facing text (`console.*`, thrown `Error` messages,
-  test fixtures), and `i18n/bootMessages.ts` — see the next bullet.
+  test fixtures), `src/devtools/` (staging-only screens that a production build
+  compiles out — see `docs/technical-decisions.md#staging-flag-overrides`), and
+  `i18n/bootMessages.ts` — see the next bullet.
 - **How the catalogues work.** English is bundled and is the fallback; `en.ts`
   is the shape everything else is typed against, so a key missing from `es.ts`
   is a compile error (a key missing from `en.ts` is a compile error at the call
@@ -132,10 +316,35 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   at construction takes `t` and is built per render instead: Zod schemas are
   `(t) => schema` factories (`hooks/useAuthSchemas.ts`), and the same goes for
   label maps and `const` option arrays — a module-level constant freezes
-  whichever language loaded first. Only the auth screens, sidebar, Profile and
-  Workspace Settings are converted so far (CON-174); the rest is still
-  hard-coded English and renders fine — that is legacy to be converted, not a
-  precedent to copy. See `docs/technical-decisions.md#i18n`.
+  whichever language loaded first. Where a table of *keys* is the natural
+  shape, keep the table and translate at the point of use
+  (`PostsEmptyState`'s `COPY`); where the values are something `Intl` already
+  knows, drop the table (Calendar Settings' weekday names, and the analytics
+  heatmap's). **A pure function that produces words takes `t` as its first
+  argument** — `components/analytics/format.ts` is the worked example, and it
+  is what lets the same helper be called from a component and from a view
+  mapper without either of them holding a frozen label. **Coverage comes in two
+  shapes**, and the difference is what you need to know before opening a file.
+  Some screens are converted whole: the auth screens, sidebar, Profile,
+  Workspace Settings, the campaign calendar, the analytics surfaces, **Brand**,
+  `/workspaces`, `/invite`, `/plans` with the Plan & billing card and the
+  entitlement renderings, and the two flag-gated features written catalogued
+  from the start (Tasks, Activity). Others hold **islands** of catalogued copy
+  inside hard-coded English, because a PR converted the strings it touched and
+  correctly left the rest alone — the post editor, the Campaigns list and the
+  Content Bank are all islands today. So a literal sitting beside a `t()` call
+  in those files is the existing state rather than a mistake to copy, and a
+  converted neighbour is no evidence a screen is done: check. The rest is still
+  hard-coded English and renders fine (CON-174) — legacy to be converted, not a
+  precedent. See `docs/technical-decisions.md#i18n`.
+- **A conversion is only proved by rendering in another language.** In an
+  English test a literal in a component and a catalogue entry are the same
+  string, so an English-only suite cannot tell a converted screen from an
+  unconverted one. `components/analytics/localisation.test.tsx` is the pattern:
+  load Spanish, switch to it, render, and assert both that the Spanish copy is
+  there *and* that the specific English words that used to be literals are not.
+  Spanish being gated off does not matter — the gate is on the entry points
+  that choose a locale, never on i18next.
 - **A language is released by one boolean.** `LOCALES` in `i18n/config.ts`
   carries `enabled` per locale; only enabled ones are offered in the picker,
   accepted from `?lang=` or restored from a previous visit — and a stored
@@ -143,6 +352,33 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   the deploy that releases it. The gate sits on those entry points, not on
   `setLocale`, so the switching machinery stays exercised by its tests while
   nothing but English is released. Spanish is complete and gated today.
+- **Dates, times, numbers and joined lists go through `lib/intl.ts`** —
+  `formatDate`, `formatNumber`, `formatRelative`, `formatList` — never
+  `toLocaleDateString(undefined, …)`, a bare `new Intl.DateTimeFormat`, or a
+  hand-rolled `slice(0, -1).join(', ') + ' and '`, which is an English list
+  formatter wearing no label (Spanish turns *and* into *e* before an i- sound,
+  and neither the conjunction nor the serial comma is ours to hard-code).
+  The bare forms mean the *browser's*
+  language, and the app's is a separate choice the user makes in Workspace
+  Settings; a Spanish UI printing "Aug 20" is the same bug as an English one
+  printing "20 ago". These helpers read the active language at call time and
+  cache the formatter per locale, so nothing is hoisted to module scope where
+  it would freeze the first language loaded. Three deliberate exceptions:
+  `lib/timeZones.ts` pins `en-US` because it *parses* `formatToParts` rather
+  than showing it, `PostCard`'s clock pins `hour12: false` because the card
+  gives the time one fixed-width slot, and `docsTable`'s `stamp()` pins
+  `en-GB` because day-first `01 Aug 26` is the format that column was asked
+  for. That last one is the only exception that is a *display* choice rather
+  than a mechanical one, so it is the one to revisit first — the app now has
+  the date convention its comment says it was waiting for. The analytics
+  surfaces used to hold a fourth and a fifth (`format.ts` pinning `en-GB` for
+  the axis, `en-US` for thousands, and two mappers pinned to agree with it);
+  they came out together in the i18n pass, because pins that exist only to
+  agree with each other agree just as well when all of them read the active
+  language. Formatting without reading `t()`
+  means nothing re-renders the component on a switch — the overlay covers the
+  app but doesn't remount it — so subscribe with `useLocale()` (or take
+  `i18n.language` off a `useTranslation()` you already have) and pass it in.
 - **The language switch is covered by a 2-second full-screen loader**, and
   `?lang=es` forces one for a page load then persists it. The waiting screen's
   own copy is the one string that must *not* come from the catalogue — it lives
@@ -174,9 +410,119 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   from the `FEATURE_FLAGS` record directly: the hook is the seam where
   server-driven values will land, and going through it keeps every call site
   untouched when they do. A flag is not a permission.
+- **A flag's life ends at the second merge, not the first.** Turning one on is
+  a deliberate step; deleting it is the *next* one, once the feature has
+  survived one real deploy and nobody has reached for the switch. A flag left
+  on is a branch nobody takes, and every reader of its call sites has to answer
+  "and when this is false?" about code that has not run since it shipped.
+  **The `true` entries are the ones on a clock — the `false` ones are the
+  mechanism working**, holding unshippable work on `develop`, and their number
+  is not a problem to solve. Reviewed on the first working day of each month:
+  every flag that is on and has had a deploy goes, with its off-branch, in a
+  commit that touches nothing else.
+- **On staging and in dev, a flag can be forced for one browser.** A
+  `?ff=tasks,-activity` link or the unlisted `/flags` panel writes an override
+  to localStorage, so one teammate can exercise a half-built feature on the
+  shared deploy while everyone else sees the app as it ships. Deliberately
+  *not* in `/api/settings` — that row is workspace-wide, which is the opposite
+  of what this is for. The whole layer is compiled out unless the build sets
+  `VITE_DEV_TOOLS=1`, so in production the key is inert and the panel's chunk
+  does not exist; keep it that way, and never link `/flags` from the app. See
+  `docs/technical-decisions.md#staging-flag-overrides`.
+- **The analytics dashboard can be served simulated numbers, for the same
+  browser and behind the same gate.** `?analytics=demo` (or the panel at
+  `/flags`) points `/overview`, `/performers` and `/learnings` at
+  `services/api/analytics.demo.ts`, because a local API answers
+  `available: false` for all three — so the cards are otherwise only ever seen
+  in their setup state. The reason is **not** that the figures are thin: the
+  analytics tables live in a *separate* database (the backend keeps its own
+  `migrations_analytics/` tree, and `20260729000001_drop_post_analytics`
+  removed them from the main one), and `ANALYTICS_DSN` is unset in the local
+  stack — which `config.go` documents as the graceful-disable default. So there
+  is nothing to sweep, rather than nothing swept yet. Wiring one up needs no
+  TimescaleDB and no second container: every Timescale block in those
+  migrations is guarded by `IF EXISTS (… 'timescaledb')`, the API embeds and
+  applies them at boot, and they track their state in `bun_migrations_analytics`
+  precisely so the schema can share the dev Postgres with the control plane. `empty` and `unavailable` produce the other two answers the endpoints
+  give. It is **not** the `STUBBED` pattern: these endpoints exist and ship, so
+  the demo is off by default even in dev, has to be asked for, folds away
+  entirely without `VITE_DEV_TOOLS=1`, and is announced in the corner for as
+  long as it is on — invented figures about a workspace's own posts are
+  indistinguishable from real ones, and somebody would act on them.
+- **What the workspace's tier allows is `useEntitlement(key)`, never a flag**
+  (CON-232). A flag says whether a feature is *built*; a tier says whether this
+  workspace *bought* it — per workspace, and therefore the server's answer. Four
+  rules make the seam safe. **Unknown key allows**: a feature the tier settings
+  don't mention is one nobody decided to charge for, so it works the day it
+  ships instead of going dark until every tier is taught about it. **Unresolved
+  decides nothing** — `pending` is a state in the union, because rendering a
+  lock while the plan is in flight tells a paying customer they didn't pay.
+  **The client never maps a tier name to a number**: tiers are versioned and
+  configurable and a workspace keeps the version it bought, so two "Pro"s can
+  hold different allowances and only the server's resolved snapshot is true.
+  **Dates are display data** — never an input to a decision, or a wrong system
+  clock becomes a billing one. It is a hook rather than a `<Gate>` wrapper
+  because *hidden* is a legitimate answer and a wrapper can't remove the `<li>`
+  around it: the call site chooses hide / lock / lock-with-upgrade, and only the
+  renderings are shared (`components/entitlements`).
+- **A downgrade suspends; the server picks what.** Nothing is deleted, and the
+  new tier only lands at the next billing boundary. A workspace that drops to
+  one campaign and has two keeps both, with one flagged read-only *by the
+  server* — never worked out on the client by counting against a limit, which
+  would pick a different victim than the server did and a different one per tab.
+  So gating applies to **creating and choosing**, never to displaying what
+  exists: suspended things stay in their lists and still open, and every picker
+  has to tolerate a current value that is no longer among its options.
+- **Two long-lived streams, and they are not interchangeable.** `/api/events`
+  is an invalidation bus — at-most-once, no log, `Last-Event-ID` ignored — so an
+  event is a *hint* that a cache is stale and the recovery path is refetch.
+  `/api/notifications/stream` is an inbox: the table is the log, the stream
+  replays from `Last-Event-ID`, and a row survives the tab being closed. Put a
+  fact somebody must not miss on the second one and a cache hint on the first;
+  neither can be a topic on the other. They share only the machinery for staying
+  open (`lib/streamConnection`: backoff, silence watchdog, subscriber counting)
+  and the one frame parser (`lib/sse.ts`) — keep both single. And notification
+  copy comes from the **catalogue**, keyed off `type` + `data`, never from the
+  `title`/`body` the server composes; those are the fallback for a `type` this
+  build predates (`lib/notifications.ts`, `docs/activity.md`).
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
   (`uploads` uses XHR) or typed errors (`zernio`).
+- **A Brand binding is four nullable ids, and the client only ever sets them**
+  (CON-245). `brand_voice_id` and `brand_audience_id` sit on the campaign and on
+  the post; *which* voice a post is actually written in is resolved — post →
+  campaign → the library's default voice, and for an audience post → campaign
+  and then nothing, because the workspace step is voices-only. That walk lives
+  in `components/brand/binding.ts` and mirrors `brandresolve` on the server,
+  which is what the generation flows obey; when the two disagree, ours is wrong.
+  Never resolve inline at a call site, and always show `source` beside a
+  resolved value — an inherited voice in a bare picker reads as *no voice*, and
+  the repair everyone reaches for pins it onto every post and kills the
+  campaign-level control. The model is deliberately **narrower than
+  `docs/brand-materials.md` §8**: no cast of voices, no local delta, no
+  staleness read, because the server shipped none of the three (CON-245 §13 is
+  where they would come back) and a picker whose extra choices no generator
+  reads is worse than no picker. **All four refs are presence-aware on their
+  PUTs**, which is why `campaignToPayload` and `postToPayload` both leave them
+  out — restating one lets an autosave undo a choice made a moment ago. A
+  campaign's is written by passing an override to `campaignToPayload`; a post's
+  goes through `setPostBrand` (`PUT /api/posts/:id/brand`), which is *not*
+  blocked on a submitted post: a binding is an input to the next generation, not
+  a change to what already went out, so CON-251's lock does not reach it. See
+  `docs/technical-decisions.md#brand-binding`.
+- **A feature waiting on the back end is stubbed with a JSON seed, never with
+  MSW.** When a flagged feature needs data the server cannot answer for yet,
+  write the normal `services/api/<thing>.ts` with the signatures the endpoint
+  will have, and back them with a `.seed.json` plus `localStorage` and a small
+  delay — `services/api/tiers.stub.ts` is the pattern today, and
+  `services/api/brand.ts` was the worked example until CON-245 took the last of
+  it out. A service worker buys wire fidelity for a contract nobody has agreed,
+  and the mock ends up inventing the API; a plain module is one readable file,
+  and swapping each body for an
+  `apiJson` call leaves the hook, the routes and the components untouched. Rules
+  that make it safe: the stub is reached only through its hook, its doc comment
+  names what it is, and it stays behind the feature's flag like everything else
+  the API can't back.
 - **A workspace is the tenant and a member is a user.** Inside a workspace,
   `services/api/workspaces.ts` is a façade over `/api/tenants/current`,
   `/api/users` and `/api/invitations` (CON-26); the account-level
@@ -234,6 +580,70 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   and `bottom-4` are shared with the assistant trigger so the bottom edge is one
   line; the trigger's `right-4` against the 24px content gutter is the one
   deliberate break-out.
+- **A control that doesn't govern the whole page doesn't go in the corner.**
+  The top-right rule above says what *may* sit there, not that every view
+  switch must. Analytics' period and platform controls sit in a scope bar above
+  the cards (`WorkspaceScopeBar`) because neither reaches all three: the period
+  does not reach the all-time lessons card, and only `/performers` takes a
+  `platform`. What makes that safe is that the cards answer back —
+  `SectionCard`'s `scope` and `everyPlatform` print one line under the heading
+  naming the controls that do *not* reach it. A card silently ignoring a
+  control above it is worse than not offering the control.
+- **Charts are hand-rolled SVG, except the two full-card plots.**
+  `components/analytics/charts.tsx` draws sparklines, heatmaps, the decay
+  curve, the publication rail and the rank bars itself — every shape is a
+  polyline, a band or a grid of rectangles, and rolling them keeps the colours
+  on semantic tokens. `TrendChart` and `ColumnChart` go through `plot.tsx`,
+  which measures real pixels and owns the scale (`@visx/scale`), the pointer
+  (`@visx/event`) and the hover card; only the line itself is `@visx/shape`.
+  Two things not to undo: the plot is **measured, not stretched** — the old
+  `preserveAspectRatio="none"` viewBox made the focus dot an ellipse and every
+  pointer coordinate a conversion — and it measures with its **own**
+  `useMeasuredWidth`, not `ParentSize`, which never observed a plot mounted
+  after the first paint and left every switched measure blank. Sparklines keep
+  the stretched viewBox; they have no pointer and nothing round.
+- **A measure is drawn in one shape, decided in one place.** `drawnSeries`
+  (`analytics/format.ts`) says whether a series is accumulated, and both the
+  tile's sparkline and the chart under it ask it. They used to each hold a
+  copy and drifted — per-day bars under a label reading "Cumulative reach",
+  above a chart drawing the running total.
+- **An idea is a question, `later` carries a date, and triage is the list**
+  (`ideas`, off). The module was imagined as a kanban and is not one: capture
+  wants no structure and a board makes every decision cost a find, a grab, an
+  aim and a drop, with an undecided column that grows to two hundred cards
+  nobody scrolls. So the piles are counts you switch between and the three
+  answers sit on the row they are about. It is **also not a separate triage
+  mode** — the first pass had one, a full-screen keyboard session, and it was
+  cut: the decision was never the slow part, reading the line is, and the line
+  is already legible in the list. What the mode added was a place to go and come
+  back from, a second set of controls to keep in step with the row's, and five
+  single-letter claims on the app's keyboard. `Hotkey` in `lib/hotkeys.ts` is
+  back to its two arrow keys; don't re-add letters for this. Three verdicts
+  because two force every "good, but not this quarter" into a pile that lies
+  about it. **A postponement names the day it comes back**, which is the
+  difference between a maybe-pile and an archive people feel better about — and
+  two rules follow that are easy to get wrong: waking is **derived**
+  (`remind_at <= now`, read at query time; a woken idea is still `later` in the
+  record, so nothing needs a sweep), and **every other verdict clears
+  `remind_at`**, or archiving something you postponed pulls it back out of the
+  archive on a day nobody chose. Everything is reversible — `no` archives and a
+  decided row carries its undo — which is what makes one-click triage safe;
+  deleting is final and reachable only from an opened row. The four counts
+  always sum to the list, so a woken idea is undecided and **not** also later.
+  **The screen is one column wide throughout**, first run included: an empty
+  state that was full-bleed while the list replacing it was narrow moved the
+  page sideways under the person who filed the first idea. One component serves
+  both levels: the campaign's page is `IdeasSurface` with `campaignId` set, and
+  `campaign_id` is a *filter*, so filing an idea onto a campaign keeps its
+  verdict and history rather than making a second row. **An idea is not a
+  task** — a task is work already committed to and drains to zero, an idea is a
+  candidate for commitment and its pile is meant to be long; merging them makes
+  the task list stop draining, which is the one thing that kills a task list.
+  Waiting on `/api/ideas`, which does not exist — contract in
+  `services/api/ideas.ts`, answered by a `localStorage` stub that seeds nothing
+  (an idea is somebody's own sentence, and an invented backlog is
+  indistinguishable from a real one). See
+  `docs/technical-decisions.md#ideas-triage`.
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
 - **Destructive-action labels are written in literal capitals** — `DELETE
@@ -267,13 +677,140 @@ creates the account or adds the workspace to one that already exists) ·
 **multi-workspace is live, unflagged** — [ogen#109](https://github.com/ogen-app/ogen/pull/109)
 merged 2026-08-14; the `multi-workspace` flag and its off-branch were deleted
 once the client was re-tested against the shipped API (CON-147) ·
-dark mode is scaffolded but empty · the
-Content-Bank **Imagery** tab is not populated yet · eslint/prettier/stylelint
-have no committed config in this repo · **i18n covers the auth screens, sidebar,
-Profile and Workspace Settings only** — everything else is still hard-coded
-English (CON-174) · **English is the only released language**: Spanish is
+dark mode is scaffolded but empty · **calendar cards have never shown a
+picture** — the card's only image source is `post.media_urls` and nothing writes
+it; editor uploads land in `post_attachments`, whose thumbnails are 15-minute
+presigned URLs the client cannot persist. Needs a thumbnail on the post list
+payload — CON-247. Calendar Settings' *Show cards as image previews* switch is
+hidden behind `calendar-card-images` until then; it was on by default and inert,
+which read as a broken calendar rather than an unbuilt feature
+(`docs/technical-decisions.md#calendar-card-media`) ·
+**a Content-Bank image has no thumbnail** —
+images upload, store as `IMG` and open on their own screen (CON-246), but the
+server renders no smaller copy, so the list's preview cell draws the full file
+scaled into 40px; `thumbnail_url` is preferred wherever it appears, so nothing
+here changes when that job lands. The other half still missing is the bridge
+that attaches a bank image to a post — **CON-290**, since CON-16 was cancelled
+once CON-246 shipped, and unowned as of 2026-09-08 — which is what the alt text
+is being collected for · **the React Compiler lint rules are warnings, not errors** —
+`react-hooks` v7 reports 123 of them against code that predates it, and each is
+a judgement call about a component rather than a mechanical fix
+([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n converts whole screens in some
+places and only islands in others.** Converted whole: the auth screens,
+sidebar, Profile, Workspace Settings, the campaign calendar (its week, month
+and list views, the cards, both rail panels and the posts table), the
+analytics surfaces (the workspace dashboard, the campaign composition, a
+post's own numbers and the three view mappers behind them), Brand (the
+Overview, all five sections, the three editors and the routes — plus the two
+tables behind them, `lib/brandSections` and the starters, which now carry
+behaviour only), `/workspaces`,
+`/invite`, `/plans` with the Plan & billing card, and the flag-gated Tasks and
+Activity features. Islands only: the post editor (`posts.*` — status and
+publish labels, the published link, sources, notes, quality, versions,
+duplicate and the performance card), the Campaigns list (the archive drawer and
+its Danger Zone, the posts toolbar and the empty state) and the Content Bank
+(the image screen, the tagging and selection dialogs, the delete confirmation,
+the upload refusals and the list and page chrome). Everything else is
+still hard-coded English (CON-174) · **English is the only released language**: Spanish is
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
+
+**A thread publishes as one post, not as a thread** (CON-196/CON-284,
+`thread-sequence`, off). Behind the flag the chain is **derived from the body**
+rather than composed in separate inputs: the editor stays the one Markdown card
+every post type uses, and the breaks come out of the words. A chain that comes
+to one message is not a failure — it publishes as an ordinary post, and
+`demotedFrom` (`lib/postTypeAuto`) picks which one on the way out of draft.
+
+**The split is the server's, and that is the whole shape of this feature.**
+R1 (ogen#140) had the client author `thread_segments` message by message and
+restamped `content` from the first of them; R2 (ogen#144, merged 2026-09-10)
+inverted it, which is the model this client already had. `posts.content` is now
+canonical — literally what the author typed, `---` lines and all — and
+`thread_segments` is `platforms.SplitThread` run over it on every write. Four
+rules follow, and each of them is a thing not to undo:
+
+- **Never send `thread_segments`.** A write carrying it is ignored, so
+  `postToPayload` omits it and nothing on the screen keeps it in step. Saving
+  the body *is* saving the thread — which also means a calendar drag or an
+  unschedule can no longer flatten a thread by omitting a field it knows
+  nothing about.
+- **Never re-implement the split.** `POST /api/posts/thread/preview` is the
+  client's only account of where a body breaks (`useThreadPreview`), and
+  `lib/threadSequence` now places files on the messages that come back rather
+  than cutting any itself. The splitter it used to hold broke at every blank
+  line and took `***` as a divider; the server does neither — three or more
+  **hyphens** alone on a line, and with no divider anywhere the body is packed
+  to the ceiling. Two implementations in two languages is exactly what R2's
+  explicit-segments design exists to avoid.
+- **A message can be too long.** In manual mode the ceiling is not applied at
+  all, so an over-long message is reported (`max_content_chars` with a
+  `segment`) rather than cut. Length verdicts come off `preview.errors`, never
+  from a count taken here.
+- **`segment_index` is optional and NULL means the root.** A file nobody moved
+  needs no index written for it. The server still answers **422** to setting one
+  on a post that is not a `thread`, on the upload and the PATCH alike, and that
+  PATCH is presence-aware — never send `segment_index` alongside `position`.
+
+The rest of the back end's half is unchanged from R1: the submit path fills
+Zernio's `threadItems`, the post-type rule carries `segmented` (which replaced a
+hard-coded list of chain-capable networks here), attachment validation counts
+per message, and `thread` is on the Threads entry in `supportedPlatforms`, so
+`aheadOfPublishers` is gone with the vocabulary gap it covered.
+
+**Waiting on one server fix.** The live run happened on 2026-09-16 and found it:
+`platforms.isRuleLine` takes three or more **hyphens**, but the divider this app
+writes is `***` — BlockNote's Markdown serialiser emits the default rule marker
+and normalises a typed `---` to it, so no author can put a hyphen rule in the
+body. Every thread this client can author therefore comes back from the preview
+endpoint as **one** message with a literal `***` inside it. Raised on CON-284,
+asking the server to widen the test to the CommonMark thematic break; do not
+normalise it here.
+
+**So `thread` is now flagged on X as well as on Threads**, and that is knowingly
+a change with the flag off — the one thing the flag rule forbids. It was taken
+because R2 is *deployed*: the server splits and gates every thread body whatever
+this build does, so "behaves as before" stopped being available, and what was
+left was a type that fails as a thread of one with nothing on screen saying so,
+or chains by a length the author cannot steer. Nothing is renamed — an existing
+thread post keeps its label, only the picker stops offering the slug. Both go
+back on together when the divider fix lands. See
+`docs/technical-decisions.md#thread-sequence`.
+
+**Two operator-tunable server limits are mirrored on the client with nothing to
+sync them** (CON-292). `platform_global_limits` is a single row an operator can
+edit in Harbor, and no REST endpoint serves it — so `MAX_ALT_TEXT_CHARS`
+(`lib/assetStatus.ts`) and `MAX_THREAD_POSTS` (`lib/threadSequence.ts`) are
+copies that match the seed today and cannot notice when it changes. Lower
+`max_thread_segments` to 10 and the editor keeps cutting at 25, then the publish
+is rejected. The fix is for both to ride along on `GET /api/platforms`; until
+then, changing one is a coordinated change rather than a config edit.
+`MAX_VIDEO_UPLOAD_BYTES` is *not* one of these — it is deliberately ours and
+below the server's ceiling, so it wins on purpose. The same ticket left the six
+existing platforms' constraint jsonb untouched, so `lib/platformMedia.ts`'s
+override table cannot be retired either, and an operator editing Instagram's
+image cap changes nothing the editor checks.
+
+**The help centre waits on content, not on an endpoint** (`help-center`,
+CON-173). The drawer, its triggers and the `#help/<key>` deep link are built;
+`services/help` serves fixtures. There is no API in the way — articles live in
+the Sanity project `getogen.com` already runs, and the app reads the **public
+`production` dataset** — so switching on is: seed `production`, register the
+app's origins for CORS (**without** credentials; it only ever reads), and
+replace the two functions in `services/help/index.ts` with the GROQ query. The
+starter articles were bootstrapped into the private `staging` dataset, which a
+browser cannot authenticate against, and that is the whole of why the flag is
+off. Three things to keep hold of when it lands. Help content must **never** go
+through `services/api/http.ts` — every request in there carries
+`credentials: 'include'`, and Sanity is a third party. An article is identified
+by a language-independent `key` and cross-linked by reference rather than by
+title, so a translation cannot break a link; the catalogue holds only the
+drawer's own chrome (`help.*`), because prose is content and belongs in the
+CMS. And the trigger is the feature's only presence on ordinary screens, so it
+reads the flag and passes it to `useHelpTopicMap({ enabled })` — an
+unconditional read would open a cross-origin request from the post editor for a
+drawer that cannot be opened, which fixtures hide right up until the deploy
+that swaps them out.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's
@@ -282,6 +819,60 @@ token-gated unsubscribe pages, not a session-authenticated one, so
 contract is in `services/api/emailPreferences.ts` and asserted by its test.
 Flip the flag when the handler answers. See
 `docs/technical-decisions.md#email-preferences`.
+
+**Workspace tiers run on a local stub** (`workspace-tiers`, CON-232). The seam
+— `types/entitlements.ts`, `lib/entitlements.ts`, `useEntitlement`, the shared
+renderings in `components/entitlements` — is written and tested, and two
+surfaces talk *about* the plan rather than being gated by it: the **Plan &
+billing card** in Workspace Settings (`components/workspace-settings/
+PlanSection`) and **`/plans`** behind its CHANGE PLAN. Choosing a tier
+re-answers every `useEntitlement` in the app, which is how the gating gets
+looked at before the API exists. **Waiting on** `GET /api/entitlements`,
+`GET /api/tiers`, `POST /api/workspace/plan`, `GET /api/billing` and
+`POST /api/billing/portal` — contracts in `services/api/entitlements.ts`,
+`tiers.ts` and `billing.ts`, all asserted by their tests, and all tested
+against the *wire* path (`fetchWorkspacePlan`, `fetchBilling`) so the stub
+can't make a contract go dark. CON-208 (tenant tiers and groups) and CON-86
+(usage metering) are done server-side, so the tiers and the counters exist;
+what is missing is a workspace-scoped REST read that puts them together, plus a
+`suspended` flag on the resources a downgrade makes read-only.
+
+**`/plans` deliberately sits outside `_authenticated`**, like `/workspaces`: it
+reads as a full-screen modal — one X, top right — because it is a detour every
+entry point returns from, and the sidebar's items belong to the work it is a
+detour from. The X goes *back* rather than to a fixed address. Two consequences
+of living out there: the broadcast stream closes while it is open, and the
+reference caches warm again on the way back.
+
+**Ogen sells through Lemon Squeezy as merchant of record, so the app holds no
+billing fields.** Lemon Squeezy is the legal seller: it takes the card, holds
+the billing address and tax id, works out and remits VAT/GST, and issues the
+invoice. Every editable billing field therefore already has a hosted, PCI-scoped
+form we neither write nor answer for — so our side is a *report and a door*. No
+address, no tax id, no card, no cancel endpoint; a second copy here is one that
+can disagree with the invoice. **And no billing screen**: once the provider has
+taken everything editable, what is left to state is a plan, a card's last four
+and one sentence naming where the rest lives, which is a card in Workspace
+Settings rather than a page — a page of that is white space with two buttons on
+it. The door is
+`POST /api/billing/portal`, which mints a **signed link that expires within the
+day** — never cache, store or put it in a `href` at render time, and open the
+tab synchronously on the click (a `window.open` after an `await` is blocked).
+
+The stub is `services/api/tiers.stub.ts` — a JSON seed of the decided tier
+matrix plus `localStorage`, with `STUBBED` switching the call sites, and it
+answers the billing read too (no provider is connected, so: no subscription and
+no portal). It does two things the client is forbidden to do, and says so:
+it **ranks** tiers (to decide upgrade from downgrade, hence `direction` on the
+wire) and it **reads the clock** (to date the renewal, which is also the
+boundary a downgrade lands on). Neither may leak out — `rank` is stripped before
+anything leaves the file, and its test asserts that.
+
+No feature is gated yet. Which of hide / lock / lock-with-upgrade each key gets
+is decided and recorded on `EntitlementKey` in `types/entitlements.ts`; wiring
+the call sites is the remaining half. An entitlement nothing consults is the
+same as no entitlement — but note the flag now also switches on a screen, so it
+stays **off** on `develop` until the endpoints answer.
 
 ## Global rules
 

@@ -56,7 +56,7 @@ function ProfilePage() {
   }
 
   return (
-    <PageContainer variant="fullFlex">
+    <PageContainer variant="fullFlex" className="page-content-motion">
       <SettingsSaveProvider>
         {/* The scroller is nested inside a positioned wrapper so the save bar
             can anchor to the column without scrolling away with the cards. */}
@@ -72,7 +72,9 @@ function ProfilePage() {
               <ProfileIdentitySection user={user} />
               <LanguageSection />
               <PasswordSection />
-              {emailPreferencesEnabled && <EmailPreferencesSection userId={user.id} />}
+              {emailPreferencesEnabled && (
+                <EmailPreferencesSection userId={user.id} />
+              )}
               <SettingsCard title={t('profile.dangerZone.title')}>
                 <div className="flex flex-col items-start gap-3">
                   <p className="max-w-150 text-sm text-tertiary-foreground">

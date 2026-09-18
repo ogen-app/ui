@@ -11,12 +11,17 @@ import {
   togglePostType,
   type CampaignAccountTarget,
 } from './campaignAccounts.ts'
-import { buildPlatformView, getPlatformInfo, type PlatformView } from './platformDictionary.ts'
-import type { Platform, PublisherAccount } from '@/types/campaigns'
+import {
+  buildPlatformView,
+  getPlatformByZernioId,
+  type PlatformView,
+} from './platformDictionary.ts'
+import { makePlatform } from './platformFixtures.ts'
+import type { PublisherAccount } from '@/types/campaigns'
 
-const FACEBOOK = 'zBU1zqVICGfk'
-const LINKEDIN = 'AXqWG7U2qnpt'
-const INSTAGRAM = 'rzgpTkARLH0L'
+const FACEBOOK = 'facebook'
+const LINKEDIN = 'linkedin'
+const INSTAGRAM = 'instagram'
 
 function account(id: string, username: string): PublisherAccount {
   return {
@@ -29,19 +34,19 @@ function account(id: string, username: string): PublisherAccount {
   }
 }
 
-/** A platform view carrying `accounts` behind one connected publisher. */
-function view(platformId: string, accounts: PublisherAccount[]): PlatformView {
-  const info = getPlatformInfo(platformId)!
-  const platform: Platform = {
-    id: platformId,
+/**
+ * A platform view carrying `accounts` behind one connected publisher.
+ *
+ * The slug doubles as the row's sqid here. Nothing in this file resolves one
+ * into the other — the views are handed to `accountRows` already joined — so a
+ * second identifier would only be a second thing to keep in step.
+ */
+function view(zernioId: string, accounts: PublisherAccount[]): PlatformView {
+  const info = getPlatformByZernioId(zernioId)!
+  const platform = makePlatform({
+    id: zernioId,
+    zernio_id: zernioId,
     name: info.name,
-    post_types: {},
-    cadence: '',
-    constraints: '',
-    text_constraints: { max_content_chars: 0, max_title_chars: 0 },
-    video_constraints: {} as Platform['video_constraints'],
-    created_at: '',
-    updated_at: '',
     publishers: [
       {
         id: 'zernio',
@@ -53,7 +58,7 @@ function view(platformId: string, accounts: PublisherAccount[]): PlatformView {
         accounts,
       },
     ],
-  }
+  })
   return buildPlatformView(platform, info)
 }
 
@@ -62,7 +67,11 @@ describe('seedAccountTargets', () => {
     expect(
       seedAccountTargets([{ id: FACEBOOK, post_types: ['reel', 'story'] }]),
     ).toEqual([
-      { platform_id: FACEBOOK, account_id: PLACEHOLDER_ACCOUNT_ID, post_types: ['reel', 'story'] },
+      {
+        platform_id: FACEBOOK,
+        account_id: PLACEHOLDER_ACCOUNT_ID,
+        post_types: ['reel', 'story'],
+      },
     ])
   })
 })
@@ -86,8 +95,14 @@ describe('parseAccountTargets', () => {
   })
 
   it('treats a missing account id as the placeholder kind', () => {
-    expect(parseAccountTargets(JSON.stringify([{ platform_id: FACEBOOK }]))).toEqual([
-      { platform_id: FACEBOOK, account_id: PLACEHOLDER_ACCOUNT_ID, post_types: [] },
+    expect(
+      parseAccountTargets(JSON.stringify([{ platform_id: FACEBOOK }])),
+    ).toEqual([
+      {
+        platform_id: FACEBOOK,
+        account_id: PLACEHOLDER_ACCOUNT_ID,
+        post_types: [],
+      },
     ])
   })
 })
@@ -96,7 +111,11 @@ describe('activateTarget', () => {
   it('adds an account with every allowed post type switched on', () => {
     const next = activateTarget([], FACEBOOK, 'a1', ['reel', 'story'])
     expect(next).toEqual([
-      { platform_id: FACEBOOK, account_id: 'a1', post_types: ['reel', 'story'] },
+      {
+        platform_id: FACEBOOK,
+        account_id: 'a1',
+        post_types: ['reel', 'story'],
+      },
     ])
   })
 
@@ -117,11 +136,25 @@ describe('activateTarget', () => {
 
   it('retires the placeholder when a real account takes its place, keeping its post types', () => {
     const targets: CampaignAccountTarget[] = [
-      { platform_id: FACEBOOK, account_id: PLACEHOLDER_ACCOUNT_ID, post_types: ['reel'] },
-      { platform_id: LINKEDIN, account_id: PLACEHOLDER_ACCOUNT_ID, post_types: ['poll'] },
+      {
+        platform_id: FACEBOOK,
+        account_id: PLACEHOLDER_ACCOUNT_ID,
+        post_types: ['reel'],
+      },
+      {
+        platform_id: LINKEDIN,
+        account_id: PLACEHOLDER_ACCOUNT_ID,
+        post_types: ['poll'],
+      },
     ]
-    expect(activateTarget(targets, FACEBOOK, 'a1', ['reel', 'story', 'poll'])).toEqual([
-      { platform_id: LINKEDIN, account_id: PLACEHOLDER_ACCOUNT_ID, post_types: ['poll'] },
+    expect(
+      activateTarget(targets, FACEBOOK, 'a1', ['reel', 'story', 'poll']),
+    ).toEqual([
+      {
+        platform_id: LINKEDIN,
+        account_id: PLACEHOLDER_ACCOUNT_ID,
+        post_types: ['poll'],
+      },
       // The placeholder's own selection, not the defaults — this is the same
       // row gaining a name.
       { platform_id: FACEBOOK, account_id: 'a1', post_types: ['reel'] },
@@ -130,7 +163,11 @@ describe('activateTarget', () => {
 
   it('leaves other platforms alone when a placeholder is superseded', () => {
     const targets: CampaignAccountTarget[] = [
-      { platform_id: LINKEDIN, account_id: PLACEHOLDER_ACCOUNT_ID, post_types: ['poll'] },
+      {
+        platform_id: LINKEDIN,
+        account_id: PLACEHOLDER_ACCOUNT_ID,
+        post_types: ['poll'],
+      },
     ]
     const next = activateTarget(targets, FACEBOOK, 'a1', ['reel'])
     expect(next).toHaveLength(2)
@@ -155,10 +192,9 @@ describe('deactivateTarget / togglePostType', () => {
   })
 
   it('adds a post type that was switched off', () => {
-    expect(togglePostType(targets, FACEBOOK, 'a1', 'story')[0].post_types).toEqual([
-      'reel',
-      'story',
-    ])
+    expect(
+      togglePostType(targets, FACEBOOK, 'a1', 'story')[0].post_types,
+    ).toEqual(['reel', 'story'])
   })
 })
 
@@ -167,8 +203,16 @@ describe('deriveTargetPlatforms', () => {
     expect(
       deriveTargetPlatforms([
         { platform_id: FACEBOOK, account_id: 'a1', post_types: ['reel'] },
-        { platform_id: FACEBOOK, account_id: 'a2', post_types: ['story', 'reel'] },
-        { platform_id: LINKEDIN, account_id: PLACEHOLDER_ACCOUNT_ID, post_types: ['poll'] },
+        {
+          platform_id: FACEBOOK,
+          account_id: 'a2',
+          post_types: ['story', 'reel'],
+        },
+        {
+          platform_id: LINKEDIN,
+          account_id: PLACEHOLDER_ACCOUNT_ID,
+          post_types: ['poll'],
+        },
       ]),
     ).toEqual([
       { id: FACEBOOK, post_types: ['reel', 'story'] },
@@ -199,7 +243,11 @@ describe('accountRows', () => {
   it('keeps an already-targeted placeholder listed once its platform is connected', () => {
     const views = [view(FACEBOOK, [account('a1', 'acme')])]
     const rows = accountRows(views, [
-      { platform_id: FACEBOOK, account_id: PLACEHOLDER_ACCOUNT_ID, post_types: ['reel'] },
+      {
+        platform_id: FACEBOOK,
+        account_id: PLACEHOLDER_ACCOUNT_ID,
+        post_types: ['reel'],
+      },
     ])
     const placeholder = rows.find((r) => r.account === null)
     expect(placeholder).toBeDefined()
@@ -244,7 +292,11 @@ describe('accountRows', () => {
     ]
     const rows = accountRows(views, [
       // The placeholder was chosen first and still sits below the account.
-      { platform_id: LINKEDIN, account_id: PLACEHOLDER_ACCOUNT_ID, post_types: ['post'] },
+      {
+        platform_id: LINKEDIN,
+        account_id: PLACEHOLDER_ACCOUNT_ID,
+        post_types: ['post'],
+      },
       { platform_id: FACEBOOK, account_id: 'a1', post_types: ['reel'] },
     ])
     expect(rows.map((r) => r.key)).toEqual([

@@ -26,9 +26,19 @@ type Props = {
  * what would break and offers to force it. That means the scary second screen
  * is only ever shown when it is actually warranted.
  */
-export function DisconnectAccountDialog({ account, platformName, isOpen, onClose }: Props) {
+export function DisconnectAccountDialog({
+  account,
+  platformName,
+  isOpen,
+  onClose,
+}: Props) {
   const { t } = useTranslation()
-  const { mutate: disconnect, isPending, error, reset } = useDisconnectZernioAccount()
+  const {
+    mutate: disconnect,
+    isPending,
+    error,
+    reset,
+  } = useDisconnectZernioAccount()
   // Set once the server has told us the guard fired, and how many posts it
   // covers. Null means we're still on the first screen.
   const [blockedBy, setBlockedBy] = useState<number | null>(null)
@@ -53,7 +63,10 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
           onClose()
         },
         onError: (err) => {
-          if (err instanceof ZernioError && err.code === 'account_has_scheduled_posts') {
+          if (
+            err instanceof ZernioError &&
+            err.code === 'account_has_scheduled_posts'
+          ) {
             // Not a failure the user needs a toast for — it's the guard doing
             // its job, and the dialog turns it into the next question.
             setBlockedBy(err.scheduledPosts ?? 0)
@@ -94,16 +107,22 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
                 />
               </p>
               <p>
-                {t('workspaceSettings.disconnect.blocked.keep', { count: blockedBy ?? 0 })}
+                {t('workspaceSettings.disconnect.blocked.keep', {
+                  count: blockedBy ?? 0,
+                })}
               </p>
             </>
           ) : (
             <>
               <p>
-                {t('workspaceSettings.disconnect.body', { platform: platformName })}
+                {t('workspaceSettings.disconnect.body', {
+                  platform: platformName,
+                })}
               </p>
               <p>
-                {t('workspaceSettings.disconnect.published', { platform: platformName })}
+                {t('workspaceSettings.disconnect.published', {
+                  platform: platformName,
+                })}
               </p>
             </>
           )}
@@ -113,11 +132,18 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
               integration) must still show, or the confirm button just returns
               from its spinner over silence. */}
           {error && !isScheduleGuard(error) && (
-            <p className="text-destructive">{disconnectErrorMessage(error, t)}</p>
+            <p className="text-destructive">
+              {disconnectErrorMessage(error, t)}
+            </p>
           )}
         </div>
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={isPending}
+          >
             {t('workspaceSettings.disconnect.keep')}
           </Button>
           <Button
@@ -140,7 +166,9 @@ export function DisconnectAccountDialog({ account, platformName, isOpen, onClose
 
 /** The 409 that turns into the force screen rather than an error line. */
 function isScheduleGuard(err: unknown): boolean {
-  return err instanceof ZernioError && err.code === 'account_has_scheduled_posts'
+  return (
+    err instanceof ZernioError && err.code === 'account_has_scheduled_posts'
+  )
 }
 
 /**

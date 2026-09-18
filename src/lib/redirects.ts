@@ -19,6 +19,10 @@ export function safeRedirect(target: string | undefined): string {
   // so "/\t/evil.com" reaches the browser as "//evil.com" — an authority
   // again. Strip every ASCII control character first so the shape checks
   // below see what the parser will see.
+  // Matching control characters is the entire point: they are what the URL
+  // parser strips, so the shape checks below have to see the string without
+  // them.
+  // eslint-disable-next-line no-control-regex
   const cleaned = target.replace(/[\u0000-\u001F\u007F]/g, '')
   if (!cleaned.startsWith('/')) return FALLBACK
   // "//host" and "/\host" — an authority, not a path.

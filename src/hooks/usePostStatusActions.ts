@@ -105,60 +105,60 @@ export function usePostStatusActions({
   const [running, setRunning] = useState<PostStatus | null>(null)
   const pending = running !== null
 
-  const actions: PostStatusAction[] = getAllowedNextStatuses(post.status).flatMap(
-    (next) => {
-      const meta = getActionMeta(post.status, next)
-      if (!meta) return []
-      const mechanism: PostStatusActionMechanism = meta.mechanism ?? 'transition'
-      const blockers = getTransitionBlockers(post, next, context)
-      return [
-        {
-          next,
-          buttonLabel: meta.buttonLabel,
-          menuLabel: meta.menuLabel,
-          intent: meta.intent,
-          kind: meta.kind,
-          mechanism,
-          reverse: meta.reverse ?? false,
-          disabled: blockers.length > 0 || pending || cancelling,
-          // A cancellation's answer isn't its 202 — the post stays
-          // `scheduled` until the worker lands the flip, and `cancelling`
-          // spans exactly that. So the unschedule button keeps waiting after
-          // its request resolves, which is the truth of what is happening.
-          running: running === next || (cancelling && mechanism === 'cancel'),
-          blockers,
-          run: async () => {
-            if (blockers.length > 0) {
-              const message = blockers.map((b) => b.message).join('; ')
-              toast.error('Not ready yet', { description: message })
-              return { ok: false, error: message }
-            }
-            // Verification asks a question before it moves anything, so
-            // the action's job is to open the dialog and stop. Nothing is
-            // in flight yet — setting `pending` here would disable the
-            // header while the user types the URL.
-            if (mechanism === 'verify') {
-              requestVerification()
-              return { ok: true, post }
-            }
-            setRunning(next)
-            // Route by mechanism so a schedule or user-cancel never
-            // executes as a plain status PUT — see
-            // PostStatusActionMechanism.
-            const result =
-              mechanism === 'cancel'
-                ? await cancelScheduled(next as CancelTarget)
-                : mechanism === 'schedule'
-                  ? await schedule()
-                  : await transitionStatus(next)
-            setRunning(null)
-            reportActionResult(mechanism, result)
-            return result
-          },
+  const actions: PostStatusAction[] = getAllowedNextStatuses(
+    post.status,
+  ).flatMap((next) => {
+    const meta = getActionMeta(post.status, next)
+    if (!meta) return []
+    const mechanism: PostStatusActionMechanism = meta.mechanism ?? 'transition'
+    const blockers = getTransitionBlockers(post, next, context)
+    return [
+      {
+        next,
+        buttonLabel: meta.buttonLabel,
+        menuLabel: meta.menuLabel,
+        intent: meta.intent,
+        kind: meta.kind,
+        mechanism,
+        reverse: meta.reverse ?? false,
+        disabled: blockers.length > 0 || pending || cancelling,
+        // A cancellation's answer isn't its 202 — the post stays
+        // `scheduled` until the worker lands the flip, and `cancelling`
+        // spans exactly that. So the unschedule button keeps waiting after
+        // its request resolves, which is the truth of what is happening.
+        running: running === next || (cancelling && mechanism === 'cancel'),
+        blockers,
+        run: async () => {
+          if (blockers.length > 0) {
+            const message = blockers.map((b) => b.message).join('; ')
+            toast.error('Not ready yet', { description: message })
+            return { ok: false, error: message }
+          }
+          // Verification asks a question before it moves anything, so
+          // the action's job is to open the dialog and stop. Nothing is
+          // in flight yet — setting `pending` here would disable the
+          // header while the user types the URL.
+          if (mechanism === 'verify') {
+            requestVerification()
+            return { ok: true, post }
+          }
+          setRunning(next)
+          // Route by mechanism so a schedule or user-cancel never
+          // executes as a plain status PUT — see
+          // PostStatusActionMechanism.
+          const result =
+            mechanism === 'cancel'
+              ? await cancelScheduled(next as CancelTarget)
+              : mechanism === 'schedule'
+                ? await schedule()
+                : await transitionStatus(next)
+          setRunning(null)
+          reportActionResult(mechanism, result)
+          return result
         },
-      ]
-    },
-  )
+      },
+    ]
+  })
 
   // Hide system-driven transitions (e.g. the publisher worker marking
   // `scheduled` → `published`) — the user shouldn't trigger those — and keep
@@ -184,7 +184,12 @@ export function usePostStatusActions({
     // labelled button there rather than a bare icon.
     // reverse() puts the primary last: the header lays buttons out left to
     // right and the most prominent one belongs nearest the icon cluster.
-    buttons: (forward.length > 0 ? forward : reverse ? [reverse] : []).reverse(),
+    buttons: (forward.length > 0
+      ? forward
+      : reverse
+        ? [reverse]
+        : []
+    ).reverse(),
     back: forward.length > 0 ? reverse : null,
     pending,
   }

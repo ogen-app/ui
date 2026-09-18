@@ -1,10 +1,21 @@
 import { useMemo } from 'react'
-import { usePlatforms } from '@/hooks/usePlatforms'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { useCampaignPostTypes } from '@/hooks/useCampaignPostTypes'
+import { usePlatformCatalog, usePlatforms } from '@/hooks/usePlatforms'
 import { usePostAttachments } from '@/hooks/usePostAttachments'
 import { findRule, usePostTypeRules } from '@/hooks/usePostTypeRules'
 import { resolveCharLimit, titleLimitFor } from '@/lib/platformLimits'
 import { mediaPolicy, type MediaPolicy } from '@/lib/postMedia'
+import {
+  demotedFrom,
+  effectivePostType,
+  isAutoPostType,
+  resolveAutoPostType,
+  type AutoResolution,
+} from '@/lib/postTypeAuto'
 import { evaluatePost, type PostCheck } from '@/lib/postValidation'
+import { planThread, publishesAsChain } from '@/lib/threadSequence'
+import { useThreadPreview } from '@/hooks/useThreadPreview'
 import type { Post } from '@/types/posts'
 
 /**
@@ -12,21 +23,77 @@ import type { Post } from '@/types/posts'
  * post-type rules: the media card and the validations section are two views
  * of the same state, and the upload progress lives in here, so they have to
  * share a single instance (called once, in the post route).
+ *
+ * It is also where the post's **effective** type is decided. An automatic post
+ * carries no slug (`lib/postTypeAuto`), and the format it publishes as is
+ * derived from the very things this hook already holds — the body, the
+ * attachments and the platform's rules. Resolving it anywhere else would mean a
+ * second `usePostAttachments`, and that hook owns the upload progress: two
+ * instances share the fetched rows and not the in-flight uploads, so the media
+ * card would draw a progress bar the validations never saw.
+ *
+ * Everything downstream reads `postType` rather than `post.platform_post_type`,
+ * and gets a concrete slug whether the author picked one or not.
  */
 export function usePostMedia(post: Post) {
   const media = usePostAttachments(post.id)
-  const { data: rules, isLoading: rulesLoading } = usePostTypeRules(post.platform_id)
+  const { data: rules, isLoading: rulesLoading } = usePostTypeRules(
+    post.platform_id,
+  )
   // Reference data behind `staleTime: Infinity` — shared with every other
-  // reader of the platforms query, so this costs no extra fetch.
-  const { data: platforms, isLoading: platformsLoading } = usePlatforms()
+  // reader of the platforms query, so this costs no extra fetch. The catalog
+  // reads the same query; `usePlatforms` is here only for the loading flag,
+  // which several checks below hold themselves pending on.
+  const { isLoading: platformsLoading } = usePlatforms()
+  const catalog = usePlatformCatalog()
 
-  const ruleView = findRule(rules, post.platform_post_type)
+  // The same list the picker offers, so the format Auto lands on is always one
+  // the author could have chosen themselves.
+  const autoEnabled = useFeatureFlag('post-type-auto')
+  const candidates = useCampaignPostTypes(post.campaign_id, post.platform_id)
+  const info = catalog.resolve(post.platform_id)
+  const zernioId = info?.zernioId
+
+  const auto: AutoResolution | null = useMemo(() => {
+    if (!autoEnabled || !isAutoPostType(post.platform_post_type)) return null
+    return resolveAutoPostType({
+      content: post.content,
+      attachments: media.attachments,
+      candidates: candidates.map((pt) => pt.slug),
+      rules,
+    })
+  }, [
+    autoEnabled,
+    post.platform_post_type,
+    post.content,
+    media.attachments,
+    candidates,
+    rules,
+  ])
+
+  const postType = effectivePostType(post.platform_post_type, auto)
+
+  const ruleView = findRule(rules, postType)
   const rule = ruleView?.rule ?? null
-  const platform = platforms?.find((p) => p.id === post.platform_id)
+  const platform = catalog.row(post.platform_id)
+
+  // Thread sequences (CON-196 / CON-284) — a post that publishes as a chain
+  // rather than one post. Two facts, and they arrive from different places:
+  // the *type* is the effective one, so an automatic post that resolved to
+  // `thread` renders as the chain it will publish as; and whether that type is
+  // a chain at all is the server's `segmented`, read off the very rule that
+  // carries the per-message character limit below.
+  //
+  // The flag withdraws the type from every picker, so with it off this is
+  // false for every post, *including* one already saved as a `thread`: that
+  // post keeps rendering as the single body it was written in, which is what
+  // it still publishes as while nothing sends `thread_segments`.
+  const sequenceEnabled = useFeatureFlag('thread-sequence')
+  const sequence = sequenceEnabled && publishesAsChain(rule)
 
   const policy: MediaPolicy = useMemo(
-    () => mediaPolicy(post.platform_id, rule, platform),
-    [post.platform_id, rule, platform],
+    () => mediaPolicy(zernioId, rule, platform),
+    [zernioId, rule, platform],
   )
 
   const ready = !media.loading && !rulesLoading && !platformsLoading
@@ -35,14 +102,27 @@ export function usePostMedia(post: Post) {
   // above rather than re-running the hook's own copies of the same lookups.
   const limitsReady = !platformsLoading && !rulesLoading
   const maxContentChars = limitsReady
-    ? resolveCharLimit(platform, rule, post.platform_post_type)
+    ? resolveCharLimit(platform, rule, postType)
     : undefined
-  const maxTitleChars = limitsReady ? titleLimitFor(platform?.text_constraints) : undefined
+  const maxTitleChars = limitsReady
+    ? titleLimitFor(platform?.text_constraints)
+    : undefined
+
+  // Handed the *effective* type rather than the stored one, so every check that
+  // names a format names the one this post will publish as. When Auto has no
+  // answer this is `''` again, and the post-type check fails exactly as it does
+  // for a post nobody has chosen for — the route replaces that row with the
+  // reason (`lib/postTypeAuto` knows it; `evaluatePost` has no `t`).
+  const evaluated = useMemo(
+    () => ({ ...post, platform_post_type: postType }),
+    [post, postType],
+  )
 
   const checks: PostCheck[] = useMemo(
     () =>
       evaluatePost({
-        post,
+        post: evaluated,
+        platform: info,
         policy,
         attachments: media.attachments,
         ready,
@@ -50,9 +130,11 @@ export function usePostMedia(post: Post) {
         requiresContent: rule?.requires_content ?? false,
         maxContentChars,
         maxTitleChars,
+        sequence,
       }),
     [
-      post,
+      evaluated,
+      info,
       policy,
       media.attachments,
       media.postValidation,
@@ -60,8 +142,90 @@ export function usePostMedia(post: Post) {
       rule,
       maxContentChars,
       maxTitleChars,
+      sequence,
     ],
   )
 
-  return { ...media, policy, checks, ready, maxTitleChars }
+  // Where the body breaks is the server's answer, asked of the body in the
+  // editor rather than the one on the row (CON-284 R2). `enabled` is what keeps
+  // every other post type off the endpoint entirely.
+  const { preview, stale: previewStale } = useThreadPreview({
+    content: post.content,
+    platformId: post.platform_id,
+    enabled: sequence,
+  })
+
+  // The chain — here rather than in the route because every input it takes is
+  // already joined in this hook: the server's messages, the attachments and the
+  // platform's media caps. The route reads it for the note, the preview card
+  // and the checks bar. Nothing writes it back: `thread_segments` is derived
+  // server-side and ignored on a write.
+  const plan = useMemo(
+    () =>
+      planThread({
+        chain: sequence,
+        content: post.content,
+        preview,
+        attachments: media.attachments,
+        imageCap: policy.image?.maxPerPost,
+        videoCap: policy.video?.maxPerPost,
+      }),
+    [sequence, post.content, preview, media.attachments, policy],
+  )
+
+  /**
+   * The ordinary slug a one-message thread has to leave as, or `null`.
+   *
+   * Only ever answers for a post *pinned* to `thread` — an automatic one never
+   * reaches the chain rung with a body that fits in a single post. `null` while
+   * the plan is pending *or stale*, so a resolution is never pinned off a chain
+   * that has not been split yet — nor off one split from a body the editor has
+   * already moved past, whose `singular` may describe a post this one no longer
+   * is.
+   */
+  const demotedType = useMemo(
+    () =>
+      sequence && !plan.pending && !previewStale
+        ? demotedFrom({
+            content: post.content,
+            attachments: media.attachments,
+            candidates: candidates.map((pt) => pt.slug),
+            rules,
+            storedType: post.platform_post_type,
+            singular: plan.singular,
+          })
+        : null,
+    [
+      sequence,
+      plan.pending,
+      previewStale,
+      plan.singular,
+      post.content,
+      post.platform_post_type,
+      media.attachments,
+      candidates,
+      rules,
+    ],
+  )
+
+  return {
+    ...media,
+    policy,
+    checks,
+    ready,
+    maxContentChars,
+    maxTitleChars,
+    /** The slug this post publishes as, chosen or derived. `''` if neither. */
+    postType,
+    /** The resolution, or `null` when the author pinned a type themselves. */
+    auto,
+    /** This post publishes as a chain rather than as one post. */
+    sequence,
+    /** The chain this post's body comes to. Empty when it is not one. */
+    plan,
+    /** The plan describes an older body than the editor holds. */
+    previewStale,
+    /** What a thread of one message publishes as instead — see `demotedFrom`. */
+    demotedType,
+  }
 }

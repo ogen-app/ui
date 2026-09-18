@@ -5,7 +5,7 @@ import type { ColumnConfig } from './types'
  */
 export function calculateTotal<TData extends Record<string, unknown>>(
   rows: TData[],
-  config: ColumnConfig<TData>
+  config: ColumnConfig<TData>,
 ): unknown {
   if (!config.totals) return ''
 
@@ -26,7 +26,9 @@ export function calculateTotal<TData extends Record<string, unknown>>(
     case 'sum':
       return values.reduce((sum, val) => sum + val, 0)
     case 'average':
-      return values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0
+      return values.length > 0
+        ? values.reduce((sum, val) => sum + val, 0) / values.length
+        : 0
     case 'count':
       return rows.length
     default:
@@ -35,41 +37,24 @@ export function calculateTotal<TData extends Record<string, unknown>>(
 }
 
 /**
- * Calculate sticky left position for a column
+ * `01 Aug 26` — a date in a table.
+ *
+ * Pinned to en-GB rather than the browser's locale: day-first is the format
+ * asked for, and an en-US visitor would otherwise read "Aug 01, 26". The app
+ * has no date-format convention yet and the tables are where two of them met —
+ * settled here, once, so a stamp means the same thing in every column of every
+ * table rather than per file.
+ *
+ * Returns null for a date that isn't set or can't be read, so a cell decides
+ * for itself what an unset date should say.
  */
-export function calculateStickyLeftPosition<TData extends Record<string, unknown>>(
-  columnId: string,
-  activeColumns: string[],
-  columnConfigs: ColumnConfig<TData>[]
-): number {
-  let cumulativeWidth = 0
-
-  for (const id of activeColumns) {
-    if (id === columnId) break
-    const config = columnConfigs.find((c) => c.id === id)
-    if (config?.isSticky && config.stickyPosition === 'left') {
-      cumulativeWidth += config.size || 150
-    }
-  }
-
-  return cumulativeWidth
-}
-
-/**
- * Generate CSS variables for column widths using column IDs
- */
-export function generateColumnWidthVars<TData extends Record<string, unknown>>(
-  activeColumns: string[],
-  columnConfigs: ColumnConfig<TData>[]
-): Record<string, string> {
-  const vars: Record<string, string> = {}
-
-  activeColumns.forEach((columnId) => {
-    const config = columnConfigs.find((c) => c.id === columnId)
-    const width = config?.size || 150
-    // Use column ID in CSS variable name
-    vars[`--col-${columnId}-width`] = `${width}px`
+export function tableDate(value: string | null | undefined): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: '2-digit',
   })
-
-  return vars
 }

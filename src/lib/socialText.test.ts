@@ -13,7 +13,9 @@ describe('markdownToSocialText', () => {
   })
 
   it('drops heading and quote markers', () => {
-    expect(markdownToSocialText('## Why now\n\n> because')).toBe('Why now\n\nbecause')
+    expect(markdownToSocialText('## Why now\n\n> because')).toBe(
+      'Why now\n\nbecause',
+    )
   })
 
   it('turns bullets into bullet characters and keeps ordered numbers', () => {
@@ -28,13 +30,15 @@ describe('markdownToSocialText', () => {
   })
 
   it('does not repeat a URL used as its own link text', () => {
-    expect(markdownToSocialText('[https://getogen.com](https://getogen.com)')).toBe(
-      'https://getogen.com',
-    )
+    expect(
+      markdownToSocialText('[https://getogen.com](https://getogen.com)'),
+    ).toBe('https://getogen.com')
   })
 
   it('reduces an image to its alt text', () => {
-    expect(markdownToSocialText('![a chart](https://x.com/a.png)')).toBe('a chart')
+    expect(markdownToSocialText('![a chart](https://x.com/a.png)')).toBe(
+      'a chart',
+    )
   })
 
   it('collapses block spacing to a single blank line', () => {
@@ -42,11 +46,15 @@ describe('markdownToSocialText', () => {
   })
 
   it('unescapes punctuation the editor escaped', () => {
-    expect(markdownToSocialText('50\\% off \\*not italic\\*')).toBe('50% off *not italic*')
+    expect(markdownToSocialText('50\\% off \\*not italic\\*')).toBe(
+      '50% off *not italic*',
+    )
   })
 
   it('passes fenced code through without treating it as Markdown', () => {
-    expect(markdownToSocialText('```\nconst a = **b**\n```')).toBe('const a = **b**')
+    expect(markdownToSocialText('```\nconst a = **b**\n```')).toBe(
+      'const a = **b**',
+    )
   })
 
   it('drops horizontal rules', () => {

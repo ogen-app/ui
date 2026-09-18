@@ -1,9 +1,17 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PlusIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import folderEmptyImage from '@/assets/illustrations/folder-empty.webp'
-import { addDays, isSameDay, monthWeeks, startOfWeek } from './calendar/date'
+import {
+  addDays,
+  isSameDay,
+  monthWeeks,
+  startOfWeek,
+  weekdayLabel,
+} from './calendar/date'
+import { formatDate } from '@/lib/intl'
 import { cn } from '@/lib'
 
 type Props = {
@@ -17,25 +25,31 @@ type Props = {
   pending?: boolean
 }
 
+/**
+ * Which pair of catalogue keys each surface reads. Week and month deliberately
+ * share theirs — it is the same empty calendar, and a user switching
+ * granularity on an empty campaign should not be told two different things
+ * about it.
+ *
+ * Keys rather than the copy itself: a table of sentences built at module scope
+ * would freeze whichever language loaded first.
+ */
 const COPY = {
   week: {
-    title: 'Your calendar is empty',
-    subtitle: 'Add your first post and it will show up here, ready to schedule.',
+    title: 'calendar.empty.calendarTitle',
+    subtitle: 'calendar.empty.calendarSubtitle',
   },
-  // Deliberately the same words as the week: it is the same empty calendar,
-  // and a user switching granularity on an empty campaign should not be told
-  // two different things about it.
   month: {
-    title: 'Your calendar is empty',
-    subtitle: 'Add your first post and it will show up here, ready to schedule.',
+    title: 'calendar.empty.calendarTitle',
+    subtitle: 'calendar.empty.calendarSubtitle',
   },
   list: {
-    title: 'No posts yet',
-    subtitle: 'Add your first post to start building this campaign.',
+    title: 'calendar.empty.listTitle',
+    subtitle: 'calendar.empty.listSubtitle',
   },
   panel: {
-    title: 'Nothing unscheduled',
-    subtitle: 'Posts without a date wait here — drag one off the calendar, or add a new one.',
+    title: 'calendar.empty.panelTitle',
+    subtitle: 'calendar.empty.panelSubtitle',
   },
 } as const
 
@@ -57,8 +71,10 @@ export function PostsEmptyState({
   onAddPost,
   pending,
 }: Props) {
+  const { t, i18n } = useTranslation()
   const { firstDayOfWeek, hiddenDays } = useCalendarSettings(campaignId)
   const compact = variant === 'panel'
+  const locale = i18n.language
 
   const columns = useMemo(() => {
     const today = new Date()
@@ -67,12 +83,12 @@ export function PostsEmptyState({
       .filter((day) => !hiddenDays.includes(day.getDay()))
       .map((day, i) => ({
         key: day.toDateString(),
-        label: day.toLocaleDateString(undefined, { weekday: 'long' }),
-        dateLabel: `${day.getDate()} ${day.toLocaleDateString(undefined, { month: 'long' })}`,
+        label: weekdayLabel(day, locale),
+        dateLabel: `${day.getDate()} ${formatDate(day, { month: 'long' }, locale)}`,
         isToday: isSameDay(day, today),
         ghosts: GHOSTS_PER_DAY[i % GHOSTS_PER_DAY.length],
       }))
-  }, [anchor, firstDayOfWeek, hiddenDays])
+  }, [anchor, firstDayOfWeek, hiddenDays, locale])
 
   const monthGrid = useMemo(
     () =>
@@ -97,7 +113,10 @@ export function PostsEmptyState({
         {monthGrid && <MonthSketch weeks={monthGrid} />}
         {variant === 'week' &&
           columns.map((col) => (
-            <div key={col.key} className="flex flex-col min-w-[150px] flex-1 gap-0.5">
+            <div
+              key={col.key}
+              className="flex flex-col min-w-[150px] flex-1 gap-0.5"
+            >
               <div className="shrink-0 bg-secondary px-2 pt-2.5 pb-2 flex flex-col items-center gap-0.5">
                 <span
                   className={cn(
@@ -163,9 +182,9 @@ export function PostsEmptyState({
                 compact ? 'text-lg/6' : 'text-2xl/8',
               )}
             >
-              {COPY[variant].title}
+              {t(COPY[variant].title)}
             </div>
-            <div>{COPY[variant].subtitle}</div>
+            <div>{t(COPY[variant].subtitle)}</div>
           </div>
           <Button
             variant="defaultInverted"
@@ -178,7 +197,7 @@ export function PostsEmptyState({
             loading={pending}
           >
             <PlusIcon className="size-4" />
-            <span>ADD POST</span>
+            <span>{t('calendar.addPost')}</span>
           </Button>
         </div>
       </div>
@@ -206,9 +225,17 @@ function MonthSketch({ weeks }: { weeks: Date[][] }) {
                 {day.getDate()}
               </span>
               {Array.from(
-                { length: GHOSTS_PER_DAY[(weekIndex + dayIndex) % GHOSTS_PER_DAY.length] },
+                {
+                  length:
+                    GHOSTS_PER_DAY[
+                      (weekIndex + dayIndex) % GHOSTS_PER_DAY.length
+                    ],
+                },
                 (_, i) => (
-                  <div key={i} className="h-5 shrink-0 border-2 border-dashed border-border" />
+                  <div
+                    key={i}
+                    className="h-5 shrink-0 border-2 border-dashed border-border"
+                  />
                 ),
               )}
             </div>
@@ -219,16 +246,28 @@ function MonthSketch({ weeks }: { weeks: Date[][] }) {
   )
 }
 
-const LIST_COLUMNS = ['Title', 'Status', 'Platform', 'Publish date', 'When']
+/**
+ * The real table's headers, read from the same keys it reads — this is a
+ * sketch of *that* table, so a column renamed there must not leave a
+ * different word behind here.
+ */
+const LIST_COLUMNS = [
+  'postsTable.columnTitle',
+  'postsTable.columnStatus',
+  'postsTable.columnPlatform',
+  'postsTable.columnPublishDate',
+  'postsTable.columnWhen',
+] as const
 
 /** Table-shaped twin of the week sketch, for the list view. */
 function ListSketch() {
+  const { t } = useTranslation()
   return (
     <>
       <div className="shrink-0 grid grid-cols-5 gap-px bg-table-header px-3 py-2">
-        {LIST_COLUMNS.map((label) => (
-          <span key={label} className="text-xs text-tertiary-foreground">
-            {label}
+        {LIST_COLUMNS.map((key) => (
+          <span key={key} className="text-xs text-tertiary-foreground">
+            {t(key)}
           </span>
         ))}
       </div>

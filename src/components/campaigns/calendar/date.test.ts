@@ -10,14 +10,18 @@ import {
 describe('addMonths', () => {
   it('keeps the day of month where the target month is long enough', () => {
     expect(formatAnchor(addMonths(new Date(2026, 7, 12), 1))).toBe('2026-09-12')
-    expect(formatAnchor(addMonths(new Date(2026, 7, 12), -1))).toBe('2026-07-12')
+    expect(formatAnchor(addMonths(new Date(2026, 7, 12), -1))).toBe(
+      '2026-07-12',
+    )
   })
 
   it('clamps to the last day when the target month is shorter', () => {
     // The bug this guards: without clamping, 31 Jan + 1 month rolls over into
     // 3 March and paging forward skips February entirely.
     expect(formatAnchor(addMonths(new Date(2026, 0, 31), 1))).toBe('2026-02-28')
-    expect(formatAnchor(addMonths(new Date(2026, 4, 31), -1))).toBe('2026-04-30')
+    expect(formatAnchor(addMonths(new Date(2026, 4, 31), -1))).toBe(
+      '2026-04-30',
+    )
   })
 
   it('knows about leap years', () => {
@@ -25,8 +29,12 @@ describe('addMonths', () => {
   })
 
   it('crosses the year boundary', () => {
-    expect(formatAnchor(addMonths(new Date(2026, 11, 15), 1))).toBe('2027-01-15')
-    expect(formatAnchor(addMonths(new Date(2026, 0, 15), -1))).toBe('2025-12-15')
+    expect(formatAnchor(addMonths(new Date(2026, 11, 15), 1))).toBe(
+      '2027-01-15',
+    )
+    expect(formatAnchor(addMonths(new Date(2026, 0, 15), -1))).toBe(
+      '2025-12-15',
+    )
   })
 })
 
@@ -58,7 +66,9 @@ describe('monthWeeks', () => {
     // Weekdays only.
     const weeks = monthWeeks(new Date(2026, 7, 12), 1, [0, 6])
     expect(weeks.every((w) => w.length === 5)).toBe(true)
-    expect(weeks.flat().some((d) => d.getDay() === 0 || d.getDay() === 6)).toBe(false)
+    expect(weeks.flat().some((d) => d.getDay() === 0 || d.getDay() === 6)).toBe(
+      false,
+    )
   })
 
   it('includes the spill days from the neighbouring months', () => {
@@ -70,14 +80,20 @@ describe('monthWeeks', () => {
 
 describe('monthColumnDays', () => {
   it('returns the visible weekdays in the user’s order', () => {
-    expect(monthColumnDays(1).map((d) => d.getDay())).toEqual([1, 2, 3, 4, 5, 6, 0])
-    expect(monthColumnDays(0).map((d) => d.getDay())).toEqual([0, 1, 2, 3, 4, 5, 6])
+    expect(monthColumnDays(1).map((d) => d.getDay())).toEqual([
+      1, 2, 3, 4, 5, 6, 0,
+    ])
+    expect(monthColumnDays(0).map((d) => d.getDay())).toEqual([
+      0, 1, 2, 3, 4, 5, 6,
+    ])
   })
 
   it('matches what monthWeeks lays out, so headers line up with cells', () => {
     const hidden = [0, 6]
     const columns = monthColumnDays(1, hidden).map((d) => d.getDay())
-    const firstRow = monthWeeks(new Date(2026, 7, 12), 1, hidden)[0].map((d) => d.getDay())
+    const firstRow = monthWeeks(new Date(2026, 7, 12), 1, hidden)[0].map((d) =>
+      d.getDay(),
+    )
     expect(columns).toEqual(firstRow)
   })
 })

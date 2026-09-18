@@ -114,7 +114,9 @@ export function DeleteWorkspaceCard() {
       <ModalContainer
         isOpen={open}
         onClose={close}
-        title={t('workspaceSettings.dangerZone.confirmTitle', { name: workspace.name })}
+        title={t('workspaceSettings.dangerZone.confirmTitle', {
+          name: workspace.name,
+        })}
         size="default"
         closeOnBackdropClick={!isPending}
         closeOnEscape={!isPending}
@@ -132,7 +134,9 @@ export function DeleteWorkspaceCard() {
             <Trans
               i18nKey="workspaceSettings.dangerZone.confirmBody"
               values={{ name: workspace.name }}
-              components={{ strong: <strong className="text-primary-foreground" /> }}
+              components={{
+                strong: <strong className="text-primary-foreground" />,
+              }}
             />
           </p>
           <div className="flex flex-col gap-1.5">
@@ -149,7 +153,12 @@ export function DeleteWorkspaceCard() {
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={close} disabled={isPending}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={close}
+              disabled={isPending}
+            >
               {t('workspaceSettings.dangerZone.keep')}
             </Button>
             <Button

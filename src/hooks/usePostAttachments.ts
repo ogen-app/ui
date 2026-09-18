@@ -4,6 +4,7 @@ import {
   deleteAttachment,
   listAttachments,
   reorderAttachment,
+  setAttachmentSegment,
   uploadAttachment,
   uploadVideoAttachment,
 } from '@/services/api/attachments'
@@ -29,6 +30,16 @@ export const postAttachmentsKey = (postId: string) =>
  * window so images in a long editing session never start 403-ing.
  */
 const PRESIGN_REFRESH_MS = 10 * 60 * 1000
+
+/**
+ * What an upload run produced. `ids` are the attachments the server created,
+ * in the order the files were sent.
+ */
+export type UploadResult = {
+  uploaded: number
+  errors: string[]
+  ids: string[]
+}
 
 export type PendingUpload = {
   // Local id — the server one doesn't exist until the upload lands.
@@ -60,9 +71,9 @@ export function usePostAttachments(postId: string) {
    * order the user picked the files in.
    */
   const upload = useCallback(
-    async (files: File[]): Promise<{ uploaded: number; errors: string[] }> => {
+    async (files: File[], segmentIndex?: number): Promise<UploadResult> => {
       const errors: string[] = []
-      let uploaded = 0
+      const ids: string[] = []
       for (const [i, file] of files.entries()) {
         const key = `${Date.now()}-${i}-${file.name}`
         setPending((p) => [...p, { key, name: file.name, percent: 0 }])
@@ -71,20 +82,29 @@ export function usePostAttachments(postId: string) {
           // direct PUT → finalize (CON-148). Everything else posts the bytes
           // to the upload endpoint as before.
           const send =
-            attachmentKind(file.type) === 'video' ? uploadVideoAttachment : uploadAttachment
-          await send(postId, file, {
+            attachmentKind(file.type) === 'video'
+              ? uploadVideoAttachment
+              : uploadAttachment
+          const created = await send(postId, file, {
+            segmentIndex,
             onProgress: (percent) =>
-              setPending((p) => p.map((u) => (u.key === key ? { ...u, percent } : u))),
+              setPending((p) =>
+                p.map((u) => (u.key === key ? { ...u, percent } : u)),
+              ),
           })
-          uploaded += 1
+          ids.push(created.id)
         } catch (err) {
-          errors.push(err instanceof Error ? err.message : `Unable to upload ${file.name}`)
+          errors.push(
+            err instanceof Error
+              ? err.message
+              : `Unable to upload ${file.name}`,
+          )
         } finally {
           setPending((p) => p.filter((u) => u.key !== key))
         }
       }
       invalidate()
-      return { uploaded, errors }
+      return { uploaded: ids.length, errors, ids }
     },
     [postId, invalidate],
   )
@@ -93,7 +113,8 @@ export function usePostAttachments(postId: string) {
     // The user's word for it, and for the thing on screen — the API calls
     // this deleting an attachment.
     meta: { errorTitle: 'Unable to remove file' },
-    mutationFn: (attachmentId: string) => deleteAttachment(postId, attachmentId),
+    mutationFn: (attachmentId: string) =>
+      deleteAttachment(postId, attachmentId),
     onSuccess: invalidate,
   })
 
@@ -126,20 +147,65 @@ export function usePostAttachments(postId: string) {
     },
     onMutate: async (ordered) => {
       await qc.cancelQueries({ queryKey: postAttachmentsKey(postId) })
-      const previous = qc.getQueryData<AttachmentListResponse>(postAttachmentsKey(postId))
+      const previous = qc.getQueryData<AttachmentListResponse>(
+        postAttachmentsKey(postId),
+      )
       if (previous) {
         // Mirror the numbering the mutation writes, so a second drag landing
         // before the refetch computes its block from the same base.
         const base = Math.max(-1, ...ordered.map((a) => a.position)) + 1
         qc.setQueryData<AttachmentListResponse>(postAttachmentsKey(postId), {
           ...previous,
-          attachments: ordered.map((a, index) => ({ ...a, position: base + index })),
+          attachments: ordered.map((a, index) => ({
+            ...a,
+            position: base + index,
+          })),
         })
       }
       return { previous }
     },
     // The rollback only; the toast comes from `meta.errorTitle` above.
     onError: (_err, _ordered, ctx) => {
+      if (ctx?.previous) {
+        qc.setQueryData(postAttachmentsKey(postId), ctx.previous)
+      }
+    },
+    onSettled: invalidate,
+  })
+
+  /**
+   * Moves one file onto another message of a thread (CON-284).
+   *
+   * Optimistic, unlike `remove`: this is the media card's one-click picker, and
+   * a thumbnail that stays put until the round-trip lands reads as a click that
+   * missed. The rollback is the whole error path — the toast comes from
+   * `meta.errorTitle`, as everywhere else here.
+   */
+  const assignSegment = useMutation({
+    meta: { errorTitle: 'Unable to move this to another message' },
+    mutationFn: ({
+      attachmentId,
+      segmentIndex,
+    }: {
+      attachmentId: string
+      segmentIndex: number | null
+    }) => setAttachmentSegment(postId, attachmentId, segmentIndex),
+    onMutate: async ({ attachmentId, segmentIndex }) => {
+      await qc.cancelQueries({ queryKey: postAttachmentsKey(postId) })
+      const previous = qc.getQueryData<AttachmentListResponse>(
+        postAttachmentsKey(postId),
+      )
+      if (previous) {
+        qc.setQueryData<AttachmentListResponse>(postAttachmentsKey(postId), {
+          ...previous,
+          attachments: previous.attachments.map((a) =>
+            a.id === attachmentId ? { ...a, segment_index: segmentIndex } : a,
+          ),
+        })
+      }
+      return { previous }
+    },
+    onError: (_err, _vars, ctx) => {
       if (ctx?.previous) {
         qc.setQueryData(postAttachmentsKey(postId), ctx.previous)
       }
@@ -159,5 +225,6 @@ export function usePostAttachments(postId: string) {
     removing: remove.isPending,
     reorder: reorder.mutate,
     reordering: reorder.isPending,
+    assignSegment: assignSegment.mutate,
   }
 }
