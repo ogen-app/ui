@@ -202,10 +202,11 @@ no entry falls back to the server's English — correct, and untranslated.
   — deterministic counts for a local day, recomputed from live data, never
   stored and never AI-written. The endpoints are `GET /api/activity/report/:date`
   and `GET /api/activity/reports`, both requiring an IANA `tz`, and both
-  **landed 2026-09-17** (ogen#161). The client half was built against an
-  assumed shape and has **not been re-tested against the real one** — which is
-  rule 4 of the flag contract and the remaining work before `activity` can be
-  turned on.
+  **landed 2026-09-17** (ogen#161). The client reads them as of 2026-09-18
+  (`services/api/activity.ts`, shapes pinned by its test); it had been built
+  against CON-225's client-side computation, which CON-285 reversed. What is
+  still owed is rule 4's round trip — the counts read across a real local
+  midnight — not the wiring.
 
 ---
 

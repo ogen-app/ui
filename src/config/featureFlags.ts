@@ -64,7 +64,12 @@ const FEATURE_FLAGS = {
    * (`submit_post_to_zernio.go`), which is what stopped turning this on from
    * *narrowing* who hears that a publish failed. The same PR gave the daily
    * report server-side endpoints (`GET /api/activity/report/:date?tz=`,
-   * `/api/activity/reports`), so the count is computed where the rows are.
+   * `/api/activity/reports`), so the count is computed where the rows are —
+   * and this client reads them rather than adding posts up itself, which is
+   * what CON-285's decision note reversed out of CON-225 §5. Both calls carry
+   * the browser's IANA zone, because a report is cut into *local* calendar
+   * days and that is the one thing the server cannot know; the shapes are
+   * pinned by `services/api/activity.test.ts`.
    *
    * **Exercised against the real API** on 2026-09-04 and again on 2026-09-07,
    * against a local build of `main`: a real `connection.action_required` row
@@ -99,6 +104,23 @@ const FEATURE_FLAGS = {
    * 2. **No producer for "never published".** `not_published` is a real
    *    outcome with no notification type, so it leaves no row — it is counted
    *    in the day's report and nowhere else.
+   * 3. **The report's day boundary is unobserved.** Whether the day the server
+   *    cuts agrees with the day this client groups under is only visible
+   *    across a real local midnight, and whether `by_author` ids match
+   *    `listMembers` needs a workspace with two people in it. Both should
+   *    hold — the zone sent as `tz` is the zone `dayKey` groups by, and the
+   *    ids are the same per-workspace membership ids — but neither has been
+   *    watched happen.
+   *
+   * **Three things the report endpoints deliberately do not carry**, none of
+   * them blocking: a **per-campaign breakdown** (the computed report had one
+   * for free, because it held every post; the server's shape is CON-225 §5 and
+   * a campaign's own report is the same endpoint with `campaign_id` set); **a
+   * code for a failure** — `failure_reason` is Go prose, so the report shows
+   * it verbatim the way a notification's `title` is shown, and the ask is the
+   * same one `lib/uploadError` is waiting on (`docs/open-questions.md` S4);
+   * and **paging**, since `before` is a keyset the feed does not use — it asks
+   * for one horizon of days and says on screen where it stops.
    *
    * The whole recipient taxonomy — every type, its trigger, its transport and
    * who hears it — is written out in `docs/events.md` rather than

@@ -342,12 +342,16 @@ export const es: Translation = {
     title: 'Actividad',
     markAllRead: 'MARCAR TODO COMO LEÍDO',
     loadFailed: 'No se pudo cargar la actividad',
-    notificationsUnavailable:
-      'No se pudieron cargar las notificaciones; solo se muestran los informes diarios.',
-    summariesUnavailable:
-      'No se pudieron cargar los resúmenes de campaña; algunas entradas pueden no tener enlace y los informes diarios no están disponibles.',
+    unavailable: {
+      notifications:
+        'No se pudieron cargar las notificaciones; solo se muestran los informes diarios.',
+      reports:
+        'No se pudieron cargar los informes diarios; solo se muestra lo que quedó registrado cuando ocurrió.',
+      links:
+        'No se pudieron cargar los resúmenes de campaña; puede que algunas entradas no enlacen con aquello de lo que hablan.',
+    },
     truncated:
-      'Mostrando las 100 entradas más recientes. Los informes diarios de abajo llegan más atrás.',
+      'Mostrando las {{entries}} entradas más recientes y los últimos {{days}} días con algo que contar.',
     empty: {
       title: 'Todavía no ha pasado nada',
       subtitle:
@@ -386,22 +390,34 @@ export const es: Translation = {
       label: {
         published: 'Publicadas',
         failed: 'Fallidas',
-        notPublished: 'Nunca publicadas',
         created: 'Creadas',
+        campaigns: 'Campañas',
       },
       published_one: '{{count}} publicación publicada',
       published_other: '{{count}} publicaciones publicadas',
-      failed_one: '{{count}} publicación no se pudo publicar',
-      failed_other: '{{count}} publicaciones no se pudieron publicar',
-      notPublished_one: '{{count}} publicación nunca se publicó',
-      notPublished_other: '{{count}} publicaciones nunca se publicaron',
+      failed_one: '{{count}} publicación no llegó a salir',
+      failed_other: '{{count}} publicaciones no llegaron a salir',
       created_one: '{{count}} publicación creada',
       created_other: '{{count}} publicaciones creadas',
+      campaignsCreated_one: '{{count}} campaña empezada',
+      campaignsCreated_other: '{{count}} campañas empezadas',
+      scheduled_one: '{{count}} programada',
+      scheduled_other: '{{count}} programadas',
       byChannel: 'Publicado por canal',
-      byCampaign: 'Por campaña',
+      didNotGoOut: 'No llegaron a salir',
+      createdBy: 'Escritas por',
+      campaignsStarted: 'Campañas empezadas',
+      status: {
+        failed: 'No se pudo publicar',
+        notPublished: 'Nunca se publicó',
+      },
+      formerMember: 'Alguien que ya no está',
+      noAuthor: 'Sin registrar',
+      loading: 'Contando el día…',
+      loadFailed: 'No se pudo cargar este informe.',
       nothing: 'Ese día no pasó nada.',
       coverage:
-        'Calculado a partir de las publicaciones de este espacio, según tu día natural local.',
+        'Calculado a partir de las publicaciones de este espacio, según el día natural en {{zone}}.',
     },
   },
 
