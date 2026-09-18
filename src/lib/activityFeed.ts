@@ -1,18 +1,22 @@
-// The pure derivations behind Activity (CON-225): the feed's entries and the
-// daily report. Everything here is a pure function of already-fetched data,
-// with `now` injected, so the rules stay unit-testable. No fetching, no stores.
-// Same shape as `campaignReadiness`, and for the same reasons.
+// The pure derivations behind Activity (CON-225): what goes in the feed, and in
+// what order. Everything here is a pure function of already-fetched data, with
+// `now` injected, so the rules stay unit-testable. No fetching, no stores. Same
+// shape as `campaignReadiness`, and for the same reasons.
 //
 // **This is Phase 2**: the notifications table exists (CON-242), so what
-// happened is *recorded* rather than inferred. The feed now has two sources and
+// happened is *recorded* rather than inferred. The feed has two sources and
 // they are different in kind:
 //
 // - **Notifications** — rows the server wrote at the moment something happened,
 //   carrying their own read state. History, and it does not get undone.
-// - **The daily report** — a count over the campaign summaries the Campaigns
-//   list fetches anyway (CON-152). Still computed, and deliberately so: it is
-//   arithmetic over posts, always correct and always instant, so storing it
-//   could only make it wronger. Any day is available as long as its posts are.
+// - **Daily reports** — one per local day that had anything on it, counted by
+//   the server (CON-285). This file no longer computes them. CON-225 §5
+//   specified the arithmetic here, over the campaign summaries the Campaigns
+//   list fetches anyway, and the reason was the day boundary: the server had no
+//   way to know the reader's midnight. CON-285 answered that by asking for it
+//   — every call carries an IANA `tz` — and took the arithmetic with it. What
+//   the trade bought is the two facts `PostSummary` could not reach: who
+//   created a post, and why one failed.
 //
 // The derived post *exceptions* Phase 1 carried are gone. They were a stand-in
 // for `post.publish_failed`, and keeping both would report one failure twice —
@@ -25,56 +29,14 @@
 // entry is a fact with a timestamp that stays true forever, never a condition
 // that stops being true when it is fixed. See `docs/activity.md`.
 
-import type { PostSummary } from '@/types/posts'
 import type { Task } from '@/lib/tasks'
 import type { AppNotification } from '@/types/notifications'
-
-/**
- * What can happen to a post that a person would want to read about later.
- *
- * `created` is in the report but never in the feed: it is routine, high-volume,
- * and usually the reader's own doing. `published` likewise — successful
- * auto-publishing is the highest-volume thing that happens and the lowest-value
- * thing to list, which is the whole argument for having a report.
- */
-export type ActivityEventKind =
-  'published' | 'failed' | 'not_published' | 'created'
-
-export type PostEvent = {
-  kind: ActivityEventKind
-  at: Date
-  campaignId: string
-  post: PostSummary
-}
-
-export type CountsByKind = Record<ActivityEventKind, number>
-
-export type ChannelCount = {
-  platformId: string
-  count: number
-}
-
-export type CampaignBreakdown = {
-  campaignId: string
-  counts: CountsByKind
-  total: number
-}
-
-export type DailyReport = {
-  /** Local calendar day, `YYYY-MM-DD`. */
-  date: string
-  /** When the last thing on this day happened — the entry's own timestamp. */
-  lastEventAt: string
-  counts: CountsByKind
-  total: number
-  /** Published only, biggest first: "3 LinkedIn, 2 Instagram, 1 X". */
-  publishedByChannel: ChannelCount[]
-  /** Busiest campaign first — the per-campaign half of the report. */
-  campaigns: CampaignBreakdown[]
-}
+import type { ActivityReportSummary } from '@/types/activity'
 
 export type ActivityEntry =
-  | { kind: 'report'; id: string; at: string; report: DailyReport }
+  // A day's headline totals. The row carries only what the list endpoint sends;
+  // opening it fetches the day itself.
+  | { kind: 'report'; id: string; at: string; report: ActivityReportSummary }
   // One recorded notification, carried whole: the entry adds nothing the row
   // does not already say, and flattening it here would mean re-deciding what a
   // notification is every time the server grows a producer.
@@ -118,10 +80,11 @@ export function isNotificationEntry(
  * The local calendar day a moment falls in, `YYYY-MM-DD`.
  *
  * Local, not UTC, and deliberately not `toISOString().slice(0, 10)` — that
- * reads the UTC day, so anything published in the evening west of Greenwich
- * would land in tomorrow's report. The day boundary is the reader's own; there
- * is no timezone to hand the server, the same reason the clock-dependent
- * readiness rules stayed client-side.
+ * reads the UTC day, so anything happening in the evening west of Greenwich
+ * would land under tomorrow's heading. The day boundary is the reader's own,
+ * which is the same boundary the report is cut by: the zone this produces a key
+ * in is the zone sent to the server as `tz` (`browserTimeZone`), and the two
+ * disagreeing is what would put a notification under the wrong day's card.
  */
 export function dayKey(date: Date): string {
   const month = `${date.getMonth() + 1}`.padStart(2, '0')
@@ -143,161 +106,6 @@ function parseDate(iso: string | null | undefined): Date | null {
   if (!iso) return null
   const date = new Date(iso)
   return Number.isNaN(date.getTime()) ? null : date
-}
-
-function emptyCounts(): CountsByKind {
-  return { published: 0, failed: 0, not_published: 0, created: 0 }
-}
-
-/**
- * What this post says happened, and when.
- *
- * A post is not one event: it was created on one day and may have published on
- * another, and both belong in their own day's report. Only its *current* status
- * can be read, so it contributes at most one outcome — the last one.
- */
-export function postEvents(post: PostSummary, campaignId: string): PostEvent[] {
-  const events: PostEvent[] = []
-
-  const created = parseDate(post.created_at)
-  if (created) events.push({ kind: 'created', at: created, campaignId, post })
-
-  // `scheduled_at` — when it was *due* — is the truthful moment for an outcome
-  // that never produced a `published_at`. `updated_at` is the fallback and a
-  // poor one: any later edit moves it, and the entry silently changes day.
-  const attempted = parseDate(post.scheduled_at) ?? parseDate(post.updated_at)
-
-  switch (post.status) {
-    case 'published': {
-      const at = parseDate(post.published_at)
-      if (at) events.push({ kind: 'published', at, campaignId, post })
-      break
-    }
-    case 'failed':
-      if (attempted)
-        events.push({ kind: 'failed', at: attempted, campaignId, post })
-      break
-    case 'not_published':
-      if (attempted)
-        events.push({ kind: 'not_published', at: attempted, campaignId, post })
-      break
-    default:
-      // draft / ready_for_publish / scheduled — nothing has happened to them
-      // yet. A future publish date is a level, not an edge: it rewrites itself
-      // daily and vanishes when the post goes out, so it is the calendar's
-      // business and eventually a task's, never the feed's.
-      break
-  }
-
-  return events
-}
-
-/** Every event in the workspace, newest first. */
-export function activityEvents(
-  summaries: Record<string, PostSummary[]>,
-): PostEvent[] {
-  const events: PostEvent[] = []
-  for (const [campaignId, posts] of Object.entries(summaries)) {
-    for (const post of posts) events.push(...postEvents(post, campaignId))
-  }
-  return events.sort((a, b) => b.at.getTime() - a.at.getTime())
-}
-
-function addTo(counts: CountsByKind, kind: ActivityEventKind) {
-  counts[kind] += 1
-}
-
-/**
- * One report per local day that had anything happen on it, newest first.
- *
- * A day with nothing gets no entry rather than an empty one — a feed of "0
- * posts published" rows for every quiet weekend is noise, and the absence says
- * the same thing.
- *
- * Events dated in the future are dropped: a clock skew or a bad `scheduled_at`
- * must not park a report above today's, permanently unread and never reachable
- * by scrolling.
- */
-export function dailyReports(
-  summaries: Record<string, PostSummary[]>,
-  now: Date = new Date(),
-): DailyReport[] {
-  type Draft = {
-    counts: CountsByKind
-    total: number
-    lastEventAt: Date
-    byChannel: Map<string, number>
-    byCampaign: Map<string, { counts: CountsByKind; total: number }>
-  }
-  const days = new Map<string, Draft>()
-
-  for (const event of activityEvents(summaries)) {
-    if (event.at.getTime() > now.getTime()) continue
-    const key = dayKey(event.at)
-    let draft = days.get(key)
-    if (!draft) {
-      draft = {
-        counts: emptyCounts(),
-        total: 0,
-        lastEventAt: event.at,
-        byChannel: new Map(),
-        byCampaign: new Map(),
-      }
-      days.set(key, draft)
-    }
-
-    addTo(draft.counts, event.kind)
-    draft.total += 1
-    if (event.at > draft.lastEventAt) draft.lastEventAt = event.at
-
-    if (event.kind === 'published') {
-      const platformId = event.post.platform_id
-      draft.byChannel.set(
-        platformId,
-        (draft.byChannel.get(platformId) ?? 0) + 1,
-      )
-    }
-
-    let campaign = draft.byCampaign.get(event.campaignId)
-    if (!campaign) {
-      campaign = { counts: emptyCounts(), total: 0 }
-      draft.byCampaign.set(event.campaignId, campaign)
-    }
-    addTo(campaign.counts, event.kind)
-    campaign.total += 1
-  }
-
-  return [...days.entries()]
-    .map(([date, draft]): DailyReport => ({
-      date,
-      lastEventAt: draft.lastEventAt.toISOString(),
-      counts: draft.counts,
-      total: draft.total,
-      publishedByChannel: [...draft.byChannel.entries()]
-        .map(([platformId, count]) => ({ platformId, count }))
-        .sort(
-          (a, b) =>
-            b.count - a.count || a.platformId.localeCompare(b.platformId),
-        ),
-      campaigns: [...draft.byCampaign.entries()]
-        .map(([campaignId, entry]) => ({ campaignId, ...entry }))
-        .sort(
-          (a, b) =>
-            b.total - a.total || a.campaignId.localeCompare(b.campaignId),
-        ),
-    }))
-    .sort((a, b) => b.date.localeCompare(a.date))
-}
-
-/** The report for one day, or null if nothing happened on it. */
-export function reportForDay(
-  summaries: Record<string, PostSummary[]>,
-  date: string,
-  now: Date = new Date(),
-): DailyReport | null {
-  return (
-    dailyReports(summaries, now).find((report) => report.date === date) ?? null
-  )
 }
 
 /**
@@ -343,8 +151,8 @@ export function taskEntries(tasks: Task[]): ActivityEntry[] {
 
 /** Everything the feed is built from. */
 export type ActivitySources = {
-  /** The batched campaign summaries (CON-152) — the report's whole input. */
-  summaries: Record<string, PostSummary[]>
+  /** The days that had something on them, newest first (CON-285). */
+  reports?: ActivityReportSummary[]
   /** Recorded notifications, newest first (CON-242). */
   notifications?: AppNotification[]
   tasks?: Task[]
@@ -361,9 +169,9 @@ export type ActivitySources = {
  * happens and listing it one line at a time is what teaches people to stop
  * reading the badge.
  *
- * Future-dated entries are dropped from both halves. A clock skew on the server
- * or a bad `scheduled_at` must not park a row above today's, permanently first
- * and never reachable by scrolling down.
+ * Future-dated entries are dropped from every half. A clock skew on the server
+ * or a zone the two ends disagree about must not park a row above today's,
+ * permanently first and never reachable by scrolling down.
  */
 export function activityFeed(
   sources: ActivitySources,
@@ -389,17 +197,27 @@ export function activityFeed(
     })
   }
 
-  for (const report of dailyReports(sources.summaries, now)) {
+  const today = dayKey(now)
+  for (const report of sources.reports ?? []) {
+    // A report is a *day*, not a moment, so it is placed at the day's local
+    // midnight. That is also what puts it last inside its own card: the card's
+    // entries run newest first, and nothing that happened on a day is earlier
+    // than the day began — so the summary closes the group it summarises
+    // rather than heading it, which is where it was placed when this was
+    // computed here and the last event of the day was its timestamp.
+    const midnight = parseDayKey(report.date)
+    if (!midnight || report.date > today) continue
     entries.push({
       kind: 'report',
       id: `report:${report.date}`,
-      at: report.lastEventAt,
+      at: midnight.toISOString(),
       report,
     })
   }
 
-  // Same instant puts the report last, so the day's summary reads as closing
-  // the group of individual entries above it rather than heading it.
+  // Same instant puts the report last — the midnight case, for anything
+  // recorded exactly as the day opened — so the day's summary still reads as
+  // closing the group above it rather than heading it.
   return entries.sort(
     (a, b) =>
       new Date(b.at).getTime() - new Date(a.at).getTime() ||

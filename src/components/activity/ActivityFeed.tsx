@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { Link } from '@tanstack/react-router'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowCounterClockwiseIcon,
@@ -33,7 +34,10 @@ import {
 } from '@/hooks/useNotifications'
 import { useTaskReconciliation } from '@/hooks/useTasks'
 import { notificationCopy, notificationTarget } from '@/lib/notifications'
+import { NOTIFICATION_PAGE_SIZE } from '@/lib/notificationCache'
+import { ACTIVITY_REPORT_DAYS } from '@/services/api/activity'
 import { dayKey, isTaskEntry, type ActivityEntry } from '@/lib/activityFeed'
+import type { ActivityReportSummary } from '@/types/activity'
 import type { AppNotification } from '@/types/notifications'
 import { cn } from '@/lib'
 import { useDayLabel, useTimeLabel } from '@/hooks/useActivityLabels'
@@ -143,16 +147,20 @@ export function ActivityFeed() {
           }
         />
 
-        {/* Half the feed failed. Above the cards and above the empty state,
-            because the empty state is where the silence lies hardest: a feed
-            whose notifications failed reads as a quiet workspace without it. */}
-        {degraded && (
+        {/* A source failed while another answered. Above the cards and above
+            the empty state, because the empty state is where the silence lies
+            hardest: a feed whose notifications failed reads as a quiet
+            workspace without it. */}
+        {degraded.length > 0 && (
           <div className="px-3 lg:px-6 pt-4">
-            <p className="w-full max-w-content mx-auto px-1 text-xs text-warning">
-              {degraded === 'notifications'
-                ? t('activity.notificationsUnavailable')
-                : t('activity.summariesUnavailable')}
-            </p>
+            {degraded.map((source) => (
+              <p
+                key={source}
+                className="w-full max-w-content mx-auto px-1 text-xs text-warning"
+              >
+                {t(`activity.unavailable.${source}`)}
+              </p>
+            ))}
           </div>
         )}
 
@@ -178,12 +186,15 @@ export function ActivityFeed() {
               />
             ))}
             {/* Said rather than swallowed: a list that stops at a round number
-                with no word about it reads as "that is everything". The reports
-                below are not truncated — they are computed from posts — so the
-                sentence names which half ran out. */}
+                with no word about it reads as "that is everything". Both halves
+                have a ceiling now — the recorded page and the run of days — so
+                the sentence names both rather than implying one goes further. */}
             {isTruncated && (
               <p className="w-full max-w-content mx-auto px-1 text-xs text-tertiary-foreground">
-                {t('activity.truncated')}
+                {t('activity.truncated', {
+                  entries: NOTIFICATION_PAGE_SIZE,
+                  days: ACTIVITY_REPORT_DAYS,
+                })}
               </p>
             )}
           </div>
@@ -374,10 +385,12 @@ function EntrySection({
     'group flex flex-col gap-3 border-t border-border py-3 first:border-t-0 first:pt-0 last:pb-0'
 
   if (entry.kind === 'report') {
+    const headline = reportHeadline(t, entry.report)
     return (
-      // The counts stay in the report itself: a tile row per day turned the
-      // page into a wall of mostly-zero figures, and the feed's job is to say
-      // a day is worth opening, not to be the report.
+      // One line, not a tile row: the figures a day is worth opening *for* are
+      // the four totals, and the list endpoint carries them, but a grid of
+      // mostly-zero tiles per day turned the page into a wall. Everything else
+      // — by channel, by author, which posts failed — stays in the report.
       <Link
         to="/activity/$date"
         params={{ date: entry.report.date }}
@@ -389,6 +402,9 @@ function EntrySection({
             className="size-5 shrink-0 text-tertiary-foreground"
           />,
           t('activity.entry.reportTitle'),
+        )}
+        {headline && (
+          <p className="pl-8 text-xs text-tertiary-foreground">{headline}</p>
         )}
       </Link>
     )
@@ -450,6 +466,34 @@ function EntrySection({
       {heading(icon, title)}
     </Link>
   )
+}
+
+/**
+ * A day in one line — "6 posts published · 1 post failed to publish".
+ *
+ * Each count is a whole sentence from its own key, so the plural agrees in
+ * every language, and the separator joins statements rather than assembling one
+ * out of fragments. Zeroes are dropped here where the report's tiles keep them:
+ * a tile that disappears on a good day makes the reader doubt it was measured,
+ * but a feed row listing what did *not* happen is the noise this row exists to
+ * avoid. A day with nothing on it is not in the list at all, so the empty
+ * string is only reachable if the server sends a row of zeroes.
+ */
+function reportHeadline(t: TFunction, report: ActivityReportSummary): string {
+  return [
+    report.published_total > 0 &&
+      t('activity.report.published', { count: report.published_total }),
+    report.failed_total > 0 &&
+      t('activity.report.failed', { count: report.failed_total }),
+    report.created_total > 0 &&
+      t('activity.report.created', { count: report.created_total }),
+    report.campaigns_created_total > 0 &&
+      t('activity.report.campaignsCreated', {
+        count: report.campaigns_created_total,
+      }),
+  ]
+    .filter((part): part is string => typeof part === 'string')
+    .join(' · ')
 }
 
 /**

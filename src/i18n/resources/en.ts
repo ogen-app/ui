@@ -462,21 +462,32 @@ export const en = {
     markAllRead: 'MARK ALL READ',
     loadFailed: 'Unable to load activity',
     /**
-     * One of the feed's two sources failed while the other answered. The feed
-     * still renders what arrived; this names the half that is missing so a
-     * quiet page cannot be mistaken for a quiet workspace.
+     * One of the feed's sources failed while another answered. The feed still
+     * renders what arrived; these name what is missing, so a quiet page cannot
+     * be mistaken for a quiet workspace. Keyed by the source so the screen can
+     * print one line per failure — `lib/activityFeed`'s three inputs fail
+     * independently.
      */
-    notificationsUnavailable:
-      'Notifications could not be loaded — showing the daily reports only.',
-    summariesUnavailable:
-      'Campaign summaries could not be loaded — entries may be missing their links and the daily reports are unavailable.',
+    unavailable: {
+      notifications:
+        'Notifications could not be loaded — showing the daily reports only.',
+      reports:
+        'The daily reports could not be loaded — showing what was recorded as it happened.',
+      /**
+       * The summaries carry no entries of their own: they are how a post
+       * notification finds the campaign that holds it, so losing them costs
+       * destinations rather than rows.
+       */
+      links:
+        'Campaign summaries could not be loaded — some entries may not link to what they are about.',
+    },
     /**
-     * Said under the last day card when the recorded half came back a full
-     * page. Names which half ran out — the day reports below it are computed
-     * from posts and go back as far as the posts do.
+     * Said under the last day card when a source came back at its ceiling.
+     * Both halves have one — the recorded page and the run of days — so the
+     * sentence names both rather than implying either goes further.
      */
     truncated:
-      'Showing the most recent 100 entries. The daily reports below go back further.',
+      'Showing the most recent {{entries}} entries and the last {{days}} days that had anything on them.',
     empty: {
       title: 'Nothing has happened yet',
       subtitle:
@@ -553,28 +564,53 @@ export const en = {
       label: {
         published: 'Published',
         failed: 'Failed',
-        notPublished: 'Never published',
         created: 'Created',
+        campaigns: 'Campaigns',
       },
       published_one: '{{count}} post published',
       published_other: '{{count}} posts published',
-      failed_one: '{{count}} post failed to publish',
-      failed_other: '{{count}} posts failed to publish',
-      notPublished_one: '{{count}} post was never published',
-      notPublished_other: '{{count}} posts were never published',
+      /**
+       * Covers both ways a post can fail to go out. The server counts them in
+       * one bucket, because the reader's question is the same for either; which
+       * one each post was is on its own row, under `status`.
+       */
+      failed_one: '{{count}} post did not go out',
+      failed_other: '{{count}} posts did not go out',
       created_one: '{{count}} post created',
       created_other: '{{count}} posts created',
+      campaignsCreated_one: '{{count}} campaign started',
+      campaignsCreated_other: '{{count}} campaigns started',
+      /** How many of the day's new posts were given a date. */
+      scheduled_one: '{{count}} scheduled',
+      scheduled_other: '{{count}} scheduled',
       byChannel: 'Published by channel',
-      byCampaign: 'By campaign',
+      didNotGoOut: 'Did not go out',
+      createdBy: 'Written by',
+      campaignsStarted: 'Campaigns started',
+      /** Which of the two a post row was — the distinction the tile merges. */
+      status: {
+        failed: 'Failed to publish',
+        notPublished: 'Never published',
+      },
+      /**
+       * A post survives the membership that wrote it, so a count can name an
+       * author the workspace no longer has. The number is real; only the name
+       * is gone.
+       */
+      formerMember: 'Someone who has left',
+      /** `created_by` was never recorded — an older post, or one the server made. */
+      noAuthor: 'Not recorded',
+      loading: 'Counting up the day…',
+      loadFailed: 'This report could not be loaded.',
       nothing: 'Nothing happened on this day.',
       /**
-       * What the report counted and what it could not — it is computed from
-       * the workspace's posts, so it knows nothing about the AI runs, uploads
-       * or connection health that the feed will carry once the server records
-       * them.
+       * What the report counted and by whose midnight. The zone is named
+       * because it is the one thing about these figures a reader could
+       * reasonably disagree with — it is the browser's, and a laptop that
+       * travelled reports a different day than the one it left.
        */
       coverage:
-        'Counted from this workspace’s posts, by your local calendar day.',
+        'Counted from this workspace’s posts, by the calendar day in {{zone}}.',
     },
   },
 

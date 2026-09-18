@@ -1,39 +1,33 @@
 import { describe, expect, it } from 'vitest'
-import type { PostSummary } from '@/types/posts'
 import {
   activityFeed,
-  dailyReports,
   dayKey,
   isNotificationEntry,
   parseDayKey,
-  postEvents,
-  reportForDay,
 } from './activityFeed.ts'
 import type { AppNotification } from '@/types/notifications'
+import type { ActivityReportSummary } from '@/types/activity'
 
 /**
  * Local times, written as local times. The day boundary these rules keep is
- * the reader's own, so a fixture pinned to a UTC instant would pass or fail by
- * whichever machine ran it.
+ * the reader's own — the same one sent to the server as `tz` — so a fixture
+ * pinned to a UTC instant would pass or fail by whichever machine ran it.
  */
 function at(y: number, m: number, d: number, h = 12, min = 0): string {
   return new Date(y, m - 1, d, h, min).toISOString()
 }
 
-function makePost(overrides: Partial<PostSummary> = {}): PostSummary {
+function report(
+  date: string,
+  over: Partial<ActivityReportSummary> = {},
+): ActivityReportSummary {
   return {
-    id: 'p1',
-    campaign_id: 'c1',
-    status: 'draft',
-    scheduled_at: null,
-    published_at: null,
-    platform_id: 'linkedin',
-    platform_post_type: 'post',
-    campaign_type_phase_id: null,
-    media_urls: [],
-    created_at: at(2026, 8, 1, 9),
-    updated_at: at(2026, 8, 1, 9),
-    ...overrides,
+    date,
+    published_total: 1,
+    failed_total: 0,
+    created_total: 0,
+    campaigns_created_total: 0,
+    ...over,
   }
 }
 
@@ -62,197 +56,12 @@ describe('parseDayKey', () => {
   })
 })
 
-describe('postEvents', () => {
-  it('counts a post on both the day it was created and the day it published', () => {
-    const events = postEvents(
-      makePost({
-        status: 'published',
-        created_at: at(2026, 8, 17, 10),
-        published_at: at(2026, 8, 19, 9),
-      }),
-      'c1',
-    )
-    expect(events.map((e) => [e.kind, dayKey(e.at)])).toEqual([
-      ['created', '2026-08-17'],
-      ['published', '2026-08-19'],
-    ])
-  })
-
-  it('dates a failure by when the post was due, not when the row was touched', () => {
-    const [, failure] = postEvents(
-      makePost({
-        status: 'failed',
-        scheduled_at: at(2026, 8, 18, 9),
-        updated_at: at(2026, 8, 19, 16),
-      }),
-      'c1',
-    )
-    expect(failure.kind).toBe('failed')
-    expect(dayKey(failure.at)).toBe('2026-08-18')
-  })
-
-  it('falls back to updated_at when a failure has no scheduled date', () => {
-    const [, failure] = postEvents(
-      makePost({
-        status: 'failed',
-        scheduled_at: null,
-        updated_at: at(2026, 8, 19, 16),
-      }),
-      'c1',
-    )
-    expect(dayKey(failure.at)).toBe('2026-08-19')
-  })
-
-  it('says nothing about a post that has not happened yet', () => {
-    const scheduled = postEvents(
-      makePost({ status: 'scheduled', scheduled_at: at(2026, 8, 25, 9) }),
-      'c1',
-    )
-    // Created, and nothing else: a future publish date is a level.
-    expect(scheduled.map((e) => e.kind)).toEqual(['created'])
-  })
-
-  it('ignores a published post with no published_at rather than inventing one', () => {
-    const events = postEvents(
-      makePost({ status: 'published', published_at: null }),
-      'c1',
-    )
-    expect(events.map((e) => e.kind)).toEqual(['created'])
-  })
-
-  it('survives unparseable timestamps', () => {
-    const events = postEvents(
-      makePost({
-        status: 'published',
-        created_at: 'not a date',
-        published_at: '',
-      }),
-      'c1',
-    )
-    expect(events).toEqual([])
-  })
-})
-
-describe('dailyReports', () => {
-  const summaries: Record<string, PostSummary[]> = {
-    c1: [
-      makePost({
-        id: 'a',
-        status: 'published',
-        created_at: at(2026, 8, 18, 10),
-        published_at: at(2026, 8, 19, 9),
-      }),
-      makePost({
-        id: 'b',
-        status: 'published',
-        platform_id: 'instagram',
-        created_at: at(2026, 8, 19, 8),
-        published_at: at(2026, 8, 19, 11),
-      }),
-      makePost({
-        id: 'c',
-        status: 'failed',
-        created_at: at(2026, 8, 19, 8),
-        scheduled_at: at(2026, 8, 19, 14),
-      }),
-    ],
-    c2: [
-      makePost({
-        id: 'd',
-        campaign_id: 'c2',
-        status: 'published',
-        created_at: at(2026, 8, 19, 7),
-        published_at: at(2026, 8, 19, 16),
-      }),
-    ],
-  }
-
-  it('groups by local day, newest first, and skips days with nothing', () => {
-    const reports = dailyReports(summaries, NOW)
-    expect(reports.map((r) => r.date)).toEqual(['2026-08-19', '2026-08-18'])
-  })
-
-  it('counts every outcome and totals them', () => {
-    const [today] = dailyReports(summaries, NOW)
-    expect(today.counts).toEqual({
-      published: 3,
-      failed: 1,
-      not_published: 0,
-      created: 3,
-    })
-    expect(today.total).toBe(7)
-  })
-
-  it('breaks published down by channel, biggest first', () => {
-    const [today] = dailyReports(summaries, NOW)
-    expect(today.publishedByChannel).toEqual([
-      { platformId: 'linkedin', count: 2 },
-      { platformId: 'instagram', count: 1 },
-    ])
-  })
-
-  it('breaks the day down per campaign, busiest first', () => {
-    const [today] = dailyReports(summaries, NOW)
-    expect(today.campaigns.map((c) => [c.campaignId, c.total])).toEqual([
-      ['c1', 5],
-      ['c2', 2],
-    ])
-  })
-
-  it('timestamps the report with the last thing that happened on the day', () => {
-    const [today] = dailyReports(summaries, NOW)
-    expect(new Date(today.lastEventAt).getTime()).toBe(
-      new Date(at(2026, 8, 19, 16)).getTime(),
-    )
-  })
-
-  it('drops events dated in the future', () => {
-    const skewed = {
-      c1: [
-        makePost({
-          id: 'z',
-          status: 'published',
-          created_at: at(2026, 8, 19, 9),
-          published_at: at(2026, 9, 30, 9),
-        }),
-      ],
-    }
-    expect(dailyReports(skewed, NOW).map((r) => r.date)).toEqual(['2026-08-19'])
-  })
-
-  it('returns nothing for an empty workspace', () => {
-    expect(dailyReports({}, NOW)).toEqual([])
-  })
-
-  it('reportForDay picks one day out and answers null for a quiet one', () => {
-    expect(reportForDay(summaries, '2026-08-18', NOW)?.counts.created).toBe(1)
-    expect(reportForDay(summaries, '2026-08-01', NOW)).toBeNull()
-  })
-})
-
 describe('activityFeed', () => {
-  const summaries: Record<string, PostSummary[]> = {
-    c1: [
-      makePost({
-        id: 'a',
-        status: 'published',
-        created_at: at(2026, 8, 19, 8),
-        published_at: at(2026, 8, 19, 9),
-      }),
-      makePost({
-        id: 'b',
-        status: 'failed',
-        created_at: at(2026, 8, 18, 8),
-        scheduled_at: at(2026, 8, 19, 14),
-      }),
-      makePost({
-        id: 'c',
-        status: 'not_published',
-        created_at: at(2026, 8, 17, 8),
-        scheduled_at: at(2026, 8, 17, 10),
-      }),
-    ],
-  }
+  const reports = [
+    report('2026-08-19', { published_total: 2, failed_total: 1 }),
+    report('2026-08-18', { created_total: 3 }),
+    report('2026-08-17'),
+  ]
 
   const failure: AppNotification = {
     id: 'n1',
@@ -270,30 +79,40 @@ describe('activityFeed', () => {
     expires_at: null,
   }
 
-  it('carries recorded entries individually and rolls the rest into the day report', () => {
-    const feed = activityFeed({ summaries, notifications: [failure] }, NOW)
+  it('carries recorded entries individually and one report per day', () => {
+    const feed = activityFeed({ reports, notifications: [failure] }, NOW)
     expect(feed.map((e) => e.kind)).toEqual([
       // 19th: the recorded failure at 14:00, then the day's report.
       'notification',
       'report',
-      // 18th: only a post being created, so the report alone.
+      // 18th and 17th: nothing was recorded, so the report alone — the derived
+      // exceptions Phase 1 would have shown here are gone on purpose.
       'report',
-      // 17th: nothing was recorded, so the report alone — the derived
-      // exception Phase 1 would have shown here is gone on purpose.
       'report',
     ])
   })
 
+  it('places a report at its own local midnight, so it closes its day', () => {
+    // The row the server sends carries a date and no time. Midnight is what
+    // puts the summary *under* the entries it summarises rather than above
+    // them — the position it held when this file still computed the report and
+    // stamped it with the day's last event.
+    const feed = activityFeed({ reports, notifications: [failure] }, NOW)
+    const first = feed[1]
+    expect(first.kind).toBe('report')
+    expect(dayKey(new Date(first.at))).toBe('2026-08-19')
+    expect(new Date(first.at).getHours()).toBe(0)
+  })
+
   it('does not re-derive an outcome the server already recorded', () => {
-    // Every post in the fixture has an outcome, and only one notification was
-    // written. A feed reading both would show three exception rows and one
-    // record; this shows the record.
-    const feed = activityFeed({ summaries, notifications: [failure] }, NOW)
+    // The 19th's report counts a failure, and one notification was written
+    // about it. A feed reading both would say it twice.
+    const feed = activityFeed({ reports, notifications: [failure] }, NOW)
     expect(feed.filter(isNotificationEntry)).toHaveLength(1)
   })
 
   it('carries the row whole, so the screen decides how to say it', () => {
-    const feed = activityFeed({ summaries, notifications: [failure] }, NOW)
+    const feed = activityFeed({ reports, notifications: [failure] }, NOW)
     const entry = feed.filter(isNotificationEntry)[0]
     expect(entry.notification.type).toBe('post.publish_failed')
     expect(entry.notification.entity_id).toBe('b')
@@ -306,7 +125,7 @@ describe('activityFeed', () => {
     // never reachable by scrolling.
     const feed = activityFeed(
       {
-        summaries,
+        reports,
         notifications: [
           { ...failure, id: 'n2', created_at: at(2026, 8, 25, 9) },
         ],
@@ -316,10 +135,27 @@ describe('activityFeed', () => {
     expect(feed.filter(isNotificationEntry)).toHaveLength(0)
   })
 
+  it('drops a report for a day that has not happened here yet', () => {
+    // The server cuts days by the zone it was sent, and a request in flight
+    // across midnight — or a clock the two ends disagree about — can name
+    // tomorrow. Same rule as a future notification, for the same reason.
+    const feed = activityFeed({ reports: [report('2026-08-20')] }, NOW)
+    expect(feed).toHaveLength(0)
+  })
+
+  it('ignores a row whose date it cannot read', () => {
+    const feed = activityFeed({ reports: [report('19-08-2026')] }, NOW)
+    expect(feed).toHaveLength(0)
+  })
+
   it('is the reports alone when nothing has been recorded yet', () => {
     // The state a fresh notifications table is in, and the state the feed is
     // in for anyone whose workspace has never produced one.
-    const feed = activityFeed({ summaries }, NOW)
+    const feed = activityFeed({ reports }, NOW)
     expect(new Set(feed.map((e) => e.kind))).toEqual(new Set(['report']))
+  })
+
+  it('is empty when neither half has anything', () => {
+    expect(activityFeed({}, NOW)).toEqual([])
   })
 })

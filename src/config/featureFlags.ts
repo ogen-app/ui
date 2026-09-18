@@ -85,10 +85,17 @@ const FEATURE_FLAGS = {
    *    a triggerable producer rather than a fixed server: **live push**, and
    *    with it the replay→live dedup (`n.Seq <= lastSentSeq`). Paging past page
    *    one is untested too.
-   * 2. **The daily report, read against the real endpoints.** `GET
-   *    /api/activity/report/:date` and `/api/activity/reports` landed
-   *    2026-09-17 (ogen#161) — the client half was built against an assumed
-   *    shape, so this is rule 4 and it is the largest piece left.
+   * 2. **The daily report, run against a workspace with days in it.** The
+   *    client is now *written* against the real endpoints rather than against
+   *    CON-225 §5's client-side computation, which CON-285 reversed: `GET
+   *    /api/activity/reports` fills the feed's report rows and `GET
+   *    /api/activity/report/:date` fills the day, both carrying the browser's
+   *    IANA zone, which is the whole reason the arithmetic could move. The
+   *    shapes are pinned by `services/api/activity.test.ts`. What is left is
+   *    the round trip: whether the day the server cuts agrees with the day this
+   *    client groups under, which is only observable across a real midnight,
+   *    and whether `by_author` ids match `listMembers` (they are the same
+   *    per-workspace membership ids, so they should).
    * 3. **A producer for "never published".** `not_published` is a real outcome
    *    with no notification type, so it leaves no record at all; it is counted
    *    in the day's report and nowhere else. CON-285 looked and found the
@@ -99,6 +106,16 @@ const FEATURE_FLAGS = {
    * either. The whole recipient taxonomy — every type, its trigger, its
    * transport and who hears it — is written out in `docs/events.md` rather
    * than reconstructed from here.
+   *
+   * **Three things the report endpoints deliberately do not carry**, none of
+   * them blocking: a **per-campaign breakdown** (the old computed report had
+   * one for free, because it held every post; the server's shape is CON-225 §5
+   * and a campaign's own report is the same endpoint with `campaign_id` set);
+   * **a code for a failure** — `failure_reason` is Go prose, so the report
+   * shows it verbatim the way a notification's `title` is shown, and the ask is
+   * the same one `lib/uploadError` is waiting on (`docs/open-questions.md` S4);
+   * and **paging**, since `before` is a keyset the feed does not use — it asks
+   * for one horizon of days and says on screen where it stops.
    *
    * **Settled since, on the server (CON-285, ogen#161, 2026-09-17):** the
    * producer vocabulary is complete — `assistant.*`, `assessment.*`,
