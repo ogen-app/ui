@@ -47,6 +47,7 @@ import {
   strategySchema,
   type StrategyFormValues,
 } from './schema'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * The chosen type out of the fetched list. Falls back to the campaign's own
@@ -93,7 +94,10 @@ export function CampaignStrategyForm({ campaign }: Props) {
   })
 
   const { t } = useTranslation()
-  const { data: types, isLoading: typesLoading } = useCampaignTypes()
+  const typesQuery = useCampaignTypes()
+  const types = typesQuery.data
+  // `awaiting`, not `isLoading` — see `lib/fetched`.
+  const typesLoading = awaiting(typesQuery)
 
   // The type is stated, not offered — the chooser only appears once the user
   // asks for it by name.

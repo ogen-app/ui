@@ -31,6 +31,7 @@ import {
   type WorkspaceMember,
   type WorkspaceRole,
 } from '@/types/workspace'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * Members and invitations are different rows saying the same thing, so their
@@ -82,7 +83,10 @@ function PeopleSectionComponent() {
   const callerRole = workspace?.role
   const canManage = callerRole ? canManageWorkspace(callerRole) : false
 
-  const { data: members, isLoading: membersLoading } = useWorkspaceMembers()
+  const membersQuery = useWorkspaceMembers()
+  const members = membersQuery.data
+  // `awaiting`, not `isLoading` — see `lib/fetched`.
+  const membersLoading = awaiting(membersQuery)
   const { data: invitations } = useWorkspaceInvitations(canManage)
 
   // Accepted ones became members; revoked ones are dead. Expired stay — they

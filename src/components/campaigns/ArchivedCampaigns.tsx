@@ -12,6 +12,7 @@ import { campaignTypeInfo } from '@/lib/campaignTypeDictionary'
 import { formatDate } from '@/lib/intl'
 import { identityAbbr, identityColorVar } from '@/lib/identity'
 import type { Campaign } from '@/types/campaigns'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * The campaigns that have been put away (CON-156), as a closed drawer at the
@@ -50,22 +51,34 @@ export function ArchivedCampaigns({
   defaultOpen?: boolean
 }) {
   const { t, i18n } = useTranslation()
-  const { data: campaigns, isLoading, isError } = useArchivedCampaigns()
+  const query = useArchivedCampaigns()
+  const { data: campaigns, isError } = query
+  // `awaiting`, not `isLoading` — see `lib/fetched`. A paused read counted as
+  // settled, which drew the drawer with "nothing archived" in it.
+  const loading = awaiting(query)
 
   const count = campaigns?.length ?? 0
-  if (isLoading && !defaultOpen) return null
+  if (loading && !defaultOpen) return null
   if (!isError && count === 0 && !defaultOpen) return null
 
   return (
     <Collapse
       title={t('campaigns.archivedSection')}
       // No count while the answer isn't known yet, rather than a confident 0.
-      meta={isLoading || isError ? undefined : count}
+      meta={loading || isError ? undefined : count}
       defaultOpen={defaultOpen}
     >
       {isError ? (
         <p className="py-2 text-sm text-warning">
           {t('campaigns.archivedError')}
+        </p>
+      ) : /* Only reachable with `defaultOpen`, which is how archiving
+             redirects here — and the one reader guaranteed to have something
+             in the pile is the one who just put it there. "Nothing archived"
+             while the read is still out would tell them it didn't work. */
+      loading ? (
+        <p className="py-2 text-sm text-tertiary-foreground">
+          {t('common.loading')}
         </p>
       ) : count === 0 ? (
         <p className="max-w-150 py-2 text-sm text-tertiary-foreground">

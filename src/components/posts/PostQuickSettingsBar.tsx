@@ -22,6 +22,7 @@ import { PlatformPicker, PostTypePicker } from './quickBar/ChannelPickers'
 import { PublishMethodPicker } from './quickBar/PublishMethodPicker'
 import { SchedulingDetails } from './quickBar/SchedulingLine'
 import { Dot } from './quickBar/parts'
+import { awaiting } from '@/lib/fetched'
 
 type Props = {
   doc: Post
@@ -89,9 +90,10 @@ export function PostQuickSettingsBar({
   const autoPostType = useFeatureFlag('post-type-auto')
   const catalog = usePlatformCatalog()
   const platform = catalog.resolve(doc.platform_id)
-  const { data: campaign, isLoading: campaignPending } = useCampaign(
-    doc.campaign_id,
-  )
+  const campaignQuery = useCampaign(doc.campaign_id)
+  const campaign = campaignQuery.data
+  // `awaiting`, not `isLoading` — see `lib/fetched`.
+  const campaignPending = awaiting(campaignQuery)
   // The same source the route resolves the method against, so the two can't
   // disagree. `unknown` holds the picker: "manual publish" is a promise about
   // what happens to this post, and it waits until we can keep it.

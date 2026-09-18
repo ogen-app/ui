@@ -90,6 +90,27 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: 30_000,
       refetchOnWindowFocus: false,
+      /**
+       * A read that cannot reach the server **fails**, rather than waiting
+       * for the network to come back.
+       *
+       * TanStack's default (`'online'`) does the opposite: with the browser
+       * offline it never issues the request at all and parks the query at
+       * `status: 'pending'`, `fetchStatus: 'paused'`. That is a fourth state
+       * on top of the three a screen draws, and it is the one nothing was
+       * written for — `isError` is false, and `isLoading` is false too,
+       * because a paused query is not fetching. Every list in the app read
+       * that as *loaded, and empty*: `/assets` told a workspace holding 18
+       * documents that nothing was filed and offered to file the first.
+       *
+       * Pausing buys an offline-capable app the chance to resume. This app
+       * has no offline mode — no persisted cache, no paused mutations, no
+       * sync on reconnect — so the wait it buys is indefinite, and the only
+       * honest answer is the one `PageError` already gives. See `awaiting`
+       * in `lib/fetched.ts`, which closes the other half: the retryer pauses
+       * on a hidden tab as well, and that one `networkMode` cannot reach.
+       */
+      networkMode: 'always',
     },
   },
 })

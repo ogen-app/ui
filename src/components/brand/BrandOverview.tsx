@@ -227,6 +227,7 @@ export function BrandOverview({
  * explaining the screen.
  */
 function FoundationIntro() {
+  const { t } = useTranslation()
   return (
     <BrandIntro
       icon={PaletteIcon}
@@ -235,8 +236,8 @@ function FoundationIntro() {
       // it is a top-level destination and the only one that would be untitled.
       // So the card's heading does the other half of the job and says what the
       // word means.
-      title="What the app writes from"
-      body="The voices it writes in, who it is written to, what may never be claimed, what is true, and the documents it draws on — one place for all five. It is written once for the workspace, and every campaign and every post inherits it."
+      title={t('brand.overview.intro.title')}
+      body={t('brand.overview.intro.body')}
       heading="h2"
     />
   )

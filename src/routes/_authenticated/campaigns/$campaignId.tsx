@@ -13,6 +13,7 @@ import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBa
 import { cn } from '@/lib'
 import { useCampaign } from '@/hooks/useCampaigns.ts'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore.ts'
+import { awaiting } from '@/lib/fetched'
 
 export const Route = createFileRoute('/_authenticated/campaigns/$campaignId')({
   component: CampaignLayout,
@@ -50,7 +51,8 @@ const DOCUMENT_SECTIONS: readonly string[] = [
 
 function CampaignLayout() {
   const { campaignId } = Route.useParams()
-  const { data: campaign, isLoading, isError } = useCampaign(campaignId)
+  const query = useCampaign(campaignId)
+  const { data: campaign, isError } = query
 
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const section =
@@ -77,7 +79,9 @@ function CampaignLayout() {
       renameThread(threadId, campaignName.trim(), campaignName.trim())
   }, [renameThread, threadId, campaignName])
 
-  if (isLoading) {
+  // `awaiting`, not `isLoading` — see `lib/fetched`: without it a paused
+  // read falls through to "Campaign not found".
+  if (awaiting(query)) {
     return (
       <PageContainer>
         <PageLoader />

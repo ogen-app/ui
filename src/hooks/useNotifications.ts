@@ -17,6 +17,7 @@ import {
 } from '@/services/api/notifications'
 import { subscribeToNotifications } from '@/stores/notificationStreamStore'
 import type { AppNotification } from '@/types/notifications'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * The notification inbox's data layer (CON-242).
@@ -77,7 +78,7 @@ export type NotificationsResult = {
  */
 export function useNotifications(): NotificationsResult {
   const enabled = useFeatureFlag('activity')
-  const { data, isLoading, isError } = useQuery({
+  const query = useQuery({
     queryKey: NOTIFICATION_LIST_KEY,
     queryFn: () => listNotifications({ limit: NOTIFICATION_PAGE_SIZE }),
     enabled,
@@ -85,10 +86,11 @@ export function useNotifications(): NotificationsResult {
   })
 
   return {
-    notifications: data ?? [],
-    isLoading: enabled && isLoading,
-    isError: enabled && isError,
-    isTruncated: (data?.length ?? 0) >= NOTIFICATION_PAGE_SIZE,
+    notifications: query.data ?? [],
+    // `awaiting`, not `isLoading` — see `lib/fetched`.
+    isLoading: awaiting(query),
+    isError: enabled && query.isError,
+    isTruncated: (query.data?.length ?? 0) >= NOTIFICATION_PAGE_SIZE,
   }
 }
 

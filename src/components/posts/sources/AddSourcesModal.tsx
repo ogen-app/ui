@@ -12,6 +12,7 @@ import { extentLabel } from '@/lib/assetExtent'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 import { cn, formatTitle } from '@/lib'
 import type { Asset } from '@/types/content'
+import { awaiting } from '@/lib/fetched'
 
 type Props = {
   onClose: () => void
@@ -39,7 +40,8 @@ type Props = {
  * effect to reset them.
  */
 export function AddSourcesModal({ onClose, attachedIds, onAdd }: Props) {
-  const { data: assets, isLoading, isError } = useAssets()
+  const assetsQuery = useAssets()
+  const assets = assetsQuery.data
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<Set<string>>(new Set())
 
@@ -112,11 +114,14 @@ export function AddSourcesModal({ onClose, attachedIds, onAdd }: Props) {
         </div>
 
         <div className="max-h-[50vh] min-h-30 overflow-y-auto">
-          {isLoading ? (
+          {/* `awaiting`, not `isLoading` — see `lib/fetched`. "There is
+              nothing in the content bank yet", below, is the claim this
+              branch protects. */}
+          {awaiting(assetsQuery) ? (
             <div className="flex h-30 items-center justify-center">
               <Spinner tone="onSurface" />
             </div>
-          ) : isError ? (
+          ) : assetsQuery.isError ? (
             <p className="py-8 text-center text-sm text-destructive">
               Unable to read the content bank.
             </p>

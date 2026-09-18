@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { getSetting, putSetting, userScopedKey } from '@/services/api/settings'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from '@/stores/toastStore'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * Column ids the posts table may be ordered by.
@@ -95,10 +96,11 @@ export function usePostsTableSort() {
   const queryKey = useMemo(() => postsTableSortKey(userId), [userId])
   const storageKey = userScopedKey(NAMESPACE, userId)
 
-  // `isLoading`, not `isPending`: the latter never resolves on a disabled
+  // `awaiting`, not `isPending`: the latter never resolves on a disabled
   // query, and with no user there is nothing to fetch — the default order is
-  // the answer, not a placeholder for one.
-  const { data, isLoading } = useQuery({
+  // the answer, not a placeholder for one. Nor `isLoading`, which is false
+  // while a retry is paused. See `lib/fetched`.
+  const query = useQuery({
     queryKey,
     queryFn: async () => parsePostsSort(await getSetting(storageKey)),
     enabled: !!userId,
@@ -109,7 +111,7 @@ export function usePostsTableSort() {
     // default order is a fine answer; fail to it fast.
     retry: false,
   })
-  const sorting = data ?? DEFAULT_POSTS_SORT
+  const sorting = query.data ?? DEFAULT_POSTS_SORT
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pending = useRef<{ key: string; value: SortingState } | null>(null)
@@ -154,6 +156,6 @@ export function usePostsTableSort() {
      * moment later — rows jumping after paint reads as a bug, and on a long
      * list you lose whatever you were looking at.
      */
-    isPending: isLoading,
+    isPending: awaiting(query),
   }
 }

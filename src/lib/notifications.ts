@@ -1,5 +1,6 @@
 import { getPlatformByZernioId } from '@/lib/platformDictionary'
 import type { AppNotification } from '@/types/notifications'
+import { formatStorage } from '@/lib/tierFeatures'
 
 /**
  * How a notification is *shown*: which catalogue entry says it, and where it
@@ -39,6 +40,12 @@ import type { AppNotification } from '@/types/notifications'
  * server, and `zernio.sync_failed` has no per-user recipient. Copy written
  * ahead of a producer is copy nobody can read, and it rots quietly — the
  * catalogue is not the place to plan.
+ *
+ * Two more were absent by mistake rather than by decision, and are now in
+ * `ENTITLEMENT_COPY_KEY` below: the plan-limit warnings had both a producer
+ * and a recipient, which is exactly what the three above lack. They are not in
+ * this table because their sentence depends on `data.feature` as well as on
+ * `type`.
  */
 const COPY_KEY = {
   'connection.expiring_soon': 'activity.notification.connectionExpiring',
@@ -67,6 +74,54 @@ const COPY_KEY = {
 } as const satisfies Record<string, string>
 
 /**
+ * The plan-limit warnings, which are two types over four features (CON-295).
+ *
+ * `entitlement.limit_reached` and `entitlement.limit_approaching` are raised
+ * by the server's quota limiter, unconditionally — they are **not** behind
+ * `workspace-tiers`, which gates the screens that talk about a plan and not
+ * the counting. They arrived before this table did and fell through to the
+ * server's English.
+ *
+ * A key per feature rather than one sentence with the feature's name slotted
+ * in. Two reasons, and the second is the real one: the wire carries
+ * `data.feature` as a machine key (`active_campaigns`) and *not* the display
+ * name the server composed its own prose from, so a shared sentence would need
+ * a lookup table of nouns here anyway — and a cap measured in bytes cannot
+ * share a sentence with a cap measured in campaigns whatever the noun says.
+ *
+ * A feature missing from here takes the server-title fallback, which is what
+ * makes adding the fifth capped resource a catalogue change rather than a
+ * regression: the limiter registers its counters at boot
+ * (`src/transport/server/server.go`), so this list can and will lag it.
+ */
+const ENTITLEMENT_COPY_KEY = {
+  team_seats: {
+    reached: 'activity.notification.entitlement.seats.reached',
+    approaching: 'activity.notification.entitlement.seats.approaching',
+  },
+  active_campaigns: {
+    reached: 'activity.notification.entitlement.campaigns.reached',
+    approaching: 'activity.notification.entitlement.campaigns.approaching',
+  },
+  content_bank_assets: {
+    reached: 'activity.notification.entitlement.documents.reached',
+    approaching: 'activity.notification.entitlement.documents.approaching',
+  },
+  media_storage_bytes: {
+    reached: 'activity.notification.entitlement.storage.reached',
+    approaching: 'activity.notification.entitlement.storage.approaching',
+  },
+} as const satisfies Record<string, Record<LimitState, string>>
+
+/** Which side of the cap a warning is about — the server's own two words. */
+type LimitState = 'approaching' | 'reached'
+
+const LIMIT_TYPE: Record<string, LimitState> = {
+  'entitlement.limit_approaching': 'approaching',
+  'entitlement.limit_reached': 'reached',
+}
+
+/**
  * The keys this table can produce, as literals rather than `string`.
  *
  * i18next types `t()` against the catalogue, so a plain `string` here would not
@@ -74,7 +129,9 @@ const COPY_KEY = {
  * this table but never added to `en.ts` fails the build instead of rendering
  * its own name on screen.
  */
-export type NotificationCopyKey = (typeof COPY_KEY)[keyof typeof COPY_KEY]
+export type NotificationCopyKey =
+  | (typeof COPY_KEY)[keyof typeof COPY_KEY]
+  | (typeof ENTITLEMENT_COPY_KEY)[keyof typeof ENTITLEMENT_COPY_KEY][LimitState]
 
 export type NotificationCopy = {
   /** Full catalogue key, ready for `t()`. */
@@ -113,6 +170,8 @@ const REQUIRED_VARS: Partial<
 export function notificationCopy(
   notification: AppNotification,
 ): NotificationCopy | null {
+  const limitState = LIMIT_TYPE[notification.type]
+  if (limitState) return entitlementCopy(notification, limitState)
   const type = notification.type as keyof typeof COPY_KEY
   const key = COPY_KEY[type] as NotificationCopyKey | undefined
   if (!key) return null
@@ -120,6 +179,43 @@ export function notificationCopy(
   const required = REQUIRED_VARS[type]
   if (required && !(required in vars)) return null
   return { key, vars }
+}
+
+/**
+ * What a plan-limit warning says, or null when this build cannot say it.
+ *
+ * Null on an unknown feature, and null on a row missing the figures its
+ * sentence counts with — the same answer, for the same reason, as a type this
+ * build has never heard of: the server's own English is true, and a sentence
+ * with `{{limit}}` still in it is not.
+ *
+ * The byte figures are rendered here rather than left as numbers, because
+ * `5368709120` is not a thing anyone has ever been told about their storage.
+ * `String` is passed as the digit formatter to keep this module free of the
+ * active language — a plan's allowance is one or two digits, so there is no
+ * grouping to get wrong. See `formatStorage`.
+ */
+function entitlementCopy(
+  notification: AppNotification,
+  state: LimitState,
+): NotificationCopy | null {
+  const data = notification.data ?? {}
+  const feature = data.feature
+  if (typeof feature !== 'string') return null
+  const keys =
+    ENTITLEMENT_COPY_KEY[feature as keyof typeof ENTITLEMENT_COPY_KEY]
+  if (!keys) return null
+  const { limit, current } = data
+  if (typeof limit !== 'number' || !Number.isFinite(limit)) return null
+  if (typeof current !== 'number' || !Number.isFinite(current)) return null
+  const bytes = feature === 'media_storage_bytes'
+  return {
+    key: keys[state],
+    vars: {
+      limit: bytes ? formatStorage(limit, String) : limit,
+      current: bytes ? formatStorage(current, String) : current,
+    },
+  }
 }
 
 function notificationVars(

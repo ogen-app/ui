@@ -56,9 +56,10 @@ const FEATURE_FLAGS = {
    * the flag off no notification request is made at all.
    *
    * **On.** The producers it was waiting for are shipped: CON-285 (ogen#161,
-   * merged 2026-09-17) completed the durable notification vocabulary — the
-   * assistant, assessment, content-plan and URL-crawl resolutions all write
-   * rows now — and the two recipient rulings taken on 2026-09-06 are
+   * merged 2026-09-17) finished the durable notification vocabulary as
+   * `docs/events.md` lists it — the assistant, assessment, content-plan and
+   * URL-crawl resolutions all write rows now — and the two recipient rulings
+   * taken on 2026-09-06 are
    * implemented rather than merely decided. `post.published` and
    * `post.publish_failed` go to the whole workspace through `EmitToUsers`
    * (`submit_post_to_zernio.go`), which is what stopped turning this on from

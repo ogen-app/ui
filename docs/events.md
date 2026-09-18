@@ -148,6 +148,16 @@ adding one is a coordinated change.
 | `assessment.completed` / `assessment.failed` | Resolution | A post quality assessment ends | Initiator |
 | `connection.expiring_soon` | Exception | The expiry sweep finds a connection near its end | Owners (CON-219) |
 | `connection.action_required` | Exception | A connection needs reauthorisation | Owners (CON-219) |
+| `entitlement.limit_approaching` / `entitlement.limit_reached` | Exception | A create pushes a capped resource over the warn threshold, or fills the cap (CON-295 §12). `dedupe_key = entitlement_limit:<feature>:<state>`, and the row expires after seven days — it is "you are running out", not a record | Owners |
+
+The entitlement pair is **not** gated by `workspace-tiers`: the limiter is
+wired unconditionally at boot, so these rows reach an inbox whether or not the
+screens that talk about a plan are switched on. Their copy is keyed by feature
+as well as by type — four capped resources today (`team_seats`,
+`active_campaigns`, `content_bank_assets`, `media_storage_bytes`), each with a
+sentence of its own, because a cap counted in bytes and a cap counted in
+campaigns are not one sentence with a noun swapped. A fifth feature registered
+server-side falls back to the server's English until the catalogue catches up.
 
 Nearly all of these carry a `dedupe_key` — usually `<type>:<entity id>`, but
 `manual_publish:<post_id>` and `conn:<account id>:<stage>` for the two that
