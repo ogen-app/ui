@@ -3490,6 +3490,13 @@ export const en = {
       messageSecondLine: 'It may be restarting or temporarily offline.',
       type: 'OFFLINE',
     },
+    crash: {
+      code: '500',
+      title: 'Something went wrong',
+      message: 'The app hit an unexpected error. Reloading usually fixes it.',
+      type: 'ERROR',
+      reload: 'Reload',
+    },
   },
 }
 
