@@ -3,6 +3,7 @@ import {
   BellSimpleIcon,
   CalendarDotsIcon,
   ChartLineUpIcon,
+  FilesIcon,
   GearSixIcon,
   LightbulbIcon,
   PaletteIcon,
@@ -25,9 +26,12 @@ import { useFeatureFlag } from '@/config/featureFlags'
  *
  * Every row here has a campaign-scoped twin one level down — see
  * `lib/campaignSections`, which is the same list narrowed. The pairing is the
- * design: Inbox → Overview, Ideas → Ideas, Campaigns → Posts, Calendar →
- * Calendar, Analytics → Analytics, and in the footer Foundation → Foundation,
- * Activity → Activity, Workspace settings → Settings. The campaign's rows are
+ * design: Inbox → Overview, Ideas → Ideas, Assets → Assets, Campaigns →
+ * Posts, Calendar → Calendar, Analytics → Analytics, and in the footer
+ * Activity → Activity, Workspace settings → Settings. Foundation is the one
+ * row with no twin, and deliberately: the voices, audiences and guardrails are
+ * the workspace's and a campaign only ever points at them, which is a choice
+ * made on its Strategy page rather than a section of its own. The campaign's rows are
  * not prefixed with its noun — the level is already named, in the campaign's
  * own name above them. Adding a module to one level without the
  * other breaks the thing the two levels are teaching.
@@ -54,7 +58,6 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
   const inboxEnabled = useFeatureFlag('tasks')
   const ideasEnabled = useFeatureFlag('ideas')
   const calendarEnabled = useFeatureFlag('workspace-calendar')
-  const analyticsEnabled = useFeatureFlag('analytics-overview')
 
   const destinations: WorkspaceDestination[] = []
 
@@ -84,6 +87,21 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
     })
   }
 
+  // Before Campaigns, on the same argument as Ideas above it: a document is
+  // material, a campaign is what gets made out of it, and the rail is in the
+  // order the work happens in. It was Brand's sixth section until the hub's
+  // one working list turned out to be two clicks deep — see `routes/assets`.
+  destinations.push({
+    id: 'assets',
+    label: t('nav.assets'),
+    // Files rather than the stacked-cards glyph it wore inside Brand: one
+    // level down this row sits directly above Posts, whose mark is cards, and
+    // two card stacks in one rail at 20px is a puzzle rather than a menu.
+    icon: FilesIcon,
+    to: '/assets',
+    isActive: (p) => p.startsWith('/assets'),
+  })
+
   destinations.push({
     id: 'campaigns',
     label: t('nav.campaigns'),
@@ -105,15 +123,13 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
     })
   }
 
-  if (analyticsEnabled) {
-    destinations.push({
-      id: 'analytics',
-      label: t('nav.analytics'),
-      icon: ChartLineUpIcon,
-      to: '/analytics',
-      isActive: (p) => p.startsWith('/analytics'),
-    })
-  }
+  destinations.push({
+    id: 'analytics',
+    label: t('nav.analytics'),
+    icon: ChartLineUpIcon,
+    to: '/analytics',
+    isActive: (p) => p.startsWith('/analytics'),
+  })
 
   return destinations
 }
@@ -135,20 +151,17 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
 export function useWorkspaceMenuEntries(): WorkspaceDestination[] {
   const { t } = useTranslation()
   const destinations = useWorkspaceDestinations()
-  const brandEnabled = useFeatureFlag('brand-materials')
   const activityEnabled = useFeatureFlag('activity')
 
   const entries = [...destinations]
 
-  if (brandEnabled) {
-    entries.push({
-      id: 'foundation',
-      label: t('nav.foundation'),
-      icon: PaletteIcon,
-      to: '/foundation',
-      isActive: (p) => p.startsWith('/foundation'),
-    })
-  }
+  entries.push({
+    id: 'foundation',
+    label: t('nav.foundation'),
+    icon: PaletteIcon,
+    to: '/foundation',
+    isActive: (p) => p.startsWith('/foundation'),
+  })
 
   if (activityEnabled) {
     entries.push({

@@ -4,19 +4,23 @@ import { i18next } from '@/i18n'
 import { brandSectionCopy, SHOWN_BRAND_SECTIONS } from '@/lib/brandSections'
 import { BrandOverview } from './BrandOverview'
 import type { BrandData, BrandVoice } from './types'
-import type { Asset } from '@/types/content'
 
 /**
- * The hub with one of its two queries missing.
+ * The hub with its query missing, in the two ways it can be.
  *
  * This is the case the screen used to get wrong, and it is worth a test rather
- * than a look at it because *nothing on the page says so*: it renders exactly
- * the placeholder it renders while a fetch is in flight, and the way you find
- * out that the fetch is never going to land is by waiting for a while and
- * noticing that it hasn't. `data && assets ? … : { isPending: true }` collapsed
- * "not here yet" and "not coming" into one state, so a document library that
- * answered 404 hid five cards' worth of voices, audiences, guardrails and facts
- * that had arrived intact. See `lib/fetched`.
+ * than a look at it because *nothing on the page says so*: a fetch that is
+ * never going to land renders exactly the placeholder a fetch in flight
+ * renders, and the way you find out is by waiting for a while and noticing that
+ * it hasn't. `data ? … : { isPending: true }` collapsed "not here yet" and "not
+ * coming" into one state, so a library that answered 404 hid the cards' worth of
+ * voices, audiences and guardrails behind a wait with no end. See
+ * `lib/fetched`.
+ *
+ * The documents were the second query that made it visible, and they are their
+ * own module now (`/assets`). The distinction outlives them: what this screen
+ * shows is decided by the fetch's state rather than by the absence of data, and
+ * an unread brand must not be read as an empty one.
  */
 
 const VOICE: BrandVoice = {
@@ -49,74 +53,35 @@ const BRAND: BrandData = {
   templates: [],
 }
 
-const ASSET = {
-  id: 'a1',
-  name: 'Pricing one-pager',
-  kind: 'pdf',
-  status: 'ready',
-} as unknown as Asset
-
 const unreadable = () => i18next.t('brand.overview.unreadable')
-const label = (id: 'sources' | 'voices') =>
-  brandSectionCopy(i18next.t, id).label
+const label = (id: 'voices') => brandSectionCopy(i18next.t, id).label
 
 const skeletons = () =>
   document.querySelectorAll('[data-slot="skeleton"]').length
 
 describe('the Foundation hub', () => {
-  it('draws the five written sections while Sources is still coming', () => {
-    render(
-      <BrandOverview
-        brand={{ status: 'ready', data: BRAND }}
-        sources={{ status: 'pending' }}
-      />,
-    )
+  it('draws the sections it was given', () => {
+    render(<BrandOverview brand={{ status: 'ready', data: BRAND }} />)
 
     expect(screen.getByText(VOICE.name)).toBeInTheDocument()
-    expect(screen.getByText(label('sources'))).toBeInTheDocument()
-    // Card-sized, not screen-sized: the placeholder is inside the one card
-    // that is waiting.
-    expect(skeletons()).toBeGreaterThan(0)
     expect(screen.queryByText(unreadable())).not.toBeInTheDocument()
-  })
-
-  it('keeps them when Sources fails, and says so in that card only', () => {
-    render(
-      <BrandOverview
-        brand={{ status: 'ready', data: BRAND }}
-        sources={{ status: 'error' }}
-      />,
-    )
-
-    expect(screen.getByText(VOICE.name)).toBeInTheDocument()
-    expect(screen.getAllByText(unreadable())).toHaveLength(1)
     expect(skeletons()).toBe(0)
   })
 
-  it('draws Sources when it is the brand that failed', () => {
-    render(
-      <BrandOverview
-        brand={{ status: 'error' }}
-        sources={{ status: 'ready', data: [ASSET] }}
-      />,
-    )
+  it('admits the failure card by card rather than as a page', () => {
+    render(<BrandOverview brand={{ status: 'error' }} />)
 
-    // One line per card that shares the failed query, and the sixth card —
-    // fed by the other one — is unaffected.
+    // One line per card, and every card keeps its heading and its caret: the
+    // screen behind the door fetches for itself and is the only place anything
+    // can be done about it.
     expect(screen.getAllByText(unreadable())).toHaveLength(
-      SHOWN_BRAND_SECTIONS.length - 1,
+      SHOWN_BRAND_SECTIONS.length,
     )
-    expect(screen.getByText(label('sources'))).toBeInTheDocument()
-    expect(screen.getByText('1')).toBeInTheDocument()
+    expect(skeletons()).toBe(0)
   })
 
   it('does not offer to write a brand from scratch when it could not read one', () => {
-    render(
-      <BrandOverview
-        brand={{ status: 'error' }}
-        sources={{ status: 'ready', data: [] }}
-      />,
-    )
+    render(<BrandOverview brand={{ status: 'error' }} />)
 
     // `FirstRun`'s own heading. An unread brand is not an empty one, and the
     // takeover would be answering a question the fetch never asked.
@@ -127,17 +92,12 @@ describe('the Foundation hub', () => {
   })
 
   it('waits as a whole page while the brand itself is in flight', () => {
-    render(
-      <BrandOverview
-        brand={{ status: 'pending' }}
-        sources={{ status: 'ready', data: [ASSET] }}
-      />,
-    )
+    render(<BrandOverview brand={{ status: 'pending' }} />)
 
-    // The one query that decides *which screen this is* — six labelled cards
+    // The one query that decides *which screen this is* — labelled cards
     // appearing for a moment before the first-run takeover replaces them is
     // worse than a placeholder that promises nothing.
-    expect(screen.queryByText(label('sources'))).not.toBeInTheDocument()
+    expect(screen.queryByText(label('voices'))).not.toBeInTheDocument()
     expect(skeletons()).toBeGreaterThan(0)
   })
 })

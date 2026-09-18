@@ -5,6 +5,10 @@ describe('navLevelOf', () => {
   it('puts the workspace destinations on level 0', () => {
     expect(navLevelOf('/campaigns')).toEqual({ level: 0, campaignId: null })
     expect(navLevelOf('/analytics')).toEqual({ level: 0, campaignId: null })
+    expect(navLevelOf('/assets')).toEqual({ level: 0, campaignId: null })
+    // The workspace bank's document editor, which is a child of `/assets`
+    // rather than an escape from it and must not read as a campaign.
+    expect(navLevelOf('/assets/a4')).toEqual({ level: 0, campaignId: null })
     expect(navLevelOf('/foundation/voices')).toEqual({
       level: 0,
       campaignId: null,
@@ -31,7 +35,7 @@ describe('navLevelOf', () => {
       level: 1,
       campaignId: 'c1',
     })
-    expect(navLevelOf('/campaigns/c1/content/a4')).toEqual({
+    expect(navLevelOf('/campaigns/c1/assets/a4')).toEqual({
       level: 1,
       campaignId: 'c1',
     })

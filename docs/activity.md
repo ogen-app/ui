@@ -9,17 +9,16 @@ reasoning — what the surface is for, what it
 deliberately is not, and which decisions are load-bearing enough that changing
 one means revisiting the rest.
 
-**What exists today:** Phase 2, behind the `activity` flag. The sidebar item
-with its count, `/activity`, the day cards and the full-screen report at
-`/activity/$date` are built; the feed reads the recorded notifications CON-242
-landed (`GET /api/notifications`, live over
-`GET /api/notifications/stream`), and the day reports come off the server
-(`GET /api/activity/reports`, `GET /api/activity/report/:date`). What is left in
-`lib/activityFeed.ts` is the rule set that orders and groups the two — pure and
-tested, as it was; the arithmetic that used to sit beside it is described under
-[The report](#the-report). What is left before the flag can flip is in the
-flag's own comment — it is about coverage on the *server* side, not about this
-screen.
+**What exists today:** Phase 2, on since 2026-09-18. The sidebar item with its
+count, `/activity`, the day cards and the full-screen report at `/activity/$date`
+are built; the feed reads the recorded notifications CON-242 landed (`GET
+/api/notifications`, live over `GET /api/notifications/stream`), and the day
+reports come off the server (`GET /api/activity/report/:date?tz=`,
+`GET /api/activity/reports`). What is left in `lib/activityFeed.ts` is the rule
+set that orders and groups the two — pure and tested, as it was; the arithmetic
+that used to sit beside it is described under [The report](#the-report). What is
+known and not yet handled is in the flag's own comment, and it is about coverage
+on the *server* side rather than about this screen.
 
 **Tasks are a separate feature** (CON-234, [`tasks.md`](./tasks.md)), a module
 of their own next door in the rail rather than a card on this screen. "Edges and

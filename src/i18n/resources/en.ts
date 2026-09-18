@@ -229,24 +229,32 @@ export const en = {
     activityUnread_other: '{{count}} unread entries',
     campaigns: 'Campaigns',
     ideas: 'Ideas',
+    /**
+     * The workspace's documents — the row above Campaigns, and the module the
+     * content bank became. Assets rather than Documents because the list holds
+     * pictures and web pages as well as notes and PDFs, and rather than
+     * Sources because that word named it while it was a section of Foundation
+     * and described its job there rather than what is in it.
+     */
+    assets: 'Assets',
     calendar: 'Calendar',
     /** CON-237. Behind the `analytics-overview` flag — hidden while it is off. */
     analytics: 'Analytics',
     /**
      * CON-227. Behind the `brand-materials` flag — hidden while it is off.
      *
-     * Foundation rather than Brand: the section holds the voices, audiences,
-     * guardrails and source documents every campaign writes from, and only one
-     * of those four is what anyone means by a brand. The flag, the module
-     * folder and the `/api/brand` resource keep the server's word.
+     * Foundation rather than Brand: the section holds the voices, audiences
+     * and guardrails every campaign writes from, and only one of those three
+     * is what anyone means by a brand. The flag, the module folder and the
+     * `/api/brand` resource keep the server's word.
      */
     foundation: 'Foundation',
     workspaceSettings: 'Workspace Settings',
     /**
      * The same footer slot as `workspaceSettings`, for the level below it.
-     * Named in full rather than left as "Settings": the row sits under
-     * Foundation, which is workspace-wide, so the word that says which of
-     * the two scopes this one belongs to is the one that has to be there.
+     * Named in full rather than left as "Settings": the footer carries rows
+     * of both scopes, so the word that says which one this belongs to is the
+     * one that has to be there.
      */
     campaignSettings: 'Campaign Settings',
     profile: 'Profile',
@@ -267,8 +275,9 @@ export const en = {
     campaignNoWindow: 'No dates set',
     /**
      * Level 1's rows, each the campaign-narrowed twin of a level 0 row:
-     * Inbox → Overview, Ideas → Ideas, Campaigns → Posts, Calendar → Calendar,
-     * Analytics → Analytics, Foundation → Foundation.
+     * Inbox → Overview, Ideas → Ideas, Assets → Assets, Campaigns → Posts,
+     * Calendar → Calendar, Analytics → Analytics. Foundation is the one level
+     * 0 row with no twin — see `lib/campaignSections`.
      *
      * **No row says "Campaign".** They were prefixed for a while, on the
      * argument that "Campaign analytics" tells you which of the two you are
@@ -283,18 +292,17 @@ export const en = {
       overview: 'Overview',
       strategy: 'Strategy',
       ideas: 'Ideas',
+      /**
+       * The workspace's Assets, narrowed — the same word at both levels rather
+       * than a second name for it. The page holds this campaign's own
+       * documents and nothing else.
+       */
+      assets: 'Assets',
       // The table, not the grid: this is the row that opens the place posts
       // are actually worked on, and the calendar is now its own row below.
       posts: 'Posts',
       calendar: 'Calendar',
       analytics: 'Analytics',
-      /**
-       * The workspace's Foundation, narrowed — the same word at both levels
-       * rather than a second name for it. The page holds the same kinds of
-       * thing scoped to one campaign: the brand material it draws on, and the
-       * documents it writes from.
-       */
-      foundation: 'Foundation',
       activity: 'Activity',
       settings: 'Settings',
     },
@@ -633,7 +641,7 @@ export const en = {
     openActivity: 'OPEN ACTIVITY',
     openAnalytics: 'OPEN ANALYTICS',
     openStrategy: 'OPEN STRATEGY',
-    openFoundation: 'OPEN FOUNDATION',
+    openAssets: 'OPEN ASSETS',
     openSettings: 'OPEN SETTINGS',
 
     /**
@@ -1062,6 +1070,8 @@ export const en = {
           'Something went wrong connecting your account. Please try again.',
         upstream:
           'We couldn’t reach the platform. Please try again in a moment.',
+        permission:
+          'We couldn’t connect a page or profile. Reconnect and make sure you allow access to a page or profile you manage.',
         noTargets:
           'This account doesn’t have any pages or profiles we can publish to.',
         generic: 'We couldn’t connect your account. Please try again.',
@@ -2543,13 +2553,6 @@ export const en = {
         whenEmpty:
           'Nothing is stated as true. Every figure in every post is invention, written confidently.',
       },
-      sources: {
-        label: 'Sources',
-        description:
-          'The documents the workspace writes from — briefs, transcripts, product pages, anything already written down. A campaign attaches the ones it draws on; this is all of them, including the ones no campaign has claimed yet.',
-        whenEmpty:
-          'Nothing to write from but the brief. Every generated post is invention.',
-      },
       look: {
         label: 'Look',
         description:
@@ -3292,6 +3295,18 @@ export const en = {
 
   content: {
     /**
+     * The documents list, at both scopes — `ContentPage` is one component and
+     * two screens. The workspace's title is the module's name on its own,
+     * because the rail's row is the whole address; the campaign's takes the
+     * shape every other campaign section uses, `${campaign} ${section}`, so
+     * the page says whose documents these are.
+     */
+    page: {
+      title: 'Assets',
+      campaignTitle: '{{campaign}} Assets',
+    },
+
+    /**
      * Shown in place of the editor for an asset this build can't open — in
      * practice, one whose `type` the server added after this version shipped
      * (CON-16 R32). It has to explain itself without naming the kind, because
@@ -3510,6 +3525,13 @@ export const en = {
       message: "The app can't connect to the server right now.",
       messageSecondLine: 'It may be restarting or temporarily offline.',
       type: 'OFFLINE',
+    },
+    crash: {
+      code: '500',
+      title: 'Something went wrong',
+      message: 'The app hit an unexpected error. Reloading usually fixes it.',
+      type: 'ERROR',
+      reload: 'Reload',
     },
   },
 }

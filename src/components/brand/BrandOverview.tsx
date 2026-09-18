@@ -17,11 +17,9 @@ import { LineItem, type LineItemIndicator } from '@/components/ui/line-item'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { AssetKindTally } from '@/components/content/AssetKindTally'
 import { formatDate, formatList } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { Fetched } from '@/lib/fetched'
-import type { Asset } from '@/types/content'
 import type { GuardrailsStance } from '@/services/api/brandLocal'
 import {
   brandSectionCopy,
@@ -83,45 +81,33 @@ import {
  * Deliberately no red anywhere — an empty section is a to-do, and a brand-new
  * workspace would otherwise look broken in five places at once.
  *
- * **Sources is the exception to rule 2, and it is the rule's own limit.** The
- * five library sections hold things somebody wrote one at a time, so naming
- * them is naming all of them. Documents arrive by the hundred, and a card that
- * listed the five most recently changed was answering a question nobody asked
- * — it counts instead (`AssetKindTally`). The list is one click below, which is
- * where a name is worth reading.
+ * **The documents are not here**, and they were, as a sixth card counting what
+ * was in the bank. They are their own module now (`/assets`) for the reason
+ * that card kept running into: every section on this screen is something
+ * somebody writes once and revisits rarely, and the documents are a working
+ * list that arrives by the hundred. Rule 2 could never be applied to it — a
+ * card naming five of four hundred documents answers nothing — and the
+ * exception it needed was the tell.
  */
 export function BrandOverview({
   brand,
-  sources = { status: 'ready', data: [] },
   facts = [],
   stance,
   showWhenEmpty = false,
   onOpen,
 }: {
-  /** The five written sections, as the one query they come from — `useBrand`. */
+  /** Every section, as the one query they come from — `useBrand`. */
   brand: Fetched<BrandData>
   /**
-   * The workspace's documents (CON-211), which are Brand's sixth section and
-   * the one whose contents do not come from `useBrand`.
-   *
-   * Passed in rather than fetched here for the reason the rest of this screen
-   * takes `brand`: it is a rendering of what is in the brand, and a component
-   * that fetches half of what it draws cannot be put in a harness or shown a
-   * fixture. The route owns both queries.
-   *
-   * Its own `Fetched` because it is its own fetch — and the only one on this
-   * screen that can be waiting or lost while everything else is drawn.
-   */
-  sources?: Fetched<Asset[]>
-  /**
-   * The ledger, already assembled — `useFacts`. Passed in for the same reason
-   * `sources` is: the statements are on `BrandData`, the dates around them are
-   * not, and a card that reached for them itself could not be shown a fixture.
+   * The ledger, already assembled — `useFacts`. Passed in rather than fetched
+   * here for the reason the rest of this screen takes `brand`: the statements
+   * are on `BrandData`, the dates around them are not, and a card that reached
+   * for them itself could not be shown a fixture.
    */
   facts?: BrandFact[]
   /**
    * Whether the workspace has decided it needs no guardrails — the answer
-   * `guardrails: null` cannot give on its own. See `readStance`; like `sources`
+   * `guardrails: null` cannot give on its own. See `readStance`; like `facts`
    * it is passed in rather than read here, so this screen stays a rendering of
    * what it is given.
    */
@@ -160,28 +146,13 @@ export function BrandOverview({
   }
 
   /**
-   * What one card has to draw, which is its own query's state and not the
-   * screen's. Sources is the only card that can differ from the other five —
-   * see `Fetched`.
+   * What one card has to draw, which is its own query's state rather than the
+   * screen's — the shape `Fetched` is for. Every card is the same query today;
+   * it stays per-card because a section whose contents come from somewhere else
+   * is a thing this screen has had before and will have again, and the card is
+   * the right size for that failure.
    */
   const contents = (section: BrandSectionInfo): Fetched<SectionContents> => {
-    if (section.id === 'sources') {
-      if (sources.status !== 'ready') return sources
-      return {
-        status: 'ready',
-        // Sources is the one section a list of rows is the wrong shape for
-        // — see `AssetKindTally`. Empty, it falls through to the section's
-        // `whenEmpty` line like every other card.
-        data: {
-          rows: [],
-          body:
-            sources.data.length > 0 ? (
-              <AssetKindTally assets={sources.data} />
-            ) : undefined,
-        },
-      }
-    }
-
     if (brand.status !== 'ready') return brand
     return {
       status: 'ready',
@@ -201,34 +172,20 @@ export function BrandOverview({
   return (
     <Wrapper>
       <FoundationIntro />
-      {/* Sources leads, immediately under the sentence explaining the screen,
-          because it is the one section whose contents somebody already has.
-          The other four are written — a voice is composed, an audience is
-          described, a rule is decided — and a workspace on day one has none of
-          them; documents exist before the app does. It also sets up the card
-          under it: the offer is to read the rest of the brand out of exactly
-          this material. */}
-      {SOURCES_FIRST.lead.map(card)}
-      {/* Nothing to offer to fill when we could not read what is already
-          there — `fills` empty is how this card hides itself. */}
+      {/* The offer sits directly under the sentence explaining the screen, and
+          above every card. It used to follow the documents card, which was the
+          material it offers to read the brand out of; with the documents their
+          own module the offer is the screen's one action and belongs where the
+          reading stops. Nothing to offer to fill when we could not read what is
+          already there — `fills` empty is how this card hides itself. */}
       <WholeBrandOffer
         fills={
           brand.status === 'ready' ? missingSectionNames(t, brand.data) : []
         }
       />
-      {SOURCES_FIRST.rest.map(card)}
+      {SHOWN_BRAND_SECTIONS.map(card)}
     </Wrapper>
   )
-}
-
-/**
- * The cards, split around the offer that sits between them. By id rather than
- * by index, so the screen's one exception to the section table's order is
- * stated rather than counted.
- */
-const SOURCES_FIRST = {
-  lead: SHOWN_BRAND_SECTIONS.filter((section) => section.id === 'sources'),
-  rest: SHOWN_BRAND_SECTIONS.filter((section) => section.id !== 'sources'),
 }
 
 /**
@@ -236,9 +193,9 @@ const SOURCES_FIRST = {
  *
  * Every other card here is a door, and a screen made entirely of doors never
  * says what the building is. Somebody arriving at Foundation for the first time
- * is looking at six things they have not heard the app use before — a voice, an
- * audience, guardrails, facts, sources — and the six cards under this one can
- * each say what *they* are while none of them can say why they are together.
+ * is looking at four things they have not heard the app use before — a voice,
+ * an audience, guardrails, facts — and the four cards under this one can each
+ * say what *they* are while none of them can say why they are together.
  *
  * So: the same card a section opens with (`BrandIntro`), at the top of the hub.
  * **It cannot be closed and it carries nothing to click.** Both are deliberate.
@@ -265,7 +222,7 @@ function FoundationIntro() {
 }
 
 /** What a card draws once its query has answered: rows, or Sources' tally. */
-type SectionContents = { rows: BrandRow[]; body?: ReactNode }
+type SectionContents = { rows: BrandRow[] }
 
 /**
  * One thing a section holds, as one row — **and every row on this screen is
@@ -402,10 +359,10 @@ function SectionCard({
  * and is the only place anything can be done about it — so the door stays open
  * while this card admits it has nothing to show.
  *
- * The placeholder is two bars rather than a copy of whatever would land there.
- * Only Sources ever reaches this state, and its content is a row of tiles
- * whose number is exactly what we are waiting to find out; mocking up three of
- * them would be guessing at the answer in the shape of the answer.
+ * The placeholder is two bars rather than a copy of whatever would land there:
+ * how many rows a card has is exactly what the fetch is going to tell us, and
+ * mocking up three of them would be guessing at the answer in the shape of the
+ * answer.
  */
 function CardContents({
   contents,
@@ -434,9 +391,8 @@ function CardContents({
     )
   }
 
-  const { rows, body } = contents.data
+  const { rows } = contents.data
 
-  if (body) return <>{body}</>
   if (rows.length === 0) {
     return <p className="text-sm text-secondary-foreground">{whenEmpty}</p>
   }
@@ -521,13 +477,6 @@ function sectionRows(
   stance?: GuardrailsStance,
 ): BrandRow[] {
   switch (id) {
-    // The documents are not in `BrandData`, and they are not rows either —
-    // the caller draws the card's body from its own query and never reaches
-    // this arm. Present so the switch stays exhaustive, which is what makes a
-    // seventh section a compile error here rather than a blank card.
-    case 'sources':
-      return []
-
     case 'voices':
       return data.voices.map((voice) => {
         // The samples are the voice, so they are what the tick is about. A

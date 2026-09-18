@@ -778,9 +778,10 @@ it. Same rule as always: a flag is not a permission.
 **Decision.** On X and Threads, a `thread` post is written in the same single
 Markdown editor as every other post type, and the chain it publishes as is
 **derived from the body** — never authored separately, never a second copy of
-the words. A `---` divider is a break; with no divider in the body it is broken
-up to fit the platform's per-post ceiling. The only thing stored beside the body
-is which post carries which file. Behind the `thread-sequence` flag (CON-196).
+the words. A thematic-break line is a break; with no divider in the body it is
+broken up to fit the platform's per-post ceiling. The only thing stored beside
+the body is which post carries which file. Shipped unflagged 2026-09-18
+(CON-196).
 
 **And the derivation is the server's** (CON-284 R2, ogen#144). `posts.content`
 is canonical and `thread_segments` is `platforms.SplitThread` run over it on
@@ -839,9 +840,10 @@ Zernio's top-level `content` and the CON-129 dedupe key.
 
 **Which moved the cut, and that is the part worth reading twice.** This client
 used to own the splitting, and its rules were not the server's: it broke at
-every blank line and accepted `***` and `___` as dividers. `SplitThread` takes
-three or more **hyphens** alone on a line and nothing else, and with no divider
-present it *packs* the body to the per-message ceiling — preferring a paragraph
+every blank line, and any horizontal rule was a divider. `SplitThread` takes a
+CommonMark thematic break — three or more of a single `-`, `*` or `_` alone on
+a line — and with no divider present it *packs* the body to the per-message
+ceiling — preferring a paragraph
 break, then a line break, then a sentence, then a word — rather than breaking at
 every blank line. A short two-paragraph body is two messages under the old
 client rule and **one segment** under the server's, which then fails the min-2
@@ -867,26 +869,26 @@ splitter they described always cut to fit. Length verdicts now come off
 - **A divider is a real block, not a convention.** BlockNote parses `---` into
   a `divider` block, so the author sees the seam they typed as a line across the
   editor. That is why it is the primary rule: the split is visible in the
-  document rather than inferred from whitespace. **And the serialisation breaks
-  it today.** BlockNote writes a divider back as `***` — its Markdown serialiser
-  emits `mdast-util-to-markdown`'s default rule marker, and normalises a typed
-  `---` to the same thing — while `SplitThread` reads hyphens only. Confirmed
-  against the live R2 build on 2026-09-16: `One\n\n---\n\nTwo` previews as two
-  segments, `One\n\n***\n\nTwo` as one. Since the editor is the only way to
-  author a body, *every* thread this client can produce is a single message with
-  a literal `***` in it. Raised on CON-284; the fix asked for is the server
-  widening `isRuleLine` to the CommonMark thematic break. **Do not normalise it
-  here** — that re-adds the delimiter opinion R2 removed, and `content` is the
-  canonical stored body, so it would mean rewriting what the author typed.
+  document rather than inferred from whitespace. **And the serialisation broke
+  it for three weeks.** BlockNote writes a divider back as `***` — its Markdown
+  serialiser emits `mdast-util-to-markdown`'s default rule marker, and
+  normalises a typed `---` to the same thing — while `SplitThread` read hyphens
+  only. Confirmed against the live R2 build on 2026-09-16: `One\n\n---\n\nTwo`
+  previewed as two segments, `One\n\n***\n\nTwo` as one, so *every* thread this
+  client could produce was a single message with a literal `***` in it.
+  ogen#156 widened `isRuleLine` to the CommonMark thematic break. **Normalising
+  it here was refused, and stays refused** — it would re-add the delimiter
+  opinion R2 removed, and `content` is the canonical stored body, so it would
+  mean rewriting what the author typed.
 - **A body with no divider is packed to the ceiling**, preferring a paragraph
   break, then a line break, then a sentence, then a word, never mid-word. It is
   *not* broken at every blank line — that was this client's old rule and it is
   gone. A body that already fits comes back as one segment, which is correct: a
   one-message body is not a thread.
 - **Only one predicate about the split lives on this side.** `splitRuleFor`
-  answers "did the author break this themselves", by the same hyphens-only test
-  the server uses, and it exists solely to choose which sentence the note under
-  the editor prints. Being generous there would describe a body as hand-broken
+  answers "did the author break this themselves", by the same thematic-break
+  test the server uses, and it exists solely to choose which sentence the note
+  under the editor prints. Being generous there would describe a body as hand-broken
   when the server is about to cut it somewhere else entirely — so it mirrors
   `platforms.isRuleLine` exactly, and it is the only thing in this file allowed
   to have an opinion about delimiters.
@@ -969,20 +971,26 @@ splitter they described always cut to fit. Length verdicts now come off
   `twitter` only. CON-284 added the word, so the honest intersection works again
   and the stand-in is gone with the gap it covered.
 
-**Waiting on** the divider fix above. The live run happened on 2026-09-16 and
-the preview endpoint itself behaved exactly as specified — it was the editor's
-`***` that came out wrong, which no contract had ever written down. Two other
-findings came off the same pass and neither blocks this flag. **`char_count`
-measures the raw Markdown**, so `[Ogen](https://getogen.com)` spends 27 of X's
-280 and `## Title` spends 8 for five visible characters; and the auto-split packs
-by those same counts, so it will cut *inside* a markup run — `**` + 280 `a`s +
-`**` comes back as a 280-character message with the bold never closed and a
-second message reading `aa**`, both passing the gate. Whether that is a counting
-bug or evidence the submit path publishes raw Markdown to Zernio is the server's
-to answer; it is also not thread-specific, since every post type measures
-`post.Content` the same way. Both are on CON-284. What is still unexercised here
-is `segment_index` on the upload and its PATCH — start the next pass there, and
-only then decide the flag's fate.
+**The live run, and what it cost.** 2026-09-16, against the deployed R2 build.
+The preview endpoint itself behaved exactly as specified; what came out wrong
+was the editor's `***`, which no contract had ever written down. A second
+finding came off the same pass: **`char_count` measured the raw Markdown**, so
+`[Ogen](https://getogen.com)` spent 27 of X's 280 and `## Title` spent 8 for
+five visible characters — and the auto-split packed by those same counts, so it
+cut *inside* a markup run (`**` + 280 `a`s + `**` came back as a 280-character
+message with the bold never closed and a second reading `aa**`, both passing the
+gate).
+
+ogen#156 fixed both, merged the same day. `isRuleLine` widened to the CommonMark
+thematic break, and `platforms.VisibleLen` — a Go port of this app's
+`markdownToSocialText` — now backs the preview's `char_count`, the split's fit
+checks and `validateThread` alike, so the number the composer shows is the
+number the gate enforces. The flag came out on 2026-09-18. The general
+(non-thread) `max_content_chars` path still counts raw Markdown, which is a
+wider question than this feature and stays on CON-284.
+
+**Still unexercised**: `segment_index` on the upload and its PATCH, and the
+preview endpoint under a fast typist. Start the next pass there.
 
 **Where.** `lib/threadSequence.ts` (+ test), `hooks/useThreadPreview.ts`,
 `previewThread` in `services/api/posts.ts`, `lib/postTypeAuto.ts`
@@ -990,8 +998,8 @@ only then decide the flag's fate.
 `setAttachmentSegment` in `services/api/attachments.ts`,
 `components/posts/sequence/ThreadSplitNote.tsx`, the `thread` branch in
 `PostMediaCard`, the `sequence` branch in `lib/postValidation.ts`,
-`TwitterPreview` / `ThreadsPreview` / `PostPreviewPanel`, and the
-`thread-sequence` flag.
+`TwitterPreview` / `ThreadsPreview` / `PostPreviewPanel`, and the `thread`
+entries in `lib/platformDictionary.ts`.
 
 ## The post picks its own type, and the empty slug is how it says so {#auto-post-type}
 
@@ -999,7 +1007,7 @@ only then decide the flag's fate.
 `platform_post_type` a post is **already** created with. While a post is
 automatic the format is derived on every render from the body and the
 attachments (`lib/postTypeAuto`); the slug is written to the record only when
-the post is committed. Behind `post-type-auto`, off.
+the post is committed. On since 2026-09-18, behind `post-type-auto` until then.
 
 **Why.** Choosing between "Text post" and "Image post" is the first thing the
 editor asks and the last thing an author has an opinion about. Those are not
@@ -1062,12 +1070,13 @@ decisions the content cannot imply, and a `whitelist_only` type has no rule to
 test — "it fits" would mean "we have no idea", which is the one answer Auto must
 not give. All of them stay in the picker and pin the post when chosen.
 
-**A chain is an answer only where it really chains.** `thread` is a rung while
-`thread-sequence` is on *and* the platform's rule says `segmented` — the
-server's own mark for a type that publishes as an ordered list of messages (see
-[above](#thread-sequence)). Both halves are needed: the flag says this build has
-released the chain, and `segmented` says this network takes one. With the flag
-off a three-thousand-character post reports "too long", which is right, because
+**A chain is an answer only where it really chains.** `thread` is a rung where
+the platform's rule says `segmented` — the server's own mark for a type that
+publishes as an ordered list of messages (see [above](#thread-sequence)). That
+one field replaced both halves of the old test: a hard-coded list of
+chain-capable networks here, and the `thread-sequence` flag that said whether
+this build had released the chain at all. Where a network does not chain, a
+three-thousand-character post reports "too long", which is right, because
 nothing is splitting it. Choosing `thread` by hand is untouched.
 
 **And the ladder runs backwards too.** A post *pinned* to `thread` whose body
@@ -1087,7 +1096,7 @@ is the same arrangement the thread row uses.
 resolution in `hooks/usePostMedia.ts`, the *Auto* entry in
 `quickBar/ChannelPickers.tsx`, the pin and the unfit row in the post route,
 `hasVisibleProblem` in `lib/postValidation.ts`, `PostCard`'s label, and the
-`post-type-auto` flag.
+`post-type-auto` flag, which is still in the record for one cycle.
 
 ## A brand binding is four ids, resolved and never copied {#brand-binding}
 
@@ -1264,7 +1273,7 @@ schemas are `t`-taking factories — see [i18n](#i18n)) vs `components/ui/form.t
 - **`page.tsx` is ignored by the router** (`routeFileIgnorePattern`). The
   `index.tsx` (routing) / `page.tsx` (presentation) split is intentional — don't
   put `createFileRoute` in a `page.tsx`.
-- **Trailing-underscore segments** (`$campaignId_`, `content-bank_`) escape the
+- **Trailing-underscore segments** (`$campaignId_`, `foundation_`) escape the
   parent layout so a child can render fullscreen. Removing the underscore
   re-nests it under the tab bar.
 - **Auth is guarded only at the root**, not on `_authenticated`. Adding a

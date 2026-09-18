@@ -6,6 +6,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-vite-plugin'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import svgr from 'vite-plugin-svgr'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -14,6 +15,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, __dirname, '')
   const uiPort = Number(env.PORT ?? 9002)
+
+  // Upload source maps to Sentry only on a real build that has a token
+  // (CON-304). `SENTRY_AUTH_TOKEN` is read at config time and never carries the
+  // `VITE_` prefix, so it stays build-side and out of the client bundle. A
+  // local `pnpm build` with no token skips the plugin and emits no maps.
+  const sentryUpload = command === 'build' && Boolean(env.SENTRY_AUTH_TOKEN)
 
   return {
     plugins: [
@@ -29,6 +36,20 @@ export default defineConfig(({ command, mode }) => {
         routeFileIgnorePattern: '(page\\.tsx$|\\.test\\.(ts|tsx)$)',
       }),
       tailwindcss(),
+      ...(sentryUpload
+        ? [
+            sentryVitePlugin({
+              org: env.SENTRY_ORG,
+              project: env.SENTRY_PROJECT,
+              authToken: env.SENTRY_AUTH_TOKEN,
+              release: { name: env.VITE_APP_RELEASE || undefined },
+              // Maps are uploaded, then deleted from dist so raw source is
+              // never served publicly (paired with `build.sourcemap: 'hidden'`).
+              sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+              telemetry: false,
+            }),
+          ]
+        : []),
     ],
     resolve: {
       alias: {
@@ -95,6 +116,10 @@ export default defineConfig(({ command, mode }) => {
       outDir: 'dist',
       emptyOutDir: true,
       target: 'es2022',
+      // `hidden` emits maps without a `sourceMappingURL` comment, so nothing
+      // references them; the Sentry plugin uploads and then deletes them. Off
+      // entirely when we're not uploading, so a plain build ships no maps.
+      sourcemap: sentryUpload ? 'hidden' : false,
       minify: command === 'build' ? 'terser' : 'esbuild',
       terserOptions:
         command === 'build'

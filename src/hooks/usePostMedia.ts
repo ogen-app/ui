@@ -83,13 +83,7 @@ export function usePostMedia(post: Post) {
   // `thread` renders as the chain it will publish as; and whether that type is
   // a chain at all is the server's `segmented`, read off the very rule that
   // carries the per-message character limit below.
-  //
-  // The flag withdraws the type from every picker, so with it off this is
-  // false for every post, *including* one already saved as a `thread`: that
-  // post keeps rendering as the single body it was written in, which is what
-  // it still publishes as while nothing sends `thread_segments`.
-  const sequenceEnabled = useFeatureFlag('thread-sequence')
-  const sequence = sequenceEnabled && publishesAsChain(rule)
+  const sequence = publishesAsChain(rule)
 
   const policy: MediaPolicy = useMemo(
     () => mediaPolicy(zernioId, rule, platform),

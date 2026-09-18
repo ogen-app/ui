@@ -26,9 +26,10 @@ Last reviewed 2026-09-18.
 | **Client action** | `invalidateQueries`; two types also toast | Renders a feed row and counts toward the unread badge |
 | **If it is missed** | Nothing is lost — the recovery path is a refetch | The row is still there on next load |
 
-So the same fact cannot be a topic on both, and the choice of transport *is* the
-choice of who hears it. A cache hint goes on the first; something a person must
-not miss goes on the second.
+So the choice of transport *is* the choice of who hears it, and of whether they
+can still hear it tomorrow. A cache hint goes on the first; something a person
+must not miss goes on the second. Neither can stand in for the other, which is
+the rule — not that a fact may only be on one of them.
 
 Since CON-285 spelled both vocabularies the same way, a few names now appear on
 **both** streams — `assistant.completed` is a bus event *and* a notification

@@ -191,6 +191,7 @@ export const es: Translation = {
     activityUnread_other: '{{count}} entradas sin leer',
     campaigns: 'Campañas',
     ideas: 'Ideas',
+    assets: 'Recursos',
     calendar: 'Calendario',
     analytics: 'Analíticas',
     foundation: 'Fundamentos',
@@ -209,10 +210,10 @@ export const es: Translation = {
       overview: 'Resumen',
       strategy: 'Estrategia',
       ideas: 'Ideas',
+      assets: 'Recursos',
       posts: 'Publicaciones',
       calendar: 'Calendario',
       analytics: 'Analíticas',
-      foundation: 'Fundamentos',
       activity: 'Actividad',
       settings: 'Ajustes',
     },
@@ -428,7 +429,7 @@ export const es: Translation = {
     openActivity: 'ABRIR ACTIVIDAD',
     openAnalytics: 'ABRIR ANALÍTICAS',
     openStrategy: 'ABRIR ESTRATEGIA',
-    openFoundation: 'ABRIR FUNDAMENTOS',
+    openAssets: 'ABRIR RECURSOS',
     openSettings: 'ABRIR AJUSTES',
     noDate: 'Sin fecha',
   },
@@ -735,6 +736,8 @@ export const es: Translation = {
         mismatch: 'Algo ha fallado al conectar tu cuenta. Inténtalo de nuevo.',
         upstream:
           'No hemos podido contactar con la plataforma. Inténtalo dentro de un momento.',
+        permission:
+          'No hemos podido conectar una página o perfil. Vuelve a conectar y asegúrate de permitir el acceso a una página o perfil que gestiones.',
         noTargets:
           'Esta cuenta no tiene páginas ni perfiles en los que podamos publicar.',
         generic: 'No hemos podido conectar tu cuenta. Inténtalo de nuevo.',
@@ -1764,13 +1767,6 @@ export const es: Translation = {
         whenEmpty:
           'No se afirma nada como cierto. Toda cifra de toda publicación es invención, escrita con aplomo.',
       },
-      sources: {
-        label: 'Fuentes',
-        description:
-          'Los documentos a partir de los que escribe el espacio de trabajo: briefings, transcripciones, páginas de producto, cualquier cosa ya escrita. Cada campaña adjunta los que usa; esto son todos, incluidos los que ninguna campaña ha reclamado.',
-        whenEmpty:
-          'No hay nada a partir de lo que escribir salvo el briefing. Toda publicación generada es invención.',
-      },
       look: {
         label: 'Aspecto',
         description:
@@ -2407,6 +2403,11 @@ export const es: Translation = {
   },
 
   content: {
+    page: {
+      title: 'Recursos',
+      campaignTitle: 'Recursos de {{campaign}}',
+    },
+
     unsupported: {
       title: 'Esto no es un documento',
       body: 'Esta versión de la aplicación no sabe mostrar este tipo de recurso. No se ha cambiado nada: sigue aquí, y una versión más reciente lo abrirá.',
@@ -2533,6 +2534,14 @@ export const es: Translation = {
       messageSecondLine:
         'Puede que se esté reiniciando o que esté temporalmente sin servicio.',
       type: 'SIN CONEXIÓN',
+    },
+    crash: {
+      code: '500',
+      title: 'Algo salió mal',
+      message:
+        'La aplicación tuvo un error inesperado. Recargar suele solucionarlo.',
+      type: 'ERROR',
+      reload: 'Recargar',
     },
   },
 }

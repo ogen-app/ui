@@ -84,19 +84,16 @@ export function AssetDetailsHeader({
           asChild
           aria-label={
             campaignId
-              ? "Back to this campaign's content"
+              ? "Back to this campaign's documents"
               : 'Back to the content bank'
           }
         >
           {campaignId ? (
-            <Link
-              to="/campaigns/$campaignId/foundation"
-              params={{ campaignId }}
-            >
+            <Link to="/campaigns/$campaignId/assets" params={{ campaignId }}>
               <CaretLeftIcon className="size-5" />
             </Link>
           ) : (
-            <Link to="/foundation/sources">
+            <Link to="/assets">
               <CaretLeftIcon className="size-5" />
             </Link>
           )}

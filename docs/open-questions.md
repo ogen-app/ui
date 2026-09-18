@@ -48,8 +48,6 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 | N3 | **A per-post series** — `GET /api/analytics/posts/:post_id`, returning per-metric running totals on an age-since-publish axis. **Written and in review** (ogen#130); re-test the client against it when it merges, per CLAUDE.md rule 4. | CON-250 | `campaign-analytics` |
 | N5 | **A repeatable `platform` filter** on all three reads, so the scope bar's control reaches more than one card of three and the marks can go back to multi-select. | **CON-289** | — |
 | N7 | **`account.avatar_url` is declared and always empty**, `display_name` mirrors `username`. Rows fall back to the initial plus the platform badge and fill in on their own. | **CON-287** | — |
-| P1 | **A thread publishes as one post** — `SubmitRequest` carries no `platformSpecificData`, so `threadItems` is never sent. The client is already built behind the flag. | CON-284 (BE), CON-196 (FE) | `thread-sequence` |
-| P2 | **Attachment validation counted per post rather than per item** — deferred deliberately. Until the publisher splits, "platform allows up to 4" is a true statement about what gets submitted; a client-side per-item count would be a more precise lie. | folded into CON-284 | `thread-sequence` |
 | P3 | **No thumbnail on the post list payload**, so a calendar card has never shown a picture. | CON-247 | `calendar-card-images` |
 | S1 | **A content-bank image has no thumbnail**, so the list's preview cell downloads the full file to draw it at 40px. Raised on the image service rather than as its own issue: it is one more output of a pipeline that already writes a normalized derivative. `assetPreview` prefers `thumbnail_url` already, so the client changes nothing when it lands. | CON-281 | — |
 | S2 | **The bridge that attaches a bank image to a post.** Both sides were built expecting it — `asset_files`' columns are named to match `post_attachments` for the field copy, and the alt text CON-246 collects has no other consumer. The client picker wants CON-210 first, so it is scoped against a campaign rather than the workspace. | **CON-290** | — |
@@ -60,6 +58,27 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 ## Closed since the last review
 
 Kept for one cycle so nobody re-raises them, then deleted.
+
+- **A1, A2, A3 — the activity producers.** Shipped in CON-285 (ogen#161,
+  2026-09-17). `post.published` and `post.publish_failed` fan out to the whole
+  workspace through `EmitToUsers` (`submit_post_to_zernio.go`), which is what
+  A1 and A2 decided on 2026-09-06 and what stopped turning the flag on from
+  *narrowing* who hears about a failure; the rest of the durable vocabulary —
+  assistant, assessment, content-plan and URL-crawl resolutions — writes rows
+  too, and the daily report got server-side endpoints
+  (`GET /api/activity/report/:date?tz=`, `/api/activity/reports`). The
+  `activity` flag came out of the record on 2026-09-18. Still not produced:
+  `not_published`, which is counted in the day's report and nowhere else.
+- **X1 — the `/api/events` naming.** Renamed in the same PR (`284058d`): the
+  six genkit bus types and the three post-lifecycle ones are dotted, while
+  `post_logs.event_type` and the CON-125 activity taxonomy deliberately keep
+  their snake_case spellings (a stability contract over backfilled history).
+  `lib/eventRouting.ts` was updated to match.
+- **P1, P2 — the thread.** The submit path fills Zernio's `threadItems` and
+  attachment validation counts per message, both from R1 (ogen#140/#144);
+  ogen#156 (2026-09-16) then fixed the two defects the live run found — the
+  `***` divider and raw-Markdown character counting — and the `thread-sequence`
+  flag came out on 2026-09-18.
 
 - **A5 — the `eventhub` subscriber leak.** Fixed and merged: ogen#142 (2026-09-08)
   made the cap self-healing — at the limit the hub now evicts the user's
