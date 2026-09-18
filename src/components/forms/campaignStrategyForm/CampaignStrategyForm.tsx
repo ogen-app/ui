@@ -41,6 +41,7 @@ import { MessagingCard } from './MessagingCard'
 import { PostGoalCard } from './PostGoalCard'
 import { SchedulingCard } from './SchedulingCard'
 import { CampaignBrandCard } from '@/components/brand/CampaignBrandCard'
+import { CampaignSeriesCard } from '@/components/series/CampaignSeriesCard'
 import {
   strategyDefaultValues,
   strategySchema,
@@ -305,7 +306,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
             post target used to sit in Advanced next to budget and language,
             where it read as trivia rather than as the rate the assistant plans
             against. */}
-          <PostGoalCard />
+          <PostGoalCard campaignId={campaign.id} />
 
           <SchedulingCard />
 
@@ -313,6 +314,13 @@ export function CampaignStrategyForm({ campaign }: Props) {
               same file: with Brand on, persona and tone are chosen here rather
               than written above. */}
           <CampaignBrandCard campaignId={campaign.id} />
+
+          {/* Under the brand card because it answers the next question in the
+              same sentence: what this campaign is written in, then what it
+              writes again and again. It was a band on the campaign's Foundation
+              page until that page became Assets (CON-305). Draws nothing with
+              the `series` flag off. */}
+          <CampaignSeriesCard campaign={campaign} />
 
           <SettingsCard
             title={

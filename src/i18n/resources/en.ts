@@ -385,6 +385,184 @@ export const en = {
   },
 
   /**
+   * Series (CON-264) — the recurring things a workspace makes, and what each
+   * campaign runs of them.
+   *
+   * The word users arrive with is *content pillar*. It is avoided in the copy
+   * on purpose: it means four different things depending on who is saying it,
+   * and the one this models — a recurring named segment with a recipe — is the
+   * one "series" says without ambiguity in either language.
+   */
+  series: {
+    library: {
+      add: 'ADD SERIES',
+      addHint: 'Something else this workspace makes again and again.',
+      writeYourOwn: 'Write your own',
+      starterGroupTitle: 'Three to start from',
+      starterGroupBody:
+        'Each one is a worked example of the part that is hard to invent from a blank form — the recipe. Take one, rewrite it until it is yours.',
+      noRecipe:
+        'No recipe yet — this groups posts, but nothing builds from it.',
+    },
+    rhythm: {
+      occasional: 'Occasional',
+      perWeek_one: 'Once a week',
+      perWeek_other: '{{count}} times a week',
+      perMonth_one: 'Once a month',
+      perMonth_other: '{{count}} times a month',
+    },
+    supply: {
+      selfOption: 'It supplies its own subject',
+      ideaOption: 'It waits for an idea',
+      selfLine: 'Supplies its own subject',
+      ideaLine: 'Waits for an idea',
+    },
+    usage: '{{drafts}} in draft, {{published}} published',
+    plan: {
+      noGoal:
+        'This campaign has no post goal, so there is nothing to measure these against.',
+      ok: '{{total}} posts planned · {{claimed}} from series · {{open}} open',
+      over: '{{total}} posts planned and the series claim {{claimed}} — {{over}} more than the campaign is set to make.',
+      undated:
+        '{{total}} posts a period · {{claimed}} from series. Set the campaign dates to plan the whole run.',
+    },
+    campaign: {
+      title: 'Series',
+      /**
+       * Under the card's heading on Strategy. Deliberately says nothing about
+       * where the goal it spends is printed — the card moved once already
+       * (CON-305) and a sentence naming its neighbour would move with it.
+       */
+      hint: 'What this campaign makes again and again, and how often. The slots they claim come out of its post goal.',
+      empty:
+        'This campaign runs none. Pick one up and every period it will claim its slots automatically.',
+      addPlaceholder: 'Add a series',
+      writeOne: 'WRITE ONE',
+      localOnly: 'this campaign only',
+      promote: 'To library',
+      promoteHint:
+        'Move this into the workspace library so other campaigns can run it too.',
+      remove: 'Stop running {{name}}',
+      claim_one: '{{count}} post',
+      claim_other: '{{count}} posts',
+      claimsNone: 'no fixed slots',
+    },
+    detail: {
+      back: 'Back to series',
+      created: '{{name}} created',
+      saved: '{{name}} saved',
+      deleted: '{{name}} deleted',
+      notFoundHeader: 'No such series',
+    },
+    editor: {
+      titleNew: 'A new series',
+      titleEdit: 'This series',
+      intro:
+        'A series is a standing instruction: what it is called, and how the next one gets built. Write the recipe as you would explain it to somebody covering for you.',
+      identityCard: 'What it is',
+      nameLabel: 'Name',
+      nameHint:
+        'What a reader would recognise it by. If nobody would call it anything, it is a theme rather than a series.',
+      namePlaceholder: 'e.g. Weekly news digest',
+      promiseLabel: 'The promise',
+      promiseHint: 'One line: what somebody gets each time it runs.',
+      promisePlaceholder:
+        'e.g. The week in one minute, with the part that actually matters',
+      recipeCard: 'How one gets built',
+      recipeHint:
+        'The structure, in your own words. This is the part that makes the tenth as good as the first — and the part a generator can act on.',
+      recipePlaceholder:
+        'e.g. Open with the single biggest story. Three more in a line each. Close with what to watch next week.',
+      runningCard: 'How it runs',
+      supplyLabel: 'Where the subject comes from',
+      supplyHint:
+        'A date or the week’s news is a subject the series already has. A profile is not — it waits until somebody names a person.',
+      formatLabel: 'Shape',
+      formatHint: 'What its posts take the shape of. Its posts inherit this.',
+      rhythmLabel: 'Suggested rhythm',
+      rhythmHint:
+        'A starting point when a campaign picks this up. Each campaign sets its own, so two can run it at different rates.',
+      needsName: 'Give the series a name',
+      create: 'CREATE SERIES',
+      save: 'SAVE SERIES',
+      dangerNoun: 'SERIES',
+      deleteCost:
+        'Posts already written keep their text. Every campaign running this one stops, and the plan gives their slots back.',
+    },
+    starters: {
+      'this-day': {
+        title: 'This day in ___ history',
+        body: 'Runs forever without anybody feeding it — the date is the subject.',
+        name: 'This day in ___ history',
+        promise: 'One thing that happened today, and why it still matters.',
+        recipe:
+          'Find an event dated today in the field. Two short paragraphs of context — what was at stake, what changed. Close on the lesson that still holds. Never more than one event.',
+      },
+      'weekly-digest': {
+        title: 'Weekly news digest',
+        body: 'The rhythm is in the name. Self-supplying, and the easiest habit to build.',
+        name: 'Weekly news digest',
+        promise: 'The week in one minute, with the part that actually matters.',
+        recipe:
+          'Lead with the single biggest story and say plainly why it matters. Three more in one line each. Close with what to watch next week. No links in the body.',
+      },
+      people: {
+        title: 'People who made an impact',
+        body: 'Cannot run until somebody names a person — the example of a series the Ideas queue feeds.',
+        name: 'People who made an impact',
+        promise: 'One person, one decision, one thing it changed for everyone.',
+        recipe:
+          'Open on the decision, not the biography. Say what the world looked like before and after. One sentence on what they got wrong, so it reads as a person rather than a statue.',
+      },
+    },
+  },
+
+  /**
+   * Content formats (CON-264) — the rhetorical shape of a post.
+   *
+   * Deliberately a short, fixed vocabulary. The hints are what people actually
+   * choose by: "explainer" and "how-to" are indistinguishable as labels and
+   * obvious once each says what it does.
+   */
+  formats: {
+    none: 'No format',
+    postHint:
+      'Optional. What shape this post takes — separate from the platform’s post type.',
+    'how-to': {
+      label: 'How-to',
+      hint: 'Steps somebody can follow and get a result.',
+    },
+    explainer: {
+      label: 'Explainer',
+      hint: 'Why something works the way it does.',
+    },
+    listicle: {
+      label: 'List',
+      hint: 'A numbered set, each item standing on its own.',
+    },
+    story: {
+      label: 'Story',
+      hint: 'One thing that happened, told in order.',
+    },
+    digest: {
+      label: 'Digest',
+      hint: 'Several items rounded up for a period.',
+    },
+    opinion: {
+      label: 'Opinion',
+      hint: 'A position, argued.',
+    },
+    question: {
+      label: 'Q&A',
+      hint: 'A question answered, or asked of the audience.',
+    },
+    announcement: {
+      label: 'Announcement',
+      hint: 'News about us, said once and plainly.',
+    },
+  },
+
+  /**
    * Tasks (CON-225): the workspace's open work, its own module next to the
    * feed. The titles themselves still speak the rule set's own English
    * (`campaignReadiness`), which is legacy to convert, not a precedent — only
@@ -2561,6 +2739,13 @@ export const en = {
           'What is true — about this business, about the problems its readers have, and about the openings nobody has taken — one statement at a time, with where it came from and the date it stops being repeatable. Everything a generated post states as a figure comes from here, or is invented.',
         whenEmpty:
           'Nothing is stated as true. Every figure in every post is invention, written confidently.',
+      },
+      series: {
+        label: 'Series',
+        description:
+          'The recurring things this workspace makes — a weekly digest, a profile that runs twice a month. Each one is a name the audience would recognise and a recipe for building the next one, so the tenth is as good as the first and nobody starts from a blank page.',
+        whenEmpty:
+          'Nothing recurs. Every post starts from scratch, and nothing can be measured as a run.',
       },
       look: {
         label: 'Look',
