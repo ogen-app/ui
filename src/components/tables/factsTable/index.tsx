@@ -1,13 +1,29 @@
 import { memo, useMemo } from 'react'
-import { TrashIcon } from '@phosphor-icons/react'
+import {
+  ClockCountdownIcon,
+  ClockIcon,
+  InfinityIcon,
+  TrashIcon,
+  WarningIcon,
+  type Icon,
+  type IconWeight,
+} from '@phosphor-icons/react'
 import { VirtualTable } from '../VirtualTable'
 import type { ColumnConfig } from '../types'
 import { tableDate } from '../utils'
 import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib'
+import { formatRelative } from '@/lib/intl'
 import {
   FACT_KINDS,
   FACT_SUBJECTS,
+  daysBetween,
+  expiryDistance,
   factKind,
   factStatus,
   factSubject,
@@ -41,14 +57,6 @@ import {
 
 /** One line of type, the app's table row. */
 const ROW_HEIGHT = 34
-/** The sticky header: a `size="sm"` header button plus its hairline. */
-const HEADER_HEIGHT = 34
-/**
- * How many rows the box is tall. Past this the ledger scrolls inside itself
- * rather than pushing the editor's own controls off the screen — the card
- * under it holds `ADD A FACT`, and a hundred-row workspace must not bury it.
- */
-const VISIBLE_ROWS = 12
 
 /**
  * The cell fills the box the table gives it and adds the inset — no height of
@@ -66,6 +74,7 @@ function FactsTableComponent({
   onEdit,
   onRemove,
   className,
+  onEmptyStateAction,
 }: {
   facts: BrandFact[]
   /** `YYYY-MM-DD`, passed in so every row ages against one clock. */
@@ -82,6 +91,13 @@ function FactsTableComponent({
   onEdit: (id: string) => void
   onRemove: (id: string) => void
   className?: string
+  /**
+   * Offered when the table is empty *because something narrowed it* — a tab,
+   * a search. An empty ledger is not this state and never reaches the table:
+   * the page says what the absence costs in its own words, which the shared
+   * empty state has no room for.
+   */
+  onEmptyStateAction?: () => void
 }) {
   const data = facts as FactRow[]
 
@@ -210,7 +226,11 @@ function FactsTableComponent({
         size: 130,
         minSize: 110,
         cell: (_value, row) => (
-          <ExpiryCell fact={row} status={factStatus(row, today)} />
+          <ExpiryCell
+            fact={row}
+            today={today}
+            status={factStatus(row, today)}
+          />
         ),
       },
       {
@@ -245,30 +265,22 @@ function FactsTableComponent({
     [showSubject],
   )
 
+  // No box of its own: the ledger is the page now, so it takes the height the
+  // page has left over — the arrangement the posts and documents tables are in,
+  // and the caller owns the grid cell that bounds it.
   return (
-    // An explicit height rather than a share of the page: this table lives in
-    // a card in a column that scrolls, so there is no leftover space for it to
-    // fill — it is as tall as it needs to be, up to the point where it starts
-    // scrolling on its own.
-    <div
-      className="grid min-h-0 overflow-hidden"
-      style={{
-        height:
-          HEADER_HEIGHT + Math.min(facts.length, VISIBLE_ROWS) * ROW_HEIGHT,
-      }}
-    >
-      <VirtualTable
-        data={data}
-        columnConfigs={columnConfigs}
-        activeColumns={activeColumns}
-        initialSorting={DEFAULT_SORT}
-        estimatedRowHeight={ROW_HEIGHT}
-        overscan={6}
-        showFooter={false}
-        fillHeight={false}
-        className={className}
-      />
-    </div>
+    <VirtualTable
+      data={data}
+      columnConfigs={columnConfigs}
+      activeColumns={activeColumns}
+      initialSorting={DEFAULT_SORT}
+      estimatedRowHeight={ROW_HEIGHT}
+      overscan={6}
+      showFooter={false}
+      fillHeight={false}
+      className={className}
+      onEmptyStateAction={onEmptyStateAction}
+    />
   )
 }
 
@@ -303,37 +315,95 @@ function Stamp({ value, unset = '—' }: { value: string; unset?: string }) {
 }
 
 /**
+ * What each status looks like — **the colour is on the mark, not on the words.**
+ *
+ * The three states were told apart by the ink of the text, which put the one
+ * loud thing in the column on the one part of it that has to stay readable:
+ * red type reads as broken type, and a row of amber sentences in a table of
+ * grey ones is a column shouting a sentence nobody needs to read twice. A glyph
+ * is the thing that can be scanned down a column at a glance and carries a
+ * colour without costing legibility, so the status is the glyph and the
+ * duration beside it is ordinary table ink.
+ *
+ * `current` is deliberately not green. Colour here means *something to do*, and
+ * a fact that is fine is not an achievement to announce — a column of green
+ * ticks would spend the reader's attention on the rows that do not need it and
+ * leave the two that do competing with sixty others.
+ */
+const EXPIRY_MARK: Record<
+  FactStatus,
+  { icon: Icon; weight: IconWeight; tone: string }
+> = {
+  // Filled, and the only filled glyph in the table: a fact being repeated
+  // after its date is the one thing on this screen that is wrong right now.
+  expired: { icon: WarningIcon, weight: 'fill', tone: 'text-destructive' },
+  due: { icon: ClockCountdownIcon, weight: 'regular', tone: 'text-warning' },
+  current: {
+    icon: ClockIcon,
+    weight: 'regular',
+    tone: 'text-tertiary-foreground',
+  },
+}
+
+/**
  * The column the screen is opened to read.
  *
- * Three states and only one of them is a plain date: a fact past its expiry is
- * being repeated wrongly *right now*, and one a few weeks off is the only
- * moment anybody can do something about it cheaply. No expiry at all is a
- * legitimate answer — a founding year does not go off — so it is stated rather
- * than left blank, which would read as a field somebody skipped.
+ * **A distance, not a date.** "01 Aug 26" is a subtraction somebody has to do
+ * against today before it means anything, and the meaning is the whole point
+ * of the column: *in 3 months* and *2 months ago* are read at a glance and
+ * *01 Aug 26* is not. See `expiryDistance` for where days give way to months.
+ * The date itself is still one hover away, because it is what you check
+ * against the source when you go to re-confirm the fact.
+ *
+ * Three states and only two of them say anything in colour — see
+ * `EXPIRY_MARK`. No expiry at all is the fourth answer and a legitimate one: a
+ * founding year does not go off, so it is stated rather than left blank, which
+ * would read as a field somebody skipped.
  */
-function ExpiryCell({ fact, status }: { fact: BrandFact; status: FactStatus }) {
+function ExpiryCell({
+  fact,
+  today,
+  status,
+}: {
+  fact: BrandFact
+  today: string
+  status: FactStatus
+}) {
   if (!fact.expiresAt)
     return (
-      <div className={CELL}>
-        <span className="table-text text-senary-foreground">
-          doesn’t expire
-        </span>
+      <div className={cn(CELL, 'gap-1.5 text-senary-foreground')}>
+        {/* Marked rather than left empty, so the durations below and above it
+            start at the same x — a column of text with one unindented row in
+            it reads as a rendering fault. */}
+        <InfinityIcon className="size-4 shrink-0" aria-hidden />
+        <span className="table-text truncate">doesn’t expire</span>
       </div>
     )
+
+  const { icon: Mark, weight, tone } = EXPIRY_MARK[status]
+  const { value, unit } = expiryDistance(daysBetween(today, fact.expiresAt))
+
   return (
-    <div className={CELL}>
-      <span
-        className={cn(
-          'table-text tabular-nums',
-          status === 'expired' && 'text-destructive',
-          status === 'due' && 'text-warning',
-          status === 'current' && 'text-tertiary-foreground',
-        )}
-      >
-        {status === 'expired' && 'Expired '}
+    <Tooltip>
+      {/* The whole cell is the trigger, not the glyph: the duration is the
+          vague half, so hovering the words is what somebody does to find out
+          exactly when. `tabIndex` because a fact's date must be reachable
+          without a pointer — Radix ties the content to it with
+          `aria-describedby`, which is also how the status word gets said out
+          loud, the glyph being decoration to a screen reader. */}
+      <TooltipTrigger asChild>
+        <div className={cn(CELL, 'gap-1.5')} tabIndex={0}>
+          <Mark className={cn('size-4 shrink-0', tone)} weight={weight} />
+          <span className="table-text truncate text-tertiary-foreground tabular-nums">
+            {formatRelative(value, unit)}
+          </span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>
+        {status === 'expired' ? 'Expired ' : 'Expires '}
         {tableDate(fact.expiresAt)}
-      </span>
-    </div>
+      </TooltipContent>
+    </Tooltip>
   )
 }
 

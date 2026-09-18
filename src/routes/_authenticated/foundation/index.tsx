@@ -9,6 +9,7 @@ import { useFacts } from '@/hooks/useFacts'
 import { useGuardrailsStance } from '@/hooks/useGuardrailsStance'
 import { useAssets } from '@/hooks/useContent'
 import { useFeatureFlag } from '@/config/featureFlags'
+import { fetched } from '@/lib/fetched'
 
 /**
  * `/foundation` — the Overview, and **the main Brand screen**.
@@ -21,10 +22,13 @@ import { useFeatureFlag } from '@/config/featureFlags'
  * No flag guard: the parent layout (`brand.tsx`) owns it, so every screen is
  * gated once rather than six times.
  *
- * The Overview takes its loading state as a prop rather than sitting behind
- * `BrandDetail` like the five sections do. It has a skeleton of its own — cards
- * whose shape is the page's shape — and swapping that for the app's spinner
- * would be a step down on the one screen where the wait is most visible.
+ * The Overview takes its queries' states as props rather than sitting behind
+ * `BrandDetail` like the five sections do, and there are two of them because
+ * the screen is fed by two fetches that land separately — see `Fetched`. It has
+ * a skeleton of its own — cards whose shape is the page's shape — and swapping
+ * that for the app's spinner would be a step down on the one screen where the
+ * wait is most visible. There is no `PageError` either: a section that failed
+ * says so in its own card, on a screen where the other five are readable.
  *
  * It still borrows `BrandDetail`'s frame: the header goes *inside* the
  * scroller, sticky and carrying the standard gradient, so the cards dissolve
@@ -37,11 +41,12 @@ export const Route = createFileRoute('/_authenticated/foundation/')({
 function BrandOverviewPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { data } = useBrand()
+  const brand = useBrand()
   // Sources is Brand's sixth section and the one `useBrand` knows nothing
-  // about, so the hub waits on both: a card that renders "nothing to write
-  // from" for the length of a second query is worse than a skeleton.
-  const { data: assets } = useAssets()
+  // about, so it arrives on its own and its card says so on its own. The hub
+  // used to wait on both — which meant this query could hold up, and when it
+  // failed permanently hide, the five cards that had nothing to do with it.
+  const assets = useAssets()
   // Both of these are views over data the hub already has, or over storage
   // that answers instantly — neither adds a wait to the screen. See
   // `services/api/brandLocal` for what the second one is standing in for.
@@ -69,12 +74,8 @@ function BrandOverviewPage() {
           <PageHeader title={t('nav.foundation')} fadeOnScroll />
           <div className="px-3 pb-10 lg:px-6">
             <BrandOverview
-              state={
-                data && assets
-                  ? { isPending: false, data }
-                  : { isPending: true }
-              }
-              sources={assets}
+              brand={fetched(brand)}
+              sources={fetched(assets)}
               facts={ledger ? facts : []}
               stance={ledger ? stance : undefined}
               onOpen={(id) => navigate({ to: `/foundation/${id}` })}

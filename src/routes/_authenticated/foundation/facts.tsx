@@ -5,7 +5,7 @@ import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { BrandBackButton, BrandPage } from '@/components/brand/detail'
-import { FactsEditor } from '@/components/brand/FactsSection'
+import { FactsLedger } from '@/components/brand/FactsSection'
 import { useFacts, useSaveFacts } from '@/hooks/useFacts'
 import { toast } from '@/stores/toastStore'
 
@@ -14,7 +14,7 @@ import { toast } from '@/stores/toastStore'
  *
  * Built like `/foundation/guardrails`, which it was part of until the table
  * arrived: a singleton section with no list above it, so the route *is* the
- * editor and the caret goes back to the Overview. It waits for the fetch for
+ * screen and the caret goes back to the Overview. It waits for the fetch for
  * the same reason that one does — the rows are the workspace's own, and a table
  * rendered on a guess is a table that saves over what is already there.
  *
@@ -36,6 +36,10 @@ function FactsPage() {
   const { facts, isPending, isError } = useFacts()
   const { save } = useSaveFacts()
 
+  // Only the two static screens take a header from here. The ledger builds its
+  // own, because the one control in it — ADD — is the screen's: the button
+  // follows whichever tab is open and adds a problem under Problems, and a
+  // header assembled out here could not know that.
   const header = <PageHeader back={<BrandBackButton />} />
 
   if (isPending) {
@@ -63,15 +67,15 @@ function FactsPage() {
 
   return (
     <BrandPage>
-      {/* No `key`: the draft is seeded once and a background refetch must not
-          throw away rows somebody is in the middle of typing. After a save the
-          two agree anyway — the save is what the draft was. */}
-      <FactsEditor
-        header={header}
+      {/* Called per row, not per screen: the ledger has no commit bar, so
+          every ADD, SAVE and removal arrives here on its own. The toast is
+          the only confirmation left that a change reached the server, which
+          is what a bar reading "Saved" used to be for. */}
+      <FactsLedger
         facts={facts}
         onSave={(next) => {
           save(next, {
-            onSuccess: () => toast.success('The facts are saved.'),
+            onSuccess: () => toast.success('The ledger is saved.'),
           })
         }}
       />

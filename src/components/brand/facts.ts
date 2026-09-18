@@ -177,6 +177,27 @@ export function countBySubject(
   return facts.filter((fact) => fact.subject === subject).length
 }
 
+/**
+ * Whether a fact answers a search.
+ *
+ * Over the statement and the source, because those are the two fields somebody
+ * wrote in their own words. The other three are already filters — About is a
+ * tab, Kind and the dates are sortable columns — and a search that also read
+ * them would return every problem in the ledger for a query aimed at a
+ * sentence about one.
+ *
+ * Every word has to appear, in either field, in any order: *family
+ * spreadsheets* finds "Half of family offices still reconcile their positions
+ * in spreadsheets", which a single substring match would not, and nobody types
+ * a search expecting the word order to be the part that matters.
+ */
+export function factMatches(fact: BrandFact, query: string): boolean {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  if (terms.length === 0) return true
+  const haystack = `${fact.statement} ${fact.source}`.toLowerCase()
+  return terms.every((term) => haystack.includes(term))
+}
+
 export type FactKindInfo = {
   id: FactKind
   label: string
@@ -247,6 +268,51 @@ export function factStatus(fact: BrandFact, today: string): FactStatus {
   return daysBetween(today, fact.expiresAt) <= DUE_WITHIN_DAYS
     ? 'due'
     : 'current'
+}
+
+/**
+ * How far off an expiry is, as a count and a unit — never as a phrase.
+ *
+ * The column used to print the date itself, and a date is the one thing this
+ * cell is not read for. Nobody scanning a ledger for what has gone off
+ * subtracts *01 Aug 26* from today in their head; what they want is the answer
+ * to that subtraction, and the date is the supporting detail — which is why it
+ * moved to the hover.
+ *
+ * ## The units, and where they change over
+ *
+ * **Days up to two months, months after that.** The obvious threshold is one
+ * month, and it is wrong: everything from six weeks to nine weeks rounds to
+ * *next month*, which is vaguer than the "in 52 days" it replaced. Days keep
+ * going until a month count can honestly say *two*.
+ *
+ * **Years past two of them.** Not a unit that was asked for, and the
+ * alternative is worse: *in 47 months* is a number nobody converts. Two years
+ * is where the months stop being read as a duration and start being read as
+ * arithmetic.
+ *
+ * The count is signed, the way `Intl.RelativeTimeFormat` wants it — negative
+ * is a fact already past its date and being repeated now. Returning the pair
+ * rather than the sentence is the rule the publish countdown follows for the
+ * same reason: the words belong to the active language, and a module that
+ * baked "in 2 months" into a return value would freeze whichever one loaded
+ * first (`docs/technical-decisions.md#i18n`).
+ */
+export type ExpiryDistance = {
+  /** Signed: positive is ahead, negative is overdue. */
+  value: number
+  unit: 'day' | 'month' | 'year'
+}
+
+/** Averaged, because the buckets are approximations by design. */
+const DAYS_PER_MONTH = 30.44
+const DAYS_PER_YEAR = 365.25
+
+export function expiryDistance(days: number): ExpiryDistance {
+  if (Math.abs(days) < 60) return { value: days, unit: 'day' }
+  const months = Math.round(days / DAYS_PER_MONTH)
+  if (Math.abs(months) < 24) return { value: months, unit: 'month' }
+  return { value: Math.round(days / DAYS_PER_YEAR), unit: 'year' }
 }
 
 /** Whole days from one `YYYY-MM-DD` to another. Negative if `to` is earlier. */
