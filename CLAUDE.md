@@ -479,9 +479,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `/api/notifications/stream` is an inbox: the table is the log, the stream
   replays from `Last-Event-ID`, and a row survives the tab being closed. Put a
   fact somebody must not miss on the second one and a cache hint on the first;
-  neither can be a topic on the other. They share only the machinery for staying
-  open (`lib/streamConnection`: backoff, silence watchdog, subscriber counting)
-  and the one frame parser (`lib/sse.ts`) — keep both single. And notification
+  neither can stand in for the other. Since CON-285 they share a vocabulary, so
+  a few names are on both — the same fact doing two jobs, not duplication. They
+  share only the machinery for staying open (`lib/streamConnection`: backoff,
+  silence watchdog, subscriber counting) and the one frame parser
+  (`lib/sse.ts`) — keep both single. And notification
   copy comes from the **catalogue**, keyed off `type` + `data`, never from the
   `title`/`body` the server composes; those are the fallback for a `type` this
   build predates (`lib/notifications.ts`, `docs/activity.md`).

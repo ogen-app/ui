@@ -40,7 +40,7 @@ The second landed with CON-242 and is the answer to the last item under *Still
 open* below: a run that outlives the tab now leaves a record, so "this finished
 while you were away" is a row rather than a silent invalidation. The two are
 deliberately separate connections — one is an invalidation bus and the other is
-an inbox, and the guarantees above are why neither can be a topic on the other.
+an inbox, and the guarantees above are why neither can stand in for the other.
 What they share is the machinery for staying open (`lib/streamConnection`:
 backoff, silence watchdog, subscriber counting), written once.
 
