@@ -14,8 +14,14 @@ import { isSameDay } from '@/components/campaigns/calendar/date'
  * lives once. In particular the time-preserving behaviour is load-bearing: a
  * post dragged across the month keeps the hour it was scheduled for, and only
  * a post that never had one gets `DEFAULT_HOUR`.
+ *
+ * `campaignId` is `null` on the workspace calendar, where a drop means the same
+ * thing but the post's campaign is whichever one it already belongs to rather
+ * than the one the grid is drawn for — see `useUpdatePost`, which reads it off
+ * the payload. Nothing else here changes: a post is dragged by the same handle
+ * onto the same kind of lane, and lands on the day it was dropped on.
  */
-export function useCalendarDrop(campaignId: string, posts: Post[]) {
+export function useCalendarDrop(campaignId: string | null, posts: Post[]) {
   /** Key of the lane the pointer is currently over, for the drop highlight. */
   const [dragOverKey, setDragOverKey] = useState<string | null>(null)
   const { mutate: updatePost } = useUpdatePost(campaignId)

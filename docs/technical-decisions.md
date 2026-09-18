@@ -249,11 +249,22 @@ keep working.
 
 ## Personal preferences namespace themselves into the tenant settings table {#user-scoped-settings}
 
-**Decision.** Calendar preferences (first day of week, hidden days) are stored
-per user *and* per campaign, under the key
-`calendar.<userId>.<campaignId>` in the backend's `/api/settings` key/value
-store. They used to be a `persist`ed Zustand store; they are server state now,
-so they live in the Query cache like everything else fetched.
+**Decision.** Calendar preferences (first day of week, hidden days, which rows
+a card may draw, whether pictures back them) are stored **per user**, under the
+key `calendar.<userId>` in the backend's `/api/settings` key/value store. They
+used to be a `persist`ed Zustand store; they are server state now, so they live
+in the Query cache like everything else fetched.
+
+They were also filed **per campaign** until 2026-09-18, on the reasoning that a
+launch campaign somebody works weekends on and an evergreen one they don't
+shouldn't share a week shape. What that produced in practice was a preference
+the user had to set again in every campaign they opened, and which then drifted
+— the same person reading the same posts through two different cards depending
+on which way in they took. Which days you want to see is a fact about how *you*
+read a calendar, not about the campaign you are reading; the workspace calendar
+is what settled it, since it has no campaign to be filed under at all. Nothing
+was migrated: a blob under the old key is simply no longer read, and the first
+visit afterwards starts from the defaults.
 
 **Why.** The API has no user-scoped store — `settings` is **tenant-scoped**
 (`tenant_id` + `key` as the primary key) and `users` has no preferences

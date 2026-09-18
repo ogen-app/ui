@@ -444,10 +444,32 @@ const FEATURE_FLAGS = {
    *
    * The campaign already has one (`/campaigns/:id/calendar`), which is the
    * whole feature *for one campaign*; this is the same view with the filter
-   * taken off, and it is the workspace's twin of it in the rail. A stub for
-   * now, because "every campaign's posts" is a query nobody has written: the
-   * posts endpoint is campaign-scoped, so this needs either a workspace-wide
-   * range query or N of them, and N grows with the workspace.
+   * taken off, and it is the workspace's twin of it in the rail. Built out of
+   * the same components, with the campaign passed as `null` — the cards name
+   * their campaign, nothing here creates a post, and the view switch drops the
+   * LIST segment, and that is the whole of the difference.
+   *
+   * **No longer waiting on an endpoint.** This flag used to say the query had
+   * not been written; it had. `GET /api/posts` returns the tenant's posts
+   * hydrated and the client already read it for two other cross-campaign
+   * questions, under a key every post write invalidates (`lib/postCache`) — so
+   * `useWorkspacePosts` is a third reader of a list that was already being
+   * kept in step, not a new contract.
+   *
+   * What it is waiting on now is **a range**. The endpoint takes no
+   * parameters, so the grid pulls every post in the workspace — bodies,
+   * campaigns, platforms and assets — however few weeks are on screen. That is
+   * the same cost `useAssetUsage` already pays and documents, and fine at
+   * today's scale; on a workspace with thousands of posts it is a calendar
+   * that opens slowly, which is worse than one that isn't offered. So the flag
+   * stays off until either `?from=&to=` lands (filed in
+   * `docs/open-questions.md`) or the feature is tried against a real workspace
+   * and judged fast enough — rule 4, deliberately, rather than flipping
+   * because the screen renders.
+   *
+   * Turning it on is one word here. Everything else is built: the route, the
+   * nav row, the panels and the place memory all read this flag already, and
+   * `?ff=workspace-calendar` exercises it on staging without a deploy.
    */
   'workspace-calendar': false,
 

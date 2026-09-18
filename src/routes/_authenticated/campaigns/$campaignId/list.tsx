@@ -151,11 +151,7 @@ function CampaignListView() {
           claim we don't get to make until we've asked. The table renders on
           one path either way; `loading` draws its own rows. */}
       {!isLoading && rows.length === 0 ? (
-        <PostsEmptyState
-          variant="list"
-          campaignId={campaignId}
-          onAddPost={addPost}
-        />
+        <PostsEmptyState variant="list" onAddPost={addPost} />
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto">
           <PostsTable

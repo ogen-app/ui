@@ -308,12 +308,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`postGoalTotal`), never as a campaign total.
 - **`/api/settings` is tenant-scoped, not user-scoped.** Every key is visible
   to the whole workspace via `GET /api/settings`. Personal preferences get
-  their identity from the key (`userScopedKey` →
-  `calendar.<userId>.<campaignId>`, `postsTable.<userId>`); never put anything
-  sensitive there. Use it for working habits that should follow the user
-  between devices — the posts table's sort order
-  (`docs/technical-decisions.md#posts-table-sort`) — and localStorage for
-  per-device display state. See `docs/technical-decisions.md#user-scoped-settings`.
+  their identity from the key (`userScopedKey` → `calendar.<userId>`,
+  `postsTable.<userId>`); never put anything sensitive there. Use it for
+  working habits that should follow the user between devices — the posts
+  table's sort order (`docs/technical-decisions.md#posts-table-sort`) — and
+  localStorage for per-device display state. See
+  `docs/technical-decisions.md#user-scoped-settings`.
 - **Every user-facing string is a catalogue entry — never a literal in a
   component.** New UI adds its keys to `src/i18n/resources/en.ts` *and* its
   translation to every other catalogue, and reads them through `t()`. This
@@ -799,6 +799,28 @@ raw Markdown — so `**bold**` no longer spends 8 characters and the auto-split 
 longer cuts through a markup run. Both halves were the ask; neither is
 normalised on this side. The flag came out on 2026-09-18. See
 `docs/technical-decisions.md#thread-sequence`.
+
+**The workspace calendar is built and flagged off** (`workspace-calendar`). It
+is the campaign's calendar with the filter taken off, and deliberately the same
+components: both grids, the card, the rung ladder and the toolbar take the
+campaign as an argument, and `null` is what says there isn't one. Three things
+follow from that null and they are the whole difference — the cards name their
+campaign (`CardFields.campaign`, stamped by the view rather than switched by
+the user), nothing on the grid creates a post, and the view switch has no LIST
+segment because the table is a campaign's. Its rows come from
+`useWorkspacePosts` — `GET /api/posts`, which existed all along and which
+`useAssetUsage` and the auto-publish allowlist already read, under a key every
+post write invalidates. What it waits on is a **range**: that endpoint takes no
+parameters, so the grid pulls the whole workspace's hydrated posts however few
+weeks are showing (`docs/open-questions.md` P4). Not a correctness problem and
+not why the flag is off — the flag is off because a calendar that opens slowly
+is worse than one that isn't offered, and nobody has tried it on a large
+workspace yet.
+
+**Calendar preferences are one set per user, shared by every calendar**
+(`calendar.<userId>`). They used to be per campaign as well; see
+`docs/technical-decisions.md#user-scoped-settings` for why that was the wrong
+axis. Nothing was migrated, so the change reads as a one-off reset.
 
 **Two operator-tunable server limits are mirrored on the client with nothing to
 sync them** (CON-292). `platform_global_limits` is a single row an operator can

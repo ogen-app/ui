@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
 import { PostsToolbar } from '@/components/campaigns/PostsToolbar'
 import { MonthlyCalendar } from '@/components/campaigns/calendar/MonthlyCalendar'
@@ -49,6 +50,7 @@ export const Route = createFileRoute(
 
 function CalendarView() {
   const { campaignId, anchor, view } = Route.useParams()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const {
     data: posts,
@@ -64,7 +66,7 @@ function CalendarView() {
   const postsFailed = postsError && posts === undefined
   // The grid reads the settings itself; the route only needs to know whether
   // they have arrived.
-  const { isPending: settingsPending } = useCalendarSettings(campaignId)
+  const { isPending: settingsPending } = useCalendarSettings()
   const addPost = useAddPost(campaignId)
   // `beforeLoad` has already rejected anything else; this narrows the param
   // for the branches below rather than re-deciding it.
@@ -126,8 +128,7 @@ function CalendarView() {
       />
       {settingsPending ? null : postsFailed ? (
         <p className="px-6 py-8 text-sm text-tertiary-foreground">
-          Couldn’t load this campaign’s posts — the calendar will fill in once
-          they’re reachable again.
+          {t('calendar.loadFailedCampaign')}
         </p>
       ) : !postsPending && rows.length === 0 ? (
         // Only once the query has answered: the invitation to add the first
@@ -135,7 +136,6 @@ function CalendarView() {
         // way to wait for it.
         <PostsEmptyState
           variant={granularity}
-          campaignId={campaignId}
           anchor={anchorDate}
           onAddPost={addPost}
         />
