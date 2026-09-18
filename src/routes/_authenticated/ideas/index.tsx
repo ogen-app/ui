@@ -1,8 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
-import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
-import { PageNotBuiltYet } from '@/components/page-primitives/PageNotBuiltYet.tsx'
+import { IdeasSurface } from '@/components/ideas/IdeasSurface'
 import { isFeatureEnabled } from '@/config/featureFlags'
 
 /**
@@ -21,13 +19,5 @@ export const Route = createFileRoute('/_authenticated/ideas/')({
 
 function WorkspaceIdeasView() {
   const { t } = useTranslation()
-  return (
-    <PageContainer>
-      <PageHeader title={t('nav.ideas')} />
-      <PageNotBuiltYet
-        title={t('ideas.stub.workspaceTitle')}
-        subtitle={t('ideas.stub.workspaceBody')}
-      />
-    </PageContainer>
-  )
+  return <IdeasSurface heading={t('nav.ideas')} />
 }
