@@ -151,6 +151,7 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
 
                 {local ? (
                   <Button
+                    type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => promote.mutate(series.id)}
@@ -164,6 +165,7 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
                 ) : null}
 
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   aria-label={t('series.campaign.remove', {
@@ -198,6 +200,7 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
         ) : null}
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={() =>
