@@ -1,59 +1,150 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listAssets,
   getAsset,
   createAsset,
+  createUrlAsset,
   updateAsset,
+  bulkTagAssets,
   deleteAsset,
-} from "@/services/api/content";
-import type { CreateAssetPayload, UpdateAssetPayload } from "@/types/content";
+} from '@/services/api/content'
+import { retrievability } from '@/lib/campaignSources'
+import type {
+  BulkTagPayload,
+  CreateAssetPayload,
+  UpdateAssetPayload,
+} from '@/types/content'
 
-const ASSETS_KEY = ["assets"] as const;
-const assetKey = (id: string) => ["assets", id] as const;
+export const ASSETS_KEY = ['assets'] as const
+export const assetKey = (id: string) => ['assets', id] as const
 
-export function useAssets() {
+/** How often to look again while something in the list is still extracting. */
+const PROCESSING_POLL_MS = 3000
+
+/**
+ * The asset list, which watches itself while anything in it is processing.
+ *
+ * Extraction happens after the upload returns, so a freshly added document
+ * lands as `processing` and becomes readable some seconds later with nothing
+ * on the client to notice. The tracker used to poll each upload it knew about;
+ * this covers the same ground from the list itself, and also covers assets
+ * that started processing somewhere else — another tab, another campaign, or
+ * before this page was open.
+ */
+export function useAssets({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: ASSETS_KEY,
     queryFn: listAssets,
-  });
+    // Off means "don't fetch for my sake", never "don't answer": a disabled
+    // query still reads whatever the cache holds, which is what lets the
+    // upload modal check for duplicates on a screen that has the list open
+    // without pulling it down on one that doesn't.
+    enabled,
+    refetchInterval: (query) =>
+      query.state.data?.some(
+        (asset) => retrievability(asset.status) === 'waiting',
+      )
+        ? PROCESSING_POLL_MS
+        : false,
+  })
 }
 
+/**
+ * One document, watching itself while it is still being read.
+ *
+ * The same self-poll as the list, for the same deployment state: the
+ * `asset.updated` broadcast is the normal way a scrape or extraction reports
+ * done, but with the event stream down an open document would say "Reading…"
+ * forever — the list isn't mounted here to backstop it, and window-focus
+ * refetches are off app-wide.
+ */
 export function useAsset(id: string) {
   return useQuery({
     queryKey: assetKey(id),
     queryFn: () => getAsset(id),
     enabled: !!id,
-  });
+    refetchInterval: (query) =>
+      query.state.data && retrievability(query.state.data.status) === 'waiting'
+        ? PROCESSING_POLL_MS
+        : false,
+  })
 }
 
 export function useCreateAsset() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateAssetPayload) => createAsset(payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ASSETS_KEY });
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
     },
-  });
+  })
+}
+
+/**
+ * Hands a URL to the scraper.
+ *
+ * The asset it resolves with is a placeholder — no title, no content — and the
+ * work happens in a background job. What fills it in is `asset.updated` on the
+ * broadcast stream (`lib/eventRouting`), with the list's own poll behind it for
+ * deployments where the stream is down.
+ */
+export function useCreateUrlAsset() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (url: string) => createUrlAsset(url),
+    // Reported inline, beside the field the URL was typed into: a toast about
+    // the value you are still looking at explains nothing the field can't.
+    meta: { errorToast: false },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
+    },
+  })
 }
 
 export function useUpdateAsset() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateAssetPayload }) =>
-      updateAsset(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: UpdateAssetPayload
+    }) => updateAsset(id, payload),
     onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: ASSETS_KEY });
-      qc.invalidateQueries({ queryKey: assetKey(id) });
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
+      qc.invalidateQueries({ queryKey: assetKey(id) })
     },
-  });
+  })
+}
+
+/**
+ * Tags a selection in one request (CON-279).
+ *
+ * The list is invalidated rather than patched: the server decides what each
+ * asset ends up carrying — dedupe, order, assets it skipped — and a client-side
+ * merge of `add`/`remove` would be a second opinion about the same rows.
+ */
+export function useBulkTagAssets() {
+  const qc = useQueryClient()
+  return useMutation({
+    meta: { errorTitle: 'Unable to tag those documents' },
+    mutationFn: (payload: BulkTagPayload) => bulkTagAssets(payload),
+    onSuccess: (assets) => {
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
+      for (const asset of assets) {
+        qc.invalidateQueries({ queryKey: assetKey(asset.id) })
+      }
+    },
+  })
 }
 
 export function useDeleteAsset() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteAsset(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ASSETS_KEY });
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
     },
-  });
+  })
 }

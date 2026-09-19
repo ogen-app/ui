@@ -46,7 +46,10 @@ export function ThinkingTimeline({
         {/* Both states share one 12px slot, so the label doesn't shift when the
             run ends. The caret fills the slot exactly — drawn any larger it
             outweighed the label it belongs to. */}
-        <span className="flex size-3 shrink-0 items-center justify-center" aria-hidden>
+        <span
+          className="flex size-3 shrink-0 items-center justify-center"
+          aria-hidden
+        >
           {streaming ? (
             <span className="size-1.5 rounded-full bg-accent animate-pulse" />
           ) : open ? (
@@ -58,7 +61,9 @@ export function ThinkingTimeline({
         <span className="flex-1">
           {/* The elapsed time is the label while running and part of the label
               once done, so there is never a second copy of it on the right. */}
-          {streaming ? `Thinking… ${formatDuration(total)}` : `Thought for ${formatDuration(total)}`}
+          {streaming
+            ? `Thinking… ${formatDuration(total)}`
+            : `Thought for ${formatDuration(total)}`}
         </span>
       </button>
 
@@ -68,7 +73,10 @@ export function ThinkingTimeline({
             const running = step.endedAt === null
             const end = step.endedAt ?? (streaming ? now : step.startedAt)
             return (
-              <li key={step.id} className="flex items-start gap-2 text-xs leading-tight">
+              <li
+                key={step.id}
+                className="flex items-start gap-2 text-xs leading-tight"
+              >
                 {/* The same 12px slot the caret sits in, so a step's mark lands
                     directly under it and its label under "Thinking…". */}
                 <span
@@ -78,15 +86,24 @@ export function ThinkingTimeline({
                   {running ? (
                     <span className="size-1.5 rounded-full bg-accent animate-pulse" />
                   ) : (
-                    <CheckIcon className="size-3 text-quinary-foreground" weight="bold" />
+                    <CheckIcon
+                      className="size-3 text-quinary-foreground"
+                      weight="bold"
+                    />
                   )}
                 </span>
                 <span
-                  className={cn('flex-1', running ? 'text-foreground' : 'text-tertiary-foreground')}
+                  className={cn(
+                    'flex-1',
+                    running ? 'text-foreground' : 'text-tertiary-foreground',
+                  )}
                 >
                   {step.label}
                   {step.detail && (
-                    <span className="text-quaternary-foreground"> · {step.detail}</span>
+                    <span className="text-quaternary-foreground">
+                      {' '}
+                      · {step.detail}
+                    </span>
                   )}
                 </span>
                 <span className="font-mono text-[11px] text-quaternary-foreground">

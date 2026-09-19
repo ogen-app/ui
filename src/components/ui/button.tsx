@@ -58,6 +58,22 @@ const buttonVariants = cva(
           'bg-primary text-primary-foreground hover:bg-secondary ' +
           'data-[active=true]:bg-secondary ' +
           '[&_[data-spinner-container]]:bg-primary [&_[data-spinner]]:bg-primary-foreground/20 [&_[data-spinner]:before]:bg-primary-foreground',
+        // A filled button for a white surface. `secondary` is `bg-primary`,
+        // which *is* white — right on the grey app canvas, invisible inside a
+        // modal. This is the same weight one step darker, so a dialog's
+        // actions read as objects rather than as words.
+        neutral:
+          'bg-tertiary text-primary-foreground hover:bg-quaternary ' +
+          'data-[active=true]:bg-quaternary ' +
+          'disabled:text-quaternary-foreground ' +
+          '[&_[data-spinner-container]]:bg-tertiary [&_[data-spinner]]:bg-primary-foreground/20 [&_[data-spinner]:before]:bg-primary-foreground',
+        // The brand teal, filled. For the one action on a screen that is worth
+        // colouring — never for a second button beside it, which would make
+        // the colour mean "a button" rather than "this one".
+        accent:
+          'bg-accent text-primary hover:bg-accent/90 ' +
+          'data-[active=true]:bg-accent/90 ' +
+          '[&_[data-spinner-container]]:bg-accent [&_[data-spinner]]:bg-primary/20 [&_[data-spinner]:before]:bg-primary',
         ghost:
           'bg-transparent text-secondary-foreground hover:text-primary-foreground ' +
           'data-[active=true]:text-primary-foreground data-[active=true]:bg-quaternary ' +
@@ -69,11 +85,6 @@ const buttonVariants = cva(
           'data-[active=true]:text-primary-foreground',
 
         container: '',
-        searchBar:
-          'bg-tertiary text-sm h-8 px-1.5 w-full truncate gap-3 justify-start text-tertiary-foreground hover:text-primary-foreground overflow-hidden ' +
-          'data-[active=true]:text-primary-foreground data-[active=true]:bg-tertiary-elevated ' +
-          '[&>div]:w-full [&>div]:flex [&>div]:items-center [&>div]:gap-3 ' +
-          'lg:h-10 lg:px-2.5 lg:[&>div]:w-[232px]',
         menu:
           'bg-transparent h-8 px-1.5 w-full gap-3 justify-start hover:bg-sidebar-secondary text-sidebar-primary-foreground hover:text-sidebar-primary-foreground overflow-hidden ' +
           'font-grotesk text-sm/6 font-medium uppercase whitespace-nowrap ' +
@@ -85,15 +96,20 @@ const buttonVariants = cva(
       },
 
       size: {
-        default: "h-10 pt-[11px] pb-2 px-4 [&_svg:not([class*='size-'])]:size-4",
-        defaultIcon: "h-10 p-0 w-10 justify-center [&_svg:not([class*='size-'])]:size-4",
+        default:
+          "h-10 pt-[11px] pb-2 px-4 [&_svg:not([class*='size-'])]:size-4",
+        defaultIcon:
+          "h-10 p-0 w-10 justify-center [&_svg:not([class*='size-'])]:size-4",
         xsIcon: "h-4 p-0 justify-center [&_svg:not([class*='size-'])]:size-3",
         sm: "h-8 pt-[11px] pb-2 px-3 [&_svg:not([class*='size-'])]:size-4",
-        smIcon: "h-8 p-0 w-8 justify-center [&_svg:not([class*='size-'])]:size-4",
+        smIcon:
+          "h-8 p-0 w-8 justify-center [&_svg:not([class*='size-'])]:size-4",
         lg: "h-10 pt-[13px] pb-3 px-4 [&_svg:not([class*='size-'])]:size-4",
-        lgIcon: "h-10 p-0 w-10 justify-center [&_svg:not([class*='size-'])]:size-4",
+        lgIcon:
+          "h-10 p-0 w-10 justify-center [&_svg:not([class*='size-'])]:size-4",
         xl: "h-11 pt-[17px] pb-4 px-6 [&_svg:not([class*='size-'])]:size-4",
-        xlIcon: "h-11 p-0 w-11 justify-center [&_svg:not([class*='size-'])]:size-4",
+        xlIcon:
+          "h-11 p-0 w-11 justify-center [&_svg:not([class*='size-'])]:size-4",
         excluded: '',
       },
     },
@@ -101,7 +117,7 @@ const buttonVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 )
 
 const Button = React.forwardRef<
@@ -126,7 +142,7 @@ const Button = React.forwardRef<
     showEllipse = false,
     ...props
   },
-  ref
+  ref,
 ) {
   // When using asChild with loading, force it to render as a button
   const Comp = asChild && !loading ? Slot : 'button'

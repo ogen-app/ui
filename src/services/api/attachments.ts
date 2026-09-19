@@ -2,18 +2,34 @@ import type {
   AttachmentListResponse,
   PostAttachmentWithValidation,
 } from '@/types/attachments'
-import { apiUrl } from './base'
+import { apiUrl, workspaceHeader } from './base'
 import { apiJson, apiVoid } from './http'
 
 const base = (postId: string) => `/api/posts/${postId}/attachments`
 
-export function listAttachments(postId: string): Promise<AttachmentListResponse> {
-  return apiJson<AttachmentListResponse>(base(postId), 'Unable to fetch attachments')
+export function listAttachments(
+  postId: string,
+): Promise<AttachmentListResponse> {
+  return apiJson<AttachmentListResponse>(
+    base(postId),
+    'Unable to fetch attachments',
+  )
 }
 
 type UploadOptions = {
   onProgress?: (percent: number) => void
   signal?: AbortSignal
+  /**
+   * Which message of a thread the file lands on (CON-284), 0-based.
+   *
+   * Omit for an ordinary post — the server answers **422** to a `segment_index`
+   * on one, so this may only be set when the post's type is already `thread`.
+   * Omitting it on a *thread* is fine too, and is the usual case: R2 reads a
+   * NULL index as the root message, so a file uploaded without one publishes on
+   * message one rather than failing the gate for want of a number the author
+   * was never asked for.
+   */
+  segmentIndex?: number
 }
 
 /**
@@ -30,11 +46,23 @@ export function uploadAttachment(
   return new Promise((resolve, reject) => {
     const form = new FormData()
     form.append('file', file)
+    // A multipart field rather than a query parameter, and only when there is
+    // one: the handler parses `segment_index` off the form and refuses a
+    // non-thread post that sends any value at all, so an empty string would be
+    // a 400 rather than a no-op.
+    if (opts.segmentIndex != null) {
+      form.append('segment_index', String(opts.segmentIndex))
+    }
 
     const xhr = new XMLHttpRequest()
     xhr.open('POST', apiUrl(base(postId)), true)
     xhr.withCredentials = true
     xhr.responseType = 'json'
+    // Same workspace as the post it attaches to (CON-147). After `open`,
+    // which is the only place `setRequestHeader` may be called.
+    for (const [key, value] of Object.entries(workspaceHeader(base(postId)))) {
+      xhr.setRequestHeader(key, value)
+    }
     // A stalled connection fires none of onload/onerror/onabort, and an
     // unsettled promise leaves the pending tile stuck forever. Generous on
     // purpose: this bounds the whole request, and a legitimate large upload
@@ -51,8 +79,7 @@ export function uploadAttachment(
 
     xhr.onload = () => {
       const body = xhr.response as
-        | (PostAttachmentWithValidation & { error?: string })
-        | null
+        (PostAttachmentWithValidation & { error?: string }) | null
       if (xhr.status < 200 || xhr.status >= 300) {
         reject(new Error(body?.error || `Unable to upload ${file.name}`))
         return
@@ -127,7 +154,51 @@ export async function uploadVideoAttachment(
   return apiJson<PostAttachmentWithValidation>(
     `${base(postId)}/finalize`,
     `Unable to finalize ${file.name}`,
-    { method: 'POST', body: { s3_key: presigned.s3_key, alt_text: '' } },
+    {
+      method: 'POST',
+      body: {
+        s3_key: presigned.s3_key,
+        alt_text: '',
+        // Omitted rather than sent as null on an ordinary post — same rule as
+        // the multipart path: the server reads presence, not value.
+        ...(opts.segmentIndex != null
+          ? { segment_index: opts.segmentIndex }
+          : {}),
+      },
+    },
+  )
+}
+
+/**
+ * Moves one attachment onto a different message of a thread, or takes it off
+ * the chain entirely with `null` (CON-284).
+ *
+ * Presence-aware on the server (`Optional[int]`), which is why this is its own
+ * call rather than a field on `reorderAttachment`: sending `position` and
+ * `segment_index` together would make every reorder restate an assignment it
+ * was not asked to change. The two are independent — `position` orders media
+ * *within* a message — so they are written independently.
+ *
+ * **422 on a post that is not a `thread`**, for any non-null value. Clearing to
+ * `null` is allowed there, which is what makes a demoted thread tidy-able; but
+ * a stale index on an ordinary post is harmless (the publish gate only reads
+ * them for threads), so nothing sweeps them, and promoting a post back to
+ * `thread` finds its old assignments still in place.
+ *
+ * On a thread, `null` is not "no message" — it is the root (CON-284 R2). So
+ * this is a two-way move rather than an assign-and-clear: sending `null` puts
+ * the file back on message one, which is where an unassigned file was
+ * publishing all along.
+ */
+export function setAttachmentSegment(
+  postId: string,
+  attachmentId: string,
+  segmentIndex: number | null,
+): Promise<PostAttachmentWithValidation> {
+  return apiJson<PostAttachmentWithValidation>(
+    `${base(postId)}/${attachmentId}`,
+    'Unable to move this to another message',
+    { method: 'PATCH', body: { segment_index: segmentIndex } },
   )
 }
 
@@ -140,7 +211,11 @@ export async function uploadVideoAttachment(
  * The Content-Type must match what presign was told: it is part of what the
  * signature covers.
  */
-function putToStorage(url: string, file: File, opts: UploadOptions): Promise<void> {
+function putToStorage(
+  url: string,
+  file: File,
+  opts: UploadOptions,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', url, true)
@@ -161,7 +236,11 @@ function putToStorage(url: string, file: File, opts: UploadOptions): Promise<voi
       if (xhr.status < 200 || xhr.status >= 300) {
         // The body is storage-provider XML, not our error envelope; surfacing
         // it verbatim would be noise.
-        reject(new Error(`Storage rejected the upload of ${file.name} (${xhr.status})`))
+        reject(
+          new Error(
+            `Storage rejected the upload of ${file.name} (${xhr.status})`,
+          ),
+        )
         return
       }
       resolve()
@@ -209,8 +288,15 @@ export function reorderAttachment(
   )
 }
 
-export function deleteAttachment(postId: string, attachmentId: string): Promise<void> {
-  return apiVoid(`${base(postId)}/${attachmentId}`, 'Unable to delete attachment', {
-    method: 'DELETE',
-  })
+export function deleteAttachment(
+  postId: string,
+  attachmentId: string,
+): Promise<void> {
+  return apiVoid(
+    `${base(postId)}/${attachmentId}`,
+    'Unable to delete attachment',
+    {
+      method: 'DELETE',
+    },
+  )
 }

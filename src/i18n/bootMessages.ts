@@ -16,13 +16,14 @@ import type { Locale } from './config'
  * may not have. Keep it to exactly these two lines; everything else belongs in
  * `resources/`, where it is lazy and where translators expect to find it.
  */
-export const BOOT_MESSAGES: Record<Locale, { title: string; message: string }> = {
-  en: {
-    title: 'Switching language',
-    message: 'Fetching the translation. This happens once per language.',
-  },
-  es: {
-    title: 'Cambiando de idioma',
-    message: 'Descargando la traducción. Solo ocurre una vez por idioma.',
-  },
-}
+export const BOOT_MESSAGES: Record<Locale, { title: string; message: string }> =
+  {
+    en: {
+      title: 'Switching language',
+      message: 'Fetching the translation. This happens once per language.',
+    },
+    es: {
+      title: 'Cambiando de idioma',
+      message: 'Descargando la traducción. Solo ocurre una vez por idioma.',
+    },
+  }

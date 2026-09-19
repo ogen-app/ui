@@ -20,7 +20,11 @@ const selectViewportPopperStyles =
 const selectItemStyles =
   "focus:bg-primary focus:text-primary-foreground [&_svg:not([class*='text-'])]:text-tertiary-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
 
-const selectScrollButtonStyles = 'flex cursor-default items-center justify-center py-1'
+const selectScrollButtonStyles =
+  'flex cursor-default items-center justify-center py-1'
+
+/** Where an option's label sits inside the popover: viewport `p-1` + item `pl-2`. */
+const ITEM_TEXT_INSET = 12
 
 const selectTriggerVariants = cva(
   "data-[placeholder]:text-tertiary-foreground [&_svg:not([class*='text-'])]:text-tertiary-foreground aria-invalid:border-destructive flex w-fit items-center justify-between gap-2 font-medium whitespace-nowrap transition-[color,border-color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -34,7 +38,12 @@ const selectTriggerVariants = cva(
           'bg-input border-b-1 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
         primary:
           'bg-input-secondary border-b-2 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
-        ghost: 'border-0 rounded-md bg-transparent px-3 py-1 shadow-none text-sm',
+        ghost:
+          'border-0 rounded-md bg-transparent px-3 py-1 shadow-none text-sm',
+        // Reads as text, not as a field: no rule under it and the caret sits
+        // against the value. Matches the post quick-settings triggers.
+        inline:
+          'border-0 rounded-none bg-transparent p-0 shadow-none text-sm font-normal text-primary-foreground w-fit',
       },
       size: {
         sm: 'h-8',
@@ -46,7 +55,7 @@ const selectTriggerVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 )
 
 type TextElement = {
@@ -62,7 +71,7 @@ type CurrencySelectProps = {
   disabled?: boolean
   className?: string
   id?: string
-  variant?: 'default' | 'ghost' | 'primary' | null | undefined
+  variant?: 'default' | 'ghost' | 'primary' | 'inline' | null | undefined
   size?: 'default' | 'sm' | 'lg'
 }
 
@@ -77,14 +86,29 @@ function TextSelect({
   variant = 'primary',
   size = 'lg',
 }: CurrencySelectProps) {
+  // Borderless triggers keep the caret next to the value; field-shaped ones
+  // push it to the far edge, where the rule underneath makes it read as a
+  // control rather than as part of the text.
+  const borderless = variant === 'inline' || variant === 'ghost'
+
+  // Left padding of each trigger variant, i.e. where its text starts.
+  const triggerTextInset =
+    variant === 'inline' ? 0 : variant === 'ghost' ? 12 : 16
+
   return (
-    <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled}>
+    <SelectPrimitive.Root
+      value={value}
+      onValueChange={onValueChange}
+      disabled={disabled}
+    >
       <SelectPrimitive.Trigger
         id={id}
         className={cn(
           selectTriggerVariants({ variant, size }),
-          'justify-between gap-3 pr-2 cursor-pointer',
-          className
+          borderless
+            ? 'justify-start gap-1.5 cursor-pointer'
+            : 'justify-between gap-3 pr-2 cursor-pointer',
+          className,
         )}
       >
         {/* The trigger is as wide as its column, not as wide as its value: a
@@ -94,22 +118,37 @@ function TextSelect({
           className="min-w-0 truncate text-left"
           placeholder={placeholder ?? 'Select...'}
         />
-        <div className="w-8 h-8 shrink-0 flex justify-center items-center text-center relative">
-          <CaretDownIcon className={'size-4'} />
-        </div>
+        {borderless ? (
+          <CaretDownIcon className="size-3 shrink-0 text-tertiary-foreground" />
+        ) : (
+          <div className="w-8 h-8 shrink-0 flex justify-center items-center text-center relative">
+            <CaretDownIcon className={'size-4'} />
+          </div>
+        )}
       </SelectPrimitive.Trigger>
 
       <SelectPrimitive.Portal>
         <SelectPrimitive.Content
-          className={cn(popoverContentStyles, popoverAnimationStyles, selectContentStyles)}
+          className={cn(
+            popoverContentStyles,
+            popoverAnimationStyles,
+            selectContentStyles,
+          )}
           style={{ zIndex: ZIndex.popover }}
           position="popper"
+          // The popover aligns to the trigger's box, but what the eye lines up
+          // is the text: an option's label sits 12px inside the popover
+          // (viewport p-1 + item pl-2), so the whole thing shifts by the
+          // difference against the trigger's own left padding.
+          alignOffset={triggerTextInset - ITEM_TEXT_INSET}
         >
           <SelectPrimitive.ScrollUpButton className={selectScrollButtonStyles}>
             <CaretUpIcon className="size-3" />
           </SelectPrimitive.ScrollUpButton>
 
-          <SelectPrimitive.Viewport className={cn('p-1', selectViewportPopperStyles)}>
+          <SelectPrimitive.Viewport
+            className={cn('p-1', selectViewportPopperStyles)}
+          >
             {elements.map((el) => (
               <TextSelectItem
                 key={el.id}
@@ -122,7 +161,9 @@ function TextSelect({
             ))}
           </SelectPrimitive.Viewport>
 
-          <SelectPrimitive.ScrollDownButton className={selectScrollButtonStyles}>
+          <SelectPrimitive.ScrollDownButton
+            className={selectScrollButtonStyles}
+          >
             <CaretDownIcon className="size-4" />
           </SelectPrimitive.ScrollDownButton>
         </SelectPrimitive.Content>
@@ -135,9 +176,17 @@ type TextSelectItemProps = React.ComponentProps<typeof SelectPrimitive.Item> & {
   isSelected: boolean
 }
 
-function TextSelectItem({ className, children, isSelected: _isSelected, ...props }: TextSelectItemProps) {
+function TextSelectItem({
+  className,
+  children,
+  isSelected: _isSelected,
+  ...props
+}: TextSelectItemProps) {
   return (
-    <SelectPrimitive.Item className={cn(selectItemStyles, className)} {...props}>
+    <SelectPrimitive.Item
+      className={cn(selectItemStyles, className)}
+      {...props}
+    >
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   )

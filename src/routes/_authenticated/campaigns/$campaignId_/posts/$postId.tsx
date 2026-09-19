@@ -1,17 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
 import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
+import { Explainer } from '@/components/page-primitives/Explainer'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
+import { ThreadSplitNote } from '@/components/posts/sequence/ThreadSplitNote'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
+import { PostLockNotice } from '@/components/posts/PostLockNotice'
+import { PostPerformanceSection } from '@/components/analytics/PostPerformanceSection'
+import { usePostPerformance } from '@/hooks/usePostPerformance'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
 import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
 import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
+import { PostSourcesCard } from '@/components/posts/sources/PostSourcesCard'
 import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
@@ -19,7 +26,6 @@ import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettin
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
 import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
-import { PinnedPostNotes } from '@/components/posts/notes/PinnedPostNotes'
 import { PostNotesCard } from '@/components/posts/notes/PostNotesCard'
 import {
   POST_PREVIEW_PORTAL_ID,
@@ -31,9 +37,14 @@ import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { usePanelScope } from '@/hooks/usePanelScope'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { charCount } from '@/lib/socialText'
+import { MAX_THREAD_POSTS, runtPositions } from '@/lib/threadSequence'
+import { getPostTypeLabel } from '@/lib/platformDictionary'
+import { canBeAutomatic, type UnfitReason } from '@/lib/postTypeAuto'
+import type { PostCheck } from '@/lib/postValidation'
 import { useCampaign } from '@/hooks/useCampaigns'
 import {
   usePost,
+  type TransitionExtras,
   type TransitionStatusResult,
   type VerifyExternalResult,
 } from '@/hooks/usePost'
@@ -41,14 +52,16 @@ import { usePostAssessment } from '@/hooks/usePostAssessment'
 import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostNotes } from '@/hooks/usePostNotes'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
+import { useDuplicatePost } from '@/hooks/usePosts'
 import { useAutoPublishAllowlist } from '@/hooks/useAutoPublishAllowlist'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount'
 import { usePostArrowNavigation } from '@/hooks/usePostNavigation'
 import { usePublishStatus } from '@/hooks/usePublishStatus'
 import { cn } from '@/lib'
+import { downloadMarkdown } from '@/lib/downloadMarkdown'
 import { resolvePublishMethod } from '@/lib/autoPublish'
-import { isNotePinned, splitNotesByPin } from '@/lib/postNotes'
-import type { PublishMethod } from '@/lib/postStatusMachine'
+import { isSubmitted, type PublishMethod } from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
 import type { PostNote } from '@/services/api/postNotes'
 import type { Post, PostStatus } from '@/types/posts'
@@ -61,6 +74,12 @@ export const Route = createFileRoute(
 
 function PostPage() {
   const { campaignId, postId } = Route.useParams()
+  // Declared by the route, not by the editor below it: being on a post is what
+  // makes the post panels resolvable, and that is true from the moment the URL
+  // is. Inside the editor it would drop for as long as the document takes to
+  // arrive — the rail would fall back to the assistant and animate its width
+  // twice on the way to a post nobody had opened before.
+  usePanelScope('post', campaignId)
   const {
     doc,
     changeDoc,
@@ -113,10 +132,39 @@ function PostPage() {
   )
 }
 
+/**
+ * The first few words of a post, for the media picker's menu. Long enough to
+ * recognise the post by, short enough not to reflow the menu.
+ */
+function excerpt(text: string): string {
+  const flat = text.replace(/\s+/g, ' ').trim()
+  return flat.length > 48 ? `${flat.slice(0, 47)}…` : flat
+}
+
+/**
+ * Why Auto found no format, as catalogue keys.
+ *
+ * A table of *keys* rather than of copy, so it can sit at module scope without
+ * freezing whichever language loaded first — the sentences are looked up at the
+ * point of use, on every render.
+ */
+const UNFIT_KEY = {
+  'too-long': 'posts.postType.autoUnfit.tooLong',
+  'media-kind': 'posts.postType.autoUnfit.mediaKind',
+  'too-many': 'posts.postType.autoUnfit.tooMany',
+  'no-candidates': 'posts.postType.autoUnfit.noCandidates',
+  // `satisfies` rather than an annotation: the reasons stay exhaustively
+  // checked, and the values keep their literal types so `t` can still tell
+  // these are real catalogue keys.
+} as const satisfies Record<UnfitReason, string>
+
 type PostEditorSurfaceProps = {
   doc: Post
   changeDoc: (fn: (p: Post) => void) => void
-  transitionStatus: (next: PostStatus) => Promise<TransitionStatusResult>
+  transitionStatus: (
+    next: PostStatus,
+    extra?: TransitionExtras,
+  ) => Promise<TransitionStatusResult>
   verifyExternal: (url: string) => Promise<VerifyExternalResult>
   schedule: () => Promise<TransitionStatusResult>
   cancelScheduled: (target: CancelTarget) => Promise<TransitionStatusResult>
@@ -136,6 +184,9 @@ function PostEditorSurface({
   saving,
   campaignId,
 }: PostEditorSurfaceProps) {
+  // Only the thread-sequence copy reads this today — the rest of this screen
+  // is still hard-coded English awaiting the CON-174 pass.
+  const { t } = useTranslation()
   const [titleDraft, setTitleDraft] = useState(doc.title)
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -151,22 +202,39 @@ function PostEditorSurface({
   // only has to survive until the button is pressed.
   const [publishMethod, setPublishMethod] = useState<PublishMethod>('auto')
 
+  // A copy of this post already exists outside Ogen — Zernio holds the
+  // submission, or the network holds the post — so the document below is the
+  // record of it rather than a draft (CON-251). Every surface on this screen
+  // asks the one predicate; the cards that already knew about `published`
+  // (media, the date, the account) now answer through it too.
+  const locked = isSubmitted(doc.status)
+
   // Resolved against the post's *current* platform rather than stored, so
   // switching to a channel the workspace hasn't allowlisted drops the post to
   // manual on the spot. Derived instead of an effect: there is no moment where
   // the state says "auto" and the platform says otherwise.
   const { data: autoPublishAllowlist, isPending: allowlistPending } =
     useAutoPublishAllowlist()
+  // The allowlist is kept by `zernio_id` (CON-292); the post holds a row sqid,
+  // so the catalog translates before the two are compared.
+  const { row: platformRow, resolve: platformInfo } = usePlatformCatalog()
   const effectivePublishMethod = resolvePublishMethod(
     publishMethod,
     autoPublishAllowlist,
-    doc.platform_id,
+    platformRow(doc.platform_id)?.zernio_id,
   )
 
   // Attachments, the platform's post-type rules and the checks derived from
   // both. Called once here because the media card and the validations
-  // section are two views of the same state (and share upload progress).
+  // section are two views of the same state (and share upload progress) — and
+  // because it is where the post's *effective* type is decided: an automatic
+  // post carries no slug, and the format it publishes as is derived from the
+  // body and the attachments this hook already holds (`lib/postTypeAuto`).
   const media = usePostMedia(doc)
+  // Whether this post publishes as a chain rather than as one post (CON-196).
+  // Derived from the effective type, so an automatic post that resolved to
+  // `thread` renders as the chain it will publish as.
+  const isSequence = media.sequence
 
   // Which of the platform's connected accounts this post publishes as
   // (CON-150). Resolved here because two consumers must agree: the
@@ -178,22 +246,101 @@ function PostEditorSurface({
     doc.social_account,
   )
 
+  // Leaving `draft` is where an automatic post's format stops being derived and
+  // becomes a fact about the record.
+  //
+  // A draft holds the empty slug for its whole life and the resolution is
+  // worked out on every render, which is what keeps it in step with the words.
+  // The server has no such notion, and draws the line in exactly one place:
+  // `requirePlatformIfNotDraft` rejects any PUT carrying an empty post type
+  // under any status but `draft`. So that edge is the last moment the slug can
+  // be written, not merely a good one — a post that crossed it still empty
+  // could not be saved again at all.
+  //
+  // Written through `changeDoc` rather than a PUT of its own, deliberately.
+  // That is one synchronous write into the same pending edit `schedule` flushes
+  // first, so the slug rides the autosave the user's last keystroke was already
+  // going to send — no extra round trip, and no window where the record and the
+  // schedule request disagree about what this post is.
+  //
+  // A thread that came to one message leaves by the same door, for the mirror
+  // reason (CON-284): the platforms have no such object, and the publish gate
+  // refuses a chain under two messages. So the slug it leaves with is the
+  // ordinary format the post already is — and that is the whole of it, because
+  // the segments are the server's own arithmetic over the body and it clears
+  // them itself the moment the type stops being `thread`. The attachments keep
+  // their `segment_index`: nothing reads it off a post that is not a thread,
+  // and leaving it is what brings the assignments back if the body grows a
+  // second message again. Note the server still refuses to *write* one onto a
+  // post that is not a thread — R2 relaxed the other direction, where a thread
+  // attachment no longer has to carry one — so this is stale data left in
+  // place deliberately, not a field being set.
+  const pinResolvedPostType = useCallback(() => {
+    const demoted = media.demotedType
+    if (demoted) {
+      changeDoc((d) => {
+        d.platform_post_type = demoted
+      })
+      return
+    }
+    if (media.auto?.state !== 'resolved') return
+    const slug = media.auto.slug
+    changeDoc((d) => {
+      d.platform_post_type = slug
+    })
+  }, [media.auto, media.demotedType, changeDoc])
+
+  const scheduleResolved = useCallback(() => {
+    pinResolvedPostType()
+    return schedule()
+  }, [pinResolvedPostType, schedule])
+
+  const transitionResolved = useCallback(
+    (next: PostStatus, extra?: TransitionExtras) => {
+      // Every edge but the way back in, rather than a list of the ones that
+      // commit the post: the server's rule is about the status the PUT carries,
+      // not about how final it is, so MARK AS READY and the manual-publish
+      // SCHEDULE (a plain PUT, unlike its auto-publish twin) need the slug just
+      // as much as publishing does. Reopening to draft must not pin — that move
+      // exists to make the post editable again, and freezing its format on the
+      // way back in would be the opposite.
+      if (!canBeAutomatic(next)) {
+        pinResolvedPostType()
+      }
+      return transitionStatus(next, extra)
+    },
+    [pinResolvedPostType, transitionStatus],
+  )
+
   // Called once, here, and shared: the header button and the badge menu must
   // see the same in-flight guard, or one could fire a second transition
   // while the other's request is still open.
   const { buttons, back, pending } = usePostStatusActions({
     post: doc,
-    transitionStatus,
-    schedule,
+    transitionStatus: transitionResolved,
+    schedule: scheduleResolved,
     cancelScheduled,
     requestVerification: () => setPublishedUrlOpen(true),
     cancelling,
     publishMethod: effectivePublishMethod,
-    context: { account },
+    // The effective type, not the record's: an automatic post has no slug until
+    // this very transition writes one, so reading the record would disable the
+    // button that does the writing.
+    context: { account, postType: media.postType },
   })
   // Null unless something really is going to publish the post — see
   // `publishTiming` for which statuses those are.
   const publishStatus = usePublishStatus(doc)
+
+  // The bottom bar's slot once there are no transitions left to put in it.
+  // Offered on `published` alone, not on every locked status: a scheduled post
+  // still has UNSCHEDULE to make, and duplicating one would be a second copy
+  // of something that has not happened yet.
+  const duplicate = useDuplicatePost(campaignId)
+  const duplicateAction =
+    doc.status === 'published'
+      ? { run: () => duplicate.run(doc), running: duplicate.running }
+      : null
   // ← / → step to the neighbouring post, unless the keypress belongs to a
   // field the user is typing in.
   usePostArrowNavigation(campaignId, doc.id)
@@ -205,10 +352,9 @@ function PostEditorSurface({
 
   // The settings form renders in the shared right sidebar (one panel at a
   // time, alongside the AI assistant). The route owns the form because it
-  // owns the post's autosave pipeline; the sidebar only hosts the layer.
-  // Declaring the scope is what makes these four resolvable at all — off this
-  // screen they stay remembered but the rail falls back to the assistant.
-  usePanelScope('post', campaignId)
+  // owns the post's autosave pipeline; the sidebar only hosts the layer. What
+  // makes these four resolvable at all is the scope `PostPage` declares — off
+  // this screen they stay remembered but the rail falls back to the assistant.
   const activePanel = useSettingsStore(selectActivePanel)
   const settingsOpen = activePanel === 'postSettings'
   const previewOpen = activePanel === 'postPreview'
@@ -236,25 +382,12 @@ function PostEditorSurface({
   // Opening the rail is its own action, separate from starting a run: the bar
   // can now do both, and a link that says "see the full breakdown" must not
   // also spend a model call.
-  const openQuality = useCallback(() => openRightPanel('postQuality'), [openRightPanel])
-  // Notes (CON-188). Where a note renders is a device-local preference, so the
-  // pin map comes from the settings store rather than the record — the API has
-  // no `pinned` column, and `lib/postNotes` supplies the default.
+  const openQuality = useCallback(
+    () => openRightPanel('postQuality'),
+    [openRightPanel],
+  )
+  // Notes (CON-188), all of them in the one card below the media.
   const notes = usePostNotes(doc.id)
-  const notePins = useSettingsStore((s) => s.notePins)
-  const setNotePin = useSettingsStore((s) => s.setNotePin)
-  const isPinned = useCallback(
-    (note: PostNote) => isNotePinned(note, notePins),
-    [notePins],
-  )
-  const togglePin = useCallback(
-    (note: PostNote) => setNotePin(note.id, !isNotePinned(note, notePins)),
-    [notePins, setNotePin],
-  )
-  const { pinned: pinnedNotes, rest: unpinnedNotes } = splitNotesByPin(
-    notes.notes,
-    notePins,
-  )
   const { edit: editNote } = notes
   const saveNote = useCallback(
     (note: PostNote, patch: { title: string; body: string }) =>
@@ -286,6 +419,39 @@ function PostEditorSurface({
   // The thread list leads every row with its campaign, so a post thread has to
   // carry its parent's name too. Cached from the campaign page in practice.
   const campaignName = useCampaign(campaignId).data?.name
+
+  // What this post did, once it is out there. The facts come off the document
+  // because the wire carries none of them — the snapshot knows figures, not
+  // which campaign this was for or what a "Single image" is called.
+  const performanceFacts = useMemo(
+    () => ({
+      title: doc.title,
+      platform: doc.platform_id,
+      format: doc.platform?.post_types[doc.platform_post_type] ?? '',
+      publishedAt: doc.published_at,
+      scheduledAt: doc.scheduled_at,
+      campaign: campaignName,
+      // Empty means unspecified, and a reconnect link pointing at "" would
+      // name an account the connections screen has never heard of.
+      socialAccountId: doc.social_account_id || null,
+    }),
+    [
+      doc.title,
+      doc.platform_id,
+      doc.platform,
+      doc.platform_post_type,
+      doc.published_at,
+      doc.scheduled_at,
+      doc.social_account_id,
+      campaignName,
+    ],
+  )
+  const performance = usePostPerformance(
+    doc.id,
+    doc.status,
+    doc.publisher_post_id,
+    performanceFacts,
+  )
   useEffect(() => {
     openThread({ kind: 'post', postId: doc.id, campaignId }, doc.title, '')
     // Only on arrival — the title is tracked separately so that retitling the
@@ -327,26 +493,216 @@ function PostEditorSurface({
     [changeDoc],
   )
 
-  const handleDownloadMarkdown = useCallback(() => {
-    const title = doc.title.trim()
-    const markdown = title ? `# ${title}\n\n${doc.content}` : doc.content
-    const blob = new Blob([markdown], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${slugify(title) || 'post'}.md`
-    a.click()
-    URL.revokeObjectURL(url)
-  }, [doc.title, doc.content])
+  // The chain — worked out in `usePostMedia`, which asks the server where the
+  // body breaks and places this post's files on the messages that come back.
+  // Which post carries which file is the one thing a body cannot say, so it is
+  // the one thing stored: `segment_index` on the attachment row (CON-284),
+  // which is what replaced the map this feature used to keep in the tenant
+  // key/value store.
+  //
+  // Nothing writes the chain back. R2 made `content` the thread's canonical
+  // body and `thread_segments` the server's arithmetic over it, so the effect
+  // that used to keep the two in step here is gone — along with the hazard it
+  // carried, of a save landing a chain cut against a body the server had not
+  // been told about yet. Saving the body *is* saving the thread now.
+  const plan = media.plan
+
+  // What the media card's per-thumbnail picker offers. Excerpts rather than
+  // numbers alone: telling post 4 from post 5 by counting paragraphs back in
+  // the editor is not something to ask of anyone.
+  const threadTargets = useMemo(
+    () =>
+      isSequence
+        ? {
+            excerpts: plan.posts.map((p) => excerpt(p.text)),
+            indexFor: (id: string) =>
+              // Read off the plan rather than off `segment_index` directly, so
+              // the picker shows where the file *will* publish: an index left
+              // behind by a deleted paragraph is clamped onto the last post,
+              // and showing the stored number would name a message that is no
+              // longer there.
+              Math.max(
+                0,
+                plan.posts.findIndex((p) =>
+                  p.attachments.some((a) => a.id === id),
+                ),
+              ),
+            assign: (attachmentId: string, index: number) =>
+              media.assignSegment({ attachmentId, segmentIndex: index }),
+          }
+        : undefined,
+    [isSequence, plan, media],
+  )
+
+  // Appended here rather than inside `evaluatePost`, which is a pure module
+  // with no `t` — and this row is new copy, so it belongs in the catalogue
+  // (CLAUDE.md) rather than beside that file's legacy English.
+  //
+  // The post-type row is *replaced* rather than appended to for the same
+  // reason. `evaluatePost` is handed the effective slug, so an automatic post
+  // that resolved reads as the format it publishes as and needs nothing here;
+  // one that did not falls back to the empty slug and would report "Pick a post
+  // type", which is the one thing the author did not do wrong. What they need
+  // instead is which wall the post hit, and only `lib/postTypeAuto` knows that.
+  const autoChecks = useMemo<PostCheck[]>(() => {
+    const auto = media.auto
+    if (!auto || auto.state === 'resolved') return media.checks
+    return media.checks.map((check) =>
+      check.id === 'post-type'
+        ? {
+            ...check,
+            label: t('posts.postType.checkLabel'),
+            status: auto.state === 'pending' ? 'pending' : 'fail',
+            detail:
+              auto.state === 'pending'
+                ? t('posts.postType.autoPending')
+                : t(UNFIT_KEY[auto.reason], { limit: auto.limit ?? 0 }),
+          }
+        : check,
+    )
+  }, [media.auto, media.checks, t])
+
+  const checks = useMemo<PostCheck[]>(() => {
+    if (!isSequence) return autoChecks
+    const tooLong = plan.posts.filter((p) => p.issues.includes('too-long'))
+    const overloaded = plan.posts.filter((p) =>
+      p.issues.some((i) => i !== 'too-long'),
+    )
+    const runts = runtPositions(plan)
+
+    // Ordered by what the author has to do about it: the messages that are
+    // wrong (too long, or carrying more media than one post may), the chain
+    // that is too long to be one, and two states that are not failures at all.
+    //
+    // Length is among them again, and it is the server's finding rather than
+    // this screen's. In manual mode — any body with divider lines in it —
+    // `SplitThread` obeys the author's breaks and does not apply the ceiling,
+    // so a message over it is reported instead of cut. The splitter this
+    // client used to run always cut to fit, which is why this row used to say
+    // length could never fail.
+    const row: PostCheck = plan.pending
+      ? {
+          id: 'thread-sequence',
+          label: t('posts.sequence.check.label'),
+          status: 'pending',
+          detail: t('posts.sequence.check.pending'),
+        }
+      : plan.overflowed
+        ? {
+            id: 'thread-sequence',
+            label: t('posts.sequence.check.label'),
+            status: 'fail',
+            detail: t('posts.sequence.check.overflow', {
+              max: MAX_THREAD_POSTS,
+            }),
+          }
+        : // Length before media, and separately from it, because the two are
+          // different jobs: one is rewriting a message, the other is dragging a
+          // file to another one. A single row reading "these posts have a
+          // problem" would make the author open each to find out which.
+          tooLong.length > 0
+          ? {
+              id: 'thread-sequence',
+              label: t('posts.sequence.check.label'),
+              status: 'fail',
+              // A rule with no positive ceiling can still report length — the
+              // server measured, we just cannot name the number, so the copy
+              // must not read "over 0 characters".
+              detail:
+                plan.charLimit && plan.charLimit > 0
+                  ? t('posts.sequence.check.tooLong', {
+                      count: tooLong.length,
+                      positions: tooLong.map((p) => p.position).join(', '),
+                      limit: plan.charLimit,
+                    })
+                  : t('posts.sequence.check.tooLongNoLimit', {
+                      count: tooLong.length,
+                      positions: tooLong.map((p) => p.position).join(', '),
+                    }),
+            }
+          : overloaded.length > 0
+            ? {
+                id: 'thread-sequence',
+                label: t('posts.sequence.check.label'),
+                status: 'fail',
+                detail: t('posts.sequence.check.issues', {
+                  count: overloaded.length,
+                  positions: overloaded.map((p) => p.position).join(', '),
+                }),
+              }
+            : // Not a failure: a thread of one message is an ordinary post, and
+              // the transition out of draft writes it as one. Saying so here is
+              // what stops the format changing under the author without warning.
+              plan.singular
+              ? {
+                  id: 'thread-sequence',
+                  label: t('posts.sequence.check.label'),
+                  status: 'pass',
+                  detail: media.demotedType
+                    ? t('posts.sequence.check.singularAs', {
+                        // The platform's label, not the slug — the author has
+                        // never seen `text-post` anywhere else on this screen.
+                        type: getPostTypeLabel(
+                          platformInfo(doc.platform_id),
+                          media.demotedType,
+                        ),
+                      })
+                    : t('posts.sequence.check.singular'),
+                }
+              : // A warning rather than a refusal: the server takes any non-empty
+                // message, and a two-character one is far more likely a divider
+                // typed a line early than something meant.
+                runts.length > 0
+                ? {
+                    id: 'thread-sequence',
+                    label: t('posts.sequence.check.label'),
+                    status: 'warn',
+                    detail: t('posts.sequence.check.runts', {
+                      count: runts.length,
+                      positions: runts.join(', '),
+                    }),
+                  }
+                : {
+                    id: 'thread-sequence',
+                    label: t('posts.sequence.check.label'),
+                    status: 'pass',
+                    detail: t('posts.sequence.postCount', {
+                      count: plan.posts.length,
+                    }),
+                  }
+
+    return [...autoChecks, row]
+  }, [
+    isSequence,
+    autoChecks,
+    plan,
+    media.demotedType,
+    platformInfo,
+    doc.platform_id,
+    t,
+  ])
+
+  const handleDownloadMarkdown = useCallback(
+    () => downloadMarkdown(doc.title, doc.content, 'post'),
+    [doc.title, doc.content],
+  )
 
   return (
-    <PageContainer variant="fullFlex">
+    // Fades in rather than appearing whole. The document, the bars and the
+    // cards all become ready in the same commit, so without this the screen
+    // arrives as one hard cut — from a spinner, or from the post that was here
+    // a moment ago. Keyed by post above, so the fade plays on each one.
+    <PageContainer variant="fullFlex" className="page-content-motion">
       {/* `relative` so the action bar anchors to the content column rather
           than the window: the right rail is a sibling of this container, so
           the bar recentres when a panel opens instead of drifting off the
           post it acts on. */}
       <div className="relative flex flex-1 min-h-0">
-        <ScrollArea className="flex-1 min-h-0" type="scroll" scrollHideDelay={350}>
+        <ScrollArea
+          className="flex-1 min-h-0"
+          type="scroll"
+          scrollHideDelay={350}
+        >
           <PostDetailsHeader
             campaignId={campaignId}
             saving={saving}
@@ -376,11 +732,18 @@ function PostEditorSurface({
                 publishMethod={effectivePublishMethod}
                 onPublishMethodChange={setPublishMethod}
                 onAddPostLink={() => setPublishedUrlOpen(true)}
+                resolvedPostType={media.postType}
               />
+            </div>
+            {/* Between the bar and the checks: below the status badge that is
+                the reason for the lock, above everything the lock applies to. */}
+            <div className="w-content empty:hidden">
+              <PostLockNotice status={doc.status} />
             </div>
             <div className="w-content">
               <PostValidationsSection
-                checks={media.checks}
+                checks={checks}
+                status={doc.status}
                 assessment={assessment}
                 postUpdatedAt={doc.updated_at}
                 qualityUnavailable={quality.unavailable}
@@ -389,12 +752,6 @@ function PostEditorSurface({
                 onOpenQuality={openQuality}
               />
             </div>
-            <PinnedPostNotes
-              notes={pinnedNotes}
-              onTogglePin={togglePin}
-              onSave={saveNote}
-              onDelete={notes.remove}
-            />
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
                 <div className="mb-4 flex flex-col">
@@ -405,7 +762,12 @@ function PostEditorSurface({
                       const next = e.target.value.replace(/\n/g, '')
                       handleTitleChange(next)
                     }}
-                    placeholder="Title"
+                    // No placeholder once locked: "Title" under a published
+                    // post reads as a field waiting to be filled in, and
+                    // nobody can fill it in. An untitled post that has gone
+                    // out simply has no title.
+                    placeholder={locked ? undefined : 'Title'}
+                    readOnly={locked}
                     rows={1}
                     className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground"
                   />
@@ -414,14 +776,33 @@ function PostEditorSurface({
                       and a counter on it would be noise. Deliberately not a
                       `maxLength`: silently swallowing keystrokes mid-word is
                       worse than showing how far over the title is. */}
-                  <TitleCounter title={titleDraft} limit={media.maxTitleChars} />
+                  <TitleCounter
+                    title={titleDraft}
+                    limit={media.maxTitleChars}
+                  />
                 </div>
+                {/* One editor for every post type, threads included: a thread
+                    is the same Markdown body, and the chain is derived from
+                    it. The Explainer teaches the divider; the note below
+                    reports what the body actually became. */}
+                {isSequence && (
+                  <Explainer id="post-thread-sequence" className="mb-6">
+                    {t('posts.sequence.explainer')}
+                  </Explainer>
+                )}
                 <PostContentEditor
                   content={doc.content}
                   onContentChange={handleContentChange}
-                  readOnly={assistantRunning}
+                  readOnly={locked}
+                  busy={assistantRunning}
                 />
+                {isSequence && (
+                  <ThreadSplitNote plan={plan} stale={media.previewStale} />
+                )}
               </div>
+            </div>
+            <div className="w-content">
+              <PostSourcesCard post={doc} changeDoc={changeDoc} />
             </div>
             <div className="w-content empty:hidden">
               <PostMediaCard
@@ -432,15 +813,26 @@ function PostEditorSurface({
                 upload={media.upload}
                 remove={media.remove}
                 reorder={media.reorder}
+                thread={threadTargets}
+              />
+            </div>
+            {/* Above the notes, below everything that *is* the post. For a
+                published post this is the reason the screen was opened, and
+                notes are the team's working material either way — burying the
+                figures under a card that grows without limit would put the
+                answer below the commentary. `empty:hidden` because most of
+                this section's states render nothing at all. */}
+            <div className="w-content empty:hidden">
+              <PostPerformanceSection
+                result={performance}
+                onAddPostLink={() => setPublishedUrlOpen(true)}
               />
             </div>
             <div className="w-content">
               <PostNotesCard
-                notes={unpinnedNotes}
+                notes={notes.notes}
                 loading={notes.loading}
                 error={notes.error !== null}
-                isPinned={isPinned}
-                onTogglePin={togglePin}
                 onAdd={notes.add}
                 onSave={saveNote}
                 onDelete={notes.remove}
@@ -470,6 +862,7 @@ function PostEditorSurface({
         <PostStatusActionBar
           buttons={buttons}
           back={back}
+          duplicate={duplicateAction}
           pending={statusBusy}
           onBlocked={flashBlockers}
           status={publishStatus}
@@ -495,7 +888,9 @@ function PostEditorSurface({
                refresh timer. */
             <PostPreviewPanel
               doc={doc}
+              postType={media.postType}
               attachments={media.attachments}
+              sequence={isSequence ? plan : undefined}
               onClose={closeRightPanel}
             />,
             previewHost,
@@ -518,6 +913,7 @@ function PostEditorSurface({
               steps={quality.steps}
               cached={quality.cached}
               assessError={quality.assessError}
+              locked={locked}
               onClose={closeRightPanel}
             />,
             qualityHost,
@@ -544,12 +940,25 @@ function PostEditorSurface({
         isOpen={publishedUrlOpen}
         onClose={() => setPublishedUrlOpen(false)}
         verifyExternal={verifyExternal}
-        // Publishing unverified is the way out of the dialog, not of the
-        // status: an already-published post has nothing left to skip to.
-        onSkip={
-          doc.status === 'published'
-            ? undefined
-            : () => transitionStatus('published')
+        // One call for both states. On a post still waiting to be published
+        // this is the unverified publish it always was, now carrying the link;
+        // on one already published the status is what it already is, so the
+        // same PUT is a plain write of `published_url` and nothing else moves.
+        // The server allows it: CON-251's lock covers the fields that would
+        // diverge from what went out, and the permalink is deliberately not
+        // one of them — recording a link is a post-publish act.
+        //
+        // Through `transitionResolved` rather than `transitionStatus` because
+        // the first of those two states is an edge out of drafting like any
+        // other: an automatic post reaching `published` here still has to
+        // write its slug down, and the PUT would be refused without it. On a
+        // post that is already published the pin is a no-op — it resolved on
+        // the way in.
+        saveUnverified={(url) =>
+          transitionResolved(
+            'published',
+            url ? { published_url: url } : undefined,
+          )
         }
       />
     </PageContainer>
@@ -585,12 +994,4 @@ function TitleCounter({
       {length} / {limit}
     </span>
   )
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60)
 }

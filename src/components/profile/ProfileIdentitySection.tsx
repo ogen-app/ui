@@ -41,7 +41,10 @@ export function ProfileIdentitySection({ user }: { user: User }) {
   const errors: Record<string, string> = parsed.success
     ? {}
     : Object.fromEntries(
-        parsed.error.issues.map((issue) => [String(issue.path[0]), issue.message]),
+        parsed.error.issues.map((issue) => [
+          String(issue.path[0]),
+          issue.message,
+        ]),
       )
 
   const changed =
@@ -70,7 +73,8 @@ export function ProfileIdentitySection({ user }: { user: User }) {
     setDraft({ ...values, [field]: value })
 
   const initials =
-    `${values.firstName[0] ?? ''}${values.lastName[0] ?? ''}`.toUpperCase() || '?'
+    `${values.firstName[0] ?? ''}${values.lastName[0] ?? ''}`.toUpperCase() ||
+    '?'
 
   return (
     <SettingsCard title={t('profile.account.title')}>
@@ -78,7 +82,9 @@ export function ProfileIdentitySection({ user }: { user: User }) {
         <Avatar className="size-12">
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
-        <p className="text-sm text-tertiary-foreground">{t('profile.account.description')}</p>
+        <p className="text-sm text-tertiary-foreground">
+          {t('profile.account.description')}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-2">
@@ -111,7 +117,9 @@ export function ProfileIdentitySection({ user }: { user: User }) {
               only once the address is actually being changed, so it reads as a
               consequence of what they just did rather than ambient noise. */}
           {emailChanged && !errors.email && (
-            <p className="text-xs text-warning">{t('profile.account.emailWarning')}</p>
+            <p className="text-xs text-warning">
+              {t('profile.account.emailWarning')}
+            </p>
           )}
         </div>
       </div>

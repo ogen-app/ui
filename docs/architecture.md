@@ -33,13 +33,14 @@ src/
     layout/        App chrome: AppSidebar, RightSidebar, AppAuth, LiveStatus.
     tables/        VirtualTable engine + postsTable / docsTable + column-width solver.
     forms/         Feature forms (campaign, post, auth) — see Forms.
-    assistant/ campaigns/ posts/ content-bank/ uploads/ workspace-settings/ profile/ settings/
+    assistant/ campaigns/ posts/ content/ brand/ uploads/ workspace-settings/ profile/ settings/
   hooks/           TanStack Query hooks + UI hooks (useOverlay, usePanelScope).
   services/api/    The API client: base + http helpers + one module per resource.
   stores/          Zustand stores (assistant, auth, eventStream, settings, toast, upload).
   lib/             Framework-free domain logic (post status machine, platforms, asset rules).
   types/           Domain types, mirroring the Go models.
-  config/          overlayRegistry, zIndex.
+  config/          overlayRegistry, zIndex, featureFlags + flagOverrides.
+  devtools/        Staging-only: the /flags panel and its marker. Not in a production build.
   index.css        Tailwind theme + tokens (single source of styling truth).
 ```
 
@@ -75,14 +76,16 @@ the global right-rail section.
 
 **Layout-escape idiom.** A trailing underscore on a path segment breaks a route
 out of its parent layout. `campaigns/$campaignId_/posts/$postId.tsx` renders the
-post editor fullscreen (no campaign tab bar); `content-bank_/$assetId.tsx` does
-the same for the asset editor.
+post editor fullscreen (no campaign tab bar); `$campaignId_/assets/$assetId.tsx`
+does the same for a campaign document. The workspace's copy of that screen
+(`assets/$assetId.tsx`) needs no underscore — `/assets` is a destination rather
+than a layout, so there is nothing above it to escape.
 
 **URL is the source of truth for tab state.** Active tabs are derived from the
 pathname via `useRouterState({ select })` rather than local state (see
-`$campaignId.tsx`, `content-bank.tsx`). Routes normalize their own params — e.g.
-the calendar route's `beforeLoad` validates `$anchor`/`$view` and redirects
-malformed URLs to the current week.
+`$campaignId.tsx`). Routes normalize their own params — e.g. the calendar
+route's `beforeLoad` validates `$anchor`/`$view` and redirects malformed URLs
+to the current week.
 
 ## Data fetching — TanStack Query
 
@@ -270,11 +273,18 @@ without a round-trip. **These mirror specific Go files and must be kept in sync*
   bind mounts. `/api` proxies to `API_URL` (default `http://localhost:9001`).
   Prod build uses terser and strips `console.log` only.
 - **`package.json` scripts** — `dev`; `build` = `tsc && vite build`
-  (type-check gates the build); `preview`; `lint` = `eslint . --ext ts,tsx`.
+  (type-check gates the build); `preview`; `typecheck`; `lint` = `eslint .`;
+  `format` / `format:check` (Prettier); `knip` (report-only).
 - **`tsconfig.json`** — strict, `noUnusedLocals/Parameters`,
   `allowImportingTsExtensions` (imports use explicit `.ts`/`.tsx`), `@/*` alias.
+- **`VITE_DEV_TOOLS`** — the one build-time *behaviour* switch. `"1"` compiles
+  in the staging feature-flag overrides and `src/devtools/`; anything else, and
+  the constant folds to `false`, the reader collapses and the panel's chunk is
+  never emitted. Set it on the staging deploy only. See
+  [technical-decisions](./technical-decisions.md#staging-flag-overrides).
 
-> **Tooling gap:** `eslint`, `prettier`, and `stylelint` are installed but no
-> config files are committed to this repo, so `pnpm lint` has no resolvable
-> config locally (inline `eslint-disable` directives imply a config exists in
-> CI / a parent context). Worth resolving.
+> **Quality tooling:** ESLint (flat config, `eslint.config.js`) and Prettier
+> (`.prettierrc`) are configured, stylelint is removed, and CI gates every PR
+> into `develop` with typecheck · lint · format · test · build. The reasoning
+> behind every line drawn there lives in
+> [quality-tooling](./quality-tooling.md).

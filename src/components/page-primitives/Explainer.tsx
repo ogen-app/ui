@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
-import { XIcon } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib";
-import { useSettingsStore } from "@/stores/settingsStore";
+import type { ReactNode } from 'react'
+import { XIcon } from '@phosphor-icons/react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 type Props = {
   /**
@@ -10,10 +10,10 @@ type Props = {
    * explained (`campaign-content-sources`), not for the page — renaming it
    * un-dismisses the note for everyone who already closed it.
    */
-  id: string;
-  children: ReactNode;
-  className?: string;
-};
+  id: string
+  children: ReactNode
+  className?: string
+}
 
 /**
  * A paragraph that explains how something works, with a close button that
@@ -32,17 +32,17 @@ type Props = {
  * to wait for and no row in the workspace-wide settings table.
  */
 export function Explainer({ id, children, className }: Props) {
-  const dismissed = useSettingsStore((s) => s.dismissedNotes.includes(id));
-  const dismissNote = useSettingsStore((s) => s.dismissNote);
+  const dismissed = useSettingsStore((s) => s.dismissedNotes.includes(id))
+  const dismissNote = useSettingsStore((s) => s.dismissNote)
 
-  if (dismissed) return null;
+  if (dismissed) return null
 
   return (
     <aside
       className={cn(
         // `relative` for the close button, and the right padding is the room it
         // sits in — the text must not run under it on a narrow column.
-        "relative rounded-md bg-secondary py-3 pr-10 pl-4",
+        'relative rounded-md bg-secondary py-3 pr-10 pl-4',
         className,
       )}
     >
@@ -66,5 +66,5 @@ export function Explainer({ id, children, className }: Props) {
         <XIcon />
       </Button>
     </aside>
-  );
+  )
 }

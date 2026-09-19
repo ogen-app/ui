@@ -1,0 +1,337 @@
+# Activity — proposal
+
+The design behind **Activity**, the workspace's answer to *"what happened since
+I last looked?"* Requirements live in
+[CON-225](https://linear.app/ogen/issue/CON-225) (this repo) and
+[CON-242](https://linear.app/ogen/issue/CON-242) (the backend subsystem it
+consumes — it superseded CON-224, which is archived); this file is the
+reasoning — what the surface is for, what it
+deliberately is not, and which decisions are load-bearing enough that changing
+one means revisiting the rest.
+
+**What exists today:** Phase 2, on since 2026-09-18. The sidebar item with its
+count, `/activity`, the day cards and the full-screen report at `/activity/$date`
+are built; the feed reads the recorded notifications CON-242 landed (`GET
+/api/notifications`, live over `GET /api/notifications/stream`), and the day
+reports come off the server (`GET /api/activity/report/:date?tz=`,
+`GET /api/activity/reports`). What is left in `lib/activityFeed.ts` is the rule
+set that orders and groups the two — pure and tested, as it was; the arithmetic
+that used to sit beside it is described under [The report](#the-report). What is
+known and not yet handled is in the flag's own comment, and it is about coverage
+on the *server* side rather than about this screen.
+
+**Tasks are a separate feature** (CON-234, [`tasks.md`](./tasks.md)), a module
+of their own next door in the rail rather than a card on this screen. "Edges and
+levels" below is the distinction the two rest on, and it is the reason this one
+ships with read and unread as its only verbs.
+
+## The gap
+
+A lot happens without the user watching. Posts publish on schedule. Tokens
+lapse. Assistant turns, content-plan generation, quality assessment and asset
+processing finish minutes after the tab that started them was closed. None of it
+is visible anywhere afterwards.
+
+Four surfaces already exist and each answers a different question:
+
+| Surface | Answers | Persists? |
+| --- | --- | --- |
+| Toasts (`stores/toastStore`) | *this just happened, while you watched* | no — gone in 5s |
+| Attention rail (`lib/campaignReadiness`) | *what does this campaign need from me?* | no — derived from current state |
+| Email (CON-219) | *act on this while you're away* | in the inbox; owners only, one type |
+| `/api/events` SSE | *your cache is stale* | no — at-most-once, no log |
+
+The missing one is the log: **what occurred, in time order, across the
+workspace.** [`sse.md`](./sse.md) closes on exactly this — *"A run that outlives
+the tab has no UI… Telling the user 'this finished while you were away' is the
+next visible feature."*
+
+## Edges and levels
+
+The single idea the whole design rests on.
+
+> **An edge is a fact with a timestamp that stays true forever. A level is a
+> condition that stops being true when it is fixed.**
+
+|  | Level | Edge |
+| --- | --- | --- |
+| Reads | *"LinkedIn's connection expires in 4 days"* | *"LinkedIn's connection expired — Aug 18, 09:14"* |
+| Tomorrow | *"…in 3 days"* — it rewrites itself | unchanged, forever |
+| You fix it | disappears | stays, now history |
+| Two of them | one row: *"2 connections expire soon"* | two entries, at two times |
+| Built from | a pure function over current data | a persisted record |
+| Lives in | the attention rail → **tasks**, later | **Activity** |
+
+The test for any candidate entry: **write the sentence with a timestamp on it.
+Does it still read correctly a week later?** *"Your post failed to publish at
+09:00"* — yes. *"3 posts need scheduling — Aug 18"* — no, that is a snapshot of
+a list that has since changed.
+
+One condition legitimately appears in both places saying different things. The
+rail says *fix this*; Activity says *this is when it broke*. That is not
+duplication, and it is why `account-expiring` stays in
+[`attention-rules.md`](./attention-rules.md) after Activity exists.
+
+Getting this wrong produces the failure everyone recognises: a notification list
+with stale items you cannot clear because the underlying problem is still there,
+sitting next to real history.
+
+### What the distinction fixes here: read/unread and nothing else
+
+Level-type items are what the system will raise **tasks** from later (CON-234),
+and `attention-rules.md` is already most of a task-generator spec — every rule
+has an id, a severity, an aggregation rule, and rule 5: *exactly one
+destination, or it is two rules*. That last property is precisely what a task
+needs and a notification does not. The rail is not something a task system
+replaces; it is the catalogue it grows out of.
+
+Which fixes a concrete decision in this feature:
+
+**The feed ships with read/unread and nothing else.** No dismiss, no resolve,
+no snooze, no per-entry "mark handled". Every one of those is a task verb, and
+putting them on notifications teaches users that clearing a notification fixes
+something, which it never does. They would all have to be taken back when tasks
+land, and the seam to tasks stays clean without them: a task appearing is itself
+an edge, so it becomes a feed entry and nothing built here is rewritten.
+
+## Why this cannot be built on the event hub
+
+`/api/events` already broadcasts most of the interesting facts, which makes it
+look like the foundation. It is not, and the reasons are in its own docs and
+measured in [`sse.md`](./sse.md):
+
+- delivery is **at-most-once**,
+- the server holds **no event log**,
+- `Last-Event-ID` is accepted and **ignored**,
+- the hub **deliberately disconnects slow subscribers** as backpressure.
+
+Every one is correct for a cache-invalidation bus and disqualifying for a
+notification. The premise of the feature is *you were not looking* — anything
+delivered only over the stream is lost for exactly the users it is meant for.
+
+So the table is the source of truth and **SSE only makes an entry appear
+instantly**. A client that was offline catches up over REST. The hub reserved `user:<id>` as a documented
+topic shape with no publisher; CON-242 took that seat — the notification service
+publishes to `notification:user:<uid>` purely to wake live connections, and
+durability comes from the table either way.
+
+## What the feed carries
+
+Two classes, and only two.
+
+**Resolutions** — something a person started that finished without them:
+assistant turns, content-plan generation, quality assessment, asset processing,
+URL-asset crawls, video probes. These do **not** wait for the daily report even
+though most are successes: they are the thing the user is waiting on. Learning
+tomorrow that your content plan finished defeats the point.
+
+**Exceptions** — something went wrong or now needs a person: publish failed,
+never published, manual-publish due, connection expired or expiring, sync
+failed.
+
+Everything else routine goes to the report.
+
+Two exclusions worth recording, because both look like obvious inclusions:
+
+**Approaching publish dates.** A future date is a level, and if every scheduled
+post pings on approach the feed becomes a calendar with worse ergonomics. Only
+the cases where a *person* must act survive — a manual-publish post coming due,
+and eventually a post due within the hour that fails its channel's validation
+(blocked on the per-post publish verdict, ask #1 in `attention-rules.md`).
+Auto-publish approach is not news; its result is.
+
+**Live teammate activity.** There is **no `updated_by` column anywhere in the
+schema** — `updated_at` records when, never who. *"Ana edited your post"* is not
+expressible at any price without backend work. `created_by` does exist on Post,
+Campaign, Asset and Attachment, so authorship lands in the report instead, which
+is the better home for it anyway.
+
+## The report
+
+Successful auto-publishing is the highest-volume thing that happens and the
+lowest-value thing to list. A workspace posting three times a day across five
+channels generates fifteen "it worked" entries daily, which trains people to
+ignore the badge — the one outcome that makes the whole feature worthless.
+
+So routine success rolls into **one computed entry per day**, opening as a
+full-screen report.
+
+**Always computed, never written.** Deterministic counts: *"6 posts published: 3
+LinkedIn, 2 Instagram, 1 X. 4 created by Ana. 1 failed."* Always correct, always
+instant, no running cost. If an AI narrative is ever wanted it sits on top of
+these numbers rather than replacing them. That part has not changed; **where**
+the counting happens has.
+
+### It moved to the server, and the timezone is why
+
+This proposal specified the report as a pure function over
+`useCampaignSummaries` — every post in the workspace, in one batched request the
+Campaigns list makes anyway, with no new endpoint at all. The argument for it
+was the day boundary: the report is cut into *local* calendar days, and there
+was no timezone to hand the server, the same reason the clock-dependent
+readiness rules stayed client-side
+([`technical-decisions.md#batched-summaries`](./technical-decisions.md#batched-summaries)).
+
+**CON-285 reversed it** (decided 2026-09-04, shipped 2026-09-17), and answered
+the boundary by asking for it: `tz` is a **required** IANA parameter on both
+endpoints and a missing or unloadable one is a 400 rather than a quiet UTC day.
+`lib/timeZones.ts`'s `browserTimeZone()` is what the client sends, and it is the
+same zone `dayKey` groups the feed's cards by — those two disagreeing is the one
+way a notification could land under the wrong day's heading.
+
+What the trade bought is the two things the summaries projection could not
+reach, both of them listed here as "widens later":
+
+- **Who created a post.** `created_by` exists on the model but was not in
+  `PostSummary`; CON-285 added it there too, so the report's `by_author`
+  breakdown is real rather than pending. The ids are per-workspace membership
+  ids, the same ones `listMembers` returns — a count against an id nobody
+  matches belongs to somebody who has left, and the screen says so rather than
+  printing a sqid.
+- **Why a post failed.** `failure_reason` rides along the same way. It is Go
+  prose (`"zernio_terminal: rejected"`), not a code, so the report shows it
+  verbatim — the same rule as a notification's server-composed `title`. A
+  per-result code is the ask, and it is the one `lib/uploadError` is already
+  waiting on.
+
+What it cost is the **per-campaign breakdown**, which the computed version had
+for free because it held every post. That was never in the v1 contents above; a
+campaign's own report is the same endpoint with `campaign_id` set, which is the
+shape this proposal asked for anyway — *one implementation, two scopes*.
+
+Two properties survived the move intact, and they are the ones worth checking if
+it is ever revisited: the report is still **recomputed on every call** from live
+post and campaign rows rather than stored as a digest, so it cannot drift from
+the data; and a day with nothing on it is still **absent from the list** while
+answering a **zeroed 200** on its own — so the feed carries no row per silent
+weekend, and a link to a quiet day still renders.
+
+Still out of reach: asset-processing and AI-run history, because nothing
+persists them. So v1 remains honestly a **publishing report**.
+
+### The boundary with Analytics
+
+Campaigns already have an Analytics sub-item. **Analytics answers *how did it
+perform*** — reach, engagement, numbers from the platforms. **The report answers
+*what happened*** — published, created, failed. These blur fast, so the line is
+worth naming before it is crossed: if the report starts carrying engagement
+numbers, it should become part of Analytics instead of growing into a second,
+cruder one.
+
+## Placement
+
+**First item in the sidebar's Modules section**, above Campaigns, with an
+unread counter.
+
+Not the top-right, and not the right rail. The corner contract (CON-178)
+reserves top-right for *views only* — things that switch a representation of the
+object on screen — and the right rail is panel-scoped per screen with the
+assistant as its floor ([`technical-decisions.md#panel-memory`](./technical-decisions.md#panel-memory)).
+Activity is global and cross-object, so it belongs where the other global
+destinations are.
+
+Three details that follow from the sidebar being what it is:
+
+- **Collapsed, the count is a dot.** There is no room for a number beside a 20px
+  icon, and the collapsed rail is label-free by design.
+- **The counter is the inbox's own unread count**, `GET
+  /api/notifications/unread-count`. A "7" means seven things happened that you
+  have not seen — never "you published seven posts". Only recorded rows can be
+  unread: a day report is arithmetic and a task entry belongs to the module next
+  door, so neither carries a dot, and Phase 1's "the report counts as one until
+  opened" went with the timestamp it was built on.
+- **The count is one small request, and never the page.** It spans the whole
+  inbox where the feed holds only the newest hundred rows, so it cannot be a
+  length — and the sidebar is on every screen, which is why it does not pull the
+  rows down with it. Between refetches it is nudged by the stream and by the
+  reads themselves rather than re-asked per change.
+
+The report opens as a **route-backed** full-screen modal (`/activity/$date`), so
+a day can be linked and shared. A plain overlay forecloses that, and for a daily
+report that seems like most of the point. The feed stays mounted underneath it,
+so closing the report puts the reader back where they were rather than
+refetching the page they came from.
+
+## Copy comes from the catalogue, not the wire
+
+Every user-facing string in this app is a catalogue entry. A title the server
+composed can never be translated, never be restyled, and never be re-worded
+without a deploy on both sides.
+
+So the API sends a **type plus structured vars** — `type:
+"post.publish_failed"`, `vars: {platform, post_title, reason_code}` — and the
+client renders through `t()`. `vars` carries data, not prose: ids, names,
+counts, enum codes. A `reason_code` is fine; a `reason` sentence is not.
+
+This is cheap to specify now and a migration later, which is why it is the first
+thing in the backend issue rather than a footnote.
+
+## Phasing
+
+**Phase 1 needed no backend.** Sidebar item, `/activity`, computed daily
+reports, the full-screen report view, with the feed's own entries *derived* from
+current post state and unread kept as a last-seen timestamp under
+`userScopedKey('activity')`. Nothing of that half is left: the derived entries
+went with CON-242, the timestamp with them, and the computed report with
+CON-285 — the *screens* are what survived, which is what "needed no backend"
+bought.
+
+**Phase 2 is the live feed**, and it landed with CON-242. Recorded entries
+replaced the derived ones, read state is per row and server-side, and the
+Phase 1 timestamp is deleted — so is `unreadCount`/`isUnread`, and so are the
+derived `failed` / `not_published` feed entries, which were a stand-in for
+`post.publish_failed`. Keeping both would have reported one failure twice: once
+as a record, once as a re-reading of current state that disappears the moment
+the post is edited.
+
+Two consequences worth stating rather than discovering:
+
+- **The feed starts empty.** Nothing was recorded before the table existed, so
+  the entries only go back as far as CON-242's deploy. The reports do not — they
+  are counted from posts and reach as far back as the posts do, though the feed
+  asks for one bounded run of days rather than paging, and says on screen where
+  that run stops.
+- **A recorded row has one recipient, and that is now known to be wrong.** The
+  producers write to the thing's `created_by`, so a post failing is news to
+  whoever made it and to nobody else, where the derived entry was visible to
+  the whole workspace. Decided 2026-09-06, matching CON-285 FR8: **exceptions
+  fan out to the workspace and resolutions go to the initiator**, so
+  `post.publish_failed` and `post.published` both widen. It is a producer-side
+  change and nothing here moves. The full recipient table — every type, shipped
+  and planned — is [`events.md`](./events.md).
+
+Both phases sit behind one flag in `config/featureFlags.ts`; Phase 1 can flip on
+without Phase 2. **Tasks are a separate feature with a separate flag** (CON-234,
+[`tasks.md`](./tasks.md)) on its own timetable: they are stored rather than
+derived, so they wait on a table rather than on CON-242, and either can ship
+without the other.
+
+## Open dependencies
+
+- ~~**A disconnecting SSE client panics the API process**~~ — closed
+  2026-09-05. Finding 5 in [`sse.md`](./sse.md) was fixed under CON-158 by
+  detaching a logging context before the writer goroutine starts, and
+  `handlers/notifications.go` was written to that pattern from the first commit,
+  so the second stream never shared the fault. Neither is blocked on it now.
+- **The copy still arrives as prose.** CON-242 sends a server-rendered `title`
+  and `body` alongside `type` and `data`, rather than the type-plus-vars this
+  document asked for. The client renders from `type` and `data` where it knows
+  the type and falls back to the server's English where it doesn't
+  (`lib/notifications.ts`), which is the honest shape of the compromise: a
+  producer can ship before its copy does, and its rows are untranslatable until
+  a key is added.
+- **`eventhub` leaked subscriber slots — fixed** (CON-286). The cap was 10 per
+  user across `/api/events` *and* `/api/notifications/stream`, and slots were
+  never reclaimed: measured on the local API 2026-09-06, ten ids never
+  released, saturated six minutes after boot and still saturated 39 hours
+  later. ogen#142 made the cap self-healing (oldest subscription evicted at
+  the limit, ~30-minute connection lifetime) and ogen#152 raised it to 30.
+  What remains ours is the `event: recycle` frame nothing listens for yet —
+  the `activity` flag comment and `docs/sse.md` carry it.
+- **Event naming is settled — dotted on both streams** (CON-285, ogen#161,
+  2026-09-17). The nine snake_case bus types were renamed
+  (`assistant_completed` → `assistant.completed`, `post_cloned` →
+  `post.cloned`) and `lib/eventRouting.ts` matches the new spellings. The
+  server's persisted taxonomies keep the old ones on purpose, so a
+  `tenant_activity_events` row still reads `post_cloned` — that is history, not
+  a wire name.

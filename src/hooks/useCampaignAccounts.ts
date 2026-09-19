@@ -10,6 +10,7 @@ import {
 } from '@/lib/campaignAccounts'
 import { toast } from '@/stores/toastStore'
 import type { CampaignPlatform } from '@/types/campaigns'
+import { awaiting } from '@/lib/fetched'
 
 /** Namespace of the settings key these are stored under. */
 const NAMESPACE = 'campaign-accounts'
@@ -67,9 +68,10 @@ export function useCampaignAccounts(
   const seed = useRef(targetPlatforms)
   seed.current = targetPlatforms
 
-  // `isLoading`, not `isPending`: a disabled query stays pending forever, and
-  // a campaign with no id has nothing to wait for.
-  const { data, isLoading } = useQuery({
+  // `awaiting`, not `isPending`: a disabled query stays pending forever, and
+  // a campaign with no id has nothing to wait for. Nor `isLoading`, which is
+  // false while a retry is paused. See `lib/fetched`.
+  const query = useQuery({
     queryKey,
     queryFn: async () =>
       parseAccountTargets(await getSetting(storageKey)) ??
@@ -80,7 +82,10 @@ export function useCampaignAccounts(
   })
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pending = useRef<{ key: string; value: CampaignAccountTarget[] } | null>(null)
+  const pending = useRef<{
+    key: string
+    value: CampaignAccountTarget[]
+  } | null>(null)
 
   // Held in a ref so `flush` can stay identity-stable: it is the unmount
   // cleanup below, and a callback that changes with the campaign would flush
@@ -117,9 +122,9 @@ export function useCampaignAccounts(
   )
 
   return {
-    targets: data ?? EMPTY,
+    targets: query.data ?? EMPTY,
     /** True until the stored choice has been read — the list is not the answer yet. */
-    isPending: isLoading,
+    isPending: awaiting(query),
     write,
   }
 }

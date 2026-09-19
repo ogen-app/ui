@@ -9,7 +9,11 @@ import {
   planSetTime,
 } from './bulkPostEdits.ts'
 
-function post(id: string, status: PostStatus, scheduled_at: string | null): Post {
+function post(
+  id: string,
+  status: PostStatus,
+  scheduled_at: string | null,
+): Post {
   return {
     id,
     campaign_id: 'c1',
@@ -18,9 +22,13 @@ function post(id: string, status: PostStatus, scheduled_at: string | null): Post
     social_account_id: '',
     title: id,
     content: '',
+    thread_segments: [],
     media_urls: [],
     scheduled_at,
     published_at: null,
+    published_url: '',
+    brand_voice_id: null,
+    brand_audience_id: null,
     status,
     cta_type: '' as Post['cta_type'],
     cta_url: '',
@@ -47,7 +55,10 @@ function at(dateStr: string, timeStr: string): string {
 describe('planSetDate', () => {
   it('moves the day and keeps each post’s own time', () => {
     const plan = planSetDate(
-      [post('a', 'draft', at('2026-08-10', '14:30')), post('b', 'draft', at('2026-08-11', '07:05'))],
+      [
+        post('a', 'draft', at('2026-08-10', '14:30')),
+        post('b', 'draft', at('2026-08-11', '07:05')),
+      ],
       '2026-09-01',
     )
     expect(plan.changes).toHaveLength(2)
@@ -87,7 +98,10 @@ describe('planSetDate', () => {
   })
 
   it('leaves out posts that are already on that date', () => {
-    const plan = planSetDate([post('a', 'draft', at('2026-09-01', '09:00'))], '2026-09-01')
+    const plan = planSetDate(
+      [post('a', 'draft', at('2026-09-01', '09:00'))],
+      '2026-09-01',
+    )
     expect(plan.changes).toHaveLength(0)
     expect(plan.skipped).toEqual([])
   })
@@ -95,7 +109,10 @@ describe('planSetDate', () => {
 
 describe('planSetTime', () => {
   it('moves the time and keeps the day', () => {
-    const plan = planSetTime([post('a', 'draft', at('2026-08-10', '14:30'))], '08:15')
+    const plan = planSetTime(
+      [post('a', 'draft', at('2026-08-10', '14:30'))],
+      '08:15',
+    )
     expect(toLocalParts(plan.changes[0].scheduled_at)).toEqual({
       dateStr: '2026-08-10',
       timeStr: '08:15',

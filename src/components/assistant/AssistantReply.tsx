@@ -12,7 +12,11 @@ function Inline({ spans }: { spans: InlineSpan[] }) {
     <>
       {spans.map((span, i) => (
         <Fragment key={i}>
-          {span.bold ? <strong className="font-semibold">{span.text}</strong> : span.text}
+          {span.bold ? (
+            <strong className="font-semibold">{span.text}</strong>
+          ) : (
+            span.text
+          )}
         </Fragment>
       ))}
     </>
@@ -124,7 +128,11 @@ function CloneCard({ clone }: { clone: NonNullable<AssistantTurn['clone']> }) {
       params={{ campaignId: clone.campaignId, postId: clone.postId }}
       className="group flex items-center gap-2 border border-border px-3 py-2.5 hover:bg-secondary"
     >
-      <CopyIcon aria-hidden weight="regular" className="size-4 shrink-0 text-tertiary-foreground" />
+      <CopyIcon
+        aria-hidden
+        weight="regular"
+        className="size-4 shrink-0 text-tertiary-foreground"
+      />
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
         Open the clone
       </span>
@@ -136,7 +144,13 @@ function CloneCard({ clone }: { clone: NonNullable<AssistantTurn['clone']> }) {
   )
 }
 
-function ListBlock({ ordered, items }: { ordered: boolean; items: InlineSpan[][] }) {
+function ListBlock({
+  ordered,
+  items,
+}: {
+  ordered: boolean
+  items: InlineSpan[][]
+}) {
   const List = ordered ? 'ol' : 'ul'
   return (
     <List

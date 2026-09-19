@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Button } from '@/components/ui/button'
 import { TrashIcon } from '@phosphor-icons/react'
@@ -22,15 +21,20 @@ import {
 } from '@/components/ui/form'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
+import { PostSourcesSection } from '@/components/posts/sources/PostSourcesSection'
 import { cn } from '@/lib'
-import { canEditScheduledAt } from '@/lib/postStatusMachine'
+import { canEditScheduledAt, isSubmitted } from '@/lib/postStatusMachine'
 import {
   fromLocalParts,
   getLocalTimezoneLabel,
   toLocalParts,
 } from '@/lib/postSchedule'
 import type { Post } from '@/types/posts'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { CampaignPostTypeSelect } from './CampaignPostTypeSelect'
+import { PostBrandSection } from '@/components/brand/PostBrandSection'
+import { PostFormatSection } from '@/components/formats/PostFormatSection'
+import { awaiting } from '@/lib/fetched'
 
 const NO_PHASE = '__none__'
 
@@ -38,7 +42,6 @@ const schema = z.object({
   platform_id: z.string(),
   platform_post_type: z.string(),
   scheduled_at: z.string().nullable(),
-  target_audience_notes: z.string(),
   campaign_type_phase_id: z.string(),
 })
 
@@ -49,7 +52,6 @@ function docToFormValues(doc: Post): FormValues {
     platform_id: doc.platform_id,
     platform_post_type: doc.platform_post_type,
     scheduled_at: doc.scheduled_at,
-    target_audience_notes: doc.target_audience_notes,
     campaign_type_phase_id: doc.campaign_type_phase_id ?? NO_PHASE,
   }
 }
@@ -67,8 +69,12 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
     defaultValues: docToFormValues(doc),
   })
 
-  const { data: campaign, isLoading: campaignPending } = useCampaign(doc.campaign_id)
+  const campaignQuery = useCampaign(doc.campaign_id)
+  const campaign = campaignQuery.data
+  // `awaiting`, not `isLoading` — see `lib/fetched`.
+  const campaignPending = awaiting(campaignQuery)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const formatsEnabled = useFeatureFlag('content-formats')
 
   const platformId = form.watch('platform_id')
   const platformPostType = form.watch('platform_post_type')
@@ -77,6 +83,12 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
   // edit here would change the displayed date without moving the actual
   // publish. Once `published` the date is history.
   const scheduleLocked = !canEditScheduledAt(doc.status)
+  // And so is the rest of the panel, for the same reason (CON-251): every
+  // field here is part of the post resource, and this form autosaves through
+  // the same whole-resource PUT the body does. DANGER ZONE is deliberately
+  // exempt — deleting a published post is still allowed, and
+  // `DeletePostDialog` already says what it does and does not undo.
+  const locked = isSubmitted(doc.status)
 
   useEffect(() => {
     const sub = form.watch((values, info) => {
@@ -85,20 +97,20 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
         switch (info.name) {
           case 'platform_id':
             if (values.platform_id) d.platform_id = values.platform_id
-            if (values.platform_post_type) d.platform_post_type = values.platform_post_type
+            if (values.platform_post_type)
+              d.platform_post_type = values.platform_post_type
             break
           case 'platform_post_type':
-            if (values.platform_post_type) d.platform_post_type = values.platform_post_type
+            if (values.platform_post_type)
+              d.platform_post_type = values.platform_post_type
             break
           case 'scheduled_at':
             d.scheduled_at = values.scheduled_at ?? null
             break
-          case 'target_audience_notes':
-            d.target_audience_notes = values.target_audience_notes ?? ''
-            break
           case 'campaign_type_phase_id':
             d.campaign_type_phase_id =
-              values.campaign_type_phase_id === NO_PHASE || !values.campaign_type_phase_id
+              values.campaign_type_phase_id === NO_PHASE ||
+              !values.campaign_type_phase_id
                 ? null
                 : values.campaign_type_phase_id
             break
@@ -135,6 +147,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                       campaign={campaign}
                       platformId={platformId}
                       postType={platformPostType}
+                      disabled={locked}
                       onChange={(pid, slug) => {
                         form.setValue('platform_id', pid, { shouldDirty: true })
                         form.setValue('platform_post_type', slug, {
@@ -173,7 +186,9 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                           <DatePicker
                             value={dateStr ? `${dateStr}T00:00:00` : null}
                             onChange={(nextDate) =>
-                              field.onChange(fromLocalParts(nextDate ?? '', timeStr))
+                              field.onChange(
+                                fromLocalParts(nextDate ?? '', timeStr),
+                              )
                             }
                             disabled={scheduleLocked}
                           />
@@ -183,14 +198,16 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                             type="time"
                             value={timeStr}
                             onChange={(e) =>
-                              field.onChange(fromLocalParts(dateStr, e.target.value))
+                              field.onChange(
+                                fromLocalParts(dateStr, e.target.value),
+                              )
                             }
                             disabled={scheduleLocked || !dateStr}
                             data-empty={!timeStr}
                             className={cn(
                               'w-24 appearance-none',
                               '[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none',
-                              "data-[empty=true]:[&::-webkit-datetime-edit]:text-transparent",
+                              'data-[empty=true]:[&::-webkit-datetime-edit]:text-transparent',
                             )}
                           />
                           {!timeStr && (
@@ -214,6 +231,34 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
             </div>
           </Collapse>
 
+          {/* Above ADVANCED because it is not one: what a post reads from
+              changes what the assistant writes, so it belongs with the post
+              type and the date rather than behind a fold. */}
+          <PostSourcesSection post={doc} changeDoc={changeDoc} />
+
+          {/* Beside Sources rather than under ADVANCED: what a post is written
+              in is the same class of thing as what it is written from, and
+              burying it would make an inherited voice something you have to go
+              looking for to discover. */}
+          <Collapse title="VOICE & AUDIENCE" defaultOpen>
+            <div className="pt-2 pb-4">
+              <PostBrandSection post={doc} />
+            </div>
+          </Collapse>
+
+          {/* Beside voice and sources for the same reason they are beside each
+              other: this says what shape the post takes, which is the same
+              class of decision as what it is written in and written from.
+              Deliberately nowhere near the post-type picker — that one is the
+              platform container (carousel, reel) and this is the rhetorical
+              shape, and putting them side by side would invite the reading
+              that one overrides the other. */}
+          {formatsEnabled && (
+            <Collapse title="FORMAT" defaultOpen>
+              <PostFormatSection postId={doc.id} />
+            </Collapse>
+          )}
+
           <Collapse title="ADVANCED">
             <div className="flex flex-col gap-4 pt-2 pb-4">
               <FormField
@@ -232,25 +277,9 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
                           onValueChange={field.onChange}
                           elements={phaseOptions}
                           placeholder="No phase"
-                          disabled={phaseOptions.length <= 1}
+                          disabled={locked || phaseOptions.length <= 1}
                         />
                       )}
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="target_audience_notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target audience notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Who should this reach?"
-                        {...field}
-                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

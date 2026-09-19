@@ -49,7 +49,7 @@ export function AppLoader({ isLoading, title, message }: AppLoaderProps) {
       aria-live="polite"
       className={cn(
         'fixed inset-0 flex items-center justify-center bg-background transition-opacity',
-        isLoading ? 'opacity-100' : 'opacity-0'
+        isLoading ? 'opacity-100' : 'opacity-0',
       )}
       style={{ zIndex: ZIndex.appLoader, transitionDuration: `${FADE_MS}ms` }}
     >
@@ -58,7 +58,9 @@ export function AppLoader({ isLoading, title, message }: AppLoaderProps) {
           {title}
         </span>
         {message && (
-          <p className="text-[14px] leading-[24px] text-tertiary-foreground">{message}</p>
+          <p className="text-[14px] leading-[24px] text-tertiary-foreground">
+            {message}
+          </p>
         )}
         <div className="mt-4 flex h-12 items-center justify-center">
           <Spinner tone="onSurface" className="h-[2px] w-80" />

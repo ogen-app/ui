@@ -4,7 +4,13 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib'
 
 const textareaVariants = cva(
-  'text-[14px] font-medium ' +
+  // Regular, not the 500 the single-line `Input` carries. A textarea holds
+  // prose — a brief's audience and tone run to paragraphs — and a paragraph
+  // set at 500 reads as emphasis applied to everything, which is a wall. The
+  // weight difference between the two controls is not an inconsistency: an
+  // input's value is a short label the eye picks out of a form, a textarea's
+  // is text the user actually reads.
+  'text-[14px] font-normal ' +
     'placeholder:text-tertiary-foreground selection:bg-selection/20 border-input flex w-full min-w-0 bg-transparent ' +
     'transition-[color,border-color,box-shadow] duration-300 outline-none resize-none overflow-hidden ' +
     'disabled:pointer-events-none disabled:cursor-not-allowed ' +
@@ -30,7 +36,7 @@ const textareaVariants = cva(
       variant: 'default',
       rows: 'default',
     },
-  }
+  },
 )
 
 function resize(el: HTMLTextAreaElement | null) {
@@ -45,46 +51,55 @@ function resize(el: HTMLTextAreaElement | null) {
 const Textarea = React.forwardRef<
   HTMLTextAreaElement,
   React.ComponentProps<'textarea'> & VariantProps<typeof textareaVariants>
->(({ className, variant, rows, onChange, value, defaultValue, ...props }, ref) => {
-  const innerRef = React.useRef<HTMLTextAreaElement | null>(null)
+>(
+  (
+    { className, variant, rows, onChange, value, defaultValue, ...props },
+    ref,
+  ) => {
+    const innerRef = React.useRef<HTMLTextAreaElement | null>(null)
 
-  React.useImperativeHandle(ref, () => innerRef.current as HTMLTextAreaElement, [])
+    React.useImperativeHandle(
+      ref,
+      () => innerRef.current as HTMLTextAreaElement,
+      [],
+    )
 
-  React.useLayoutEffect(() => {
-    resize(innerRef.current)
-  }, [value, defaultValue])
+    React.useLayoutEffect(() => {
+      resize(innerRef.current)
+    }, [value, defaultValue])
 
-  // A narrower box wraps the same text into more lines, so the autosized
-  // height is only right for the width it was measured at. Width-only: the
-  // height changes are ours, and re-measuring on them would loop.
-  React.useEffect(() => {
-    const el = innerRef.current
-    if (!el) return
-    let last = el.clientWidth
-    const observer = new ResizeObserver(() => {
-      if (el.clientWidth === last) return
-      last = el.clientWidth
-      resize(el)
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+    // A narrower box wraps the same text into more lines, so the autosized
+    // height is only right for the width it was measured at. Width-only: the
+    // height changes are ours, and re-measuring on them would loop.
+    React.useEffect(() => {
+      const el = innerRef.current
+      if (!el) return
+      let last = el.clientWidth
+      const observer = new ResizeObserver(() => {
+        if (el.clientWidth === last) return
+        last = el.clientWidth
+        resize(el)
+      })
+      observer.observe(el)
+      return () => observer.disconnect()
+    }, [])
 
-  return (
-    <textarea
-      ref={innerRef}
-      data-slot="textarea"
-      className={cn(textareaVariants({ variant, rows, className }))}
-      value={value}
-      defaultValue={defaultValue}
-      onChange={(e) => {
-        resize(e.currentTarget)
-        onChange?.(e)
-      }}
-      {...props}
-    />
-  )
-})
+    return (
+      <textarea
+        ref={innerRef}
+        data-slot="textarea"
+        className={cn(textareaVariants({ variant, rows, className }))}
+        value={value}
+        defaultValue={defaultValue}
+        onChange={(e) => {
+          resize(e.currentTarget)
+          onChange?.(e)
+        }}
+        {...props}
+      />
+    )
+  },
+)
 
 Textarea.displayName = 'Textarea'
 

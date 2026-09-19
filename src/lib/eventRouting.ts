@@ -2,10 +2,15 @@ import type { QueryFilters } from '@tanstack/react-query'
 import { postKey } from '@/hooks/usePost'
 import { postAssessmentKey } from '@/hooks/usePostAssessment'
 import { campaignKey } from '@/hooks/useCampaigns'
+import { ASSETS_KEY } from '@/hooks/useContent'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
-import { postNotesKey, postVersionsKey } from '@/lib/queryKeys'
+import {
+  postNotesKey,
+  postVersionsKey,
+  WORKSPACE_POSTS_KEY,
+} from '@/lib/queryKeys'
 import type { AppEvent, EventSubject } from '@/types/events'
 
 /**
@@ -23,6 +28,16 @@ import type { AppEvent, EventSubject } from '@/types/events'
  * - **Nothing here shows anything.** Toasts are decided in `eventStreamStore`
  *   against a short allowlist, because most of this fires while the user is
  *   already looking at the thing that changed.
+ *
+ * Every type below is matched **literally** against the wire, and since
+ * CON-285 the whole vocabulary is dotted — one convention across this bus and
+ * the notification inbox, where nine snake_case names (`assistant_completed`,
+ * `post_cloned`, …) used to be the odd ones out. That rename had no
+ * compatibility window and needed none, but it is the kind of change to check
+ * against the server rather than assume: a type whose spelling drifts is not
+ * an error here, it is a cache that quietly stops invalidating. The server's
+ * persisted taxonomies (`post_logs.event_type`, the activity events) keep the
+ * snake_case spellings deliberately — only the wire moved.
  */
 
 /**
@@ -31,8 +46,17 @@ import type { AppEvent, EventSubject } from '@/types/events'
  * Only *mounted* lists refetch, which is at most the calendar the user is on.
  */
 const CAMPAIGN_POST_LISTS: QueryFilters = {
-  predicate: (query) => query.queryKey[0] === 'campaigns' && query.queryKey[2] === 'posts',
+  predicate: (query) =>
+    query.queryKey[0] === 'campaigns' && query.queryKey[2] === 'posts',
 }
+
+/**
+ * The workspace-wide post list (`useAssetUsage`, auto-publish) holds the same
+ * rows under its own root, deliberately outside `['campaigns']` — so no
+ * campaign filter ever reaches it and it has to travel with the lists above
+ * wherever a post changed.
+ */
+const WORKSPACE_POST_LIST: QueryFilters = { queryKey: WORKSPACE_POSTS_KEY }
 
 const ZERNIO_SURFACES: QueryFilters[] = [
   // Platforms first: it — not the account list — is what the composer's account
@@ -52,6 +76,8 @@ export function parseTopic(topic: string): EventSubject {
         return { kind: 'post', id: parts[2] }
       case 'campaign':
         return { kind: 'campaign', id: parts[2] }
+      case 'asset':
+        return { kind: 'asset', id: parts[2] }
       case 'zernio_account':
         return { kind: 'zernioAccount', id: parts[2] }
     }
@@ -63,25 +89,29 @@ export function parseTopic(topic: string): EventSubject {
  * The `localRuns` key this event would duplicate, or null if it can't be a
  * duplicate of anything.
  *
- * Only terminal AI events qualify. `post_scheduled` looks similar but isn't:
+ * Only terminal AI events qualify. `post.scheduled` looks similar but isn't:
  * it is a plain mutation whose initiator already invalidated, so a second
  * invalidation is merely redundant rather than harmful.
  */
 export function localRunKeyFor(event: AppEvent): string | null {
   const subject = parseTopic(event.topic)
   switch (event.type) {
-    case 'assistant_completed':
-    case 'assistant_failed':
+    case 'assistant.completed':
+    case 'assistant.failed':
       if (subject.kind === 'post' || subject.kind === 'campaign') {
         return localRunKey('assistant', subject.id)
       }
       return null
-    case 'assessment_completed':
-    case 'assessment_failed':
-      return subject.kind === 'post' ? localRunKey('assessment', subject.id) : null
-    case 'content_plan_completed':
-    case 'content_plan_failed':
-      return subject.kind === 'campaign' ? localRunKey('contentPlan', subject.id) : null
+    case 'assessment.completed':
+    case 'assessment.failed':
+      return subject.kind === 'post'
+        ? localRunKey('assessment', subject.id)
+        : null
+    case 'content_plan.completed':
+    case 'content_plan.failed':
+      return subject.kind === 'campaign'
+        ? localRunKey('contentPlan', subject.id)
+        : null
     default:
       return null
   }
@@ -117,17 +147,18 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         // A background job wrote numbers no client could have known about.
         // The single genuinely new fact in the catalogue.
         case 'post.analytics.updated':
-          return [post, CAMPAIGN_POST_LISTS]
-        // The clone is a new row, so only the list changes; `subject.id` is
-        // the post it was cloned *from*, which didn't.
-        case 'post_cloned':
-          return [CAMPAIGN_POST_LISTS]
+          return [post, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
+        // The clone is a new row, so only the lists change: `subject.id` is
+        // the *new* post (the source is in `payload.sourcePostId`), and a post
+        // nobody has fetched yet has no cache entry to make stale.
+        case 'post.cloned':
+          return [CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
         // A restore writes two versions (the auto-save of unsnapshotted
         // edits, then the copy) — the history is as stale as the post is.
-        case 'post_restored':
-          return [post, versions, CAMPAIGN_POST_LISTS]
-        case 'post_scheduled':
-          return [post, CAMPAIGN_POST_LISTS]
+        case 'post.restored':
+          return [post, versions, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
+        case 'post.scheduled':
+          return [post, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
         // The post flow snapshots before it rewrites. Only reaches other
         // people's tabs — the actor's own copy is suppressed as a local run,
         // and handled where the turn settles (assistantStore.refreshSubject).
@@ -135,14 +166,25 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         // tool persists as it runs, and a note-only turn changes neither the
         // body nor the history. Listed unconditionally because the broadcast
         // carries no record of which tools fired.
-        case 'assistant_completed':
-          return [post, versions, notes]
-        case 'assistant_failed':
+        case 'assistant.completed':
+          // The list comes along because the turn may have rewritten the
+          // title, and a calendar showing the old one has no other way to
+          // find out — there is no `post_updated` in the catalogue. Same rule
+          // as everywhere here: if the post is stale, the rows are too.
+          return [
+            post,
+            versions,
+            notes,
+            CAMPAIGN_POST_LISTS,
+            WORKSPACE_POST_LIST,
+          ]
+        case 'assistant.failed':
           // Notes are written by the tool as it goes, not at the end, so a
-          // failed turn can still have left some behind.
-          return [post, notes]
-        case 'assessment_completed':
-        case 'assessment_failed':
+          // failed turn can still have left some behind — and a turn that
+          // failed part-way can have written the body first.
+          return [post, notes, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
+        case 'assessment.completed':
+        case 'assessment.failed':
           // Its own namespace, deliberately not nested under the post — see
           // `postAssessmentKey`.
           return [{ queryKey: postAssessmentKey(subject.id) }]
@@ -153,16 +195,28 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
 
     case 'campaign':
       switch (event.type) {
-        case 'assistant_completed':
-        case 'assistant_failed':
-        case 'content_plan_completed':
-        case 'content_plan_failed':
+        case 'assistant.completed':
+        case 'assistant.failed':
+        case 'content_plan.completed':
+        case 'content_plan.failed':
           // The post list and the overview both nest under this key, and a
-          // content plan writes posts, so one filter covers all three.
-          return [{ queryKey: campaignKey(subject.id) }]
+          // content plan writes posts, so one filter covers all three. The
+          // workspace-wide list holds those same posts outside the namespace.
+          return [{ queryKey: campaignKey(subject.id) }, WORKSPACE_POST_LIST]
         default:
           return []
       }
+
+    case 'asset': {
+      // A document read in the background — a scraped page (CON-222), and the
+      // PDF pipeline once it publishes these too. The event carries the status
+      // and some counts, never the text, so the only thing to do with it is
+      // refetch: the row's word count and the open editor both read `content`.
+      if (event.type !== 'asset.updated') return []
+      // One filter, not two: an open document's key nests under the list's
+      // (`['assets', id]`), so this reaches the row and the editor both.
+      return [{ queryKey: ASSETS_KEY }]
+    }
 
     case 'zernioAccount':
       // All five (attached, attach_failed, updated, disconnected, revived)
@@ -171,7 +225,10 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
 
     case 'zernioSync':
       if (event.type === 'zernio.sync.failed') return ZERNIO_SURFACES
-      if (event.type === 'zernio.sync.ok' && syncChangedAnything(event.payload)) {
+      if (
+        event.type === 'zernio.sync.ok' &&
+        syncChangedAnything(event.payload)
+      ) {
         return ZERNIO_SURFACES
       }
       return []
@@ -194,7 +251,10 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
  */
 export const RECONCILE_FILTERS: QueryFilters[] = [
   { queryKey: ['post'] },
+  // Covers the list and every open document — `assetKey` nests under it.
+  { queryKey: ASSETS_KEY },
   { queryKey: ['postAssessment'] },
   { queryKey: ['campaigns'] },
+  WORKSPACE_POST_LIST,
   ...ZERNIO_SURFACES,
 ]

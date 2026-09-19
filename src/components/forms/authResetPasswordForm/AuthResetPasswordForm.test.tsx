@@ -19,7 +19,8 @@ async function setPassword(
   { password = NEW, confirm = NEW } = {},
 ) {
   if (password) await user.type(screen.getByLabelText('New password'), password)
-  if (confirm) await user.type(screen.getByLabelText('Confirm new password'), confirm)
+  if (confirm)
+    await user.type(screen.getByLabelText('Confirm new password'), confirm)
   await user.click(screen.getByRole('button', { name: /set new password/i }))
 }
 
@@ -30,7 +31,9 @@ beforeEach(() => {
 describe('AuthResetPasswordForm', () => {
   it('spends the token from the link, which the user never sees or types', async () => {
     const user = userEvent.setup()
-    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, { path: RESET_ROUTE })
+    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, {
+      path: RESET_ROUTE,
+    })
 
     await setPassword(user)
 
@@ -43,13 +46,18 @@ describe('AuthResetPasswordForm', () => {
     // reset is exactly the moment someone else may have been in the account.
     // The `reset` flag is what makes the login screen explain itself.
     const user = userEvent.setup()
-    const { router } = await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, {
-      path: RESET_ROUTE,
-    })
+    const { router } = await renderWithProviders(
+      <AuthResetPasswordForm token={TOKEN} />,
+      {
+        path: RESET_ROUTE,
+      },
+    )
 
     await setPassword(user)
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/auth/login'))
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/auth/login'),
+    )
     expect(router.state.location.search).toMatchObject({ reset: true })
   })
 
@@ -58,7 +66,9 @@ describe('AuthResetPasswordForm', () => {
     // the user cannot see and will not use again until their next login,
     // possibly on another device.
     const user = userEvent.setup()
-    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, { path: RESET_ROUTE })
+    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, {
+      path: RESET_ROUTE,
+    })
 
     await setPassword(user, { confirm: 'Password2' })
 
@@ -68,7 +78,9 @@ describe('AuthResetPasswordForm', () => {
 
   it('refuses a password the rules reject', async () => {
     const user = userEvent.setup()
-    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, { path: RESET_ROUTE })
+    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, {
+      path: RESET_ROUTE,
+    })
 
     await setPassword(user, { password: 'short', confirm: 'short' })
 
@@ -80,19 +92,25 @@ describe('AuthResetPasswordForm', () => {
     // the action is on another screen.
     const user = userEvent.setup()
     resetPassword.mockRejectedValue(new Error('This link has expired'))
-    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, { path: RESET_ROUTE })
+    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, {
+      path: RESET_ROUTE,
+    })
 
     await setPassword(user)
 
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent('This link has expired')
-    expect(screen.getByRole('link', { name: /request a new link/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /request a new link/i }),
+    ).toBeInTheDocument()
   })
 
   it('retires the failure — and the way out — once the user edits', async () => {
     const user = userEvent.setup()
     resetPassword.mockRejectedValue(new Error('This link has expired'))
-    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, { path: RESET_ROUTE })
+    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, {
+      path: RESET_ROUTE,
+    })
 
     await setPassword(user)
     await screen.findByText('This link has expired')
@@ -100,25 +118,37 @@ describe('AuthResetPasswordForm', () => {
     await user.type(screen.getByLabelText('New password'), '2')
 
     await waitFor(() =>
-      expect(screen.queryByText('This link has expired')).not.toBeInTheDocument(),
+      expect(
+        screen.queryByText('This link has expired'),
+      ).not.toBeInTheDocument(),
     )
-    expect(screen.queryByRole('link', { name: /request a new link/i })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: /request a new link/i }),
+    ).not.toBeInTheDocument()
   })
 
   it('points the password field at the rules, which are its error message', async () => {
-    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, { path: RESET_ROUTE })
+    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, {
+      path: RESET_ROUTE,
+    })
 
     const password = screen.getByLabelText('New password')
     expect(password).toHaveAttribute('aria-describedby', 'password-rules')
-    expect(document.getElementById('password-rules')).toHaveTextContent(/min\. 8 chars/i)
+    expect(document.getElementById('password-rules')).toHaveTextContent(
+      /min\. 8 chars/i,
+    )
   })
 
   it('puts the cursor on the field it rejected', async () => {
     const user = userEvent.setup()
-    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, { path: RESET_ROUTE })
+    await renderWithProviders(<AuthResetPasswordForm token={TOKEN} />, {
+      path: RESET_ROUTE,
+    })
 
     await setPassword(user, { confirm: 'Password2' })
 
-    await waitFor(() => expect(screen.getByLabelText('Confirm new password')).toHaveFocus())
+    await waitFor(() =>
+      expect(screen.getByLabelText('Confirm new password')).toHaveFocus(),
+    )
   })
 })

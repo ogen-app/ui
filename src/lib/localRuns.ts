@@ -28,7 +28,10 @@ export function localRunKey(scope: LocalRunScope, subjectId: string): string {
  * of the run, so an abort or a throw can't leave the key stuck and silently
  * deafen this tab to that subject for the rest of the session.
  */
-export function beginLocalRun(scope: LocalRunScope, subjectId: string): () => void {
+export function beginLocalRun(
+  scope: LocalRunScope,
+  subjectId: string,
+): () => void {
   const key = localRunKey(scope, subjectId)
   active.add(key)
   return () => {

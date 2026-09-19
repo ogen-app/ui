@@ -20,7 +20,10 @@ type LoginFlags = { expired?: boolean; reset?: boolean }
  * are the reason you are looking at a login form, and colour would make the
  * reset case read as a congratulation and the expiry as an error.
  */
-export function loginSubtitle({ expired, reset }: LoginFlags, t: TFunction): string {
+export function loginSubtitle(
+  { expired, reset }: LoginFlags,
+  t: TFunction,
+): string {
   if (expired) return t('auth.login.expired')
   if (reset) return t('auth.login.afterReset')
   return t('auth.login.subtitle')
@@ -39,7 +42,10 @@ function LoginPage() {
       bottomNav={
         <>
           {t('auth.login.noAccount')}{' '}
-          <Link to="/auth/register" className="text-primary-foreground font-medium">
+          <Link
+            to="/auth/register"
+            className="text-primary-foreground font-medium"
+          >
             {t('auth.login.signUpLink')}
           </Link>
         </>

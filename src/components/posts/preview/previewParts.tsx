@@ -216,7 +216,11 @@ export function PreviewMedia({
             key={`${item.url}-${i}`}
             item={item}
             fill
-            overlay={overflow > 0 && i === shown.length - 1 ? `+${overflow}` : undefined}
+            overlay={
+              overflow > 0 && i === shown.length - 1
+                ? `+${overflow}`
+                : undefined
+            }
           />
         ))
       )}
@@ -293,10 +297,18 @@ export function PreviewCarousel({
             {index + 1}/{count}
           </div>
           {index > 0 && (
-            <CarouselArrow side="left" color={arrowColor} onClick={carousel.prev} />
+            <CarouselArrow
+              side="left"
+              color={arrowColor}
+              onClick={carousel.prev}
+            />
           )}
           {index < count - 1 && (
-            <CarouselArrow side="right" color={arrowColor} onClick={carousel.next} />
+            <CarouselArrow
+              side="right"
+              color={arrowColor}
+              onClick={carousel.next}
+            />
           )}
         </>
       )}
@@ -352,7 +364,9 @@ export function CarouselDots({
           onClick={() => carousel.go(i)}
           aria-label={`Image ${i + 1}`}
           className="size-1.5 shrink-0 cursor-pointer rounded-full"
-          style={{ background: i === carousel.index ? activeColor : mutedColor }}
+          style={{
+            background: i === carousel.index ? activeColor : mutedColor,
+          }}
         />
       ))}
     </div>
@@ -404,13 +418,18 @@ export function Frame({
              grid cell or an aspect ratio. Facebook shows a lone image at its
              natural shape, and `h-full` against an auto-height parent would
              collapse it. */
-          className={cn('w-full', fill || aspect ? 'h-full object-cover' : 'h-auto')}
+          className={cn(
+            'w-full',
+            fill || aspect ? 'h-full object-cover' : 'h-auto',
+          )}
           style={{ display: 'block' }}
         />
       )}
       {/* Outside the failed branch on purpose: a video with no poster is still
           a video, and the play mark is what says so. */}
-      {isVideo && !overlay && <VideoChrome durationMs={item.durationMs} size={chromeSize} />}
+      {isVideo && !overlay && (
+        <VideoChrome durationMs={item.durationMs} size={chromeSize} />
+      )}
       {overlay && (
         <div
           className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-white"
@@ -497,11 +516,21 @@ export function VideoChrome({
 }
 
 /** One of the Like / Comment / Share style buttons along the card's foot. */
-export function ActionRow({ children, color }: { children: ReactNode; color: string }) {
+export function ActionRow({
+  children,
+  color,
+}: {
+  children: ReactNode
+  color: string
+}) {
   return (
     <div
       className="flex items-center justify-around"
-      style={{ borderTop: `1px solid ${PREVIEW_BORDER}`, color, padding: '4px 8px' }}
+      style={{
+        borderTop: `1px solid ${PREVIEW_BORDER}`,
+        color,
+        padding: '4px 8px',
+      }}
     >
       {children}
     </div>

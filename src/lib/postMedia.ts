@@ -56,18 +56,19 @@ export type MediaPolicy = {
 const SUPPORTED_KINDS: AttachmentKind[] = ['image', 'pdf', 'video']
 
 /**
- * Resolves the policy for a post. `rule` is the server's rule for the
- * selected post type — `null` while it loads, or for whitelist-only types
- * (event, live-video) where Ogen enforces nothing. `platform` is the row from
- * `usePlatforms()`, which carries the server-owned video rules; `undefined`
- * while it loads.
+ * Resolves the policy for a post. `zernioId` names the network whose media
+ * rules apply — our own table is filed under it (CON-292), so a caller holding
+ * a sqid translates first. `rule` is the server's rule for the selected post
+ * type — `null` while it loads, or for whitelist-only types (event, live-video)
+ * where Ogen enforces nothing. `platform` is the row from `usePlatforms()`,
+ * which carries the server-owned video rules; `undefined` while it loads.
  */
 export function mediaPolicy(
-  platformId: string,
+  zernioId: string | undefined,
   rule: ResolvedPostTypeRule | null | undefined,
   platform?: Platform,
 ): MediaPolicy {
-  const media = getPlatformMedia(platformId)
+  const media = getPlatformMedia(zernioId ?? '')
   const video = resolveVideoConstraints(platform)
 
   // The per-post cap for the kinds this type actually takes. The server has
@@ -75,7 +76,8 @@ export function mediaPolicy(
   // client-side floor — take the loosest applicable one and let the rule bind.
   const capFor = (kinds: AttachmentKind[]): number | null => {
     const caps: number[] = []
-    if (kinds.includes('image') && media.image) caps.push(media.image.maxPerPost)
+    if (kinds.includes('image') && media.image)
+      caps.push(media.image.maxPerPost)
     if (kinds.includes('video') && video) caps.push(video.maxPerPost)
     return caps.length > 0 ? Math.max(...caps) : null
   }
@@ -108,7 +110,10 @@ export function mediaPolicy(
   // accepted and then warned about. `platform` being undefined is a load, not
   // a verdict, so it must not trip this.
   const videoUnsupported =
-    !!platform && kinds.length > 0 && kinds.every((k) => k === 'video') && !video
+    !!platform &&
+    kinds.length > 0 &&
+    kinds.every((k) => k === 'video') &&
+    !video
 
   // `max_attachments: 0` is the text-post case — no media at all.
   const ruleMax = rule.max_attachments
@@ -140,8 +145,10 @@ export function mediaPolicy(
  * file. Mixed-kind types (the `story` image-or-video rule) stay generic.
  */
 export function mediaNoun(policy: MediaPolicy, plural = false): string {
-  const onlyVideo = policy.kinds.length > 0 && policy.kinds.every((k) => k === 'video')
-  const onlyImage = policy.kinds.length > 0 && policy.kinds.every((k) => k === 'image')
+  const onlyVideo =
+    policy.kinds.length > 0 && policy.kinds.every((k) => k === 'video')
+  const onlyImage =
+    policy.kinds.length > 0 && policy.kinds.every((k) => k === 'image')
   if (onlyVideo) return plural ? 'videos' : 'a video'
   if (onlyImage) return plural ? 'images' : 'an image'
   return plural ? 'files' : 'a file'
@@ -154,7 +161,8 @@ export function mediaNoun(policy: MediaPolicy, plural = false): string {
  * case for them.
  */
 export function describeConstraints(policy: MediaPolicy): string | undefined {
-  const onlyVideo = policy.kinds.includes('video') && !policy.kinds.includes('image')
+  const onlyVideo =
+    policy.kinds.includes('video') && !policy.kinds.includes('image')
   const hint = onlyVideo
     ? policy.video && describeVideoConstraints(policy.video)
     : policy.image && describeImageConstraints(policy.image)
@@ -165,7 +173,14 @@ export function describeConstraints(policy: MediaPolicy): string | undefined {
 export function acceptAttribute(policy: MediaPolicy): string {
   const mimes: string[] = []
   if (policy.kinds.includes('image')) {
-    mimes.push(...(policy.image?.allowedMimes ?? ['image/jpeg', 'image/png', 'image/webp', 'image/gif']))
+    mimes.push(
+      ...(policy.image?.allowedMimes ?? [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'image/gif',
+      ]),
+    )
   }
   if (policy.kinds.includes('pdf')) {
     mimes.push(...(policy.document?.allowedMimes ?? ['application/pdf']))
@@ -182,7 +197,9 @@ export function strandedAttachments(
   policy: MediaPolicy,
 ): PostAttachment[] {
   if (!policy.accepts) return attachments
-  return attachments.filter((a) => !policy.kinds.includes(attachmentKind(a.mime_type)))
+  return attachments.filter(
+    (a) => !policy.kinds.includes(attachmentKind(a.mime_type)),
+  )
 }
 
 /** Client-side pre-check, mirroring what the server would warn about. */
@@ -192,7 +209,10 @@ export function checkFile(
 ): { ok: true } | { ok: false; reason: string } {
   const kind = attachmentKind(file.type)
   if (kind === 'other') {
-    return { ok: false, reason: `${file.name}: only images, PDFs and video are supported` }
+    return {
+      ok: false,
+      reason: `${file.name}: only images, PDFs and video are supported`,
+    }
   }
   if (!policy.kinds.includes(kind)) {
     return {
@@ -211,7 +231,10 @@ export function checkFile(
   // user a multi-hundred-megabyte upload that finalize would refuse anyway.
   if (kind === 'video') {
     if (!policy.video) {
-      return { ok: false, reason: `${file.name}: this platform doesn't publish video` }
+      return {
+        ok: false,
+        reason: `${file.name}: this platform doesn't publish video`,
+      }
     }
     if (file.size > policy.video.maxFileSizeBytes) {
       const cap = formatBytes(policy.video.maxFileSizeBytes)
@@ -238,10 +261,16 @@ export function checkFile(
       ? policy.document?.maxFileSizeBytes
       : policy.image && imageSizeLimit(policy.image, file.type)
   if (maxBytes !== undefined && file.size > maxBytes) {
-    return { ok: false, reason: `${file.name} is larger than this platform allows` }
+    return {
+      ok: false,
+      reason: `${file.name} is larger than this platform allows`,
+    }
   }
   if (limit && file.type && !limit.allowedMimes.includes(file.type)) {
-    return { ok: false, reason: `${file.name}: this platform doesn't accept that format` }
+    return {
+      ok: false,
+      reason: `${file.name}: this platform doesn't accept that format`,
+    }
   }
   return { ok: true }
 }

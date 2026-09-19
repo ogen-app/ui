@@ -39,7 +39,9 @@ export function Toaster() {
           <ToastIcon variant={t.variant} />
           <div className="flex min-w-0 flex-col gap-0.5">
             <ToastTitle>{t.title}</ToastTitle>
-            {t.description && <ToastDescription>{t.description}</ToastDescription>}
+            {t.description && (
+              <ToastDescription>{t.description}</ToastDescription>
+            )}
           </div>
           <ToastClose />
         </Toast>

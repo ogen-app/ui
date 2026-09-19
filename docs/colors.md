@@ -73,7 +73,7 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
 | `--border` | gray-300 | Default hairlines |
 | `--border-primary` | black | Emphasized border |
 | `--ring` | gray-400 | Focus ring |
-| `--destructive`, `--positive`, `--negative`, `--warning`, `--info`, `--attention`, `--accent`, `--editable` | oklch accents | Status / affordance accents (`--warning` = validation warnings, orange; `--accent` = active/selected control, teal #40A9A4 — **fill, not ink**, see below) |
+| `--destructive`, `--positive`, `--negative`, `--warning`, `--info`, `--attention`, `--notification`, `--accent`, `--editable` | oklch accents | Status / affordance accents (`--warning` = validation warnings, orange; `--notification` = unread, orange; `--accent` = active/selected control, teal #40A9A4 — **fill, not ink**, see below) |
 
 `--accent` is a brand colour, and it does not pass as text: 2.83:1 on white,
 under both AA and AA-Large. The ~14 `text-accent` call sites inherit that
@@ -99,12 +99,22 @@ maps a state onto a colour; everything with a state goes through it.
 borrow `--chart-4` and `--chart-5`. Both are orange, so an in-progress badge
 and a publish-by-hand badge were the same colour as a validation warning, and
 the calendar's warning triangle was indistinguishable from a healthy card's
-status edge. **Orange now means exactly one thing** — and since the accent went
-teal it really is one thing: `--accent` was the last *semantic* token still
-borrowing the hue, so `--warning` is the only orange that carries a meaning.
+status edge. **Orange means two things, and they are both named.** `--warning`
+is "off but not broken"; `--notification` is "unread", the collapsed sidebar's
+dot and nothing else so far. Neither may borrow the other's token — a count you
+haven't read is not a thing that is wrong, and the whole point of splitting
+`--info` and `--attention` out of `--chart-*` was that a shared hue with no name
+becomes a shared *meaning*. What is gone for good is orange with no token behind
+it: `--accent` was the last semantic token borrowing the hue, and it went teal.
 (Orange-family hues survive in the categorical scales — `--chart-*`,
-`--campaign-5` — which is exactly why those are exempt from meaning.) Don't
-reach into
+`--campaign-5` — which is exactly why those are exempt from meaning.)
+
+`--notification` is a stronger orange than `--warning` because it never carries
+text: it is 8px of fill, so it is free to be a colour a label could not sit on.
+That also makes it the wrong token for anything with words in it — a badge with
+a figure in it wants `--warning`'s legibility, or its own token.
+
+Don't reach into
 `--chart-*` for a state — charts are a categorical scale and carry no meaning
 (see the exceptions below); add a semantic token instead.
 
@@ -124,6 +134,16 @@ reach into
   SVG `fill`/`stroke` that needs it. Held to one lightness with the chroma
   pushed as far as each hue carries it — seven marks have to be told apart at
   20px, and the first, muted cut of this palette could not be.
+- **Section glyphs** (`--nav-*` for the campaign rail, `--brand-*` for Brand's
+  five tabs) are one permanent hue per fixed place, so a row of otherwise
+  identical line icons can be aimed at rather than read. Same register as
+  `--campaign-*` (L≈0.53, chroma as far as the hue carries it) and the same
+  exclusions — nothing near red (~25°, the destructive voice) and nothing within
+  20° of the teal accent (~191°). They are separate families rather than aliases
+  of each other: retuning one set of places must not silently retune another.
+  Applied inline (`style={{ color: tone }}`) from the section table that owns
+  them, never as a utility class, and never on anything but the glyph — colour
+  here means *which section* and must not also be able to mean a state.
 - **Shadows** carry their color inside the shadow tokens
   (`--shadow-md`, `--shadow-lg`, `--shadow-top`).
 

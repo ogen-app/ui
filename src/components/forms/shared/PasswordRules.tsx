@@ -29,7 +29,10 @@ export function PasswordRules({ value, id }: { value: string; id?: string }) {
   return (
     <p
       id={id}
-      className={cn('text-xs', allPassed ? 'text-positive' : 'text-tertiary-foreground')}
+      className={cn(
+        'text-xs',
+        allPassed ? 'text-positive' : 'text-tertiary-foreground',
+      )}
     >
       {rules.map(({ test, label }, i) => (
         <span key={label}>
@@ -37,7 +40,11 @@ export function PasswordRules({ value, id }: { value: string; id?: string }) {
             (i === rules.length - 1
               ? t('validation.passwordRules.lastSeparator')
               : t('validation.passwordRules.separator'))}
-          <span className={cn(test(value) ? 'text-positive' : 'text-tertiary-foreground')}>
+          <span
+            className={cn(
+              test(value) ? 'text-positive' : 'text-tertiary-foreground',
+            )}
+          >
             {label}
           </span>
         </span>

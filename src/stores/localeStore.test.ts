@@ -141,7 +141,10 @@ describe('setLocale', () => {
   })
 
   it('remembers the choice before the fetch, not after', () => {
-    void useLocaleStore.getState().setLocale('es').catch(() => {})
+    void useLocaleStore
+      .getState()
+      .setLocale('es')
+      .catch(() => {})
     // Written synchronously: the choice is the user's whether or not the
     // chunk arrives.
     expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('es')

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowUUpLeftIcon,
   CaretLeftIcon,
@@ -22,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { useFeatureFlag } from '@/config/featureFlags'
+import { isSubmitted } from '@/lib/postStatusMachine'
 import { usePostVersions } from '@/hooks/usePostVersions'
 import type { PostVersion } from '@/services/api/posts'
 import type { Post } from '@/types/posts'
@@ -63,7 +65,10 @@ function buildEntries(doc: Post, versions: PostVersion[]): Entry[] {
   const headIsLive = head?.content === doc.content
   return [
     { kind: 'live', content: doc.content, saved: headIsLive ? head : null },
-    ...(headIsLive ? rest : versions).map((v): Entry => ({ kind: 'saved', version: v })),
+    ...(headIsLive ? rest : versions).map((v): Entry => ({
+      kind: 'saved',
+      version: v,
+    })),
   ]
 }
 
@@ -80,12 +85,30 @@ function buildEntries(doc: Post, versions: PostVersion[]): Entry[] {
  * — it copies the chosen text into a new version on top. Nothing is
  * overwritten, which the copy has to say, or rolling back reads as destroying
  * whatever came after.
+ *
+ * On a submitted post the panel keeps every read and loses every write
+ * (CON-251). Restore is the important one: it writes the chosen text back into
+ * the post, so on a published post it would rewrite the record of what went
+ * out — worse than creating a snapshot, and easy to miss because it reads as
+ * navigation rather than as an edit.
  */
 export function PostVersionsPanel({ doc, onClose }: Props) {
-  const { versions, loading, save, saving, restore, restoring, remove, removing } =
-    usePostVersions(doc.id)
-  const canDelete = useFeatureFlag('post-version-delete')
+  const {
+    versions,
+    loading,
+    save,
+    saving,
+    restore,
+    restoring,
+    remove,
+    removing,
+  } = usePostVersions(doc.id)
+  const deleteEnabled = useFeatureFlag('post-version-delete')
   const [viewing, setViewing] = useState<Entry | null>(null)
+  const locked = isSubmitted(doc.status)
+  // Discarding a snapshot of a submitted post throws away part of the record
+  // of what went out, so the lock outranks the flag.
+  const canDelete = deleteEnabled && !locked
 
   // The panel outlives the post — the sidebar keeps it mounted across
   // navigation — so an entry being read must not survive into another post's
@@ -98,7 +121,7 @@ export function PostVersionsPanel({ doc, onClose }: Props) {
         entry={viewing}
         onBack={() => setViewing(null)}
         onRestore={
-          viewing.kind === 'saved'
+          viewing.kind === 'saved' && !locked
             ? // `.catch` because the mutations rethrow after their own error
               // toast — the chain only sequences the success side (leave the
               // reader once the restore is in), and a failure should keep the
@@ -121,12 +144,18 @@ export function PostVersionsPanel({ doc, onClose }: Props) {
     <RailPanel
       title="Versions"
       titleAdornment={
-        <span className="text-sm text-tertiary-foreground">{entries.length}</span>
+        <span className="text-sm text-tertiary-foreground">
+          {entries.length}
+        </span>
       }
       onClose={onClose}
       className="h-full"
       bodyClassName="flex-1"
-      footer={<SaveVersionForm onSave={save} saving={saving} />}
+      // No footer at all on a submitted post, rather than a disabled button:
+      // there is nothing to snapshot that the post has not already become.
+      footer={
+        locked ? undefined : <SaveVersionForm onSave={save} saving={saving} />
+      }
       footerFade={40}
     >
       {loading ? (
@@ -140,10 +169,12 @@ export function PostVersionsPanel({ doc, onClose }: Props) {
             <EntryRow
               key={entry.kind === 'live' ? 'live' : entry.version.id}
               entry={entry}
+              locked={locked}
               onView={() => setViewing(entry)}
               onRestore={
-                entry.kind === 'saved'
-                  ? () => void restore(entry.version.version_number).catch(() => {})
+                entry.kind === 'saved' && !locked
+                  ? () =>
+                      void restore(entry.version.version_number).catch(() => {})
                   : undefined
               }
               restoring={restoring}
@@ -175,6 +206,7 @@ function CreatorMark({ creator }: { creator: PostVersion['creator'] }) {
 
 function EntryRow({
   entry,
+  locked,
   onView,
   onRestore,
   restoring,
@@ -183,6 +215,8 @@ function EntryRow({
   removing,
 }: {
   entry: Entry
+  /** The post is submitted, which changes what the live row *is*. */
+  locked: boolean
   onView: () => void
   /** Absent on the live entry — it is already the post's text. */
   onRestore?: () => void
@@ -193,6 +227,7 @@ function EntryRow({
   canDelete: boolean
   removing: boolean
 }) {
+  const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
   const live = entry.kind === 'live'
   // The live row borrows the matching snapshot's identity when there is one,
@@ -210,11 +245,21 @@ function EntryRow({
     >
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-sm font-medium shrink-0">
-          {version ? `Version ${version.version_number}` : 'Draft'}
+          {version
+            ? `Version ${version.version_number}`
+            : locked
+              ? t('posts.versions.liveSubmitted')
+              : t('posts.versions.liveDraft')}
         </span>
-        {live && <StatusBadge tone="positive" label="Current" className="shrink-0" />}
+        {live && (
+          <StatusBadge tone="positive" label="Current" className="shrink-0" />
+        )}
         <span className="ml-auto shrink-0 text-xs text-tertiary-foreground">
-          {version ? relativeTime(version.created_at) : 'Unsaved'}
+          {version
+            ? relativeTime(version.created_at)
+            : locked
+              ? null
+              : t('posts.versions.liveDraftTime')}
         </span>
         {/* The whole column disappears with the flag: with nothing to put in
             it, the spacer would only push the timestamp off the right edge. */}
@@ -234,7 +279,10 @@ function EntryRow({
               {/* Sentence case, unlike the DELETE confirm below it: the
                   literal-capitals rule is for the button that does the thing,
                   and no menu in the app shouts at its own items. */}
-              <DropdownMenuItem variant="destructive" onSelect={() => setConfirming(true)}>
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => setConfirming(true)}
+              >
                 <TrashIcon />
                 <span>Delete version</span>
               </DropdownMenuItem>
@@ -252,7 +300,12 @@ function EntryRow({
           <CreatorMark creator={version.creator} />
         ) : (
           <span className="shrink-0 text-xs text-tertiary-foreground">
-            Not snapshotted yet
+            {/* "yet" promises a snapshot that is coming. On a submitted post
+                none is — the server does not write one at publish (CON-253) —
+                so the two states are worded apart. */}
+            {locked
+              ? t('posts.versions.liveSubmittedNote')
+              : t('posts.versions.liveDraftNote')}
           </span>
         )}
         {version?.note && (
@@ -297,7 +350,13 @@ function EntryRow({
         // invisible — all it does is indent the icon past the text column
         // above it. Spacing between the two comes from the gap instead.
         <div className="flex items-center gap-4">
-          <Button type="button" variant="ghost" size="sm" className="px-0" onClick={onView}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="px-0"
+            onClick={onView}
+          >
             <EyeIcon />
             <span>View</span>
           </Button>
@@ -408,7 +467,9 @@ function VersionReader({
       footerFade={48}
     >
       {content.trim() === '' ? (
-        <p className="text-sm text-tertiary-foreground">There is no text here yet.</p>
+        <p className="text-sm text-tertiary-foreground">
+          There is no text here yet.
+        </p>
       ) : (
         // Preserving the author's line breaks: this is the post as written, not
         // a rendering of it, and the editor below is plain text too.
@@ -488,7 +549,12 @@ function SaveVersionForm({
       />
       {/* Default size, not `sm`: the input beside it is h-10, and an h-8
           button next to it reads as a mistake rather than a hierarchy. */}
-      <Button type="submit" variant="outline" disabled={saving} loading={saving}>
+      <Button
+        type="submit"
+        variant="outline"
+        disabled={saving}
+        loading={saving}
+      >
         <FloppyDiskIcon />
         <span>Save</span>
       </Button>

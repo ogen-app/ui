@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
-import { z } from "zod";
+import { useCallback, useState } from 'react'
+import { z } from 'zod'
 
-import { type FieldErrors } from "@/lib";
+import { type FieldErrors } from '@/lib'
 
 /**
  * Generic form state + validation hook driven by a zod object schema.
@@ -20,59 +20,61 @@ import { type FieldErrors } from "@/lib";
  */
 export function useFormValidation<T extends z.ZodObject<z.ZodRawShape>>(
   schema: T,
-  defaultValues: z.infer<T>
+  defaultValues: z.infer<T>,
 ) {
-  type Values = z.infer<T>;
+  type Values = z.infer<T>
 
-  const [values, setValues] = useState<Values>(defaultValues);
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors<Values>>({});
-  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [values, setValues] = useState<Values>(defaultValues)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<Values>>({})
+  const [hasSubmitted, setHasSubmitted] = useState(false)
 
   const setField = useCallback(
     <K extends keyof Values>(name: K, value: Values[K]) => {
       setValues((prev) => {
-        const next = { ...prev, [name]: value } as Values;
+        const next = { ...prev, [name]: value } as Values
         if (hasSubmitted) {
-          const result = schema.safeParse(next);
+          const result = schema.safeParse(next)
           if (result.success) {
-            setFieldErrors({});
+            setFieldErrors({})
           } else {
-            const fieldIssue = result.error.issues.find((issue) => issue.path[0] === name);
+            const fieldIssue = result.error.issues.find(
+              (issue) => issue.path[0] === name,
+            )
             setFieldErrors((prevErrors) => ({
               ...prevErrors,
               [name]: fieldIssue?.message,
-            }));
+            }))
           }
         }
-        return next;
-      });
+        return next
+      })
     },
-    [schema, hasSubmitted]
-  );
+    [schema, hasSubmitted],
+  )
 
   const validate = useCallback((): Values | undefined => {
-    setHasSubmitted(true);
-    const result = schema.safeParse(values);
+    setHasSubmitted(true)
+    const result = schema.safeParse(values)
     if (result.success) {
-      setFieldErrors({});
-      return result.data as Values;
+      setFieldErrors({})
+      return result.data as Values
     }
-    const errors: FieldErrors<Values> = {};
+    const errors: FieldErrors<Values> = {}
     for (const issue of result.error.issues) {
-      const key = issue.path[0];
-      if (typeof key === "string" && !(key in errors)) {
-        (errors as Record<string, string>)[key] = issue.message;
+      const key = issue.path[0]
+      if (typeof key === 'string' && !(key in errors)) {
+        ;(errors as Record<string, string>)[key] = issue.message
       }
     }
-    setFieldErrors(errors);
-    return undefined;
-  }, [schema, values]);
+    setFieldErrors(errors)
+    return undefined
+  }, [schema, values])
 
   const reset = useCallback(() => {
-    setValues(defaultValues);
-    setFieldErrors({});
-    setHasSubmitted(false);
-  }, [defaultValues]);
+    setValues(defaultValues)
+    setFieldErrors({})
+    setHasSubmitted(false)
+  }, [defaultValues])
 
-  return { values, setField, fieldErrors, validate, reset };
+  return { values, setField, fieldErrors, validate, reset }
 }

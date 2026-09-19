@@ -34,7 +34,13 @@ import type { PreviewProps } from './types.ts'
  * slide's ratio, so a portrait shot in position four loses its top and
  * bottom, and there is nowhere else in the app to see that happen.
  */
-export function InstagramPreview({ text, media, postType, author, timeLabel }: PreviewProps) {
+export function InstagramPreview({
+  text,
+  media,
+  postType,
+  author,
+  timeLabel,
+}: PreviewProps) {
   const handle = author.username ?? author.name ?? 'your.account'
   const carousel = useCarousel(media.length)
   // Square is the feed's shape; a Reel is 9:16 and previewing one in a square
@@ -44,14 +50,23 @@ export function InstagramPreview({ text, media, postType, author, timeLabel }: P
   return (
     <PreviewSurface style={{ borderRadius: 4 }}>
       <div className="flex items-center gap-2 px-3 py-2">
-        <PreviewAvatar src={author.avatarUrl} name={handle} size={32} background={C.muted} />
+        <PreviewAvatar
+          src={author.avatarUrl}
+          name={handle}
+          size={32}
+          background={C.muted}
+        />
         <div
           className="min-w-0 flex-1 truncate font-semibold"
           style={{ color: C.text, fontSize: 14 }}
         >
           {handle}
         </div>
-        <DotsThreeIcon className="size-5 shrink-0" style={{ color: C.text }} aria-hidden />
+        <DotsThreeIcon
+          className="size-5 shrink-0"
+          style={{ color: C.text }}
+          aria-hidden
+        />
       </div>
 
       {media.length === 0 ? (
@@ -79,12 +94,19 @@ export function InstagramPreview({ text, media, postType, author, timeLabel }: P
       {/* The dots sit in the action row, centred, exactly as Instagram places
           them — which is why the carousel's index lives in this component
           rather than inside the media block. */}
-      <div className="relative flex items-center gap-4 px-3 pt-3" style={{ color: C.text }}>
+      <div
+        className="relative flex items-center gap-4 px-3 pt-3"
+        style={{ color: C.text }}
+      >
         <HeartIcon className="size-6" aria-hidden />
         <ChatCircleIcon className="size-6" aria-hidden />
         <PaperPlaneTiltIcon className="size-6" aria-hidden />
         <div className="absolute inset-x-0 flex justify-center">
-          <CarouselDots carousel={carousel} activeColor={C.dot} mutedColor={C.dotMuted} />
+          <CarouselDots
+            carousel={carousel}
+            activeColor={C.dot}
+            mutedColor={C.dotMuted}
+          />
         </div>
         <BookmarkSimpleIcon className="ml-auto size-6" aria-hidden />
       </div>
@@ -106,7 +128,10 @@ export function InstagramPreview({ text, media, postType, author, timeLabel }: P
             </span>
           }
         />
-        <div className="pt-1.5 uppercase" style={{ color: C.muted, fontSize: 10 }}>
+        <div
+          className="pt-1.5 uppercase"
+          style={{ color: C.muted, fontSize: 10 }}
+        >
           {timeLabel}
         </div>
       </div>

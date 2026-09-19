@@ -11,6 +11,7 @@ import {
   defaultCampaignTypeId,
 } from '@/components/campaigns/CampaignTypePicker'
 import { useCampaignTypes, useCreateCampaign } from '@/hooks/useCampaigns'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * The first step of a campaign: its name and its type.
@@ -28,7 +29,10 @@ export function CreateCampaignDialog({
   open: boolean
   onClose: () => void
 }) {
-  const { data: types, isLoading: typesLoading } = useCampaignTypes()
+  const typesQuery = useCampaignTypes()
+  const types = typesQuery.data
+  // `awaiting`, not `isLoading` — see `lib/fetched`.
+  const typesLoading = awaiting(typesQuery)
   const createCampaign = useCreateCampaign()
   const navigate = useNavigate()
 
@@ -133,7 +137,11 @@ export function CreateCampaignDialog({
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!canCreate} loading={createCampaign.isPending}>
+          <Button
+            type="submit"
+            disabled={!canCreate}
+            loading={createCampaign.isPending}
+          >
             CREATE CAMPAIGN
           </Button>
         </div>

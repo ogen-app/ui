@@ -15,7 +15,7 @@
 
 export type GoalCadence = 'week' | 'month'
 
-export const GOAL_CADENCES: readonly GoalCadence[] = ['week', 'month']
+const GOAL_CADENCES: readonly GoalCadence[] = ['week', 'month']
 
 /** What the server applies to a campaign that leaves the cadence unset. */
 export const DEFAULT_GOAL_CADENCE: GoalCadence = 'month'
@@ -23,12 +23,14 @@ export const DEFAULT_GOAL_CADENCE: GoalCadence = 'month'
 const DAY_MS = 24 * 60 * 60 * 1000
 
 /** How one period is named in a sentence, singular. */
-export const CADENCE_UNIT: Record<GoalCadence, string> = {
+const CADENCE_UNIT: Record<GoalCadence, string> = {
   week: 'week',
   month: 'month',
 }
 
-export function normalizeGoalCadence(value: string | null | undefined): GoalCadence {
+export function normalizeGoalCadence(
+  value: string | null | undefined,
+): GoalCadence {
   return GOAL_CADENCES.includes(value as GoalCadence)
     ? (value as GoalCadence)
     : DEFAULT_GOAL_CADENCE
@@ -53,7 +55,9 @@ export function normalizeGoalCadence(value: string | null | undefined): GoalCade
  * shift is short one hour's worth of day, and local midnight east of UTC
  * lands `getUTCMonth` in the previous month.
  */
-function calendarParts(value: string): { y: number; m: number; d: number } | null {
+function calendarParts(
+  value: string,
+): { y: number; m: number; d: number } | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
   if (!match) return null
   const y = Number(match[1])
@@ -118,7 +122,8 @@ export function postGoalTotal(
   startDate: string | null,
   endDate: string | null,
 ): PostGoalTotal {
-  if (postsPerPeriod == null || postsPerPeriod <= 0) return { kind: 'needs-count' }
+  if (postsPerPeriod == null || postsPerPeriod <= 0)
+    return { kind: 'needs-count' }
 
   const dated = Boolean(startDate) && Boolean(endDate)
   const periods = periodsInRange(cadence, startDate, endDate)
@@ -143,7 +148,8 @@ export function describePostGoalTotal(
   cadence: GoalCadence,
   total: PostGoalTotal,
 ): string {
-  if (total.kind === 'needs-count') return 'Number of posts total will appear here.'
+  if (total.kind === 'needs-count')
+    return 'Number of posts total will appear here.'
 
   const unit = CADENCE_UNIT[cadence]
   const rate = `${plural(postsPerPeriod ?? 0, 'post', 'posts')} a ${unit}`

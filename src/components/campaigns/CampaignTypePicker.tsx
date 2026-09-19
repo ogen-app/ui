@@ -52,7 +52,9 @@ function TypeCardBody({ type }: { type: CampaignType }) {
       <span className="flex min-w-0 flex-col gap-0.5 text-left">
         <span className="text-base font-medium">{label}</span>
         {description && (
-          <span className="text-sm text-secondary-foreground">{description}</span>
+          <span className="text-sm text-secondary-foreground">
+            {description}
+          </span>
         )}
       </span>
     </>

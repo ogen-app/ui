@@ -12,7 +12,10 @@ import type { Post } from '@/types/posts'
  * view use, so opening a post from either of them finds it already cached and
  * the keys work on the first press.
  */
-export function usePostNeighbours(campaignId: string, postId: string): PostNeighbours {
+export function usePostNeighbours(
+  campaignId: string,
+  postId: string,
+): PostNeighbours {
   const { data } = useCampaignPosts(campaignId)
   return useMemo(() => postNeighbours(data ?? [], postId), [data, postId])
 }
@@ -29,7 +32,10 @@ export function usePostNeighbours(campaignId: string, postId: string): PostNeigh
  * them — inside the title, the body or the settings form, the arrows still
  * move the caret.
  */
-export function usePostArrowNavigation(campaignId: string, postId: string): void {
+export function usePostArrowNavigation(
+  campaignId: string,
+  postId: string,
+): void {
   const navigate = useNavigate()
   const { previous, next } = usePostNeighbours(campaignId, postId)
 

@@ -9,14 +9,17 @@ browser and timing what arrived, then checked against `ogen` `origin/main`
 (`a2e1435`). Where a claim here is measured rather than read off the code, it
 says so.
 
-> **Blocked on a backend crash.** The consumer described below is built and
-> tested, but must not be deployed until finding 5 is fixed: a client that
-> disconnects from `/api/events` panics the API process. See the bottom of this
-> file.
+> **The backend crash that blocked this is fixed** (CON-158). Finding 5 — a
+> client disconnecting from `/api/events` panicking the API process — was
+> repaired on `ogen` `main` by detaching a logging context before the writer
+> goroutine starts, and re-checked on 2026-09-05. The notification stream added
+> for CON-242 was written to the repaired pattern, so it never carried the bug.
+> Finding 5 at the bottom of this file keeps the diagnosis, because the shape of
+> the mistake is easy to make again.
 
 ## What the UI consumes today
 
-Five streams. Four are **per-request POST flows** — the request opens a stream,
+Six streams. Four are **per-request POST flows** — the request opens a stream,
 the stream ends when the work does: 
 
 | Endpoint | Consumer | Events handled |
@@ -26,11 +29,24 @@ the stream ends when the work does:
 | `POST /api/posts/:id/assess` | `services/api/quality.ts` | `step`, `complete`, `error` |
 | `POST /api/campaigns/:id/generate-draft` | `services/api/contentPlan.ts` | `step`, `post`, `warning`, `complete`, `error` |
 
-The fifth is **`GET /api/events`**, the hub-backed broadcast stream, added by
-this work — the only channel carrying things the tab did not itself start.
+The other two are long-lived and carry things the tab did not itself start:
 
-`EventSource` is not used anywhere and can't be: it is GET-only and can't carry
-a JSON body, so all five read the wire format off a `fetch` response body.
+| Endpoint | Consumer | Guarantee |
+| --- | --- | --- |
+| `GET /api/events` | `stores/eventStreamStore` | at-most-once, no log — a hint that a cache is stale |
+| `GET /api/notifications/stream` | `stores/notificationStreamStore` | durable; the table is the log and `Last-Event-ID` replays from it |
+
+The second landed with CON-242 and is the answer to the last item under *Still
+open* below: a run that outlives the tab now leaves a record, so "this finished
+while you were away" is a row rather than a silent invalidation. The two are
+deliberately separate connections — one is an invalidation bus and the other is
+an inbox, and the guarantees above are why neither can stand in for the other.
+What they share is the machinery for staying open (`lib/streamConnection`:
+backoff, silence watchdog, subscriber counting), written once.
+
+`EventSource` is not used anywhere and can't be: it is GET-only, can't carry a
+JSON body, and can't set `X-Workspace-Id` — so all six read the wire format off
+a `fetch` response body.
 
 ## What it does not consume
 
@@ -82,17 +98,20 @@ From `origin/main`. Every publisher and every type:
 
 | Topic | Types |
 | --- | --- |
-| `entity:post:<id>` | `assistant_completed`, `assistant_failed`, `assessment_completed`, `assessment_failed`, `post_cloned`, `post_restored`, `post_scheduled`, `post.analytics.updated` |
-| `entity:campaign:<id>` | `assistant_completed`, `assistant_failed`, `content_plan_completed`, `content_plan_failed` |
+| `entity:post:<id>` | `assistant.completed`, `assistant.failed`, `assessment.completed`, `assessment.failed`, `post.cloned`, `post.restored`, `post.scheduled`, `post.analytics.updated` |
+| `entity:campaign:<id>` | `assistant.completed`, `assistant.failed`, `content_plan.completed`, `content_plan.failed` |
 | `entity:zernio_account:<id>` | `zernio.account.attached`, `zernio.account.attach_failed`, `zernio.account.updated`, `zernio.account.disconnected`, `zernio.account.revived` |
 | `zernio:sync` | `zernio.sync.ok`, `zernio.sync.failed` |
 
 `job:<id>` and `user:<id>` are documented topic shapes with no publisher yet.
 
-Two naming conventions are in play — dotted (`zernio.sync.ok`,
-`post.analytics.updated`) and snake_case (`post_cloned`,
-`assistant_completed`). Worth settling before the UI hard-codes strings
-against both.
+**One naming convention, since CON-285** (ogen#161, 2026-09-17): dotted, here
+and on the notification stream both. The nine snake_case types above were
+renamed in place — `assistant_completed` → `assistant.completed`, `post_cloned`
+→ `post.cloned` — with no compatibility window, because a wire name nobody
+persists needs none. What the server *does* persist keeps the old spelling on
+purpose: `post_logs.event_type` and the `tenant_activity_events` taxonomy still
+read `post_cloned`, so history does not split across two spellings.
 
 ## Findings
 
@@ -143,9 +162,9 @@ flush at the end (first byte ~58s). `/api/events` is measured above as
 genuinely progressive, so the note should not be read as applying to it. The
 AI-flow timing was **not** re-measured for CON-134 and may well be stale.
 
-**5. A disconnecting client crashes the API.** Found by running the consumer
-below against the local stack: the process died four times, each time with the
-same panic.
+**5. A disconnecting client crashes the API — fixed, see the note at the end of
+this finding.** Found by running the consumer below against the local stack: the
+process died four times, each time with the same panic.
 
 ```
 panic: runtime error: invalid memory address or nil pointer dereference
@@ -178,6 +197,24 @@ and closing the tab.**
 The fix is to log the captured `sessionID` without the request context —
 `slog.Error(...)`, or a context built before the handler returns. Backend
 change; nothing the UI can work around.
+
+**Fixed, and the fix is worth reading.** `ogen` `main` now builds the logging
+context *before* the handler returns and hands the goroutine that instead:
+`reqID, _ := logging.RequestIDFrom(c.Context())` on the handler side, then
+`logCtx := logging.WithRequestID(context.Background(), reqID)` carrying the user
+and tenant, and every `slog.*Context` inside the writer takes `logCtx`. So the
+writer-side logs still correlate with the request and nothing reaches the
+recycled `RequestCtx`. The comment above it names CON-158 and spells out why —
+the panic lands on a goroutine Fiber's recover middleware cannot see, which is
+what turned a logging slip into a process kill.
+
+**The notification stream never had it.** `src/handlers/notifications.go`
+(CON-242) was written to the repaired pattern: it detaches both a `logCtx` and a
+`queryCtx` before `SetBodyStreamWriter`, and the last `c.Context()` in the file
+is the call that installs the writer. Checked against `main` on 2026-09-05 by
+reading both handlers. This answers the question the `activity` flag comment
+recorded as open — the second long-lived stream neither shares the fault nor
+needs its own fix.
 
 ## What was built
 
@@ -225,14 +262,71 @@ Decisions worth knowing:
 
 ### Still open
 
-- **The naming conventions are still mixed** — dotted (`zernio.sync.ok`) and
-  snake_case (`post_cloned`). `eventRouting.ts` matches both literally. Worth
-  settling backend-side rather than normalising at this boundary forever.
 - **Topics are `all`.** Narrowing to the mounted screens would mean
   re-subscribing on every navigation for no privacy gain, since the server
   already scopes to the tenant. Revisit if event volume grows.
-- **A run that outlives the tab has no UI.** Reload during an assistant turn and
-  the hub will report its completion, which currently just invalidates. Telling
-  the user "this finished while you were away" is the next visible feature.
-- **`id:` is parsed and unused**, ready for the replay the endpoint reserves it
-  for.
+- **`id:` is parsed and unused on `/api/events`.** The hub reserves the field
+  and ignores what is sent back, so there is nothing to resume into. The
+  notification stream is where replay actually happens.
+- **A healthy connection now ends twice an hour, and this side cannot tell that
+  from an outage.** The 30-minute lifetime (CON-286, below) closes the stream
+  cleanly, which is exactly what a drop looks like from here — so every recycle
+  runs the full reconnect path: `flushAllPendingSaves`, the whole of
+  `RECONCILE_FILTERS`, and `LiveStatus` showing *"Catching up… / Refreshing what
+  changed while the connection was down"* when nothing was down. The cost is
+  bounded — `invalidateQueries` only refetches queries that are mounted, and
+  `attempts` resets on open so the *"Reconnecting…"* half stays quiet — but a
+  recovery affordance built for an outage is now on a timer. The fix is to
+  measure the gap rather than count the reconnect: a close that was clean, with
+  no watchdog silence, reopening inside a couple of seconds, has missed at most
+  a second of an at-most-once bus and should skip both the reconcile and the
+  badge. That trade — a ~1s hole twice an hour against 48 catch-ups a day — is
+  the thing to decide, and it is ours to decide alone; no server change can tell
+  us, short of a frame announcing the recycle before the close.
+- **Past the cap, eviction rotates rather than settles.** The 10 subscriptions
+  are per *user* across both streams and every device, so the ceiling is 10 tabs
+  today and **5 once `activity` turns the second stream on**. Above it, each
+  tab's reconnect evicts another tab's stream, which reconnects a second later
+  and evicts a third, indefinitely — with a full reconcile in each victim. It is
+  strictly better than the wedge it replaced, and oldest-first at least evicts
+  the connection nearest its own recycle, but nothing damps it. Asked on CON-286
+  for a cap of ≥ 2 × expected tabs before Activity ships; Serhii offered the
+  constant.
+
+### Closed since
+
+- **Ten leaked slots killed both streams for a user, permanently** (CON-286).
+  The cap was never reclaimed on a client that vanished without a clean close:
+  `SetBodyStreamWriter`'s goroutine only exits on a write *error*, and the 8-byte
+  heartbeat keeps succeeding into the kernel buffer of a half-dead socket, so the
+  goroutine parked forever holding its slot and the `defer unsubscribe()` — which
+  was already the first statement in both handlers — never ran. Measured on the
+  local API: 328 connects against 318 disconnects, the first `429` six minutes
+  after boot and the same user still saturated 39 hours later. Fixed by
+  [ogen#142](https://github.com/ogen-app/ogen/pull/142) (merged 2026-09-08) in
+  two layers: the hub now **evicts the user's oldest subscriber** at the cap
+  instead of refusing the newcomer — so a reload always opens, and closing the
+  evicted channel unparks that zombie's goroutine — and every connection on both
+  streams gets a **hard ~30-minute lifetime** (`defaultStreamLifetime`), a reaper
+  keyed on age rather than on a write succeeding. **The client needed no change**
+  and got none: a clean server close already falls into the same retry tail as a
+  drop (`streamConnection.ts`), the notification stream already sends
+  `Last-Event-ID` fresh per attempt so the recycle's gap replays, and
+  `/api/events` already reconciles over REST because it has nothing to replay.
+  What the fix did leave behind is the two entries above.
+- **A run that outlives the tab has no UI.** Closed by CON-242: the notification
+  table records what finished, `GET /api/notifications/stream` replays it from
+  `Last-Event-ID`, and Activity renders it (`docs/activity.md`). The hub still
+  only invalidates, which is now the right division of labour rather than a gap.
+- **`seq` read back as `0`, so replay could never advance.** Measured
+  2026-09-04 against ogen@e722bab: the column was right and a *live* frame was
+  right, but `bun:"seq,scanonly"` kept it out of the generated `SELECT`, so
+  every row `List` / `ReplaySince` returned carried 0 — a cursor of 0, which
+  `parseCursor` reads as "no cursor". Fixed by
+  [ogen#139](https://github.com/ogen-app/ogen/pull/139) (merged 2026-09-04):
+  the tag is `nullzero,autoincrement`, which still lets the sequence assign on
+  insert while keeping the column in reads, and the new test asserts `seq` on a
+  row coming back from a *read* rather than off the inserted model — the reason
+  the original suite stayed green. **Not yet exercised from the client**: the
+  UI was written for the fixed server and needs no change, but the round trip
+  is unverified, so replay is proved by the server's tests and not by ours.

@@ -37,7 +37,10 @@ function ResetPasswordPage() {
               i18nKey="auth.reset.brokenBody"
               components={{
                 request: (
-                  <Link to="/auth/forgot" className="text-primary-foreground font-medium" />
+                  <Link
+                    to="/auth/forgot"
+                    className="text-primary-foreground font-medium"
+                  />
                 ),
               }}
             />

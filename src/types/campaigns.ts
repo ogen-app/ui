@@ -1,37 +1,28 @@
-import type { Tag } from "@/types/content";
-import type { GoalCadence } from "@/lib/postGoal";
-
-/**
- * Server-owned and no longer user-facing: `draft` and `active` both mean
- * active, and the UI neither shows nor sets this. It stays on the DTO only so
- * an update round-trips the server's own value instead of clearing it. Once
- * campaigns are created `active` server-side and the lifecycle moves to
- * soft-delete/archive (CON-156 §6), this and its pass-through come out.
- */
-export type CampaignStatus = "draft" | "active";
+import type { Tag } from '@/types/content'
+import type { GoalCadence } from '@/lib/postGoal'
 
 export type CampaignPlatform = {
-  id: string;
-  post_types: string[];
-};
+  id: string
+  post_types: string[]
+}
 
 export type PublisherAccount = {
-  id: string;
-  username: string;
-  display_name: string;
-  avatar_url: string;
-  is_active: boolean;
-  connected_at: string;
-};
+  id: string
+  username: string
+  display_name: string
+  avatar_url: string
+  is_active: boolean
+  connected_at: string
+}
 
 export type PlatformPublisher = {
-  id: string;
-  name: string;
-  state: string;
-  connected: boolean;
-  supported_post_types: string[];
-  accounts: PublisherAccount[];
-};
+  id: string
+  name: string
+  state: string
+  connected: boolean
+  supported_post_types: string[]
+  accounts: PublisherAccount[]
+}
 
 /**
  * The platform's text ceilings, seeded server-side (CON-91). Sibling of the
@@ -42,11 +33,11 @@ export type PlatformPublisher = {
  * through `contentLimitFor()` rather than directly.
  */
 export type TextConstraints = {
-  max_content_chars: number;
-  max_title_chars: number;
+  max_content_chars: number
+  max_title_chars: number
   /** Per-post-type overrides of `max_content_chars`, keyed by slug. */
-  per_post_type?: Record<string, number>;
-};
+  per_post_type?: Record<string, number>
+}
 
 /**
  * The platform's video rule set, seeded server-side (CON-148). Mirrors
@@ -65,42 +56,70 @@ export type TextConstraints = {
  * ceiling is not the one we upload against.
  */
 export type VideoConstraints = {
-  max_file_size_bytes: number;
+  max_file_size_bytes: number
   /** Container names, not MIME types — `["mp4", "mov"]`. */
-  allowed_formats: string[];
-  max_duration_seconds: number;
+  allowed_formats: string[]
+  max_duration_seconds: number
   /** Reels and Shorts have a floor as well as a ceiling. */
-  min_duration_seconds: number;
+  min_duration_seconds: number
   /** `0` is unbounded, not "no pixels allowed". */
-  max_width: number;
-  max_height: number;
-  allowed_aspect_ratios: string[];
-  max_attachments_per_post: number;
+  max_width: number
+  max_height: number
+  allowed_aspect_ratios: string[]
+  max_attachments_per_post: number
   /** YouTube rejects an untitled upload; feed platforms derive one. */
-  requires_video_title: boolean;
-};
+  requires_video_title: boolean
+}
 
 export type Platform = {
-  id: string;
-  name: string;
-  post_types: Record<string, string>;
-  cadence: string;
+  /**
+   * The row's sqid. Minted by the server — for a platform an operator adds in
+   * Harbor it cannot be known at build time, which is why nothing in this app
+   * is filed under it. It addresses a row; `zernio_id` identifies a network.
+   */
+  id: string
+  name: string
+  /**
+   * Zernio's wire slug (`twitter`, `linkedin`, …) — the stable key every piece
+   * of our own display metadata and per-network behaviour is filed under
+   * (CON-292). See `lib/platformDictionary`.
+   */
+  zernio_id: string
+  /**
+   * Whether an operator has turned this platform on. The list endpoint already
+   * filters to enabled rows, so this is `true` for everything we receive there
+   * — it is on the type because the detail route does not filter, and because
+   * a post scheduled before a platform was disabled still refers to it.
+   */
+  enabled: boolean
+  /** Whether an account can be connected for it. */
+  connect_supported: boolean
+  post_types: Record<string, string>
+  /**
+   * The subset of `post_types` Zernio can actually publish. Narrower than the
+   * seeded vocabulary, and narrower again once `lib/platformDictionary` has had
+   * its say — that table bounds it to what this build can also *render*.
+   */
+  supported_post_types: string[]
+  /** Operator-controlled display order; the list endpoint is already sorted. */
+  sort_order: number
+  cadence: string
   /** Prose, shown as-is in workspace settings. Not machine-readable. */
-  constraints: string;
-  text_constraints: TextConstraints;
-  video_constraints: VideoConstraints;
-  created_at: string;
-  updated_at: string;
-  publishers?: PlatformPublisher[];
-};
+  constraints: string
+  text_constraints: TextConstraints
+  video_constraints: VideoConstraints
+  created_at: string
+  updated_at: string
+  publishers?: PlatformPublisher[]
+}
 
 export type CampaignTypePhase = {
-  id: string;
-  campaign_type_id: string;
-  name: string;
-  purpose: string;
-  sequence: number;
-};
+  id: string
+  campaign_type_id: string
+  name: string
+  purpose: string
+  sequence: number
+}
 
 /**
  * `name` is the slug, and the only part of the row the UI reads for display —
@@ -109,34 +128,57 @@ export type CampaignTypePhase = {
  * off this type on purpose, so nobody wires seeded copy back into the UI.
  */
 export type CampaignType = {
-  id: string;
-  name: string;
-  is_system: boolean;
-  phases?: CampaignTypePhase[];
-};
+  id: string
+  name: string
+  is_system: boolean
+  phases?: CampaignTypePhase[]
+}
 
 export type Campaign = {
-  id: string;
-  name: string;
-  description: string;
-  target_persona: string;
-  key_messages: string;
-  tone_guidelines: string;
-  use_assets: boolean;
-  asset_ids: string[];
-  target_platforms: CampaignPlatform[];
-  campaign_type_id: string;
-  status: CampaignStatus;
-  start_date: string | null;
-  end_date: string | null;
+  id: string
+  name: string
+  description: string
+  target_persona: string
+  key_messages: string
+  tone_guidelines: string
+  /**
+   * The Brand voice and audience this campaign writes in (CON-245), or `null`
+   * where it has not chosen. Both supersede the legacy prose above rather than
+   * joining it: the server injects a resolved voice *instead of*
+   * `tone_guidelines`, and a resolved audience instead of `target_persona`, so
+   * that a stale prose line cannot contradict the voice.
+   *
+   * Read them through `components/brand/binding`, never directly — a reference
+   * to a deleted entry has to fall through to the level below it.
+   */
+  brand_voice_id: string | null
+  brand_audience_id: string | null
+  use_assets: boolean
+  asset_ids: string[]
+  target_platforms: CampaignPlatform[]
+  campaign_type_id: string
+  /**
+   * When this campaign was put away, or null while it is in the active set
+   * (CON-156). Archiving is the reversible half of the lifecycle that replaced
+   * `status`, which is gone from the client entirely: `draft` and `active` both
+   * meant active, the UI never showed either, and the server now creates every
+   * campaign active.
+   *
+   * A deleted campaign is stamped rather than dropped server-side, but it is
+   * excluded from every read — so `deleted_at` is deliberately not modelled
+   * here. There is no screen that could ever receive one.
+   */
+  archived_at: string | null
+  start_date: string | null
+  end_date: string | null
   /**
    * The post goal's rate: posts per `goal_cadence` period, **not** a
    * whole-campaign total (CON-182 reinterpreted the column, and backfilled
    * every existing campaign to a monthly cadence). Read it through
    * `lib/postGoal`, never as a total.
    */
-  estimated_post_count: number | null;
-  goal_cadence: GoalCadence;
+  estimated_post_count: number | null
+  goal_cadence: GoalCadence
   /**
    * Scheduling settings (CON-181), which the content-plan flow places every
    * generated draft by. `publishing_time` is a zero-padded 24-hour "HH:MM" read
@@ -145,51 +187,67 @@ export type Campaign = {
    * tokens; `spread_minutes` is the ± jitter around the time. See
    * `lib/campaignScheduling`.
    */
-  publishing_time: string;
-  timezone: string;
-  publishing_days: string[];
-  spread_minutes: number;
-  language: string;
-  budget: number | null;
-  currency: string;
-  tag_ids: string[];
-  tags: Tag[];
-  platforms: Platform[];
-  campaign_type?: CampaignType | null;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-};
+  publishing_time: string
+  timezone: string
+  publishing_days: string[]
+  spread_minutes: number
+  language: string
+  budget: number | null
+  currency: string
+  tag_ids: string[]
+  tags: Tag[]
+  platforms: Platform[]
+  campaign_type?: CampaignType | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}
 
 export type CreateCampaignPayload = {
-  name: string;
-  campaign_type_id: string;
-  description?: string;
-  target_persona?: string;
-  key_messages?: string;
-  tone_guidelines?: string;
-  use_assets?: boolean;
-  asset_ids?: string[];
-  target_platforms?: CampaignPlatform[];
-  status?: CampaignStatus;
-  start_date?: string | null;
-  end_date?: string | null;
-  estimated_post_count?: number | null;
-  goal_cadence?: GoalCadence;
+  name: string
+  campaign_type_id: string
+  description?: string
+  target_persona?: string
+  key_messages?: string
+  tone_guidelines?: string
+  /**
+   * The Brand refs are **presence-aware** (CON-245), like the two document
+   * fields below them and unlike everything else here: leaving one out keeps
+   * whatever the campaign already has, sending `null` clears it.
+   *
+   * That is why `campaignToPayload` does not round-trip them the way it
+   * round-trips the rest — an ordinary save omits them and cannot clobber a
+   * binding written from another screen. Pass one as an override to change it,
+   * which is the only thing that should ever set it.
+   */
+  brand_voice_id?: string | null
+  brand_audience_id?: string | null
+  /**
+   * Deliberately no `use_assets` / `asset_ids`. The campaign's documents are
+   * attached and detached through the CON-233 membership endpoints, which are
+   * atomic and derive the flag from the set — and the PUT reads both fields as
+   * presence-aware, so leaving them out is what preserves them. A payload that
+   * could name them is one an autosave could restate a stale copy of.
+   */
+  target_platforms?: CampaignPlatform[]
+  start_date?: string | null
+  end_date?: string | null
+  estimated_post_count?: number | null
+  goal_cadence?: GoalCadence
   /**
    * Omitting any of these does not leave the stored value alone — the server
    * normalizes an absent field to its default (09:00 / UTC / every day / ±15),
    * so a partial payload silently resets the campaign's schedule. Build every
    * update through `campaignToPayload`, which round-trips them.
    */
-  publishing_time?: string;
-  timezone?: string;
-  publishing_days?: string[];
-  spread_minutes?: number;
-  budget?: number | null;
-  currency?: string;
-  language?: string;
-  tag_ids?: string[];
-};
+  publishing_time?: string
+  timezone?: string
+  publishing_days?: string[]
+  spread_minutes?: number
+  budget?: number | null
+  currency?: string
+  language?: string
+  tag_ids?: string[]
+}
 
-export type UpdateCampaignPayload = CreateCampaignPayload;
+export type UpdateCampaignPayload = CreateCampaignPayload

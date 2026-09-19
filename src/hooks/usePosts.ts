@@ -1,26 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { QueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useMemo } from 'react'
-import { createPost, deletePost, listCampaignPosts, updatePost } from '@/services/api/posts'
-import { CAMPAIGN_SUMMARIES_KEY } from '@/hooks/useCampaigns'
+import { useTranslation } from 'react-i18next'
+import {
+  createPost,
+  deletePost,
+  listCampaignPosts,
+  updatePost,
+} from '@/services/api/posts'
+import { invalidateCampaignPosts } from '@/lib/postCache'
 import { atDefaultTime } from '@/lib/postSchedule'
+import { campaignPostsKey } from '@/lib/queryKeys'
 import { selectStreamedPosts, useAssistantStore } from '@/stores/assistantStore'
+import { toast } from '@/stores/toastStore'
 import type { StreamedPost } from '@/types/assistant'
 import type { Post, PostPayload } from '@/types/posts'
-
-export const campaignPostsKey = (campaignId: string) => ['campaigns', campaignId, 'posts'] as const
-
-/**
- * The Campaigns-list summaries (CON-152) are a roll-up of these posts and sit
- * beside this key rather than under it — across *all* campaigns, so one
- * workspace-wide key covers every card at once. Invalidating the post list
- * alone would leave the cards showing the old totals.
- */
-export function invalidateCampaignPosts(qc: QueryClient, campaignId: string): void {
-  qc.invalidateQueries({ queryKey: campaignPostsKey(campaignId) })
-  qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })
-}
 
 /**
  * The campaign's posts, with any the assistant is generating right now folded
@@ -56,8 +50,13 @@ function draftPost(streamed: StreamedPost, campaignId: string): Post {
     ...streamed,
     campaign_id: campaignId,
     social_account_id: '',
+    // A streamed draft is being written, not published — it has no chain yet.
+    thread_segments: [],
     media_urls: [],
     published_at: null,
+    published_url: '',
+    brand_voice_id: null,
+    brand_audience_id: null,
     status: 'draft',
     cta_type: 'none',
     cta_url: '',
@@ -73,7 +72,7 @@ function draftPost(streamed: StreamedPost, campaignId: string): Post {
   }
 }
 
-export function useCreatePost(campaignId: string) {
+function useCreatePost(campaignId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: PostPayload) => createPost(payload),
@@ -112,6 +111,92 @@ export function useAddPost(campaignId: string) {
     },
     [createPost, navigate, campaignId],
   )
+}
+
+/**
+ * What a copy of a post starts life as (CON-251).
+ *
+ * Built field by field rather than through `postToPayload`, because what
+ * carries over is a decision and not a round-trip: the payload names exactly
+ * what the copy is *about* — the words, the channel, the call to action and the
+ * documents it was written from — and everything left out is left out on
+ * purpose.
+ *
+ * - **The schedule and the status** belong to the post that went out, so the
+ *   copy starts as an unscheduled draft rather than inheriting a date in the
+ *   past.
+ * - **`media_urls`** is the server's rendering of the original's attachments.
+ *   Copying the strings would give the new post a calendar thumbnail of files
+ *   it does not have — attachments are their own resource, uploaded per post,
+ *   and nothing on the API copies them.
+ * - **`published_at`, `publisher_post_id` and `published_url`** are the
+ *   server's, and naming them here would claim the copy is the thing that was
+ *   published — the last one literally: a draft carrying the original's
+ *   permalink would offer a "view post" link to somebody else's post.
+ *
+ * The account *is* carried: a repurposed post almost always goes out as the
+ * same one, and a picker that has to tolerate a disconnected value already
+ * does.
+ */
+function duplicatePayload(post: Post, title: string): PostPayload {
+  return {
+    campaign_id: post.campaign_id,
+    platform_id: post.platform_id,
+    platform_post_type: post.platform_post_type,
+    social_account_id: post.social_account_id,
+    title,
+    content: post.content,
+    cta_type: post.cta_type,
+    cta_url: post.cta_url,
+    target_audience_notes: post.target_audience_notes,
+    used_asset_ids: post.used_asset_ids,
+    campaign_type_phase_id: post.campaign_type_phase_id,
+    status: 'draft',
+    scheduled_at: null,
+  }
+}
+
+/**
+ * Copies a post into a new draft in the same campaign, and opens it.
+ *
+ * The one forward move a published post has: `published` is terminal, so the
+ * bottom bar's commit slot has no transition left to offer, and repurposing
+ * what already worked is what people actually want next.
+ *
+ * It navigates rather than landing the draft silently — a copy you are not
+ * taken to is indistinguishable from a button that did nothing.
+ */
+export function useDuplicatePost(campaignId: string) {
+  const create = useCreatePost(campaignId)
+  const navigate = useNavigate()
+  const { t } = useTranslation()
+
+  const run = useCallback(
+    (post: Post) => {
+      // An untitled post copies to an untitled draft: "(copy)" on its own
+      // names nothing, and the title is Ogen's own label on every platform
+      // but YouTube.
+      const source = post.title.trim()
+      const title = source
+        ? t('posts.duplicate.titleSuffix', { title: source })
+        : ''
+      create.mutate(duplicatePayload(post, title), {
+        onSuccess: (created) => {
+          toast.success(t('posts.duplicate.success'))
+          void navigate({
+            to: '/campaigns/$campaignId/posts/$postId',
+            params: { campaignId, postId: created.id },
+          })
+        },
+        onError: () => {
+          toast.error(t('posts.duplicate.error'))
+        },
+      })
+    },
+    [create, navigate, campaignId, t],
+  )
+
+  return { run, running: create.isPending }
 }
 
 export function useUpdatePost(campaignId: string) {

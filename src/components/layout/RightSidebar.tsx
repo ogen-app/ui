@@ -49,7 +49,13 @@ export const POST_VERSIONS_PORTAL_ID = 'right-sidebar-post-versions'
  * and fade out (opacity only), so switching panels cross-fades and the AI
  * assistant keeps running invisibly.
  */
-function PanelLayer({ active, children }: { active: boolean; children: ReactNode }) {
+function PanelLayer({
+  active,
+  children,
+}: {
+  active: boolean
+  children: ReactNode
+}) {
   return (
     <div
       aria-hidden={!active}
@@ -111,7 +117,10 @@ export function RightSidebar() {
             {campaignId && (
               <>
                 <PanelLayer active={activePanel === 'calendarSettings'}>
-                  <CalendarSettingsPanel campaignId={campaignId} onClose={close} />
+                  <CalendarSettingsPanel
+                    campaignId={campaignId}
+                    onClose={close}
+                  />
                 </PanelLayer>
                 <PanelLayer active={activePanel === 'notScheduled'}>
                   <NotScheduledPanel campaignId={campaignId} onClose={close} />
@@ -156,7 +165,11 @@ export function RightSidebar() {
         )}
       >
         <Logo variant="mark" className="size-8" loading={isBusy} />
-        {hasUnread && !assistantActive && (
+        {/* Shown whenever a thread is waiting, including while the panel is
+            open: with the rail on the thread list, or on another thread, the
+            corner is still the only thing saying something landed elsewhere.
+            Reading a thread is what clears it, not opening the rail. */}
+        {hasUnread && (
           <span
             aria-label="The assistant has finished"
             className="absolute top-2 right-2 size-2 rounded-full bg-accent"

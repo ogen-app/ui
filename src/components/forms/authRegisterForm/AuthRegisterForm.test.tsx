@@ -5,7 +5,9 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 import { AuthRegisterForm } from './AuthRegisterForm'
 
 const signup = vi.fn()
-vi.mock('@/services/api/tenants', () => ({ signup: (...a: unknown[]) => signup(...a) }))
+vi.mock('@/services/api/tenants', () => ({
+  signup: (...a: unknown[]) => signup(...a),
+}))
 vi.mock('@/services/api/sessions', () => ({ invalidateSession: vi.fn() }))
 
 const VALID = {
@@ -17,7 +19,10 @@ const VALID = {
 }
 
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText('Organization Name'), VALID.organization)
+  await user.type(
+    screen.getByLabelText('Organization Name'),
+    VALID.organization,
+  )
   await user.type(screen.getByLabelText('First Name'), VALID.first)
   await user.type(screen.getByLabelText('Last Name'), VALID.last)
   await user.type(screen.getByLabelText('Email'), VALID.email)
@@ -70,12 +75,16 @@ describe('AuthRegisterForm', () => {
 
     await fillValidForm(user)
     await user.click(screen.getByRole('button', { name: /sign up/i }))
-    expect(await screen.findByRole('alert')).toHaveTextContent(/already registered/i)
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /already registered/i,
+    )
 
     await user.type(screen.getByLabelText('Email'), 'x')
 
     await waitFor(() =>
-      expect(screen.getByRole('alert')).not.toHaveTextContent(/already registered/i),
+      expect(screen.getByRole('alert')).not.toHaveTextContent(
+        /already registered/i,
+      ),
     )
   })
 
@@ -99,7 +108,9 @@ describe('AuthRegisterForm', () => {
 
     const describedBy = password.getAttribute('aria-describedby')
     expect(describedBy).toBe('password-rules')
-    expect(document.getElementById(describedBy!)).toHaveTextContent(/min\. 8 chars/i)
+    expect(document.getElementById(describedBy!)).toHaveTextContent(
+      /min\. 8 chars/i,
+    )
   })
 
   it('names its fields so a password manager can save the credential', async () => {

@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, memo, type JSX } from 'react'
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  memo,
+  type JSX,
+} from 'react'
 import {
   type Column,
   type ColumnDef,
@@ -24,13 +32,6 @@ import { ZIndex } from '@/config/zIndex.ts'
 import { CaretDownIcon, CaretUpIcon } from '@phosphor-icons/react'
 import { FooterCell } from '@/components/tables/TableCells.tsx'
 import { TableEmptyState } from './TableEmptyState'
-import { Skeleton } from '@/components/ui/skeleton'
-
-/** Enough rows to read as a table rather than as a stray bar. */
-const SKELETON_ROWS = 8
-
-/** Cycled per row and column so a block of them doesn't read as a barcode. */
-const SKELETON_WIDTHS = ['70%', '45%', '60%', '35%', '55%']
 
 function VirtualTableComponent<TData extends Record<string, unknown>>({
   data,
@@ -85,7 +86,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
     (columnId: string) => {
       return columnConfigs.find((config) => config.id === columnId)
     },
-    [columnConfigs]
+    [columnConfigs],
   )
 
   // Create TanStack Table columns from configs
@@ -113,10 +114,20 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
 
         if (config.sortable === false) {
           return (
+            // The sortable header's button box and typography, minus the
+            // button. Without it an unsortable column's label rendered at the
+            // page's base size in full-strength ink and sat a few pixels above
+            // every header beside it — the height and padding here are the
+            // `size="sm"` button's own, so the two labels share a baseline.
+            // It never showed because every unsortable column in the app so
+            // far has an empty header string.
             <div
               className={cn(
-                '',
-                alignment === 'right' ? 'text-right flex-row-reverse' : 'text-left'
+                'inline-flex h-8 w-full items-center px-3 pt-[11px] pb-2',
+                'text-xs font-normal text-tertiary-foreground',
+                alignment === 'right' && 'justify-end text-right',
+                alignment === 'center' && 'justify-center text-center',
+                alignment === 'left' && 'justify-start text-left',
               )}
             >
               {config.header}
@@ -132,7 +143,9 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             className={cn(
               'w-full justify-start gap-1 overflow-hidden',
-              alignment === 'right' ? 'text-right flex-row-reverse' : 'text-left'
+              alignment === 'right'
+                ? 'text-right flex-row-reverse'
+                : 'text-left',
             )}
           >
             <span className="truncate">{config.header}</span>
@@ -154,16 +167,23 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
         const alignment = config.alignment || 'left'
         const cellClass = cn(
           alignment === 'right' ? 'text-right' : 'text-left',
-          config.cellClassName ?? ''
+          config.cellClassName ?? '',
         )
 
         if (config.cell) {
           return (
+            // The second hard-coded 34: every custom cell is wrapped here, so
+            // a table asking for a taller row got a correctly-sized row
+            // containing 34px cell boxes its content hung out of — the
+            // hairline drawn a third of the way up the row, and the cell's own
+            // box no longer the thing the eye reads as the row. Same fix as
+            // the wrapper: one number, read in both places.
             <div
               className={cn(
-                'h-[34px] border-b-2 border-background leading-7 relative',
-                cellClass
+                'border-b-2 border-background leading-7 relative',
+                cellClass,
               )}
+              style={{ height: `${estimatedRowHeight}px` }}
             >
               {config.cell(value, row.original)}
             </div>
@@ -174,7 +194,9 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
       },
       footer: config.totals
         ? ({ table }) => {
-            const filteredRows = table.getFilteredRowModel().rows.map((row) => row.original)
+            const filteredRows = table
+              .getFilteredRowModel()
+              .rows.map((row) => row.original)
             const result = calculateTotal(filteredRows, config)
             const alignment = config.alignment || 'left'
             const cellClass = alignment === 'right' ? 'text-right' : 'text-left'
@@ -182,7 +204,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             if (config.totals!.formatter && typeof result === 'number') {
               return (
                 <div className={cn('h-8 px-3', cellClass)}>
-                  <FooterCell className={'leading-8'} value={config.totals!.formatter(result)} />
+                  <FooterCell
+                    className={'leading-8'}
+                    value={config.totals!.formatter(result)}
+                  />
                 </div>
               )
             }
@@ -191,7 +216,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
           }
         : undefined,
     }))
-  }, [activeColumns, getColumnConfig])
+  }, [activeColumns, getColumnConfig, estimatedRowHeight])
 
   // Create TanStack Table instance
   const table = useReactTable({
@@ -235,13 +260,13 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   // Get sticky left position for a column
   const getStickyLeftPosition = useCallback(
     (columnId: string) => stickyLeftPositions.get(columnId) ?? 0,
-    [stickyLeftPositions]
+    [stickyLeftPositions],
   )
 
   // Get sticky right position for a column
   const getStickyRightPosition = useCallback(
     (columnId: string) => stickyRightPositions.get(columnId) ?? 0,
-    [stickyRightPositions]
+    [stickyRightPositions],
   )
 
   // The column shell for a body-level row that carries no cell content: the
@@ -262,7 +287,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
           isRightSticky && 'sticky bg-table-row',
           columnConfig?.borderSide === 'left' && 'border-l-2',
           columnConfig?.borderSide === 'right' && 'border-r-2',
-          columnConfig?.borderSide === 'both' && 'border-x-2'
+          columnConfig?.borderSide === 'both' && 'border-x-2',
         ),
         style: {
           width: `var(--col-${columnId}-width)`,
@@ -277,34 +302,48 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
         },
       }
     },
-    [getColumnConfig, getStickyLeftPosition, getStickyRightPosition]
+    [getColumnConfig, getStickyLeftPosition, getStickyRightPosition],
   )
 
-  // One header group carries the leaf columns; both content-less rows below
-  // walk it rather than re-deriving it per cell.
+  // One header group carries the leaf columns; the spacer row below walks it
+  // rather than re-deriving it per cell.
   const leafHeaders = table.getHeaderGroups()[0]?.headers ?? []
 
   // `!loading` is part of it: with a controlled sort the rows can already be
-  // in hand while the stored order is still being read, and rendering them
-  // under the skeleton would paint the default order only to re-sort a moment
-  // later. Loading means skeleton only — no body, no footer, and (via the
-  // header's pointer-events guard) no sort clicks racing the read.
+  // in hand while the stored order is still being read, and painting them then
+  // would show the default order only to re-sort it a moment later. Loading
+  // means the header and nothing else — no body, no footer, no empty state,
+  // and (via the header's pointer-events guard) no sort clicks racing the
+  // read.
   const hasData = !loading && rows.length > 0
   const hasFooter =
     showFooter &&
     table
       .getFooterGroups()
-      .some((group) => group.headers.some((header) => header.column.columnDef.footer))
+      .some((group) =>
+        group.headers.some((header) => header.column.columnDef.footer),
+      )
 
-  // Calculate spacer height when fillHeight is enabled and check if content fits
-  useEffect(() => {
+  // Calculate spacer height when fillHeight is enabled and check if content fits.
+  //
+  // Before paint, not after: `contentFitsInSpace` starts false, and false is
+  // the full-height branch below. Measuring in a passive effect meant a short
+  // list mounted as a page-tall slab of table surface and collapsed to its six
+  // rows a frame later — which is what switching to this section looked like,
+  // a flash of the whole column going white. The measurement reads the parent,
+  // the header and the virtualiser's total, none of which depend on the height
+  // being decided here, so there is no second pass to wait for.
+  useLayoutEffect(() => {
     if (!containerRef.current || !viewportRef.current) return
 
     const updateMeasurements = () => {
       // Measure parent's available space (the grid cell)
-      const parentHeight = containerRef.current?.parentElement?.clientHeight ?? 0
+      const parentHeight =
+        containerRef.current?.parentElement?.clientHeight ?? 0
       const headerHeight = headerRef.current?.clientHeight ?? 0
-      const footerHeight = hasFooter ? (footerRef.current?.clientHeight ?? 0) : 0
+      const footerHeight = hasFooter
+        ? (footerRef.current?.clientHeight ?? 0)
+        : 0
       const contentHeight = headerHeight + totalSize + footerHeight
 
       // Update spacer height for fillHeight mode
@@ -336,20 +375,35 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
       className={cn(
         'flex flex-col w-full overflow-hidden bg-table-row box-border',
         // When no data, always fill height. When has data, use fillHeight prop or contentFitsInSpace logic
+        //
+        // `h-full` as well as `flex-1`, because `flex-1` only grows inside a
+        // flex parent and not every caller gives it one. Without a height of
+        // its own the loading table is as tall as its header, and the
+        // virtualizer — which sizes its window from the scroll viewport it
+        // attaches to — settles on room for one row and keeps that range after
+        // the data lands, showing a handful of a long list.
         !hasData || fillHeight
-          ? 'flex-1 min-h-0'
+          ? 'flex-1 min-h-0 h-full'
           : contentFitsInSpace
             ? 'self-start'
             : 'flex-1 min-h-0',
-        className
+        className,
       )}
       style={columnWidthVars}
     >
       {/* Scrollable viewport */}
-      <ScrollAreaPrimitive.Root className={cn('relative flex-1 min-h-0 overflow-hidden')}>
+      <ScrollAreaPrimitive.Root
+        className={cn('relative flex-1 min-h-0 overflow-hidden')}
+      >
         <ScrollAreaPrimitive.Viewport
           ref={viewportRef}
-          className={'h-full w-full rounded-[inherit]'}
+          // `overscroll-none` turns off the elastic bounce macOS gives an inner
+          // scroller. The bounce translates the scrolled box as a whole, and a
+          // header held in place by `sticky top-0` has nothing to hold on to
+          // once the scroll position goes past its own top — so pulling down at
+          // the top of the list dragged the column headings along with the
+          // rows, which is not something a table header does.
+          className={'h-full w-full overscroll-none rounded-[inherit]'}
         >
           {/* Header - sticky top */}
           <div
@@ -357,7 +411,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             className={cn(
               'sticky top-0 bg-table-header',
               `z-${ZIndex.stickyTableHeader}`,
-              !hasData && 'pointer-events-none'
+              !hasData && 'pointer-events-none',
             )}
           >
             {table.getHeaderGroups().map((headerGroup) => (
@@ -371,9 +425,11 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                 {headerGroup.headers.map((header) => {
                   const columnConfig = getColumnConfig(header.column.id)
                   const isLeftSticky =
-                    columnConfig?.isSticky && columnConfig?.stickyPosition === 'left'
+                    columnConfig?.isSticky &&
+                    columnConfig?.stickyPosition === 'left'
                   const isRightSticky =
-                    columnConfig?.isSticky && columnConfig?.stickyPosition === 'right'
+                    columnConfig?.isSticky &&
+                    columnConfig?.stickyPosition === 'right'
                   const stickyLeftPosition = isLeftSticky
                     ? getStickyLeftPosition(header.column.id)
                     : 0
@@ -390,7 +446,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                         isRightSticky && 'sticky bg-table-header',
                         columnConfig?.borderSide === 'left' && 'border-l-2',
                         columnConfig?.borderSide === 'right' && 'border-r-2',
-                        columnConfig?.borderSide === 'both' && 'border-x-2'
+                        columnConfig?.borderSide === 'both' && 'border-x-2',
                       )}
                       style={{
                         width: `var(--col-${header.column.id}-width)`,
@@ -406,7 +462,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                     >
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </div>
                   )
                 })}
@@ -414,47 +473,11 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             ))}
           </div>
 
-          {/* Skeleton rows — the shape of the body, in the real columns, so
-              nothing shifts sideways when the data lands. */}
-          {loading && (
-            <div style={{ width: hasOverflow ? `${totalWidth}px` : '100%' }}>
-              {Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
-                <div
-                  key={rowIndex}
-                  className="flex bg-table-row"
-                  style={{ height: `${estimatedRowHeight}px` }}
-                >
-                  {leafHeaders.map((header, colIndex) => {
-                    const shell = rowCellShell(header.column.id)
-                    return (
-                      <div
-                        key={header.id}
-                        className={cn(
-                          shell.className,
-                          'flex items-center border-b-2 px-3'
-                        )}
-                        style={shell.style}
-                      >
-                        {/* A control column holds buttons, not data — a bar
-                            there would read as content that never arrives. */}
-                        {!getColumnConfig(header.column.id)?.isControl && (
-                          <Skeleton
-                            className="h-3"
-                            style={{
-                              width:
-                                SKELETON_WIDTHS[
-                                  (rowIndex + colIndex) % SKELETON_WIDTHS.length
-                                ],
-                            }}
-                          />
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Nothing between the header and the rows while they are in
+              flight. The header is the real one at its real widths, so the
+              rows arrive into the table rather than replacing a sketch of
+              one — and a body of grey bars would be claiming there is
+              something there to read. */}
 
           {/* Empty state */}
           {!hasData && !loading && (
@@ -482,9 +505,16 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                   <div
                     key={row.id}
                     className={cn(
-                      'group flex absolute top-0 left-0 h-[34px] bg-table-row hover:bg-table-row-hover contain-strict'
+                      'group flex absolute top-0 left-0 bg-table-row hover:bg-table-row-hover contain-strict',
                     )}
                     style={{
+                      // Was hard-coded `h-[34px]`, which silently disagreed
+                      // with the virtualiser: `estimateSize` already positions
+                      // every row by `estimatedRowHeight`, so any table asking
+                      // for a taller row got correct offsets and a 34px box
+                      // that its cells spilled out of. Reading the same number
+                      // for both is what lets a two-line row exist.
+                      height: `${estimatedRowHeight}px`,
                       transform: `translateY(${virtualRow.start}px)`,
                       width: hasOverflow ? `${totalWidth}px` : '100%',
                     }}
@@ -492,9 +522,11 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                     {row.getVisibleCells().map((cell) => {
                       const columnConfig = getColumnConfig(cell.column.id)
                       const isLeftSticky =
-                        columnConfig?.isSticky && columnConfig?.stickyPosition === 'left'
+                        columnConfig?.isSticky &&
+                        columnConfig?.stickyPosition === 'left'
                       const isRightSticky =
-                        columnConfig?.isSticky && columnConfig?.stickyPosition === 'right'
+                        columnConfig?.isSticky &&
+                        columnConfig?.stickyPosition === 'right'
                       const stickyLeftPosition = isLeftSticky
                         ? getStickyLeftPosition(cell.column.id)
                         : 0
@@ -507,12 +539,15 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                           key={cell.id}
                           className={cn(
                             'shrink-0 border-background contain-[layout_style_paint]',
-                            isLeftSticky && 'sticky bg-table-row group-hover:bg-table-row-hover',
-                            isRightSticky && 'sticky bg-table-row group-hover:bg-table-row-hover',
+                            isLeftSticky &&
+                              'sticky bg-table-row group-hover:bg-table-row-hover',
+                            isRightSticky &&
+                              'sticky bg-table-row group-hover:bg-table-row-hover',
                             columnConfig?.borderSide === 'left' && 'border-l-2',
-                            columnConfig?.borderSide === 'right' && 'border-r-2',
+                            columnConfig?.borderSide === 'right' &&
+                              'border-r-2',
                             columnConfig?.borderSide === 'both' && 'border-x-2',
-                            columnConfig?.cellClassName
+                            columnConfig?.cellClassName,
                           )}
                           style={{
                             width: `var(--col-${cell.column.id}-width)`,
@@ -526,7 +561,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                             }),
                           }}
                         >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
                         </div>
                       )
                     })}
@@ -557,7 +595,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
               ref={footerRef}
               className={cn(
                 'sticky bottom-0 bg-table-footer -mt-0.5',
-                `z-${ZIndex.stickyTableFooter}`
+                `z-${ZIndex.stickyTableFooter}`,
               )}
             >
               {table.getFooterGroups().map((footerGroup) => (
@@ -571,9 +609,11 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                   {footerGroup.headers.map((header) => {
                     const columnConfig = getColumnConfig(header.column.id)
                     const isLeftSticky =
-                      columnConfig?.isSticky && columnConfig?.stickyPosition === 'left'
+                      columnConfig?.isSticky &&
+                      columnConfig?.stickyPosition === 'left'
                     const isRightSticky =
-                      columnConfig?.isSticky && columnConfig?.stickyPosition === 'right'
+                      columnConfig?.isSticky &&
+                      columnConfig?.stickyPosition === 'right'
                     const stickyLeftPosition = isLeftSticky
                       ? getStickyLeftPosition(header.column.id)
                       : 0
@@ -590,7 +630,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                           isRightSticky && 'sticky bg-table-footer',
                           columnConfig?.borderSide === 'left' && 'border-l-2',
                           columnConfig?.borderSide === 'right' && 'border-r-2',
-                          columnConfig?.borderSide === 'both' && 'border-x-2'
+                          columnConfig?.borderSide === 'both' && 'border-x-2',
                         )}
                         style={{
                           width: `var(--col-${header.column.id}-width)`,
@@ -606,7 +646,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                       >
                         {header.isPlaceholder
                           ? null
-                          : flexRender(header.column.columnDef.footer, header.getContext())}
+                          : flexRender(
+                              header.column.columnDef.footer,
+                              header.getContext(),
+                            )}
                       </div>
                     )
                   })}
@@ -615,17 +658,29 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             </div>
           )}
         </ScrollAreaPrimitive.Viewport>
-        {hasData && <ScrollBar orientation="vertical" style={{ zIndex: ZIndex.scrollBar }} />}
-        {hasData && hasOverflow && (
-          <ScrollBar orientation="horizontal" style={{ zIndex: ZIndex.scrollBar }} />
+        {hasData && (
+          <ScrollBar
+            orientation="vertical"
+            style={{ zIndex: ZIndex.scrollBar }}
+          />
         )}
-        {hasData && <ScrollAreaPrimitive.Corner style={{ zIndex: ZIndex.scrollBar }} />}
+        {hasData && hasOverflow && (
+          <ScrollBar
+            orientation="horizontal"
+            style={{ zIndex: ZIndex.scrollBar }}
+          />
+        )}
+        {hasData && (
+          <ScrollAreaPrimitive.Corner style={{ zIndex: ZIndex.scrollBar }} />
+        )}
       </ScrollAreaPrimitive.Root>
     </div>
   )
 }
 
 // Export memoized version
-export const VirtualTable = memo(VirtualTableComponent) as <TData extends Record<string, unknown>>(
-  props: VirtualTableProps<TData>
+export const VirtualTable = memo(VirtualTableComponent) as <
+  TData extends Record<string, unknown>,
+>(
+  props: VirtualTableProps<TData>,
 ) => JSX.Element

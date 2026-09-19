@@ -36,7 +36,9 @@ describe('the mutation-cache error default', () => {
   })
 
   it('reads the API message as the title, since that is how they are written', async () => {
-    const toasts = await failWith(new Error('This campaign has 3 scheduled posts'))
+    const toasts = await failWith(
+      new Error('This campaign has 3 scheduled posts'),
+    )
     expect(toasts[0].title).toBe('This campaign has 3 scheduled posts')
     expect(toasts[0].description).toBeUndefined()
   })
@@ -63,7 +65,9 @@ describe('the mutation-cache error default', () => {
   it('stays silent when the call site opted out', async () => {
     // Inline form errors, dialogs that turn a refusal into their next
     // question, hooks that triage the error themselves.
-    expect(await failWith(new Error('boom'), { errorToast: false })).toHaveLength(0)
+    expect(
+      await failWith(new Error('boom'), { errorToast: false }),
+    ).toHaveLength(0)
   })
 
   it('still says something when what was thrown is not an Error', async () => {

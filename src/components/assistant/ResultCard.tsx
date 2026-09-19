@@ -27,7 +27,9 @@ import type {
  * explanation}` — the result payload is dropped — so a reloaded turn arrives
  * with empty details and falls back to the one-line footer.
  */
-export function hasResultCard(details: AssistantResultDetails | undefined): boolean {
+export function hasResultCard(
+  details: AssistantResultDetails | undefined,
+): boolean {
   return !!details && Object.keys(details).length > 0
 }
 
@@ -86,7 +88,10 @@ function postsReviewCard(details: AssistantResultDetails) {
           title={`Checked ${checked} of ${total} posts`}
           detail={`${countLabel(findings.length, 'drift')}${capped ? ' · capped' : ''}`}
         />
-        <Findings findings={findings} emptyLabel="Every post follows the brief." />
+        <Findings
+          findings={findings}
+          emptyLabel="Every post follows the brief."
+        />
       </Card>
     )
   }
@@ -107,10 +112,14 @@ function datesCard(details: AssistantResultDetails) {
           </p>
         </CardRow>
         {postsOutsideRange > 0 && (
-          <CardRow icon={WarningIcon} tone="warning" className="border-t border-border">
+          <CardRow
+            icon={WarningIcon}
+            tone="warning"
+            className="border-t border-border"
+          >
             <p className="text-sm text-warning">
-              {countLabel(postsOutsideRange, 'post')} now fall outside the range — ask to
-              redistribute them.
+              {countLabel(postsOutsideRange, 'post')} now fall outside the range
+              — ask to redistribute them.
             </p>
           </CardRow>
         )}
@@ -125,10 +134,16 @@ function redistributeCard(details: AssistantResultDetails) {
     const { postsUpdated, phaseCount } = details.redistribute
     return (
       <Card>
-        <CardHeader icon={ArrowsOutLineHorizontalIcon} title="Posts redistributed" />
+        <CardHeader
+          icon={ArrowsOutLineHorizontalIcon}
+          title="Posts redistributed"
+        />
         <CardRow className="pt-0">
           <p className="text-sm text-secondary-foreground">
-            Re-dated <span className="text-foreground">{countLabel(postsUpdated, 'post')}</span>{' '}
+            Re-dated{' '}
+            <span className="text-foreground">
+              {countLabel(postsUpdated, 'post')}
+            </span>{' '}
             across {countLabel(phaseCount, 'phase')}.
           </p>
         </CardRow>
@@ -218,8 +233,13 @@ function CardRow({
     <div className={cn('flex items-start gap-2 px-3 py-2.5', className)}>
       {/* `mt-0.5` centres a 16px glyph on a 20px first line and leaves the
           rest of a multi-line row alone. */}
-      <span aria-hidden className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
-        {Icon && <Icon className={cn('size-4', TONE_CLASS[tone])} weight="regular" />}
+      <span
+        aria-hidden
+        className="mt-0.5 flex size-4 shrink-0 items-center justify-center"
+      >
+        {Icon && (
+          <Icon className={cn('size-4', TONE_CLASS[tone])} weight="regular" />
+        )}
       </span>
       <div className="min-w-0 flex-1">{children}</div>
     </div>
@@ -240,8 +260,14 @@ function CardHeader({
   return (
     <CardRow icon={icon} tone={tone}>
       <div className="flex items-baseline gap-2">
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{title}</span>
-        {detail && <span className="shrink-0 text-sm text-tertiary-foreground">{detail}</span>}
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+          {title}
+        </span>
+        {detail && (
+          <span className="shrink-0 text-sm text-tertiary-foreground">
+            {detail}
+          </span>
+        )}
       </div>
     </CardRow>
   )
@@ -299,7 +325,9 @@ function Findings({
               )}
               <p className="text-sm/[1.5] text-foreground">{finding.issue}</p>
               {finding.suggestion && (
-                <p className="text-sm/[1.5] text-tertiary-foreground">→ {finding.suggestion}</p>
+                <p className="text-sm/[1.5] text-tertiary-foreground">
+                  → {finding.suggestion}
+                </p>
               )}
             </div>
           </CardRow>

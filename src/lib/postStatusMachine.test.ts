@@ -1,13 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import {
+  canEditPublishingAccount,
+  canEditScheduledAt,
   getActionMeta,
+  getAllowedNextStatuses,
   getTransitionBlockers,
+  isSubmitted,
+  isTerminalStatus,
   type TransitionContext,
 } from './postStatusMachine.ts'
-import type { Post } from '@/types/posts'
+import type { Post, PostStatus } from '@/types/posts'
+
+const EVERY_STATUS: PostStatus[] = [
+  'draft',
+  'ready_for_publish',
+  'scheduled',
+  'scheduled_for_manual_publishing',
+  'failed',
+  'published',
+  'not_published',
+]
 
 // Platform Sqid from platformDictionary.ts.
-const LINKEDIN = 'AXqWG7U2qnpt'
+const LINKEDIN = 'linkedin'
 
 function post(overrides: Partial<Post> = {}): Post {
   return {
@@ -18,10 +33,14 @@ function post(overrides: Partial<Post> = {}): Post {
     social_account_id: '',
     title: '',
     content: 'Hello',
+    thread_segments: [],
     media_urls: [],
     // Far enough out that the future-date rule never trips these cases.
     scheduled_at: '2099-01-01T00:00:00Z',
     published_at: null,
+    published_url: '',
+    brand_voice_id: null,
+    brand_audience_id: null,
     status: 'ready_for_publish',
     cta_type: 'none',
     cta_url: '',
@@ -94,8 +113,13 @@ describe('getTransitionBlockers — account selection', () => {
   })
 
   it('leaves the earlier edges alone', () => {
-    expect(getTransitionBlockers(post({ status: 'draft' }), 'ready_for_publish', AMBIGUOUS))
-      .toEqual([])
+    expect(
+      getTransitionBlockers(
+        post({ status: 'draft' }),
+        'ready_for_publish',
+        AMBIGUOUS,
+      ),
+    ).toEqual([])
   })
 
   it('reports the account alongside the other missing fields', () => {
@@ -120,25 +144,178 @@ describe('action mechanisms', () => {
   it('completes a manual publish by verifying the URL, not by a status PUT', () => {
     // A PUT here would mark the post published with no publisher linkage,
     // stranding it outside analytics forever (CON-149).
-    expect(getActionMeta('scheduled_for_manual_publishing', 'published')?.mechanism).toBe(
-      'verify',
-    )
+    expect(
+      getActionMeta('scheduled_for_manual_publishing', 'published')?.mechanism,
+    ).toBe('verify')
   })
 
   it('unschedules through the cancel endpoint', () => {
-    expect(getActionMeta('scheduled', 'ready_for_publish')?.mechanism).toBe('cancel')
+    expect(getActionMeta('scheduled', 'ready_for_publish')?.mechanism).toBe(
+      'cancel',
+    )
     expect(getActionMeta('scheduled', 'draft')?.mechanism).toBe('cancel')
   })
 
   it('schedules auto-publish through the schedule endpoint', () => {
-    expect(getActionMeta('ready_for_publish', 'scheduled')?.mechanism).toBe('schedule')
+    expect(getActionMeta('ready_for_publish', 'scheduled')?.mechanism).toBe(
+      'schedule',
+    )
   })
 
   it('keeps the manual-publish schedule edge on the PUT path', () => {
     // Deliberately not 'schedule': the schedule endpoint would re-route an
     // allowlisted platform to auto-publish against the user's explicit choice.
     expect(
-      getActionMeta('ready_for_publish', 'scheduled_for_manual_publishing')?.mechanism,
+      getActionMeta('ready_for_publish', 'scheduled_for_manual_publishing')
+        ?.mechanism,
     ).toBeUndefined()
+  })
+})
+
+/**
+ * The reopening edges (CON-251, and CON-130 before it). A post reaches
+ * `failed`, `not_published` or `scheduled_for_manual_publishing` with nothing
+ * of it living outside Ogen, and usually because the words need changing — so
+ * every one of them goes back to `draft`. The server has accepted these all
+ * along; the machine is what decides whether anything offers them.
+ */
+describe('reopening a post for editing', () => {
+  it('offers the way back to draft from every status that has one', () => {
+    for (const status of [
+      'ready_for_publish',
+      'scheduled_for_manual_publishing',
+      'failed',
+      'not_published',
+    ] as const) {
+      expect(getAllowedNextStatuses(status)).toContain('draft')
+      expect(getActionMeta(status, 'draft')?.kind).toBe('user')
+    }
+  })
+
+  it('goes back by a plain status PUT, having no job to cancel', () => {
+    // Unlike `scheduled` → draft, which must cancel the Zernio submission
+    // first: none of these statuses has one in flight.
+    expect(getActionMeta('failed', 'draft')?.mechanism).toBeUndefined()
+    expect(getActionMeta('not_published', 'draft')?.mechanism).toBeUndefined()
+  })
+
+  it('never claims the back button off another edge', () => {
+    // At most one edge per status may be `reverse`, or the header would have
+    // two candidates for its one icon button and pick by table order.
+    for (const status of EVERY_STATUS) {
+      const reversible = getAllowedNextStatuses(status).filter(
+        (next) => getActionMeta(status, next)?.reverse,
+      )
+      expect(reversible.length).toBeLessThanOrEqual(1)
+    }
+  })
+})
+
+// The one edge in the machine the user cannot take.
+describe('the convert-to-manual edge', () => {
+  it('is the server’s move, not an action', () => {
+    // CON-130: the publisher takes a scheduled post to manual publishing when
+    // the platform's auto-publish allowlist is turned off under it. The cancel
+    // endpoint accepts only ready_for_publish or draft, so there is no request
+    // the UI could send — offering it would produce a 400.
+    expect(getAllowedNextStatuses('scheduled')).toContain(
+      'scheduled_for_manual_publishing',
+    )
+    expect(
+      getActionMeta('scheduled', 'scheduled_for_manual_publishing')?.kind,
+    ).toBe('system')
+  })
+})
+
+// The rule the whole read-only post surface hangs off (CON-251): a post locks
+// when a copy of it exists outside Ogen.
+describe('isSubmitted', () => {
+  it('locks the two statuses where something else holds a copy', () => {
+    // Zernio holds the submission; the network holds the post.
+    expect(isSubmitted('scheduled')).toBe(true)
+    expect(isSubmitted('published')).toBe(true)
+  })
+
+  it('leaves a manual schedule open', () => {
+    // Nothing has been submitted anywhere — the date is a reminder to a
+    // human, and the post stays theirs to change until they go and post it.
+    expect(isSubmitted('scheduled_for_manual_publishing')).toBe(false)
+  })
+
+  it('reopens the statuses the copy came back from', () => {
+    // Both are reached *because* the post needs changing, so locking them
+    // would remove the only thing left to do.
+    expect(isSubmitted('failed')).toBe(false)
+    expect(isSubmitted('not_published')).toBe(false)
+  })
+
+  it('leaves the pre-submission statuses open', () => {
+    expect(isSubmitted('draft')).toBe(false)
+    expect(isSubmitted('ready_for_publish')).toBe(false)
+  })
+
+  it('is not the same question as terminality', () => {
+    // The trap this predicate exists to avoid. `isTerminalStatus` is true of
+    // `published` alone, so a gate written that way locks every published post
+    // correctly, passes review, and then silently freezes whatever gets an
+    // empty edge list next. `scheduled` is where the two already part company.
+    expect(isSubmitted('scheduled')).toBe(true)
+    expect(isTerminalStatus('scheduled')).toBe(false)
+  })
+
+  it('is the same rule the date and account locks use', () => {
+    // Not a restatement of their implementation — an assertion that the three
+    // stay one rule, so a change to what "locked" means cannot reach the
+    // document and leave the date picker behind.
+    for (const status of EVERY_STATUS) {
+      expect(canEditScheduledAt(status)).toBe(!isSubmitted(status))
+      expect(canEditPublishingAccount(status)).toBe(!isSubmitted(status))
+    }
+  })
+})
+
+describe("an automatic post's type", () => {
+  // Auto resolves the format from the body and the files, and the record only
+  // gains a slug as the post is committed (`lib/postTypeAuto`).
+  const automatic = post({ platform_post_type: '' })
+
+  it('does not block the transition that writes it down', () => {
+    // Reading the record here would disable the very button that pins it.
+    expect(
+      fields(
+        getTransitionBlockers(automatic, 'ready_for_publish', {
+          ...RESOLVED,
+          postType: 'image-post',
+        }),
+      ),
+    ).not.toContain('platform_post_type')
+  })
+
+  it('blocks when nothing fits, exactly as an unchosen type does', () => {
+    // `''` is what the resolver answers with when no format takes the post, so
+    // the unresolvable case needs no rule of its own here.
+    expect(
+      fields(
+        getTransitionBlockers(automatic, 'ready_for_publish', {
+          ...RESOLVED,
+          postType: '',
+        }),
+      ),
+    ).toContain('platform_post_type')
+  })
+
+  it('falls back to the record for every caller but the editor', () => {
+    expect(
+      fields(getTransitionBlockers(post(), 'ready_for_publish', RESOLVED)),
+    ).not.toContain('platform_post_type')
+    expect(
+      fields(
+        getTransitionBlockers(
+          post({ platform_post_type: '' }),
+          'ready_for_publish',
+          RESOLVED,
+        ),
+      ),
+    ).toContain('platform_post_type')
   })
 })

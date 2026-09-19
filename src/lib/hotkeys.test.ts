@@ -41,7 +41,14 @@ describe('isTargetBusy', () => {
   })
 
   it('leaves the arrow-driven widgets to steer themselves', () => {
-    for (const role of ['dialog', 'menu', 'listbox', 'combobox', 'tablist', 'grid']) {
+    for (const role of [
+      'dialog',
+      'menu',
+      'listbox',
+      'combobox',
+      'tablist',
+      'grid',
+    ]) {
       expect(isTargetBusy(mount(`<div role="${role}"></div>`))).toBe(true)
     }
   })
@@ -77,14 +84,19 @@ describe('shouldIgnoreHotkey', () => {
   })
 
   it('ignores a held key', () => {
-    expect(shouldIgnoreHotkey(press(mount('<button></button>'), { repeat: true }))).toBe(
-      true,
-    )
+    expect(
+      shouldIgnoreHotkey(press(mount('<button></button>'), { repeat: true })),
+    ).toBe(true)
   })
 
   it('leaves modified keys to the browser', () => {
     const el = mount('<button></button>')
-    for (const modifier of ['metaKey', 'ctrlKey', 'altKey', 'shiftKey'] as const) {
+    for (const modifier of [
+      'metaKey',
+      'ctrlKey',
+      'altKey',
+      'shiftKey',
+    ] as const) {
       expect(shouldIgnoreHotkey(press(el, { [modifier]: true }))).toBe(true)
     }
   })

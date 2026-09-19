@@ -1,12 +1,18 @@
 import { useMemo, type JSX, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { usePublishingAccount } from '@/hooks/usePublishingAccount.ts'
-import { getPlatformInfo } from '@/lib/platformDictionary.ts'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { getPlatformMedia } from '@/lib/platformMedia.ts'
 import { relativeTime } from '@/lib/relativeTime.ts'
+import { formatNumber } from '@/lib/intl'
 import { useCharLimit } from '@/hooks/useCharLimit'
-import { charCount, markdownToSocialText, threadSegments } from '@/lib/socialText.ts'
-import { attachmentKind, type PostAttachmentWithValidation } from '@/types/attachments'
+import { charCount, markdownToSocialText } from '@/lib/socialText.ts'
+import type { ThreadPlan } from '@/lib/threadSequence'
+import {
+  attachmentKind,
+  type PostAttachmentWithValidation,
+} from '@/types/attachments'
 import type { Post } from '@/types/posts'
 import { FacebookPreview } from './FacebookPreview.tsx'
 import { InstagramPreview } from './InstagramPreview.tsx'
@@ -56,8 +62,40 @@ const FEED_TILES: Record<string, number> = {
 /** Networks whose multi-image card is a swipeable carousel, not a grid. */
 const CAROUSEL_NETWORKS = new Set(['instagram', 'threads'])
 
-/** Networks whose `thread` post type chains several per-limit posts. */
-const THREAD_NETWORKS = new Set(['twitter'])
+/**
+ * Networks whose `thread` post type chains several per-limit posts. Zernio
+ * takes the same `threadItems` on both (CON-196).
+ */
+const THREAD_NETWORKS = new Set(['twitter', 'threads'])
+
+/**
+ * The URL a card actually draws: a video shows its poster frame, everything
+ * else its own file. Absent when object storage is unconfigured, or when a
+ * video's poster render never ran — there is nothing to show for those, so
+ * they are reported in the notes rather than rendered.
+ */
+function shownUrl(a: PostAttachmentWithValidation): string | undefined {
+  return attachmentKind(a.mime_type) === 'video'
+    ? a.thumbnail_url
+    : a.presigned_url
+}
+
+/**
+ * Attachments as feed tiles. PDFs are dropped — the networks treat them as
+ * documents (LinkedIn turns one into a slide carousel), so they are counted
+ * for the notes but never rendered as pictures.
+ */
+function toPreviewMedia(
+  list: PostAttachmentWithValidation[],
+): PreviewMediaItem[] {
+  return list.flatMap<PreviewMediaItem>((a) => {
+    const kind = attachmentKind(a.mime_type)
+    if (kind !== 'image' && kind !== 'video') return []
+    const url = shownUrl(a)
+    if (!url) return []
+    return [{ url, kind, durationMs: a.duration_ms }]
+  })
+}
 
 /**
  * "Preview" for the right sidebar: the post as its platform will render it.
@@ -69,10 +107,20 @@ const THREAD_NETWORKS = new Set(['twitter'])
  */
 export function PostPreviewPanel({
   doc,
+  postType: postTypeProp,
   attachments,
+  sequence,
   onClose,
 }: {
   doc: Post
+  /**
+   * The format to preview as, when it is not the one on the record. An
+   * automatic post carries no slug and the route resolves one from the body
+   * and the files (`lib/postTypeAuto`) — previewing such a post as a plain feed
+   * card would show a Story or a Short as something it is not. Defaults to the
+   * post's own type, which is what every caller but the editor passes.
+   */
+  postType?: string
   /**
    * Passed in rather than fetched: the route already holds the one
    * `usePostMedia` instance, and these carry presigned URLs that the query
@@ -80,9 +128,17 @@ export function PostPreviewPanel({
    * separately-expiring copy.
    */
   attachments: PostAttachmentWithValidation[]
+  /**
+   * The chain a thread publishes as, when the post is one and the feature is
+   * on (CON-196). Passed in rather than worked out here for the same reason
+   * the attachments are: the editor owns the one plan, and a second one
+   * derived from the same body could still disagree about the ceiling it was
+   * cut to while that ceiling is loading.
+   */
+  sequence?: ThreadPlan<PostAttachmentWithValidation>
   onClose?: () => void
 }) {
-  const platform = getPlatformInfo(doc.platform_id)
+  const platform = usePlatformCatalog().resolve(doc.platform_id)
   // Renders as the account the post actually publishes as — including a
   // disconnected one on a post that already went out, which is the only
   // honest byline for it.
@@ -100,23 +156,14 @@ export function PostPreviewPanel({
   // so they are counted for the notes but never rendered as pictures.
   const { media, pdfCount, missingImages, missingPosters } = useMemo(() => {
     const ordered = [...attachments].sort((a, b) => a.position - b.position)
-    // `presigned_url` is absent when object storage is unconfigured, and a
-    // video's poster is absent when the render failed — there is nothing to
-    // show for those, so they are reported, not rendered.
-    const shownUrl = (a: PostAttachmentWithValidation) =>
-      attachmentKind(a.mime_type) === 'video' ? a.thumbnail_url : a.presigned_url
     const pictures = ordered.filter((a) => {
       const kind = attachmentKind(a.mime_type)
       return kind === 'image' || kind === 'video'
     })
     return {
-      media: pictures.flatMap<PreviewMediaItem>((a) => {
-        const url = shownUrl(a)
-        if (!url) return []
-        const kind = attachmentKind(a.mime_type) === 'video' ? 'video' : 'image'
-        return [{ url, kind, durationMs: a.duration_ms }]
-      }),
-      pdfCount: ordered.filter((a) => attachmentKind(a.mime_type) === 'pdf').length,
+      media: toPreviewMedia(ordered),
+      pdfCount: ordered.filter((a) => attachmentKind(a.mime_type) === 'pdf')
+        .length,
       // Counted apart because they mean different things: an image with no
       // link is storage misconfigured, a video with no poster is the render
       // that never ran. Telling the user to check object storage when the
@@ -134,7 +181,8 @@ export function PostPreviewPanel({
   // "in 3 days" on the card is a cheap confirmation that the date is right.
   // Once published, when it actually went out is the truer answer, and both
   // fields are set by then.
-  const timeLabel = relativeTime(doc.published_at ?? doc.scheduled_at) ?? 'Just now'
+  const timeLabel =
+    relativeTime(doc.published_at ?? doc.scheduled_at) ?? 'Just now'
 
   /* No subtitle: LinkedIn's second line is the page's own headline, which we
      do not have. The campaign name went there first and read as if it were
@@ -149,15 +197,16 @@ export function PostPreviewPanel({
   // The same server-resolved ceiling the Validations panel measures against,
   // so the two never disagree about whether the copy fits (CON-91). It
   // replaced a hard-coded per-network max that lived beside the folds.
-  const { limit, titleLimit, ready: limitsReady } = useCharLimit(
-    doc.platform_id,
-    doc.platform_post_type,
-  )
+  const {
+    limit,
+    titleLimit,
+    ready: limitsReady,
+  } = useCharLimit(doc.platform_id, postTypeProp ?? doc.platform_post_type)
 
   // Two post types are not a feed card at all, and previewing them as one
   // said something untrue: a story publishes no caption, and a thread's
   // character limit is per post rather than for the whole text.
-  const postType = doc.platform_post_type
+  const postType = postTypeProp ?? doc.platform_post_type
   const isStory =
     postType === 'story' &&
     !!platform &&
@@ -165,24 +214,33 @@ export function PostPreviewPanel({
   // A Short is the third: fullscreen vertical with its chrome laid over the
   // video, nothing like the watch page it used to borrow (CON-169).
   const isShort = postType === 'short' && platform?.zernioId === 'youtube'
-  const isThread = postType === 'thread' && !!platform && THREAD_NETWORKS.has(platform.zernioId)
-  // 1-based, because the note counts posts the way the reader will. The same
-  // `threadSegments` verdicts the Twitter card badges, so the note and the
-  // badge cannot disagree about which post is too long.
-  const longSegments = useMemo(
-    () =>
-      isThread
-        ? threadSegments(text, limit).flatMap((s, i) => (s.over ? [i + 1] : []))
-        : [],
-    [isThread, text, limit],
-  )
+  const isThread =
+    postType === 'thread' &&
+    !!platform &&
+    THREAD_NETWORKS.has(platform.zernioId)
+
+  // The chain the cards draw: each post's own words and its own files. Built
+  // here rather than in the cards because the presigned URLs live on this
+  // side, and there is one owner of them by design.
+  const previewSequence = useMemo(() => {
+    if (!sequence) return undefined
+    return sequence.posts.map((post) => ({
+      // Already flattened: the segments arrive from the server as the Markdown
+      // the author typed, and `planThread` runs each through
+      // `markdownToSocialText` on the way out — so this is plain text, cut
+      // where the server cut it.
+      text: post.text,
+      media: toPreviewMedia(post.attachments),
+    }))
+  }, [sequence])
 
   // The platform's own ceiling on images in one post. Anything past it cannot
   // publish, so the card is drawn from the images that can — otherwise the
   // preview would promise a slide the network will drop. Videos ride along:
   // the image cap is about images, and the video rules live server-side
   // (`video_constraints`), enforced by the Validations panel.
-  const imageCap = getPlatformMedia(doc.platform_id).image?.maxPerPost ?? null
+  const imageCap =
+    getPlatformMedia(platform?.zernioId ?? '').image?.maxPerPost ?? null
   const publishable = useMemo(() => {
     if (imageCap === null) return media
     let images = 0
@@ -191,24 +249,31 @@ export function PostPreviewPanel({
   const imageCount = media.filter((m) => m.kind === 'image').length
   const videoCount = media.filter((m) => m.kind === 'video').length
   const feedTiles = platform ? FEED_TILES[platform.zernioId] : undefined
+  // Not a carousel when the post is a chain, however many files it holds: a
+  // sequence's images are spread across its posts, one or two each, and
+  // calling that "a carousel" describes a card the network will never draw.
   const carousel =
     !isStory &&
+    !previewSequence &&
     !!platform &&
     CAROUSEL_NETWORKS.has(platform.zernioId) &&
     publishable.length > 1
 
   return (
-    <RailPanel
-      title="Preview"
-      onClose={onClose}
-      className="h-full"
-    >
+    <RailPanel title="Preview" onClose={onClose} className="h-full">
       {/* The platform gets its own line rather than riding the title: it is
           what the card below *is*, not a qualifier on the panel's name. */}
       {platform && (
         <div className="flex items-center gap-2">
-          <platform.icon size={20} weight="fill" color={platform.color} aria-hidden />
-          <span className="text-sm text-secondary-foreground">{platform.name}</span>
+          <platform.icon
+            size={20}
+            weight="fill"
+            color={platform.color}
+            aria-hidden
+          />
+          <span className="text-sm text-secondary-foreground">
+            {platform.name}
+          </span>
         </div>
       )}
 
@@ -246,6 +311,7 @@ export function PostPreviewPanel({
               timeLabel={timeLabel}
               postType={postType}
               charLimit={limit}
+              sequence={previewSequence}
             />
           )}
 
@@ -265,7 +331,7 @@ export function PostPreviewPanel({
             carousel={carousel}
             story={isStory}
             thread={isThread}
-            longSegments={longSegments}
+            sequence={!!previewSequence}
             max={limit}
             accountConnected={author.connected}
           />
@@ -287,6 +353,7 @@ function Notes({
   publishesTitle,
   markdown,
   text,
+  sequence,
   imageCount,
   videoCount,
   pdfCount,
@@ -297,7 +364,6 @@ function Notes({
   carousel,
   story,
   thread,
-  longSegments,
   max,
   accountConnected,
 }: {
@@ -305,6 +371,8 @@ function Notes({
   title: string
   /** The platform has a title field of its own (YouTube) — CON-160. */
   publishesTitle: boolean
+  /** The chain is real: the editor composed it, rather than the card guessing it. */
+  sequence: boolean
   markdown: string
   /** The flattened copy, as the network would receive it. */
   text: string
@@ -329,11 +397,11 @@ function Notes({
   /** An X thread: several posts, each with its own character limit. */
   thread: boolean
   /** 1-based positions of the thread posts that are over that limit. */
-  longSegments: number[]
   /** The platform's ceiling; `null` while unresolved or where there is none. */
   max: number | null
   accountConnected: boolean
 }) {
+  const { t } = useTranslation()
   const notes: ReactNode[] = []
 
   // The whole of a story's copy is dropped, which outranks every other note
@@ -342,8 +410,8 @@ function Notes({
   if (story && text.trim()) {
     notes.push(
       <span className="text-destructive">
-        The caption is not published — a story has no text field. Anything that has to be read
-        must be part of the image itself.
+        The caption is not published — a story has no text field. Anything that
+        has to be read must be part of the image itself.
       </span>,
     )
   }
@@ -352,14 +420,16 @@ function Notes({
     if (imageCount === 0) {
       notes.push(
         <span className="text-destructive">
-          A story is one image, full screen. This post has none, so it cannot be scheduled.
+          A story is one image, full screen. This post has none, so it cannot be
+          scheduled.
         </span>,
       )
     } else if (imageCount > 1) {
       notes.push(
         <span className="text-destructive">
-          A story takes exactly one image and this post has {imageCount} — {platformName} will
-          not accept it. Remove the rest, or split them across posts.
+          A story takes exactly one image and this post has {imageCount} —{' '}
+          {platformName} will not accept it. Remove the rest, or split them
+          across posts.
         </span>,
       )
     }
@@ -368,8 +438,8 @@ function Notes({
   if (title.trim() && !publishesTitle) {
     notes.push(
       <>
-        The title is not published. {platformName} posts have no title field, so it stays in
-        Ogen as the post's name.
+        The title is not published. {platformName} posts have no title field, so
+        it stays in Ogen as the post's name.
       </>,
     )
   }
@@ -380,8 +450,8 @@ function Notes({
   if (!title.trim() && publishesTitle) {
     notes.push(
       <>
-        There is no title, so {platformName} falls back to the first line of the description
-        — or to "Untitled Video" when there is none.
+        There is no title, so {platformName} falls back to the first line of the
+        description — or to "Untitled Video" when there is none.
       </>,
     )
   }
@@ -393,58 +463,64 @@ function Notes({
     // Worth saying once: the user typed bold and it is not going to be bold.
     notes.push(
       <>
-        The formatting is not published — {platformName} captions are plain text, so bold,
-        headings and lists are flattened before the post goes out. Links keep their address
-        in the text, which counts toward the limit.
+        The formatting is not published — {platformName} captions are plain
+        text, so bold, headings and lists are flattened before the post goes
+        out. Links keep their address in the text, which counts toward the
+        limit.
       </>,
     )
   }
 
   if (thread) {
+    // The two strings here go through the catalogue while the rest of this
+    // component's copy does not: it is still legacy English awaiting the
+    // CON-174 pass, and the rule is that the strings you *touch* move
+    // (CLAUDE.md). These two had to be touched — the old one said the
+    // publisher does the splitting, and it never has.
     notes.push(
       <>
-        A thread: the card splits the copy at blank lines, one post per paragraph. Ogen sends
-        it as a single block and the publisher does the real splitting, so the breaks may land
-        elsewhere.
+        {t(
+          sequence
+            ? 'posts.sequence.previewNote'
+            : 'posts.sequence.previewNoteUnsplit',
+        )}
       </>,
     )
 
-    // The limit is per post here, so the usual "over the limit" note would be
-    // wrong in both directions — it fires on threads that are fine and says
-    // nothing about which post is the problem.
-    if (longSegments.length > 0 && max) {
-      notes.push(
-        <span className="text-destructive">
-          {longSegments.length === 1
-            ? `Post ${longSegments[0]} is`
-            : `Posts ${longSegments.slice(0, -1).join(', ')} and ${
-                longSegments[longSegments.length - 1]
-              } are`}{' '}
-          past {platformName}'s {max} characters per post, and will be rejected.
-        </span>,
-      )
-    }
+    // No "post 3 is too long" note, deliberately: the chain is cut to the
+    // per-post ceiling as it is built, so a post past it is not a state this
+    // card can be shown. The whole-body length note below is skipped for the
+    // same reason — `thread` guards it.
   }
 
   // Past the platform's cap the extra images do not publish at all — a
   // different and worse fact than a feed that collapses them, so it is said
-  // first and in the destructive colour.
-  if (!story && imageCap !== null && imageCount > imageCap) {
+  // first and in the destructive colour. Not on a chain: its images are spread
+  // across its posts, and the cap is per post — the thread's own row in the
+  // pre-publish bar is what measures them.
+  if (!story && !sequence && imageCap !== null && imageCount > imageCap) {
     notes.push(
       <span className="text-destructive">
-        Only the first {imageCap} of {imageCount} images will publish — {platformName} takes{' '}
-        {imageCap} in one post. Remove the rest, or split them across posts.
+        Only the first {imageCap} of {imageCount} images will publish —{' '}
+        {platformName} takes {imageCap} in one post. Remove the rest, or split
+        them across posts.
       </span>,
     )
   }
 
-  const publishing = imageCap === null ? imageCount : Math.min(imageCount, imageCap)
+  const publishing =
+    imageCap === null ? imageCount : Math.min(imageCount, imageCap)
 
-  if (!story && feedTiles !== undefined && publishing > feedTiles) {
+  if (
+    !story &&
+    !sequence &&
+    feedTiles !== undefined &&
+    publishing > feedTiles
+  ) {
     notes.push(
       <>
-        {publishing} images publish, and the feed shows the first {feedTiles} — the rest open
-        when the reader taps the post.
+        {publishing} images publish, and the feed shows the first {feedTiles} —
+        the rest open when the reader taps the post.
       </>,
     )
   }
@@ -452,8 +528,9 @@ function Notes({
   if (carousel) {
     notes.push(
       <>
-        A carousel: the reader swipes through the slides and only the first is in the feed,
-        so it carries the post. Every slide is cropped to the first one's shape.
+        A carousel: the reader swipes through the slides and only the first is
+        in the feed, so it carries the post. Every slide is cropped to the first
+        one's shape.
       </>,
     )
   }
@@ -461,10 +538,10 @@ function Notes({
   if (videoCount > 0 && !story) {
     notes.push(
       <>
-        {videoCount === 1 ? 'The video is' : `The ${videoCount} videos are`} drawn as{' '}
-        {videoCount === 1 ? 'its poster frame' : 'their poster frames'} — the same still{' '}
-        {platformName} shows before playback. Nothing here plays, and the poster is generated
-        rather than chosen.
+        {videoCount === 1 ? 'The video is' : `The ${videoCount} videos are`}{' '}
+        drawn as {videoCount === 1 ? 'its poster frame' : 'their poster frames'}{' '}
+        — the same still {platformName} shows before playback. Nothing here
+        plays, and the poster is generated rather than chosen.
       </>,
     )
   }
@@ -472,9 +549,9 @@ function Notes({
   if (pdfCount > 0) {
     notes.push(
       <>
-        {pdfCount === 1 ? 'A PDF is attached' : `${pdfCount} PDFs are attached`} and not
-        drawn above — {platformName} treats documents as their own kind of post, which this
-        preview does not cover.
+        {pdfCount === 1 ? 'A PDF is attached' : `${pdfCount} PDFs are attached`}{' '}
+        and not drawn above — {platformName} treats documents as their own kind
+        of post, which this preview does not cover.
       </>,
     )
   }
@@ -482,9 +559,9 @@ function Notes({
   if (missingImages > 0) {
     notes.push(
       <>
-        {missingImages === 1 ? 'One image has' : `${missingImages} images have`} no download
-        link yet, so {missingImages === 1 ? 'it is' : 'they are'} missing from the card —
-        object storage may not be configured.
+        {missingImages === 1 ? 'One image has' : `${missingImages} images have`}{' '}
+        no download link yet, so {missingImages === 1 ? 'it is' : 'they are'}{' '}
+        missing from the card — object storage may not be configured.
       </>,
     )
   }
@@ -492,9 +569,12 @@ function Notes({
   if (missingPosters > 0) {
     notes.push(
       <>
-        {missingPosters === 1 ? 'One video has' : `${missingPosters} videos have`} no poster
-        frame, so {missingPosters === 1 ? 'it is' : 'they are'} missing from the card. The
-        upload is fine — the frame is taken after it lands, and that step did not run.
+        {missingPosters === 1
+          ? 'One video has'
+          : `${missingPosters} videos have`}{' '}
+        no poster frame, so {missingPosters === 1 ? 'it is' : 'they are'}{' '}
+        missing from the card. The upload is fine — the frame is taken after it
+        lands, and that step did not run.
       </>,
     )
   }
@@ -502,8 +582,8 @@ function Notes({
   if (!accountConnected) {
     notes.push(
       <>
-        No {platformName} account is connected, so the name and picture above are
-        placeholders.
+        No {platformName} account is connected, so the name and picture above
+        are placeholders.
       </>,
     )
   }
@@ -515,16 +595,16 @@ function Notes({
   if (!thread && max !== null && charCount(text) > max) {
     notes.push(
       <span className="text-destructive">
-        The text is past {platformName}'s limit of {max.toLocaleString()} characters and will
-        be rejected.
+        The text is past {platformName}'s limit of {formatNumber(max)}{' '}
+        characters and will be rejected.
       </span>,
     )
   }
 
   notes.push(
     <>
-      Everything else is an approximation — the real post depends on the reader's device and
-      on whatever {platformName} changed this week.
+      Everything else is an approximation — the real post depends on the
+      reader's device and on whatever {platformName} changed this week.
     </>,
   )
 

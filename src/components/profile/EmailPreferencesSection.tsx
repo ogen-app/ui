@@ -30,8 +30,8 @@ export function EmailPreferencesSection({ userId }: { userId: string }) {
         <div className="flex max-w-150 flex-col gap-1">
           <p className="text-sm font-medium">Marketing emails</p>
           <p className="text-sm text-tertiary-foreground">
-            Onboarding tips and product news. Account emails — password resets and
-            the like — are sent either way and can't be turned off.
+            Onboarding tips and product news. Account emails — password resets
+            and the like — are sent either way and can't be turned off.
           </p>
         </div>
         {isError ? null : isPending ? (
@@ -59,10 +59,10 @@ export function EmailPreferencesSection({ userId }: { userId: string }) {
         // Not an Explainer — this is a live warning about the account, and
         // Explainers can be dismissed for good (CLAUDE.md).
         <p className="text-xs text-warning">
-          Email to this address bounced or was reported as spam, so nothing is being
-          delivered to it — marketing or otherwise. Suppression follows the address,
-          not the account, so changing your email above starts delivery again;
-          clearing the block on this one needs support.
+          Email to this address bounced or was reported as spam, so nothing is
+          being delivered to it — marketing or otherwise. Suppression follows
+          the address, not the account, so changing your email above starts
+          delivery again; clearing the block on this one needs support.
         </p>
       )}
     </SettingsCard>

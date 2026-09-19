@@ -2,19 +2,10 @@
  * Cache and storage utilities for the application
  */
 
-// import { useAuthStore } from '@/stores/authStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { queryClient } from '@/lib/queryClient'
 import { resetPrefetchLatch } from '@/lib/prefetch'
-
-/**
- * Result of a storage clearing operation
- */
-export type ClearResult = {
-  type: string
-  success: boolean
-  error?: Error
-}
+import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
 
 /**
  * Helper to delete a single IndexedDB database with timeout protection
@@ -28,25 +19,21 @@ function deleteIndexedDatabase(dbName: string): Promise<void> {
       deleteRequest.onsuccess = () => resolve()
       deleteRequest.onerror = () => reject(deleteRequest.error)
       deleteRequest.onblocked = () => {
-        console.warn(`Database deletion blocked for ${dbName}, forcing close...`)
+        console.warn(
+          `Database deletion blocked for ${dbName}, forcing close...`,
+        )
         // Resolve anyway - page reload will clean up
         resolve()
       }
     }),
     // Timeout after 2 seconds
     new Promise<void>((_, reject) =>
-      setTimeout(() => reject(new Error(`Timeout deleting database ${dbName}`)), 2000)
+      setTimeout(
+        () => reject(new Error(`Timeout deleting database ${dbName}`)),
+        2000,
+      ),
     ),
   ])
-}
-
-/**
- * Clears non-auth data stores without touching auth state.
- * Used during login/register to remove stale guest data before loading the new user's data.
- * Clears: portfolios, reference data caches, and user-specific settings.
- */
-export function clearNonAuthData(): void {
-
 }
 
 /**
@@ -60,11 +47,17 @@ export async function clearAllApplicationData(): Promise<void> {
 
   // IMPORTANT: Clear persisted storage FIRST to prevent persist middleware from re-saving
   try {
-    console.log('Clearing localStorage... (this may take a few seconds, please be patient)')
+    console.log(
+      'Clearing localStorage... (this may take a few seconds, please be patient)',
+    )
     localStorage.clear()
     results.push({ type: 'localStorage', success: true })
   } catch (error) {
-    results.push({ type: 'localStorage', success: false, error: error as Error })
+    results.push({
+      type: 'localStorage',
+      success: false,
+      error: error as Error,
+    })
   }
 
   // THEN reset Zustand in-memory state without triggering persist middleware
@@ -74,7 +67,11 @@ export async function clearAllApplicationData(): Promise<void> {
 
     results.push({ type: 'zustandStores', success: true })
   } catch (error) {
-    results.push({ type: 'zustandStores', success: false, error: error as Error })
+    results.push({
+      type: 'zustandStores',
+      success: false,
+      error: error as Error,
+    })
     console.error('Failed to reset Zustand stores:', error)
   }
 
@@ -91,12 +88,22 @@ export async function clearAllApplicationData(): Promise<void> {
     results.push({ type: 'queryCache', success: false, error: error as Error })
   }
 
-  // Clear sessionStorage
+  // Clear sessionStorage. The tab's active workspace is unpinned through its
+  // own setter rather than left to `clear()`: that value is mirrored in a
+  // module variable so the request layer can read it synchronously, and wiping
+  // the storage behind it would leave the mirror holding the workspace of the
+  // account that just logged out — which the next login on this tab would then
+  // name in its headers (CON-147).
   try {
+    setActiveWorkspaceId(null)
     sessionStorage.clear()
     results.push({ type: 'sessionStorage', success: true })
   } catch (error) {
-    results.push({ type: 'sessionStorage', success: false, error: error as Error })
+    results.push({
+      type: 'sessionStorage',
+      success: false,
+      error: error as Error,
+    })
   }
 
   // Clear service worker caches
@@ -106,7 +113,11 @@ export async function clearAllApplicationData(): Promise<void> {
       await Promise.all(cacheNames.map((name) => window.caches.delete(name)))
       results.push({ type: 'serviceWorkerCaches', success: true })
     } catch (error) {
-      results.push({ type: 'serviceWorkerCaches', success: false, error: error as Error })
+      results.push({
+        type: 'serviceWorkerCaches',
+        success: false,
+        error: error as Error,
+      })
     }
   }
 
@@ -115,7 +126,9 @@ export async function clearAllApplicationData(): Promise<void> {
     try {
       const databases = await window.indexedDB.databases()
       await Promise.allSettled(
-        databases.map((db) => (db.name ? deleteIndexedDatabase(db.name) : Promise.resolve()))
+        databases.map((db) =>
+          db.name ? deleteIndexedDatabase(db.name) : Promise.resolve(),
+        ),
       )
       results.push({ type: 'indexedDB', success: true })
     } catch (error) {
@@ -128,10 +141,15 @@ export async function clearAllApplicationData(): Promise<void> {
   const failed = results.filter((r) => !r.success)
 
   if (successful.length > 0) {
-    console.log(`Successfully cleared: ${successful.map((r) => r.type).join(', ')}`)
+    console.log(
+      `Successfully cleared: ${successful.map((r) => r.type).join(', ')}`,
+    )
   }
 
   if (failed.length > 0) {
-    console.warn('Failed to clear:', failed.map((r) => `${r.type}: ${r.error?.message}`).join(', '))
+    console.warn(
+      'Failed to clear:',
+      failed.map((r) => `${r.type}: ${r.error?.message}`).join(', '),
+    )
   }
 }

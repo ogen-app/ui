@@ -22,13 +22,16 @@ export function AuthRegisterForm() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { mutate: signup, isPending, error, reset } = useSignup()
-  const { values, setField, fieldErrors, validate } = useFormValidation(useSignupSchema(), {
-    organizationName: '',
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-  })
+  const { values, setField, fieldErrors, validate } = useFormValidation(
+    useSignupSchema(),
+    {
+      organizationName: '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+    },
+  )
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -54,10 +57,12 @@ export function AuthRegisterForm() {
    * contradicts the field they are correcting — and there is no way to tell
    * from here which edit was the fix, so any edit retires it.
    */
-  const change = <K extends keyof typeof values>(name: K) => (value: string) => {
-    setField(name, value as (typeof values)[K])
-    if (error) reset()
-  }
+  const change =
+    <K extends keyof typeof values>(name: K) =>
+    (value: string) => {
+      setField(name, value as (typeof values)[K])
+      if (error) reset()
+    }
 
   return (
     <form
@@ -66,7 +71,9 @@ export function AuthRegisterForm() {
       noValidate
     >
       <div className="flex flex-col gap-2">
-        <Label htmlFor="organizationName">{t('auth.register.organizationLabel')}</Label>
+        <Label htmlFor="organizationName">
+          {t('auth.register.organizationLabel')}
+        </Label>
         <Input
           id="organizationName"
           name="organization"
@@ -77,7 +84,9 @@ export function AuthRegisterForm() {
           value={values.organizationName}
           onChange={(e) => change('organizationName')(e.target.value)}
           aria-invalid={!!fieldErrors.organizationName}
-          aria-describedby={fieldErrors.organizationName ? 'organizationName-error' : undefined}
+          aria-describedby={
+            fieldErrors.organizationName ? 'organizationName-error' : undefined
+          }
           disabled={isPending}
         />
         {fieldErrors.organizationName && (
@@ -98,7 +107,9 @@ export function AuthRegisterForm() {
           value={values.firstName}
           onChange={(e) => change('firstName')(e.target.value)}
           aria-invalid={!!fieldErrors.firstName}
-          aria-describedby={fieldErrors.firstName ? 'firstName-error' : undefined}
+          aria-describedby={
+            fieldErrors.firstName ? 'firstName-error' : undefined
+          }
           disabled={isPending}
         />
         {fieldErrors.firstName && (

@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
+import { formatDate } from '@/lib/intl'
 import { useDeletePost } from '@/hooks/usePosts'
 import { toast } from '@/stores/toastStore'
 import type { Post, PostStatus } from '@/types/posts'
@@ -18,13 +19,7 @@ type Props = {
 }
 
 function formatWhen(iso: string | null): string | null {
-  if (!iso) return null
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return null
-  return d.toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
+  return formatDate(iso, { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 /**
@@ -42,8 +37,11 @@ function warningFor(status: PostStatus, when: string | null) {
           <>
             <p>
               This post has already been published. Deleting it removes it from
-              Ogen only — <strong>the published post stays live on the social
-              network</strong> and will not be taken down.
+              Ogen only —{' '}
+              <strong>
+                the published post stays live on the social network
+              </strong>{' '}
+              and will not be taken down.
             </p>
             <p>
               You'll lose the content, settings and history we keep for it here.
@@ -59,9 +57,13 @@ function warningFor(status: PostStatus, when: string | null) {
         body: (
           <>
             <p>
-              This post is <strong>scheduled to publish
-              {when ? ` on ${when}` : ''}</strong>. Deleting it cancels the
-              scheduled publish — it will never go out.
+              This post is{' '}
+              <strong>
+                scheduled to publish
+                {when ? ` on ${when}` : ''}
+              </strong>
+              . Deleting it cancels the scheduled publish — it will never go
+              out.
             </p>
             <p>Please confirm. This cannot be undone.</p>
           </>
@@ -70,17 +72,24 @@ function warningFor(status: PostStatus, when: string | null) {
     default:
       return {
         confirmLabel: 'DELETE POST',
-        body: <p>This post will be permanently deleted. This cannot be undone.</p>,
+        body: (
+          <p>This post will be permanently deleted. This cannot be undone.</p>
+        ),
       }
   }
 }
 
 export function DeletePostDialog({ post, isOpen, onClose, onDeleted }: Props) {
   const navigate = useNavigate()
-  const { mutate: deletePost, isPending: deleting } = useDeletePost(post.campaign_id)
+  const { mutate: deletePost, isPending: deleting } = useDeletePost(
+    post.campaign_id,
+  )
 
   const title = post.title.trim()
-  const { confirmLabel, body } = warningFor(post.status, formatWhen(post.scheduled_at))
+  const { confirmLabel, body } = warningFor(
+    post.status,
+    formatWhen(post.scheduled_at),
+  )
 
   const handleConfirm = () => {
     deletePost(post.id, {
@@ -127,7 +136,12 @@ export function DeletePostDialog({ post, isOpen, onClose, onDeleted }: Props) {
           {body}
         </div>
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={deleting}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={deleting}
+          >
             KEEP POST
           </Button>
           <Button

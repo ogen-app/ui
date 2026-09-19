@@ -1,1 +1,1 @@
-export { AuthRegisterForm } from "./AuthRegisterForm";
+export { AuthRegisterForm } from './AuthRegisterForm'
