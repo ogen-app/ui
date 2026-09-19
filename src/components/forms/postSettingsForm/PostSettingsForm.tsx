@@ -34,6 +34,7 @@ import { useFeatureFlag } from '@/config/featureFlags'
 import { CampaignPostTypeSelect } from './CampaignPostTypeSelect'
 import { PostBrandSection } from '@/components/brand/PostBrandSection'
 import { PostFormatSection } from '@/components/formats/PostFormatSection'
+import { awaiting } from '@/lib/fetched'
 
 const NO_PHASE = '__none__'
 
@@ -68,9 +69,10 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
     defaultValues: docToFormValues(doc),
   })
 
-  const { data: campaign, isLoading: campaignPending } = useCampaign(
-    doc.campaign_id,
-  )
+  const campaignQuery = useCampaign(doc.campaign_id)
+  const campaign = campaignQuery.data
+  // `awaiting`, not `isLoading` — see `lib/fetched`.
+  const campaignPending = awaiting(campaignQuery)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const formatsEnabled = useFeatureFlag('content-formats')
 

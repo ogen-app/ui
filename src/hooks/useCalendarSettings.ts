@@ -11,6 +11,7 @@ import {
 import { getSetting, putSetting, userScopedKey } from '@/services/api/settings'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from '@/stores/toastStore'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * A user's calendar preferences for one campaign. Day numbers follow JS
@@ -140,16 +141,18 @@ export function useCalendarSettings(campaignId: string) {
   const queryKey = calendarSettingsKey(userId, campaignId)
   const storageKey = userScopedKey(NAMESPACE, userId, campaignId)
 
-  // `isLoading`, not `isPending`: the latter stays true forever on a disabled
+  // `awaiting`, not `isPending`: the latter stays true forever on a disabled
   // query, and without a user there is nothing to fetch — the defaults are
-  // the answer, not a placeholder for one.
-  const { data, isLoading, isError } = useQuery({
+  // the answer, not a placeholder for one. Nor `isLoading`, which is false
+  // while a retry is paused. See `lib/fetched`.
+  const query = useQuery({
     queryKey,
     queryFn: async () => parse(await getSetting(storageKey)),
     enabled: !!userId && !!campaignId,
     // Nothing else writes these, so the cache is authoritative once loaded.
     staleTime: Infinity,
   })
+  const { data, isError } = query
   const settings = data ?? DEFAULTS
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -272,7 +275,7 @@ export function useCalendarSettings(campaignId: string) {
      * controls must not present them as the user's own choices (the query
      * retries on the next window focus).
      */
-    isPending: isLoading || isError,
+    isPending: awaiting(query) || isError,
     setFirstDayOfWeek,
     setDayVisible,
     setCardField,

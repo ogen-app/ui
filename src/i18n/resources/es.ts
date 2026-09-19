@@ -545,6 +545,28 @@ export const es: Translation = {
       assistantFailed: 'El asistente no pudo terminar tu solicitud',
       assessmentCompleted: 'Hay una evaluación de calidad lista',
       assessmentFailed: 'No se pudo completar una evaluación de calidad',
+      entitlement: {
+        seats: {
+          reached: 'Los {{limit}} puestos de tu plan están ocupados',
+          approaching:
+            '{{current}} de {{limit}} puestos de tu plan están ocupados',
+        },
+        campaigns: {
+          reached: 'Las {{limit}} campañas que permite tu plan están activas',
+          approaching:
+            '{{current}} de {{limit}} campañas que permite tu plan están activas',
+        },
+        documents: {
+          reached: 'El banco de contenido está lleno con {{limit}} documentos',
+          approaching:
+            'El banco de contenido tiene {{current}} de {{limit}} documentos',
+        },
+        storage: {
+          reached: 'El almacenamiento multimedia está lleno con {{limit}}',
+          approaching:
+            'El almacenamiento multimedia está en {{current}} de {{limit}}',
+        },
+      },
     },
     report: {
       label: {
@@ -2001,6 +2023,10 @@ export const es: Translation = {
     },
 
     overview: {
+      intro: {
+        title: 'A partir de qué escribe la app',
+        body: 'Las voces con las que escribe, a quién se dirige y lo que nunca puede afirmar. Se escribe una vez para el espacio de trabajo, y cada campaña y cada publicación lo heredan.',
+      },
       nothingReads: 'Todavía nada lee esto',
       unreadable: 'No se ha podido cargar lo que hay aquí.',
       stated: '{{count}} indicados',

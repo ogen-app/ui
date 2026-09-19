@@ -15,6 +15,7 @@ import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
 import type { Post } from '@/types/posts'
+import { awaiting } from '@/lib/fetched'
 
 /** Stable identity for a grid with nothing in it yet. */
 const NO_POSTS: Post[] = []
@@ -50,11 +51,11 @@ export const Route = createFileRoute(
 function CalendarView() {
   const { campaignId, anchor, view } = Route.useParams()
   const navigate = useNavigate()
-  const {
-    data: posts,
-    isLoading: postsPending,
-    isError: postsError,
-  } = useCampaignPosts(campaignId)
+  const postsQuery = useCampaignPosts(campaignId)
+  const { data: posts, isError: postsError } = postsQuery
+  // `awaiting`, not `isLoading` — see `lib/fetched`. Same reasoning as the
+  // failed-fetch guard below, for the state that reports neither.
+  const postsPending = awaiting(postsQuery)
   const rows = posts ?? NO_POSTS
   // A failed fetch is not an empty campaign: without this, an error left
   // `rows` empty with `postsPending` false, and the screen invited the user to

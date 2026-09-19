@@ -10,6 +10,7 @@ import { postToPayload } from '@/services/api/posts'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { PostCard } from './PostCard'
 import { cn } from '@/lib'
+import { awaiting } from '@/lib/fetched'
 
 type NotScheduledPanelProps = {
   campaignId: string
@@ -27,7 +28,8 @@ export function NotScheduledPanel({
 }: NotScheduledPanelProps) {
   const { t } = useTranslation()
   const [dragOver, setDragOver] = useState(false)
-  const { data: posts, isLoading } = useCampaignPosts(campaignId)
+  const postsQuery = useCampaignPosts(campaignId)
+  const posts = postsQuery.data
   const { mutate: updatePost } = useUpdatePost(campaignId)
   const addPost = useAddPost(campaignId)
 
@@ -83,7 +85,9 @@ export function NotScheduledPanel({
           dragOver && 'bg-secondary',
         )}
       >
-        {isLoading ? (
+        {/* `awaiting`, not `isLoading` — see `lib/fetched`: the state below
+            is exactly the announcement this guard exists to hold back. */}
+        {awaiting(postsQuery) ? (
           // Two cards' worth of panel, so it doesn't announce "nothing
           // unscheduled" before it has looked.
           <div className="flex flex-col gap-3">

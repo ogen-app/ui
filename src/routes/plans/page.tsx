@@ -14,6 +14,7 @@ import { useWorkspacePlan } from '@/hooks/useEntitlements'
 import { useSelectTier, useTiers } from '@/hooks/useTiers'
 import { toast } from '@/stores/toastStore'
 import type { Tier } from '@/types/tiers'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * `/plans` — every plan there is, over the whole screen (CON-232).
@@ -74,7 +75,8 @@ export function PlansPage() {
     })
   }
 
-  if (plan.isLoading || tiers.isLoading) {
+  // `awaiting`, not `isLoading` — see `lib/fetched`.
+  if (awaiting(plan) || awaiting(tiers)) {
     return (
       <PlansFrame>
         <PageLoader />

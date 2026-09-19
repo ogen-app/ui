@@ -749,6 +749,37 @@ export const en = {
       assistantFailed: 'The assistant could not finish your request',
       assessmentCompleted: 'A quality assessment is ready',
       assessmentFailed: 'A quality assessment could not be finished',
+      /**
+       * The plan's quotas, one pair per capped resource — see
+       * `ENTITLEMENT_COPY_KEY` in `lib/notifications` for why the feature is a
+       * key here rather than a word slotted into one sentence.
+       *
+       * Both halves state the figure, because that is the whole content of the
+       * warning: "you are near your limit" without the number is something the
+       * reader has to go and look up, on a row whose only job was to save them
+       * the trip. Neither sells an upgrade — a notification is a fact, and the
+       * place that takes money is one click away on the plan itself.
+       */
+      entitlement: {
+        seats: {
+          reached: 'All {{limit}} seats on your plan are taken',
+          approaching: '{{current}} of {{limit}} seats on your plan are taken',
+        },
+        campaigns: {
+          reached: 'All {{limit}} campaigns your plan allows are active',
+          approaching:
+            '{{current}} of {{limit}} campaigns your plan allows are active',
+        },
+        documents: {
+          reached: 'The content bank is full at {{limit}} documents',
+          approaching:
+            'The content bank holds {{current}} of {{limit}} documents',
+        },
+        storage: {
+          reached: 'Media storage is full at {{limit}}',
+          approaching: 'Media storage is at {{current}} of {{limit}}',
+        },
+      },
     },
     report: {
       /**
@@ -2841,6 +2872,21 @@ export const en = {
 
     /** The hub — `BrandOverview.tsx`. */
     overview: {
+      /**
+       * The sentence the hub opens with — `FoundationIntro`.
+       *
+       * It names what is on the screen and stops there, which is a correction:
+       * it used to promise "one place for all five", counting the documents
+       * among them, and the documents left for `/assets` when Assets became a
+       * module of its own. A sentence that lists the contents of a screen has
+       * to be rewritten every time the screen changes, so this one lists no
+       * count and nothing it cannot see — the facts card comes and goes with
+       * its flag, and the line stays true either way.
+       */
+      intro: {
+        title: 'What the app writes from',
+        body: 'The voices it writes in, who it is written to, and what it may never claim. Written once for the workspace, and every campaign and every post inherits it.',
+      },
       /**
        * The honesty rule at index length. The section's own screen says it in a
        * sentence (`shell.readByNothing`); five sentences down one page is the

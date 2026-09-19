@@ -19,6 +19,7 @@ import { readPageErrorMessage } from '@/lib/scrapeErrors'
 import { toast } from '@/stores/toastStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import type { UpdateAssetPayload } from '@/types/content'
+import { awaiting } from '@/lib/fetched'
 
 type Props = {
   assetId: string
@@ -61,7 +62,8 @@ type Props = {
  */
 export function AssetDocument({ assetId, campaignId }: Props) {
   const { data: campaign } = useCampaign(campaignId ?? '')
-  const { data: asset, isLoading, isError } = useAsset(assetId)
+  const query = useAsset(assetId)
+  const { data: asset, isError } = query
   const updateAsset = useUpdateAsset()
   const rescrape = useCreateUrlAsset()
   const [title, setTitle] = useState<string | null>(null)
@@ -207,7 +209,10 @@ export function AssetDocument({ assetId, campaignId }: Props) {
     downloadMarkdown(title ?? asset.title, asset.content)
   }, [asset, title])
 
-  if (isLoading) {
+  // `awaiting`, not `isLoading` — see `lib/fetched`. Without it a read
+  // paused mid-retry falls through to "Document not found", which is a
+  // different and worse answer than "still reading".
+  if (awaiting(query)) {
     return (
       <PageContainer>
         <PageLoader />
