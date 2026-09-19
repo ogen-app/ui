@@ -71,6 +71,12 @@ export type CardFacts = {
   hasFlag?: boolean
   /** The post has a picture to be backed by — `media_urls[0]`. */
   hasImage?: boolean
+  /**
+   * The post's campaign came back hydrated, so there is a name to draw. Only
+   * ever read on the workspace calendar, where `CardFields.campaign` is on —
+   * a row that is off costs no height whether the name is there or not.
+   */
+  hasCampaign?: boolean
 }
 
 /*
@@ -79,7 +85,7 @@ export type CardFacts = {
  */
 const CARD_PADDING = 16 // p-2, top and bottom
 const CARD_ROW_GAP = 6 // gap-1.5
-const TEXT_ROW = 16 // text-[12px]/[16px] — status, time, platform, account
+const TEXT_ROW = 16 // text-[12px]/[16px] — status, time, platform, account, campaign
 const TITLE_LINE = 17 // 14px at leading-[1.2], rounded up so the ceiling holds
 
 /**
@@ -137,6 +143,11 @@ export function cardHeight(
   if (fields.title) rows.push(rung.titleLines * TITLE_LINE)
   if (fields.platform) rows.push(TEXT_ROW)
   if (fields.account) rows.push(TEXT_ROW)
+  // Last, and only where the calendar being drawn has more than one campaign
+  // in it — see `CardFields.campaign`. It is on the ladder like any other row,
+  // so a busy day on the workspace grid spends it the same way it spends the
+  // platform: the rung tightens, the card gets shorter, the day stays whole.
+  if (fields.campaign && facts.hasCampaign) rows.push(TEXT_ROW)
   const media = fields.image && facts.hasImage ? CARD_BANDS[band] : 0
   const stack =
     rows.length === 0

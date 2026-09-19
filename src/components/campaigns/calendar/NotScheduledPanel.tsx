@@ -3,17 +3,65 @@ import { useTranslation } from 'react-i18next'
 import { useParams } from '@tanstack/react-router'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useAddPost, useCampaignPosts, useUpdatePost } from '@/hooks/usePosts'
+import {
+  useAddPost,
+  useCampaignPosts,
+  useUpdatePost,
+  useWorkspacePosts,
+} from '@/hooks/usePosts'
+import type { Post } from '@/types/posts'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
 import { postToPayload } from '@/services/api/posts'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { PostCard } from './PostCard'
+import { withCampaignRow } from './cardFields'
 import { cn } from '@/lib'
 
-type NotScheduledPanelProps = {
+/** One campaign's strays, for the panel beside that campaign's calendar. */
+export function NotScheduledPanel({
+  campaignId,
+  onClose,
+}: {
   campaignId: string
   onClose?: () => void
+}) {
+  const { data: posts, isLoading } = useCampaignPosts(campaignId)
+  const addPost = useAddPost(campaignId)
+  return (
+    <NotScheduled
+      campaignId={campaignId}
+      posts={posts}
+      isLoading={isLoading}
+      onAddPost={addPost}
+      onClose={onClose}
+    />
+  )
+}
+
+/**
+ * Every campaign's strays, for the panel beside the workspace calendar.
+ *
+ * Two entry points rather than one hook call with a fallback id, for the same
+ * reason `CalendarHeaderActions` has two: the campaign panel must not fetch the
+ * whole workspace's posts, and a hook cannot take a branch. It offers no ADD
+ * POST — there is no campaign here for a new one to belong to — so the empty
+ * state says where posts come from instead (`PostsEmptyState`).
+ */
+export function WorkspaceNotScheduledPanel({
+  onClose,
+}: {
+  onClose?: () => void
+}) {
+  const { data: posts, isLoading } = useWorkspacePosts()
+  return (
+    <NotScheduled
+      campaignId={null}
+      posts={posts}
+      isLoading={isLoading}
+      onClose={onClose}
+    />
+  )
 }
 
 /**
@@ -21,15 +69,22 @@ type NotScheduledPanelProps = {
  * non-blocking, so posts can be dragged out onto the calendar days; dropping
  * a scheduled post onto the panel body unschedules it.
  */
-export function NotScheduledPanel({
+function NotScheduled({
   campaignId,
+  posts,
+  isLoading,
+  onAddPost,
   onClose,
-}: NotScheduledPanelProps) {
+}: {
+  campaignId: string | null
+  posts: Post[] | undefined
+  isLoading: boolean
+  onAddPost?: () => void
+  onClose?: () => void
+}) {
   const { t } = useTranslation()
   const [dragOver, setDragOver] = useState(false)
-  const { data: posts, isLoading } = useCampaignPosts(campaignId)
   const { mutate: updatePost } = useUpdatePost(campaignId)
-  const addPost = useAddPost(campaignId)
 
   // These cards are the ones the user drags onto the grid, so they are drawn
   // as that grid draws them: the panel is mounted by the right rail rather
@@ -37,8 +92,15 @@ export function NotScheduledPanel({
   // (`strict: false` — this component also renders on screens with no `view`
   // param at all, and week is the calendar's own default).
   const { view } = useParams({ strict: false })
-  const { card } = useCalendarSettings(campaignId)
-  const fields = card[view === 'month' ? 'month' : 'week']
+  const { card } = useCalendarSettings()
+  const viewFields = card[view === 'month' ? 'month' : 'week']
+  // On the workspace panel the cards name their campaign, exactly as the grid
+  // they are about to be dragged onto does — see `cardFields`. Memoized: the
+  // object is a `memo` prop on every card below.
+  const fields = useMemo(
+    () => withCampaignRow(viewFields, campaignId === null),
+    [viewFields, campaignId],
+  )
 
   const unscheduled = useMemo(
     () => (posts ?? []).filter((p) => !p.scheduled_at),
@@ -91,11 +153,7 @@ export function NotScheduledPanel({
             <Skeleton className="h-20 w-full shrink-0" />
           </div>
         ) : unscheduled.length === 0 ? (
-          <PostsEmptyState
-            variant="panel"
-            campaignId={campaignId}
-            onAddPost={addPost}
-          />
+          <PostsEmptyState variant="panel" onAddPost={onAddPost} />
         ) : (
           unscheduled.map((post) => (
             <div key={post.id} className="border border-border shrink-0">

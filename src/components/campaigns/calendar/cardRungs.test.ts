@@ -15,7 +15,9 @@ import {
   DEFAULT_MONTH_FIELDS,
   DEFAULT_WEEK_FIELDS,
   canHideField,
+  cardIsBare,
   visibleFieldCount,
+  withCampaignRow,
   type CardFields,
 } from './cardFields'
 
@@ -35,6 +37,59 @@ const MONTH_UNBACKED: CardFields = { ...DEFAULT_MONTH_FIELDS, image: false }
 const fields = (overrides: Partial<CardFields> = {}): CardFields => ({
   ...DEFAULT_WEEK_FIELDS,
   ...overrides,
+})
+
+describe('the campaign row', () => {
+  const week = withCampaignRow(DEFAULT_WEEK_FIELDS, true)
+  const named: CardFacts = { hasTime: true, hasCampaign: true }
+
+  it('costs a row where the calendar draws more than one campaign', () => {
+    expect(cardHeight(CARD_RUNGS[0], named, week)).toBeGreaterThan(
+      cardHeight(CARD_RUNGS[0], named, DEFAULT_WEEK_FIELDS),
+    )
+  })
+
+  it('costs nothing on a post whose campaign came back unhydrated', () => {
+    // The card skips the row rather than printing a placeholder, so the
+    // ladder must not budget for one either — otherwise a column of such
+    // posts measures taller than it draws and tightens for nothing.
+    expect(cardHeight(CARD_RUNGS[0], TEXT, week)).toBe(
+      cardHeight(CARD_RUNGS[0], TEXT, DEFAULT_WEEK_FIELDS),
+    )
+  })
+
+  it('is spent by the ladder like any other row', () => {
+    // A lane that fits four campaign-named cards at the roomiest rung fits
+    // them with room to spare once the ladder tightens — the point being that
+    // the row is measured, so a busy day on the workspace grid gets shorter
+    // cards rather than a lane that overflows.
+    const day = [named, named, named, named]
+    const room = stackHeight(CARD_RUNGS[0], day, week)
+    expect(stackHeight(CARD_RUNGS[2], day, week)).toBeLessThan(room)
+    expect(fitRung(day, room, week)).toEqual(CARD_RUNGS[0])
+    expect(fitRung(day, room - 1, week)).not.toEqual(CARD_RUNGS[0])
+  })
+
+  it('does not count towards the floor that makes the status speak up', () => {
+    // `cardIsBare` is about the switches the user has; the campaign row is not
+    // one of them. A workspace card stripped to a campaign name says no more
+    // about the post than a coloured strip does, so the status still writes
+    // itself out — exactly as it would on the campaign calendar.
+    const stripped = withCampaignRow(
+      fields({ time: false, title: false, platform: false, account: false }),
+      true,
+    )
+    expect(cardIsBare(stripped, true)).toBe(true)
+  })
+
+  it('hands back the same object when nothing changes', () => {
+    // The identity is a `memo` prop on every card and a `useMemo` dependency
+    // in both grids — a fresh object per render re-measures the whole grid.
+    expect(withCampaignRow(DEFAULT_WEEK_FIELDS, false)).toBe(
+      DEFAULT_WEEK_FIELDS,
+    )
+    expect(withCampaignRow(week, true)).toBe(week)
+  })
 })
 
 describe('cardHeight', () => {
@@ -313,6 +368,9 @@ describe('cardFields', () => {
   it('defaults to the card as it was before any of this was configurable', () => {
     expect(DEFAULT_WEEK_FIELDS).toEqual({
       image: true,
+      // Off in the default, and off on the campaign calendar whatever the
+      // default says — the view stamps it (`withCampaignRow`).
+      campaign: false,
       status: false,
       time: true,
       title: true,
@@ -327,6 +385,7 @@ describe('cardFields', () => {
 
     const one: CardFields = {
       image: false,
+      campaign: false,
       status: false,
       time: false,
       title: true,

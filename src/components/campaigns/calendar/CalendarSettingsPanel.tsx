@@ -51,15 +51,18 @@ const CARD_VIEWS = [
  * "Calendar Settings" content for the right sidebar. The sidebar is
  * non-blocking, so the calendar behind it reflects preference changes live.
  *
- * The preferences are per campaign as well as per user — a launch campaign a
- * user works weekends on and an evergreen one they don't shouldn't share a
- * week shape — so the panel needs the campaign it was opened from.
+ * The preferences themselves are the user's and are shared by every calendar
+ * (`useCalendarSettings`), so this panel is the same panel wherever it is
+ * opened from. `campaignId` is not what the settings are filed under — it is
+ * only the one annotation on the day list, naming the days *this* campaign
+ * never publishes on, and the workspace calendar opens the panel without one
+ * because no such day exists across every campaign at once.
  */
 export function CalendarSettingsPanel({
   campaignId,
   onClose,
 }: {
-  campaignId: string
+  campaignId?: string
   onClose?: () => void
 }) {
   const { t, i18n } = useTranslation()
@@ -79,13 +82,16 @@ export function CalendarSettingsPanel({
     setDayVisible,
     setCardField,
     setImagePreviews,
-  } = useCalendarSettings(campaignId)
+  } = useCalendarSettings()
   // The campaign's publishing days, so the panel can say which of these rows
   // the campaign will never put anything on. Shares the cached campaign the
   // page around it already loaded, so opening the panel costs no extra request.
   // While it is loading there is nothing to annotate — and no annotation is the
-  // right guess, since a campaign publishes on every day by default.
-  const { data: campaign } = useCampaign(campaignId)
+  // right guess, since a campaign publishes on every day by default. On the
+  // workspace calendar there is no campaign to ask, and the annotation is
+  // simply absent: a day some campaigns publish on and others don't is not a
+  // fact the row could state.
+  const { data: campaign } = useCampaign(campaignId ?? '')
   const publishingDays = campaign
     ? publishingDayNumbers(campaign.publishing_days)
     : null

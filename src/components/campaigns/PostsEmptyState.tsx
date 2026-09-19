@@ -17,11 +17,16 @@ import { cn } from '@/lib'
 type Props = {
   /** Which surface is empty — decides the backdrop sketch, copy and scale. */
   variant: 'week' | 'month' | 'list' | 'panel'
-  /** Whose calendar preferences shape the calendar sketch. */
-  campaignId: string
   /** Range to sketch behind the prompt. Defaults to the current week/month. */
   anchor?: Date
-  onAddPost: () => void
+  /**
+   * Omitted where the surface cannot create a post — the workspace calendar,
+   * which has no one campaign to put a new one in. That absence is also what
+   * picks the copy: an empty state whose whole sentence is an invitation must
+   * not be shown without the button it is inviting you to press, so the
+   * workspace's says where posts come from instead of offering to make one.
+   */
+  onAddPost?: () => void
   pending?: boolean
 }
 
@@ -38,10 +43,18 @@ const COPY = {
   week: {
     title: 'calendar.empty.calendarTitle',
     subtitle: 'calendar.empty.calendarSubtitle',
+    noAdd: {
+      title: 'calendar.empty.workspaceTitle',
+      subtitle: 'calendar.empty.workspaceSubtitle',
+    },
   },
   month: {
     title: 'calendar.empty.calendarTitle',
     subtitle: 'calendar.empty.calendarSubtitle',
+    noAdd: {
+      title: 'calendar.empty.workspaceTitle',
+      subtitle: 'calendar.empty.workspaceSubtitle',
+    },
   },
   list: {
     title: 'calendar.empty.listTitle',
@@ -50,6 +63,10 @@ const COPY = {
   panel: {
     title: 'calendar.empty.panelTitle',
     subtitle: 'calendar.empty.panelSubtitle',
+    noAdd: {
+      title: 'calendar.empty.panelTitle',
+      subtitle: 'calendar.empty.workspacePanelSubtitle',
+    },
   },
 } as const
 
@@ -66,15 +83,21 @@ const GHOSTS_PER_DAY = [1, 0, 2, 1, 0, 1, 0]
  */
 export function PostsEmptyState({
   variant,
-  campaignId,
   anchor,
   onAddPost,
   pending,
 }: Props) {
   const { t, i18n } = useTranslation()
-  const { firstDayOfWeek, hiddenDays } = useCalendarSettings(campaignId)
+  const { firstDayOfWeek, hiddenDays } = useCalendarSettings()
   const compact = variant === 'panel'
   const locale = i18n.language
+  // What this surface says where nothing can be added from it — the workspace
+  // calendar. Not a matter of tone: "add your first post" names an action that
+  // is not on the screen, and the reader's next question is where the button
+  // is, so these say where posts are made instead. The list has no such copy
+  // and needs none; it is a campaign's table and never appears without one.
+  const entry = COPY[variant]
+  const copy = !onAddPost && 'noAdd' in entry ? entry.noAdd : entry
 
   const columns = useMemo(() => {
     const today = new Date()
@@ -182,23 +205,25 @@ export function PostsEmptyState({
                 compact ? 'text-lg/6' : 'text-2xl/8',
               )}
             >
-              {t(COPY[variant].title)}
+              {t(copy.title)}
             </div>
-            <div>{t(COPY[variant].subtitle)}</div>
+            <div>{t(copy.subtitle)}</div>
           </div>
-          <Button
-            variant="defaultInverted"
-            size={compact ? 'sm' : 'default'}
-            // Wrapped, not passed bare: callers hand us `useAddPost`, whose
-            // optional `day` parameter would swallow the MouseEvent and blow
-            // up in `atDefaultTime`. The `() => void` prop type hides that
-            // from the compiler, so the wrapper has to live here.
-            onClick={() => onAddPost()}
-            loading={pending}
-          >
-            <PlusIcon className="size-4" />
-            <span>{t('calendar.addPost')}</span>
-          </Button>
+          {onAddPost && (
+            <Button
+              variant="defaultInverted"
+              size={compact ? 'sm' : 'default'}
+              // Wrapped, not passed bare: callers hand us `useAddPost`, whose
+              // optional `day` parameter would swallow the MouseEvent and blow
+              // up in `atDefaultTime`. The `() => void` prop type hides that
+              // from the compiler, so the wrapper has to live here.
+              onClick={() => onAddPost()}
+              loading={pending}
+            >
+              <PlusIcon className="size-4" />
+              <span>{t('calendar.addPost')}</span>
+            </Button>
+          )}
         </div>
       </div>
     </div>

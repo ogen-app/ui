@@ -6,11 +6,12 @@ import {
   createPost,
   deletePost,
   listCampaignPosts,
+  listPosts,
   updatePost,
 } from '@/services/api/posts'
 import { invalidateCampaignPosts } from '@/lib/postCache'
 import { atDefaultTime } from '@/lib/postSchedule'
-import { campaignPostsKey } from '@/lib/queryKeys'
+import { campaignPostsKey, WORKSPACE_POSTS_KEY } from '@/lib/queryKeys'
 import { selectStreamedPosts, useAssistantStore } from '@/stores/assistantStore'
 import { toast } from '@/stores/toastStore'
 import type { StreamedPost } from '@/types/assistant'
@@ -40,6 +41,55 @@ export function useCampaignPosts(campaignId: string) {
       .map((p) => draftPost(p, campaignId))
     return pending.length === 0 ? saved : [...saved, ...pending]
   }, [query.data, streamed, campaignId])
+
+  return { ...query, data }
+}
+
+/**
+ * Every post in the workspace that belongs to a campaign still in play — what
+ * the workspace calendar is drawn from.
+ *
+ * One request, not one per campaign: `GET /api/posts` returns the tenant's
+ * posts hydrated, and the client already reads it for two other cross-campaign
+ * questions (`useAssetUsage`, the auto-publish allowlist), under a key that
+ * every post write already invalidates and patches (`lib/postCache`). So the
+ * grid stays in step with an edit made anywhere in the app for free, and a
+ * campaign's own calendar and this one can be open in two tabs without either
+ * going stale behind the other.
+ *
+ * Two things it deliberately does not do.
+ *
+ * **It does not ask for a range.** The endpoint takes no parameters, so this is
+ * the whole workspace's posts however few weeks are on screen — hydrated
+ * bodies, campaigns, platforms and assets included. That is the honest cost of
+ * having the view at all today, and it is the same cost `useAssetUsage` already
+ * pays and documents; a `?from=&to=` read is the fix, and it is filed as an
+ * open question rather than worked around here with N campaign-scoped requests,
+ * which is the N+1 CON-152 removed from the Campaigns list.
+ *
+ * **It does not fold in the assistant's streamed drafts**, which
+ * `useCampaignPosts` does. A content plan is generated inside one campaign and
+ * watched on that campaign's calendar; the rows land here on the invalidation
+ * that follows the turn. Reaching into every open thread to collect them would
+ * mean building an aggregate the store has no stable identity for, to show a
+ * few minutes of a process that is happening on another screen.
+ *
+ * Archived campaigns are filtered out rather than asked about: `GET /api/posts`
+ * has no archive filter, but each post carries its hydrated campaign, so the
+ * `archived_at` stamp is already here. A post whose campaign came back
+ * unhydrated is kept — that is a gap in the payload, not evidence the campaign
+ * was put away (CON-156).
+ */
+export function useWorkspacePosts() {
+  const query = useQuery({
+    queryKey: WORKSPACE_POSTS_KEY,
+    queryFn: listPosts,
+  })
+
+  const data = useMemo(
+    () => query.data?.filter((p) => !p.campaign?.archived_at),
+    [query.data],
+  )
 
   return { ...query, data }
 }
@@ -199,17 +249,36 @@ export function useDuplicatePost(campaignId: string) {
   return { run, running: create.isPending }
 }
 
-export function useUpdatePost(campaignId: string) {
+/**
+ * Saving a post, painting the change into the list the caller is looking at.
+ *
+ * `campaignId` is `null` on the workspace calendar, which is reading every
+ * campaign's posts at once (`useWorkspacePosts`) and so has no single campaign
+ * list to paint. The optimistic patch then lands in the workspace-wide key
+ * instead — the same rows under their other root, which nothing reaches by
+ * prefix from the campaign side.
+ *
+ * Either way the settle names a campaign: the one passed in, or the one the
+ * payload carries, which `postToPayload` always fills. That matters for a drag
+ * on the workspace grid — the post moved in *its* campaign, and that campaign's
+ * own calendar has to hear about it. `invalidateCampaignPosts` covers the
+ * workspace key and the summaries roll-up alongside it, so one call keeps all
+ * three in step.
+ */
+export function useUpdatePost(campaignId: string | null) {
   const qc = useQueryClient()
+  const listKey = campaignId
+    ? campaignPostsKey(campaignId)
+    : WORKSPACE_POSTS_KEY
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: PostPayload }) =>
       updatePost(id, payload),
     onMutate: async ({ id, payload }) => {
-      await qc.cancelQueries({ queryKey: campaignPostsKey(campaignId) })
-      const prev = qc.getQueryData<Post[]>(campaignPostsKey(campaignId))
+      await qc.cancelQueries({ queryKey: listKey })
+      const prev = qc.getQueryData<Post[]>(listKey)
       if (prev) {
         qc.setQueryData<Post[]>(
-          campaignPostsKey(campaignId),
+          listKey,
           prev.map((p) => (p.id === id ? { ...p, ...payload } : p)),
         )
       }
@@ -220,10 +289,10 @@ export function useUpdatePost(campaignId: string) {
     // refused update, so a dragged post snapping back reads as a UI glitch
     // rather than as the server saying no.
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(campaignPostsKey(campaignId), ctx.prev)
+      if (ctx?.prev) qc.setQueryData(listKey, ctx.prev)
     },
-    onSettled: () => {
-      invalidateCampaignPosts(qc, campaignId)
+    onSettled: (_post, _err, { payload }) => {
+      invalidateCampaignPosts(qc, campaignId ?? payload.campaign_id)
     },
   })
 }

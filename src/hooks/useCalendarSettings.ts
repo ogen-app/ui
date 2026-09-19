@@ -13,8 +13,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { toast } from '@/stores/toastStore'
 
 /**
- * A user's calendar preferences for one campaign. Day numbers follow JS
- * `Date#getDay()`: 0 = Sunday … 6 = Saturday.
+ * A user's calendar preferences. Day numbers follow JS `Date#getDay()`:
+ * 0 = Sunday … 6 = Saturday.
  */
 export type CalendarSettings = {
   firstDayOfWeek: number
@@ -47,8 +47,8 @@ const NAMESPACE = 'calendar'
 /** How long to coalesce toggles before writing. A run of switch flips is one PUT. */
 const SAVE_DEBOUNCE_MS = 500
 
-export const calendarSettingsKey = (userId: string, campaignId: string) =>
-  ['settings', NAMESPACE, userId, campaignId] as const
+export const calendarSettingsKey = (userId: string) =>
+  ['settings', NAMESPACE, userId] as const
 
 /**
  * Field by field, so a blob written before this setting existed comes back with
@@ -125,20 +125,37 @@ function parse(raw: string | null): CalendarSettings {
 }
 
 /**
- * Per-user, per-campaign calendar preferences, persisted server-side so they
- * follow the user to another browser.
+ * Per-user calendar preferences, persisted server-side so they follow the user
+ * to another browser.
+ *
+ * **One set for every calendar**, campaign and workspace alike. These used to
+ * be filed per campaign (`calendar.<userId>.<campaignId>`), on the reasoning
+ * that a campaign with two publishing days wants a different grid from one
+ * with seven. What that actually produced was a preference the user had to set
+ * again in every campaign they opened, and which then drifted — the same
+ * person reading the same posts through two different cards depending on which
+ * way in they took. Which days you want to see and how much a card should say
+ * are facts about how *you* read a calendar, not about the campaign you are
+ * reading; the workspace calendar is what made that obvious, since it has no
+ * campaign to be filed under at all.
+ *
+ * Nothing is migrated. A blob written under the old key is simply not read any
+ * more, so the first visit after this lands starts from the defaults — the same
+ * stance the shape change inside `parse` takes, and for the same reason:
+ * re-flipping a switch is cheaper than the code to guess which campaign's
+ * answer should become everyone's.
  *
  * The API has no user-scoped store, only the tenant-wide key/value table, so
- * the identity lives in the key (`calendar.<userId>.<campaignId>`) rather than
- * in a column — see `services/api/settings.ts`. Changes paint from the Query
- * cache immediately and the write is debounced behind them, so flipping six
- * day switches in a row costs one request instead of six.
+ * the identity lives in the key (`calendar.<userId>`) rather than in a column —
+ * see `services/api/settings.ts`. Changes paint from the Query cache
+ * immediately and the write is debounced behind them, so flipping six day
+ * switches in a row costs one request instead of six.
  */
-export function useCalendarSettings(campaignId: string) {
+export function useCalendarSettings() {
   const userId = useAuthStore((s) => s.user?.id ?? '')
   const qc = useQueryClient()
-  const queryKey = calendarSettingsKey(userId, campaignId)
-  const storageKey = userScopedKey(NAMESPACE, userId, campaignId)
+  const queryKey = calendarSettingsKey(userId)
+  const storageKey = userScopedKey(NAMESPACE, userId)
 
   // `isLoading`, not `isPending`: the latter stays true forever on a disabled
   // query, and without a user there is nothing to fetch — the defaults are
@@ -146,7 +163,7 @@ export function useCalendarSettings(campaignId: string) {
   const { data, isLoading, isError } = useQuery({
     queryKey,
     queryFn: async () => parse(await getSetting(storageKey)),
-    enabled: !!userId && !!campaignId,
+    enabled: !!userId,
     // Nothing else writes these, so the cache is authoritative once loaded.
     staleTime: Infinity,
   })
@@ -182,12 +199,12 @@ export function useCalendarSettings(campaignId: string) {
       // this is what makes that gate load-bearing rather than cosmetic.
       if (data === undefined) return
       qc.setQueryData(queryKey, next)
-      if (!userId || !campaignId) return
+      if (!userId) return
       pending.current = { key: storageKey, value: next }
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(flush, SAVE_DEBOUNCE_MS)
     },
-    [qc, queryKey, storageKey, userId, campaignId, flush, data],
+    [qc, queryKey, storageKey, userId, flush, data],
   )
 
   const setFirstDayOfWeek = useCallback(

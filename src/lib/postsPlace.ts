@@ -51,6 +51,23 @@ export type PostsPlace = {
   granularity: CalendarGranularity
 }
 
+/**
+ * What the workspace calendar's place is filed under, in the same map the
+ * campaigns use.
+ *
+ * One map rather than a second store: it is the same fact — the week someone
+ * was last reading — and the calendar that grid belongs to is as much a place
+ * to come back to as any campaign's. The `@` is what keeps the two apart with
+ * certainty: ids here are sqids, which are alphanumeric, so no campaign can
+ * ever be filed under this key however the alphabet is configured.
+ *
+ * Only ever holds a calendar granularity. The workspace has no table for the
+ * `list` view to name, so nothing writes one — and `sanitizePostsPlaces` would
+ * keep one a hand-edited blob put there, which costs nothing: the only reader
+ * is `readCalendarPlace`, which returns the granularity and never the view.
+ */
+export const WORKSPACE_PLACE = '@workspace'
+
 export function isPostsView(value: unknown): value is PostsView {
   return (POSTS_VIEWS as readonly unknown[]).includes(value)
 }

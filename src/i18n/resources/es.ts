@@ -595,11 +595,6 @@ export const es: Translation = {
   },
 
   calendar: {
-    stub: {
-      workspaceTitle: 'Todas las campañas en un calendario',
-      workspaceBody:
-        'La misma vista que ya tiene cada campaña, sin el filtro: qué publica todo el espacio de trabajo, y cuándo.',
-    },
     unscheduled: 'SIN PROGRAMAR',
     unscheduledPosts: 'Publicaciones sin programar',
     settings: 'Ajustes del calendario',
@@ -630,6 +625,13 @@ export const es: Translation = {
     showFieldOnWeek: 'Mostrar {{field}} en la tarjeta de semana',
     showFieldOnMonth: 'Mostrar {{field}} en la tarjeta de mes',
 
+    untitledCampaign: 'Campaña sin título',
+
+    loadFailed:
+      'No se pudieron cargar tus publicaciones: el calendario se rellenará cuando vuelvan a estar disponibles.',
+    loadFailedCampaign:
+      'No se pudieron cargar las publicaciones de esta campaña: el calendario se rellenará cuando vuelvan a estar disponibles.',
+
     imagePreviews: 'Mostrar las tarjetas con vista previa de la imagen',
     imagePreviewsNote:
       'Solo las publicaciones que tienen imagen y, en el mes, solo en los días con espacio para una',
@@ -653,6 +655,11 @@ export const es: Translation = {
       panelTitle: 'Nada sin programar',
       panelSubtitle:
         'Las publicaciones sin fecha esperan aquí — arrastra una fuera del calendario o añade una nueva.',
+      workspaceTitle: 'Todavía no hay nada planificado',
+      workspaceSubtitle:
+        'Las publicaciones se escriben dentro de una campaña. Programa una y aparecerá aquí, sea cual sea la campaña a la que pertenezca.',
+      workspacePanelSubtitle:
+        'Las publicaciones sin fecha esperan aquí — arrastra una al calendario para darle una.',
     },
   },
 

@@ -840,11 +840,6 @@ export const en = {
   },
 
   calendar: {
-    stub: {
-      workspaceTitle: 'Every campaign, on one calendar',
-      workspaceBody:
-        'The view each campaign already has, with the filter taken off — what the whole workspace is publishing, and when.',
-    },
     /**
      * The header's counter button: the posts that have no date on them yet.
      * `unscheduled` is the visible label beside the glyph and is a button, so
@@ -916,6 +911,24 @@ export const en = {
     showFieldOnWeek: 'Show {{field}} on the week card',
     showFieldOnMonth: 'Show {{field}} on the month card',
 
+    /**
+     * The campaign a card belongs to — the workspace calendar's one extra row,
+     * and the only thing telling two otherwise identical cards apart there. The
+     * fallback names the state rather than the campaign, because a campaign
+     * with no name yet is ordinary while it is being set up.
+     */
+    untitledCampaign: 'Untitled campaign',
+
+    /**
+     * What a grid says when its posts could not be fetched. Deliberately not an
+     * error dialog: the calendar is still drawn and still navigable, and this
+     * is the one line saying why it is empty.
+     */
+    loadFailed:
+      'Couldn’t load your posts — the calendar will fill in once they’re reachable again.',
+    loadFailedCampaign:
+      'Couldn’t load this campaign’s posts — the calendar will fill in once they’re reachable again.',
+
     imagePreviews: 'Show cards as image previews',
     imagePreviewsNote:
       'Only posts that have a picture, and in the month only on the days with room for one',
@@ -966,6 +979,16 @@ export const en = {
       panelTitle: 'Nothing unscheduled',
       panelSubtitle:
         'Posts without a date wait here — drag one off the calendar, or add a new one.',
+      /**
+       * The same two surfaces on the workspace calendar, which has no ADD POST
+       * — so neither sentence offers one. Both say where posts come from
+       * instead, because that is the reader's next question.
+       */
+      workspaceTitle: 'Nothing is planned yet',
+      workspaceSubtitle:
+        'Posts are written inside a campaign. Schedule one and it will show up here, whichever campaign it belongs to.',
+      workspacePanelSubtitle:
+        'Posts without a date wait here — drag one onto the calendar to give it one.',
     },
   },
 
