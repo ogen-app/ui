@@ -116,11 +116,12 @@ export function AssetAudioView({ asset, onTitleChange, onDirty }: Props) {
 
       {!settled ? (
         <>
-          <AssetIngestState asset={asset} />
+          <AssetIngestState asset={asset} inset />
           <RunProgress run={run.data ?? null} />
         </>
       ) : asset.status === 'failed' ? (
         <AssetIngestState
+          inset
           asset={{
             ...asset,
             // The run's reason is the more specific of the two when the asset

@@ -370,7 +370,9 @@ function Picture({ asset }: { asset: Asset }) {
     // the reading that makes one failed. Not the same as never stored.
     const undrawable = !broken && !!asset.file?.url
     return (
-      <AssetStateFrame>
+      // The picture's own box, so a missing one takes the place a drawn one
+      // would and the fields below sit where they will once it is.
+      <AssetStateFrame inset className="bg-secondary px-4">
         <ImageBrokenIcon className="size-8 text-tertiary-foreground" />
         <p className="text-sm text-tertiary-foreground">
           {undrawable

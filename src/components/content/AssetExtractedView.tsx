@@ -51,7 +51,7 @@ export function AssetExtractedView({ asset, onTitleChange, onDirty }: Props) {
       />
 
       {!settled ? (
-        <AssetIngestState asset={asset} />
+        <AssetIngestState asset={asset} inset />
       ) : chunks.isPending ? (
         <div className="flex justify-center py-8">
           <Spinner tone="onSurface" className="w-24" />
@@ -63,7 +63,7 @@ export function AssetExtractedView({ asset, onTitleChange, onDirty }: Props) {
       ) : loaded.length === 0 ? (
         // Ready with nothing in it — an image-only PDF, a blank sheet. Not a
         // failure, and worded so it doesn't read as one.
-        <AssetStateFrame>
+        <AssetStateFrame inset>
           <FileDashedIcon className="size-8 text-tertiary-foreground" />
           <p className="text-sm text-tertiary-foreground">
             {t('content.extracted.empty')}
