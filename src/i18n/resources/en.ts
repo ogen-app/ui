@@ -3547,6 +3547,32 @@ export const en = {
     },
 
     /**
+     * What to call each kind of asset, under its count on the preview cards
+     * (`AssetKindTally`). "Text files" rather than "notes" for the first: it
+     * holds both the notes written here and the markdown files uploaded, and
+     * calling an upload a note would be the summary disagreeing with the row
+     * it stands for. "Documents" are the office and text files document-service
+     * reads (CON-280); "recordings" are audio (CON-282).
+     */
+    kinds: {
+      text_one: 'text file',
+      text_other: 'text files',
+      page_one: 'web page',
+      page_other: 'web pages',
+      pdf_one: 'PDF',
+      pdf_other: 'PDFs',
+      document_one: 'document',
+      document_other: 'documents',
+      image_one: 'image',
+      image_other: 'images',
+      audio_one: 'recording',
+      audio_other: 'recordings',
+      /** Muted notes under the tiles — a state, not a fifth kind of thing. */
+      waiting: '{{count}} still being read',
+      unreadable: '{{count}} couldn’t be read',
+    },
+
+    /**
      * Shown in place of the editor for an asset this build can't open — in
      * practice, one whose `type` the server added after this version shipped
      * (CON-16 R32). It has to explain itself without naming the kind, because

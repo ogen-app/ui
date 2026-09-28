@@ -3,7 +3,7 @@ import type { Asset } from '@/types/content'
 /**
  * What kind of thing a document is, in the app's own words.
  *
- * Four, not the three categories this replaced (`text` / `imagery` / `files`).
+ * More than the three categories this replaced (`text` / `imagery` / `files`).
  * Those came from the workspace bank's old ALL / TEXT / IMAGERY / FILES tabs,
  * which went with its old layout (CON-211) — and they were already a fiction
  * the one place they were used: `AssetGlyph` drew a fourth glyph for a scraped
@@ -18,14 +18,19 @@ import type { Asset } from '@/types/content'
  * of guessing wrong on a *glyph* is a wrong picture, which is the cheapest
  * failure available. `opensAsDocument` is the one that fails closed instead.
  */
-export type AssetKind = 'text' | 'page' | 'pdf' | 'image'
+export type AssetKind =
+  'text' | 'page' | 'pdf' | 'document' | 'image' | 'audio'
 
 export function assetKind(asset: Pick<Asset, 'type'>): AssetKind {
   switch (asset.type) {
     case 'PDF':
       return 'pdf'
+    case 'DOC':
+      return 'document'
     case 'IMG':
       return 'image'
+    case 'AUDIO':
+      return 'audio'
     case 'URL':
       return 'page'
     default:
@@ -40,7 +45,14 @@ export function assetKind(asset: Pick<Asset, 'type'>): AssetKind {
  * every time it is glanced at — a row whose items reorder as documents arrive
  * has to be read rather than recognised.
  */
-export const ASSET_KINDS: AssetKind[] = ['text', 'page', 'pdf', 'image']
+export const ASSET_KINDS: AssetKind[] = [
+  'text',
+  'page',
+  'pdf',
+  'document',
+  'image',
+  'audio',
+]
 
 /** One kind, and how many of them there are. */
 export type AssetKindCount = { kind: AssetKind; count: number }

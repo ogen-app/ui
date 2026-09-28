@@ -2601,6 +2601,23 @@ export const es: Translation = {
       campaignTitle: 'Recursos de {{campaign}}',
     },
 
+    kinds: {
+      text_one: 'archivo de texto',
+      text_other: 'archivos de texto',
+      page_one: 'página web',
+      page_other: 'páginas web',
+      pdf_one: 'PDF',
+      pdf_other: 'PDF',
+      document_one: 'documento',
+      document_other: 'documentos',
+      image_one: 'imagen',
+      image_other: 'imágenes',
+      audio_one: 'grabación',
+      audio_other: 'grabaciones',
+      waiting: '{{count}} aún en lectura',
+      unreadable: '{{count}} no se pudieron leer',
+    },
+
     unsupported: {
       title: 'Esto no es un documento',
       body: 'Esta versión de la aplicación no sabe mostrar este tipo de recurso. No se ha cambiado nada: sigue aquí, y una versión más reciente lo abrirá.',

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import { tallyAssetKinds } from '@/lib/assetKind'
 import { retrievability } from '@/lib/campaignSources'
@@ -36,6 +37,7 @@ export function AssetKindTally({
   assets: Asset[]
   className?: string
 }) {
+  const { t } = useTranslation()
   const tally = tallyAssetKinds(assets)
   if (tally.length === 0) return null
 
@@ -52,8 +54,10 @@ export function AssetKindTally({
     (asset) => retrievability(asset.status) === 'never',
   ).length
   const notes = [
-    waiting > 0 ? `${waiting} still being read` : null,
-    unreadable > 0 ? `${unreadable} couldn’t be read` : null,
+    waiting > 0 ? t('content.kinds.waiting', { count: waiting }) : null,
+    unreadable > 0
+      ? t('content.kinds.unreadable', { count: unreadable })
+      : null,
   ].filter(Boolean)
 
   return (
@@ -78,7 +82,7 @@ export function AssetKindTally({
                   of unpredictable length on the same line would push each
                   number to a different place. */}
               <span className="text-xs leading-4 text-tertiary-foreground">
-                {assetKindNoun(kind, count)}
+                {assetKindNoun(t, kind, count)}
               </span>
             </li>
           )

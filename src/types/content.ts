@@ -15,12 +15,18 @@ export type AssetStatus =
  * Markdown on our behalf (CON-222); it reads like any other document from here,
  * and only differs in having somewhere it came from.
  *
- * `"IMG"` is an image (CON-246). It is the only member that is **not** a
- * document: its `content` is a description of the picture rather than the
- * thing itself, which is why `opensAsDocument` exists and why an image gets a
- * screen of its own rather than the editor.
+ * `"IMG"` is an image (CON-246). Its `content` is a description of the
+ * picture rather than the thing itself, which is why `opensAsDocument` exists
+ * and why an image gets a screen of its own rather than the editor.
+ *
+ * `"DOC"` is an office or text file — Word, Excel, PowerPoint, OpenDocument,
+ * EPUB, CSV, HTML, email, RTF, plain text — parsed by document-service into
+ * source-anchored chunks (CON-280). `"AUDIO"` is a recording, whose `content`
+ * is the transcript audio-service wrote once the run finished (CON-282). Both
+ * are ingestion output, like a PDF's text, and the server refuses an edit to
+ * any of the three (`content_locked`, CON-312).
  */
-export type AssetType = 'MD' | 'PDF' | 'URL' | 'IMG' | null
+export type AssetType = 'MD' | 'PDF' | 'URL' | 'IMG' | 'DOC' | 'AUDIO' | null
 
 /**
  * One image from a scraped page, copied into our own storage (CON-222).
@@ -73,6 +79,13 @@ export type AssetFile = {
   url?: string | null
   /** A picture of the file: a PDF's first page. Absent when the render failed. */
   thumbnail_url?: string | null
+  /**
+   * The browser-safe copy image-service writes of every image (CON-299) — a
+   * PNG, so a HEIC or TIFF original that no browser draws still has something
+   * to show. Absent until the ingest has finished, and on anything that isn't
+   * an image.
+   */
+  normalized_url?: string | null
   /** Pixel dimensions of an image, `0` for anything else. */
   width: number
   height: number
@@ -96,6 +109,20 @@ export type Asset = {
    * description the embeddings are built from, and empty on everything else.
    */
   alt_text: string
+  /**
+   * Whether a person wrote the alt text, rather than image-service (CON-281).
+   * Re-processing never overwrites one a person wrote. The server flips it on
+   * any PUT whose `alt_text` differs from the stored value, which is why a
+   * screen sends `alt_text` only once someone has typed in it.
+   */
+  alt_text_edited_by_user?: boolean
+  /**
+   * Why ingestion failed, when it did (CON-312). `failure_code` is one of the
+   * upload codes (`lib/uploadError`); `failure_reason` is the server's prose,
+   * kept for a code this build predates.
+   */
+  failure_code?: string | null
+  failure_reason?: string | null
   /** Mirrored page images. Absent until a scrape has stored some. */
   images?: AssetImage[]
   /** The upload behind this document. Absent for notes and scraped pages. */
@@ -125,12 +152,14 @@ export type CreateAssetPayload = {
  * would have every save carry the copy of those the editor last read, so
  * saving a title would undo a re-tag done in another tab a second earlier.
  *
- * `title` and `content` stay required: they are what a screen editing an asset
- * always has in hand, and a PUT that names neither is not an update.
+ * `title` stays required — the server has no way to say "no title". `content`
+ * is optional since CON-312: an empty or unchanged one keeps what is stored, so
+ * a rename of an ingested asset (PDF, DOC, AUDIO) sends only the title and can
+ * never trip `content_locked`, which a *different* value on those types does.
  */
 export type UpdateAssetPayload = {
   title: string
-  content: string
+  content?: string
   alt_text?: string
   tag_ids?: string[]
 }

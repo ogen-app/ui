@@ -11,6 +11,15 @@ describe('assetKind', () => {
     expect(assetKind({ type: 'IMG' })).toBe('image')
   })
 
+  // CON-280/282 — both used to fall through to the note's glyph.
+  it('files an office or text file under document', () => {
+    expect(assetKind({ type: 'DOC' })).toBe('document')
+  })
+
+  it('files a recording under audio', () => {
+    expect(assetKind({ type: 'AUDIO' })).toBe('audio')
+  })
+
   // The kind the categories used to leave to the glyph to special-case.
   it('files a scraped page under page', () => {
     expect(assetKind({ type: 'URL' })).toBe('page')
