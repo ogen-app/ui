@@ -189,14 +189,18 @@ export function UploadModal({
                         })}
                       </p>
                     )}
+                    {/* Under the name, not beside it: a refusal is a sentence,
+                        and on the same line it squeezed out the filename —
+                        the half that says which file it is about. */}
+                    {!validation.ok && (
+                      <p className="text-xs text-destructive">
+                        {uploadErrorMessage(t, validation.failure)}
+                      </p>
+                    )}
                   </div>
-                  {validation.ok ? (
+                  {validation.ok && (
                     <p className="shrink-0 text-xs tabular-nums text-tertiary-foreground">
                       {formatBytes(file.size)}
-                    </p>
-                  ) : (
-                    <p className="shrink-0 text-xs text-destructive">
-                      {uploadErrorMessage(t, validation.failure)}
                     </p>
                   )}
                   {/* A bin rather than an ✕. The modal's own close control is

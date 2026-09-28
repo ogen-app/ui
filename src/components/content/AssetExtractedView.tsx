@@ -110,6 +110,7 @@ export function AssetExtractedView({ asset, onTitleChange, onDirty }: Props) {
 function ChunkSection({ chunk }: { chunk: AssetChunk }) {
   const { t } = useTranslation()
   const label = chunkLabel(t, chunk)
+  const text = withoutLeadingLabel(chunk.content, chunk.source_label)
   return (
     <li className="flex flex-col gap-2">
       {label && (
@@ -120,10 +121,29 @@ function ChunkSection({ chunk }: { chunk: AssetChunk }) {
       {/* Plain text, as extracted. Whitespace is kept because a sheet's rows
           and an email's quoting are carried by it. */}
       <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
-        {chunk.content}
+        {text}
       </p>
     </li>
   )
+}
+
+/**
+ * The chunk's text without its own label on top.
+ *
+ * document-service opens a section's chunk with its heading path — "Q3 Launch
+ * Plan › Audience", then a blank line — so the embedding carries where it sits.
+ * Printed under that same label it reads twice; only an exact repeat is
+ * dropped, so nothing the file itself says is ever cut.
+ */
+function withoutLeadingLabel(content: string, label?: string | null): string {
+  const heading = label?.trim()
+  if (!heading) return content
+  const [first, ...rest] = content.split('\n')
+  if (first.trim() !== heading) return content
+  return rest
+    .join('\n')
+    .replace(/^\s*\n/, '')
+    .trimStart()
 }
 
 /**

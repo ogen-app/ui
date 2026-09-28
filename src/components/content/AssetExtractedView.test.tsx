@@ -85,6 +85,23 @@ describe('AssetExtractedView', () => {
     expect(api.listAssetChunks).toHaveBeenCalledWith('doc1', 0, 100)
   })
 
+  // document-service prefixes a section's text with its heading path.
+  it('does not print a section heading twice', async () => {
+    api.listAssetChunks.mockResolvedValueOnce(
+      page([
+        chunk({
+          chunk_index: 0,
+          source_label: 'Q3 Launch Plan › Audience',
+          content: 'Q3 Launch Plan › Audience\n\nEarly-stage founders.',
+        }),
+      ]),
+    )
+    renderView(asset({}))
+
+    expect(await screen.findByText('Early-stage founders.')).toBeInTheDocument()
+    expect(screen.getAllByText(/Q3 Launch Plan › Audience/)).toHaveLength(1)
+  })
+
   it('labels a PDF chunk by the pages it spans', async () => {
     api.listAssetChunks.mockResolvedValueOnce(
       page([
