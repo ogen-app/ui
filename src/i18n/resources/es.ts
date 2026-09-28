@@ -2660,6 +2660,23 @@ export const es: Translation = {
       pages: 'Páginas {{from}}–{{to}}',
     },
 
+    audio: {
+      transcript: 'Transcripción',
+      playFrom: 'Reproducir desde {{time}}',
+      normalizing: 'Preparando la grabación…',
+      progress: 'Transcritas {{done}} de {{total}} partes',
+      partial: 'Algunas partes de la grabación no se pudieron transcribir.',
+      empty: 'No se ha encontrado voz en esta grabación.',
+      loadFailed:
+        'No se ha podido cargar la transcripción. Prueba a recargar la página.',
+      missing:
+        'Esta grabación no se guardó, así que no hay nada que reproducir.',
+      noPlayer: 'Este navegador no puede reproducir audio.',
+      retry_one: 'Reintentar la parte fallida',
+      retry_other: 'Reintentar las {{count}} partes fallidas',
+      reextract: 'Transcribir de nuevo',
+    },
+
     locked: {
       title: 'El texto de este archivo no se puede editar',
       body: 'Se leyó del archivo subido. Sube una versión nueva para cambiarlo.',

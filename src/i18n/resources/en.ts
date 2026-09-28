@@ -3636,6 +3636,27 @@ export const en = {
       pages: 'Pages {{from}}–{{to}}',
     },
 
+    /**
+     * A recording's screen (`AssetAudioView`, CON-282): the player, and the
+     * transcript the audio service wrote — read-only, like a PDF's text.
+     */
+    audio: {
+      transcript: 'Transcript',
+      playFrom: 'Play from {{time}}',
+      normalizing: 'Preparing the recording…',
+      progress: 'Transcribed {{done}} of {{total}} parts',
+      partial: 'Some parts of the recording could not be transcribed.',
+      empty: 'No speech was found in this recording.',
+      loadFailed: "The transcript couldn't be loaded. Try reloading the page.",
+      /** The file never reached storage — a deployment fault, not a bad file. */
+      missing: 'This recording was not stored, so there is nothing to play.',
+      noPlayer: 'This browser cannot play audio.',
+      retry_one: 'Retry the failed part',
+      retry_other: 'Retry the {{count}} failed parts',
+      /** Runs the whole transcription again and replaces the transcript. */
+      reextract: 'Transcribe again',
+    },
+
     /** A PUT that tried to change ingested text (CON-312 `content_locked`). */
     locked: {
       title: "This file's text can't be edited",

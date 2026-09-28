@@ -5,6 +5,7 @@ import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AssetDetailsHeader } from '@/components/content/AssetDetailsHeader'
+import { AssetAudioView } from '@/components/content/AssetAudioView'
 import { AssetEditor } from '@/components/content/AssetEditor'
 import { AssetExtractedView } from '@/components/content/AssetExtractedView'
 import { AssetImageView } from '@/components/content/AssetImageView'
@@ -286,6 +287,12 @@ export function AssetDocument({ assetId, campaignId }: Props) {
               />
             ) : screen === 'extracted' ? (
               <AssetExtractedView
+                asset={asset}
+                onTitleChange={handleTitleChange}
+                onDirty={markDirty}
+              />
+            ) : screen === 'audio' ? (
+              <AssetAudioView
                 asset={asset}
                 onTitleChange={handleTitleChange}
                 onDirty={markDirty}

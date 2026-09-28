@@ -7,7 +7,11 @@ import {
 import {
   listAssets,
   getAsset,
+  getAudioStatus,
+  getAudioTranscript,
   listAssetChunks,
+  reextractAudio,
+  retryAudio,
   createAsset,
   createUrlAsset,
   updateAsset,
@@ -103,6 +107,57 @@ export function useAssetChunks(id: string, { enabled }: { enabled: boolean }) {
       return next < last.total && last.chunks.length > 0 ? next : undefined
     },
     enabled: enabled && !!id,
+  })
+}
+
+export const audioStatusKey = (id: string) => ['assets', id, 'audio'] as const
+export const transcriptKey = (id: string) =>
+  ['assets', id, 'audio', 'transcript'] as const
+
+const AUDIO_SETTLED = new Set(['complete', 'partial', 'failed'])
+
+/**
+ * A recording's transcription run, watching itself until it settles — the
+ * asset's own poll says *that* it is still going, this says how far.
+ */
+export function useAudioStatus(id: string) {
+  return useQuery({
+    queryKey: audioStatusKey(id),
+    queryFn: () => getAudioStatus(id),
+    enabled: !!id,
+    refetchInterval: (query) => {
+      const status = query.state.data?.extraction.status
+      return status && AUDIO_SETTLED.has(status) ? false : PROCESSING_POLL_MS
+    },
+  })
+}
+
+/** The transcript, once there is one to read. */
+export function useAudioTranscript(
+  id: string,
+  { enabled }: { enabled: boolean },
+) {
+  return useQuery({
+    queryKey: transcriptKey(id),
+    queryFn: () => getAudioTranscript(id),
+    enabled: enabled && !!id,
+  })
+}
+
+/**
+ * Re-runs a recording's transcription: only its failed parts (`retry`), or
+ * the whole of it (`reextract`). Either way the asset goes back to being read,
+ * so everything under it is re-fetched — status, run, transcript.
+ */
+export function useRerunAudio(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (mode: 'retry' | 'reextract') =>
+      mode === 'retry' ? retryAudio(id) : reextractAudio(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: assetKey(id) })
+      qc.invalidateQueries({ queryKey: ASSETS_KEY, exact: true })
+    },
   })
 }
 

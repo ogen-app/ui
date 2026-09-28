@@ -134,7 +134,7 @@ function ChunkSection({ chunk }: { chunk: AssetChunk }) {
  * the assistant also uses, and two spellings of one citation would be worse
  * than an English one. The page range is ours, so it is catalogued.
  */
-export function chunkLabel(t: TFunction, chunk: AssetChunk): string | null {
+function chunkLabel(t: TFunction, chunk: AssetChunk): string | null {
   const label = chunk.source_label?.trim()
   if (label) return label
   if (chunk.page_start > 0) {

@@ -89,6 +89,22 @@ export function uploadErrorMessage(
   return fromProse(t, message)
 }
 
+/**
+ * Why an asset's ingestion failed — its `failure_code` and `failure_reason`
+ * (CON-312), or a run's — worded by the same table as an upload refusal,
+ * because it is the same vocabulary: a failed document and a refused upload
+ * are one `invalid_file`. A failure the server gave no reason for says so.
+ */
+export function ingestFailureMessage(
+  t: TFunction,
+  failure: { failure_code?: string | null; failure_reason?: string | null },
+): string {
+  const code = failure.failure_code ?? undefined
+  const message = failure.failure_reason?.trim() ?? ''
+  if (!code && !message) return t('content.ingest.failedUnstated')
+  return uploadErrorMessage(t, { code, message })
+}
+
 /** How the server words a legacy or password-protected Office file. */
 const LEGACY_PROSE = /legacy binary or password-protected/i
 

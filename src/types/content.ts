@@ -223,3 +223,57 @@ export type AssetChunkPage = {
   offset: number
   limit: number
 }
+
+/**
+ * A recording's transcription run (`GET /:id/audio`, CON-282). One per
+ * attempt; `status` walks `pending → normalizing → transcribing → complete |
+ * partial | failed`. The asset's own `status` settles with it, but only this
+ * says how far along it is.
+ */
+export type AudioExtraction = {
+  id: string
+  asset_id: string
+  status:
+    | 'pending'
+    | 'normalizing'
+    | 'transcribing'
+    | 'complete'
+    | 'partial'
+    | 'failed'
+  source_duration_ms: number
+  segment_count: number
+  detected_language?: string | null
+  failure_code?: string | null
+  failure_reason?: string | null
+}
+
+/** One slice of the recording, transcribed on its own and retried alone. */
+export type AudioSegment = {
+  id: string
+  index: number
+  start_ms: number
+  end_ms: number
+  status: 'pending' | 'done' | 'failed'
+  retry_count: number
+  failure_reason?: string | null
+}
+
+export type AudioStatus = {
+  extraction: AudioExtraction
+  segments: AudioSegment[]
+}
+
+/**
+ * One line of a transcript (`GET /:id/audio/transcript`). `label` is the
+ * server's "M:SS–M:SS" for the span; `is_speech` is false for a stretch of
+ * music or silence the transcriber marked rather than wrote out.
+ */
+export type TranscriptEntry = {
+  start_ms: number
+  end_ms: number
+  label: string
+  text: string
+  confidence: number
+  language: string
+  is_speech: boolean
+}

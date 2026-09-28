@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { WarningIcon } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { AssetStateFrame } from '@/components/content/AssetStateFrame'
-import { uploadErrorMessage } from '@/lib/uploadError'
+import { ingestFailureMessage } from '@/lib/uploadError'
 import type { Asset } from '@/types/content'
 
 /**
@@ -38,7 +37,7 @@ export function AssetIngestState({
           {t('content.ingest.failedTitle')}
         </h2>
         <p className="text-sm text-tertiary-foreground">
-          {failureMessage(t, asset)}
+          {ingestFailureMessage(t, asset)}
         </p>
         {children}
       </AssetStateFrame>
@@ -58,15 +57,4 @@ export function AssetIngestState({
       </p>
     </AssetStateFrame>
   )
-}
-
-/** Why it failed, or a plain admission when the server didn't say. */
-export function failureMessage(
-  t: TFunction,
-  asset: Pick<Asset, 'failure_code' | 'failure_reason'>,
-): string {
-  const code = asset.failure_code ?? undefined
-  const message = asset.failure_reason?.trim() ?? ''
-  if (!code && !message) return t('content.ingest.failedUnstated')
-  return uploadErrorMessage(t, { code, message })
 }
