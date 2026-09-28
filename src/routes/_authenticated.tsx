@@ -26,7 +26,6 @@ function AuthenticatedLayout() {
   // The durable one, on the same terms and for the same reason (CON-242). Two
   // connections rather than one because they answer different questions: this
   // one replays what was missed, and the bus above deliberately cannot.
-  // A no-op while the `activity` flag is off.
   useNotificationStream()
 
   return (

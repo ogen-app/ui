@@ -3,7 +3,6 @@ import { useLocation } from '@tanstack/react-router'
 import { BellSimpleIcon, GearSixIcon, PaletteIcon } from '@phosphor-icons/react'
 import { ActivitySidebarItem } from '@/components/activity/ActivitySidebarItem'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
-import { useFeatureFlag } from '@/config/featureFlags'
 
 /**
  * The band under the level: the things that are around the work rather than
@@ -45,28 +44,25 @@ export function NavUtilityStrip({
 }) {
   const { t } = useTranslation()
   const { pathname } = useLocation()
-  const activityEnabled = useFeatureFlag('activity')
 
   const gear = <GearSixIcon weight="regular" className="size-5 flex-none" />
 
   if (level === 1 && campaignId) {
     return (
       <div className="flex flex-col gap-1">
-        {activityEnabled && (
-          // Plain, where level 0's row carries an unread count: the count is
-          // the workspace's, from an endpoint that takes no campaign, and a
-          // number here would be answering a different question than the row
-          // it sits under is asking.
-          <AppSidebarButtonMenu
-            icon={
-              <BellSimpleIcon weight="regular" className="size-5 flex-none" />
-            }
-            text={t('nav.campaign.activity')}
-            isActive={pathname.includes('/activity')}
-            to="/campaigns/$campaignId/activity"
-            params={{ campaignId }}
-          />
-        )}
+        {/* Plain, where level 0's row carries an unread count: the count is
+            the workspace's, from an endpoint that takes no campaign, and a
+            number here would be answering a different question than the row
+            it sits under is asking. */}
+        <AppSidebarButtonMenu
+          icon={
+            <BellSimpleIcon weight="regular" className="size-5 flex-none" />
+          }
+          text={t('nav.campaign.activity')}
+          isActive={pathname.includes('/activity')}
+          to="/campaigns/$campaignId/activity"
+          params={{ campaignId }}
+        />
         <AppSidebarButtonMenu
           icon={gear}
           text={t('nav.campaign.settings')}
@@ -89,9 +85,7 @@ export function NavUtilityStrip({
         isActive={pathname.startsWith('/foundation')}
         to="/foundation"
       />
-      {activityEnabled && (
-        <ActivitySidebarItem isActive={pathname.startsWith('/activity')} />
-      )}
+      <ActivitySidebarItem isActive={pathname.startsWith('/activity')} />
       <AppSidebarButtonMenu
         icon={gear}
         text={t('nav.workspaceSettings')}

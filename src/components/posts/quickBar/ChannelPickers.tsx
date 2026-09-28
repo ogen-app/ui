@@ -155,7 +155,6 @@ export function PostTypePicker({
   types,
   connectedSlugs,
   auto,
-  clearable,
   resolved,
   disabled,
   readOnly,
@@ -170,20 +169,13 @@ export function PostTypePicker({
   /** The subset a *connected* publisher supports; the rest are flagged. */
   connectedSlugs: ReadonlySet<string>
   /**
-   * Auto is available, so the empty slug means "the post decides" rather than
-   * "nobody has chosen". With this false the picker is what it always was: an
-   * unset type is a gap, and the trigger warns about it.
-   *
-   * Implies `clearable`: offering Auto is offering the empty slug.
+   * Auto is offered: the empty slug may be written, and means "the post
+   * decides". False once the post has left `draft`, where the server requires a
+   * concrete type on every PUT — so a post cannot be talked back into having no
+   * format at a point where saving it would fail, and an unset type there is a
+   * gap the trigger warns about.
    */
   auto?: boolean
-  /**
-   * The empty slug may be written at all. False once the post has left `draft`,
-   * where the server requires a concrete type on every PUT — so neither Auto
-   * nor the deselect row is offered there, and a post cannot be talked back
-   * into having no format at a point where saving it would fail.
-   */
-  clearable?: boolean
   /** What Auto resolved to; only read when `auto` and nothing is `selected`. */
   resolved?: string
   disabled?: boolean
@@ -259,18 +251,6 @@ export function PostTypePicker({
         ))}
         {types.length === 0 && (
           <InfoRow>No post types on this campaign</InfoRow>
-        )}
-        {/* With Auto offered above, the empty slug is already reachable as a
-            choice — a second row meaning the same thing would read as two
-            different ones. Gone entirely once the post has left `draft`: the
-            save that followed could only fail. */}
-        {selected && !auto && clearable && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => onSelect('')}>
-              <span>Deselect post type</span>
-            </DropdownMenuItem>
-          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

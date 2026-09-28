@@ -7,7 +7,7 @@ import {
   serializeFlagOverrides,
   setFlagOverride,
 } from './flagOverrides'
-import { isFeatureEnabled } from './featureFlags'
+import { buildFlagValue, FLAG_IDS, isFeatureEnabled } from './featureFlags'
 
 /**
  * These run with `DEV_TOOLS` on, because vitest runs in dev mode — which is
@@ -15,15 +15,15 @@ import { isFeatureEnabled } from './featureFlags'
  * half is a build-time fold, asserted by the build rather than here: see
  * `docs/technical-decisions.md#staging-flag-overrides`.
  */
-const KNOWN = ['tasks', 'ideas', 'activity']
+const KNOWN = ['tasks', 'ideas', 'series']
 
 /**
- * Two of those ship off and one ships on, which is what the resolver's second
- * case needs — forcing a flag *off* is only testable against a flag the build
- * has on. On-flags are retired as their features settle, so when `activity`
- * goes, this moves to whichever one is on at the time; it is the only thing
- * here that cares which flag it names.
+ * Forcing a flag *off* is only testable against a flag the build has on, and
+ * on-flags are retired as their features settle — so the resolver's second case
+ * finds one rather than naming it, and reports itself skipped in a build that
+ * has none on at all.
  */
+const ON_IN_BUILD = FLAG_IDS.find(buildFlagValue)
 
 function visit(url: string) {
   window.history.replaceState(null, '', url)
@@ -70,21 +70,22 @@ describe('the resolver', () => {
     expect(isFeatureEnabled('tasks')).toBe(true)
   })
 
-  it('can force a flag off that the build has on', () => {
-    expect(isFeatureEnabled('activity')).toBe(true)
-    setFlagOverride('activity', false)
-    expect(isFeatureEnabled('activity')).toBe(false)
+  it.skipIf(!ON_IN_BUILD)('can force a flag off that the build has on', () => {
+    const flag = ON_IN_BUILD!
+    expect(isFeatureEnabled(flag)).toBe(true)
+    setFlagOverride(flag, false)
+    expect(isFeatureEnabled(flag)).toBe(false)
   })
 })
 
 describe('?ff=', () => {
   it('forces the names it lists and strips itself from the address bar', () => {
-    visit('/campaigns?ff=tasks,-activity')
+    visit('/campaigns?ff=tasks,-series')
     bootstrapFlagOverrides(KNOWN)
 
     expect(readFlagOverrides()).toEqual({
       tasks: true,
-      activity: false,
+      series: false,
     })
     expect(window.location.search).toBe('')
   })

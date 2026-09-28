@@ -22,8 +22,8 @@
 // for `post.publish_failed`, and keeping both would report one failure twice —
 // once as a record and once as a re-reading of current state that disappears
 // the moment the post is edited. What the recorded half does not yet cover is
-// written down in the `activity` flag's comment, because it is a question for
-// the back end rather than a gap to paper over here.
+// written down in `docs/activity.md` (*Known, and not blocking*), because it is
+// a question for the back end rather than a gap to paper over here.
 //
 // The rule deciding what is allowed in here at all is edges vs levels — an
 // entry is a fact with a timestamp that stays true forever, never a condition

@@ -1,6 +1,5 @@
 import { useCallback, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useFeatureFlag } from '@/config/featureFlags'
 import {
   NOTIFICATION_LIST_KEY,
   NOTIFICATION_PAGE_SIZE,
@@ -31,10 +30,6 @@ import { awaiting } from '@/lib/fetched'
  * `rows.length` would say "12" to somebody with two hundred unread. It also
  * means the sidebar — mounted on every screen — pays for one small request
  * instead of a hundred rows it will not render.
- *
- * Everything is gated on the `activity` flag, which is the feature these rows
- * are read on: with it off nothing is fetched, no stream opens, and the app
- * behaves exactly as it did before the inbox existed.
  */
 
 /**
@@ -47,11 +42,7 @@ import { awaiting } from '@/lib/fetched'
  * browser must not inherit it.
  */
 export function useNotificationStream(): void {
-  const enabled = useFeatureFlag('activity')
-  useEffect(() => {
-    if (!enabled) return
-    return subscribeToNotifications()
-  }, [enabled])
+  useEffect(() => subscribeToNotifications(), [])
 }
 
 export type NotificationsResult = {
@@ -77,11 +68,9 @@ export type NotificationsResult = {
  * Mounting always refetches; the cached rows are shown meanwhile.
  */
 export function useNotifications(): NotificationsResult {
-  const enabled = useFeatureFlag('activity')
   const query = useQuery({
     queryKey: NOTIFICATION_LIST_KEY,
     queryFn: () => listNotifications({ limit: NOTIFICATION_PAGE_SIZE }),
-    enabled,
     staleTime: 0,
   })
 
@@ -89,7 +78,7 @@ export function useNotifications(): NotificationsResult {
     notifications: query.data ?? [],
     // `awaiting`, not `isLoading` — see `lib/fetched`.
     isLoading: awaiting(query),
-    isError: enabled && query.isError,
+    isError: query.isError,
     isTruncated: (query.data?.length ?? 0) >= NOTIFICATION_PAGE_SIZE,
   }
 }
@@ -102,11 +91,9 @@ export function useNotifications(): NotificationsResult {
  * it stays right between refetches without costing a request per change.
  */
 export function useNotificationUnreadCount(): number {
-  const enabled = useFeatureFlag('activity')
   const { data } = useQuery({
     queryKey: NOTIFICATION_UNREAD_KEY,
     queryFn: unreadNotificationCount,
-    enabled,
     // A badge is not worth a retry storm, and the next refetch corrects it.
     retry: false,
   })

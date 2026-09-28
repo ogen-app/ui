@@ -300,8 +300,8 @@ Two consequences worth stating rather than discovering:
   change and nothing here moves. The full recipient table — every type, shipped
   and planned — is [`events.md`](./events.md).
 
-Both phases sit behind one flag in `config/featureFlags.ts`; Phase 1 can flip on
-without Phase 2. **Tasks are a separate feature with a separate flag** (CON-234,
+Both phases shipped behind one `activity` flag, turned on 2026-09-18 and
+deleted with its off-branch on 2026-09-28. **Tasks are a separate feature with a separate flag** (CON-234,
 [`tasks.md`](./tasks.md)) on its own timetable: they are stored rather than
 derived, so they wait on a table rather than on CON-242, and either can ship
 without the other.
@@ -327,7 +327,7 @@ without the other.
   later. ogen#142 made the cap self-healing (oldest subscription evicted at
   the limit, ~30-minute connection lifetime) and ogen#152 raised it to 30.
   What remains ours is the `event: recycle` frame nothing listens for yet —
-  the `activity` flag comment and `docs/sse.md` carry it.
+  see [Known, and not blocking](#known-and-not-blocking) and `docs/sse.md`.
 - **Event naming is settled — dotted on both streams** (CON-285, ogen#161,
   2026-09-17). The nine snake_case bus types were renamed
   (`assistant_completed` → `assistant.completed`, `post_cloned` →
@@ -335,3 +335,48 @@ without the other.
   server's persisted taxonomies keep the old ones on purpose, so a
   `tenant_activity_events` row still reads `post_cloned` — that is history, not
   a wire name.
+
+## Known, and not blocking
+
+In the order they will bite. These were the `activity` flag's comment until the
+flag came out; none of them was a reason to keep it.
+
+1. **The `recycle` frame is not handled.** ogen#142 gave connections a
+   30-minute lifetime and made the subscriber cap self-healing (the hub evicts
+   a user's oldest subscription rather than refusing the newcomer), so a clean
+   close mid-session is routine — twice an hour per tab, plus any eviction —
+   and a clean close is exactly what a dropped connection looks like. ogen#152
+   sends the one thing that tells them apart, a frame before the close:
+
+   ```
+   event: recycle
+   data: {"reason":"lifetime"}
+   ```
+
+   deliberately with **no `id:` line**, so it does not advance the replay
+   cursor. `lib/streamConnection` does not listen for it, so every recycle runs
+   the full recovery path — flush autosaves, invalidate the routing table,
+   *"Catching up…"* when nothing was down. Correct, and noisy; the second
+   stream per tab doubles the noise. [`sse.md`](./sse.md) has the measurements.
+2. **No producer for "never published".** `not_published` is a real outcome
+   with no notification type, so it leaves no row — it is counted in the day's
+   report and nowhere else.
+3. **Not yet watched happen**, though each should hold:
+   - the report's day boundary agreeing with the day the feed groups under —
+     only visible across a real local midnight (the zone sent as `tz` is the
+     zone `dayKey` groups by);
+   - `by_author` ids matching `listMembers` — needs a workspace with two people
+     in it (both are per-workspace membership ids);
+   - live push and the replay→live dedup (`n.Seq <= lastSentSeq`) — the REST
+     read, `Last-Event-ID` replay, click-through `PATCH` and `mark-all-read`'s
+     `before` bound were exercised against a local `main` on 2026-09-04 and
+     2026-09-07, before CON-285 gave the stream a producer to trigger;
+   - paging the inbox past its first page.
+
+**Three things the report endpoints deliberately do not carry**: a
+**per-campaign breakdown** (a campaign's own report is the same endpoint with
+`campaign_id` set — see [The report](#it-moved-to-the-server-and-the-timezone-is-why));
+**a code for a failure** — `failure_reason` is Go prose and is shown verbatim,
+the same ask `lib/uploadError` is waiting on (`open-questions.md` S4); and
+**paging**, since `before` is a keyset the feed does not use — it asks for one
+horizon of days and says on screen where it stops.

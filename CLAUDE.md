@@ -252,7 +252,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (CON-165): the server defaults it away on silence and *preserves*
   `used_asset_ids`, so the two fields are opposites and a builder that treats
   them alike is wrong about one of them.
-- **A post's type is a default, not a question** (`post-type-auto`, on). *Auto*
+- **A post's type is a default, not a question.** *Auto*
   is the empty `platform_post_type` every post is **already** created with —
   `useAddPost` sends a campaign and a date and nothing else — so the feature
   stores nothing and waits on no endpoint; it reads a state that already existed
@@ -263,8 +263,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   server's and not a judgement call: `requirePlatformIfNotDraft` refuses a PUT
   carrying an empty type under any other status, so a post that crossed it still
   automatic could not be saved again at all. Hence `canBeAutomatic`, read in both
-  directions — the picker offers *Auto* (and its older twin, the deselect row)
-  only to a draft, and the transition out is what pins. Pinning is one-way:
+  directions — the picker offers *Auto* only to a draft, and the transition out is what pins. Pinning is one-way:
   reopen to draft and the post keeps the slug it resolved to.
   The ladder is `text-post → image-post → carousel → video → reel → short →
   thread`, loosest first, bounded by what the *campaign* enables — Auto can only
@@ -272,9 +271,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   or Link post (editorial decisions the content cannot imply) nor a
   `whitelist_only` type (no rule to test). **`thread` is a rung wherever the
   post-type rule says `segmented`** — the server's own answer, which replaced a
-  hard-coded list of chain-capable networks here. Switch `post-type-auto` off
-  and the empty slug means what it always did — a `fail` in the checks bar and a
-  mark on the card. The ladder is also what a *pinned* thread demotes through
+  hard-coded list of chain-capable networks here. The ladder is also what a *pinned* thread demotes through
   when its body comes to one message (`demotedFrom`), with the chain rung
   barred so it cannot resolve straight back. See
   `docs/technical-decisions.md#auto-post-type`.
@@ -442,7 +439,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   every flag that is on and has had a deploy goes, with its off-branch, in a
   commit that touches nothing else.
 - **On staging and in dev, a flag can be forced for one browser.** A
-  `?ff=tasks,-activity` link or the unlisted `/flags` panel writes an override
+  `?ff=tasks,-ideas` link or the unlisted `/flags` panel writes an override
   to localStorage, so one teammate can exercise a half-built feature on the
   shared deploy while everyone else sees the app as it ships. Deliberately
   *not* in `/api/settings` — that row is workspace-wide, which is the opposite

@@ -730,7 +730,7 @@ Releasing it is `enabled: true`.
 
 **Decision.** `useFeatureFlag`/`isFeatureEnabled` resolve
 `readFlagOverrides()[flag] ?? FEATURE_FLAGS[flag]`. The override set lives in
-**localStorage**, is set by a bookmarkable `?ff=tasks,-activity` link or the
+**localStorage**, is set by a bookmarkable `?ff=tasks,-ideas` link or the
 unlisted `/flags` panel, and the whole layer is compiled out of any build that
 was not made with `VITE_DEV_TOOLS=1`.
 
@@ -1007,7 +1007,8 @@ entries in `lib/platformDictionary.ts`.
 `platform_post_type` a post is **already** created with. While a post is
 automatic the format is derived on every render from the body and the
 attachments (`lib/postTypeAuto`); the slug is written to the record only when
-the post is committed. On since 2026-09-18, behind `post-type-auto` until then.
+the post is committed. On since 2026-09-18; the `post-type-auto` flag came out
+with its off-branch on 2026-09-28.
 
 **Why.** Choosing between "Text post" and "Image post" is the first thing the
 editor asks and the last thing an author has an opinion about. Those are not
@@ -1053,9 +1054,9 @@ Two things came out of that, and both read the same predicate,
   [Scheduling](#schedule-endpoint)), so a pin list written in terms of
   "scheduling" missed it entirely and the request went out with no type on it.
 - **The picker offers the empty slug only to a draft.** Auto is not in the menu
-  once the post is out — and neither is the *Deselect post type* row, which
-  predates this feature and had always failed the same way, quietly, on any
-  non-draft post.
+  once the post is out. The *Deselect post type* row that predated Auto is gone
+  altogether: it wrote the same empty slug, and on any non-draft post it had
+  always failed the same way, quietly.
 
 **The ladder.** `text-post → image-post → carousel → video → reel → short →
 thread`, least demanding first, so the winner is the *loosest* type the post
@@ -1092,11 +1093,38 @@ type", which is the one thing the author did not do wrong. That row is built in
 the route rather than in `evaluatePost`, which is a pure module with no `t`; it
 is the same arrangement the thread row uses.
 
+**Checked against the server before it went on** (`ogen` `origin/main`,
+2026-09-18), because the ladder is a claim about the Go read off its source:
+
+- **The rules are not seeded.** `postTypeRules` in
+  `domain/platforms/post_types.go` is a hard-coded table keyed by slug, projected
+  onto the wire by `ResolvePostTypeRules`, so `allowed_kinds`, `min_` and
+  `max_attachments` cannot be "seeded loosely". What *is* per-platform is which
+  slugs are offered and the constraint blocks the sentinels resolve against.
+  `max_content_chars` never arrives as `0`: unbounded is `null` on the wire.
+- **`fits` mirrors `ValidatePostType` with one rule left out.**
+  `requires_video_title` (CON-148) binds YouTube alone, whose only types —
+  `video` and `short` — are both video-kind and both bound by it, so no choice
+  Auto makes avoids it and modelling it would change no answer. If a platform
+  ever offers a titled video type beside an untitled non-video one, that is the
+  line to add. `max_title_chars` is out for the same reason: it fails every
+  candidate equally.
+- **`requires_content` is an exact mirror**, though the two sources don't look
+  it: the server trims before testing for empty and the character ceiling does
+  not, but both flatteners end in a trim, so `shape.chars === 0` answers the same
+  question. Tested on this side.
+
+**Two things to watch.** `text-post` is the rung everything rests on, and
+CON-206 plans to merge it into `image-post` with `min_attachments: 0` — that
+doesn't break Auto (the walk stops one rung earlier) but it changes what every
+post resolves to, so test the two together. And the chain rung arrived in the
+same window as Auto itself, so neither has been watched choosing against the
+other on a live network.
+
 **Where.** `lib/postTypeAuto.ts` (+ test), `hooks/useCampaignPostTypes.ts`, the
 resolution in `hooks/usePostMedia.ts`, the *Auto* entry in
 `quickBar/ChannelPickers.tsx`, the pin and the unfit row in the post route,
-`hasVisibleProblem` in `lib/postValidation.ts`, `PostCard`'s label, and the
-`post-type-auto` flag, which is still in the record for one cycle.
+`hasVisibleProblem` in `lib/postValidation.ts`, and `PostCard`'s label.
 
 ## A brand binding is four ids, resolved and never copied {#brand-binding}
 
