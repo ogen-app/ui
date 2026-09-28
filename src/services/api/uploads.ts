@@ -9,6 +9,8 @@ export type UploadResult = {
   asset_id?: string
   status: 'created' | 'failed'
   error?: string
+  /** Why it failed, machine-readable (CON-281) — see `lib/uploadError`. */
+  code?: string
   asset?: Asset
 }
 

@@ -18,12 +18,83 @@ const t = ((key: string, vars?: Record<string, string>) =>
 
 const message = (raw: string) => uploadErrorMessage(t, raw)
 
+describe('a result carrying a code', () => {
+  const coded = (code: string, raw = '') =>
+    uploadErrorMessage(t, { code, message: raw })
+
+  it('chooses the sentence by code, not by prose', () => {
+    expect(coded('extension_not_allowed', 'anything at all')).toBe(
+      'uploads.errors.type',
+    )
+    expect(coded('vector_rejected')).toBe('uploads.errors.vector')
+    expect(coded('empty_file')).toBe('uploads.errors.empty')
+    expect(coded('quota_exceeded', 'media storage limit reached')).toBe(
+      'uploads.errors.quota',
+    )
+    expect(coded('service_unavailable')).toBe('uploads.errors.unavailable')
+    expect(coded('internal_error')).toBe('uploads.errors.server')
+  })
+
+  it('lifts the cap out of a too_large message', () => {
+    expect(coded('too_large', 'file exceeds maximum size of 50 MB')).toBe(
+      'uploads.errors.tooBig {"limit":"50 MB"}',
+    )
+    expect(coded('too_large', 'over the ceiling')).toBe(
+      'uploads.errors.tooBigUnstated',
+    )
+  })
+
+  // process_audio.go:318.
+  it('lifts the plan limit out of a duration refusal', () => {
+    expect(
+      coded(
+        'duration_exceeded',
+        'audio is 95 min, over the 60 min limit for your plan',
+      ),
+    ).toBe('uploads.errors.duration {"count":60}')
+  })
+
+  // assets.go:707 — the server's code is the generic one, its prose names the fix.
+  it('tells a legacy Office file apart from any other unsupported type', () => {
+    expect(
+      coded(
+        'unsupported_media_type',
+        'legacy binary or password-protected Office files are not supported — save as unprotected .docx/.xlsx/.pptx and re-upload',
+      ),
+    ).toBe('uploads.errors.legacyOffice')
+    expect(coded('unsupported_media_type', 'unsupported image type')).toBe(
+      'uploads.errors.unsupportedType',
+    )
+    expect(coded('legacy_office')).toBe('uploads.errors.legacyOffice')
+  })
+
+  it('keeps the PDF wording for an unreadable PDF', () => {
+    expect(coded('invalid_file', 'file is not a valid PDF')).toBe(
+      'uploads.errors.notPdf',
+    )
+    expect(coded('invalid_file', 'the document could not be read')).toBe(
+      'uploads.errors.invalid',
+    )
+  })
+
+  it('falls back to the prose for a code it does not know', () => {
+    expect(coded('some_future_code', 'imageprobe: some future refusal')).toBe(
+      'Some future refusal',
+    )
+  })
+})
+
 describe('conditions the server reports', () => {
   it('words a refused extension', () => {
-    // assets.go:323 — and `validateUploadFile`'s own copy of it.
+    // assets.go:496, before and after CON-280 widened the list.
     expect(message('only .md, .pdf and image files are accepted')).toBe(
       'uploads.errors.type',
     )
+    expect(
+      message(
+        'only .md, .pdf, image, and office/text document files are accepted',
+      ),
+    ).toBe('uploads.errors.type')
   })
 
   it('words a sniffed body without repeating the MIME at the reader', () => {

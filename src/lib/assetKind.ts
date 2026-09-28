@@ -18,8 +18,7 @@ import type { Asset } from '@/types/content'
  * of guessing wrong on a *glyph* is a wrong picture, which is the cheapest
  * failure available. `opensAsDocument` is the one that fails closed instead.
  */
-export type AssetKind =
-  'text' | 'page' | 'pdf' | 'document' | 'image' | 'audio'
+export type AssetKind = 'text' | 'page' | 'pdf' | 'document' | 'image' | 'audio'
 
 export function assetKind(asset: Pick<Asset, 'type'>): AssetKind {
   switch (asset.type) {

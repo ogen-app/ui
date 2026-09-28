@@ -565,6 +565,24 @@ const FEATURE_FLAGS = {
    * that way.
    */
   'content-formats': false,
+
+  /**
+   * Uploading audio to the Content Bank (CON-313 over CON-282): the eleven
+   * audio extensions in the picker, and the presign → PUT → finalize path in
+   * the upload store. Off, an `.mp3` is refused as an extension the bank
+   * doesn't take, exactly as before.
+   *
+   * Only the *upload* is behind it. An AUDIO asset that arrives some other way
+   * still opens on its own screen with its player and transcript, because that
+   * reads through our API alone.
+   *
+   * **Waiting on** R2 CORS for a browser `PUT` to the presigned URL (CON-307).
+   * The API side is shipped and was run end to end locally; what fails without
+   * CORS is the one request that goes to storage rather than to us, and it fails
+   * as a network error after presign has already created the asset. Turn it on
+   * once an upload has gone through on staging.
+   */
+  'content-bank-audio': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS
