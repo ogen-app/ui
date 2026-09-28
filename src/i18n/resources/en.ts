@@ -2497,30 +2497,144 @@ export const en = {
     /** Capitalised like every other action label in the app. */
     upgrade: 'UPGRADE',
     /**
-     * The way out of the upgrade dialog, said rather than implied.
+     * The upgrade dialog (CON-232): one recommended plan argued for, with what
+     * it adds beside it.
      *
-     * Not "Cancel": nothing is being cancelled, and the word belongs to the
-     * action the user was refused. "Not now" is also the truthful half of what
-     * they are choosing — the limit is still there, and often the thing to do
-     * about it is to go back and delete one, which is behind this dialog.
+     * The limit titles are one whole sentence per metered feature rather than
+     * one sentence with `{{feature}}` slotted in, because `features` below are
+     * headings ("Campaigns") and the sentence wants a noun phrase mid-way
+     * ("all active campaigns") — a different word, in every language. None of
+     * them states a number: the figure is on the plan, and the title's job is
+     * the fact, not the count. `{{plan}}` is the tier's name, which is data.
+     *
+     * `perMonth` wraps the price in `<price>` so it can be set large without
+     * the unit being assembled from a fragment.
      */
-    notNow: 'Not now',
-
-    /**
-     * The upgrade dialog's own chrome — the offer, and what the plans do about
-     * the one feature that stopped somebody.
-     *
-     * The heading sells the plans rather than the refusal, because the refusal
-     * is already stated underneath it by `limitReached` / `notInPlan`. Saying
-     * "you can't do that" twice, once in a bigger font, is how a dialog that
-     * answers a question turns into one that tells somebody off.
-     *
-     * `pitchPlans` takes the feature's own name — the same one the price list
-     * uses, out of `features` below — so the table under it cannot be read as a
-     * comparison of the plans in general, which is a different screen.
-     */
-    pitchTitle: 'Get more with our premium plans',
-    pitchPlans: 'What each plan includes for {{feature}}',
+    paywall: {
+      label: 'Upgrade your plan',
+      title: 'Get more with Ogen {{plan}} Plan',
+      titleTop: '{{plan}} is as far as this goes',
+      reasonTier: "{{feature}} isn't included in {{plan}}.",
+      reasonTierOther: "This isn't included in {{plan}}.",
+      reasonLimit: {
+        team_seats: "You've filled every seat on {{plan}}.",
+        workspaces: "You've used all workspaces on {{plan}}.",
+        connected_accounts: "You've connected every account {{plan}} allows.",
+        active_campaigns: "You've used all active campaigns on {{plan}}.",
+        plan_runs_per_month:
+          "You've used this month's content plan runs on {{plan}}.",
+        quality_reviews_per_post:
+          "You've used this post's quality reviews on {{plan}}.",
+        posts_total: "You've used all posts on {{plan}}.",
+        content_bank_assets: 'Your content bank is full on {{plan}}.',
+        web_page_imports: "You've used all web-page imports on {{plan}}.",
+        media_storage_bytes: "You've used all media storage on {{plan}}.",
+        assistant_multiplier:
+          "You've used the assistant's allowance on {{plan}}.",
+      },
+      reasonLimitOther: "You've reached a limit on {{plan}}.",
+      bodyTier: 'Upgrading turns it on for everyone in this workspace.',
+      bodyLimit: "Everything you've made stays exactly as it is.",
+      bodyResets:
+        'Your allowance fills back up on {{when}}, or upgrade now to keep going.',
+      noOffer:
+        'No plan on sale offers more of this than the one you have. Compare the plans to see everything each one includes.',
+      billing: 'Billing period',
+      monthly: 'Monthly',
+      yearly: 'Yearly',
+      perMonth: '<price>{{price}}</price> / month',
+      billedYearly: '{{total}} billed yearly',
+      billedYearlySaving: '{{total}} billed yearly · save {{saving}}',
+      upgradeTo: 'UPGRADE TO {{plan}}',
+      comparePlans: 'Compare every plan',
+      seeAllFeatures: 'See all features',
+      /**
+       * One tile per benefit: a title that carries the figure, and one line
+       * on what it is for. Counted features pluralise on `count`; storage takes
+       * a pre-formatted `value`; a plain capability has only `included`. A
+       * counted feature the tier does not meter reads as `unlimited`.
+       */
+      benefit: {
+        team_seats: {
+          limit_one: '{{count}} team member',
+          limit_other: '{{count}} team members',
+          unlimited: 'Unlimited team members',
+          description: 'Invite teammates to plan and publish with you.',
+        },
+        workspaces: {
+          limit_one: '{{count}} workspace',
+          limit_other: '{{count}} workspaces',
+          unlimited: 'Unlimited workspaces',
+          description: 'Keep separate brands or clients apart.',
+        },
+        connected_accounts: {
+          limit_one: '{{count}} connected account',
+          limit_other: '{{count}} connected accounts',
+          unlimited: 'Unlimited connected accounts',
+          description: 'Publish to more of your social profiles.',
+        },
+        active_campaigns: {
+          limit_one: '{{count}} active campaign',
+          limit_other: '{{count}} active campaigns',
+          unlimited: 'Unlimited active campaigns',
+          description: 'Run more campaigns at the same time.',
+        },
+        plan_runs_per_month: {
+          limit_one: '{{count}} content plan run a month',
+          limit_other: '{{count}} content plan runs a month',
+          unlimited: 'Unlimited content plan runs',
+          description: "Let Ogen draft a campaign's posts for you.",
+        },
+        quality_reviews_per_post: {
+          limit_one: '{{count}} quality review per post',
+          limit_other: '{{count}} quality reviews per post',
+          unlimited: 'Unlimited quality reviews',
+          description: 'Check each post before it goes out.',
+        },
+        posts_total: {
+          limit_one: '{{count}} post',
+          limit_other: '{{count}} posts',
+          unlimited: 'Unlimited posts',
+          description: 'Keep writing without counting what is left.',
+        },
+        content_bank_assets: {
+          limit_one: '{{count}} content bank document',
+          limit_other: '{{count}} content bank documents',
+          unlimited: 'Unlimited content bank documents',
+          description: 'Store the notes, files and pages your posts draw on.',
+        },
+        web_page_imports: {
+          limit_one: '{{count}} web page import',
+          limit_other: '{{count}} web page imports',
+          unlimited: 'Unlimited web page imports',
+          description: 'Turn any web page into source material.',
+        },
+        media_storage_bytes: {
+          limit: '{{value}} of media storage',
+          unlimited: 'Unlimited media storage',
+          description: 'Room for the images and videos in your posts.',
+        },
+        multiple_accounts_per_platform: {
+          included: 'Several accounts on one platform',
+          description: 'Connect two profiles on the same network.',
+        },
+        all_campaign_types: {
+          included: 'All campaign types',
+          description: 'Every campaign format, not only evergreen.',
+        },
+        custom_campaign_types: {
+          included: 'Custom campaign types',
+          description: 'Define campaign types of your own.',
+        },
+      },
+      /**
+       * The plan card's line under the name, and its stand-in for a price the
+       * catalogue has not published — an unpriced plan says so rather than
+       * showing nothing, or showing a zero it does not mean.
+       */
+      planPitch: 'Everything on {{current}}, with more room to grow.',
+      unpriced: 'Pricing is not published yet.',
+    },
     seePlans: 'SEE PLANS',
     /**
      * For the half of the workspace that cannot act on any of the above

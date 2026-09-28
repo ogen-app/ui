@@ -27,10 +27,6 @@ import { toast } from '@/stores/toastStore.ts'
 import { isSubmitted } from '@/lib/postStatusMachine.ts'
 import { cn } from '@/lib'
 import { formatBytes } from '@/lib/platformMedia.ts'
-// Not the one above it: that formatter tops out at MB because it measures one
-// file against a platform's cap, and a workspace's storage allowance is a
-// figure with a G in it.
-import { formatBytes as formatStorage } from '@/lib/assetStatus.ts'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog.tsx'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
 import { formatTimecode } from '@/lib/platformVideo.ts'
@@ -366,7 +362,7 @@ export function PostMediaCard({
 
       {/* Answered before the picker opens rather than after the file is chosen:
           a workspace out of storage should not be asked which file to send. */}
-      <UpgradeDialog gate={storage} format={formatStorage} />
+      <UpgradeDialog gate={storage} />
     </div>
   )
 }

@@ -1800,10 +1800,128 @@ export const es: Translation = {
     unlimited: 'Sin límite',
 
     upgrade: 'MEJORAR PLAN',
-    notNow: 'Ahora no',
 
-    pitchTitle: 'Consigue más con nuestros planes premium',
-    pitchPlans: 'Lo que incluye cada plan en {{feature}}',
+    paywall: {
+      label: 'Mejora tu plan',
+      title: 'Consigue más con el plan {{plan}} de Ogen',
+      titleTop: '{{plan}} es lo máximo para esto',
+      reasonTier: '{{feature}} no está incluido en {{plan}}.',
+      reasonTierOther: 'Esto no está incluido en {{plan}}.',
+      reasonLimit: {
+        team_seats: 'Has ocupado todos los puestos de {{plan}}.',
+        workspaces: 'Has usado todos los espacios de trabajo de {{plan}}.',
+        connected_accounts:
+          'Has conectado todas las cuentas que permite {{plan}}.',
+        active_campaigns: 'Has usado todas las campañas activas de {{plan}}.',
+        plan_runs_per_month:
+          'Has usado los planes de contenido de este mes en {{plan}}.',
+        quality_reviews_per_post:
+          'Has usado las revisiones de calidad de esta publicación en {{plan}}.',
+        posts_total: 'Has usado todas las publicaciones de {{plan}}.',
+        content_bank_assets: 'Tu banco de contenido está lleno en {{plan}}.',
+        web_page_imports:
+          'Has usado todas las importaciones de páginas web de {{plan}}.',
+        media_storage_bytes:
+          'Has usado todo el almacenamiento multimedia de {{plan}}.',
+        assistant_multiplier:
+          'Has usado la asignación del asistente en {{plan}}.',
+      },
+      reasonLimitOther: 'Has alcanzado un límite en {{plan}}.',
+      bodyTier: 'Mejorar el plan lo activa para todo el espacio de trabajo.',
+      bodyLimit: 'Todo lo que has creado se queda tal cual.',
+      bodyResets:
+        'Tu asignación se renueva el {{when}}, o mejora ahora para seguir.',
+      noOffer:
+        'Ningún plan a la venta ofrece más de esto que el tuyo. Compara los planes para ver todo lo que incluye cada uno.',
+      billing: 'Periodo de facturación',
+      monthly: 'Mensual',
+      yearly: 'Anual',
+      perMonth: '<price>{{price}}</price> / mes',
+      billedYearly: '{{total}} facturados al año',
+      billedYearlySaving: '{{total}} facturados al año · ahorras {{saving}}',
+      upgradeTo: 'PASAR A {{plan}}',
+      comparePlans: 'Comparar todos los planes',
+      seeAllFeatures: 'Ver todas las funciones',
+      benefit: {
+        team_seats: {
+          limit_one: '{{count}} miembro del equipo',
+          limit_other: '{{count}} miembros del equipo',
+          unlimited: 'Miembros del equipo sin límite',
+          description: 'Invita a tu equipo a planificar y publicar contigo.',
+        },
+        workspaces: {
+          limit_one: '{{count}} espacio de trabajo',
+          limit_other: '{{count}} espacios de trabajo',
+          unlimited: 'Espacios de trabajo sin límite',
+          description: 'Mantén separadas tus marcas o clientes.',
+        },
+        connected_accounts: {
+          limit_one: '{{count}} cuenta conectada',
+          limit_other: '{{count}} cuentas conectadas',
+          unlimited: 'Cuentas conectadas sin límite',
+          description: 'Publica en más de tus perfiles sociales.',
+        },
+        active_campaigns: {
+          limit_one: '{{count}} campaña activa',
+          limit_other: '{{count}} campañas activas',
+          unlimited: 'Campañas activas sin límite',
+          description: 'Lleva más campañas a la vez.',
+        },
+        plan_runs_per_month: {
+          limit_one: '{{count}} plan de contenido al mes',
+          limit_other: '{{count}} planes de contenido al mes',
+          unlimited: 'Planes de contenido sin límite',
+          description:
+            'Deja que Ogen redacte las publicaciones de una campaña.',
+        },
+        quality_reviews_per_post: {
+          limit_one: '{{count}} revisión de calidad por publicación',
+          limit_other: '{{count}} revisiones de calidad por publicación',
+          unlimited: 'Revisiones de calidad sin límite',
+          description: 'Revisa cada publicación antes de que salga.',
+        },
+        posts_total: {
+          limit_one: '{{count}} publicación',
+          limit_other: '{{count}} publicaciones',
+          unlimited: 'Publicaciones sin límite',
+          description: 'Sigue escribiendo sin contar lo que queda.',
+        },
+        content_bank_assets: {
+          limit_one: '{{count}} documento en el banco de contenido',
+          limit_other: '{{count}} documentos en el banco de contenido',
+          unlimited: 'Documentos sin límite en el banco de contenido',
+          description:
+            'Guarda las notas, archivos y páginas en las que se basan tus publicaciones.',
+        },
+        web_page_imports: {
+          limit_one: '{{count}} importación de página web',
+          limit_other: '{{count}} importaciones de páginas web',
+          unlimited: 'Importaciones de páginas web sin límite',
+          description: 'Convierte cualquier página web en material de origen.',
+        },
+        media_storage_bytes: {
+          limit: '{{value}} de almacenamiento multimedia',
+          unlimited: 'Almacenamiento multimedia sin límite',
+          description:
+            'Espacio para las imágenes y vídeos de tus publicaciones.',
+        },
+        multiple_accounts_per_platform: {
+          included: 'Varias cuentas en una plataforma',
+          description: 'Conecta dos perfiles de la misma red.',
+        },
+        all_campaign_types: {
+          included: 'Todos los tipos de campaña',
+          description:
+            'Todos los formatos de campaña, no solo los atemporales.',
+        },
+        custom_campaign_types: {
+          included: 'Tipos de campaña personalizados',
+          description: 'Define tus propios tipos de campaña.',
+        },
+      },
+      planPitch: 'Todo lo de {{current}}, con más margen para crecer.',
+      unpriced: 'El precio aún no está publicado.',
+    },
     seePlans: 'VER PLANES',
     ownersOnlyPlan:
       'Solo un propietario del espacio puede cambiar el plan para todo el equipo.',

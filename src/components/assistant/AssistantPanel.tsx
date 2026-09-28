@@ -195,9 +195,7 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
               onToggleSuggestions={() => setSuggesting((s) => !s)}
               suggestionsOpen={suggesting}
             />
-            {/* No meter: the assistant's allowance is a token budget wearing a
-                multiplier, so its numbers are true and unprintable. */}
-            <UpgradeDialog gate={gate} hideUsage />
+            <UpgradeDialog gate={gate} />
           </div>
         )
       }
