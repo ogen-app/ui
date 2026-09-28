@@ -26,6 +26,16 @@ import type { Entitlement, EntitlementKey } from '@/types/entitlements'
  * ```
  */
 export type UpgradeGate = {
+  /**
+   * Which feature was refused.
+   *
+   * Carried rather than re-passed at the call site so the dialog can *name* it
+   * — "what each plan includes for Campaigns" is a row of the price list, and
+   * the gate is the only thing that already knows which row. Eleven call sites
+   * each handing the same key to two things is eleven chances for the dialog to
+   * be talking about a different feature from the button behind it.
+   */
+  feature: EntitlementKey
   entitlement: Entitlement
   /** Whether the plan has refused this. `pending` is not refusal. */
   denied: boolean
@@ -56,6 +66,7 @@ export function useUpgradeGate(key: EntitlementKey): UpgradeGate {
   const denied = entitlement.state === 'denied'
 
   return {
+    feature: key,
     entitlement,
     denied,
     selling,

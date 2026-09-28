@@ -1042,10 +1042,20 @@ caller already catches as an `ApiError`. Four things about that path:
   gets, so `staleWorkspace` verifies the pin with a request. A tier that switches
   a feature off would otherwise fire one on every click of the control it hides.
   The status alone decides nothing: the code has to agree, both ways.
-- **No cache invalidation rides along.** Refetching the plan after a quota
-  refusal is the obvious repair and would change nothing — the API ships
-  allowances and no tally, so the entry comes back with the same limit and the
-  same uncounted `used`. Add one when a usage read exists.
+- **No cache invalidation rides along the *refusal*, but the *spend* invalidates.**
+  Refetching the plan after a 402 is the obvious repair and would change
+  nothing — the API ships allowances and no tally, so the entry comes back with
+  the same limit and the same uncounted `used`. What does invalidate is the
+  write that moved one of the server's four counters, through
+  `invalidateEntitlements` (`hooks/useEntitlements.ts`): campaign
+  create/archive/unarchive/delete, bank note/upload/import/delete, member
+  removal, post-attachment upload/remove. The **deletes** are the half that is
+  easy to leave out and the one that matters more — a stale tally after a create
+  offers a control that is about to be refused *with an explanation*, while a
+  stale tally after a delete keeps a workspace locked out of room it has just
+  made, with no refusal to explain it. Also a no-op today, and installed anyway:
+  the alternative, the day a usage read lands, is a fortnight of meters that
+  only move on a page reload.
 - **The near-limit warnings are notifications, one sentence per feature.**
   `entitlement.limit_approaching` / `limit_reached` carry the key, the counts and
   the band crossed; `lib/notifications.ts` maps each capped feature to its own
@@ -1053,6 +1063,27 @@ caller already catches as an `ApiError`. Four things about that path:
   `media_storage_bytes` rendered through `formatStorage` rather than printed as
   nine digits of bytes. A feature missing from that table — or a row missing its
   figures — falls back to the server's English title like any other unknown row.
+  The counts are shown and deliberately never fed back into the plan: the inbox
+  replays from `Last-Event-ID` and the REST page carries rows until they
+  expire, so a week-old crossing is indistinguishable from a live one, and
+  writing one in would deny a workspace on a stale figure — the one direction
+  this seam never resolves towards. It becomes a refetch hint the day a usage
+  read exists.
+
+**A gate points at the key the server charges, not at the one the control looks
+like it costs.** `lib/entitlements.ts` carries the table of what CON-295
+actually counts — four numeric caps and the campaign-type gates, each with the
+route it is checked on — because a gate aimed anywhere else is not a stricter
+gate but a different one, refusing on a number this client made up. The Content
+Bank is the worked example: its note, its upload and its web-page import all
+sell `content_bank_assets`, because that is the single key `assets.go` charges
+all three to. Selling the upload as `media_storage_bytes` was wrong twice over —
+that counter is the sum of *post attachments* and nothing else, so a workspace
+at its storage cap was refused an upload the byte counter never sees. Two
+entries in that table are edges rather than details: the seat cap is on the
+direct-create route and not on the invitation flow this product actually uses,
+and enforcement is **warn-first** server-side, so a deployment may be refusing
+nothing at all.
 
 The toast carries the numbers under a title that already names the action; the
 feed row stands alone, so its sentence names the feature *and* the numbers.

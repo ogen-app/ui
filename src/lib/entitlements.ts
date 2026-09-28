@@ -9,6 +9,34 @@
  * server refuses what isn't granted. What is decided here is only what the UI
  * offers, which is why every ambiguous case below resolves towards showing the
  * feature rather than hiding it.
+ *
+ * ## What the server actually counts (CON-295, as of 2026-09-19)
+ *
+ * Worth having written down, because "the server refuses what isn't granted" is
+ * true of the *design* and only partly true of the deployment, and a gate
+ * pointed at a key nothing counts is not a stricter gate — it is a different
+ * one, refusing on a number this client made up.
+ *
+ * | key | checked at | counted as |
+ * | --- | --- | --- |
+ * | `team_seats` | `POST /api/users` **only** | members in the tenant |
+ * | `active_campaigns` | campaign create | campaigns not archived |
+ * | `content_bank_assets` | note create, file upload, URL import | rows in the bank |
+ * | `media_storage_bytes` | post-attachment upload | `SUM(size)` of post attachments |
+ * | `all_campaign_types` / `custom_campaign_types` | campaign create/update | boolean gate |
+ *
+ * Nothing else has a counter registered, and an unregistered key is logged and
+ * **allowed**. Two of those rows have an edge a reader will otherwise discover
+ * the hard way: the seat cap is on the direct-create route and not on the
+ * invitation flow, which is the path this product actually uses; and the byte
+ * cap counts post attachments and not the content bank, so a bank upload is
+ * charged as one row rather than as its size.
+ *
+ * Two more facts about the deployment, both of which can make every rule above
+ * look inert: enforcement is **warn-first** (`ENTITLEMENT_ENFORCEMENT_MODE`
+ * defaults to `warn`, which logs the would-block and lets the create through),
+ * and the check is advisory rather than a reservation — it reads committed
+ * usage, so two creates at the boundary can both pass.
  */
 import type {
   Entitlement,

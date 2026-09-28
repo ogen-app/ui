@@ -24,6 +24,7 @@ import {
 import { reconnectEvents } from '@/stores/eventStreamStore'
 import { reconnectNotifications } from '@/stores/notificationStreamStore'
 import { useAuthStore } from '@/stores/authStore'
+import { canChangePlan } from '@/types/workspace'
 import type {
   CreateWorkspacePayload,
   InvitePayload,
@@ -31,6 +32,7 @@ import type {
   Workspace,
   WorkspaceRole,
 } from '@/types/workspace'
+import { invalidateEntitlements } from './useEntitlements'
 
 export const WORKSPACE_KEY = ['workspace'] as const
 export const WORKSPACE_MEMBERS_KEY = ['workspace', 'members'] as const
@@ -72,6 +74,27 @@ export function useWorkspace(): Workspace | undefined {
   const listed = workspaces?.find((w) => w.id === tenant.id)
   if (!listed) return undefined
   return { ...tenant, role: listed.role }
+}
+
+/**
+ * Whether the person reading may change what this workspace is on (CON-232).
+ *
+ * The one question every upgrade prompt in the app has to ask, so it is asked
+ * in one place: a member who is stopped by a limit is owed the explanation and
+ * *not* a button that sends them to a screen where every control is inert.
+ *
+ * **An unresolved role answers no**, which is the opposite of how this seam
+ * treats an unresolved entitlement — and deliberately. `pending` decides
+ * nothing there because the cost of being wrong is telling a paying customer
+ * they did not pay. Here the cost of being wrong is a control that appears and
+ * then vanishes under the cursor, which is worse than one that arrives a frame
+ * late; it is also what `PlanBillingCard` already does with `mayManage`, and
+ * two answers to "are you an owner" on one screen is its own bug. In practice
+ * the role is long since resolved: nothing asks this before a click.
+ */
+export function useCanChangePlan(): boolean {
+  const workspace = useWorkspace()
+  return workspace ? canChangePlan(workspace.role) : false
 }
 
 /** Renames the workspace. Owner-gated server-side; a member's PUT is refused. */
@@ -157,6 +180,11 @@ export function useRemoveMember() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: WORKSPACE_MEMBERS_KEY })
       qc.invalidateQueries({ queryKey: WORKSPACE_INVITATIONS_KEY })
+      // A seat given back. `team_seats` counts *members*, so inviting spends
+      // nothing until the invitation is accepted — which happens in somebody
+      // else's session, not this one. Removing is the only end of it this tab
+      // can move (CON-295).
+      invalidateEntitlements(qc)
     },
   })
 }

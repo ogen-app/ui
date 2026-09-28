@@ -50,7 +50,16 @@ export function TierFeatureList({ features }: { features: TierFeature[] }) {
   )
 }
 
-function FeatureValue({
+/**
+ * What one tier grants of one feature, in words — "25 per month", "Unlimited",
+ * "Not included".
+ *
+ * Exported because the upgrade dialog draws one row of this table: when a
+ * limit stops somebody, what each plan would give them of *that* feature is the
+ * answer to the question they are actually asking. Sharing the rendering is
+ * what stops the pitch and the price list disagreeing about the same number.
+ */
+export function FeatureValue({
   featureKey,
   value,
 }: {

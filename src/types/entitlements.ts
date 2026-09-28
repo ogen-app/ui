@@ -104,11 +104,16 @@ export type EntitlementKey =
  * - **Sell** (lock with an upgrade, at the moment of intent) — `active_campaigns`,
  *   `team_seats`, `connected_accounts`, `plan_runs_per_month`,
  *   `quality_reviews_per_post`, `media_storage_bytes`, `assistant_multiplier`,
- *   `posts_total`, `content_bank_assets`, `web_page_imports`, `workspaces`.
- *   These are the ones somebody is *already reaching for* when they are
- *   stopped: they clicked add, invite, connect, run, review, upload, import, or
- *   opened the assistant. The upgrade answers a question they had rather than
- *   interrupting with one.
+ *   `posts_total`, `content_bank_assets`, `workspaces`. These are the ones
+ *   somebody is *already reaching for* when they are stopped: they clicked add,
+ *   invite, connect, run, review, upload, import, or opened the assistant. The
+ *   upgrade answers a question they had rather than interrupting with one.
+ * - **Sold by another key** — `web_page_imports`. Importing a page is sold, but
+ *   as `content_bank_assets`, because that is what the server charges it to: an
+ *   imported page is one row in the bank like a note or a file, and no counter
+ *   is registered against `web_page_imports` at all. It stays in the union and
+ *   on the price list, where it is a true statement about the tier; what it is
+ *   not is a refusal this client can predict.
  * - **Lock, no call to action** — `multiple_accounts_per_platform`. An
  *   affordance that would otherwise vanish without explanation: a workspace that
  *   has never had two accounts on one platform would never learn the capability
@@ -121,8 +126,11 @@ export type EntitlementKey =
  * can hide in a dropdown and sell on a button. Where a key appears in two
  * places, this is the disposition for its primary one.
  *
- * **Twelve of the fourteen are wired; two are not, and each for a stated
+ * **Eleven of the fourteen are wired; three are not, and each for a stated
  * reason.**
+ *
+ * - `web_page_imports` — see above: the control is gated, under the key the
+ *   server charges.
  *
  * - `custom_campaign_types` has no surface. Authoring a bespoke campaign type
  *   is not something this build can do from any screen, so there is no control

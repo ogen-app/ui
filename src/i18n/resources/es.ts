@@ -1802,6 +1802,12 @@ export const es: Translation = {
     upgrade: 'MEJORAR PLAN',
     notNow: 'Ahora no',
 
+    pitchTitle: 'Consigue más con nuestros planes premium',
+    pitchPlans: 'Lo que incluye cada plan en {{feature}}',
+    seePlans: 'VER PLANES',
+    ownersOnlyPlan:
+      'Solo un propietario del espacio puede cambiar el plan para todo el equipo.',
+
     suspended: 'Solo lectura',
     suspendedBody:
       'Tu plan ha cambiado, así que esto es de solo lectura por ahora. No se ha eliminado nada: sigue todo aquí, y al mejorar el plan vuelve a ser editable.',

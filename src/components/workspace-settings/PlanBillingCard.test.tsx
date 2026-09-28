@@ -56,6 +56,7 @@ function render(props: Partial<Parameters<typeof PlanBillingCard>[0]> = {}) {
       tier={MONTHLY}
       billing={billed('active')}
       mayManage
+      mayChange
       onManage={() => {}}
       {...props}
     />,

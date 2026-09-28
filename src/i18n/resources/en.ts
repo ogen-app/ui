@@ -2507,6 +2507,31 @@ export const en = {
     notNow: 'Not now',
 
     /**
+     * The upgrade dialog's own chrome — the offer, and what the plans do about
+     * the one feature that stopped somebody.
+     *
+     * The heading sells the plans rather than the refusal, because the refusal
+     * is already stated underneath it by `limitReached` / `notInPlan`. Saying
+     * "you can't do that" twice, once in a bigger font, is how a dialog that
+     * answers a question turns into one that tells somebody off.
+     *
+     * `pitchPlans` takes the feature's own name — the same one the price list
+     * uses, out of `features` below — so the table under it cannot be read as a
+     * comparison of the plans in general, which is a different screen.
+     */
+    pitchTitle: 'Get more with our premium plans',
+    pitchPlans: 'What each plan includes for {{feature}}',
+    seePlans: 'SEE PLANS',
+    /**
+     * For the half of the workspace that cannot act on any of the above
+     * (CON-232). "For everyone here" is the part worth saying: a plan is not a
+     * personal setting somebody forgot to turn on, and a member who reads it as
+     * one goes looking for a switch that does not exist.
+     */
+    ownersOnlyPlan:
+      'Only a workspace owner can change the plan for everyone here.',
+
+    /**
      * A downgrade suspends; it never deletes. The body's first job is that
      * reassurance — a campaign that stops accepting edits reads as a campaign
      * that has been taken away, and it hasn't been.

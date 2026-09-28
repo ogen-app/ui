@@ -12,6 +12,7 @@ import { TierCard } from '@/components/tiers/TierCard'
 import { ZIndex } from '@/config/zIndex'
 import { useWorkspacePlan } from '@/hooks/useEntitlements'
 import { useSelectTier, useTiers } from '@/hooks/useTiers'
+import { useCanChangePlan } from '@/hooks/useWorkspaces'
 import { toast } from '@/stores/toastStore'
 import type { Tier } from '@/types/tiers'
 import { awaiting } from '@/lib/fetched'
@@ -43,6 +44,12 @@ export function PlansPage() {
   const plan = useWorkspacePlan()
   const tiers = useTiers()
   const select = useSelectTier()
+  /**
+   * Who is reading. A member gets the comparison and no controls — the screen
+   * is a price list as well as a chooser, and the half of it that is a price
+   * list is worth reading before anyone goes and asks an owner for anything.
+   */
+  const mayChange = useCanChangePlan()
 
   const choose = (tier: Tier) => {
     select.mutate(tier.id, {
@@ -78,7 +85,7 @@ export function PlansPage() {
   // `awaiting`, not `isLoading` — see `lib/fetched`.
   if (awaiting(plan) || awaiting(tiers)) {
     return (
-      <PlansFrame>
+      <PlansFrame mayChange={mayChange}>
         <PageLoader />
       </PlansFrame>
     )
@@ -86,7 +93,7 @@ export function PlansPage() {
 
   if (plan.isError || tiers.isError || !plan.data || !tiers.data) {
     return (
-      <PlansFrame>
+      <PlansFrame mayChange={mayChange}>
         <PageError header={t('tiers.planLoadFailed')} />
       </PlansFrame>
     )
@@ -104,10 +111,11 @@ export function PlansPage() {
   const retired = !offered.some((tier) => tier.id === held.id)
 
   return (
-    <PlansFrame>
+    <PlansFrame mayChange={mayChange}>
       <PlanSummary
         tier={held}
         retired={retired}
+        mayChange={mayChange}
         onCancelChange={cancelChange}
         busy={select.isPending}
       />
@@ -119,6 +127,7 @@ export function PlansPage() {
             tier={tier}
             current={tier.id === held.id}
             scheduled={held.scheduled?.id === tier.id}
+            mayChoose={mayChange}
             onChoose={choose}
             busy={select.isPending}
           />
@@ -128,7 +137,13 @@ export function PlansPage() {
   )
 }
 
-function PlansFrame({ children }: { children: React.ReactNode }) {
+function PlansFrame({
+  children,
+  mayChange,
+}: {
+  children: React.ReactNode
+  mayChange: boolean
+}) {
   const { t } = useTranslation()
   const router = useRouter()
   const navigate = useNavigate()
@@ -175,6 +190,14 @@ function PlansFrame({ children }: { children: React.ReactNode }) {
             <p className="text-[13px] text-tertiary-foreground">
               {t('tiers.planMock')}
             </p>
+            {/* Said once, at the top, rather than on each card: with no CHOOSE
+                buttons anywhere the page needs one line explaining why, not
+                three copies of a disabled control. */}
+            {!mayChange && (
+              <p className="text-[13px] text-tertiary-foreground">
+                {t('tiers.ownersOnlyPlan')}
+              </p>
+            )}
           </div>
           {children}
         </div>

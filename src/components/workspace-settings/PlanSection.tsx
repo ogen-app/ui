@@ -5,7 +5,7 @@ import { useFeatureFlag } from '@/config/featureFlags'
 import { useBilling, useBillingPortal } from '@/hooks/useBilling'
 import { useWorkspacePlan } from '@/hooks/useEntitlements'
 import { useWorkspace } from '@/hooks/useWorkspaces'
-import { canManageBilling } from '@/types/workspace'
+import { canChangePlan, canManageBilling } from '@/types/workspace'
 import { toast } from '@/stores/toastStore'
 
 /**
@@ -58,6 +58,9 @@ export function PlanSection() {
       // gets the sentence they are entitled to and an explanation, not a row
       // that stays empty because a request was made that was never theirs.
       mayManage={workspace ? canManageBilling(workspace.role) : false}
+      // Asked separately from the line above, because they are separate
+      // questions the moment `admin` exists — see `canChangePlan`.
+      mayChange={workspace ? canChangePlan(workspace.role) : false}
       planFailed={plan.isError}
       onManage={openPortal}
       managing={portal.isPending}

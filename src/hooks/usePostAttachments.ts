@@ -15,6 +15,7 @@ import {
   type PostAttachmentWithValidation,
 } from '@/types/attachments'
 import { awaiting } from '@/lib/fetched'
+import { invalidateEntitlements } from '@/hooks/useEntitlements'
 
 /**
  * Attachments are their own resource, not part of the post document, so
@@ -64,6 +65,10 @@ export function usePostAttachments(postId: string) {
 
   const invalidate = useCallback(() => {
     void qc.invalidateQueries({ queryKey: postAttachmentsKey(postId) })
+    // These bytes are the whole of `media_storage_bytes`: the server's counter
+    // is the sum of the workspace's post attachments and nothing else, so an
+    // upload here spends the allowance and a removal gives it back (CON-295).
+    invalidateEntitlements(qc)
   }, [qc, postId])
 
   /**

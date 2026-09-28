@@ -15,6 +15,16 @@ type Props = {
   current: boolean
   /** Whether this is the tier the workspace has already been moved onto. */
   scheduled: boolean
+  /**
+   * Whether this reader may choose at all (CON-232).
+   *
+   * False takes the button off **every** card, which is why it is safe: the
+   * screen then reads as the comparison it also is, and the one sentence under
+   * the heading says whose decision it is. A card with a hole where its
+   * neighbours have a control is read as broken; a page of cards with no
+   * controls is read as a price list.
+   */
+  mayChoose: boolean
   onChoose: (tier: Tier) => void
   busy: boolean
 }
@@ -31,7 +41,14 @@ type Props = {
  * putting it on the card as well would give one action two controls that have
  * to agree.
  */
-export function TierCard({ tier, current, scheduled, onChoose, busy }: Props) {
+export function TierCard({
+  tier,
+  current,
+  scheduled,
+  mayChoose,
+  onChoose,
+  busy,
+}: Props) {
   const { t, i18n } = useTranslation()
 
   // Which row to show is `displayPrice`'s rule; wording it is this component's,
@@ -96,22 +113,24 @@ export function TierCard({ tier, current, scheduled, onChoose, busy }: Props) {
 
       <TierFeatureList features={tierFeatures(tier)} />
 
-      <Button
-        // Both non-actionable states take the quiet variant: a disabled
-        // primary button still reads as the thing to press, and "Scheduled"
-        // rendered that way looked like the call to action on the page.
-        variant={current || scheduled ? 'defaultInverted' : 'default'}
-        className="mt-auto w-full"
-        disabled={busy || current || scheduled}
-        onClick={() => onChoose(tier)}
-        aria-label={t('tiers.chooseNamed', { name: tier.name })}
-      >
-        {current
-          ? t('tiers.currentBadge')
-          : scheduled
-            ? t('tiers.scheduledBadge')
-            : t('tiers.choose')}
-      </Button>
+      {mayChoose && (
+        <Button
+          // Both non-actionable states take the quiet variant: a disabled
+          // primary button still reads as the thing to press, and "Scheduled"
+          // rendered that way looked like the call to action on the page.
+          variant={current || scheduled ? 'defaultInverted' : 'default'}
+          className="mt-auto w-full"
+          disabled={busy || current || scheduled}
+          onClick={() => onChoose(tier)}
+          aria-label={t('tiers.chooseNamed', { name: tier.name })}
+        >
+          {current
+            ? t('tiers.currentBadge')
+            : scheduled
+              ? t('tiers.scheduledBadge')
+              : t('tiers.choose')}
+        </Button>
+      )}
     </section>
   )
 }

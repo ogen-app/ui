@@ -20,6 +20,16 @@ type Props = {
   /** Undefined for a member, who never makes the request. */
   billing: BillingAccount | undefined
   mayManage: boolean
+  /**
+   * Whether this reader may move the workspace onto another plan (CON-232).
+   *
+   * A separate answer from `mayManage` even though both are "are you an owner"
+   * today — see `canChangePlan`. It changes the word on the button rather than
+   * removing it: the comparison is worth reading whoever is reading it, and a
+   * member who cannot choose is exactly the person who wants to know what
+   * choosing would get them before they go and ask.
+   */
+  mayChange: boolean
   /** The plan read failed. Kept apart from `!tier` so the two can differ. */
   planFailed?: boolean
   onManage: () => void
@@ -54,6 +64,7 @@ export function PlanBillingCard({
   tier,
   billing,
   mayManage,
+  mayChange,
   planFailed = false,
   onManage,
   managing = false,
@@ -69,6 +80,7 @@ export function PlanBillingCard({
             tier={tier}
             subscription={subscription}
             planFailed={planFailed}
+            mayChange={mayChange}
           />
         </SettingsRow>
 
@@ -137,10 +149,12 @@ export function PlanBanner({
   tier,
   subscription,
   planFailed = false,
+  mayChange,
 }: {
   tier: TierSnapshot | undefined
   subscription: BillingSubscription | null
   planFailed?: boolean
+  mayChange: boolean
 }) {
   const { t, i18n } = useTranslation()
   const { headline, timing } = usePlanStatement(tier)
@@ -222,8 +236,14 @@ export function PlanBanner({
         )}
       </span>
       <div className="ml-auto shrink-0 pl-3">
+        {/* The same door, named for what is behind it for this reader. A
+            member sent to a screen of CHANGE buttons that do nothing would
+            conclude the app is broken; one sent to read the plans finds
+            exactly what the word promised. */}
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/plans">{t('tiers.changePlan')}</Link>
+          <Link to="/plans">
+            {mayChange ? t('tiers.changePlan') : t('tiers.seePlans')}
+          </Link>
         </Button>
       </div>
     </div>

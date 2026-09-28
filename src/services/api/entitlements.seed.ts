@@ -71,7 +71,17 @@ const SEED_USAGE: Readonly<Record<string, number>> = seed.used
 export function withSeededUsage(plan: WorkspacePlan): WorkspacePlan {
   const entitlements: Record<string, RawEntitlement> = {}
   for (const [key, entry] of Object.entries(plan.entitlements)) {
-    const metered = entry.limit !== undefined && key in SEED_USAGE
+    const metered =
+      entry.limit !== undefined &&
+      // Only where the server said nothing. It sends no tally today, so this
+      // reads as always-true — and that is exactly why the condition is here
+      // rather than in the commit that deletes the file. A seed that overwrote
+      // a real counter would not fail a test or look wrong on screen; it would
+      // quietly report yesterday's number under a meter somebody is reading to
+      // decide whether to pay, and it would do it on the deploy that finally
+      // made the number real.
+      entry.used == null &&
+      key in SEED_USAGE
     entitlements[key] = metered ? { ...entry, used: SEED_USAGE[key] } : entry
   }
   return { ...plan, entitlements }

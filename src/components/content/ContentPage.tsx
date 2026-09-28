@@ -21,7 +21,7 @@ import { UploadModal } from '@/components/uploads/UploadModal'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import { useAssets, useCreateAsset, useDeleteAsset } from '@/hooks/useContent'
-import { formatBytes, uploadLimitLines } from '@/lib/assetStatus'
+import { uploadLimitLines } from '@/lib/assetStatus'
 import {
   addToCampaign,
   removeFromCampaign,
@@ -94,20 +94,29 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
   const dragDepth = useRef(0)
 
   /*
-   * ADD CONTENT is one button over three allowances, because the three things
-   * it offers cost different things: a note is a row in the bank, a file is
-   * bytes of storage, and a web page is an import somebody has to crawl. They
-   * are gated where they are chosen rather than on the trigger — a menu that
-   * opened onto an upgrade dialog would refuse the two choices that were still
-   * available along with the one that wasn't.
+   * ADD CONTENT is one button over one allowance, because the three things it
+   * offers all cost the same thing: a row in the bank. A note, a file and a web
+   * page each land as one asset, and the server charges all three to
+   * `content_bank_assets` — `assets.go` calls the limiter with that key at the
+   * document create, the file upload and the URL import alike (CON-295).
+   *
+   * It used to sell three: `media_storage_bytes` for the upload and
+   * `web_page_imports` for the import. Both were wrong in the same way, and the
+   * way is worth stating because it is the failure mode of predicting a refusal
+   * at all. The byte allowance counts *post attachments* and nothing else
+   * (`SumSizeBytesInTenant`), so a workspace at its storage cap was refused an
+   * upload that costs the bank's counter one row and the byte counter nothing;
+   * and `web_page_imports` has no counter registered on the server at all, so
+   * whatever the dialog said about it was invented here. A gate aimed at a key
+   * the server does not charge is not a stricter gate — it is a different one,
+   * and the 402 that eventually arrives names a feature the dialog was not
+   * talking about.
    *
    * Dropping files onto the page is deliberately not gated. It is a gesture
    * with no control to attach an explanation to, and the server's own refusal
    * already arrives as a sentence under the upload's name (CON-295).
    */
-  const docGate = useUpgradeGate('content_bank_assets')
-  const uploadGate = useUpgradeGate('media_storage_bytes')
-  const webPageGate = useUpgradeGate('web_page_imports')
+  const bankGate = useUpgradeGate('content_bank_assets')
 
   /** The campaign's documents, or — in the bank — every document there is. */
   const shown = useMemo(
@@ -214,9 +223,9 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
 
   // Wrapped once each, so the header menu and the empty state's buttons — which
   // are handed these same three — answer a denial identically.
-  const write = docGate.intent(handleCreate)
-  const upload = uploadGate.intent(() => setUploadModalOpen(true))
-  const addWebPage = webPageGate.intent(() => setWebPageModalOpen(true))
+  const write = bankGate.intent(handleCreate)
+  const upload = bankGate.intent(() => setUploadModalOpen(true))
+  const addWebPage = bankGate.intent(() => setWebPageModalOpen(true))
 
   /**
    * A page the backend has accepted for scraping, joining this scope.
@@ -427,11 +436,9 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
         onSubmitted={handleWebPage}
       />
 
-      <UpgradeDialog gate={docGate} />
-      {/* The one allowance measured in bytes, so it brings its own formatter:
-          "402653184 of 1073741824" is true and unreadable. */}
-      <UpgradeDialog gate={uploadGate} format={formatBytes} />
-      <UpgradeDialog gate={webPageGate} />
+      {/* One dialog for the three: they share a gate, so they share the
+          sentence it puts on screen. */}
+      <UpgradeDialog gate={bankGate} />
     </div>
   )
 }

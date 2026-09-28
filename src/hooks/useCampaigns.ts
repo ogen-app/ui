@@ -17,6 +17,7 @@ import type {
 } from '@/types/campaigns'
 import type { MutationErrorMeta } from '@/lib/queryClient'
 import { CAMPAIGN_SUMMARIES_KEY } from '@/lib/queryKeys'
+import { invalidateEntitlements } from './useEntitlements'
 
 const CAMPAIGNS_KEY = ['campaigns'] as const
 // Exported so the assistant store can invalidate it from outside React. The
@@ -99,6 +100,8 @@ export function useCreateCampaign() {
     mutationFn: (payload: CreateCampaignPayload) => createCampaign(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY })
+      // One more against `active_campaigns`, which the server counts.
+      invalidateEntitlements(qc)
     },
   })
 }
@@ -151,6 +154,9 @@ function useArchiveMutation(
       qc.invalidateQueries({ queryKey: ARCHIVED_CAMPAIGNS_KEY })
       qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })
       qc.invalidateQueries({ queryKey: campaignKey(id) })
+      // The cap is on *active* campaigns, so archiving frees one and bringing
+      // it back spends one.
+      invalidateEntitlements(qc)
     },
   })
 }
@@ -174,6 +180,7 @@ export function useDeleteCampaign() {
       qc.invalidateQueries({ queryKey: CAMPAIGNS_KEY })
       qc.invalidateQueries({ queryKey: ARCHIVED_CAMPAIGNS_KEY })
       qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })
+      invalidateEntitlements(qc)
     },
   })
 }
