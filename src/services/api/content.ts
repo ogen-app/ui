@@ -139,3 +139,29 @@ export function reextractAudio(id: string): Promise<void> {
     },
   )
 }
+
+/**
+ * Writes a new alt text for an image, synchronously (CON-281). It **saves**,
+ * and it replaces one a person wrote — it is an explicit request for a fresh
+ * one — without touching `alt_text_edited_by_user`.
+ */
+export async function regenerateAltText(id: string): Promise<string> {
+  const body = await apiJson<{ alt_text: string }>(
+    `${BASE}/${id}/image/alt-text`,
+    'Unable to write a new alt text',
+    { method: 'POST' },
+  )
+  return body.alt_text
+}
+
+/** Reads an image again from scratch; a person's alt text is kept. */
+export function reextractImage(id: string): Promise<void> {
+  return apiVoid(
+    `${BASE}/${id}/image/reextract`,
+    'Unable to read this image again',
+    {
+      method: 'POST',
+      body: {},
+    },
+  )
+}

@@ -2700,6 +2700,14 @@ export const es: Translation = {
       tagsHelp: 'Cómo vuelves a encontrar esta imagen en la lista.',
       missing: 'Esta imagen no se guardó, así que no hay nada que mostrar.',
       animated: 'Animada',
+      altGenerated:
+        'Escrito automáticamente a partir de la imagen. Edítalo para hacerlo tuyo: al volver a leer la imagen se conserva lo que escribas.',
+      altRegenerate: 'Escribir uno nuevo',
+      partial:
+        'La imagen se describió, pero no se pudo leer todo el texto que contiene.',
+      reextract: 'Volver a leer',
+      undrawable:
+        'El formato de esta imagen no se puede mostrar en un navegador y no se creó una copia visible.',
     },
 
     selection: {

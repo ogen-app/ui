@@ -3694,6 +3694,16 @@ export const en = {
       /** The bytes never reached storage — a deployment fault, not a bad file. */
       missing: 'This image was not stored, so there is nothing to show.',
       animated: 'Animated',
+      /** Shown instead of `altHelp` while the alt text is image-service's. */
+      altGenerated:
+        'Written automatically from the picture. Edit it to make it yours — reading the image again keeps what you write.',
+      /** Replaces the alt text on the spot, a person's included. */
+      altRegenerate: 'Write a new one',
+      partial:
+        'The picture was described, but the text in it could not all be read.',
+      reextract: 'Read again',
+      undrawable:
+        "This image's format can't be shown in a browser, and no viewable copy was made.",
     },
 
     /** The floating bar over a ticked selection in the documents list. */

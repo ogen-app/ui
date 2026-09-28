@@ -11,6 +11,8 @@ import {
   getAudioTranscript,
   listAssetChunks,
   reextractAudio,
+  reextractImage,
+  regenerateAltText,
   retryAudio,
   createAsset,
   createUrlAsset,
@@ -24,6 +26,7 @@ import { isSessionExpiring } from '@/lib/sessionExpiry'
 import { ApiError } from '@/services/api/errors'
 import { toast } from '@/stores/toastStore'
 import type {
+  Asset,
   BulkTagPayload,
   CreateAssetPayload,
   UpdateAssetPayload,
@@ -154,6 +157,36 @@ export function useRerunAudio(id: string) {
   return useMutation({
     mutationFn: (mode: 'retry' | 'reextract') =>
       mode === 'retry' ? retryAudio(id) : reextractAudio(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: assetKey(id) })
+      qc.invalidateQueries({ queryKey: ASSETS_KEY, exact: true })
+    },
+  })
+}
+
+/**
+ * A fresh alt text for an image. The server saves it, so the cached asset is
+ * patched with it rather than refetched — a refetch mid-edit would bring the
+ * rest of the asset back with it.
+ */
+export function useRegenerateAltText(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => regenerateAltText(id),
+    onSuccess: (alt_text) => {
+      qc.setQueryData<Asset>(assetKey(id), (asset) =>
+        asset ? { ...asset, alt_text } : asset,
+      )
+      qc.invalidateQueries({ queryKey: ASSETS_KEY, exact: true })
+    },
+  })
+}
+
+/** Reads an image again; the asset goes back to pending and is watched. */
+export function useReextractImage(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => reextractImage(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: assetKey(id) })
       qc.invalidateQueries({ queryKey: ASSETS_KEY, exact: true })
