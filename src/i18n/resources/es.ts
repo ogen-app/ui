@@ -2703,6 +2703,8 @@ export const es: Translation = {
       altGenerated:
         'Escrito automáticamente a partir de la imagen. Edítalo para hacerlo tuyo: al volver a leer la imagen se conserva lo que escribas.',
       altRegenerate: 'Escribir uno nuevo',
+      failedTitle: 'Esta imagen no se procesó',
+      partialTitle: 'Esta imagen solo se procesó en parte',
       partial:
         'La imagen se describió, pero no se pudo leer todo el texto que contiene.',
       reextract: 'Volver a leer',

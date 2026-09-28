@@ -143,6 +143,9 @@ describe('AssetImageView', () => {
       }),
     )
     expect(
+      screen.getByRole('heading', { name: "This image wasn't processed" }),
+    ).toBeInTheDocument()
+    expect(
       screen.getByText(
         "Files like this can't be read right now. Try again in a few minutes.",
       ),

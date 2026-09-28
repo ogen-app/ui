@@ -3699,6 +3699,9 @@ export const en = {
         'Written automatically from the picture. Edit it to make it yours — reading the image again keeps what you write.',
       /** Replaces the alt text on the spot, a person's included. */
       altRegenerate: 'Write a new one',
+      /** The heading over a failed or partial reading, above its reason. */
+      failedTitle: "This image wasn't processed",
+      partialTitle: 'This image was only partly processed',
       partial:
         'The picture was described, but the text in it could not all be read.',
       reextract: 'Read again',
