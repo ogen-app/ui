@@ -1,5 +1,6 @@
 import type {
   Asset,
+  AssetChunkPage,
   BulkTagPayload,
   CreateAssetPayload,
   UpdateAssetPayload,
@@ -14,6 +15,21 @@ export function listAssets(): Promise<Asset[]> {
 
 export function getAsset(id: string): Promise<Asset> {
   return apiJson<Asset>(`${BASE}/${id}`, 'Unable to fetch asset')
+}
+
+/**
+ * One page of an asset's chunks, in order, without their embeddings
+ * (CON-312). The server caps a page at 500 and defaults to 100.
+ */
+export function listAssetChunks(
+  id: string,
+  offset = 0,
+  limit = 100,
+): Promise<AssetChunkPage> {
+  return apiJson<AssetChunkPage>(
+    `${BASE}/${id}/chunks?offset=${offset}&limit=${limit}`,
+    'Unable to read this document',
+  )
 }
 
 export function createAsset(payload: CreateAssetPayload): Promise<Asset> {

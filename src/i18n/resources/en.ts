@@ -3587,6 +3587,61 @@ export const en = {
       body: 'This app version has no way to show this kind of asset. Nothing has been changed — it is still here, and a newer version will open it.',
     },
 
+    /** The title field on the screens whose body isn't edited here. */
+    titlePlaceholder: 'Title',
+    titleLabel: 'Title',
+
+    /** The size of an asset, under its name in a list (`lib/assetExtent`). */
+    extent: {
+      words_one: '{{formatted}} word',
+      words_other: '{{formatted}} words',
+      pages_one: '{{count}} page',
+      pages_other: '{{count}} pages',
+      waiting: 'Not read yet',
+      nothing: 'Nothing extracted',
+      noDescription: 'No description',
+    },
+
+    /**
+     * An uploaded file an ingestion service is still reading, or has given up
+     * on (`AssetIngestState`). The failure's own reason comes from the asset's
+     * `failure_code`, worded by `uploads.errors`; this is the frame around it.
+     */
+    ingest: {
+      readingTitle: 'Reading this file',
+      readingBody:
+        'This happens in the background and can take a few minutes. You can leave — it fills in here on its own, and the campaign can use it as soon as it does.',
+      failedTitle: "We couldn't read this file",
+      failedUnstated:
+        "The server didn't say why. Delete it and upload it again, or try a different copy of the file.",
+    },
+
+    /**
+     * A PDF or an office document's extracted text, shown read-only
+     * (`AssetExtractedView`, CON-312). The server refuses edits to it, because
+     * saving would re-chunk the text and lose where each part came from.
+     */
+    extracted: {
+      readOnly:
+        'This is the text read out of the file, in the sections the assistant cites. It can’t be edited here — upload a new version to change it.',
+      partial:
+        'Only part of this file could be read. The rest is not searchable.',
+      empty:
+        'Nothing could be read from this file — it may only contain images.',
+      loadFailed:
+        "This file's text couldn't be loaded. Try reloading the page.",
+      shown: 'Showing {{shown}} of {{total}} sections',
+      more: 'Show more',
+      page: 'Page {{page}}',
+      pages: 'Pages {{from}}–{{to}}',
+    },
+
+    /** A PUT that tried to change ingested text (CON-312 `content_locked`). */
+    locked: {
+      title: "This file's text can't be edited",
+      body: 'It was read out of the uploaded file. Upload a new version to change it.',
+    },
+
     /**
      * An image asset's screen (CON-246). The two text fields are the whole
      * point of it, so their help lines carry the distinction rather than

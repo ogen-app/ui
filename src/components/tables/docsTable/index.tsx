@@ -18,7 +18,7 @@ import {
 import { useAssetUsage } from '@/hooks/useAssetUsage'
 import { AssetGlyph } from '@/components/content/AssetGlyph'
 import { AssetPreview } from '@/components/content/AssetPreview'
-import { extentLabel } from '@/lib/assetExtent'
+import { AssetExtent } from '@/components/content/AssetExtent'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 import { relativeTime } from '@/lib/relativeTime'
 import { cn, formatTitle } from '@/lib'
@@ -289,7 +289,7 @@ function AssetsTableComponent({
                     <span className="truncate">{pageUrlLabel(source)}</span>
                   )}
                   <span className="shrink-0 tabular-nums">
-                    {extentLabel(row)}
+                    <AssetExtent asset={row} />
                   </span>
                   <StatusBadge tone={badge.tone} label={badge.label} />
                 </span>

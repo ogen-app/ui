@@ -1,14 +1,24 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import {
   listAssets,
   getAsset,
+  listAssetChunks,
   createAsset,
   createUrlAsset,
   updateAsset,
   bulkTagAssets,
   deleteAsset,
 } from '@/services/api/content'
+import { i18next } from '@/i18n'
 import { retrievability } from '@/lib/campaignSources'
+import { isSessionExpiring } from '@/lib/sessionExpiry'
+import { ApiError } from '@/services/api/errors'
+import { toast } from '@/stores/toastStore'
 import type {
   BulkTagPayload,
   CreateAssetPayload,
@@ -70,6 +80,32 @@ export function useAsset(id: string) {
   })
 }
 
+export const assetChunksKey = (id: string) => ['assets', id, 'chunks'] as const
+
+/** How many chunks each "show more" brings in. */
+const CHUNK_PAGE = 100
+
+/**
+ * The asset's chunks, a page at a time (CON-312).
+ *
+ * Under `['assets', id]`, so anything that invalidates the asset — its own
+ * poll settling, an `asset.updated` event — takes the chunks with it: a
+ * re-extraction replaces every one of them. Enable it only once the asset has
+ * settled; while it is still being read there is nothing stable to page.
+ */
+export function useAssetChunks(id: string, { enabled }: { enabled: boolean }) {
+  return useInfiniteQuery({
+    queryKey: assetChunksKey(id),
+    queryFn: ({ pageParam }) => listAssetChunks(id, pageParam, CHUNK_PAGE),
+    initialPageParam: 0,
+    getNextPageParam: (last) => {
+      const next = last.offset + last.chunks.length
+      return next < last.total && last.chunks.length > 0 ? next : undefined
+    },
+    enabled: enabled && !!id,
+  })
+}
+
 export function useCreateAsset() {
   const qc = useQueryClient()
   return useMutation({
@@ -101,9 +137,32 @@ export function useCreateUrlAsset() {
   })
 }
 
+/**
+ * Saves an asset.
+ *
+ * One refusal is worded here rather than by the default toast: `content_locked`
+ * (CON-312), a changed `content` on a PDF, office document or recording. No
+ * screen sends one — those types open read-only — so reaching it means the
+ * screen was wrong about what it had open, and the asset is re-read so the
+ * right screen replaces it.
+ */
 export function useUpdateAsset() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorToast: false },
+    onError: (err, { id }) => {
+      // The default toast's own guard, which opting out skips: a 401 has
+      // already started the redirect to the login screen.
+      if (isSessionExpiring()) return
+      if (err instanceof ApiError && err.code === 'content_locked') {
+        toast.error(i18next.t('content.locked.title'), {
+          description: i18next.t('content.locked.body'),
+        })
+        qc.invalidateQueries({ queryKey: assetKey(id) })
+        return
+      }
+      toast.error(err instanceof Error ? err.message : 'Unable to update asset')
+    },
     mutationFn: ({
       id,
       payload,

@@ -16,7 +16,7 @@ export type AssetStatus =
  * and only differs in having somewhere it came from.
  *
  * `"IMG"` is an image (CON-246). Its `content` is a description of the
- * picture rather than the thing itself, which is why `opensAsDocument` exists
+ * picture rather than the thing itself, which is why `assetScreen` exists
  * and why an image gets a screen of its own rather than the editor.
  *
  * `"DOC"` is an office or text file — Word, Excel, PowerPoint, OpenDocument,
@@ -177,4 +177,49 @@ export type BulkTagPayload = {
   asset_ids: string[]
   add?: string[]
   remove?: string[]
+}
+
+/**
+ * Where a chunk came from in its file (CON-280/282/281) — the structured form
+ * of `source_label`. Which fields are set depends on `kind`.
+ */
+export type SourceAnchor = {
+  kind: 'page' | 'slide' | 'sheet' | 'section' | 'email' | 'time' | 'image'
+  page?: number
+  slide?: number
+  sheet?: string
+  cell_range?: string
+  heading_path?: string[]
+  /** On the recording's own timeline, for `time`. */
+  start_ms?: number
+  end_ms?: number
+}
+
+/**
+ * One searchable piece of an asset: what the assistant retrieves and cites
+ * (`GET /api/content-bank/assets/:id/chunks`, CON-312).
+ *
+ * For a PDF or an office document this is also the only place its text lives:
+ * those assets' `content` is a placeholder, and the chunks are what the
+ * extraction produced.
+ */
+export type AssetChunk = {
+  id: string
+  asset_id: string
+  chunk_index: number
+  /** 1-based pages a PDF chunk spans; 0 on everything else. */
+  page_start: number
+  page_end: number
+  /** A citation: "Slide 4", "Sheet 'Q3' rows 10–24", "1:05–1:40". */
+  source_label?: string | null
+  source_anchor?: SourceAnchor | null
+  content: string
+  token_count: number
+}
+
+export type AssetChunkPage = {
+  chunks: AssetChunk[]
+  total: number
+  offset: number
+  limit: number
 }

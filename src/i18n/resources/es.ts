@@ -2623,6 +2623,48 @@ export const es: Translation = {
       body: 'Esta versión de la aplicación no sabe mostrar este tipo de recurso. No se ha cambiado nada: sigue aquí, y una versión más reciente lo abrirá.',
     },
 
+    titlePlaceholder: 'Título',
+    titleLabel: 'Título',
+
+    extent: {
+      words_one: '{{formatted}} palabra',
+      words_other: '{{formatted}} palabras',
+      pages_one: '{{count}} página',
+      pages_other: '{{count}} páginas',
+      waiting: 'Aún sin leer',
+      nothing: 'No se extrajo nada',
+      noDescription: 'Sin descripción',
+    },
+
+    ingest: {
+      readingTitle: 'Leyendo este archivo',
+      readingBody:
+        'Esto ocurre en segundo plano y puede tardar unos minutos. Puedes salir: se completará aquí solo, y la campaña podrá usarlo en cuanto lo haga.',
+      failedTitle: 'No hemos podido leer este archivo',
+      failedUnstated:
+        'El servidor no ha dicho por qué. Elimínalo y vuelve a subirlo, o prueba con otra copia del archivo.',
+    },
+
+    extracted: {
+      readOnly:
+        'Este es el texto leído del archivo, en las secciones que cita el asistente. No se puede editar aquí: sube una versión nueva para cambiarlo.',
+      partial:
+        'Solo se ha podido leer una parte de este archivo. El resto no se puede buscar.',
+      empty:
+        'No se ha podido leer nada de este archivo; puede que solo contenga imágenes.',
+      loadFailed:
+        'No se ha podido cargar el texto de este archivo. Prueba a recargar la página.',
+      shown: 'Se muestran {{shown}} de {{total}} secciones',
+      more: 'Mostrar más',
+      page: 'Página {{page}}',
+      pages: 'Páginas {{from}}–{{to}}',
+    },
+
+    locked: {
+      title: 'El texto de este archivo no se puede editar',
+      body: 'Se leyó del archivo subido. Sube una versión nueva para cambiarlo.',
+    },
+
     image: {
       titlePlaceholder: 'Título',
       altLabel: 'Texto alternativo',

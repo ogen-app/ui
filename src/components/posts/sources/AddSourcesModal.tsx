@@ -8,7 +8,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { AssetGlyph } from '@/components/content/AssetGlyph'
 import { useAssets } from '@/hooks/useContent'
 import { retrievability } from '@/lib/campaignSources'
-import { extentLabel } from '@/lib/assetExtent'
+import { AssetExtent } from '@/components/content/AssetExtent'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 import { cn, formatTitle } from '@/lib'
 import type { Asset } from '@/types/content'
@@ -211,7 +211,9 @@ function AssetChoice({
             {asset.source_url && !provisional && (
               <span className="truncate">{pageUrlLabel(asset.source_url)}</span>
             )}
-            <span className="shrink-0">{extentLabel(asset)}</span>
+            <span className="shrink-0">
+              <AssetExtent asset={asset} />
+            </span>
           </span>
         </span>
         {attached ? (
