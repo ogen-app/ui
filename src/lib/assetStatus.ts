@@ -267,6 +267,14 @@ export function validateUploadFile(file: File): UploadValidation {
  */
 export const LEGACY_OFFICE_CODE = 'legacy_office'
 
+/**
+ * Ours too: the PUT to storage in a presigned upload failed. The server never
+ * saw it, so it has no code for it — and the likeliest cause, a bucket that
+ * doesn't allow uploads from this origin, is one the browser reports only as a
+ * network error.
+ */
+export const STORAGE_UPLOAD_FAILED_CODE = 'storage_upload_failed'
+
 /** Async statuses that will never change again. */
 export function isTerminalStatus(status: AssetStatus): boolean {
   return status === 'ready' || status === 'partial' || status === 'failed'

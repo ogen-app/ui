@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next'
 import {
   LEGACY_OFFICE_CODE,
+  STORAGE_UPLOAD_FAILED_CODE,
   formatBytes,
   type UploadFailure,
 } from '@/lib/assetStatus'
@@ -81,6 +82,8 @@ export function uploadErrorMessage(
       return t('uploads.errors.partial')
     case 'internal_error':
       return t('uploads.errors.server')
+    case STORAGE_UPLOAD_FAILED_CODE:
+      return t('uploads.errors.storage')
   }
 
   return fromProse(t, message)
@@ -93,6 +96,9 @@ const LEGACY_PROSE = /legacy binary or password-protected/i
 function capFrom(message: string): string | null {
   const stated = message.match(/exceeds maximum size of (\d+ [MG]B)/i)
   if (stated) return stated[1]
+  // The audio finalize's 413 (`headWithinCap`), in binary units.
+  const gib = message.match(/maximum size of (\d+) GiB/i)
+  if (gib) return `${gib[1]} GB`
   const bytes = message.match(/exceeds limit of (\d+) bytes/i)
   return bytes ? formatBytes(Number(bytes[1])) : null
 }

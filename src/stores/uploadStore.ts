@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { uploadAssetFile } from '@/services/api/uploads'
+import { uploadAssetFile, uploadAudioFile } from '@/services/api/uploads'
 import {
   validateUploadFile,
   type UploadFailure,
@@ -79,9 +79,17 @@ export const useUploadStore = create<UploadState>()(
           ),
         }))
 
-      const start = (id: string, file: File, target: UploadTarget) => {
+      const start = (
+        id: string,
+        file: File,
+        kind: UploadKind,
+        target: UploadTarget,
+      ) => {
         patch(id, { phase: 'uploading', progress: 0, error: undefined })
-        uploadAssetFile(file, { onProgress: (p) => patch(id, { progress: p }) })
+        // A recording goes presign → storage → finalize rather than through
+        // the multipart endpoint, which refuses it; both answer in one shape.
+        const upload = kind === 'audio' ? uploadAudioFile : uploadAssetFile
+        upload(file, { onProgress: (p) => patch(id, { progress: p }) })
           .then((result) => {
             if (result.status === 'failed') {
               patch(id, {
@@ -153,8 +161,8 @@ export const useUploadStore = create<UploadState>()(
 
           set((state) => ({ items: [...state.items, ...items] }))
           for (const item of items) {
-            if (item.phase === 'uploading')
-              start(item.id, item.file, {
+            if (item.phase === 'uploading' && item.kind)
+              start(item.id, item.file, item.kind, {
                 campaignId: item.campaignId,
                 postId: item.postId,
               })
@@ -169,7 +177,8 @@ export const useUploadStore = create<UploadState>()(
             patch(id, { phase: 'failed', error: validation.failure })
             return
           }
-          start(id, item.file, {
+          patch(id, { kind: validation.kind })
+          start(id, item.file, validation.kind, {
             campaignId: item.campaignId,
             postId: item.postId,
           })

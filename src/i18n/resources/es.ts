@@ -2739,6 +2739,8 @@ export const es: Translation = {
       notConfigured: 'Este servidor todavía no puede guardar imágenes.',
       undecodable: 'No se ha podido leer esta imagen; puede que esté dañada.',
       server: 'Algo ha fallado al guardar este archivo. Inténtalo de nuevo.',
+      storage:
+        'No se ha podido enviar el archivo al almacenamiento. Vuelve a intentarlo; si sigue fallando, el almacenamiento aún no acepta subidas desde esta aplicación.',
     },
   },
 

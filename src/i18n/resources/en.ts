@@ -3790,6 +3790,13 @@ export const en = {
       undecodable: "This image couldn't be read — it may be damaged.",
       /** Our side failed. Nothing about the file is wrong. */
       server: 'Something went wrong saving this file. Try again.',
+      /**
+       * The file never reached storage. Most often a bucket that doesn't
+       * accept uploads from this address, which the browser only reports as a
+       * network failure — so it says to retry and names the likelier cause.
+       */
+      storage:
+        "The file couldn't be sent to storage. Try again — if it keeps failing, storage isn't accepting uploads from this app yet.",
     },
   },
 
