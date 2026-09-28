@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/AppSidebar'
+import { AnnouncementFrame } from '@/components/layout/AnnouncementRibbon'
 import { UploadTracker } from '@/components/uploads/UploadTracker'
 import { RightSidebar } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -30,16 +31,19 @@ function AuthenticatedLayout() {
   useNotificationStream()
 
   return (
-    <SidebarProvider
-      open={!sidebarCollapsed}
-      onOpenChange={(open) => setSidebarCollapsed(!open)}
-    >
-      <AppSidebar />
-      <SidebarInset className="min-w-0">
-        <Outlet />
-      </SidebarInset>
-      <RightSidebar />
-      <UploadTracker />
-    </SidebarProvider>
+    <AnnouncementFrame>
+      <SidebarProvider
+        open={!sidebarCollapsed}
+        onOpenChange={(open) => setSidebarCollapsed(!open)}
+        className="min-h-[calc(100svh-var(--announcement-h))]"
+      >
+        <AppSidebar />
+        <SidebarInset className="min-w-0">
+          <Outlet />
+        </SidebarInset>
+        <RightSidebar />
+        <UploadTracker />
+      </SidebarProvider>
+    </AnnouncementFrame>
   )
 }
