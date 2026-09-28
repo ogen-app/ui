@@ -581,46 +581,62 @@ would be two sources of truth and no correction.
 
 ## An asset opens as a document only if we know it is one {#asset-opening}
 
-**Decision.** `AssetDocument` asks `opensAsDocument` (`lib/assetCategory.ts`)
-before it reaches the editor. `null | MD | PDF | URL` are documents; everything
-else — including a `type` this build has never seen — gets `UnsupportedAsset`, a
-read-only state, and loses the "Download as Markdown" item with it.
+**Decision.** `AssetDocument` asks `assetScreen` (`lib/assetKind.ts`) which
+screen an asset gets, and the editor is one named answer rather than the
+fallback:
+
+| Screen | Types | What it is |
+| --- | --- | --- |
+| `editor` | `null`, `MD`, `URL` | BlockNote, autosaving `content` |
+| `extracted` | `PDF`, `DOC` | the chunks, read-only (`AssetExtractedView`) |
+| `image` | `IMG` | the picture, alt text and description (`AssetImageView`) |
+| `audio` | `AUDIO` | the player and transcript (`AssetAudioView`) |
+| `unsupported` | anything else | a read-only state (`UnsupportedAsset`) |
+
+Only the editor offers "Download as Markdown", since on every other screen
+`content` is a placeholder, a description or a transcript.
 
 **Why.** The screen used to treat the editor as its fallback: a URL asset still
 being scraped got `ScrapeState`, and *anything else* got `AssetEditor`. That is
 only safe while every asset is text, and the server's vocabulary grows without
-asking the client — `MD | PDF` became `MD | PDF | URL` in CON-222 and takes
-`IMG` next. `AssetEditor` seeds BlockNote from `asset.content` and autosaves it
-back, so the first asset type whose `content` is not a document is silently
-overwritten by anyone who opens it and types. CON-105 writes image assets with
-`content = "[]"`, which renders as an editable paragraph reading `[]` over a
-field that is meant to hold the image's description (CON-16 D4). Filed as
-CON-235.
+asking the client — `MD | PDF` has since gained `URL` (CON-222), `IMG`
+(CON-246), `DOC` (CON-280) and `AUDIO` (CON-282). `AssetEditor` seeds BlockNote
+from `asset.content` and autosaves it back, so the first asset type whose
+`content` is not a document is silently overwritten by anyone who opens it and
+types. CON-105 wrote image assets with `content = "[]"`, which rendered as an
+editable paragraph reading `[]` over a field meant to hold the image's
+description (CON-16 D4). Filed as CON-235.
 
-Two consequences worth keeping:
+Three consequences worth keeping:
 
-- **PDF is a document.** What you edit there is the extracted text, and that
-  text is what the embeddings are built from — so the rule is about the *body*,
-  not about whether bytes sit behind the row.
+- **PDF left the editor** (CON-313). It was filed as a document on the argument
+  that its extracted text is what the embeddings are built from — and that is
+  still true, but the text was never in `content`. The PDF job, like the
+  document one, writes chunks and leaves `content` at the upload's `"[]"`
+  placeholder, so the editor showed every real PDF as two brackets. And since
+  CON-312 the server refuses a changed `content` on PDF, DOC and AUDIO (409
+  `content_locked`), because saving would re-chunk the text and lose the anchors
+  the assistant cites ("Slide 4", "Sheet 'Q3' rows 10–24"). So the extracted
+  screen reads `GET /:id/chunks` and shows each chunk under its label; the title
+  is the only field it writes. The same placeholder is why the list states a
+  PDF by its pages and a document by its size rather than counting words.
+- **Saves send `content` only once it has been edited.** An empty or unchanged
+  `content` keeps the stored value (CON-312), so a rename is a title-only PUT
+  and can never trip `content_locked`. A `content_locked` that does arrive means
+  the screen was wrong about what it had open; `useUpdateAsset` words it and
+  re-reads the asset.
 - **The fallback is a floor, not a destination.** A kind worth showing properly
-  gets its own view and stops arriving here, and `IMG` is the first to do it:
-  CON-246 settled the DTO field for the original (`AssetFile.url`), so
-  `AssetImageView` renders the picture with its alt text and description beside
-  it. `opensAsDocument` still answers `false` for an image — it is not a
-  document and never opens in the editor — so the two rules compose rather than
-  compete. What reaches `UnsupportedAsset` now is only a kind this build has
+  gets its own screen and stops arriving there — `IMG` first, then `DOC` and
+  `AUDIO` — so what reaches `UnsupportedAsset` is only a kind this build has
   genuinely never heard of.
 
-**One further consequence, found while wiring that up.** The asset update is a
-whole-resource PUT and the handler assigns `tag_ids` and `alt_text` from the
-request unconditionally, so a payload naming only what changed erases the rest.
-`AssetDocument` had been sending `{title, content}`, which had been silently
-untagging every asset anyone renamed — invisible only because nothing in the app
-sets a tag. Every save now goes through `assetToPayload` (`lib/assetPayload.ts`),
-the same round-trip `campaignToPayload` does for the same reason. The image
-screen debounces the *asset* rather than each field for the matching reason: two
-saves in flight each carry a stale copy of the other's field, and the second to
-land wins.
+**One further consequence, found while wiring up images.** The asset update was
+then a whole-resource PUT, so a payload naming only what changed erased the rest,
+and every rename had been silently untagging the asset. That was fixed on the
+server instead (CON-279): `alt_text` and `tag_ids` are presence-aware, so a
+screen sends only the fields it owns. The image screen still debounces the
+*asset* rather than each field, because two saves in flight each carry a stale
+copy of the other's field and the second to land wins.
 
 ## English is bundled, every other language is a chunk {#i18n}
 

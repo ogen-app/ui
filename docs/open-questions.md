@@ -21,7 +21,7 @@ contract doc, or the Linear issue. When an entry closes, delete the row — a
 stale question is worse than no list, because it sends someone to re-answer
 something that already has an answer.
 
-Last reviewed 2026-09-18.
+Last reviewed 2026-09-18; S4 and S5 updated 2026-09-28 (CON-313).
 
 ---
 
@@ -33,7 +33,7 @@ or work everyone agrees about that nobody has raised.
 | # | Ask | Why it is still open |
 | --- | --- | --- |
 | **B3** | **A `suspended` flag** on the resources a downgrade makes read-only. | **Which** to suspend was decided 2026-09-16: **the most recent survives** — newest-first by `created_at` up to the new tier's allowance, the rest suspend. Still open because nothing implements it and it has no ticket. The rule has to be applied *by the server*: the client must never work it out by counting against a limit, or it picks a different victim than the server did and a different one per tab. |
-| **S4** | **A stable `code` on each upload result**, beside the prose `error` it already carries. | Agreed 2026-09-16 as backend work; **no ticket yet**. `POST …/assets/upload` answers 201 and words every refusal as English prose — some of it Go, verbatim: `imageprobe: unsupported media type: text/plain; charset=utf-8`. With no code to switch on, the client matches the sentence to translate it (`lib/uploadError`). That degrades safely — an unrecognised message falls through to the fallback, minus the package prefix — but a rewording server-side silently drops a refusal back to untranslated English. One enum field closes it for good. **The same ask, one surface over:** `failure_reason` on a post is Go prose too (`zernio_terminal: rejected`, `submit_failed: …`), and it now reaches the screen — the Activity daily report prints it verbatim beside each post that did not go out (CON-285). Shown as it arrived rather than matched, because unlike an upload refusal this one is a record of something that already happened and a half-matched sentence would be worse than the server's own. |
+| **S4** | **A stable `code` on a post's `failure_reason`.** | The upload half closed (see below); this is the same ask one surface over. `failure_reason` on a post is Go prose (`zernio_terminal: rejected`, `submit_failed: …`), and it now reaches the screen — the Activity daily report prints it verbatim beside each post that did not go out (CON-285). Shown as it arrived rather than matched, because unlike an upload refusal this one is a record of something that already happened and a half-matched sentence would be worse than the server's own. |
 | **I1** | **`/api/ideas` — the whole module.** No table, no endpoint, no column. The client is built and usable against a `localStorage` stub; the contract is written out in full in `services/api/ideas.ts` (five calls) and the two rules the server has to own are asserted on both sides of the seam. Open rather than tracked because there is no ticket and nobody has raised it: the module was built to find out whether triage this shape is faster, and it is, which is the argument for the table. Two decisions go with it — whether a verdict is its own endpoint (it is here, so a decision cannot ride along with an edit) and **what a *yes* leads to**, which is nothing today and wants `POST /api/ideas/:id/promote` rather than the client creating a post and hoping the link survives. Blocks the `ideas` flag, which stays off while the stub is per browser — a shared backlog shared with nobody is a worse lie than an unbuilt page. |
 | **X2** | **`updated_by` exists nowhere**, so "who edited this" is unanswerable. | Named as out of scope in CON-285 and never raised on its own. **Deferred 2026-09-16** — wanted eventually, not now. Kept here rather than deleted because it is the reason a whole class of feed entry — teammate activity — cannot be built at any price, and because the column's value is the history it accumulates: the day it is added is the day that history starts. |
 
@@ -53,11 +53,19 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 | S2 | **The bridge that attaches a bank image to a post.** Both sides were built expecting it — `asset_files`' columns are named to match `post_attachments` for the field copy, and the alt text CON-246 collects has no other consumer. The client picker wants CON-210 first, so it is scoped against a campaign rather than the workspace. | **CON-290** | — |
 | S3 | **Campaign-scoped assets**, with the workspace bank staying on as workspace-wide knowledge storage (CON-211). | CON-210 | — |
 | B1 | **Session-authenticated email preferences.** CON-155 shipped the suppression engine, but every endpoint it exposes verifies a signature lifted from an email footer, not a session. | CON-155 | `email-preferences` |
+| S5 | **R2 CORS for a browser `PUT`** to a presigned URL, so a recording's bytes can reach storage from the app's origin. The API side of audio ingestion shipped (CON-282/312) and the client is built; without CORS the PUT fails as a network error after presign has made the asset, which the client then deletes. | CON-307 | `content-bank-audio` |
 | B2 | **The entitlements and billing reads** — `/entitlements`, `/tiers`, `/workspace/plan`, `/billing`, `/billing/portal`. The tiers and counters exist (CON-208, CON-86); the workspace-scoped REST read that puts them together does not. | CON-243 | `workspace-tiers` |
 
 ## Closed since the last review
 
 Kept for one cycle so nobody re-raises them, then deleted.
+
+- **S4, the upload half — a stable `code` on each upload result.** Shipped in
+  CON-281 and completed in CON-312: every `/upload` result, post-attachment
+  refusal and failed asset (`failure_code`) carries one of
+  `models/upload_code.go`'s codes beside its prose. `lib/uploadError` switches
+  on the code and reads the prose only for the numbers a code leaves out and
+  for a code this build predates (CON-313). The post half stays open as S4.
 
 - **A1, A2, A3 — the activity producers.** Shipped in CON-285 (ogen#161,
   2026-09-17). `post.published` and `post.publish_failed` fan out to the whole
