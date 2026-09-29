@@ -68,16 +68,10 @@ function SeriesEditorPage() {
   // a name you are typing flickers as you type it. Handed to the editor rather
   // than rendered above it, because the sticky gradient only fades content that
   // passes under it.
-  const header = (
-    <PageHeader
-      back={
-        <BrandBackButton
-          to="/foundation/series"
-          label={t('series.detail.back')}
-        />
-      }
-    />
+  const backButton = (
+    <BrandBackButton to="/foundation/series" label={t('series.detail.back')} />
   )
+  const header = <PageHeader back={backButton} />
 
   const body = () => {
     // The create branch waits on the library too, unlike the voice editor's —
@@ -96,7 +90,8 @@ function SeriesEditorPage() {
       const starter = SERIES_STARTERS.find((entry) => entry.id === from)
       return (
         <SeriesEditor
-          header={header}
+          key={seriesId}
+          back={backButton}
           // Written from the workspace library, so it belongs to the workspace.
           // A campaign's own path passes its own scope — see `seriesFromStarter`.
           series={
@@ -105,15 +100,16 @@ function SeriesEditorPage() {
               : blankSeries({ kind: 'workspace' })
           }
           onCancel={back}
+          // Moves to the stored series, which autosaves from there — see the
+          // voice route.
           onSave={(written) =>
-            save.mutate(written, {
-              onSuccess: () => {
-                toast.success(
-                  t('series.detail.created', { name: written.name }),
-                )
-                back()
-              },
-            })
+            save.mutateAsync(written).then((stored) =>
+              navigate({
+                to: '/foundation/series/$seriesId',
+                params: { seriesId: stored.id },
+                replace: true,
+              }),
+            )
           }
         />
       )
@@ -143,17 +139,11 @@ function SeriesEditorPage() {
 
     return (
       <SeriesEditor
-        header={header}
+        key={seriesId}
+        back={backButton}
         series={series}
         onCancel={back}
-        onSave={(written) =>
-          save.mutate(written, {
-            onSuccess: () => {
-              toast.success(t('series.detail.saved', { name: written.name }))
-              back()
-            },
-          })
-        }
+        onSave={(written) => save.mutateAsync(written)}
         onDelete={() =>
           remove.mutate(series.id, {
             onSuccess: () => {

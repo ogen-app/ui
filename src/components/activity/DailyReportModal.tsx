@@ -45,7 +45,7 @@ export function DailyReportModal({
       height="full"
       title={`${t('activity.entry.reportTitle')} — ${dayLabel(date, now)}`}
     >
-      <div className="flex h-full flex-col gap-8 overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
         {isError ? (
           <p className="text-sm text-negative">
             {t('activity.report.loadFailed')}

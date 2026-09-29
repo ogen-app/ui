@@ -75,12 +75,14 @@ export function useSaveVoice() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (voice: BrandVoice) => saveVoice(voice),
+    // One at a time: the editor autosaves, and two whole-voice PUTs racing
+    // could land in the wrong order and leave the older one stored.
+    scope: { id: 'brand-voice' },
     meta: { errorTitle: 'Unable to save the voice' },
     onSuccess: (saved) => {
-      // Written into the cache as well as invalidated: the editor navigates
-      // back to the library the moment this resolves, and without the direct
-      // write the list would paint one frame of its pre-save self while the
-      // refetch is in flight — which reads as "it didn't save".
+      // Written into the cache as well as invalidated: a create navigates to
+      // the stored voice the moment this resolves, and without the direct
+      // write that screen would find no such voice until the refetch lands.
       qc.setQueryData<BrandData>(BRAND_KEY, (current) => {
         if (!current) return current
         const merged = current.voices.some((v) => v.id === saved.id)
@@ -137,6 +139,8 @@ export function useSaveAudience() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (audience: BrandAudience) => saveAudience(audience),
+    // Serialised for the voice's reason — see `useSaveVoice`.
+    scope: { id: 'brand-audience' },
     meta: { errorTitle: 'Unable to save the audience' },
     onSuccess: (saved) => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) => {
@@ -175,14 +179,15 @@ export function useDeleteAudience() {
  *
  * A singleton, so there is no merge to do and no id to match on — the editor
  * hands back the whole set and it replaces the whole set. The direct cache
- * write is here for the reason it is on the other two: the editor navigates
- * back to the section the instant this resolves, and without it the section
- * paints one frame of its pre-save self, which reads as "it didn't save".
+ * write is here so the Overview, one caret away, never paints a frame of the
+ * pre-save rules.
  */
 export function useSaveGuardrails() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (guardrails: BrandGuardrails) => saveGuardrails(guardrails),
+    // Serialised for the voice's reason — see `useSaveVoice`.
+    scope: { id: 'brand-guardrails' },
     meta: { errorTitle: 'Unable to save the guardrails' },
     onSuccess: (saved) => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) =>

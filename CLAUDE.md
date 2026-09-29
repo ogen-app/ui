@@ -84,6 +84,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   commits to nothing), and **Foundation** has no campaign twin (voices,
   audiences and guardrails are the workspace's, and what a campaign has of them
   is a *pointer*, chosen on its Strategy page through `CampaignBrandCard`).
+- **Posts is a list and the Calendar is a calendar — they are two
+  destinations, not three views of one.** The toolbar's switch was WEEK /
+  MONTH / LIST, which said the table is a way of looking at a week; it is not,
+  it has no range at all. So the segmented control offers the two
+  granularities and appears only on the calendar, the list keeps the half of
+  the toolbar that is about the posts (how many, and ADD POST), and both
+  screens can create one. Moving between them is the rail's two rows. The
+  memory still records which of the two you were last on, because the post
+  editor's back arrow has to land where you came from
+  (`lib/postsPlace`) — `PostsPlace.view` keeps `'list'` for exactly that, and
+  `granularity` is what the entry points naming *the calendar* read.
+
 - **Documents are Assets, and Assets is a module rather than a section of
   Foundation.** `/assets` at level 0, `/campaigns/:id/assets` at level 1, one
   `ContentPage` behind both (`campaign === null` is the workspace bank). It was

@@ -27,6 +27,7 @@ import {
   EditorIntro,
   Field,
   ForkedNote,
+  useEditorSave,
 } from './editor'
 import {
   voiceStarterCopy,
@@ -64,8 +65,8 @@ import {
  *
  * The rules sit *below* the samples and are framed as what a sample cannot say:
  * a pasted post shows you the register, it cannot promise that every future
- * post avoids hashtags. That framing is the whole argument for keeping them
- * at all.
+ * post stays off the exclamation marks. That framing is the whole argument for
+ * keeping them at all.
  *
  * ## What it does not do
  *
@@ -84,12 +85,11 @@ import {
  *   — see `BrandVoice.summary`. Editing samples therefore invalidates it, and
  *   the screen says so rather than showing a stale reading.
  *
- * The commit is a `PageActionBar` and there is no autosave, per CON-178: this
- * is an editor screen, and the one thing the index deliberately has no room for
- * is a commit.
+ * A stored voice saves itself and a new one is created on purpose — see
+ * `useEditorSave`, which every Foundation editor shares.
  */
 export function VoiceEditor({
-  header,
+  back,
   voice,
   starter,
   first = false,
@@ -97,16 +97,8 @@ export function VoiceEditor({
   onCancel,
   onDelete,
 }: {
-  /**
-   * The page header, rendered *inside* this component's scroller.
-   *
-   * It belongs to the route, which knows where back goes — but it has to be a
-   * child of the scroll container for the sticky gradient to have anything to
-   * dissolve, and the scroll container is here. Passing it down is cheaper than
-   * moving the scroller up and leaving the action bar behind. Same arrangement
-   * as post details.
-   */
-  header?: ReactNode
+  /** The route's way back, drawn in the frame's header. */
+  back: ReactNode
   /** The voice being edited, or `null` when writing a new one. */
   voice: BrandVoice | null
   /** The template this was forked from, when arriving via a starter card. */
@@ -120,8 +112,9 @@ export function VoiceEditor({
    * would silently take it off whichever voice has it. See `draftFrom`.
    */
   first?: boolean
-  onSave?: (voice: BrandVoice) => void
-  onCancel?: () => void
+  /** One write — the create, or an autosave of a stored voice. */
+  onSave: (voice: BrandVoice) => Promise<unknown>
+  onCancel: () => void
   /** Only offered for a voice that exists. */
   onDelete?: () => void
 }) {
@@ -141,16 +134,28 @@ export function VoiceEditor({
   const samplesChanged =
     draft.samples.join('\u0000') !== (voice?.samples ?? []).join('\u0000')
 
+  const write = (d: Draft) => onSave(assemble(t, d, voice, starter))
+  const save = useEditorSave({
+    draft,
+    stored: voice !== null,
+    blocked: !named,
+    save: write,
+  })
+
   return (
     <BrandEditorFrame
-      header={header}
-      contentKey={voice ? 'edit' : 'new'}
+      back={back}
+      save={save}
       blocker={named ? undefined : t('brand.voices.editor.needsName')}
-      commitLabel={
-        voice ? t('brand.voices.editor.save') : t('brand.voices.editor.create')
+      create={
+        voice
+          ? undefined
+          : {
+              label: t('brand.voices.editor.create'),
+              onCreate: () => write(draft),
+              onCancel,
+            }
       }
-      onCancel={onCancel}
-      onSave={() => onSave?.(assemble(t, draft, voice, starter))}
     >
       <VoiceIntro name={voice?.name} />
 
@@ -245,14 +250,6 @@ export function VoiceEditor({
             onChange={(v) => setRule('emoji', v)}
           />
           <ChoiceRow
-            label={t('brand.voices.editor.choices.hashtagsLabel')}
-            value={draft.rules.hashtags}
-            options={choiceOptions(HASHTAG_VALUES, (v) =>
-              t(`brand.voices.editor.choices.hashtags.${v}` as const),
-            )}
-            onChange={(v) => setRule('hashtags', v)}
-          />
-          <ChoiceRow
             label={t('brand.voices.editor.choices.lengthLabel')}
             value={draft.rules.length}
             options={choiceOptions(LENGTH_VALUES, (v) =>
@@ -299,7 +296,14 @@ export function VoiceEditor({
             line, an override of the rules above, or a separate sample set.
             Six empty boxes assert the first, and the assertion was costing
             more room than the samples. Any notes already written are kept
-            and saved untouched; only the editing is parked. */}
+            and saved untouched; only the editing is parked.
+
+            This is also where hashtags went. They were a sixth scale in the
+            card above until it was clear that every answer to it is a
+            sentence about one network — see `VoiceRules`. Nothing states a
+            hashtag policy anywhere in the app until this card is built, which
+            is the honest position: a wrong one stated once for six platforms
+            was not better. */}
         <p className="max-w-2xl text-sm leading-5 text-tertiary-foreground">
           {t('brand.voices.editor.channelsUnbuilt')}
         </p>
@@ -310,7 +314,10 @@ export function VoiceEditor({
           noun={t('brand.voices.editor.noun')}
           name={voice.name}
           cost={deletionCost(t, voice.usage)}
-          onDelete={onDelete}
+          onDelete={() => {
+            save.hold()
+            onDelete()
+          }}
         />
       )}
     </BrandEditorFrame>
@@ -329,7 +336,6 @@ const BLANK_RULES: VoiceRules = {
   formality: 'neutral',
   person: 'we',
   emoji: 'sparingly',
-  hashtags: 'few',
   length: 'medium',
   opening: '',
   closing: '',
@@ -958,9 +964,8 @@ function ChoiceRow<T extends string>({
  * voice, and neither reads correctly in the other's place.
  */
 const FORMALITY_VALUES = ['casual', 'neutral', 'formal'] as const
-const PERSON_VALUES = ['i', 'we', 'third'] as const
+const PERSON_VALUES = ['i', 'we', 'third', 'none'] as const
 const EMOJI_VALUES = ['never', 'sparingly', 'freely'] as const
-const HASHTAG_VALUES = ['never', 'few', 'many'] as const
 const LENGTH_VALUES = ['short', 'medium', 'long'] as const
 
 /**

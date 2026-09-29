@@ -17,7 +17,6 @@ import {
   useGuardrailsStance,
   useSetGuardrailsStance,
 } from '@/hooks/useGuardrailsStance'
-import type { BarStatus } from '@/components/page-primitives/PageActionBar'
 import { brandSection, brandSectionCopy } from '@/lib/brandSections'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { cn } from '@/lib'
@@ -27,6 +26,7 @@ import {
   EditorCard,
   EditorIntro,
   ForkedNote,
+  useEditorSave,
 } from './editor'
 import { StarterCard, StarterGroup } from './shell'
 import {
@@ -59,16 +59,13 @@ import type { BrandGuardrails } from './types'
  * the same shape from the other direction (a screen that is not a column), and
  * Look will when it is built.
  *
- * Two consequences worth naming, because they are what the drilldown was
- * quietly paying for:
- *
- * - **`CANCEL` had somewhere to go, and this does not.** Leaving is the caret;
- *   the bar's ghost is `DISCARD CHANGES` and puts the draft back where it was.
- * - **Saving an untouched screen would be a lie.** This is a page somebody
- *   lands on to read as often as to edit, so the commit is live only once
- *   something differs from what is stored (`dirty`) — otherwise it stamps a new
- *   `updatedAt` on rules nobody touched, in the one section where "when was
- *   this last checked" is a question people ask.
+ **It saves itself, creating included** (`useEditorSave`). The voice and
+ * audience editors hold their first write for a `CREATE` because a nameless
+ * entry cannot be listed; a singleton has no name to wait for, so the first
+ * rule typed — or the first starter picked — is the create. What is compared is
+ * the *stated* shape (`statement`), so opening the page never writes it and
+ * never stamps a new `updatedAt` on rules nobody touched, in the one section
+ * where "when was this last checked" is a question people ask.
  *
  * ## The whole problem is getting the lists in
  *
@@ -146,31 +143,40 @@ import type { BrandGuardrails } from './types'
  * not when somebody guesses it will.
  */
 export function GuardrailsEditor({
-  header,
+  back,
   guardrails,
   onSave,
   onDelete,
 }: {
-  /** The page header, rendered inside the frame's scroller. */
-  header?: ReactNode
+  /** The route's way back, drawn in the frame's header. */
+  back: ReactNode
   /** The guardrails as they stand, or `null` while the section is empty. */
   guardrails: BrandGuardrails | null
-  onSave?: (guardrails: BrandGuardrails) => void
+  /** One write — every save of this screen, the first included. */
+  onSave: (guardrails: BrandGuardrails) => Promise<unknown>
   /** Only offered once there are guardrails to remove. */
   onDelete?: () => void
 }) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState<Draft>(() => draftFrom(t, guardrails))
-  /** Which of ours filled it in, while nothing has been saved over it yet. */
+  /** Which of ours filled it in, for the rest of this visit. */
   const [forkedFrom, setForkedFrom] = useState<GuardrailStarter | null>(null)
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }))
 
   const written = assemble(draft)
-  const stated = signature(written)
-  const dirty = stated !== signature(guardrails)
-  const blank = stated === signature(null)
+  const stated = statement(written)
+  const dirty = JSON.stringify(stated) !== JSON.stringify(statement(guardrails))
+  const blank = JSON.stringify(stated) === JSON.stringify(statement(null))
+  // Blank is refused rather than written: the server answers a PUT with every
+  // list empty with a 422, and the way back to nothing is the danger zone.
+  const save = useEditorSave({
+    draft: stated,
+    stored: true,
+    blocked: blank,
+    save: () => onSave(written),
+  })
 
   const info = brandSection('guardrails')
   const copy = brandSectionCopy(t, 'guardrails')
@@ -180,25 +186,14 @@ export function GuardrailsEditor({
 
   return (
     <BrandEditorFrame
-      header={header}
-      contentKey={`${guardrails ? 'edit' : 'new'}-${dirty ? 'dirty' : 'clean'}`}
-      dirty={dirty}
-      status={barStatus(t, dirty, guardrails !== null)}
+      back={back}
+      save={save}
       // Only reachable with rules already stored: clearing every field is how
       // somebody deletes them without noticing they have, and an empty record
       // saved over a full one is indistinguishable afterwards from rules that
       // were never written. The way back to nothing is the danger zone, which
       // says what it costs and asks twice.
       blocker={guardrails && blank ? t('brand.guardrails.cleared') : undefined}
-      commitLabel={
-        guardrails ? t('brand.guardrails.save') : t('brand.guardrails.create')
-      }
-      cancelLabel={t('brand.guardrails.discard')}
-      onCancel={() => {
-        setDraft(draftFrom(t, guardrails))
-        setForkedFrom(null)
-      }}
-      onSave={() => onSave?.(written)}
     >
       <EditorIntro
         section="guardrails"
@@ -210,7 +205,10 @@ export function GuardrailsEditor({
         missing={guardrails ? undefined : copy.whenEmpty}
       />
 
-      {forkedFrom && !guardrails && (
+      {/* Kept for the visit rather than dropped once the pick is stored — it
+          is, within a second, and the warning is about reading every line of
+          what just arrived, which takes longer than that. */}
+      {forkedFrom && (
         <ForkedNote
           icon={forkedFrom.icon}
           title={guardrailStarterCopy(t, forkedFrom).title}
@@ -318,7 +316,10 @@ export function GuardrailsEditor({
           noun={t('brand.guardrails.noun')}
           name={t('brand.guardrails.dangerName')}
           cost={t('brand.guardrails.deleteCost')}
-          onDelete={onDelete}
+          onDelete={() => {
+            save.hold()
+            onDelete()
+          }}
         />
       )}
     </BrandEditorFrame>
@@ -336,9 +337,9 @@ export function GuardrailsEditor({
  * which is the worst thing that could happen to this particular section.
  *
  * So the decision is a control, and taking it is one gesture. It saves on the
- * spot rather than through the bar at the foot of the screen, following
- * `PlatformsControl`: the bar commits the *rules*, and a stance that sat dirty
- * next to four empty lists would be waiting on a save that has nothing to save.
+ * spot, to its own setting, following `PlatformsControl` — the rules' autosave
+ * has nothing to write while all four lists are empty, which is exactly when
+ * this is offered.
  *
  * It is only ever offered while the section is empty. Written rules are the
  * stance, stated in more detail than a switch can hold — and saving them clears
@@ -733,57 +734,21 @@ function splitWords(text: string): string[] {
 
 /**
  * What is stated, as one comparable value — the answer to "has anything
- * actually changed", which is what decides whether the commit is live.
+ * actually changed", which is what decides whether there is anything to save.
  *
  * Over the *stated* shape rather than the draft, so the two things that are not
  * edits do not read as ones: a blank row somebody opened and abandoned, and the
  * fresh `updatedAt` `assemble` stamps on every call. `null` and a record with
- * nothing in it are deliberately the same signature — that equality is what
+ * nothing in it are deliberately the same statement — that equality is what
  * makes the blocker above catch a cleared-out set of rules.
  */
-function signature(guardrails: BrandGuardrails | null): string {
+function statement(guardrails: BrandGuardrails | null) {
   const g = guardrails
-  return JSON.stringify([
+  return [
     g?.facts ?? [],
     g?.mayClaim ?? [],
     g?.neverClaim ?? [],
     g?.bannedWords ?? [],
     g?.disclaimer ?? '',
-  ])
-}
-
-/**
- * Where the screen stands, in the bar beside the actions.
- *
- * This is the half of the `dirty` rule that speaks. The commit going quiet on
- * an untouched screen only reads as deliberate if something says the screen is
- * untouched; without it, a disabled `SAVE GUARDRAILS` is a page that appears to
- * be broken. Nothing is said while the section is empty and nothing has been
- * typed — there is no state to report yet, and the intro card above has just
- * said the section is empty in more useful words.
- */
-function barStatus(
-  t: TFunction,
-  dirty: boolean,
-  exists: boolean,
-): BarStatus | undefined {
-  if (dirty) {
-    return {
-      key: 'dirty',
-      full: <BarNote>{t('brand.guardrails.unsaved')}</BarNote>,
-      compact: <BarNote>{t('brand.guardrails.unsavedShort')}</BarNote>,
-    }
-  }
-  if (!exists) return undefined
-  return {
-    key: 'saved',
-    full: <BarNote>{t('brand.guardrails.saved')}</BarNote>,
-    compact: <BarNote>{t('brand.guardrails.saved')}</BarNote>,
-  }
-}
-
-function BarNote({ children }: { children: ReactNode }) {
-  return (
-    <span className="px-1 text-xs text-tertiary-foreground">{children}</span>
-  )
+  ]
 }

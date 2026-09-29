@@ -1,9 +1,9 @@
 import {
+  Fragment,
+  useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
-  useState,
   type ReactNode,
 } from 'react'
 import { Link } from '@tanstack/react-router'
@@ -14,7 +14,6 @@ import {
   CaretRightIcon,
   CheckCircleIcon,
   CheckSquareIcon,
-  ChecksIcon,
   InfoIcon,
   NotebookIcon,
   WarningIcon,
@@ -25,18 +24,23 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState'
-import { Button } from '@/components/ui/button'
 import { useActivityFeed } from '@/hooks/useActivity'
 import {
-  useMarkAllNotificationsRead,
+  useMarkNotificationsReadThrough,
   useNotificationUnreadCount,
+  useReadOnSight,
   useSetNotificationRead,
 } from '@/hooks/useNotifications'
 import { useTaskReconciliation } from '@/hooks/useTasks'
 import { notificationCopy, notificationTarget } from '@/lib/notifications'
 import { NOTIFICATION_PAGE_SIZE } from '@/lib/notificationCache'
 import { ACTIVITY_REPORT_DAYS } from '@/services/api/activity'
-import { dayKey, isTaskEntry, type ActivityEntry } from '@/lib/activityFeed'
+import {
+  dayKey,
+  isTaskEntry,
+  seenBeforeDivider,
+  type ActivityEntry,
+} from '@/lib/activityFeed'
 import type { ActivityReportSummary } from '@/types/activity'
 import type { AppNotification } from '@/types/notifications'
 import { cn } from '@/lib'
@@ -68,6 +72,16 @@ import { useDayLabel, useTimeLabel } from '@/hooks/useActivityLabels'
  * them on a feed teaches people that clearing an entry fixes something, which
  * it never does. The API offers a dismiss and this screen deliberately does not
  * call it — what is owed is the module next door (CON-234).
+ *
+ * **And reading is looking.** There is no MARK ALL READ: a row is read once it
+ * has been on screen (`useReadOnSight`), so the rail's badge drains as the page
+ * is scrolled rather than on a button nobody can press honestly — clearing
+ * rows you never scrolled to is exactly what the badge exists to stop. What
+ * the button did that looking cannot is reach past the page: the count spans
+ * the whole inbox and the feed holds the newest hundred rows, so an inbox with
+ * more unread than that would badge forever. Reaching the foot of a full page
+ * covers it — everything older than the oldest row shown is marked read,
+ * because the page is as far back as this screen goes.
  */
 export function ActivityFeed() {
   const { t } = useTranslation()
@@ -83,8 +97,9 @@ export function ActivityFeed() {
   // The badge is the inbox's own count, not a count of what is on screen: the
   // page is the newest hundred rows and the number is over all of them.
   const unread = useNotificationUnreadCount()
-  const markAllRead = useMarkAllNotificationsRead()
   const setRead = useSetNotificationRead()
+  const { recent, watch } = useReadOnSight()
+  const markReadThrough = useMarkNotificationsReadThrough()
   // There is no server raising or resolving tasks, so a screen has to. Both
   // this one and the Tasks board do — they are separate destinations and can
   // never be mounted at once, so there is still only ever one writer, and a
@@ -92,12 +107,32 @@ export function ActivityFeed() {
   // `useTaskReconciliation`.
   useTaskReconciliation()
 
-  // MARK ALL READ is bounded by the highest row the page holds, so with no
-  // rows loaded it has nothing to act on — clicking would silently do nothing,
-  // however loud the badge. The button stays down until rows arrive.
-  const hasRows = useMemo(
-    () => entries.some((entry) => entry.kind === 'notification'),
-    [entries],
+  // What the page holds of the inbox: its oldest row, and how many of its rows
+  // are unread. More unread in the count than on the page means some are older
+  // than anything this screen can show.
+  const page = useMemo(() => {
+    let oldest: number | null = null
+    let unreadHere = 0
+    for (const entry of entries) {
+      if (entry.kind !== 'notification') continue
+      const { seq, read_at } = entry.notification
+      if (oldest === null || seq < oldest) oldest = seq
+      if (!read_at) unreadHere += 1
+    }
+    return { oldest, unreadHere }
+  }, [entries])
+  const unreadBeyondPage =
+    isTruncated && page.oldest !== null && unread > page.unreadHere
+  const endRef = useSightedOnce(
+    unreadBeyondPage && page.oldest !== null
+      ? markReadThrough.bind(null, page.oldest)
+      : null,
+  )
+
+  // Where what is new on this visit ends — see `seenBeforeDivider`.
+  const dividerBefore = useMemo(
+    () => seenBeforeDivider(entries, recent),
+    [entries, recent],
   )
 
   // The feed is already in time order; grouping only cuts it into days.
@@ -131,21 +166,7 @@ export function ActivityFeed() {
   return (
     <PageContainer variant="fullFlex">
       <div className="h-0 grow overflow-y-auto flex flex-col">
-        <PageHeader
-          title={t('activity.title')}
-          actions={
-            // Top-right, against the corner contract's "views only" rule, and
-            // deliberately: marking the feed read changes nothing in the
-            // workspace — no document, no post, nothing another member can see
-            // — only which of these sections are still lit for this reader.
-            // That is a property of the view, which is what this corner is for.
-            <MarkAllReadButton
-              unread={hasRows ? unread : 0}
-              settled={!isLoading}
-              onClick={markAllRead}
-            />
-          }
-        />
+        <PageHeader title={t('activity.title')} />
 
         {/* A source failed while another answered. Above the cards and above
             the empty state, because the empty state is where the silence lies
@@ -182,6 +203,9 @@ export function ActivityFeed() {
                 entries={day.entries}
                 now={now}
                 campaignOfPost={campaignOfPost}
+                recent={recent}
+                watch={watch}
+                dividerBefore={dividerBefore}
                 onOpen={(id) => setRead.mutate({ id, read: true })}
               />
             ))}
@@ -190,7 +214,10 @@ export function ActivityFeed() {
                 have a ceiling now — the recorded page and the run of days — so
                 the sentence names both rather than implying one goes further. */}
             {isTruncated && (
-              <p className="w-full max-w-content mx-auto px-1 text-xs text-tertiary-foreground">
+              <p
+                ref={endRef}
+                className="w-full max-w-content mx-auto px-1 text-xs text-tertiary-foreground"
+              >
                 {t('activity.truncated', {
                   entries: NOTIFICATION_PAGE_SIZE,
                   days: ACTIVITY_REPORT_DAYS,
@@ -205,79 +232,44 @@ export function ActivityFeed() {
 }
 
 /**
- * MARK ALL READ, which is only worth words while there is something to mark.
- *
- * With nothing unread it keeps the ticks and drops the label — the calendar's
- * unscheduled counter verbatim, and for the same reason: reading the last
- * entry is a thing the user just did, and the corner it happened in should
- * settle rather than jump. So the label slides shut on the chrome's own 200ms
- * linear curve instead of being unmounted.
- *
- * The measured width is what makes that animate at all: `width: auto` does not
- * interpolate. The 8px gap lives on the inner span rather than on the button,
- * so it is inside the measured width and collapses with the word instead of
- * leaving a space behind the ticks.
+ * Runs `action` the first time the element is on screen with the tab visible,
+ * and never again for this mount. `null` means there is nothing to do yet —
+ * the element is still watched, so the action fires if it becomes due while
+ * the element is already in view.
  */
-function MarkAllReadButton({
-  unread,
-  settled,
-  onClick,
-}: {
-  unread: number
-  settled: boolean
-  onClick: () => void
-}) {
-  const { t } = useTranslation()
-  const hasUnread = unread > 0
+function useSightedOnce(action: (() => void) | null) {
+  const actionRef = useRef(action)
+  const inView = useRef(false)
+  const done = useRef(false)
 
-  const labelRef = useRef<HTMLSpanElement>(null)
-  const [labelWidth, setLabelWidth] = useState(0)
-  useLayoutEffect(() => {
-    const el = labelRef.current
-    if (!el) return
-    const measure = () => setLabelWidth(el.offsetWidth)
-    measure()
-    // `w-max` keeps the span's natural width inside the collapsed box, so this
-    // fires for a language switch or a webfont landing late.
-    const observer = new ResizeObserver(measure)
-    observer.observe(el)
-    return () => observer.disconnect()
+  const fire = useCallback(() => {
+    if (done.current || !inView.current || !actionRef.current) return
+    if (document.visibilityState !== 'visible') return
+    done.current = true
+    actionRef.current()
   }, [])
 
-  // Held off until the first load has settled: before that the count is zero,
-  // so the label would play its opening on every cold load — an animation
-  // reporting nothing.
-  const [animate, setAnimate] = useState(false)
   useEffect(() => {
-    if (!settled || animate) return
-    const frame = requestAnimationFrame(() => setAnimate(true))
-    return () => cancelAnimationFrame(frame)
-  }, [settled, animate])
+    actionRef.current = action
+    fire()
+  }, [action, fire])
 
-  return (
-    <Button
-      variant="ghost"
-      size="lg"
-      className="gap-0"
-      disabled={!hasUnread}
-      onClick={onClick}
-      // The label is gone in the state where it is needed most for anyone not
-      // reading the screen, so the name lives here in both states.
-      aria-label={t('activity.markAllRead')}
-    >
-      <ChecksIcon weight="bold" className="size-4" />
-      <span
-        className={cn(
-          'overflow-hidden',
-          animate && 'transition-[width] duration-200 ease-linear',
-        )}
-        style={{ width: hasUnread ? labelWidth : 0 }}
-      >
-        <span ref={labelRef} className="block w-max whitespace-nowrap pl-2">
-          {t('activity.markAllRead')}
-        </span>
-      </span>
-    </Button>
+  useEffect(() => {
+    document.addEventListener('visibilitychange', fire)
+    return () => document.removeEventListener('visibilitychange', fire)
+  }, [fire])
+
+  return useCallback(
+    (el: HTMLElement | null) => {
+      if (!el) return undefined
+      const io = new IntersectionObserver(([entry]) => {
+        inView.current = entry?.isIntersecting ?? false
+        fire()
+      })
+      io.observe(el)
+      return () => io.disconnect()
+    },
+    [fire],
   )
 }
 
@@ -290,12 +282,19 @@ function DayCard({
   entries,
   now,
   campaignOfPost,
+  recent,
+  watch,
+  dividerBefore,
   onOpen,
 }: {
   date: string
   entries: ActivityEntry[]
   now: Date
   campaignOfPost: (postId: string) => string | null
+  recent: ReadonlySet<string>
+  watch: (el: HTMLElement | null) => (() => void) | undefined
+  /** The entry the "seen before this visit" line sits above, if it is here. */
+  dividerBefore: string | null
   onOpen: (notificationId: string) => void
 }) {
   const dayLabel = useDayLabel()
@@ -309,16 +308,56 @@ function DayCard({
       </h2>
 
       <div className="flex flex-col">
-        {entries.map((entry) => (
-          <EntrySection
-            key={entry.id}
-            entry={entry}
-            campaignOfPost={campaignOfPost}
-            onOpen={onOpen}
-          />
-        ))}
+        {entries.map((entry) => {
+          const divided = entry.id === dividerBefore
+          return (
+            <Fragment key={entry.id}>
+              {divided && <SeenBeforeDivider />}
+              <EntrySection
+                entry={entry}
+                campaignOfPost={campaignOfPost}
+                recent={recent}
+                watch={watch}
+                divided={divided}
+                onOpen={onOpen}
+              />
+            </Fragment>
+          )
+        })}
       </div>
     </article>
+  )
+}
+
+/**
+ * The line between what is new on this visit and what was there before it.
+ *
+ * It stands in for the section border it replaces rather than adding a second
+ * rule beside it, and it is labelled on the *old* side, because it sits below
+ * the new rows: in a newest-first feed "new" is simply the top, and what needs
+ * saying is where that stops.
+ */
+function SeenBeforeDivider() {
+  const { t } = useTranslation()
+  return (
+    <div
+      role="separator"
+      aria-label={t('activity.seenBefore')}
+      className="flex items-center gap-3 py-2 first:pt-0"
+    >
+      {/* A short lead-in, so the label reads as set into the rule rather than
+          as a heading above it. */}
+      <span aria-hidden className="h-px w-5 shrink-0 bg-border" />
+      {/* Capitals are styling here, not copy: this is a label, not a
+          destructive action, and the `aria-label` should read as a sentence. */}
+      <span
+        aria-hidden
+        className="shrink-0 font-mono text-xs uppercase text-tertiary-foreground"
+      >
+        {t('activity.seenBefore')}
+      </span>
+      <span aria-hidden className="h-px grow bg-border" />
+    </div>
   )
 }
 
@@ -331,10 +370,17 @@ function DayCard({
 function EntrySection({
   entry,
   campaignOfPost,
+  recent,
+  watch,
+  divided = false,
   onOpen,
 }: {
   entry: ActivityEntry
   campaignOfPost: (postId: string) => string | null
+  recent: ReadonlySet<string>
+  watch: (el: HTMLElement | null) => (() => void) | undefined
+  /** Sits under the "seen before" line, which takes the place of its border. */
+  divided?: boolean
   onOpen: (notificationId: string) => void
 }) {
   const { t } = useTranslation()
@@ -342,7 +388,17 @@ function EntrySection({
   // Only a recorded row can be unread. A report is arithmetic and a task entry
   // belongs to the module next door; neither has a read state to carry, and
   // inventing one would put a dot beside something nobody can clear.
-  const unread = entry.kind === 'notification' && !entry.notification.read_at
+  //
+  // `recent` wins over the record: a row read on sight is written read at
+  // once, but it keeps its mark until the reader leaves — see `useReadOnSight`.
+  const seen: 'unseen' | 'recent' | 'seen' =
+    entry.kind !== 'notification'
+      ? 'seen'
+      : recent.has(entry.notification.id)
+        ? 'recent'
+        : entry.notification.read_at
+          ? 'seen'
+          : 'unseen'
 
   const heading = (icon: ReactNode, title: string, linked = true) => (
     <div className="flex items-center gap-3 min-w-0">
@@ -353,15 +409,27 @@ function EntrySection({
       <span className="shrink-0 font-mono text-xs text-tertiary-foreground">
         {timeLabel(entry.at)}
       </span>
-      {/* The dot is what "unread" means here — there is no other state, and
-          there deliberately won't be one until tasks arrive to own dismissing
-          and resolving. */}
+      {/* A filled dot is unseen; a ring is seen for the first time on this
+          visit — already read as far as the badge is concerned, and marked
+          only so that arriving on the page does not wipe out the one thing it
+          came to show. The ring is the dot hollowed out rather than a second
+          mark, so a row turning from one to the other reads as the same
+          signal settling. */}
       <span
         className={cn(
-          'size-2 shrink-0 rounded-md',
-          unread ? 'bg-tertiary-foreground' : 'bg-transparent',
+          'size-2 shrink-0 rounded-md border-[1.5px] transition-colors duration-200',
+          seen === 'unseen' &&
+            'border-tertiary-foreground bg-tertiary-foreground',
+          seen === 'recent' && 'border-tertiary-foreground bg-transparent',
+          seen === 'seen' && 'border-transparent bg-transparent',
         )}
-        aria-label={unread ? t('activity.unread') : undefined}
+        aria-label={
+          seen === 'unseen'
+            ? t('activity.unread')
+            : seen === 'recent'
+              ? t('activity.recent')
+              : undefined
+        }
       />
       {/* A caret is a promise that there is somewhere to go. What happened to
           a task has no destination of its own — the task is upstairs on the
@@ -381,8 +449,10 @@ function EntrySection({
   // Sections stack inside the card, divided rather than boxed: a border on a
   // border reads as a card in a card, and the card's own surface is already
   // doing that work.
-  const className =
-    'group flex flex-col gap-3 border-t border-border py-3 first:border-t-0 first:pt-0 last:pb-0'
+  const className = cn(
+    'group flex flex-col gap-3 border-t border-border py-3 first:border-t-0 first:pt-0 last:pb-0',
+    divided && 'border-t-0 pt-2',
+  )
 
   if (entry.kind === 'report') {
     const headline = reportHeadline(t, entry.report)
@@ -445,16 +515,27 @@ function EntrySection({
   const title = copy ? t(copy.key, copy.vars) : notification.title
   const target = notificationTarget(notification, campaignOfPost)
   const icon = <LevelIcon level={notification.level} />
+  // Watched only while unseen: once the row is recent or read there is nothing
+  // left for looking at it to change, and dropping the ref stops the watch.
+  const sight = {
+    ref: seen === 'unseen' ? watch : undefined,
+    'data-notification-id': notification.id,
+  }
 
   if (!target) {
     // Nothing to open — an entity that has been deleted, or a type this build
     // cannot place. The row still says what happened, which is the part that
     // matters; it just makes no promise about going anywhere.
-    return <div className={className}>{heading(icon, title, false)}</div>
+    return (
+      <div {...sight} className={className}>
+        {heading(icon, title, false)}
+      </div>
+    )
   }
 
   return (
     <Link
+      {...sight}
       to={target.to}
       params={target.params}
       className={className}

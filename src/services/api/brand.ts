@@ -3,6 +3,7 @@ import type {
   BrandData,
   BrandGuardrails,
   BrandVoice,
+  VoiceRules,
 } from '@/components/brand/types'
 import { apiJson, apiVoid } from './http'
 
@@ -61,10 +62,56 @@ import { apiJson, apiVoid } from './http'
  *
  * Not wired here: `POST /api/brand/uploads`, and the `look` / `templates`
  * writes. The endpoints exist; the editors that would call them do not.
+ *
+ * ## The one field that is not itself on the wire
+ *
+ * A voice with no narrator (`rules.person: 'none'`) travels as `''`. Everything
+ * else in this file is the wire shape exactly, and this is the exception, so it
+ * is worth the two functions below rather than a value the screens have to keep
+ * remembering to translate.
  */
 
-export function getBrand(): Promise<BrandData> {
-  return apiJson<BrandData>('/api/brand', 'Unable to load the brand')
+/**
+ * A voice as the server has it: `person` is its three-member enum, or the empty
+ * string it also accepts and stores as *nothing said*.
+ */
+type WireVoice = Omit<BrandVoice, 'rules'> & {
+  rules: Omit<VoiceRules, 'person'> & { person: VoiceRules['person'] | '' }
+}
+
+/**
+ * `'' → 'none'`, in that direction only.
+ *
+ * Reading an unset person as *no narrator* is not a guess about what somebody
+ * meant — it is what the value **does**: the server's `renderRules` drops an
+ * empty rule, so a voice stored this way generates with no person instruction
+ * either way. The choice and the absence are the same post, so giving them one
+ * name is the honest rendering rather than a lossy one.
+ */
+function voiceFromWire({ rules, ...voice }: WireVoice): BrandVoice {
+  const { person, ...rest } = rules
+  return {
+    ...voice,
+    rules: { ...rest, person: person === '' ? 'none' : person },
+  }
+}
+
+/** The way back. `none` is not in the server's enum — see `VoiceRules.person`. */
+function voiceToWire({ rules, ...voice }: BrandVoice): WireVoice {
+  const { person, ...rest } = rules
+  return {
+    ...voice,
+    rules: { ...rest, person: person === 'none' ? '' : person },
+  }
+}
+
+export async function getBrand(): Promise<BrandData> {
+  const brand = await apiJson<
+    Omit<BrandData, 'voices'> & {
+      voices: WireVoice[]
+    }
+  >('/api/brand', 'Unable to load the brand')
+  return { ...brand, voices: brand.voices.map(voiceFromWire) }
 }
 
 /**
@@ -81,18 +128,21 @@ export function getBrand(): Promise<BrandData> {
  * it — would make "does this exist yet" a question with two answers, and the
  * client's would be a guess.
  */
-export function saveVoice(voice: BrandVoice): Promise<BrandVoice> {
-  const { id, ...body } = voice
-  return id
-    ? apiJson<BrandVoice>(
+export async function saveVoice(voice: BrandVoice): Promise<BrandVoice> {
+  const wire = voiceToWire(voice)
+  const { id, ...body } = wire
+  const saved = id
+    ? await apiJson<WireVoice>(
         `/api/brand/voices/${id}`,
         'Unable to save the voice',
-        { method: 'PUT', body: voice },
+        { method: 'PUT', body: wire },
       )
-    : apiJson<BrandVoice>('/api/brand/voices', 'Unable to save the voice', {
-        method: 'POST',
-        body,
-      })
+    : await apiJson<WireVoice>(
+        '/api/brand/voices',
+        'Unable to save the voice',
+        { method: 'POST', body },
+      )
+  return voiceFromWire(saved)
 }
 
 /**

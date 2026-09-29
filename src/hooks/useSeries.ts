@@ -75,9 +75,13 @@ export function useSaveSeries() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (series: ContentSeries) => saveSeries(series),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: SERIES_KEY })
+    // One at a time: the editor autosaves — see `useSaveVoice`.
+    scope: { id: 'series' },
+    // Awaited, so a create's caller only moves to the stored series once the
+    // library can say it exists — otherwise it lands on "no such series".
+    onSuccess: async () => {
       void queryClient.invalidateQueries({ queryKey: ['campaigns'] })
+      await queryClient.invalidateQueries({ queryKey: SERIES_KEY })
     },
   })
 }

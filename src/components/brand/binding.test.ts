@@ -18,7 +18,6 @@ function voice(id: string, over: Partial<BrandVoice> = {}): BrandVoice {
     samples: [],
     rules: {
       emoji: 'never',
-      hashtags: 'never',
       formality: 'neutral',
       person: 'we',
       length: 'medium',

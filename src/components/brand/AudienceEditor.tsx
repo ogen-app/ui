@@ -10,6 +10,7 @@ import {
   EditorIntro,
   Field,
   ForkedNote,
+  useEditorSave,
 } from './editor'
 import {
   audienceStarterCopy,
@@ -48,27 +49,28 @@ import type { BrandAudience, BrandUsage } from './types'
  * danger zone are `editor.tsx` — see the note there. This file is the fields
  * and the words, which is what an editor should be.
  *
- * Nothing is blocked but a missing name, nothing is persisted beyond the stub
- * (CON-228), and `summary` is read off the three lines by us rather than typed,
+ * Nothing is blocked but a missing name, a stored audience saves itself
+ * (`useEditorSave`), and `summary` is read off the three lines by us rather than typed,
  * so editing them invalidates it. All three are the voice editor's rules, for
  * the voice editor's reasons.
  */
 export function AudienceEditor({
-  header,
+  back,
   audience,
   starter,
   onSave,
   onCancel,
   onDelete,
 }: {
-  /** The page header, rendered inside the frame's scroller. */
-  header?: ReactNode
+  /** The route's way back, drawn in the frame's header. */
+  back: ReactNode
   /** The audience being edited, or `null` when describing a new one. */
   audience: BrandAudience | null
   /** The relationship this was started from, when arriving via a starter card. */
   starter?: AudienceStarter | null
-  onSave?: (audience: BrandAudience) => void
-  onCancel?: () => void
+  /** One write — the create, or an autosave of a stored audience. */
+  onSave: (audience: BrandAudience) => Promise<unknown>
+  onCancel: () => void
   /** Only offered for an audience that exists. */
   onDelete?: () => void
 }) {
@@ -85,18 +87,28 @@ export function AudienceEditor({
   const named = draft.name.trim().length > 0
   const changed = linesOf(draft) !== linesOf(audience)
 
+  const write = (d: Draft) => onSave(assemble(t, d, audience, starter))
+  const save = useEditorSave({
+    draft,
+    stored: audience !== null,
+    blocked: !named,
+    save: write,
+  })
+
   return (
     <BrandEditorFrame
-      header={header}
-      contentKey={audience ? 'edit' : 'new'}
+      back={back}
+      save={save}
       blocker={named ? undefined : t('brand.audiences.editor.needsName')}
-      commitLabel={
+      create={
         audience
-          ? t('brand.audiences.editor.save')
-          : t('brand.audiences.editor.create')
+          ? undefined
+          : {
+              label: t('brand.audiences.editor.create'),
+              onCreate: () => write(draft),
+              onCancel,
+            }
       }
-      onCancel={onCancel}
-      onSave={() => onSave?.(assemble(t, draft, audience, starter))}
     >
       <AudienceIntro name={audience?.name} />
 
@@ -147,7 +159,10 @@ export function AudienceEditor({
           noun={t('brand.audiences.editor.noun')}
           name={audience.name}
           cost={deletionCost(t, audience.usage)}
-          onDelete={onDelete}
+          onDelete={() => {
+            save.hold()
+            onDelete()
+          }}
         />
       )}
     </BrandEditorFrame>

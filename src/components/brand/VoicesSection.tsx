@@ -6,7 +6,7 @@ import {
   AddEntryCard,
   BrandLibrary,
   DefaultStar,
-  LibraryCard,
+  LibraryEntry,
   OriginLine,
   PlainActionCard,
   StarterCard,
@@ -168,7 +168,6 @@ function VoiceCard({
   const { t } = useTranslation()
   const thin =
     voice.samples.length > 0 && voice.samples.length < MIN_VOICE_SAMPLES
-  const sample = voice.samples[0]
 
   const facts = [
     sampleCount(t, voice.samples.length),
@@ -181,55 +180,29 @@ function VoiceCard({
     facts.push(t('brand.voices.postsBehind', { count: voice.postsBehind }))
 
   return (
-    <LibraryCard onClick={onOpen ? () => onOpen(voice.id) : undefined}>
-      <header className="flex min-w-0 flex-col gap-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-          <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
-            {voice.name}
-          </h3>
-          {voice.isDefault && (
-            <DefaultStar
-              backed={voice.samples.length >= MIN_VOICE_SAMPLES}
-              label={defaultVoiceLabel(t, voice)}
-              className="text-sm leading-5 text-secondary-foreground"
-            />
-          )}
-        </div>
-        <p className="text-sm leading-5 text-secondary-foreground">
-          {voice.whenToUse}
-        </p>
-      </header>
-
-      {/* The sample carries the card. A left rule rather than quote marks:
-          these are posts, not quotations, and typographic quotes would read as
-          us citing the customer back at them. */}
-      {sample ? (
-        <blockquote className="whitespace-pre-line border-l-2 border-quaternary pl-3 text-sm leading-5">
-          {sample}
-        </blockquote>
-      ) : (
-        <p className="border-l-2 border-quaternary pl-3 text-sm leading-5 text-tertiary-foreground">
-          {t('brand.voices.noSamples')}
-        </p>
-      )}
-
-      {/* Three bullets: what it is, what it has done, where it came from. A
-          list rather than three stacked lines, because the middle one wraps on
-          a narrow column and without markers the wrapped half reads as a fourth
-          fact. Commas inside a bullet, since the bullet already does the
-          separating a middle dot was doing — and the same size and colour as
-          the line under the name, because the bullets and the position are
-          already saying this is the subordinate part. */}
-      <footer>
-        <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
-          <li>{rulesLine(t, voice.rules)}</li>
-          <li>{facts.join(t('brand.facts.separator'))}</li>
-          <li>
-            <OriginLine origin={voice.origin} />
-          </li>
-        </ul>
-      </footer>
-    </LibraryCard>
+    <LibraryEntry
+      onOpen={onOpen ? () => onOpen(voice.id) : undefined}
+      name={voice.name}
+      mark={
+        voice.isDefault && (
+          <DefaultStar
+            backed={voice.samples.length >= MIN_VOICE_SAMPLES}
+            label={defaultVoiceLabel(t, voice)}
+            className="text-sm leading-5 text-secondary-foreground"
+          />
+        )
+      }
+      line={voice.whenToUse}
+      // The sample carries the card: it is the one thing that tells one voice
+      // from another, which a description cannot.
+      substance={voice.samples[0]}
+      empty={t('brand.voices.noSamples')}
+      facts={[
+        rulesLine(t, voice.rules),
+        facts.join(t('brand.facts.separator')),
+        <OriginLine key="origin" origin={voice.origin} />,
+      ]}
+    />
   )
 }
 
@@ -240,7 +213,9 @@ function VoiceCard({
  *
  * Six chips under every card turned the section into a spec sheet and pulled
  * the eye off the sample, which is the one thing on the card that actually
- * distinguishes one voice from another.
+ * distinguishes one voice from another. There are four rules now — hashtags
+ * left the voice for the channel notes (`VoiceRules`) — and the line is the
+ * better for it.
  *
  * The three `Record<…, string>` maps this used to keep are gone into the
  * catalogue: a module-level table of English is exactly the constant that
@@ -253,7 +228,6 @@ function rulesLine(t: TFunction, rules: VoiceRules): string {
     t(`brand.voices.rules.formality.${rules.formality}` as const),
     t(`brand.voices.rules.person.${rules.person}` as const),
     t(`brand.voices.rules.emoji.${rules.emoji}` as const),
-    t(`brand.voices.rules.hashtags.${rules.hashtags}` as const),
     t(`brand.voices.rules.length.${rules.length}` as const),
   ].join(t('brand.facts.separator'))
 }

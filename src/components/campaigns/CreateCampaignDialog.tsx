@@ -83,7 +83,7 @@ export function CreateCampaignDialog({
       height="large"
     >
       <form
-        className="flex h-full flex-col gap-6"
+        className="flex min-h-0 flex-1 flex-col gap-6"
         noValidate
         autoComplete="off"
         onSubmit={(e) => {
