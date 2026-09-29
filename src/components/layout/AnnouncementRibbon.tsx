@@ -2,7 +2,6 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowUpRightIcon, MegaphoneIcon, XIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib'
 import { ZIndex } from '@/config/zIndex'
 import {
   useAnnouncements,
@@ -15,11 +14,12 @@ import type { Announcement } from '@/types/announcements'
 const RIBBON_HEIGHT = '2.5rem'
 
 /**
- * The CTA and the close are one pair of outlined boxes in the ribbon's own
- * ink, since the stock outline is drawn for a light surface.
+ * The CTA's outline in the ribbon's own ink, since the stock outline is drawn
+ * for a light surface. `pt-[9px]` over `sm`'s 11px centres the capitals in
+ * the 32px box.
  */
-const RIBBON_OUTLINE =
-  'shrink-0 border-primary/40 text-primary hover:border-primary hover:bg-primary/10'
+const RIBBON_CTA =
+  'shrink-0 border-primary/40 pt-[9px] text-primary uppercase hover:border-primary hover:bg-primary/10'
 
 /**
  * The newest operator announcement (CON-230), as a one-line ribbon across the
@@ -93,12 +93,7 @@ function AnnouncementRibbon({ announcement }: { announcement: Announcement }) {
           //
           // Capitals by CSS, not in the copy: the label is the operator's and
           // arrives as they typed it.
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className={cn(RIBBON_OUTLINE, 'uppercase')}
-          >
+          <Button asChild variant="outline" size="sm" className={RIBBON_CTA}>
             <a
               href={cta.url}
               target="_blank"
@@ -110,17 +105,16 @@ function AnnouncementRibbon({ announcement }: { announcement: Announcement }) {
             </a>
           </Button>
         )}
-        {/* `pt-[3px]` puts the cross on the same line as the CTA's arrow: `sm`
-            pads 11px over 8px to sit capitals optically centred, which lowers
-            its icon by 1.5px, and an unpadded icon box would not follow. */}
+        {/* Phosphor's cross fills 160 of its 256 units and the arrow 144, so at
+            the same box the cross reads a size larger; 14.4px draws both at 9px. */}
         <Button
-          variant="outline"
+          variant="ghost"
           size="smIcon"
-          className={cn(RIBBON_OUTLINE, 'pt-[3px]')}
+          className="shrink-0 text-primary hover:bg-primary/10 hover:text-primary"
           aria-label={t('announcements.dismiss')}
           onClick={() => dismiss.mutate(id)}
         >
-          <XIcon />
+          <XIcon className="size-[14.4px]" />
         </Button>
       </div>
     </aside>
