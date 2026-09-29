@@ -2,10 +2,38 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { CalendarBlankIcon, GearSixIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { useCampaignPosts } from '@/hooks/usePosts'
+import { useCampaignPosts, useWorkspacePosts } from '@/hooks/usePosts'
+import type { Post } from '@/types/posts'
 import { usePanelScope } from '@/hooks/usePanelScope'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
+
+/**
+ * The campaign calendar's header icons — the counter is that campaign's.
+ */
+export function CalendarHeaderActions({ campaignId }: { campaignId: string }) {
+  const { data: posts, isPending } = useCampaignPosts(campaignId)
+  return (
+    <CalendarActions
+      campaignId={campaignId}
+      posts={posts}
+      isPending={isPending}
+    />
+  )
+}
+
+/**
+ * The same icons on the workspace calendar, counting every campaign's strays.
+ *
+ * A separate entry point rather than a `campaignId ?? ''` inside one, because
+ * the two read different queries and a hook cannot take a branch: calling both
+ * would make the campaign calendar fetch the whole workspace's posts for a
+ * number it never shows.
+ */
+export function WorkspaceCalendarHeaderActions() {
+  const { data: posts, isPending } = useWorkspacePosts()
+  return <CalendarActions posts={posts} isPending={isPending} />
+}
 
 /**
  * Header icon set for the calendar section: the not-scheduled counter and
@@ -13,23 +41,33 @@ import { cn } from '@/lib'
  * AI assistant — one at a time); these buttons only switch what it shows. The
  * active icon renders filled in the accent color.
  *
- * The counter comes first because it is about this campaign's posts and
- * settings is about the view — the same order the rest of the app puts them
- * in, work before preferences, and it keeps the gear last where a gear is
- * always looked for.
+ * The counter comes first because it is about the posts and settings is about
+ * the view — the same order the rest of the app puts them in, work before
+ * preferences, and it keeps the gear last where a gear is always looked for.
  *
  * This component exists exactly while the calendar does, so it is also where
  * the calendar declares its panel scope: leaving hides the calendar's panels
  * without forgetting which one was open, and coming back brings it straight
- * back up.
+ * back up. The scope is `calendar` for both calendars, deliberately — one
+ * remembered choice, so opening the settings panel in a campaign and then going
+ * to the workspace grid finds it open there too. They are the same two panels
+ * over the same preferences.
  */
-export function CalendarHeaderActions({ campaignId }: { campaignId: string }) {
+function CalendarActions({
+  campaignId,
+  posts,
+  isPending,
+}: {
+  /** Absent on the workspace calendar — the panels below cope. */
+  campaignId?: string
+  posts: Post[] | undefined
+  isPending: boolean
+}) {
   usePanelScope('calendar', campaignId)
 
   const { t } = useTranslation()
   const activePanel = useSettingsStore(selectActivePanel)
   const toggle = useSettingsStore((s) => s.toggleRightPanel)
-  const { data: posts, isPending } = useCampaignPosts(campaignId)
   const unscheduledCount = (posts ?? []).filter((p) => !p.scheduled_at).length
   const hasUnscheduled = unscheduledCount > 0
 

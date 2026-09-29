@@ -146,6 +146,41 @@ export const es: Translation = {
       brokenBody:
         'Abre el enlace directamente desde el correo o <request>pide uno nuevo</request>.',
     },
+    secureAccount: {
+      title: 'Protege tu cuenta de Ogen',
+      intro:
+        'Hemos detectado un nuevo inicio de sesión en <strong>{{email}}</strong>:',
+      detailsLabel: 'Detalles del inicio de sesión',
+      whenLabel: 'Cuándo',
+      deviceLabel: 'Dispositivo',
+      ipLabel: 'Dirección IP',
+      locationLabel: 'Ubicación aproximada',
+      explainer:
+        'Si no has sido tú, protege tu cuenta. Cerraremos todas las sesiones en todos los dispositivos — incluida esta — y elegirás una contraseña nueva enseguida.',
+      submit: 'PROTEGER MI CUENTA',
+      wasMe: 'He sido yo',
+      failed:
+        'No hemos podido conectar con Ogen, así que aún no ha cambiado nada. Inténtalo de nuevo.',
+      rateLimited_one:
+        'Demasiados intentos. Inténtalo de nuevo dentro de {{count}} minuto.',
+      rateLimited_other:
+        'Demasiados intentos. Inténtalo de nuevo dentro de {{count}} minutos.',
+      loadFailedTitle: 'No hemos podido comprobar este enlace',
+      loadFailedSubtitle:
+        'Algo ha fallado por nuestra parte — puede que el enlace siga siendo válido',
+      usedTitle: 'Este enlace ya se ha usado',
+      usedBody: 'Tu cuenta se protegió y se cerraron todas las sesiones.',
+      usedReset:
+        '¿Aún tienes que elegir una contraseña nueva? <reset>Restablécela aquí</reset>.',
+      expiredTitle: 'Este enlace ha caducado',
+      expiredBody:
+        'Los enlaces son válidos durante 24 horas. Restablecer la contraseña también cierra todas las sesiones.',
+      expiredSubmit: 'RESTABLECER MI CONTRASEÑA',
+      invalidTitle: 'Este enlace no es válido',
+      invalidBody: 'Comprueba que has abierto el enlace completo del correo.',
+      invalidReset:
+        '¿Te preocupa tu cuenta? <reset>Restablece tu contraseña</reset>.',
+    },
     invite: {
       title: 'Únete al espacio',
       subtitle: '{{inviter}} te ha invitado a {{workspace}}',
@@ -615,11 +650,6 @@ export const es: Translation = {
   },
 
   calendar: {
-    stub: {
-      workspaceTitle: 'Todas las campañas en un calendario',
-      workspaceBody:
-        'La misma vista que ya tiene cada campaña, sin el filtro: qué publica todo el espacio de trabajo, y cuándo.',
-    },
     unscheduled: 'SIN PROGRAMAR',
     unscheduledPosts: 'Publicaciones sin programar',
     settings: 'Ajustes del calendario',
@@ -649,6 +679,13 @@ export const es: Translation = {
     showFieldOnWeek: 'Mostrar {{field}} en la tarjeta de semana',
     showFieldOnMonth: 'Mostrar {{field}} en la tarjeta de mes',
 
+    untitledCampaign: 'Campaña sin título',
+
+    loadFailed:
+      'No se pudieron cargar tus publicaciones: el calendario se rellenará cuando vuelvan a estar disponibles.',
+    loadFailedCampaign:
+      'No se pudieron cargar las publicaciones de esta campaña: el calendario se rellenará cuando vuelvan a estar disponibles.',
+
     imagePreviews: 'Mostrar las tarjetas con vista previa de la imagen',
     imagePreviewsNote:
       'Solo las publicaciones que tienen imagen y, en el mes, solo en los días con espacio para una',
@@ -672,6 +709,11 @@ export const es: Translation = {
       panelTitle: 'Nada sin programar',
       panelSubtitle:
         'Las publicaciones sin fecha esperan aquí — arrastra una fuera del calendario o añade una nueva.',
+      workspaceTitle: 'Todavía no hay nada planificado',
+      workspaceSubtitle:
+        'Las publicaciones se escriben dentro de una campaña. Programa una y aparecerá aquí, sea cual sea la campaña a la que pertenezca.',
+      workspacePanelSubtitle:
+        'Las publicaciones sin fecha esperan aquí — arrastra una al calendario para darle una.',
     },
   },
 

@@ -40,7 +40,7 @@ describe('PostsEmptyState', () => {
     await renderWithProviders(
       <PostsEmptyState
         variant="week"
-        campaignId="c1"
+
         anchor={ANCHOR}
         onAddPost={() => {}}
       />,
@@ -61,7 +61,7 @@ describe('PostsEmptyState', () => {
     await renderWithProviders(
       <PostsEmptyState
         variant="week"
-        campaignId="c1"
+
         anchor={ANCHOR}
         onAddPost={() => {}}
       />,
@@ -78,7 +78,7 @@ describe('PostsEmptyState', () => {
 
   it('says something different for the list and the panel', async () => {
     const { unmount } = await renderWithProviders(
-      <PostsEmptyState variant="list" campaignId="c1" onAddPost={() => {}} />,
+      <PostsEmptyState variant="list" onAddPost={() => {}} />,
     )
     expect(screen.getByText('No posts yet')).toBeInTheDocument()
     // The sketch of the table draws the table's own headers, from the same keys.
@@ -86,7 +86,7 @@ describe('PostsEmptyState', () => {
     unmount()
 
     await renderWithProviders(
-      <PostsEmptyState variant="panel" campaignId="c1" onAddPost={() => {}} />,
+      <PostsEmptyState variant="panel" onAddPost={() => {}} />,
     )
     expect(screen.getByText('Nothing unscheduled')).toBeInTheDocument()
   })

@@ -26,7 +26,13 @@ import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useAddPost } from '@/hooks/usePosts'
 
 type PostsToolbarProps = {
-  campaignId: string
+  /**
+   * The campaign whose posts are being arranged, or `null` on the workspace
+   * calendar. Two things come off it: where the view switch navigates, and
+   * whether there is an ADD POST at all — a new post needs a campaign to be
+   * created in, and "every campaign" is not one.
+   */
+  campaignId: string | null
   view: 'week' | 'month' | 'list'
   /** Present only on the calendar; drives the range label and date nav. */
   anchor?: Date
@@ -67,6 +73,10 @@ function formatWeekRange(weekStart: Date, locale: string): string {
  * is a question. What the list keeps is the half of the toolbar that is about
  * the posts rather than about the date: how many there are, and the way to add
  * one.
+ *
+ * The workspace calendar takes the same toolbar with `campaignId: null`, which
+ * drops ADD POST — a new post needs a campaign to be created in. What is left
+ * is what the workspace grid actually offers: where you are, and how to move.
  */
 export function PostsToolbar({
   campaignId,
@@ -77,9 +87,9 @@ export function PostsToolbar({
 }: PostsToolbarProps) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const addPost = useAddPost(campaignId)
-  const { firstDayOfWeek, isPending: settingsPending } =
-    useCalendarSettings(campaignId)
+  // Never called where the button isn't drawn; hooks don't take a branch.
+  const addPost = useAddPost(campaignId ?? '')
+  const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings()
   const isCalendar = view === 'week' || view === 'month'
 
   const handleViewSelect = (next: 'week' | 'month') => {
@@ -87,14 +97,18 @@ export function PostsToolbar({
     // The anchor is granularity-free by design (see `calendar/date.ts`), so
     // switching views keeps the day you were looking at and only re-derives
     // the range around it.
-    navigate({
-      to: '/campaigns/$campaignId/calendar/$anchor/$view',
-      params: {
-        campaignId,
-        anchor: formatAnchor(anchor ?? new Date()),
-        view: next,
-      },
-    })
+    const nextAnchor = formatAnchor(anchor ?? new Date())
+    if (campaignId === null) {
+      navigate({
+        to: '/calendar/$anchor/$view',
+        params: { anchor: nextAnchor, view: next },
+      })
+    } else {
+      navigate({
+        to: '/campaigns/$campaignId/calendar/$anchor/$view',
+        params: { campaignId, anchor: nextAnchor, view: next },
+      })
+    }
   }
 
   /**
@@ -224,10 +238,12 @@ export function PostsToolbar({
             </Tabs>
           )}
 
-          <Button variant="default" onClick={() => addPost()}>
-            <PlusIcon />
-            <span>{t('calendar.addPost')}</span>
-          </Button>
+          {campaignId !== null && (
+            <Button variant="default" onClick={() => addPost()}>
+              <PlusIcon />
+              <span>{t('calendar.addPost')}</span>
+            </Button>
+          )}
         </div>
       </div>
     </div>

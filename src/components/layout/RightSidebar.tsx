@@ -3,7 +3,10 @@ import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
 import { AssistantPanel } from '@/components/assistant/AssistantPanel'
 import { CalendarSettingsPanel } from '@/components/campaigns/calendar/CalendarSettingsPanel'
-import { NotScheduledPanel } from '@/components/campaigns/calendar/NotScheduledPanel'
+import {
+  NotScheduledPanel,
+  WorkspaceNotScheduledPanel,
+} from '@/components/campaigns/calendar/NotScheduledPanel'
 import {
   selectAnyRunning,
   selectAnyUnread,
@@ -85,6 +88,7 @@ function PanelLayer({
 export function RightSidebar() {
   const activePanel = useSettingsStore(selectActivePanel)
   const campaignId = useSettingsStore((s) => s.campaignId)
+  const scope = useSettingsStore((s) => s.scope)
   const toggle = useSettingsStore((s) => s.toggleRightPanel)
   const close = useSettingsStore((s) => s.closeRightPanel)
 
@@ -112,8 +116,21 @@ export function RightSidebar() {
             <PanelLayer active={assistantActive}>
               <AssistantPanel onClose={close} />
             </PanelLayer>
-            {/* Both are campaign-scoped — calendar preferences are stored per
-                campaign, and the not-scheduled list is that campaign's. */}
+            {/* The calendar's two panels, in the version the calendar
+                underneath calls for. They are the same two panels over the same
+                preferences either way; what differs is whose posts the
+                not-scheduled list holds, and whether the day rows can name a
+                campaign's publishing days.
+
+                The two branches are gated differently on purpose. The
+                campaign's stays mounted on `campaignId` alone, which outlives
+                the scope, so leaving the calendar fades the panel out rather
+                than making it vanish mid-transition. The workspace's is gated
+                on the scope, because the alternative — mounting wherever no
+                campaign has been visited — would pull the whole workspace's
+                posts on app boot for a panel nobody has opened. While the
+                workspace calendar is on screen the route is already running
+                that query, so the panel's own read costs nothing. */}
             {campaignId && (
               <>
                 <PanelLayer active={activePanel === 'calendarSettings'}>
@@ -124,6 +141,16 @@ export function RightSidebar() {
                 </PanelLayer>
                 <PanelLayer active={activePanel === 'notScheduled'}>
                   <NotScheduledPanel campaignId={campaignId} onClose={close} />
+                </PanelLayer>
+              </>
+            )}
+            {campaignId === null && scope === 'calendar' && (
+              <>
+                <PanelLayer active={activePanel === 'calendarSettings'}>
+                  <CalendarSettingsPanel onClose={close} />
+                </PanelLayer>
+                <PanelLayer active={activePanel === 'notScheduled'}>
+                  <WorkspaceNotScheduledPanel onClose={close} />
                 </PanelLayer>
               </>
             )}

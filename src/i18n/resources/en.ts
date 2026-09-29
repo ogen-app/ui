@@ -170,6 +170,43 @@ export const en = {
       brokenBody:
         'Open the link straight from the email, or <request>request a new one</request>.',
     },
+    /**
+     * Where the "This wasn't me" link in the new-device sign-in email lands
+     * (CON-318). `<reset>` goes to Forgot password — or to Profile for someone
+     * still signed in, whom Forgot password would bounce.
+     */
+    secureAccount: {
+      title: 'Secure your Ogen account',
+      intro: 'We noticed a new sign-in to <strong>{{email}}</strong>:',
+      detailsLabel: 'Sign-in details',
+      whenLabel: 'When',
+      deviceLabel: 'Device',
+      ipLabel: 'IP address',
+      locationLabel: 'Approximate location',
+      explainer:
+        "If this wasn't you, secure your account. We'll sign out every session on every device — including this one — and you'll set a new password right away.",
+      submit: 'SECURE MY ACCOUNT',
+      wasMe: 'This was me',
+      /** Network or server failure — nothing was revoked, so retrying is safe. */
+      failed: "We couldn't reach Ogen, so nothing has changed yet. Try again.",
+      rateLimited_one: 'Too many attempts. Try again in {{count}} minute.',
+      rateLimited_other: 'Too many attempts. Try again in {{count}} minutes.',
+      loadFailedTitle: "We couldn't check this link",
+      loadFailedSubtitle:
+        'Something went wrong on our side — the link itself may still be fine',
+      usedTitle: 'This link has already been used',
+      usedBody: 'Your account was secured and all sessions were signed out.',
+      usedReset:
+        'Still need to set a new password? <reset>Reset it here</reset>.',
+      expiredTitle: 'This link has expired',
+      expiredBody:
+        'Links are valid for 24 hours. Resetting your password also signs out every session.',
+      expiredSubmit: 'RESET MY PASSWORD',
+      invalidTitle: "This link isn't valid",
+      invalidBody: 'Check you opened the full link from the email.',
+      invalidReset:
+        'Worried about your account? <reset>Reset your password</reset>.',
+    },
     /** The emailed invitation's landing page (CON-26). */
     invite: {
       title: 'Join the workspace',
@@ -876,11 +913,6 @@ export const en = {
   },
 
   calendar: {
-    stub: {
-      workspaceTitle: 'Every campaign, on one calendar',
-      workspaceBody:
-        'The view each campaign already has, with the filter taken off — what the whole workspace is publishing, and when.',
-    },
     /**
      * The header's counter button: the posts that have no date on them yet.
      * `unscheduled` is the visible label beside the glyph and is a button, so
@@ -951,6 +983,24 @@ export const en = {
     showFieldOnWeek: 'Show {{field}} on the week card',
     showFieldOnMonth: 'Show {{field}} on the month card',
 
+    /**
+     * The campaign a card belongs to — the workspace calendar's one extra row,
+     * and the only thing telling two otherwise identical cards apart there. The
+     * fallback names the state rather than the campaign, because a campaign
+     * with no name yet is ordinary while it is being set up.
+     */
+    untitledCampaign: 'Untitled campaign',
+
+    /**
+     * What a grid says when its posts could not be fetched. Deliberately not an
+     * error dialog: the calendar is still drawn and still navigable, and this
+     * is the one line saying why it is empty.
+     */
+    loadFailed:
+      'Couldn’t load your posts — the calendar will fill in once they’re reachable again.',
+    loadFailedCampaign:
+      'Couldn’t load this campaign’s posts — the calendar will fill in once they’re reachable again.',
+
     imagePreviews: 'Show cards as image previews',
     imagePreviewsNote:
       'Only posts that have a picture, and in the month only on the days with room for one',
@@ -1001,6 +1051,16 @@ export const en = {
       panelTitle: 'Nothing unscheduled',
       panelSubtitle:
         'Posts without a date wait here — drag one off the calendar, or add a new one.',
+      /**
+       * The same two surfaces on the workspace calendar, which has no ADD POST
+       * — so neither sentence offers one. Both say where posts come from
+       * instead, because that is the reader's next question.
+       */
+      workspaceTitle: 'Nothing is planned yet',
+      workspaceSubtitle:
+        'Posts are written inside a campaign. Schedule one and it will show up here, whichever campaign it belongs to.',
+      workspacePanelSubtitle:
+        'Posts without a date wait here — drag one onto the calendar to give it one.',
     },
   },
 
