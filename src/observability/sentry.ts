@@ -90,7 +90,7 @@ function redactUrl(url: string): string {
 }
 
 /** Span attributes the fetch/XHR instrumentation fills with the request URL. */
-const SPAN_URL_KEYS = ['url', 'http.url'] as const
+const SPAN_URL_KEYS = ['url', 'http.url', 'url.full'] as const
 
 /**
  * Removes anything that could carry a token or PII from an event in place:

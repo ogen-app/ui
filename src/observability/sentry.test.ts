@@ -71,6 +71,8 @@ describe('redactEvent', () => {
           data: {
             url: '/api/security/login-alerts/secret/secure',
             'http.url': 'https://app.example/api/security/login-alerts/secret',
+            'url.full':
+              'https://app.example/api/security/login-alerts/secret/secure',
             'http.query': '?token=secret',
           },
         } as unknown as NonNullable<Sentry.Event['spans']>[number],

@@ -121,8 +121,10 @@ Three things to keep:
   auto-submit.
 - **The token rides in the API *path*,** so Sentry's scrubber replaces that
   segment with `:token` (`observability/sentry.ts`, `PATH_TOKEN_PREFIXES`) as
-  well as dropping query strings, and the page sets `no-referrer` while it is
-  open (`useNoReferrer`). The routes send no `X-Workspace-Id` — the token names
+  well as dropping query strings. `no-referrer` is sent twice over: as a
+  header on the document (`Caddyfile`), because `index.html`'s own requests go
+  out before any React runs, and by the page while it is open
+  (`useNoReferrer`). The routes send no `X-Workspace-Id` — the token names
   an account, not a workspace.
 - **A dead link's way out depends on the session.** Forgot password bounces a
   signed-in visitor home, so for them the reset link points at Profile, which

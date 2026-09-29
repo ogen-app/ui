@@ -10,8 +10,13 @@ import { useEffect } from 'react'
  * does not depend on the default.
  *
  * The meta tag is consulted per request, so setting it on mount covers every
- * request the page makes. Whatever was there before is restored on unmount, so
- * the rest of the app keeps its own policy.
+ * request the page makes from then on. Whatever was there before is restored
+ * on unmount, so the rest of the app keeps its own policy.
+ *
+ * It cannot cover what happened before mount: the scripts and favicon
+ * `index.html` asks for are requested first. A page reached from an email
+ * therefore also needs a `Referrer-Policy` header on the document itself —
+ * see the `Caddyfile` — and this hook is the second layer, not the only one.
  */
 export function useNoReferrer(): void {
   useEffect(() => {
