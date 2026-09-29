@@ -376,15 +376,19 @@ export type PerformerRow = {
  * overlap; `total_posts` is how many the window actually held. There is no way
  * to ask for the middle, so re-ranking by another criterion is a refetch with a
  * different `by`, never a client-side sort.
+ *
+ * The three lists can arrive as `null` rather than `[]` — a Go nil slice. A
+ * window with four posts fills `best` and sends `worst: null`, since the two
+ * ends do not overlap. Read them through `?? []`.
  */
 export type PerformersBoard = {
   window: AnalyticsWindow
   updated_at: string
   by: PerformerSort
   total_posts: number
-  best: PerformerRow[]
-  worst: PerformerRow[]
-  insights: AnalyticsInsight[]
+  best: PerformerRow[] | null
+  worst: PerformerRow[] | null
+  insights: AnalyticsInsight[] | null
 }
 
 /** What `/learnings` mines. Anything else is a 400 `invalid_param`. */

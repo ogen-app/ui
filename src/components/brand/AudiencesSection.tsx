@@ -4,7 +4,7 @@ import { usageLine } from './format'
 import {
   AddEntryCard,
   BrandLibrary,
-  LibraryCard,
+  LibraryEntry,
   OriginLine,
   PlainActionCard,
   StarterCard,
@@ -119,49 +119,36 @@ function AudienceCard({
 }) {
   const { t } = useTranslation()
   return (
-    <LibraryCard onClick={onOpen ? () => onOpen(audience.id) : undefined}>
-      <header className="flex min-w-0 flex-col gap-1">
-        <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
-          {audience.name}
-        </h3>
-        <p className="text-sm leading-5 text-secondary-foreground">
-          {audience.who}
-        </p>
-      </header>
-
-      {/* The consequences, as a definition list rather than prose. The labels
-          are what force the concrete answer: a fantasy audience can be
-          described at length and still leave all three of these blank, and on a
-          full-width card that emptiness is three visible gaps rather than a
-          shorter paragraph. */}
-      <dl className="flex flex-col gap-1.5 text-sm leading-5">
-        <Consequence
-          label={t('brand.audiences.readsOn')}
-          value={audience.readsOn}
-        />
-        <Consequence
-          label={t('brand.audiences.scrollsPast')}
-          value={audience.scrollsPastWhen}
-        />
-        <Consequence
-          label={t('brand.audiences.believesWhen')}
-          value={audience.believesWhen}
-        />
-      </dl>
-
-      {/* Same block as the voice card's: what it has done, then where it came
-          from, bulleted, and set in the same size and colour as the line under
-          the name. Kept identical on purpose — two library cards whose feet are
-          set differently read as two screens built by two people. */}
-      <footer>
-        <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
-          <li>{usageLine(t, audience.usage)}</li>
-          <li>
-            <OriginLine origin={audience.origin} />
-          </li>
-        </ul>
-      </footer>
-    </LibraryCard>
+    <LibraryEntry
+      onOpen={onOpen ? () => onOpen(audience.id) : undefined}
+      name={audience.name}
+      line={audience.who}
+      // The consequences, as a definition list rather than prose. The labels
+      // are what force the concrete answer: a fantasy audience can be
+      // described at length and still leave all three of these blank, and on
+      // a full-width card that emptiness is three visible gaps rather than a
+      // shorter paragraph — which is why the list is always drawn.
+      substance={
+        <dl className="flex flex-col gap-1.5">
+          <Consequence
+            label={t('brand.audiences.readsOn')}
+            value={audience.readsOn}
+          />
+          <Consequence
+            label={t('brand.audiences.scrollsPast')}
+            value={audience.scrollsPastWhen}
+          />
+          <Consequence
+            label={t('brand.audiences.believesWhen')}
+            value={audience.believesWhen}
+          />
+        </dl>
+      }
+      facts={[
+        usageLine(t, audience.usage),
+        <OriginLine key="origin" origin={audience.origin} />,
+      ]}
+    />
   )
 }
 

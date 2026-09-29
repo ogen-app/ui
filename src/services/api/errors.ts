@@ -42,11 +42,19 @@ export async function fetchOrThrowUnavailable(
  */
 export class ApiError extends Error {
   readonly status: number
+  /**
+   * The machine-readable reason, when the body carried one — the content
+   * bank's `content_locked` and upload codes (CON-281/312), an entitlement's
+   * `entitlement_exceeded`. Switch on this rather than on `message`, which is
+   * prose.
+   */
+  readonly code?: string
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.code = code
   }
 }
 
@@ -96,7 +104,13 @@ export class EntitlementError extends ApiError {
   readonly current: number | null
 
   constructor(status: number, message: string, denial: EntitlementDenial) {
-    super(status, message)
+    super(
+      status,
+      message,
+      denial.reason === 'limit'
+        ? 'entitlement_exceeded'
+        : 'feature_not_available',
+    )
     this.name = 'EntitlementError'
     this.reason = denial.reason
     this.feature = denial.feature
@@ -118,6 +132,7 @@ type PlatformValidationError = {
 
 type ApiErrorBody = {
   error?: string
+  code?: string
   /**
    * Keyed by platform id. Sent with 422s from the validation gate — post
    * create, the draft → ready_for_publish PUT, and POST /:id/schedule.
@@ -283,7 +298,8 @@ export async function apiErrorFrom(
   const body = await readErrorBody(res)
   const message = messageFrom(body, fallback)
   const denial = entitlementDenial(res.status, body)
-  return denial
-    ? new EntitlementError(res.status, message, denial)
-    : new ApiError(res.status, message)
+  if (denial) return new EntitlementError(res.status, message, denial)
+  const code =
+    typeof body?.code === 'string' && body.code ? body.code : undefined
+  return new ApiError(res.status, message, code)
 }

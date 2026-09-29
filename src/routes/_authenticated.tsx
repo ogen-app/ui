@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/AppSidebar'
+import { AnnouncementFrame } from '@/components/layout/AnnouncementRibbon'
 import { UploadTracker } from '@/components/uploads/UploadTracker'
 import { RightSidebar } from '@/components/layout/RightSidebar'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -26,20 +27,22 @@ function AuthenticatedLayout() {
   // The durable one, on the same terms and for the same reason (CON-242). Two
   // connections rather than one because they answer different questions: this
   // one replays what was missed, and the bus above deliberately cannot.
-  // A no-op while the `activity` flag is off.
   useNotificationStream()
 
   return (
-    <SidebarProvider
-      open={!sidebarCollapsed}
-      onOpenChange={(open) => setSidebarCollapsed(!open)}
-    >
-      <AppSidebar />
-      <SidebarInset className="min-w-0">
-        <Outlet />
-      </SidebarInset>
-      <RightSidebar />
-      <UploadTracker />
-    </SidebarProvider>
+    <AnnouncementFrame>
+      <SidebarProvider
+        open={!sidebarCollapsed}
+        onOpenChange={(open) => setSidebarCollapsed(!open)}
+        className="min-h-[calc(100svh-var(--announcement-h))]"
+      >
+        <AppSidebar />
+        <SidebarInset className="min-w-0">
+          <Outlet />
+        </SidebarInset>
+        <RightSidebar />
+        <UploadTracker />
+      </SidebarProvider>
+    </AnnouncementFrame>
   )
 }

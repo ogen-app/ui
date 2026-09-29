@@ -2,13 +2,9 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ModalContainer } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
-import {
-  FilePdfIcon,
-  ImageSquareIcon,
-  NoteIcon,
-  TrashIcon,
-  WarningIcon,
-} from '@phosphor-icons/react'
+import { TrashIcon, WarningIcon } from '@phosphor-icons/react'
+import { ASSET_KIND_ICON } from '@/components/content/assetKindIcons'
+import type { AssetKind } from '@/lib/assetKind'
 import { Dropzone } from './Dropzone'
 import { useUploadStore } from '@/stores/uploadStore'
 import { useAssets } from '@/hooks/useContent'
@@ -19,9 +15,20 @@ import {
   formatBytes,
   uploadLimitLines,
   validateUploadFile,
+  type UploadKind,
   type UploadValidation,
 } from '@/lib/assetStatus'
 import type { Asset } from '@/types/content'
+
+/**
+ * The largest image the modal hashes to look for a duplicate.
+ *
+ * The whole file goes through memory to be hashed, and since CON-281 the image
+ * cap is the operator's rather than a fixed 10 MB, so nothing else bounds that
+ * buffer. 50 MB is the server's default cap; an image over it simply goes
+ * unchecked, which costs a warning and never an upload.
+ */
+const MAX_HASHED_BYTES = 50 << 20
 
 type Props = {
   isOpen: boolean
@@ -99,11 +106,12 @@ export function UploadModal({
   const addFiles = (files: File[]) => {
     setStaged((prev) => [...prev, ...files])
     for (const file of files) {
-      // Only what the server would dedupe, and only after validation has
-      // passed it: the image cap is what keeps this to a 10 MB buffer, and a
-      // file that is going to be refused anyway has nothing to compare.
+      // Only what the server would dedupe, only after validation has passed
+      // it — a file that is going to be refused has nothing to compare — and
+      // only up to a size worth reading into memory for a warning.
       const validation = validateUploadFile(file)
       if (!validation.ok || validation.kind !== 'image') continue
+      if (file.size > MAX_HASHED_BYTES) continue
       void sha256Hex(file)
         .then((hex) =>
           setChecksums((prev) => new Map(prev).set(file, hex.toLowerCase())),
@@ -145,7 +153,7 @@ export function UploadModal({
           {uploadLimitLines(t).map((line) => (
             <p key={line}>{line}</p>
           ))}
-          <p>{t('uploads.pdfNote')}</p>
+          <p>{t('uploads.backgroundNote')}</p>
         </div>
 
         <Dropzone onFiles={addFiles} />
@@ -181,14 +189,18 @@ export function UploadModal({
                         })}
                       </p>
                     )}
+                    {/* Under the name, not beside it: a refusal is a sentence,
+                        and on the same line it squeezed out the filename —
+                        the half that says which file it is about. */}
+                    {!validation.ok && (
+                      <p className="text-xs text-destructive">
+                        {uploadErrorMessage(t, validation.failure)}
+                      </p>
+                    )}
                   </div>
-                  {validation.ok ? (
+                  {validation.ok && (
                     <p className="shrink-0 text-xs tabular-nums text-tertiary-foreground">
                       {formatBytes(file.size)}
-                    </p>
-                  ) : (
-                    <p className="shrink-0 text-xs text-destructive">
-                      {uploadErrorMessage(t, validation.error)}
                     </p>
                   )}
                   {/* A bin rather than an ✕. The modal's own close control is
@@ -236,7 +248,7 @@ export function UploadModal({
 /**
  * What kind of file is about to be uploaded, before its name.
  *
- * The same three glyphs the list uses for the assets these become
+ * The same glyphs the list uses for the assets these become
  * (`AssetGlyph`), so a file looks like the thing it is about to turn into
  * rather than being introduced by one icon here and a different one there.
  * That component takes an `Asset`, though, and a staged file is not one yet —
@@ -251,11 +263,15 @@ function StagedGlyph({ validation }: { validation: UploadValidation }) {
   if (!validation.ok) {
     return <WarningIcon className="size-5 shrink-0 text-destructive" />
   }
-  const Icon =
-    validation.kind === 'image'
-      ? ImageSquareIcon
-      : validation.kind === 'pdf'
-        ? FilePdfIcon
-        : NoteIcon
+  const Icon = ASSET_KIND_ICON[UPLOAD_KIND_AS_ASSET[validation.kind]]
   return <Icon className="size-5 shrink-0 text-tertiary-foreground" />
+}
+
+/** The kind of asset each kind of upload turns into. */
+const UPLOAD_KIND_AS_ASSET: Record<UploadKind, AssetKind> = {
+  md: 'text',
+  pdf: 'pdf',
+  document: 'document',
+  image: 'image',
+  audio: 'audio',
 }

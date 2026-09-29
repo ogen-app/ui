@@ -67,9 +67,15 @@ export type LocalSettings = {
 type PanelContext = {
   scope: PanelScope | null
   /**
-   * The campaign you are in, for the panels that are about one. Sticky — it
-   * survives the scope clearing so a panel can fade out instead of vanishing
-   * mid-transition, and is only ever overwritten by the next campaign.
+   * The campaign you are in, for the panels that are about one, or `null` where
+   * the screen under the sidebar has none — the workspace calendar, whose
+   * panels are about every campaign at once.
+   *
+   * Sticky across the scope *clearing* only: it survives an unmount so a panel
+   * can fade out instead of vanishing mid-transition. A screen that claims the
+   * scope always answers, `null` included — inheriting the last campaign would
+   * have the workspace calendar's not-scheduled panel list one campaign's
+   * strays under a grid showing all of them.
    */
   campaignId: string | null
 }
@@ -165,8 +171,12 @@ export const useSettingsStore = create<SettingsState>()(
         setPanelScope: (scope, campaignId) => {
           set((state) => ({
             scope,
-            // Never cleared, only replaced — see `PanelContext.campaignId`.
-            campaignId: campaignId ?? state.campaignId,
+            // Kept only while nothing is claiming the scope, so the panel that
+            // is fading out still has its campaign — see
+            // `PanelContext.campaignId`. A screen that *is* claiming it
+            // replaces the answer outright, `undefined` included.
+            campaignId:
+              scope === null ? state.campaignId : (campaignId ?? null),
           }))
         },
 

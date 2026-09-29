@@ -84,6 +84,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   commits to nothing), and **Foundation** has no campaign twin (voices,
   audiences and guardrails are the workspace's, and what a campaign has of them
   is a *pointer*, chosen on its Strategy page through `CampaignBrandCard`).
+- **Posts is a list and the Calendar is a calendar — they are two
+  destinations, not three views of one.** The toolbar's switch was WEEK /
+  MONTH / LIST, which said the table is a way of looking at a week; it is not,
+  it has no range at all. So the segmented control offers the two
+  granularities and appears only on the calendar, the list keeps the half of
+  the toolbar that is about the posts (how many, and ADD POST), and both
+  screens can create one. Moving between them is the rail's two rows. The
+  memory still records which of the two you were last on, because the post
+  editor's back arrow has to land where you came from
+  (`lib/postsPlace`) — `PostsPlace.view` keeps `'list'` for exactly that, and
+  `granularity` is what the entry points naming *the calendar* read.
+
 - **Documents are Assets, and Assets is a module rather than a section of
   Foundation.** `/assets` at level 0, `/campaigns/:id/assets` at level 1, one
   `ContentPage` behind both (`campaign === null` is the workspace bank). It was
@@ -159,17 +171,27 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`MAX_VIDEO_UPLOAD_BYTES`) is ours, and always wins over the seeded ceiling.
   A probed-but-zero `duration_ms` means video-service was down, not a
   zero-length file. See `docs/technical-decisions.md#video-ingest`.
-- **An asset only opens in the editor if `opensAsDocument` says it is one.**
-  `AssetDocument`'s editor is the last branch, never the fallback: `null | MD |
-  PDF | URL` are documents, and anything else — a `type` the build predates —
-  gets the read-only `UnsupportedAsset`. Never restore "everything else gets
-  `AssetEditor`". It seeds BlockNote from `content` and autosaves it back, so
-  the first type whose `content` isn't a document is overwritten by anyone who
-  opens it and types (CON-235; `IMG`'s `content` is its description). PDF *is*
-  a document — its extracted text is what the embeddings are built from. An
-  image is not, and has its own screen rather than the fallback
-  (`AssetImageView`, CON-246), so `UnsupportedAsset` is now only reached by a
-  kind this build has never heard of. See
+  **A Content-Bank recording takes the same shape** (`uploadAudioFile`,
+  behind `content-bank-audio`), sharing `services/api/storageUpload` — which
+  sends exactly the headers presign signed, never `file.type`, because the
+  browser's `audio/x-m4a` is not the server's `audio/mp4`. Presign creates the
+  asset before a byte moves, so a failed PUT or a refused finalize deletes it
+  again; a finalize that never answered does not, since its run may have begun.
+- **An asset only opens in the editor if `assetScreen` says so.** It answers
+  one of `editor | extracted | image | audio | unsupported`, and the editor is a
+  named answer, never the fallback: only `null | MD | URL` reach it. Never
+  restore "everything else gets `AssetEditor`" — it seeds BlockNote from
+  `content` and autosaves it back, so the first type whose `content` isn't a
+  document is overwritten by anyone who opens it and types (CON-235). **PDF and
+  DOC are read-only** (`AssetExtractedView`): the server refuses a changed
+  `content` on PDF, DOC and AUDIO (409 `content_locked`, CON-312), and their
+  `content` is only the upload's `"[]"` placeholder anyway — the text lives in
+  the chunks, so that screen reads `GET /:id/chunks`, and the list states a PDF
+  by its pages rather than counting the placeholder's one "word". An image
+  (`AssetImageView`, CON-246) and a recording (`AssetAudioView`, CON-282) have
+  screens of their own; `UnsupportedAsset` is only reached by a kind this build
+  has never heard of. Saves send `content` only once it has been edited, so a
+  rename on an ingested type is a title-only PUT. See
   `docs/technical-decisions.md#asset-opening`.
 - **An asset update is presence-aware, and a campaign's is not.** Since CON-279
   the asset PUT reads `alt_text` and `tag_ids` as optional: omit one and the
@@ -203,13 +225,19 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   document it would resolve to. Images only: nothing else carries a checksum,
   so a second PDF really is a second document and warning about one would be a
   promise the server doesn't keep.
-- **An upload refusal is the server's prose, worded by the client.** The upload
-  endpoint answers 201 and reports each file's fate as an English sentence —
-  some of it Go, package prefix and all — so `lib/uploadError` matches the
-  conditions onto catalogue copy and lifts the caps out of the message rather
-  than restating them. Add a case there, not a literal at the call site; an
-  unmatched message falls through to a fallback that strips the package name.
-  The real fix is a per-result `code` on the API (`docs/open-questions.md` S4).
+- **An upload refusal is worded by its `code`, not its prose.** Since
+  CON-281/312 every `/upload` result, post-attachment refusal and failed asset
+  (`failure_code`) carries one of `models/upload_code.go`'s codes, and
+  `lib/uploadError` switches on it — the client's own refusals
+  (`validateUploadFile`) answer in the same codes, so one table words both. The
+  prose is read for only two things: the numbers a code deliberately leaves out
+  (a cap, a duration limit), lifted out rather than restated, and a code this
+  build predates, which falls back to matching the sentence as everything did
+  before codes existed. Add a case there, not a literal at the call site. Two
+  codes are ours and never sent: `legacy_office` (a `.doc` is told to save as
+  `.docx`) and `storage_upload_failed` (a presigned PUT that never reached the
+  bucket). **The client holds no image cap** — the operator sets it (CON-281),
+  and a guess below it refuses files the server takes.
 - **A campaign update is a whole-resource PUT, and the server defaults every
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of
@@ -252,7 +280,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (CON-165): the server defaults it away on silence and *preserves*
   `used_asset_ids`, so the two fields are opposites and a builder that treats
   them alike is wrong about one of them.
-- **A post's type is a default, not a question** (`post-type-auto`, on). *Auto*
+- **A post's type is a default, not a question.** *Auto*
   is the empty `platform_post_type` every post is **already** created with —
   `useAddPost` sends a campaign and a date and nothing else — so the feature
   stores nothing and waits on no endpoint; it reads a state that already existed
@@ -263,8 +291,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   server's and not a judgement call: `requirePlatformIfNotDraft` refuses a PUT
   carrying an empty type under any other status, so a post that crossed it still
   automatic could not be saved again at all. Hence `canBeAutomatic`, read in both
-  directions — the picker offers *Auto* (and its older twin, the deselect row)
-  only to a draft, and the transition out is what pins. Pinning is one-way:
+  directions — the picker offers *Auto* only to a draft, and the transition out is what pins. Pinning is one-way:
   reopen to draft and the post keeps the slug it resolved to.
   The ladder is `text-post → image-post → carousel → video → reel → short →
   thread`, loosest first, bounded by what the *campaign* enables — Auto can only
@@ -272,9 +299,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   or Link post (editorial decisions the content cannot imply) nor a
   `whitelist_only` type (no rule to test). **`thread` is a rung wherever the
   post-type rule says `segmented`** — the server's own answer, which replaced a
-  hard-coded list of chain-capable networks here. Switch `post-type-auto` off
-  and the empty slug means what it always did — a `fail` in the checks bar and a
-  mark on the card. The ladder is also what a *pinned* thread demotes through
+  hard-coded list of chain-capable networks here. The ladder is also what a *pinned* thread demotes through
   when its body comes to one message (`demotedFrom`), with the chain rung
   barred so it cannot resolve straight back. See
   `docs/technical-decisions.md#auto-post-type`.
@@ -308,12 +333,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`postGoalTotal`), never as a campaign total.
 - **`/api/settings` is tenant-scoped, not user-scoped.** Every key is visible
   to the whole workspace via `GET /api/settings`. Personal preferences get
-  their identity from the key (`userScopedKey` →
-  `calendar.<userId>.<campaignId>`, `postsTable.<userId>`); never put anything
-  sensitive there. Use it for working habits that should follow the user
-  between devices — the posts table's sort order
-  (`docs/technical-decisions.md#posts-table-sort`) — and localStorage for
-  per-device display state. See `docs/technical-decisions.md#user-scoped-settings`.
+  their identity from the key (`userScopedKey` → `calendar.<userId>`,
+  `postsTable.<userId>`); never put anything sensitive there. Use it for
+  working habits that should follow the user between devices — the posts
+  table's sort order (`docs/technical-decisions.md#posts-table-sort`) — and
+  localStorage for per-device display state. See
+  `docs/technical-decisions.md#user-scoped-settings`.
 - **Every user-facing string is a catalogue entry — never a literal in a
   component.** New UI adds its keys to `src/i18n/resources/en.ts` *and* its
   translation to every other catalogue, and reads them through `t()`. This
@@ -442,7 +467,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   every flag that is on and has had a deploy goes, with its off-branch, in a
   commit that touches nothing else.
 - **On staging and in dev, a flag can be forced for one browser.** A
-  `?ff=tasks,-activity` link or the unlisted `/flags` panel writes an override
+  `?ff=tasks,-ideas` link or the unlisted `/flags` panel writes an override
   to localStorage, so one teammate can exercise a half-built feature on the
   shared deploy while everyone else sees the app as it ships. Deliberately
   *not* in `/api/settings` — that row is workspace-wide, which is the opposite
@@ -799,6 +824,28 @@ raw Markdown — so `**bold**` no longer spends 8 characters and the auto-split 
 longer cuts through a markup run. Both halves were the ask; neither is
 normalised on this side. The flag came out on 2026-09-18. See
 `docs/technical-decisions.md#thread-sequence`.
+
+**The workspace calendar is built and flagged off** (`workspace-calendar`). It
+is the campaign's calendar with the filter taken off, and deliberately the same
+components: both grids, the card, the rung ladder and the toolbar take the
+campaign as an argument, and `null` is what says there isn't one. Three things
+follow from that null and they are the whole difference — the cards name their
+campaign (`CardFields.campaign`, stamped by the view rather than switched by
+the user), nothing on the grid creates a post, and the view switch has no LIST
+segment because the table is a campaign's. Its rows come from
+`useWorkspacePosts` — `GET /api/posts`, which existed all along and which
+`useAssetUsage` and the auto-publish allowlist already read, under a key every
+post write invalidates. What it waits on is a **range**: that endpoint takes no
+parameters, so the grid pulls the whole workspace's hydrated posts however few
+weeks are showing (`docs/open-questions.md` P4). Not a correctness problem and
+not why the flag is off — the flag is off because a calendar that opens slowly
+is worse than one that isn't offered, and nobody has tried it on a large
+workspace yet.
+
+**Calendar preferences are one set per user, shared by every calendar**
+(`calendar.<userId>`). They used to be per campaign as well; see
+`docs/technical-decisions.md#user-scoped-settings` for why that was the wrong
+axis. Nothing was migrated, so the change reads as a one-off reset.
 
 **Two operator-tunable server limits are mirrored on the client with nothing to
 sync them** (CON-292). `platform_global_limits` is a single row an operator can

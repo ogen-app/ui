@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import {
   CircleDashedIcon,
+  ToolboxIcon,
   UserCircleIcon,
   WarningIcon,
 } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { cn, formatTitle } from '@/lib'
 import { formatDate } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
@@ -216,7 +216,6 @@ function PostCardComponent({
   band = 'full',
 }: PostCardProps) {
   const { t, i18n } = useTranslation()
-  const autoPostType = useFeatureFlag('post-type-auto')
   const title = formatTitle(post.title)
   const platformInfo = usePlatformCatalog().resolve(post.platform_id)
   // Fall back to a neutral, "undefined"-feeling dashed circle (in the muted
@@ -228,7 +227,7 @@ function PostCardComponent({
   // rather than the answer; the editor is where the answer is.
   const label = !platformInfo
     ? t('posts.noPlatform')
-    : autoPostType && !post.platform_post_type
+    : !post.platform_post_type
       ? t('posts.postType.auto')
       : getPostTypeLabel(platformInfo, post.platform_post_type)
   const statusLabel = postStatusLabel(t, post.status)
@@ -541,6 +540,27 @@ function PostCardComponent({
             <UserCircleIcon className="size-3.5 shrink-0" />
             <span className="truncate">
               {account.name ?? t('posts.noAccount')}
+            </span>
+          </div>
+        )}
+
+        {/* Row 5 — which campaign this belongs to, drawn only where that is
+            not already known from the page around the card (the workspace
+            calendar). Last, because it is the widest context the card carries
+            and the card reads inwards: when, what, where it goes out, who as,
+            and finally what body of work it is part of.
+
+            Unlike the account row above it, this one is skipped where there is
+            nothing to name: an unhydrated campaign is a gap in the payload
+            rather than a state of the post, so there is no "no campaign" worth
+            reporting — every post has one by construction. The toolbox is the
+            sidebar's own mark for Campaigns, so the row is recognisable as a
+            campaign without the word. */}
+        {fields.campaign && post.campaign && (
+          <div className="flex items-center gap-1 text-[12px]/[16px] text-tertiary-foreground min-w-0">
+            <ToolboxIcon className="size-3.5 shrink-0" />
+            <span className="truncate">
+              {formatTitle(post.campaign.name, t('calendar.untitledCampaign'))}
             </span>
           </div>
         )}

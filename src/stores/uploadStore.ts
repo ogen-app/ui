@@ -1,7 +1,11 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { uploadAssetFile } from '@/services/api/uploads'
-import { validateUploadFile, type UploadKind } from '@/lib/assetStatus'
+import { uploadAssetFile, uploadAudioFile } from '@/services/api/uploads'
+import {
+  validateUploadFile,
+  type UploadFailure,
+  type UploadKind,
+} from '@/lib/assetStatus'
 import { addToCampaign } from '@/lib/campaignMembership'
 import { attachToPost } from '@/lib/postSources'
 import { queryClient } from '@/lib/queryClient'
@@ -40,7 +44,7 @@ export type UploadItem = UploadTarget & {
   phase: UploadPhase
   progress: number // 0–100, meaningful while `uploading`
   assetId?: string
-  error?: string
+  error?: UploadFailure
 }
 
 type UploadState = {
@@ -76,14 +80,25 @@ export const useUploadStore = create<UploadState>()(
           ),
         }))
 
-      const start = (id: string, file: File, target: UploadTarget) => {
+      const start = (
+        id: string,
+        file: File,
+        kind: UploadKind,
+        target: UploadTarget,
+      ) => {
         patch(id, { phase: 'uploading', progress: 0, error: undefined })
-        uploadAssetFile(file, { onProgress: (p) => patch(id, { progress: p }) })
+        // A recording goes presign → storage → finalize rather than through
+        // the multipart endpoint, which refuses it; both answer in one shape.
+        const upload = kind === 'audio' ? uploadAudioFile : uploadAssetFile
+        upload(file, { onProgress: (p) => patch(id, { progress: p }) })
           .then((result) => {
             if (result.status === 'failed') {
               patch(id, {
                 phase: 'failed',
-                error: result.error ?? 'Upload failed',
+                error: {
+                  code: result.code,
+                  message: result.error ?? 'Upload failed',
+                },
               })
               return
             }
@@ -114,7 +129,9 @@ export const useUploadStore = create<UploadState>()(
           .catch((err: unknown) => {
             patch(id, {
               phase: 'failed',
-              error: err instanceof Error ? err.message : 'Upload failed',
+              error: {
+                message: err instanceof Error ? err.message : 'Upload failed',
+              },
             })
           })
       }
@@ -140,15 +157,15 @@ export const useUploadStore = create<UploadState>()(
                   ...base,
                   kind: null,
                   phase: 'failed' as const,
-                  error: validation.error,
+                  error: validation.failure,
                 }
           })
           if (items.length === 0) return
 
           set((state) => ({ items: [...state.items, ...items] }))
           for (const item of items) {
-            if (item.phase === 'uploading')
-              start(item.id, item.file, {
+            if (item.phase === 'uploading' && item.kind)
+              start(item.id, item.file, item.kind, {
                 campaignId: item.campaignId,
                 postId: item.postId,
               })
@@ -160,10 +177,11 @@ export const useUploadStore = create<UploadState>()(
           if (!item) return
           const validation = validateUploadFile(item.file)
           if (!validation.ok) {
-            patch(id, { phase: 'failed', error: validation.error })
+            patch(id, { phase: 'failed', error: validation.failure })
             return
           }
-          start(id, item.file, {
+          patch(id, { kind: validation.kind })
+          start(id, item.file, validation.kind, {
             campaignId: item.campaignId,
             postId: item.postId,
           })

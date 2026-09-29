@@ -62,12 +62,38 @@ export type BrandUsage = {
   published: number
 }
 
-/** How a voice handles the things that most obviously give it away. */
+/**
+ * How a voice handles the things that most obviously give it away.
+ *
+ * **Hashtags are not one of them, and they were.** A voice is how the workspace
+ * sounds, and it is one voice across every network — but *no hashtags* is a
+ * sentence about LinkedIn and *hashtag-heavy* is a sentence about Instagram, so
+ * a single answer here was always going to be wrong on at least one platform
+ * the moment it was given. It is a per-channel rule, and it belongs with the
+ * other per-channel rules (`channelNotes`, and the platform tables behind
+ * them). Dropping it is a real drop: the field goes off the wire too, and the
+ * server's `renderRules` leaves out what it is not sent, so nothing tells a
+ * generator about hashtags until the channel half is built.
+ */
 export type VoiceRules = {
   emoji: 'never' | 'sparingly' | 'freely'
-  hashtags: 'never' | 'few' | 'many'
   formality: 'casual' | 'neutral' | 'formal'
-  person: 'i' | 'we' | 'third'
+  /**
+   * Who is speaking — including **nobody**.
+   *
+   * `none` is the fourth answer and not the absence of one: plenty of brands
+   * write with no narrator at all, in copy that is about the thing rather than
+   * from a speaker, and forcing that voice to pick between *I*, *we* and *the
+   * company* puts a person into every post it generates.
+   *
+   * It is `''` on the wire — see `services/api/brand`. The server's enum has
+   * three members and accepts the empty string as *unset*, which is the only
+   * value it will take today and which `renderRules` already drops. So the
+   * choice survives a round trip and a voice that made it gets no person
+   * instruction at all, rather than the wrong one; saying it out loud needs a
+   * `none` in `voicePerson` (`docs/open-questions.md`).
+   */
+  person: 'i' | 'we' | 'third' | 'none'
   length: 'short' | 'medium' | 'long'
   /** How a post opens — the single most recognisable habit a voice has. */
   opening: string
@@ -306,19 +332,6 @@ export type BrandData = {
   guardrails: BrandGuardrails | null
   look: BrandLook | null
   templates: BrandTemplate[]
-}
-
-/** Whether a workspace has anything at all — the first-run branch. */
-export function isBrandEmpty(data: BrandData): boolean {
-  // The three sections that are offered — see `shown` in `lib/brandSections`.
-  // A workspace whose only brand material is a `look` it has no way to have
-  // written from this app is still, from the Overview's point of view, a
-  // workspace that has not started.
-  return (
-    data.voices.length === 0 &&
-    data.audiences.length === 0 &&
-    data.guardrails === null
-  )
 }
 
 /**

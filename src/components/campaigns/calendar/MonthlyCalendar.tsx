@@ -10,6 +10,7 @@ import { resolveForPlatform } from '@/lib/publishingAccount'
 import { hasVisibleProblem } from '@/lib/postValidation'
 import { MonthDensity } from './MonthDensity'
 import { PostCard } from './PostCard'
+import { withCampaignRow } from './cardFields'
 import { isDateLocked } from './LockMark'
 import { fitMonthCell } from './cardRungs'
 import { comparePostOrder } from '@/lib/postOrder'
@@ -24,7 +25,12 @@ import {
 import { cn } from '@/lib'
 
 type MonthlyCalendarProps = {
-  campaignId: string
+  /**
+   * The campaign this month belongs to, or `null` on the workspace calendar —
+   * see `WeeklyCalendar`, which takes it on the same terms. The cells name
+   * their campaign and offer no add affordance when it is `null`.
+   */
+  campaignId: string | null
   posts: Post[]
   /** The anchor day from the route; the visible month is derived from it. */
   anchor: Date
@@ -74,9 +80,13 @@ function MonthlyCalendarComponent({
   const [laneHeight, setLaneHeight] = useState(ASSUMED_LANE_HEIGHT)
   const { t, i18n } = useTranslation()
   const today = useMemo(() => new Date(), [])
-  const addPost = useAddPost(campaignId)
-  const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings(campaignId)
-  const fields = card.month
+  // Never called on the workspace grid — see `WeeklyCalendar`.
+  const addPost = useAddPost(campaignId ?? '')
+  const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings()
+  const fields = useMemo(
+    () => withCampaignRow(card.month, campaignId === null),
+    [card.month, campaignId],
+  )
   // The same fields with the pictures off, for the days that can't afford
   // them (see `fitMonthCell`). Built once rather than per cell: the object's
   // identity is a `memo` prop on every card, so a fresh one each render would
@@ -191,6 +201,7 @@ function MonthlyCalendarComponent({
                     resolvePlatform(post.platform_id),
                   ),
                 hasImage: Boolean(post.media_urls[0]),
+                hasCampaign: Boolean(post.campaign),
               }))
               // `null` means the day fits at no rung, with or without its
               // pictures — draw the summary. A cell cannot scroll the way a
@@ -264,7 +275,7 @@ function MonthlyCalendarComponent({
                         the plain create endpoint, which — unlike `schedule` —
                         never validates the date, so this is the only thing
                         keeping a post from being born already in the past. */}
-                    {!isPastDay(day) && (
+                    {campaignId !== null && !isPastDay(day) && (
                       <button
                         type="button"
                         onClick={() => addPost(day)}

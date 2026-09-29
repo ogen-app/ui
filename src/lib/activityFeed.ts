@@ -22,8 +22,8 @@
 // for `post.publish_failed`, and keeping both would report one failure twice —
 // once as a record and once as a re-reading of current state that disappears
 // the moment the post is edited. What the recorded half does not yet cover is
-// written down in the `activity` flag's comment, because it is a question for
-// the back end rather than a gap to paper over here.
+// written down in `docs/activity.md` (*Known, and not blocking*), because it is
+// a question for the back end rather than a gap to paper over here.
 //
 // The rule deciding what is allowed in here at all is edges vs levels — an
 // entry is a fact with a timestamp that stays true forever, never a condition
@@ -223,4 +223,33 @@ export function activityFeed(
       new Date(b.at).getTime() - new Date(a.at).getTime() ||
       (a.kind === 'report' ? 1 : 0) - (b.kind === 'report' ? 1 : 0),
   )
+}
+
+/**
+ * The entry the "seen before this visit" line sits above, or `null` for none.
+ *
+ * New is a notification that was unread when the reader arrived — still
+ * unread, or read on sight during this visit (`recent`). The line goes under
+ * the run of new rows at the top of the feed, directly after the last of them
+ * rather than before the first old notification, so a report or task entry in
+ * between sits below the line with the rest of what came before.
+ *
+ * Stable for the visit, because a row read on sight moves from unread to
+ * `recent` and stays new. No line when nothing is new, and none when nothing
+ * old follows — a rule with nothing on one side of it says nothing. An unread
+ * row further down, below some that were read, does not stretch the run: it
+ * keeps its own dot, and the line still marks where the top run ends.
+ */
+export function seenBeforeDivider(
+  entries: ActivityEntry[],
+  recent: ReadonlySet<string>,
+): string | null {
+  let lastNew = -1
+  for (const [index, entry] of entries.entries()) {
+    if (entry.kind !== 'notification') continue
+    const { id, read_at } = entry.notification
+    if (recent.has(id) || !read_at) lastNew = index
+    else return lastNew >= 0 ? (entries[lastNew + 1]?.id ?? null) : null
+  }
+  return null
 }

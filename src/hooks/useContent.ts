@@ -1,15 +1,32 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import {
   listAssets,
   getAsset,
+  getAudioStatus,
+  getAudioTranscript,
+  listAssetChunks,
+  reextractAudio,
+  reextractImage,
+  regenerateAltText,
+  retryAudio,
   createAsset,
   createUrlAsset,
   updateAsset,
   bulkTagAssets,
   deleteAsset,
 } from '@/services/api/content'
+import { i18next } from '@/i18n'
 import { retrievability } from '@/lib/campaignSources'
+import { isSessionExpiring } from '@/lib/sessionExpiry'
+import { ApiError } from '@/services/api/errors'
+import { toast } from '@/stores/toastStore'
 import type {
+  Asset,
   BulkTagPayload,
   CreateAssetPayload,
   UpdateAssetPayload,
@@ -71,6 +88,124 @@ export function useAsset(id: string) {
   })
 }
 
+export const assetChunksKey = (id: string) => ['assets', id, 'chunks'] as const
+
+/** How many chunks each "show more" brings in. */
+const CHUNK_PAGE = 100
+
+/**
+ * The asset's chunks, a page at a time (CON-312).
+ *
+ * Under `['assets', id]`, so anything that invalidates the asset — its own
+ * poll settling, an `asset.updated` event — takes the chunks with it: a
+ * re-extraction replaces every one of them. Enable it only once the asset has
+ * settled; while it is still being read there is nothing stable to page.
+ */
+export function useAssetChunks(id: string, { enabled }: { enabled: boolean }) {
+  return useInfiniteQuery({
+    queryKey: assetChunksKey(id),
+    queryFn: ({ pageParam }) => listAssetChunks(id, pageParam, CHUNK_PAGE),
+    initialPageParam: 0,
+    getNextPageParam: (last) => {
+      const next = last.offset + last.chunks.length
+      return next < last.total && last.chunks.length > 0 ? next : undefined
+    },
+    enabled: enabled && !!id,
+  })
+}
+
+export const audioStatusKey = (id: string) => ['assets', id, 'audio'] as const
+export const transcriptKey = (id: string) =>
+  ['assets', id, 'audio', 'transcript'] as const
+
+const AUDIO_SETTLED = new Set(['complete', 'partial', 'failed'])
+
+/**
+ * A recording's transcription run, watching itself until it settles — the
+ * asset's own poll says *that* it is still going, this says how far.
+ *
+ * A recording with no run yet answers `null`, and that only means "not yet"
+ * while the asset is still being read: once `assetSettled`, nothing is coming,
+ * and polling on would go on for as long as the screen stays open. A failed
+ * read stops it too — a re-run or an `asset.updated` invalidates this key, so
+ * the next run is still picked up.
+ */
+export function useAudioStatus(
+  id: string,
+  { assetSettled }: { assetSettled: boolean },
+) {
+  return useQuery({
+    queryKey: audioStatusKey(id),
+    queryFn: () => getAudioStatus(id),
+    enabled: !!id,
+    refetchInterval: (query) => {
+      if (query.state.status === 'error') return false
+      const status = query.state.data?.extraction.status
+      if (status) return AUDIO_SETTLED.has(status) ? false : PROCESSING_POLL_MS
+      return assetSettled ? false : PROCESSING_POLL_MS
+    },
+  })
+}
+
+/** The transcript, once there is one to read. */
+export function useAudioTranscript(
+  id: string,
+  { enabled }: { enabled: boolean },
+) {
+  return useQuery({
+    queryKey: transcriptKey(id),
+    queryFn: () => getAudioTranscript(id),
+    enabled: enabled && !!id,
+  })
+}
+
+/**
+ * Re-runs a recording's transcription: only its failed parts (`retry`), or
+ * the whole of it (`reextract`). Either way the asset goes back to being read,
+ * so everything under it is re-fetched — status, run, transcript.
+ */
+export function useRerunAudio(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (mode: 'retry' | 'reextract') =>
+      mode === 'retry' ? retryAudio(id) : reextractAudio(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: assetKey(id) })
+      qc.invalidateQueries({ queryKey: ASSETS_KEY, exact: true })
+    },
+  })
+}
+
+/**
+ * A fresh alt text for an image. The server saves it, so the cached asset is
+ * patched with it rather than refetched — a refetch mid-edit would bring the
+ * rest of the asset back with it.
+ */
+export function useRegenerateAltText(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => regenerateAltText(id),
+    onSuccess: (alt_text) => {
+      qc.setQueryData<Asset>(assetKey(id), (asset) =>
+        asset ? { ...asset, alt_text } : asset,
+      )
+      qc.invalidateQueries({ queryKey: ASSETS_KEY, exact: true })
+    },
+  })
+}
+
+/** Reads an image again; the asset goes back to pending and is watched. */
+export function useReextractImage(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => reextractImage(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: assetKey(id) })
+      qc.invalidateQueries({ queryKey: ASSETS_KEY, exact: true })
+    },
+  })
+}
+
 export function useCreateAsset() {
   const qc = useQueryClient()
   return useMutation({
@@ -110,9 +245,32 @@ export function useCreateUrlAsset() {
   })
 }
 
+/**
+ * Saves an asset.
+ *
+ * One refusal is worded here rather than by the default toast: `content_locked`
+ * (CON-312), a changed `content` on a PDF, office document or recording. No
+ * screen sends one — those types open read-only — so reaching it means the
+ * screen was wrong about what it had open, and the asset is re-read so the
+ * right screen replaces it.
+ */
 export function useUpdateAsset() {
   const qc = useQueryClient()
   return useMutation({
+    meta: { errorToast: false },
+    onError: (err, { id }) => {
+      // The default toast's own guard, which opting out skips: a 401 has
+      // already started the redirect to the login screen.
+      if (isSessionExpiring()) return
+      if (err instanceof ApiError && err.code === 'content_locked') {
+        toast.error(i18next.t('content.locked.title'), {
+          description: i18next.t('content.locked.body'),
+        })
+        qc.invalidateQueries({ queryKey: assetKey(id) })
+        return
+      }
+      toast.error(err instanceof Error ? err.message : 'Unable to update asset')
+    },
     mutationFn: ({
       id,
       payload,

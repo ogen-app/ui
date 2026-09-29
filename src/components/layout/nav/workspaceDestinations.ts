@@ -151,7 +151,6 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
 export function useWorkspaceMenuEntries(): WorkspaceDestination[] {
   const { t } = useTranslation()
   const destinations = useWorkspaceDestinations()
-  const activityEnabled = useFeatureFlag('activity')
 
   const entries = [...destinations]
 
@@ -163,15 +162,13 @@ export function useWorkspaceMenuEntries(): WorkspaceDestination[] {
     isActive: (p) => p.startsWith('/foundation'),
   })
 
-  if (activityEnabled) {
-    entries.push({
-      id: 'activity',
-      label: t('nav.activity'),
-      icon: BellSimpleIcon,
-      to: '/activity',
-      isActive: (p) => p.startsWith('/activity'),
-    })
-  }
+  entries.push({
+    id: 'activity',
+    label: t('nav.activity'),
+    icon: BellSimpleIcon,
+    to: '/activity',
+    isActive: (p) => p.startsWith('/activity'),
+  })
 
   entries.push({
     id: 'workspace-settings',

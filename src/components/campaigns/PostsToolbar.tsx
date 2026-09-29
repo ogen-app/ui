@@ -5,7 +5,6 @@ import {
   CalendarDotsIcon,
   CaretLeftIcon,
   CaretRightIcon,
-  ListDashesIcon,
   PlusIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
@@ -29,7 +28,13 @@ import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 
 type PostsToolbarProps = {
-  campaignId: string
+  /**
+   * The campaign whose posts are being arranged, or `null` on the workspace
+   * calendar. Two things come off it: where the view switch navigates, and
+   * whether there is an ADD POST at all — a new post needs a campaign to be
+   * created in, and "every campaign" is not one.
+   */
+  campaignId: string | null
   view: 'week' | 'month' | 'list'
   /** Present only on the calendar; drives the range label and date nav. */
   anchor?: Date
@@ -58,8 +63,22 @@ function formatWeekRange(weekStart: Date, locale: string): string {
 }
 
 /**
- * Toolbar shared by the posts views: date range (calendar only), the
- * WEEK / MONTH / LIST switch, date navigation, and ADD POST.
+ * Toolbar shared by the two posts screens: the date range and the WEEK / MONTH
+ * switch on the calendar, the count on the list, and ADD POST on both.
+ *
+ * **The list is not a third view of the calendar, and the switch no longer
+ * pretends it is.** It was WEEK / MONTH / LIST, three segments of one control,
+ * which said that the table is a way of looking at a week — and it is not: it
+ * has no range at all, it is every post in the campaign. The two are separate
+ * destinations with their own rows in the rail (`lib/campaignSections`), so the
+ * switch now only picks a granularity, and it only appears where a granularity
+ * is a question. What the list keeps is the half of the toolbar that is about
+ * the posts rather than about the date: how many there are, and the way to add
+ * one.
+ *
+ * The workspace calendar takes the same toolbar with `campaignId: null`, which
+ * drops ADD POST — a new post needs a campaign to be created in. What is left
+ * is what the workspace grid actually offers: where you are, and how to move.
  */
 export function PostsToolbar({
   campaignId,
@@ -70,7 +89,8 @@ export function PostsToolbar({
 }: PostsToolbarProps) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const addPost = useAddPost(campaignId)
+  // Never called where the button isn't drawn; hooks don't take a branch.
+  const addPost = useAddPost(campaignId ?? '')
   // The toolbar's ADD POST is where a post allowance is answered, because it is
   // the one entry point that is on screen in all three views. The calendar's
   // click-to-create cells are deliberately left ungated: they are a gesture
@@ -78,33 +98,31 @@ export function PostsToolbar({
   // worth of explanation, and the server's own refusal already arrives as a
   // sentence under the action's name (CON-295).
   const gate = useUpgradeGate('posts_total')
-  const { firstDayOfWeek, isPending: settingsPending } =
-    useCalendarSettings(campaignId)
+  const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings()
   const isCalendar = view === 'week' || view === 'month'
 
-  const handleViewSelect = (next: string) => {
+  const handleViewSelect = (next: 'week' | 'month') => {
     if (next === view) return
-    if (next === 'week' || next === 'month') {
-      // The anchor is granularity-free by design (see `calendar/date.ts`), so
-      // switching views keeps the day you were looking at and only re-derives
-      // the range around it.
+    // The anchor is granularity-free by design (see `calendar/date.ts`), so
+    // switching views keeps the day you were looking at and only re-derives
+    // the range around it.
+    const nextAnchor = formatAnchor(anchor ?? new Date())
+    if (campaignId === null) {
+      navigate({
+        to: '/calendar/$anchor/$view',
+        params: { anchor: nextAnchor, view: next },
+      })
+    } else {
       navigate({
         to: '/campaigns/$campaignId/calendar/$anchor/$view',
-        params: {
-          campaignId,
-          anchor: formatAnchor(anchor ?? new Date()),
-          view: next,
-        },
+        params: { campaignId, anchor: nextAnchor, view: next },
       })
-    } else if (next === 'list') {
-      navigate({ to: '/campaigns/$campaignId/list', params: { campaignId } })
     }
   }
 
   /**
-   * The three arrangements of the same posts. Two calendars that differ by
-   * how much they hold — one date marked, then many — and a list, which is
-   * the grouping that is actually there.
+   * The two arrangements of the calendar: the same posts, differing by how
+   * much of the plan is on screen at once — one week marked out, then a month.
    *
    * Built per render rather than hoisted, so the names come from whichever
    * language is loaded now; a module-level array would freeze the first one.
@@ -112,8 +130,7 @@ export function PostsToolbar({
   const views = [
     { value: 'week', Icon: CalendarDotIcon, label: t('calendar.viewWeek') },
     { value: 'month', Icon: CalendarDotsIcon, label: t('calendar.viewMonth') },
-    { value: 'list', Icon: ListDashesIcon, label: t('calendar.viewList') },
-  ]
+  ] as const
 
   /** One step of whatever the current view shows — a week, or a month. */
   const step = (direction: 1 | -1) => {
@@ -187,15 +204,18 @@ export function PostsToolbar({
         )}
 
         {/* The view switch stays beside ADD POST; the date navigator sits to
-            their left rather than between them. */}
+            their left rather than between them. The list has no switch at all
+            — it is not a granularity — so ADD POST moves up against the count
+            rather than leaving a gap where a control used to be. */}
         <div className="flex items-center gap-2">
-          <Tabs value={view}>
-            <TabsList variant="segmented" size="excluded">
-              {views.map(({ value, Icon, label }) => (
-                // The tooltip is what the label used to do for a sighted
-                // reader; `aria-label` keeps saying it to everyone else.
-                <Tooltip key={value}>
-                  {/* The span is the tooltip's trigger, not the tab. Both
+          {isCalendar && (
+            <Tabs value={view}>
+              <TabsList variant="segmented" size="excluded">
+                {views.map(({ value, Icon, label }) => (
+                  // The tooltip is what the label used to do for a sighted
+                  // reader; `aria-label` keeps saying it to everyone else.
+                  <Tooltip key={value}>
+                    {/* The span is the tooltip's trigger, not the tab. Both
                       primitives write `data-state`, and merged onto one
                       element the tooltip's wins — the selected segment loses
                       its fill. The wrapper has to keep a box of its own (the
@@ -204,37 +224,40 @@ export function PostsToolbar({
                       accessibility tree instead: `presentation` is what keeps
                       the tab a child of the tablist. The tooltip still answers
                       the keyboard — focus bubbles to it from the button. */}
-                  <TooltipTrigger asChild>
-                    <span role="presentation" className="inline-flex">
-                      <TabsTrigger
-                        variant="segmented"
-                        size="icon"
-                        value={value}
-                        aria-label={label}
-                        onClick={() => handleViewSelect(value)}
-                      >
-                        {/* Bold: at 16px the regular weight goes spindly
+                    <TooltipTrigger asChild>
+                      <span role="presentation" className="inline-flex">
+                        <TabsTrigger
+                          variant="segmented"
+                          size="icon"
+                          value={value}
+                          aria-label={label}
+                          onClick={() => handleViewSelect(value)}
+                        >
+                          {/* Bold: at 16px the regular weight goes spindly
                             against the type beside it, and the dots that tell
                             the two calendars apart stop reading. */}
-                        <Icon weight="bold" />
-                      </TabsTrigger>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">{label}</TooltipContent>
-                </Tooltip>
-              ))}
-            </TabsList>
-          </Tabs>
+                          <Icon weight="bold" />
+                        </TabsTrigger>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">{label}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </TabsList>
+            </Tabs>
+          )}
 
-          <Button
-            variant="default"
-            onClick={gate.intent(() => {
-              addPost()
-            })}
-          >
-            <PlusIcon />
-            <span>{t('calendar.addPost')}</span>
-          </Button>
+          {campaignId !== null && (
+            <Button
+              variant="default"
+              onClick={gate.intent(() => {
+                addPost()
+              })}
+            >
+              <PlusIcon />
+              <span>{t('calendar.addPost')}</span>
+            </Button>
+          )}
         </div>
       </div>
       <UpgradeDialog gate={gate} />

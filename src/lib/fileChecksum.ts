@@ -10,10 +10,10 @@
  * A PDF's `asset_files` row carries no checksum, so the same PDF uploaded twice
  * really does produce two documents, and warning about it would be wrong.
  *
- * The whole file goes through memory, which is why the caller hashes after
- * `validateUploadFile` has passed it: the image cap is 10 MB, so the worst case
- * is a 10 MB buffer and a few tens of milliseconds. Never hash a file that
- * failed validation — the cap is what makes this cheap.
+ * The whole file goes through memory, which is why the caller hashes only
+ * after `validateUploadFile` has passed it, and only below a size ceiling of
+ * its own (`UploadModal`'s `MAX_HASHED_BYTES`) — the image cap is the
+ * operator's since CON-281, so it no longer bounds the buffer.
  *
  * `crypto.subtle` needs a secure context. localhost and https both are, so in
  * practice it is always there; the caller still treats a rejection as "no

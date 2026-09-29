@@ -257,6 +257,25 @@ describe('what the board is not showing', () => {
 
     expect(view.hidden).toBe(0)
   })
+
+  it('reads a null list as an empty one, which is how the server sends it', () => {
+    // A window of four posts fills `best`, and `worst` comes back as a Go nil
+    // slice rather than `[]`.
+    const view = buildPerformersView(
+      t,
+      board({
+        best: [row(), row({ post_id: 'p2' })],
+        worst: null,
+        insights: null,
+        total_posts: 2,
+      }),
+    )
+
+    expect(view.best).toHaveLength(2)
+    expect(view.worst).toEqual([])
+    expect(view.insights).toEqual([])
+    expect(view.hidden).toBe(0)
+  })
 })
 
 describe('the row’s supporting line', () => {

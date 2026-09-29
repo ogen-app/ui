@@ -15,12 +15,20 @@ import { resolveForPlatform } from '@/lib/publishingAccount'
 import { hasVisibleProblem } from '@/lib/postValidation'
 import { isDateLocked } from './LockMark'
 import { PostCard } from './PostCard'
+import { withCampaignRow } from './cardFields'
 import { CARD_RUNGS, pickRung, stackHeight, type CardRung } from './cardRungs'
 import { dayLabel, isSameDay, visibleWeekDays, weekdayLabel } from './date'
 import { cn } from '@/lib'
 
 type WeeklyCalendarProps = {
-  campaignId: string
+  /**
+   * The campaign this week belongs to, or `null` on the workspace calendar,
+   * where the week belongs to all of them. Two things follow from `null` and
+   * they are the whole difference between the two grids: the cards name their
+   * campaign (`withCampaignRow`), and there is nowhere for an ADD POST to put
+   * a new post, so the day offers none.
+   */
+  campaignId: string | null
   posts: Post[]
   /** The anchor day from the route; the visible week is derived from it. */
   anchor: Date
@@ -68,9 +76,17 @@ function WeeklyCalendarComponent({
   const [hoverKey, setHoverKey] = useState<string | null>(null)
   const { t, i18n } = useTranslation()
   const today = useMemo(() => new Date(), [])
-  const addPost = useAddPost(campaignId)
-  const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings(campaignId)
-  const fields = card.week
+  // Never called on the workspace grid — the button that would call it isn't
+  // rendered there — but hooks don't take a branch, so it is given the empty
+  // campaign a disabled create would refuse anyway.
+  const addPost = useAddPost(campaignId ?? '')
+  const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings()
+  // Memoized because the identity is a `useMemo` dependency below and a `memo`
+  // prop on every card — see `withCampaignRow`.
+  const fields = useMemo(
+    () => withCampaignRow(card.week, campaignId === null),
+    [card.week, campaignId],
+  )
   const { dragOverKey, laneHandlers } = useCalendarDrop(campaignId, posts)
   // One read of the cached platform list for the whole grid; the cards call
   // the hook form for themselves and get the same answer.
@@ -137,10 +153,14 @@ function WeeklyCalendarComponent({
         const dayPosts = postsByDay.get(day.toDateString()) ?? []
         // Past days draw no ADD POST button, so they have that much more room
         // for cards — the rung is per column, and so is what is in the column.
+        // Nor does any day on the workspace grid, which has no campaign to add
+        // to: reserving the space there would cost every column a card's worth
+        // of height for a button that is never drawn.
+        const addable = campaignId !== null && !isPastDay(day)
         const available =
           laneHeight === null
             ? 0
-            : laneHeight - (isPastDay(day) ? 0 : ADD_BUTTON_SPACE)
+            : laneHeight - (addable ? ADD_BUTTON_SPACE : 0)
         const facts = dayPosts.map((post) => ({
           hasTime: Boolean(post.scheduled_at ?? post.published_at),
           // Resolved exactly as the card resolves it, from one platform-list
@@ -162,6 +182,9 @@ function WeeklyCalendarComponent({
           // (`media_urls[0]` there too) — `length > 0` would charge a 100px
           // band for a post whose first URL is the empty string.
           hasImage: Boolean(post.media_urls[0]),
+          // As the card decides whether to draw the row: a campaign that came
+          // back unhydrated has no name to print, so it costs no height.
+          hasCampaign: Boolean(post.campaign),
         }))
         const rung =
           laneHeight === null
@@ -185,6 +208,7 @@ function WeeklyCalendarComponent({
         }
       }),
     [
+      campaignId,
       days,
       today,
       postsByDay,
@@ -297,7 +321,7 @@ function WeeklyCalendarComponent({
                   plain create endpoint, which — unlike `schedule` — never
                   validates the date, so this is the only thing keeping a post
                   from being born already in the past. */}
-              {!isPastDay(col.day) && (
+              {campaignId !== null && !isPastDay(col.day) && (
                 <button
                   type="button"
                   onClick={() => addPost(col.day)}

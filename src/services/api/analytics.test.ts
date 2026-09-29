@@ -10,6 +10,7 @@ import {
 import type {
   AnalyticsLearnings,
   AnalyticsOverview,
+  PerformerRow,
   PerformersBoard,
 } from '@/types/analytics'
 
@@ -148,7 +149,7 @@ describe('fetchAnalyticsOverview', () => {
   })
 })
 
-const ROW: PerformersBoard['best'][number] = {
+const ROW: PerformerRow = {
   post_id: 'p1',
   publisher_post_id: 'z1',
   title: 'How we cut our render time in half',
@@ -221,7 +222,7 @@ describe('fetchPerformers', () => {
       }),
     )
 
-    const row = (await fetchPerformers()).data?.best[0]
+    const row = (await fetchPerformers()).data?.best?.[0]
 
     expect(row?.platform).toBe('linkedin')
     expect(row?.account).not.toHaveProperty('platform')
@@ -255,7 +256,7 @@ describe('fetchPerformers', () => {
       }),
     )
 
-    const row = (await fetchPerformers()).data?.best[0]
+    const row = (await fetchPerformers()).data?.best?.[0]
 
     expect(row?.against_typical).toBeNull()
     expect(row?.baseline).toBe('insufficient_history')

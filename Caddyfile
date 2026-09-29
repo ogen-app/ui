@@ -20,6 +20,13 @@
 		}
 	}
 
+	# The "This wasn't me" page carries its token in the URL (CON-318). The
+	# policy has to arrive with the document: the page's own
+	# `useNoReferrer` only runs after the scripts and favicon index.html
+	# asks for have already been requested with the full URL as Referer.
+	@secureAccount path /auth/secure-account /auth/secure-account/
+	header @secureAccount Referrer-Policy "no-referrer"
+
 	# SPA: static assets, falling back to index.html for client-side routes.
 	handle {
 		root * /srv

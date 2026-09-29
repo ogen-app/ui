@@ -283,8 +283,8 @@ export function buildPerformersView(
   const by = PERFORMER_BASES.includes(board.by)
     ? board.by
     : DEFAULT_PERFORMER_BASIS
-  const best = board.best.map((row) => readRow(t, row, by))
-  const worst = board.worst.map((row) => readRow(t, row, by))
+  const best = (board.best ?? []).map((row) => readRow(t, row, by))
+  const worst = (board.worst ?? []).map((row) => readRow(t, row, by))
 
   return {
     period: readPeriod(t, board),
@@ -296,7 +296,7 @@ export function buildPerformersView(
     // separately server-side, and a negative "and N more" is worse than none.
     hidden: Math.max(0, board.total_posts - best.length - worst.length),
     withoutBaseline: [...best, ...worst].filter((r) => r.pace === null).length,
-    insights: board.insights.map(readInsight),
+    insights: (board.insights ?? []).map(readInsight),
     lastRefreshedAt: checkedAt(board.updated_at),
   }
 }

@@ -68,7 +68,9 @@ export function UploadRow({ item }: { item: UploadItem }) {
         </span>
         <div className="flex items-center gap-1 shrink-0">
           <StatusBadge tone={badge.tone} label={badge.label} />
-          {item.phase === 'failed' && (
+          {/* Not for a file refused before it was sent: retrying re-runs the
+              same check on the same file. */}
+          {item.phase === 'failed' && item.kind !== null && (
             <Button
               variant="ghost"
               size="xsIcon"

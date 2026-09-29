@@ -249,11 +249,22 @@ keep working.
 
 ## Personal preferences namespace themselves into the tenant settings table {#user-scoped-settings}
 
-**Decision.** Calendar preferences (first day of week, hidden days) are stored
-per user *and* per campaign, under the key
-`calendar.<userId>.<campaignId>` in the backend's `/api/settings` key/value
-store. They used to be a `persist`ed Zustand store; they are server state now,
-so they live in the Query cache like everything else fetched.
+**Decision.** Calendar preferences (first day of week, hidden days, which rows
+a card may draw, whether pictures back them) are stored **per user**, under the
+key `calendar.<userId>` in the backend's `/api/settings` key/value store. They
+used to be a `persist`ed Zustand store; they are server state now, so they live
+in the Query cache like everything else fetched.
+
+They were also filed **per campaign** until 2026-09-18, on the reasoning that a
+launch campaign somebody works weekends on and an evergreen one they don't
+shouldn't share a week shape. What that produced in practice was a preference
+the user had to set again in every campaign they opened, and which then drifted
+— the same person reading the same posts through two different cards depending
+on which way in they took. Which days you want to see is a fact about how *you*
+read a calendar, not about the campaign you are reading; the workspace calendar
+is what settled it, since it has no campaign to be filed under at all. Nothing
+was migrated: a blob under the old key is simply no longer read, and the first
+visit afterwards starts from the defaults.
 
 **Why.** The API has no user-scoped store — `settings` is **tenant-scoped**
 (`tenant_id` + `key` as the primary key) and `users` has no preferences
@@ -581,46 +592,62 @@ would be two sources of truth and no correction.
 
 ## An asset opens as a document only if we know it is one {#asset-opening}
 
-**Decision.** `AssetDocument` asks `opensAsDocument` (`lib/assetCategory.ts`)
-before it reaches the editor. `null | MD | PDF | URL` are documents; everything
-else — including a `type` this build has never seen — gets `UnsupportedAsset`, a
-read-only state, and loses the "Download as Markdown" item with it.
+**Decision.** `AssetDocument` asks `assetScreen` (`lib/assetKind.ts`) which
+screen an asset gets, and the editor is one named answer rather than the
+fallback:
+
+| Screen | Types | What it is |
+| --- | --- | --- |
+| `editor` | `null`, `MD`, `URL` | BlockNote, autosaving `content` |
+| `extracted` | `PDF`, `DOC` | the chunks, read-only (`AssetExtractedView`) |
+| `image` | `IMG` | the picture, alt text and description (`AssetImageView`) |
+| `audio` | `AUDIO` | the player and transcript (`AssetAudioView`) |
+| `unsupported` | anything else | a read-only state (`UnsupportedAsset`) |
+
+Only the editor offers "Download as Markdown", since on every other screen
+`content` is a placeholder, a description or a transcript.
 
 **Why.** The screen used to treat the editor as its fallback: a URL asset still
 being scraped got `ScrapeState`, and *anything else* got `AssetEditor`. That is
 only safe while every asset is text, and the server's vocabulary grows without
-asking the client — `MD | PDF` became `MD | PDF | URL` in CON-222 and takes
-`IMG` next. `AssetEditor` seeds BlockNote from `asset.content` and autosaves it
-back, so the first asset type whose `content` is not a document is silently
-overwritten by anyone who opens it and types. CON-105 writes image assets with
-`content = "[]"`, which renders as an editable paragraph reading `[]` over a
-field that is meant to hold the image's description (CON-16 D4). Filed as
-CON-235.
+asking the client — `MD | PDF` has since gained `URL` (CON-222), `IMG`
+(CON-246), `DOC` (CON-280) and `AUDIO` (CON-282). `AssetEditor` seeds BlockNote
+from `asset.content` and autosaves it back, so the first asset type whose
+`content` is not a document is silently overwritten by anyone who opens it and
+types. CON-105 wrote image assets with `content = "[]"`, which rendered as an
+editable paragraph reading `[]` over a field meant to hold the image's
+description (CON-16 D4). Filed as CON-235.
 
-Two consequences worth keeping:
+Three consequences worth keeping:
 
-- **PDF is a document.** What you edit there is the extracted text, and that
-  text is what the embeddings are built from — so the rule is about the *body*,
-  not about whether bytes sit behind the row.
+- **PDF left the editor** (CON-313). It was filed as a document on the argument
+  that its extracted text is what the embeddings are built from — and that is
+  still true, but the text was never in `content`. The PDF job, like the
+  document one, writes chunks and leaves `content` at the upload's `"[]"`
+  placeholder, so the editor showed every real PDF as two brackets. And since
+  CON-312 the server refuses a changed `content` on PDF, DOC and AUDIO (409
+  `content_locked`), because saving would re-chunk the text and lose the anchors
+  the assistant cites ("Slide 4", "Sheet 'Q3' rows 10–24"). So the extracted
+  screen reads `GET /:id/chunks` and shows each chunk under its label; the title
+  is the only field it writes. The same placeholder is why the list states a
+  PDF by its pages and a document by its size rather than counting words.
+- **Saves send `content` only once it has been edited.** An empty or unchanged
+  `content` keeps the stored value (CON-312), so a rename is a title-only PUT
+  and can never trip `content_locked`. A `content_locked` that does arrive means
+  the screen was wrong about what it had open; `useUpdateAsset` words it and
+  re-reads the asset.
 - **The fallback is a floor, not a destination.** A kind worth showing properly
-  gets its own view and stops arriving here, and `IMG` is the first to do it:
-  CON-246 settled the DTO field for the original (`AssetFile.url`), so
-  `AssetImageView` renders the picture with its alt text and description beside
-  it. `opensAsDocument` still answers `false` for an image — it is not a
-  document and never opens in the editor — so the two rules compose rather than
-  compete. What reaches `UnsupportedAsset` now is only a kind this build has
+  gets its own screen and stops arriving there — `IMG` first, then `DOC` and
+  `AUDIO` — so what reaches `UnsupportedAsset` is only a kind this build has
   genuinely never heard of.
 
-**One further consequence, found while wiring that up.** The asset update is a
-whole-resource PUT and the handler assigns `tag_ids` and `alt_text` from the
-request unconditionally, so a payload naming only what changed erases the rest.
-`AssetDocument` had been sending `{title, content}`, which had been silently
-untagging every asset anyone renamed — invisible only because nothing in the app
-sets a tag. Every save now goes through `assetToPayload` (`lib/assetPayload.ts`),
-the same round-trip `campaignToPayload` does for the same reason. The image
-screen debounces the *asset* rather than each field for the matching reason: two
-saves in flight each carry a stale copy of the other's field, and the second to
-land wins.
+**One further consequence, found while wiring up images.** The asset update was
+then a whole-resource PUT, so a payload naming only what changed erased the rest,
+and every rename had been silently untagging the asset. That was fixed on the
+server instead (CON-279): `alt_text` and `tag_ids` are presence-aware, so a
+screen sends only the fields it owns. The image screen still debounces the
+*asset* rather than each field, because two saves in flight each carry a stale
+copy of the other's field and the second to land wins.
 
 ## English is bundled, every other language is a chunk {#i18n}
 
@@ -730,7 +757,7 @@ Releasing it is `enabled: true`.
 
 **Decision.** `useFeatureFlag`/`isFeatureEnabled` resolve
 `readFlagOverrides()[flag] ?? FEATURE_FLAGS[flag]`. The override set lives in
-**localStorage**, is set by a bookmarkable `?ff=tasks,-activity` link or the
+**localStorage**, is set by a bookmarkable `?ff=tasks,-ideas` link or the
 unlisted `/flags` panel, and the whole layer is compiled out of any build that
 was not made with `VITE_DEV_TOOLS=1`.
 
@@ -1007,7 +1034,8 @@ entries in `lib/platformDictionary.ts`.
 `platform_post_type` a post is **already** created with. While a post is
 automatic the format is derived on every render from the body and the
 attachments (`lib/postTypeAuto`); the slug is written to the record only when
-the post is committed. On since 2026-09-18, behind `post-type-auto` until then.
+the post is committed. On since 2026-09-18; the `post-type-auto` flag came out
+with its off-branch on 2026-09-28.
 
 **Why.** Choosing between "Text post" and "Image post" is the first thing the
 editor asks and the last thing an author has an opinion about. Those are not
@@ -1053,9 +1081,9 @@ Two things came out of that, and both read the same predicate,
   [Scheduling](#schedule-endpoint)), so a pin list written in terms of
   "scheduling" missed it entirely and the request went out with no type on it.
 - **The picker offers the empty slug only to a draft.** Auto is not in the menu
-  once the post is out — and neither is the *Deselect post type* row, which
-  predates this feature and had always failed the same way, quietly, on any
-  non-draft post.
+  once the post is out. The *Deselect post type* row that predated Auto is gone
+  altogether: it wrote the same empty slug, and on any non-draft post it had
+  always failed the same way, quietly.
 
 **The ladder.** `text-post → image-post → carousel → video → reel → short →
 thread`, least demanding first, so the winner is the *loosest* type the post
@@ -1092,11 +1120,38 @@ type", which is the one thing the author did not do wrong. That row is built in
 the route rather than in `evaluatePost`, which is a pure module with no `t`; it
 is the same arrangement the thread row uses.
 
+**Checked against the server before it went on** (`ogen` `origin/main`,
+2026-09-18), because the ladder is a claim about the Go read off its source:
+
+- **The rules are not seeded.** `postTypeRules` in
+  `domain/platforms/post_types.go` is a hard-coded table keyed by slug, projected
+  onto the wire by `ResolvePostTypeRules`, so `allowed_kinds`, `min_` and
+  `max_attachments` cannot be "seeded loosely". What *is* per-platform is which
+  slugs are offered and the constraint blocks the sentinels resolve against.
+  `max_content_chars` never arrives as `0`: unbounded is `null` on the wire.
+- **`fits` mirrors `ValidatePostType` with one rule left out.**
+  `requires_video_title` (CON-148) binds YouTube alone, whose only types —
+  `video` and `short` — are both video-kind and both bound by it, so no choice
+  Auto makes avoids it and modelling it would change no answer. If a platform
+  ever offers a titled video type beside an untitled non-video one, that is the
+  line to add. `max_title_chars` is out for the same reason: it fails every
+  candidate equally.
+- **`requires_content` is an exact mirror**, though the two sources don't look
+  it: the server trims before testing for empty and the character ceiling does
+  not, but both flatteners end in a trim, so `shape.chars === 0` answers the same
+  question. Tested on this side.
+
+**Two things to watch.** `text-post` is the rung everything rests on, and
+CON-206 plans to merge it into `image-post` with `min_attachments: 0` — that
+doesn't break Auto (the walk stops one rung earlier) but it changes what every
+post resolves to, so test the two together. And the chain rung arrived in the
+same window as Auto itself, so neither has been watched choosing against the
+other on a live network.
+
 **Where.** `lib/postTypeAuto.ts` (+ test), `hooks/useCampaignPostTypes.ts`, the
 resolution in `hooks/usePostMedia.ts`, the *Auto* entry in
 `quickBar/ChannelPickers.tsx`, the pin and the unfit row in the post route,
-`hasVisibleProblem` in `lib/postValidation.ts`, `PostCard`'s label, and the
-`post-type-auto` flag, which is still in the record for one cycle.
+`hasVisibleProblem` in `lib/postValidation.ts`, and `PostCard`'s label.
 
 ## A brand binding is four ids, resolved and never copied {#brand-binding}
 

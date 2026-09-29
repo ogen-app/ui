@@ -170,6 +170,43 @@ export const en = {
       brokenBody:
         'Open the link straight from the email, or <request>request a new one</request>.',
     },
+    /**
+     * Where the "This wasn't me" link in the new-device sign-in email lands
+     * (CON-318). `<reset>` goes to Forgot password — or to Profile for someone
+     * still signed in, whom Forgot password would bounce.
+     */
+    secureAccount: {
+      title: 'Secure your Ogen account',
+      intro: 'We noticed a new sign-in to <strong>{{email}}</strong>:',
+      detailsLabel: 'Sign-in details',
+      whenLabel: 'When',
+      deviceLabel: 'Device',
+      ipLabel: 'IP address',
+      locationLabel: 'Approximate location',
+      explainer:
+        "If this wasn't you, secure your account. We'll sign out every session on every device — including this one — and you'll set a new password right away.",
+      submit: 'SECURE MY ACCOUNT',
+      wasMe: 'This was me',
+      /** Network or server failure — nothing was revoked, so retrying is safe. */
+      failed: "We couldn't reach Ogen, so nothing has changed yet. Try again.",
+      rateLimited_one: 'Too many attempts. Try again in {{count}} minute.',
+      rateLimited_other: 'Too many attempts. Try again in {{count}} minutes.',
+      loadFailedTitle: "We couldn't check this link",
+      loadFailedSubtitle:
+        'Something went wrong on our side — the link itself may still be fine',
+      usedTitle: 'This link has already been used',
+      usedBody: 'Your account was secured and all sessions were signed out.',
+      usedReset:
+        'Still need to set a new password? <reset>Reset it here</reset>.',
+      expiredTitle: 'This link has expired',
+      expiredBody:
+        'Links are valid for 24 hours. Resetting your password also signs out every session.',
+      expiredSubmit: 'RESET MY PASSWORD',
+      invalidTitle: "This link isn't valid",
+      invalidBody: 'Check you opened the full link from the email.',
+      invalidReset:
+        'Worried about your account? <reset>Reset your password</reset>.',
+    },
     /** The emailed invitation's landing page (CON-26). */
     invite: {
       title: 'Join the workspace',
@@ -449,8 +486,6 @@ export const en = {
     },
     detail: {
       back: 'Back to series',
-      created: '{{name}} created',
-      saved: '{{name}} saved',
       deleted: '{{name}} deleted',
       notFoundHeader: 'No such series',
     },
@@ -484,7 +519,6 @@ export const en = {
         'A starting point when a campaign picks this up. Each campaign sets its own, so two can run it at different rates.',
       needsName: 'Give the series a name',
       create: 'CREATE SERIES',
-      save: 'SAVE SERIES',
       dangerNoun: 'SERIES',
       deleteCost:
         'Posts already written keep their text. Every campaign running this one stops, and the plan gives their slots back.',
@@ -653,8 +687,6 @@ export const en = {
         'The same feed as the workspace\u2019s, narrowed to what happened inside this campaign.',
     },
     title: 'Activity',
-    /** Capitals are the copy, as on every other list's header action. */
-    markAllRead: 'MARK ALL READ',
     loadFailed: 'Unable to load activity',
     /**
      * One of the feed's sources failed while another answered. The feed still
@@ -690,6 +722,16 @@ export const en = {
     },
     /** The dot's accessible name — the only thing that says what it means. */
     unread: 'Unread',
+    /**
+     * The ring's accessible name: seen for the first time on this visit, and
+     * already read as far as the badge is concerned.
+     */
+    recent: 'New',
+    /**
+     * The line under what is new on this visit — labelled on the old side,
+     * because in a newest-first feed “new” is simply the top.
+     */
+    seenBefore: 'Seen before this visit',
     /** Relative day names, used instead of a date for the two recent ones. */
     today: 'Today',
     yesterday: 'Yesterday',
@@ -871,11 +913,6 @@ export const en = {
   },
 
   calendar: {
-    stub: {
-      workspaceTitle: 'Every campaign, on one calendar',
-      workspaceBody:
-        'The view each campaign already has, with the filter taken off — what the whole workspace is publishing, and when.',
-    },
     /**
      * The header's counter button: the posts that have no date on them yet.
      * `unscheduled` is the visible label beside the glyph and is a button, so
@@ -897,7 +934,6 @@ export const en = {
      */
     viewWeek: 'Week',
     viewMonth: 'Month',
-    viewList: 'List',
 
     /**
      * The two arrows either side of the range. They name the unit they move by,
@@ -946,6 +982,24 @@ export const en = {
     fieldNoteStatus: 'Writes the status out, and gives the time its own line',
     showFieldOnWeek: 'Show {{field}} on the week card',
     showFieldOnMonth: 'Show {{field}} on the month card',
+
+    /**
+     * The campaign a card belongs to — the workspace calendar's one extra row,
+     * and the only thing telling two otherwise identical cards apart there. The
+     * fallback names the state rather than the campaign, because a campaign
+     * with no name yet is ordinary while it is being set up.
+     */
+    untitledCampaign: 'Untitled campaign',
+
+    /**
+     * What a grid says when its posts could not be fetched. Deliberately not an
+     * error dialog: the calendar is still drawn and still navigable, and this
+     * is the one line saying why it is empty.
+     */
+    loadFailed:
+      'Couldn’t load your posts — the calendar will fill in once they’re reachable again.',
+    loadFailedCampaign:
+      'Couldn’t load this campaign’s posts — the calendar will fill in once they’re reachable again.',
 
     imagePreviews: 'Show cards as image previews',
     imagePreviewsNote:
@@ -997,6 +1051,16 @@ export const en = {
       panelTitle: 'Nothing unscheduled',
       panelSubtitle:
         'Posts without a date wait here — drag one off the calendar, or add a new one.',
+      /**
+       * The same two surfaces on the workspace calendar, which has no ADD POST
+       * — so neither sentence offers one. Both say where posts come from
+       * instead, because that is the reader's next question.
+       */
+      workspaceTitle: 'Nothing is planned yet',
+      workspaceSubtitle:
+        'Posts are written inside a campaign. Schedule one and it will show up here, whichever campaign it belongs to.',
+      workspacePanelSubtitle:
+        'Posts without a date wait here — drag one onto the calendar to give it one.',
     },
   },
 
@@ -3026,7 +3090,13 @@ export const en = {
       offer: {
         dismiss: "Don't offer this again",
         title: 'Fill this in from what you already have',
-        body: 'One pass fills {{fills}} — from your own words, not from a template, and you see everything it proposes before any of it is saved.',
+        /**
+         * Names the three routes, because the tiles under it no longer can —
+         * they are clipped to a sliver (`WholeBrandOffer`). A sentence that
+         * said only "one pass" over an unreadable stack would be a band
+         * announcing something it never gets around to saying.
+         */
+        body: 'One pass fills {{fills}} — from your website, a document you already have, or a handful of questions. Your own words, not a template, and you see everything it proposes before any of it is saved.',
         website: {
           title: 'Read it off your website',
           body: 'Voice samples from your own copy, the disclaimer you already run, and the product facts behind every claim.',
@@ -3129,39 +3199,8 @@ export const en = {
       missingMessage:
         'It may have been deleted, or the link may be to another workspace.',
       /** The confirmations. `{{name}}` is the entry's own, always the user's words. */
-      created: '{{name}} is in the library.',
-      saved: '{{name}} saved.',
       deleted: '{{name}} was deleted.',
-      guardrailsSaved: 'The guardrails are saved.',
-      guardrailsCreated: 'The guardrails are set.',
       guardrailsDeleted: 'The guardrails were deleted.',
-    },
-
-    /** The screen every workspace sees on the day this ships — `FirstRun.tsx`. */
-    firstRun: {
-      title:
-        'Everything generated here sounds like everything else generated anywhere',
-      body: 'People use social media to be distinct — that is what branding is for. Generated content has no voice of its own and nothing stopping it from reading like the rest of the feed. This is where you keep the material that makes yours yours: how you sound, who you are talking to, and what you may never claim.',
-      manual: {
-        title: 'Fill it in yourself',
-        body: 'Straight to the three sections, empty. The fastest path when you already know how you sound and only need somewhere to put it.',
-      },
-      guided: {
-        title: 'Build it with Ogen',
-        body: 'Answer a handful of questions and Ogen drafts the whole thing with you — the path that works when none of this is written down anywhere, and the only one that needs no website, no archive and no file.',
-      },
-      website: {
-        title: 'Read it off your website',
-        body: 'Point us at your site and we propose the whole thing in one step — voice samples from your own copy, the disclaimer you already run, and the product facts behind every claim.',
-      },
-      posts: {
-        title: 'Learn it from your posts',
-        body: "The voice you already have, in your own words. Fix what's wrong rather than inventing something from scratch.",
-      },
-      template: {
-        title: 'Start from a template',
-        body: 'A short setup that walks the whole foundation one question at a time — voice, audience and the things you can never claim. Individual starter voices and audiences already exist inside those two sections; what is coming is doing all three in one pass.',
-      },
     },
 
     /** The visual half — `LookSection.tsx`. */
@@ -3256,16 +3295,12 @@ export const en = {
           i: 'first person',
           we: 'we',
           third: 'third person',
+          none: 'no narrator',
         },
         emoji: {
           never: 'no emoji',
           sparingly: 'some emoji',
           freely: 'emoji freely',
-        },
-        hashtags: {
-          never: 'no hashtags',
-          few: 'few hashtags',
-          many: 'hashtag-heavy',
         },
         length: {
           short: 'short posts',
@@ -3277,7 +3312,6 @@ export const en = {
       /** The one place a voice is written — `VoiceEditor.tsx`. */
       editor: {
         needsName: 'Needs a name before it can be saved.',
-        save: 'Save voice',
         create: 'Create voice',
         introNamed: '{{name}} Voice',
         introNew: 'A new voice',
@@ -3313,7 +3347,7 @@ export const en = {
         bulkUploadSoon: 'Coming soon',
         rules: 'Rules',
         rulesHint:
-          'What a sample cannot say for itself. A pasted post shows the register; it cannot promise that the next thirty avoid hashtags.',
+          'What a sample cannot say for itself. A pasted post shows the register; it cannot promise that the next thirty stay off the exclamation marks.',
         opening: 'How a post opens',
         openingHint:
           'The most recognisable habit a voice has, and worth writing out rather than picking.',
@@ -3326,9 +3360,9 @@ export const en = {
         channelsHint:
           'A note inside this voice, not a second voice. “Dialled down on LinkedIn” belongs here; a near-identical second entry in the library does not.',
         channelsUnbuilt:
-          'Not built yet. Every channel uses this voice exactly as written above.',
+          'Not built yet. Every channel uses this voice exactly as written above — including hashtags, which belong here rather than in the rules, and which nothing states until this is built.',
         /**
-         * The five scales, as the *editor* words them — deliberately not
+         * The four scales, as the *editor* words them — deliberately not
          * `brand.voices.rules.*`, which is how a library card *describes* a
          * voice. "I / we / the company" is a set being chosen between; "first
          * person / we / third person" is a sentence about a voice. Two
@@ -3346,18 +3380,19 @@ export const en = {
             i: 'I',
             we: 'we',
             third: 'the company',
+            /**
+             * Not a blank option and not "no preference": copy with no speaker
+             * in it is a style plenty of brands write in on purpose, and it is
+             * the fourth answer to the question rather than the refusal to
+             * answer it.
+             */
+            none: 'no narrator',
           },
           emojiLabel: 'Emoji',
           emoji: {
             never: 'never',
             sparingly: 'sparingly',
             freely: 'freely',
-          },
-          hashtagsLabel: 'Hashtags',
-          hashtags: {
-            never: 'never',
-            few: 'a few',
-            many: 'many',
           },
           lengthLabel: 'Length',
           length: {
@@ -3414,7 +3449,6 @@ export const en = {
       /** One audience, being described — `AudienceEditor.tsx`. */
       editor: {
         needsName: 'Needs a name before it can be saved.',
-        save: 'Save audience',
         create: 'Create audience',
         introNamed: '{{name}} Audience',
         introNew: 'A new audience',
@@ -3524,11 +3558,8 @@ export const en = {
     guardrails: {
       cleared:
         'Everything has been cleared. Guardrails that state nothing are the same as none — delete them below instead.',
-      save: 'Save guardrails',
-      create: 'Set the guardrails',
-      discard: 'Discard changes',
       forkedNote:
-        'The rules arrived and the facts did not: a template knows what a business like yours may never claim, and nothing at all about what is true of you. Read every line before saving it — this is the section people stop checking.',
+        'The rules arrived and the facts did not: a template knows what a business like yours may never claim, and nothing at all about what is true of you. It is saved as it stands, so read every line — this is the section people stop checking.',
       starterGroupTitle: 'Start from a template',
       starterGroupBody:
         'Three shapes the rules take, rather than thirty industries. Pick the closest and it fills the lists below — every line is meant to be read and edited, because this is the one section people will trust.',
@@ -3563,9 +3594,6 @@ export const en = {
       removeLine: 'Remove this line',
       keyboardHint:
         'Enter starts the next one. Paste a list to add all of it at once.',
-      unsaved: 'Unsaved changes',
-      unsavedShort: 'Unsaved',
-      saved: 'Saved',
       noun: 'GUARDRAILS',
       /** The `name` in the delete dialog's title — a singleton has no name of its own. */
       dangerName: 'Guardrails',
@@ -3640,6 +3668,17 @@ export const en = {
     /** What every Brand editor is made of — `editor.tsx`. */
     editor: {
       cancel: 'Cancel',
+      /**
+       * Leaving a new entry that was never created — the one draft on these
+       * screens that exists nowhere else. `discard` is destructive, so its
+       * capitals are part of the copy.
+       */
+      leave: {
+        title: 'Leave without creating it?',
+        body: 'Nothing on this screen has been saved yet. Leaving now loses it.',
+        stay: 'Keep editing',
+        discard: 'DISCARD',
+      },
       /**
        * The fork note's first sentence. `<name>` is the starter's name, set in
        * the foreground colour — a `<Trans>` rather than three JSX fragments,
@@ -3733,6 +3772,32 @@ export const en = {
     },
 
     /**
+     * What to call each kind of asset, under its count on the preview cards
+     * (`AssetKindTally`). "Text files" rather than "notes" for the first: it
+     * holds both the notes written here and the markdown files uploaded, and
+     * calling an upload a note would be the summary disagreeing with the row
+     * it stands for. "Documents" are the office and text files document-service
+     * reads (CON-280); "recordings" are audio (CON-282).
+     */
+    kinds: {
+      text_one: 'text file',
+      text_other: 'text files',
+      page_one: 'web page',
+      page_other: 'web pages',
+      pdf_one: 'PDF',
+      pdf_other: 'PDFs',
+      document_one: 'document',
+      document_other: 'documents',
+      image_one: 'image',
+      image_other: 'images',
+      audio_one: 'recording',
+      audio_other: 'recordings',
+      /** Muted notes under the tiles — a state, not a fifth kind of thing. */
+      waiting: '{{count}} still being read',
+      unreadable: '{{count}} couldn’t be read',
+    },
+
+    /**
      * Shown in place of the editor for an asset this build can't open — in
      * practice, one whose `type` the server added after this version shipped
      * (CON-16 R32). It has to explain itself without naming the kind, because
@@ -3745,6 +3810,82 @@ export const en = {
     unsupported: {
       title: "This isn't a document",
       body: 'This app version has no way to show this kind of asset. Nothing has been changed — it is still here, and a newer version will open it.',
+    },
+
+    /** The title field on the screens whose body isn't edited here. */
+    titlePlaceholder: 'Title',
+    titleLabel: 'Title',
+
+    /** The size of an asset, under its name in a list (`lib/assetExtent`). */
+    extent: {
+      words_one: '{{formatted}} word',
+      words_other: '{{formatted}} words',
+      pages_one: '{{count}} page',
+      pages_other: '{{count}} pages',
+      waiting: 'Not read yet',
+      nothing: 'Nothing extracted',
+      noDescription: 'No description',
+    },
+
+    /**
+     * An uploaded file an ingestion service is still reading, or has given up
+     * on (`AssetIngestState`). The failure's own reason comes from the asset's
+     * `failure_code`, worded by `uploads.errors`; this is the frame around it.
+     */
+    ingest: {
+      readingTitle: 'Reading this file',
+      readingBody:
+        'This happens in the background and can take a few minutes. You can leave — it fills in here on its own, and the campaign can use it as soon as it does.',
+      failedTitle: "We couldn't read this file",
+      failedUnstated:
+        "The server didn't say why. Delete it and upload it again, or try a different copy of the file.",
+    },
+
+    /**
+     * A PDF or an office document's extracted text, shown read-only
+     * (`AssetExtractedView`, CON-312). The server refuses edits to it, because
+     * saving would re-chunk the text and lose where each part came from.
+     */
+    extracted: {
+      readOnly:
+        'This is the text read out of the file, in the sections the assistant cites. It can’t be edited here — upload a new version to change it.',
+      partial:
+        'Only part of this file could be read. The rest is not searchable.',
+      empty:
+        'Nothing could be read from this file — it may only contain images.',
+      loadFailed:
+        "This file's text couldn't be loaded. Try reloading the page.",
+      shown: 'Showing {{shown}} of {{total}} sections',
+      more: 'Show more',
+      page: 'Page {{page}}',
+      pages: 'Pages {{from}}–{{to}}',
+    },
+
+    /**
+     * A recording's screen (`AssetAudioView`, CON-282): the player, and the
+     * transcript the audio service wrote — read-only, like a PDF's text.
+     */
+    audio: {
+      transcript: 'Transcript',
+      playFrom: 'Play from {{time}}',
+      normalizing: 'Preparing the recording…',
+      progress: 'Transcribed {{done}} of {{total}} parts',
+      partial: 'Some parts of the recording could not be transcribed.',
+      empty: 'No speech was found in this recording.',
+      loadFailed: "The transcript couldn't be loaded. Try reloading the page.",
+      /** The file never reached storage — a deployment fault, not a bad file. */
+      missing: 'This recording was not stored, so there is nothing to play.',
+      noPlayer: 'This browser cannot play audio.',
+      retry_one: 'Retry the failed part',
+      retry_other: 'Retry the {{count}} failed parts',
+      /** Runs the whole transcription again and replaces the transcript. */
+      reextract: 'Transcribe again',
+    },
+
+    /** A PUT that tried to change ingested text (CON-312 `content_locked`). */
+    locked: {
+      title: "This file's text can't be edited",
+      body: 'It was read out of the uploaded file. Upload a new version to change it.',
     },
 
     /**
@@ -3778,6 +3919,19 @@ export const en = {
       /** The bytes never reached storage — a deployment fault, not a bad file. */
       missing: 'This image was not stored, so there is nothing to show.',
       animated: 'Animated',
+      /** Shown instead of `altHelp` while the alt text is image-service's. */
+      altGenerated:
+        'Written automatically from the picture. Edit it to make it yours — reading the image again keeps what you write.',
+      /** Replaces the alt text on the spot, a person's included. */
+      altRegenerate: 'Write a new one',
+      /** The heading over a failed or partial reading, above its reason. */
+      failedTitle: "This image wasn't processed",
+      partialTitle: 'This image was only partly processed',
+      partial:
+        'The picture was described, but the text in it could not all be read.',
+      reextract: 'Read again',
+      undrawable:
+        "This image's format can't be shown in a browser, and no viewable copy was made.",
     },
 
     /** The floating bar over a ticked selection in the documents list. */
@@ -3853,17 +4007,24 @@ export const en = {
   /**
    * The upload modal and its drop zone.
    *
-   * The limits are two lines rather than one because they answer two different
-   * questions — "will it take my PDF" and "will it take my photo" — and a
-   * reader looking for one of them should not have to read past the other.
-   * Their sizes are interpolated from the caps in `lib/assetStatus`, so the
-   * copy never states a number that has drifted from the one enforced.
+   * The limits are one line per kind of file, because each answers a
+   * different question — "will it take my PDF", "my spreadsheet", "my photo"
+   * — and a reader looking for one should not have to read past the others.
+   * Sizes are interpolated from the caps in `lib/assetStatus`, so the copy
+   * never states a number that has drifted from the one enforced. Images state
+   * none: their cap is the operator's (CON-281), and the server names it when
+   * a file is over it.
    */
   uploads: {
-    limitDocs: 'Markdown up to {{md}}, PDF up to {{pdf}}',
-    limitImages: 'Images (JPEG, PNG, WebP, GIF) up to {{size}}',
+    limitText: 'Markdown up to {{md}}, PDF up to {{pdf}}',
+    limitDocuments:
+      'Word, Excel, PowerPoint, OpenDocument, EPUB, CSV, HTML, email, RTF and text files up to {{size}}',
+    limitImages: 'Images: JPEG, PNG, WebP, GIF, HEIC, AVIF, TIFF and BMP',
+    limitAudio:
+      'Audio: MP3, WAV, M4A, AAC, OGG, Opus, FLAC, WebM and AIFF up to {{size}}',
     /** Why an upload can finish and the document still not be readable. */
-    pdfNote: 'PDFs are read in the background, so they finish after upload.',
+    backgroundNote:
+      'Everything except Markdown is read in the background, so it finishes after upload.',
     browse: 'Drop files here or click to browse',
     remove: 'Remove {{name}}',
     /** Last resort: the request died without the server wording anything. */
@@ -3901,20 +4062,55 @@ export const en = {
      * is anything to do, and admits it is our fault where there isn't.
      */
     errors: {
-      type: 'Only .md, .pdf and image files are accepted.',
+      type: "This kind of file can't be added to the content bank.",
+      /**
+       * `.doc`, `.xls`, `.ppt` — or a password-protected Office file, which the
+       * server refuses in the same words. Both have the same fix.
+       */
+      legacyOffice:
+        "Older or password-protected Office files can't be read. Save it as an unprotected .docx, .xlsx or .pptx and upload that.",
       /** The name said one thing and the bytes were another. */
-      unsupportedType:
-        "This file's contents aren't a kind we can read. Images have to be JPEG, PNG, WebP or GIF.",
+      unsupportedType: "This file's contents aren't a kind we can read.",
+      vector:
+        "SVG and other vector images aren't supported. Export it as a PNG or JPEG first.",
       /** The cap is the server's own, lifted out of its message. */
       tooBig: 'This file is over the {{limit}} limit.',
+      /** The same refusal when the server's message carried no number. */
+      tooBigUnstated: 'This file is too big to upload.',
       dimensions: 'This image is too big to store — the limit is {{max}}.',
+      dimensionsUnstated: 'This image has too many pixels to store.',
+      /** A recording longer than the plan allows; the limit is the server's. */
+      duration_one:
+        'This recording is over the {{count}}-minute limit for your plan.',
+      duration_other:
+        'This recording is over the {{count}}-minute limit for your plan.',
+      durationUnstated: 'This recording is longer than your plan allows.',
+      /** A tier limit — file count or storage — not anything about the file. */
+      quota:
+        "Your plan's content bank limit has been reached, so this wasn't added.",
+      /**
+       * The service that reads this kind of file is switched off or down. Not
+       * the file's fault, and trying later is the whole of the advice.
+       */
+      unavailable:
+        "Files like this can't be read right now. Try again in a few minutes.",
+      /** Searchable, but the structured read didn't finish. */
+      partial: 'Only part of this could be read.',
       empty: 'This file is empty.',
       notPdf: "This isn't a readable PDF.",
+      invalid: "This file couldn't be read — it may be damaged.",
       /** A deployment fault: the bucket isn't configured. */
       notConfigured: "This server can't store images yet.",
       undecodable: "This image couldn't be read — it may be damaged.",
       /** Our side failed. Nothing about the file is wrong. */
       server: 'Something went wrong saving this file. Try again.',
+      /**
+       * The file never reached storage. Most often a bucket that doesn't
+       * accept uploads from this address, which the browser only reports as a
+       * network failure — so it says to retry and names the likelier cause.
+       */
+      storage:
+        "The file couldn't be sent to storage. Try again — if it keeps failing, storage isn't accepting uploads from this app yet.",
     },
   },
 
@@ -3935,6 +4131,15 @@ export const en = {
     trigger: {
       label: 'What is this?',
     },
+  },
+
+  /**
+   * The chrome around an operator announcement (CON-230). The announcement's
+   * own words are the operator's and come from the server untranslated.
+   */
+  announcements: {
+    label: 'Announcement',
+    dismiss: 'Hide this announcement',
   },
 
   errors: {

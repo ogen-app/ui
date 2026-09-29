@@ -284,11 +284,17 @@ export function ModalContainer({
 
         {/* Content — a height-bounded modal hands its body whatever the header
             left over and lets the body decide what scrolls inside it, so a
-            form can pin its buttons while only the long part moves. */}
+            form can pin its buttons while only the long part moves.
+
+            The body is a flex column, and its child takes the space with
+            `min-h-0 flex-1` rather than `h-full`: under a `max-h-*` budget the
+            modal has no definite height, so a percentage resolves to nothing,
+            the child grows to its content and spills past the panel's foot on
+            a short screen. */}
         <div
           className={cn(
             isContainer ? 'h-full' : 'p-6',
-            height !== 'auto' && 'min-h-0 flex-1',
+            height !== 'auto' && 'flex min-h-0 flex-1 flex-col',
           )}
         >
           {children}

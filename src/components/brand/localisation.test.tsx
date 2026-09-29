@@ -49,7 +49,6 @@ const VOICE: BrandVoice = {
   samples: [],
   rules: {
     emoji: 'never',
-    hashtags: 'never',
     formality: 'neutral',
     person: 'we',
     length: 'medium',

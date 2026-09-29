@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assetKind, opensAsDocument, tallyAssetKinds } from './assetKind'
+import { assetKind, assetScreen, tallyAssetKinds } from './assetKind'
 import type { AssetType } from '@/types/content'
 
 describe('assetKind', () => {
@@ -9,6 +9,15 @@ describe('assetKind', () => {
 
   it('files an image under image', () => {
     expect(assetKind({ type: 'IMG' })).toBe('image')
+  })
+
+  // CON-280/282 — both used to fall through to the note's glyph.
+  it('files an office or text file under document', () => {
+    expect(assetKind({ type: 'DOC' })).toBe('document')
+  })
+
+  it('files a recording under audio', () => {
+    expect(assetKind({ type: 'AUDIO' })).toBe('audio')
   })
 
   // The kind the categories used to leave to the glyph to special-case.
@@ -58,41 +67,40 @@ describe('tallyAssetKinds', () => {
   })
 })
 
-describe('opensAsDocument', () => {
-  it('opens a note written in the app', () => {
-    expect(opensAsDocument({ type: null })).toBe(true)
-  })
-
-  it('opens an uploaded markdown file', () => {
-    expect(opensAsDocument({ type: 'MD' })).toBe(true)
-  })
-
-  // What you edit on a PDF is the extracted text, which is what the embeddings
-  // are built from — so it is a document, whatever the bytes behind it are.
-  it('opens a PDF, because its text is the asset', () => {
-    expect(opensAsDocument({ type: 'PDF' })).toBe(true)
-  })
-
-  it('opens a scraped page', () => {
-    expect(opensAsDocument({ type: 'URL' })).toBe(true)
+describe('assetScreen', () => {
+  it('opens a note, a markdown upload and a scraped page in the editor', () => {
+    expect(assetScreen({ type: null })).toBe('editor')
+    expect(assetScreen({ type: 'MD' })).toBe('editor')
+    expect(assetScreen({ type: 'URL' })).toBe('editor')
   })
 
   /*
-   * The case the predicate exists for. An image's `content` is a description
-   * of the picture, so an editor pointed at it is editing the wrong field —
-   * and autosaving over it (CON-16 R32).
+   * The server refuses a changed `content` on both (CON-312), so an editor on
+   * either would fail every keystroke — and their `content` is a placeholder
+   * anyway, the text living in the chunks.
    */
-  it('refuses an image', () => {
-    expect(opensAsDocument({ type: 'IMG' })).toBe(false)
+  it('shows a PDF and an office document read-only', () => {
+    expect(assetScreen({ type: 'PDF' })).toBe('extracted')
+    expect(assetScreen({ type: 'DOC' })).toBe('extracted')
   })
 
   /*
-   * And the general case behind it. The cast stands in for a server that has
-   * grown a type this build was compiled before, which is how `URL` and `IMG`
-   * both arrived: failing closed has to be the default, not a list of the
-   * exceptions we happened to think of.
+   * An image's `content` is a description of the picture, so an editor
+   * pointed at it is editing the wrong field — and autosaving over it
+   * (CON-16 R32).
+   */
+  it('gives an image and a recording screens of their own', () => {
+    expect(assetScreen({ type: 'IMG' })).toBe('image')
+    expect(assetScreen({ type: 'AUDIO' })).toBe('audio')
+  })
+
+  /*
+   * The case the function exists for. The cast stands in for a server that
+   * has grown a type this build was compiled before, which is how `URL`, `IMG`,
+   * `DOC` and `AUDIO` all arrived: failing closed has to be the default, not a
+   * list of the exceptions we happened to think of.
    */
   it('refuses a type this build has never heard of', () => {
-    expect(opensAsDocument({ type: 'VIDEO' as AssetType })).toBe(false)
+    expect(assetScreen({ type: 'VIDEO' as AssetType })).toBe('unsupported')
   })
 })
