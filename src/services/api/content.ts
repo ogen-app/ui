@@ -1,9 +1,13 @@
 import type {
   Asset,
+  AssetChunkPage,
+  AudioStatus,
+  TranscriptEntry,
   BulkTagPayload,
   CreateAssetPayload,
   UpdateAssetPayload,
 } from '@/types/content'
+import { ApiError } from './errors'
 import { apiJson, apiVoid } from './http'
 
 const BASE = '/api/content-bank/assets'
@@ -14,6 +18,21 @@ export function listAssets(): Promise<Asset[]> {
 
 export function getAsset(id: string): Promise<Asset> {
   return apiJson<Asset>(`${BASE}/${id}`, 'Unable to fetch asset')
+}
+
+/**
+ * One page of an asset's chunks, in order, without their embeddings
+ * (CON-312). The server caps a page at 500 and defaults to 100.
+ */
+export function listAssetChunks(
+  id: string,
+  offset = 0,
+  limit = 100,
+): Promise<AssetChunkPage> {
+  return apiJson<AssetChunkPage>(
+    `${BASE}/${id}/chunks?offset=${offset}&limit=${limit}`,
+    'Unable to read this document',
+  )
 }
 
 export function createAsset(payload: CreateAssetPayload): Promise<Asset> {
@@ -71,4 +90,78 @@ export function deleteAsset(id: string): Promise<void> {
   return apiVoid(`${BASE}/${id}`, 'Unable to delete asset', {
     method: 'DELETE',
   })
+}
+
+/**
+ * How far a recording's transcription has got (CON-282), or null before a run
+ * exists — the server answers 404 for that, which is a state and not an error.
+ */
+export async function getAudioStatus(id: string): Promise<AudioStatus | null> {
+  try {
+    return await apiJson<AudioStatus>(
+      `${BASE}/${id}/audio`,
+      'Unable to read this recording',
+    )
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null
+    throw err
+  }
+}
+
+export async function getAudioTranscript(
+  id: string,
+): Promise<TranscriptEntry[]> {
+  const body = await apiJson<{ transcript: TranscriptEntry[] | null }>(
+    `${BASE}/${id}/audio/transcript`,
+    'Unable to read this transcript',
+  )
+  return body.transcript ?? []
+}
+
+/**
+ * Re-drives only the parts of the recording that failed. A 409 means there
+ * were none — or that audio isn't configured on this deployment.
+ */
+export function retryAudio(id: string): Promise<void> {
+  return apiVoid(`${BASE}/${id}/audio/retry`, 'Unable to retry', {
+    method: 'POST',
+  })
+}
+
+/** Transcribes the whole recording again, replacing the transcript. */
+export function reextractAudio(id: string): Promise<void> {
+  return apiVoid(
+    `${BASE}/${id}/audio/reextract`,
+    'Unable to transcribe again',
+    {
+      method: 'POST',
+      body: {},
+    },
+  )
+}
+
+/**
+ * Writes a new alt text for an image, synchronously (CON-281). It **saves**,
+ * and it replaces one a person wrote — it is an explicit request for a fresh
+ * one — without touching `alt_text_edited_by_user`.
+ */
+export async function regenerateAltText(id: string): Promise<string> {
+  const body = await apiJson<{ alt_text: string }>(
+    `${BASE}/${id}/image/alt-text`,
+    'Unable to write a new alt text',
+    { method: 'POST' },
+  )
+  return body.alt_text
+}
+
+/** Reads an image again from scratch; a person's alt text is kept. */
+export function reextractImage(id: string): Promise<void> {
+  return apiVoid(
+    `${BASE}/${id}/image/reextract`,
+    'Unable to read this image again',
+    {
+      method: 'POST',
+      body: {},
+    },
+  )
 }

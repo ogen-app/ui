@@ -1,7 +1,7 @@
 import { handleUnauthorized } from '@/lib/sessionExpiry'
 import { handleForbidden } from '@/lib/staleWorkspace'
 import { apiUrl, workspaceHeader } from './base'
-import { ApiError, errorMessage } from './errors'
+import { ApiError, errorDetails } from './errors'
 
 type ApiRequestOptions = {
   method?: string
@@ -47,7 +47,8 @@ async function send(
     // because 403 is also the ordinary answer to a member calling an
     // owner-only route. See `lib/staleWorkspace.ts`.
     if (res.status === 403 && 'X-Workspace-Id' in scope) handleForbidden()
-    throw new ApiError(res.status, await errorMessage(res, fallbackError))
+    const { message, code } = await errorDetails(res, fallbackError)
+    throw new ApiError(res.status, message, code)
   }
   return res
 }

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { UploadSimpleIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
-import { UPLOAD_ACCEPT } from '@/lib/assetStatus'
+import { uploadAccept } from '@/lib/assetStatus'
 
 type Props = {
   onFiles: (files: File[]) => void
@@ -66,7 +66,7 @@ export function Dropzone({ onFiles, className }: Props) {
       <input
         ref={inputRef}
         type="file"
-        accept={UPLOAD_ACCEPT}
+        accept={uploadAccept()}
         multiple
         hidden
         onChange={(e) => {

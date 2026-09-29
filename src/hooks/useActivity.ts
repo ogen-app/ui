@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useCampaignSummaries } from '@/hooks/useCampaigns'
 import { useNotifications } from '@/hooks/useNotifications'
 import { useTasks } from '@/hooks/useTasks'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { browserTimeZone } from '@/lib/timeZones'
 import {
   ACTIVITY_REPORT_DAYS,
@@ -88,12 +87,10 @@ export type ActivityDegradation = 'notifications' | 'reports' | 'links'
  * is part of the key, because the two answers are different reports.
  */
 export function useActivityReports(campaignId?: string) {
-  const enabled = useFeatureFlag('activity')
   const tz = browserTimeZone()
   return useQuery({
     queryKey: [...ACTIVITY_REPORTS_KEY, 'list', tz, campaignId ?? null],
     queryFn: () => listActivityReports({ tz, campaignId }),
-    enabled,
     staleTime: 30_000,
   })
 }
@@ -114,12 +111,10 @@ export function useActivityReport(
   isLoading: boolean
   isError: boolean
 } {
-  const enabled = useFeatureFlag('activity')
   const tz = browserTimeZone()
   const query = useQuery({
     queryKey: [...ACTIVITY_REPORTS_KEY, 'day', date, tz, campaignId ?? null],
     queryFn: () => fetchActivityReport(date, { tz, campaignId }),
-    enabled,
     staleTime: 30_000,
   })
   // `awaiting`, not `isLoading` — see `lib/fetched`.
@@ -132,7 +127,6 @@ export function useActivityReport(
 
 /** The feed itself: what happened, plus one report per day. */
 export function useActivityFeed(): ActivityFeedResult {
-  const enabled = useFeatureFlag('activity')
   // Kept whole rather than destructured: `awaiting` reads two fields off a
   // query, and it is what tells "still coming" from "settled" here — see
   // `lib/fetched`.
@@ -164,8 +158,8 @@ export function useActivityFeed(): ActivityFeedResult {
     [dataUpdatedAt, notifications, reports, tasks],
   )
   const entries = useMemo(
-    () => (enabled ? activityFeed({ reports, notifications, tasks }, now) : []),
-    [enabled, reports, notifications, tasks, now],
+    () => activityFeed({ reports, notifications, tasks }, now),
+    [reports, notifications, tasks, now],
   )
 
   const campaignByPost = useMemo(() => {
@@ -182,7 +176,6 @@ export function useActivityFeed(): ActivityFeedResult {
   )
 
   const degraded = useMemo(() => {
-    if (!enabled) return []
     const failed: ActivityDegradation[] = []
     // Both failing is the page's own error state, not a pair of warnings over
     // an empty list.
@@ -191,7 +184,7 @@ export function useActivityFeed(): ActivityFeedResult {
     }
     if (summariesError) failed.push('links')
     return failed
-  }, [enabled, notificationsError, reportsError, summariesError])
+  }, [notificationsError, reportsError, summariesError])
 
   return {
     entries,
@@ -203,12 +196,9 @@ export function useActivityFeed(): ActivityFeedResult {
     // failing, and one failing alone is `degraded` — shown, and said. The
     // summaries are in neither: they carry no entries, so a page that failed
     // on them would be blank over a feed that had loaded.
-    isLoading:
-      enabled && notificationsLoading && reportsLoading && summariesLoading,
-    isError: enabled && notificationsError && reportsError,
+    isLoading: notificationsLoading && reportsLoading && summariesLoading,
+    isError: notificationsError && reportsError,
     degraded,
-    isTruncated:
-      enabled &&
-      (isTruncated || (reports?.length ?? 0) >= ACTIVITY_REPORT_DAYS),
+    isTruncated: isTruncated || (reports?.length ?? 0) >= ACTIVITY_REPORT_DAYS,
   }
 }

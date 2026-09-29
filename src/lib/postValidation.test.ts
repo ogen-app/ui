@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   checksSummary,
   foldChecks,
@@ -9,16 +9,6 @@ import {
 } from './postValidation.ts'
 import { getPlatformByZernioId } from './platformDictionary.ts'
 import type { Post } from '@/types/posts'
-
-vi.mock('@/config/featureFlags', () => ({
-  isFeatureEnabled: vi.fn(() => false),
-}))
-
-const { isFeatureEnabled } = await import('@/config/featureFlags')
-
-afterEach(() => {
-  vi.mocked(isFeatureEnabled).mockReturnValue(false)
-})
 
 function check(status: CheckStatus, id: string = status): PostCheck {
   return { id, label: id, status }
@@ -234,29 +224,15 @@ describe('hasVisibleProblem', () => {
     expect(hasVisibleProblem(post(), RESOLVED, undefined)).toBe(true)
   })
 
-  it('flags an unset post type while nothing is deciding it', () => {
-    expect(
-      hasVisibleProblem(post({ platform_post_type: '' }), RESOLVED, LINKEDIN),
-    ).toBe(true)
-  })
-
-  it('stands down on an unset post type once Auto is released', () => {
+  it('stands down on an unset post type, because Auto is deciding it', () => {
     // Auto makes the empty slug the *default* state of a draft rather than a
     // gap, and every new post starts there — a mark on all of them would stop
     // meaning anything. The card cannot resolve it either: that needs the
     // attachments, and the list payload carries none.
-    vi.mocked(isFeatureEnabled).mockReturnValue(true)
 
     expect(
       hasVisibleProblem(post({ platform_post_type: '' }), RESOLVED, LINKEDIN),
     ).toBe(false)
-  })
-
-  it('still flags a missing platform when Auto is released', () => {
-    // Auto answers one of the two questions the card asks, and only that one.
-    vi.mocked(isFeatureEnabled).mockReturnValue(true)
-
-    expect(hasVisibleProblem(post(), RESOLVED, undefined)).toBe(true)
   })
 
   it('flags an outcome that already went wrong, before anything else', () => {

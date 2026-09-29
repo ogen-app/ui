@@ -32,8 +32,8 @@ type Props = {
   /** Re-scrape the source. Only passed for a document that has one. */
   onRefreshSource?: () => void
   /**
-   * Save the body as a `.md` file. Only passed for an asset whose body *is*
-   * text (`opensAsDocument`) — offering it on anything else would hand the user
+   * Save the body as a `.md` file. Only passed for an asset that opens in the
+   * editor (`assetScreen`) — offering it on anything else would hand the user
    * a Markdown file containing whatever the field happens to hold instead.
    */
   onDownloadMarkdown?: () => void

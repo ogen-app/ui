@@ -44,7 +44,7 @@ export const DEV_TOOLS =
 const STORAGE_KEY = 'ogen.flagOverrides'
 
 /**
- * `?ff=tasks,-activity` — a bare name forces a flag on, a leading `-` forces
+ * `?ff=tasks,-ideas` — a bare name forces a flag on, a leading `-` forces
  * it off, and `?ff=` alone clears every override.
  *
  * The parameter *merges* into what is already stored, so one bookmark per

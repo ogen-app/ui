@@ -15,12 +15,18 @@ export type AssetStatus =
  * Markdown on our behalf (CON-222); it reads like any other document from here,
  * and only differs in having somewhere it came from.
  *
- * `"IMG"` is an image (CON-246). It is the only member that is **not** a
- * document: its `content` is a description of the picture rather than the
- * thing itself, which is why `opensAsDocument` exists and why an image gets a
- * screen of its own rather than the editor.
+ * `"IMG"` is an image (CON-246). Its `content` is a description of the
+ * picture rather than the thing itself, which is why `assetScreen` exists
+ * and why an image gets a screen of its own rather than the editor.
+ *
+ * `"DOC"` is an office or text file — Word, Excel, PowerPoint, OpenDocument,
+ * EPUB, CSV, HTML, email, RTF, plain text — parsed by document-service into
+ * source-anchored chunks (CON-280). `"AUDIO"` is a recording, whose `content`
+ * is the transcript audio-service wrote once the run finished (CON-282). Both
+ * are ingestion output, like a PDF's text, and the server refuses an edit to
+ * any of the three (`content_locked`, CON-312).
  */
-export type AssetType = 'MD' | 'PDF' | 'URL' | 'IMG' | null
+export type AssetType = 'MD' | 'PDF' | 'URL' | 'IMG' | 'DOC' | 'AUDIO' | null
 
 /**
  * One image from a scraped page, copied into our own storage (CON-222).
@@ -73,6 +79,13 @@ export type AssetFile = {
   url?: string | null
   /** A picture of the file: a PDF's first page. Absent when the render failed. */
   thumbnail_url?: string | null
+  /**
+   * The browser-safe copy image-service writes of every image (CON-299) — a
+   * PNG, so a HEIC or TIFF original that no browser draws still has something
+   * to show. Absent until the ingest has finished, and on anything that isn't
+   * an image.
+   */
+  normalized_url?: string | null
   /** Pixel dimensions of an image, `0` for anything else. */
   width: number
   height: number
@@ -96,6 +109,20 @@ export type Asset = {
    * description the embeddings are built from, and empty on everything else.
    */
   alt_text: string
+  /**
+   * Whether a person wrote the alt text, rather than image-service (CON-281).
+   * Re-processing never overwrites one a person wrote. The server flips it on
+   * any PUT whose `alt_text` differs from the stored value, which is why a
+   * screen sends `alt_text` only once someone has typed in it.
+   */
+  alt_text_edited_by_user?: boolean
+  /**
+   * Why ingestion failed, when it did (CON-312). `failure_code` is one of the
+   * upload codes (`lib/uploadError`); `failure_reason` is the server's prose,
+   * kept for a code this build predates.
+   */
+  failure_code?: string | null
+  failure_reason?: string | null
   /** Mirrored page images. Absent until a scrape has stored some. */
   images?: AssetImage[]
   /** The upload behind this document. Absent for notes and scraped pages. */
@@ -125,12 +152,14 @@ export type CreateAssetPayload = {
  * would have every save carry the copy of those the editor last read, so
  * saving a title would undo a re-tag done in another tab a second earlier.
  *
- * `title` and `content` stay required: they are what a screen editing an asset
- * always has in hand, and a PUT that names neither is not an update.
+ * `title` stays required — the server has no way to say "no title". `content`
+ * is optional since CON-312: an empty or unchanged one keeps what is stored, so
+ * a rename of an ingested asset (PDF, DOC, AUDIO) sends only the title and can
+ * never trip `content_locked`, which a *different* value on those types does.
  */
 export type UpdateAssetPayload = {
   title: string
-  content: string
+  content?: string
   alt_text?: string
   tag_ids?: string[]
 }
@@ -148,4 +177,103 @@ export type BulkTagPayload = {
   asset_ids: string[]
   add?: string[]
   remove?: string[]
+}
+
+/**
+ * Where a chunk came from in its file (CON-280/282/281) — the structured form
+ * of `source_label`. Which fields are set depends on `kind`.
+ */
+export type SourceAnchor = {
+  kind: 'page' | 'slide' | 'sheet' | 'section' | 'email' | 'time' | 'image'
+  page?: number
+  slide?: number
+  sheet?: string
+  cell_range?: string
+  heading_path?: string[]
+  /** On the recording's own timeline, for `time`. */
+  start_ms?: number
+  end_ms?: number
+}
+
+/**
+ * One searchable piece of an asset: what the assistant retrieves and cites
+ * (`GET /api/content-bank/assets/:id/chunks`, CON-312).
+ *
+ * For a PDF or an office document this is also the only place its text lives:
+ * those assets' `content` is a placeholder, and the chunks are what the
+ * extraction produced.
+ */
+export type AssetChunk = {
+  id: string
+  asset_id: string
+  chunk_index: number
+  /** 1-based pages a PDF chunk spans; 0 on everything else. */
+  page_start: number
+  page_end: number
+  /** A citation: "Slide 4", "Sheet 'Q3' rows 10–24", "1:05–1:40". */
+  source_label?: string | null
+  source_anchor?: SourceAnchor | null
+  content: string
+  token_count: number
+}
+
+export type AssetChunkPage = {
+  chunks: AssetChunk[]
+  total: number
+  offset: number
+  limit: number
+}
+
+/**
+ * A recording's transcription run (`GET /:id/audio`, CON-282). One per
+ * attempt; `status` walks `pending → normalizing → transcribing → complete |
+ * partial | failed`. The asset's own `status` settles with it, but only this
+ * says how far along it is.
+ */
+export type AudioExtraction = {
+  id: string
+  asset_id: string
+  status:
+    | 'pending'
+    | 'normalizing'
+    | 'transcribing'
+    | 'complete'
+    | 'partial'
+    | 'failed'
+  source_duration_ms: number
+  segment_count: number
+  detected_language?: string | null
+  failure_code?: string | null
+  failure_reason?: string | null
+}
+
+/** One slice of the recording, transcribed on its own and retried alone. */
+export type AudioSegment = {
+  id: string
+  index: number
+  start_ms: number
+  end_ms: number
+  status: 'pending' | 'done' | 'failed'
+  retry_count: number
+  failure_reason?: string | null
+}
+
+export type AudioStatus = {
+  extraction: AudioExtraction
+  segments: AudioSegment[]
+}
+
+/**
+ * One line of a transcript (`GET /:id/audio/transcript`). `label` is the
+ * server's "M:SS–M:SS" for the span; `is_speech` is false for a stretch of
+ * music or silence the transcriber marked rather than wrote out.
+ */
+export type TranscriptEntry = {
+  start_ms: number
+  end_ms: number
+  label: string
+  text: string
+  confidence: number
+  language: string
+  is_speech: boolean
 }

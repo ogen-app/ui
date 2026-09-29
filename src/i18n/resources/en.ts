@@ -3526,6 +3526,32 @@ export const en = {
     },
 
     /**
+     * What to call each kind of asset, under its count on the preview cards
+     * (`AssetKindTally`). "Text files" rather than "notes" for the first: it
+     * holds both the notes written here and the markdown files uploaded, and
+     * calling an upload a note would be the summary disagreeing with the row
+     * it stands for. "Documents" are the office and text files document-service
+     * reads (CON-280); "recordings" are audio (CON-282).
+     */
+    kinds: {
+      text_one: 'text file',
+      text_other: 'text files',
+      page_one: 'web page',
+      page_other: 'web pages',
+      pdf_one: 'PDF',
+      pdf_other: 'PDFs',
+      document_one: 'document',
+      document_other: 'documents',
+      image_one: 'image',
+      image_other: 'images',
+      audio_one: 'recording',
+      audio_other: 'recordings',
+      /** Muted notes under the tiles — a state, not a fifth kind of thing. */
+      waiting: '{{count}} still being read',
+      unreadable: '{{count}} couldn’t be read',
+    },
+
+    /**
      * Shown in place of the editor for an asset this build can't open — in
      * practice, one whose `type` the server added after this version shipped
      * (CON-16 R32). It has to explain itself without naming the kind, because
@@ -3538,6 +3564,82 @@ export const en = {
     unsupported: {
       title: "This isn't a document",
       body: 'This app version has no way to show this kind of asset. Nothing has been changed — it is still here, and a newer version will open it.',
+    },
+
+    /** The title field on the screens whose body isn't edited here. */
+    titlePlaceholder: 'Title',
+    titleLabel: 'Title',
+
+    /** The size of an asset, under its name in a list (`lib/assetExtent`). */
+    extent: {
+      words_one: '{{formatted}} word',
+      words_other: '{{formatted}} words',
+      pages_one: '{{count}} page',
+      pages_other: '{{count}} pages',
+      waiting: 'Not read yet',
+      nothing: 'Nothing extracted',
+      noDescription: 'No description',
+    },
+
+    /**
+     * An uploaded file an ingestion service is still reading, or has given up
+     * on (`AssetIngestState`). The failure's own reason comes from the asset's
+     * `failure_code`, worded by `uploads.errors`; this is the frame around it.
+     */
+    ingest: {
+      readingTitle: 'Reading this file',
+      readingBody:
+        'This happens in the background and can take a few minutes. You can leave — it fills in here on its own, and the campaign can use it as soon as it does.',
+      failedTitle: "We couldn't read this file",
+      failedUnstated:
+        "The server didn't say why. Delete it and upload it again, or try a different copy of the file.",
+    },
+
+    /**
+     * A PDF or an office document's extracted text, shown read-only
+     * (`AssetExtractedView`, CON-312). The server refuses edits to it, because
+     * saving would re-chunk the text and lose where each part came from.
+     */
+    extracted: {
+      readOnly:
+        'This is the text read out of the file, in the sections the assistant cites. It can’t be edited here — upload a new version to change it.',
+      partial:
+        'Only part of this file could be read. The rest is not searchable.',
+      empty:
+        'Nothing could be read from this file — it may only contain images.',
+      loadFailed:
+        "This file's text couldn't be loaded. Try reloading the page.",
+      shown: 'Showing {{shown}} of {{total}} sections',
+      more: 'Show more',
+      page: 'Page {{page}}',
+      pages: 'Pages {{from}}–{{to}}',
+    },
+
+    /**
+     * A recording's screen (`AssetAudioView`, CON-282): the player, and the
+     * transcript the audio service wrote — read-only, like a PDF's text.
+     */
+    audio: {
+      transcript: 'Transcript',
+      playFrom: 'Play from {{time}}',
+      normalizing: 'Preparing the recording…',
+      progress: 'Transcribed {{done}} of {{total}} parts',
+      partial: 'Some parts of the recording could not be transcribed.',
+      empty: 'No speech was found in this recording.',
+      loadFailed: "The transcript couldn't be loaded. Try reloading the page.",
+      /** The file never reached storage — a deployment fault, not a bad file. */
+      missing: 'This recording was not stored, so there is nothing to play.',
+      noPlayer: 'This browser cannot play audio.',
+      retry_one: 'Retry the failed part',
+      retry_other: 'Retry the {{count}} failed parts',
+      /** Runs the whole transcription again and replaces the transcript. */
+      reextract: 'Transcribe again',
+    },
+
+    /** A PUT that tried to change ingested text (CON-312 `content_locked`). */
+    locked: {
+      title: "This file's text can't be edited",
+      body: 'It was read out of the uploaded file. Upload a new version to change it.',
     },
 
     /**
@@ -3571,6 +3673,19 @@ export const en = {
       /** The bytes never reached storage — a deployment fault, not a bad file. */
       missing: 'This image was not stored, so there is nothing to show.',
       animated: 'Animated',
+      /** Shown instead of `altHelp` while the alt text is image-service's. */
+      altGenerated:
+        'Written automatically from the picture. Edit it to make it yours — reading the image again keeps what you write.',
+      /** Replaces the alt text on the spot, a person's included. */
+      altRegenerate: 'Write a new one',
+      /** The heading over a failed or partial reading, above its reason. */
+      failedTitle: "This image wasn't processed",
+      partialTitle: 'This image was only partly processed',
+      partial:
+        'The picture was described, but the text in it could not all be read.',
+      reextract: 'Read again',
+      undrawable:
+        "This image's format can't be shown in a browser, and no viewable copy was made.",
     },
 
     /** The floating bar over a ticked selection in the documents list. */
@@ -3646,17 +3761,24 @@ export const en = {
   /**
    * The upload modal and its drop zone.
    *
-   * The limits are two lines rather than one because they answer two different
-   * questions — "will it take my PDF" and "will it take my photo" — and a
-   * reader looking for one of them should not have to read past the other.
-   * Their sizes are interpolated from the caps in `lib/assetStatus`, so the
-   * copy never states a number that has drifted from the one enforced.
+   * The limits are one line per kind of file, because each answers a
+   * different question — "will it take my PDF", "my spreadsheet", "my photo"
+   * — and a reader looking for one should not have to read past the others.
+   * Sizes are interpolated from the caps in `lib/assetStatus`, so the copy
+   * never states a number that has drifted from the one enforced. Images state
+   * none: their cap is the operator's (CON-281), and the server names it when
+   * a file is over it.
    */
   uploads: {
-    limitDocs: 'Markdown up to {{md}}, PDF up to {{pdf}}',
-    limitImages: 'Images (JPEG, PNG, WebP, GIF) up to {{size}}',
+    limitText: 'Markdown up to {{md}}, PDF up to {{pdf}}',
+    limitDocuments:
+      'Word, Excel, PowerPoint, OpenDocument, EPUB, CSV, HTML, email, RTF and text files up to {{size}}',
+    limitImages: 'Images: JPEG, PNG, WebP, GIF, HEIC, AVIF, TIFF and BMP',
+    limitAudio:
+      'Audio: MP3, WAV, M4A, AAC, OGG, Opus, FLAC, WebM and AIFF up to {{size}}',
     /** Why an upload can finish and the document still not be readable. */
-    pdfNote: 'PDFs are read in the background, so they finish after upload.',
+    backgroundNote:
+      'Everything except Markdown is read in the background, so it finishes after upload.',
     browse: 'Drop files here or click to browse',
     remove: 'Remove {{name}}',
     /** Last resort: the request died without the server wording anything. */
@@ -3694,20 +3816,55 @@ export const en = {
      * is anything to do, and admits it is our fault where there isn't.
      */
     errors: {
-      type: 'Only .md, .pdf and image files are accepted.',
+      type: "This kind of file can't be added to the content bank.",
+      /**
+       * `.doc`, `.xls`, `.ppt` — or a password-protected Office file, which the
+       * server refuses in the same words. Both have the same fix.
+       */
+      legacyOffice:
+        "Older or password-protected Office files can't be read. Save it as an unprotected .docx, .xlsx or .pptx and upload that.",
       /** The name said one thing and the bytes were another. */
-      unsupportedType:
-        "This file's contents aren't a kind we can read. Images have to be JPEG, PNG, WebP or GIF.",
+      unsupportedType: "This file's contents aren't a kind we can read.",
+      vector:
+        "SVG and other vector images aren't supported. Export it as a PNG or JPEG first.",
       /** The cap is the server's own, lifted out of its message. */
       tooBig: 'This file is over the {{limit}} limit.',
+      /** The same refusal when the server's message carried no number. */
+      tooBigUnstated: 'This file is too big to upload.',
       dimensions: 'This image is too big to store — the limit is {{max}}.',
+      dimensionsUnstated: 'This image has too many pixels to store.',
+      /** A recording longer than the plan allows; the limit is the server's. */
+      duration_one:
+        'This recording is over the {{count}}-minute limit for your plan.',
+      duration_other:
+        'This recording is over the {{count}}-minute limit for your plan.',
+      durationUnstated: 'This recording is longer than your plan allows.',
+      /** A tier limit — file count or storage — not anything about the file. */
+      quota:
+        "Your plan's content bank limit has been reached, so this wasn't added.",
+      /**
+       * The service that reads this kind of file is switched off or down. Not
+       * the file's fault, and trying later is the whole of the advice.
+       */
+      unavailable:
+        "Files like this can't be read right now. Try again in a few minutes.",
+      /** Searchable, but the structured read didn't finish. */
+      partial: 'Only part of this could be read.',
       empty: 'This file is empty.',
       notPdf: "This isn't a readable PDF.",
+      invalid: "This file couldn't be read — it may be damaged.",
       /** A deployment fault: the bucket isn't configured. */
       notConfigured: "This server can't store images yet.",
       undecodable: "This image couldn't be read — it may be damaged.",
       /** Our side failed. Nothing about the file is wrong. */
       server: 'Something went wrong saving this file. Try again.',
+      /**
+       * The file never reached storage. Most often a bucket that doesn't
+       * accept uploads from this address, which the browser only reports as a
+       * network failure — so it says to retry and names the likelier cause.
+       */
+      storage:
+        "The file couldn't be sent to storage. Try again — if it keeps failing, storage isn't accepting uploads from this app yet.",
     },
   },
 
