@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryWrapper } from '@/test/queryWrapper'
 import type { Asset, AudioStatus, TranscriptEntry } from '@/types/content'
@@ -178,5 +178,41 @@ describe('AssetAudioView', () => {
     expect(
       screen.getByRole('button', { name: 'Transcribe again' }),
     ).toBeInTheDocument()
+  })
+})
+
+describe('the run poll', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('stops asking for a run a settled recording never started', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    api.getAudioStatus.mockResolvedValue(null)
+    renderView(asset({ status: 'ready' }))
+    await waitFor(() => expect(api.getAudioStatus).toHaveBeenCalledTimes(1))
+
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(api.getAudioStatus).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps asking while the recording is still being read', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    api.getAudioStatus.mockResolvedValue(null)
+    renderView(asset({ status: 'processing' }))
+    await waitFor(() => expect(api.getAudioStatus).toHaveBeenCalledTimes(1))
+
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(api.getAudioStatus.mock.calls.length).toBeGreaterThan(1)
+  })
+
+  it('stops after a failed read', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    api.getAudioStatus.mockRejectedValue(new Error('down'))
+    renderView(asset({ status: 'processing' }))
+    await waitFor(() => expect(api.getAudioStatus).toHaveBeenCalled())
+    await vi.advanceTimersByTimeAsync(60_000)
+    const calls = api.getAudioStatus.mock.calls.length
+
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(api.getAudioStatus).toHaveBeenCalledTimes(calls)
   })
 })

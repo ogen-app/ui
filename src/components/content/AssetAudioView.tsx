@@ -37,7 +37,7 @@ type Props = {
 export function AssetAudioView({ asset, onTitleChange, onDirty }: Props) {
   const { t } = useTranslation()
   const settled = isTerminalStatus(asset.status)
-  const run = useAudioStatus(asset.id)
+  const run = useAudioStatus(asset.id, { assetSettled: settled })
   const transcript = useAudioTranscript(asset.id, {
     enabled: settled && asset.status !== 'failed',
   })

@@ -122,15 +122,26 @@ const AUDIO_SETTLED = new Set(['complete', 'partial', 'failed'])
 /**
  * A recording's transcription run, watching itself until it settles — the
  * asset's own poll says *that* it is still going, this says how far.
+ *
+ * A recording with no run yet answers `null`, and that only means "not yet"
+ * while the asset is still being read: once `assetSettled`, nothing is coming,
+ * and polling on would go on for as long as the screen stays open. A failed
+ * read stops it too — a re-run or an `asset.updated` invalidates this key, so
+ * the next run is still picked up.
  */
-export function useAudioStatus(id: string) {
+export function useAudioStatus(
+  id: string,
+  { assetSettled }: { assetSettled: boolean },
+) {
   return useQuery({
     queryKey: audioStatusKey(id),
     queryFn: () => getAudioStatus(id),
     enabled: !!id,
     refetchInterval: (query) => {
+      if (query.state.status === 'error') return false
       const status = query.state.data?.extraction.status
-      return status && AUDIO_SETTLED.has(status) ? false : PROCESSING_POLL_MS
+      if (status) return AUDIO_SETTLED.has(status) ? false : PROCESSING_POLL_MS
+      return assetSettled ? false : PROCESSING_POLL_MS
     },
   })
 }
