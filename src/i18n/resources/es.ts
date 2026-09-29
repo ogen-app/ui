@@ -2822,6 +2822,11 @@ export const es: Translation = {
     },
   },
 
+  announcements: {
+    label: 'Anuncio',
+    dismiss: 'Ocultar este anuncio',
+  },
+
   errors: {
     notFound: {
       code: '404',

@@ -243,6 +243,11 @@
 }
 
 :root {
+  /* The operator announcement ribbon's height while one is showing, and 0
+     otherwise — set by `AnnouncementFrame` around the authenticated layout.
+     Everything sized to the viewport subtracts it, which is what lets the
+     ribbon sit above the page without pushing its bottom edge off-screen. */
+  --announcement-h: 0px;
   --radius: 1px;
   --background: var(--gray-100); /* Rename to default? */
   --foreground: var(--black); /* Rename to default? */
