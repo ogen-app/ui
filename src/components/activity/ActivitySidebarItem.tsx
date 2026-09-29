@@ -6,9 +6,7 @@ import { useNotificationUnreadCount } from '@/hooks/useNotifications'
 /**
  * The Activity row, in the workspace level's utility band.
  *
- * Its own component so the feature's query mounts with the feature: with the
- * flag off this never renders, so nothing is fetched for a feature nobody can
- * see. The count is the inbox's own (`GET /api/notifications/unread-count`) —
+ * Its own component so the count's query mounts with the row. The count is the inbox's own (`GET /api/notifications/unread-count`) —
  * one small request from a row that is on every screen, rather than the page of
  * rows only the feed renders.
  *

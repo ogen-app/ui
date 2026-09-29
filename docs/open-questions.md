@@ -67,7 +67,8 @@ Kept for one cycle so nobody re-raises them, then deleted.
   assistant, assessment, content-plan and URL-crawl resolutions — writes rows
   too, and the daily report got server-side endpoints
   (`GET /api/activity/report/:date?tz=`, `/api/activity/reports`). The
-  `activity` flag came out of the record on 2026-09-18. Still not produced:
+  `activity` flag went on 2026-09-18 and came out of the record on 2026-09-28.
+  Still not produced:
   `not_published`, which is counted in the day's report and nowhere else.
 - **X1 — the `/api/events` naming.** Renamed in the same PR (`284058d`): the
   six genkit bus types and the three post-lifecycle ones are dotted, while

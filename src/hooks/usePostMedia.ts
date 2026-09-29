@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useCampaignPostTypes } from '@/hooks/useCampaignPostTypes'
 import { usePlatformCatalog, usePlatforms } from '@/hooks/usePlatforms'
 import { usePostAttachments } from '@/hooks/usePostAttachments'
@@ -52,13 +51,12 @@ export function usePostMedia(post: Post) {
 
   // The same list the picker offers, so the format Auto lands on is always one
   // the author could have chosen themselves.
-  const autoEnabled = useFeatureFlag('post-type-auto')
   const candidates = useCampaignPostTypes(post.campaign_id, post.platform_id)
   const info = catalog.resolve(post.platform_id)
   const zernioId = info?.zernioId
 
   const auto: AutoResolution | null = useMemo(() => {
-    if (!autoEnabled || !isAutoPostType(post.platform_post_type)) return null
+    if (!isAutoPostType(post.platform_post_type)) return null
     return resolveAutoPostType({
       content: post.content,
       attachments: media.attachments,
@@ -66,7 +64,6 @@ export function usePostMedia(post: Post) {
       rules,
     })
   }, [
-    autoEnabled,
     post.platform_post_type,
     post.content,
     media.attachments,

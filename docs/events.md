@@ -8,7 +8,7 @@ Written because the recipient question kept being answered per-type in three
 places — the `activity` flag comment, [`sse.md`](./sse.md) and CON-285's FR8 —
 and a fan-out rule you cannot see whole is a fan-out rule nobody can review.
 This file is the whole. It is a **catalogue, not a design doc**: the reasoning
-for a rule lives in [`activity.md`](./activity.md) and the flag comments, and
+for a rule lives in [`activity.md`](./activity.md), and
 the wire detail lives in [`sse.md`](./sse.md).
 
 Last reviewed 2026-09-18.

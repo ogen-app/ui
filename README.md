@@ -61,7 +61,7 @@ flag **for your browser alone**, which is how one person exercises an unfinished
 feature on a deploy everyone else is using:
 
 ```
-http://localhost:9002/campaigns?ff=tasks,-activity   # `-` forces off, ?ff= clears
+http://localhost:9002/campaigns?ff=tasks,-ideas   # `-` forces off, ?ff= clears
 ```
 
 `/flags` lists every flag with a switch and a reset. Overrides live in
