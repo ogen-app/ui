@@ -159,17 +159,27 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`MAX_VIDEO_UPLOAD_BYTES`) is ours, and always wins over the seeded ceiling.
   A probed-but-zero `duration_ms` means video-service was down, not a
   zero-length file. See `docs/technical-decisions.md#video-ingest`.
-- **An asset only opens in the editor if `opensAsDocument` says it is one.**
-  `AssetDocument`'s editor is the last branch, never the fallback: `null | MD |
-  PDF | URL` are documents, and anything else — a `type` the build predates —
-  gets the read-only `UnsupportedAsset`. Never restore "everything else gets
-  `AssetEditor`". It seeds BlockNote from `content` and autosaves it back, so
-  the first type whose `content` isn't a document is overwritten by anyone who
-  opens it and types (CON-235; `IMG`'s `content` is its description). PDF *is*
-  a document — its extracted text is what the embeddings are built from. An
-  image is not, and has its own screen rather than the fallback
-  (`AssetImageView`, CON-246), so `UnsupportedAsset` is now only reached by a
-  kind this build has never heard of. See
+  **A Content-Bank recording takes the same shape** (`uploadAudioFile`,
+  behind `content-bank-audio`), sharing `services/api/storageUpload` — which
+  sends exactly the headers presign signed, never `file.type`, because the
+  browser's `audio/x-m4a` is not the server's `audio/mp4`. Presign creates the
+  asset before a byte moves, so a failed PUT or a refused finalize deletes it
+  again; a finalize that never answered does not, since its run may have begun.
+- **An asset only opens in the editor if `assetScreen` says so.** It answers
+  one of `editor | extracted | image | audio | unsupported`, and the editor is a
+  named answer, never the fallback: only `null | MD | URL` reach it. Never
+  restore "everything else gets `AssetEditor`" — it seeds BlockNote from
+  `content` and autosaves it back, so the first type whose `content` isn't a
+  document is overwritten by anyone who opens it and types (CON-235). **PDF and
+  DOC are read-only** (`AssetExtractedView`): the server refuses a changed
+  `content` on PDF, DOC and AUDIO (409 `content_locked`, CON-312), and their
+  `content` is only the upload's `"[]"` placeholder anyway — the text lives in
+  the chunks, so that screen reads `GET /:id/chunks`, and the list states a PDF
+  by its pages rather than counting the placeholder's one "word". An image
+  (`AssetImageView`, CON-246) and a recording (`AssetAudioView`, CON-282) have
+  screens of their own; `UnsupportedAsset` is only reached by a kind this build
+  has never heard of. Saves send `content` only once it has been edited, so a
+  rename on an ingested type is a title-only PUT. See
   `docs/technical-decisions.md#asset-opening`.
 - **An asset update is presence-aware, and a campaign's is not.** Since CON-279
   the asset PUT reads `alt_text` and `tag_ids` as optional: omit one and the
@@ -203,13 +213,19 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   document it would resolve to. Images only: nothing else carries a checksum,
   so a second PDF really is a second document and warning about one would be a
   promise the server doesn't keep.
-- **An upload refusal is the server's prose, worded by the client.** The upload
-  endpoint answers 201 and reports each file's fate as an English sentence —
-  some of it Go, package prefix and all — so `lib/uploadError` matches the
-  conditions onto catalogue copy and lifts the caps out of the message rather
-  than restating them. Add a case there, not a literal at the call site; an
-  unmatched message falls through to a fallback that strips the package name.
-  The real fix is a per-result `code` on the API (`docs/open-questions.md` S4).
+- **An upload refusal is worded by its `code`, not its prose.** Since
+  CON-281/312 every `/upload` result, post-attachment refusal and failed asset
+  (`failure_code`) carries one of `models/upload_code.go`'s codes, and
+  `lib/uploadError` switches on it — the client's own refusals
+  (`validateUploadFile`) answer in the same codes, so one table words both. The
+  prose is read for only two things: the numbers a code deliberately leaves out
+  (a cap, a duration limit), lifted out rather than restated, and a code this
+  build predates, which falls back to matching the sentence as everything did
+  before codes existed. Add a case there, not a literal at the call site. Two
+  codes are ours and never sent: `legacy_office` (a `.doc` is told to save as
+  `.docx`) and `storage_upload_failed` (a presigned PUT that never reached the
+  bucket). **The client holds no image cap** — the operator sets it (CON-281),
+  and a guess below it refuses files the server takes.
 - **A campaign update is a whole-resource PUT, and the server defaults every
   field the payload omits.** Leaving `publishing_days` out does not preserve the
   campaign's publishing days — it resets them to all seven, same for the rest of

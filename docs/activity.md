@@ -191,8 +191,8 @@ reach, both of them listed here as "widens later":
 - **Why a post failed.** `failure_reason` rides along the same way. It is Go
   prose (`"zernio_terminal: rejected"`), not a code, so the report shows it
   verbatim — the same rule as a notification's server-composed `title`. A
-  per-result code is the ask, and it is the one `lib/uploadError` is already
-  waiting on.
+  per-result code is the ask — the one upload results got in CON-281, and
+  still open for posts (`open-questions.md` S4).
 
 What it cost is the **per-campaign breakdown**, which the computed version had
 for free because it held every post. That was never in the v1 contents above; a

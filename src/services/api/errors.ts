@@ -42,11 +42,19 @@ export async function fetchOrThrowUnavailable(
  */
 export class ApiError extends Error {
   readonly status: number
+  /**
+   * The machine-readable reason, when the body carried one — the content
+   * bank's `content_locked` and upload codes (CON-281/312), an entitlement's
+   * `entitlement_exceeded`. Switch on this rather than on `message`, which is
+   * prose.
+   */
+  readonly code?: string
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.code = code
   }
 }
 
@@ -63,6 +71,7 @@ type PlatformValidationError = {
 
 type ApiErrorBody = {
   error?: string
+  code?: string
   /**
    * Keyed by platform id. Sent with 422s from the validation gate — post
    * create, the draft → ready_for_publish PUT, and POST /:id/schedule.
@@ -121,19 +130,32 @@ export async function errorMessage(
   res: Response,
   fallback: string,
 ): Promise<string> {
+  return (await errorDetails(res, fallback)).message
+}
+
+/** `errorMessage`, plus the body's `code` when it sent one. Reads the body. */
+export async function errorDetails(
+  res: Response,
+  fallback: string,
+): Promise<{ message: string; code?: string }> {
   try {
     const body = (await res.json()) as ApiErrorBody
+    const code =
+      typeof body.code === 'string' && body.code ? body.code : undefined
     if (typeof body.error === 'string' && body.error.length > 0) {
       const accountMessage = ACCOUNT_SELECTION_MESSAGES[body.error]
-      if (accountMessage) return accountMessage
+      if (accountMessage) return { message: accountMessage, code }
       const details = validationDetails(body.platform_validation)
-      if (details.length === 0) return body.error
+      if (details.length === 0) return { message: body.error, code }
       const shown = details.slice(0, MAX_VALIDATION_DETAILS)
       const more = details.length - shown.length
-      return `${body.error}: ${shown.join('; ')}${more > 0 ? ` (+${more} more)` : ''}`
+      return {
+        message: `${body.error}: ${shown.join('; ')}${more > 0 ? ` (+${more} more)` : ''}`,
+        code,
+      }
     }
+    return { message: fallback, code }
   } catch {
-    // fall through
+    return { message: fallback }
   }
-  return fallback
 }

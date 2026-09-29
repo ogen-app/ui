@@ -2601,9 +2601,85 @@ export const es: Translation = {
       campaignTitle: 'Recursos de {{campaign}}',
     },
 
+    kinds: {
+      text_one: 'archivo de texto',
+      text_other: 'archivos de texto',
+      page_one: 'página web',
+      page_other: 'páginas web',
+      pdf_one: 'PDF',
+      pdf_other: 'PDF',
+      document_one: 'documento',
+      document_other: 'documentos',
+      image_one: 'imagen',
+      image_other: 'imágenes',
+      audio_one: 'grabación',
+      audio_other: 'grabaciones',
+      waiting: '{{count}} aún en lectura',
+      unreadable: '{{count}} no se pudieron leer',
+    },
+
     unsupported: {
       title: 'Esto no es un documento',
       body: 'Esta versión de la aplicación no sabe mostrar este tipo de recurso. No se ha cambiado nada: sigue aquí, y una versión más reciente lo abrirá.',
+    },
+
+    titlePlaceholder: 'Título',
+    titleLabel: 'Título',
+
+    extent: {
+      words_one: '{{formatted}} palabra',
+      words_other: '{{formatted}} palabras',
+      pages_one: '{{count}} página',
+      pages_other: '{{count}} páginas',
+      waiting: 'Aún sin leer',
+      nothing: 'No se extrajo nada',
+      noDescription: 'Sin descripción',
+    },
+
+    ingest: {
+      readingTitle: 'Leyendo este archivo',
+      readingBody:
+        'Esto ocurre en segundo plano y puede tardar unos minutos. Puedes salir: se completará aquí solo, y la campaña podrá usarlo en cuanto lo haga.',
+      failedTitle: 'No hemos podido leer este archivo',
+      failedUnstated:
+        'El servidor no ha dicho por qué. Elimínalo y vuelve a subirlo, o prueba con otra copia del archivo.',
+    },
+
+    extracted: {
+      readOnly:
+        'Este es el texto leído del archivo, en las secciones que cita el asistente. No se puede editar aquí: sube una versión nueva para cambiarlo.',
+      partial:
+        'Solo se ha podido leer una parte de este archivo. El resto no se puede buscar.',
+      empty:
+        'No se ha podido leer nada de este archivo; puede que solo contenga imágenes.',
+      loadFailed:
+        'No se ha podido cargar el texto de este archivo. Prueba a recargar la página.',
+      shown: 'Se muestran {{shown}} de {{total}} secciones',
+      more: 'Mostrar más',
+      page: 'Página {{page}}',
+      pages: 'Páginas {{from}}–{{to}}',
+    },
+
+    audio: {
+      transcript: 'Transcripción',
+      playFrom: 'Reproducir desde {{time}}',
+      normalizing: 'Preparando la grabación…',
+      progress: 'Transcritas {{done}} de {{total}} partes',
+      partial: 'Algunas partes de la grabación no se pudieron transcribir.',
+      empty: 'No se ha encontrado voz en esta grabación.',
+      loadFailed:
+        'No se ha podido cargar la transcripción. Prueba a recargar la página.',
+      missing:
+        'Esta grabación no se guardó, así que no hay nada que reproducir.',
+      noPlayer: 'Este navegador no puede reproducir audio.',
+      retry_one: 'Reintentar la parte fallida',
+      retry_other: 'Reintentar las {{count}} partes fallidas',
+      reextract: 'Transcribir de nuevo',
+    },
+
+    locked: {
+      title: 'El texto de este archivo no se puede editar',
+      body: 'Se leyó del archivo subido. Sube una versión nueva para cambiarlo.',
     },
 
     image: {
@@ -2624,6 +2700,16 @@ export const es: Translation = {
       tagsHelp: 'Cómo vuelves a encontrar esta imagen en la lista.',
       missing: 'Esta imagen no se guardó, así que no hay nada que mostrar.',
       animated: 'Animada',
+      altGenerated:
+        'Escrito automáticamente a partir de la imagen. Edítalo para hacerlo tuyo: al volver a leer la imagen se conserva lo que escribas.',
+      altRegenerate: 'Escribir uno nuevo',
+      failedTitle: 'Esta imagen no se procesó',
+      partialTitle: 'Esta imagen solo se procesó en parte',
+      partial:
+        'La imagen se describió, pero no se pudo leer todo el texto que contiene.',
+      reextract: 'Volver a leer',
+      undrawable:
+        'El formato de esta imagen no se puede mostrar en un navegador y no se creó una copia visible.',
     },
 
     selection: {
@@ -2674,9 +2760,14 @@ export const es: Translation = {
   },
 
   uploads: {
-    limitDocs: 'Markdown hasta {{md}}, PDF hasta {{pdf}}',
-    limitImages: 'Imágenes (JPEG, PNG, WebP, GIF) hasta {{size}}',
-    pdfNote: 'Los PDF se leen en segundo plano, así que terminan después.',
+    limitText: 'Markdown hasta {{md}}, PDF hasta {{pdf}}',
+    limitDocuments:
+      'Archivos de Word, Excel, PowerPoint, OpenDocument, EPUB, CSV, HTML, correo, RTF y texto hasta {{size}}',
+    limitImages: 'Imágenes: JPEG, PNG, WebP, GIF, HEIC, AVIF, TIFF y BMP',
+    limitAudio:
+      'Audio: MP3, WAV, M4A, AAC, OGG, Opus, FLAC, WebM y AIFF hasta {{size}}',
+    backgroundNote:
+      'Todo salvo el Markdown se lee en segundo plano, así que termina después de subirse.',
     browse: 'Suelta los archivos aquí o haz clic para elegirlos',
     remove: 'Quitar {{name}}',
     failed: 'No se ha podido subir',
@@ -2687,17 +2778,38 @@ export const es: Translation = {
     duplicate: 'Ya está en el banco de contenido como «{{title}}»',
 
     errors: {
-      type: 'Solo se aceptan archivos .md, .pdf e imágenes.',
+      type: 'Este tipo de archivo no se puede añadir al banco de contenido.',
+      legacyOffice:
+        'Los archivos de Office antiguos o protegidos con contraseña no se pueden leer. Guárdalo como .docx, .xlsx o .pptx sin protección y sube ese.',
       unsupportedType:
-        'El contenido de este archivo no es de un tipo que podamos leer. Las imágenes tienen que ser JPEG, PNG, WebP o GIF.',
+        'El contenido de este archivo no es de un tipo que podamos leer.',
+      vector:
+        'Las imágenes SVG y otras vectoriales no se admiten. Expórtala antes como PNG o JPEG.',
       tooBig: 'Este archivo supera el límite de {{limit}}.',
+      tooBigUnstated: 'Este archivo es demasiado grande para subirlo.',
       dimensions:
         'Esta imagen es demasiado grande para guardarla: el límite es {{max}}.',
+      dimensionsUnstated:
+        'Esta imagen tiene demasiados píxeles para guardarla.',
+      duration_one:
+        'Esta grabación supera el límite de {{count}} minuto de tu plan.',
+      duration_other:
+        'Esta grabación supera el límite de {{count}} minutos de tu plan.',
+      durationUnstated:
+        'Esta grabación es más larga de lo que permite tu plan.',
+      quota:
+        'Se ha alcanzado el límite del banco de contenido de tu plan, así que no se ha añadido.',
+      unavailable:
+        'Ahora mismo no se pueden leer archivos como este. Vuelve a intentarlo en unos minutos.',
+      partial: 'Solo se ha podido leer una parte.',
       empty: 'Este archivo está vacío.',
       notPdf: 'Este archivo no es un PDF legible.',
+      invalid: 'No se ha podido leer este archivo; puede que esté dañado.',
       notConfigured: 'Este servidor todavía no puede guardar imágenes.',
       undecodable: 'No se ha podido leer esta imagen; puede que esté dañada.',
       server: 'Algo ha fallado al guardar este archivo. Inténtalo de nuevo.',
+      storage:
+        'No se ha podido enviar el archivo al almacenamiento. Vuelve a intentarlo; si sigue fallando, el almacenamiento aún no acepta subidas desde esta aplicación.',
     },
   },
 
