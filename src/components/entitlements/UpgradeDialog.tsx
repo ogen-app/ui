@@ -8,6 +8,7 @@ import {
 } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
+import { GradientMark } from '@/components/ui/gradient-button'
 import { ModalContainer } from '@/components/ui/modal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -54,8 +55,8 @@ export type PaywallData = { plan: WorkspacePlan; tiers: Tier[] }
  * **One plan, argued for.** The left column is the plan we recommend — the
  * cheapest one that clears the wall they just hit (`recommendedTier`, which
  * Harbor is expected to take over) — with its price and the one button. The
- * right column is what that plan adds, the refused feature first and marked by
- * style alone, so every tile reads the same way. Everything else is one link
+ * right column is what that plan adds, the refused feature first and styled like
+ * the rest, so the list reads as benefits rather than as options. Everything else is one link
  * away on `/plans`, from both columns: *is this the right plan?* is asked on
  * the left and *what else do I get?* on the right, and the same page answers
  * both.
@@ -295,18 +296,17 @@ function Heading({
 
   return (
     <header className="flex flex-col gap-5 pr-8">
-      {/* The tile a chosen thing wears elsewhere in this feature. Teal is a
-          fill and not ink in this theme, so it colours the mark and nothing
-          that has to be read (`docs/colors.md`). */}
-      <span className="flex size-12 items-center justify-center rounded-lg bg-secondary text-accent">
-        <StarIcon size={26} weight="fill" aria-hidden />
+      {/* The sweep marks the dialog as the offer, here and on its one button;
+          nothing that has to be read wears it. */}
+      <span className="flex size-12 items-center justify-center rounded-lg bg-secondary">
+        <GradientMark icon={StarIcon} size={26} weight="fill" />
       </span>
       <div className="flex flex-col gap-2">
         <h2 className="font-display text-2xl font-medium tracking-tight md:text-[28px] md:leading-tight">
           {title}
         </h2>
         {/* Two whole sentences side by side, each its own catalogue entry. */}
-        <p className="max-w-[60ch] text-sm text-tertiary-foreground">
+        <p className="max-w-[60ch] text-sm text-foreground">
           {reason} {consequence}
         </p>
       </div>
@@ -334,9 +334,9 @@ function OfferColumn({
 }) {
   const { t } = useTranslation()
   const { month, year } = billingOptions(tier)
-  const [interval, setBilling] = useState<'month' | 'year'>('month')
-  // The switcher is shown only when both prices exist; otherwise whichever one
-  // does is simply the price.
+  // Yearly first: it is the cheaper way to hold the plan, and the saving is
+  // stated under the price rather than left to be discovered.
+  const [interval, setBilling] = useState<'month' | 'year'>('year')
   const both = month !== null && year !== null
   const shown = both ? interval : month ? 'month' : 'year'
 
@@ -344,81 +344,100 @@ function OfferColumn({
     <section className="flex flex-col gap-2">
       {/* Stretched to the benefit list's height, so the two columns end on
           one line and their links sit level underneath. */}
-      <div className="flex flex-1 flex-col gap-6 rounded-lg border border-border p-6">
+      <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border">
+        {/* The period is a detail of the price, not the first decision on the
+            card, so it sits on a grey ribbon across the top, set on the ribbon
+            the way a tab is rather than in a track of its own. Shown only when
+            both prices exist; otherwise whichever one does is simply the
+            price. */}
         {both && (
-          <Tabs
-            value={interval}
-            onValueChange={(value) => setBilling(value as 'month' | 'year')}
-          >
-            <TabsList
-              variant="segmented"
-              size="excluded"
-              className="grid w-full grid-cols-2"
-              aria-label={t('tiers.paywall.billing')}
+          <div className="flex justify-center border-b border-border bg-secondary px-4 py-1.5">
+            <Tabs
+              value={interval}
+              onValueChange={(value) => setBilling(value as 'month' | 'year')}
             >
-              <TabsTrigger variant="segmented" value="month">
-                {t('tiers.paywall.monthly')}
-              </TabsTrigger>
-              <TabsTrigger variant="segmented" value="year">
-                {t('tiers.paywall.yearly')}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+              <TabsList
+                size="excluded"
+                className="h-7 gap-0.5 p-0"
+                aria-label={t('tiers.paywall.billing')}
+              >
+                <TabsTrigger
+                  value="month"
+                  className="h-7 rounded px-3 text-xs lg:text-xs data-[state=active]:bg-popover data-[state=active]:text-foreground data-[state=active]:inset-ring data-[state=active]:inset-ring-border"
+                >
+                  {t('tiers.paywall.monthly')}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="year"
+                  className="h-7 rounded px-3 text-xs lg:text-xs data-[state=active]:bg-popover data-[state=active]:text-foreground data-[state=active]:inset-ring data-[state=active]:inset-ring-border"
+                >
+                  {t('tiers.paywall.yearly')}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         )}
 
-        <div className="flex flex-col gap-1">
-          {/* Data, not copy: a tier's name is whatever the server calls it. */}
-          <h3 className="font-display text-lg font-medium tracking-tight">
-            {tier.name}
-          </h3>
-          <p className="text-[13px] text-tertiary-foreground">
-            {t('tiers.paywall.planPitch', { current: currentName })}
-          </p>
-        </div>
+        <div className="flex flex-1 flex-col gap-5 p-5">
+          {/* The plan and its price sit in the middle of whatever height the
+            benefit list gives the card, rather than hanging from its top. */}
+          <div className="flex flex-1 flex-col justify-center gap-6">
+            <div className="flex flex-col gap-1">
+              {/* Data, not copy: a tier's name is whatever the server calls it. */}
+              <h3 className="font-display text-3xl font-medium tracking-tight">
+                {t('tiers.paywall.planName', { plan: tier.name })}
+              </h3>
+              <p className="text-[13px] text-tertiary-foreground">
+                {t('tiers.paywall.planPitch', { current: currentName })}
+              </p>
+            </div>
 
-        <div className="flex flex-col gap-1">
-          {shown === 'month' && month && <MonthlyPrice price={month} />}
-          {shown === 'year' && year && (
-            <YearlyPrice price={year} month={month} />
-          )}
-          {/* A plan the catalogue has not priced says so. Nothing at all read as
-            a card that failed to load, and "€0" would be a promise. */}
-          {!month && !year && (
-            <p className="font-display text-xl font-medium tracking-tight text-tertiary-foreground">
-              {t('tiers.paywall.unpriced')}
-            </p>
-          )}
-        </div>
+            <div className="flex flex-col gap-1">
+              {shown === 'month' && month && <MonthlyPrice price={month} />}
+              {shown === 'year' && year && (
+                <YearlyPrice price={year} month={month} />
+              )}
+              {/* A plan the catalogue has not priced says so. Nothing at all read
+                as a card that failed to load, and "€0" would be a promise. */}
+              {!month && !year && (
+                <p className="font-display text-xl font-medium tracking-tight text-tertiary-foreground">
+                  {t('tiers.paywall.unpriced')}
+                </p>
+              )}
+            </div>
+          </div>
 
-        <div className="mt-auto flex flex-col gap-3">
-          {mayChange ? (
-            // The one action on this screen worth colouring.
-            <Button
-              variant="accent"
-              size="lg"
-              className="w-full"
-              onClick={onUpgrade}
-            >
-              <RocketLaunchIcon weight="fill" aria-hidden />
-              {t('tiers.paywall.upgradeTo', {
-                plan: tier.name.toLocaleUpperCase(),
-              })}
-            </Button>
-          ) : (
-            <>
-              <OwnersOnly />
-              {/* Not the teal one: nothing is being sold to this reader, so
-                colouring the way out would make the colour mean "a button". */}
+          <div className="flex flex-col gap-3">
+            {mayChange ? (
+              // The one action on this screen worth colouring. The rocket rides
+              // the far edge, where it points the way the click goes.
               <Button
-                variant="neutral"
+                variant="sweep"
                 size="lg"
-                className="w-full"
-                onClick={onClose}
+                className="w-full justify-between"
+                onClick={onUpgrade}
               >
-                {t('common.close')}
+                {t('tiers.paywall.upgradeTo', {
+                  plan: tier.name.toLocaleUpperCase(),
+                })}
+                <RocketLaunchIcon weight="fill" aria-hidden />
               </Button>
-            </>
-          )}
+            ) : (
+              <>
+                <OwnersOnly />
+                {/* Not the teal one: nothing is being sold to this reader, so
+                colouring the way out would make the colour mean "a button". */}
+                <Button
+                  variant="neutral"
+                  size="lg"
+                  className="w-full"
+                  onClick={onClose}
+                >
+                  {t('common.close')}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <LinkOut onClick={onCompare}>{t('tiers.paywall.comparePlans')}</LinkOut>
@@ -479,7 +498,7 @@ function BigPrice({ amount, currency }: { amount: number; currency: string }) {
         values={{ price: money(amount, currency) }}
         components={{
           price: (
-            <span className="font-display text-4xl font-medium tracking-tight text-foreground" />
+            <span className="font-display text-[44px] leading-none font-medium tracking-tight text-foreground" />
           ),
         }}
       />
@@ -515,7 +534,7 @@ function BenefitsColumn({
       {/* The tiles share out whatever height the plan card needs, so a tall
           card never leaves a gap under a short list, or the other way round. */}
       <ul className="flex flex-1 flex-col gap-2">
-        {primary && <BenefitTile feature={primary} primary />}
+        {primary && <BenefitTile feature={primary} />}
         {secondary.map((feature) => (
           <BenefitTile key={feature.key} feature={feature} />
         ))}

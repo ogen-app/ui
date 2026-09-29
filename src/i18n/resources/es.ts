@@ -1838,8 +1838,9 @@ export const es: Translation = {
       yearly: 'Anual',
       perMonth: '<price>{{price}}</price> / mes',
       billedYearly: '{{total}} facturados al año',
-      billedYearlySaving: '{{total}} facturados al año · ahorras {{saving}}',
+      billedYearlySaving: '{{total}} facturados al año, ahorras {{saving}}',
       upgradeTo: 'PASAR A {{plan}}',
+      planName: 'Ogen {{plan}}',
       comparePlans: 'Comparar todos los planes',
       seeAllFeatures: 'Ver todas las funciones',
       benefit: {

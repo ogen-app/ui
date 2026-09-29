@@ -2544,8 +2544,10 @@ export const en = {
       yearly: 'Yearly',
       perMonth: '<price>{{price}}</price> / month',
       billedYearly: '{{total}} billed yearly',
-      billedYearlySaving: '{{total}} billed yearly · save {{saving}}',
+      billedYearlySaving: '{{total}} billed yearly, save {{saving}}',
       upgradeTo: 'UPGRADE TO {{plan}}',
+      /** The offered plan's name on its card; `plan` is the server's tier name. */
+      planName: 'Ogen {{plan}}',
       comparePlans: 'Compare every plan',
       seeAllFeatures: 'See all features',
       /**

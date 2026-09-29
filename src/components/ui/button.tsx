@@ -74,6 +74,20 @@ const buttonVariants = cva(
           'bg-accent text-primary hover:bg-accent/90 ' +
           'data-[active=true]:bg-accent/90 ' +
           '[&_[data-spinner-container]]:bg-accent [&_[data-spinner]]:bg-primary/20 [&_[data-spinner]:before]:bg-primary',
+        // `accent` with the sweep in place of the teal, for the one action a
+        // screen that already speaks in the sweep is selling. Blue to green
+        // only: white on the orange tip falls short of legible.
+        sweep:
+          'bg-linear-to-r from-sweep-from to-sweep-to text-primary hover:opacity-90 ' +
+          'data-[active=true]:opacity-90 ' +
+          '[&_[data-spinner-container]]:bg-sweep-to [&_[data-spinner]]:bg-primary/20 [&_[data-spinner]:before]:bg-primary',
+        // Accented without a fill: the default surface, with the ink drawn by
+        // `GradientButton` (ui/gradient-button), which puts the sweep on the
+        // mark and the label. It hovers to a grey rather than to `default`'s
+        // black, which the gradient cannot be read on.
+        gradient:
+          'bg-primary hover:bg-secondary data-[active=true]:bg-secondary ' +
+          '[&_[data-spinner-container]]:bg-primary [&_[data-spinner]]:bg-sweep-to/20 [&_[data-spinner]:before]:bg-sweep-to',
         ghost:
           'bg-transparent text-secondary-foreground hover:text-primary-foreground ' +
           'data-[active=true]:text-primary-foreground data-[active=true]:bg-quaternary ' +

@@ -194,7 +194,9 @@ describe('UpgradeDialog', () => {
         "You've used all active campaigns on Trial. Everything you've made stays exactly as it is.",
       ),
     ).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Pro' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Ogen Pro' }),
+    ).toBeInTheDocument()
     expect(
       screen.queryByRole('heading', { name: 'Max' }),
     ).not.toBeInTheDocument()
@@ -216,17 +218,15 @@ describe('UpgradeDialog', () => {
     expect(tiles[1]).toHaveTextContent('3 team members')
   })
 
-  it('switches between the monthly and the yearly price', async () => {
+  it('opens on the yearly price and switches to the monthly one', async () => {
     answer.current = SPENT
     catalogue.current = [PRO]
     render(<OpenGate />)
 
-    expect(screen.getByText('€29')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('tab', { name: 'Yearly' }))
     expect(screen.getByText('€24')).toBeInTheDocument()
-    expect(
-      screen.getByText('€290 billed yearly · save €58'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('€290 billed yearly, save €58')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('tab', { name: 'Monthly' }))
+    expect(screen.getByText('€29')).toBeInTheDocument()
   })
 
   it('shows a member the offer and no way to take it', async () => {
@@ -239,7 +239,7 @@ describe('UpgradeDialog', () => {
     render(<OpenGate />)
 
     // The price is not an owner's privilege — only the decision is.
-    expect(screen.getByText('€29')).toBeInTheDocument()
+    expect(screen.getByText('€24')).toBeInTheDocument()
     expect(
       screen.getByText(
         'Only a workspace owner can change the plan for everyone here.',

@@ -23,7 +23,6 @@ import {
   type TierFeature,
   type TierFeatureKey,
 } from '@/lib/tierFeatures'
-import { cn } from '@/lib'
 
 /** A mark per feature, so a column of tiles can be scanned before it is read. */
 const ICON: Record<TierFeatureKey, Icon> = {
@@ -96,36 +95,17 @@ function benefitTitle(
  * One benefit of the offered plan: its mark, a title carrying the figure, and
  * one line on what it is for.
  *
- * The primary tile — the feature that was refused — differs by style alone:
- * an accent edge, a tint and a teal mark. Same object, same three parts, so the
- * column reads as one list with its most important row first rather than a
- * headline and some footnotes.
+ * The refused feature is first in the column and otherwise looks like every
+ * other tile: marked out, it read as a choice already made, as if the list
+ * were a picker.
  */
-export function BenefitTile({
-  feature,
-  primary = false,
-}: {
-  feature: TierFeature
-  primary?: boolean
-}) {
+export function BenefitTile({ feature }: { feature: TierFeature }) {
   const { t, i18n } = useTranslation()
   const Mark = ICON[feature.key]
   return (
-    <li
-      className={cn(
-        'flex flex-1 items-center gap-3 rounded-lg border px-4 py-3',
-        primary ? 'border-accent bg-accent/10' : 'border-border',
-      )}
-    >
-      <span
-        className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-md',
-          primary
-            ? 'bg-accent text-primary'
-            : 'bg-secondary text-tertiary-foreground',
-        )}
-      >
-        <Mark size={18} weight={primary ? 'fill' : 'regular'} aria-hidden />
+    <li className="flex flex-1 items-center gap-3 rounded-lg border border-border px-4 py-3">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-tertiary-foreground">
+        <Mark size={18} aria-hidden />
       </span>
       <span className="flex min-w-0 flex-col">
         <span className="text-sm font-medium">
