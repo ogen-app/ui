@@ -138,8 +138,8 @@ describe('the performers payload', () => {
     const byReach = await demoPerformers({ window: '28d', by: 'reach' }, NOW)
 
     expect(byReach.data!.by).toBe('reach')
-    expect(byReach.data!.best.map((r) => r.post_id)).not.toEqual(
-      byTypical.data!.best.map((r) => r.post_id),
+    expect(byReach.data!.best!.map((r) => r.post_id)).not.toEqual(
+      byTypical.data!.best!.map((r) => r.post_id),
     )
   })
 })
