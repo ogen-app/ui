@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
+import { GradientButton } from '@/components/ui/gradient-button'
 import { formatNumber } from '@/lib/intl'
 import { displayPrice, toMajorUnits } from '@/lib/tierPrice'
 import { tierFeatures } from '@/lib/tierFeatures'
@@ -113,24 +114,26 @@ export function TierCard({
 
       <TierFeatureList features={tierFeatures(tier)} />
 
-      {mayChoose && (
-        <Button
-          // Both non-actionable states take the quiet variant: a disabled
-          // primary button still reads as the thing to press, and "Scheduled"
-          // rendered that way looked like the call to action on the page.
-          variant={current || scheduled ? 'defaultInverted' : 'default'}
-          className="mt-auto w-full"
-          disabled={busy || current || scheduled}
-          onClick={() => onChoose(tier)}
-          aria-label={t('tiers.chooseNamed', { name: tier.name })}
-        >
-          {current
-            ? t('tiers.currentBadge')
-            : scheduled
-              ? t('tiers.scheduledBadge')
-              : t('tiers.choose')}
-        </Button>
-      )}
+      {/* Choosing a plan is the one act on this page that spends money, so it
+          takes the accented button. Both non-actionable states take the quiet
+          variant instead: a disabled accent still reads as the thing to press,
+          and "Scheduled" rendered that way looked like the call to action on
+          the page. */}
+      {mayChoose &&
+        (current || scheduled ? (
+          <Button variant="defaultInverted" className="mt-auto w-full" disabled>
+            {current ? t('tiers.currentBadge') : t('tiers.scheduledBadge')}
+          </Button>
+        ) : (
+          <GradientButton
+            className="mt-auto w-full justify-center"
+            disabled={busy}
+            onClick={() => onChoose(tier)}
+            aria-label={t('tiers.chooseNamed', { name: tier.name })}
+          >
+            {t('tiers.choose')}
+          </GradientButton>
+        ))}
     </section>
   )
 }
