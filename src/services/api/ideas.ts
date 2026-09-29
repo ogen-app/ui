@@ -1,48 +1,44 @@
 import { apiJson, apiVoid } from './http'
-import {
-  STUBBED,
-  stubCaptureIdea,
-  stubDeleteIdea,
-  stubEditIdea,
-  stubListIdeas,
-  stubSetVerdict,
-} from './ideas.stub'
 import type { Idea, IdeaVerdict } from '@/lib/ideas'
 
 /**
  * Ideas — the backlog of what a workspace could make, and the verdicts on it.
  *
- * **Nothing on the API answers this yet.** There is no table and no endpoint;
- * `ideas.stub.ts` stands in, off `localStorage`, so the screen can be built and
- * used before the server has an opinion. This file is the contract the client
- * is written against — the stub returns the same wire shapes and goes through
- * the same parser below, so swapping it out is deleting the `STUBBED` branches
- * and nothing else.
+ * The client was written against this contract before the server had one, off
+ * a `localStorage` stub; CON-315 built the endpoints to it, and the stub is
+ * gone. `ideas.test.ts` is the executable half of what follows.
  *
  * ## The contract
  *
- *     GET /api/ideas[?campaign_id=<id>]
+ *     GET /api/ideas[?campaign_id=<id>|none]
  *
  * Workspace-scoped, like everything else behind `X-Workspace-Id`. Ideas are
  * shared: every member sees the same backlog, which is the point of keeping one.
  *
  *     200 {"ideas": [{
- *       "id": "idea_01J…",
+ *       "id": "k3Xz9QpL",
  *       "title": "A teardown of our own onboarding",
  *       "note": "",
  *       "campaign_id": null,
  *       "verdict": null,
  *       "created_at": "2026-09-17T08:00:00Z",
- *       "created_by": "usr_01J…",
+ *       "created_by": "Vo5fQRrMVdI",
  *       "decided_at": null,
  *       "decided_by": null,
  *       "remind_at": null
  *     }]}
  *
+ * The server also sends `created_by_name` — the author as they were named at
+ * capture, which outlives the membership when `created_by` goes `null` — and
+ * `updated_at`. Nothing on screen reads either yet, so neither is typed here.
+ *
  * `campaign_id` filters rather than scopes — the same rows, narrowed. The
  * campaign's Ideas page is this module with the filter on, and an idea moved
  * onto a campaign keeps its verdict and its history rather than becoming a new
- * row somewhere else.
+ * row somewhere else. `none` narrows to the ideas no campaign holds; nothing
+ * asks for that today. An idea whose campaign was deleted reads back with
+ * `campaign_id: null`, and naming a campaign that is not live in the workspace
+ * is a 400.
  *
  *     POST /api/ideas  {"title": "…", "note": "", "campaign_id": null}
  *
@@ -55,7 +51,8 @@ import type { Idea, IdeaVerdict } from '@/lib/ideas'
  * Presence-aware, like the asset PUT since CON-279: a field left out is left
  * alone, a field sent — including `""` and `null` — replaces what is stored. So
  * a screen sends what it owns and nothing else, and two people editing
- * different halves of the same idea do not overwrite each other.
+ * different halves of the same idea do not overwrite each other. Any other key
+ * — `verdict`, `remind_at`, `created_by` — and an empty body are a 400.
  *
  *     PUT /api/ideas/:id/verdict  {"verdict": "later"|"yes"|"no"|null,
  *                                  "remind_at": "2026-10-17T08:00:00Z"|null}
@@ -63,7 +60,9 @@ import type { Idea, IdeaVerdict } from '@/lib/ideas'
  * **A verdict is its own endpoint and deliberately not a field on the PATCH**,
  * for the reason archiving a campaign is not a field on its PUT: a decision
  * must not be able to ride along with an edit. `null` returns the idea to the
- * inbox, which is how every decision here stays reversible.
+ * inbox, which is how every decision here stays reversible. Both keys are
+ * required on every call, and every call re-stamps `decided_at`/`decided_by` —
+ * postponing again moves the decision as well as the wake-up.
  *
  * Two rules the server owns, because the client cannot be trusted with either:
  *
@@ -120,17 +119,13 @@ export function ideaFromWire(body: IdeaBody): Idea {
 }
 
 export async function listIdeas(campaignId?: string | null): Promise<Idea[]> {
-  const bodies = STUBBED
-    ? await stubListIdeas(campaignId ?? null)
-    : (
-        await apiJson<{ ideas: IdeaBody[] }>(
-          campaignId
-            ? `/api/ideas?campaign_id=${encodeURIComponent(campaignId)}`
-            : '/api/ideas',
-          'Unable to fetch ideas',
-        )
-      ).ideas
-  return bodies.map(ideaFromWire)
+  const { ideas } = await apiJson<{ ideas: IdeaBody[] }>(
+    campaignId
+      ? `/api/ideas?campaign_id=${encodeURIComponent(campaignId)}`
+      : '/api/ideas',
+    'Unable to fetch ideas',
+  )
+  return ideas.map(ideaFromWire)
 }
 
 export async function captureIdea(fields: {
@@ -143,22 +138,26 @@ export async function captureIdea(fields: {
     note: fields.note ?? '',
     campaign_id: fields.campaignId ?? null,
   }
-  const body = STUBBED
-    ? await stubCaptureIdea(payload)
-    : await apiJson<IdeaBody>('/api/ideas', 'Unable to save the idea', {
-        method: 'POST',
-        body: payload,
-      })
+  const body = await apiJson<IdeaBody>(
+    '/api/ideas',
+    'Unable to save the idea',
+    {
+      method: 'POST',
+      body: payload,
+    },
+  )
   return ideaFromWire(body)
 }
 
 export async function editIdea(id: string, edit: IdeaEdit): Promise<Idea> {
-  const body = STUBBED
-    ? await stubEditIdea(id, edit)
-    : await apiJson<IdeaBody>(`/api/ideas/${id}`, 'Unable to save the idea', {
-        method: 'PATCH',
-        body: edit,
-      })
+  const body = await apiJson<IdeaBody>(
+    `/api/ideas/${id}`,
+    'Unable to save the idea',
+    {
+      method: 'PATCH',
+      body: edit,
+    },
+  )
   return ideaFromWire(body)
 }
 
@@ -168,19 +167,15 @@ export async function setIdeaVerdict(
   verdict: IdeaVerdict | null,
   remindAt: string | null = null,
 ): Promise<Idea> {
-  const payload = { verdict, remind_at: remindAt }
-  const body = STUBBED
-    ? await stubSetVerdict(id, payload)
-    : await apiJson<IdeaBody>(
-        `/api/ideas/${id}/verdict`,
-        'Unable to save the decision',
-        { method: 'PUT', body: payload },
-      )
+  const body = await apiJson<IdeaBody>(
+    `/api/ideas/${id}/verdict`,
+    'Unable to save the decision',
+    { method: 'PUT', body: { verdict, remind_at: remindAt } },
+  )
   return ideaFromWire(body)
 }
 
 export async function deleteIdea(id: string): Promise<void> {
-  if (STUBBED) return stubDeleteIdea(id)
   await apiVoid(`/api/ideas/${id}`, 'Unable to delete the idea', {
     method: 'DELETE',
   })

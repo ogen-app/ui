@@ -37,8 +37,7 @@ import { awaiting } from '@/lib/fetched'
  * cruder and always right.
  *
  * What an idea *is* lives in `lib/ideas.ts`, pure and testable; this file only
- * moves it between the screen and the API. Which API is `services/api/ideas.ts`'s
- * business — today a `localStorage` stub, with the endpoints written out.
+ * moves it between the screen and the API (`services/api/ideas.ts`, CON-315).
  */
 
 export function ideasQueryKey(campaignId: string | null) {

@@ -300,35 +300,23 @@ const FEATURE_FLAGS = {
    * Was two `PageNotBuiltYet` stubs that completed the rail's pairing; it is
    * now the working module — a capture box, three verdicts given on the row
    * itself, and four counts to switch piles by, at the workspace level and
-   * narrowed to one campaign. **Off — waiting on the back end.**
+   * narrowed to one campaign. **On since CON-315** — the flag stays for one
+   * deploy and comes out at the next monthly review, off-branch and all.
    *
-   * **Waiting on:** `/api/ideas`, which does not exist. No table, no endpoint,
-   * no column. The contract is written out in full in `services/api/ideas.ts`
-   * — five calls, and the two rules the server has to own rather than trust the
-   * client with (`remind_at` belongs to `later` and is cleared by every other
-   * verdict; a woken idea is still `later` in the database, with "back in the
-   * inbox" derived at read time). `services/api/ideas.stub.ts` answers them off
-   * `localStorage` so the screen can be built and *used* first, which is the
-   * only way to find out whether triage this shape is actually faster.
+   * `/api/ideas` shipped to the contract written in `services/api/ideas.ts`
+   * (ogen, 2026-09-25), and the `localStorage` stub that stood in for it is
+   * deleted. The stub was the whole reason this was off: it was per browser,
+   * so the backlog this module is about sharing was shared with nobody.
    *
-   * The stub is why this stays off rather than being a judgement call. It is
-   * per browser: the backlog this module is entirely about sharing is shared
-   * with nobody until the endpoints land, and a teammate opening the same
-   * workspace sees an empty list. That is a worse lie than an unbuilt page.
+   * Both points the client had guessed at came back the way it guessed:
    *
-   * Two things the API will decide that the client has guessed at, and both
-   * should be re-read against the real thing under rule 4:
-   *
-   * 1. **Whether a verdict is a field or an endpoint.** It is separate here so
-   *    a decision cannot ride along with an edit — the argument that keeps
-   *    archive off the campaign PUT — but the server may reasonably fold it in.
-   * 2. **What *yes* leads to.** Nothing, today: an accepted idea can be filed
-   *    onto a campaign and that is all. Promotion — an idea becoming a post, or
-   *    a brief — is the next ticket and the reason to want `POST
-   *    /api/ideas/:id/promote` rather than to have the client create the post
-   *    and hope the link survives.
+   * 1. **A verdict is its own endpoint** (`PUT /api/ideas/:id/verdict`), so a
+   *    decision cannot ride along with an edit. The PATCH refuses a `verdict`.
+   * 2. **A *yes* leads nowhere yet.** An accepted idea can be filed onto a
+   *    campaign and that is all. Promotion, `POST /api/ideas/:id/promote`, is
+   *    future work on the server's side (CON-315 §13), not a client guess.
    */
-  ideas: false,
+  ideas: true,
 
   /**
    * The workspace's calendar — every campaign's posts on one grid.

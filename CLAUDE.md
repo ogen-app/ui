@@ -672,7 +672,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   copy and drifted — per-day bars under a label reading "Cumulative reach",
   above a chart drawing the running total.
 - **An idea is a question, `later` carries a date, and triage is the list**
-  (`ideas`, off). The module was imagined as a kanban and is not one: capture
+  (`ideas`, on). The module was imagined as a kanban and is not one: capture
   wants no structure and a board makes every decision cost a find, a grab, an
   aim and a drop, with an undecided column that grows to two hundred cards
   nobody scrolls. So the piles are counts you switch between and the three
@@ -707,10 +707,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   task** — a task is work already committed to and drains to zero, an idea is a
   candidate for commitment and its pile is meant to be long; merging them makes
   the task list stop draining, which is the one thing that kills a task list.
-  Waiting on `/api/ideas`, which does not exist — contract in
-  `services/api/ideas.ts`, answered by a `localStorage` stub that seeds nothing
-  (an idea is somebody's own sentence, and an invented backlog is
-  indistinguishable from a real one). See
+  Backed by `/api/ideas` since CON-315 — the contract in
+  `services/api/ideas.ts` is what the server was built to, and the verdict
+  rules are the server's to enforce now. See
   `docs/technical-decisions.md#ideas-triage`.
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
