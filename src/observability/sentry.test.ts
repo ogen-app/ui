@@ -52,6 +52,43 @@ describe('redactEvent', () => {
     })
     expect(event.breadcrumbs?.[1].data).toEqual({ note: 'no url here' })
   })
+
+  it('replaces a token carried in the path, where no query string hides it', () => {
+    // The emailed links for invitations (CON-26) and login alerts (CON-318)
+    // put their token in the API path; the page URL carries it as `?token=`.
+    const event: Sentry.Event = {
+      request: {
+        url: 'https://app.example/auth/secure-account?token=secret',
+      },
+      breadcrumbs: [
+        { data: { url: '/api/security/login-alerts/secret' } },
+        { data: { url: '/api/security/login-alerts/secret/secure' } },
+        { data: { url: 'https://api.example/api/invitations/accept/secret' } },
+      ],
+      spans: [
+        {
+          description: 'POST /api/security/login-alerts/secret/secure',
+          data: {
+            url: '/api/security/login-alerts/secret/secure',
+            'http.url': 'https://app.example/api/security/login-alerts/secret',
+            'http.query': '?token=secret',
+          },
+        } as unknown as NonNullable<Sentry.Event['spans']>[number],
+      ],
+    }
+
+    redactEvent(event)
+
+    expect(JSON.stringify(event)).not.toContain('secret')
+    expect(event.breadcrumbs?.map((c) => c.data?.url)).toEqual([
+      '/api/security/login-alerts/:token',
+      '/api/security/login-alerts/:token/secure',
+      'https://api.example/api/invitations/accept/:token',
+    ])
+    expect(event.spans?.[0].description).toBe(
+      'POST /api/security/login-alerts/:token/secure',
+    )
+  })
 })
 
 describe('beforeSend', () => {

@@ -63,6 +63,13 @@ describe('workspaceHeader', () => {
     })
   })
 
+  it('leaves the login-alert routes unscoped — the token names the account', () => {
+    expect(workspaceHeader('/api/security/login-alerts/tok-1')).toEqual({})
+    expect(workspaceHeader('/api/security/login-alerts/tok-1/secure')).toEqual(
+      {},
+    )
+  })
+
   it('ignores the query string when deciding', () => {
     expect(workspaceHeader('/api/workspaces?include=counts')).toEqual({})
   })

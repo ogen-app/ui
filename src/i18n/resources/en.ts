@@ -170,6 +170,43 @@ export const en = {
       brokenBody:
         'Open the link straight from the email, or <request>request a new one</request>.',
     },
+    /**
+     * Where the "This wasn't me" link in the new-device sign-in email lands
+     * (CON-318). `<reset>` goes to Forgot password — or to Profile for someone
+     * still signed in, whom Forgot password would bounce.
+     */
+    secureAccount: {
+      title: 'Secure your Ogen account',
+      intro: 'We noticed a new sign-in to <strong>{{email}}</strong>:',
+      detailsLabel: 'Sign-in details',
+      whenLabel: 'When',
+      deviceLabel: 'Device',
+      ipLabel: 'IP address',
+      locationLabel: 'Approximate location',
+      explainer:
+        "If this wasn't you, secure your account. We'll sign out every session on every device — including this one — and you'll set a new password right away.",
+      submit: 'SECURE MY ACCOUNT',
+      wasMe: 'This was me',
+      /** Network or server failure — nothing was revoked, so retrying is safe. */
+      failed: "We couldn't reach Ogen, so nothing has changed yet. Try again.",
+      rateLimited_one: 'Too many attempts. Try again in {{count}} minute.',
+      rateLimited_other: 'Too many attempts. Try again in {{count}} minutes.',
+      loadFailedTitle: "We couldn't check this link",
+      loadFailedSubtitle:
+        'Something went wrong on our side — the link itself may still be fine',
+      usedTitle: 'This link has already been used',
+      usedBody: 'Your account was secured and all sessions were signed out.',
+      usedReset:
+        'Still need to set a new password? <reset>Reset it here</reset>.',
+      expiredTitle: 'This link has expired',
+      expiredBody:
+        'Links are valid for 24 hours. Resetting your password also signs out every session.',
+      expiredSubmit: 'RESET MY PASSWORD',
+      invalidTitle: "This link isn't valid",
+      invalidBody: 'Check you opened the full link from the email.',
+      invalidReset:
+        'Worried about your account? <reset>Reset your password</reset>.',
+    },
     /** The emailed invitation's landing page (CON-26). */
     invite: {
       title: 'Join the workspace',

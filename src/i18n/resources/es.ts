@@ -146,6 +146,41 @@ export const es: Translation = {
       brokenBody:
         'Abre el enlace directamente desde el correo o <request>pide uno nuevo</request>.',
     },
+    secureAccount: {
+      title: 'Protege tu cuenta de Ogen',
+      intro:
+        'Hemos detectado un nuevo inicio de sesión en <strong>{{email}}</strong>:',
+      detailsLabel: 'Detalles del inicio de sesión',
+      whenLabel: 'Cuándo',
+      deviceLabel: 'Dispositivo',
+      ipLabel: 'Dirección IP',
+      locationLabel: 'Ubicación aproximada',
+      explainer:
+        'Si no has sido tú, protege tu cuenta. Cerraremos todas las sesiones en todos los dispositivos — incluida esta — y elegirás una contraseña nueva enseguida.',
+      submit: 'PROTEGER MI CUENTA',
+      wasMe: 'He sido yo',
+      failed:
+        'No hemos podido conectar con Ogen, así que aún no ha cambiado nada. Inténtalo de nuevo.',
+      rateLimited_one:
+        'Demasiados intentos. Inténtalo de nuevo dentro de {{count}} minuto.',
+      rateLimited_other:
+        'Demasiados intentos. Inténtalo de nuevo dentro de {{count}} minutos.',
+      loadFailedTitle: 'No hemos podido comprobar este enlace',
+      loadFailedSubtitle:
+        'Algo ha fallado por nuestra parte — puede que el enlace siga siendo válido',
+      usedTitle: 'Este enlace ya se ha usado',
+      usedBody: 'Tu cuenta se protegió y se cerraron todas las sesiones.',
+      usedReset:
+        '¿Aún tienes que elegir una contraseña nueva? <reset>Restablécela aquí</reset>.',
+      expiredTitle: 'Este enlace ha caducado',
+      expiredBody:
+        'Los enlaces son válidos durante 24 horas. Restablecer la contraseña también cierra todas las sesiones.',
+      expiredSubmit: 'RESTABLECER MI CONTRASEÑA',
+      invalidTitle: 'Este enlace no es válido',
+      invalidBody: 'Comprueba que has abierto el enlace completo del correo.',
+      invalidReset:
+        '¿Te preocupa tu cuenta? <reset>Restablece tu contraseña</reset>.',
+    },
     invite: {
       title: 'Únete al espacio',
       subtitle: '{{inviter}} te ha invitado a {{workspace}}',
