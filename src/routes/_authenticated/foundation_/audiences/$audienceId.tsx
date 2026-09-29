@@ -54,33 +54,34 @@ function AudienceEditorPage() {
    * the sticky gradient only fades content that passes *under* it and the
    * scroller is in there.
    */
-  const header = (
-    <PageHeader
-      back={
-        <BrandBackButton
-          to="/foundation/audiences"
-          label={t('brand.detail.backToAudiences')}
-        />
-      }
+  const backButton = (
+    <BrandBackButton
+      to="/foundation/audiences"
+      label={t('brand.detail.backToAudiences')}
     />
   )
+  const header = <PageHeader back={backButton} />
 
   const body = () => {
     if (isNew) {
       return (
         <AudienceEditor
-          header={header}
+          key={audienceId}
+          back={backButton}
           audience={null}
           starter={audienceStarter(from)}
           onCancel={back}
-          onSave={(written) => {
-            save.mutate(written, {
-              onSuccess: () => {
-                toast.success(t('brand.detail.created', { name: written.name }))
-                back()
-              },
-            })
-          }}
+          // Moves to the stored audience, which autosaves from there — see
+          // the voice route.
+          onSave={(written) =>
+            save.mutateAsync(written).then((stored) =>
+              navigate({
+                to: '/foundation/audiences/$audienceId',
+                params: { audienceId: stored.id },
+                replace: true,
+              }),
+            )
+          }
         />
       )
     }
@@ -114,25 +115,17 @@ function AudienceEditorPage() {
 
     return (
       <AudienceEditor
-        header={header}
+        key={audienceId}
+        back={backButton}
         audience={audience}
         onCancel={back}
-        onSave={(written) => {
-          save.mutate(written, {
-            onSuccess: () => {
-              toast.success(t('brand.detail.saved', { name: written.name }))
-              back()
-            },
+        onSave={(written) => save.mutateAsync(written)}
+        onDelete={() =>
+          remove.mutateAsync(audience.id).then(() => {
+            toast.success(t('brand.detail.deleted', { name: audience.name }))
+            back()
           })
-        }}
-        onDelete={() => {
-          remove.mutate(audience.id, {
-            onSuccess: () => {
-              toast.success(t('brand.detail.deleted', { name: audience.name }))
-              back()
-            },
-          })
-        }}
+        }
       />
     )
   }

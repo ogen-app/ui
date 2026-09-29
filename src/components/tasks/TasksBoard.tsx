@@ -119,9 +119,9 @@ export function TasksBoard() {
             // exception it names: a list has creation rather than commit, which
             // is why ADD CAMPAIGN lives there too. This is the same thing.
             //
-            // Ghost, like the feed's MARK ALL READ next door: these two modules
-            // share a corner as far as anyone moving between them is concerned,
-            // and a solid button on one of them would read as the louder screen.
+            // Ghost rather than solid: the feed next door has nothing in this
+            // corner, and a solid button here would make the two screens read
+            // as a quiet one and a loud one.
             <Button variant="ghost" size="lg" onClick={() => setCreating(true)}>
               <PlusCircleIcon weight="bold" className="size-4" />
               <span>{t('tasks.add')}</span>

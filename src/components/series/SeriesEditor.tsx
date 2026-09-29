@@ -9,6 +9,7 @@ import {
   EditorCard,
   EditorIntro,
   Field,
+  useEditorSave,
 } from '@/components/brand/editor'
 import { FormatPicker } from '@/components/formats/FormatPicker'
 import { useFeatureFlag } from '@/config/featureFlags'
@@ -54,19 +55,21 @@ import type { ContentSeries, SeriesSupply } from './types'
  * — and a cleared checkbox would read as the question being unanswered.
  */
 export function SeriesEditor({
-  header,
+  back,
   series,
   onSave,
   onCancel,
   onDelete,
 }: {
-  header?: ReactNode
+  /** The route's way back, drawn in the frame's header. */
+  back: ReactNode
   /** What the editor opens with — a blank, a fork of a starter, or a stored one. */
   series: ContentSeries
-  onSave?: (series: ContentSeries) => void
-  onCancel?: () => void
+  /** One write — the create, or an autosave of a stored series. */
+  onSave: (series: ContentSeries) => Promise<unknown>
+  onCancel: () => void
   /** Absent for a series that has never been stored. */
-  onDelete?: () => void
+  onDelete?: () => Promise<unknown>
 }) {
   const { t } = useTranslation()
   const formats = useFeatureFlag('content-formats')
@@ -81,34 +84,41 @@ export function SeriesEditor({
   const existing = Boolean(series.id)
   const trimmed = name.trim()
 
+  // With the formats flag off this editor never shows the control, so it hands
+  // back whatever the series already carried rather than clearing a value the
+  // user could not see.
+  const draft = {
+    name: trimmed,
+    promise: promise.trim(),
+    recipe: recipe.trim(),
+    supply,
+    formatId: formats ? formatId : series.formatId,
+    defaultRhythm: rhythm,
+  }
+  const write = (d: typeof draft) => onSave({ ...series, ...d })
+  const save = useEditorSave({
+    draft,
+    stored: existing,
+    // The only thing that blocks a save. A series with no recipe is incomplete
+    // and saves anyway; a series with no name cannot be referred to at all, by
+    // a person or by a row in a list.
+    blocked: !trimmed,
+    save: write,
+  })
+
   return (
     <BrandEditorFrame
-      header={header}
-      contentKey={existing ? 'edit' : 'new'}
-      // The only thing that blocks a save. A series with no recipe is
-      // incomplete and saves anyway; a series with no name cannot be referred
-      // to at all, by a person or by a row in a list.
+      back={back}
+      save={save}
       blocker={trimmed ? undefined : t('series.editor.needsName')}
-      commitLabel={
-        existing ? t('series.editor.save') : t('series.editor.create')
-      }
-      onCancel={onCancel}
-      onSave={
-        onSave
-          ? () =>
-              onSave({
-                ...series,
-                name: trimmed,
-                promise: promise.trim(),
-                recipe: recipe.trim(),
-                supply,
-                // With the formats flag off this editor never showed the
-                // control, so it hands back whatever the series already
-                // carried rather than clearing a value the user could not see.
-                formatId: formats ? formatId : series.formatId,
-                defaultRhythm: rhythm,
-              })
-          : undefined
+      create={
+        existing
+          ? undefined
+          : {
+              label: t('series.editor.create'),
+              onCreate: () => write(draft),
+              onCancel,
+            }
       }
     >
       <EditorIntro
@@ -201,7 +211,10 @@ export function SeriesEditor({
           noun={t('series.editor.dangerNoun')}
           name={series.name}
           cost={t('series.editor.deleteCost')}
-          onDelete={onDelete}
+          onDelete={() => {
+            const release = save.hold()
+            onDelete().catch(release)
+          }}
         />
       ) : null}
     </BrandEditorFrame>

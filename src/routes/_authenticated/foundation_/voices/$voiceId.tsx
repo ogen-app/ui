@@ -33,11 +33,10 @@ import { toast } from '@/stores/toastStore'
  * separate create screen, because there is no separate creating: a voice is
  * whatever is in the editor when you commit it.
  *
- * Saving writes through `useBrand`'s mutations, which today reach a stub
- * (`services/api/brand.ts`) rather than an endpoint — a JSON seed and
- * `localStorage`. The distinction is invisible from here, which is the whole
- * point of putting the fake at the service and not in the screen: when CON-228
- * lands, this file does not change.
+ * A stored voice saves itself (`useEditorSave`), so there is no toast and no
+ * navigation on a save — the header's cloud is the whole report. Creating one
+ * moves to its own address, `replace`d so that back skips the blank form; the
+ * editor remounts on the stored voice and autosaves from there.
  */
 export const Route = createFileRoute(
   '/_authenticated/foundation_/voices/$voiceId',
@@ -80,16 +79,13 @@ function VoiceEditorPage() {
    * the scroller. The two branches that have nothing to scroll get their own
    * copy above a static frame.
    */
-  const header = (
-    <PageHeader
-      back={
-        <BrandBackButton
-          to="/foundation/voices"
-          label={t('brand.detail.backToVoices')}
-        />
-      }
+  const backButton = (
+    <BrandBackButton
+      to="/foundation/voices"
+      label={t('brand.detail.backToVoices')}
     />
   )
+  const header = <PageHeader back={backButton} />
 
   const body = () => {
     // The library gates the create branch as well as the edit one, and that is
@@ -107,21 +103,26 @@ function VoiceEditorPage() {
     if (isNew) {
       return (
         <VoiceEditor
-          header={header}
+          // Keyed by the address: a create replaces `new` with the stored id,
+          // and without a key React keeps this instance — whose autosave
+          // baseline is the blank form — and writes the voice straight back.
+          key={voiceId}
+          back={backButton}
           voice={null}
           starter={voiceStarter(from)}
           // `data` is absent when the fetch failed, and `undefined === 0` is
           // false — so a library we could not read never promotes anything.
           first={data?.voices.length === 0}
           onCancel={back}
-          onSave={(written) => {
-            save.mutate(written, {
-              onSuccess: () => {
-                toast.success(t('brand.detail.created', { name: written.name }))
-                back()
-              },
-            })
-          }}
+          onSave={(written) =>
+            save.mutateAsync(written).then((stored) =>
+              navigate({
+                to: '/foundation/voices/$voiceId',
+                params: { voiceId: stored.id },
+                replace: true,
+              }),
+            )
+          }
         />
       )
     }
@@ -153,25 +154,17 @@ function VoiceEditorPage() {
 
     return (
       <VoiceEditor
-        header={header}
+        key={voiceId}
+        back={backButton}
         voice={voice}
         onCancel={back}
-        onSave={(written) => {
-          save.mutate(written, {
-            onSuccess: () => {
-              toast.success(t('brand.detail.saved', { name: written.name }))
-              back()
-            },
+        onSave={(written) => save.mutateAsync(written)}
+        onDelete={() =>
+          remove.mutateAsync(voice.id).then(() => {
+            toast.success(t('brand.detail.deleted', { name: voice.name }))
+            back()
           })
-        }}
-        onDelete={() => {
-          remove.mutate(voice.id, {
-            onSuccess: () => {
-              toast.success(t('brand.detail.deleted', { name: voice.name }))
-              back()
-            },
-          })
-        }}
+        }
       />
     )
   }

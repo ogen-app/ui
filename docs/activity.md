@@ -94,6 +94,24 @@ something, which it never does. They would all have to be taken back when tasks
 land, and the seam to tasks stays clean without them: a task appearing is itself
 an edge, so it becomes a feed entry and nothing built here is rewritten.
 
+**And read is set by looking, not by a button** (2026-09-28). A row is written
+read once more than half of it has been on screen for 300ms with the tab
+visible (`useReadOnSight`), so the rail's badge drains as the feed is scrolled —
+and a fast fling to the bottom reads nothing it only flew past. The row
+does not lose its mark at that moment: it goes from a filled dot (*unseen*) to a
+ring (*recent*) and keeps the ring until the reader navigates away or reloads,
+because arriving on the page is not reading it, and a mark that vanished the
+instant it was drawn would never be seen. *Recent* is screen state only — no
+field, no cache — which is what makes it one-time: the next visit shows the row
+with no mark. Under the run of new rows at the top sits one line, *Seen before
+this visit* (`seenBeforeDivider`), so twenty arrivals read as a block rather
+than twenty rings to count. MARK ALL READ went with it; clearing rows nobody scrolled to is
+the thing the badge exists to prevent. The one job it did that looking cannot
+is reach past the page — the count spans the inbox, the feed holds the newest
+hundred rows — so reaching the foot of a full page marks everything up to the
+oldest row shown read (`mark-all-read` with that row's `seq`), since the page is
+as far back as the screen goes.
+
 ## Why this cannot be built on the event hub
 
 `/api/events` already broadcasts most of the interesting facts, which makes it

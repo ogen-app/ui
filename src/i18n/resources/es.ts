@@ -361,8 +361,6 @@ export const es: Translation = {
     },
     detail: {
       back: 'Volver a series',
-      created: '{{name}} creada',
-      saved: '{{name}} guardada',
       deleted: '{{name}} eliminada',
       notFoundHeader: 'No existe esa serie',
     },
@@ -397,7 +395,6 @@ export const es: Translation = {
         'Un punto de partida cuando una campaña la adopta. Cada campaña define el suyo, así que dos pueden ejecutarla a ritmos distintos.',
       needsName: 'Ponle nombre a la serie',
       create: 'CREAR SERIE',
-      save: 'GUARDAR SERIE',
       dangerNoun: 'SERIE',
       deleteCost:
         'Las publicaciones ya escritas conservan su texto. Todas las campañas que la ejecutan se detienen y el plan recupera sus huecos.',
@@ -535,7 +532,6 @@ export const es: Translation = {
         'El mismo historial que el del espacio de trabajo, reducido a lo que ocurrió dentro de esta campaña.',
     },
     title: 'Actividad',
-    markAllRead: 'MARCAR TODO COMO LEÍDO',
     loadFailed: 'No se pudo cargar la actividad',
     unavailable: {
       notifications:
@@ -553,6 +549,8 @@ export const es: Translation = {
         'Aquí aparecerán las publicaciones que salgan, las que fallen y un informe de cada día.',
     },
     unread: 'Sin leer',
+    recent: 'Nuevo',
+    seenBefore: 'Visto antes de esta visita',
     today: 'Hoy',
     yesterday: 'Ayer',
     entry: {
@@ -657,7 +655,6 @@ export const es: Translation = {
     settings: 'Ajustes del calendario',
     viewWeek: 'Semana',
     viewMonth: 'Mes',
-    viewList: 'Lista',
 
     previousWeek: 'Semana anterior',
     nextWeek: 'Semana siguiente',
@@ -2042,7 +2039,7 @@ export const es: Translation = {
       offer: {
         dismiss: 'No volver a ofrecer esto',
         title: 'Rellénalo con lo que ya tienes',
-        body: 'Una sola pasada rellena {{fills}}, a partir de tus propias palabras y no de una plantilla, y ves todo lo que propone antes de que se guarde nada.',
+        body: 'Una sola pasada rellena {{fills}}: desde tu sitio web, un documento que ya tengas o unas cuantas preguntas. Tus propias palabras y no una plantilla, y ves todo lo que propone antes de que se guarde nada.',
         website: {
           title: 'Leerlo de tu sitio web',
           body: 'Muestras de voz de tus propios textos, el aviso legal que ya publicas y los datos de producto que respaldan cada afirmación.',
@@ -2111,38 +2108,8 @@ export const es: Translation = {
       noAudienceHeader: 'No existe esa audiencia',
       missingMessage:
         'Puede que se haya eliminado, o que el enlace sea de otro espacio de trabajo.',
-      created: '{{name}} ya está en la biblioteca.',
-      saved: '{{name}} guardada.',
       deleted: 'Se eliminó {{name}}.',
-      guardrailsSaved: 'Los límites están guardados.',
-      guardrailsCreated: 'Los límites están establecidos.',
       guardrailsDeleted: 'Se eliminaron los límites.',
-    },
-
-    firstRun: {
-      title:
-        'Todo lo que se genera aquí suena igual que lo generado en cualquier otro sitio',
-      body: 'La gente usa las redes sociales para distinguirse: para eso está la marca. El contenido generado no tiene voz propia ni nada que le impida leerse como el resto del feed. Aquí es donde guardas el material que hace que lo tuyo sea tuyo: cómo suenas, a quién le hablas y qué no puedes afirmar nunca.',
-      manual: {
-        title: 'Rellénalo tú',
-        body: 'Directo a las tres secciones, vacías. El camino más rápido cuando ya sabes cómo suenas y solo necesitas dónde ponerlo.',
-      },
-      guided: {
-        title: 'Constrúyelo con Ogen',
-        body: 'Responde a unas cuantas preguntas y Ogen redacta todo contigo: el camino que funciona cuando nada de esto está escrito en ninguna parte, y el único que no necesita sitio web, ni archivo, ni documento.',
-      },
-      website: {
-        title: 'Léelo de tu sitio web',
-        body: 'Indícanos tu sitio y te proponemos todo de una vez: ejemplos de voz sacados de tus propios textos, el aviso legal que ya usas y los datos de producto que respaldan cada afirmación.',
-      },
-      posts: {
-        title: 'Apréndelo de tus publicaciones',
-        body: 'La voz que ya tienes, con tus propias palabras. Corrige lo que no encaje en lugar de inventar algo desde cero.',
-      },
-      template: {
-        title: 'Empieza con una plantilla',
-        body: 'Una configuración breve que recorre toda la marca pregunta a pregunta: voz, audiencia y las cosas que no puedes afirmar nunca. Dentro de esas dos secciones ya existen voces y audiencias de partida sueltas; lo que está por llegar es hacer las tres de una sola vez.',
-      },
     },
 
     look: {
@@ -2221,16 +2188,12 @@ export const es: Translation = {
           i: 'primera persona',
           we: 'nosotros',
           third: 'tercera persona',
+          none: 'sin narrador',
         },
         emoji: {
           never: 'sin emojis',
           sparingly: 'algunos emojis',
           freely: 'emojis sin límite',
-        },
-        hashtags: {
-          never: 'sin hashtags',
-          few: 'pocos hashtags',
-          many: 'muchos hashtags',
         },
         length: {
           short: 'publicaciones cortas',
@@ -2241,7 +2204,6 @@ export const es: Translation = {
 
       editor: {
         needsName: 'Necesita un nombre para poder guardarse.',
-        save: 'Guardar voz',
         create: 'Crear voz',
         introNamed: 'Voz {{name}}',
         introNew: 'Una voz nueva',
@@ -2280,7 +2242,7 @@ export const es: Translation = {
         bulkUploadSoon: 'Próximamente',
         rules: 'Reglas',
         rulesHint:
-          'Lo que un ejemplo no puede decir por sí solo. Una publicación pegada enseña el registro; no puede prometer que las treinta siguientes eviten los hashtags.',
+          'Lo que un ejemplo no puede decir por sí solo. Una publicación pegada enseña el registro; no puede prometer que las treinta siguientes se abstengan de los signos de exclamación.',
         opening: 'Cómo abre una publicación',
         openingHint:
           'La costumbre más reconocible de una voz, y merece la pena escribirla en vez de elegirla.',
@@ -2294,7 +2256,7 @@ export const es: Translation = {
         channelsHint:
           'Una nota dentro de esta voz, no una segunda voz. «Más contenida en LinkedIn» va aquí; una segunda entrada casi idéntica en la biblioteca, no.',
         channelsUnbuilt:
-          'Todavía sin construir. Todos los canales usan esta voz tal como está escrita arriba.',
+          'Todavía sin construir. Todos los canales usan esta voz tal como está escrita arriba, hashtags incluidos: su sitio es este y no las reglas, y de momento no los fija nada.',
         choices: {
           formalityLabel: 'Formalidad',
           formality: {
@@ -2307,18 +2269,13 @@ export const es: Translation = {
             i: 'yo',
             we: 'nosotros',
             third: 'la empresa',
+            none: 'sin narrador',
           },
           emojiLabel: 'Emojis',
           emoji: {
             never: 'nunca',
             sparingly: 'con moderación',
             freely: 'sin límite',
-          },
-          hashtagsLabel: 'Hashtags',
-          hashtags: {
-            never: 'nunca',
-            few: 'unos pocos',
-            many: 'muchos',
           },
           lengthLabel: 'Extensión',
           length: {
@@ -2373,7 +2330,6 @@ export const es: Translation = {
 
       editor: {
         needsName: 'Necesita un nombre para poder guardarse.',
-        save: 'Guardar audiencia',
         create: 'Crear audiencia',
         introNamed: 'Audiencia {{name}}',
         introNew: 'Una audiencia nueva',
@@ -2474,11 +2430,8 @@ export const es: Translation = {
     guardrails: {
       cleared:
         'Se ha borrado todo. Unos límites que no indican nada son lo mismo que no tener ninguno: elimínalos abajo en su lugar.',
-      save: 'Guardar límites',
-      create: 'Establecer los límites',
-      discard: 'Descartar cambios',
       forkedNote:
-        'Han llegado las reglas y no los datos: una plantilla sabe qué no puede afirmar nunca un negocio como el tuyo, y absolutamente nada sobre qué es cierto en el tuyo. Lee cada línea antes de guardarla: esta es la sección que la gente deja de revisar.',
+        'Han llegado las reglas y no los datos: una plantilla sabe qué no puede afirmar nunca un negocio como el tuyo, y absolutamente nada sobre qué es cierto en el tuyo. Se guarda tal cual, así que lee cada línea: esta es la sección que la gente deja de revisar.',
       starterGroupTitle: 'Empieza con una plantilla',
       starterGroupBody:
         'Tres formas que adoptan las reglas, en lugar de treinta sectores. Elige la más parecida y rellenará las listas de abajo: cada línea está pensada para leerse y editarse, porque esta es la sección en la que la gente va a confiar.',
@@ -2515,9 +2468,6 @@ export const es: Translation = {
       removeLine: 'Quitar esta línea',
       keyboardHint:
         'Intro empieza la siguiente. Pega una lista para añadirla entera de una vez.',
-      unsaved: 'Cambios sin guardar',
-      unsavedShort: 'Sin guardar',
-      saved: 'Guardado',
       noun: 'LÍMITES',
       dangerName: 'Límites',
       deleteCost:
@@ -2579,6 +2529,12 @@ export const es: Translation = {
 
     editor: {
       cancel: 'Cancelar',
+      leave: {
+        title: '¿Salir sin crearlo?',
+        body: 'Aún no se ha guardado nada de esta pantalla. Si sales ahora, se pierde.',
+        stay: 'Seguir editando',
+        discard: 'DESCARTAR',
+      },
       forkedFrom:
         'Partió de <name>{{name}}</name>, y se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',
       danger: {

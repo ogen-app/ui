@@ -486,8 +486,6 @@ export const en = {
     },
     detail: {
       back: 'Back to series',
-      created: '{{name}} created',
-      saved: '{{name}} saved',
       deleted: '{{name}} deleted',
       notFoundHeader: 'No such series',
     },
@@ -521,7 +519,6 @@ export const en = {
         'A starting point when a campaign picks this up. Each campaign sets its own, so two can run it at different rates.',
       needsName: 'Give the series a name',
       create: 'CREATE SERIES',
-      save: 'SAVE SERIES',
       dangerNoun: 'SERIES',
       deleteCost:
         'Posts already written keep their text. Every campaign running this one stops, and the plan gives their slots back.',
@@ -690,8 +687,6 @@ export const en = {
         'The same feed as the workspace\u2019s, narrowed to what happened inside this campaign.',
     },
     title: 'Activity',
-    /** Capitals are the copy, as on every other list's header action. */
-    markAllRead: 'MARK ALL READ',
     loadFailed: 'Unable to load activity',
     /**
      * One of the feed's sources failed while another answered. The feed still
@@ -727,6 +722,16 @@ export const en = {
     },
     /** The dot's accessible name — the only thing that says what it means. */
     unread: 'Unread',
+    /**
+     * The ring's accessible name: seen for the first time on this visit, and
+     * already read as far as the badge is concerned.
+     */
+    recent: 'New',
+    /**
+     * The line under what is new on this visit — labelled on the old side,
+     * because in a newest-first feed “new” is simply the top.
+     */
+    seenBefore: 'Seen before this visit',
     /** Relative day names, used instead of a date for the two recent ones. */
     today: 'Today',
     yesterday: 'Yesterday',
@@ -929,7 +934,6 @@ export const en = {
      */
     viewWeek: 'Week',
     viewMonth: 'Month',
-    viewList: 'List',
 
     /**
      * The two arrows either side of the range. They name the unit they move by,
@@ -2900,7 +2904,13 @@ export const en = {
       offer: {
         dismiss: "Don't offer this again",
         title: 'Fill this in from what you already have',
-        body: 'One pass fills {{fills}} — from your own words, not from a template, and you see everything it proposes before any of it is saved.',
+        /**
+         * Names the three routes, because the tiles under it no longer can —
+         * they are clipped to a sliver (`WholeBrandOffer`). A sentence that
+         * said only "one pass" over an unreadable stack would be a band
+         * announcing something it never gets around to saying.
+         */
+        body: 'One pass fills {{fills}} — from your website, a document you already have, or a handful of questions. Your own words, not a template, and you see everything it proposes before any of it is saved.',
         website: {
           title: 'Read it off your website',
           body: 'Voice samples from your own copy, the disclaimer you already run, and the product facts behind every claim.',
@@ -3003,39 +3013,8 @@ export const en = {
       missingMessage:
         'It may have been deleted, or the link may be to another workspace.',
       /** The confirmations. `{{name}}` is the entry's own, always the user's words. */
-      created: '{{name}} is in the library.',
-      saved: '{{name}} saved.',
       deleted: '{{name}} was deleted.',
-      guardrailsSaved: 'The guardrails are saved.',
-      guardrailsCreated: 'The guardrails are set.',
       guardrailsDeleted: 'The guardrails were deleted.',
-    },
-
-    /** The screen every workspace sees on the day this ships — `FirstRun.tsx`. */
-    firstRun: {
-      title:
-        'Everything generated here sounds like everything else generated anywhere',
-      body: 'People use social media to be distinct — that is what branding is for. Generated content has no voice of its own and nothing stopping it from reading like the rest of the feed. This is where you keep the material that makes yours yours: how you sound, who you are talking to, and what you may never claim.',
-      manual: {
-        title: 'Fill it in yourself',
-        body: 'Straight to the three sections, empty. The fastest path when you already know how you sound and only need somewhere to put it.',
-      },
-      guided: {
-        title: 'Build it with Ogen',
-        body: 'Answer a handful of questions and Ogen drafts the whole thing with you — the path that works when none of this is written down anywhere, and the only one that needs no website, no archive and no file.',
-      },
-      website: {
-        title: 'Read it off your website',
-        body: 'Point us at your site and we propose the whole thing in one step — voice samples from your own copy, the disclaimer you already run, and the product facts behind every claim.',
-      },
-      posts: {
-        title: 'Learn it from your posts',
-        body: "The voice you already have, in your own words. Fix what's wrong rather than inventing something from scratch.",
-      },
-      template: {
-        title: 'Start from a template',
-        body: 'A short setup that walks the whole foundation one question at a time — voice, audience and the things you can never claim. Individual starter voices and audiences already exist inside those two sections; what is coming is doing all three in one pass.',
-      },
     },
 
     /** The visual half — `LookSection.tsx`. */
@@ -3130,16 +3109,12 @@ export const en = {
           i: 'first person',
           we: 'we',
           third: 'third person',
+          none: 'no narrator',
         },
         emoji: {
           never: 'no emoji',
           sparingly: 'some emoji',
           freely: 'emoji freely',
-        },
-        hashtags: {
-          never: 'no hashtags',
-          few: 'few hashtags',
-          many: 'hashtag-heavy',
         },
         length: {
           short: 'short posts',
@@ -3151,7 +3126,6 @@ export const en = {
       /** The one place a voice is written — `VoiceEditor.tsx`. */
       editor: {
         needsName: 'Needs a name before it can be saved.',
-        save: 'Save voice',
         create: 'Create voice',
         introNamed: '{{name}} Voice',
         introNew: 'A new voice',
@@ -3187,7 +3161,7 @@ export const en = {
         bulkUploadSoon: 'Coming soon',
         rules: 'Rules',
         rulesHint:
-          'What a sample cannot say for itself. A pasted post shows the register; it cannot promise that the next thirty avoid hashtags.',
+          'What a sample cannot say for itself. A pasted post shows the register; it cannot promise that the next thirty stay off the exclamation marks.',
         opening: 'How a post opens',
         openingHint:
           'The most recognisable habit a voice has, and worth writing out rather than picking.',
@@ -3200,9 +3174,9 @@ export const en = {
         channelsHint:
           'A note inside this voice, not a second voice. “Dialled down on LinkedIn” belongs here; a near-identical second entry in the library does not.',
         channelsUnbuilt:
-          'Not built yet. Every channel uses this voice exactly as written above.',
+          'Not built yet. Every channel uses this voice exactly as written above — including hashtags, which belong here rather than in the rules, and which nothing states until this is built.',
         /**
-         * The five scales, as the *editor* words them — deliberately not
+         * The four scales, as the *editor* words them — deliberately not
          * `brand.voices.rules.*`, which is how a library card *describes* a
          * voice. "I / we / the company" is a set being chosen between; "first
          * person / we / third person" is a sentence about a voice. Two
@@ -3220,18 +3194,19 @@ export const en = {
             i: 'I',
             we: 'we',
             third: 'the company',
+            /**
+             * Not a blank option and not "no preference": copy with no speaker
+             * in it is a style plenty of brands write in on purpose, and it is
+             * the fourth answer to the question rather than the refusal to
+             * answer it.
+             */
+            none: 'no narrator',
           },
           emojiLabel: 'Emoji',
           emoji: {
             never: 'never',
             sparingly: 'sparingly',
             freely: 'freely',
-          },
-          hashtagsLabel: 'Hashtags',
-          hashtags: {
-            never: 'never',
-            few: 'a few',
-            many: 'many',
           },
           lengthLabel: 'Length',
           length: {
@@ -3288,7 +3263,6 @@ export const en = {
       /** One audience, being described — `AudienceEditor.tsx`. */
       editor: {
         needsName: 'Needs a name before it can be saved.',
-        save: 'Save audience',
         create: 'Create audience',
         introNamed: '{{name}} Audience',
         introNew: 'A new audience',
@@ -3398,11 +3372,8 @@ export const en = {
     guardrails: {
       cleared:
         'Everything has been cleared. Guardrails that state nothing are the same as none — delete them below instead.',
-      save: 'Save guardrails',
-      create: 'Set the guardrails',
-      discard: 'Discard changes',
       forkedNote:
-        'The rules arrived and the facts did not: a template knows what a business like yours may never claim, and nothing at all about what is true of you. Read every line before saving it — this is the section people stop checking.',
+        'The rules arrived and the facts did not: a template knows what a business like yours may never claim, and nothing at all about what is true of you. It is saved as it stands, so read every line — this is the section people stop checking.',
       starterGroupTitle: 'Start from a template',
       starterGroupBody:
         'Three shapes the rules take, rather than thirty industries. Pick the closest and it fills the lists below — every line is meant to be read and edited, because this is the one section people will trust.',
@@ -3437,9 +3408,6 @@ export const en = {
       removeLine: 'Remove this line',
       keyboardHint:
         'Enter starts the next one. Paste a list to add all of it at once.',
-      unsaved: 'Unsaved changes',
-      unsavedShort: 'Unsaved',
-      saved: 'Saved',
       noun: 'GUARDRAILS',
       /** The `name` in the delete dialog's title — a singleton has no name of its own. */
       dangerName: 'Guardrails',
@@ -3514,6 +3482,17 @@ export const en = {
     /** What every Brand editor is made of — `editor.tsx`. */
     editor: {
       cancel: 'Cancel',
+      /**
+       * Leaving a new entry that was never created — the one draft on these
+       * screens that exists nowhere else. `discard` is destructive, so its
+       * capitals are part of the copy.
+       */
+      leave: {
+        title: 'Leave without creating it?',
+        body: 'Nothing on this screen has been saved yet. Leaving now loses it.',
+        stay: 'Keep editing',
+        discard: 'DISCARD',
+      },
       /**
        * The fork note's first sentence. `<name>` is the starter's name, set in
        * the foreground colour — a `<Trans>` rather than three JSX fragments,

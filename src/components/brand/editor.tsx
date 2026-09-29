@@ -1,5 +1,18 @@
-import { useState, type ReactNode } from 'react'
-import { StarIcon, TrashIcon, type Icon } from '@phosphor-icons/react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
+import { useBlocker } from '@tanstack/react-router'
+import {
+  StarIcon,
+  TrashIcon,
+  WarningCircleIcon,
+  type Icon,
+} from '@phosphor-icons/react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
@@ -12,8 +25,9 @@ import {
 import {
   PAGE_ACTION_BAR_INSET,
   PageActionBar,
-  type BarStatus,
 } from '@/components/page-primitives/PageActionBar'
+import { PageHeader } from '@/components/page-primitives/PageHeader'
+import { SaveStatus } from '@/components/page-primitives/SaveStatus'
 import { brandSection, type BrandSectionId } from '@/lib/brandSections'
 import { cn } from '@/lib'
 import { BrandIntro, COLUMN } from './shell'
@@ -36,85 +50,232 @@ import { BrandIntro, COLUMN } from './shell'
  */
 
 /**
- * The screen an editor sits in: the scroller with the header inside it, the
- * column, and the commit bar under the whole thing.
+ * How long an entry sits unchanged before it is written — the post editor's
+ * figure, so the two kinds of screen that save themselves keep one rhythm.
+ */
+const AUTOSAVE_MS = 600
+
+/** What `useEditorSave` reports, and what `BrandEditorFrame` draws from it. */
+export type EditorSave = {
+  /**
+   * A write is waiting out the debounce or in flight. Tracks the debounce as
+   * well as the request, like the post editor's `saving`: an edit nobody has
+   * sent yet is exactly as unsaved as one on the wire.
+   */
+  saving: boolean
+  /** The screen holds something that differs from what it opened with or last wrote. */
+  unsaved: boolean
+  /**
+   * Stop writing. Called before a delete: the unmount that follows it would
+   * otherwise flush a pending edit into a `PUT` on a row that no longer
+   * exists. Returns the release, for a delete that fails — the row is still
+   * there, and every edit after it would otherwise be dropped while the cloud
+   * went on saying it was saving.
+   */
+  hold: () => () => void
+  /** Whether a hold is in place — a delete is on its way, so leaving is expected. */
+  held: () => boolean
+}
+
+/**
+ * **An entry that exists saves itself.** Every edit is written 600ms after the
+ * last keystroke, the way a post and a campaign are, and the header's cloud is
+ * the only thing that says so — no toast, no button, no bar.
+ *
+ * It used to be a `SAVE VOICE` at the foot of the screen, and people missed it:
+ * the bar is pinned, but the screen treated every edit as unsaved from the
+ * first frame, so the bar never changed and nobody read it. Worse, the caret,
+ * the sidebar and closing the tab all threw the draft away without asking. An
+ * editor whose commit is easy to miss and whose exits are silent loses work in
+ * the ordinary course of using it.
+ *
+ * **A new entry is still created on purpose** (`stored: false`): it has no row
+ * to write into until a name exists, and a half-typed name should not become a
+ * library entry on its own. So this reports `unsaved` for the frame's leave
+ * guard and writes nothing; the frame's `create` does the first write, and the
+ * route moves to the stored entry's own address, where this takes over.
+ *
+ * `blocked` is a write the server would refuse or that would lose something —
+ * a nameless entry, guardrails cleared to nothing. The edit is kept on screen
+ * and simply not sent, and the frame says why.
+ *
+ * Writes compare a signature of the **draft** — the fields the screen owns —
+ * rather than of the entity it assembles, which carries server fields
+ * (`usage`, `summary`) and a fresh `updatedAt` on every render, and would
+ * never compare equal twice. So opening a screen never writes it, a save
+ * landing never triggers another, and typing a letter and deleting it again
+ * inside the debounce sends nothing.
+ *
+ * Leaving flushes. A pending edit is sent on unmount rather than dropped, so
+ * the caret and the sidebar need no guard on a stored entry — except one whose
+ * edit is blocked, which cannot be sent, so the frame asks about that instead.
+ */
+export function useEditorSave<D>({
+  draft,
+  stored,
+  blocked = false,
+  save,
+}: {
+  /** The fields the screen owns, as they stand. Plain data — it is compared as JSON. */
+  draft: D
+  /** Whether there is a row to write into — see above. */
+  stored: boolean
+  blocked?: boolean
+  /** One write. Its rejection is reported by the mutation; this only retries on the next edit. */
+  save: (draft: D) => Promise<unknown>
+}): EditorSave {
+  const signature = JSON.stringify(draft)
+  const [baseline, setBaseline] = useState(signature)
+  const [inFlight, setInFlight] = useState(0)
+  // Bumped by a release, so a held edit is armed again without another one.
+  const [released, setReleased] = useState(0)
+
+  // Against the last *confirmed* write. A write still in flight for this very
+  // signature may re-arm the timer, and `write` drops it as already sent.
+  const armed = stored && !blocked && signature !== baseline
+
+  // The timer and the unmount flush outlive renders, so they read the current
+  // value and writer through refs rather than closing over the first ones.
+  const latest = useRef({ draft, signature, save, armed })
+  useLayoutEffect(() => {
+    latest.current = { draft, signature, save, armed }
+  })
+  const written = useRef(baseline)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const held = useRef(false)
+
+  const write = useCallback(() => {
+    timer.current = null
+    const { draft, signature, save } = latest.current
+    if (held.current || signature === written.current) return
+    const previous = written.current
+    written.current = signature
+    setInFlight((n) => n + 1)
+    save(draft)
+      .then(
+        () => setBaseline(signature),
+        // Put the mark back so the next edit sends this one's content too;
+        // the mutation has already said what went wrong.
+        () => {
+          if (written.current === signature) written.current = previous
+        },
+      )
+      .finally(() => setInFlight((n) => n - 1))
+  }, [])
+
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = armed ? setTimeout(write, AUTOSAVE_MS) : null
+  }, [armed, signature, write, released])
+
+  // Sends whatever is armed, not only what is waiting on the timer: a write
+  // that was refused leaves no timer behind, and leaving is its last chance.
+  // `write` drops a signature already on the wire, and a blocked draft is
+  // never armed, so neither goes out twice or goes out invalid.
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current)
+      timer.current = null
+      if (latest.current.armed) write()
+    },
+    [write],
+  )
+
+  const saving = inFlight > 0 || armed
+
+  // Closing the tab is the one exit a flush cannot cover — so it asks about
+  // anything not yet confirmed, including an edit held back as blocked.
+  const unconfirmed = inFlight > 0 || (stored && signature !== baseline)
+  useEffect(() => {
+    if (!unconfirmed) return
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [unconfirmed])
+
+  const hold = useCallback(() => {
+    held.current = true
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = null
+    return () => {
+      held.current = false
+      setReleased((n) => n + 1)
+    }
+  }, [])
+
+  const isHeld = useCallback(() => held.current, [])
+
+  return { saving, unsaved: signature !== baseline, hold, held: isHeld }
+}
+
+/**
+ * The screen an editor sits in: the header, the scroller, the column — and,
+ * only when there is something to say, the bar.
  *
  * ## The header is a child, not a sibling
  *
- * It is rendered *inside* the `ScrollArea`, which is the whole reason it takes
- * a `header` prop rather than the route drawing one above this: a sticky
- * gradient can only dissolve content that passes underneath it, and content
- * that scrolls in a different box never passes underneath anything. The route
- * still owns the header — it is the only thing that knows where back goes —
- * it just hands it down. Post details is the same arrangement for the same
- * reason.
+ * It is rendered *inside* the `ScrollArea`: a sticky gradient can only dissolve
+ * content that passes underneath it, and content that scrolls in a different
+ * box never passes underneath anything. The route still says where back goes
+ * — it hands down `back` — and the frame puts `SaveStatus` in the header's
+ * centre, which is where every autosaving screen in the app reports.
  *
- * ## The bar is outside it
+ * ## The bar is for creating, and for refusing
  *
- * `PageActionBar` is anchored to the content column and must not scroll away,
- * so it is a sibling of the scroller and the column below reserves its height
- * with `PAGE_ACTION_BAR_INSET`. CON-178: an editor screen commits at the
- * bottom centre, and the commit is the one thing on it that is always
- * reachable.
+ * A stored entry saves itself (`useEditorSave`), so it has nothing to commit
+ * and no bar — except while a save is refused, when the bar carries the
+ * sentence saying why and nothing else. An edit being quietly not written is
+ * the one state of an autosaving screen that must be impossible to miss.
  *
- * ## One blocker, one disabled button
+ * A new entry keeps `CANCEL` and `CREATE …`: the first write is a decision.
+ * Leaving one with something typed in it asks first, because until it is
+ * created the draft exists nowhere but this screen. `CANCEL` does not ask — it
+ * *is* the answer.
  *
- * `blocker` both explains and enforces. The first build passed the sentence to
- * the bar and a separate `disabled` to the button, which is two statements of
- * one rule and one of them was eventually going to be wrong — a screen that
- * says why you cannot save and then lets you save is worse than either half.
- *
- * ## `dirty`, for an editor you did not drill into
- *
- * Two of these screens are reached from a list, so leaving is `CANCEL` and
- * saving an untouched draft is merely pointless. Guardrails is reached from the
- * Overview and *is* the section — there is no read-only version of it to go
- * back to, so the screen sits there unchanged for most of its life, and a live
- * `SAVE` on an untouched document would stamp a new `updatedAt` on material
- * nobody edited. With `dirty: false` the bar drops the discard button and
- * disables the commit; what state the screen is in is said by `status`, so the
- * rule above still holds — one statement, one enforcement, never two.
+ * One blocker, one disabled button: `blocker` both explains and enforces, so
+ * a screen can never say why it cannot save and then let you save.
  */
 export function BrandEditorFrame({
-  header,
+  back,
+  save,
   blocker,
-  status,
-  dirty = true,
-  contentKey,
-  commitLabel,
-  cancelLabel,
-  onCancel,
-  onSave,
+  create,
   children,
 }: {
-  /** The route's `PageHeader`, rendered inside this component's scroller. */
-  header?: ReactNode
-  /** Why this cannot be committed yet, if it cannot. Shown, and enforced. */
+  /** The route's way back — a `BrandBackButton`. */
+  back: ReactNode
+  save: EditorSave
+  /** Why this cannot be written yet, if it cannot. Shown, and enforced. */
   blocker?: string
-  /** A fact about the document, beside the actions — see `BarStatus`. */
-  status?: BarStatus
-  /**
-   * Whether there is anything to commit. Defaults to `true`: an editor opened
-   * on a row of a list is left by cancelling whether or not it was touched.
-   */
-  dirty?: boolean
-  /** What the bar animates between — `'new'` and `'edit'` in practice. */
-  contentKey: string
-  /** `SAVE VOICE`, `CREATE AUDIENCE` — the noun is the editor's to name. */
-  commitLabel: string
-  /**
-   * `CANCEL` leaves; `DISCARD CHANGES` puts a screen you stay on back.
-   * Defaulted in the body rather than in the signature — a default argument
-   * written as a literal here would be an English sentence on a prop
-   * signature, and the bar upper-cases whatever it is given.
-   */
-  cancelLabel?: string
-  onCancel?: () => void
-  onSave?: () => void
+  /** Present while the entry has never been stored — see above. */
+  create?: {
+    /** `CREATE VOICE` — the noun is the editor's to name. */
+    label: string
+    /** The first write; the route navigates to the stored entry when it lands. */
+    onCreate: () => Promise<unknown>
+    onCancel: () => void
+  }
   children: ReactNode
 }) {
   const { t } = useTranslation()
   const column = cn('flex flex-col gap-3 px-3 lg:px-6', PAGE_ACTION_BAR_INSET)
+
+  // Set on the way out through the screen's own exits, which must not be asked
+  // about. Put back if the create fails, so the draft is guarded again.
+  const leaving = useRef(false)
+  // A blocked edit on a stored entry is the other draft that exists nowhere
+  // but here: autosave holds it back, so leaving would drop it silently.
+  const guarded = () =>
+    (Boolean(create) || Boolean(blocker)) &&
+    save.unsaved &&
+    !save.held() &&
+    !leaving.current
+  const leave = useBlocker({
+    shouldBlockFn: guarded,
+    enableBeforeUnload: guarded,
+    withResolver: true,
+  })
+
   return (
     <div className="relative flex h-full min-h-0 flex-col">
       <ScrollArea
@@ -122,35 +283,78 @@ export function BrandEditorFrame({
         type="scroll"
         scrollHideDelay={350}
       >
-        {header}
+        <PageHeader back={back} center={<SaveStatus saving={save.saving} />} />
         <div className={column}>{children}</div>
       </ScrollArea>
 
-      <PageActionBar contentKey={contentKey} blocker={blocker} status={status}>
-        {/* Literal `null`, not a component that renders one: the bar counts a
-            child that draws nothing and rules a divider beside it. */}
-        {dirty ? (
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            <span className="uppercase">
-              {cancelLabel ?? t('brand.editor.cancel')}
-            </span>
+      {create ? (
+        <PageActionBar contentKey="create" blocker={blocker}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              leaving.current = true
+              create.onCancel()
+            }}
+          >
+            <span className="uppercase">{t('brand.editor.cancel')}</span>
           </Button>
-        ) : null}
-        <Button
-          variant="ghost"
-          size="sm"
-          // The ghost variant has no disabled ink of its own — it only stops
-          // taking clicks — and the strong `text-primary-foreground` here is
-          // exactly what makes a dead button look live. `senary` is the ink the
-          // default variant fades to, so a refused commit greys the same way
-          // wherever it happens.
-          className="text-primary-foreground disabled:text-senary-foreground"
-          disabled={Boolean(blocker) || !dirty}
-          onClick={onSave}
-        >
-          <span className="uppercase">{commitLabel}</span>
-        </Button>
-      </PageActionBar>
+          <Button
+            variant="ghost"
+            size="sm"
+            // The ghost variant has no disabled ink of its own — it only stops
+            // taking clicks — and the strong `text-primary-foreground` here is
+            // exactly what makes a dead button look live. `senary` is the ink
+            // the default variant fades to.
+            className="text-primary-foreground disabled:text-senary-foreground"
+            disabled={Boolean(blocker)}
+            onClick={() => {
+              leaving.current = true
+              create.onCreate().catch(() => {
+                leaving.current = false
+              })
+            }}
+          >
+            <span className="uppercase">{create.label}</span>
+          </Button>
+        </PageActionBar>
+      ) : blocker ? (
+        <PageActionBar contentKey="blocked">
+          <span className="flex items-center gap-1.5 px-2 text-xs text-secondary-foreground">
+            <WarningCircleIcon className="size-4 shrink-0" />
+            {blocker}
+          </span>
+        </PageActionBar>
+      ) : null}
+
+      <ModalContainer
+        isOpen={leave.status === 'blocked'}
+        onClose={() => leave.reset?.()}
+        title={t('brand.editor.leave.title')}
+        size="small"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-secondary-foreground">
+            {t('brand.editor.leave.body')}
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => leave.reset?.()}
+            >
+              {t('brand.editor.leave.stay')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructiveInverted"
+              onClick={() => leave.proceed?.()}
+            >
+              {t('brand.editor.leave.discard')}
+            </Button>
+          </div>
+        </div>
+      </ModalContainer>
     </div>
   )
 }
@@ -327,8 +531,8 @@ export function ForkedNote({
 /**
  * The one gesture on an editor with no undo behind it, so it takes two.
  *
- * Everything else on these screens is recoverable by not saving — `CANCEL` puts
- * the whole thing back. Deleting is the exception, and the same one the
+ * Everything else on these screens is recoverable by typing it back — an edit
+ * is a change to a field you can see. Deleting is the exception, and the same one the
  * document and post editors make: a list may delete a row on one click, because
  * the row is one of twenty and the mistake is visible immediately, but a thing
  * that fills the screen and may have just been written gets asked about.

@@ -4,7 +4,7 @@ import { brandSection } from '@/lib/brandSections'
 import {
   AddEntryCard,
   BrandLibrary,
-  LibraryCard,
+  LibraryEntry,
   PlainActionCard,
   StarterCard,
   StarterGroup,
@@ -114,42 +114,19 @@ function SeriesCard({
   const formats = useFeatureFlag('content-formats')
 
   return (
-    <LibraryCard onClick={onOpen ? () => onOpen(series.id) : undefined}>
-      <header className="flex min-w-0 flex-col gap-1">
-        <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
-          {series.name}
-        </h3>
-        {series.promise ? (
-          <p className="text-sm leading-5 text-secondary-foreground">
-            {series.promise}
-          </p>
-        ) : null}
-      </header>
-
-      {/* The recipe, quoted rather than summarised. It is the object's whole
-          content, and a card that showed only its presence would be the filing
-          cabinet this feature is trying not to be. Clamped, because a long
-          recipe must not push the next card off the screen — the editor is one
-          click away and is where it is read in full. */}
-      {series.recipe ? (
-        <p className="line-clamp-3 text-sm leading-5 whitespace-pre-line">
-          {series.recipe}
-        </p>
-      ) : (
-        <p className="text-sm leading-5 text-tertiary-foreground">
-          {t('series.library.noRecipe')}
-        </p>
-      )}
-
-      {/* The same foot the voice and audience cards have — what it has done,
-          then what it is, bulleted and set in the line-under-the-name colour.
-          Kept identical on purpose. */}
-      <footer>
-        <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
-          <li>{seriesMetaLine(t, series, { withFormat: formats })}</li>
-          <li>{supplyLine(t, series.supply)}</li>
-        </ul>
-      </footer>
-    </LibraryCard>
+    <LibraryEntry
+      onOpen={onOpen ? () => onOpen(series.id) : undefined}
+      name={series.name}
+      line={series.promise}
+      // The recipe, quoted rather than summarised. It is the object's whole
+      // content, and a card that showed only its presence would be the filing
+      // cabinet this feature is trying not to be.
+      substance={series.recipe}
+      empty={t('series.library.noRecipe')}
+      facts={[
+        seriesMetaLine(t, series, { withFormat: formats }),
+        supplyLine(t, series.supply),
+      ]}
+    />
   )
 }

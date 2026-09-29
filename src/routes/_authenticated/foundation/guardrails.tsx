@@ -54,7 +54,8 @@ function GuardrailsPage() {
   const { mutate: decide } = useSetGuardrailsStance()
   const [deletions, setDeletions] = useState(0)
 
-  const header = <PageHeader back={<BrandBackButton />} />
+  const backButton = <BrandBackButton />
+  const header = <PageHeader back={backButton} />
 
   if (isPending) {
     return (
@@ -85,31 +86,24 @@ function GuardrailsPage() {
     <BrandPage>
       <GuardrailsEditor
         key={deletions}
-        header={header}
+        back={backButton}
         guardrails={guardrails}
-        onSave={(written) => {
-          save.mutate(written, {
-            onSuccess: () => {
-              // Written rules are the stance, said in more detail than the
-              // switch can hold — so the switch cannot be left standing beside
-              // them saying the opposite. See `StanceCard`.
-              decide(false)
-              toast.success(
-                guardrails
-                  ? t('brand.detail.guardrailsSaved')
-                  : t('brand.detail.guardrailsCreated'),
-              )
-            },
+        onSave={(written) =>
+          save.mutateAsync(written).then(() => {
+            // Written rules are the stance, said in more detail than the
+            // switch can hold — so the switch cannot be left standing beside
+            // them saying the opposite. See `StanceCard`. Only on the write
+            // that creates them: the switch is offered only while there are
+            // none, so every later save would restate the same `false`.
+            if (!guardrails) decide(false)
           })
-        }}
-        onDelete={() => {
-          remove.mutate(undefined, {
-            onSuccess: () => {
-              setDeletions((n) => n + 1)
-              toast.success(t('brand.detail.guardrailsDeleted'))
-            },
+        }
+        onDelete={() =>
+          remove.mutateAsync().then(() => {
+            setDeletions((n) => n + 1)
+            toast.success(t('brand.detail.guardrailsDeleted'))
           })
-        }}
+        }
       />
     </BrandPage>
   )

@@ -250,6 +250,18 @@ const OFFER_NOTE_ID = 'brand-read-from-website'
  * routes is worth a card even while none of them is built: the reason people
  * abandon this screen is the belief that they have to write it all themselves.
  *
+ * **And the three tiles are trimmed to a sliver.** They were 216px of card
+ * naming things that cannot be clicked, at the top of the one screen where the
+ * work is underneath — and this band now carries the whole "some of this is
+ * coming" job, since the first-run takeover that used to carry it is gone
+ * (`BrandOverview`). So the stack is clipped mid-way through the first tile and
+ * faded out into the card: the shape of a list continuing past the cut is what
+ * says *there is more of this coming* in 40px, and the three routes are named
+ * in the sentence above it rather than left to be read off a tile nobody can
+ * finish reading. The cut half is `aria-hidden` for the same reason it is
+ * clipped — a screen reader getting three headings and three sentences would be
+ * hearing the card this one stopped being.
+ *
  * **And it can be closed for good.** Not the `Explainer` contract — that one
  * bans anything the user needs while working. It is safe to lose because it is
  * a shortcut and never the only way in: every section still offers its own
@@ -281,7 +293,7 @@ export function WholeBrandOffer({
     <section
       className={cn(
         COLUMN,
-        'relative flex flex-col gap-4 bg-primary px-6 py-6',
+        'relative flex flex-col gap-3 bg-primary px-6 py-5',
       )}
     >
       {/* Parked in the corner. It is the only control on the card, and the
@@ -318,22 +330,30 @@ export function WholeBrandOffer({
         </p>
       </header>
 
-      <div className="grid gap-3">
-        <StarterCard
-          icon={GlobeIcon}
-          title={t('brand.shell.offer.website.title')}
-          body={t('brand.shell.offer.website.body')}
-        />
-        <StarterCard
-          icon={StackIcon}
-          title={t('brand.shell.offer.document.title')}
-          body={t('brand.shell.offer.document.body')}
-        />
-        <StarterCard
-          icon={ChatCircleTextIcon}
-          title={t('brand.shell.offer.questions.title')}
-          body={t('brand.shell.offer.questions.body')}
-        />
+      {/* 40px of a 216px stack. `h-10` lands inside the first tile rather than
+          between two of them, which is the whole trick: a clean edge reads as a
+          card that ends, and a tile cut through the middle reads as a list that
+          carries on. The fade is `to-primary` because that is the card's own
+          background — it dissolves into this card, not into the page. */}
+      <div aria-hidden className="relative h-10 overflow-hidden">
+        <div className="grid gap-3">
+          <StarterCard
+            icon={GlobeIcon}
+            title={t('brand.shell.offer.website.title')}
+            body={t('brand.shell.offer.website.body')}
+          />
+          <StarterCard
+            icon={StackIcon}
+            title={t('brand.shell.offer.document.title')}
+            body={t('brand.shell.offer.document.body')}
+          />
+          <StarterCard
+            icon={ChatCircleTextIcon}
+            title={t('brand.shell.offer.questions.title')}
+            body={t('brand.shell.offer.questions.body')}
+          />
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-7 bg-gradient-to-b from-transparent to-primary" />
       </div>
     </section>
   )
@@ -445,6 +465,84 @@ export function LibraryCard({
         />
       )}
     </article>
+  )
+}
+
+/**
+ * One library entry, laid out — **the anatomy every library card shares**, so
+ * voices, audiences and series stop being three cards that happen to sit on
+ * the same white block.
+ *
+ * They had drifted: a voice ruled its sample and let it run to any length, a
+ * series clamped its recipe and ruled nothing, an audience set its three lines
+ * as a bare list. Each was defensible, and side by side down the hub's three
+ * sections they read as three designers. So one order, one set of type:
+ *
+ * 1. **The name**, display size, with the default star beside it when there is
+ *    one — the only mark allowed on the heading line.
+ * 2. **One line** under it, secondary: what somebody picks this one for.
+ * 3. **The substance**, in a ruled block — the thing that makes this entry
+ *    different from its siblings (a sample, the three consequence lines, the
+ *    recipe). Text is clamped to four lines, because a card is a preview and
+ *    the editor is one click away. When there is none, the same block says so
+ *    in tertiary, in the same place, so an empty entry is the same card with
+ *    different words rather than a shorter one.
+ * 4. **The facts**, bulleted at the foot, in the line-under-the-name colour.
+ */
+export function LibraryEntry({
+  name,
+  mark,
+  line,
+  substance,
+  empty,
+  facts,
+  onOpen,
+}: {
+  name: string
+  /** Beside the name — in practice `DefaultStar`. */
+  mark?: ReactNode
+  line?: string
+  /** A string is clamped to four lines; a node is drawn as given. */
+  substance?: ReactNode
+  /** What the ruled block says while there is no substance. */
+  empty?: string
+  facts: ReactNode[]
+  onOpen?: () => void
+}) {
+  return (
+    <LibraryCard onClick={onOpen}>
+      <header className="flex min-w-0 flex-col gap-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
+            {name}
+          </h3>
+          {mark}
+        </div>
+        {line ? (
+          <p className="text-sm leading-5 text-secondary-foreground">{line}</p>
+        ) : null}
+      </header>
+
+      <div className="border-l-2 border-quaternary pl-3 text-sm leading-5">
+        {typeof substance === 'string' ? (
+          <p className="line-clamp-4 whitespace-pre-line">{substance}</p>
+        ) : substance ? (
+          substance
+        ) : (
+          <p className="text-tertiary-foreground">{empty}</p>
+        )}
+      </div>
+
+      {/* A list rather than stacked lines, because a fact wraps on a narrow
+          column and without markers the wrapped half reads as another fact. */}
+      <footer>
+        <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
+          {facts.map((fact, i) => (
+            <li key={i}>{fact}</li>
+          ))}
+        </ul>
+      </footer>
+    </LibraryCard>
   )
 }
 

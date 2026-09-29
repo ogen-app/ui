@@ -33,7 +33,6 @@ const VOICE: BrandVoice = {
   samples: [],
   rules: {
     emoji: 'never',
-    hashtags: 'never',
     formality: 'neutral',
     person: 'we',
     length: 'medium',
@@ -80,23 +79,31 @@ describe('the Foundation hub', () => {
     expect(skeletons()).toBe(0)
   })
 
-  it('does not offer to write a brand from scratch when it could not read one', () => {
-    render(<BrandOverview brand={{ status: 'error' }} />)
+  it('is the same screen for a workspace with nothing in it', () => {
+    render(
+      <BrandOverview
+        brand={{
+          status: 'ready',
+          data: { ...BRAND, voices: [] },
+        }}
+      />,
+    )
 
-    // `FirstRun`'s own heading. An unread brand is not an empty one, and the
-    // takeover would be answering a question the fetch never asked.
-    expect(
-      screen.queryByText(i18next.t('brand.firstRun.title')),
-    ).not.toBeInTheDocument()
+    // There is no first-run takeover any more. An empty brand lands on the hub
+    // with its cards openable, rather than on a screen whose one working
+    // control is a door to this one.
     expect(screen.getByText(label('voices'))).toBeInTheDocument()
+    expect(
+      screen.getByText(i18next.t('brand.shell.offer.title')),
+    ).toBeInTheDocument()
   })
 
   it('waits as a whole page while the brand itself is in flight', () => {
     render(<BrandOverview brand={{ status: 'pending' }} />)
 
-    // The one query that decides *which screen this is* — labelled cards
-    // appearing for a moment before the first-run takeover replaces them is
-    // worse than a placeholder that promises nothing.
+    // Its five sections are one fetch, so no card here could have drawn
+    // sooner, and six cards of skeleton rows is a busier way of saying the
+    // same nothing.
     expect(screen.queryByText(label('voices'))).not.toBeInTheDocument()
     expect(skeletons()).toBeGreaterThan(0)
   })

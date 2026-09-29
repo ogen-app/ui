@@ -4,6 +4,8 @@ import {
   dayKey,
   isNotificationEntry,
   parseDayKey,
+  seenBeforeDivider,
+  type ActivityEntry,
 } from './activityFeed.ts'
 import type { AppNotification } from '@/types/notifications'
 import type { ActivityReportSummary } from '@/types/activity'
@@ -157,5 +159,60 @@ describe('activityFeed', () => {
 
   it('is empty when neither half has anything', () => {
     expect(activityFeed({}, NOW)).toEqual([])
+  })
+})
+
+describe('seenBeforeDivider', () => {
+  function note(id: string, read: boolean): ActivityEntry {
+    return {
+      kind: 'notification',
+      id: `n:${id}`,
+      at: at(2026, 8, 19),
+      notification: {
+        id,
+        read_at: read ? at(2026, 8, 18) : null,
+      } as AppNotification,
+    }
+  }
+  function day(date: string): ActivityEntry {
+    return {
+      kind: 'report',
+      id: `r:${date}`,
+      at: at(2026, 8, 19),
+      report: report(date),
+    }
+  }
+  const none = new Set<string>()
+
+  it('sits under the run of new rows at the top', () => {
+    const entries = [note('a', false), note('b', false), note('c', true)]
+    expect(seenBeforeDivider(entries, none)).toBe('n:c')
+  })
+
+  it('counts a row read on sight this visit as new', () => {
+    const entries = [note('a', true), note('b', true)]
+    expect(seenBeforeDivider(entries, new Set(['a']))).toBe('n:b')
+  })
+
+  it('goes directly after the last new row, so a report between sits below it', () => {
+    const entries = [note('a', false), day('2026-08-18'), note('b', true)]
+    expect(seenBeforeDivider(entries, none)).toBe('r:2026-08-18')
+  })
+
+  it('draws nothing when nothing is new', () => {
+    expect(
+      seenBeforeDivider([note('a', true), note('b', true)], none),
+    ).toBeNull()
+  })
+
+  it('draws nothing when everything is new', () => {
+    expect(
+      seenBeforeDivider([note('a', false), day('2026-08-18')], none),
+    ).toBeNull()
+  })
+
+  it('is not stretched by an unread row further down', () => {
+    const entries = [note('a', false), note('b', true), note('c', false)]
+    expect(seenBeforeDivider(entries, none)).toBe('n:b')
   })
 })

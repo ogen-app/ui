@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import {
   CaretRightIcon,
   ChatTeardropTextIcon,
@@ -30,7 +30,6 @@ import {
   type BrandSectionId,
   type BrandSectionInfo,
 } from '@/lib/brandSections'
-import { FirstRun } from './FirstRun'
 import {
   FACT_SUBJECTS,
   countBySubject,
@@ -40,12 +39,7 @@ import {
 } from './facts'
 import { defaultVoiceLabel, sampleCount, usageLine } from './format'
 import { BrandIntro, DefaultStar, WholeBrandOffer } from './shell'
-import {
-  EXPECTED_RATIOS,
-  isBrandEmpty,
-  MIN_VOICE_SAMPLES,
-  type BrandData,
-} from './types'
+import { EXPECTED_RATIOS, MIN_VOICE_SAMPLES, type BrandData } from './types'
 
 /**
  * Brand's main screen: what is in each section, and the way into it.
@@ -91,13 +85,22 @@ import {
  * list that arrives by the hundred. Rule 2 could never be applied to it — a
  * card naming five of four hundred documents answers nothing — and the
  * exception it needed was the tell.
+ *
+ * **There is no first-run takeover**, and there was: an empty brand used to be
+ * met by a full screen of five ways in, four of them COMING SOON, with *fill it
+ * in yourself* as the one that worked. It was a screen you read once and then
+ * dismissed to reach this one — which is the same screen, with the same ways
+ * in, except that its cards can actually be opened. Two screens that differ
+ * only in whether the content is reachable is one screen and a doorstep. So the
+ * hub is what an empty workspace arrives at, its cards say what is missing the
+ * way they always have, and the paths that are not built yet are named once, in
+ * a band, by `WholeBrandOffer`.
  */
 export function BrandOverview({
   brand,
   facts = [],
   series = [],
   stance,
-  showWhenEmpty = false,
   onOpen,
 }: {
   /** Every section, as the one query they come from — `useBrand`. */
@@ -131,38 +134,15 @@ export function BrandOverview({
    * what it is given.
    */
   stance?: GuardrailsStance
-  /** Skips the first-run takeover — the escape hatch, and the harness. */
-  showWhenEmpty?: boolean
   onOpen?: (id: BrandSectionId) => void
 }) {
   const { t } = useTranslation()
-  const [skippedFirstRun, setSkippedFirstRun] = useState(false)
 
-  // The brand query still holds the whole screen while it is in flight, and it
-  // is the one query that should: what it settles is not six cards' contents
-  // but *which screen this is* — an empty brand is the first-run takeover, and
-  // six labelled cards appearing for a moment before a takeover replaces them
-  // is worse than a placeholder that promises nothing. Its five sections are
-  // one fetch anyway, so there is no card here that could have drawn sooner.
+  // The brand query still holds the whole screen while it is in flight: its
+  // five sections are one fetch, so there is no card here that could have
+  // drawn sooner, and six labelled cards whose every row is a skeleton is a
+  // busier way of saying the same nothing.
   if (brand.status === 'pending') return <OverviewSkeleton />
-
-  // `status === 'ready'`, not merely "no data": a brand we failed to read is
-  // not an empty one, and offering to write a brand from scratch is the wrong
-  // answer to a fetch that fell over. A failure lands on the cards instead,
-  // one line per card, where it can say which part is missing.
-  const firstRun =
-    brand.status === 'ready' &&
-    isBrandEmpty(brand.data) &&
-    !showWhenEmpty &&
-    !skippedFirstRun
-
-  if (firstRun) {
-    return (
-      <Wrapper>
-        <FirstRun onManual={() => setSkippedFirstRun(true)} />
-      </Wrapper>
-    )
-  }
 
   /**
    * What one card has to draw, which is its own query's state rather than the

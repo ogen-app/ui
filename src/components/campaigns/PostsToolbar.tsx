@@ -5,7 +5,6 @@ import {
   CalendarDotsIcon,
   CaretLeftIcon,
   CaretRightIcon,
-  ListDashesIcon,
   PlusIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
@@ -62,13 +61,22 @@ function formatWeekRange(weekStart: Date, locale: string): string {
 }
 
 /**
- * Toolbar shared by the posts views: date range (calendar only), the
- * WEEK / MONTH / LIST switch, date navigation, and ADD POST.
+ * Toolbar shared by the two posts screens: the date range and the WEEK / MONTH
+ * switch on the calendar, the count on the list, and ADD POST on both.
+ *
+ * **The list is not a third view of the calendar, and the switch no longer
+ * pretends it is.** It was WEEK / MONTH / LIST, three segments of one control,
+ * which said that the table is a way of looking at a week — and it is not: it
+ * has no range at all, it is every post in the campaign. The two are separate
+ * destinations with their own rows in the rail (`lib/campaignSections`), so the
+ * switch now only picks a granularity, and it only appears where a granularity
+ * is a question. What the list keeps is the half of the toolbar that is about
+ * the posts rather than about the date: how many there are, and the way to add
+ * one.
  *
  * The workspace calendar takes the same toolbar with `campaignId: null`, which
- * drops the two things that need a campaign — the LIST segment, since the table
- * is a campaign's, and ADD POST. What is left is what the workspace grid
- * actually offers: where you are, and how to move.
+ * drops ADD POST — a new post needs a campaign to be created in. What is left
+ * is what the workspace grid actually offers: where you are, and how to move.
  */
 export function PostsToolbar({
   campaignId,
@@ -84,55 +92,36 @@ export function PostsToolbar({
   const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings()
   const isCalendar = view === 'week' || view === 'month'
 
-  const handleViewSelect = (next: string) => {
+  const handleViewSelect = (next: 'week' | 'month') => {
     if (next === view) return
     // The anchor is granularity-free by design (see `calendar/date.ts`), so
     // switching views keeps the day you were looking at and only re-derives
     // the range around it.
     const nextAnchor = formatAnchor(anchor ?? new Date())
-    if (next === 'week' || next === 'month') {
-      if (campaignId === null) {
-        navigate({
-          to: '/calendar/$anchor/$view',
-          params: { anchor: nextAnchor, view: next },
-        })
-      } else {
-        navigate({
-          to: '/campaigns/$campaignId/calendar/$anchor/$view',
-          params: { campaignId, anchor: nextAnchor, view: next },
-        })
-      }
-    } else if (next === 'list' && campaignId !== null) {
-      navigate({ to: '/campaigns/$campaignId/list', params: { campaignId } })
+    if (campaignId === null) {
+      navigate({
+        to: '/calendar/$anchor/$view',
+        params: { anchor: nextAnchor, view: next },
+      })
+    } else {
+      navigate({
+        to: '/campaigns/$campaignId/calendar/$anchor/$view',
+        params: { campaignId, anchor: nextAnchor, view: next },
+      })
     }
   }
 
   /**
-   * The three arrangements of the same posts. Two calendars that differ by
-   * how much they hold — one date marked, then many — and a list, which is
-   * the grouping that is actually there.
+   * The two arrangements of the calendar: the same posts, differing by how
+   * much of the plan is on screen at once — one week marked out, then a month.
    *
    * Built per render rather than hoisted, so the names come from whichever
    * language is loaded now; a module-level array would freeze the first one.
-   *
-   * Two of the three on the workspace calendar. The list is a campaign's table
-   * — its columns are the campaign's phases and its sort is stored per campaign
-   * — so there is no workspace arrangement for that segment to switch to, and a
-   * segment that navigates nowhere is worse than one that isn't offered.
    */
   const views = [
     { value: 'week', Icon: CalendarDotIcon, label: t('calendar.viewWeek') },
     { value: 'month', Icon: CalendarDotsIcon, label: t('calendar.viewMonth') },
-    ...(campaignId === null
-      ? []
-      : [
-          {
-            value: 'list',
-            Icon: ListDashesIcon,
-            label: t('calendar.viewList'),
-          },
-        ]),
-  ]
+  ] as const
 
   /** One step of whatever the current view shows — a week, or a month. */
   const step = (direction: 1 | -1) => {
@@ -206,15 +195,18 @@ export function PostsToolbar({
         )}
 
         {/* The view switch stays beside ADD POST; the date navigator sits to
-            their left rather than between them. */}
+            their left rather than between them. The list has no switch at all
+            — it is not a granularity — so ADD POST moves up against the count
+            rather than leaving a gap where a control used to be. */}
         <div className="flex items-center gap-2">
-          <Tabs value={view}>
-            <TabsList variant="segmented" size="excluded">
-              {views.map(({ value, Icon, label }) => (
-                // The tooltip is what the label used to do for a sighted
-                // reader; `aria-label` keeps saying it to everyone else.
-                <Tooltip key={value}>
-                  {/* The span is the tooltip's trigger, not the tab. Both
+          {isCalendar && (
+            <Tabs value={view}>
+              <TabsList variant="segmented" size="excluded">
+                {views.map(({ value, Icon, label }) => (
+                  // The tooltip is what the label used to do for a sighted
+                  // reader; `aria-label` keeps saying it to everyone else.
+                  <Tooltip key={value}>
+                    {/* The span is the tooltip's trigger, not the tab. Both
                       primitives write `data-state`, and merged onto one
                       element the tooltip's wins — the selected segment loses
                       its fill. The wrapper has to keep a box of its own (the
@@ -223,27 +215,28 @@ export function PostsToolbar({
                       accessibility tree instead: `presentation` is what keeps
                       the tab a child of the tablist. The tooltip still answers
                       the keyboard — focus bubbles to it from the button. */}
-                  <TooltipTrigger asChild>
-                    <span role="presentation" className="inline-flex">
-                      <TabsTrigger
-                        variant="segmented"
-                        size="icon"
-                        value={value}
-                        aria-label={label}
-                        onClick={() => handleViewSelect(value)}
-                      >
-                        {/* Bold: at 16px the regular weight goes spindly
+                    <TooltipTrigger asChild>
+                      <span role="presentation" className="inline-flex">
+                        <TabsTrigger
+                          variant="segmented"
+                          size="icon"
+                          value={value}
+                          aria-label={label}
+                          onClick={() => handleViewSelect(value)}
+                        >
+                          {/* Bold: at 16px the regular weight goes spindly
                             against the type beside it, and the dots that tell
                             the two calendars apart stop reading. */}
-                        <Icon weight="bold" />
-                      </TabsTrigger>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">{label}</TooltipContent>
-                </Tooltip>
-              ))}
-            </TabsList>
-          </Tabs>
+                          <Icon weight="bold" />
+                        </TabsTrigger>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">{label}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </TabsList>
+            </Tabs>
+          )}
 
           {campaignId !== null && (
             <Button variant="default" onClick={() => addPost()}>
