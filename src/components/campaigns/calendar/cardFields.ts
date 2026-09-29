@@ -18,8 +18,10 @@
  * the month. `useCalendarSettings` keeps the two blobs; nothing else has to
  * know which view it is drawing for beyond passing the right one down.
  *
- * The picture is deliberately *not* one of these fields. It is one answer for
- * the whole calendar (`imagePreviews`) — see `CardFields.image`.
+ * Two rows are deliberately *not* among these fields, and for opposite
+ * reasons. The picture is one answer for the whole calendar
+ * (`imagePreviews`), and the campaign is not an answer at all — it is decided
+ * by which calendar is drawing. See `CardFields`.
  *
  * One thing is not switchable at all: the status accent down the card's left
  * edge. It costs no content width, and a calendar that can't say which posts
@@ -39,7 +41,7 @@ export const CARD_FIELDS = [
 export type CardField = (typeof CARD_FIELDS)[number]
 
 /**
- * The switchable rows, plus the picture.
+ * The switchable rows, plus the two that are not switchable.
  *
  * `image` sits in the record because every card reads it the same way as the
  * rest, but it is not a `CardField`: it has no switch of its own in either
@@ -47,8 +49,33 @@ export type CardField = (typeof CARD_FIELDS)[number]
  * is the calendar-wide `imagePreviews` preference copied in by
  * `useCalendarSettings`. Turning previews on turns them on everywhere, which
  * is what makes it a property of the calendar rather than of a card.
+ *
+ * `campaign` is in the record on the same terms and for a different reason:
+ * it is not a preference either way. On a campaign's own calendar every card
+ * names the same campaign, so the row is a line of noise repeated down every
+ * column; on the workspace calendar it is the one thing telling two otherwise
+ * identical cards apart. A switch for it would therefore be a switch whose
+ * right answer is already known from where the user is standing — so the view
+ * stamps it, `withCampaignRow` is how, and the rung ladder can still take it
+ * away on a day too busy to afford it.
  */
-export type CardFields = Record<CardField, boolean> & { image: boolean }
+export type CardFields = Record<CardField, boolean> & {
+  image: boolean
+  campaign: boolean
+}
+
+/**
+ * The same fields, answered for a calendar that draws one campaign or every
+ * campaign.
+ *
+ * A function rather than a spread at each call site because the object's
+ * identity is load-bearing: `CardFields` is a `useMemo` dependency in both
+ * grids and a `memo` prop on every card, so a fresh one per render re-measures
+ * the grid and re-renders the whole week. Callers memoize the result.
+ */
+export function withCampaignRow(fields: CardFields, show: boolean): CardFields {
+  return fields.campaign === show ? fields : { ...fields, campaign: show }
+}
 
 /**
  * The week card as it was before any of this was configurable: the status as
@@ -64,6 +91,7 @@ export const DEFAULT_WEEK_FIELDS: CardFields = {
   platform: true,
   account: false,
   image: true,
+  campaign: false,
 }
 
 /**
@@ -87,6 +115,7 @@ export const DEFAULT_MONTH_FIELDS: CardFields = {
   platform: false,
   account: false,
   image: true,
+  campaign: false,
 }
 
 export function visibleFieldCount(fields: CardFields): number {
@@ -96,6 +125,12 @@ export function visibleFieldCount(fields: CardFields): number {
 /**
  * Whether the switches have stripped the card back to one row of content — the
  * floor the panel will not let the user go below.
+ *
+ * The campaign row is not counted, for the same reason the picture isn't: it
+ * is not one of the switches this is the floor for, and a workspace card
+ * stripped to a campaign name says no more about the post than a coloured
+ * strip does. So the status still speaks up there, exactly as it would on the
+ * campaign calendar.
  *
  * It is a real place: `canHideField` stops at one switch, so "only the title"
  * and "only the time" are both states a user can arrive at. A card that says

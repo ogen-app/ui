@@ -9,7 +9,8 @@ import { formatAnchor } from './date'
 import { cn } from '@/lib'
 
 type Props = {
-  campaignId: string
+  /** `null` on the workspace calendar — the week it opens is that grid's own. */
+  campaignId: string | null
   day: Date
   posts: Post[]
 }
@@ -24,6 +25,13 @@ type Props = {
  * "Instagram Reel ×3" does not fit where a logo and a number do. The titles
  * are not lost, they move one click away: the whole block opens the week that
  * contains this day, where the full cards live and drag works as it does now.
+ *
+ * It opens the week of whichever calendar it is in — the campaign's, or the
+ * workspace's — because the density is a summary of what that grid is showing
+ * and stepping out of it would answer a different question. Written as two
+ * branches rather than one `to` built from a condition: a `<Link>` takes its
+ * param types from a literal `to`, and a union spread in types as neither (the
+ * same reason `BackToPosts` is written twice over).
  */
 function MonthDensityComponent({ campaignId, day, posts }: Props) {
   const { t, i18n } = useTranslation()
@@ -49,19 +57,20 @@ function MonthDensityComponent({ campaignId, day, posts }: Props) {
       )
   }, [posts, resolve])
 
-  return (
-    <Link
-      to="/campaigns/$campaignId/calendar/$anchor/$view"
-      params={{ campaignId, anchor: formatAnchor(day), view: 'week' }}
-      title={t('calendar.density', {
-        count: posts.length,
-        date: formatDate(day, { dateStyle: 'long' }, i18n.language),
-      })}
-      className={cn(
-        'flex flex-wrap content-start items-center gap-x-2 gap-y-1 p-1',
-        'cursor-pointer transition-colors hover:bg-quaternary',
-      )}
-    >
+  const anchor = formatAnchor(day)
+  const shared = {
+    title: t('calendar.density', {
+      count: posts.length,
+      date: formatDate(day, { dateStyle: 'long' }, i18n.language),
+    }),
+    className: cn(
+      'flex flex-wrap content-start items-center gap-x-2 gap-y-1 p-1',
+      'cursor-pointer transition-colors hover:bg-quaternary',
+    ),
+  }
+
+  const marks = (
+    <>
       {groups.map(({ id, count, info }) => {
         // Same neutral dashed circle the week card falls back to when a post
         // has no platform yet — an absence, not a warning.
@@ -82,6 +91,24 @@ function MonthDensityComponent({ campaignId, day, posts }: Props) {
           </span>
         )
       })}
+    </>
+  )
+
+  return campaignId === null ? (
+    <Link
+      to="/calendar/$anchor/$view"
+      params={{ anchor, view: 'week' }}
+      {...shared}
+    >
+      {marks}
+    </Link>
+  ) : (
+    <Link
+      to="/campaigns/$campaignId/calendar/$anchor/$view"
+      params={{ campaignId, anchor, view: 'week' }}
+      {...shared}
+    >
+      {marks}
     </Link>
   )
 }
