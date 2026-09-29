@@ -98,14 +98,12 @@ function GuardrailsPage() {
             if (!guardrails) decide(false)
           })
         }
-        onDelete={() => {
-          remove.mutate(undefined, {
-            onSuccess: () => {
-              setDeletions((n) => n + 1)
-              toast.success(t('brand.detail.guardrailsDeleted'))
-            },
+        onDelete={() =>
+          remove.mutateAsync().then(() => {
+            setDeletions((n) => n + 1)
+            toast.success(t('brand.detail.guardrailsDeleted'))
           })
-        }}
+        }
       />
     </BrandPage>
   )

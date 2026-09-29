@@ -145,11 +145,9 @@ function SeriesEditorPage() {
         onCancel={back}
         onSave={(written) => save.mutateAsync(written)}
         onDelete={() =>
-          remove.mutate(series.id, {
-            onSuccess: () => {
-              toast.success(t('series.detail.deleted', { name: series.name }))
-              back()
-            },
+          remove.mutateAsync(series.id).then(() => {
+            toast.success(t('series.detail.deleted', { name: series.name }))
+            back()
           })
         }
       />

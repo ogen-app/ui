@@ -69,7 +69,7 @@ export function SeriesEditor({
   onSave: (series: ContentSeries) => Promise<unknown>
   onCancel: () => void
   /** Absent for a series that has never been stored. */
-  onDelete?: () => void
+  onDelete?: () => Promise<unknown>
 }) {
   const { t } = useTranslation()
   const formats = useFeatureFlag('content-formats')
@@ -212,8 +212,8 @@ export function SeriesEditor({
           name={series.name}
           cost={t('series.editor.deleteCost')}
           onDelete={() => {
-            save.hold()
-            onDelete()
+            const release = save.hold()
+            onDelete().catch(release)
           }}
         />
       ) : null}

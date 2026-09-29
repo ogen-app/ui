@@ -116,7 +116,7 @@ export function VoiceEditor({
   onSave: (voice: BrandVoice) => Promise<unknown>
   onCancel: () => void
   /** Only offered for a voice that exists. */
-  onDelete?: () => void
+  onDelete?: () => Promise<unknown>
 }) {
   const { t } = useTranslation()
   const initial = useMemo(
@@ -315,8 +315,8 @@ export function VoiceEditor({
           name={voice.name}
           cost={deletionCost(t, voice.usage)}
           onDelete={() => {
-            save.hold()
-            onDelete()
+            const release = save.hold()
+            onDelete().catch(release)
           }}
         />
       )}

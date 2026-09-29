@@ -66,11 +66,15 @@ export type EditorSave = {
   /** The screen holds something that differs from what it opened with or last wrote. */
   unsaved: boolean
   /**
-   * Stop writing, for good. Called before a delete: the unmount that follows
-   * it would otherwise flush a pending edit into a `PUT` on a row that no
-   * longer exists.
+   * Stop writing. Called before a delete: the unmount that follows it would
+   * otherwise flush a pending edit into a `PUT` on a row that no longer
+   * exists. Returns the release, for a delete that fails — the row is still
+   * there, and every edit after it would otherwise be dropped while the cloud
+   * went on saying it was saving.
    */
-  hold: () => void
+  hold: () => () => void
+  /** Whether a hold is in place — a delete is on its way, so leaving is expected. */
+  held: () => boolean
 }
 
 /**
@@ -103,7 +107,8 @@ export type EditorSave = {
  * inside the debounce sends nothing.
  *
  * Leaving flushes. A pending edit is sent on unmount rather than dropped, so
- * the caret and the sidebar need no guard on a stored entry.
+ * the caret and the sidebar need no guard on a stored entry — except one whose
+ * edit is blocked, which cannot be sent, so the frame asks about that instead.
  */
 export function useEditorSave<D>({
   draft,
@@ -122,12 +127,18 @@ export function useEditorSave<D>({
   const signature = JSON.stringify(draft)
   const [baseline, setBaseline] = useState(signature)
   const [inFlight, setInFlight] = useState(0)
+  // Bumped by a release, so a held edit is armed again without another one.
+  const [released, setReleased] = useState(0)
+
+  // Against the last *confirmed* write. A write still in flight for this very
+  // signature may re-arm the timer, and `write` drops it as already sent.
+  const armed = stored && !blocked && signature !== baseline
 
   // The timer and the unmount flush outlive renders, so they read the current
   // value and writer through refs rather than closing over the first ones.
-  const latest = useRef({ draft, signature, save })
+  const latest = useRef({ draft, signature, save, armed })
   useLayoutEffect(() => {
-    latest.current = { draft, signature, save }
+    latest.current = { draft, signature, save, armed }
   })
   const written = useRef(baseline)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -152,41 +163,49 @@ export function useEditorSave<D>({
       .finally(() => setInFlight((n) => n - 1))
   }, [])
 
-  // Against the last *confirmed* write. A write still in flight for this very
-  // signature may re-arm the timer, and `write` drops it as already sent.
-  const armed = stored && !blocked && signature !== baseline
-
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current)
     timer.current = armed ? setTimeout(write, AUTOSAVE_MS) : null
-  }, [armed, signature, write])
+  }, [armed, signature, write, released])
 
+  // Sends whatever is armed, not only what is waiting on the timer: a write
+  // that was refused leaves no timer behind, and leaving is its last chance.
+  // `write` drops a signature already on the wire, and a blocked draft is
+  // never armed, so neither goes out twice or goes out invalid.
   useEffect(
     () => () => {
-      if (!timer.current) return
-      clearTimeout(timer.current)
-      write()
+      if (timer.current) clearTimeout(timer.current)
+      timer.current = null
+      if (latest.current.armed) write()
     },
     [write],
   )
 
   const saving = inFlight > 0 || armed
 
-  // Closing the tab is the one exit a flush cannot cover.
+  // Closing the tab is the one exit a flush cannot cover — so it asks about
+  // anything not yet confirmed, including an edit held back as blocked.
+  const unconfirmed = inFlight > 0 || (stored && signature !== baseline)
   useEffect(() => {
-    if (!saving) return
+    if (!unconfirmed) return
     const warn = (e: BeforeUnloadEvent) => e.preventDefault()
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [saving])
+  }, [unconfirmed])
 
   const hold = useCallback(() => {
     held.current = true
     if (timer.current) clearTimeout(timer.current)
     timer.current = null
+    return () => {
+      held.current = false
+      setReleased((n) => n + 1)
+    }
   }, [])
 
-  return { saving, unsaved: signature !== baseline, hold }
+  const isHeld = useCallback(() => held.current, [])
+
+  return { saving, unsaved: signature !== baseline, hold, held: isHeld }
 }
 
 /**
@@ -244,7 +263,13 @@ export function BrandEditorFrame({
   // Set on the way out through the screen's own exits, which must not be asked
   // about. Put back if the create fails, so the draft is guarded again.
   const leaving = useRef(false)
-  const guarded = () => Boolean(create) && save.unsaved && !leaving.current
+  // A blocked edit on a stored entry is the other draft that exists nowhere
+  // but here: autosave holds it back, so leaving would drop it silently.
+  const guarded = () =>
+    (Boolean(create) || Boolean(blocker)) &&
+    save.unsaved &&
+    !save.held() &&
+    !leaving.current
   const leave = useBlocker({
     shouldBlockFn: guarded,
     enableBeforeUnload: guarded,

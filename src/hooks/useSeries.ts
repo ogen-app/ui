@@ -90,6 +90,8 @@ export function useDeleteSeries() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteSeries(id),
+    // Behind any save still queued, so none lands after it.
+    scope: { id: 'series' },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SERIES_KEY })
       void queryClient.invalidateQueries({ queryKey: ['campaigns'] })
