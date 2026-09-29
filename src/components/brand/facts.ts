@@ -76,12 +76,10 @@ export type FactSubject = 'us' | 'problem' | 'opportunity'
 
 export type BrandFact = {
   /**
-   * Stable within a session only.
-   *
-   * The wire has no id for a fact — `guardrails.facts` is an array of strings —
-   * so this is minted client-side to key rows and to survive an edit to the
-   * statement itself. See `services/api/brandLocal.ts` for what is stored
-   * against it and why that is temporary.
+   * The server's id (CON-316), stable across edits to the statement — which is
+   * what lets a typo fix keep the dates. `''` is a fact not stored yet, the
+   * convention voices use: the client never mints an id the server would have
+   * to accept.
    */
   id: string
   statement: string
@@ -89,7 +87,7 @@ export type BrandFact = {
   kind: FactKind
   /** Where it can be checked: a URL, a document, a person. Free text. */
   source: string
-  /** `YYYY-MM-DD`. */
+  /** `YYYY-MM-DD`, or `''` for a fact that predates the ledger. */
   addedAt: string
   /** `YYYY-MM-DD`, or `''` for a fact nobody has re-checked since. */
   checkedAt: string
@@ -361,12 +359,11 @@ export function factTally(
  * The subject also picks the kind the row opens on — see `startsAs`.
  */
 export function emptyFact(
-  id: string,
   today: string,
   subject: FactSubject = 'us',
 ): BrandFact {
   return {
-    id,
+    id: '',
     statement: '',
     subject,
     kind: factSubject(subject).startsAs,

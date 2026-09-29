@@ -141,10 +141,10 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     id: 'facts',
     icon: SealCheckIcon,
     tone: 'var(--brand-facts)',
-    readBy: [],
-    // The ledger's metadata is a localStorage stand-in until the backend ask
-    // lands — see the `facts-ledger` flag. Off, the statements stay a card
-    // inside guardrails and this section is not offered.
+    // Every generation flow reads the ledger since CON-316, and leaves out a
+    // fact past its expiry. Off, the statements stay a card inside guardrails
+    // and this section is not offered — see the `facts-ledger` flag.
+    readBy: ['plan', 'post'],
     shown: isFeatureEnabled('facts-ledger'),
   },
   {

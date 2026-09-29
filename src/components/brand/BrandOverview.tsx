@@ -20,7 +20,6 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDate, formatList } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { Fetched } from '@/lib/fetched'
-import type { GuardrailsStance } from '@/services/api/brandLocal'
 import { isFeatureEnabled } from '@/config/featureFlags'
 import { seriesMetaLine } from '@/components/series/format'
 import type { ContentSeries } from '@/components/series/types'
@@ -39,7 +38,12 @@ import {
 } from './facts'
 import { defaultVoiceLabel, sampleCount, usageLine } from './format'
 import { BrandIntro, DefaultStar, WholeBrandOffer } from './shell'
-import { EXPECTED_RATIOS, MIN_VOICE_SAMPLES, type BrandData } from './types'
+import {
+  EXPECTED_RATIOS,
+  MIN_VOICE_SAMPLES,
+  type BrandData,
+  type GuardrailsStance,
+} from './types'
 
 /**
  * Brand's main screen: what is in each section, and the way into it.
@@ -129,7 +133,7 @@ export function BrandOverview({
   facts?: BrandFact[]
   /**
    * Whether the workspace has decided it needs no guardrails — the answer
-   * `guardrails: null` cannot give on its own. See `readStance`; like `facts`
+   * `guardrails: null` cannot give on its own. See `GuardrailsStance`; like `facts`
    * it is passed in rather than read here, so this screen stays a rendering of
    * what it is given.
    */
@@ -621,7 +625,7 @@ function sectionRows(
       // The distinction the section could not draw until there was somewhere
       // to record it: a workspace that decided it needs no rules gets a row
       // saying so, and one that has never answered falls through to the card's
-      // empty state, which is written as an unfinished to-do. See `readStance`.
+      // empty state, which is written as an unfinished to-do. See `GuardrailsStance`.
       if (!g) {
         return stance?.none
           ? [

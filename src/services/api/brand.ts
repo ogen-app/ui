@@ -1,8 +1,10 @@
+import type { BrandFact } from '@/components/brand/facts'
 import type {
   BrandAudience,
   BrandData,
   BrandGuardrails,
   BrandVoice,
+  GuardrailsStance,
   VoiceRules,
 } from '@/components/brand/types'
 import { apiJson, apiVoid } from './http'
@@ -105,13 +107,67 @@ function voiceToWire({ rules, ...voice }: BrandVoice): WireVoice {
   }
 }
 
+/**
+ * A fact as the server has it (CON-316): the three dates are `null` rather than
+ * `''` when unset, and the author rides along.
+ *
+ * The author is not carried onto `BrandFact` — nothing on the ledger shows it
+ * yet — and neither is `updatedAt`. Backfilled rows answer `null` for every
+ * date and `""` for the author, which is exactly what the ledger drew for a
+ * statement with no metadata before the table existed.
+ */
+type WireFact = Omit<BrandFact, 'addedAt' | 'checkedAt' | 'expiresAt'> & {
+  addedAt: string | null
+  checkedAt: string | null
+  expiresAt: string | null
+  createdBy: string | null
+  createdByName: string
+  updatedAt: string
+}
+
+function factFromWire(fact: WireFact): BrandFact {
+  return {
+    id: fact.id,
+    statement: fact.statement,
+    subject: fact.subject,
+    kind: fact.kind,
+    source: fact.source,
+    addedAt: fact.addedAt ?? '',
+    checkedAt: fact.checkedAt ?? '',
+    expiresAt: fact.expiresAt ?? '',
+  }
+}
+
+/**
+ * The editable fields, and only those — the PUT is a full replace of exactly
+ * this set, so an omitted date *clears* it and an omitted subject is a 422.
+ * `''` goes out as `null`; the server reads both as no date, and `null` is the
+ * one it answers with.
+ */
+function factToWire(fact: BrandFact) {
+  return {
+    statement: fact.statement,
+    subject: fact.subject,
+    kind: fact.kind,
+    source: fact.source,
+    addedAt: fact.addedAt || null,
+    checkedAt: fact.checkedAt || null,
+    expiresAt: fact.expiresAt || null,
+  }
+}
+
 export async function getBrand(): Promise<BrandData> {
   const brand = await apiJson<
-    Omit<BrandData, 'voices'> & {
+    Omit<BrandData, 'voices' | 'facts'> & {
       voices: WireVoice[]
+      facts: WireFact[]
     }
   >('/api/brand', 'Unable to load the brand')
-  return { ...brand, voices: brand.voices.map(voiceFromWire) }
+  return {
+    ...brand,
+    voices: brand.voices.map(voiceFromWire),
+    facts: brand.facts.map(factFromWire),
+  }
 }
 
 /**
@@ -192,15 +248,26 @@ export function deleteAudience(id: string): Promise<void> {
 }
 
 /**
+ * A guardrails write. `facts` is **presence-aware** since CON-316: leave it out
+ * and the ledger is untouched, send it — `[]` included — and the server
+ * reconciles the ledger to that list by statement, deleting every fact not in
+ * it. So the ledger's own screen never sends it; only the flag-off editor,
+ * where the statements are still a list on this record, does.
+ */
+export type GuardrailsWrite = Omit<BrandGuardrails, 'facts'> & {
+  facts?: string[]
+}
+
+/**
  * Write the guardrails — a singleton, so always a replace and never an insert.
  *
  * A `422` here is the server refusing an all-empty set, and the message it
  * sends points at `DELETE`. It surfaces through the mutation cache's default
  * error toast like any other refusal (`lib/queryClient.ts`); there is nothing
- * for this file to translate.
+ * for this file to translate. A success also clears the stance server-side.
  */
 export function saveGuardrails(
-  guardrails: BrandGuardrails,
+  guardrails: GuardrailsWrite,
 ): Promise<BrandGuardrails> {
   return apiJson<BrandGuardrails>(
     '/api/brand/guardrails',
@@ -214,4 +281,53 @@ export function deleteGuardrails(): Promise<void> {
   return apiVoid('/api/brand/guardrails', 'Unable to clear the guardrails', {
     method: 'DELETE',
   })
+}
+
+/**
+ * Add one fact to the ledger. The server mints the id and the author, and
+ * defaults `addedAt` to today (UTC) — `emptyFact` sends today anyway.
+ *
+ * `409` is a statement the workspace already has; `422` a blank or over-long
+ * one, a date that is not a date, or the 200th fact. Both are the modal's to
+ * word, so neither is translated here.
+ */
+export async function createFact(fact: BrandFact): Promise<BrandFact> {
+  const saved = await apiJson<WireFact>(
+    '/api/brand/facts',
+    'Unable to add the fact',
+    { method: 'POST', body: factToWire(fact) },
+  )
+  return factFromWire(saved)
+}
+
+/** Replace one fact's editable fields. The id survives a changed statement. */
+export async function updateFact(fact: BrandFact): Promise<BrandFact> {
+  const saved = await apiJson<WireFact>(
+    `/api/brand/facts/${encodeURIComponent(fact.id)}`,
+    'Unable to save the fact',
+    { method: 'PUT', body: factToWire(fact) },
+  )
+  return factFromWire(saved)
+}
+
+/** Remove one fact. Hard delete; a `404` is a teammate having got there first. */
+export function deleteFact(id: string): Promise<void> {
+  return apiVoid(
+    `/api/brand/facts/${encodeURIComponent(id)}`,
+    'Unable to remove the fact',
+    { method: 'DELETE' },
+  )
+}
+
+/**
+ * Record, or take back, that the workspace needs no guardrails. `none: true` is
+ * a `409` while any rules are stored — the switch is only offered while there
+ * are none, so reaching it means a teammate wrote one meanwhile.
+ */
+export function setGuardrailsStance(none: boolean): Promise<GuardrailsStance> {
+  return apiJson<GuardrailsStance>(
+    '/api/brand/guardrails/stance',
+    'Unable to record the decision',
+    { method: 'PUT', body: { none } },
+  )
 }

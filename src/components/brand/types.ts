@@ -13,6 +13,8 @@
  * The argument behind every decision here is `docs/brand-materials.md`.
  */
 
+import type { BrandFact } from './facts'
+
 /**
  * Where a piece of material came from.
  *
@@ -332,6 +334,31 @@ export type BrandData = {
   guardrails: BrandGuardrails | null
   look: BrandLook | null
   templates: BrandTemplate[]
+  /**
+   * The facts ledger, one row per fact (CON-316). Always a list, oldest first,
+   * **expired facts included**: the ledger shows everything and only generation
+   * skips what has gone off. `guardrails.facts` is the same statements as a
+   * read-only projection, kept for the flag-off editor.
+   */
+  facts: BrandFact[]
+  /** Whether the workspace has decided it needs no guardrails (CON-316). */
+  guardrailsStance: GuardrailsStance
+}
+
+/**
+ * The answer `guardrails: null` cannot give on its own — *nobody has looked*
+ * versus *somebody looked and decided nothing needs restricting*.
+ *
+ * The server holds it and keeps it honest: `none: true` is refused (409) while
+ * any rules exist, and a successful guardrails `PUT` clears it in the same
+ * transaction, so a written rule and the stance never disagree. `decidedAt` is
+ * an ISO timestamp; every other field is `null` while `none` is false.
+ */
+export type GuardrailsStance = {
+  none: boolean
+  decidedAt: string | null
+  decidedBy: string | null
+  decidedByName: string | null
 }
 
 /**

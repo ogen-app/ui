@@ -113,16 +113,16 @@ describe('emptyFact', () => {
   // The add button is pressed underneath a tab, and a blank row that lands in
   // a different ledger from the one it was added in is the tab lying.
   it('is added into the ledger it was asked for', () => {
-    expect(emptyFact('new-0', TODAY, 'opportunity').subject).toBe('opportunity')
-    expect(emptyFact('new-0', TODAY).subject).toBe('us')
+    expect(emptyFact(TODAY, 'opportunity').subject).toBe('opportunity')
+    expect(emptyFact(TODAY).subject).toBe('us')
   })
 
   // An opening is an absence: there is no system holding it and nothing to
   // count, so `measured` was wrong on nearly every row somebody would write.
   it('opens on the kind its subject usually is', () => {
-    expect(emptyFact('new-0', TODAY, 'opportunity').kind).toBe('judgement')
-    expect(emptyFact('new-0', TODAY, 'problem').kind).toBe('measured')
-    expect(emptyFact('new-0', TODAY).kind).toBe('measured')
+    expect(emptyFact(TODAY, 'opportunity').kind).toBe('judgement')
+    expect(emptyFact(TODAY, 'problem').kind).toBe('measured')
+    expect(emptyFact(TODAY).kind).toBe('measured')
   })
 })
 

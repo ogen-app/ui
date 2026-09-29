@@ -1,90 +1,84 @@
-import { useMemo } from 'react'
-import { useBrand, useDeleteGuardrails, useSaveGuardrails } from './useBrand'
-import { factsFrom, saveFactMeta } from '@/services/api/brandLocal'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { BRAND_KEY, useBrand } from './useBrand'
+import { createFact, deleteFact, updateFact } from '@/services/api/brand'
+import { ApiError } from '@/services/api/errors'
 import type { BrandFact } from '@/components/brand/facts'
-import type { BrandGuardrails } from '@/components/brand/types'
+import type { BrandData } from '@/components/brand/types'
+
+/** One array for "none yet", so the ledger's re-seed does not fire per render. */
+const NO_FACTS: BrandFact[] = []
 
 /**
- * The facts ledger, assembled out of the one place the server keeps it.
- *
- * A fact is still a member of `guardrails.facts` on the wire — the section
- * split is a UI decision, not a storage one, and moving the statements
- * somewhere else would have taken them away from the generator that already
- * reads them. What the ledger adds is the metadata around each statement, which
- * has nowhere to live yet: see `services/api/brandLocal`, which is where the
- * temporary half is and where it says so.
+ * The facts ledger — `brand.facts`, one row per fact (CON-316).
  *
  * Derived from `useBrand` rather than fetched, for the reason `useBrand` is one
  * query: this is a view over the same object every other Brand screen reads,
- * and a second request for the same row would make the Overview wait twice.
+ * and a second request for the same rows would make the Overview wait twice.
  */
 export function useFacts() {
   const { data, isPending, isError } = useBrand()
-  const statements = data?.guardrails?.facts
-  const facts = useMemo(() => factsFrom(statements ?? []), [statements])
-  return { facts, guardrails: data?.guardrails ?? null, isPending, isError }
+  return { facts: data?.facts ?? NO_FACTS, isPending, isError }
 }
 
 /**
- * Write the ledger back.
+ * The ledger's three writes, one row each.
  *
- * Two writes that have to be one gesture: the statements go to the guardrails
- * endpoint, and the metadata to the sidecar. The sidecar goes first and
- * unconditionally — it is a `localStorage` write that cannot fail in a way
- * worth branching on, and doing it after the request would drop the dates of
- * anybody who navigated while the save was in flight.
+ * Per row because the server is: two people editing different facts both
+ * land, where the whole-list write this replaced let the later one put back
+ * whatever the earlier one had changed. Each result goes straight into the
+ * cache so the table shows the row the moment the modal closes, and the brand
+ * is invalidated behind it because `guardrails.facts` is a projection of the
+ * same rows.
  *
- * **Emptying the ledger can mean deleting the guardrails.** The server refuses
- * an all-empty `PUT` (a `422`, deliberately — `DELETE` is the only route to
- * `null`), so removing the last fact from a workspace that has no rules and no
- * disclaimer either is a delete, not a save. Anything else and it is an
- * ordinary replace that leaves the other four lists exactly as they were.
+ * The create and update don't toast their own failures — a duplicate statement
+ * or a bad date is the modal's to say, beside the field — and a `404` refetches,
+ * because it means a teammate removed the row this screen is still showing.
  */
-export function useSaveFacts() {
-  const { data } = useBrand()
-  const save = useSaveGuardrails()
-  const remove = useDeleteGuardrails()
-  const current = data?.guardrails ?? null
+export function useFactMutations() {
+  const qc = useQueryClient()
+
+  const land = (change: (facts: BrandFact[]) => BrandFact[]) => {
+    qc.setQueryData<BrandData>(BRAND_KEY, (current) =>
+      current ? { ...current, facts: change(current.facts) } : current,
+    )
+    qc.invalidateQueries({ queryKey: BRAND_KEY })
+  }
+  const onError = (error: Error) => {
+    if (error instanceof ApiError && error.status === 404) {
+      qc.invalidateQueries({ queryKey: BRAND_KEY })
+    }
+  }
+
+  const create = useMutation({
+    mutationFn: createFact,
+    scope: { id: 'brand-facts' },
+    meta: { errorToast: false },
+    onSuccess: (saved) => land((facts) => [...facts, saved]),
+    onError,
+  })
+  const update = useMutation({
+    mutationFn: updateFact,
+    scope: { id: 'brand-facts' },
+    meta: { errorToast: false },
+    onSuccess: (saved) =>
+      land((facts) =>
+        facts.map((fact) => (fact.id === saved.id ? saved : fact)),
+      ),
+    onError,
+  })
+  const remove = useMutation({
+    mutationFn: deleteFact,
+    scope: { id: 'brand-facts' },
+    meta: { errorTitle: 'Unable to remove the fact' },
+    onSuccess: (_void, id) =>
+      land((facts) => facts.filter((fact) => fact.id !== id)),
+    onError,
+  })
 
   return {
-    isPending: save.isPending || remove.isPending,
-    save(facts: BrandFact[], options?: { onSuccess?: () => void }) {
-      const kept = facts.filter((fact) => fact.statement.trim().length > 0)
-      saveFactMeta(kept)
-
-      const next: BrandGuardrails = {
-        facts: kept.map((fact) => fact.statement.trim()),
-        mayClaim: current?.mayClaim ?? [],
-        neverClaim: current?.neverClaim ?? [],
-        bannedWords: current?.bannedWords ?? [],
-        disclaimer: current?.disclaimer ?? '',
-        updatedAt: new Date().toISOString(),
-      }
-
-      if (statesNothing(next)) {
-        // Nothing stored and nothing to store: the ledger was emptied on a
-        // workspace that had only facts. Saving would be refused and deleting
-        // something that does not exist would be a request for nothing.
-        if (!current) {
-          options?.onSuccess?.()
-          return
-        }
-        remove.mutate(undefined, { onSuccess: options?.onSuccess })
-        return
-      }
-
-      save.mutate(next, { onSuccess: options?.onSuccess })
-    },
+    /** A fact with no id yet is added; one with an id is replaced. */
+    save: (fact: BrandFact) =>
+      fact.id ? update.mutateAsync(fact) : create.mutateAsync(fact),
+    remove: (id: string) => remove.mutateAsync(id),
   }
-}
-
-/** The all-empty shape the server answers `422` to. */
-function statesNothing(g: BrandGuardrails): boolean {
-  return (
-    g.facts.length === 0 &&
-    g.mayClaim.length === 0 &&
-    g.neverClaim.length === 0 &&
-    g.bannedWords.length === 0 &&
-    g.disclaimer.trim().length === 0
-  )
 }

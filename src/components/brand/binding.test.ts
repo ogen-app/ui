@@ -6,6 +6,7 @@ import {
   resolveVoice,
 } from './binding'
 import type { BrandAudience, BrandData, BrandVoice } from './types'
+import { NO_STANCE } from '@/hooks/useBrand'
 
 function voice(id: string, over: Partial<BrandVoice> = {}): BrandVoice {
   return {
@@ -57,6 +58,8 @@ function brandWith(over: Partial<BrandData> = {}): BrandData {
     guardrails: null,
     look: null,
     templates: [],
+    facts: [],
+    guardrailsStance: NO_STANCE,
     ...over,
   }
 }
