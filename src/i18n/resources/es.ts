@@ -146,6 +146,41 @@ export const es: Translation = {
       brokenBody:
         'Abre el enlace directamente desde el correo o <request>pide uno nuevo</request>.',
     },
+    secureAccount: {
+      title: 'Protege tu cuenta de Ogen',
+      intro:
+        'Hemos detectado un nuevo inicio de sesión en <strong>{{email}}</strong>:',
+      detailsLabel: 'Detalles del inicio de sesión',
+      whenLabel: 'Cuándo',
+      deviceLabel: 'Dispositivo',
+      ipLabel: 'Dirección IP',
+      locationLabel: 'Ubicación aproximada',
+      explainer:
+        'Si no has sido tú, protege tu cuenta. Cerraremos todas las sesiones en todos los dispositivos — incluida esta — y elegirás una contraseña nueva enseguida.',
+      submit: 'PROTEGER MI CUENTA',
+      wasMe: 'He sido yo',
+      failed:
+        'No hemos podido conectar con Ogen, así que aún no ha cambiado nada. Inténtalo de nuevo.',
+      rateLimited_one:
+        'Demasiados intentos. Inténtalo de nuevo dentro de {{count}} minuto.',
+      rateLimited_other:
+        'Demasiados intentos. Inténtalo de nuevo dentro de {{count}} minutos.',
+      loadFailedTitle: 'No hemos podido comprobar este enlace',
+      loadFailedSubtitle:
+        'Algo ha fallado por nuestra parte — puede que el enlace siga siendo válido',
+      usedTitle: 'Este enlace ya se ha usado',
+      usedBody: 'Tu cuenta se protegió y se cerraron todas las sesiones.',
+      usedReset:
+        '¿Aún tienes que elegir una contraseña nueva? <reset>Restablécela aquí</reset>.',
+      expiredTitle: 'Este enlace ha caducado',
+      expiredBody:
+        'Los enlaces son válidos durante 24 horas. Restablecer la contraseña también cierra todas las sesiones.',
+      expiredSubmit: 'RESTABLECER MI CONTRASEÑA',
+      invalidTitle: 'Este enlace no es válido',
+      invalidBody: 'Comprueba que has abierto el enlace completo del correo.',
+      invalidReset:
+        '¿Te preocupa tu cuenta? <reset>Restablece tu contraseña</reset>.',
+    },
     invite: {
       title: 'Únete al espacio',
       subtitle: '{{inviter}} te ha invitado a {{workspace}}',
@@ -275,6 +310,164 @@ export const es: Translation = {
     saveFailed: 'No se pudo guardar. Tus ideas no han cambiado.',
   },
 
+  series: {
+    library: {
+      add: 'AÑADIR SERIE',
+      addHint: 'Otra cosa que este espacio de trabajo hace una y otra vez.',
+      writeYourOwn: 'Escribe la tuya',
+      starterGroupTitle: 'Tres para empezar',
+      starterGroupBody:
+        'Cada una es un ejemplo trabajado de lo más difícil de inventar desde un formulario en blanco: la receta. Toma una y reescríbela hasta que sea tuya.',
+      noRecipe:
+        'Aún sin receta: esto agrupa publicaciones, pero nada se construye a partir de ello.',
+    },
+    rhythm: {
+      occasional: 'Ocasional',
+      perWeek_one: 'Una vez por semana',
+      perWeek_other: '{{count}} veces por semana',
+      perMonth_one: 'Una vez al mes',
+      perMonth_other: '{{count}} veces al mes',
+    },
+    supply: {
+      selfOption: 'Aporta su propio tema',
+      ideaOption: 'Espera una idea',
+      selfLine: 'Aporta su propio tema',
+      ideaLine: 'Espera una idea',
+    },
+    usage: '{{drafts}} en borrador, {{published}} publicadas',
+    plan: {
+      noGoal:
+        'Esta campaña no tiene objetivo de publicaciones, así que no hay nada con lo que comparar estas series.',
+      ok: '{{total}} publicaciones previstas · {{claimed}} de series · {{open}} libres',
+      over: '{{total}} publicaciones previstas y las series reclaman {{claimed}}: {{over}} más de las que la campaña tiene previstas.',
+      undated:
+        '{{total}} publicaciones por período · {{claimed}} de series. Define las fechas de la campaña para planificar todo el recorrido.',
+    },
+    campaign: {
+      title: 'Series',
+      hint: 'Lo que esta campaña hace una y otra vez, y con qué frecuencia. Las publicaciones que reclaman salen de su objetivo.',
+      empty:
+        'Esta campaña no ejecuta ninguna. Añade una y reservará sus huecos en cada período automáticamente.',
+      addPlaceholder: 'Añadir una serie',
+      writeOne: 'ESCRIBIR UNA',
+      localOnly: 'solo esta campaña',
+      promote: 'A la biblioteca',
+      promoteHint:
+        'Lleva esta serie a la biblioteca del espacio de trabajo para que otras campañas también puedan ejecutarla.',
+      remove: 'Dejar de ejecutar {{name}}',
+      claim_one: '{{count}} publicación',
+      claim_other: '{{count}} publicaciones',
+      claimsNone: 'sin huecos fijos',
+    },
+    detail: {
+      back: 'Volver a series',
+      created: '{{name}} creada',
+      saved: '{{name}} guardada',
+      deleted: '{{name}} eliminada',
+      notFoundHeader: 'No existe esa serie',
+    },
+    editor: {
+      titleNew: 'Una serie nueva',
+      titleEdit: 'Esta serie',
+      intro:
+        'Una serie es una instrucción permanente: cómo se llama y cómo se construye la siguiente. Escribe la receta como se la explicarías a quien te sustituya.',
+      identityCard: 'Qué es',
+      nameLabel: 'Nombre',
+      nameHint:
+        'Aquello por lo que un lector la reconocería. Si nadie la llamaría de ninguna manera, es un tema y no una serie.',
+      namePlaceholder: 'p. ej. Resumen semanal de noticias',
+      promiseLabel: 'La promesa',
+      promiseHint: 'Una línea: qué se lleva alguien cada vez que se publica.',
+      promisePlaceholder:
+        'p. ej. La semana en un minuto, con lo que de verdad importa',
+      recipeCard: 'Cómo se construye',
+      recipeHint:
+        'La estructura, con tus palabras. Es lo que hace que la décima salga tan bien como la primera, y lo que un generador puede seguir.',
+      recipePlaceholder:
+        'p. ej. Abre con la noticia más importante. Tres más, una línea cada una. Cierra con lo que habrá que vigilar la semana que viene.',
+      runningCard: 'Cómo se ejecuta',
+      supplyLabel: 'De dónde sale el tema',
+      supplyHint:
+        'Una fecha o las noticias de la semana son un tema que la serie ya tiene. Un perfil no: espera a que alguien nombre a una persona.',
+      formatLabel: 'Forma',
+      formatHint:
+        'La forma que toman sus publicaciones. Las publicaciones la heredan.',
+      rhythmLabel: 'Ritmo sugerido',
+      rhythmHint:
+        'Un punto de partida cuando una campaña la adopta. Cada campaña define el suyo, así que dos pueden ejecutarla a ritmos distintos.',
+      needsName: 'Ponle nombre a la serie',
+      create: 'CREAR SERIE',
+      save: 'GUARDAR SERIE',
+      dangerNoun: 'SERIE',
+      deleteCost:
+        'Las publicaciones ya escritas conservan su texto. Todas las campañas que la ejecutan se detienen y el plan recupera sus huecos.',
+    },
+    starters: {
+      'this-day': {
+        title: 'Un día como hoy en ___',
+        body: 'Se ejecuta siempre sin que nadie la alimente: la fecha es el tema.',
+        name: 'Un día como hoy en ___',
+        promise: 'Algo que pasó hoy y por qué todavía importa.',
+        recipe:
+          'Busca un hecho fechado hoy en el sector. Dos párrafos breves de contexto: qué estaba en juego y qué cambió. Cierra con la lección que sigue vigente. Nunca más de un hecho.',
+      },
+      'weekly-digest': {
+        title: 'Resumen semanal de noticias',
+        body: 'El ritmo está en el nombre. Se alimenta sola y es el hábito más fácil de construir.',
+        name: 'Resumen semanal de noticias',
+        promise: 'La semana en un minuto, con lo que de verdad importa.',
+        recipe:
+          'Empieza por la noticia más importante y di sin rodeos por qué importa. Tres más, una línea cada una. Cierra con lo que habrá que vigilar la semana que viene. Sin enlaces en el cuerpo.',
+      },
+      people: {
+        title: 'Gente que dejó huella',
+        body: 'No puede ejecutarse hasta que alguien nombre a una persona: el ejemplo de serie que alimenta la cola de ideas.',
+        name: 'Gente que dejó huella',
+        promise: 'Una persona, una decisión y algo que cambió para todos.',
+        recipe:
+          'Abre con la decisión, no con la biografía. Cuenta cómo era el mundo antes y después. Una frase sobre en qué se equivocó, para que se lea como una persona y no como una estatua.',
+      },
+    },
+  },
+
+  formats: {
+    none: 'Sin forma',
+    postHint:
+      'Opcional. Qué forma toma esta publicación, aparte del tipo de publicación de la plataforma.',
+    'how-to': {
+      label: 'Cómo se hace',
+      hint: 'Pasos que alguien puede seguir para obtener un resultado.',
+    },
+    explainer: {
+      label: 'Explicación',
+      hint: 'Por qué algo funciona como funciona.',
+    },
+    listicle: {
+      label: 'Lista',
+      hint: 'Un conjunto numerado, cada punto se sostiene solo.',
+    },
+    story: {
+      label: 'Relato',
+      hint: 'Algo que ocurrió, contado en orden.',
+    },
+    digest: {
+      label: 'Resumen',
+      hint: 'Varios elementos recopilados de un período.',
+    },
+    opinion: {
+      label: 'Opinión',
+      hint: 'Una postura, argumentada.',
+    },
+    question: {
+      label: 'Preguntas y respuestas',
+      hint: 'Una pregunta respondida, o planteada al público.',
+    },
+    announcement: {
+      label: 'Anuncio',
+      hint: 'Noticias sobre nosotros, dichas una vez y con claridad.',
+    },
+  },
+
   tasks: {
     title: 'Tareas',
     add: 'AÑADIR TAREA',
@@ -387,6 +580,28 @@ export const es: Translation = {
       assistantFailed: 'El asistente no pudo terminar tu solicitud',
       assessmentCompleted: 'Hay una evaluación de calidad lista',
       assessmentFailed: 'No se pudo completar una evaluación de calidad',
+      entitlement: {
+        seats: {
+          reached: 'Los {{limit}} puestos de tu plan están ocupados',
+          approaching:
+            '{{current}} de {{limit}} puestos de tu plan están ocupados',
+        },
+        campaigns: {
+          reached: 'Las {{limit}} campañas que permite tu plan están activas',
+          approaching:
+            '{{current}} de {{limit}} campañas que permite tu plan están activas',
+        },
+        documents: {
+          reached: 'El banco de contenido está lleno con {{limit}} documentos',
+          approaching:
+            'El banco de contenido tiene {{current}} de {{limit}} documentos',
+        },
+        storage: {
+          reached: 'El almacenamiento multimedia está lleno con {{limit}}',
+          approaching:
+            'El almacenamiento multimedia está en {{current}} de {{limit}}',
+        },
+      },
     },
     report: {
       label: {
@@ -1776,6 +1991,13 @@ export const es: Translation = {
         whenEmpty:
           'No se afirma nada como cierto. Toda cifra de toda publicación es invención, escrita con aplomo.',
       },
+      series: {
+        label: 'Series',
+        description:
+          'Lo que este espacio de trabajo hace una y otra vez: un resumen semanal, un perfil dos veces al mes. Cada una es un nombre que el público reconoce y una receta para construir la siguiente, de modo que la décima salga tan bien como la primera y nadie empiece desde una página en blanco.',
+        whenEmpty:
+          'Nada se repite. Cada publicación empieza de cero y nada puede medirse como serie.',
+      },
       look: {
         label: 'Aspecto',
         description:
@@ -1843,6 +2065,10 @@ export const es: Translation = {
     },
 
     overview: {
+      intro: {
+        title: 'A partir de qué escribe la app',
+        body: 'Las voces con las que escribe, a quién se dirige y lo que nunca puede afirmar. Se escribe una vez para el espacio de trabajo, y cada campaña y cada publicación lo heredan.',
+      },
       nothingReads: 'Todavía nada lee esto',
       unreadable: 'No se ha podido cargar lo que hay aquí.',
       stated: '{{count}} indicados',
@@ -2417,9 +2643,85 @@ export const es: Translation = {
       campaignTitle: 'Recursos de {{campaign}}',
     },
 
+    kinds: {
+      text_one: 'archivo de texto',
+      text_other: 'archivos de texto',
+      page_one: 'página web',
+      page_other: 'páginas web',
+      pdf_one: 'PDF',
+      pdf_other: 'PDF',
+      document_one: 'documento',
+      document_other: 'documentos',
+      image_one: 'imagen',
+      image_other: 'imágenes',
+      audio_one: 'grabación',
+      audio_other: 'grabaciones',
+      waiting: '{{count}} aún en lectura',
+      unreadable: '{{count}} no se pudieron leer',
+    },
+
     unsupported: {
       title: 'Esto no es un documento',
       body: 'Esta versión de la aplicación no sabe mostrar este tipo de recurso. No se ha cambiado nada: sigue aquí, y una versión más reciente lo abrirá.',
+    },
+
+    titlePlaceholder: 'Título',
+    titleLabel: 'Título',
+
+    extent: {
+      words_one: '{{formatted}} palabra',
+      words_other: '{{formatted}} palabras',
+      pages_one: '{{count}} página',
+      pages_other: '{{count}} páginas',
+      waiting: 'Aún sin leer',
+      nothing: 'No se extrajo nada',
+      noDescription: 'Sin descripción',
+    },
+
+    ingest: {
+      readingTitle: 'Leyendo este archivo',
+      readingBody:
+        'Esto ocurre en segundo plano y puede tardar unos minutos. Puedes salir: se completará aquí solo, y la campaña podrá usarlo en cuanto lo haga.',
+      failedTitle: 'No hemos podido leer este archivo',
+      failedUnstated:
+        'El servidor no ha dicho por qué. Elimínalo y vuelve a subirlo, o prueba con otra copia del archivo.',
+    },
+
+    extracted: {
+      readOnly:
+        'Este es el texto leído del archivo, en las secciones que cita el asistente. No se puede editar aquí: sube una versión nueva para cambiarlo.',
+      partial:
+        'Solo se ha podido leer una parte de este archivo. El resto no se puede buscar.',
+      empty:
+        'No se ha podido leer nada de este archivo; puede que solo contenga imágenes.',
+      loadFailed:
+        'No se ha podido cargar el texto de este archivo. Prueba a recargar la página.',
+      shown: 'Se muestran {{shown}} de {{total}} secciones',
+      more: 'Mostrar más',
+      page: 'Página {{page}}',
+      pages: 'Páginas {{from}}–{{to}}',
+    },
+
+    audio: {
+      transcript: 'Transcripción',
+      playFrom: 'Reproducir desde {{time}}',
+      normalizing: 'Preparando la grabación…',
+      progress: 'Transcritas {{done}} de {{total}} partes',
+      partial: 'Algunas partes de la grabación no se pudieron transcribir.',
+      empty: 'No se ha encontrado voz en esta grabación.',
+      loadFailed:
+        'No se ha podido cargar la transcripción. Prueba a recargar la página.',
+      missing:
+        'Esta grabación no se guardó, así que no hay nada que reproducir.',
+      noPlayer: 'Este navegador no puede reproducir audio.',
+      retry_one: 'Reintentar la parte fallida',
+      retry_other: 'Reintentar las {{count}} partes fallidas',
+      reextract: 'Transcribir de nuevo',
+    },
+
+    locked: {
+      title: 'El texto de este archivo no se puede editar',
+      body: 'Se leyó del archivo subido. Sube una versión nueva para cambiarlo.',
     },
 
     image: {
@@ -2440,6 +2742,16 @@ export const es: Translation = {
       tagsHelp: 'Cómo vuelves a encontrar esta imagen en la lista.',
       missing: 'Esta imagen no se guardó, así que no hay nada que mostrar.',
       animated: 'Animada',
+      altGenerated:
+        'Escrito automáticamente a partir de la imagen. Edítalo para hacerlo tuyo: al volver a leer la imagen se conserva lo que escribas.',
+      altRegenerate: 'Escribir uno nuevo',
+      failedTitle: 'Esta imagen no se procesó',
+      partialTitle: 'Esta imagen solo se procesó en parte',
+      partial:
+        'La imagen se describió, pero no se pudo leer todo el texto que contiene.',
+      reextract: 'Volver a leer',
+      undrawable:
+        'El formato de esta imagen no se puede mostrar en un navegador y no se creó una copia visible.',
     },
 
     selection: {
@@ -2490,9 +2802,14 @@ export const es: Translation = {
   },
 
   uploads: {
-    limitDocs: 'Markdown hasta {{md}}, PDF hasta {{pdf}}',
-    limitImages: 'Imágenes (JPEG, PNG, WebP, GIF) hasta {{size}}',
-    pdfNote: 'Los PDF se leen en segundo plano, así que terminan después.',
+    limitText: 'Markdown hasta {{md}}, PDF hasta {{pdf}}',
+    limitDocuments:
+      'Archivos de Word, Excel, PowerPoint, OpenDocument, EPUB, CSV, HTML, correo, RTF y texto hasta {{size}}',
+    limitImages: 'Imágenes: JPEG, PNG, WebP, GIF, HEIC, AVIF, TIFF y BMP',
+    limitAudio:
+      'Audio: MP3, WAV, M4A, AAC, OGG, Opus, FLAC, WebM y AIFF hasta {{size}}',
+    backgroundNote:
+      'Todo salvo el Markdown se lee en segundo plano, así que termina después de subirse.',
     browse: 'Suelta los archivos aquí o haz clic para elegirlos',
     remove: 'Quitar {{name}}',
     failed: 'No se ha podido subir',
@@ -2503,17 +2820,38 @@ export const es: Translation = {
     duplicate: 'Ya está en el banco de contenido como «{{title}}»',
 
     errors: {
-      type: 'Solo se aceptan archivos .md, .pdf e imágenes.',
+      type: 'Este tipo de archivo no se puede añadir al banco de contenido.',
+      legacyOffice:
+        'Los archivos de Office antiguos o protegidos con contraseña no se pueden leer. Guárdalo como .docx, .xlsx o .pptx sin protección y sube ese.',
       unsupportedType:
-        'El contenido de este archivo no es de un tipo que podamos leer. Las imágenes tienen que ser JPEG, PNG, WebP o GIF.',
+        'El contenido de este archivo no es de un tipo que podamos leer.',
+      vector:
+        'Las imágenes SVG y otras vectoriales no se admiten. Expórtala antes como PNG o JPEG.',
       tooBig: 'Este archivo supera el límite de {{limit}}.',
+      tooBigUnstated: 'Este archivo es demasiado grande para subirlo.',
       dimensions:
         'Esta imagen es demasiado grande para guardarla: el límite es {{max}}.',
+      dimensionsUnstated:
+        'Esta imagen tiene demasiados píxeles para guardarla.',
+      duration_one:
+        'Esta grabación supera el límite de {{count}} minuto de tu plan.',
+      duration_other:
+        'Esta grabación supera el límite de {{count}} minutos de tu plan.',
+      durationUnstated:
+        'Esta grabación es más larga de lo que permite tu plan.',
+      quota:
+        'Se ha alcanzado el límite del banco de contenido de tu plan, así que no se ha añadido.',
+      unavailable:
+        'Ahora mismo no se pueden leer archivos como este. Vuelve a intentarlo en unos minutos.',
+      partial: 'Solo se ha podido leer una parte.',
       empty: 'Este archivo está vacío.',
       notPdf: 'Este archivo no es un PDF legible.',
+      invalid: 'No se ha podido leer este archivo; puede que esté dañado.',
       notConfigured: 'Este servidor todavía no puede guardar imágenes.',
       undecodable: 'No se ha podido leer esta imagen; puede que esté dañada.',
       server: 'Algo ha fallado al guardar este archivo. Inténtalo de nuevo.',
+      storage:
+        'No se ha podido enviar el archivo al almacenamiento. Vuelve a intentarlo; si sigue fallando, el almacenamiento aún no acepta subidas desde esta aplicación.',
     },
   },
 

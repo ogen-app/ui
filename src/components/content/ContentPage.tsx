@@ -32,6 +32,7 @@ import type { Campaign } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
 import { AddWebPageModal } from './AddWebPageModal'
 import { ContentList } from './ContentList'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * Documents, in the scope that holds them.
@@ -71,7 +72,7 @@ import { ContentList } from './ContentList'
 export function ContentPage({ campaign }: { campaign: Campaign | null }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { data: assets, isLoading, isError } = useAssets()
+  const assets = useAssets()
   const createAsset = useCreateAsset()
   const deleteAsset = useDeleteAsset()
 
@@ -92,8 +93,11 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
 
   /** The campaign's documents, or — in the bank — every document there is. */
   const shown = useMemo(
-    () => (campaign ? campaignAssets(assets ?? [], campaign) : (assets ?? [])),
-    [assets, campaign],
+    () =>
+      campaign
+        ? campaignAssets(assets.data ?? [], campaign)
+        : (assets.data ?? []),
+    [assets.data, campaign],
   )
 
   // In transit, or refused on the way in. Anything the server has already
@@ -338,9 +342,17 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
           `h-full`, which measures the whole column with the header in it and
           would push the table's last rows under the fold. */}
       <div className="grid min-h-0 flex-1 overflow-hidden px-3 lg:px-6">
-        {isLoading ? (
+        {/* `awaiting`, not `isLoading` — see `lib/fetched`. This is the
+            branch the bug was in: a read that failed while the tab was in the
+            background parks the query as *pending but not fetching*, which
+            `isLoading` and `isError` both report as false, and the bank drew
+            its first-run empty state over a workspace holding eighteen
+            documents — with three buttons inviting the user to file the
+            first. An empty list is a claim, and this is the only place that
+            gets to make it. */}
+        {awaiting(assets) ? (
           <PageLoader />
-        ) : isError ? (
+        ) : assets.isError ? (
           <PageError
             header={
               campaign

@@ -98,6 +98,38 @@ The confirm endpoint returns the same 400 message for an unknown, expired, or
 already-spent token, deliberately — it is written as a sentence because the UI
 prints it as-is next to "Request a new link".
 
+### 4. "This wasn't me" — `/auth/secure-account?token=…`
+
+Where the link in the `new_device_login` email lands (CON-317 server, CON-318
+here). Public, and — unlike login and Forgot password — no signed-in bounce:
+the likeliest visitor is someone signed in right now who has just been told
+somebody else is too.
+
+```text
+emailed link   {APP_BASE_URL}/auth/secure-account?token=<token>
+
+on load        GET  /api/security/login-alerts/:token          → the sign-in, read-only
+on click       POST /api/security/login-alerts/:token/secure   → { reset_url, sessions_revoked }
+               └─ clear local auth state, then window.location.assign(reset_url)
+                  → the ordinary /auth/reset screen
+```
+
+Three things to keep:
+
+- **Loading the page must change nothing.** Mail scanners `GET` every link in
+  an email, so only the button's `POST` secures the account. Never add an
+  auto-submit.
+- **The token rides in the API *path*,** so Sentry's scrubber replaces that
+  segment with `:token` (`observability/sentry.ts`, `PATH_TOKEN_PREFIXES`) as
+  well as dropping query strings. `no-referrer` is sent twice over: as a
+  header on the document (`Caddyfile`), because `index.html`'s own requests go
+  out before any React runs, and by the page while it is open
+  (`useNoReferrer`). The routes send no `X-Workspace-Id` — the token names
+  an account, not a workspace.
+- **A dead link's way out depends on the session.** Forgot password bounces a
+  signed-in visitor home, so for them the reset link points at Profile, which
+  sends the same email.
+
 ## The root guard — `src/routes/__root.tsx`
 
 Auth is guarded **once**, in the root route's `beforeLoad` (never on

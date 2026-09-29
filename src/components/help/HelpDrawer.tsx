@@ -16,6 +16,7 @@ import {
   selectPreviousArticle,
   useHelpStore,
 } from '@/stores/helpStore'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * The help centre (CON-173).
@@ -60,9 +61,12 @@ export function HelpDrawer() {
   const previousKey = useHelpStore(selectPreviousArticle)
   const { open, close, back, setWidth } = useHelpStore.getState()
 
-  const { data: article, isLoading } = useHelpArticle(
-    isOpen ? articleKey : null,
-  )
+  const query = useHelpArticle(isOpen ? articleKey : null)
+  const article = query.data
+  // `awaiting`, not `isLoading` — see `lib/fetched`. It answers false for the
+  // closed drawer's disabled query too, which is what `isLoading` was doing
+  // right and `isPending` would get wrong.
+  const loadingArticle = awaiting(query)
 
   // Open from the address bar — on first paint, and again whenever the hash
   // changes under us. The listener is not optional: pasting a help link into
@@ -145,7 +149,7 @@ export function HelpDrawer() {
               />
             }
           >
-            {isLoading ? (
+            {loadingArticle ? (
               <div className="flex justify-center py-8">
                 <Spinner />
               </div>

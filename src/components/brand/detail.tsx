@@ -163,7 +163,11 @@ export function BrandBackButton({
   to = '/foundation',
   label,
 }: {
-  to?: '/foundation' | '/foundation/voices' | '/foundation/audiences'
+  to?:
+    | '/foundation'
+    | '/foundation/voices'
+    | '/foundation/audiences'
+    | '/foundation/series'
   /**
    * Overrides the destination's name for a caller one level deeper. Defaulted
    * inside rather than in the signature: a default argument is evaluated once
@@ -292,5 +296,9 @@ function isSectionEmpty(section: BrandSectionId, data: BrandData): boolean {
       return data.templates.length === 0
     case 'facts':
       return (data.guardrails?.facts.length ?? 0) === 0
+    // Never asked: the series screen is a `SeriesDetail`, gated on its own
+    // query, because the entries are not on `BrandData` and never will be.
+    case 'series':
+      return false
   }
 }

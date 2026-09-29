@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { ROLE_LABEL_KEYS, type WorkspaceChoice } from '@/types/workspace'
 import { toast } from '@/stores/toastStore'
 import { cn } from '@/lib'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * The workspace chooser — a full page, on its own, with no app chrome around
@@ -31,7 +32,8 @@ export default function WorkspacesPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { user } = useAuthStore()
-  const { data: workspaces, isLoading, isError } = useWorkspaces()
+  const query = useWorkspaces()
+  const { data: workspaces, isError } = query
   const { mutate: switchTo, isPending } = useSwitchWorkspace()
   const [createOpen, setCreateOpen] = useState(false)
   // Which workspace *this* tab is in. Not a field on the row: the server has no
@@ -69,7 +71,8 @@ export default function WorkspacesPage() {
               card above — the only thing that changes between them is what
               they say. The list is short, so each option gets the weight of a
               card rather than a row. */}
-          {isLoading ? (
+          {/* `awaiting`, not `isLoading` — see `lib/fetched`. */}
+          {awaiting(query) ? (
             <Card className="mt-8 text-sm text-tertiary-foreground">
               {t('common.loading')}
             </Card>

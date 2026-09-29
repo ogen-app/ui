@@ -15,6 +15,7 @@ import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
 import type { BulkPlan } from '@/lib/bulkPostEdits'
 import { postToPayload } from '@/services/api/posts'
 import type { Post } from '@/types/posts'
+import { awaiting } from '@/lib/fetched'
 
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/list',
@@ -30,7 +31,11 @@ function CampaignListView() {
   // No anchor: the table has no date range of its own, so it keeps whichever
   // week the calendar last left — see `lib/postsPlace`.
   useRememberPostsPlace(campaignId, 'list')
-  const { data: posts, isLoading } = useCampaignPosts(campaignId)
+  const postsQuery = useCampaignPosts(campaignId)
+  const posts = postsQuery.data
+  // `awaiting`, not `isLoading` — see `lib/fetched`. Both readers below are
+  // claims about how many posts there are, and a paused read is not an answer.
+  const isLoading = awaiting(postsQuery)
   // `mutateAsync` is stable, so the columns aren't rebuilt on every render.
   const { mutateAsync: deletePost, isPending: deleting } =
     useDeletePost(campaignId)

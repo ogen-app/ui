@@ -18,6 +18,7 @@ import {
   type Idea,
   type IdeaVerdict,
 } from '@/lib/ideas'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * Ideas' data layer — the list, and the five things you can do to it.
@@ -47,15 +48,22 @@ export function ideasQueryKey(campaignId: string | null) {
 export function useIdeas(campaignId: string | null = null) {
   const enabled = useFeatureFlag('ideas')
 
-  const { data, isLoading, isError } = useQuery({
+  const query = useQuery({
     queryKey: ideasQueryKey(campaignId),
     queryFn: () => listIdeas(campaignId),
     enabled,
     staleTime: 30_000,
   })
 
-  const ideas = useMemo(() => data ?? [], [data])
-  return { ideas, isLoading: enabled && isLoading, isError: enabled && isError }
+  const ideas = useMemo(() => query.data ?? [], [query.data])
+  // `awaiting`, not `isLoading` — see `lib/fetched`. It also answers the
+  // `enabled &&` this used to carry: a query nobody switched on is idle, not
+  // waiting.
+  return {
+    ideas,
+    isLoading: awaiting(query),
+    isError: enabled && query.isError,
+  }
 }
 
 /**

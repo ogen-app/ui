@@ -8,7 +8,6 @@ import {
   WarningIcon,
 } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { cn, formatTitle } from '@/lib'
 import { formatDate } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
@@ -217,7 +216,6 @@ function PostCardComponent({
   band = 'full',
 }: PostCardProps) {
   const { t, i18n } = useTranslation()
-  const autoPostType = useFeatureFlag('post-type-auto')
   const title = formatTitle(post.title)
   const platformInfo = usePlatformCatalog().resolve(post.platform_id)
   // Fall back to a neutral, "undefined"-feeling dashed circle (in the muted
@@ -229,7 +227,7 @@ function PostCardComponent({
   // rather than the answer; the editor is where the answer is.
   const label = !platformInfo
     ? t('posts.noPlatform')
-    : autoPostType && !post.platform_post_type
+    : !post.platform_post_type
       ? t('posts.postType.auto')
       : getPostTypeLabel(platformInfo, post.platform_post_type)
   const statusLabel = postStatusLabel(t, post.status)

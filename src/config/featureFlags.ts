@@ -49,93 +49,10 @@ import { readFlagOverrides } from './flagOverrides'
 
 const FEATURE_FLAGS = {
   /**
-   * Activity (CON-225): the sidebar item, the feed, and the daily report — the
-   * workspace's answer to "what happened since I last looked?". Also the whole
-   * notification client (CON-242): the inbox queries, the durable stream and
-   * the unread count are mounted by this feature and by nothing else, so with
-   * the flag off no notification request is made at all.
-   *
-   * **On.** The producers it was waiting for are shipped: CON-285 (ogen#161,
-   * merged 2026-09-17) completed the durable notification vocabulary — the
-   * assistant, assessment, content-plan and URL-crawl resolutions all write
-   * rows now — and the two recipient rulings taken on 2026-09-06 are
-   * implemented rather than merely decided. `post.published` and
-   * `post.publish_failed` go to the whole workspace through `EmitToUsers`
-   * (`submit_post_to_zernio.go`), which is what stopped turning this on from
-   * *narrowing* who hears that a publish failed. The same PR gave the daily
-   * report server-side endpoints (`GET /api/activity/report/:date?tz=`,
-   * `/api/activity/reports`), so the count is computed where the rows are —
-   * and this client reads them rather than adding posts up itself, which is
-   * what CON-285's decision note reversed out of CON-225 §5. Both calls carry
-   * the browser's IANA zone, because a report is cut into *local* calendar
-   * days and that is the one thing the server cannot know; the shapes are
-   * pinned by `services/api/activity.test.ts`.
-   *
-   * **Exercised against the real API** on 2026-09-04 and again on 2026-09-07,
-   * against a local build of `main`: a real `connection.action_required` row
-   * read over REST and rendered from the catalogue, replay served against
-   * `Last-Event-ID` (strictly `>`, ascending; an unparseable cursor is
-   * live-only with a 200, one ahead of the log replays nothing), click-through
-   * `PATCH`, and `mark-all-read`'s `before` bound proved on both sides. What
-   * was still unobserved then was **live push** and the replay→live dedup
-   * (`n.Seq <= lastSentSeq`), which needed a triggerable producer — and
-   * CON-285 is that producer. Paging past page one is untested too.
-   *
-   * **Known and deliberately not blocking**, in the order they will bite:
-   *
-   * 1. **The `recycle` frame is not handled.** ogen#142 gave connections a
-   *    30-minute lifetime and made the subscriber cap self-healing (the hub
-   *    evicts a user's oldest subscription rather than refusing the newcomer;
-   *    ogen#152 then raised it 10 → 30, because ten counted across *both*
-   *    streams). So a clean close mid-session is now routine — twice an hour
-   *    per tab, plus any eviction — and a clean close is exactly what a
-   *    dropped connection looks like. ogen#152 ships the one thing that tells
-   *    them apart, a frame sent before the close:
-   *
-   *        event: recycle
-   *        data: {"reason":"lifetime"}
-   *
-   *    deliberately with **no `id:` line**, so it does not advance the replay
-   *    cursor. `lib/streamConnection` does not listen for it, so every recycle
-   *    runs the full recovery path — flush autosaves, invalidate the routing
-   *    table, *"Catching up…"* when nothing was down. Correct, and noisy; this
-   *    feature's second stream per tab is what doubles the noise.
-   *    `docs/sse.md` carries the measurements.
-   * 2. **No producer for "never published".** `not_published` is a real
-   *    outcome with no notification type, so it leaves no row — it is counted
-   *    in the day's report and nowhere else.
-   * 3. **The report's day boundary is unobserved.** Whether the day the server
-   *    cuts agrees with the day this client groups under is only visible
-   *    across a real local midnight, and whether `by_author` ids match
-   *    `listMembers` needs a workspace with two people in it. Both should
-   *    hold — the zone sent as `tz` is the zone `dayKey` groups by, and the
-   *    ids are the same per-workspace membership ids — but neither has been
-   *    watched happen.
-   *
-   * **Three things the report endpoints deliberately do not carry**, none of
-   * them blocking: a **per-campaign breakdown** (the computed report had one
-   * for free, because it held every post; the server's shape is CON-225 §5 and
-   * a campaign's own report is the same endpoint with `campaign_id` set); **a
-   * code for a failure** — `failure_reason` is Go prose, so the report shows
-   * it verbatim the way a notification's `title` is shown, and the ask is the
-   * same one `lib/uploadError` is waiting on (`docs/open-questions.md` S4);
-   * and **paging**, since `before` is a keyset the feed does not use — it asks
-   * for one horizon of days and says on screen where it stops.
-   *
-   * The whole recipient taxonomy — every type, its trigger, its transport and
-   * who hears it — is written out in `docs/events.md` rather than
-   * reconstructed from here.
-   *
-   * Delete this flag, and the off-branch under it, once the feature has met a
-   * deployed workspace and nobody has reached for the switch.
-   */
-  activity: true,
-
-  /**
    * Tasks (CON-234): the workspace's open work, its own module directly under
    * Activity in the rail.
    *
-   * Separate from `activity` because they are different objects and will land
+   * Separate from Activity because they are different objects and will land
    * at different times. A task is a **level** — a condition that stops being
    * true when it is fixed — where a feed entry is an **edge**, a timestamped
    * fact that stays true forever (`docs/tasks.md`). Keeping them apart is
@@ -283,72 +200,6 @@ const FEATURE_FLAGS = {
    * been seen with an actual picture in it.
    */
   'calendar-card-images': false,
-
-  /**
-   * **Auto post type** — the post works out its own format from what is in it,
-   * instead of asking the author to name one first.
-   *
-   * Picking between "Text post" and "Image post" is not a decision anybody sets
-   * out to make; it is what a post already *is* once the words and the files
-   * are there. So Auto is the default, the app reads the body and the
-   * attachments and names the format itself, and re-names it as the post
-   * changes — attach a picture to a text post and it becomes an image post
-   * without anyone touching the picker.
-   *
-   * **On.** Nothing was ever waiting on an endpoint: Auto is the empty
-   * `platform_post_type` a post is already created with (`useAddPost` sends a
-   * campaign and a date and nothing else); the resolution is derived on every
-   * render and written to the record as the post leaves `draft`, which is as
-   * long as the server will hold an empty type. Nothing new is stored and no
-   * column is missing. The flag existed because this changes what that empty
-   * string *means* on four surfaces that had always read it as "broken" — the
-   * checks bar, the quick-settings picker, the calendar card and
-   * `hasVisibleProblem` — and because the ladder was a claim about the server
-   * read off the Go source rather than exercised against it.
-   *
-   * **That claim was checked against `ogen` `origin/main` before this went on**,
-   * and two of the three worries on the old list turned out not to exist:
-   *
-   * 1. **The rules are not seeded.** `postTypeRules` in
-   *    `domain/platforms/post_types.go` is a hard-coded table keyed by slug, and
-   *    `ResolvePostTypeRules` projects it onto the wire — so a rule "seeded
-   *    loosely" is not a thing that can happen to `allowed_kinds`, `min_` or
-   *    `max_attachments`. What *is* per-platform is which slugs are offered and
-   *    the three constraint blocks the sentinels resolve against. And
-   *    `max_content_chars` cannot arrive as `0`: `resolveMaxContentChars`
-   *    returns a value only when the limit is positive, so unbounded is `null`
-   *    on the wire and nowhere else.
-   * 2. **`fits` mirrors `ValidatePostType`, with one rule deliberately left
-   *    out.** CON-148's `requires_video_title` refuses an untitled video on a
-   *    platform whose `video_constraints` ask for one. That is YouTube alone,
-   *    and YouTube offers `video` and `short` — both video-kind, both bound by
-   *    it — so no choice Auto can make avoids the rule and modelling it would
-   *    change no answer. If a platform ever offers a titled video type beside
-   *    an untitled non-video one, this is the line to add.
-   *    `max_title_chars` is out for the same reason: it fails every candidate
-   *    equally, so it is not a choice.
-   * 3. **`requires_content` is an exact mirror**, which is not obvious from
-   *    the two sources: the server trims before testing for empty
-   *    (`strings.TrimSpace(FlattenSocialText(…))`) and the character ceiling
-   *    does not (`VisibleLen`), so a whitespace-only body looks like it could
-   *    be long and empty at once. It cannot — both flatteners end in a trim, so
-   *    `shape.chars === 0` answers the same question. Tested on this side.
-   *
-   * **What is left is a live run**, and two things to watch when it happens:
-   *
-   * - **`text-post` is the rung everything rests on**, and CON-206 plans to
-   *   merge it into `image-post` with `min_attachments: 0`. That does not break
-   *   Auto — the walk would stop one rung earlier — but it changes what every
-   *   post resolves to, so the two want testing together.
-   * - **The chain rung is the newest thing here.** `thread` is a rung wherever
-   *   the rule says `segmented`, which arrived with the `thread-sequence` flag's
-   *   removal rather than with this feature, so the two shipped in the same
-   *   window and neither has watched the other choose.
-   *
-   * A post that already carries a type is untouched, and pinning is still
-   * one-way: reopen to draft and it keeps the slug it resolved to.
-   */
-  'post-type-auto': true,
 
   /**
    * Deleting one saved version of a post, from the version-history panel
@@ -513,6 +364,97 @@ const FEATURE_FLAGS = {
    * dataset.
    */
   'help-center': false,
+
+  /**
+   * Series — the recurring things a workspace makes, and what each campaign
+   * runs of them (CON-264).
+   *
+   * A series is a **standing instruction**: a name, and how one is built. "This
+   * day in finance history", "Weekly news digest". It is re-read every time it
+   * produces a post and never finished, which is what makes it Foundation
+   * material rather than an idea — an idea is inventory and gets spent.
+   *
+   * The word people arrive with is *content pillar*, and it means at least four
+   * incompatible things (broad themes, mix ratios, recurring segments, message
+   * pillars). This models the third, because it is the only one a generator can
+   * act on and the only one analytics can group by. A theme collapses into it —
+   * "People who made an impact" is a series with a person-shaped slot — so one
+   * object covers both readings without a second table.
+   *
+   * **The definition is the workspace's, the run is the campaign's.**
+   * `/foundation/series` is the library; a campaign picks from it and gives each
+   * a rhythm on its **Strategy** page (`CampaignSeriesCard`), which is where all
+   * the work happens. A campaign may also define one locally and promote it once
+   * it proves it recurs, so the library fills from use instead of being seeded
+   * with four generic nouns at onboarding.
+   *
+   * That card was a band on the campaign's Foundation page until CON-305, when
+   * the documents became their own module and took the page with them. The mix
+   * is still derived and never typed: rhythms are set per series, the share is
+   * computed against `postGoalTotal`, and the sentence stating it is printed
+   * once, under the post goal. There is deliberately no percentage picker — a
+   * mix you type is a plan you break in week two, and a mix you derive is a
+   * fact.
+   *
+   * **Waiting on** a workspace-scoped `brand_series` table, `series_ids` plus a
+   * per-series rhythm on the campaign — **attached and detached, never
+   * restated**, for the reason CON-233 gives about `asset_ids` — a nullable
+   * `series_id` on the post, and analytics grouped by it, which is the "for
+   * insights" half of the ticket. Everything above the stub in
+   * `services/api/series.stub.ts` is written against the signatures those will
+   * have.
+   */
+  series: false,
+
+  /**
+   * Content formats — how-to, explainer, listicle, digest (CON-264).
+   *
+   * **A vocabulary, not a library.** A fixed table in `lib/contentFormats.ts`
+   * and a picker, with no page, no CRUD, no empty state and no Foundation
+   * section. That is the whole difference between this costing nothing and it
+   * being a second Series.
+   *
+   * A fixed list is enough because a bare format label already carries a recipe
+   * — the vocabulary is shared with the model, so "how-to" implies an opening,
+   * a numbered middle and a takeaway in a way "Education" never implies
+   * anything. It is the one axis here that needs no configuration to be useful,
+   * which is why it is a separate flag: it pays off in a workspace that has
+   * never opened the Series page.
+   *
+   * **Not `platform_post_type`.** That is the container — carousel, reel,
+   * thread — and it is already modelled and already derived (Auto, `lib/postTypeAuto`).
+   * This is the rhetorical shape, and a how-to can be any container at all. The
+   * two never compete for the same decision.
+   *
+   * Optional everywhere, on purpose: a post may have no format, and nothing
+   * warns about it. Forcing the classification is the mistake CON-210 paid for
+   * with its three-mode source picker.
+   *
+   * **Waiting on** a nullable `content_format` column on the post (and on the
+   * series, when that flag lands — a series pins one and its posts inherit it).
+   * Until then a post's format lives in a `localStorage` sidecar
+   * (`services/api/contentLocal.ts`), which is per browser and must not ship
+   * that way.
+   */
+  'content-formats': false,
+
+  /**
+   * Uploading audio to the Content Bank (CON-313 over CON-282): the eleven
+   * audio extensions in the picker, and the presign → PUT → finalize path in
+   * the upload store. Off, an `.mp3` is refused as an extension the bank
+   * doesn't take, exactly as before.
+   *
+   * Only the *upload* is behind it. An AUDIO asset that arrives some other way
+   * still opens on its own screen with its player and transcript, because that
+   * reads through our API alone.
+   *
+   * **Waiting on** R2 CORS for a browser `PUT` to the presigned URL (CON-307).
+   * The API side is shipped and was run end to end locally; what fails without
+   * CORS is the one request that goes to storage rather than to us, and it fails
+   * as a network error after presign has already created the asset. Turn it on
+   * once an upload has gone through on staging.
+   */
+  'content-bank-audio': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useCampaignPostTypes } from '@/hooks/useCampaignPostTypes'
 import { usePlatformCatalog, usePlatforms } from '@/hooks/usePlatforms'
 import { usePostAttachments } from '@/hooks/usePostAttachments'
@@ -17,6 +16,7 @@ import { evaluatePost, type PostCheck } from '@/lib/postValidation'
 import { planThread, publishesAsChain } from '@/lib/threadSequence'
 import { useThreadPreview } from '@/hooks/useThreadPreview'
 import type { Post } from '@/types/posts'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * One place that joins the post, its attachments and the platform's
@@ -37,25 +37,26 @@ import type { Post } from '@/types/posts'
  */
 export function usePostMedia(post: Post) {
   const media = usePostAttachments(post.id)
-  const { data: rules, isLoading: rulesLoading } = usePostTypeRules(
-    post.platform_id,
-  )
+  const rulesQuery = usePostTypeRules(post.platform_id)
+  const rules = rulesQuery.data
+  // `awaiting`, not `isLoading`, throughout — see `lib/fetched`.
+  const rulesLoading = awaiting(rulesQuery)
   // Reference data behind `staleTime: Infinity` — shared with every other
   // reader of the platforms query, so this costs no extra fetch. The catalog
   // reads the same query; `usePlatforms` is here only for the loading flag,
   // which several checks below hold themselves pending on.
-  const { isLoading: platformsLoading } = usePlatforms()
+  const platformsQuery = usePlatforms()
+  const platformsLoading = awaiting(platformsQuery)
   const catalog = usePlatformCatalog()
 
   // The same list the picker offers, so the format Auto lands on is always one
   // the author could have chosen themselves.
-  const autoEnabled = useFeatureFlag('post-type-auto')
   const candidates = useCampaignPostTypes(post.campaign_id, post.platform_id)
   const info = catalog.resolve(post.platform_id)
   const zernioId = info?.zernioId
 
   const auto: AutoResolution | null = useMemo(() => {
-    if (!autoEnabled || !isAutoPostType(post.platform_post_type)) return null
+    if (!isAutoPostType(post.platform_post_type)) return null
     return resolveAutoPostType({
       content: post.content,
       attachments: media.attachments,
@@ -63,7 +64,6 @@ export function usePostMedia(post: Post) {
       rules,
     })
   }, [
-    autoEnabled,
     post.platform_post_type,
     post.content,
     media.attachments,

@@ -20,6 +20,7 @@ import { useHotkeys } from '@/hooks/useHotkeys'
 import { useWorkspacePosts } from '@/hooks/usePosts'
 import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
 import { WORKSPACE_PLACE } from '@/lib/postsPlace'
+import { awaiting } from '@/lib/fetched'
 import type { Post } from '@/types/posts'
 
 /** Stable identity for a grid with nothing in it yet. */
@@ -81,11 +82,11 @@ function WorkspaceCalendarView() {
   const { anchor, view } = Route.useParams()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const {
-    data: posts,
-    isLoading: postsPending,
-    isError: postsError,
-  } = useWorkspacePosts()
+  const postsQuery = useWorkspacePosts()
+  const { data: posts, isError: postsError } = postsQuery
+  // `awaiting`, not `isLoading` — see `lib/fetched`. Same reasoning as the
+  // campaign's calendar.
+  const postsPending = awaiting(postsQuery)
   const rows = posts ?? NO_POSTS
   // A failed fetch is not an empty workspace — same rule as the campaign's
   // calendar. Cached rows from an earlier success still draw; only a fetch that

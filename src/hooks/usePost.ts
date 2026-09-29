@@ -16,6 +16,7 @@ import {
   withHeldSources,
 } from '@/lib/postCache'
 import type { Post, PostStatus } from '@/types/posts'
+import { awaiting } from '@/lib/fetched'
 
 const SAVE_DEBOUNCE_MS = 600
 
@@ -510,7 +511,7 @@ export function usePost(postId: string): UsePostResult {
     cancelScheduled,
     cancelling,
     saving,
-    loading: query.isLoading,
+    loading: awaiting(query),
     error: query.error ?? undefined,
   }
 }

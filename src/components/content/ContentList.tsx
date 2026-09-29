@@ -452,14 +452,18 @@ function UploadingRows({ uploads }: { uploads: UploadItem[] }) {
           </div>
           {file.phase === 'failed' ? (
             <>
-              <Button
-                variant="ghost"
-                size="xsIcon"
-                aria-label={`Retry ${file.filename}`}
-                onClick={() => retry(file.id)}
-              >
-                <ArrowsClockwiseIcon className="size-4" />
-              </Button>
+              {/* Not for a file this client refused before sending it — the
+                  same file fails the same check again. */}
+              {file.kind !== null && (
+                <Button
+                  variant="ghost"
+                  size="xsIcon"
+                  aria-label={`Retry ${file.filename}`}
+                  onClick={() => retry(file.id)}
+                >
+                  <ArrowsClockwiseIcon className="size-4" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="xsIcon"

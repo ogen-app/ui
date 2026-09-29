@@ -619,7 +619,7 @@ describe('hasVisibleProblem', () => {
   })
 
   it('leaves an empty post type alone, because Auto is deciding it', () => {
-    // The default state of every new draft since `post-type-auto` shipped. The
+    // The default state of every new draft since Auto shipped. The
     // card cannot resolve it — the answer needs the attachments, which the list
     // payload does not carry — so it stands down rather than marking every post
     // anyone has just created. An unresolvable one is reported in the editor's

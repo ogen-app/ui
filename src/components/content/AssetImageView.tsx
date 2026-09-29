@@ -1,13 +1,27 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageBrokenIcon } from '@phosphor-icons/react'
+import {
+  ArrowsClockwiseIcon,
+  ImageBrokenIcon,
+  SparkleIcon,
+  WarningIcon,
+} from '@phosphor-icons/react'
+import { AssetIngestState } from '@/components/content/AssetIngestState'
 import { AssetStateFrame } from '@/components/content/AssetStateFrame'
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { TagsInput } from '@/components/ui/tags-input'
-import { MAX_ALT_TEXT_CHARS, formatBytes } from '@/lib/assetStatus'
+import { useReextractImage, useRegenerateAltText } from '@/hooks/useContent'
+import { drawableImageUrl } from '@/lib/assetPreview'
+import {
+  MAX_ALT_TEXT_CHARS,
+  formatBytes,
+  isTerminalStatus,
+} from '@/lib/assetStatus'
+import { ingestFailureMessage } from '@/lib/uploadError'
 import { formatNumber } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { Asset, UpdateAssetPayload } from '@/types/content'
@@ -57,8 +71,34 @@ type Props = {
  * drawn inside a box the file's own dimensions reserve. Without that the fields
  * below jump down the moment a 4-megapixel photo decodes.
  */
-export function AssetImageView({ asset, onChange, onDirty }: Props) {
+export function AssetImageView(props: Props) {
+  /*
+   * Nothing to edit until image-service has finished (CON-281): an upload is
+   * created `pending` and the description and alt text are the service's to
+   * write first. The form below seeds its fields once, on mount, so mounting it
+   * early would show two empty boxes and keep them empty after the service
+   * filled them in — waiting here means it mounts with what was written.
+   */
+  if (!isTerminalStatus(props.asset.status)) {
+    return <AssetIngestState asset={props.asset} />
+  }
+  return <ImageForm {...props} />
+}
+
+function ImageForm({ asset, onChange, onDirty }: Props) {
   const { t } = useTranslation()
+  const regenerate = useRegenerateAltText(asset.id)
+  const reextract = useReextractImage(asset.id)
+  /*
+   * Who wrote the alt text on screen: image-service or a person. Seeded from
+   * the server's `alt_text_edited_by_user`, then kept here, because the two
+   * ways it changes on this screen don't agree with that flag — a regenerate
+   * leaves it as it was (and a person's text has just been replaced by a
+   * machine's), and typing flips it only once the save lands.
+   */
+  const [altByPerson, setAltByPerson] = useState(
+    asset.alt_text_edited_by_user ?? true,
+  )
   const altId = useId()
   const descriptionId = useId()
   const tagsId = useId()
@@ -154,13 +194,30 @@ export function AssetImageView({ asset, onChange, onDirty }: Props) {
   const handleTitle = (e: ChangeEvent<HTMLTextAreaElement>) =>
     edit({ title: e.target.value.replace(/\n/g, '') })
 
-  const handleAltText = (e: ChangeEvent<HTMLInputElement>) =>
+  const handleAltText = (e: ChangeEvent<HTMLInputElement>) => {
+    setAltByPerson(true)
     // Clamped by code point, which is what the server counts
     // (`utf8.RuneCountInString`). `maxLength` counts UTF-16 units instead, so a
     // field of emoji would stop the user half a limit early — and the reverse
     // mismatch would send a value the server answers 400 to.
     edit({
       alt_text: [...e.target.value].slice(0, MAX_ALT_TEXT_CHARS).join(''),
+    })
+  }
+
+  /*
+   * A fresh alt text, written and **saved** by the server. The field is set to
+   * it without marking it touched: this screen didn't write it, so the next
+   * debounced save must not send it back — which, from a draft built before
+   * the regenerate, would also put the old text over the new one.
+   */
+  const handleRegenerate = () =>
+    regenerate.mutate(undefined, {
+      onSuccess: (alt_text) => {
+        touchedRef.current.delete('alt_text')
+        setDraft((prev) => ({ ...prev, alt_text }))
+        setAltByPerson(false)
+      },
     })
 
   const handleDescription = (e: ChangeEvent<HTMLTextAreaElement>) =>
@@ -179,10 +236,67 @@ export function AssetImageView({ asset, onChange, onDirty }: Props) {
         className="w-full resize-none overflow-hidden border-0 bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-tertiary-foreground"
       />
 
+      {/* The picture is stored either way; what failed or stopped short is
+          the reading of it. Named above the picture, with the way to try
+          again, rather than instead of it — and laid out as the campaign
+          overview's cards are: a marked heading saying what happened, the
+          reason under it, the action in the header's corner. */}
+      {(asset.status === 'failed' || asset.status === 'partial') && (
+        <section className="flex flex-col gap-2 rounded-md border border-quaternary p-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex w-4 shrink-0 items-center justify-center">
+              <WarningIcon
+                className={cn(
+                  'size-5',
+                  asset.status === 'failed'
+                    ? 'text-destructive'
+                    : 'text-warning',
+                )}
+                aria-hidden
+              />
+            </span>
+            <h2 className="font-display text-base font-medium">
+              {asset.status === 'failed'
+                ? t('content.image.failedTitle')
+                : t('content.image.partialTitle')}
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto shrink-0"
+              onClick={() => reextract.mutate()}
+              loading={reextract.isPending}
+            >
+              <ArrowsClockwiseIcon />
+              <span>{t('content.image.reextract')}</span>
+            </Button>
+          </div>
+          {/* Indented to the heading's first letter: 16px mark plus the gap. */}
+          <p className="pl-7 text-sm text-secondary-foreground">
+            {asset.status === 'failed'
+              ? ingestFailureMessage(t, asset)
+              : t('content.image.partial')}
+          </p>
+        </section>
+      )}
+
       <Picture asset={asset} />
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={altId}>{t('content.image.altLabel')}</Label>
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor={altId}>{t('content.image.altLabel')}</Label>
+          {/* Replaces whatever is there, a person's text included — it is
+              asked for by name, and the label says what it does. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRegenerate}
+            loading={regenerate.isPending}
+          >
+            <SparkleIcon />
+            <span>{t('content.image.altRegenerate')}</span>
+          </Button>
+        </div>
         <Input
           id={altId}
           value={draft.alt_text}
@@ -191,7 +305,9 @@ export function AssetImageView({ asset, onChange, onDirty }: Props) {
         />
         <div className="flex items-start justify-between gap-4">
           <p className="text-xs text-tertiary-foreground">
-            {t('content.image.altHelp')}
+            {!altByPerson && draft.alt_text !== ''
+              ? t('content.image.altGenerated')
+              : t('content.image.altHelp')}
           </p>
           {altLength >= COUNTER_FROM && (
             <span
@@ -264,14 +380,23 @@ export function AssetImageView({ asset, onChange, onDirty }: Props) {
 function Picture({ asset }: { asset: Asset }) {
   const { t } = useTranslation()
   const [broken, setBroken] = useState(false)
-  const url = asset.file?.url
+  // The original when a browser can draw it, else image-service's PNG of it —
+  // a HEIC or TIFF has only the second (CON-299).
+  const url = asset.file ? drawableImageUrl(asset.file) : null
 
   if (!url || broken) {
+    // Stored, but in a format no browser draws and with no PNG copy of it —
+    // the reading that makes one failed. Not the same as never stored.
+    const undrawable = !broken && !!asset.file?.url
     return (
-      <AssetStateFrame>
+      // The picture's own box, so a missing one takes the place a drawn one
+      // would and the fields below sit where they will once it is.
+      <AssetStateFrame inset className="bg-secondary px-4">
         <ImageBrokenIcon className="size-8 text-tertiary-foreground" />
         <p className="text-sm text-tertiary-foreground">
-          {t('content.image.missing')}
+          {undrawable
+            ? t('content.image.undrawable')
+            : t('content.image.missing')}
         </p>
       </AssetStateFrame>
     )

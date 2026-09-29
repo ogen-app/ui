@@ -15,6 +15,7 @@ import {
   sortTasks,
   type Task,
 } from '@/lib/tasks'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * Tasks' data layer (CON-225, prototype).
@@ -61,15 +62,22 @@ function enqueueWrite(next: Task[]): Promise<void> {
 export function useTasks() {
   const enabled = useFeatureFlag('tasks')
 
-  const { data, isLoading, isError } = useQuery({
+  const query = useQuery({
     queryKey: TASKS_QUERY_KEY,
     queryFn: async () => parseTasks(await getSetting(STORAGE_KEY)),
     enabled,
     staleTime: 30_000,
   })
 
-  const tasks = useMemo(() => sortTasks(data ?? []), [data])
-  return { tasks, isLoading: enabled && isLoading, isError: enabled && isError }
+  const tasks = useMemo(() => sortTasks(query.data ?? []), [query.data])
+  // `awaiting`, not `isLoading` — see `lib/fetched`. It also answers the
+  // `enabled &&` this used to carry: a query nobody switched on is idle, not
+  // waiting, so the flag being off still reads as a settled empty list.
+  return {
+    tasks,
+    isLoading: awaiting(query),
+    isError: enabled && query.isError,
+  }
 }
 
 /**

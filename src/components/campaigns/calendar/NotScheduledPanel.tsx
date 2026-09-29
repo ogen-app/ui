@@ -17,6 +17,7 @@ import { canEditScheduledAt } from '@/lib/postStatusMachine'
 import { PostCard } from './PostCard'
 import { withCampaignRow } from './cardFields'
 import { cn } from '@/lib'
+import { awaiting } from '@/lib/fetched'
 
 /** One campaign's strays, for the panel beside that campaign's calendar. */
 export function NotScheduledPanel({
@@ -26,13 +27,13 @@ export function NotScheduledPanel({
   campaignId: string
   onClose?: () => void
 }) {
-  const { data: posts, isLoading } = useCampaignPosts(campaignId)
+  const postsQuery = useCampaignPosts(campaignId)
   const addPost = useAddPost(campaignId)
   return (
     <NotScheduled
       campaignId={campaignId}
-      posts={posts}
-      isLoading={isLoading}
+      posts={postsQuery.data}
+      waiting={awaiting(postsQuery)}
       onAddPost={addPost}
       onClose={onClose}
     />
@@ -53,12 +54,12 @@ export function WorkspaceNotScheduledPanel({
 }: {
   onClose?: () => void
 }) {
-  const { data: posts, isLoading } = useWorkspacePosts()
+  const postsQuery = useWorkspacePosts()
   return (
     <NotScheduled
       campaignId={null}
-      posts={posts}
-      isLoading={isLoading}
+      posts={postsQuery.data}
+      waiting={awaiting(postsQuery)}
       onClose={onClose}
     />
   )
@@ -72,13 +73,13 @@ export function WorkspaceNotScheduledPanel({
 function NotScheduled({
   campaignId,
   posts,
-  isLoading,
+  waiting,
   onAddPost,
   onClose,
 }: {
   campaignId: string | null
   posts: Post[] | undefined
-  isLoading: boolean
+  waiting: boolean
   onAddPost?: () => void
   onClose?: () => void
 }) {
@@ -145,7 +146,9 @@ function NotScheduled({
           dragOver && 'bg-secondary',
         )}
       >
-        {isLoading ? (
+        {/* `awaiting`, not `isLoading` — see `lib/fetched`: the state below
+            is exactly the announcement this guard exists to hold back. */}
+        {waiting ? (
           // Two cards' worth of panel, so it doesn't announce "nothing
           // unscheduled" before it has looked.
           <div className="flex flex-col gap-3">

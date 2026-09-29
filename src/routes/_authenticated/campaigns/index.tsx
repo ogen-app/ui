@@ -12,6 +12,7 @@ import { ArchivedCampaigns } from '@/components/campaigns/ArchivedCampaigns.tsx'
 import { CampaignCard } from '@/components/campaigns/CampaignCard.tsx'
 import { CreateCampaignDialog } from '@/components/campaigns/CreateCampaignDialog.tsx'
 import { useCampaigns } from '@/hooks/useCampaigns.ts'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * There is one campaigns list, with the archive as a drawer at the foot of it
@@ -34,12 +35,15 @@ export const Route = createFileRoute('/_authenticated/campaigns/')({
 function Campaigns() {
   const { t } = useTranslation()
   const { archived = false } = Route.useSearch()
-  const { data: campaigns, isLoading, isError } = useCampaigns()
+  const query = useCampaigns()
+  const { data: campaigns, isError } = query
   const [creating, setCreating] = useState(false)
 
   const hasCampaigns = !!(campaigns && campaigns.length > 0)
 
-  if (isLoading) {
+  // `awaiting`, not `isLoading` — see `lib/fetched`. Below this line the
+  // screen is entitled to say the workspace has no campaigns.
+  if (awaiting(query)) {
     return (
       <PageContainer>
         <PageLoader />

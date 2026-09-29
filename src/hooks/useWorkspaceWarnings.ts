@@ -6,6 +6,7 @@ import {
   workspaceWarnings,
   type WorkspaceWarning,
 } from '@/lib/workspaceWarnings'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * The workspace's warnings (CON-225), scored by `lib/workspaceWarnings`.
@@ -57,8 +58,8 @@ export function useWorkspaceWarnings(): {
 
   return {
     warnings,
-    isLoading:
-      enabled && (campaignsQuery.isLoading || summariesQuery.isLoading),
+    // `awaiting`, not `isLoading` — see `lib/fetched`.
+    isLoading: awaiting(campaignsQuery) || awaiting(summariesQuery),
     isError: enabled && (campaignsQuery.isError || summariesQuery.isError),
   }
 }

@@ -19,6 +19,7 @@ import { PlatformsSection } from '@/components/workspace-settings/PlatformsSecti
 import { ConnectPlatformsSection } from '@/components/workspace-settings/ConnectPlatformsSection'
 import { ConnectLanding } from '@/components/workspace-settings/ConnectLanding'
 import { DeleteWorkspaceCard } from '@/components/workspace-settings/DeleteWorkspaceCard'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * Where the connect flow comes back to (CON-217), and where the expiry emails
@@ -52,9 +53,11 @@ export const Route = createFileRoute('/_authenticated/workspace-settings/')({
 function WorkspaceSettings() {
   const { t } = useTranslation()
   const { connected, connect_error: connectError } = Route.useSearch()
-  const { isLoading, isError } = usePlatforms()
+  const platforms = usePlatforms()
+  const { isError } = platforms
 
-  if (isLoading) {
+  // `awaiting`, not `isLoading` — see `lib/fetched`.
+  if (awaiting(platforms)) {
     return (
       <PageContainer>
         <PageLoader />

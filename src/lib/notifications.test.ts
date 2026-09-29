@@ -199,3 +199,82 @@ describe('notificationTarget', () => {
     ).toBeNull()
   })
 })
+
+describe('notificationCopy — plan limits', () => {
+  /**
+   * These two arrive whether or not `workspace-tiers` is on: the server's
+   * limiter is wired unconditionally, so a workspace that has never seen a
+   * plan screen still gets the row. They were falling through to the server's
+   * English — which is where an untranslatable sentence is *correct* for an
+   * unknown type, and simply a gap for a known one.
+   */
+  const limit = (over: Partial<AppNotification> = {}) =>
+    row({
+      type: 'entitlement.limit_reached',
+      level: 'warning',
+      entity_type: '',
+      entity_id: '',
+      data: {
+        feature: 'active_campaigns',
+        current: 3,
+        limit: 3,
+        remaining: 0,
+        percent: 80,
+        state: 'reached',
+      },
+      ...over,
+    })
+
+  it('names the feature as well as the type', () => {
+    expect(notificationCopy(limit())).toEqual({
+      key: 'activity.notification.entitlement.campaigns.reached',
+      vars: { current: 3, limit: 3 },
+    })
+  })
+
+  it('tells the two sides of the cap apart', () => {
+    const copy = notificationCopy(
+      limit({
+        type: 'entitlement.limit_approaching',
+        data: { feature: 'team_seats', current: 4, limit: 5 },
+      }),
+    )
+    expect(copy).toEqual({
+      key: 'activity.notification.entitlement.seats.approaching',
+      vars: { current: 4, limit: 5 },
+    })
+  })
+
+  it('writes a storage cap as a size, never as a byte count', () => {
+    // `5368709120` is not a thing anyone has been told about their storage.
+    const copy = notificationCopy(
+      limit({
+        data: {
+          feature: 'media_storage_bytes',
+          current: 5368709120,
+          limit: 5368709120,
+        },
+      }),
+    )
+    expect(copy).toEqual({
+      key: 'activity.notification.entitlement.storage.reached',
+      vars: { current: '5 GB', limit: '5 GB' },
+    })
+  })
+
+  it('falls back to the server for a capped feature this build has no sentence for', () => {
+    // The limiter registers its counters at boot, so this list will lag it —
+    // and the server's own English is true meanwhile.
+    expect(
+      notificationCopy(
+        limit({ data: { feature: 'ai_tokens', current: 9, limit: 10 } }),
+      ),
+    ).toBeNull()
+  })
+
+  it('falls back to the server when the figures its sentence counts with are missing', () => {
+    expect(
+      notificationCopy(limit({ data: { feature: 'active_campaigns' } })),
+    ).toBeNull()
+  })
+})

@@ -38,3 +38,33 @@ export function fetched<T>(query: { data?: T; isError: boolean }): Fetched<T> {
   if (query.data !== undefined) return { status: 'ready', data: query.data }
   return { status: query.isError ? 'error' : 'pending' }
 }
+
+/**
+ * Whether a screen has nothing to draw yet and should say so — the predicate
+ * that used to be `isLoading`, and the bug that was.
+ *
+ * `isLoading` is `isPending && isFetching`, which is three of the four states
+ * a query can be in while it holds no data. The fourth is **paused**: after a
+ * failed attempt TanStack stops retrying until the tab is looked at again
+ * (`focusManager`), and a paused query is pending but *not* fetching. So
+ * `isLoading` is false, `isError` is false, `data` is `undefined` — and a
+ * screen branching `isLoading ? wait : isError ? explain : draw` draws. With
+ * `data ?? []` behind it, that is a list announcing itself empty because the
+ * request failed while the user was in another tab.
+ *
+ * `isPending` alone is not the fix either, and the three hooks that say so in
+ * a comment are right: a **disabled** query is pending for ever, so a screen
+ * gated on it would wait for a request nobody is going to make. The state
+ * those two miss between them is the one to name — pending, and something is
+ * still going to happen. `fetchStatus: 'idle'` is exactly "and nothing is".
+ *
+ * Offline is the other way in, and it is handled a layer up: `networkMode:
+ * 'always'` (`lib/queryClient`) means a request with no network fails instead
+ * of pausing. This covers the hidden tab, which no `networkMode` reaches.
+ */
+export function awaiting(query: {
+  status: 'pending' | 'error' | 'success'
+  fetchStatus: 'fetching' | 'paused' | 'idle'
+}): boolean {
+  return query.status === 'pending' && query.fetchStatus !== 'idle'
+}

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
 import { HelpTrigger } from '@/components/help/HelpTrigger'
 import { useCampaign } from '@/hooks/useCampaigns'
@@ -22,6 +21,7 @@ import { PlatformPicker, PostTypePicker } from './quickBar/ChannelPickers'
 import { PublishMethodPicker } from './quickBar/PublishMethodPicker'
 import { SchedulingDetails } from './quickBar/SchedulingLine'
 import { Dot } from './quickBar/parts'
+import { awaiting } from '@/lib/fetched'
 
 type Props = {
   doc: Post
@@ -86,12 +86,12 @@ export function PostQuickSettingsBar({
   resolvedPostType,
   className,
 }: Props) {
-  const autoPostType = useFeatureFlag('post-type-auto')
   const catalog = usePlatformCatalog()
   const platform = catalog.resolve(doc.platform_id)
-  const { data: campaign, isLoading: campaignPending } = useCampaign(
-    doc.campaign_id,
-  )
+  const campaignQuery = useCampaign(doc.campaign_id)
+  const campaign = campaignQuery.data
+  // `awaiting`, not `isLoading` — see `lib/fetched`.
+  const campaignPending = awaiting(campaignQuery)
   // The same source the route resolves the method against, so the two can't
   // disagree. `unknown` holds the picker: "manual publish" is a promise about
   // what happens to this post, and it waits until we can keep it.
@@ -104,11 +104,9 @@ export function PostQuickSettingsBar({
   // two pickers beside it now read the same way.
   const locked = isSubmitted(doc.status)
   // The empty slug is a draft's privilege (`canBeAutomatic`), so a post that
-  // has left `draft` cannot be talked back into having no format — not into
-  // Auto, and not through the deselect row this picker has always offered. That
-  // second one predates the feature and failed the same way: the save that
-  // followed could only ever be refused.
-  const clearable = canBeAutomatic(doc.status)
+  // has left `draft` cannot be talked back into Auto: the save that followed
+  // could only ever be refused.
+  const autoOffered = canBeAutomatic(doc.status)
 
   // platform id → post-type slugs enabled on this campaign.
   const campaignPostTypes = useMemo(
@@ -180,7 +178,7 @@ export function PostQuickSettingsBar({
       // An automatic post carries no slug and wants none: picking one here
       // would answer a question the author deliberately left open, and the
       // resolver re-answers it against the new platform's rules anyway.
-      if (autoPostType && isAutoPostType(d.platform_post_type)) return
+      if (isAutoPostType(d.platform_post_type)) return
       // Keep the post type when the new platform supports the same slug,
       // otherwise prefer the campaign's first enabled type for it. Both
       // sides read the selectable list, so switching platforms can never
@@ -289,8 +287,7 @@ export function PostQuickSettingsBar({
               connectedSlugs={
                 connectedPostTypes.get(doc.platform_id) ?? EMPTY_SLUGS
               }
-              auto={autoPostType && clearable}
-              clearable={clearable}
+              auto={autoOffered}
               resolved={resolvedPostType}
               disabled={campaignPending}
               readOnly={locked}

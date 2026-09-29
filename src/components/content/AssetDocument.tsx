@@ -5,7 +5,9 @@ import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AssetDetailsHeader } from '@/components/content/AssetDetailsHeader'
+import { AssetAudioView } from '@/components/content/AssetAudioView'
 import { AssetEditor } from '@/components/content/AssetEditor'
+import { AssetExtractedView } from '@/components/content/AssetExtractedView'
 import { AssetImageView } from '@/components/content/AssetImageView'
 import { DeleteAssetDialog } from '@/components/content/DeleteAssetDialog'
 import { ScrapeState } from '@/components/content/ScrapeState'
@@ -13,12 +15,13 @@ import { UnsupportedAsset } from '@/components/content/UnsupportedAsset'
 import { useAsset, useCreateUrlAsset, useUpdateAsset } from '@/hooks/useContent'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { downloadMarkdown } from '@/lib/downloadMarkdown'
-import { opensAsDocument } from '@/lib/assetKind'
+import { assetScreen } from '@/lib/assetKind'
 import { isTerminalStatus } from '@/lib/assetStatus'
 import { readPageErrorMessage } from '@/lib/scrapeErrors'
 import { toast } from '@/stores/toastStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import type { UpdateAssetPayload } from '@/types/content'
+import { awaiting } from '@/lib/fetched'
 
 type Props = {
   assetId: string
@@ -42,16 +45,15 @@ type Props = {
  * screen is the same: once the text exists, a read page is a document like any
  * other, editable and autosaving.
  *
- * The editor is the last branch and never the fallback. An asset only reaches
- * it once `opensAsDocument` says its body is text; anything else — an asset
- * type this build predates — gets `UnsupportedAsset` instead. That ordering is
- * the whole of CON-16 R32: the previous arrangement mounted an autosaving
- * editor on whatever arrived, so the first type the server added that wasn't a
- * document would have been quietly overwritten by anyone who opened it.
- *
- * An image is that type, and it now has a screen rather than the fallback
- * (`AssetImageView`, CON-246). What arrives at `UnsupportedAsset` from here on
- * is only a kind this build has genuinely never heard of.
+ * Which screen an asset gets is `assetScreen`'s answer, and the editor is one
+ * named answer rather than the fallback: only a note, a Markdown upload or a
+ * scraped page reaches it. A PDF or an office document shows its extracted
+ * text read-only (`AssetExtractedView`, CON-312), an image and a recording
+ * have screens of their own, and a type this build predates gets
+ * `UnsupportedAsset`. That ordering is the whole of CON-16 R32: the previous
+ * arrangement mounted an autosaving editor on whatever arrived, so the first
+ * type the server added that wasn't a document would have been quietly
+ * overwritten by anyone who opened it.
  *
  * What it does *not* borrow is the commit bar. A post has one because it has
  * somewhere to go — draft, scheduled, published — and the bar is where that
@@ -61,7 +63,8 @@ type Props = {
  */
 export function AssetDocument({ assetId, campaignId }: Props) {
   const { data: campaign } = useCampaign(campaignId ?? '')
-  const { data: asset, isLoading, isError } = useAsset(assetId)
+  const query = useAsset(assetId)
+  const { data: asset, isError } = query
   const updateAsset = useUpdateAsset()
   const rescrape = useCreateUrlAsset()
   const [title, setTitle] = useState<string | null>(null)
@@ -139,9 +142,14 @@ export function AssetDocument({ assetId, campaignId }: Props) {
     (overrides: Partial<UpdateAssetPayload>) => {
       if (!asset) return
       const v = editVersionRef.current
+      // `content` only once this screen has edited it. The PUT keeps the
+      // stored value when it is left out (CON-312), and on a PDF, DOC or
+      // recording a *different* one is refused — so a rename there is a
+      // title and nothing else.
+      const draftContent = draftRef.current.content
       const payload: UpdateAssetPayload = {
         title: draftRef.current.title ?? asset.title,
-        content: draftRef.current.content ?? asset.content,
+        ...(draftContent !== null && { content: draftContent }),
         ...overrides,
       }
       saveChainRef.current = saveChainRef.current.then(() =>
@@ -207,7 +215,10 @@ export function AssetDocument({ assetId, campaignId }: Props) {
     downloadMarkdown(title ?? asset.title, asset.content)
   }, [asset, title])
 
-  if (isLoading) {
+  // `awaiting`, not `isLoading` — see `lib/fetched`. Without it a read
+  // paused mid-retry falls through to "Document not found", which is a
+  // different and worse answer than "still reading".
+  if (awaiting(query)) {
     return (
       <PageContainer>
         <PageLoader />
@@ -233,11 +244,13 @@ export function AssetDocument({ assetId, campaignId }: Props) {
       ? sourceUrl
       : null
 
-  // Whether there is a document here at all. Asked before the editor is
-  // reached, not after: falling through to it is what writes an empty body over
-  // an asset whose `content` was never a document (CON-16 R32). It also decides
-  // the Markdown download, which is the same field under another name.
-  const editable = opensAsDocument(asset)
+  // Which screen, asked before the editor is reached rather than after:
+  // falling through to it is what writes an empty body over an asset whose
+  // `content` was never a document (CON-16 R32). It also decides the Markdown
+  // download, which is the editor's `content` under another name — on the
+  // other screens that field is a placeholder, a description or a transcript.
+  const screen = assetScreen(asset)
+  const editable = screen === 'editor'
 
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
@@ -266,16 +279,25 @@ export function AssetDocument({ assetId, campaignId }: Props) {
                 onRetry={handleRefreshSource}
                 retrying={rescrape.isPending}
               />
-            ) : asset.type === 'IMG' ? (
-              // Named ahead of the fallback rather than folded into it: an
-              // image is a kind this build knows, and `UnsupportedAsset` is
-              // reserved for the one it doesn't.
+            ) : screen === 'image' ? (
               <AssetImageView
                 asset={asset}
                 onChange={enqueueSave}
                 onDirty={markDirty}
               />
-            ) : !editable ? (
+            ) : screen === 'extracted' ? (
+              <AssetExtractedView
+                asset={asset}
+                onTitleChange={handleTitleChange}
+                onDirty={markDirty}
+              />
+            ) : screen === 'audio' ? (
+              <AssetAudioView
+                asset={asset}
+                onTitleChange={handleTitleChange}
+                onDirty={markDirty}
+              />
+            ) : screen !== 'editor' ? (
               <UnsupportedAsset />
             ) : (
               <div className="w-content bg-primary px-10 py-8">

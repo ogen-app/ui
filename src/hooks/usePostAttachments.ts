@@ -14,6 +14,7 @@ import {
   type AttachmentListResponse,
   type PostAttachmentWithValidation,
 } from '@/types/attachments'
+import { awaiting } from '@/lib/fetched'
 
 /**
  * Attachments are their own resource, not part of the post document, so
@@ -217,7 +218,7 @@ export function usePostAttachments(postId: string) {
     attachments: query.data?.attachments ?? [],
     /** Post-level rule failures (count cap, image+PDF mix). */
     postValidation: query.data?.platform_validation ?? [],
-    loading: query.isLoading,
+    loading: awaiting(query),
     error: query.error ?? undefined,
     pending,
     upload,
