@@ -44,6 +44,7 @@ import { Route as AuthLoginIndexRouteImport } from './routes/auth/login/index'
 import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
+import { Route as AuthSecureAccountIndexRouteImport } from './routes/auth/secure-account/index'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
 import { Route as AuthenticatedCampaignsCampaignIdActivityRouteImport } from './routes/_authenticated/campaigns/$campaignId/activity'
 import { Route as AuthenticatedCampaignsCampaignIdAnalyticsRouteImport } from './routes/_authenticated/campaigns/$campaignId/analytics'
@@ -254,6 +255,11 @@ const AuthResetIndexRoute = AuthResetIndexRouteImport.update({
   path: '/auth/reset/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthSecureAccountIndexRoute = AuthSecureAccountIndexRouteImport.update({
+  id: '/auth/secure-account/',
+  path: '/auth/secure-account/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedCampaignsCampaignIdIndexRoute =
   AuthenticatedCampaignsCampaignIdIndexRouteImport.update({
     id: '/',
@@ -392,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
+  '/auth/secure-account/': typeof AuthSecureAccountIndexRoute
   '/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
@@ -442,6 +449,7 @@ export interface FileRoutesByTo {
   '/auth/logout': typeof AuthLogoutIndexRoute
   '/auth/register': typeof AuthRegisterIndexRoute
   '/auth/reset': typeof AuthResetIndexRoute
+  '/auth/secure-account': typeof AuthSecureAccountIndexRoute
   '/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
@@ -497,6 +505,7 @@ export interface FileRoutesById {
   '/auth/logout/': typeof AuthLogoutIndexRoute
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
+  '/auth/secure-account/': typeof AuthSecureAccountIndexRoute
   '/_authenticated/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/_authenticated/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
   '/_authenticated/campaigns/$campaignId/assets': typeof AuthenticatedCampaignsCampaignIdAssetsRoute
@@ -552,6 +561,7 @@ export interface FileRouteTypes {
     | '/auth/logout/'
     | '/auth/register/'
     | '/auth/reset/'
+    | '/auth/secure-account/'
     | '/campaigns/$campaignId/activity'
     | '/campaigns/$campaignId/analytics'
     | '/campaigns/$campaignId/assets'
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/auth/logout'
     | '/auth/register'
     | '/auth/reset'
+    | '/auth/secure-account'
     | '/campaigns/$campaignId/activity'
     | '/campaigns/$campaignId/analytics'
     | '/campaigns/$campaignId/assets'
@@ -656,6 +667,7 @@ export interface FileRouteTypes {
     | '/auth/logout/'
     | '/auth/register/'
     | '/auth/reset/'
+    | '/auth/secure-account/'
     | '/_authenticated/campaigns/$campaignId/activity'
     | '/_authenticated/campaigns/$campaignId/analytics'
     | '/_authenticated/campaigns/$campaignId/assets'
@@ -688,6 +700,7 @@ export interface RootRouteChildren {
   AuthLogoutIndexRoute: typeof AuthLogoutIndexRoute
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
   AuthResetIndexRoute: typeof AuthResetIndexRoute
+  AuthSecureAccountIndexRoute: typeof AuthSecureAccountIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -935,6 +948,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/reset'
       fullPath: '/auth/reset/'
       preLoaderRoute: typeof AuthResetIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/secure-account/': {
+      id: '/auth/secure-account/'
+      path: '/auth/secure-account'
+      fullPath: '/auth/secure-account/'
+      preLoaderRoute: typeof AuthSecureAccountIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/campaigns/$campaignId/': {
@@ -1219,6 +1239,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLogoutIndexRoute: AuthLogoutIndexRoute,
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,
   AuthResetIndexRoute: AuthResetIndexRoute,
+  AuthSecureAccountIndexRoute: AuthSecureAccountIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

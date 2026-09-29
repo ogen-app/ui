@@ -62,28 +62,64 @@ function parseSampleRate(raw: string | undefined): number {
   return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 0.1
 }
 
-function stripQueryString(url: string): string {
+/**
+ * Public endpoints whose capability token is a *path* segment rather than a
+ * query parameter, so stripping the query string alone would still ship it.
+ * The segment after each prefix is replaced with `:token`.
+ */
+const PATH_TOKEN_PREFIXES = [
+  '/api/invitations/accept/',
+  '/api/security/login-alerts/',
+]
+
+/**
+ * A URL — or a span description such as `GET /api/…` — with its query string
+ * dropped and any path-borne token replaced by `:token`.
+ */
+function redactUrl(url: string): string {
   const q = url.indexOf('?')
-  return q === -1 ? url : url.slice(0, q)
+  let out = q === -1 ? url : url.slice(0, q)
+  for (const prefix of PATH_TOKEN_PREFIXES) {
+    const at = out.indexOf(prefix)
+    if (at === -1) continue
+    const start = at + prefix.length
+    const end = out.indexOf('/', start)
+    out = out.slice(0, start) + ':token' + (end === -1 ? '' : out.slice(end))
+  }
+  return out
 }
+
+/** Span attributes the fetch/XHR instrumentation fills with the request URL. */
+const SPAN_URL_KEYS = ['url', 'http.url', 'url.full'] as const
 
 /**
  * Removes anything that could carry a token or PII from an event in place:
- * query strings (tokens ride there), request bodies, and cookies. The route
- * template, status and stable ids are what remain — enough to group and
- * correlate, nothing to leak (D3).
+ * query strings and path-borne tokens (the emailed links carry one or the
+ * other), request bodies, and cookies — across the request, the breadcrumbs
+ * and a transaction's spans. The route template, status and stable ids are
+ * what remain — enough to group and correlate, nothing to leak (D3).
  *
  * Exported for its unit test; not called directly outside this module.
  */
 export function redactEvent(event: Sentry.Event): void {
   if (event.request?.url) {
-    event.request.url = stripQueryString(event.request.url)
+    event.request.url = redactUrl(event.request.url)
   }
   for (const crumb of event.breadcrumbs ?? []) {
     for (const key of ['url', 'to', 'from'] as const) {
       const value = crumb.data?.[key]
-      if (typeof value === 'string') crumb.data![key] = stripQueryString(value)
+      if (typeof value === 'string') crumb.data![key] = redactUrl(value)
     }
+  }
+  for (const span of event.spans ?? []) {
+    if (span.description) span.description = redactUrl(span.description)
+    const data = span.data as Record<string, unknown> | undefined
+    if (!data) continue
+    for (const key of SPAN_URL_KEYS) {
+      const value = data[key]
+      if (typeof value === 'string') data[key] = redactUrl(value)
+    }
+    delete data['http.query']
   }
   if (event.request) {
     delete event.request.data

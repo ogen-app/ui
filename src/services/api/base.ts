@@ -33,7 +33,10 @@ export function apiUrl(path: string): string {
  * the header that is causing it.
  *
  * The public invite routes are here for a different reason: the token names the
- * workspace, and the person holding it is not yet a member of anything.
+ * workspace, and the person holding it is not yet a member of anything. The
+ * login-alert routes likewise: the token names an *account*, and the browser
+ * following the email may have a tab pinned to a workspace that has nothing to
+ * do with it (CON-318).
  */
 function isAccountScoped(path: string): boolean {
   // Compare against the path only — a query string never changes which
@@ -45,7 +48,8 @@ function isAccountScoped(path: string): boolean {
     p === '/api/current_user' ||
     p === '/api/sessions' ||
     p.startsWith('/api/sessions/') ||
-    p.startsWith('/api/invitations/accept/')
+    p.startsWith('/api/invitations/accept/') ||
+    p.startsWith('/api/security/login-alerts/')
   )
 }
 
