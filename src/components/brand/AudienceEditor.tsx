@@ -72,7 +72,7 @@ export function AudienceEditor({
   onSave: (audience: BrandAudience) => Promise<unknown>
   onCancel: () => void
   /** Only offered for an audience that exists. */
-  onDelete?: () => void
+  onDelete?: () => Promise<unknown>
 }) {
   const { t } = useTranslation()
   const initial = useMemo(
@@ -160,8 +160,8 @@ export function AudienceEditor({
           name={audience.name}
           cost={deletionCost(t, audience.usage)}
           onDelete={() => {
-            save.hold()
-            onDelete()
+            const release = save.hold()
+            onDelete().catch(release)
           }}
         />
       )}

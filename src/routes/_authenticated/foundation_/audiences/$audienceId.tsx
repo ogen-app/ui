@@ -120,14 +120,12 @@ function AudienceEditorPage() {
         audience={audience}
         onCancel={back}
         onSave={(written) => save.mutateAsync(written)}
-        onDelete={() => {
-          remove.mutate(audience.id, {
-            onSuccess: () => {
-              toast.success(t('brand.detail.deleted', { name: audience.name }))
-              back()
-            },
+        onDelete={() =>
+          remove.mutateAsync(audience.id).then(() => {
+            toast.success(t('brand.detail.deleted', { name: audience.name }))
+            back()
           })
-        }}
+        }
       />
     )
   }

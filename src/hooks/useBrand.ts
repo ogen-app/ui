@@ -111,6 +111,8 @@ export function useDeleteVoice() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteVoice(id),
+    // Behind any save still queued for this kind, so none lands after it.
+    scope: { id: 'brand-voice' },
     meta: { errorTitle: 'Unable to delete the voice' },
     onSuccess: (_void, id) => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) => {
@@ -159,6 +161,7 @@ export function useDeleteAudience() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteAudience(id),
+    scope: { id: 'brand-audience' },
     meta: { errorTitle: 'Unable to delete the audience' },
     onSuccess: (_void, id) => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) =>
@@ -203,6 +206,7 @@ export function useDeleteGuardrails() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: deleteGuardrails,
+    scope: { id: 'brand-guardrails' },
     meta: { errorTitle: 'Unable to clear the guardrails' },
     onSuccess: () => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) =>

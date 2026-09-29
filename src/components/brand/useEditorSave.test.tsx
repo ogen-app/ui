@@ -117,4 +117,56 @@ describe('useEditorSave', () => {
     expect(save).toHaveBeenCalledTimes(2)
     expect(save).toHaveBeenLastCalledWith({ name: 'Founder, dry.' })
   })
+
+  it('writes again after a released hold — a delete that failed', async () => {
+    const { save, hook } = setup({ draft: { name: 'Founder' } })
+    hook.rerender({ draft: { name: 'Founder, dry' } })
+    let release = () => {}
+    act(() => {
+      release = hook.result.current.hold()
+    })
+    await pass(2000)
+    expect(save).not.toHaveBeenCalled()
+
+    act(() => release())
+    await pass(600)
+    expect(save).toHaveBeenCalledWith({ name: 'Founder, dry' })
+  })
+
+  it('sends a refused write again on the way out', async () => {
+    const save = vi
+      .fn((_draft: { name: string }) => Promise.resolve())
+      .mockRejectedValueOnce(new Error('offline'))
+    const hook = renderHook(
+      ({ draft }: { draft: { name: string } }) =>
+        useEditorSave({ draft, stored: true, save }),
+      { initialProps: { draft: { name: 'Founder' } } },
+    )
+    hook.rerender({ draft: { name: 'Founder, dry' } })
+    await pass(600)
+    expect(save).toHaveBeenCalledTimes(1)
+
+    hook.unmount()
+    expect(save).toHaveBeenCalledTimes(2)
+    expect(save).toHaveBeenLastCalledWith({ name: 'Founder, dry' })
+  })
+
+  it('never sends a blocked draft on the way out', async () => {
+    const { save, hook } = setup({ draft: { name: 'Founder' } })
+    hook.rerender({ draft: { name: '' }, blocked: true })
+    hook.unmount()
+    expect(save).not.toHaveBeenCalled()
+  })
+
+  it('asks before the tab closes on a blocked edit', async () => {
+    const add = vi.spyOn(window, 'addEventListener')
+    const { hook } = setup({ draft: { name: 'Founder' } })
+    const unloads = () =>
+      add.mock.calls.filter(([type]) => type === 'beforeunload').length
+    const before = unloads()
+    hook.rerender({ draft: { name: '' }, blocked: true })
+    expect(unloads()).toBe(before + 1)
+    expect(hook.result.current.saving).toBe(false)
+    add.mockRestore()
+  })
 })

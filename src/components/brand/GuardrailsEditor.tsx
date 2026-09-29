@@ -155,7 +155,7 @@ export function GuardrailsEditor({
   /** One write — every save of this screen, the first included. */
   onSave: (guardrails: BrandGuardrails) => Promise<unknown>
   /** Only offered once there are guardrails to remove. */
-  onDelete?: () => void
+  onDelete?: () => Promise<unknown>
 }) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState<Draft>(() => draftFrom(t, guardrails))
@@ -317,8 +317,8 @@ export function GuardrailsEditor({
           name={t('brand.guardrails.dangerName')}
           cost={t('brand.guardrails.deleteCost')}
           onDelete={() => {
-            save.hold()
-            onDelete()
+            const release = save.hold()
+            onDelete().catch(release)
           }}
         />
       )}

@@ -159,14 +159,12 @@ function VoiceEditorPage() {
         voice={voice}
         onCancel={back}
         onSave={(written) => save.mutateAsync(written)}
-        onDelete={() => {
-          remove.mutate(voice.id, {
-            onSuccess: () => {
-              toast.success(t('brand.detail.deleted', { name: voice.name }))
-              back()
-            },
+        onDelete={() =>
+          remove.mutateAsync(voice.id).then(() => {
+            toast.success(t('brand.detail.deleted', { name: voice.name }))
+            back()
           })
-        }}
+        }
       />
     )
   }
