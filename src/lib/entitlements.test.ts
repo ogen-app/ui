@@ -188,6 +188,22 @@ describe('resolveEntitlement', () => {
     )
     expect(result.state === 'allowed' && result.usage?.used).toBeNull()
   })
+
+  it('never counts a per-post allowance against the workspace', () => {
+    // The plan is the workspace's and the allowance is spent post by post, so
+    // a tally on it is about no post in particular. Read as the workspace's,
+    // one review anywhere would lock reviews on every post.
+    const result = resolveEntitlement(
+      'quality_reviews_per_post',
+      plan({
+        quality_reviews_per_post: { limit: 1, used: 1, reset: 'per_post' },
+      }),
+    )
+    expect(result).toEqual({
+      state: 'allowed',
+      usage: { limit: 1, used: null, reset: 'per_post', resetsAt: null },
+    })
+  })
 })
 
 describe('usageReset', () => {

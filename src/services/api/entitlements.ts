@@ -76,9 +76,10 @@ import type {
  * **There are no counters, and that is the gap that matters.** Nothing on the
  * API reports what a workspace has *used* — CON-243 has a usage read as
  * explicitly future — so a limit arrives with nothing to measure it against.
- * `entitlements.seed.ts` supplies held-still ones meanwhile, applied in
- * `getWorkspacePlan` and deliberately not here; `Usage.used` is `number | null`
- * so the day it lands, nothing changes but the parse.
+ * `entitlements.seed.ts` supplies held-still ones to the *stub* meanwhile —
+ * never to this read, whose limits are real and must not be denied on an
+ * invented tally; `Usage.used` is `number | null` so the day the usage read
+ * lands, nothing changes but the parse.
  *
  * **There is no name, no start date, and no scheduled change.** The payload
  * carries no display name for the tier (raised on CON-243; Serhii offered to
@@ -270,9 +271,9 @@ export function planFromWire(body: TierVersionBody): WorkspacePlan {
  * this file exists to hold still.
  *
  * It returns the payload as it arrives, counters and all — which is to say
- * without any. Seeding those is `getWorkspacePlan`'s job, one layer out, so
- * that no test of this function can agree with something the endpoint never
- * said.
+ * without any, and `getWorkspacePlan` passes it on that way: the seeded
+ * counters are the stub's, so that neither a test of this function nor a real
+ * workspace can be told something the endpoint never said.
  */
 export function fetchWorkspacePlan(): Promise<WorkspacePlan> {
   return apiJson<TierVersionBody>(
@@ -284,17 +285,19 @@ export function fetchWorkspacePlan(): Promise<WorkspacePlan> {
 /**
  * The plan the app reads.
  *
- * Two pieces of scaffolding sit here, and they come out on different days.
  * `STUBBED` points the call at `tiers.stub.ts`, which answers a whole tier
  * matrix off a JSON seed so the plan screen can be driven before there is any
  * way to *change* tier — there is no plan-selection endpoint, only Harbor.
- * `withSeededUsage` fills in the counters the real endpoint does not send.
  *
- * The second outlives the first: once the stub goes, the app reads the server's
- * real allowances and still has no tally to put beside them until the usage read
- * lands. See `entitlements.seed.ts`.
+ * **The seeded counters ride on the stub and never on the server's answer.**
+ * `withSeededUsage` invents a tally so the meters and the denied-by-limit branch
+ * can be looked at; put on a real plan, it would tell a real trial workspace
+ * with a campaign cap of three that it is full, and sell it an upgrade with no
+ * refusal behind it. The real read stays uncounted until the usage read lands,
+ * and an uncounted limit cannot deny. See `entitlements.seed.ts`.
  */
 export function getWorkspacePlan(): Promise<WorkspacePlan> {
-  const plan = STUBBED ? stubWorkspacePlan() : fetchWorkspacePlan()
-  return plan.then(withSeededUsage)
+  return STUBBED
+    ? stubWorkspacePlan().then(withSeededUsage)
+    : fetchWorkspacePlan()
 }

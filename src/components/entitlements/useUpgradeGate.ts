@@ -64,6 +64,10 @@ export function useUpgradeGate(key: EntitlementKey): UpgradeGate {
   // Not `!== 'allowed'`: an unanswered plan decides nothing, and a lock shown
   // while the request is in flight tells a paying customer they didn't pay.
   const denied = entitlement.state === 'denied'
+  // A refusal that stops being one takes the callout with it, and is forgotten
+  // rather than hidden: left set, it would reopen by itself — with no click
+  // behind it — the next time the plan came back denied.
+  if (selling && !denied) setSelling(false)
 
   return {
     feature: key,

@@ -2727,9 +2727,7 @@ export const en = {
      * copy arrives in one language and cannot be put in a catalogue — see
      * `services/api/tiers.ts`. Everything the app says *about* a tier is here.
      */
-    plansTitle: 'Plans',
-    planIntro:
-      'What this workspace can do, and what the other plans would change.',
+    plansTitle: 'Select a plan you like',
     /**
      * Not an Explainer, and not dismissible. Someone looking at a page of plans
      * with a button on each is entitled to know that the button does not buy
@@ -2829,6 +2827,8 @@ export const en = {
 
     currentPlan: 'Current plan',
     currentBadge: 'Current',
+    /** The held plan's button on `/plans`: disabled, but drawn as a label, not greyed out. */
+    currentPlanButton: 'Current Plan',
     /** The tier a change has already been made to, waiting on its date. */
     scheduledBadge: 'Scheduled',
     /** A tier version that is still held but can no longer be bought. */
@@ -2902,9 +2902,24 @@ export const en = {
     included: 'Included',
     excluded: 'Not included',
 
-    price: '{{price}} per month',
-    priceYear: '{{price}} per year',
+    /**
+     * A plan card's price, set large: `<price>` wraps the figure so the unit
+     * can sit beside it small without being assembled from a fragment.
+     */
+    price: '<price>{{price}}</price> / month',
+    priceYear: '<price>{{price}}</price> / year',
     priceFree: 'Free',
+    /**
+     * The band over the plan the page puts forward — the cheapest paid one.
+     * "Recommended" rather than "popular": the client has no sales figures, and
+     * a claim about what other people bought would be one nobody made.
+     */
+    recommended: 'RECOMMENDED',
+    /** Heads a card's checklist when it holds everything the card before it does. */
+    everythingIn: 'Everything in {{name}}, plus:',
+    compareTitle: 'Compare all features',
+    /** The comparison table's first column, read by screen readers only. */
+    compareFeature: 'Feature',
 
     /**
      * The name each entitlement key goes by on screen. Keyed by the key rather
@@ -2925,6 +2940,41 @@ export const en = {
       content_bank_assets: 'Content bank documents',
       web_page_imports: 'Web page imports',
       media_storage_bytes: 'Media storage',
+    },
+    /**
+     * The first plan card's checklist: what the product does, not what the
+     * plan allows. Capabilities, never figures — the figures are in the
+     * comparison under the cards.
+     */
+    capabilities: {
+      voice: 'Build a unique voice that stands out from AI-generated slop',
+      strategy: 'Easily generate your content strategy',
+      store: 'Store files, audio notes, ideas and tasks, all in one place',
+      publish: 'Create, schedule and auto-publish posts across social networks',
+      quality:
+        'Check a post’s quality and how it will perform before it goes out',
+      analytics: 'Unified analytics and insights',
+    },
+    /**
+     * A later card's line for a feature it has more of than the card before
+     * it. No figure on purpose — the card sells the step. `team_seats` has two
+     * because the step reads differently from one seat than from several.
+     */
+    gain: {
+      workspaces: 'Separate workspaces to run isolated campaigns',
+      connected_accounts: 'Add more social networks',
+      active_campaigns: 'Run several targeted campaigns at once',
+      team_seats: 'Invite teammates to a shared workspace',
+      team_seats_more: 'Invite even more people to work with you',
+      quality_reviews_per_post: 'Get more quality reviews',
+      media_storage_bytes: 'Get extended storage',
+      multiple_accounts_per_platform: 'Connect several accounts on one network',
+      all_campaign_types: 'Use every campaign type',
+      custom_campaign_types: 'Create campaign types of your own',
+      plan_runs_per_month: 'Generate more content strategies',
+      posts_total: 'Publish more posts',
+      content_bank_assets: 'Keep more in your content bank',
+      web_page_imports: 'Import more web pages',
     },
   },
 

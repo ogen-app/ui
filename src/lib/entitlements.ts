@@ -93,12 +93,19 @@ export function usageReset(value: unknown): UsageReset | null {
  * ships allowances and no tally, so nearly every entry arrives uncounted, and
  * "0 of 5" is not a cautious reading of that — it is a claim that nothing has
  * been used, which unlocks a control that may well be exhausted.
+ *
+ * A `per_post` allowance is uncounted whatever arrives with it. It is spent
+ * post by post and the plan is the workspace's, so a tally on it is about no
+ * post in particular — read as the workspace's, one review anywhere would lock
+ * reviews on every post. Until something counts per post, the server's 402 is
+ * the only refusal.
  */
 function toUsage(entry: RawEntitlement): Usage | null {
   if (entry.limit === undefined && entry.used === undefined) return null
+  const reset = usageReset(entry.reset)
   return {
     limit: entry.limit ?? null,
-    used: entry.used ?? null,
+    used: reset === 'per_post' ? null : (entry.used ?? null),
     reset: usageReset(entry.reset),
     resetsAt: entry.resetsAt ?? null,
   }

@@ -1971,9 +1971,7 @@ export const es: Translation = {
       'Tu plan ha cambiado, así que esto es de solo lectura por ahora. No se ha eliminado nada: sigue todo aquí, y al mejorar el plan vuelve a ser editable.',
     suspendedSince: 'De solo lectura desde el {{when}}.',
 
-    plansTitle: 'Planes',
-    planIntro:
-      'Lo que puede hacer este espacio y lo que cambiarían los demás planes.',
+    plansTitle: 'Elige el plan que prefieras',
     planMock:
       'Los planes todavía no están conectados a la facturación. Elegir uno solo cambia lo que este espacio puede hacer.',
     planLoadFailed: 'No se han podido cargar los planes.',
@@ -2010,6 +2008,7 @@ export const es: Translation = {
 
     currentPlan: 'Plan actual',
     currentBadge: 'Actual',
+    currentPlanButton: 'Plan actual',
     scheduledBadge: 'Programado',
     retired: 'Ya no se ofrece',
     since: 'En este plan desde el {{when}}.',
@@ -2042,9 +2041,13 @@ export const es: Translation = {
     included: 'Incluido',
     excluded: 'No incluido',
 
-    price: '{{price}} al mes',
-    priceYear: '{{price}} al año',
+    price: '<price>{{price}}</price> / mes',
+    priceYear: '<price>{{price}}</price> / año',
     priceFree: 'Gratis',
+    recommended: 'RECOMENDADO',
+    everythingIn: 'Todo lo de {{name}}, y además:',
+    compareTitle: 'Compara todas las funciones',
+    compareFeature: 'Función',
 
     features: {
       team_seats: 'Miembros del equipo',
@@ -2060,6 +2063,32 @@ export const es: Translation = {
       content_bank_assets: 'Documentos del banco de contenido',
       web_page_imports: 'Importaciones de páginas web',
       media_storage_bytes: 'Almacenamiento multimedia',
+    },
+    capabilities: {
+      voice:
+        'Crea una voz única que destaque entre el contenido genérico de la IA',
+      strategy: 'Genera tu estrategia de contenido sin esfuerzo',
+      store: 'Guarda archivos, notas de voz, ideas y tareas en un solo lugar',
+      publish: 'Crea, programa y publica automáticamente en tus redes sociales',
+      quality:
+        'Revisa la calidad de una publicación y cómo funcionará antes de publicarla',
+      analytics: 'Analíticas e información unificadas',
+    },
+    gain: {
+      workspaces: 'Espacios de trabajo separados para campañas aisladas',
+      connected_accounts: 'Añade más redes sociales',
+      active_campaigns: 'Lleva varias campañas dirigidas a la vez',
+      team_seats: 'Invita a tu equipo a un espacio de trabajo compartido',
+      team_seats_more: 'Invita a aún más personas a trabajar contigo',
+      quality_reviews_per_post: 'Más revisiones de calidad',
+      media_storage_bytes: 'Almacenamiento ampliado',
+      multiple_accounts_per_platform: 'Conecta varias cuentas en una misma red',
+      all_campaign_types: 'Usa todos los tipos de campaña',
+      custom_campaign_types: 'Crea tus propios tipos de campaña',
+      plan_runs_per_month: 'Genera más estrategias de contenido',
+      posts_total: 'Publica más',
+      content_bank_assets: 'Guarda más en tu banco de contenido',
+      web_page_imports: 'Importa más páginas web',
     },
   },
 

@@ -59,10 +59,11 @@ const SEED_USAGE: Readonly<Record<string, number>> = seed.used
 /**
  * Merges the held-still counters into a plan the server answered.
  *
- * Applied in `getWorkspacePlan` and never in `fetchWorkspacePlan`, so the
- * contract test keeps asserting the wire shape exactly as it arrives — a parser
- * that invented a counter would make the one test that watches this endpoint
- * agree with something the endpoint never said.
+ * Applied by `getWorkspacePlan` to the **stub's** answer only. On the real
+ * read an invented tally is not scaffolding but a false refusal — a trial
+ * workspace with a campaign cap of three would be told it is full — and it
+ * would also make the contract test agree with something the endpoint never
+ * said.
  *
  * Only metered entries are touched. A boolean entitlement is a verdict with
  * nothing to count against it, and `0 of ∞` under *Multiple accounts per

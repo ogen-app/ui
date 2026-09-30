@@ -930,9 +930,11 @@ Four things about the pair that are each a thing not to undo:
   claim nobody made, and it unlocks a control that may well be exhausted. An
   uncounted limit therefore cannot produce `denied: 'limit'`, which is the
   resolve-towards-offering rule the whole file follows. `entitlements.seed.ts`
-  supplies held-still counters meanwhile, applied in `getWorkspacePlan` and
-  deliberately not in `fetchWorkspacePlan` — so no test of the wire can agree
-  with something the endpoint never said.
+  supplies held-still counters meanwhile, **to the stub's answer only** — put
+  on the real read, an invented tally tells a real workspace it is full and
+  sells it an upgrade with no refusal behind it. A `per_post` allowance is
+  uncounted whatever arrives: the plan is the workspace's, so a tally on it is
+  about no post in particular.
 - **The subscription half is not on either read.** No display name (derived from
   the slug until the server sends one), no `effective_from`, no renewal, no
   scheduled change — Ogen holds no subscription state by design (CON-243 §5).

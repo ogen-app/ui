@@ -113,6 +113,25 @@ describe('useUpgradeGate', () => {
     act(() => result.current.dismiss())
     expect(result.current.selling).toBe(false)
   })
+
+  it('does not reopen by itself when the plan is denied again', () => {
+    // Opened, then the refusal lifted without anyone dismissing it. Left set,
+    // the callout would come back on its own the next time the plan said no.
+    answer.current = SPENT
+    const { result, rerender } = renderHook(() =>
+      useUpgradeGate('active_campaigns'),
+    )
+    act(() => {
+      result.current.intent(vi.fn())()
+    })
+    expect(result.current.selling).toBe(true)
+
+    answer.current = { state: 'allowed', usage: null }
+    rerender()
+    answer.current = SPENT
+    rerender()
+    expect(result.current.selling).toBe(false)
+  })
 })
 
 const eur = (amount: number, interval: 'month' | 'year') => ({

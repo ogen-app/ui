@@ -424,10 +424,10 @@ export function stubResetPlan(): void {
  * Stamps the reset date onto the allowances that have one.
  *
  * The counters that used to be joined on here are `withSeededUsage`'s job now
- * (`entitlements.seed.ts`), applied one layer out so the stub and the real
- * endpoint are counted from the same table. What is left is the date, which only
- * the stub can supply: it is the renewal, and the real endpoint reports no
- * renewal at all.
+ * (`entitlements.seed.ts`), applied one layer out by `getWorkspacePlan` — to
+ * this stub's answer only, never the real endpoint's. What is left is the date,
+ * which only the stub can supply: it is the renewal, and the real endpoint
+ * reports no renewal at all.
  */
 function withResetDate(
   entitlements: Record<string, RawEntitlement>,

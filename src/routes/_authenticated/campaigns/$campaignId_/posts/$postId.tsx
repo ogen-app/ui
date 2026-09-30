@@ -916,7 +916,7 @@ function PostEditorSurface({
               unavailable={quality.unavailable}
               loadError={quality.loadError}
               onReload={quality.reload}
-              onAssess={startAssessment}
+              onAssess={runAssessment}
               assessing={assessing}
               steps={quality.steps}
               cached={quality.cached}

@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest'
 import {
   SECONDARY_BENEFITS,
   billingOptions,
+  cardHighlights,
   offerBenefits,
+  recommendedPlan,
   recommendedTier,
   yearlySaving,
 } from './upgradeOffer'
+import { featureValue } from '@/lib/tierFeatures'
 import type { RawEntitlement, TierVersionPrice } from '@/types/entitlements'
 import type { Tier } from '@/types/tiers'
 
@@ -174,5 +177,75 @@ describe('billingOptions', () => {
 
   it('works out the yearly saving in minor units', () => {
     expect(yearlySaving(eur(2900), eur(29000, 'year'))).toBe(5800)
+  })
+})
+
+describe('recommendedPlan', () => {
+  const trial = tier('trial', TRIAL, [eur(0)])
+
+  it('frames the cheapest paid plan, never the free one', () => {
+    expect(recommendedPlan([trial, MAX, PRO])?.id).toBe('pro')
+  })
+
+  it('frames nothing when no plan costs anything', () => {
+    expect(recommendedPlan([trial, tier('unpriced', {})])).toBeNull()
+  })
+
+  it('skips a plan that cannot be bought', () => {
+    const retired = tier('old', TRIAL, [eur(1000)], false)
+    expect(recommendedPlan([retired, PRO])?.id).toBe('pro')
+  })
+
+  it('compares prices only within one currency', () => {
+    // 2000 yen is fewer units than 29 euros and is not cheaper. With no
+    // exchange rates, a price in another currency cannot win.
+    const yen = tier('yen', TRIAL, [
+      { amount: 2000, currency: 'JPY', interval: 'month', countryCode: null },
+    ])
+    expect(recommendedPlan([PRO, yen])?.id).toBe('pro')
+  })
+})
+
+describe('cardHighlights', () => {
+  const trial = tier('trial', TRIAL, [eur(0)])
+
+  it('lists what the plan adds over the card before it, in pitch order', () => {
+    const { plus, gains } = cardHighlights(PRO, trial)
+    expect(plus).toBe(true)
+    expect(gains.map((g) => g.key)).toEqual([
+      'connected_accounts',
+      'active_campaigns',
+      'team_seats',
+      'all_campaign_types',
+      'plan_runs_per_month',
+    ])
+  })
+
+  it('carries what the card before had, so a line can say "even more"', () => {
+    const { gains } = cardHighlights(PRO, trial)
+    expect(gains.find((g) => g.key === 'team_seats')?.from).toEqual(
+      featureValue(TRIAL.team_seats),
+    )
+  })
+
+  it('leads with what only the bigger plan can do at all', () => {
+    // Several accounts on one network is new on Max; more of what Pro already
+    // had follows it, so the card does not open by repeating Pro's.
+    expect(cardHighlights(MAX, PRO).gains.map((g) => g.key)).toEqual([
+      'multiple_accounts_per_platform',
+      'connected_accounts',
+      'active_campaigns',
+      'team_seats',
+      'plan_runs_per_month',
+    ])
+  })
+
+  it('lists no gains on the first card', () => {
+    expect(cardHighlights(trial, null)).toEqual({ plus: false, gains: [] })
+  })
+
+  it('does not claim "everything in" a neighbour it does not contain', () => {
+    const sideways = tier('sideways', { ...TRIAL, team_seats: { limit: 0 } })
+    expect(cardHighlights(sideways, trial)).toEqual({ plus: false, gains: [] })
   })
 })
