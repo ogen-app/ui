@@ -1211,7 +1211,7 @@ entries — the two pickers are converted, the eleven library screens are not.
 
 ## An idea is a question, and triage is the list rather than a board {#ideas-triage}
 
-**Decision.** Ideas (`ideas`, off) is a backlog with one capture field, three
+**Decision.** Ideas (`ideas`, on) is a backlog with one capture field, three
 verdicts given on the row itself, and four counts to switch piles by. It is
 deliberately **not** a kanban board, which is what the module was first
 imagined as — and, after one pass, deliberately not a separate answering mode
@@ -1246,9 +1246,10 @@ easy to get wrong:
   having run rather than on the date somebody gave it.
 - **Every other verdict clears `remind_at`.** Postpone to next month, archive
   this afternoon, and a surviving wake-up pulls the idea back out of the
-  archive on a day nobody chose. Asserted on both sides of the seam
-  (`lib/ideas.test.ts`, `services/api/ideas.stub.test.ts`) because the client
-  agreeing about it is not the same as the store agreeing.
+  archive on a day nobody chose. `lib/ideas.decideIdea` does it on the client
+  and the verdict endpoint refuses a `remind_at` on anything but `later`,
+  because the client agreeing about it is not the same as the store agreeing.
+  `services/api/ideas.test.ts` pins what the client sends.
 
 **Every decision is reversible, and that is what makes the speed safe.** Triage
 is only fast if a wrong answer costs nothing, so `no` archives rather than
@@ -1306,23 +1307,21 @@ to that campaign. `campaign_id` is a filter and not a scope, so an idea moved
 onto a campaign keeps the verdict and the history it already had instead of
 becoming a second row somewhere else.
 
-**Waiting on `/api/ideas`.** No table, no endpoint, no column. The contract is
-written out in `services/api/ideas.ts` and answered by a `localStorage` stub —
-a plain module, not MSW, per the rule above. The stub is why the flag stays
-off: it is per browser, so the shared backlog this module is entirely about is
-shared with nobody, and a teammate opening the same workspace sees an empty
-list. That is a worse lie than an unbuilt page. It also seeds **nothing** — the
-other stub in this app seeds a tier matrix, which is reference data somebody
-decided, whereas an idea is a person's own sentence and inventing a backlog
-would put words in a workspace's mouth indistinguishable from its own.
+**Backed by `/api/ideas` (CON-315).** The contract was written out in
+`services/api/ideas.ts` first and answered by a `localStorage` stub, a plain
+module rather than MSW per the rule above. The server was then built to that
+contract, and the stub was deleted when the endpoints were wired. The stub was
+why the flag stayed off: it was per browser, so the shared backlog this module
+is about was shared with nobody. It seeded **nothing**, because an idea is a
+person's own sentence, and that still holds: a new workspace's list is empty.
 
 **What a *yes* leads to is the open half.** Today: an accepted idea can be
 filed onto a campaign, and that is all. Promotion — an idea becoming a post or
 a brief — wants `POST /api/ideas/:id/promote` rather than the client creating
-the post and hoping the link survives.
+the post and hoping the link survives. CON-315 lists it as future work.
 
-**Where.** `lib/ideas.ts` (+ test), `services/api/ideas.ts`,
-`services/api/ideas.stub.ts` (+ test), `hooks/useIdeas.ts`,
+**Where.** `lib/ideas.ts` (+ test), `services/api/ideas.ts` (+ test),
+`hooks/useIdeas.ts`,
 `components/ideas/*` (the rail's row included), its wiring in
 `components/layout/nav/WorkspaceLevel.tsx`, the two `ideas` routes, and the
 `ideas.*` catalogue entries in both languages.
