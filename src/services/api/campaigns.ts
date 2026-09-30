@@ -1,8 +1,11 @@
 import type {
   Campaign,
+  CampaignPhasePlan,
   CampaignType,
   CreateCampaignPayload,
+  PhaseWindowInput,
   UpdateCampaignPayload,
+  UpdateCampaignResponse,
 } from '@/types/campaigns'
 import type { CampaignSummariesResponse, PostSummary } from '@/types/posts'
 import { apiJson, apiVoid } from './http'
@@ -39,11 +42,15 @@ export function createCampaign(
 export function updateCampaign(
   id: string,
   payload: UpdateCampaignPayload,
-): Promise<Campaign> {
-  return apiJson<Campaign>(`${BASE}/${id}`, 'Unable to update campaign', {
-    method: 'PUT',
-    body: payload,
-  })
+): Promise<UpdateCampaignResponse> {
+  return apiJson<UpdateCampaignResponse>(
+    `${BASE}/${id}`,
+    'Unable to update campaign',
+    {
+      method: 'PUT',
+      body: payload,
+    },
+  )
 }
 
 /**
@@ -145,6 +152,46 @@ export async function listCampaignSummaries(): Promise<
     byCampaign[summary.campaign_id] = summary.posts ?? []
   }
   return byCampaign
+}
+
+/**
+ * The campaign's phases and when each one runs (CON-166).
+ *
+ * With nothing stored the windows are the server's even split of the campaign
+ * dates — the same split content generation plans into — so this is the only
+ * account of a window the client has. Never split the dates here.
+ */
+export function getPhasePlan(id: string): Promise<CampaignPhasePlan> {
+  return apiJson<CampaignPhasePlan>(
+    `${BASE}/${id}/phases`,
+    'Unable to fetch the campaign phases',
+  )
+}
+
+/**
+ * Replaces the plan with a hand-edited one. Always the whole plan — one window
+ * per phase, back to back, from the start date to the end date — because the
+ * server stores it whole or not at all; 400 `invalid_phase_plan` names the
+ * first phase that breaks a rule.
+ */
+export function savePhasePlan(
+  id: string,
+  phases: PhaseWindowInput[],
+): Promise<CampaignPhasePlan> {
+  return apiJson<CampaignPhasePlan>(
+    `${BASE}/${id}/phases`,
+    'Unable to save the campaign phases',
+    { method: 'PUT', body: { phases } },
+  )
+}
+
+/** Drops a hand-edited plan, back to the even split. Idempotent. */
+export function resetPhasePlan(id: string): Promise<CampaignPhasePlan> {
+  return apiJson<CampaignPhasePlan>(
+    `${BASE}/${id}/phases`,
+    'Unable to reset the campaign phases',
+    { method: 'DELETE' },
+  )
 }
 
 export function listCampaignTypes(): Promise<CampaignType[]> {

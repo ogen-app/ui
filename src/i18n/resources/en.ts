@@ -3541,6 +3541,56 @@ export const en = {
       commitment: 'The commitment',
       spend: 'Spend & language',
     },
+    /**
+     * The campaign's type on Strategy (CON-166). It locks once a post is
+     * planned against one of its phases; the lock line is state, not
+     * teaching, so it sits under the card rather than in an Explainer.
+     */
+    type: {
+      label: 'Campaign type',
+      change: 'CHANGE',
+      cancel: 'Cancel',
+      locked_one:
+        "Locked — {{count}} post is planned against this type's phases.",
+      locked_other:
+        "Locked — {{count}} posts are planned against this type's phases.",
+      lockedUncounted: "Locked — posts are planned against this type's phases.",
+      lockedToastTitle: "The campaign type can't change any more",
+      lockedToastBody:
+        'Posts are now planned against its phases, so the type has been put back. Your other changes are still unsaved.',
+    },
+    /**
+     * When each phase of the campaign's type runs (CON-166). The windows are
+     * the server's; a person only moves the boundary between two phases.
+     */
+    phases: {
+      title: 'Phases',
+      explainer:
+        'A campaign type moves through its phases in order, and generated posts are planned into the phase whose dates they fall on. Move the day a phase ends to give it more or less of the campaign.',
+      derived: 'Split evenly across the campaign dates.',
+      manual: 'Dates set by hand.',
+      reset: 'Split evenly again',
+      unscheduled: 'Set a start and end date to see when each phase runs.',
+      tooShort_one:
+        "The campaign is shorter than its {{count}} phase, so it can't be split.",
+      tooShort_other:
+        "The campaign is shorter than its {{count}} phases, so they can't be split.",
+      pendingDates: 'Save the new dates to re-plan the phases.',
+      pendingType: 'Save the new type to see its phases.',
+      empty: 'This campaign type has no phases.',
+      loadError: "The phases couldn't be loaded.",
+      window: '{{start}} – {{end}}',
+      days_one: '{{count}} day',
+      days_other: '{{count}} days',
+      posts_one: '{{count}} post',
+      posts_other: '{{count}} posts',
+      ends: 'Ends',
+      endsLabel: 'When {{phase}} ends',
+      saveError: 'Unable to save the phase dates',
+      resetError: 'Unable to split the phases evenly again',
+      resetBySave:
+        "The phase dates went back to an even split, because the campaign's dates or type changed.",
+    },
     settings: {
       record: 'The record',
     },

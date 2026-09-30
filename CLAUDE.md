@@ -331,6 +331,22 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   and the server backfilled every campaign to `month` — so an old total of 12 on
   a three-month campaign now plans 36 posts. Read it through `lib/postGoal`
   (`postGoalTotal`), never as a campaign total.
+- **A campaign's phase windows are the server's, and the type locks once they
+  are used** (CON-166). `GET /api/campaigns/:id/phases` answers each phase of
+  the type with an inclusive window — the even split of the campaign dates
+  (`derived`), a hand-edited plan (`manual`), or no dates yet
+  (`unscheduled`) — and that split is what content generation plans into, so
+  the client never works one out. `CampaignPhasesCard` on Strategy only moves
+  the boundary between two phases (`lib/phasePlan`), which keeps the plan back
+  to back, and PUTs it **whole**; `DELETE` is "split evenly again". The query
+  sits under the campaign's key, so every campaign save re-reads it — which is
+  how a save the server answered with `phase_plan_reset: true` (a type change,
+  or dates that left a phase no days) shows up. `type_locked` on the campaign
+  is computed, not latched: it holds while any post has a phase, disables the
+  picker, and a stale screen that sends a new type anyway gets 409
+  `campaign_type_locked`, worded from the catalogue with the type put back and
+  the rest of the form left dirty. A post's phase is `null`, never `""` — the
+  server refuses the empty string, and a phase from another type is a 400.
 - **`/api/settings` is tenant-scoped, not user-scoped.** Every key is visible
   to the whole workspace via `GET /api/settings`. Personal preferences get
   their identity from the key (`userScopedKey` → `calendar.<userId>`,

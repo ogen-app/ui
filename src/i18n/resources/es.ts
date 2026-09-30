@@ -2568,6 +2568,49 @@ export const es: Translation = {
       commitment: 'El compromiso',
       spend: 'Presupuesto e idioma',
     },
+    type: {
+      label: 'Tipo de campaña',
+      change: 'CAMBIAR',
+      cancel: 'Cancelar',
+      locked_one:
+        'Bloqueado: {{count}} publicación está planificada en las fases de este tipo.',
+      locked_other:
+        'Bloqueado: {{count}} publicaciones están planificadas en las fases de este tipo.',
+      lockedUncounted:
+        'Bloqueado: hay publicaciones planificadas en las fases de este tipo.',
+      lockedToastTitle: 'El tipo de campaña ya no se puede cambiar',
+      lockedToastBody:
+        'Ya hay publicaciones planificadas en sus fases, así que se ha restablecido el tipo. Tus otros cambios siguen sin guardar.',
+    },
+    phases: {
+      title: 'Fases',
+      explainer:
+        'Un tipo de campaña avanza por sus fases en orden, y las publicaciones generadas se planifican en la fase en cuyas fechas caen. Mueve el día en que termina una fase para darle más o menos parte de la campaña.',
+      derived: 'Repartidas por igual entre las fechas de la campaña.',
+      manual: 'Fechas fijadas a mano.',
+      reset: 'Repartir por igual de nuevo',
+      unscheduled:
+        'Fija una fecha de inicio y de fin para ver cuándo se ejecuta cada fase.',
+      tooShort_one:
+        'La campaña es más corta que su {{count}} fase, así que no se puede dividir.',
+      tooShort_other:
+        'La campaña es más corta que sus {{count}} fases, así que no se pueden dividir.',
+      pendingDates: 'Guarda las nuevas fechas para replanificar las fases.',
+      pendingType: 'Guarda el nuevo tipo para ver sus fases.',
+      empty: 'Este tipo de campaña no tiene fases.',
+      loadError: 'No se pudieron cargar las fases.',
+      window: '{{start}} – {{end}}',
+      days_one: '{{count}} día',
+      days_other: '{{count}} días',
+      posts_one: '{{count}} publicación',
+      posts_other: '{{count}} publicaciones',
+      ends: 'Termina',
+      endsLabel: 'Cuándo termina {{phase}}',
+      saveError: 'No se pudieron guardar las fechas de las fases',
+      resetError: 'No se pudieron volver a repartir las fases por igual',
+      resetBySave:
+        'Las fechas de las fases volvieron a un reparto igual, porque cambiaron las fechas o el tipo de la campaña.',
+    },
     settings: {
       record: 'El registro',
     },

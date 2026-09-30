@@ -2,11 +2,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   addCampaignAssets,
   archiveCampaign,
+  getPhasePlan,
   listCampaigns,
   listCampaignSummaries,
   removeCampaignAsset,
+  resetPhasePlan,
+  savePhasePlan,
   unarchiveCampaign,
+  updateCampaign,
 } from './campaigns'
+import { ApiError } from './errors'
 import type { CampaignSummariesResponse } from '@/types/posts'
 
 function stubFetch(res: Response) {
@@ -174,5 +179,92 @@ describe('listCampaignSummaries', () => {
     await expect(listCampaignSummaries()).rejects.toThrow(
       'campaign summaries are not available',
     )
+  })
+})
+
+/**
+ * The phase plan (CON-166): one resource under the campaign, read, replaced
+ * whole and reset, and the two coded refusals the Strategy page words itself.
+ */
+describe('phase plan', () => {
+  const PLAN = {
+    campaign_id: 'c1',
+    campaign_type_id: 'Uk',
+    source: 'derived',
+    type_locked: false,
+    phases: [
+      {
+        phase_id: '98',
+        sequence: 1,
+        name: 'Launch & Distribution',
+        purpose: '',
+        start_date: '2026-10-01',
+        end_date: '2026-10-16',
+        post_count: 0,
+      },
+    ],
+  }
+
+  it('reads, replaces and resets at /campaigns/:id/phases', async () => {
+    const fetchMock = stubFetch(jsonResponse(200, PLAN))
+    expect(await getPhasePlan('c1')).toEqual(PLAN)
+
+    fetchMock.mockResolvedValue(jsonResponse(200, PLAN))
+    const windows = [
+      { phase_id: '98', start_date: '2026-10-01', end_date: '2026-10-16' },
+    ]
+    await savePhasePlan('c1', windows)
+    fetchMock.mockResolvedValue(jsonResponse(200, PLAN))
+    await resetPhasePlan('c1')
+
+    const [getUrl, getInit] = fetchMock.mock.calls[0]
+    const [putUrl, putInit] = fetchMock.mock.calls[1]
+    const [delUrl, delInit] = fetchMock.mock.calls[2]
+    expect(getUrl).toMatch(/\/api\/campaigns\/c1\/phases$/)
+    expect(getInit?.method ?? 'GET').toBe('GET')
+    expect(putUrl).toMatch(/\/api\/campaigns\/c1\/phases$/)
+    expect(putInit.method).toBe('PUT')
+    // Whole plan, under `phases` — never a single window.
+    expect(JSON.parse(putInit.body)).toEqual({ phases: windows })
+    expect(delUrl).toMatch(/\/api\/campaigns\/c1\/phases$/)
+    expect(delInit.method).toBe('DELETE')
+  })
+
+  it('carries the code of a refused plan', async () => {
+    stubFetch(
+      jsonResponse(400, {
+        code: 'invalid_phase_plan',
+        error: 'phase 98: windows must be contiguous',
+      }),
+    )
+    const err = await savePhasePlan('c1', []).catch((e) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.code).toBe('invalid_phase_plan')
+  })
+
+  it('carries campaign_type_locked off the campaign PUT', async () => {
+    stubFetch(
+      jsonResponse(409, {
+        code: 'campaign_type_locked',
+        error: "the campaign type can't be changed",
+        phased_post_count: 7,
+      }),
+    )
+    const err = await updateCampaign('c1', {
+      name: 'x',
+      campaign_type_id: 'other',
+    }).catch((e) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(409)
+    expect(err.code).toBe('campaign_type_locked')
+  })
+
+  it('passes phase_plan_reset through on the PUT response', async () => {
+    stubFetch(jsonResponse(200, { id: 'c1', phase_plan_reset: true }))
+    const saved = await updateCampaign('c1', {
+      name: 'x',
+      campaign_type_id: 'Uk',
+    })
+    expect(saved.phase_plan_reset).toBe(true)
   })
 })

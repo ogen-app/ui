@@ -24,6 +24,7 @@ function makeCampaign(overrides: Partial<Campaign> = {}): Campaign {
     asset_ids: [],
     target_platforms: [],
     campaign_type_id: 'ct1',
+    type_locked: false,
     archived_at: null,
     start_date: null,
     end_date: null,
