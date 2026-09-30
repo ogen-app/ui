@@ -35,6 +35,11 @@ type BackdropProps = {
    */
   'aria-labelledby'?: string
   /**
+   * The accessible name itself, for an overlay whose heading is drawn rather
+   * than titled — a dialog with no `title` has no name without one.
+   */
+  'aria-label'?: string
+  /**
    * Children to render inside the backdrop
    */
   children?: React.ReactNode
@@ -58,6 +63,7 @@ export function Backdrop({
   role,
   'aria-modal': ariaModal,
   'aria-labelledby': ariaLabelledby,
+  'aria-label': ariaLabel,
   children,
 }: BackdropProps) {
   return (
@@ -77,6 +83,7 @@ export function Backdrop({
       role={role}
       aria-modal={ariaModal}
       aria-labelledby={ariaLabelledby}
+      aria-label={ariaLabel}
       aria-hidden={role ? undefined : 'true'}
     >
       {children}

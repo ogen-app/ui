@@ -3,7 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { useZernioHealth } from '@/hooks/useZernio'
 import { connectedAccounts, type PlatformView } from '@/lib/platformDictionary'
+import { cn } from '@/lib'
 import { SettingsCard } from '@/components/settings/SettingsCard'
+import { LockedBadge } from '@/components/entitlements/LockedBadge'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
+import { useEntitlement } from '@/hooks/useEntitlements'
 import { useConnectPlatform } from './connectPlatform'
 
 /**
@@ -13,12 +18,23 @@ import { useConnectPlatform } from './connectPlatform'
  * account is mirrored back, at which point the platform moves up into
  * Platform Settings. The hand-off itself lives in `useConnectPlatform`,
  * shared with the Reconnect button on a broken platform row.
+ *
+ * Two entitlements meet on these tiles, and they answer differently on purpose
+ * (CON-232). A workspace out of *accounts* is sold an upgrade at the click,
+ * because it was reaching for one. A workspace whose tier allows only one
+ * account **per platform** gets a lock and no pitch: that one is an affordance
+ * nobody asked for yet, and a tile that simply stopped working on its second
+ * use would teach a user that the app is broken rather than that the
+ * capability exists.
  */
 function ConnectPlatformsSectionComponent() {
   const { t } = useTranslation()
   const views = usePlatformViews()
   const { data: health, isPending: healthPending } = useZernioHealth()
   const { start, modal } = useConnectPlatform()
+  const gate = useUpgradeGate('connected_accounts')
+  // Read straight, not through a gate: this one never opens a dialog.
+  const several = useEntitlement('multiple_accounts_per_platform')
 
   // Every known platform is offered, connected or not: a workspace can hold
   // several accounts per platform, so a tile never disappears once used.
@@ -50,12 +66,19 @@ function ConnectPlatformsSectionComponent() {
               // take a click that opens a popup and then fails. They stay
               // visible and inert until the answer is in.
               disabled={integrationOff || healthPending}
-              onConnect={() => start(v)}
+              // A second account on a platform that already has one. The tile
+              // stays on screen either way — that is the whole point of a lock
+              // over a hide — so this only decides what its caption says.
+              locked={
+                several.state === 'denied' && connectedAccounts(v).length > 0
+              }
+              onConnect={gate.intent(() => start(v))}
             />
           ))}
         </ul>
       )}
       {modal}
+      <UpgradeDialog gate={gate} />
     </SettingsCard>
   )
 }
@@ -68,10 +91,13 @@ function ConnectPlatformsSectionComponent() {
 function PlatformTile({
   view,
   disabled,
+  locked,
   onConnect,
 }: {
   view: PlatformView
   disabled: boolean
+  /** The tier allows one account per platform, and this one is spoken for. */
+  locked: boolean
   onConnect: () => void
 }) {
   const { t } = useTranslation()
@@ -83,14 +109,25 @@ function PlatformTile({
       <button
         type="button"
         onClick={onConnect}
-        disabled={disabled}
-        className="group w-full h-full bg-secondary px-4 py-6 flex flex-col items-center justify-center gap-2 cursor-pointer
+        disabled={disabled || locked}
+        className={cn(
+          `group w-full h-full bg-secondary px-4 py-6 flex flex-col items-center justify-center gap-2 cursor-pointer
           hover:bg-quaternary transition-colors focus-visible:outline-2 focus-visible:outline-ring
-          disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-secondary"
+          disabled:cursor-not-allowed disabled:hover:bg-secondary`,
+          // Dimmed while the integration is unreachable — that tile has nothing
+          // to say and is waiting. A locked one is not waiting, it is
+          // explaining, so it keeps its contrast: a badge at 50% is a sentence
+          // the people most likely to need it cannot read.
+          disabled && 'opacity-50',
+        )}
       >
         <Icon className="size-8" weight="fill" style={{ color: info.color }} />
         <span className="text-sm font-medium text-center">{info.name}</span>
-        {count === 0 ? (
+        {locked ? (
+          // In place of the caption, not beside it: "1 connected" and a lock
+          // are the same fact said twice, and the lock is the half that is news.
+          <LockedBadge className="text-[11px]" />
+        ) : count === 0 ? (
           <span className="text-xs text-tertiary-foreground">
             {t('workspaceSettings.connect.connect')}
           </span>

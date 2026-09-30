@@ -2515,20 +2515,201 @@ export const en = {
     resets: 'Your allowance goes back to full on {{when}}.',
 
     /**
-     * The meter. Each period is a whole sentence: where "this month" sits in
+     * The same two refusals, arriving from the server instead of being
+     * predicted here (CON-295). The API answers 402 `entitlement_exceeded` or
+     * 403 `feature_not_available`, and these are what the mutation toast says
+     * in place of that identifier.
+     *
+     * They go in the toast's *description*, under a title that already names
+     * the action that failed — which is why neither names the feature. The noun
+     * is on screen already, and putting it here would have to survive
+     * `media_storage_bytes`, whose allowance is a byte count: "you've used all
+     * 1073741824" is a true sentence nobody can read.
+     *
+     * `deniedLimit` takes the server's cap as `{{count}}` so the singular is a
+     * sentence rather than a "1". The tier refusal carries no number at all —
+     * a capability that is switched off has nothing to count.
+     */
+    deniedTier: "This isn't included in your plan.",
+    deniedLimit_one: "You've used the one that your plan allows.",
+    deniedLimit_other: "You've used all {{count}} that your plan allows.",
+    /** The quota refusal with no cap on it — a malformed body, and rare. */
+    deniedLimitFlat: "You've used everything your plan allows here.",
+
+    /**
+     * The meter. Each reset is a whole sentence: where "this month" sits in
      * the line is a different answer in every language, and gluing it onto a
      * stem would decide that in English for everyone.
+     *
+     * The four are the server's own reset words (CON-243). `usage` covers
+     * `standing` — a ceiling that never refills has no period to name — and a
+     * reset word this build has not heard of, which is true either way.
      */
     usage: '{{used}} of {{limit}}',
-    usageDay: '{{used}} of {{limit}} today',
     usageMonth: '{{used}} of {{limit}} this month',
+    usageTotal: '{{used}} of {{limit}} used',
     usagePost: '{{used}} of {{limit}} on this post',
-    usagePublish: '{{used}} of {{limit}} for this publish',
+    /**
+     * The limit with no tally beside it — which is most of them, because the
+     * API ships allowances and no usage read (CON-243). Saying "0 of 5" instead
+     * would be a claim that nothing has been used, made by nobody.
+     */
+    limitOnly: '{{limit}} included',
     /** For the tier that paid to have no number here. */
     unlimited: 'Unlimited',
 
     /** Capitalised like every other action label in the app. */
     upgrade: 'UPGRADE',
+    /**
+     * The upgrade dialog (CON-232): one recommended plan argued for, with what
+     * it adds beside it.
+     *
+     * The limit titles are one whole sentence per metered feature rather than
+     * one sentence with `{{feature}}` slotted in, because `features` below are
+     * headings ("Campaigns") and the sentence wants a noun phrase mid-way
+     * ("all active campaigns") — a different word, in every language. None of
+     * them states a number: the figure is on the plan, and the title's job is
+     * the fact, not the count. `{{plan}}` is the tier's name, which is data.
+     *
+     * `perMonth` wraps the price in `<price>` so it can be set large without
+     * the unit being assembled from a fragment.
+     */
+    paywall: {
+      label: 'Upgrade your plan',
+      title: 'Get more with Ogen {{plan}} Plan',
+      titleTop: '{{plan}} is as far as this goes',
+      reasonTier: "{{feature}} isn't included in {{plan}}.",
+      reasonTierOther: "This isn't included in {{plan}}.",
+      reasonLimit: {
+        team_seats: "You've filled every seat on {{plan}}.",
+        workspaces: "You've used all workspaces on {{plan}}.",
+        connected_accounts: "You've connected every account {{plan}} allows.",
+        active_campaigns: "You've used all active campaigns on {{plan}}.",
+        plan_runs_per_month:
+          "You've used this month's content plan runs on {{plan}}.",
+        quality_reviews_per_post:
+          "You've used this post's quality reviews on {{plan}}.",
+        posts_total: "You've used all posts on {{plan}}.",
+        content_bank_assets: 'Your content bank is full on {{plan}}.',
+        web_page_imports: "You've used all web-page imports on {{plan}}.",
+        media_storage_bytes: "You've used all media storage on {{plan}}.",
+        assistant_multiplier:
+          "You've used the assistant's allowance on {{plan}}.",
+      },
+      reasonLimitOther: "You've reached a limit on {{plan}}.",
+      bodyTier: 'Upgrading turns it on for everyone in this workspace.',
+      bodyLimit: "Everything you've made stays exactly as it is.",
+      bodyResets:
+        'Your allowance fills back up on {{when}}, or upgrade now to keep going.',
+      noOffer:
+        'No plan on sale offers more of this than the one you have. Compare the plans to see everything each one includes.',
+      billing: 'Billing period',
+      monthly: 'Monthly',
+      yearly: 'Yearly',
+      perMonth: '<price>{{price}}</price> / month',
+      billedYearly: '{{total}} billed yearly',
+      billedYearlySaving: '{{total}} billed yearly, save {{saving}}',
+      upgradeTo: 'UPGRADE TO {{plan}}',
+      /** The offered plan's name on its card; `plan` is the server's tier name. */
+      planName: 'Ogen {{plan}}',
+      comparePlans: 'Compare every plan',
+      seeAllFeatures: 'See all features',
+      /**
+       * One tile per benefit: a title that carries the figure, and one line
+       * on what it is for. Counted features pluralise on `count`; storage takes
+       * a pre-formatted `value`; a plain capability has only `included`. A
+       * counted feature the tier does not meter reads as `unlimited`.
+       */
+      benefit: {
+        team_seats: {
+          limit_one: '{{count}} team member',
+          limit_other: '{{count}} team members',
+          unlimited: 'Unlimited team members',
+          description: 'Invite teammates to plan and publish with you.',
+        },
+        workspaces: {
+          limit_one: '{{count}} workspace',
+          limit_other: '{{count}} workspaces',
+          unlimited: 'Unlimited workspaces',
+          description: 'Keep separate brands or clients apart.',
+        },
+        connected_accounts: {
+          limit_one: '{{count}} connected account',
+          limit_other: '{{count}} connected accounts',
+          unlimited: 'Unlimited connected accounts',
+          description: 'Publish to more of your social profiles.',
+        },
+        active_campaigns: {
+          limit_one: '{{count}} active campaign',
+          limit_other: '{{count}} active campaigns',
+          unlimited: 'Unlimited active campaigns',
+          description: 'Run more campaigns at the same time.',
+        },
+        plan_runs_per_month: {
+          limit_one: '{{count}} content plan run a month',
+          limit_other: '{{count}} content plan runs a month',
+          unlimited: 'Unlimited content plan runs',
+          description: "Let Ogen draft a campaign's posts for you.",
+        },
+        quality_reviews_per_post: {
+          limit_one: '{{count}} quality review per post',
+          limit_other: '{{count}} quality reviews per post',
+          unlimited: 'Unlimited quality reviews',
+          description: 'Check each post before it goes out.',
+        },
+        posts_total: {
+          limit_one: '{{count}} post',
+          limit_other: '{{count}} posts',
+          unlimited: 'Unlimited posts',
+          description: 'Keep writing without counting what is left.',
+        },
+        content_bank_assets: {
+          limit_one: '{{count}} content bank document',
+          limit_other: '{{count}} content bank documents',
+          unlimited: 'Unlimited content bank documents',
+          description: 'Store the notes, files and pages your posts draw on.',
+        },
+        web_page_imports: {
+          limit_one: '{{count}} web page import',
+          limit_other: '{{count}} web page imports',
+          unlimited: 'Unlimited web page imports',
+          description: 'Turn any web page into source material.',
+        },
+        media_storage_bytes: {
+          limit: '{{value}} of media storage',
+          unlimited: 'Unlimited media storage',
+          description: 'Room for the images and videos in your posts.',
+        },
+        multiple_accounts_per_platform: {
+          included: 'Several accounts on one platform',
+          description: 'Connect two profiles on the same network.',
+        },
+        all_campaign_types: {
+          included: 'All campaign types',
+          description: 'Every campaign format, not only evergreen.',
+        },
+        custom_campaign_types: {
+          included: 'Custom campaign types',
+          description: 'Define campaign types of your own.',
+        },
+      },
+      /**
+       * The plan card's line under the name, and its stand-in for a price the
+       * catalogue has not published — an unpriced plan says so rather than
+       * showing nothing, or showing a zero it does not mean.
+       */
+      planPitch: 'Everything on {{current}}, with more room to grow.',
+      unpriced: 'Pricing is not published yet.',
+    },
+    seePlans: 'SEE PLANS',
+    /**
+     * For the half of the workspace that cannot act on any of the above
+     * (CON-232). "For everyone here" is the part worth saying: a plan is not a
+     * personal setting somebody forgot to turn on, and a member who reads it as
+     * one goes looking for a switch that does not exist.
+     */
+    ownersOnlyPlan:
+      'Only a workspace owner can change the plan for everyone here.',
 
     /**
      * A downgrade suspends; it never deletes. The body's first job is that
@@ -2546,9 +2727,7 @@ export const en = {
      * copy arrives in one language and cannot be put in a catalogue — see
      * `services/api/tiers.ts`. Everything the app says *about* a tier is here.
      */
-    plansTitle: 'Plans',
-    planIntro:
-      'What this workspace can do, and what the other plans would change.',
+    plansTitle: 'Select a plan you like',
     /**
      * Not an Explainer, and not dismissible. Someone looking at a page of plans
      * with a button on each is entitled to know that the button does not buy
@@ -2648,6 +2827,8 @@ export const en = {
 
     currentPlan: 'Current plan',
     currentBadge: 'Current',
+    /** The held plan's button on `/plans`: disabled, but drawn as a label, not greyed out. */
+    currentPlanButton: 'Current Plan',
     /** The tier a change has already been made to, waiting on its date. */
     scheduledBadge: 'Scheduled',
     /** A tier version that is still held but can no longer be bought. */
@@ -2708,18 +2889,37 @@ export const en = {
     changedNow: "You're now on {{name}}.",
     changeCancelled: 'That change has been called off.',
 
-    /** How a tier states an allowance, as opposed to how a meter spends one. */
+    /**
+     * How a tier states an allowance, as opposed to how a meter spends one.
+     * Keyed off the server's reset words (CON-243); `limitFlat` covers
+     * `standing` — a ceiling with no period to name — and any word this build
+     * has not heard of.
+     */
     limitFlat: '{{value}}',
-    limitDay: '{{value}} per day',
     limitMonth: '{{value}} per month',
+    limitTotal: '{{value}} in total',
     limitPost: '{{value}} per post',
-    limitPublish: '{{value}} per publish',
     included: 'Included',
     excluded: 'Not included',
 
-    price: '{{price}} per month',
-    priceYear: '{{price}} per year',
+    /**
+     * A plan card's price, set large: `<price>` wraps the figure so the unit
+     * can sit beside it small without being assembled from a fragment.
+     */
+    price: '<price>{{price}}</price> / month',
+    priceYear: '<price>{{price}}</price> / year',
     priceFree: 'Free',
+    /**
+     * The band over the plan the page puts forward — the cheapest paid one.
+     * "Recommended" rather than "popular": the client has no sales figures, and
+     * a claim about what other people bought would be one nobody made.
+     */
+    recommended: 'RECOMMENDED',
+    /** Heads a card's checklist when it holds everything the card before it does. */
+    everythingIn: 'Everything in {{name}}, plus:',
+    compareTitle: 'Compare all features',
+    /** The comparison table's first column, read by screen readers only. */
+    compareFeature: 'Feature',
 
     /**
      * The name each entitlement key goes by on screen. Keyed by the key rather
@@ -2727,18 +2927,54 @@ export const en = {
      * price list and on the lock that mentions it.
      */
     features: {
-      seats: 'Team members',
-      social_accounts: 'Connected accounts',
+      team_seats: 'Team members',
+      workspaces: 'Workspaces',
+      connected_accounts: 'Connected accounts',
       multiple_accounts_per_platform: 'Several accounts on one platform',
-      campaigns: 'Campaigns',
+      active_campaigns: 'Campaigns',
+      all_campaign_types: 'All campaign types',
       custom_campaign_types: 'Custom campaign types',
-      content_plan_runs: 'Content plan runs',
-      post_assistant: 'Post Assistant',
-      post_quality_reviews: 'Post quality reviews',
-      post_versions: 'Version history',
-      brand_personas: 'Brand personas',
-      brand_voices: 'Brand voices',
+      plan_runs_per_month: 'Content plan runs',
+      quality_reviews_per_post: 'Post quality reviews',
+      posts_total: 'Posts',
+      content_bank_assets: 'Content bank documents',
+      web_page_imports: 'Web page imports',
       media_storage_bytes: 'Media storage',
+    },
+    /**
+     * The first plan card's checklist: what the product does, not what the
+     * plan allows. Capabilities, never figures — the figures are in the
+     * comparison under the cards.
+     */
+    capabilities: {
+      voice: 'Build a unique voice that stands out from AI-generated slop',
+      strategy: 'Easily generate your content strategy',
+      store: 'Store files, audio notes, ideas and tasks, all in one place',
+      publish: 'Create, schedule and auto-publish posts across social networks',
+      quality:
+        'Check a post’s quality and how it will perform before it goes out',
+      analytics: 'Unified analytics and insights',
+    },
+    /**
+     * A later card's line for a feature it has more of than the card before
+     * it. No figure on purpose — the card sells the step. `team_seats` has two
+     * because the step reads differently from one seat than from several.
+     */
+    gain: {
+      workspaces: 'Separate workspaces to run isolated campaigns',
+      connected_accounts: 'Add more social networks',
+      active_campaigns: 'Run several targeted campaigns at once',
+      team_seats: 'Invite teammates to a shared workspace',
+      team_seats_more: 'Invite even more people to work with you',
+      quality_reviews_per_post: 'Get more quality reviews',
+      media_storage_bytes: 'Get extended storage',
+      multiple_accounts_per_platform: 'Connect several accounts on one network',
+      all_campaign_types: 'Use every campaign type',
+      custom_campaign_types: 'Create campaign types of your own',
+      plan_runs_per_month: 'Generate more content strategies',
+      posts_total: 'Publish more posts',
+      content_bank_assets: 'Keep more in your content bank',
+      web_page_imports: 'Import more web pages',
     },
   },
 

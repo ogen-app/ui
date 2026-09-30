@@ -913,15 +913,72 @@ surfaces talk *about* the plan rather than being gated by it: the **Plan &
 billing card** in Workspace Settings (`components/workspace-settings/
 PlanSection`) and **`/plans`** behind its CHANGE PLAN. Choosing a tier
 re-answers every `useEntitlement` in the app, which is how the gating gets
-looked at before the API exists. **Waiting on** `GET /api/entitlements`,
-`GET /api/tiers`, `POST /api/workspace/plan`, `GET /api/billing` and
-`POST /api/billing/portal` — contracts in `services/api/entitlements.ts`,
-`tiers.ts` and `billing.ts`, all asserted by their tests, and all tested
-against the *wire* path (`fetchWorkspacePlan`, `fetchBilling`) so the stub
-can't make a contract go dark. CON-208 (tenant tiers and groups) and CON-86
-(usage metering) are done server-side, so the tiers and the counters exist;
-what is missing is a workspace-scoped REST read that puts them together, plus a
-`suspended` flag on the resources a downgrade makes read-only.
+looked at before the API exists.
+
+**Both plan reads have landed, and neither is the one this client designed**
+(CON-243, PR ogen#150). `GET /api/me/entitlements` answers — the invented
+`GET /api/entitlements` 404s and is gone — with a resolved tier **version**:
+`tier_id` + `version_id`, an immutable allowance set, price rows in `net_minor`
+minor units, and every entitlement enriched with the server's feature catalog
+(name, description, category, `is_material`, `reset`). **`GET /api/public/pricing`
+answers with the identical record**, one per purchasable version, in place of the
+invented `GET /api/tiers`. That identity is load-bearing: a version is one
+artifact, so there is one wire type (`TierVersionBody`) and one parser, and
+`tiers.ts` calls `entitlements.ts`'s rather than keeping a second copy — two
+parsers are how a price list and the lock on a button end up disagreeing about
+what a limit is. `TierVersion` is the half they share; `TierSnapshot` adds the
+subscription fields a *held* version has and `Tier` adds the allowances.
+
+Four things about the pair that are each a thing not to undo:
+
+- **The keys are the server's, verbatim.** `team_seats`, `active_campaigns`,
+  `plan_runs_per_month` — not the `seats`/`campaigns`/`content_plan_runs` this
+  build used to ask about. That rename had no visible symptom, which is the
+  point: under default-allow an unknown key does not fail, it silently unlocks
+  the feature it was meant to gate. `services/api/entitlements.seed.json` holds
+  a verbatim copy of the catalog and its test asserts every `EntitlementKey`
+  against it, so the next rename fails loudly. Re-sync it by re-reading
+  `GET /api/public/pricing`, never by editing it to make the test pass.
+- **Allowances arrive with no tally.** There is no usage read anywhere on the
+  API and CON-243 has one as explicitly future, so `Usage.used` is
+  `number | null` and `null` means *uncounted* — a third thing beside unlimited
+  (`limit: null`) and ungated (key absent). Never default it to `0`: that is a
+  claim nobody made, and it unlocks a control that may well be exhausted. An
+  uncounted limit therefore cannot produce `denied: 'limit'`, which is the
+  resolve-towards-offering rule the whole file follows. `entitlements.seed.ts`
+  supplies held-still counters meanwhile, **to the stub's answer only** — put
+  on the real read, an invented tally tells a real workspace it is full and
+  sells it an upgrade with no refusal behind it. A `per_post` allowance is
+  uncounted whatever arrives: the plan is the workspace's, so a tally on it is
+  about no post in particular.
+- **The subscription half is not on either read.** No display name (derived from
+  the slug until the server sends one), no `effective_from`, no renewal, no
+  scheduled change — Ogen holds no subscription state by design (CON-243 §5).
+  Screens omit those lines rather than softening them. The price list drops a
+  `tagline` for the same reason: the catalog has no per-tier line of copy, and a
+  table of taglines keyed on a tier slug goes blank for the first tier published
+  without telling this build.
+- **The price list publishes only what is purchasable, and it is public.** A
+  superseded version somebody is grandfathered onto is not in it, and neither is
+  the internal `default` tier every workspace sits on — so `/plans` renders the
+  tier in force from `WorkspacePlan` and never by looking its id up in the list;
+  a lookup that missed would blank out the name of the plan somebody is paying
+  for. It is also unauthenticated and cached at the edge, so `/api/public/*` is
+  in `isAccountScoped` (`base.ts`) and goes out with **no `X-Workspace-Id`** —
+  varying a CDN-cached route by a header the answer does not depend on splits the
+  cache per workspace for nothing. A version is priced as a *list* (currency ×
+  interval × country); which row a card shows is `lib/tierPrice.ts`, never a
+  `[0]`, and `net_minor` is divided by the currency's own exponent rather than by
+  100 — JPY has no minor unit.
+
+**Still waiting on** a usage read, a tier name on the payload,
+`POST /api/workspace/plan` (no counterpart at all: a version is assigned by an
+operator through Harbor's gRPC `PlanAdminService`, CON-294), `GET /api/billing` /
+`POST /api/billing/portal`, published Pro and Max versions, and a `suspended`
+flag on the resources a downgrade makes read-only. Contracts live in
+`services/api/entitlements.ts`, `tiers.ts` and `billing.ts`, all asserted by
+their tests against the *wire* path (`fetchWorkspacePlan`, `fetchTiers`,
+`fetchBilling`) so the stub can't make a contract go dark.
 
 **`/plans` deliberately sits outside `_authenticated`**, like `/workspaces`: it
 reads as a full-screen modal — one X, top right — because it is a detour every
@@ -948,17 +1005,41 @@ tab synchronously on the click (a `window.open` after an `await` is blocked).
 The stub is `services/api/tiers.stub.ts` — a JSON seed of the decided tier
 matrix plus `localStorage`, with `STUBBED` switching the call sites, and it
 answers the billing read too (no provider is connected, so: no subscription and
-no portal). It does two things the client is forbidden to do, and says so:
+no portal). It now stands in for an *action* rather than for the server's
+answers, both reads having landed, which raises what it owes them: its Trial row
+is the published `ttv-trial-v1` verbatim — ids, price and all fifteen
+allowances — and `stubListTiers` filters the superseded version out, because the
+endpoint publishes no such row. It does two things the client is forbidden to do,
+and says so:
 it **ranks** tiers (to decide upgrade from downgrade, hence `direction` on the
 wire) and it **reads the clock** (to date the renewal, which is also the
 boundary a downgrade lands on). Neither may leak out — `rank` is stripped before
 anything leaves the file, and its test asserts that.
 
-No feature is gated yet. Which of hide / lock / lock-with-upgrade each key gets
-is decided and recorded on `EntitlementKey` in `types/entitlements.ts`; wiring
-the call sites is the remaining half. An entitlement nothing consults is the
-same as no entitlement — but note the flag now also switches on a screen, so it
-stays **off** on `develop` until the endpoints answer.
+**The call sites are wired, and the flag is the only thing holding them**
+(CON-232). Twelve of the fourteen keys are consulted at the control they govern;
+which of hide / lock / lock-with-upgrade each one gets is decided and recorded on
+`EntitlementKey` in `types/entitlements.ts`, along with the reason the other two
+are not wired — `custom_campaign_types` has no authoring screen to hide, and
+`workspaces` is an *account* allowance that only a *workspace*-scoped read can
+answer, so it is left to the server. Everything goes through `useEntitlement`,
+which returns `UNGATED` while the flag is down; nothing reads `FEATURE_FLAGS` or
+the plan directly. The flag stays **off** on `develop` — it also switches on a
+screen, and there is still no way to change plan.
+
+**Selling is one behaviour, not eleven.** The sell disposition is always the
+same moment — a control the user just clicked — so it is one hook and one
+rendering: `useUpgradeGate(key)` wraps the action (`gate.intent(run)`) and
+`<UpgradeDialog gate={gate} />` answers a refusal with the callout and a way to
+`/plans`. The wrapped handler *returns whether it ran*, which is what lets the
+assistant's composer keep a draft it was about to clear. Hiding and locking
+deliberately get no such wrapper: hiding means reaching the `<li>`, the
+separator and the empty state, and locking means the control staying put — both
+are the call site's, which is the whole reason the seam is a hook. Two gestures
+are ungated on purpose and say so where they live: dropping files onto the
+Content Bank, and click-to-create on a calendar day. Neither has a control to
+hang an explanation on, and the server's own refusal already arrives as a
+sentence (CON-295).
 
 **Series and content formats are two flags, and the split is the design**
 (CON-264, `series` and `content-formats`, both off). The word people arrive with
@@ -1005,6 +1086,72 @@ levels, `/series` and `/campaigns/:id/series`, which is what documents just did
 and what the nav rule would prefer over a level-1 card with no level-0 row.
 `CampaignSeriesCard` takes a campaign and nothing else, so making that move is a
 re-parent plus two nav rows rather than a rewrite.
+
+**Being refused is the half that is live, and it is not behind the flag**
+(CON-295). The server enforces whether or not this client asks first: it answers
+**402 `entitlement_exceeded`** with `feature`, `limit` and `current`, and **403
+`feature_not_available`** with `feature`. Both are read into an
+`EntitlementError` (`services/api/errors.ts`) that every `apiJson`/`apiVoid`
+caller already catches as an `ApiError`. Four things about that path:
+
+- **The code is never shown.** `error` on those two bodies is an identifier, and
+  the global mutation toast renders `error.message` as its title — so before
+  this, a refused create toasted the word `entitlement_exceeded`. The message
+  falls back to the caller's own sentence ("Unable to create the campaign") and
+  the *reason* goes underneath it, translated, in `lib/queryClient.ts`.
+  `services/api/*` holds no copy and has no `t`; that handler is the first place
+  up the stack that renders, which is why it reads the language off the i18next
+  instance rather than taking a `TFunction`.
+- **A feature-gated 403 must not reach `handleForbidden`.** 403 is also what an
+  owner-only route tells a member and what a tab pinned to a departed workspace
+  gets, so `staleWorkspace` verifies the pin with a request. A tier that switches
+  a feature off would otherwise fire one on every click of the control it hides.
+  The status alone decides nothing: the code has to agree, both ways.
+- **No cache invalidation rides along the *refusal*, but the *spend* invalidates.**
+  Refetching the plan after a 402 is the obvious repair and would change
+  nothing — the API ships allowances and no tally, so the entry comes back with
+  the same limit and the same uncounted `used`. What does invalidate is the
+  write that moved one of the server's four counters, through
+  `invalidateEntitlements` (`hooks/useEntitlements.ts`): campaign
+  create/archive/unarchive/delete, bank note/upload/import/delete, member
+  removal, post-attachment upload/remove. The **deletes** are the half that is
+  easy to leave out and the one that matters more — a stale tally after a create
+  offers a control that is about to be refused *with an explanation*, while a
+  stale tally after a delete keeps a workspace locked out of room it has just
+  made, with no refusal to explain it. Also a no-op today, and installed anyway:
+  the alternative, the day a usage read lands, is a fortnight of meters that
+  only move on a page reload.
+- **The near-limit warnings are notifications, one sentence per feature.**
+  `entitlement.limit_approaching` / `limit_reached` carry the key, the counts and
+  the band crossed; `lib/notifications.ts` maps each capped feature to its own
+  pair of sentences (`ENTITLEMENT_COPY_KEY`) and states the figures, with
+  `media_storage_bytes` rendered through `formatStorage` rather than printed as
+  nine digits of bytes. A feature missing from that table — or a row missing its
+  figures — falls back to the server's English title like any other unknown row.
+  The counts are shown and deliberately never fed back into the plan: the inbox
+  replays from `Last-Event-ID` and the REST page carries rows until they
+  expire, so a week-old crossing is indistinguishable from a live one, and
+  writing one in would deny a workspace on a stale figure — the one direction
+  this seam never resolves towards. It becomes a refetch hint the day a usage
+  read exists.
+
+**A gate points at the key the server charges, not at the one the control looks
+like it costs.** `lib/entitlements.ts` carries the table of what CON-295
+actually counts — four numeric caps and the campaign-type gates, each with the
+route it is checked on — because a gate aimed anywhere else is not a stricter
+gate but a different one, refusing on a number this client made up. The Content
+Bank is the worked example: its note, its upload and its web-page import all
+sell `content_bank_assets`, because that is the single key `assets.go` charges
+all three to. Selling the upload as `media_storage_bytes` was wrong twice over —
+that counter is the sum of *post attachments* and nothing else, so a workspace
+at its storage cap was refused an upload the byte counter never sees. Two
+entries in that table are edges rather than details: the seat cap is on the
+direct-create route and not on the invitation flow this product actually uses,
+and enforcement is **warn-first** server-side, so a deployment may be refusing
+nothing at all.
+
+The toast carries the numbers under a title that already names the action; the
+feed row stands alone, so its sentence names the feature *and* the numbers.
 
 ## Global rules
 

@@ -31,6 +31,7 @@ import type {
   CreateAssetPayload,
   UpdateAssetPayload,
 } from '@/types/content'
+import { invalidateEntitlements } from './useEntitlements'
 
 export const ASSETS_KEY = ['assets'] as const
 export const assetKey = (id: string) => ['assets', id] as const
@@ -211,6 +212,10 @@ export function useCreateAsset() {
     mutationFn: (payload: CreateAssetPayload) => createAsset(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ASSETS_KEY })
+      // A row in the bank, which is what `content_bank_assets` counts — the
+      // server charges a written note, an uploaded file and a scraped page to
+      // that one key alike (CON-295).
+      invalidateEntitlements(qc)
     },
   })
 }
@@ -232,6 +237,10 @@ export function useCreateUrlAsset() {
     meta: { errorToast: false },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ASSETS_KEY })
+      // A row in the bank, which is what `content_bank_assets` counts — the
+      // server charges a written note, an uploaded file and a scraped page to
+      // that one key alike (CON-295).
+      invalidateEntitlements(qc)
     },
   })
 }
@@ -303,6 +312,10 @@ export function useDeleteAsset() {
     mutationFn: (id: string) => deleteAsset(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ASSETS_KEY })
+      // A row in the bank, which is what `content_bank_assets` counts — the
+      // server charges a written note, an uploaded file and a scraped page to
+      // that one key alike (CON-295).
+      invalidateEntitlements(qc)
     },
   })
 }

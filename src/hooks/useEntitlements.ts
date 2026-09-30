@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query'
 
 import { getWorkspacePlan } from '@/services/api/entitlements'
 import { UNGATED, resolveEntitlement } from '@/lib/entitlements'
@@ -41,6 +42,31 @@ import type { Entitlement, EntitlementKey } from '@/types/entitlements'
  * invalidate it, or the meters go stale in the direction that flatters us.
  */
 export const ENTITLEMENTS_KEY = ['entitlements'] as const
+
+/**
+ * Marks the workspace's allowances as spent-or-freed, after a write that moved
+ * one of the server's counters (CON-295).
+ *
+ * The four the server actually counts are `team_seats`, `active_campaigns`,
+ * `content_bank_assets` and `media_storage_bytes` — members, campaigns, bank
+ * rows and post-attachment bytes — so the call sites are the creates and the
+ * deletes of exactly those four things.
+ *
+ * **The deletes matter as much as the creates**, and are the half that is easy
+ * to leave out. A stale tally after a create flatters us: it offers a control
+ * that is about to be refused, and the refusal arrives with an explanation. A
+ * stale tally after a *delete* does the opposite — it keeps a workspace locked
+ * out of something it has just made room for, with no refusal to explain it,
+ * because nothing was ever sent.
+ *
+ * It is a no-op today, and that is not a reason to leave it out. The API ships
+ * allowances and no tally (`entitlements.seed.ts`), so the refetch comes back
+ * with the numbers it already had; the day a usage read lands, the alternative
+ * to this being here is a fortnight of meters that only move on a page reload.
+ */
+export function invalidateEntitlements(client: QueryClient): void {
+  void client.invalidateQueries({ queryKey: ENTITLEMENTS_KEY })
+}
 
 /**
  * The plan itself. Undefined until it answers.

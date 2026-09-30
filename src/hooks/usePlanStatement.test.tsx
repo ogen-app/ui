@@ -21,6 +21,10 @@ import type { TierSnapshot } from '@/types/entitlements'
 const PAID: TierSnapshot = {
   id: 'tier_max_2026_08_01',
   name: 'Ogen Max',
+  tierId: 'max',
+  purchasable: true,
+  changeReason: '',
+  prices: [],
   effectiveFrom: '2026-08-22T00:00:00Z',
   billingPeriod: 'month',
   renewsAt: '2026-09-22T00:00:00Z',
@@ -30,6 +34,10 @@ const PAID: TierSnapshot = {
 const FREE: TierSnapshot = {
   id: 'tier_trial_2026_08_01',
   name: 'Ogen Trial',
+  tierId: 'trial',
+  purchasable: true,
+  changeReason: '',
+  prices: [],
   effectiveFrom: '2026-08-01T00:00:00Z',
   billingPeriod: null,
   renewsAt: null,

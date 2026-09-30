@@ -18,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { UploadModal } from '@/components/uploads/UploadModal'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import { useAssets, useCreateAsset, useDeleteAsset } from '@/hooks/useContent'
 import { uploadLimitLines } from '@/lib/assetStatus'
 import {
@@ -90,6 +92,31 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
   const openingWebPage = useRef(false)
   const [isDragging, setIsDragging] = useState(false)
   const dragDepth = useRef(0)
+
+  /*
+   * ADD CONTENT is one button over one allowance, because the three things it
+   * offers all cost the same thing: a row in the bank. A note, a file and a web
+   * page each land as one asset, and the server charges all three to
+   * `content_bank_assets` — `assets.go` calls the limiter with that key at the
+   * document create, the file upload and the URL import alike (CON-295).
+   *
+   * It used to sell three: `media_storage_bytes` for the upload and
+   * `web_page_imports` for the import. Both were wrong in the same way, and the
+   * way is worth stating because it is the failure mode of predicting a refusal
+   * at all. The byte allowance counts *post attachments* and nothing else
+   * (`SumSizeBytesInTenant`), so a workspace at its storage cap was refused an
+   * upload that costs the bank's counter one row and the byte counter nothing;
+   * and `web_page_imports` has no counter registered on the server at all, so
+   * whatever the dialog said about it was invented here. A gate aimed at a key
+   * the server does not charge is not a stricter gate — it is a different one,
+   * and the 402 that eventually arrives names a feature the dialog was not
+   * talking about.
+   *
+   * Dropping files onto the page is deliberately not gated. It is a gesture
+   * with no control to attach an explanation to, and the server's own refusal
+   * already arrives as a sentence under the upload's name (CON-295).
+   */
+  const bankGate = useUpgradeGate('content_bank_assets')
 
   /** The campaign's documents, or — in the bank — every document there is. */
   const shown = useMemo(
@@ -193,6 +220,12 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
       },
     )
   }
+
+  // Wrapped once each, so the header menu and the empty state's buttons — which
+  // are handed these same three — answer a denial identically.
+  const write = bankGate.intent(handleCreate)
+  const upload = bankGate.intent(() => setUploadModalOpen(true))
+  const addWebPage = bankGate.intent(() => setWebPageModalOpen(true))
 
   /**
    * A page the backend has accepted for scraping, joining this scope.
@@ -311,22 +344,21 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
                 e.preventDefault()
               }}
             >
-              <DropdownMenuItem size="lg" onClick={handleCreate}>
+              <DropdownMenuItem size="lg" onClick={write}>
                 <FileTextIcon />
                 <span>Write a note</span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                size="lg"
-                onClick={() => setUploadModalOpen(true)}
-              >
+              <DropdownMenuItem size="lg" onClick={upload}>
                 <UploadSimpleIcon />
                 <span>Upload file</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 size="lg"
                 onClick={() => {
+                  // Set either way: what it suppresses is the menu handing
+                  // focus back, and a modal is opening in both outcomes.
                   openingWebPage.current = true
-                  setWebPageModalOpen(true)
+                  addWebPage()
                 }}
               >
                 <GlobeSimpleIcon />
@@ -366,9 +398,9 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             assets={shown}
             uploads={uploads}
             onDeleteMany={handleDeleteMany}
-            onWrite={handleCreate}
-            onUpload={() => setUploadModalOpen(true)}
-            onAddWebPage={() => setWebPageModalOpen(true)}
+            onWrite={write}
+            onUpload={upload}
+            onAddWebPage={addWebPage}
           />
         )}
       </div>
@@ -403,6 +435,10 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
         destination={campaign ? 'campaign' : 'bank'}
         onSubmitted={handleWebPage}
       />
+
+      {/* One dialog for the three: they share a gate, so they share the
+          sentence it puts on screen. */}
+      <UpgradeDialog gate={bankGate} />
     </div>
   )
 }

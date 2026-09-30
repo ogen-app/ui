@@ -1,7 +1,9 @@
+import type { TFunction } from 'i18next'
+
 import type {
   EntitlementKey,
   RawEntitlement,
-  UsagePeriod,
+  UsageReset,
 } from '@/types/entitlements'
 import type { Tier } from '@/types/tiers'
 
@@ -27,26 +29,69 @@ import type { Tier } from '@/types/tiers'
  * is a silent omission rather than a compile error — which is the right way
  * round. Not every entitlement is worth a row on a price list, and a tier list
  * that grows a key the client has never heard of must not break this screen.
+ *
+ * **`assistant_multiplier` is left out deliberately.** It is a real entitlement
+ * and the app may ask about it, but the catalog's own description ends "never a
+ * published number" — the allowance behind the Post Assistant is a token budget
+ * priced off current model rates, and printing ×1 / ×5 / ×20 on a price list
+ * would commit us to a figure that moves with what the models cost. It is the
+ * one key whose *value* is not ours to show.
  */
-export const TIER_FEATURE_ORDER: readonly EntitlementKey[] = [
-  'seats',
-  'social_accounts',
+export const TIER_FEATURE_ORDER = [
+  'team_seats',
+  'workspaces',
+  'connected_accounts',
   'multiple_accounts_per_platform',
-  'campaigns',
+  'active_campaigns',
+  'all_campaign_types',
   'custom_campaign_types',
-  'content_plan_runs',
-  'post_assistant',
-  'post_quality_reviews',
-  'post_versions',
-  'brand_personas',
-  'brand_voices',
+  'plan_runs_per_month',
+  'quality_reviews_per_post',
+  'posts_total',
+  'content_bank_assets',
+  'web_page_imports',
   'media_storage_bytes',
-]
+] as const satisfies readonly EntitlementKey[]
+
+/**
+ * The keys that have a row, which is narrower than every key the app can ask
+ * about.
+ *
+ * Narrower on purpose, and it is what makes the omission above safe rather than
+ * merely allowed: the catalogue needs a heading for each of *these* and not for
+ * every entitlement, so leaving `assistant_multiplier` off the table does not
+ * oblige anybody to write a label for a number we have decided never to print.
+ */
+export type TierFeatureKey = (typeof TIER_FEATURE_ORDER)[number]
+
+/**
+ * Whether a key the server named is one this build has a heading for.
+ *
+ * The question is asked wherever a feature arrives from outside the price list
+ * — a refusal, a near-limit warning — because those carry whichever key the
+ * catalog holds, including `assistant_multiplier` and anything added since this
+ * build. A key with no name here is not an error: the caller says less rather
+ * than printing `plan_runs_per_month` at somebody.
+ */
+export function isTierFeatureKey(value: unknown): value is TierFeatureKey {
+  return TIER_FEATURE_ORDER.includes(value as TierFeatureKey)
+}
+
+/**
+ * What a feature is called on screen, in the app's language.
+ *
+ * One lookup rather than a template literal at each call site, so the price
+ * list, a lock and a notification cannot drift into calling the same allowance
+ * three things.
+ */
+export function featureLabel(t: TFunction, key: TierFeatureKey): string {
+  return t(`tiers.features.${key}` as const)
+}
 
 /** Keys whose numbers are byte sizes, not tallies. */
-const BYTE_KEYS: readonly EntitlementKey[] = ['media_storage_bytes']
+const BYTE_KEYS: readonly TierFeatureKey[] = ['media_storage_bytes']
 
-export function isByteKey(key: EntitlementKey): boolean {
+export function isByteKey(key: TierFeatureKey): boolean {
   return BYTE_KEYS.includes(key)
 }
 
@@ -54,10 +99,10 @@ export type TierFeatureValue =
   | { kind: 'included' }
   | { kind: 'excluded' }
   | { kind: 'unlimited' }
-  | { kind: 'limit'; limit: number; period: UsagePeriod | null }
+  | { kind: 'limit'; limit: number; reset: UsageReset | null }
 
 export type TierFeature = {
-  key: EntitlementKey
+  key: TierFeatureKey
   value: TierFeatureValue
 }
 
@@ -79,7 +124,7 @@ export function featureValue(
   // Allowed, with nothing metered against it: a plain yes.
   if (entry.limit === undefined) return { kind: 'included' }
   if (entry.limit === null) return { kind: 'unlimited' }
-  return { kind: 'limit', limit: entry.limit, period: entry.period ?? null }
+  return { kind: 'limit', limit: entry.limit, reset: entry.reset ?? null }
 }
 
 export function tierFeatures(tier: Tier): TierFeature[] {

@@ -70,10 +70,11 @@ type NoticeShellProps = {
   /**
    * The action, rendered only when there is somewhere for it to go.
    *
-   * Optional on purpose: there is no billing screen yet, and a button that
-   * explains a limit and then does nothing about it is worse than no button —
-   * it turns an explanation into a dead end. Call sites pass this once
-   * upgrading is a thing a user can actually do.
+   * Optional on purpose: a button that explains a limit and then does nothing
+   * about it is worse than no button, because it turns an explanation into a
+   * dead end. `/plans` is now somewhere to go, but not every notice wants to
+   * send anyone there — `SuspendedNotice` states a fact, and the sold denials
+   * carry their buttons on the dialog's own bottom edge rather than up here.
    */
   action?: { label: string; onClick: () => void }
   className?: string

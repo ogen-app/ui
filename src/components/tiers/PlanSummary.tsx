@@ -17,6 +17,12 @@ type Props = {
    * for.
    */
   retired: boolean
+  /**
+   * Whether this reader may change the plan (CON-232) — which is what calling a
+   * scheduled change off is. A member reads the announcement and cannot undo it,
+   * the same way they could not have made it.
+   */
+  mayChange: boolean
   onCancelChange: () => void
   busy: boolean
 }
@@ -30,7 +36,13 @@ type Props = {
  * would let somebody re-read it a week later and conclude the change had not
  * gone through.
  */
-export function PlanSummary({ tier, retired, onCancelChange, busy }: Props) {
+export function PlanSummary({
+  tier,
+  retired,
+  mayChange,
+  onCancelChange,
+  busy,
+}: Props) {
   const { t, i18n } = useTranslation()
 
   return (
@@ -45,11 +57,18 @@ export function PlanSummary({ tier, retired, onCancelChange, busy }: Props) {
           </h2>
           {retired && <Chip variant="muted">{t('tiers.retired')}</Chip>}
         </div>
-        <p className="text-[13px] text-tertiary-foreground">
-          {t('tiers.since', {
-            when: formatDay(tier.effectiveFrom, i18n.language),
-          })}
-        </p>
+        {/*
+          Omitted rather than softened when the date is missing, which it is
+          against the real endpoint: `GET /api/me/entitlements` does not carry
+          one (CON-243). "On this plan since —" is worse than no line at all.
+        */}
+        {tier.effectiveFrom && (
+          <p className="text-[13px] text-tertiary-foreground">
+            {t('tiers.since', {
+              when: formatDay(tier.effectiveFrom, i18n.language),
+            })}
+          </p>
+        )}
       </div>
 
       {tier.scheduled && (
@@ -68,7 +87,7 @@ export function PlanSummary({ tier, retired, onCancelChange, busy }: Props) {
             },
           )}
           action={
-            busy
+            busy || !mayChange
               ? undefined
               : { label: t('tiers.cancelChange'), onClick: onCancelChange }
           }

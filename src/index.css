@@ -191,6 +191,9 @@
   --color-negative: var(--negative);
   --color-info: var(--info);
   --color-attention: var(--attention);
+  --color-sweep-from: var(--sweep-from);
+  --color-sweep-to: var(--sweep-to);
+  --color-sweep-splash: var(--sweep-splash);
   --color-notification: var(--notification);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -323,6 +326,14 @@
      value ever has to come back, the text sites need their own `--accent-ink`
      first. */
   --accent: oklch(0.55 0.0955 190.71);
+  /* The sweep — the accented button's ink (`GradientButton`), the paywall's
+     fill and its mark. Blue to green, ending in a splash of orange. Blue
+     and green are text-safe on white and carry most of a label; the orange is
+     lighter and is only ever the last stretch of it, so no whole word lands
+     on it. */
+  --sweep-from: var(--info);
+  --sweep-to: var(--positive);
+  --sweep-splash: var(--notification);
 
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -804,6 +815,21 @@
 
   .page-loader-motion {
     animation: page-fade-in 200ms 240ms ease-out both;
+  }
+
+  /* The sweep on glyphs. Transparent text for the same reason as the
+     shimmer below; an icon cannot be clipped this way, so `GradientMark`
+     paints its mark with an SVG gradient on the same tokens. */
+  .text-sweep {
+    background-image: linear-gradient(
+      90deg,
+      var(--sweep-from),
+      var(--sweep-to) 75%,
+      var(--sweep-splash)
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
   }
 
   /* A highlight travelling along a line of text, for work still in progress.

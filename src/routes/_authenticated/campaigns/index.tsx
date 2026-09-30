@@ -13,6 +13,8 @@ import { CampaignCard } from '@/components/campaigns/CampaignCard.tsx'
 import { CreateCampaignDialog } from '@/components/campaigns/CreateCampaignDialog.tsx'
 import { useCampaigns } from '@/hooks/useCampaigns.ts'
 import { awaiting } from '@/lib/fetched'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog.tsx'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
 
 /**
  * There is one campaigns list, with the archive as a drawer at the foot of it
@@ -38,6 +40,11 @@ function Campaigns() {
   const query = useCampaigns()
   const { data: campaigns, isError } = query
   const [creating, setCreating] = useState(false)
+  // Both the header action and the empty state's open the same dialog, so both
+  // go through the same gate — an allowance that only stopped one of them would
+  // be reachable by having no campaigns yet.
+  const gate = useUpgradeGate('active_campaigns')
+  const create = gate.intent(() => setCreating(true))
 
   const hasCampaigns = !!(campaigns && campaigns.length > 0)
 
@@ -69,7 +76,7 @@ function Campaigns() {
         <PageHeader
           title={t('campaigns.title')}
           actions={
-            <Button onClick={() => setCreating(true)} size="lg">
+            <Button onClick={create} size="lg">
               <PlusIcon className="size-4" />
               <span>{t('campaigns.add')}</span>
             </Button>
@@ -89,10 +96,7 @@ function Campaigns() {
               title={t('campaigns.empty.title')}
               subtitle={t('campaigns.empty.subtitle')}
               actions={
-                <Button
-                  onClick={() => setCreating(true)}
-                  variant="defaultInverted"
-                >
+                <Button onClick={create} variant="defaultInverted">
                   <PlusIcon className="size-4" />
                   <span>{t('campaigns.add')}</span>
                 </Button>
@@ -115,6 +119,7 @@ function Campaigns() {
         open={creating}
         onClose={() => setCreating(false)}
       />
+      <UpgradeDialog gate={gate} />
     </PageContainer>
   )
 }

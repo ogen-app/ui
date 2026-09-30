@@ -10,6 +10,7 @@ import { addToCampaign } from '@/lib/campaignMembership'
 import { attachToPost } from '@/lib/postSources'
 import { queryClient } from '@/lib/queryClient'
 import type { AssetStatus } from '@/types/content'
+import { invalidateEntitlements } from '@/hooks/useEntitlements'
 
 /**
  * A tracked upload moves: uploading (HTTP transfer) → processing (async backend
@@ -121,6 +122,8 @@ export const useUploadStore = create<UploadState>()(
               if (target.postId)
                 void attachToPost(target.postId, [result.asset_id])
               queryClient.invalidateQueries({ queryKey: ['assets'] })
+              // One more row against `content_bank_assets` (CON-295).
+              invalidateEntitlements(queryClient)
             }
           })
           .catch((err: unknown) => {

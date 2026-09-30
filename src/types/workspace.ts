@@ -24,7 +24,7 @@ export const WORKSPACE_ROLES: WorkspaceRole[] = ['owner', 'member']
 
 /**
  * With two tiers the whole permission matrix is one question: are you an
- * owner. The three predicates below stay separate anyway because they answer
+ * owner. The predicates below stay separate anyway because they answer
  * different questions and CON-147's `admin` will pull them apart again — a
  * caller that asks the right one keeps working when it does.
  *
@@ -68,6 +68,26 @@ export function canManageWorkspace(actor: WorkspaceRole): boolean {
  * this is the mirror that keeps a member off a screen that would 403.
  */
 export function canManageBilling(actor: WorkspaceRole): boolean {
+  return actor === 'owner'
+}
+
+/**
+ * Whether `actor` may move the workspace onto a different plan (CON-232).
+ *
+ * Its own predicate rather than a second caller of `canManageBilling`, for the
+ * reason stated above: they are different questions, and `admin` is where they
+ * come apart — whoever runs the workspace is a plausible person to choose what
+ * it pays for, and an implausible one to be shown the card on file.
+ *
+ * It is also the one predicate here with **no server rule to mirror yet**. A
+ * workspace's version is assigned by an operator through Harbor (CON-294) and
+ * `POST /api/workspace/plan` does not exist, so nothing refuses a member's
+ * choice today except this line. That makes it a product decision recorded
+ * ahead of its endpoint rather than the usual grey-it-out-first mirror — and
+ * the reason to write it down now is that every upgrade prompt in the app has
+ * to know which half of the audience it is talking to.
+ */
+export function canChangePlan(actor: WorkspaceRole): boolean {
   return actor === 'owner'
 }
 

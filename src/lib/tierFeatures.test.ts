@@ -17,12 +17,12 @@ import type { Tier } from '@/types/tiers'
 
 function tier(entitlements: Tier['entitlements']): Tier {
   return {
-    id: 'tier_test',
+    id: 'ttv-test-v1',
+    tierId: 'test',
     name: 'Test',
-    tagline: '',
-    effectiveFrom: '2026-08-01T00:00:00Z',
-    price: null,
-    available: true,
+    purchasable: true,
+    changeReason: '',
+    prices: [],
     entitlements,
   }
 }
@@ -53,19 +53,19 @@ describe('featureValue', () => {
     })
   })
 
-  it('keeps the period with the number', () => {
-    expect(featureValue({ limit: 10, period: 'month' })).toEqual({
+  it('keeps the reset word with the number', () => {
+    expect(featureValue({ limit: 10, reset: 'monthly' })).toEqual({
       kind: 'limit',
       limit: 10,
-      period: 'month',
+      reset: 'monthly',
     })
   })
 
-  it('carries a limit with no period as a plain total', () => {
+  it('carries a limit with no reset word as a plain total', () => {
     expect(featureValue({ limit: 3 })).toEqual({
       kind: 'limit',
       limit: 3,
-      period: null,
+      reset: null,
     })
   })
 
@@ -76,14 +76,14 @@ describe('featureValue', () => {
     expect(featureValue({ limit: 5, used: 5 })).toEqual({
       kind: 'limit',
       limit: 5,
-      period: null,
+      reset: null,
     })
   })
 })
 
 describe('tierFeatures', () => {
   it('answers for every feature in the table, in order', () => {
-    const features = tierFeatures(tier({ campaigns: { limit: 5 } }))
+    const features = tierFeatures(tier({ active_campaigns: { limit: 5 } }))
     expect(features.map((feature) => feature.key)).toEqual([
       ...TIER_FEATURE_ORDER,
     ])

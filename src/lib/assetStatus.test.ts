@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TFunction } from 'i18next'
 import {
+  formatBytes,
   uploadAccept,
   uploadLimitLines,
   validateUploadFile,
@@ -222,5 +223,17 @@ describe('validateUploadFile', () => {
         failure: { code: 'legacy_office' },
       })
     }
+  })
+})
+
+describe('formatBytes', () => {
+  it('names the unit the figure is actually in', () => {
+    // It measured one file against a per-file cap until the storage allowance
+    // started coming through it (CON-232), and an allowance is where the units
+    // run out: a plan granting ten gigabytes read "10240.0 MB".
+    expect(formatBytes(900)).toBe('900 B')
+    expect(formatBytes(2 * 1024)).toBe('2 KB')
+    expect(formatBytes(1.4 * 1024 * 1024)).toBe('1.4 MB')
+    expect(formatBytes(10 * 1024 * 1024 * 1024)).toBe('10.0 GB')
   })
 })

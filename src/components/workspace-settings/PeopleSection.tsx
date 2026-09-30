@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { TextSelect } from '@/components/ui/text-select'
 import { SettingsCard } from '@/components/settings/SettingsCard'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import {
   useInviteMember,
   useRemoveMember,
@@ -505,6 +507,9 @@ function InviteForm({ callerRole }: { callerRole: WorkspaceRole }) {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<WorkspaceRole>('member')
   const { mutate: invite, isPending } = useInviteMember()
+  // Gated on the submit rather than on the button, so the address the user
+  // typed is still in the field when they come back from the plan screen.
+  const gate = useUpgradeGate('team_seats')
 
   const roles = grantableRoles(callerRole)
   const trimmed = email.trim()
@@ -530,12 +535,14 @@ function InviteForm({ callerRole }: { callerRole: WorkspaceRole }) {
     )
   }
 
+  const send = gate.intent(submit)
+
   return (
     <form
       className="flex flex-col gap-3 border-t border-quaternary pt-6"
       onSubmit={(e) => {
         e.preventDefault()
-        if (trimmed) submit()
+        if (trimmed) send()
       }}
     >
       <SubHeader>{t('workspaceSettings.people.inviteHeading')}</SubHeader>
@@ -593,6 +600,7 @@ function InviteForm({ callerRole }: { callerRole: WorkspaceRole }) {
       <p className="text-xs text-tertiary-foreground">
         {t(ROLE_ABILITY_KEYS[role])}
       </p>
+      <UpgradeDialog gate={gate} />
     </form>
   )
 }

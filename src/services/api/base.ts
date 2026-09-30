@@ -37,6 +37,12 @@ export function apiUrl(path: string): string {
  * login-alert routes likewise: the token names an *account*, and the browser
  * following the email may have a tab pinned to a workspace that has nothing to
  * do with it (CON-318).
+ *
+ * `/api/public/*` is a third reason again. Those routes are about no workspace
+ * at all — the price list is the same list a logged-out visitor reads — and the
+ * server caches them at the edge for everyone at once. A request varying by a
+ * header the response does not depend on is a cache split per workspace, for an
+ * answer that is identical in all of them.
  */
 function isAccountScoped(path: string): boolean {
   // Compare against the path only — a query string never changes which
@@ -49,7 +55,8 @@ function isAccountScoped(path: string): boolean {
     p === '/api/sessions' ||
     p.startsWith('/api/sessions/') ||
     p.startsWith('/api/invitations/accept/') ||
-    p.startsWith('/api/security/login-alerts/')
+    p.startsWith('/api/security/login-alerts/') ||
+    p.startsWith('/api/public/')
   )
 }
 

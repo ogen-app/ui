@@ -63,6 +63,13 @@ describe('workspaceHeader', () => {
     })
   })
 
+  it('leaves the public routes unscoped — they are about no workspace', () => {
+    // The price list is the same list a logged-out visitor reads, and the server
+    // caches it at the edge. A header the answer does not vary by would split
+    // that cache per workspace for nothing.
+    expect(workspaceHeader('/api/public/pricing')).toEqual({})
+  })
+
   it('leaves the login-alert routes unscoped — the token names the account', () => {
     expect(workspaceHeader('/api/security/login-alerts/tok-1')).toEqual({})
     expect(workspaceHeader('/api/security/login-alerts/tok-1/secure')).toEqual(

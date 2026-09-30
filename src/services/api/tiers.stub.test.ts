@@ -14,10 +14,10 @@ import {
  * become its acceptance criteria rather than dead scaffolding.
  */
 
-const TRIAL = 'tier_trial_2026_08_01'
-const PRO = 'tier_pro_2026_08_01'
-const MAX = 'tier_max_2026_08_01'
-const LEGACY_PRO = 'tier_pro_2026_01_01'
+const TRIAL = 'ttv-trial-v1'
+const PRO = 'ttv-pro-v1'
+const MAX = 'ttv-max-v1'
+const LEGACY_PRO = 'ttv-pro-v0'
 
 const AUGUST = new Date('2026-08-22T12:00:00Z')
 
@@ -26,16 +26,29 @@ beforeEach(() => {
 })
 
 describe('the tier list', () => {
-  it('keeps a superseded version in the list, marked unbuyable', () => {
-    // A workspace keeps the version it bought, so the plan screen routinely
-    // has to name a tier nobody can buy today.
+  it('publishes only what can be bought, like the endpoint does', () => {
+    // `GET /api/public/pricing` carries purchasable versions and nothing else,
+    // so a superseded one is absent rather than present-and-flagged. The plan
+    // screen's "no longer offered" case is therefore reached by the held version
+    // missing from this list — see below — and not by a flag on a card.
     return stubListTiers().then((tiers) => {
-      const legacy = tiers.find((tier) => tier.id === LEGACY_PRO)
-      expect(legacy?.available).toBe(false)
-      expect(
-        tiers.filter((tier) => tier.available).map((tier) => tier.id),
-      ).toEqual([TRIAL, PRO, MAX])
+      expect(tiers.map((tier) => tier.id)).toEqual([TRIAL, PRO, MAX])
+      expect(tiers.every((tier) => tier.purchasable)).toBe(true)
     })
+  })
+
+  it('still resolves a plan on a version it no longer lists', async () => {
+    // A workspace keeps the version it bought. If the superseded row went out of
+    // the table along with the list, a plan on it would resolve to no allowances
+    // at all — which reads as a broken app rather than as an old plan.
+    localStorage.setItem(
+      'stub-plan',
+      JSON.stringify({ tierId: LEGACY_PRO, since: '2026-01-01T00:00:00Z' }),
+    )
+    const plan = await stubWorkspacePlan(AUGUST)
+    expect(plan.tier.id).toBe(LEGACY_PRO)
+    expect(plan.tier.purchasable).toBe(false)
+    expect(plan.entitlements.active_campaigns.limit).toBe(3)
   })
 
   it('never hands the client a way to rank tiers', () => {
@@ -45,37 +58,65 @@ describe('the tier list', () => {
       for (const tier of tiers) expect(tier).not.toHaveProperty('rank')
     })
   })
+
+  it('names the tier a version belongs to, separately from the version', () => {
+    // Two versions of Pro share `tierId` and share nothing else. The client
+    // ranks neither, but a screen that wanted to group versions by tier has the
+    // only field that can do it.
+    return stubListTiers().then((tiers) => {
+      expect(tiers.map((tier) => tier.tierId)).toEqual(['trial', 'pro', 'max'])
+    })
+  })
+
+  it('prices the trial at zero and leaves the undecided tiers unpriced', () => {
+    // Free is `amount: 0`; undecided is no row at all, and the card draws no
+    // price line for the second. Conflating them puts "Free" on Max.
+    return stubListTiers().then((tiers) => {
+      expect(tiers[0].prices).toEqual([
+        { amount: 0, currency: 'EUR', interval: 'month', countryCode: null },
+      ])
+      expect(tiers[1].prices).toEqual([])
+    })
+  })
 })
 
 describe('the plan', () => {
   it('starts on the trial, with nothing scheduled', async () => {
     const plan = await stubWorkspacePlan()
     expect(plan.tier.id).toBe(TRIAL)
-    expect(plan.tier.scheduled_change).toBeNull()
+    expect(plan.tier.scheduled).toBeNull()
   })
 
-  it('puts the workspace tally beside every limit', async () => {
-    // A limit with no counter can only be enforced after the click. The join
-    // is the endpoint's job, which is why it isn't a second request.
+  it('states a tier allowance, leaving the tally to be laid over it', async () => {
+    // The counters moved to `entitlements.seed.ts` (CON-243), so that the stub
+    // and the real endpoint are counted from one table rather than two that
+    // drift. What the stub owns is the *allowance*.
     const plan = await stubWorkspacePlan()
-    expect(plan.entitlements?.campaigns).toEqual({ limit: 1, used: 3 })
-  })
-
-  it('leaves a boolean entitlement without a counter', async () => {
-    // There is no allowance to count against a yes/no, and inventing a `used`
-    // for one would put a meter under a lock that has no numbers in it.
-    const plan = await stubWorkspacePlan()
-    expect(plan.entitlements?.brand_personas).toEqual({ allowed: false })
-  })
-
-  it('dates the reset only where there is a period to reset', async () => {
-    const plan = await stubWorkspacePlan()
-    expect(plan.entitlements?.content_plan_runs).toMatchObject({
-      limit: 3,
-      period: 'month',
-      resets_at: expect.any(String),
+    expect(plan.entitlements.active_campaigns).toMatchObject({
+      limit: 1,
+      reset: 'standing',
     })
-    expect(plan.entitlements?.post_versions).not.toHaveProperty('resets_at')
+  })
+
+  it('leaves a boolean entitlement without an allowance', async () => {
+    // There is nothing to count against a yes/no, and inventing a limit for one
+    // would put a meter under a lock that has no numbers in it.
+    const plan = await stubWorkspacePlan()
+    expect(plan.entitlements.multiple_accounts_per_platform).toEqual({
+      allowed: false,
+    })
+  })
+
+  it('dates the reset only where the allowance actually refills', async () => {
+    const plan = await stubWorkspacePlan()
+    expect(plan.entitlements.plan_runs_per_month).toMatchObject({
+      limit: 3,
+      reset: 'monthly',
+      resetsAt: expect.any(String),
+    })
+    // A standing ceiling and a lifetime total never return to zero.
+    expect(plan.entitlements.posts_total).not.toHaveProperty('resetsAt')
+    expect(plan.entitlements.media_storage_bytes).not.toHaveProperty('resetsAt')
   })
 })
 
@@ -83,9 +124,9 @@ describe('choosing a tier', () => {
   it('applies an upgrade immediately', async () => {
     const plan = await stubSelectTier(MAX, AUGUST)
     expect(plan.tier.id).toBe(MAX)
-    expect(plan.tier.scheduled_change).toBeNull()
+    expect(plan.tier.scheduled).toBeNull()
     // And the allowances move with it, in the same answer.
-    expect(plan.entitlements?.campaigns).toEqual({ limit: null, used: 3 })
+    expect(plan.entitlements.active_campaigns.limit).toBeNull()
   })
 
   it('holds a downgrade until the next billing boundary', async () => {
@@ -95,14 +136,14 @@ describe('choosing a tier', () => {
     // Still on Max, still with Max's allowances — nothing is taken away on
     // the click.
     expect(plan.tier.id).toBe(MAX)
-    expect(plan.entitlements?.campaigns).toEqual({ limit: null, used: 3 })
-    expect(plan.tier.scheduled_change).toMatchObject({
+    expect(plan.entitlements.active_campaigns.limit).toBeNull()
+    expect(plan.tier.scheduled).toMatchObject({
       id: TRIAL,
       direction: 'downgrade',
       // A month on from the day Max was chosen: the boundary is the renewal,
       // because the downgrade lands on the invoice that would have charged for
       // the tier being left.
-      effective_from: '2026-09-22T12:00:00.000Z',
+      effectiveFrom: '2026-09-22T12:00:00.000Z',
     })
   })
 
@@ -112,7 +153,7 @@ describe('choosing a tier', () => {
     const plan = await stubSelectTier(PRO, AUGUST)
 
     expect(plan.tier.id).toBe(PRO)
-    expect(plan.tier.scheduled_change).toBeNull()
+    expect(plan.tier.scheduled).toBeNull()
   })
 
   it('reports the direction rather than leaving it to be inferred', async () => {
@@ -120,7 +161,7 @@ describe('choosing a tier', () => {
     // warnings, and the dates alone cannot tell them apart.
     await stubSelectTier(PRO, AUGUST)
     const plan = await stubSelectTier(TRIAL, AUGUST)
-    expect(plan.tier.scheduled_change?.direction).toBe('downgrade')
+    expect(plan.tier.scheduled?.direction).toBe('downgrade')
   })
 
   it('survives a tier id it does not recognise', async () => {
@@ -145,9 +186,9 @@ describe('choosing a tier', () => {
     const afterBoundary = new Date('2026-09-23T12:00:00Z')
     const plan = await stubWorkspacePlan(afterBoundary)
     expect(plan.tier.id).toBe(TRIAL)
-    expect(plan.tier.scheduled_change).toBeNull()
+    expect(plan.tier.scheduled).toBeNull()
     // And the allowances land with it.
-    expect(plan.entitlements?.campaigns).toEqual({ limit: 1, used: 3 })
+    expect(plan.entitlements.active_campaigns.limit).toBe(1)
   })
 
   it('persists a landed change rather than re-deriving it per read', async () => {
@@ -159,7 +200,7 @@ describe('choosing a tier', () => {
     // change has been applied and written, not recomputed from the clock.
     const plan = await stubWorkspacePlan(AUGUST)
     expect(plan.tier.id).toBe(TRIAL)
-    expect(plan.tier.scheduled_change).toBeNull()
+    expect(plan.tier.scheduled).toBeNull()
   })
 
   it('ranks a later choice against the landed tier, not the one left behind', async () => {
@@ -171,7 +212,7 @@ describe('choosing a tier', () => {
     // the Max the workspace is no longer on.
     const plan = await stubSelectTier(PRO, new Date('2026-09-23T12:00:00Z'))
     expect(plan.tier.id).toBe(PRO)
-    expect(plan.tier.scheduled_change).toBeNull()
+    expect(plan.tier.scheduled).toBeNull()
   })
 
   it('falls back to the seed when the stored tier no longer exists', async () => {

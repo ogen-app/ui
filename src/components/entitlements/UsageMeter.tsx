@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import { formatNumber } from '@/lib/intl'
 import { cn } from '@/lib'
-import type { Usage, UsagePeriod } from '@/types/entitlements'
+import type { Usage, UsageReset } from '@/types/entitlements'
 
 type Props = {
   usage: Usage
@@ -27,9 +27,15 @@ type Props = {
  * bar that has to be re-sized at every one of them is not a shared rendering,
  * it is a shape three screens argue about.
  *
- * Each period is a whole sentence in the catalogue rather than a phrase glued
+ * Each reset is a whole sentence in the catalogue rather than a phrase glued
  * onto a stem, because where "this month" lands in the sentence is a different
  * answer in every language.
+ *
+ * **Three things it can say, not two.** Unlimited, the full meter, and — since
+ * CON-243 — the limit on its own, for an allowance the API states but does not
+ * count. That last one is the common case today and it is why the component
+ * cannot simply default a missing tally to zero: "0 of 10" reads as a fresh
+ * allowance, which is a reassurance nobody checked.
  */
 export function UsageMeter({ usage, format, className }: Props) {
   const { t, i18n } = useTranslation()
@@ -42,10 +48,12 @@ export function UsageMeter({ usage, format, className }: Props) {
   const text =
     usage.limit === null
       ? t('tiers.unlimited')
-      : t(usageKey(usage.period), {
-          used: write(usage.used),
-          limit: write(usage.limit),
-        })
+      : usage.used === null
+        ? t('tiers.limitOnly', { limit: write(usage.limit) })
+        : t(usageKey(usage.reset), {
+            used: write(usage.used),
+            limit: write(usage.limit),
+          })
 
   return (
     <span className={cn('text-[13px] text-tertiary-foreground', className)}>
@@ -59,18 +67,18 @@ export function UsageMeter({ usage, format, className }: Props) {
  * is harmless, but the habit it teaches — freezing something at import — is the
  * one that breaks the moment a value on the other side is translated.
  */
-function usageKey(period: UsagePeriod | null) {
-  switch (period) {
-    case 'day':
-      return 'tiers.usageDay' as const
-    case 'month':
+function usageKey(reset: UsageReset | null) {
+  switch (reset) {
+    case 'monthly':
       return 'tiers.usageMonth' as const
-    case 'post':
+    case 'total':
+      return 'tiers.usageTotal' as const
+    case 'per_post':
       return 'tiers.usagePost' as const
-    case 'publish':
-      return 'tiers.usagePublish' as const
-    // A period this build has never heard of arrives as null (`usagePeriod`),
-    // and lands here — the plain form, which is true whatever the period was.
+    // `standing` lands here alongside a reset word this build has never heard
+    // of (`usageReset` narrows that to null). Both want the plain form: a
+    // ceiling that never refills has no period to name, and an unknown one has
+    // none we can name.
     default:
       return 'tiers.usage' as const
   }

@@ -1826,23 +1826,152 @@ export const es: Translation = {
     limitReached: 'Has alcanzado tu límite',
     resets: 'Tu cuota vuelve a estar completa el {{when}}.',
 
+    deniedTier: 'Esto no está incluido en tu plan.',
+    deniedLimit_one: 'Ya has usado el único que permite tu plan.',
+    deniedLimit_other: 'Ya has usado los {{count}} que permite tu plan.',
+    deniedLimitFlat: 'Ya has usado todo lo que tu plan permite aquí.',
+
     usage: '{{used}} de {{limit}}',
-    usageDay: '{{used}} de {{limit}} hoy',
     usageMonth: '{{used}} de {{limit}} este mes',
+    usageTotal: '{{used}} de {{limit}} usados',
     usagePost: '{{used}} de {{limit}} en esta publicación',
-    usagePublish: '{{used}} de {{limit}} para esta publicación',
+    limitOnly: '{{limit}} incluidos',
     unlimited: 'Sin límite',
 
     upgrade: 'MEJORAR PLAN',
+
+    paywall: {
+      label: 'Mejora tu plan',
+      title: 'Consigue más con el plan {{plan}} de Ogen',
+      titleTop: '{{plan}} es lo máximo para esto',
+      reasonTier: '{{feature}} no está incluido en {{plan}}.',
+      reasonTierOther: 'Esto no está incluido en {{plan}}.',
+      reasonLimit: {
+        team_seats: 'Has ocupado todos los puestos de {{plan}}.',
+        workspaces: 'Has usado todos los espacios de trabajo de {{plan}}.',
+        connected_accounts:
+          'Has conectado todas las cuentas que permite {{plan}}.',
+        active_campaigns: 'Has usado todas las campañas activas de {{plan}}.',
+        plan_runs_per_month:
+          'Has usado los planes de contenido de este mes en {{plan}}.',
+        quality_reviews_per_post:
+          'Has usado las revisiones de calidad de esta publicación en {{plan}}.',
+        posts_total: 'Has usado todas las publicaciones de {{plan}}.',
+        content_bank_assets: 'Tu banco de contenido está lleno en {{plan}}.',
+        web_page_imports:
+          'Has usado todas las importaciones de páginas web de {{plan}}.',
+        media_storage_bytes:
+          'Has usado todo el almacenamiento multimedia de {{plan}}.',
+        assistant_multiplier:
+          'Has usado la asignación del asistente en {{plan}}.',
+      },
+      reasonLimitOther: 'Has alcanzado un límite en {{plan}}.',
+      bodyTier: 'Mejorar el plan lo activa para todo el espacio de trabajo.',
+      bodyLimit: 'Todo lo que has creado se queda tal cual.',
+      bodyResets:
+        'Tu asignación se renueva el {{when}}, o mejora ahora para seguir.',
+      noOffer:
+        'Ningún plan a la venta ofrece más de esto que el tuyo. Compara los planes para ver todo lo que incluye cada uno.',
+      billing: 'Periodo de facturación',
+      monthly: 'Mensual',
+      yearly: 'Anual',
+      perMonth: '<price>{{price}}</price> / mes',
+      billedYearly: '{{total}} facturados al año',
+      billedYearlySaving: '{{total}} facturados al año, ahorras {{saving}}',
+      upgradeTo: 'PASAR A {{plan}}',
+      planName: 'Ogen {{plan}}',
+      comparePlans: 'Comparar todos los planes',
+      seeAllFeatures: 'Ver todas las funciones',
+      benefit: {
+        team_seats: {
+          limit_one: '{{count}} miembro del equipo',
+          limit_other: '{{count}} miembros del equipo',
+          unlimited: 'Miembros del equipo sin límite',
+          description: 'Invita a tu equipo a planificar y publicar contigo.',
+        },
+        workspaces: {
+          limit_one: '{{count}} espacio de trabajo',
+          limit_other: '{{count}} espacios de trabajo',
+          unlimited: 'Espacios de trabajo sin límite',
+          description: 'Mantén separadas tus marcas o clientes.',
+        },
+        connected_accounts: {
+          limit_one: '{{count}} cuenta conectada',
+          limit_other: '{{count}} cuentas conectadas',
+          unlimited: 'Cuentas conectadas sin límite',
+          description: 'Publica en más de tus perfiles sociales.',
+        },
+        active_campaigns: {
+          limit_one: '{{count}} campaña activa',
+          limit_other: '{{count}} campañas activas',
+          unlimited: 'Campañas activas sin límite',
+          description: 'Lleva más campañas a la vez.',
+        },
+        plan_runs_per_month: {
+          limit_one: '{{count}} plan de contenido al mes',
+          limit_other: '{{count}} planes de contenido al mes',
+          unlimited: 'Planes de contenido sin límite',
+          description:
+            'Deja que Ogen redacte las publicaciones de una campaña.',
+        },
+        quality_reviews_per_post: {
+          limit_one: '{{count}} revisión de calidad por publicación',
+          limit_other: '{{count}} revisiones de calidad por publicación',
+          unlimited: 'Revisiones de calidad sin límite',
+          description: 'Revisa cada publicación antes de que salga.',
+        },
+        posts_total: {
+          limit_one: '{{count}} publicación',
+          limit_other: '{{count}} publicaciones',
+          unlimited: 'Publicaciones sin límite',
+          description: 'Sigue escribiendo sin contar lo que queda.',
+        },
+        content_bank_assets: {
+          limit_one: '{{count}} documento en el banco de contenido',
+          limit_other: '{{count}} documentos en el banco de contenido',
+          unlimited: 'Documentos sin límite en el banco de contenido',
+          description:
+            'Guarda las notas, archivos y páginas en las que se basan tus publicaciones.',
+        },
+        web_page_imports: {
+          limit_one: '{{count}} importación de página web',
+          limit_other: '{{count}} importaciones de páginas web',
+          unlimited: 'Importaciones de páginas web sin límite',
+          description: 'Convierte cualquier página web en material de origen.',
+        },
+        media_storage_bytes: {
+          limit: '{{value}} de almacenamiento multimedia',
+          unlimited: 'Almacenamiento multimedia sin límite',
+          description:
+            'Espacio para las imágenes y vídeos de tus publicaciones.',
+        },
+        multiple_accounts_per_platform: {
+          included: 'Varias cuentas en una plataforma',
+          description: 'Conecta dos perfiles de la misma red.',
+        },
+        all_campaign_types: {
+          included: 'Todos los tipos de campaña',
+          description:
+            'Todos los formatos de campaña, no solo los atemporales.',
+        },
+        custom_campaign_types: {
+          included: 'Tipos de campaña personalizados',
+          description: 'Define tus propios tipos de campaña.',
+        },
+      },
+      planPitch: 'Todo lo de {{current}}, con más margen para crecer.',
+      unpriced: 'El precio aún no está publicado.',
+    },
+    seePlans: 'VER PLANES',
+    ownersOnlyPlan:
+      'Solo un propietario del espacio puede cambiar el plan para todo el equipo.',
 
     suspended: 'Solo lectura',
     suspendedBody:
       'Tu plan ha cambiado, así que esto es de solo lectura por ahora. No se ha eliminado nada: sigue todo aquí, y al mejorar el plan vuelve a ser editable.',
     suspendedSince: 'De solo lectura desde el {{when}}.',
 
-    plansTitle: 'Planes',
-    planIntro:
-      'Lo que puede hacer este espacio y lo que cambiarían los demás planes.',
+    plansTitle: 'Elige el plan que prefieras',
     planMock:
       'Los planes todavía no están conectados a la facturación. Elegir uno solo cambia lo que este espacio puede hacer.',
     planLoadFailed: 'No se han podido cargar los planes.',
@@ -1879,6 +2008,7 @@ export const es: Translation = {
 
     currentPlan: 'Plan actual',
     currentBadge: 'Actual',
+    currentPlanButton: 'Plan actual',
     scheduledBadge: 'Programado',
     retired: 'Ya no se ofrece',
     since: 'En este plan desde el {{when}}.',
@@ -1905,30 +2035,60 @@ export const es: Translation = {
     changeCancelled: 'Se ha anulado ese cambio.',
 
     limitFlat: '{{value}}',
-    limitDay: '{{value}} al día',
     limitMonth: '{{value}} al mes',
+    limitTotal: '{{value}} en total',
     limitPost: '{{value}} por publicación',
-    limitPublish: '{{value}} por publicación programada',
     included: 'Incluido',
     excluded: 'No incluido',
 
-    price: '{{price}} al mes',
-    priceYear: '{{price}} al año',
+    price: '<price>{{price}}</price> / mes',
+    priceYear: '<price>{{price}}</price> / año',
     priceFree: 'Gratis',
+    recommended: 'RECOMENDADO',
+    everythingIn: 'Todo lo de {{name}}, y además:',
+    compareTitle: 'Compara todas las funciones',
+    compareFeature: 'Función',
 
     features: {
-      seats: 'Miembros del equipo',
-      social_accounts: 'Cuentas conectadas',
+      team_seats: 'Miembros del equipo',
+      workspaces: 'Espacios de trabajo',
+      connected_accounts: 'Cuentas conectadas',
       multiple_accounts_per_platform: 'Varias cuentas en una misma plataforma',
-      campaigns: 'Campañas',
+      active_campaigns: 'Campañas',
+      all_campaign_types: 'Todos los tipos de campaña',
       custom_campaign_types: 'Tipos de campaña personalizados',
-      content_plan_runs: 'Ejecuciones del plan de contenido',
-      post_assistant: 'Asistente de publicaciones',
-      post_quality_reviews: 'Revisiones de calidad',
-      post_versions: 'Historial de versiones',
-      brand_personas: 'Perfiles de marca',
-      brand_voices: 'Voces de marca',
+      plan_runs_per_month: 'Ejecuciones del plan de contenido',
+      quality_reviews_per_post: 'Revisiones de calidad',
+      posts_total: 'Publicaciones',
+      content_bank_assets: 'Documentos del banco de contenido',
+      web_page_imports: 'Importaciones de páginas web',
       media_storage_bytes: 'Almacenamiento multimedia',
+    },
+    capabilities: {
+      voice:
+        'Crea una voz única que destaque entre el contenido genérico de la IA',
+      strategy: 'Genera tu estrategia de contenido sin esfuerzo',
+      store: 'Guarda archivos, notas de voz, ideas y tareas en un solo lugar',
+      publish: 'Crea, programa y publica automáticamente en tus redes sociales',
+      quality:
+        'Revisa la calidad de una publicación y cómo funcionará antes de publicarla',
+      analytics: 'Analíticas e información unificadas',
+    },
+    gain: {
+      workspaces: 'Espacios de trabajo separados para campañas aisladas',
+      connected_accounts: 'Añade más redes sociales',
+      active_campaigns: 'Lleva varias campañas dirigidas a la vez',
+      team_seats: 'Invita a tu equipo a un espacio de trabajo compartido',
+      team_seats_more: 'Invita a aún más personas a trabajar contigo',
+      quality_reviews_per_post: 'Más revisiones de calidad',
+      media_storage_bytes: 'Almacenamiento ampliado',
+      multiple_accounts_per_platform: 'Conecta varias cuentas en una misma red',
+      all_campaign_types: 'Usa todos los tipos de campaña',
+      custom_campaign_types: 'Crea tus propios tipos de campaña',
+      plan_runs_per_month: 'Genera más estrategias de contenido',
+      posts_total: 'Publica más',
+      content_bank_assets: 'Guarda más en tu banco de contenido',
+      web_page_imports: 'Importa más páginas web',
     },
   },
 

@@ -29,6 +29,17 @@ export interface ModalContainerProps {
   title?: string
 
   /**
+   * The dialog's accessible name, for a modal that draws its own heading
+   * instead of taking `title`.
+   *
+   * Without one of the two a screen reader announces an unnamed dialog — which
+   * is what happens to every modal whose header is richer than a line of text
+   * (an icon beside it, a second line under it). Catalogue copy like any other
+   * user-facing string; it is read aloud.
+   */
+  label?: string
+
+  /**
    * Modal content
    */
   children: ReactNode
@@ -98,6 +109,7 @@ export function ModalContainer({
   isOpen,
   onClose,
   title,
+  label,
   children,
   className,
   showCloseButton = true,
@@ -219,6 +231,7 @@ export function ModalContainer({
       role="dialog"
       aria-modal={true}
       aria-labelledby={title ? 'modal-title' : undefined}
+      aria-label={title ? undefined : label}
       className={cn(
         'flex',
         'animate-in fade-in-0 duration-300',

@@ -24,6 +24,10 @@ const BOUNDARY = '2026-08-31T00:00:00Z'
 const MONTHLY: TierSnapshot = {
   id: 'tier_max_2026_08_01',
   name: 'Ogen Max',
+  tierId: 'max',
+  purchasable: true,
+  changeReason: '',
+  prices: [],
   effectiveFrom: '2026-08-01T00:00:00Z',
   billingPeriod: 'month',
   renewsAt: BOUNDARY,
@@ -52,6 +56,7 @@ function render(props: Partial<Parameters<typeof PlanBillingCard>[0]> = {}) {
       tier={MONTHLY}
       billing={billed('active')}
       mayManage
+      mayChange
       onManage={() => {}}
       {...props}
     />,

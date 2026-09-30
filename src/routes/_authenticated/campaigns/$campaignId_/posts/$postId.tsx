@@ -9,6 +9,8 @@ import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { Explainer } from '@/components/page-primitives/Explainer'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { ThreadSplitNote } from '@/components/posts/sequence/ThreadSplitNote'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
@@ -379,6 +381,11 @@ function PostEditorSurface({
   // this post" empty state, offering a second one.
   const quality = usePostAssessment(doc.id)
   const { assessment, assess: startAssessment, assessing } = quality
+  // One gate for both places a run can be started — the checks bar and the
+  // rail panel — because they start the same run and would otherwise disagree
+  // about whether there is one left.
+  const qualityGate = useUpgradeGate('quality_reviews_per_post')
+  const runAssessment = qualityGate.intent(startAssessment)
   // Opening the rail is its own action, separate from starting a run: the bar
   // can now do both, and a link that says "see the full breakdown" must not
   // also spend a model call.
@@ -740,6 +747,7 @@ function PostEditorSurface({
             <div className="w-content empty:hidden">
               <PostLockNotice status={doc.status} />
             </div>
+            <UpgradeDialog gate={qualityGate} />
             <div className="w-content">
               <PostValidationsSection
                 checks={checks}
@@ -748,7 +756,7 @@ function PostEditorSurface({
                 postUpdatedAt={doc.updated_at}
                 qualityUnavailable={quality.unavailable}
                 assessing={assessing}
-                onAssess={startAssessment}
+                onAssess={runAssessment}
                 onOpenQuality={openQuality}
               />
             </div>
@@ -908,7 +916,7 @@ function PostEditorSurface({
               unavailable={quality.unavailable}
               loadError={quality.loadError}
               onReload={quality.reload}
-              onAssess={startAssessment}
+              onAssess={runAssessment}
               assessing={assessing}
               steps={quality.steps}
               cached={quality.cached}

@@ -24,6 +24,8 @@ import {
 import { formatDate } from '@/lib/intl'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useAddPost } from '@/hooks/usePosts'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 
 type PostsToolbarProps = {
   /**
@@ -89,6 +91,13 @@ export function PostsToolbar({
   const navigate = useNavigate()
   // Never called where the button isn't drawn; hooks don't take a branch.
   const addPost = useAddPost(campaignId ?? '')
+  // The toolbar's ADD POST is where a post allowance is answered, because it is
+  // the one entry point that is on screen in all three views. The calendar's
+  // click-to-create cells are deliberately left ungated: they are a gesture
+  // rather than a button, there is nowhere on a day cell to put a dialog's
+  // worth of explanation, and the server's own refusal already arrives as a
+  // sentence under the action's name (CON-295).
+  const gate = useUpgradeGate('posts_total')
   const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings()
   const isCalendar = view === 'week' || view === 'month'
 
@@ -239,13 +248,19 @@ export function PostsToolbar({
           )}
 
           {campaignId !== null && (
-            <Button variant="default" onClick={() => addPost()}>
+            <Button
+              variant="default"
+              onClick={gate.intent(() => {
+                addPost()
+              })}
+            >
               <PlusIcon />
               <span>{t('calendar.addPost')}</span>
             </Button>
           )}
         </div>
       </div>
+      <UpgradeDialog gate={gate} />
     </div>
   )
 }

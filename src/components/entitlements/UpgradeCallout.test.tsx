@@ -24,7 +24,7 @@ const DENIED_BY_LIMIT: Entitlement = {
   usage: {
     limit: 10,
     used: 10,
-    period: 'month',
+    reset: 'monthly',
     resetsAt: '2026-09-01T00:00:00Z',
   },
 }
@@ -85,7 +85,7 @@ describe('UpgradeCallout', () => {
         entitlement={denied({
           state: 'denied',
           reason: 'limit',
-          usage: { limit: 12_000, used: 12_000, period: null, resetsAt: null },
+          usage: { limit: 12_000, used: 12_000, reset: null, resetsAt: null },
         })}
       />,
     )
@@ -104,7 +104,7 @@ describe('UpgradeCallout', () => {
           usage: {
             limit: 100_000_000,
             used: 100_000_000,
-            period: null,
+            reset: null,
             resetsAt: null,
           },
         })}

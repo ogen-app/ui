@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { queryClient, type MutationErrorMeta } from './queryClient'
 import * as sessionExpiry from './sessionExpiry'
+import { EntitlementError } from '@/services/api/errors'
 import { useToastStore } from '@/stores/toastStore'
 
 /**
@@ -72,12 +73,58 @@ describe('the mutation-cache error default', () => {
 
   it('still says something when what was thrown is not an Error', async () => {
     const toasts = await failWith('a bare string')
-    expect(toasts[0].title).toBe('Something went wrong')
+    expect(toasts[0].title).toBe('Something went wrong.')
   })
 
   it('still says something when an Error carries an empty message', async () => {
     const toasts = await failWith(new Error(''))
-    expect(toasts[0].title).toBe('Something went wrong')
+    expect(toasts[0].title).toBe('Something went wrong.')
+  })
+
+  it('says why under what, when the plan is the reason', async () => {
+    // The title is the caller's own sentence about the action — the API sends
+    // a machine code and `errors.ts` refuses to pass it off as prose. The
+    // description is the only part that is new information.
+    const toasts = await failWith(
+      new EntitlementError(402, 'Unable to create the campaign', {
+        reason: 'limit',
+        feature: 'active_campaigns',
+        limit: 3,
+        current: 3,
+      }),
+    )
+    expect(toasts[0]).toMatchObject({
+      title: 'Unable to create the campaign',
+      description: "You've used all 3 that your plan allows.",
+    })
+  })
+
+  it('says the singular as a sentence rather than as a 1', async () => {
+    const toasts = await failWith(
+      new EntitlementError(402, 'Unable to add the workspace', {
+        reason: 'limit',
+        feature: 'workspaces',
+        limit: 1,
+        current: 1,
+      }),
+    )
+    expect(toasts[0].description).toBe(
+      "You've used the one that your plan allows.",
+    )
+  })
+
+  it('counts nothing for a capability the tier switches off', async () => {
+    // A 403 `feature_not_available` carries no figures, and a limit sentence
+    // built on a missing one would read "all undefined".
+    const toasts = await failWith(
+      new EntitlementError(403, 'Unable to save the campaign type', {
+        reason: 'tier',
+        feature: 'custom_campaign_types',
+        limit: null,
+        current: null,
+      }),
+    )
+    expect(toasts[0].description).toBe("This isn't included in your plan.")
   })
 
   it('stays quiet while a session-expiry redirect is in flight', async () => {
