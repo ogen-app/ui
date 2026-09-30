@@ -3094,6 +3094,12 @@ export const en = {
       },
     },
 
+    /** The facts ledger's refusals, said beside the statement (CON-316). */
+    factsLedger: {
+      duplicate: 'This workspace already has that statement as a fact.',
+      gone: 'Someone removed this fact while it was open. The ledger has been refreshed.',
+      saveFailed: 'The fact could not be saved. Try again.',
+    },
     /**
      * The counts a piece of material is described by — `components/brand/
      * format.ts`, which takes `t` as its first argument for exactly this.

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import {
   CheckIcon,
@@ -17,6 +18,7 @@ import { FactsTable } from '@/components/tables/factsTable'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { brandSectionCopy } from '@/lib/brandSections'
+import { ApiError } from '@/services/api/errors'
 import { BrandBackButton } from './detail'
 import { Field } from './editor'
 import {
@@ -108,8 +110,16 @@ import {
  * a table whose rows had each been individually finished, which is the wrong
  * question asked twice: it made somebody who had just pressed ADD FACT press
  * SAVE THE LEDGER to mean it, and left the two disagreeing in between. So the
- * modal writes through — **DONE saves, the trash saves, and nothing on this
- * screen is pending.**
+ * modal writes through — **SAVE saves, the trash saves, and nothing on this
+ * screen is pending.** Each is one row on the wire too (CON-316): an add is a
+ * `POST`, a save a `PUT` of that fact, a removal a `DELETE`, so two people
+ * editing different rows both land.
+ *
+ * The modal **waits for the answer** before it closes. The server can refuse a
+ * row — a statement the ledger already has, a date that is not one — and the
+ * place to say so is beside the field, with what was typed still in it; a
+ * modal that closed first would have to report a refusal about a form that is
+ * gone.
  *
  * That makes the modal's **CANCEL** the real safeguard, and it is: it holds
  * its own copy of the fact, so closing by any of the four ways a modal closes
@@ -121,35 +131,17 @@ import {
  * among twenty and it is visible the instant it happens.
  */
 export function FactsLedger({
-  facts,
+  facts: ledger,
   onSave,
+  onRemove,
 }: {
   facts: BrandFact[]
-  onSave?: (facts: BrandFact[]) => void
+  /** One row — added when it has no id, replaced when it has one. */
+  onSave: (fact: BrandFact) => Promise<unknown>
+  onRemove: (id: string) => Promise<unknown>
 }) {
   const { t } = useTranslation()
   const today = todayISO()
-  /**
-   * The ledger on screen — the saved one, one row ahead of the server.
-   *
-   * Every change here is written through immediately, so this is not a draft;
-   * it is what the save was, held locally because the mutation only puts the
-   * new list in the cache when the response comes back. Without it the row
-   * somebody just finished would sit unchanged behind a closed modal for the
-   * length of a round trip, which reads as a save that did not take.
-   */
-  const [ledger, setLedger] = useState<BrandFact[]>(facts)
-  /**
-   * …and re-seeded whenever the server's list changes, which is the
-   * documented way to reset state from a prop. `facts` is memoised on the
-   * statements, so this fires when a save lands (agreeing with what we already
-   * show) or when something else refetches — never on an unrelated render.
-   */
-  const [seeded, setSeeded] = useState<BrandFact[]>(facts)
-  if (seeded !== facts) {
-    setSeeded(facts)
-    setLedger(facts)
-  }
   /** Which ledger is on screen. `'all'` is a view, never a value on a row. */
   const [view, setView] = useState<LedgerView>('all')
   /** What is typed in the box, unparsed — see `factMatches`. */
@@ -180,42 +172,14 @@ export function FactsLedger({
   // about this business, which is what the ledger held before it had tabs.
   const adding: FactSubject = view === 'all' ? 'us' : view
 
-  const add = () =>
-    setEditing({
-      // Minted off the length rather than off the wire, which has no id for a
-      // fact at all — see `BrandFact.id`. Prefixed differently from the ids the
-      // service mints so a fresh row cannot collide with a stored one.
-      fact: emptyFact(`new-${ledger.length}-${Date.now()}`, today, adding),
-      isNew: true,
-    })
+  // No id until the server gives it one — see `BrandFact.id`.
+  const add = () => setEditing({ fact: emptyFact(today, adding), isNew: true })
 
-  /**
-   * Show it and store it, in that order — the one path every change takes.
-   *
-   * A statement-less row is dropped from what is sent, which is the same rule
-   * the modal enforces on its commit button; it cannot get here, and the save
-   * strips it anyway (`useSaveFacts`). The endpoint takes the whole ledger, so
-   * "save this row" is a write of all of them either way — what is atomic is
-   * the gesture, not the request.
-   */
-  const write = (rows: BrandFact[]) => {
-    setLedger(rows)
-    onSave?.(rows.filter((fact) => fact.statement.trim().length > 0))
-  }
+  // Both close the modal only once the row is stored; a refusal rejects, and
+  // the modal keeps it on screen — see "A row saves itself" above.
+  const commit = (fact: BrandFact) => onSave(fact).then(() => setEditing(null))
 
-  const commit = (fact: BrandFact, isNew: boolean) => {
-    write(
-      isNew
-        ? [...ledger, fact]
-        : ledger.map((row) => (row.id === fact.id ? fact : row)),
-    )
-    setEditing(null)
-  }
-
-  const remove = (id: string) => {
-    write(ledger.filter((row) => row.id !== id))
-    setEditing(null)
-  }
+  const remove = (id: string) => onRemove(id).then(() => setEditing(null))
 
   return (
     // The page's own shape, not `BrandEditorFrame`: that frame is a scroller
@@ -277,7 +241,8 @@ export function FactsLedger({
                   // Under a tab, every row would say the same word — see the prop.
                   showSubject={view === 'all'}
                   onEdit={open}
-                  onRemove={remove}
+                  // A failure toasts from the mutation; nothing to add here.
+                  onRemove={(id) => void remove(id).catch(() => {})}
                   // Only ever empty here because the search emptied it, so the
                   // way out is to undo the search — and the tab with it, since
                   // a query that matches nothing under Problems may well match
@@ -301,11 +266,11 @@ export function FactsLedger({
         <FactModal
           // Re-seeds the fields when a different row is opened, rather than
           // carrying the last one's answers into it.
-          key={editing.fact.id}
+          key={editing.fact.id || 'new'}
           fact={editing.fact}
           isNew={editing.isNew}
           onClose={() => setEditing(null)}
-          onDone={(fact) => commit(fact, editing.isNew)}
+          onDone={commit}
           onRemove={() => remove(editing.fact.id)}
         />
       )}
@@ -463,12 +428,25 @@ function FactModal({
   fact: BrandFact
   isNew: boolean
   onClose: () => void
-  onDone: (fact: BrandFact) => void
-  onRemove: () => void
+  onDone: (fact: BrandFact) => Promise<unknown>
+  onRemove: () => Promise<unknown>
 }) {
+  const { t } = useTranslation()
   const [draft, setDraft] = useState<BrandFact>(fact)
+  const [busy, setBusy] = useState<'save' | 'remove' | null>(null)
+  /** The server's refusal of the last press, worded for this form. */
+  const [refused, setRefused] = useState<string | null>(null)
   const set = (next: Partial<BrandFact>) =>
     setDraft((current) => ({ ...current, ...next }))
+
+  const submit = (which: 'save' | 'remove', write: () => Promise<unknown>) => {
+    setBusy(which)
+    setRefused(null)
+    write().catch((error: unknown) => {
+      setBusy(null)
+      setRefused(refusal(t, error))
+    })
+  }
 
   // A fact with no sentence is not a fact. It is also what the save strips out
   // silently, so refusing it here is the same rule said where it can be acted
@@ -498,6 +476,11 @@ function FactModal({
             className="min-h-16 px-3 py-2 leading-5"
           />
         </Field>
+        {refused && (
+          <p role="alert" className="text-sm leading-5 text-destructive">
+            {refused}
+          </p>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="About" hint={factSubject(draft.subject).hint}>
@@ -569,7 +552,9 @@ function FactModal({
               variant="ghost"
               size="sm"
               className="text-tertiary-foreground hover:text-destructive"
-              onClick={onRemove}
+              loading={busy === 'remove'}
+              disabled={busy !== null}
+              onClick={() => submit('remove', onRemove)}
             >
               <TrashIcon />
               <span>REMOVE THIS FACT</span>
@@ -587,8 +572,9 @@ function FactModal({
             <Button
               variant="outline"
               size="sm"
-              disabled={blank}
-              onClick={() => onDone(draft)}
+              disabled={blank || busy !== null}
+              loading={busy === 'save'}
+              onClick={() => submit('save', () => onDone(draft))}
             >
               <CheckIcon />
               {/* Named from the subject it opened as, like the title — the
@@ -603,4 +589,23 @@ function FactModal({
       </div>
     </ModalContainer>
   )
+}
+
+/**
+ * What a refused row says, beside the field it is about.
+ *
+ * Two answers are the ledger's own and are worded here: a statement the
+ * workspace already has (`409`) and a row a teammate removed meanwhile
+ * (`404`, and the ledger refetches behind it). Everything else — a `422` for a
+ * blank statement, a bad date, the 200th fact — is the server's sentence,
+ * which already names the field.
+ */
+function refusal(t: TFunction, error: unknown): string {
+  if (error instanceof ApiError && error.status === 409)
+    return t('brand.factsLedger.duplicate')
+  if (error instanceof ApiError && error.status === 404)
+    return t('brand.factsLedger.gone')
+  return error instanceof Error && error.message
+    ? error.message
+    : t('brand.factsLedger.saveFailed')
 }

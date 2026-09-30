@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { BrandBackButton, BrandPage } from '@/components/brand/detail'
 import { FactsLedger } from '@/components/brand/FactsSection'
-import { useFacts, useSaveFacts } from '@/hooks/useFacts'
+import { useFactMutations, useFacts } from '@/hooks/useFacts'
 import { toast } from '@/stores/toastStore'
 
 /**
@@ -18,12 +18,12 @@ import { toast } from '@/stores/toastStore'
  * the same reason that one does — the rows are the workspace's own, and a table
  * rendered on a guess is a table that saves over what is already there.
  *
- * The statements still travel on the guardrails record; `useSaveFacts` is where
- * that, and the metadata that has nowhere to travel yet, are reconciled.
+ * Each fact is its own row on the server (CON-316), written one at a time
+ * through `useFactMutations`.
  */
 export const Route = createFileRoute('/_authenticated/foundation/facts')({
   // While `facts-ledger` is off the statements live where they always did —
-  // the guardrails editor — and this table's metadata has no backend home.
+  // a plain list in the guardrails editor.
   beforeLoad: () => {
     if (!isFeatureEnabled('facts-ledger')) {
       throw redirect({ to: '/foundation/guardrails' })
@@ -34,7 +34,7 @@ export const Route = createFileRoute('/_authenticated/foundation/facts')({
 
 function FactsPage() {
   const { facts, isPending, isError } = useFacts()
-  const { save } = useSaveFacts()
+  const { save, remove } = useFactMutations()
 
   // Only the two static screens take a header from here. The ledger builds its
   // own, because the one control in it — ADD — is the screen's: the button
@@ -73,11 +73,12 @@ function FactsPage() {
           is what a bar reading "Saved" used to be for. */}
       <FactsLedger
         facts={facts}
-        onSave={(next) => {
-          save(next, {
-            onSuccess: () => toast.success('The ledger is saved.'),
-          })
-        }}
+        onSave={(fact) =>
+          save(fact).then(() => toast.success('The ledger is saved.'))
+        }
+        onRemove={(id) =>
+          remove(id).then(() => toast.success('The ledger is saved.'))
+        }
       />
     </BrandPage>
   )

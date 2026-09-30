@@ -2171,6 +2171,11 @@ export const es: Translation = {
       },
     },
 
+    factsLedger: {
+      duplicate: 'Este espacio de trabajo ya tiene esa afirmación como dato.',
+      gone: 'Alguien eliminó este dato mientras estaba abierto. El registro se ha actualizado.',
+      saveFailed: 'No se pudo guardar el dato. Inténtalo de nuevo.',
+    },
     facts: {
       samplesNone: 'sin ejemplos',
       samples_one: '{{count}} ejemplo',

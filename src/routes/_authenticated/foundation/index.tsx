@@ -41,13 +41,11 @@ function BrandOverviewPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const brand = useBrand()
-  // Both of these are views over data the hub already has, or over storage
-  // that answers instantly — neither adds a wait to the screen. See
-  // `services/api/brandLocal` for what the second one is standing in for.
+  // Both are views over the brand the hub already has — neither adds a wait.
   const { facts } = useFacts()
-  const { data: stance } = useGuardrailsStance()
+  const stance = useGuardrailsStance()
   // Off: the Facts card is not among the sections (`brandSections`), and the
-  // guardrails card must not read a stance one browser decided for itself.
+  // guardrails card draws the section as it did before the stance existed.
   const ledger = useFeatureFlag('facts-ledger')
   // Off: the Series card is not among the sections (`brandSections`), so this
   // query never runs and the hub is byte-for-byte what it was before CON-264.

@@ -367,26 +367,20 @@ const FEATURE_FLAGS = {
   /**
    * The facts ledger — `/foundation/facts` and the guardrails stance.
    *
-   * The statements are real (`guardrails.facts` on the wire, same field the
-   * generator reads), but everything the ledger adds *around* them lives in a
-   * `localStorage` sidecar (`services/api/brandLocal.ts`): the subject/kind
-   * filing, the source, and — the point of the table — the added/checked/
-   * expires dates. An expiry date one browser wide is decoration, and the
-   * "no guardrails by design" stance is a decision a workspace takes, not a
-   * preference a browser holds.
+   * On since CON-316: each fact is a row of its own on the server
+   * (`/api/brand/facts`, carried on `GET /api/brand` as `facts`), with its
+   * subject, kind, source and the added/checked/expires dates, and generation
+   * leaves out a fact past its expiry. The "no guardrails by design" stance is
+   * the server's too (`PUT /api/brand/guardrails/stance`, `guardrailsStance`).
    *
-   * Off: facts stay editable as the plain statement list inside the
-   * guardrails editor, exactly as before the ledger existed, and the stance
-   * UI does not render. On: the guardrails editor hands the statements to the
-   * ledger and shows the stance.
-   *
-   * **Waiting on** a backend home for the metadata (columns beside
-   * `guardrails.facts`, or a table of its own) and a stance field —
-   * `PUT /api/brand/guardrails` 422s an all-empty body precisely so `DELETE`
-   * stays the only route to `null`, which is why "empty by design" has
-   * nowhere to be recorded today.
+   * Off: facts stay editable as the plain statement list inside the guardrails
+   * editor, which sends `facts` and has the server reconcile the ledger to it,
+   * and the stance UI does not render. On: the guardrails editor leaves `facts`
+   * out of its writes (the key is presence-aware, and `[]` deletes every fact)
+   * and shows the stance. The flag stays for one deploy and comes out at the
+   * next monthly review, with the off-branch and the server's reconcile path.
    */
-  'facts-ledger': false,
+  'facts-ledger': true,
 
   /**
    * The contextual help centre (CON-173) — the drawer, its triggers and the

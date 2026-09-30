@@ -4,6 +4,7 @@ import { i18next } from '@/i18n'
 import { brandSectionCopy, SHOWN_BRAND_SECTIONS } from '@/lib/brandSections'
 import { BrandOverview } from './BrandOverview'
 import type { BrandData, BrandVoice } from './types'
+import { NO_STANCE } from '@/hooks/useBrand'
 
 /**
  * The hub with its query missing, in the two ways it can be.
@@ -50,6 +51,8 @@ const BRAND: BrandData = {
   guardrails: null,
   look: null,
   templates: [],
+  facts: [],
+  guardrailsStance: NO_STANCE,
 }
 
 const unreadable = () => i18next.t('brand.overview.unreadable')

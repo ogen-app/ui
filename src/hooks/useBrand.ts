@@ -7,6 +7,7 @@ import {
   saveAudience,
   saveGuardrails,
   saveVoice,
+  type GuardrailsWrite,
 } from '@/services/api/brand'
 import { setPostBrand } from '@/services/api/posts'
 import { postKey } from '@/hooks/usePost'
@@ -14,7 +15,6 @@ import { landSavedPost } from '@/lib/postCache'
 import type {
   BrandAudience,
   BrandData,
-  BrandGuardrails,
   BrandVoice,
 } from '@/components/brand/types'
 
@@ -184,24 +184,42 @@ export function useDeleteAudience() {
  * hands back the whole set and it replaces the whole set. The direct cache
  * write is here so the Overview, one caret away, never paints a frame of the
  * pre-save rules.
+ *
+ * The stance goes with it: the server clears it in the same transaction as any
+ * successful write (CON-316), so the cache says the same rather than leaving a
+ * "decided none" standing beside the rules that just replaced it.
  */
 export function useSaveGuardrails() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (guardrails: BrandGuardrails) => saveGuardrails(guardrails),
+    mutationFn: (guardrails: GuardrailsWrite) => saveGuardrails(guardrails),
     // Serialised for the voice's reason — see `useSaveVoice`.
     scope: { id: 'brand-guardrails' },
     meta: { errorTitle: 'Unable to save the guardrails' },
     onSuccess: (saved) => {
       qc.setQueryData<BrandData>(BRAND_KEY, (current) =>
-        current ? { ...current, guardrails: saved } : current,
+        current
+          ? { ...current, guardrails: saved, guardrailsStance: NO_STANCE }
+          : current,
       )
       qc.invalidateQueries({ queryKey: BRAND_KEY })
     },
   })
 }
 
-/** Back to `null` — the section empty, which is a state it draws. */
+/** What the server answers for a workspace that has not decided. */
+export const NO_STANCE = {
+  none: false,
+  decidedAt: null,
+  decidedBy: null,
+  decidedByName: null,
+} as const satisfies BrandData['guardrailsStance']
+
+/**
+ * Back to `null` — the section empty, which is a state it draws. Facts are not
+ * touched (CON-316: they are their own section now), and no earlier stance
+ * comes back: emptying the rules is not deciding they should be empty.
+ */
 export function useDeleteGuardrails() {
   const qc = useQueryClient()
   return useMutation({

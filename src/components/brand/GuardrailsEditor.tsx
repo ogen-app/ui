@@ -18,6 +18,13 @@ import {
   useSetGuardrailsStance,
 } from '@/hooks/useGuardrailsStance'
 import { brandSection, brandSectionCopy } from '@/lib/brandSections'
+import type { GuardrailsWrite } from '@/services/api/brand'
+import {
+  assemble,
+  comparable,
+  statement,
+  type GuardrailsDraft,
+} from './guardrailsWrite'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { cn } from '@/lib'
 import {
@@ -96,13 +103,20 @@ import type { BrandGuardrails } from './types'
  * decides otherwise. A fact is a *record* — it came from somewhere, it went in
  * on a date, and most facts go off on their own — and none of that fits a list
  * of sentences. It has its own section and its own table now
- * (`FactsSection`), and this screen still carries the statements through
- * untouched on the way to the server, because they travel on the same record.
+ * (`FactsSection`), on rows of their own (CON-316).
  *
- * While the `facts-ledger` flag is off, the ledger's metadata has no home the
- * whole workspace can see (`services/api/brandLocal`), so this screen keeps
- * the plain statement list it always had and the stance card does not render
- * — the app behaves as it did before the ledger existed.
+ * **So with the ledger on, this screen never sends `facts`.** The key is
+ * presence-aware on the guardrails `PUT`: omitted, the ledger is untouched;
+ * present, the server reconciles the ledger to it — and `[]` deletes every
+ * fact. The `guardrails.facts` this screen is handed is only a projection of
+ * the ledger, which moves whenever a teammate adds a row, so it is also left
+ * out of what counts as a change here; otherwise adding a fact would mark the
+ * rules unsaved.
+ *
+ * While the `facts-ledger` flag is off this screen keeps the plain statement
+ * list it always had and sends it, which the server reconciles by statement,
+ * and the stance card does not render — the app behaves as it did before the
+ * ledger existed.
  *
  * ## One list per card, and one heading style on the screen
  *
@@ -153,7 +167,7 @@ export function GuardrailsEditor({
   /** The guardrails as they stand, or `null` while the section is empty. */
   guardrails: BrandGuardrails | null
   /** One write — every save of this screen, the first included. */
-  onSave: (guardrails: BrandGuardrails) => Promise<unknown>
+  onSave: (guardrails: GuardrailsWrite) => Promise<unknown>
   /** Only offered once there are guardrails to remove. */
   onDelete?: () => Promise<unknown>
 }) {
@@ -164,10 +178,15 @@ export function GuardrailsEditor({
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }))
+  // Off: facts keep their plain statement card below and no stance renders —
+  // see "Facts are not here any more" above.
+  const ledger = useFeatureFlag('facts-ledger')
 
-  const written = assemble(draft)
+  const written = assemble(draft, ledger)
   const stated = statement(written)
-  const dirty = JSON.stringify(stated) !== JSON.stringify(statement(guardrails))
+  const dirty =
+    JSON.stringify(stated) !==
+    JSON.stringify(statement(guardrails && comparable(guardrails, ledger)))
   const blank = JSON.stringify(stated) === JSON.stringify(statement(null))
   // Blank is refused rather than written: the server answers a PUT with every
   // list empty with a 422, and the way back to nothing is the danger zone.
@@ -180,9 +199,6 @@ export function GuardrailsEditor({
 
   const info = brandSection('guardrails')
   const copy = brandSectionCopy(t, 'guardrails')
-  // Off: facts keep their plain statement card below and no stance renders —
-  // see "Facts are not here any more" above.
-  const ledger = useFeatureFlag('facts-ledger')
 
   return (
     <BrandEditorFrame
@@ -345,13 +361,11 @@ export function GuardrailsEditor({
  * stance, stated in more detail than a switch can hold — and saving them clears
  * this, so the two can never disagree.
  *
- * **The storage is temporary and per browser.** See `readStance` in
- * `services/api/brandLocal`: there is no column for this, the empty `PUT` is
- * refused by design, and a decision a workspace takes cannot live in one
- * person's browser for long.
+ * The server holds it (CON-316) and enforces both halves of that: it refuses
+ * `none: true` while rules exist, and clears the stance on any rules write.
  */
 function StanceCard() {
-  const { data: stance } = useGuardrailsStance()
+  const stance = useGuardrailsStance()
   const { mutate: decide } = useSetGuardrailsStance()
   const decided = stance?.none ?? false
 
@@ -653,11 +667,7 @@ function WordField({
 
 /* ---------------------------------------------------------------- the draft */
 
-type Draft = Pick<
-  BrandGuardrails,
-  'facts' | 'mayClaim' | 'neverClaim' | 'bannedWords' | 'disclaimer'
->
-
+type Draft = GuardrailsDraft
 function draftFrom(
   t: TFunction,
   guardrails: BrandGuardrails | null,
@@ -688,28 +698,6 @@ function draftFrom(
 }
 
 /**
- * The draft as the whole singleton, for the caller to store.
- *
- * Blank rows are dropped here rather than while typing, which is the only place
- * it can be done without deleting the row somebody is standing in. It is also
- * what makes `empty` answerable above: whether anything has been *stated* is a
- * question about the saved shape, not about how many boxes are on screen.
- */
-function assemble(draft: Draft): BrandGuardrails {
-  const stated = (items: string[]) =>
-    items.map((item) => item.trim()).filter((item) => item.length > 0)
-
-  return {
-    facts: stated(draft.facts),
-    mayClaim: stated(draft.mayClaim),
-    neverClaim: stated(draft.neverClaim),
-    bannedWords: stated(draft.bannedWords),
-    disclaimer: draft.disclaimer.trim(),
-    updatedAt: new Date().toISOString(),
-  }
-}
-
-/**
  * A pasted block as one statement per line.
  *
  * The leading bullet or number goes: what gets pasted here came out of a
@@ -730,25 +718,4 @@ function splitWords(text: string): string[] {
     .split(/[,\n]/)
     .map((word) => word.trim())
     .filter((word) => word.length > 0)
-}
-
-/**
- * What is stated, as one comparable value — the answer to "has anything
- * actually changed", which is what decides whether there is anything to save.
- *
- * Over the *stated* shape rather than the draft, so the two things that are not
- * edits do not read as ones: a blank row somebody opened and abandoned, and the
- * fresh `updatedAt` `assemble` stamps on every call. `null` and a record with
- * nothing in it are deliberately the same statement — that equality is what
- * makes the blocker above catch a cleared-out set of rules.
- */
-function statement(guardrails: BrandGuardrails | null) {
-  const g = guardrails
-  return [
-    g?.facts ?? [],
-    g?.mayClaim ?? [],
-    g?.neverClaim ?? [],
-    g?.bannedWords ?? [],
-    g?.disclaimer ?? '',
-  ]
 }

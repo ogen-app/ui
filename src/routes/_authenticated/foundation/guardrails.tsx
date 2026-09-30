@@ -11,7 +11,6 @@ import {
   useDeleteGuardrails,
   useSaveGuardrails,
 } from '@/hooks/useBrand'
-import { useSetGuardrailsStance } from '@/hooks/useGuardrailsStance'
 import { toast } from '@/stores/toastStore'
 
 /**
@@ -51,7 +50,6 @@ function GuardrailsPage() {
   const { data, isPending, isError } = useBrand()
   const save = useSaveGuardrails()
   const remove = useDeleteGuardrails()
-  const { mutate: decide } = useSetGuardrailsStance()
   const [deletions, setDeletions] = useState(0)
 
   const backButton = <BrandBackButton />
@@ -88,16 +86,9 @@ function GuardrailsPage() {
         key={deletions}
         back={backButton}
         guardrails={guardrails}
-        onSave={(written) =>
-          save.mutateAsync(written).then(() => {
-            // Written rules are the stance, said in more detail than the
-            // switch can hold — so the switch cannot be left standing beside
-            // them saying the opposite. See `StanceCard`. Only on the write
-            // that creates them: the switch is offered only while there are
-            // none, so every later save would restate the same `false`.
-            if (!guardrails) decide(false)
-          })
-        }
+        // Written rules take the stance back; the server clears it in the same
+        // write, and `useSaveGuardrails` mirrors that in the cache.
+        onSave={(written) => save.mutateAsync(written)}
         onDelete={() =>
           remove.mutateAsync().then(() => {
             setDeletions((n) => n + 1)

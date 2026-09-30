@@ -7,6 +7,7 @@ import type { Post } from '@/types/posts'
 import { VoicesSection } from './VoicesSection'
 import { voiceStarterDraft, VOICE_STARTERS } from './starters'
 import type { BrandData, BrandVoice } from './types'
+import { NO_STANCE } from '@/hooks/useBrand'
 
 /**
  * Brand in a language that is not English.
@@ -66,6 +67,8 @@ const BRAND: BrandData = {
   guardrails: null,
   look: null,
   templates: [],
+  facts: [],
+  guardrailsStance: NO_STANCE,
 }
 
 const EMPTY_BRAND: BrandData = { ...BRAND, voices: [] }
