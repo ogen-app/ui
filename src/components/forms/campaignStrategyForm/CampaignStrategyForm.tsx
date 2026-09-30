@@ -14,7 +14,19 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { useCampaignTypes, useUpdateCampaign } from '@/hooks/useCampaigns'
+import { useQueryClient } from '@tanstack/react-query'
+import {
+  campaignKey,
+  useCampaignPhases,
+  useCampaignTypes,
+  useUpdateCampaign,
+} from '@/hooks/useCampaigns'
+import {
+  CampaignPhasesCard,
+  type PhasePlanPending,
+} from '@/components/campaigns/CampaignPhasesCard'
+import { ApiError } from '@/services/api/errors'
+import { toast } from '@/stores/toastStore'
 import {
   CampaignTypeCard,
   CampaignTypePicker,
@@ -105,8 +117,31 @@ export function CampaignStrategyForm({ campaign }: Props) {
 
   // No autosave here: edits mark the page dirty and are applied by the
   // header's Save button (settingsSave context), like the settings page.
-  const { isDirty } = form.formState
-  const { mutateAsync: updateCampaign } = useUpdateCampaign()
+  const { isDirty, dirtyFields } = form.formState
+  const qc = useQueryClient()
+  // Toasts its own failures: a type the server has just locked is worded
+  // here, from the catalogue, instead of by the server's prose (CON-166).
+  const { mutateAsync: updateCampaign } = useUpdateCampaign({
+    errorToast: false,
+  })
+
+  // The type locks once a post is planned against one of its phases. The
+  // count is read off the phase plan, which the card below fetches anyway.
+  const phasesQuery = useCampaignPhases(campaign.id)
+  const phasedPosts = phasesQuery.data?.phases.reduce(
+    (sum, p) => sum + p.post_count,
+    0,
+  )
+  const typeLocked = campaign.type_locked
+
+  // What the phase plan on screen doesn't know yet. The type wins: a new type
+  // brings different phases, so its dates are moot until it is saved.
+  const phasesPending: PhasePlanPending = dirtyFields.campaign_type_id
+    ? 'type'
+    : dirtyFields.start_date || dirtyFields.end_date
+      ? 'dates'
+      : null
+
   const save = useCallback(async () => {
     const v = form.getValues()
     const payload = campaignToPayload(campaign, {
@@ -128,10 +163,38 @@ export function CampaignStrategyForm({ campaign }: Props) {
       language: v.language,
       target_platforms: v.target_platforms,
     })
-    await updateCampaign({ id: campaign.id, payload })
+    let saved
+    try {
+      saved = await updateCampaign({ id: campaign.id, payload })
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'campaign_type_locked') {
+        // A post was planned against the phases since this page loaded. Put
+        // the type back and leave everything else dirty for the next Save;
+        // the refetch brings `type_locked` with it.
+        form.resetField('campaign_type_id', {
+          defaultValue: campaign.campaign_type_id,
+        })
+        setChangingType(false)
+        qc.invalidateQueries({ queryKey: campaignKey(campaign.id) })
+        toast.error(t('campaigns.type.lockedToastTitle'), {
+          description: t('campaigns.type.lockedToastBody'),
+        })
+      } else {
+        // What the mutation cache would have said (CON-164).
+        // `apiJson` always throws with a message written for the user.
+        toast.error(err instanceof Error ? err.message : String(err))
+      }
+      throw err
+    }
     // Re-baseline so the form is pristine against what was just saved.
     form.reset(v)
-  }, [campaign, form, updateCampaign])
+    // A type change, or dates that left a phase no days, drop a hand-edited
+    // plan back to the even split. The campaign's invalidation re-reads it;
+    // this says why the dates below just moved.
+    if (saved.phase_plan_reset) {
+      toast.info(t('campaigns.phases.resetBySave'))
+    }
+  }, [campaign, form, qc, t, updateCampaign])
   useRegisterSettingsSave('campaign-strategy', isDirty, save)
 
   /**
@@ -260,7 +323,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
                 name="campaign_type_id"
                 render={({ field }) => (
                   <FormItem className="lg:col-span-2">
-                    <FormLabel>Campaign type</FormLabel>
+                    <FormLabel>{t('campaigns.type.label')}</FormLabel>
                     {changingType ? (
                       <div className="flex flex-col gap-3">
                         <CampaignTypePicker
@@ -278,7 +341,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
                           className="self-start"
                           onClick={() => setChangingType(false)}
                         >
-                          Cancel
+                          {t('campaigns.type.cancel')}
                         </Button>
                       </div>
                     ) : (
@@ -291,13 +354,20 @@ export function CampaignStrategyForm({ campaign }: Props) {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            disabled={typesLoading}
+                            disabled={typesLoading || typeLocked}
                             onClick={() => setChangingType(true)}
                           >
-                            CHANGE
+                            {t('campaigns.type.change')}
                           </Button>
                         }
                       />
+                    )}
+                    {typeLocked && (
+                      <p className="text-sm text-secondary-foreground">
+                        {phasedPosts
+                          ? t('campaigns.type.locked', { count: phasedPosts })
+                          : t('campaigns.type.lockedUncounted')}
+                      </p>
                     )}
                     <FormMessage />
                   </FormItem>
@@ -305,6 +375,13 @@ export function CampaignStrategyForm({ campaign }: Props) {
               />
             </div>
           </SettingsCard>
+
+          {/* Straight after the window and the type, because it is both of
+              them at once: the type's phases laid over the campaign's dates. */}
+          <CampaignPhasesCard
+            campaignId={campaign.id}
+            pending={phasesPending}
+          />
 
           {/* How much the campaign should produce, then when it goes out. The
             post target used to sit in Advanced next to budget and language,

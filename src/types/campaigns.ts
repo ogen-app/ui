@@ -158,6 +158,13 @@ export type Campaign = {
   target_platforms: CampaignPlatform[]
   campaign_type_id: string
   /**
+   * The type can no longer change, because at least one post is planned
+   * against one of its phases (CON-166). Computed, not latched: delete every
+   * phased post and it unlocks. The PUT refuses a type change while it holds
+   * (409 `campaign_type_locked`), so this only decides what the picker offers.
+   */
+  type_locked: boolean
+  /**
    * When this campaign was put away, or null while it is in the active set
    * (CON-156). Archiving is the reversible half of the lifecycle that replaced
    * `status`, which is gone from the client entirely: `draft` and `active` both
@@ -251,3 +258,50 @@ export type CreateCampaignPayload = {
 }
 
 export type UpdateCampaignPayload = CreateCampaignPayload
+
+/**
+ * The PUT's answer: the campaign, plus whether the save threw away a
+ * hand-edited phase plan (CON-166). A type change always does; a date change
+ * does when it would leave a phase with no days. Absent when nothing was reset.
+ */
+export type UpdateCampaignResponse = Campaign & { phase_plan_reset?: boolean }
+
+/**
+ * Where a campaign's phase windows come from (CON-166): split evenly over its
+ * dates, edited by hand, or nowhere yet because it has no dates.
+ */
+export type PhasePlanSource = 'derived' | 'manual' | 'unscheduled'
+
+/**
+ * One phase of the campaign's type, with the window it runs in. Both dates
+ * are inclusive `YYYY-MM-DD`, and both are null while the plan is
+ * `unscheduled`.
+ */
+export type CampaignPhaseWindow = {
+  phase_id: string
+  sequence: number
+  name: string
+  purpose: string
+  start_date: string | null
+  end_date: string | null
+  post_count: number
+}
+
+/**
+ * `GET /api/campaigns/:id/phases`. Phases arrive ordered by `sequence`, and a
+ * plan is only ever stored whole — there is no half-edited state.
+ */
+export type CampaignPhasePlan = {
+  campaign_id: string
+  campaign_type_id: string
+  source: PhasePlanSource
+  type_locked: boolean
+  phases: CampaignPhaseWindow[]
+}
+
+/** One window of a `PUT …/phases`, which always carries every phase. */
+export type PhaseWindowInput = {
+  phase_id: string
+  start_date: string
+  end_date: string
+}

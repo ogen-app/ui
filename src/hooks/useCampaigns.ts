@@ -9,10 +9,15 @@ import {
   unarchiveCampaign,
   deleteCampaign,
   listCampaignTypes,
+  getPhasePlan,
+  savePhasePlan,
+  resetPhasePlan,
 } from '@/services/api/campaigns'
 import type {
   Campaign,
+  CampaignPhasePlan,
   CreateCampaignPayload,
+  PhaseWindowInput,
   UpdateCampaignPayload,
 } from '@/types/campaigns'
 import type { MutationErrorMeta } from '@/lib/queryClient'
@@ -23,6 +28,14 @@ const CAMPAIGNS_KEY = ['campaigns'] as const
 // campaign's post list nests under this key, so invalidating it covers both.
 export const campaignKey = (id: string) => ['campaigns', id] as const
 export const CAMPAIGN_TYPES_KEY = ['campaign-types'] as const
+/**
+ * Under the campaign's own key on purpose: the phase windows follow the
+ * campaign's dates and type, so the invalidation every campaign save already
+ * does is what re-reads them — including the save that reset a hand-edited
+ * plan (CON-166).
+ */
+export const campaignPhasesKey = (id: string) =>
+  [...campaignKey(id), 'phases'] as const
 /**
  * The archived list is a sibling key, not a variant of the active one: it is a
  * different read, and a campaign moves between them rather than changing
@@ -184,4 +197,44 @@ export function useCampaignTypes() {
     queryFn: listCampaignTypes,
     staleTime: Infinity,
   })
+}
+
+/** The campaign's phases and their windows (CON-166). */
+export function useCampaignPhases(id: string) {
+  return useQuery({
+    queryKey: campaignPhasesKey(id),
+    queryFn: () => getPhasePlan(id),
+    enabled: !!id,
+  })
+}
+
+/**
+ * Saving or resetting a plan answers with the plan, so the cache is written
+ * from the response rather than refetched. `type_locked` rides on it too, but
+ * the campaign's own copy is left for its next read: neither write can change
+ * whether a post holds a phase.
+ */
+function usePhasePlanMutation(
+  fn: (plan: PhaseWindowInput[] | null) => Promise<CampaignPhasePlan>,
+  meta: MutationErrorMeta,
+  id: string,
+) {
+  const qc = useQueryClient()
+  return useMutation({
+    meta,
+    mutationFn: fn,
+    onSuccess: (plan) => qc.setQueryData(campaignPhasesKey(id), plan),
+  })
+}
+
+export function useSavePhasePlan(id: string, meta: MutationErrorMeta) {
+  return usePhasePlanMutation(
+    (phases) => savePhasePlan(id, phases ?? []),
+    meta,
+    id,
+  )
+}
+
+export function useResetPhasePlan(id: string, meta: MutationErrorMeta) {
+  return usePhasePlanMutation(() => resetPhasePlan(id), meta, id)
 }

@@ -44,6 +44,11 @@ type DatePickerProps = {
   disabled?: boolean
   className?: string
   id?: string
+  /** Earliest and latest selectable day, as the same strings `value` takes. */
+  min?: string
+  max?: string
+  /** Offer the calendar's Clear. Off where an empty value means nothing. */
+  clearable?: boolean
 } & VariantProps<typeof datePickerTriggerVariants>
 
 function toDate(value: string | null): Date | undefined {
@@ -77,9 +82,14 @@ function DatePicker({
   id,
   variant,
   size,
+  min,
+  max,
+  clearable = true,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
   const selected = toDate(value)
+  const from = toDate(min ?? null)
+  const to = toDate(max ?? null)
   // The trigger's label is a formatted date and nothing else here reads the
   // catalogue, so this is what re-renders it when the language changes.
   const locale = useLocale()
@@ -105,12 +115,17 @@ function DatePicker({
         <Calendar
           mode="single"
           selected={selected}
+          defaultMonth={selected}
+          disabled={[
+            ...(from ? [{ before: from }] : []),
+            ...(to ? [{ after: to }] : []),
+          ]}
           onSelect={(d) => {
             onChange(d ? toISODate(d) : null)
             setOpen(false)
           }}
           onClear={
-            selected
+            clearable && selected
               ? () => {
                   onChange(null)
                   setOpen(false)

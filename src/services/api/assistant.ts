@@ -466,8 +466,8 @@ function streamedPost(parsed: Record<string, unknown>): StreamedPost | null {
     content: str(post.body),
     platform_id: str(post.platformId),
     platform_post_type: str(post.contentType),
-    campaign_type_phase_id:
-      typeof post.phaseId === 'string' ? post.phaseId : null,
+    // Never `""`: the server refuses an empty phase id (CON-166).
+    campaign_type_phase_id: str(post.phaseId) || null,
     // Local noon keeps the post on its calendar day regardless of timezone.
     scheduled_at: publishDate ? `${publishDate}T12:00:00` : null,
   }
