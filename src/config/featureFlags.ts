@@ -329,24 +329,6 @@ const FEATURE_FLAGS = {
   'workspace-calendar': false,
 
   /**
-   * The facts ledger — `/foundation/facts` and the guardrails stance.
-   *
-   * On since CON-316: each fact is a row of its own on the server
-   * (`/api/brand/facts`, carried on `GET /api/brand` as `facts`), with its
-   * subject, kind, source and the added/checked/expires dates, and generation
-   * leaves out a fact past its expiry. The "no guardrails by design" stance is
-   * the server's too (`PUT /api/brand/guardrails/stance`, `guardrailsStance`).
-   *
-   * Off: facts stay editable as the plain statement list inside the guardrails
-   * editor, which sends `facts` and has the server reconcile the ledger to it,
-   * and the stance UI does not render. On: the guardrails editor leaves `facts`
-   * out of its writes (the key is presence-aware, and `[]` deletes every fact)
-   * and shows the stance. The flag stays for one deploy and comes out at the
-   * next monthly review, with the off-branch and the server's reconcile path.
-   */
-  'facts-ledger': true,
-
-  /**
    * The contextual help centre (CON-173) — the drawer, its triggers and the
    * `#help/<key>` deep link. **Off — waiting on content, not on an endpoint.**
    *

@@ -5,17 +5,15 @@ import type { BrandGuardrails } from './types'
  * What the guardrails editor writes, and what it counts as a change — kept out
  * of the component because one rule here can destroy another section.
  *
- * Since CON-316 `facts` is presence-aware on the guardrails `PUT`: omitted, the
- * ledger is untouched; present, the server reconciles the ledger to it, and
- * `[]` deletes every fact. With the ledger on, the facts are rows of their own,
- * so this screen must never send the key — and the `guardrails.facts` it is
- * handed is only a projection of those rows, which moves whenever a teammate
- * adds one, so it is left out of the comparison too.
+ * The facts are rows of their own since CON-316, and this screen never writes
+ * them. The `guardrails.facts` it is handed is only a projection of those rows,
+ * which moves whenever a teammate adds one, so it is left out of the comparison
+ * too — otherwise adding a fact would mark the rules unsaved.
  */
 
 export type GuardrailsDraft = Pick<
   BrandGuardrails,
-  'facts' | 'mayClaim' | 'neverClaim' | 'bannedWords' | 'disclaimer'
+  'mayClaim' | 'neverClaim' | 'bannedWords' | 'disclaimer'
 >
 
 /**
@@ -26,17 +24,11 @@ export type GuardrailsDraft = Pick<
  * what makes `empty` answerable above: whether anything has been *stated* is a
  * question about the saved shape, not about how many boxes are on screen.
  */
-export function assemble(
-  draft: GuardrailsDraft,
-  ledger: boolean,
-): GuardrailsWrite {
+export function assemble(draft: GuardrailsDraft): GuardrailsWrite {
   const stated = (items: string[]) =>
     items.map((item) => item.trim()).filter((item) => item.length > 0)
 
   return {
-    // Left out, not emptied, with the ledger on — `[]` would delete every
-    // fact. See "Facts are not here any more".
-    ...(ledger ? {} : { facts: stated(draft.facts) }),
     mayClaim: stated(draft.mayClaim),
     neverClaim: stated(draft.neverClaim),
     bannedWords: stated(draft.bannedWords),
@@ -46,11 +38,7 @@ export function assemble(
 }
 
 /** The stored record as this screen compares it — without the ledger's projection. */
-export function comparable(
-  guardrails: BrandGuardrails,
-  ledger: boolean,
-): GuardrailsWrite {
-  if (!ledger) return guardrails
+export function comparable(guardrails: BrandGuardrails): GuardrailsWrite {
   const { facts: _projection, ...rules } = guardrails
   return rules
 }
@@ -68,7 +56,6 @@ export function comparable(
 export function statement(guardrails: GuardrailsWrite | null) {
   const g = guardrails
   return [
-    g?.facts ?? [],
     g?.mayClaim ?? [],
     g?.neverClaim ?? [],
     g?.bannedWords ?? [],

@@ -2600,12 +2600,6 @@ export const es: Translation = {
       starterGroupTitle: 'Empieza con una plantilla',
       starterGroupBody:
         'Tres formas que adoptan las reglas, en lugar de treinta sectores. Elige la más parecida y rellenará las listas de abajo: cada línea está pensada para leerse y editarse, porque esta es la sección en la que la gente va a confiar.',
-      facts: 'Datos',
-      factsHint:
-        'Qué es cierto, para que deje de inventarse. Cifras, fechas, qué hace el producto y cuánto cuesta: las cosas que si no un generador rellena de forma verosímil.',
-      factsPlaceholder:
-        'Soporte responde en un día laborable, todos los días de la semana.',
-      addFact: 'Añadir un dato',
       mayClaim: 'Se puede afirmar',
       mayClaimHint:
         'Afirmaciones ya revisadas, con la formulación con la que se revisaron. Esto es lo que evita que una frase que le costó una hora a un abogado se reescriba desde cero cada vez.',
