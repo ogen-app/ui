@@ -56,7 +56,6 @@ export type WorkspaceDestination = {
 export function useWorkspaceDestinations(): WorkspaceDestination[] {
   const { t } = useTranslation()
   const inboxEnabled = useFeatureFlag('tasks')
-  const ideasEnabled = useFeatureFlag('ideas')
   const calendarEnabled = useFeatureFlag('workspace-calendar')
 
   const destinations: WorkspaceDestination[] = []
@@ -77,15 +76,13 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
   // Before Campaigns, because it is the earlier state of the same material:
   // an idea is what a campaign is made out of, and the order of the rail is
   // the order the work happens in.
-  if (ideasEnabled) {
-    destinations.push({
-      id: 'ideas',
-      label: t('nav.ideas'),
-      icon: LightbulbIcon,
-      to: '/ideas',
-      isActive: (p) => p.startsWith('/ideas'),
-    })
-  }
+  destinations.push({
+    id: 'ideas',
+    label: t('nav.ideas'),
+    icon: LightbulbIcon,
+    to: '/ideas',
+    isActive: (p) => p.startsWith('/ideas'),
+  })
 
   // Before Campaigns, on the same argument as Ideas above it: a document is
   // material, a campaign is what gets made out of it, and the rail is in the

@@ -15,7 +15,7 @@ import { buildFlagValue, FLAG_IDS, isFeatureEnabled } from './featureFlags'
  * half is a build-time fold, asserted by the build rather than here: see
  * `docs/technical-decisions.md#staging-flag-overrides`.
  */
-const KNOWN = ['tasks', 'ideas', 'series']
+const KNOWN = ['tasks', 'help-center', 'series']
 
 /**
  * Forcing a flag *off* is only testable against a flag the build has on, and
@@ -92,10 +92,10 @@ describe('?ff=', () => {
 
   it('merges into what is already stored, so bookmarks compose', () => {
     setFlagOverride('tasks', true)
-    visit('/campaigns?ff=ideas')
+    visit('/campaigns?ff=help-center')
     bootstrapFlagOverrides(KNOWN)
 
-    expect(readFlagOverrides()).toEqual({ tasks: true, ideas: true })
+    expect(readFlagOverrides()).toEqual({ tasks: true, 'help-center': true })
   })
 
   it('clears everything when given no names', () => {
@@ -144,7 +144,7 @@ describe('a corrupted key', () => {
 
 describe('serializeFlagOverrides', () => {
   it('round-trips through the query parameter', () => {
-    const set = { tasks: true, ideas: false }
+    const set = { tasks: true, 'help-center': false }
     visit(`/campaigns?ff=${serializeFlagOverrides(set)}`)
     bootstrapFlagOverrides(KNOWN)
 

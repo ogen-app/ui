@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { SidebarMenuSkeleton } from '@/components/ui/sidebar'
 import { useCalendarPlace } from '@/hooks/usePostsPlace'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { cn } from '@/lib'
 import { formatDate } from '@/lib/intl'
 import {
@@ -76,7 +75,6 @@ export function CampaignLevel({
   // The calendar's own remembered position, not the posts' — this row names
   // the calendar, so it opens one whatever arrangement the user last chose.
   const calendar = useCalendarPlace(campaignId)
-  const ideasEnabled = useFeatureFlag('ideas')
 
   // `/list` is the Posts row's route and carries no word of its own that the
   // others don't, so it is the fallback rather than a case of its own.
@@ -154,10 +152,6 @@ export function CampaignLevel({
             `NavUtilityStrip`, and a section is one entry wherever it appears. */}
         {CAMPAIGN_SECTIONS.filter((section) => !section.utility).map(
           (section) => {
-            // Gated here as well as on the route: with the flag off the
-            // campaign must have no Ideas at all, and a row that redirects is
-            // worse than no row.
-            if (section.id === 'ideas' && !ideasEnabled) return null
             const link = sectionLink(section.id)
             return (
               <AppSidebarButtonMenu

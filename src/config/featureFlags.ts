@@ -295,30 +295,6 @@ const FEATURE_FLAGS = {
   'workspace-tiers': false,
 
   /**
-   * Ideas — the module between a brief and a post, at both levels.
-   *
-   * Was two `PageNotBuiltYet` stubs that completed the rail's pairing; it is
-   * now the working module — a capture box, three verdicts given on the row
-   * itself, and four counts to switch piles by, at the workspace level and
-   * narrowed to one campaign. **On since CON-315** — the flag stays for one
-   * deploy and comes out at the next monthly review, off-branch and all.
-   *
-   * `/api/ideas` shipped to the contract written in `services/api/ideas.ts`
-   * (ogen, 2026-09-25), and the `localStorage` stub that stood in for it is
-   * deleted. The stub was the whole reason this was off: it was per browser,
-   * so the backlog this module is about sharing was shared with nobody.
-   *
-   * Both points the client had guessed at came back the way it guessed:
-   *
-   * 1. **A verdict is its own endpoint** (`PUT /api/ideas/:id/verdict`), so a
-   *    decision cannot ride along with an edit. The PATCH refuses a `verdict`.
-   * 2. **A *yes* leads nowhere yet.** An accepted idea can be filed onto a
-   *    campaign and that is all. Promotion, `POST /api/ideas/:id/promote`, is
-   *    future work on the server's side (CON-315 §13), not a client guess.
-   */
-  ideas: true,
-
-  /**
    * The workspace's calendar — every campaign's posts on one grid.
    *
    * The campaign already has one (`/campaigns/:id/calendar`), which is the
