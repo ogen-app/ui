@@ -96,9 +96,10 @@ export type Platform = {
   connect_supported: boolean
   post_types: Record<string, string>
   /**
-   * The subset of `post_types` Zernio can actually publish. Narrower than the
-   * seeded vocabulary, and narrower again once `lib/platformDictionary` has had
-   * its say — that table bounds it to what this build can also *render*.
+   * The subset of `post_types` Zernio can actually publish — the operator's
+   * choice, edited in Harbor. This is the platform's post-type vocabulary;
+   * `lib/platformDictionary` only supplies wording and release flags for the
+   * slugs it knows, and names the rest from `post_types` (CON-311).
    */
   supported_post_types: string[]
   /** Operator-controlled display order; the list endpoint is already sorted. */

@@ -152,7 +152,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   comes after — that is what makes a launch need no deploy. What "support" means
   is the checklist in [`docs/platform-support.md`](./docs/platform-support.md);
   the silent one is `lib/platformMedia`, where a missing row means *no* image
-  checks rather than permissive ones.
+  checks rather than permissive ones. **Post types are the other way round**
+  (CON-311): the row's `supported_post_types` is the vocabulary, and the
+  dictionary's `postTypes` only words it — a slug it does not list is offered
+  under the row's own `post_types` label (`withOperatorPostTypes`) rather than
+  dropped, because Harbor's selector was inert while this was an intersection.
+  Read post types off a view or `resolve`, never off `getPlatformByZernioId`,
+  which knows only the build's half.
 - **A post's permalink survives publication and is not frozen with the rest**
   (CON-165). `published_url` is on `PostPayload` and must stay there: the PUT
   assigns it unconditionally, so an autosave that omits it clears the link on

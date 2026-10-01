@@ -48,6 +48,11 @@ export type PlatformCatalog = {
    *
    * Undefined for a network this build does not support, and for any sqid while
    * the list is still loading.
+   *
+   * Once the list is in, this is the *row's* metadata — the dictionary's with
+   * the operator's post types added (`withOperatorPostTypes`, CON-311) — so the
+   * editor's picker and every post-type label agree with Workspace Settings.
+   * Before it is in, a slug still answers from the bare dictionary.
    */
   resolve: (idOrSlug: string) => PlatformInfo | undefined
   /** The server's row for a sqid — constraints, publishers, cadence. */
@@ -63,12 +68,14 @@ export function usePlatformCatalog(): PlatformCatalog {
     const views = buildPlatformViews(rows)
     const bySqid = new Map(rows.map((p) => [p.id, p]))
     const viewBySqid = new Map(views.map((v) => [v.platform.id, v]))
+    const infoBySlug = new Map(views.map((v) => [v.info.zernioId, v.info]))
     return {
       rows,
       views,
       resolve: (idOrSlug) =>
-        getPlatformByZernioId(idOrSlug) ??
-        getPlatformByZernioId(bySqid.get(idOrSlug)?.zernio_id ?? ''),
+        viewBySqid.get(idOrSlug)?.info ??
+        infoBySlug.get(idOrSlug) ??
+        getPlatformByZernioId(idOrSlug),
       row: (id) => bySqid.get(id),
       view: (id) => viewBySqid.get(id),
     }

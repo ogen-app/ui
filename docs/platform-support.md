@@ -35,8 +35,9 @@ and 5 are enforced by `platformDictionary.test.ts`; the rest are not, so they ar
 the ones to actually check.
 
 1. **Dictionary entry** — `PLATFORMS` in `lib/platformDictionary.ts`: `zernioId`,
-   `name`, `icon`, brand `color`, and the `postTypes` this build can both render
-   and publish. Labels are ours, not the seeded `post_types` wording.
+   `name`, `icon`, brand `color`, and labels for the `postTypes` it expects to
+   publish. Labels are ours, not the seeded `post_types` wording — but the list
+   is wording, not a limit (see below).
 2. **Preview** — `components/posts/preview/PostPreviewPanel.tsx`: a renderer in
    `RENDERERS`, plus membership in `FEED_TILES` and in whichever of
    `STORY_NETWORKS` / `THREAD_NETWORKS` / `CAROUSEL_NETWORKS` apply. Without a
@@ -58,8 +59,16 @@ the ones to actually check.
    constraint jsonb filled in, and Zernio needs to actually support the network.
    Ours is the display half; theirs is whether anything can publish.
 
-Post types are the same rule one level down: a slug needs a label here, a preview
-that can draw it, and a server-side rule before it is offered.
+Post types are **not** the same rule one level down (CON-311). Which types a
+platform offers is the row's `supported_post_types`, edited in Harbor; a slug
+there that `postTypes` does not list is offered anyway, under the row's own
+`post_types` label (`withOperatorPostTypes`). What a type needs from this build
+is only wording: the preview is per platform, the Auto ladder names its own
+slugs, and the attachment and length rules come off the server, which treats a
+slug it has no rule for as whitelist-only. So a `postTypes` entry is how to give
+a type our label, a place in the order or a release `flag` — never what makes
+it reachable. Removing a slug in Harbor withdraws it from every picker; a post
+that already carries it keeps its label.
 
 ## Global limits we mirror blind
 

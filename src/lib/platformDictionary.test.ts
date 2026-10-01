@@ -311,3 +311,71 @@ describe('thread, released', () => {
     )
   })
 })
+
+// Harbor's post-type selector used to be inert for anything this build did not
+// already list: the dictionary was intersected in as a ceiling. The operator's
+// row decides the vocabulary now, and the dictionary only words it (CON-311).
+describe('operator post types (CON-311)', () => {
+  function operatorRow(
+    supported: string[],
+    publisherSupported: string[] = supported,
+  ): Platform {
+    return {
+      ...apiPlatform(LINKEDIN, publisherSupported),
+      post_types: {
+        'text-post': 'Text post (seeded wording)',
+        poll: 'Poll',
+        'live-video': 'Live video',
+        document: '  ',
+      },
+      supported_post_types: supported,
+    }
+  }
+
+  it('offers a type the operator enabled that the dictionary does not list', () => {
+    const [v] = buildPlatformViews([operatorRow(['text-post', 'poll'])])
+    expect(v.allowed.map((pt) => pt.slug)).toEqual(['text-post', 'poll'])
+    expect(v.available.find((pt) => pt.slug === 'poll')?.label).toBe('Poll')
+  })
+
+  it('keeps our label for a type the dictionary words', () => {
+    const [v] = buildPlatformViews([operatorRow(['text-post'])])
+    expect(v.allowed[0].label).toBe('Text post')
+  })
+
+  it('names an unlabelled slug by the slug itself', () => {
+    const [v] = buildPlatformViews([operatorRow(['document', 'newsletter'])])
+    expect(v.allowed.map((pt) => pt.label)).toEqual(['document', 'newsletter'])
+  })
+
+  it('leaves out seeded types the operator has not enabled', () => {
+    const [v] = buildPlatformViews([operatorRow(['text-post'])])
+    expect(v.info.postTypes.map((pt) => pt.slug)).not.toContain('live-video')
+  })
+
+  it('drops a dictionary type the operator took away', () => {
+    const [v] = buildPlatformViews([operatorRow(['text-post', 'video'])])
+    expect(v.allowed.map((pt) => pt.slug)).toEqual(['text-post', 'video'])
+  })
+
+  // The top-level list is read from the database per request; the publisher's
+  // projection trails it by up to a tick.
+  it('learns the word before the publisher can send it', () => {
+    const [v] = buildPlatformViews([operatorRow(['poll'], ['text-post'])])
+    expect(v.info.postTypes.map((pt) => pt.slug)).toContain('poll')
+    expect(v.allowed.map((pt) => pt.slug)).not.toContain('poll')
+  })
+
+  it("reaches the editor's picker and a post's label", () => {
+    const [v] = buildPlatformViews([operatorRow(['poll'])])
+    expect(releasedPostTypes(v.info).map((pt) => pt.slug)).toContain('poll')
+    expect(getPostTypeLabel(v.info, 'poll')).toBe('Poll')
+  })
+
+  it('leaves the shared dictionary untouched', () => {
+    buildPlatformViews([operatorRow(['poll'])])
+    expect(
+      getPlatformByZernioId(LINKEDIN)?.postTypes.map((pt) => pt.slug),
+    ).not.toContain('poll')
+  })
+})
