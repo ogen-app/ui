@@ -22,19 +22,25 @@
 // auto-publish allowlist, connect links and `supportsSequence` are all keyed by
 // slug — so this was the last table out of step.
 //
-// `postTypes` lists only the slugs a publisher can actually send. The
-// platforms table seeds a far wider vocabulary — 46 slugs, including polls,
-// events, live video, Spaces, Guides — and none of them can leave Ogen: no
-// publisher implements them, so `buildPlatformView` filtered every one out of
-// `allowed` and they reached the user only as the editor's "N other post
-// types" line, advertising formats nothing can publish.
+// **Post types are the operator's too, and the dictionary only words them**
+// (CON-311). `postTypes` below is the set this build has labels, release flags
+// and an order for — it is no longer a ceiling. A row's own
+// `supported_post_types` is what an operator edits in Harbor, and a slug there
+// that this table does not list is appended to the platform's vocabulary under
+// the label the row carries for it in `post_types`. This used to be an
+// intersection, and it made Harbor's selector look inert: enabling a type the
+// shipped build did not list changed nothing anywhere in the app.
 //
-// So the dictionary is the set we can *render and publish*, not the set the
-// platform's API has. `allowed` still does the real filtering — it is what
-// varies by deployment and by which publishers are configured — and this list
-// bounds it to the slugs that have a label, a preview and a server-side rule.
-// Adding a format back means adding it in all three places, which is the work
-// it actually takes.
+// That is safe for a post type where it is not for a network, because a post
+// type is not rendered by anything of its own. The preview is chosen per
+// platform, the Auto ladder only ever lands on the slugs it names, attachment
+// and length rules come off the server (`GET /api/platforms/:id/post-type-rules`
+// and `text_constraints`), and the server takes a slug it has no rule for as
+// whitelist-only. What an unknown slug lacks is only our wording.
+//
+// The seeded `post_types` map itself is still not the vocabulary — it holds 46
+// slugs, polls, events and live video among them, and nothing publishes most of
+// them. Only `supported_post_types` reaches a picker.
 
 import type { Icon } from '@phosphor-icons/react'
 import {
@@ -242,6 +248,42 @@ export function getPlatformByZernioId(
   return BY_ZERNIO_ID.get(zernioId)
 }
 
+/**
+ * `info` with the operator's post types added to the ones this build words.
+ *
+ * The dictionary's entries keep their place, label and flag; a slug the row
+ * enables and the dictionary does not list follows them, in the operator's
+ * order, named by the row's own `post_types` label (or its slug, if the row
+ * has none). A dictionary type the operator has *not* enabled is kept too —
+ * `buildPlatformView` still drops it wherever the question is what can
+ * publish, and the editor still has to name a post that already carries it.
+ *
+ * Reads both of the row's lists: the top-level one is read from the database
+ * on every request, while the publishers' projection is refreshed on a tick, so
+ * a type added in Harbor reaches the vocabulary on the next fetch even when the
+ * publisher has not caught up — `allowed` then waits for the publisher, as it
+ * should.
+ */
+export function withOperatorPostTypes(
+  info: PlatformInfo,
+  platform: Platform,
+): PlatformInfo {
+  const known = new Set(info.postTypes.map((pt) => pt.slug))
+  const extra: PlatformPostType[] = []
+  const slugs = [
+    ...platform.supported_post_types,
+    ...(platform.publishers ?? []).flatMap((p) => p.supported_post_types),
+  ]
+  for (const slug of slugs) {
+    if (known.has(slug)) continue
+    known.add(slug)
+    extra.push({ slug, label: platform.post_types[slug]?.trim() || slug })
+  }
+  return extra.length === 0
+    ? info
+    : { ...info, postTypes: [...info.postTypes, ...extra] }
+}
+
 function unionSupportedSlugs(
   publishers: { supported_post_types: string[] }[],
 ): Set<string> {
@@ -336,7 +378,7 @@ export function buildPlatformViews(platforms: Platform[]): PlatformView[] {
       }
       return []
     }
-    return [buildPlatformView(platform, info)]
+    return [buildPlatformView(platform, withOperatorPostTypes(info, platform))]
   })
 }
 
