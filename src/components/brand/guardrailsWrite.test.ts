@@ -5,7 +5,7 @@ import type { BrandGuardrails } from './types'
 /**
  * The one write on the guardrails screen that can destroy another section
  * (CON-316): `facts` is presence-aware on the `PUT`, and `[]` deletes the
- * whole ledger. With the ledger on, the key must be absent — not empty.
+ * whole ledger. So the key must be absent — not empty.
  */
 
 const STORED: BrandGuardrails = {
@@ -18,7 +18,6 @@ const STORED: BrandGuardrails = {
 }
 
 const DRAFT = {
-  facts: ['Founded in 2019.'],
   mayClaim: ['Licensed in the EU and the UK.', '  '],
   neverClaim: [],
   bannedWords: [],
@@ -26,41 +25,26 @@ const DRAFT = {
 }
 
 describe('assemble', () => {
-  it('leaves facts out entirely while the ledger is on', () => {
-    const written = assemble(DRAFT, true)
+  it('leaves facts out entirely', () => {
+    const written = assemble(DRAFT)
     expect(written).not.toHaveProperty('facts')
     expect(written.mayClaim).toEqual(['Licensed in the EU and the UK.'])
-  })
-
-  it('still sends the statement list with the ledger off', () => {
-    expect(assemble(DRAFT, false).facts).toEqual(['Founded in 2019.'])
   })
 })
 
 describe('comparable', () => {
   // A teammate adding a fact moves the projection under an open screen; that
   // must not read as an unsaved change to the rules.
-  it('ignores the ledger projection while the ledger is on', () => {
+  it('ignores the ledger projection', () => {
     const moved = { ...STORED, facts: [...STORED.facts, 'A second fact.'] }
-    expect(statement(comparable(moved, true))).toEqual(
-      statement(comparable(STORED, true)),
-    )
-  })
-
-  it('keeps the statements in the comparison with the ledger off', () => {
-    const moved = { ...STORED, facts: [...STORED.facts, 'A second fact.'] }
-    expect(statement(comparable(moved, false))).not.toEqual(
-      statement(comparable(STORED, false)),
-    )
+    expect(comparable(moved)).not.toHaveProperty('facts')
+    expect(statement(comparable(moved))).toEqual(statement(comparable(STORED)))
   })
 
   // Rules empty, facts on the ledger: blank, so the editor blocks the save
   // rather than sending the all-empty body the server answers 422 to.
-  it('reads rules-only emptiness as blank while the ledger is on', () => {
-    const empty = assemble(
-      { ...DRAFT, mayClaim: [], facts: ['Founded in 2019.'] },
-      true,
-    )
+  it('reads rules-only emptiness as blank', () => {
+    const empty = assemble({ ...DRAFT, mayClaim: [] })
     expect(statement(empty)).toEqual(statement(null))
   })
 })

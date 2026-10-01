@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import { isFeatureEnabled } from '@/config/featureFlags'
+import { createFileRoute } from '@tanstack/react-router'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
@@ -22,13 +21,6 @@ import { toast } from '@/stores/toastStore'
  * through `useFactMutations`.
  */
 export const Route = createFileRoute('/_authenticated/foundation/facts')({
-  // While `facts-ledger` is off the statements live where they always did —
-  // a plain list in the guardrails editor.
-  beforeLoad: () => {
-    if (!isFeatureEnabled('facts-ledger')) {
-      throw redirect({ to: '/foundation/guardrails' })
-    }
-  },
   component: FactsPage,
 })
 

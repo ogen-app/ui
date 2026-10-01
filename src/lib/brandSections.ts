@@ -49,7 +49,7 @@ import { isFeatureEnabled } from '@/config/featureFlags'
  * so they are their own level-0 module at `/assets`, with a campaign-scoped
  * twin, and this table is back to the things a brand is made of.
  *
- * **Three of the seven are offered today** — see `shown`, and read the rest of
+ * **Four of the seven are offered today** — see `shown`, and read the rest of
  * this file as describing the module rather than the current menu.
  */
 export type BrandSectionId =
@@ -142,10 +142,9 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     icon: SealCheckIcon,
     tone: 'var(--brand-facts)',
     // Every generation flow reads the ledger since CON-316, and leaves out a
-    // fact past its expiry. Off, the statements stay a card inside guardrails
-    // and this section is not offered — see the `facts-ledger` flag.
+    // fact past its expiry.
     readBy: ['plan', 'post'],
-    shown: isFeatureEnabled('facts-ledger'),
+    shown: true,
   },
   {
     id: 'series',

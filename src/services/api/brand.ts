@@ -248,15 +248,13 @@ export function deleteAudience(id: string): Promise<void> {
 }
 
 /**
- * A guardrails write. `facts` is **presence-aware** since CON-316: leave it out
- * and the ledger is untouched, send it — `[]` included — and the server
- * reconciles the ledger to that list by statement, deleting every fact not in
- * it. So the ledger's own screen never sends it; only the flag-off editor,
- * where the statements are still a list on this record, does.
+ * A guardrails write, which never carries `facts`. The key is
+ * **presence-aware** since CON-316: leave it out and the ledger is untouched,
+ * send it — `[]` included — and the server reconciles the ledger to that list
+ * by statement, deleting every fact not in it. The ledger is written a row at
+ * a time through `/api/brand/facts`, so nothing here may send it.
  */
-export type GuardrailsWrite = Omit<BrandGuardrails, 'facts'> & {
-  facts?: string[]
-}
+export type GuardrailsWrite = Omit<BrandGuardrails, 'facts'>
 
 /**
  * Write the guardrails — a singleton, so always a replace and never an insert.

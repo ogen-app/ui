@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { toast } from '@/stores/toastStore'
 import {
   captureIdea,
@@ -45,23 +44,18 @@ export function ideasQueryKey(campaignId: string | null) {
 }
 
 export function useIdeas(campaignId: string | null = null) {
-  const enabled = useFeatureFlag('ideas')
-
   const query = useQuery({
     queryKey: ideasQueryKey(campaignId),
     queryFn: () => listIdeas(campaignId),
-    enabled,
     staleTime: 30_000,
   })
 
   const ideas = useMemo(() => query.data ?? [], [query.data])
-  // `awaiting`, not `isLoading` — see `lib/fetched`. It also answers the
-  // `enabled &&` this used to carry: a query nobody switched on is idle, not
-  // waiting.
+  // `awaiting`, not `isLoading` — see `lib/fetched`.
   return {
     ideas,
     isLoading: awaiting(query),
-    isError: enabled && query.isError,
+    isError: query.isError,
   }
 }
 

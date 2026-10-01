@@ -1,6 +1,5 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { IdeasSurface } from '@/components/ideas/IdeasSurface'
-import { isFeatureEnabled } from '@/config/featureFlags'
 
 /**
  * The campaign's ideas — the same module as the workspace's, narrowed to one
@@ -17,9 +16,6 @@ import { isFeatureEnabled } from '@/config/featureFlags'
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/ideas',
 )({
-  beforeLoad: () => {
-    if (!isFeatureEnabled('ideas')) throw redirect({ to: '/campaigns' })
-  },
   component: CampaignIdeasView,
 })
 

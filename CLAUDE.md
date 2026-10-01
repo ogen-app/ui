@@ -678,7 +678,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   copy and drifted — per-day bars under a label reading "Cumulative reach",
   above a chart drawing the running total.
 - **An idea is a question, `later` carries a date, and triage is the list**
-  (`ideas`, on). The module was imagined as a kanban and is not one: capture
+  (shipped, unflagged). The module was imagined as a kanban and is not one: capture
   wants no structure and a board makes every decision cost a find, a grab, an
   aim and a drop, with an undecided column that grows to two hundred cards
   nobody scrolls. So the piles are counts you switch between and the three

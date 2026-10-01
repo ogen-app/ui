@@ -1211,7 +1211,7 @@ entries — the two pickers are converted, the eleven library screens are not.
 
 ## An idea is a question, and triage is the list rather than a board {#ideas-triage}
 
-**Decision.** Ideas (`ideas`, on) is a backlog with one capture field, three
+**Decision.** Ideas (shipped, unflagged) is a backlog with one capture field, three
 verdicts given on the row itself, and four counts to switch piles by. It is
 deliberately **not** a kanban board, which is what the module was first
 imagined as — and, after one pass, deliberately not a separate answering mode

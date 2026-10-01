@@ -65,7 +65,7 @@ Kept for one cycle so nobody re-raises them, then deleted.
 - **I1 — `/api/ideas`, the whole module.** Shipped in CON-315 (ogen,
   2026-09-25) to the contract `services/api/ideas.ts` had written out: five
   calls, the verdict as its own endpoint, and the two verdict rules enforced by
-  the server. The stub is deleted and the `ideas` flag is on. What a *yes*
+  the server. The stub is deleted, and so is the `ideas` flag. What a *yes*
   leads to is still nothing; promotion is listed as future work there.
 
 - **S4, the upload half — a stable `code` on each upload result.** Shipped in

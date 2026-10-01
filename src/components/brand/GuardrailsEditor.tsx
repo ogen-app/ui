@@ -25,7 +25,6 @@ import {
   statement,
   type GuardrailsDraft,
 } from './guardrailsWrite'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { cn } from '@/lib'
 import {
   BrandEditorFrame,
@@ -96,7 +95,7 @@ import type { BrandGuardrails } from './types'
  *   everybody has learned from every tag field — because five words typed into
  *   a textarea are five words nobody can count or delete one of.
  *
- * ## Facts are not here any more — behind `facts-ledger`
+ * ## Facts are not here any more
  *
  * They were the first of five lists and they were the odd one out. The other
  * four are *rules*: true because somebody decided them, changed when somebody
@@ -105,18 +104,13 @@ import type { BrandGuardrails } from './types'
  * of sentences. It has its own section and its own table now
  * (`FactsSection`), on rows of their own (CON-316).
  *
- * **So with the ledger on, this screen never sends `facts`.** The key is
+ * **So this screen never sends `facts`.** The key is
  * presence-aware on the guardrails `PUT`: omitted, the ledger is untouched;
  * present, the server reconciles the ledger to it — and `[]` deletes every
  * fact. The `guardrails.facts` this screen is handed is only a projection of
  * the ledger, which moves whenever a teammate adds a row, so it is also left
  * out of what counts as a change here; otherwise adding a fact would mark the
  * rules unsaved.
- *
- * While the `facts-ledger` flag is off this screen keeps the plain statement
- * list it always had and sends it, which the server reconciles by statement,
- * and the stance card does not render — the app behaves as it did before the
- * ledger existed.
  *
  * ## One list per card, and one heading style on the screen
  *
@@ -178,15 +172,11 @@ export function GuardrailsEditor({
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((d) => ({ ...d, [key]: value }))
-  // Off: facts keep their plain statement card below and no stance renders —
-  // see "Facts are not here any more" above.
-  const ledger = useFeatureFlag('facts-ledger')
-
-  const written = assemble(draft, ledger)
+  const written = assemble(draft)
   const stated = statement(written)
   const dirty =
     JSON.stringify(stated) !==
-    JSON.stringify(statement(guardrails && comparable(guardrails, ledger)))
+    JSON.stringify(statement(guardrails && comparable(guardrails)))
   const blank = JSON.stringify(stated) === JSON.stringify(statement(null))
   // Blank is refused rather than written: the server answers a PUT with every
   // list empty with a 422, and the way back to nothing is the danger zone.
@@ -233,7 +223,7 @@ export function GuardrailsEditor({
         </ForkedNote>
       )}
 
-      {ledger && !guardrails && <StanceCard />}
+      {!guardrails && <StanceCard />}
 
       {/* Offered while the screen is still blank, and withdrawn by the first
           keystroke — see the note on starters above. */}
@@ -259,20 +249,6 @@ export function GuardrailsEditor({
             )
           })}
         </StarterGroup>
-      )}
-
-      {!ledger && (
-        <EditorCard
-          title={t('brand.guardrails.facts')}
-          hint={t('brand.guardrails.factsHint')}
-        >
-          <StatementList
-            items={draft.facts}
-            onChange={(facts) => set('facts', facts)}
-            placeholder={t('brand.guardrails.factsPlaceholder')}
-            addLabel={t('brand.guardrails.addFact')}
-          />
-        </EditorCard>
       )}
 
       <EditorCard
@@ -675,11 +651,6 @@ function draftFrom(
 ): Draft {
   if (guardrails) {
     return {
-      // Carried, never shown. The facts ledger is its own section and its own
-      // table now, but the statements are stored on this record — so a save
-      // from this screen has to hand back the ones it was given or it deletes
-      // a section it does not draw.
-      facts: guardrails.facts,
       mayClaim: guardrails.mayClaim,
       neverClaim: guardrails.neverClaim,
       bannedWords: guardrails.bannedWords,
@@ -689,7 +660,6 @@ function draftFrom(
   // A starter hands over rules and words, never facts — see `GuardrailStarter`.
   const seed = starter ? guardrailStarterDraft(t, starter) : undefined
   return {
-    facts: [],
     mayClaim: [],
     neverClaim: seed?.neverClaim ?? [],
     bannedWords: seed?.bannedWords ?? [],
