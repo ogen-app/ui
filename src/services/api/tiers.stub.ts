@@ -3,14 +3,19 @@ import type { RawEntitlement, WorkspacePlan } from '@/types/entitlements'
 import type { Tier } from '@/types/tiers'
 
 /**
- * A tier list and a plan, standing in for a plan change nobody can make
- * (CON-232, CON-243).
+ * A plan, standing in for a plan change nobody can make (CON-232, CON-243).
+ *
+ * **It never answers the price list.** `GET /api/public/pricing` is read from
+ * the server even while `STUBBED` is on (see `tiers.ts`): prices are the one
+ * thing on the plan screen a visitor takes as a promise, so they are never
+ * invented. What this file stands in for is only the workspace's side — which
+ * version it holds, and moving it onto another.
  *
  * **This whole file is scaffolding.** It exists so the plan screen and the
  * entitlement seam can be built and driven before there is any way to *choose* a
  * tier — pick one here and every gated surface in the app changes with it, which
  * is the only way to see whether the gating reads right. Delete it, and the
- * `STUBBED` branch in `tiers.ts` and `entitlements.ts`, on the commit that wires
+ * `STUBBED` branches in `tiers.ts`, `entitlements.ts` and `billing.ts`, on the commit that wires
  * the real endpoints.
  *
  * **Both reads it answers now exist**, which is new and is why what follows
@@ -20,8 +25,8 @@ import type { Tier } from '@/types/tiers'
  * there is no self-serve change. The stub is therefore no longer a substitute
  * for the server's answers but a substitute for an action, and it has to agree
  * with the server about everything it is not substituting for: Trial below is
- * the published version, ids and all. Two published tiers short of a comparison
- * screen is the other reason it is still switched on.
+ * the published version, ids and all, and a choice made from the real list
+ * lands here by the same version id.
  *
  * A JSON seed plus `localStorage`, not a fetch-level mock: the request layer
  * stays honest, so nothing can pass a test against an interceptor and then fail
@@ -45,7 +50,7 @@ import type { Tier } from '@/types/tiers'
  *    downgrade, and therefore whether it lands now or at the next billing
  *    boundary. That is the server's judgement — tiers are configurable, so only
  *    the thing that owns the list can order it — and it is why `direction`
- *    arrives on the wire. `rank` is stripped before anything leaves this file.
+ *    arrives on the wire. `rank` never leaves this file.
  * 2. **It reads the clock to make a decision.** The renewal date, and the
  *    boundary a downgrade lands on, are computed here. On the real thing both
  *    come off the subscription; the client only ever displays them.
@@ -77,7 +82,7 @@ type SeedTier = Tier & {
   /**
    * How often this tier bills — `null` for the free one.
    *
-   * Stub-only, like `rank`, and stripped by `toTier` for the same reason: the
+   * Stub-only, like `rank`, and never copied onto a plan for the same reason: the
    * *tier list* says what a tier costs, while how often a given workspace is
    * charged is a property of its subscription. On the real thing this comes off
    * the subscription, which is why it is reported on the plan rather than on the
@@ -200,8 +205,8 @@ const TIERS: readonly SeedTier[] = [
      * it stays on it, so the screen has to render a current plan that is not
      * among the ones on offer. Ranked with the Pro that replaced it.
      *
-     * `stubListTiers` leaves it out, because `GET /api/public/pricing` does —
-     * only purchasable versions are published. Reaching it means being *put* on
+     * `GET /api/public/pricing` leaves it out — only purchasable versions are
+     * published. Reaching it means being *put* on
      * it, which is what the endpoint has no counterpart for (Harbor does it) and
      * what a hand-edited `stub-plan` key does here.
      */
@@ -338,27 +343,6 @@ function reconcile(selection: Selection, now: Date): Selection {
     since: due.effectiveFrom,
     scheduled: null,
   })
-}
-
-function toTier(tier: SeedTier): Tier {
-  // Neither leaves this file. `rank` because the client is not allowed to order
-  // tiers, `billingPeriod` because it belongs to a subscription rather than to
-  // the price list.
-  const { rank: _rank, billingPeriod: _billingPeriod, ...rest } = tier
-  return rest
-}
-
-/**
- * The purchasable versions, which is what `GET /api/public/pricing` publishes.
- *
- * The superseded one is filtered out here rather than left out of the table, so
- * that a plan *on* it still resolves to its allowances — that is the whole point
- * of keeping it. A list that included it would be a list the real endpoint
- * cannot produce, and the plan screen's "no longer offered" case would be
- * exercised by nothing.
- */
-export function stubListTiers(): Promise<Tier[]> {
-  return Promise.resolve(TIERS.filter((tier) => tier.purchasable).map(toTier))
 }
 
 /**

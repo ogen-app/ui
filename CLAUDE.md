@@ -976,8 +976,16 @@ operator through Harbor's gRPC `PlanAdminService`, CON-294), `GET /api/billing` 
 `POST /api/billing/portal`, published Pro and Max versions, and a `suspended`
 flag on the resources a downgrade makes read-only. Contracts live in
 `services/api/entitlements.ts`, `tiers.ts` and `billing.ts`, all asserted by
-their tests against the *wire* path (`fetchWorkspacePlan`, `fetchTiers`,
+their tests against the *wire* path (`fetchWorkspacePlan`, `listTiers`,
 `fetchBilling`) so the stub can't make a contract go dark.
+
+**Prices are never stubbed.** The price list is read from
+`GET /api/public/pricing` even while `STUBBED` is on — `listTiers` has no stub
+branch — because it is the one thing on `/plans` and the paywall a visitor
+takes as a promise, and a seeded price is indistinguishable from a real one.
+So both screens show what is published, which today is Trial alone: the
+paywall has no plan to recommend until Pro and Max have versions, and that is
+the true answer rather than a gap to fill with a fixture.
 
 **`/plans` deliberately sits outside `_authenticated`**, like `/workspaces`: it
 reads as a full-screen modal — one X, top right — because it is a detour every
@@ -1002,13 +1010,13 @@ day** — never cache, store or put it in a `href` at render time, and open the
 tab synchronously on the click (a `window.open` after an `await` is blocked).
 
 The stub is `services/api/tiers.stub.ts` — a JSON seed of the decided tier
-matrix plus `localStorage`, with `STUBBED` switching the call sites, and it
-answers the billing read too (no provider is connected, so: no subscription and
+matrix plus `localStorage`, with `STUBBED` switching the plan read and the
+plan change (never the price list, above), and it answers the billing read too (no provider is connected, so: no subscription and
 no portal). It now stands in for an *action* rather than for the server's
 answers, both reads having landed, which raises what it owes them: its Trial row
 is the published `ttv-trial-v1` verbatim — ids, price and all fifteen
-allowances — and `stubListTiers` filters the superseded version out, because the
-endpoint publishes no such row. It does two things the client is forbidden to do,
+allowances — so a choice made from the real list lands on the seed by the same
+version id. It does two things the client is forbidden to do,
 and says so:
 it **ranks** tiers (to decide upgrade from downgrade, hence `direction` on the
 wire) and it **reads the clock** (to date the renewal, which is also the

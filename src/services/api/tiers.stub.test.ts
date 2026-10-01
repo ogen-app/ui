@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import {
-  stubListTiers,
-  stubResetPlan,
-  stubSelectTier,
-  stubWorkspacePlan,
-} from './tiers.stub'
+import { stubResetPlan, stubSelectTier, stubWorkspacePlan } from './tiers.stub'
 
 /**
  * The stub is standing in for the server, so what is asserted here is the
@@ -25,22 +20,12 @@ beforeEach(() => {
   stubResetPlan()
 })
 
-describe('the tier list', () => {
-  it('publishes only what can be bought, like the endpoint does', () => {
-    // `GET /api/public/pricing` carries purchasable versions and nothing else,
-    // so a superseded one is absent rather than present-and-flagged. The plan
-    // screen's "no longer offered" case is therefore reached by the held version
-    // missing from this list — see below — and not by a flag on a card.
-    return stubListTiers().then((tiers) => {
-      expect(tiers.map((tier) => tier.id)).toEqual([TRIAL, PRO, MAX])
-      expect(tiers.every((tier) => tier.purchasable)).toBe(true)
-    })
-  })
-
-  it('still resolves a plan on a version it no longer lists', async () => {
-    // A workspace keeps the version it bought. If the superseded row went out of
-    // the table along with the list, a plan on it would resolve to no allowances
-    // at all — which reads as a broken app rather than as an old plan.
+describe('the seed', () => {
+  it('still resolves a plan on a version nobody can buy any more', async () => {
+    // A workspace keeps the version it bought, and `GET /api/public/pricing`
+    // does not list it. If the superseded row went out of the seed, a plan on it
+    // would resolve to no allowances at all — which reads as a broken app rather
+    // than as an old plan.
     localStorage.setItem(
       'stub-plan',
       JSON.stringify({ tierId: LEGACY_PRO, since: '2026-01-01T00:00:00Z' }),
@@ -51,32 +36,11 @@ describe('the tier list', () => {
     expect(plan.entitlements.active_campaigns.limit).toBe(3)
   })
 
-  it('never hands the client a way to rank tiers', () => {
+  it('never hands the client a way to rank tiers', async () => {
     // Ordering configurable tiers is the server's judgement — it is why
     // `direction` arrives on the wire instead of being worked out here.
-    return stubListTiers().then((tiers) => {
-      for (const tier of tiers) expect(tier).not.toHaveProperty('rank')
-    })
-  })
-
-  it('names the tier a version belongs to, separately from the version', () => {
-    // Two versions of Pro share `tierId` and share nothing else. The client
-    // ranks neither, but a screen that wanted to group versions by tier has the
-    // only field that can do it.
-    return stubListTiers().then((tiers) => {
-      expect(tiers.map((tier) => tier.tierId)).toEqual(['trial', 'pro', 'max'])
-    })
-  })
-
-  it('prices the trial at zero and leaves the undecided tiers unpriced', () => {
-    // Free is `amount: 0`; undecided is no row at all, and the card draws no
-    // price line for the second. Conflating them puts "Free" on Max.
-    return stubListTiers().then((tiers) => {
-      expect(tiers[0].prices).toEqual([
-        { amount: 0, currency: 'EUR', interval: 'month', countryCode: null },
-      ])
-      expect(tiers[1].prices).toEqual([])
-    })
+    const plan = await stubWorkspacePlan()
+    expect(plan.tier).not.toHaveProperty('rank')
   })
 })
 

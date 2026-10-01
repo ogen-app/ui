@@ -5,7 +5,7 @@ import {
   versionFromWire,
   type TierVersionBody,
 } from './entitlements'
-import { STUBBED, stubListTiers, stubSelectTier } from './tiers.stub'
+import { STUBBED, stubSelectTier } from './tiers.stub'
 import type { WorkspacePlan } from '@/types/entitlements'
 import type { Tier } from '@/types/tiers'
 
@@ -38,9 +38,12 @@ import type { Tier } from '@/types/tiers'
  * plan somebody is paying for. What the screen does with this list is compare
  * against it, and notice when the held version is absent.
  *
- * **Today it publishes one tier**: `trial` v1, at €0/month. Pro and Max have no
- * published version, which is the other half of why the stub is still switched
- * on — a plan screen with one card on it cannot be looked at.
+ * **It is always read from the server, never from the stub.** A price list is
+ * the one thing on the plan screen a visitor takes as a promise, and a seeded
+ * one would put invented prices in front of somebody with nothing to tell them
+ * apart from real ones. So `STUBBED` does not reach this read: the screen shows
+ * what is published — today that is one tier, `trial` v1 at €0/month — and a
+ * Pro or Max card appears the day its version is published, not before.
  *
  * **The rows are editorial data, and they are not translated.** The catalog
  * ships each feature's name and description in one language, and that is a real
@@ -67,22 +70,11 @@ export function tierFromWire(body: TierVersionBody): Tier {
   return { ...versionFromWire(body), entitlements: entitlementsFromWire(body) }
 }
 
-/**
- * The request itself, split from `listTiers` for the same reason
- * `fetchWorkspacePlan` is split from `getWorkspacePlan`: the contract stays
- * asserted against the shape the server actually sends, even while the app is
- * reading the stub. Without the split, switching the screen onto the stub would
- * quietly stop testing the endpoint.
- */
-export function fetchTiers(): Promise<Tier[]> {
+export function listTiers(): Promise<Tier[]> {
   return apiJson<TiersBody>(
     '/api/public/pricing',
     'Unable to load the plans',
   ).then((payload) => (payload.tiers ?? []).map(tierFromWire))
-}
-
-export function listTiers(): Promise<Tier[]> {
-  return STUBBED ? stubListTiers() : fetchTiers()
 }
 
 /**

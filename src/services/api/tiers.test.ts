@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchTiers } from './tiers'
+import { listTiers } from './tiers'
 import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
 
 /**
@@ -10,11 +10,6 @@ import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
  * response from `api.dev.getogen.com`, read on 2026-09-16 and trimmed only in
  * the entitlements array. It replaces a `GET /api/tiers` that was designed here
  * and that the server answers 404 for.
- *
- * Deliberately against `fetchTiers` rather than `listTiers`, for the same reason
- * `entitlements.test.ts` drives `fetchWorkspacePlan`: the screen reads a stub
- * today, and a contract test that went dark the moment the app stopped making
- * the request would be no contract at all.
  *
  * What is asserted here that is not asserted next door: that this route goes out
  * **unscoped**. It is public and cached at the edge, and a request varying by a
@@ -82,11 +77,11 @@ afterEach(() => {
   setActiveWorkspaceId(null)
 })
 
-describe('fetchTiers', () => {
+describe('listTiers', () => {
   it('reads the public pricing route', async () => {
     const fetchMock = stubFetch(jsonResponse(200, { tiers: [TRIAL] }))
 
-    await fetchTiers()
+    await listTiers()
 
     expect(fetchMock.mock.calls[0][0]).toBe('/api/public/pricing')
     expect(fetchMock.mock.calls[0][1].method).toBe('GET')
@@ -100,7 +95,7 @@ describe('fetchTiers', () => {
     setActiveWorkspaceId('ws-a')
     const fetchMock = stubFetch(jsonResponse(200, { tiers: [TRIAL] }))
 
-    await fetchTiers()
+    await listTiers()
 
     expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty(
       'X-Workspace-Id',
@@ -163,17 +158,17 @@ describe('fetchTiers', () => {
     await expect(withTiers([])).resolves.toEqual([])
 
     stubFetch(jsonResponse(200, {}))
-    await expect(fetchTiers()).resolves.toEqual([])
+    await expect(listTiers()).resolves.toEqual([])
   })
 
   it("surfaces the server's message rather than a generic failure", async () => {
     stubFetch(jsonResponse(500, { error: 'pricing catalog unavailable' }))
 
-    await expect(fetchTiers()).rejects.toThrow('pricing catalog unavailable')
+    await expect(listTiers()).rejects.toThrow('pricing catalog unavailable')
   })
 })
 
 function withTiers(tiers: unknown[]) {
   stubFetch(jsonResponse(200, { tiers }))
-  return fetchTiers()
+  return listTiers()
 }

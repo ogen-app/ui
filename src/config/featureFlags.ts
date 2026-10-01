@@ -287,10 +287,11 @@ const FEATURE_FLAGS = {
    * commit.** The plan screen and the billing card are driven by a
    * `localStorage` stub (`services/api/tiers.stub.ts`) so the tier
    * differentiation can be built and reviewed; a stub is not a reason to ship
-   * the feature on. `STUBBED` still switches the call sites, and it stays on for
-   * now — not because the plan read is missing, but because there is no way to
-   * *change* plan and only one tier is published, so the screen behind CHANGE
-   * PLAN would be one nameless card that no button can move you off.
+   * the feature on. `STUBBED` still switches the plan read and the plan change —
+   * never the price list, which is always `GET /api/public/pricing` — and it
+   * stays on for now because there is no way to *change* plan. Only one tier is
+   * published, so the screen behind CHANGE PLAN is one card until Pro and Max
+   * have versions.
    */
   'workspace-tiers': false,
 
