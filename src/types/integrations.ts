@@ -107,3 +107,44 @@ export class ZernioError extends Error {
     this.scheduledPosts = extra?.scheduledPosts
   }
 }
+
+/* ------------------------------------------------------------------------ *
+ * Figma plugin (CON-338/339): the pairing a plugin asks the user to approve,
+ * and the connections that approval leaves behind.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Where a pairing is in the handshake. Expiry is not a status — an expired or
+ * already-collected pairing is simply gone, and the preview answers 410.
+ */
+export type PluginPairingStatus = 'pending' | 'approved' | 'denied'
+
+/** What the approval page shows before the user allows or denies the plugin. */
+export type PluginPairingPreview = {
+  client: string
+  /** Chosen by the plugin, e.g. "Figma · Jane Doe" — the plugin's word, not ours. */
+  client_label: string
+  status: PluginPairingStatus
+  /** The address the plugin asked from, so a pairing you didn't start looks foreign. */
+  created_ip: string
+  created_at: string
+  expires_at: string
+}
+
+/** The member a connection acts as. Sent on every row of the list. */
+export type PluginConnectionUser = {
+  id: string
+  name: string
+  email?: string
+}
+
+/** One plugin install that holds a token for this workspace. */
+export type PluginConnection = {
+  id: string
+  client: string
+  label: string
+  user?: PluginConnectionUser
+  created_at: string
+  /** Null until the plugin first calls the API with its token. */
+  last_used_at: string | null
+}

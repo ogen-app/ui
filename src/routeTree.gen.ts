@@ -59,6 +59,7 @@ import { Route as AuthenticatedFoundationAudiencesAudienceIdRouteImport } from '
 import { Route as AuthenticatedFoundationSeriesSeriesIdRouteImport } from './routes/_authenticated/foundation_/series/$seriesId'
 import { Route as AuthenticatedFoundationVoicesVoiceIdRouteImport } from './routes/_authenticated/foundation_/voices/$voiceId'
 import { Route as AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport } from './routes/_authenticated/workspace-settings/connect.$connectionId'
+import { Route as IntegrationsFigmaConnectIndexRouteImport } from './routes/integrations/figma/connect/index'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/index'
 import { Route as AuthenticatedCampaignsCampaignIdAssetsAssetIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/assets/$assetId'
 import { Route as AuthenticatedCampaignsCampaignIdPostsPostIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/posts/$postId'
@@ -345,6 +346,12 @@ const AuthenticatedWorkspaceSettingsConnectConnectionIdRoute =
     path: '/workspace-settings/connect/$connectionId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const IntegrationsFigmaConnectIndexRoute =
+  IntegrationsFigmaConnectIndexRouteImport.update({
+    id: '/integrations/figma/connect/',
+    path: '/integrations/figma/connect/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedCampaignsCampaignIdCalendarIndexRoute =
   AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport.update({
     id: '/calendar/',
@@ -420,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/foundation/voices/$voiceId': typeof AuthenticatedFoundationVoicesVoiceIdRoute
   '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/integrations/figma/connect/': typeof IntegrationsFigmaConnectIndexRoute
   '/campaigns/$campaignId/assets/$assetId': typeof AuthenticatedCampaignsCampaignIdAssetsAssetIdRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -472,6 +480,7 @@ export interface FileRoutesByTo {
   '/foundation/voices/$voiceId': typeof AuthenticatedFoundationVoicesVoiceIdRoute
   '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/integrations/figma/connect': typeof IntegrationsFigmaConnectIndexRoute
   '/campaigns/$campaignId/assets/$assetId': typeof AuthenticatedCampaignsCampaignIdAssetsAssetIdRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/campaigns/$campaignId/calendar': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -529,6 +538,7 @@ export interface FileRoutesById {
   '/_authenticated/foundation_/voices/$voiceId': typeof AuthenticatedFoundationVoicesVoiceIdRoute
   '/_authenticated/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/_authenticated/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/integrations/figma/connect/': typeof IntegrationsFigmaConnectIndexRoute
   '/_authenticated/campaigns/$campaignId_/assets/$assetId': typeof AuthenticatedCampaignsCampaignIdAssetsAssetIdRoute
   '/_authenticated/campaigns/$campaignId_/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
   '/_authenticated/campaigns/$campaignId/calendar/': typeof AuthenticatedCampaignsCampaignIdCalendarIndexRoute
@@ -586,6 +596,7 @@ export interface FileRouteTypes {
     | '/foundation/voices/$voiceId'
     | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId/'
+    | '/integrations/figma/connect/'
     | '/campaigns/$campaignId/assets/$assetId'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar/'
@@ -638,6 +649,7 @@ export interface FileRouteTypes {
     | '/foundation/voices/$voiceId'
     | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId'
+    | '/integrations/figma/connect'
     | '/campaigns/$campaignId/assets/$assetId'
     | '/campaigns/$campaignId/posts/$postId'
     | '/campaigns/$campaignId/calendar'
@@ -694,6 +706,7 @@ export interface FileRouteTypes {
     | '/_authenticated/foundation_/voices/$voiceId'
     | '/_authenticated/workspace-settings/connect/$connectionId'
     | '/_authenticated/campaigns/$campaignId/'
+    | '/integrations/figma/connect/'
     | '/_authenticated/campaigns/$campaignId_/assets/$assetId'
     | '/_authenticated/campaigns/$campaignId_/posts/$postId'
     | '/_authenticated/campaigns/$campaignId/calendar/'
@@ -714,6 +727,7 @@ export interface RootRouteChildren {
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
   AuthResetIndexRoute: typeof AuthResetIndexRoute
   AuthSecureAccountIndexRoute: typeof AuthSecureAccountIndexRoute
+  IntegrationsFigmaConnectIndexRoute: typeof IntegrationsFigmaConnectIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1068,6 +1082,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/integrations/figma/connect/': {
+      id: '/integrations/figma/connect/'
+      path: '/integrations/figma/connect'
+      fullPath: '/integrations/figma/connect/'
+      preLoaderRoute: typeof IntegrationsFigmaConnectIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/campaigns/$campaignId/calendar/': {
       id: '/_authenticated/campaigns/$campaignId/calendar/'
       path: '/calendar'
@@ -1262,6 +1283,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,
   AuthResetIndexRoute: AuthResetIndexRoute,
   AuthSecureAccountIndexRoute: AuthSecureAccountIndexRoute,
+  IntegrationsFigmaConnectIndexRoute: IntegrationsFigmaConnectIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

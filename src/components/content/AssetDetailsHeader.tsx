@@ -1,10 +1,12 @@
 import { Link } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowsClockwiseIcon,
   ArrowSquareOutIcon,
   CaretLeftIcon,
   DotsThreeVerticalIcon,
   DownloadSimpleIcon,
+  FigmaLogoIcon,
   TrashIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
@@ -18,6 +20,7 @@ import {
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { SaveStatus } from '@/components/page-primitives/SaveStatus'
 import { pageUrlLabel } from '@/lib/webPageUrl'
+import type { FigmaOriginRef } from '@/types/content'
 
 type Props = {
   /**
@@ -29,6 +32,12 @@ type Props = {
   saving: boolean
   /** The page this was scraped from, for a URL document (CON-222). */
   sourceUrl?: string | null
+  /**
+   * Set when the Figma plugin sent this image (CON-339), with the frame it
+   * came from when the server has one. Named rather than linked: a public
+   * plugin cannot read the file key, so there is nothing to link to.
+   */
+  fromFigma?: { frame: FigmaOriginRef | null }
   /** Re-scrape the source. Only passed for a document that has one. */
   onRefreshSource?: () => void
   /**
@@ -71,6 +80,7 @@ export function AssetDetailsHeader({
   campaignId,
   saving,
   sourceUrl,
+  fromFigma,
   onRefreshSource,
   onDownloadMarkdown,
   onDelete,
@@ -147,6 +157,29 @@ export function AssetDetailsHeader({
           <ArrowSquareOutIcon className="size-3.5 shrink-0" />
         </a>
       )}
+      {fromFigma && <FromFigma frame={fromFigma.frame} />}
     </PageHeader>
+  )
+}
+
+/**
+ * "From Figma · Hero banner · Launch deck" — provenance for a plugin upload,
+ * in the slot a scraped page's link out uses, because it answers the same
+ * question about the document.
+ */
+function FromFigma({ frame }: { frame: FigmaOriginRef | null }) {
+  const { t } = useTranslation()
+  const where = [frame?.node_name, frame?.file_name].filter(Boolean).join(' · ')
+  return (
+    <span
+      title={where || undefined}
+      className="flex min-w-0 items-center gap-1.5 rounded-full bg-tertiary px-2.5 py-1 text-xs text-secondary-foreground"
+    >
+      <FigmaLogoIcon aria-hidden className="size-3.5 shrink-0" />
+      <span className="shrink-0 font-medium text-primary-foreground">
+        {t('content.figmaOrigin.chip')}
+      </span>
+      {where && <span className="truncate">{where}</span>}
+    </span>
   )
 }
