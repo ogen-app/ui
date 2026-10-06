@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { TFunction } from 'i18next'
 import {
   formatBytes,
@@ -6,16 +6,6 @@ import {
   uploadLimitLines,
   validateUploadFile,
 } from './assetStatus'
-
-const flags = vi.hoisted(() => ({ audio: false }))
-vi.mock('@/config/featureFlags', () => ({
-  isFeatureEnabled: (flag: string) =>
-    flag === 'content-bank-audio' ? flags.audio : false,
-}))
-
-afterEach(() => {
-  flags.audio = false
-})
 
 /**
  * A `t` that echoes the key and whatever was interpolated into it, so these
@@ -68,7 +58,7 @@ describe('uploadAccept', () => {
     ]) {
       expect(accept).toContain(ext)
     }
-    expect(accept).toHaveLength(2 + 24 + 11)
+    expect(accept).toHaveLength(2 + 24 + 11 + 11)
   })
 
   it('offers no SVG and no legacy Office format', () => {
@@ -78,10 +68,8 @@ describe('uploadAccept', () => {
     }
   })
 
-  // `content-bank-audio` — the upload is what the flag holds back.
-  it('offers audio only while the flag is on', () => {
-    expect(uploadAccept()).not.toContain('.mp3')
-    flags.audio = true
+  // `audioUploadMIMEs` — routed to presign rather than the multipart endpoint.
+  it('offers audio', () => {
     const accept = uploadAccept().split(',')
     for (const ext of ['.mp3', '.wav', '.m4a', '.flac', '.aiff']) {
       expect(accept).toContain(ext)
@@ -105,9 +93,7 @@ describe('uploadLimitLines', () => {
     expect(uploadLimitLines(t)[2]).toBe('uploads.limitImages {}')
   })
 
-  it('adds the audio line, in gigabytes, only while the flag is on', () => {
-    expect(uploadLimitLines(t)).toHaveLength(3)
-    flags.audio = true
+  it('adds the audio line, in gigabytes', () => {
     const lines = uploadLimitLines(t)
     expect(lines).toHaveLength(4)
     expect(lines[3]).toContain('5 GB')
@@ -178,18 +164,7 @@ describe('validateUploadFile', () => {
     })
   })
 
-  it('refuses audio as an unknown extension while the flag is off', () => {
-    expect(validateUploadFile(file('call.mp3', 1 * MB))).toEqual({
-      ok: false,
-      failure: {
-        code: 'extension_not_allowed',
-        message: 'this file type is not accepted',
-      },
-    })
-  })
-
-  it('routes audio up to 5 GB once the flag is on', () => {
-    flags.audio = true
+  it('routes audio up to 5 GB', () => {
     expect(validateUploadFile(file('call.m4a', 4 * GB))).toEqual({
       ok: true,
       kind: 'audio',

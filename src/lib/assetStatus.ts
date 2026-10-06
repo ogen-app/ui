@@ -1,7 +1,6 @@
 import type { TFunction } from 'i18next'
 import type { AssetStatus } from '@/types/content'
 import type { StatusTone } from '@/components/ui/status-badge'
-import { isFeatureEnabled } from '@/config/featureFlags'
 
 /**
  * What a file becomes once uploaded, routed by its extension the way the server
@@ -130,21 +129,11 @@ const EXTENSIONS: Record<UploadKind, readonly string[]> = {
  */
 const LEGACY_OFFICE = ['.doc', '.dot', '.xls', '.xlt', '.ppt', '.pot']
 
-/** Whether this build uploads audio — see `content-bank-audio`. */
-function audioUploads(): boolean {
-  return isFeatureEnabled('content-bank-audio')
-}
-
-function uploadKinds(): UploadKind[] {
-  const kinds: UploadKind[] = ['md', 'pdf', 'document', 'image']
-  return audioUploads() ? [...kinds, 'audio'] : kinds
-}
+const UPLOAD_KINDS: UploadKind[] = ['md', 'pdf', 'document', 'image', 'audio']
 
 /** The extensions the file picker offers, as an `accept` attribute. */
 export function uploadAccept(): string {
-  return uploadKinds()
-    .flatMap((kind) => EXTENSIONS[kind])
-    .join(',')
+  return UPLOAD_KINDS.flatMap((kind) => EXTENSIONS[kind]).join(',')
 }
 
 /**
@@ -160,18 +149,15 @@ export function uploadAccept(): string {
  * every catalogue.
  */
 export function uploadLimitLines(t: TFunction): string[] {
-  const lines = [
+  return [
     t('uploads.limitText', {
       md: capLabel(UPLOAD_LIMITS.md),
       pdf: capLabel(UPLOAD_LIMITS.pdf),
     }),
     t('uploads.limitDocuments', { size: capLabel(UPLOAD_LIMITS.document) }),
     t('uploads.limitImages'),
+    t('uploads.limitAudio', { size: capLabel(UPLOAD_LIMITS.audio) }),
   ]
-  if (audioUploads()) {
-    lines.push(t('uploads.limitAudio', { size: capLabel(UPLOAD_LIMITS.audio) }))
-  }
-  return lines
 }
 
 /**
@@ -197,7 +183,7 @@ function extensionOf(filename: string): string {
 /** Maps a filename extension to an upload kind, or null if unsupported. */
 function detectUploadKind(filename: string): UploadKind | null {
   const ext = extensionOf(filename)
-  return uploadKinds().find((kind) => EXTENSIONS[kind].includes(ext)) ?? null
+  return UPLOAD_KINDS.find((kind) => EXTENSIONS[kind].includes(ext)) ?? null
 }
 
 /**

@@ -55,7 +55,6 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 | S2 | **The bridge that attaches a bank image to a post.** Both sides were built expecting it — `asset_files`' columns are named to match `post_attachments` for the field copy, and the alt text CON-246 collects has no other consumer. The client picker wants CON-210 first, so it is scoped against a campaign rather than the workspace. | **CON-290** | — |
 | S3 | **Campaign-scoped assets**, with the workspace bank staying on as workspace-wide knowledge storage (CON-211). | CON-210 | — |
 | B1 | **Session-authenticated email preferences.** CON-155 shipped the suppression engine, but every endpoint it exposes verifies a signature lifted from an email footer, not a session. | CON-155 | `email-preferences` |
-| S5 | **R2 CORS for a browser `PUT`** to a presigned URL, so a recording's bytes can reach storage from the app's origin. The API side of audio ingestion shipped (CON-282/312) and the client is built; without CORS the PUT fails as a network error after presign has made the asset, which the client then deletes. | CON-307 | `content-bank-audio` |
 | E1 | **`post.attachments.changed` on `entity:post:<id>`** after every committed attachment write — upload, video finalize, bank attach (the Figma plugin's path), update, reorder, delete — tenant-stamped with no `UserID`, so every member with the post open hears it. The client routes it already (`lib/eventRouting`); until it is published, a file the Figma plugin attaches to an open post appears only on reload or the 10-minute presign refetch. | **CON-345** | — |
 | B2 | **The entitlements and billing reads** — `/entitlements`, `/tiers`, `/workspace/plan`, `/billing`, `/billing/portal`. The tiers and counters exist (CON-208, CON-86); the workspace-scoped REST read that puts them together does not. | CON-243 | `workspace-tiers` |
 
@@ -63,6 +62,10 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 
 Kept for one cycle so nobody re-raises them, then deleted.
 
+- **S5 — R2 CORS for a browser `PUT`.** Video post attachments already PUT
+  straight to a presigned R2 URL through the same `storageUpload`, unflagged, so
+  the bucket was answering the app's origin all along. Audio uploads are on by
+  default and the `content-bank-audio` flag is deleted (CON-349, 2026-10-07).
 - **I1 — `/api/ideas`, the whole module.** Shipped in CON-315 (ogen,
   2026-09-25) to the contract `services/api/ideas.ts` had written out: five
   calls, the verdict as its own endpoint, and the two verdict rules enforced by
