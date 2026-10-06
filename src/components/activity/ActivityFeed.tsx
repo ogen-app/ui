@@ -538,6 +538,7 @@ function EntrySection({
       {...sight}
       to={target.to}
       params={target.params}
+      hash={target.hash}
       className={className}
       // Opening what an entry points at *is* reading it. The click navigates
       // either way — a failed write leaves the row unread, which is the

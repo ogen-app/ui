@@ -267,6 +267,11 @@ export function AssetDocument({ assetId, campaignId }: Props) {
             campaignId={campaignId}
             saving={isDirty}
             sourceUrl={sourceUrl}
+            fromFigma={
+              asset.origin === 'figma'
+                ? { frame: asset.origin_ref ?? null }
+                : undefined
+            }
             onRefreshSource={sourceUrl ? handleRefreshSource : undefined}
             onDownloadMarkdown={editable ? handleDownloadMarkdown : undefined}
             onDelete={() => setDeleteOpen(true)}

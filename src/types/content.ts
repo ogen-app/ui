@@ -129,9 +129,31 @@ export type Asset = {
   file?: AssetFile | null
   tag_ids: string[]
   tags: Tag[]
+  /**
+   * Where the asset came from beyond a plain upload (CON-338): `''` for an
+   * upload or anything older than the column, `'figma'` for a frame the Figma
+   * plugin sent. A checksum-dedupe hit keeps the first sender's provenance.
+   */
+  origin?: AssetOrigin
+  /** The origin's pointer back at its source — for Figma, the frame. */
+  origin_ref?: FigmaOriginRef | null
   created_by: string
   created_at: string
   updated_at: string
+}
+
+export type AssetOrigin = '' | 'figma'
+
+/**
+ * The frame a Figma plugin sent. A public plugin cannot read the file key, so
+ * `file_key` only ever arrives from a private org build — which is why the
+ * frame is named rather than linked.
+ */
+export type FigmaOriginRef = {
+  node_id: string
+  node_name: string
+  file_name?: string
+  file_key?: string
 }
 
 export type CreateAssetPayload = {

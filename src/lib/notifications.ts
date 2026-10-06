@@ -71,6 +71,9 @@ const COPY_KEY = {
   'assistant.failed': 'activity.notification.assistantFailed',
   'assessment.completed': 'activity.notification.assessmentCompleted',
   'assessment.failed': 'activity.notification.assessmentFailed',
+  // Sent to the member who approved a Figma plugin pairing (CON-338), so an
+  // approval they did not mean to give — a phished link — is visible.
+  'integration.plugin_connected': 'activity.notification.pluginConnected',
 } as const satisfies Record<string, string>
 
 /**
@@ -149,13 +152,14 @@ export type NotificationCopy = {
  * takes the server-title fallback instead, same as an unknown type.
  */
 const REQUIRED_VARS: Partial<
-  Record<keyof typeof COPY_KEY, 'channel' | 'count'>
+  Record<keyof typeof COPY_KEY, 'channel' | 'count' | 'label'>
 > = {
   'connection.expiring_soon': 'channel',
   'connection.action_required': 'channel',
   'post.published': 'channel',
   'post.publish_failed': 'channel',
   'campaign.content_plan_ready': 'count',
+  'integration.plugin_connected': 'label',
 }
 
 /**
@@ -241,6 +245,13 @@ function notificationVars(
     vars.count = count
   }
 
+  // A plugin connection's label is the plugin's own name for itself —
+  // "Figma · Jane Doe" — and the only thing that says *which* install it was.
+  const label = data.label
+  if (typeof label === 'string' && label) {
+    vars.label = label
+  }
+
   return vars
 }
 
@@ -263,6 +274,8 @@ export function channelName(platform: string): string {
 export type NotificationTarget = {
   to: string
   params?: Record<string, string>
+  /** A section of the page to land on, for a page that is a column of them. */
+  hash?: string
 }
 
 /**
@@ -306,6 +319,10 @@ export function notificationTarget(
       // No route addresses one connection: they are a section of Workspace
       // Settings, which is where reconnecting happens anyway.
       return { to: '/workspace-settings' }
+    case 'plugin_connection':
+      // Same page, the Integrations card — where the connection can be seen
+      // and, if it was not wanted, disconnected.
+      return { to: '/workspace-settings', hash: 'integrations' }
     default:
       return null
   }

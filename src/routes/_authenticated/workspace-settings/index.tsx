@@ -18,6 +18,7 @@ import { PeopleSection } from '@/components/workspace-settings/PeopleSection'
 import { PlatformsSection } from '@/components/workspace-settings/PlatformsSection'
 import { ConnectPlatformsSection } from '@/components/workspace-settings/ConnectPlatformsSection'
 import { ConnectLanding } from '@/components/workspace-settings/ConnectLanding'
+import { IntegrationsSection } from '@/components/workspace-settings/IntegrationsSection'
 import { DeleteWorkspaceCard } from '@/components/workspace-settings/DeleteWorkspaceCard'
 import { awaiting } from '@/lib/fetched'
 
@@ -106,6 +107,7 @@ function WorkspaceSettings() {
               <PeopleSection />
               <PlatformsSection />
               <ConnectPlatformsSection />
+              <IntegrationsSection />
               <DeleteWorkspaceCard />
             </div>
           </div>

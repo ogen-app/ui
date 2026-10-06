@@ -68,6 +68,24 @@ describe('notificationCopy', () => {
     expect(copy?.vars).toEqual({ count: 12 })
   })
 
+  it('names which plugin install was connected, or defers to the server', () => {
+    const connected = (data: Record<string, unknown>) =>
+      notificationCopy(
+        row({
+          type: 'integration.plugin_connected',
+          entity_type: 'plugin_connection',
+          entity_id: 'pt_1',
+          data,
+        }),
+      )
+    expect(connected({ client: 'figma', label: 'Figma · Jane' })).toEqual({
+      key: 'activity.notification.pluginConnected',
+      vars: { label: 'Figma · Jane' },
+    })
+    // Without the label the sentence would print `{{label}}`.
+    expect(connected({ client: 'figma' })).toBeNull()
+  })
+
   it('has copy for every producer the server runs today', () => {
     // The half CON-285 wired after CON-242 opened the vocabulary. A type
     // missing from the table is not an error — it renders the server's own
@@ -185,6 +203,19 @@ describe('notificationTarget', () => {
         nowhere,
       ),
     ).toEqual({ to: '/assets/$assetId', params: { assetId: 'a9' } })
+  })
+
+  it('lands a plugin connection on the Integrations card', () => {
+    expect(
+      notificationTarget(
+        row({
+          type: 'integration.plugin_connected',
+          entity_type: 'plugin_connection',
+          entity_id: 'pt_1',
+        }),
+        nowhere,
+      ),
+    ).toEqual({ to: '/workspace-settings', hash: 'integrations' })
   })
 
   it('goes nowhere for an entity kind this build does not place', () => {

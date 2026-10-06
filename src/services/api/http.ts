@@ -15,6 +15,14 @@ type ApiRequestOptions = {
    * than the id in the path and 403. Not for anything workspace-scoped.
    */
   unscoped?: boolean
+  /**
+   * Act in this workspace instead of the tab's pin. For the one screen that
+   * lets the user choose where a thing is created without moving the tab
+   * there — approving a Figma plugin pairing (CON-339), whose token is minted
+   * in whichever workspace the request names. A 403 on such a call says
+   * nothing about the tab's own pin, so it never reaches `handleForbidden`.
+   */
+  workspaceId?: string
 }
 
 async function send(
@@ -24,7 +32,11 @@ async function send(
 ): Promise<Response> {
   // Which workspace this request acts in, when the path is one that acts in a
   // workspace at all — see `workspaceHeader`.
-  const scope = options.unscoped ? {} : workspaceHeader(path)
+  const scope: Record<string, string> = options.workspaceId
+    ? { 'X-Workspace-Id': options.workspaceId }
+    : options.unscoped
+      ? {}
+      : workspaceHeader(path)
   const init: RequestInit = {
     method: options.method ?? 'GET',
     credentials: 'include',
@@ -59,6 +71,7 @@ async function send(
     if (
       res.status === 403 &&
       'X-Workspace-Id' in scope &&
+      !options.workspaceId &&
       !(error instanceof EntitlementError)
     ) {
       handleForbidden()
