@@ -101,4 +101,38 @@ describe('usePostAttachments and the event stream', () => {
     expect(service.listAttachments).toHaveBeenCalledTimes(1)
     expect(ids(result)).toEqual(['b', 'a'])
   })
+
+  it('refreshes once the last of two overlapping writes lands, not the first', async () => {
+    // Refetching when the first lands would fetch a list without the second
+    // and paint it over the second's optimistic state.
+    vi.mocked(service.listAttachments)
+      .mockReset()
+      .mockResolvedValue(list(file('a', 0), file('b', 1)))
+    const settle: Array<() => void> = []
+    vi.mocked(service.setAttachmentSegment).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          settle.push(() => resolve(undefined as never))
+        }),
+    )
+    const { result } = renderHook(() => usePostAttachments('p1'), { wrapper })
+    await waitFor(() => expect(ids(result)).toEqual(['a', 'b']))
+
+    act(() =>
+      result.current.assignSegment({ attachmentId: 'a', segmentIndex: 1 }),
+    )
+    act(() =>
+      result.current.assignSegment({ attachmentId: 'b', segmentIndex: 1 }),
+    )
+    await waitFor(() => expect(settle).toHaveLength(2))
+
+    await act(async () => settle[0]())
+    await new Promise((r) => setTimeout(r, 20))
+    expect(service.listAttachments).toHaveBeenCalledTimes(1)
+
+    await act(async () => settle[1]())
+    await waitFor(() =>
+      expect(service.listAttachments).toHaveBeenCalledTimes(2),
+    )
+  })
 })

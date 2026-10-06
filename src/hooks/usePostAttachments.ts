@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   deleteAttachment,
@@ -109,12 +109,29 @@ export function usePostAttachments(postId: string) {
   /**
    * Marks the three writes below as this tab's own, so a broadcast about the
    * same list waits for them rather than refetching mid-flight (CON-345) —
-   * a reorder is n requests, and each will announce itself. Every one of them
-   * refreshes the list when it settles, which is what the key promises.
+   * a reorder is n requests, and each will announce itself. The last of them
+   * to settle refreshes the list, which is what the key promises.
    * Uploads deliberately go without: a file landing is worth showing as soon
    * as the server has it, even while the next one is still in the air.
    */
-  const writeKey = localWriteKey(postAttachmentsKey(postId))
+  const writeKey = useMemo(
+    () => localWriteKey(postAttachmentsKey(postId)),
+    [postId],
+  )
+
+  /**
+   * Refreshes only once no other write on the list is still in flight. Two
+   * quick moves overlap, and the first to land would otherwise refetch a list
+   * that doesn't have the second yet and paint it over the second's
+   * optimistic state. TanStack still counts the settling mutation as pending
+   * inside `onSettled` — its status flips after the callbacks — so `1` means
+   * this one is the last.
+   */
+  const invalidateAfterLastWrite = useCallback(() => {
+    if (qc.isMutating({ mutationKey: writeKey, exact: true }) <= 1) {
+      invalidate()
+    }
+  }, [qc, writeKey, invalidate])
 
   const remove = useMutation({
     mutationKey: writeKey,
@@ -125,7 +142,7 @@ export function usePostAttachments(postId: string) {
       deleteAttachment(postId, attachmentId),
     // Settled, not success: a broadcast skipped while this was in flight is
     // only caught up by this refresh, and a failed delete owes it too.
-    onSettled: invalidate,
+    onSettled: invalidateAfterLastWrite,
   })
 
   /**
@@ -181,7 +198,7 @@ export function usePostAttachments(postId: string) {
         qc.setQueryData(postAttachmentsKey(postId), ctx.previous)
       }
     },
-    onSettled: invalidate,
+    onSettled: invalidateAfterLastWrite,
   })
 
   /**
@@ -222,7 +239,7 @@ export function usePostAttachments(postId: string) {
         qc.setQueryData(postAttachmentsKey(postId), ctx.previous)
       }
     },
-    onSettled: invalidate,
+    onSettled: invalidateAfterLastWrite,
   })
 
   return {
