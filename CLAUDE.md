@@ -177,8 +177,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`MAX_VIDEO_UPLOAD_BYTES`) is ours, and always wins over the seeded ceiling.
   A probed-but-zero `duration_ms` means video-service was down, not a
   zero-length file. See `docs/technical-decisions.md#video-ingest`.
-  **A Content-Bank recording takes the same shape** (`uploadAudioFile`,
-  behind `content-bank-audio`), sharing `services/api/storageUpload` — which
+  **A Content-Bank recording takes the same shape** (`uploadAudioFile`),
+  sharing `services/api/storageUpload` — which
   sends exactly the headers presign signed, never `file.type`, because the
   browser's `audio/x-m4a` is not the server's `audio/mp4`. Presign creates the
   asset before a byte moves, so a failed PUT or a refused finalize deletes it
