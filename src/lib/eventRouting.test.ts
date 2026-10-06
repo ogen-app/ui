@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { invalidationsFor, localRunKeyFor, parseTopic } from './eventRouting'
+import { QueryClient } from '@tanstack/react-query'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  heldByLocalWrite,
+  invalidationsFor,
+  localRunKeyFor,
+  parseTopic,
+} from './eventRouting'
+import { localWriteKey, postAttachmentsKey } from './queryKeys'
 import type { AppEvent } from '@/types/events'
 
 const event = (
@@ -82,6 +89,20 @@ describe('invalidationsFor', () => {
     ]) {
       expect(keys(event('entity:post:p1', type))).toContainEqual(['posts'])
     }
+  })
+
+  it("refreshes only the media list when a post's files change", () => {
+    // The Figma plugin attaching from outside the app is the case this is for
+    // (CON-345). The body must not refetch — the editor may be mid-autosave —
+    // and no list reads attachments.
+    const e = event('entity:post:p1', 'post.attachments.changed', {
+      attachment_id: 'att1',
+      action: 'created',
+      source: 'figma_plugin',
+    })
+    expect(keys(e)).toEqual([['post', 'p1', 'attachments']])
+    expect(keys(e)).not.toContainEqual(['post', 'p1'])
+    expect(hitsPostLists(e)).toBe(false)
   })
 
   it("refreshes every calendar after someone else's assistant turn", () => {
@@ -177,6 +198,7 @@ describe('invalidationsFor', () => {
       ['entity:post:p1', 'post.restored'],
       ['entity:post:p1', 'post.scheduled'],
       ['entity:post:p1', 'post.analytics.updated'],
+      ['entity:post:p1', 'post.attachments.changed'],
       ['entity:campaign:c1', 'assistant.completed'],
       ['entity:campaign:c1', 'assistant.failed'],
       ['entity:campaign:c1', 'content_plan.completed'],
@@ -229,5 +251,45 @@ describe('localRunKeyFor', () => {
     expect(
       localRunKeyFor(event('entity:post:p1', 'content_plan.completed')),
     ).toBeNull()
+  })
+})
+
+describe('heldByLocalWrite', () => {
+  /** Starts a write that never lands, under `mutationKey`. */
+  const startWrite = async (client: QueryClient, mutationKey: unknown[]) => {
+    void client
+      .getMutationCache()
+      .build(client, { mutationKey, mutationFn: () => new Promise(() => {}) })
+      .execute(undefined)
+    await vi.waitFor(() => expect(client.isMutating()).toBe(1))
+  }
+
+  const media = { queryKey: postAttachmentsKey('p1') }
+
+  it('lets a refetch through when nothing is being written', () => {
+    expect(heldByLocalWrite(new QueryClient(), media)).toBe(false)
+  })
+
+  it('holds a refetch back while this tab is writing the same list', async () => {
+    const client = new QueryClient()
+    await startWrite(client, [...localWriteKey(postAttachmentsKey('p1'))])
+    expect(heldByLocalWrite(client, media)).toBe(true)
+  })
+
+  it('does not hold back another post, or the post above the list', async () => {
+    // The post's own refetch has nobody to catch it up afterwards — a write
+    // on the media list settles by refreshing the list, not the body.
+    const client = new QueryClient()
+    await startWrite(client, [...localWriteKey(postAttachmentsKey('p1'))])
+    expect(
+      heldByLocalWrite(client, { queryKey: postAttachmentsKey('p2') }),
+    ).toBe(false)
+    expect(heldByLocalWrite(client, { queryKey: ['post', 'p1'] })).toBe(false)
+  })
+
+  it('never holds a filter that names no key', async () => {
+    const client = new QueryClient()
+    await startWrite(client, [...localWriteKey(postAttachmentsKey('p1'))])
+    expect(heldByLocalWrite(client, { predicate: () => true })).toBe(false)
   })
 })

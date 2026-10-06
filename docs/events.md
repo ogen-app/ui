@@ -67,6 +67,16 @@ a run *this tab started* is muted by `lib/localRuns.ts`, because the POST stream
 the caller is already rendering reports the same outcome, and a refetch over a
 cache the running flow is still writing loses the newer copy.
 
+A second, narrower mute works one level down, per query rather than per run: a
+write this tab is still applying holds back the refetch of the query it is
+writing, when that write carries `localWriteKey(<query key>)` as its mutation
+key (`heldByLocalWrite`). A reorder of a post's media is one request per file,
+each will be announced, and a refetch between them would paint a half-applied
+order over the user's drag. The key is a promise as well as a marker — a write
+that carries it refreshes the query itself when it settles, success or not, so
+a skipped event is caught up rather than lost. The match is exact: a write on
+`['post', id, 'attachments']` never holds back a refetch of `['post', id]`.
+
 | Topic | Type | Trigger | Client does |
 | --- | --- | --- | --- |
 | `entity:post:<id>` | `assistant.completed` / `assistant.failed` | A post-assistant run ends | Invalidate the post; muted for the tab that started it |
@@ -75,6 +85,7 @@ cache the running flow is still writing loses the newer copy.
 | | `post.restored` | A post version is restored | Invalidate the post |
 | | `post.scheduled` | A post is scheduled | Invalidate the post and its campaign's list |
 | | `post.analytics.updated` | The Zernio refresh sweep writes new figures for the post | Invalidate that post's analytics |
+| | `post.attachments.changed` | A file is added to, changed on, moved within or removed from the post — from the editor, a teammate, or an integration such as the Figma plugin (CON-345). Payload `{attachment_id, action, source}` | Invalidate that post's attachments only — never the body, which may be mid-autosave. Not muted for the actor: the plugin's upload *is* the actor's. Held while this tab is writing the same list (above). **Awaiting the API** — routed ahead of its producer |
 | `entity:campaign:<id>` | `assistant.completed` / `assistant.failed` | A campaign-assistant run ends | Invalidate the campaign; muted for the starting tab |
 | | `content_plan.completed` / `content_plan.failed` | Content-plan generation ends | Invalidate the campaign's posts |
 | `entity:zernio_account:<id>` | `zernio.account.attached` / `.updated` / `.revived` | A social account is connected or changes state | Invalidate the accounts list |

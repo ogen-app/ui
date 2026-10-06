@@ -58,3 +58,30 @@ export const CAMPAIGN_SUMMARIES_KEY = ['campaigns', 'summaries'] as const
  * campaign's list — and nothing should invalidate one by touching the other.
  */
 export const WORKSPACE_POSTS_KEY = ['posts'] as const
+
+/**
+ * A post's attachments.
+ *
+ * Unlike the history and the notes, this one nests under the editor's
+ * `['post', id]` on purpose: whatever makes the post stale makes its media
+ * stale too. It is still its own entry rather than a field of the post, so the
+ * autosave's whole-document PUT never races an attachment write, and an event
+ * about the media alone can refresh it without refetching the body under the
+ * user's cursor (CON-345).
+ */
+export const postAttachmentsKey = (postId: string) =>
+  ['post', postId, 'attachments'] as const
+
+/**
+ * The mutation key for a write this tab is applying to a query's data — an
+ * optimistic paint, or a run of requests that only makes sense once all of
+ * them land.
+ *
+ * The event stream reads it (`heldByLocalWrite` in `eventRouting`): while such
+ * a write is in flight, a broadcast saying the same query is stale is skipped,
+ * because a refetch then would fetch a half-applied state and paint it over the
+ * user's. Nothing is lost by skipping — a write carrying this key refreshes the
+ * query itself when it settles, and that is the contract for using it.
+ */
+export const localWriteKey = (queryKey: readonly unknown[]) =>
+  [...queryKey, 'write'] as const
