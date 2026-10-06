@@ -8,7 +8,6 @@ import {
   uploadAttachment,
   uploadVideoAttachment,
 } from '@/services/api/attachments'
-import { postKey } from '@/hooks/usePost'
 import {
   attachmentKind,
   type AttachmentListResponse,
@@ -16,15 +15,7 @@ import {
 } from '@/types/attachments'
 import { awaiting } from '@/lib/fetched'
 import { invalidateEntitlements } from '@/hooks/useEntitlements'
-
-/**
- * Attachments are their own resource, not part of the post document, so
- * they live under their own key rather than inside `["post", id]` — the
- * post's debounced autosave PUTs the whole doc back and would otherwise
- * race the attachment mutations.
- */
-export const postAttachmentsKey = (postId: string) =>
-  [...postKey(postId), 'attachments'] as const
+import { localWriteKey, postAttachmentsKey } from '@/lib/queryKeys'
 
 /**
  * Presigned GET URLs expire 15 minutes after the response is built
@@ -115,13 +106,26 @@ export function usePostAttachments(postId: string) {
     [postId, invalidate],
   )
 
+  /**
+   * Marks the three writes below as this tab's own, so a broadcast about the
+   * same list waits for them rather than refetching mid-flight (CON-345) —
+   * a reorder is n requests, and each will announce itself. Every one of them
+   * refreshes the list when it settles, which is what the key promises.
+   * Uploads deliberately go without: a file landing is worth showing as soon
+   * as the server has it, even while the next one is still in the air.
+   */
+  const writeKey = localWriteKey(postAttachmentsKey(postId))
+
   const remove = useMutation({
+    mutationKey: writeKey,
     // The user's word for it, and for the thing on screen — the API calls
     // this deleting an attachment.
     meta: { errorTitle: 'Unable to remove file' },
     mutationFn: (attachmentId: string) =>
       deleteAttachment(postId, attachmentId),
-    onSuccess: invalidate,
+    // Settled, not success: a broadcast skipped while this was in flight is
+    // only caught up by this refresh, and a failed delete owes it too.
+    onSettled: invalidate,
   })
 
   /**
@@ -142,6 +146,7 @@ export function usePostAttachments(postId: string) {
    * atomic request instead of n — see CON-124.
    */
   const reorder = useMutation({
+    mutationKey: writeKey,
     // "media" rather than the API's "attachment": this is the drag-and-drop
     // list, and the user is looking at their files.
     meta: { errorTitle: 'Unable to reorder media' },
@@ -188,6 +193,7 @@ export function usePostAttachments(postId: string) {
    * `meta.errorTitle`, as everywhere else here.
    */
   const assignSegment = useMutation({
+    mutationKey: writeKey,
     meta: { errorTitle: 'Unable to move this to another message' },
     mutationFn: ({
       attachmentId,

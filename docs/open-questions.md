@@ -56,6 +56,7 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 | S3 | **Campaign-scoped assets**, with the workspace bank staying on as workspace-wide knowledge storage (CON-211). | CON-210 | — |
 | B1 | **Session-authenticated email preferences.** CON-155 shipped the suppression engine, but every endpoint it exposes verifies a signature lifted from an email footer, not a session. | CON-155 | `email-preferences` |
 | S5 | **R2 CORS for a browser `PUT`** to a presigned URL, so a recording's bytes can reach storage from the app's origin. The API side of audio ingestion shipped (CON-282/312) and the client is built; without CORS the PUT fails as a network error after presign has made the asset, which the client then deletes. | CON-307 | `content-bank-audio` |
+| E1 | **`post.attachments.changed` on `entity:post:<id>`** after every committed attachment write — upload, video finalize, bank attach (the Figma plugin's path), update, reorder, delete — tenant-stamped with no `UserID`, so every member with the post open hears it. The client routes it already (`lib/eventRouting`); until it is published, a file the Figma plugin attaches to an open post appears only on reload or the 10-minute presign refetch. | **CON-345** | — |
 | B2 | **The entitlements and billing reads** — `/entitlements`, `/tiers`, `/workspace/plan`, `/billing`, `/billing/portal`. The tiers and counters exist (CON-208, CON-86); the workspace-scoped REST read that puts them together does not. | CON-243 | `workspace-tiers` |
 
 ## Closed since the last review

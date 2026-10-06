@@ -5,6 +5,7 @@ import { flushAllPendingSaves } from '@/lib/pendingSaves'
 import { isLocalRun } from '@/lib/localRuns'
 import {
   RECONCILE_FILTERS,
+  heldByLocalWrite,
   invalidationsFor,
   localRunKeyFor,
 } from '@/lib/eventRouting'
@@ -143,13 +144,18 @@ async function reconcile(): Promise<void> {
   }
 }
 
-function handleEvent(event: AppEvent): void {
+/** Exported for tests; the stream is the only caller. */
+export function handleEvent(event: AppEvent): void {
   // A run this tab is streaming reports its own outcome; the hub copy of it is
   // an echo, and acting on it would refetch a cache the run is still writing.
   const runKey = localRunKeyFor(event)
   if (runKey && isLocalRun(runKey)) return
 
   for (const filters of invalidationsFor(event)) {
+    // Same reasoning one level down: a write this tab is still applying will
+    // refresh the query itself once it lands, and a refetch now would paint
+    // its half-done state over the user's.
+    if (heldByLocalWrite(queryClient, filters)) continue
     void queryClient.invalidateQueries(filters)
   }
 

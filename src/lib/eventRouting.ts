@@ -1,4 +1,4 @@
-import type { QueryFilters } from '@tanstack/react-query'
+import type { QueryClient, QueryFilters } from '@tanstack/react-query'
 import { postKey } from '@/hooks/usePost'
 import { postAssessmentKey } from '@/hooks/usePostAssessment'
 import { campaignKey } from '@/hooks/useCampaigns'
@@ -7,6 +7,8 @@ import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
 import {
+  localWriteKey,
+  postAttachmentsKey,
   postNotesKey,
   postVersionsKey,
   WORKSPACE_POSTS_KEY,
@@ -159,6 +161,15 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
           return [post, versions, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
         case 'post.scheduled':
           return [post, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
+        // A file was added, changed, moved or removed — by this editor, a
+        // teammate's, or an integration such as the Figma plugin attaching
+        // from outside the app (CON-345). Only the media list: the body is
+        // untouched, and refetching it would land under an active autosave.
+        // No post list reads attachments, so none of them is stale either.
+        // The actor's own copy is deliberately not muted — the plugin's upload
+        // *is* the actor's, and it is the case this event exists for.
+        case 'post.attachments.changed':
+          return [{ queryKey: postAttachmentsKey(subject.id) }]
         // The post flow snapshots before it rewrites. Only reaches other
         // people's tabs — the actor's own copy is suppressed as a local run,
         // and handled where the turn settles (assistantStore.refreshSubject).
@@ -236,6 +247,27 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
     case 'unknown':
       return []
   }
+}
+
+/**
+ * Whether a write this tab is applying to the filtered query should hold an
+ * event's refetch back (see `localWriteKey`).
+ *
+ * Matched exactly, so a write on the media list never holds back a refetch of
+ * the post above it — that one has nobody to catch it up afterwards. A filter
+ * that names no key (the shape-matched post lists) is never held.
+ */
+export function heldByLocalWrite(
+  client: QueryClient,
+  filters: QueryFilters,
+): boolean {
+  if (!filters.queryKey) return false
+  return (
+    client.isMutating({
+      mutationKey: localWriteKey(filters.queryKey),
+      exact: true,
+    }) > 0
+  )
 }
 
 /**
