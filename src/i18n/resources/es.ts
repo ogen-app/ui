@@ -1853,7 +1853,7 @@ export const es: Translation = {
     firstComment: {
       heading: 'Primer comentario',
       helper:
-        'Se publica bajo tu publicación cuando ya está en línea: el lugar para los enlaces.',
+        'Ideal para enlaces: LinkedIn e Instagram favorecen las publicaciones sin enlaces en el texto.',
       add: 'AÑADIR PRIMER COMENTARIO',
       remove: 'QUITAR',
       fieldLabel: 'Primer comentario',
