@@ -30,7 +30,6 @@ import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPane
 import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
 import { PostNotesCard } from '@/components/posts/notes/PostNotesCard'
 import { PostFirstCommentCard } from '@/components/posts/firstComment/PostFirstCommentCard'
-import { useFeatureFlag } from '@/config/featureFlags'
 import {
   POST_PREVIEW_PORTAL_ID,
   POST_QUALITY_PORTAL_ID,
@@ -255,19 +254,17 @@ function PostEditorSurface({
   // The first comment (CON-361), measured against the effective type's limit.
   // One answer read three times — by the card, the checks bar and the status
   // actions — so a comment the bar calls a failure is always one the buttons
-  // refuse. `null` when the feature is off or there is no comment to measure.
-  const firstCommentEnabled = useFeatureFlag('first-comment')
+  // refuse. `null` when there is no comment to measure.
   const firstCommentTarget = t('posts.firstComment.target', {
     platform: platformInfo(doc.platform_id)?.name ?? '',
     type: getPostTypeLabel(platformInfo(doc.platform_id), media.postType),
   })
-  const firstCommentText = firstCommentEnabled ? (doc.first_comment ?? '') : ''
   const firstComment = useMemo(
     () =>
-      hasFirstComment({ first_comment: firstCommentText })
-        ? firstCommentFit(firstCommentText, media.maxFirstCommentChars)
+      hasFirstComment({ first_comment: doc.first_comment })
+        ? firstCommentFit(doc.first_comment, media.maxFirstCommentChars)
         : null,
-    [firstCommentText, media.maxFirstCommentChars],
+    [doc.first_comment, media.maxFirstCommentChars],
   )
   const firstCommentBlocker =
     firstComment?.state === 'over'
@@ -875,17 +872,15 @@ function PostEditorSurface({
                 )}
               </div>
             </div>
-            {firstCommentEnabled && (
-              <div className="w-content empty:hidden">
-                <PostFirstCommentCard
-                  post={doc}
-                  changeDoc={changeDoc}
-                  limit={media.maxFirstCommentChars}
-                  target={firstCommentTarget}
-                  locked={locked}
-                />
-              </div>
-            )}
+            <div className="w-content empty:hidden">
+              <PostFirstCommentCard
+                post={doc}
+                changeDoc={changeDoc}
+                limit={media.maxFirstCommentChars}
+                target={firstCommentTarget}
+                locked={locked}
+              />
+            </div>
             <div className="w-content">
               <PostSourcesCard post={doc} changeDoc={changeDoc} />
             </div>

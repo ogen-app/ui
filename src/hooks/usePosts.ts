@@ -9,7 +9,6 @@ import {
   listPosts,
   updatePost,
 } from '@/services/api/posts'
-import { isFeatureEnabled } from '@/config/featureFlags'
 import { invalidateCampaignPosts } from '@/lib/postCache'
 import { atDefaultTime } from '@/lib/postSchedule'
 import { campaignPostsKey, WORKSPACE_POSTS_KEY } from '@/lib/queryKeys'
@@ -108,6 +107,9 @@ function draftPost(streamed: StreamedPost, campaignId: string): Post {
     published_url: '',
     brand_voice_id: null,
     brand_audience_id: null,
+    first_comment: '',
+    first_comment_delay_minutes: 0,
+    first_comment_status: null,
     status: 'draft',
     cta_type: 'none',
     cta_url: '',
@@ -195,7 +197,6 @@ export function useAddPost(campaignId: string) {
  * original's and stays behind, for the same reason `published_url` does.
  */
 function duplicatePayload(post: Post, title: string): PostPayload {
-  const firstComment = isFeatureEnabled('first-comment') && post.first_comment
   return {
     campaign_id: post.campaign_id,
     platform_id: post.platform_id,
@@ -210,12 +211,8 @@ function duplicatePayload(post: Post, title: string): PostPayload {
     campaign_type_phase_id: post.campaign_type_phase_id,
     status: 'draft',
     scheduled_at: null,
-    ...(firstComment
-      ? {
-          first_comment: firstComment,
-          first_comment_delay_minutes: post.first_comment_delay_minutes ?? 0,
-        }
-      : {}),
+    first_comment: post.first_comment,
+    first_comment_delay_minutes: post.first_comment_delay_minutes,
   }
 }
 

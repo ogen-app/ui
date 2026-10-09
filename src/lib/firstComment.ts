@@ -1,6 +1,6 @@
 import { charCount, markdownToSocialText } from '@/lib/socialText'
 import type { StatusTone } from '@/components/ui/status-badge'
-import type { FirstCommentDelay, Post } from '@/types/posts'
+import type { Post } from '@/types/posts'
 
 /**
  * A post's first comment (CON-360/361): what the editor may say about it before
@@ -24,15 +24,14 @@ export function firstCommentLength(text: string): number {
 
 /** The post carries a comment worth sending. */
 export function hasFirstComment(post: Pick<Post, 'first_comment'>): boolean {
-  return (post.first_comment ?? '').trim() !== ''
+  return post.first_comment.trim() !== ''
 }
 
 /**
  * Where a comment stands against the post's platform and type.
  *
  * - `unknown` — no limit to measure against: no type picked yet, the rules are
- *   still loading, or the server predates CON-360. Nothing is claimed either
- *   way, so nothing is blocked.
+ *   still loading. Nothing is claimed either way, so nothing is blocked.
  * - `unsupported` — the type takes no first comment (`0`).
  * - `over` / `ok` — measured against the limit.
  */
@@ -105,7 +104,7 @@ export function firstCommentStatusLine(
   >,
   now: number,
 ): FirstCommentStatusLine | null {
-  const delay = post.first_comment_delay_minutes ?? 0
+  const delay = post.first_comment_delay_minutes
   switch (post.first_comment_status ?? null) {
     case null:
       if (post.status === 'published') return null
@@ -162,11 +161,4 @@ function minutesUntilComment(
  */
 export function isPermissionError(error: string | undefined): boolean {
   return /permission|forbidden|\b403\b/i.test(error ?? '')
-}
-
-/** The delay as the API stores it, defaulting a post that predates it to 0. */
-export function firstCommentDelay(
-  post: Pick<Post, 'first_comment_delay_minutes'>,
-): FirstCommentDelay {
-  return post.first_comment_delay_minutes ?? 0
 }

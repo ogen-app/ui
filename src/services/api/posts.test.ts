@@ -104,19 +104,14 @@ describe('postToPayload', () => {
 
   /**
    * A fourth case (CON-360): presence-aware like the sources, but restated,
-   * because the autosave is the only writer the comment has. A server that
-   * predates the field sends neither, and neither goes back.
+   * because the autosave is the only writer the comment has.
    */
-  it('restates the first comment and its delay, when the server has them', () => {
+  it('restates the first comment and its delay', () => {
     const payload = postToPayload(
       makePost({ first_comment: 'Link →', first_comment_delay_minutes: 3 }),
     )
     expect(payload.first_comment).toBe('Link →')
     expect(payload.first_comment_delay_minutes).toBe(3)
-
-    const wire = JSON.parse(JSON.stringify(postToPayload(makePost())))
-    expect('first_comment' in wire).toBe(false)
-    expect('first_comment_delay_minutes' in wire).toBe(false)
   })
 
   it('never sends the thread segments back', () => {

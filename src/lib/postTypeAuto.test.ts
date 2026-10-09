@@ -26,7 +26,13 @@ function view(
   slug: string,
   r: ResolvedPostTypeRule | null = rule(),
 ): PostTypeRuleView {
-  return { slug, label: slug, whitelist_only: r === null, rule: r }
+  return {
+    slug,
+    label: slug,
+    whitelist_only: r === null,
+    rule: r,
+    max_first_comment_chars: 0,
+  }
 }
 
 function files(...mimes: string[]) {

@@ -45,9 +45,6 @@ export type PostTypeRuleView = {
    * no first comment — X, stories, a LinkedIn article — and the composer hides
    * the field. Beside `rule` rather than in it, so a whitelist-only type
    * carries it too.
-   *
-   * Optional only until CON-360 reaches the API: a server that predates it
-   * sends nothing, which reads as "unknown" rather than as "unsupported".
    */
-  max_first_comment_chars?: number
+  max_first_comment_chars: number
 }

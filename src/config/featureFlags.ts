@@ -418,24 +418,6 @@ const FEATURE_FLAGS = {
    * that way.
    */
   'content-formats': false,
-
-  /**
-   * A post's first comment (CON-361, the UI half of CON-360): text posted
-   * under the live post, with it or 1 / 3 / 5 / 10 minutes after it publishes.
-   * The editor's First comment card, its two validation rows, the transition
-   * blocker for an over-limit or unsupported comment, and duplicating the
-   * comment with the post.
-   *
-   * **Waiting on** CON-360 reaching the API's `develop`. It is built on
-   * `feature/CON-360-first-comment` (ogen) and this client is written to that
-   * branch: `max_first_comment_chars` on each post-type rule, the presence-aware
-   * `first_comment` / `first_comment_delay_minutes` on the post write, the
-   * worker-written `first_comment_status` (+ `_id`, `_posted_at`, `_error`) on
-   * the read, and the `post.first_comment_failed` notification. Re-test against
-   * a deploy of that branch before switching this on — in particular that a
-   * delayed comment moves from `pending` to `posted` on the editor's poll.
-   */
-  'first-comment': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS
