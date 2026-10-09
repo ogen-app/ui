@@ -2525,7 +2525,8 @@ export const en = {
      */
     firstComment: {
       heading: 'First comment',
-      helper: 'Posted under your post once it’s live — the place for links.',
+      helper:
+        'Great for links — LinkedIn and Instagram favour posts without links in the caption.',
       add: 'ADD FIRST COMMENT',
       remove: 'REMOVE',
       fieldLabel: 'First comment',
