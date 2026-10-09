@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import { postKey } from '@/hooks/usePost'
 import { queryClient } from '@/lib/queryClient'
 import {
   cachedNotifications,
@@ -53,7 +54,20 @@ const connection = createStreamConnection({
           // be parsed just after — on a workspace switch that would land the old
           // workspace's row in the new workspace's cache. Same guard as the
           // events stream.
-          if (!signal.aborted) landLiveNotification(queryClient, notification)
+          if (signal.aborted) return
+          landLiveNotification(queryClient, notification)
+          // The one row that is also news about an open screen: the post's
+          // first comment failed (CON-360), and its editor would otherwise
+          // keep saying "posting in ~1 min" until the next poll.
+          if (
+            notification.type === 'post.first_comment_failed' &&
+            notification.entity_type === 'post' &&
+            notification.entity_id
+          ) {
+            void queryClient.invalidateQueries({
+              queryKey: postKey(notification.entity_id),
+            })
+          }
         },
         onActivity: hooks.activity,
       },

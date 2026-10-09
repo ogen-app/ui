@@ -319,3 +319,38 @@ describe("an automatic post's type", () => {
     ).toContain('platform_post_type')
   })
 })
+
+// Mirrors checkFirstComment in src/domain/platforms/post_types.go (CON-360):
+// part of the readiness gate, so every edge out of draft passes it.
+describe('getTransitionBlockers — first comment', () => {
+  const OVER: TransitionContext = {
+    ...RESOLVED,
+    firstCommentBlocker: 'Shorten the first comment to 1,250 characters',
+  }
+
+  it('blocks every edge out of draft while the comment would be refused', () => {
+    for (const next of [
+      'ready_for_publish',
+      'scheduled',
+      'scheduled_for_manual_publishing',
+    ] as const) {
+      expect(fields(getTransitionBlockers(post(), next, OVER))).toContain(
+        'first_comment',
+      )
+    }
+  })
+
+  it('never blocks the way back into draft', () => {
+    expect(getTransitionBlockers(post(), 'draft', OVER)).toEqual([])
+  })
+
+  /** Unscheduling is how a stale comment gets fixed — it must not wait on it. */
+  it('never blocks leaving a submitted post', () => {
+    const blockers = getTransitionBlockers(
+      post({ status: 'scheduled' }),
+      'ready_for_publish',
+      OVER,
+    )
+    expect(fields(blockers)).not.toContain('first_comment')
+  })
+})

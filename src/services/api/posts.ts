@@ -382,6 +382,13 @@ export function restorePost(
  * convert-to-manual can no longer turn a thread back into a single post by
  * omitting a field they know nothing about, because the body they *do* carry
  * is now the whole of the thread.
+ *
+ * The first comment and its delay (CON-360) are presence-aware like the
+ * sources, but restated rather than omitted: unlike `used_asset_ids` they have
+ * no endpoint of their own, so the autosave is their only writer, and the
+ * CON-251 lock lets a scheduled post restate the values it already holds. A
+ * server that predates CON-360 sends neither, and `undefined` keeps both off
+ * the wire.
  */
 export function postToPayload(post: Post): PostPayload {
   return {
@@ -400,5 +407,7 @@ export function postToPayload(post: Post): PostPayload {
     cta_url: post.cta_url,
     target_audience_notes: post.target_audience_notes,
     campaign_type_phase_id: post.campaign_type_phase_id,
+    first_comment: post.first_comment,
+    first_comment_delay_minutes: post.first_comment_delay_minutes,
   }
 }

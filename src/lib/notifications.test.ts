@@ -93,6 +93,7 @@ describe('notificationCopy', () => {
     // invisible in English and total in every other language.
     const emitted = [
       ['post.manual_publish_due', 'postManualPublishDue'],
+      ['post.first_comment_failed', 'postFirstCommentFailed'],
       ['url_asset.crawled', 'urlAssetCrawled'],
       ['url_asset.failed', 'urlAssetFailed'],
       ['content_plan.failed', 'contentPlanFailed'],

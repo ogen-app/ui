@@ -39,4 +39,15 @@ export type PostTypeRuleView = {
    */
   whitelist_only: boolean
   rule: ResolvedPostTypeRule | null
+  /**
+   * The first-comment ceiling for this post type (CON-360), in the same
+   * flattened visible length the body is counted in. `0` means the type takes
+   * no first comment — X, stories, a LinkedIn article — and the composer hides
+   * the field. Beside `rule` rather than in it, so a whitelist-only type
+   * carries it too.
+   *
+   * Optional only until CON-360 reaches the API: a server that predates it
+   * sends nothing, which reads as "unknown" rather than as "unsupported".
+   */
+  max_first_comment_chars?: number
 }

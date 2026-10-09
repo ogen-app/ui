@@ -14,6 +14,25 @@ export type PostStatus =
 export type PostCTAType = 'link' | 'button' | 'none'
 
 /**
+ * What became of a post's first comment (CON-360). Written by the publish
+ * workers only, and `null` until the post goes live — or for good, when the
+ * post went live without one.
+ *
+ * - `delegated` — it rode the publish request (delay 0) and Zernio posted it
+ *   with the post. Zernio reports nothing further, so this is final.
+ * - `pending` — the post is live and Ogen posts the comment once the delay
+ *   has passed.
+ * - `posted` / `failed` — the delayed comment's outcome.
+ * - `skipped` — the post never went live, so neither did the comment.
+ */
+export type FirstCommentStatus =
+  'pending' | 'delegated' | 'posted' | 'failed' | 'skipped'
+
+/** The minutes after publish a first comment may wait. `0` is with the post. */
+export const FIRST_COMMENT_DELAYS = [0, 1, 3, 5, 10] as const
+export type FirstCommentDelay = (typeof FIRST_COMMENT_DELAYS)[number]
+
+/**
  * One message of a thread (CON-284). Index 0 is the root and the rest become
  * replies in order.
  *
@@ -138,6 +157,24 @@ export type Post = {
    */
   brand_voice_id: string | null
   brand_audience_id: string | null
+  /**
+   * Text posted under the live post (CON-360) — `""` for none — and how long
+   * after publishing it goes out. Plain text, trimmed by the server.
+   *
+   * Optional only until CON-360 reaches the API: a server that predates it
+   * sends neither, and `postToPayload` then sends neither back.
+   */
+  first_comment?: string
+  first_comment_delay_minutes?: FirstCommentDelay
+  /**
+   * The comment's outcome, written by the publish workers and never by this
+   * client. The other three are **omitted** when empty rather than sent as
+   * `null`.
+   */
+  first_comment_status?: FirstCommentStatus | null
+  first_comment_id?: string
+  first_comment_posted_at?: string
+  first_comment_error?: string
   created_by: string
   created_at: string
   updated_at: string
@@ -233,4 +270,11 @@ export type PostPayload = {
   campaign_type_phase_id?: string | null
   /** Round-tripped, never omitted — see `Post.published_url`. */
   published_url?: string
+  /**
+   * Presence-aware (CON-360): omitted leaves the stored value alone, `""`
+   * clears the comment. The delay must be one of `FIRST_COMMENT_DELAYS` —
+   * anything else, `null` included, is a 400.
+   */
+  first_comment?: string
+  first_comment_delay_minutes?: FirstCommentDelay
 }

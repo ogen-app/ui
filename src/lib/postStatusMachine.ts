@@ -317,7 +317,11 @@ export function isPublishMethodEdge(from: PostStatus, to: PostStatus): boolean {
 
 export type PostStatusBlocker = {
   field:
-    'platform_id' | 'platform_post_type' | 'scheduled_at' | 'social_account_id'
+    | 'platform_id'
+    | 'platform_post_type'
+    | 'scheduled_at'
+    | 'social_account_id'
+    | 'first_comment'
   message: string
 }
 
@@ -345,6 +349,14 @@ export type TransitionContext = {
    * means.
    */
   postType?: string
+  /**
+   * Why the post's first comment would be refused, already worded — or absent
+   * when it would not be (CON-360). The server's publish gate refuses a
+   * comment over the platform's limit and one on a type that takes none, on
+   * every edge out of draft; `lib/firstComment` decides, and the caller words
+   * it because this module holds no `t`.
+   */
+  firstCommentBlocker?: string
 }
 
 // Mirrors the server's pre-transition rules. Returns blockers the UI
@@ -366,6 +378,8 @@ export type TransitionContext = {
 //   the submit worker, so which account it "would" go out as is moot and
 //   demanding a choice there would invent a requirement the API doesn't
 //   have.
+// - First comment: checkFirstComment in src/domain/platforms/post_types.go
+//   (CON-360), part of the readiness gate every non-draft status passes.
 export function getTransitionBlockers(
   post: Post,
   next: PostStatus,
@@ -380,6 +394,14 @@ export function getTransitionBlockers(
       blockers.push({
         field: 'platform_post_type',
         message: 'Pick a post type first',
+      })
+    }
+    // Never on the way out of a submitted post: unscheduling is how a stale
+    // comment gets fixed, and must not wait on fixing it first.
+    if (context.firstCommentBlocker && !isSubmitted(post.status)) {
+      blockers.push({
+        field: 'first_comment',
+        message: context.firstCommentBlocker,
       })
     }
   }

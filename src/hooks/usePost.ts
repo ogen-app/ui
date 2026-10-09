@@ -25,6 +25,13 @@ const SAVE_DEBOUNCE_MS = 600
 // landing an unschedule), so we poll to surface those without a reload.
 const SCHEDULED_POLL_MS = 5_000
 
+// How often to refetch a published post whose first comment is still waiting
+// out its delay (CON-360). The worker writes the outcome and broadcasts
+// nothing on the events bus, so the poll is what moves `pending` to `posted`
+// without a reload. Slower than the schedule poll: the delay is minutes long,
+// and the line it updates reads "~N min".
+const FIRST_COMMENT_POLL_MS = 15_000
+
 /**
  * The editor's copy of a post, and only the editor's.
  *
@@ -123,7 +130,11 @@ export function usePost(postId: string): UsePostResult {
     // refetches straight away instead of passing for fresh.
     initialDataUpdatedAt: seed?.updatedAt,
     refetchInterval: (q) =>
-      q.state.data?.status === 'scheduled' ? SCHEDULED_POLL_MS : false,
+      q.state.data?.status === 'scheduled'
+        ? SCHEDULED_POLL_MS
+        : q.state.data?.first_comment_status === 'pending'
+          ? FIRST_COMMENT_POLL_MS
+          : false,
   })
 
   const [cancelling, setCancelling] = useState(false)
