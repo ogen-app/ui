@@ -287,7 +287,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `used_asset_ids`, so the two fields are opposites and a builder that treats
   them alike is wrong about one of them.
 - **A post's first comment is presence-aware but restated** (CON-360/361,
-  behind `first-comment`). `first_comment` and `first_comment_delay_minutes`
+  shipped unflagged). `first_comment` and `first_comment_delay_minutes`
   have no endpoint of their own, so unlike `used_asset_ids` the autosave is
   their only writer and `postToPayload` sends them; the CON-251 lock accepts a
   restated value. `first_comment_status` and its three siblings are the

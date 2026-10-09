@@ -160,18 +160,15 @@ export type Post = {
   /**
    * Text posted under the live post (CON-360) — `""` for none — and how long
    * after publishing it goes out. Plain text, trimmed by the server.
-   *
-   * Optional only until CON-360 reaches the API: a server that predates it
-   * sends neither, and `postToPayload` then sends neither back.
    */
-  first_comment?: string
-  first_comment_delay_minutes?: FirstCommentDelay
+  first_comment: string
+  first_comment_delay_minutes: FirstCommentDelay
   /**
    * The comment's outcome, written by the publish workers and never by this
    * client. The other three are **omitted** when empty rather than sent as
    * `null`.
    */
-  first_comment_status?: FirstCommentStatus | null
+  first_comment_status: FirstCommentStatus | null
   first_comment_id?: string
   first_comment_posted_at?: string
   first_comment_error?: string

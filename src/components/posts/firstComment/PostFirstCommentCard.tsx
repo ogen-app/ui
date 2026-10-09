@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { TextSelect } from '@/components/ui/text-select'
 import { cn } from '@/lib'
 import {
-  firstCommentDelay,
   firstCommentFit,
   firstCommentStatusLine,
   type FirstCommentStatusLine,
@@ -69,7 +68,7 @@ export function PostFirstCommentCard({
   className,
 }: Props) {
   const { t } = useTranslation()
-  const stored = post.first_comment ?? ''
+  const stored = post.first_comment
   // A local draft, like the title's, because the server trims what it stores
   // and its answer lands back in the cache: typed straight through, the space
   // before the next word would vanish under the cursor on every save.
@@ -109,10 +108,10 @@ export function PostFirstCommentCard({
             {stored}
           </p>
           <p className="text-sm text-tertiary-foreground">
-            {firstCommentDelay(post) === 0
+            {post.first_comment_delay_minutes === 0
               ? t('posts.firstComment.timing.withPost')
               : t('posts.firstComment.timing.after', {
-                  count: firstCommentDelay(post),
+                  count: post.first_comment_delay_minutes,
                 })}
           </p>
         </div>
@@ -226,7 +225,7 @@ export function PostFirstCommentCard({
                   variant="default"
                   size="lg"
                   className="w-64"
-                  value={String(firstCommentDelay(post))}
+                  value={String(post.first_comment_delay_minutes)}
                   onValueChange={(v) =>
                     setDelay(Number(v) as FirstCommentDelay)
                   }
