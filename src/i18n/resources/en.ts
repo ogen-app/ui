@@ -764,6 +764,7 @@ export const en = {
         'Your {{channel}} connection needs reconnecting',
       postPublished: 'A {{channel}} post was published',
       postPublishFailed: 'A {{channel}} post failed to publish',
+      postFirstCommentFailed: 'A post’s first comment couldn’t be posted',
       /**
        * Says nothing about the channel on purpose: this producer carries a
        * platform sqid rather than a network, and it is not ours to resolve
@@ -2516,6 +2517,67 @@ export const en = {
       error: "The post couldn't be duplicated. Try again.",
       /** Appended to the copy's title so the two are told apart in a list. */
       titleSuffix: '{{title}} (copy)',
+    },
+
+    /**
+     * A post's first comment (CON-361) — text posted under the live post, with
+     * it or a few minutes after it publishes.
+     */
+    firstComment: {
+      heading: 'First comment',
+      helper: 'Posted under your post once it’s live — the place for links.',
+      add: 'ADD FIRST COMMENT',
+      remove: 'REMOVE',
+      fieldLabel: 'First comment',
+      placeholder: 'A link, a source, or the rest of the story',
+      delayLabel: 'Post it',
+      delay: {
+        now: 'Immediately — with the post',
+        minutes_one: '{{count}} min after publish',
+        minutes_other: '{{count}} min after publish',
+      },
+      accountNote: 'Ogen posts it from the account this post goes out on.',
+      /** The platform and post type a comment cannot go out on. */
+      target: '{{platform}} ({{type}})',
+      unsupported:
+        '{{target}} doesn’t take a first comment, so this post can’t go out with one. Remove it or pick another platform or post type.',
+      check: {
+        label: 'First comment',
+        unsupported: 'Not supported on {{target}}',
+        within: '{{length}} / {{limit}} characters',
+        over: '{{length}} / {{limit}} characters — {{over}} over',
+      },
+      blocker: {
+        over: 'Shorten the first comment to {{limit}} characters',
+        unsupported: 'Remove the first comment — {{target}} doesn’t take one',
+      },
+      /** Under a locked comment: when it was set to go out. */
+      timing: {
+        withPost: 'With the post',
+        after_one: '{{count}} min after publish',
+        after_other: '{{count}} min after publish',
+      },
+      /**
+       * The line beside the heading once the post has left drafting, one per
+       * `first_comment_status` — plus the two plans a scheduled post shows
+       * before there is any status at all.
+       */
+      status: {
+        withPost: 'Goes out with the post',
+        afterPublish_one: 'Posts ~{{count}} min after publish',
+        afterPublish_other: 'Posts ~{{count}} min after publish',
+        postingIn_one: 'Posting in ~{{count}} min',
+        postingIn_other: 'Posting in ~{{count}} min',
+        postingNow: 'Posting now',
+        delegated: 'Sent with the post',
+        posted: 'Posted · {{at}}',
+        postedUndated: 'Posted',
+        failed: 'Not posted: {{error}}',
+        failedPermission: 'Not posted: the account isn’t allowed to comment.',
+        failedUnexplained: 'Not posted',
+        reconnect: 'Reconnect account',
+        skipped: 'Not posted — the post didn’t publish',
+      },
     },
 
     /**

@@ -29,6 +29,8 @@ import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
 import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
 import { PostNotesCard } from '@/components/posts/notes/PostNotesCard'
+import { PostFirstCommentCard } from '@/components/posts/firstComment/PostFirstCommentCard'
+import { useFeatureFlag } from '@/config/featureFlags'
 import {
   POST_PREVIEW_PORTAL_ID,
   POST_QUALITY_PORTAL_ID,
@@ -39,6 +41,8 @@ import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { usePanelScope } from '@/hooks/usePanelScope'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { charCount } from '@/lib/socialText'
+import { firstCommentFit, hasFirstComment } from '@/lib/firstComment'
+import { formatNumber } from '@/lib/intl'
 import { MAX_THREAD_POSTS, runtPositions } from '@/lib/threadSequence'
 import { getPostTypeLabel } from '@/lib/platformDictionary'
 import { canBeAutomatic, type UnfitReason } from '@/lib/postTypeAuto'
@@ -248,6 +252,34 @@ function PostEditorSurface({
     doc.social_account,
   )
 
+  // The first comment (CON-361), measured against the effective type's limit.
+  // One answer read three times — by the card, the checks bar and the status
+  // actions — so a comment the bar calls a failure is always one the buttons
+  // refuse. `null` when the feature is off or there is no comment to measure.
+  const firstCommentEnabled = useFeatureFlag('first-comment')
+  const firstCommentTarget = t('posts.firstComment.target', {
+    platform: platformInfo(doc.platform_id)?.name ?? '',
+    type: getPostTypeLabel(platformInfo(doc.platform_id), media.postType),
+  })
+  const firstCommentText = firstCommentEnabled ? (doc.first_comment ?? '') : ''
+  const firstComment = useMemo(
+    () =>
+      hasFirstComment({ first_comment: firstCommentText })
+        ? firstCommentFit(firstCommentText, media.maxFirstCommentChars)
+        : null,
+    [firstCommentText, media.maxFirstCommentChars],
+  )
+  const firstCommentBlocker =
+    firstComment?.state === 'over'
+      ? t('posts.firstComment.blocker.over', {
+          limit: formatNumber(firstComment.limit),
+        })
+      : firstComment?.state === 'unsupported'
+        ? t('posts.firstComment.blocker.unsupported', {
+            target: firstCommentTarget,
+          })
+        : undefined
+
   // Leaving `draft` is where an automatic post's format stops being derived and
   // becomes a fact about the record.
   //
@@ -328,7 +360,7 @@ function PostEditorSurface({
     // The effective type, not the record's: an automatic post has no slug until
     // this very transition writes one, so reading the record would disable the
     // button that does the writing.
-    context: { account, postType: media.postType },
+    context: { account, postType: media.postType, firstCommentBlocker },
   })
   // Null unless something really is going to publish the post — see
   // `publishTiming` for which statuses those are.
@@ -689,6 +721,40 @@ function PostEditorSurface({
     t,
   ])
 
+  // Last, after the length and media rows it sits beside on the platform's
+  // side of the gate: the server refuses an over-limit comment and one on a
+  // type that takes none exactly as it refuses an over-long body.
+  const allChecks = useMemo<PostCheck[]>(() => {
+    if (!firstComment || firstComment.state === 'unknown') return checks
+    const label = t('posts.firstComment.check.label')
+    const row: PostCheck =
+      firstComment.state === 'unsupported'
+        ? {
+            id: 'first-comment',
+            label,
+            status: 'fail',
+            detail: t('posts.firstComment.check.unsupported', {
+              target: firstCommentTarget,
+            }),
+          }
+        : {
+            id: 'first-comment',
+            label,
+            status: firstComment.state === 'over' ? 'fail' : 'pass',
+            detail: t(
+              firstComment.state === 'over'
+                ? 'posts.firstComment.check.over'
+                : 'posts.firstComment.check.within',
+              {
+                length: formatNumber(firstComment.length),
+                limit: formatNumber(firstComment.limit),
+                over: formatNumber(firstComment.length - firstComment.limit),
+              },
+            ),
+          }
+    return [...checks, row]
+  }, [checks, firstComment, firstCommentTarget, t])
+
   const handleDownloadMarkdown = useCallback(
     () => downloadMarkdown(doc.title, doc.content, 'post'),
     [doc.title, doc.content],
@@ -750,7 +816,7 @@ function PostEditorSurface({
             <UpgradeDialog gate={qualityGate} />
             <div className="w-content">
               <PostValidationsSection
-                checks={checks}
+                checks={allChecks}
                 status={doc.status}
                 assessment={assessment}
                 postUpdatedAt={doc.updated_at}
@@ -809,6 +875,17 @@ function PostEditorSurface({
                 )}
               </div>
             </div>
+            {firstCommentEnabled && (
+              <div className="w-content empty:hidden">
+                <PostFirstCommentCard
+                  post={doc}
+                  changeDoc={changeDoc}
+                  limit={media.maxFirstCommentChars}
+                  target={firstCommentTarget}
+                  locked={locked}
+                />
+              </div>
+            )}
             <div className="w-content">
               <PostSourcesCard post={doc} changeDoc={changeDoc} />
             </div>

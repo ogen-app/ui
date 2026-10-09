@@ -286,6 +286,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (CON-165): the server defaults it away on silence and *preserves*
   `used_asset_ids`, so the two fields are opposites and a builder that treats
   them alike is wrong about one of them.
+- **A post's first comment is presence-aware but restated** (CON-360/361,
+  behind `first-comment`). `first_comment` and `first_comment_delay_minutes`
+  have no endpoint of their own, so unlike `used_asset_ids` the autosave is
+  their only writer and `postToPayload` sends them; the CON-251 lock accepts a
+  restated value. `first_comment_status` and its three siblings are the
+  workers' and never sent. The limit is the post-type rule's
+  `max_first_comment_chars` (`0` = the type takes none), and a comment on such
+  a type is **kept and blocked**, not cleared — the server's publish gate
+  refuses it, and clearing would lose the text a switch back wants.
 - **A post's type is a default, not a question.** *Auto*
   is the empty `platform_post_type` every post is **already** created with —
   `useAddPost` sends a campaign and a date and nothing else — so the feature

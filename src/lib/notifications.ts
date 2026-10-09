@@ -54,6 +54,10 @@ const COPY_KEY = {
   'post.published': 'activity.notification.postPublished',
   'post.publish_failed': 'activity.notification.postPublishFailed',
   'post.manual_publish_due': 'activity.notification.postManualPublishDue',
+  // The post is live and its delayed first comment is not (CON-360). Sent to
+  // the author alone; the reason is in `data.error` and on the post itself,
+  // which is where the row links to.
+  'post.first_comment_failed': 'activity.notification.postFirstCommentFailed',
   'asset.ready': 'activity.notification.assetReady',
   'asset.ingest_failed': 'activity.notification.assetIngestFailed',
   // A crawled page is an asset like any other, and the server still splits it

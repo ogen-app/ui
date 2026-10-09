@@ -9,6 +9,7 @@ import {
   listPosts,
   updatePost,
 } from '@/services/api/posts'
+import { isFeatureEnabled } from '@/config/featureFlags'
 import { invalidateCampaignPosts } from '@/lib/postCache'
 import { atDefaultTime } from '@/lib/postSchedule'
 import { campaignPostsKey, WORKSPACE_POSTS_KEY } from '@/lib/queryKeys'
@@ -187,8 +188,14 @@ export function useAddPost(campaignId: string) {
  * The account *is* carried: a repurposed post almost always goes out as the
  * same one, and a picker that has to tolerate a disconnected value already
  * does.
+ *
+ * So is the first comment with its delay (CON-360) — the copy stays on the
+ * original's platform, which is the one case the server's own clone carries
+ * them in too. Its outcome (`first_comment_status` and the rest) is the
+ * original's and stays behind, for the same reason `published_url` does.
  */
 function duplicatePayload(post: Post, title: string): PostPayload {
+  const firstComment = isFeatureEnabled('first-comment') && post.first_comment
   return {
     campaign_id: post.campaign_id,
     platform_id: post.platform_id,
@@ -203,6 +210,12 @@ function duplicatePayload(post: Post, title: string): PostPayload {
     campaign_type_phase_id: post.campaign_type_phase_id,
     status: 'draft',
     scheduled_at: null,
+    ...(firstComment
+      ? {
+          first_comment: firstComment,
+          first_comment_delay_minutes: post.first_comment_delay_minutes ?? 0,
+        }
+      : {}),
   }
 }
 

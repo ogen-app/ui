@@ -101,6 +101,12 @@ export function usePostMedia(post: Post) {
   const maxTitleChars = limitsReady
     ? titleLimitFor(platform?.text_constraints)
     : undefined
+  // Off the same rule as the body's limit, for the *effective* type — an
+  // automatic post is measured against the format it will publish as.
+  // `undefined` until there is a rule to read it from (CON-360).
+  const maxFirstCommentChars = limitsReady
+    ? ruleView?.max_first_comment_chars
+    : undefined
 
   // Handed the *effective* type rather than the stored one, so every check that
   // names a format names the one this post will publish as. When Auto has no
@@ -209,6 +215,11 @@ export function usePostMedia(post: Post) {
     ready,
     maxContentChars,
     maxTitleChars,
+    /**
+     * The first-comment ceiling for the effective type; `0` takes none,
+     * `undefined` is not known (yet).
+     */
+    maxFirstCommentChars,
     /** The slug this post publishes as, chosen or derived. `''` if neither. */
     postType,
     /** The resolution, or `null` when the author pinned a type themselves. */

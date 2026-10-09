@@ -564,6 +564,8 @@ export const es: Translation = {
       connectionActionRequired: 'Tu conexión con {{channel}} debe reconectarse',
       postPublished: 'Se publicó una publicación de {{channel}}',
       postPublishFailed: 'No se pudo publicar una publicación de {{channel}}',
+      postFirstCommentFailed:
+        'No se pudo publicar el primer comentario de una publicación',
       postManualPublishDue: 'Hay una publicación pendiente de publicar a mano',
       assetReady: 'Un documento terminó de procesarse',
       assetIngestFailed: 'No se pudo procesar un documento',
@@ -1846,6 +1848,59 @@ export const es: Translation = {
       liveDraftNote: 'Todavía sin instantánea',
       liveSubmitted: 'Texto actual',
       liveSubmittedNote: 'Nunca se guardó una instantánea',
+    },
+
+    firstComment: {
+      heading: 'Primer comentario',
+      helper:
+        'Se publica bajo tu publicación cuando ya está en línea: el lugar para los enlaces.',
+      add: 'AÑADIR PRIMER COMENTARIO',
+      remove: 'QUITAR',
+      fieldLabel: 'Primer comentario',
+      placeholder: 'Un enlace, una fuente o el resto de la historia',
+      delayLabel: 'Publicarlo',
+      delay: {
+        now: 'De inmediato, con la publicación',
+        minutes_one: '{{count}} min después de publicar',
+        minutes_other: '{{count}} min después de publicar',
+      },
+      accountNote:
+        'Ogen lo publica desde la cuenta con la que sale esta publicación.',
+      target: '{{platform}} ({{type}})',
+      unsupported:
+        '{{target}} no admite un primer comentario, así que esta publicación no puede salir con uno. Quítalo o elige otra plataforma u otro tipo de publicación.',
+      check: {
+        label: 'Primer comentario',
+        unsupported: 'No disponible en {{target}}',
+        within: '{{length}} / {{limit}} caracteres',
+        over: '{{length}} / {{limit}} caracteres: {{over}} de más',
+      },
+      blocker: {
+        over: 'Acorta el primer comentario a {{limit}} caracteres',
+        unsupported: 'Quita el primer comentario: {{target}} no lo admite',
+      },
+      timing: {
+        withPost: 'Con la publicación',
+        after_one: '{{count}} min después de publicar',
+        after_other: '{{count}} min después de publicar',
+      },
+      status: {
+        withPost: 'Sale con la publicación',
+        afterPublish_one: 'Se publica ~{{count}} min después',
+        afterPublish_other: 'Se publica ~{{count}} min después',
+        postingIn_one: 'Se publica en ~{{count}} min',
+        postingIn_other: 'Se publica en ~{{count}} min',
+        postingNow: 'Publicándose ahora',
+        delegated: 'Enviado con la publicación',
+        posted: 'Publicado · {{at}}',
+        postedUndated: 'Publicado',
+        failed: 'No publicado: {{error}}',
+        failedPermission:
+          'No publicado: la cuenta no tiene permiso para comentar.',
+        failedUnexplained: 'No publicado',
+        reconnect: 'Volver a conectar la cuenta',
+        skipped: 'No publicado: la publicación no salió',
+      },
     },
 
     duplicate: {
