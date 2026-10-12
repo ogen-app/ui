@@ -6,6 +6,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib'
 import { formatNumber } from '@/lib/intl'
 import {
+  citationStatus,
   inRange,
   isNumericCell,
   sheetColumns,
@@ -13,6 +14,9 @@ import {
   type Sheet,
   type SheetRow,
 } from '@/lib/sheetChunks'
+
+/** How many pages a citation may pull in on its own before it waits. */
+const MAX_CITATION_PAGES = 10
 
 type Props = {
   sheets: Sheet[]
@@ -64,13 +68,25 @@ export function SheetView({
   // The rows a citation names may sit in a page not loaded yet — even on a
   // sheet no loaded page has reached — so go and get them rather than
   // highlighting nothing.
+  // Bounded: a citation is chased for a few pages at most, and not at all
+  // once the loaded chunks show it cannot be there. Load more stays for the
+  // rest.
   const citedMissing =
-    cited !== null &&
-    (!sheets.some((s) => s.name === cited.sheet) || !citedLoaded)
+    cited !== null && citationStatus(sheets, cited) === 'more'
+  const autoLoads = useRef<{ cited: CitedRange | null; count: number }>({
+    cited: null,
+    count: 0,
+  })
 
   useEffect(() => {
-    if (citedMissing && hasMore && !loadingMore) onLoadMore()
-  }, [citedMissing, hasMore, loadingMore, onLoadMore])
+    if (!citedMissing || !hasMore || loadingMore) return
+    if (autoLoads.current.cited !== cited) {
+      autoLoads.current = { cited, count: 0 }
+    }
+    if (autoLoads.current.count >= MAX_CITATION_PAGES) return
+    autoLoads.current.count += 1
+    onLoadMore()
+  }, [cited, citedMissing, hasMore, loadingMore, onLoadMore])
 
   useEffect(() => {
     if (range && citedLoaded) {

@@ -104,6 +104,8 @@ export type Sheet = {
   name: string
   /** The header's own row number, from the summary's range. */
   headerRow: number | null
+  /** The sheet's last row, from the same range — past it there is nothing. */
+  lastRow: number | null
   /** From the summary chunk, in the file's order. */
   columns: string[]
   /** Data rows, from the summary; null until the summary has been read. */
@@ -125,6 +127,7 @@ export function sheetsFromChunks(chunks: AssetChunk[]): Sheet[] {
       sheet = {
         name,
         headerRow: null,
+        lastRow: null,
         columns: [],
         rowCount: null,
         samples: [],
@@ -144,6 +147,7 @@ export function sheetsFromChunks(chunks: AssetChunk[]): Sheet[] {
 
     if (label?.part === 'summary') {
       sheet.headerRow = range?.from ?? null
+      sheet.lastRow = range?.to ?? null
       const m = SUMMARY.exec(chunk.content)
       if (m) {
         sheet.columns = m[1]
@@ -285,6 +289,26 @@ export type CitedRange = {
   from: number
   to: number
   by: string
+}
+
+/**
+ * Where a citation stands against the chunks loaded so far: its rows are
+ * here (`found`), may be on a later page (`more`), or cannot be — the range
+ * is past the sheet's last row, the loaded rows have already gone past it
+ * (blank rows are never stored), or a later sheet has started, which only
+ * happens once this one is fully loaded (`never`).
+ */
+export function citationStatus(
+  sheets: Sheet[],
+  cited: CitedRange,
+): 'found' | 'more' | 'never' {
+  const at = sheets.findIndex((s) => s.name === cited.sheet)
+  if (at < 0) return 'more'
+  const sheet = sheets[at]
+  if (sheet.rows.some((r) => inRange(r, cited))) return 'found'
+  if (sheet.lastRow !== null && cited.from > sheet.lastRow) return 'never'
+  if (sheet.rows.some((r) => r.from > cited.to)) return 'never'
+  return at < sheets.length - 1 ? 'never' : 'more'
 }
 
 /** Whether a row falls inside a cited range. */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AssetChunk } from '@/types/content'
 import {
+  citationStatus,
   columnLetter,
   inRange,
   isNumericCell,
@@ -134,6 +135,41 @@ describe('parseRowLine', () => {
       Region: 'EMEA',
     })
     expect(parseRowLine('just text')).toBeNull()
+  })
+})
+
+describe('citationStatus', () => {
+  const sheets = sheetsFromChunks([
+    chunk(0, 'Sheet "A" summary', 'Sheet "A" — columns: X. 3 data rows.', {
+      kind: 'sheet',
+      sheet: 'A',
+      cell_range: 'A1:A40',
+    }),
+    chunk(1, 'Sheet "A" rows 2-4', 'X: 1\nX: 2\nX: 3', {
+      kind: 'sheet',
+      sheet: 'A',
+      cell_range: 'A2:A4',
+    }),
+  ])
+  const cite = (sheet: string, from: number, to: number) => ({
+    sheet,
+    from,
+    to,
+    by: '',
+  })
+
+  it('finds loaded rows and waits for unloaded ones', () => {
+    expect(citationStatus(sheets, cite('A', 3, 3))).toBe('found')
+    expect(citationStatus(sheets, cite('A', 10, 12))).toBe('more')
+    expect(citationStatus(sheets, cite('B', 2, 5))).toBe('more')
+  })
+
+  it('gives up where the rows cannot be', () => {
+    // Past the sheet's last row.
+    expect(citationStatus(sheets, cite('A', 50, 60))).toBe('never')
+    // A later sheet has started, so this one is fully loaded.
+    const withNext = [...sheets, { ...sheets[0], name: 'B' }]
+    expect(citationStatus(withNext, cite('A', 10, 12))).toBe('never')
   })
 })
 

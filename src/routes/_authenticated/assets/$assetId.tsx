@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { AssetDocument } from '@/components/content/AssetDocument'
 
@@ -30,14 +31,18 @@ function BankDocument() {
   const { assetId } = Route.useParams()
   const { lens } = Route.useSearch()
   const navigate = Route.useNavigate()
+  // Stable, so the page's stale-lens effect does not re-run on every render.
+  const onLensChange = useCallback(
+    (next: string) =>
+      void navigate({ search: next ? { lens: next } : {}, replace: true }),
+    [navigate],
+  )
   return (
     <AssetDocument
       assetId={assetId}
       campaignId={null}
       lens={lens}
-      onLensChange={(next) =>
-        void navigate({ search: next ? { lens: next } : {}, replace: true })
-      }
+      onLensChange={onLensChange}
     />
   )
 }
