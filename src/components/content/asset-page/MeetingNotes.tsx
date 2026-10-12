@@ -1,9 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import { PlayIcon } from '@phosphor-icons/react'
-import { useAudioSeek } from '@/hooks/useAudioSeek'
-import { timeLabelSeconds } from '@/lib/assetAnalysis'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { Section } from './InsightSection'
+import { SourceChip } from './SourceChip'
 
 /**
  * What a meeting recording settled (CON-364): who was there, who promised
@@ -81,7 +79,7 @@ export function MeetingNotes({ lens }: { lens: AssetAnalysis }) {
                   {c.due || '—'}
                 </span>
                 <span className="justify-self-end">
-                  {c.source_label && <TimeChip label={c.source_label} />}
+                  {c.source_label && <SourceChip label={c.source_label} />}
                 </span>
               </li>
             ))}
@@ -114,45 +112,5 @@ export function Bullets({ items }: { items: string[] }) {
         <li key={i}>{item}</li>
       ))}
     </ul>
-  )
-}
-
-/**
- * A source label as a chip. A time ("12:03–12:47") on a page with a player
- * plays from where it starts; anything else — a page, a slide, a time with no
- * player to move — is a plain label.
- */
-export function TimeChip({
-  label,
-  interactive = true,
-}: {
-  label: string
-  /** False where the chip sits inside another control. */
-  interactive?: boolean
-}) {
-  const { t } = useTranslation()
-  const player = useAudioSeek()
-  const seconds = timeLabelSeconds(label)
-  const start = label.split(/[–-]/)[0]?.trim() || label
-  if (interactive && player && seconds !== null) {
-    return (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          player.seek(seconds)
-        }}
-        aria-label={t('content.audio.playFrom', { time: label })}
-        className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-quaternary px-2.5 py-0.5 text-xs tabular-nums text-accent hover:bg-secondary"
-      >
-        <PlayIcon weight="fill" className="size-3" aria-hidden />
-        {start}
-      </button>
-    )
-  }
-  return (
-    <span className="inline-flex items-center rounded-full border border-quaternary px-2.5 py-0.5 text-xs tabular-nums text-tertiary-foreground">
-      {label}
-    </span>
   )
 }

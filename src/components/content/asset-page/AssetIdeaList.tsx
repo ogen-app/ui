@@ -14,7 +14,7 @@ import { parseIdeaNote } from '@/lib/assetAnalysis'
 import type { Idea } from '@/lib/ideas'
 import { ideaFromWire } from '@/services/api/ideas'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
-import { TimeChip } from './MeetingNotes'
+import { SourceChip } from './SourceChip'
 
 /** How many ideas show before "Show N more". */
 const FIRST_IDEAS = 5
@@ -28,7 +28,17 @@ const FIRST_IDEAS = 5
  * way to the inbox under it. An idea someone has already said no to is left
  * out — it was answered, and this list is what is still worth making.
  */
-export function AssetIdeaList({ lens }: { lens: AssetAnalysis }) {
+export function AssetIdeaList({
+  lens,
+  spreadsheet = false,
+}: {
+  lens: AssetAnalysis
+  /**
+   * A spreadsheet's ideas quote its figures, and a workbook is usually
+   * internal data — so the footnote says to check before posting.
+   */
+  spreadsheet?: boolean
+}) {
   const { t } = useTranslation()
   const [showAll, setShowAll] = useState(false)
   const [open, setOpen] = useState<string | null>(null)
@@ -100,6 +110,7 @@ export function AssetIdeaList({ lens }: { lens: AssetAnalysis }) {
           )}
           <p className="text-xs text-tertiary-foreground">
             {t('assetInsights.ideas.footnote')}
+            {spreadsheet && ` ${t('assetInsights.sheet.footnote')}`}
           </p>
         </>
       )}
@@ -149,7 +160,7 @@ function IdeaRow({
           {/* Labels only: these sit inside the row's button. The playable
               chips are in the opened row. */}
           {sources.slice(0, 3).map((s) => (
-            <TimeChip key={s} label={s} interactive={false} />
+            <SourceChip key={s} label={s} interactive={false} />
           ))}
         </span>
         <Caret className="mt-0.5 size-4 shrink-0 text-tertiary-foreground" />
@@ -167,7 +178,7 @@ function IdeaRow({
           {sources.length > 0 && (
             <span className="flex flex-wrap gap-1.5">
               {sources.map((s) => (
-                <TimeChip key={s} label={s} />
+                <SourceChip key={s} label={s} citedBy={idea.title} />
               ))}
             </span>
           )}

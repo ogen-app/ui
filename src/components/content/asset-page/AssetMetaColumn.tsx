@@ -17,6 +17,7 @@ import { assetKind } from '@/lib/assetKind'
 import { formatBytes } from '@/lib/assetStatus'
 import { formatDate, formatNumber } from '@/lib/intl'
 import { relativeTime } from '@/lib/relativeTime'
+import type { SheetSummary } from '@/lib/sheetChunks'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import type { Asset } from '@/types/content'
 import { CampaignMark } from './CampaignMark'
@@ -26,6 +27,11 @@ type Props = {
   lenses: AssetAnalysis[]
   /** The picture at the top — `AssetStage`. */
   stage: ReactNode
+  /**
+   * A spreadsheet's sheets, as far as they are loaded (§5.4) — the kind line
+   * counts them and their rows, and a Sheets fact names them.
+   */
+  sheets?: SheetSummary[]
   onTitleChange: (title: string) => void
   onDirty: () => void
 }
@@ -50,6 +56,7 @@ export function AssetMetaColumn({
   asset,
   lenses,
   stage,
+  sheets,
   onTitleChange,
   onDirty,
 }: Props) {
@@ -64,11 +71,28 @@ export function AssetMetaColumn({
   const extent = extentLabel(t, asset, i18n.language)
   const size = asset.file?.size_bytes ?? 0
   const sizeLabel = size > 0 ? formatBytes(size) : null
-  const kindLine = [
-    assetKindNoun(t, kind, 1),
-    extent,
-    sizeLabel !== extent ? sizeLabel : null,
-  ].filter(Boolean)
+  const sheetRows = sheets?.reduce((sum, s) => sum + (s.rows ?? 0), 0) ?? 0
+  const kindLine = (
+    sheets
+      ? [
+          t('assetInsights.sheet.kind'),
+          sheets.length > 0
+            ? t('assetInsights.sheet.sheets', { count: sheets.length })
+            : null,
+          sheetRows > 0
+            ? t('assetInsights.sheet.rows', {
+                count: sheetRows,
+                formatted: formatNumber(sheetRows, {}, i18n.language),
+              })
+            : null,
+          sizeLabel,
+        ]
+      : [
+          assetKindNoun(t, kind, 1),
+          extent,
+          sizeLabel !== extent ? sizeLabel : null,
+        ]
+  ).filter(Boolean)
 
   const addedBy = members.data?.find((m) => m.id === asset.created_by)?.name
   const language = languageName(workspaceLens?.language, i18n.language)
@@ -126,6 +150,13 @@ export function AssetMetaColumn({
           {asset.file?.original_name && (
             <Fact label={t('assetInsights.meta.file')}>
               <span className="break-all">{asset.file.original_name}</span>
+            </Fact>
+          )}
+          {sheets && sheets.length > 0 && (
+            <Fact label={t('assetInsights.sheet.fact')}>
+              {sheetNames(sheets, (count) =>
+                t('assetInsights.sheet.moreSheets', { count }),
+              )}
             </Fact>
           )}
           {language && (
@@ -208,6 +239,16 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
       <dd className="min-w-0 text-foreground">{children}</dd>
     </>
   )
+}
+
+/** "Pipeline, Regions, Targets", and "+N more" past four. */
+function sheetNames(
+  sheets: SheetSummary[],
+  more: (count: number) => string,
+): string {
+  const names = sheets.slice(0, 4).map((s) => s.name)
+  if (sheets.length > 4) names.push(more(sheets.length - 4))
+  return names.join(', ')
 }
 
 /** "English" for `en`, in the reader's language; null when unknown. */

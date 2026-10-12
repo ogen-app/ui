@@ -465,6 +465,37 @@ export const en = {
       model_refused: 'The analysis model declined to read this file.',
       unknown: 'Something went wrong while analysing it.',
     },
+    /**
+     * A spreadsheet's stage, facts and Source table (CON-366 §5.4). Sheet
+     * names and row ranges inside chips are the file's and the server's.
+     */
+    sheet: {
+      kind: 'spreadsheet',
+      sheets_one: '{{count}} sheet',
+      sheets_other: '{{count}} sheets',
+      rows_one: '{{formatted}} row',
+      rows_other: '{{formatted}} rows',
+      fact: 'Sheets',
+      moreSheets: '+{{count}} more',
+      read: 'Sheets read',
+      chip_one: '{{name}} · {{formatted}} row',
+      chip_other: '{{name}} · {{formatted}} rows',
+      footnote:
+        'Figures in ideas come straight from the sheet — check what is public before posting.',
+      open: 'Open the {{name}} sheet',
+      openRows: 'Show {{label}} in the sheet',
+      readOnly: 'Read-only · the text the assistant reads',
+      citedRange: 'Rows {{from}}–{{to}}',
+      citedBy: 'cited by “{{idea}}”',
+      clear: 'Clear',
+      showing: 'Showing {{shown}} of {{total}} rows',
+      loaded_one: '{{shown}} row loaded',
+      loaded_other: '{{shown}} rows loaded',
+      loadMore: 'Load more',
+      loadFailed: 'Couldn’t load this sheet',
+      empty: 'This sheet has no rows.',
+      notLoaded: 'This sheet’s rows are further on — load more to reach them.',
+    },
     retry: 'Try again',
     retryFailed: 'Couldn’t start the analysis again',
     seePlans: 'See plans',
