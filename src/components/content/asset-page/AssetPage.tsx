@@ -166,9 +166,12 @@ export function AssetPage({
       // Autoplay refused; the seek stands and the play button is right there.
     })
   }, [])
+  // Only with a file to play: without one the stage says it is missing, and
+  // chips and transcript lines must not pretend they can seek.
+  const audioUrl = asset.type === 'AUDIO' ? (asset.file?.url ?? null) : null
   const player = useMemo<AudioSeek | null>(
-    () => (asset.type === 'AUDIO' ? { seek, nowMs } : null),
-    [asset.type, seek, nowMs],
+    () => (audioUrl ? { seek, nowMs } : null),
+    [audioUrl, seek, nowMs],
   )
 
   // A spreadsheet's sheets, from the same chunk pages the table pages

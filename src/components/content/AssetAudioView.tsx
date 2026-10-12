@@ -60,6 +60,9 @@ export function AssetAudioView({
   // the lines below drive that one rather than drawing a second.
   const shared = useAudioSeek()
   const nowMs = shared ? shared.nowMs : ownNowMs
+  // A line plays from where it starts only when there is something to play:
+  // the page's player, or this screen's own <audio>.
+  const canSeek = shared !== null || Boolean(asset.file?.url)
 
   const seek = (entry: TranscriptEntry) => {
     if (shared) {
@@ -198,6 +201,7 @@ export function AssetAudioView({
                     <button
                       type="button"
                       onClick={() => seek(entry)}
+                      disabled={!canSeek}
                       aria-label={t('content.audio.playFrom', {
                         time: entry.label,
                       })}

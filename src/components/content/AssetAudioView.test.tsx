@@ -134,6 +134,16 @@ describe('AssetAudioView', () => {
     play.mockRestore()
   })
 
+  it('leaves lines inert when there is nothing to play', async () => {
+    api.getAudioTranscript.mockResolvedValue([
+      line({ start_ms: 0, end_ms: 5_000, label: '0:00–0:05', text: 'Hi.' }),
+    ])
+    renderView(asset({ file: null }))
+    expect(
+      await screen.findByRole('button', { name: 'Play from 0:00–0:05' }),
+    ).toBeDisabled()
+  })
+
   it('reports how far a run has got while it is still transcribing', async () => {
     api.getAudioStatus.mockResolvedValue(
       run('transcribing', [segment(0, 'done'), segment(1, 'pending')]),

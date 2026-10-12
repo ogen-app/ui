@@ -111,6 +111,15 @@ describe('SheetView', () => {
     expect(props.onLoadMore).toHaveBeenCalled()
   })
 
+  it('does not chase a citation the loaded rows rule out', () => {
+    // Regions is followed by no sheet, but Pipeline is: Pipeline is complete.
+    const props = renderView({
+      cited: { sheet: 'Pipeline', from: 40, to: 45, by: '' },
+      hasMore: true,
+    })
+    expect(props.onLoadMore).not.toHaveBeenCalled()
+  })
+
   it('falls back to the text view when the chunks hold no sheet', () => {
     renderView({ sheets: [] })
     expect(screen.getByText('text view')).toBeInTheDocument()
