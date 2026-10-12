@@ -41,14 +41,22 @@ export function AssetStage({ asset, audioRef, onAudioTime }: Props) {
   const cover = asset.file?.thumbnail_url
   if (kind === 'pdf' && usable(cover)) {
     // Column-wide and uncaptioned: the cover is the picture, and the page
-    // count is already in the kind line under it.
+    // count is already in the kind line under it. Its foot fades into the
+    // column rather than stopping on a hard edge — a page is not a photo, and
+    // a cut line under it reads as the end of the card.
     return (
-      <img
-        src={cover}
-        alt=""
-        onError={onError(cover)}
-        className="block w-full border-b border-quaternary bg-secondary"
-      />
+      <div className="relative">
+        <img
+          src={cover}
+          alt=""
+          onError={onError(cover)}
+          className="block w-full bg-secondary"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-primary"
+        />
+      </div>
     )
   }
   if (kind === 'image') {

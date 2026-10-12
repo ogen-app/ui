@@ -27,6 +27,7 @@ import { formatNumber } from '@/lib/intl'
 import type { SheetSummary } from '@/lib/sheetChunks'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { AssetIdeaList } from './AssetIdeaList'
+import { FadingScroll } from './FadingScroll'
 import { Section } from './InsightSection'
 import { Bullets, MeetingNotes } from './MeetingNotes'
 
@@ -235,8 +236,8 @@ function Reading({
 
       {(lens.summary.trim() || lens.key_points.length > 0) && (
         // The reading itself, capped: a long summary scrolls in place rather
-        // than pushing the ideas a screen away.
-        <div className="-mr-2 flex max-h-[600px] flex-col gap-8 overflow-y-auto pr-2">
+        // than pushing the ideas a screen away, its edges fading as it does.
+        <FadingScroll className="-mr-2 flex max-h-[600px] flex-col gap-8 pr-2">
           {lens.summary.trim() && (
             <Section title={t('assetInsights.summary')}>
               <SummaryText text={lens.summary} />
@@ -255,7 +256,7 @@ function Reading({
               <Bullets items={lens.key_points} />
             </Section>
           )}
-        </div>
+        </FadingScroll>
       )}
 
       {hasMeetingNotes(lens) && <MeetingNotes lens={lens} />}
