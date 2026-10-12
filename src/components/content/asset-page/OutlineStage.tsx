@@ -63,7 +63,7 @@ export function OutlineStage({
         </ol>
       </div>
       {/* There is more to the document than the first few headings. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-b from-transparent to-secondary" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-linear-to-b from-transparent to-secondary" />
     </div>
   )
 }
