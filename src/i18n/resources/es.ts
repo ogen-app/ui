@@ -3190,7 +3190,6 @@ export const es: Translation = {
         'No se ha podido cargar la transcripción. Prueba a recargar la página.',
       missing:
         'Esta grabación no se guardó, así que no hay nada que reproducir.',
-      noPlayer: 'Este navegador no puede reproducir audio.',
       retry_one: 'Reintentar la parte fallida',
       retry_other: 'Reintentar las {{count}} partes fallidas',
       reextract: 'Transcribir de nuevo',
@@ -3202,7 +3201,6 @@ export const es: Translation = {
     },
 
     image: {
-      titlePlaceholder: 'Título',
       altLabel: 'Texto alternativo',
       altPlaceholder: 'Una persona en un taller sosteniendo un implante dental',
       altHelp:

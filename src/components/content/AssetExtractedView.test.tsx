@@ -50,11 +50,7 @@ const chunk = (
 function renderView(a: Asset) {
   return render(
     <QueryWrapper>
-      <AssetExtractedView
-        asset={a}
-        onTitleChange={() => {}}
-        onDirty={() => {}}
-      />
+      <AssetExtractedView asset={a} />
     </QueryWrapper>,
   )
 }

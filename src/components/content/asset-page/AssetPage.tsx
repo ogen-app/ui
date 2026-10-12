@@ -76,7 +76,7 @@ function rememberTab(tab: Tab) {
 }
 
 /**
- * The asset page as two columns (CON-366, behind `asset-insights`): what the
+ * The asset page as two columns (CON-366): what the
  * asset is on the left, what it says on the right.
  *
  * The right column is two tabs. **Insights** is the LLM's reading of the asset

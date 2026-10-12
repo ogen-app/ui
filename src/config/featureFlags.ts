@@ -418,20 +418,6 @@ const FEATURE_FLAGS = {
    * that way.
    */
   'content-formats': false,
-  /**
-   * Asset insights (CON-366): the asset page as two columns — what the asset
-   * is on the left, what it says on the right — with the LLM analysis and the
-   * ideas it distilled under an Insights tab, and today's screens kept whole
-   * under Source.
-   *
-   * Off, the page is the single column it was, untouched: the flag switches
-   * between two pages rather than threading through one.
-   *
-   * **Waiting on** CON-364's deploy — `GET /api/content-bank/assets/:id/
-   * analyses`, the retry endpoint, `asset.analysis.updated` on the event bus
-   * and `analysis_status` on asset reads.
-   */
-  'asset-insights': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryWrapper } from '@/test/queryWrapper'
+import type { AudioSeek } from '@/hooks/useAudioSeek'
 import type { Asset, AudioStatus, TranscriptEntry } from '@/types/content'
 
 const api = vi.hoisted(() => ({
@@ -15,6 +16,7 @@ vi.mock('@/services/api/content', async (importOriginal) => ({
 }))
 
 const { AssetAudioView } = await import('./AssetAudioView')
+const { AudioSeekContext } = await import('@/hooks/useAudioSeek')
 
 const asset = (over: Partial<Asset>): Asset => ({
   id: 'aud1',
@@ -75,12 +77,22 @@ const line = (over: Partial<TranscriptEntry>): TranscriptEntry => ({
   ...over,
 })
 
-function renderView(a: Asset) {
-  return render(
+/**
+ * The page's player — the stage draws it (`useAudioSeek`); this screen only
+ * drives it. Null is a recording with no file to play.
+ */
+function renderView(
+  a: Asset,
+  player: AudioSeek | null = { seek: vi.fn(), nowMs: null },
+) {
+  render(
     <QueryWrapper>
-      <AssetAudioView asset={a} onTitleChange={() => {}} onDirty={() => {}} />
+      <AudioSeekContext.Provider value={player}>
+        <AssetAudioView asset={a} />
+      </AudioSeekContext.Provider>
     </QueryWrapper>,
   )
+  return { player }
 }
 
 beforeEach(() => {
@@ -90,7 +102,7 @@ beforeEach(() => {
 })
 
 describe('AssetAudioView', () => {
-  it('plays the recording and shows the transcript under its timestamps', async () => {
+  it('shows the transcript under its timestamps', async () => {
     api.getAudioTranscript.mockResolvedValue([
       line({ text: 'Welcome back.' }),
       line({
@@ -100,22 +112,15 @@ describe('AssetAudioView', () => {
         text: 'Pricing changes next week.',
       }),
     ])
-    const { container } = renderView(asset({}))
+    renderView(asset({}))
 
-    expect(container.querySelector('audio')).toHaveAttribute(
-      'src',
-      'https://bucket.example/update.m4a',
-    )
     expect(
       await screen.findByText('Pricing changes next week.'),
     ).toBeInTheDocument()
     expect(screen.getByText('1:05–1:10')).toBeInTheDocument()
   })
 
-  it('plays from the line that was clicked', async () => {
-    const play = vi
-      .spyOn(HTMLMediaElement.prototype, 'play')
-      .mockResolvedValue(undefined)
+  it('plays the page player from the line that was clicked', async () => {
     api.getAudioTranscript.mockResolvedValue([
       line({
         start_ms: 65_000,
@@ -124,21 +129,19 @@ describe('AssetAudioView', () => {
         text: 'Later.',
       }),
     ])
-    const { container } = renderView(asset({}))
+    const { player } = renderView(asset({}))
 
     fireEvent.click(
       await screen.findByRole('button', { name: 'Play from 1:05–1:10' }),
     )
-    expect(container.querySelector('audio')!.currentTime).toBe(65)
-    expect(play).toHaveBeenCalled()
-    play.mockRestore()
+    expect(player?.seek).toHaveBeenCalledWith(65)
   })
 
   it('leaves lines inert when there is nothing to play', async () => {
     api.getAudioTranscript.mockResolvedValue([
       line({ start_ms: 0, end_ms: 5_000, label: '0:00–0:05', text: 'Hi.' }),
     ])
-    renderView(asset({ file: null }))
+    renderView(asset({ file: null }), null)
     expect(
       await screen.findByRole('button', { name: 'Play from 0:00–0:05' }),
     ).toBeDisabled()

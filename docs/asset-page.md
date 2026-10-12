@@ -1,9 +1,9 @@
 # The asset page — insights and source (CON-366)
 
-Behind the `asset-insights` flag, `/assets/:id` and
-`/campaigns/:id/assets/:assetId` are two columns: **what the asset is** on the
-left, **what it says** on the right. Flag off, the single-column page is
-untouched — `AssetDocument` switches bodies, nothing else.
+`/assets/:id` and `/campaigns/:id/assets/:assetId` are two columns: **what
+the asset is** on the left, **what it says** on the right. Shipped unflagged —
+the `asset-insights` flag and the single-column page are gone; the old
+screens live on as the Source tab, without their own titles.
 
 Code: `components/content/asset-page/`. Rules (pure, tested):
 `lib/assetAnalysis.ts`, `lib/sheetChunks.ts`. Data: `hooks/useAssetAnalyses.ts`
