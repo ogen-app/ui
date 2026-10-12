@@ -4,6 +4,7 @@ import {
   citationStatus,
   columnLetter,
   inRange,
+  nearRange,
   isNumericCell,
   isSpreadsheet,
   parseRowLine,
@@ -220,7 +221,11 @@ describe('sheetsFromChunks', () => {
     expect(inRange(sheets[0].rows[1], { from: 3, to: 3 })).toBe(true)
     expect(inRange(sheets[0].rows[0], { from: 3, to: 3 })).toBe(false)
     // An unnumbered row is cited when its group overlaps the range.
-    expect(inRange(sheets[1].rows[0], { from: 5, to: 6 })).toBe(true)
+    // An unnumbered row is only marked when the range covers its chunk…
+    expect(inRange(sheets[1].rows[0], { from: 5, to: 6 })).toBe(false)
+    expect(inRange(sheets[1].rows[0], { from: 2, to: 9 })).toBe(true)
+    // …but the chunk still counts as where the citation is.
+    expect(nearRange(sheets[1].rows[0], { from: 5, to: 6 })).toBe(true)
   })
 })
 

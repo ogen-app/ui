@@ -357,13 +357,23 @@ function SummaryText({ text }: { text: string }) {
               part.level <= 2 ? 'text-base' : 'text-[15px]',
             )}
           >
-            {part.text}
+            <HeadingSpans text={part.text} />
           </p>
         ) : (
           <MarkupBlocks key={i} text={part.text} />
         ),
       )}
     </div>
+  )
+}
+
+/** A heading's own inline markup — `## **Bold** title` — read like a line. */
+function HeadingSpans({ text }: { text: string }) {
+  const [block] = parseAssistantMarkup(text)
+  return block?.kind === 'paragraph' ? (
+    <Spans spans={block.spans} />
+  ) : (
+    <>{text}</>
   )
 }
 

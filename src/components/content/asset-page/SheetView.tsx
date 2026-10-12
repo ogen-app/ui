@@ -8,6 +8,7 @@ import { formatNumber } from '@/lib/intl'
 import {
   citationStatus,
   inRange,
+  nearRange,
   isNumericCell,
   sheetColumns,
   type CitedRange,
@@ -64,7 +65,7 @@ export function SheetView({
   const columns = useMemo(() => (sheet ? sheetColumns(sheet) : []), [sheet])
   const range = cited && sheet && cited.sheet === sheet.name ? cited : null
   const firstCitedRef = useRef<HTMLTableRowElement | null>(null)
-  const citedLoaded = range ? sheet.rows.some((r) => inRange(r, range)) : true
+  const citedLoaded = range ? sheet.rows.some((r) => nearRange(r, range)) : true
   // The rows a citation names may sit in a page not loaded yet — even on a
   // sheet no loaded page has reached — so go and get them rather than
   // highlighting nothing.
@@ -111,7 +112,15 @@ export function SheetView({
   if (!sheet) return <>{fallback}</>
 
   const nameOf = (s: Sheet) => s.name || fallbackName
-  const firstCited = range ? sheet.rows.findIndex((r) => inRange(r, range)) : -1
+  // Scroll to the first marked row; failing that, to the chunk the citation
+  // falls in, whose rows blank lines left unnumbered.
+  const firstMarked = range
+    ? sheet.rows.findIndex((r) => inRange(r, range))
+    : -1
+  const firstCited =
+    firstMarked >= 0 || !range
+      ? firstMarked
+      : sheet.rows.findIndex((r) => nearRange(r, range))
 
   return (
     <div className="flex flex-col gap-5">
