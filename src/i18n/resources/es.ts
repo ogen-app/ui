@@ -267,6 +267,11 @@ export const es: Translation = {
       analyse: 'Analizar',
       ideas: 'Sacar ideas',
     },
+    outline: {
+      contents: 'Contenido',
+      slides: 'Diapositivas',
+      untitled: 'Diapositiva {{number}}',
+    },
     entityKind: {
       person: 'Persona',
       org: 'Organización',
@@ -308,6 +313,8 @@ export const es: Translation = {
       addToCampaign: 'Añadir a una campaña',
       formerMember: 'Antiguo miembro',
       source: 'Fuente',
+      updated: 'Actualizado',
+      images: 'Imágenes',
       minutes_one: '{{count}} min',
       minutes_other: '{{count}} min',
       tags: 'Etiquetas',
@@ -382,6 +389,15 @@ export const es: Translation = {
       loadFailed: 'No se pudo cargar el análisis',
       loadFailedBody: 'Revisa tu conexión; se reintentará solo.',
       none: 'Sin analizar',
+      noneNoteBody:
+        'El análisis aparece un rato después de que dejes de editar esta nota.',
+      emptyNote: 'Aún no hay nada que leer',
+      emptyNoteBody:
+        'Escribe en esta nota y su resumen e ideas llegarán cuando hagas una pausa.',
+      startWriting: 'Empezar a escribir',
+      emptySource: 'No hay texto que analizar',
+      emptySourceBody:
+        'Este archivo no tiene texto que el análisis pueda leer, por ejemplo un PDF solo con imágenes o una hoja en blanco.',
       noneBody:
         'Este recurso se añadió antes de que existiera el análisis. Las subidas nuevas se analizan automáticamente.',
     },

@@ -365,6 +365,12 @@ export const en = {
       analyse: 'Analyse',
       ideas: 'Distil ideas',
     },
+    /** A Word file's or a deck's outline, drawn where its picture would be. */
+    outline: {
+      contents: 'Contents',
+      slides: 'Slides',
+      untitled: 'Slide {{number}}',
+    },
     /** A mention's kind, on hover. */
     entityKind: {
       person: 'Person',
@@ -412,6 +418,9 @@ export const en = {
       formerMember: 'Former member',
       /** A scraped page's address, where a file would have its name. */
       source: 'Source',
+      /** A web page's last change: a re-read or an edit — there is no scrape date. */
+      updated: 'Updated',
+      images: 'Images',
       minutes_one: '{{count}} min',
       minutes_other: '{{count}} min',
       tags: 'Tags',
@@ -487,6 +496,15 @@ export const en = {
       loadFailed: 'Couldn’t load the insights',
       loadFailedBody: 'Check your connection; this retries on its own.',
       none: 'Not analysed',
+      noneNoteBody:
+        'Insights appear a little while after you stop editing this note.',
+      emptyNote: 'Nothing to read yet',
+      emptyNoteBody:
+        'Write in this note and its summary and ideas follow once you pause.',
+      startWriting: 'Start writing',
+      emptySource: 'No text to analyse',
+      emptySourceBody:
+        'This file has no text the analysis could read — an image-only PDF or a blank sheet, say.',
       noneBody:
         'This asset was added before insights existed. New uploads are analysed automatically.',
     },

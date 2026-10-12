@@ -5,6 +5,7 @@ import {
   formatClock,
   insightState,
   isAnalyzable,
+  isEmptyReading,
   isMissingLens,
   metaStatus,
   missingLens,
@@ -93,6 +94,14 @@ describe('insightState', () => {
         lens({ status: 'skipped', failure_code: 'entitlement_disabled' }),
       ),
     ).toBe('notInPlan')
+  })
+})
+
+describe('isEmptyReading', () => {
+  it('knows a reading of nothing from one with something in it', () => {
+    expect(isEmptyReading(lens({ summary: '' }))).toBe(true)
+    expect(isEmptyReading(lens())).toBe(false)
+    expect(isEmptyReading(lens({ summary: '', status: 'running' }))).toBe(false)
   })
 })
 

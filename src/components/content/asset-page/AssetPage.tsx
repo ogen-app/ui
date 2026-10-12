@@ -14,6 +14,7 @@ import { SheetCiteContext, type SheetCite } from '@/hooks/useSheetCite'
 import {
   insightState,
   isAnalyzable,
+  isEmptyReading,
   isMissingLens,
   lensKey,
   missingLens,
@@ -27,11 +28,14 @@ import {
   summarizeSheets,
   type CitedRange,
 } from '@/lib/sheetChunks'
+import { assetKind } from '@/lib/assetKind'
+import { documentOutline } from '@/lib/documentOutline'
 import type { Asset } from '@/types/content'
 import { AssetMetaColumn } from './AssetMetaColumn'
 import { AssetStage } from './AssetStage'
 import { InsightsPanel, type PanelState } from './InsightsPanel'
 import { LensPicker } from './LensPicker'
+import { OutlineStage } from './OutlineStage'
 import { SheetStage } from './SheetStage'
 import { SheetView } from './SheetView'
 
@@ -132,13 +136,20 @@ export function AssetPage({
   })
   const settled =
     asset.status !== 'failed' && retrievability(asset.status) !== 'waiting'
-  const state: PanelState = analyses.isError
+  const lensState: PanelState = analyses.isError
     ? 'loadFailed'
     : settled &&
         analyses.isSuccess &&
         (lenses.length === 0 || (current && isMissingLens(current)))
       ? 'none'
       : insightState(asset.status, current)
+  // A settled reading with nothing in it: the source had no text to read —
+  // a note not yet written, an image-only PDF. Said as such, not shown as an
+  // empty page.
+  const state: PanelState =
+    lensState === 'ready' && current && isEmptyReading(current)
+      ? 'empty'
+      : lensState
   const busy = state === 'reading' || state === 'analysing'
 
   // A `?lens=` that no longer names a lens — the asset was taken out of that
@@ -174,13 +185,23 @@ export function AssetPage({
     [audioUrl, seek, nowMs],
   )
 
-  // A spreadsheet's sheets, from the same chunk pages the table pages
-  // through — one query, so the stage, the facts and the table agree.
+  // A document's chunks — a spreadsheet's sheets, a Word file's or a deck's
+  // outline — from the same pages the Source tab reads, one query, so the
+  // stage, the facts and the text agree.
   const spreadsheet = isSpreadsheet(asset) && settled
-  const chunks = useAssetChunks(asset.id, { enabled: spreadsheet })
-  const sheets = useMemo(
-    () => sheetsFromChunks(chunks.data?.pages.flatMap((p) => p.chunks) ?? []),
+  const isDocument = asset.type === 'DOC' && settled
+  const chunks = useAssetChunks(asset.id, { enabled: isDocument })
+  const loadedChunks = useMemo(
+    () => chunks.data?.pages.flatMap((p) => p.chunks) ?? [],
     [chunks.data],
+  )
+  const sheets = useMemo(
+    () => (spreadsheet ? sheetsFromChunks(loadedChunks) : []),
+    [spreadsheet, loadedChunks],
+  )
+  const outline = useMemo(
+    () => (isDocument && !spreadsheet ? documentOutline(loadedChunks) : null),
+    [isDocument, spreadsheet, loadedChunks],
   )
   const fallbackName = withoutExtension(
     asset.file?.original_name ?? asset.title,
@@ -258,6 +279,12 @@ export function AssetPage({
                   fallbackName={fallbackName}
                   onOpenSheet={openSheet}
                 />
+              ) : outline ? (
+                <OutlineStage
+                  outline={outline}
+                  format={fileFormat(asset.file?.original_name)}
+                  fileName={asset.file?.original_name ?? null}
+                />
               ) : (
                 <AssetStage
                   asset={asset}
@@ -316,6 +343,8 @@ export function AssetPage({
                     state={state}
                     lens={current}
                     sheets={sheetSummaries}
+                    authored={assetKind(asset) === 'text'}
+                    onOpenSource={() => setTab('source')}
                     retrying={retry.isPending}
                     onRetry={() => retry.mutate(current?.campaign_id ?? null)}
                   />
@@ -336,6 +365,14 @@ export function AssetPage({
       </SheetCiteContext.Provider>
     </AudioSeekContext.Provider>
   )
+}
+
+/** "DOCX" from "plan.docx". */
+function fileFormat(name: string | undefined): string | null {
+  const dot = name?.lastIndexOf('.') ?? -1
+  return name && dot > 0 && dot < name.length - 1
+    ? name.slice(dot + 1).toUpperCase()
+    : null
 }
 
 /** "q3-pipeline" from "q3-pipeline.csv" — a CSV's one sheet's name. */
