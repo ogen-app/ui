@@ -1,3 +1,5 @@
+import type { AssetAnalysisStatus } from './assetAnalysis'
+
 export type Tag = {
   id: string
   name: string
@@ -137,6 +139,11 @@ export type Asset = {
   origin?: AssetOrigin
   /** The origin's pointer back at its source — for Figma, the frame. */
   origin_ref?: FigmaOriginRef | null
+  /**
+   * Where the asset's workspace analysis stands (CON-364), or null for a kind
+   * that is never analysed (images) or one not queued yet.
+   */
+  analysis_status?: AssetAnalysisStatus | null
   created_by: string
   created_at: string
   updated_at: string

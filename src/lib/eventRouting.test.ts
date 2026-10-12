@@ -139,6 +139,20 @@ describe('invalidationsFor', () => {
     expect(keys(e)).toEqual([['assets']])
   })
 
+  it('refreshes the asset and the ideas when an analysis moves', () => {
+    const e = event('entity:asset:a1', 'asset.analysis.updated', {
+      status: 'ready',
+      ideas_count: 7,
+    })
+    expect(keys(e)).toEqual([['assets', 'a1'], ['ideas']])
+  })
+
+  it('ignores an analysis event on the campaign topic', () => {
+    expect(
+      invalidationsFor(event('entity:campaign:c1', 'asset.analysis.updated')),
+    ).toEqual([])
+  })
+
   it('ignores an asset event it does not know', () => {
     expect(invalidationsFor(event('entity:asset:a1', 'asset.deleted'))).toEqual(
       [],

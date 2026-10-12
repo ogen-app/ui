@@ -88,6 +88,9 @@ a skipped event is caught up rather than lost. The match is exact: a write on
 | | `post.attachments.changed` | A file is added to, changed on, moved within or removed from the post — from the editor, a teammate, or an integration such as the Figma plugin (CON-345). Payload `{attachment_id, action, source}` | Invalidate that post's attachments only — never the body, which may be mid-autosave. Not muted for the actor: the plugin's upload *is* the actor's. Held while this tab is writing the same list (above). **Awaiting the API** — routed ahead of its producer |
 | `entity:campaign:<id>` | `assistant.completed` / `assistant.failed` | A campaign-assistant run ends | Invalidate the campaign; muted for the starting tab |
 | | `content_plan.completed` / `content_plan.failed` | Content-plan generation ends | Invalidate the campaign's posts |
+| | `asset.analysis.updated` | The same event on the campaign's topic, for a campaign lens (CON-364) | Nothing — the asset-topic copy already covers it |
+| `entity:asset:<id>` | `asset.updated` | A scraped page or an ingest moves on | Invalidate the asset list and the open asset |
+| | `asset.analysis.updated` | An analysis lens is queued, starts, or settles (CON-364). Payload `{asset_id, campaign_id, analysis_id, status, ideas_count}` | Invalidate the asset's subtree — which holds its analyses (`['assets', id, 'analyses']`) — and every Ideas list, since a settled lens files new ideas. The asset page also polls every 15 s while a lens is in flight, for the event that never arrives (CON-366) |
 | `entity:zernio_account:<id>` | `zernio.account.attached` / `.updated` / `.revived` | A social account is connected or changes state | Invalidate the accounts list |
 | | `zernio.account.attach_failed` | Connecting an account failed | **Toasts** — unexpected, actionable, invisible on whatever screen you are on |
 | | `zernio.account.disconnected` | An account was disconnected | **Toasts**, same reason |
