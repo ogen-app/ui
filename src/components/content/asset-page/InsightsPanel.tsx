@@ -5,6 +5,8 @@ import {
   ArrowsClockwiseIcon,
   CheckIcon,
   CircleIcon,
+  FileDashedIcon,
+  NotePencilIcon,
   TableIcon,
   FileXIcon,
   LockSimpleIcon,
@@ -32,7 +34,7 @@ import { Bullets, MeetingNotes } from './MeetingNotes'
  * could not be read at all, and an asset that settled before analysis existed
  * and so has no lens to show.
  */
-export type PanelState = InsightState | 'loadFailed' | 'none'
+export type PanelState = InsightState | 'loadFailed' | 'none' | 'empty'
 
 type Props = {
   state: PanelState
@@ -44,6 +46,13 @@ type Props = {
    * shown as what the reading covered (§5.4). Absent on every other kind.
    */
   sheets?: SheetSummary[]
+  /**
+   * A note or Markdown file — written here, not ingested. Its empty and
+   * not-yet-analysed states point at writing rather than at the file.
+   */
+  authored?: boolean
+  /** Switches to the Source tab — the empty note's way to start writing. */
+  onOpenSource?: () => void
 }
 
 /**
@@ -58,6 +67,8 @@ export function InsightsPanel({
   onRetry,
   retrying,
   sheets,
+  authored = false,
+  onOpenSource,
 }: Props) {
   const { t } = useTranslation()
   const lensName =
@@ -95,7 +106,35 @@ export function InsightsPanel({
         <Notice
           icon={<FileXIcon className="size-5 text-tertiary-foreground" />}
           title={t('assetInsights.state.none')}
-          body={t('assetInsights.state.noneBody')}
+          body={
+            authored
+              ? t('assetInsights.state.noneNoteBody')
+              : t('assetInsights.state.noneBody')
+          }
+        />
+      )
+    case 'empty':
+      return authored ? (
+        <Notice
+          icon={<NotePencilIcon className="size-5 text-tertiary-foreground" />}
+          title={t('assetInsights.state.emptyNote')}
+          body={t('assetInsights.state.emptyNoteBody')}
+        >
+          {onOpenSource && (
+            <Button
+              variant="outline"
+              className="uppercase"
+              onClick={onOpenSource}
+            >
+              {t('assetInsights.state.startWriting')}
+            </Button>
+          )}
+        </Notice>
+      ) : (
+        <Notice
+          icon={<FileDashedIcon className="size-5 text-tertiary-foreground" />}
+          title={t('assetInsights.state.emptySource')}
+          body={t('assetInsights.state.emptySourceBody')}
         />
       )
     case 'assetFailed':

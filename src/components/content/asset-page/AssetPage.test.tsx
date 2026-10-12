@@ -91,6 +91,68 @@ describe('AssetPage', () => {
     expect(screen.getByText('Anna K.')).toBeInTheDocument()
   })
 
+  it('draws a deck as its outline of slides', async () => {
+    api.listAssetChunks.mockResolvedValue({
+      offset: 0,
+      limit: 100,
+      total: 1,
+      chunks: [
+        {
+          id: 'k0',
+          asset_id: 'a1',
+          chunk_index: 0,
+          page_start: 0,
+          page_end: 0,
+          source_label: 'Slides 1-2',
+          source_anchor: { kind: 'slide', slide: 1 },
+          content: 'Slide 1\nQ3 launch\n\nSlide 2\nPricing',
+          token_count: 5,
+        },
+      ],
+    })
+    api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
+    await renderPage(
+      asset({
+        type: 'DOC',
+        file: {
+          id: 'f1',
+          original_name: 'launch.pptx',
+          mime_type:
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          size_bytes: 2_000_000,
+          width: 0,
+          height: 0,
+          is_animated: false,
+        },
+      }),
+    )
+    expect(await screen.findByText('Q3 launch')).toBeInTheDocument()
+    expect(screen.getByText('Pricing')).toBeInTheDocument()
+    expect(screen.getByText('Slides')).toBeInTheDocument()
+  })
+
+  it('names a web page by its domain, update and images', async () => {
+    api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
+    await renderPage(
+      asset({
+        type: 'URL',
+        source_url: 'https://acme.com/blog/launch',
+        images: [
+          {
+            id: 'i1',
+            idx: 0,
+            source_url: 'https://acme.com/a.png',
+            url: 'https://cdn/a.png',
+            mime_type: 'image/png',
+            size_bytes: 1,
+          },
+        ],
+      }),
+    )
+    expect(await screen.findByText('Updated')).toBeInTheDocument()
+    expect(screen.getByText('Images')).toBeInTheDocument()
+  })
+
   it('answers a campaign with no analysis row as not analysed', async () => {
     campaigns.current = [{ id: 'c1', name: 'Old campaign', asset_ids: ['a1'] }]
     api.listAssetAnalyses.mockResolvedValue([workspaceLens()])

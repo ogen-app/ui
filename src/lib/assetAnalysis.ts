@@ -140,6 +140,23 @@ export function isMissingLens(lens: Pick<AssetAnalysis, 'id'>): boolean {
   return lens.id.startsWith(MISSING_LENS)
 }
 
+/**
+ * A settled reading with nothing in it. The server stores one when the source
+ * has no text (a note not yet written, silence, an image-only file) rather
+ * than calling the model, so it reads as "ready" — the page says what it
+ * means instead of showing an empty reading.
+ */
+export function isEmptyReading(
+  lens: Pick<AssetAnalysis, 'status' | 'summary' | 'key_points' | 'ideas'>,
+): boolean {
+  return (
+    lens.status === 'ready' &&
+    lens.summary.trim() === '' &&
+    lens.key_points.length === 0 &&
+    lens.ideas.length === 0
+  )
+}
+
 /** Whether a lens has meeting notes to show — recordings, mostly. */
 export function hasMeetingNotes(
   lens: Pick<

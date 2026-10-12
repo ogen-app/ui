@@ -154,6 +154,22 @@ export function AssetMetaColumn({
               </Fact>
             )
           )}
+          {kind === 'page' && (
+            // There is no scrape timestamp on the asset: `updated_at` moves on
+            // a re-read and on an edit alike, so it is named as an update.
+            <Fact label={t('assetInsights.meta.updated')}>
+              {formatDate(
+                asset.updated_at,
+                { dateStyle: 'medium', timeStyle: 'short' },
+                i18n.language,
+              )}
+            </Fact>
+          )}
+          {kind === 'page' && (asset.images?.length ?? 0) > 0 && (
+            <Fact label={t('assetInsights.meta.images')}>
+              {formatNumber(asset.images?.length ?? 0, {}, i18n.language)}
+            </Fact>
+          )}
           {sheets && sheets.length > 0 && (
             <Fact label={t('assetInsights.sheet.fact')}>
               {sheetNames(sheets, (count) =>

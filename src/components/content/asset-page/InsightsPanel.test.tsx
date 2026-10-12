@@ -121,6 +121,31 @@ describe('InsightsPanel', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('asks for writing on an empty note, and opens Source', async () => {
+    const onOpenSource = vi.fn()
+    await renderWithProviders(
+      <InsightsPanel
+        state="empty"
+        lens={lens({ summary: '' })}
+        authored
+        onOpenSource={onOpenSource}
+        onRetry={() => {}}
+        retrying={false}
+      />,
+    )
+    expect(screen.getByText('Nothing to read yet')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /start writing/i }))
+    expect(onOpenSource).toHaveBeenCalled()
+  })
+
+  it('says a file had no text, without asking for writing', async () => {
+    await renderPanel('empty', lens({ summary: '' }))
+    expect(screen.getByText('No text to analyse')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /start writing/i }),
+    ).not.toBeInTheDocument()
+  })
+
   it('tracks the steps while the file is read', async () => {
     await renderPanel('reading', undefined)
     expect(screen.getByText('Extract text')).toBeInTheDocument()
