@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { cn } from '@/lib'
 
 /** How long after the last keystroke the title is written back. */
 const SAVE_DEBOUNCE_MS = 500
@@ -21,10 +22,13 @@ export function AssetTitle({
   initialTitle,
   onChange,
   onDirty,
+  className,
 }: {
   initialTitle: string
   onChange: (title: string) => void
   onDirty: () => void
+  /** Overrides the type size — the asset page's left column sets it smaller. */
+  className?: string
 }) {
   const { t } = useTranslation()
   // Seeded once: re-seeding on a refetch would take the field away from
@@ -75,7 +79,10 @@ export function AssetTitle({
       placeholder={t('content.titlePlaceholder')}
       aria-label={t('content.titleLabel')}
       rows={1}
-      className="w-full resize-none overflow-hidden border-0 bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-tertiary-foreground"
+      className={cn(
+        'w-full resize-none overflow-hidden border-0 bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-tertiary-foreground',
+        className,
+      )}
     />
   )
 }

@@ -46,6 +46,12 @@ type Props = {
   onChange: (overrides: Partial<UpdateAssetPayload>) => void
   /** Marks the header's save indicator as in-flight, on the first keystroke. */
   onDirty: () => void
+  /**
+   * Hosted under the two-column page's Source tab (CON-366), which already
+   * shows the title in its left column and owns the surface around this: no
+   * title field and no page-width card of its own.
+   */
+  embedded?: boolean
 }
 
 /**
@@ -85,7 +91,7 @@ export function AssetImageView(props: Props) {
   return <ImageForm {...props} />
 }
 
-function ImageForm({ asset, onChange, onDirty }: Props) {
+function ImageForm({ asset, onChange, onDirty, embedded = false }: Props) {
   const { t } = useTranslation()
   const regenerate = useRegenerateAltText(asset.id)
   const reextract = useReextractImage(asset.id)
@@ -226,15 +232,22 @@ function ImageForm({ asset, onChange, onDirty }: Props) {
   const altLength = [...draft.alt_text].length
 
   return (
-    <div className="flex w-content flex-col gap-8 bg-primary px-10 py-8">
-      <textarea
-        ref={titleRef}
-        value={draft.title.trim() === '' ? '' : draft.title}
-        onChange={handleTitle}
-        placeholder={t('content.image.titlePlaceholder')}
-        rows={1}
-        className="w-full resize-none overflow-hidden border-0 bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-tertiary-foreground"
-      />
+    <div
+      className={cn(
+        'flex flex-col gap-8',
+        embedded ? 'w-full' : 'w-content bg-primary px-10 py-8',
+      )}
+    >
+      {!embedded && (
+        <textarea
+          ref={titleRef}
+          value={draft.title.trim() === '' ? '' : draft.title}
+          onChange={handleTitle}
+          placeholder={t('content.image.titlePlaceholder')}
+          rows={1}
+          className="w-full resize-none overflow-hidden border-0 bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-tertiary-foreground"
+        />
+      )}
 
       {/* The picture is stored either way; what failed or stopped short is
           the reading of it. Named above the picture, with the way to try

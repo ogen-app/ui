@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { AssetIngestState } from '@/components/content/AssetIngestState'
 import { AssetTitle } from '@/components/content/AssetTitle'
+import { useAudioSeek } from '@/hooks/useAudioSeek'
 import {
   useAudioStatus,
   useAudioTranscript,
@@ -19,6 +20,12 @@ type Props = {
   asset: Asset
   onTitleChange: (title: string) => void
   onDirty: () => void
+  /**
+   * Hosted under the two-column page's Source tab (CON-366), which already
+   * shows the title in its left column and owns the surface around this: no
+   * title field and no page-width card of its own.
+   */
+  embedded?: boolean
 }
 
 /**
@@ -34,7 +41,12 @@ type Props = {
  * and a transcript whose timestamps don't do anything asks the reader to scrub
  * for the moment by hand. The line being played is marked as it goes by.
  */
-export function AssetAudioView({ asset, onTitleChange, onDirty }: Props) {
+export function AssetAudioView({
+  asset,
+  onTitleChange,
+  onDirty,
+  embedded = false,
+}: Props) {
   const { t } = useTranslation()
   const settled = isTerminalStatus(asset.status)
   const run = useAudioStatus(asset.id, { assetSettled: settled })
@@ -43,9 +55,17 @@ export function AssetAudioView({ asset, onTitleChange, onDirty }: Props) {
   })
   const rerun = useRerunAudio(asset.id)
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [nowMs, setNowMs] = useState<number | null>(null)
+  const [ownNowMs, setNowMs] = useState<number | null>(null)
+  // On the two-column page the player is the stage's, in the other column;
+  // the lines below drive that one rather than drawing a second.
+  const shared = useAudioSeek()
+  const nowMs = shared ? shared.nowMs : ownNowMs
 
   const seek = (entry: TranscriptEntry) => {
+    if (shared) {
+      shared.seek(entry.start_ms / 1000)
+      return
+    }
     const el = audioRef.current
     if (!el) return
     el.currentTime = entry.start_ms / 1000
@@ -89,14 +109,21 @@ export function AssetAudioView({ asset, onTitleChange, onDirty }: Props) {
   )
 
   return (
-    <div className="flex w-content flex-col gap-8 bg-primary px-10 py-8">
-      <AssetTitle
-        initialTitle={asset.title}
-        onChange={onTitleChange}
-        onDirty={onDirty}
-      />
+    <div
+      className={cn(
+        'flex flex-col gap-8',
+        embedded ? 'w-full' : 'w-content bg-primary px-10 py-8',
+      )}
+    >
+      {!embedded && (
+        <AssetTitle
+          initialTitle={asset.title}
+          onChange={onTitleChange}
+          onDirty={onDirty}
+        />
+      )}
 
-      {asset.file?.url ? (
+      {shared ? null : asset.file?.url ? (
         <audio
           ref={audioRef}
           src={asset.file.url}

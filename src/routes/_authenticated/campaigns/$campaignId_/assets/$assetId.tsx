@@ -1,14 +1,30 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { AssetDocument } from '@/components/content/AssetDocument'
 
+/** See the bank's copy of this route: `?lens=` picks the Insights reading. */
+type AssetSearch = { lens?: string }
+
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId_/assets/$assetId',
 )({
   component: CampaignDocument,
+  validateSearch: (search: Record<string, unknown>): AssetSearch =>
+    typeof search.lens === 'string' && search.lens ? { lens: search.lens } : {},
 })
 
 /** One of a campaign's documents — the same screen, knowing whose it is. */
 function CampaignDocument() {
   const { campaignId, assetId } = Route.useParams()
-  return <AssetDocument assetId={assetId} campaignId={campaignId} />
+  const { lens } = Route.useSearch()
+  const navigate = Route.useNavigate()
+  return (
+    <AssetDocument
+      assetId={assetId}
+      campaignId={campaignId}
+      lens={lens}
+      onLensChange={(next) =>
+        void navigate({ search: { lens: next }, replace: true })
+      }
+    />
+  )
 }
