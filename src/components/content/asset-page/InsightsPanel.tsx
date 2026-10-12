@@ -111,7 +111,19 @@ export function InsightsPanel({
               ? t('assetInsights.state.noneNoteBody')
               : t('assetInsights.state.noneBody')
           }
-        />
+        >
+          {/* Starts the missing lens through the retry endpoint, which
+              creates it when there is none (CON-367). */}
+          <Button
+            variant="outline"
+            className="uppercase"
+            onClick={onRetry}
+            loading={retrying}
+          >
+            <ArrowsClockwiseIcon />
+            <span>{t('assetInsights.state.analyseNow')}</span>
+          </Button>
+        </Notice>
       )
     case 'empty':
       return authored ? (

@@ -390,7 +390,8 @@ export const es: Translation = {
       loadFailedBody: 'Revisa tu conexión; se reintentará solo.',
       none: 'Sin analizar',
       noneNoteBody:
-        'El análisis aparece un rato después de que dejes de editar esta nota.',
+        'El análisis aparece un rato después de que dejes de editar esta nota, o puedes analizarla ahora.',
+      analyseNow: 'Analizar ahora',
       emptyNote: 'Aún no hay nada que leer',
       emptyNoteBody:
         'Escribe en esta nota y su resumen e ideas llegarán cuando hagas una pausa.',
@@ -399,7 +400,7 @@ export const es: Translation = {
       emptySourceBody:
         'Este archivo no tiene texto que el análisis pueda leer, por ejemplo un PDF solo con imágenes o una hoja en blanco.',
       noneBody:
-        'Este recurso se añadió antes de que existiera el análisis. Las subidas nuevas se analizan automáticamente.',
+        'Este recurso se añadió antes de que existiera el análisis. Se está procesando en segundo plano, o puedes analizarlo ahora.',
     },
     failure: {
       entitlement_disabled:

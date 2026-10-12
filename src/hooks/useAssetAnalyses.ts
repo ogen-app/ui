@@ -48,7 +48,10 @@ export function useAssetAnalyses(
 }
 
 /**
- * Re-queues a failed or skipped lens.
+ * Re-queues a failed or skipped lens — or starts one that does not exist yet
+ * (CON-367: the endpoint creates a missing lens), which is what "Analyse now"
+ * on a never-analysed asset sends. A missing lens is not in the cache, so
+ * there is nothing to mark optimistically; the refetch brings it in pending.
  *
  * Optimistic: the lens is marked `pending` in the cache at once, so the
  * skeleton is on screen before the round trip, and the refetch on settle
