@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowsClockwiseIcon,
+  TableIcon,
   FileXIcon,
   LockSimpleIcon,
   WarningIcon,
@@ -11,6 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import { hasMeetingNotes, type InsightState } from '@/lib/assetAnalysis'
+import { formatNumber } from '@/lib/intl'
+import type { SheetSummary } from '@/lib/sheetChunks'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { AssetIdeaList } from './AssetIdeaList'
 import { Section } from './InsightSection'
@@ -28,6 +31,11 @@ type Props = {
   lens: AssetAnalysis | undefined
   onRetry: () => void
   retrying: boolean
+  /**
+   * A spreadsheet's sheets as far as they are loaded, named for display —
+   * shown as what the reading covered (§5.4). Absent on every other kind.
+   */
+  sheets?: SheetSummary[]
 }
 
 /**
@@ -36,7 +44,13 @@ type Props = {
  * read, the analysis on its way, a failure that can be retried, and the two
  * plan gates, which are not errors and are not worded as ones.
  */
-export function InsightsPanel({ state, lens, onRetry, retrying }: Props) {
+export function InsightsPanel({
+  state,
+  lens,
+  onRetry,
+  retrying,
+  sheets,
+}: Props) {
   const { t } = useTranslation()
   const lensName =
     lens?.campaign_id && lens.campaign_name
@@ -116,12 +130,18 @@ export function InsightsPanel({ state, lens, onRetry, retrying }: Props) {
         </Notice>
       )
     case 'ready':
-      return lens ? <Reading lens={lens} /> : null
+      return lens ? <Reading lens={lens} sheets={sheets} /> : null
   }
 }
 
-function Reading({ lens }: { lens: AssetAnalysis }) {
-  const { t } = useTranslation()
+function Reading({
+  lens,
+  sheets,
+}: {
+  lens: AssetAnalysis
+  sheets?: SheetSummary[]
+}) {
+  const { t, i18n } = useTranslation()
   const paragraphs = lens.summary
     .split(/\n\s*\n/)
     .map((p) => p.trim())
@@ -171,6 +191,28 @@ function Reading({ lens }: { lens: AssetAnalysis }) {
 
       {hasMeetingNotes(lens) && <MeetingNotes lens={lens} />}
 
+      {sheets && sheets.length > 0 && (
+        <Section title={t('assetInsights.sheet.read')}>
+          <ul className="flex flex-wrap gap-2">
+            {sheets.map((sheet) => (
+              <li
+                key={sheet.name}
+                className="inline-flex items-center gap-2 rounded-full border border-quaternary px-3 py-1 text-sm text-secondary-foreground"
+              >
+                <TableIcon className="size-4 text-accent" aria-hidden />
+                {sheet.rows === null
+                  ? sheet.name
+                  : t('assetInsights.sheet.chip', {
+                      name: sheet.name,
+                      count: sheet.rows,
+                      formatted: formatNumber(sheet.rows, {}, i18n.language),
+                    })}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
       {(lens.topics.length > 0 || people.length > 0) && (
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
           {lens.topics.length > 0 && (
@@ -186,7 +228,7 @@ function Reading({ lens }: { lens: AssetAnalysis }) {
         </div>
       )}
 
-      <AssetIdeaList lens={lens} />
+      <AssetIdeaList lens={lens} spreadsheet={sheets !== undefined} />
     </div>
   )
 }
