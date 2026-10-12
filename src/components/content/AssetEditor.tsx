@@ -13,6 +13,11 @@ type AssetEditorProps = {
   onTitleChange: (title: string) => void
   onContentChange: (content: string) => void
   onDirty?: () => void
+  /**
+   * Under the two-column page's Source tab (CON-366): the title is edited in
+   * the left column there, so the body is all this draws.
+   */
+  hideTitle?: boolean
 }
 
 const DEFAULT_CONTENT: Block[] = [
@@ -29,6 +34,7 @@ export function AssetEditor({
   onTitleChange,
   onContentChange,
   onDirty,
+  hideTitle = false,
 }: AssetEditorProps) {
   const [title, setTitle] = useState(initialTitle)
   const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -172,15 +178,17 @@ export function AssetEditor({
 
   return (
     <div className="flex flex-col">
-      <textarea
-        ref={titleRef}
-        value={displayTitle}
-        onChange={handleTitleChange}
-        onKeyDown={handleTitleKeyDown}
-        placeholder="Title"
-        rows={1}
-        className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground mb-4"
-      />
+      {!hideTitle && (
+        <textarea
+          ref={titleRef}
+          value={displayTitle}
+          onChange={handleTitleChange}
+          onKeyDown={handleTitleKeyDown}
+          placeholder="Title"
+          rows={1}
+          className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground mb-4"
+        />
+      )}
       <BlockNoteView
         editor={editor}
         onChange={handleContentChange}

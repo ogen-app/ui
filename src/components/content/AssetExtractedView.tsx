@@ -8,6 +8,7 @@ import { AssetStateFrame } from '@/components/content/AssetStateFrame'
 import { AssetTitle } from '@/components/content/AssetTitle'
 import { useAssetChunks } from '@/hooks/useContent'
 import { isTerminalStatus } from '@/lib/assetStatus'
+import { cn } from '@/lib'
 import { formatNumber } from '@/lib/intl'
 import type { Asset, AssetChunk } from '@/types/content'
 
@@ -15,6 +16,12 @@ type Props = {
   asset: Asset
   onTitleChange: (title: string) => void
   onDirty: () => void
+  /**
+   * Hosted under the two-column page's Source tab (CON-366), which already
+   * shows the title in its left column and owns the surface around this: no
+   * title field and no page-width card of its own.
+   */
+  embedded?: boolean
 }
 
 /**
@@ -33,7 +40,12 @@ type Props = {
  * order, each under the label it is cited by — which is also the most honest
  * account of what the assistant can read here, in the pieces it reads it in.
  */
-export function AssetExtractedView({ asset, onTitleChange, onDirty }: Props) {
+export function AssetExtractedView({
+  asset,
+  onTitleChange,
+  onDirty,
+  embedded = false,
+}: Props) {
   const { t, i18n } = useTranslation()
   const settled = isTerminalStatus(asset.status) && asset.status !== 'failed'
   const chunks = useAssetChunks(asset.id, { enabled: settled })
@@ -43,12 +55,19 @@ export function AssetExtractedView({ asset, onTitleChange, onDirty }: Props) {
   const total = pages[pages.length - 1]?.total ?? 0
 
   return (
-    <div className="flex w-content flex-col gap-8 bg-primary px-10 py-8">
-      <AssetTitle
-        initialTitle={asset.title}
-        onChange={onTitleChange}
-        onDirty={onDirty}
-      />
+    <div
+      className={cn(
+        'flex flex-col gap-8',
+        embedded ? 'w-full' : 'w-content bg-primary px-10 py-8',
+      )}
+    >
+      {!embedded && (
+        <AssetTitle
+          initialTitle={asset.title}
+          onChange={onTitleChange}
+          onDirty={onDirty}
+        />
+      )}
 
       {!settled ? (
         <AssetIngestState asset={asset} inset />

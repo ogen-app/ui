@@ -22,6 +22,8 @@ import { toast } from '@/stores/toastStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import type { UpdateAssetPayload } from '@/types/content'
 import { awaiting } from '@/lib/fetched'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { AssetPage } from '@/components/content/asset-page/AssetPage'
 
 type Props = {
   assetId: string
@@ -31,6 +33,12 @@ type Props = {
    * whether deleting also detaches, and which assistant thread the rail shows.
    */
   campaignId: string | null
+  /**
+   * `?lens=` — which reading the Insights tab opens on (CON-366), and how to
+   * change it. Only read with `asset-insights` on.
+   */
+  lens?: string
+  onLensChange?: (lens: string) => void
 }
 
 /**
@@ -61,7 +69,13 @@ type Props = {
  * thing left to do is leave, which the back caret already does. A bar whose
  * one button is a second way out is furniture.
  */
-export function AssetDocument({ assetId, campaignId }: Props) {
+export function AssetDocument({
+  assetId,
+  campaignId,
+  lens,
+  onLensChange = () => {},
+}: Props) {
+  const insights = useFeatureFlag('asset-insights')
   const { data: campaign } = useCampaign(campaignId ?? '')
   const query = useAsset(assetId)
   const { data: asset, isError } = query
@@ -252,6 +266,55 @@ export function AssetDocument({ assetId, campaignId }: Props) {
   const screen = assetScreen(asset)
   const editable = screen === 'editor'
 
+  /*
+   * Today's screen for this asset. On its own it is the page; with
+   * `asset-insights` on it is the two-column page's Source tab (`embedded`),
+   * where the title lives in the left column instead (CON-366).
+   */
+  const renderSource = (embedded: boolean) =>
+    readingFrom !== null ? (
+      <ScrapeState
+        sourceUrl={readingFrom}
+        failed={asset.status === 'failed'}
+        onRetry={handleRefreshSource}
+        retrying={rescrape.isPending}
+      />
+    ) : screen === 'image' ? (
+      <AssetImageView
+        asset={asset}
+        onChange={enqueueSave}
+        onDirty={markDirty}
+        embedded={embedded}
+      />
+    ) : screen === 'extracted' ? (
+      <AssetExtractedView
+        asset={asset}
+        onTitleChange={handleTitleChange}
+        onDirty={markDirty}
+        embedded={embedded}
+      />
+    ) : screen === 'audio' ? (
+      <AssetAudioView
+        asset={asset}
+        onTitleChange={handleTitleChange}
+        onDirty={markDirty}
+        embedded={embedded}
+      />
+    ) : screen !== 'editor' ? (
+      <UnsupportedAsset />
+    ) : (
+      <div className={embedded ? 'w-full' : 'w-content bg-primary px-10 py-8'}>
+        <AssetEditor
+          initialTitle={asset.title}
+          initialContent={asset.content}
+          onTitleChange={handleTitleChange}
+          onContentChange={handleContentChange}
+          onDirty={markDirty}
+          hideTitle={embedded}
+        />
+      </div>
+    )
+
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
       {/* `relative` so the fader anchors to the content column rather than
@@ -277,43 +340,18 @@ export function AssetDocument({ assetId, campaignId }: Props) {
             onDelete={() => setDeleteOpen(true)}
           />
           <div className="flex flex-col items-center gap-3 relative z-0">
-            {readingFrom !== null ? (
-              <ScrapeState
-                sourceUrl={readingFrom}
-                failed={asset.status === 'failed'}
-                onRetry={handleRefreshSource}
-                retrying={rescrape.isPending}
-              />
-            ) : screen === 'image' ? (
-              <AssetImageView
+            {insights ? (
+              <AssetPage
                 asset={asset}
-                onChange={enqueueSave}
-                onDirty={markDirty}
-              />
-            ) : screen === 'extracted' ? (
-              <AssetExtractedView
-                asset={asset}
+                campaignId={campaignId}
+                lens={lens}
+                onLensChange={onLensChange}
+                source={renderSource(true)}
                 onTitleChange={handleTitleChange}
                 onDirty={markDirty}
               />
-            ) : screen === 'audio' ? (
-              <AssetAudioView
-                asset={asset}
-                onTitleChange={handleTitleChange}
-                onDirty={markDirty}
-              />
-            ) : screen !== 'editor' ? (
-              <UnsupportedAsset />
             ) : (
-              <div className="w-content bg-primary px-10 py-8">
-                <AssetEditor
-                  initialTitle={asset.title}
-                  initialContent={asset.content}
-                  onTitleChange={handleTitleChange}
-                  onContentChange={handleContentChange}
-                  onDirty={markDirty}
-                />
-              </div>
+              renderSource(false)
             )}
             {/* Scroll past the end, as on a post: without it the last line
                 sits pinned against the bottom edge with nowhere to go. This is

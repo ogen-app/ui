@@ -1,8 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { AssetDocument } from '@/components/content/AssetDocument'
 
+/**
+ * `?lens=` names the reading the Insights tab opens on — a campaign id or
+ * `workspace` (CON-366) — so a link reopens the reading it was copied from.
+ */
+type AssetSearch = { lens?: string }
+
 export const Route = createFileRoute('/_authenticated/assets/$assetId')({
   component: BankDocument,
+  validateSearch: (search: Record<string, unknown>): AssetSearch =>
+    typeof search.lens === 'string' && search.lens ? { lens: search.lens } : {},
 })
 
 /**
@@ -20,5 +28,16 @@ export const Route = createFileRoute('/_authenticated/assets/$assetId')({
  */
 function BankDocument() {
   const { assetId } = Route.useParams()
-  return <AssetDocument assetId={assetId} campaignId={null} />
+  const { lens } = Route.useSearch()
+  const navigate = Route.useNavigate()
+  return (
+    <AssetDocument
+      assetId={assetId}
+      campaignId={null}
+      lens={lens}
+      onLensChange={(next) =>
+        void navigate({ search: { lens: next }, replace: true })
+      }
+    />
+  )
 }

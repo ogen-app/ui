@@ -254,6 +254,125 @@ export const es: Translation = {
     },
   },
 
+  assetInsights: {
+    tabs: {
+      insights: 'Análisis',
+      source: 'Fuente',
+    },
+    lens: {
+      readingFor: 'Leído para',
+      workspace: 'Espacio de trabajo',
+      campaign: 'Campaña',
+      theWorkspace: 'el espacio de trabajo',
+    },
+    fit: '{{score}} % de encaje',
+    meta: {
+      status: {
+        reading: 'Leyendo el archivo…',
+        unreadable: 'No se pudo leer este archivo',
+        analysing: 'Analizando…',
+        analysed: 'Analizado · {{when}}',
+        analysisFailed: 'El análisis falló',
+        notAnalysed: 'Sin analizar',
+        ready: 'Listo',
+      },
+      addedBy: 'Añadido por',
+      added: 'Añadido',
+      file: 'Archivo',
+      language: 'Idioma',
+      download: 'Descargar',
+      campaigns: 'Campañas',
+      noCampaigns: 'Todavía no está en ninguna campaña.',
+      tags: 'Etiquetas',
+    },
+    player: {
+      play: 'Reproducir',
+      pause: 'Pausar',
+      seek: 'Posición en la grabación',
+    },
+    summary: 'Resumen',
+    keyPoints: 'Puntos clave',
+    topics: 'Temas',
+    mentions: 'Menciones',
+    relevance: {
+      title: 'Leído para {{campaign}}',
+    },
+    partialSource:
+      'Parte de este archivo no se pudo leer, así que esta lectura solo cubre el resto.',
+    truncated:
+      'Este archivo es más largo de lo que cubre una lectura, así que se omitió su parte final.',
+    meeting: {
+      participants: 'Participantes',
+      inferred: 'deducido',
+      commitments_one: 'Compromisos · {{count}}',
+      commitments_other: 'Compromisos · {{count}}',
+      unattributed: 'Sin asignar',
+      decisions: 'Decisiones',
+      openQuestions: 'Preguntas abiertas',
+    },
+    ideas: {
+      heading: 'Ideas',
+      headingFor: 'Ideas para {{campaign}}',
+      viewAll: 'Ver todas en Ideas',
+      open: 'Abrir en Ideas',
+      showMore_one: 'Mostrar {{count}} idea más',
+      showMore_other: 'Mostrar {{count}} ideas más',
+      footnote:
+        'Las ideas se extraen de este recurso y llegan sin clasificar a tu bandeja de Ideas.',
+      emptyTitle: 'Este no dio ideas',
+      emptyBody:
+        'El resumen está aquí, pero la fuente era demasiado corta o se alejaba demasiado del brief para sacar publicaciones.',
+      where: {
+        inbox: 'En tu bandeja de Ideas',
+        yes: 'Marcada con sí en Ideas',
+        later: 'Pospuesta en Ideas',
+        no: 'Marcada con no en Ideas',
+      },
+      verdict: {
+        inbox: 'Sin clasificar',
+        yes: 'Sí',
+        later: 'Ahora no',
+        no: 'No',
+      },
+    },
+    state: {
+      reading: 'Primero se está leyendo el archivo',
+      readingBody: 'El análisis empieza cuando se haya extraído su texto.',
+      analysing: 'Analizando para {{lens}}',
+      analysingBody:
+        'Suele tardar menos de un minuto. Aparecerá aquí sin recargar.',
+      assetFailed: 'No hay nada que analizar',
+      assetFailedBody:
+        'No se pudo leer este archivo, así que no hay texto del que sacar conclusiones.',
+      failed: 'No se pudo analizar este recurso',
+      notInPlan: 'El análisis de recursos no está incluido en tu plan.',
+      notInPlanBody: 'La pestaña Fuente sigue disponible.',
+      limitReached: 'Ya se han usado los análisis de este mes.',
+      limitReachedBody:
+        'Se volverá a ejecutar el mes que viene, o inténtalo de nuevo tras mejorar el plan.',
+      loadFailed: 'No se pudo cargar el análisis',
+      loadFailedBody: 'Revisa tu conexión; se reintentará solo.',
+      none: 'Sin analizar',
+      noneBody:
+        'Este recurso se añadió antes de que existiera el análisis. Las subidas nuevas se analizan automáticamente.',
+    },
+    failure: {
+      entitlement_disabled:
+        'El análisis de recursos no está incluido en tu plan.',
+      limit_reached: 'Ya se han usado los análisis de este mes.',
+      empty_source: 'Este archivo no tenía texto que analizar.',
+      invalid_output: 'El análisis volvió con un formato incorrecto.',
+      source_unavailable:
+        'No se pudo cargar el texto del archivo para analizarlo.',
+      model_unavailable: 'No se pudo contactar con el modelo de análisis.',
+      model_refused: 'El modelo de análisis se negó a leer este archivo.',
+      unknown: 'Algo falló al analizarlo.',
+    },
+    retry: 'Reintentar',
+    retryFailed: 'No se pudo volver a iniciar el análisis',
+    seePlans: 'Ver planes',
+  },
+
   ideas: {
     capture: {
       placeholder: '¿Qué podríamos crear?',

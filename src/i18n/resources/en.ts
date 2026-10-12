@@ -346,6 +346,131 @@ export const en = {
   },
 
   /**
+   * The asset page's two-column layout (CON-366, `asset-insights`): the LLM's
+   * reading of an asset (CON-364) under Insights, the old screen under Source.
+   */
+  assetInsights: {
+    tabs: {
+      insights: 'Insights',
+      source: 'Source',
+    },
+    lens: {
+      readingFor: 'Reading for',
+      workspace: 'Workspace',
+      /** A campaign lens whose campaign name did not arrive. */
+      campaign: 'Campaign',
+      /** In a sentence: "Analysing for the workspace". */
+      theWorkspace: 'the workspace',
+    },
+    /** A campaign's fit, 0–100 from the analysis. */
+    fit: '{{score}}% fit',
+    meta: {
+      status: {
+        reading: 'Reading the file…',
+        unreadable: 'Couldn’t read this file',
+        analysing: 'Analysing…',
+        analysed: 'Analysed · {{when}}',
+        analysisFailed: 'Analysis failed',
+        notAnalysed: 'Not analysed',
+        ready: 'Ready',
+      },
+      addedBy: 'Added by',
+      added: 'Added',
+      file: 'File',
+      language: 'Language',
+      download: 'Download',
+      campaigns: 'Campaigns',
+      noCampaigns: 'Not in a campaign yet.',
+      tags: 'Tags',
+    },
+    player: {
+      play: 'Play',
+      pause: 'Pause',
+      seek: 'Position in the recording',
+    },
+    summary: 'Summary',
+    keyPoints: 'Key points',
+    topics: 'Topics',
+    mentions: 'Mentions',
+    relevance: {
+      title: 'Read for {{campaign}}',
+    },
+    partialSource:
+      'Part of this file couldn’t be read, so this reading covers only the rest of it.',
+    truncated:
+      'This file is longer than one reading covers, so its last part was left out.',
+    meeting: {
+      participants: 'Participants',
+      /** Said of a participant or an owner the model guessed rather than heard named. */
+      inferred: 'inferred',
+      commitments_one: 'Commitments · {{count}}',
+      commitments_other: 'Commitments · {{count}}',
+      unattributed: 'Unattributed',
+      decisions: 'Decisions',
+      openQuestions: 'Open questions',
+    },
+    ideas: {
+      heading: 'Ideas',
+      headingFor: 'Ideas for {{campaign}}',
+      viewAll: 'View all in Ideas',
+      open: 'Open in Ideas',
+      showMore_one: 'Show {{count}} more idea',
+      showMore_other: 'Show {{count}} more ideas',
+      footnote:
+        'Ideas are drafted from this asset and land untriaged in your Ideas inbox.',
+      emptyTitle: 'No ideas from this one',
+      emptyBody:
+        'The summary is here, but the source was too short or too far off the brief to draw posts from.',
+      where: {
+        inbox: 'In your Ideas inbox',
+        yes: 'Marked yes in Ideas',
+        later: 'Postponed in Ideas',
+        no: 'Marked no in Ideas',
+      },
+      verdict: {
+        inbox: 'Not triaged yet',
+        yes: 'Yes',
+        later: 'Not now',
+        no: 'No',
+      },
+    },
+    state: {
+      reading: 'Reading the file first',
+      readingBody: 'Insights start once its text has been extracted.',
+      analysing: 'Analysing for {{lens}}',
+      analysingBody:
+        'This usually takes under a minute. It appears here without a refresh.',
+      assetFailed: 'Nothing to analyse',
+      assetFailedBody:
+        'This file couldn’t be read, so there is no text to draw insights from.',
+      failed: 'Couldn’t analyse this asset',
+      notInPlan: 'Asset insights aren’t included in your plan.',
+      notInPlanBody: 'The Source tab stays available.',
+      limitReached: 'This month’s analyses are used up.',
+      limitReachedBody:
+        'It runs again next month, or try again after upgrading.',
+      loadFailed: 'Couldn’t load the insights',
+      loadFailedBody: 'Check your connection; this retries on its own.',
+      none: 'Not analysed',
+      noneBody:
+        'This asset was added before insights existed. New uploads are analysed automatically.',
+    },
+    failure: {
+      entitlement_disabled: 'Asset insights aren’t included in your plan.',
+      limit_reached: 'This month’s analyses are used up.',
+      empty_source: 'There was no text in this file to analyse.',
+      invalid_output: 'The analysis came back malformed.',
+      source_unavailable: 'The file’s text couldn’t be loaded for analysis.',
+      model_unavailable: 'The analysis model could not be reached.',
+      model_refused: 'The analysis model declined to read this file.',
+      unknown: 'Something went wrong while analysing it.',
+    },
+    retry: 'Try again',
+    retryFailed: 'Couldn’t start the analysis again',
+    seePlans: 'See plans',
+  },
+
+  /**
    * Ideas: a backlog anyone can add a line to, and the three answers triage
    * gives it. The verdicts are nouns for the piles (`verdict.*`) and verbs for
    * the controls (`action.*`) — the same word does not do both jobs in every
