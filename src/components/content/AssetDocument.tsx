@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
@@ -76,6 +77,7 @@ export function AssetDocument({
   onLensChange = () => {},
 }: Props) {
   const insights = useFeatureFlag('asset-insights')
+  const { t } = useTranslation()
   const { data: campaign } = useCampaign(campaignId ?? '')
   const query = useAsset(assetId)
   const { data: asset, isError } = query
@@ -328,6 +330,15 @@ export function AssetDocument({
         >
           <AssetDetailsHeader
             campaignId={campaignId}
+            contextLabel={
+              insights
+                ? campaignId
+                  ? t('assetInsights.header.campaign', {
+                      campaign: campaignName ?? '',
+                    })
+                  : t('assetInsights.header.bank')
+                : undefined
+            }
             saving={isDirty}
             sourceUrl={sourceUrl}
             fromFigma={

@@ -120,4 +120,26 @@ describe('InsightsPanel', () => {
       screen.queryByRole('button', { name: /try again/i }),
     ).not.toBeInTheDocument()
   })
+
+  it('tracks the steps while the file is read', async () => {
+    await renderPanel('reading', undefined)
+    expect(screen.getByText('Extract text')).toBeInTheDocument()
+    expect(screen.getByText('Distil ideas')).toBeInTheDocument()
+  })
+
+  it('keeps a reading on screen while it is read again', async () => {
+    await renderPanel('ready', lens({ status: 'running' }))
+    expect(screen.getByText(/Re-reading for Spring launch/)).toBeInTheDocument()
+    expect(screen.getByText('Second paragraph.')).toBeInTheDocument()
+  })
+
+  it('reads the summary as light Markdown, mentions with their kind', async () => {
+    await renderPanel(
+      'ready',
+      lens({ summary: 'Lead with **the chart**.\n\n- one\n- two' }),
+    )
+    expect(screen.getByText('the chart').tagName).toBe('STRONG')
+    expect(screen.getByText('two').tagName).toBe('LI')
+    expect(screen.getByText('Acme')).toHaveAttribute('title', 'Organisation')
+  })
 })

@@ -255,6 +255,25 @@ export const es: Translation = {
   },
 
   assetInsights: {
+    header: {
+      bank: 'Banco de contenido',
+      campaign: '{{campaign}} · Recursos',
+    },
+    arrived_one: 'Análisis listo: {{count}} idea añadida',
+    arrived_other: 'Análisis listo: {{count}} ideas añadidas',
+    steps: {
+      upload: 'Subida',
+      extract: 'Extraer texto',
+      analyse: 'Analizar',
+      ideas: 'Sacar ideas',
+    },
+    entityKind: {
+      person: 'Persona',
+      org: 'Organización',
+      product: 'Producto',
+      place: 'Lugar',
+      other: 'Otro',
+    },
     tabs: {
       insights: 'Análisis',
       source: 'Fuente',
@@ -269,6 +288,8 @@ export const es: Translation = {
     meta: {
       status: {
         reading: 'Leyendo el archivo…',
+        transcribing: 'Transcribiendo · {{done}} de {{total}} segmentos',
+        fetching: 'Obteniendo la página…',
         unreadable: 'No se pudo leer este archivo',
         analysing: 'Analizando…',
         analysed: 'Analizado · {{when}}',
@@ -283,6 +304,12 @@ export const es: Translation = {
       download: 'Descargar',
       campaigns: 'Campañas',
       noCampaigns: 'Todavía no está en ninguna campaña.',
+      moreCampaigns: '+{{count}} más',
+      addToCampaign: 'Añadir a una campaña',
+      formerMember: 'Antiguo miembro',
+      source: 'Fuente',
+      minutes_one: '{{count}} min',
+      minutes_other: '{{count}} min',
       tags: 'Etiquetas',
     },
     player: {
@@ -339,6 +366,8 @@ export const es: Translation = {
       reading: 'Primero se está leyendo el archivo',
       readingBody: 'El análisis empieza cuando se haya extraído su texto.',
       analysing: 'Analizando para {{lens}}',
+      refreshing:
+        'Volviendo a leer para {{lens}}: esta lectura se mantiene hasta que esté lista la nueva.',
       analysingBody:
         'Suele tardar menos de un minuto. Aparecerá aquí sin recargar.',
       assetFailed: 'No hay nada que analizar',

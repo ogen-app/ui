@@ -36,7 +36,7 @@ function BankDocument() {
       campaignId={null}
       lens={lens}
       onLensChange={(next) =>
-        void navigate({ search: { lens: next }, replace: true })
+        void navigate({ search: next ? { lens: next } : {}, replace: true })
       }
     />
   )

@@ -1,8 +1,10 @@
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowsClockwiseIcon,
+  CheckIcon,
+  CircleIcon,
   TableIcon,
   FileXIcon,
   LockSimpleIcon,
@@ -11,7 +13,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
-import { hasMeetingNotes, type InsightState } from '@/lib/assetAnalysis'
+import { cn } from '@/lib'
+import {
+  hasMeetingNotes,
+  isLensWaiting,
+  type InsightState,
+} from '@/lib/assetAnalysis'
+import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { formatNumber } from '@/lib/intl'
 import type { SheetSummary } from '@/lib/sheetChunks'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
@@ -61,6 +69,7 @@ export function InsightsPanel({
     case 'reading':
       return (
         <Waiting
+          step="extract"
           title={t('assetInsights.state.reading')}
           body={t('assetInsights.state.readingBody')}
         />
@@ -68,6 +77,7 @@ export function InsightsPanel({
     case 'analysing':
       return (
         <Waiting
+          step="analyse"
           title={t('assetInsights.state.analysing', { lens: lensName })}
           body={t('assetInsights.state.analysingBody')}
         />
@@ -142,14 +152,22 @@ function Reading({
   sheets?: SheetSummary[]
 }) {
   const { t, i18n } = useTranslation()
-  const paragraphs = lens.summary
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-  const people = lens.entities.map((e) => e.name)
+  const lensName =
+    lens.campaign_id && lens.campaign_name
+      ? lens.campaign_name
+      : t('assetInsights.lens.theWorkspace')
 
   return (
-    <div className="flex flex-col gap-8 motion-safe:animate-in motion-safe:fade-in">
+    <div className="flex flex-col gap-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150">
+      {isLensWaiting(lens) && (
+        // A re-read in flight (a brief edit, a retry): the reading below
+        // stays until the new one replaces it.
+        <p className="flex items-center gap-2 text-xs text-tertiary-foreground">
+          <Spinner tone="onSurface" className="w-4" />
+          {t('assetInsights.state.refreshing', { lens: lensName })}
+        </p>
+      )}
+
       {lens.campaign_id && lens.relevance && (
         <div className="border-l-3 border-accent bg-accent/10 px-5 py-3">
           <p className="text-sm font-medium text-accent">
@@ -163,23 +181,16 @@ function Reading({
         </div>
       )}
 
-      {(lens.partial_source || lens.truncated) && (
-        <p className="text-sm text-warning">
-          {lens.partial_source
-            ? t('assetInsights.partialSource')
-            : t('assetInsights.truncated')}
-        </p>
-      )}
-
-      {paragraphs.length > 0 && (
+      {lens.summary.trim() && (
         <Section title={t('assetInsights.summary')}>
-          <div className="flex flex-col gap-3">
-            {paragraphs.map((p, i) => (
-              <p key={i} className="text-[15px] leading-7 text-foreground">
-                {p}
-              </p>
-            ))}
-          </div>
+          <SummaryText text={lens.summary} />
+          {(lens.partial_source || lens.truncated) && (
+            <p className="text-xs text-warning">
+              {lens.partial_source
+                ? t('assetInsights.partialSource')
+                : t('assetInsights.truncated')}
+            </p>
+          )}
         </Section>
       )}
 
@@ -213,16 +224,26 @@ function Reading({
         </Section>
       )}
 
-      {(lens.topics.length > 0 || people.length > 0) && (
+      {(lens.topics.length > 0 || lens.entities.length > 0) && (
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
           {lens.topics.length > 0 && (
             <Section title={t('assetInsights.topics')}>
-              <Pills items={lens.topics} filled />
+              <Pills
+                items={lens.topics.map((topic) => ({ text: topic }))}
+                filled
+              />
             </Section>
           )}
-          {people.length > 0 && (
+          {lens.entities.length > 0 && (
             <Section title={t('assetInsights.mentions')}>
-              <Pills items={people} />
+              <Pills
+                items={lens.entities.map((entity) => ({
+                  text: entity.name,
+                  title: t(`assetInsights.entityKind.${entity.kind}`, {
+                    defaultValue: t('assetInsights.entityKind.other'),
+                  }),
+                }))}
+              />
             </Section>
           )}
         </div>
@@ -237,21 +258,23 @@ function Pills({
   items,
   filled = false,
 }: {
-  items: string[]
+  /** `title` is the hover text — a mention's kind. */
+  items: { text: string; title?: string }[]
   filled?: boolean
 }) {
   return (
     <ul className="flex flex-wrap gap-2">
       {items.map((item) => (
         <li
-          key={item}
+          key={item.text}
+          title={item.title}
           className={
             filled
               ? 'rounded-full bg-tertiary px-3 py-1 text-sm text-secondary-foreground'
               : 'rounded-full border border-quaternary px-3 py-1 text-sm text-secondary-foreground'
           }
         >
-          {item}
+          {item.text}
         </li>
       ))}
     </ul>
@@ -259,18 +282,118 @@ function Pills({
 }
 
 /**
+ * The summary, as the light Markdown the model writes it in: paragraphs,
+ * lists, bold — read with the assistant's own parser rather than an editor.
+ */
+function SummaryText({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col gap-3 text-[15px] leading-7 text-foreground">
+      {parseAssistantMarkup(text).map((block, i) =>
+        block.kind === 'paragraph' ? (
+          <p key={i}>
+            <Spans spans={block.spans} />
+          </p>
+        ) : block.ordered ? (
+          <ol key={i} className="flex list-decimal flex-col gap-1 pl-5">
+            {block.items.map((item, j) => (
+              <li key={j}>
+                <Spans spans={item} />
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <ul key={i} className="flex list-disc flex-col gap-1 pl-5">
+            {block.items.map((item, j) => (
+              <li key={j}>
+                <Spans spans={item} />
+              </li>
+            ))}
+          </ul>
+        ),
+      )}
+    </div>
+  )
+}
+
+function Spans({ spans }: { spans: InlineSpan[] }) {
+  return (
+    <>
+      {spans.map((span, i) =>
+        span.bold ? (
+          <strong key={i} className="font-semibold">
+            {span.text}
+          </strong>
+        ) : (
+          <Fragment key={i}>{span.text}</Fragment>
+        ),
+      )}
+    </>
+  )
+}
+
+const STEPS = ['upload', 'extract', 'analyse', 'ideas'] as const
+
+/**
+ * Where the reading has got to, as four steps. Illustrative rather than a
+ * progress bar: only a recording reports real progress (the status line has
+ * it), and analysing and distilling ideas are one step on the server, so they
+ * light together.
+ */
+function StepTracker({ step }: { step: 'extract' | 'analyse' }) {
+  const { t } = useTranslation()
+  const active = step === 'extract' ? ['extract'] : ['analyse', 'ideas']
+  const done = step === 'extract' ? ['upload'] : ['upload', 'extract']
+  return (
+    <ol className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
+      {STEPS.map((name, i) => (
+        <li key={name} className="flex items-center gap-3">
+          {i > 0 && <span aria-hidden className="h-px w-6 bg-quaternary" />}
+          <span
+            className={cn(
+              'flex items-center gap-1.5',
+              done.includes(name)
+                ? 'text-foreground'
+                : active.includes(name)
+                  ? 'font-medium text-accent'
+                  : 'text-tertiary-foreground',
+            )}
+          >
+            {done.includes(name) ? (
+              <CheckIcon weight="bold" className="size-3.5" aria-hidden />
+            ) : active.includes(name) ? (
+              <Spinner tone="onSurface" className="w-3.5" />
+            ) : (
+              <CircleIcon className="size-3.5" aria-hidden />
+            )}
+            {t(`assetInsights.steps.${name}`)}
+          </span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+/**
  * Something is on its way: a line saying what, and the shape of what is
  * coming — summary, points, ideas — so the page does not jump when it lands.
  */
-function Waiting({ title, body }: { title: string; body: string }) {
+function Waiting({
+  step,
+  title,
+  body,
+}: {
+  step: 'extract' | 'analyse'
+  title: string
+  body: string
+}) {
   return (
     <div className="flex flex-col gap-8" aria-busy>
-      <div className="flex items-start gap-3">
-        <Spinner tone="onSurface" className="mt-0.5 w-5" />
+      <div className="flex flex-col gap-4 border-l-3 border-accent bg-accent/5 px-5 py-4">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-medium text-foreground">{title}</p>
           <p className="text-sm text-tertiary-foreground">{body}</p>
         </div>
+        <StepTracker step={step} />
       </div>
       <div className="flex flex-col gap-3">
         <Skeleton className="h-3 w-24" />

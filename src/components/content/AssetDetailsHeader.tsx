@@ -47,6 +47,12 @@ type Props = {
    */
   onDownloadMarkdown?: () => void
   onDelete: () => void
+  /**
+   * Where the back caret returns to, in words — "Content bank", "Spring
+   * launch · Assets". The two-column page names it (CON-366); the single
+   * column left it to the caret.
+   */
+  contextLabel?: string
 }
 
 /**
@@ -84,6 +90,7 @@ export function AssetDetailsHeader({
   onRefreshSource,
   onDownloadMarkdown,
   onDelete,
+  contextLabel,
 }: Props) {
   return (
     <PageHeader
@@ -145,6 +152,11 @@ export function AssetDetailsHeader({
         </DropdownMenu>
       }
     >
+      {contextLabel && (
+        <span className="min-w-0 truncate text-[13px] font-medium text-tertiary-foreground">
+          {contextLabel}
+        </span>
+      )}
       {sourceUrl && (
         <a
           href={sourceUrl}
