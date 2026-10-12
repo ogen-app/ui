@@ -143,12 +143,19 @@ describe('SourceChip', () => {
     )
   })
 
+  it('shows a heading path by its last heading, the full path on hover', () => {
+    render(<SourceChip label="Process overview › SDLC methodology" />)
+    expect(screen.getByText('SDLC methodology').parentElement).toHaveAttribute(
+      'title',
+      'Process overview › SDLC methodology',
+    )
+  })
+
   it('is a plain, shortened label anywhere else', () => {
     render(<SourceChip label='Sheet "Pipeline" summary' />)
-    expect(screen.getByText('Pipeline · summary')).toHaveAttribute(
-      'title',
-      'Sheet "Pipeline" summary',
-    )
+    expect(
+      screen.getByText('Pipeline · summary').parentElement,
+    ).toHaveAttribute('title', 'Sheet "Pipeline" summary')
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 })

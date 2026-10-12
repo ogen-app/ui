@@ -19,6 +19,7 @@ import { cn } from '@/lib'
 import {
   hasMeetingNotes,
   isLensWaiting,
+  summaryParts,
   type InsightState,
 } from '@/lib/assetAnalysis'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
@@ -232,23 +233,29 @@ function Reading({
         </div>
       )}
 
-      {lens.summary.trim() && (
-        <Section title={t('assetInsights.summary')}>
-          <SummaryText text={lens.summary} />
-          {(lens.partial_source || lens.truncated) && (
-            <p className="text-xs text-warning">
-              {lens.partial_source
-                ? t('assetInsights.partialSource')
-                : t('assetInsights.truncated')}
-            </p>
+      {(lens.summary.trim() || lens.key_points.length > 0) && (
+        // The reading itself, capped: a long summary scrolls in place rather
+        // than pushing the ideas a screen away.
+        <div className="-mr-2 flex max-h-[600px] flex-col gap-8 overflow-y-auto pr-2">
+          {lens.summary.trim() && (
+            <Section title={t('assetInsights.summary')}>
+              <SummaryText text={lens.summary} />
+              {(lens.partial_source || lens.truncated) && (
+                <p className="text-xs text-warning">
+                  {lens.partial_source
+                    ? t('assetInsights.partialSource')
+                    : t('assetInsights.truncated')}
+                </p>
+              )}
+            </Section>
           )}
-        </Section>
-      )}
 
-      {lens.key_points.length > 0 && (
-        <Section title={t('assetInsights.keyPoints')}>
-          <Bullets items={lens.key_points} />
-        </Section>
+          {lens.key_points.length > 0 && (
+            <Section title={t('assetInsights.keyPoints')}>
+              <Bullets items={lens.key_points} />
+            </Section>
+          )}
+        </div>
       )}
 
       {hasMeetingNotes(lens) && <MeetingNotes lens={lens} />}
@@ -339,6 +346,30 @@ function Pills({
 function SummaryText({ text }: { text: string }) {
   return (
     <div className="flex flex-col gap-3 text-[15px] leading-7 text-foreground">
+      {summaryParts(text).map((part, i) =>
+        part.kind === 'heading' ? (
+          <p
+            key={i}
+            role="heading"
+            aria-level={Math.min(part.level + 2, 6)}
+            className={cn(
+              'font-semibold text-foreground',
+              part.level <= 2 ? 'text-base' : 'text-[15px]',
+            )}
+          >
+            {part.text}
+          </p>
+        ) : (
+          <MarkupBlocks key={i} text={part.text} />
+        ),
+      )}
+    </div>
+  )
+}
+
+function MarkupBlocks({ text }: { text: string }) {
+  return (
+    <>
       {parseAssistantMarkup(text).map((block, i) =>
         block.kind === 'paragraph' ? (
           <p key={i}>
@@ -362,7 +393,7 @@ function SummaryText({ text }: { text: string }) {
           </ul>
         ),
       )}
-    </div>
+    </>
   )
 }
 

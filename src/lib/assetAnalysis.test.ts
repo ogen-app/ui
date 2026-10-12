@@ -11,6 +11,7 @@ import {
   missingLens,
   parseIdeaNote,
   pickLens,
+  summaryParts,
   timeLabelSeconds,
 } from './assetAnalysis'
 
@@ -94,6 +95,27 @@ describe('insightState', () => {
         lens({ status: 'skipped', failure_code: 'entitlement_disabled' }),
       ),
     ).toBe('notInPlan')
+  })
+})
+
+describe('summaryParts', () => {
+  it('takes headings out and leaves the text between them whole', () => {
+    expect(
+      summaryParts(
+        '## Small models win\n\nThis is a **position** paper.\n### Claim ##\n- one\n- two',
+      ),
+    ).toEqual([
+      { kind: 'heading', level: 2, text: 'Small models win' },
+      { kind: 'text', text: 'This is a **position** paper.' },
+      { kind: 'heading', level: 3, text: 'Claim' },
+      { kind: 'text', text: '- one\n- two' },
+    ])
+  })
+
+  it('leaves a hash that is not a heading alone', () => {
+    expect(summaryParts('#hashtag and C# code')).toEqual([
+      { kind: 'text', text: '#hashtag and C# code' },
+    ])
   })
 })
 
