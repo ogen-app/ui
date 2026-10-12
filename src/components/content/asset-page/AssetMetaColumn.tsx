@@ -87,7 +87,8 @@ export function AssetMetaColumn({
       <div
         className={cn(
           'overflow-hidden lg:max-h-none',
-          kind !== 'audio' && 'max-h-56',
+          // A PDF cover crops itself (so its fade stays on what is shown).
+          kind !== 'audio' && kind !== 'pdf' && 'max-h-56',
         )}
       >
         {stage}

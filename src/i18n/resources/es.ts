@@ -259,6 +259,10 @@ export const es: Translation = {
       bank: 'Banco de contenido',
       campaign: '{{campaign}} · Recursos',
     },
+    cover: {
+      zoom: 'Ver la portada a tamaño completo',
+      close: 'Cerrar',
+    },
     arrived_one: 'Análisis listo: {{count}} idea añadida',
     arrived_other: 'Análisis listo: {{count}} ideas añadidas',
     steps: {

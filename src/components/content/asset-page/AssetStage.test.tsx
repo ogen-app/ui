@@ -49,6 +49,20 @@ describe('AssetStage', () => {
     )
   })
 
+  it('opens the whole cover over the page, and puts it away', () => {
+    renderStage(pdf())
+    fireEvent.click(
+      screen.getByRole('button', { name: 'View the cover full size' }),
+    )
+    const dialog = screen.getByRole('dialog', { name: 'Report' })
+    expect(dialog.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://cdn/thumbnail.png',
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
   it('falls back to the tile when the cover will not load', () => {
     const { container } = renderStage(pdf())
     fireEvent.error(container.querySelector('img')!)

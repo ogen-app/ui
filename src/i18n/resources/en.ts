@@ -355,6 +355,11 @@ export const en = {
       bank: 'Content bank',
       campaign: '{{campaign}} · Assets',
     },
+    /** A PDF's first page on the stage, and opened whole. */
+    cover: {
+      zoom: 'View the cover full size',
+      close: 'Close',
+    },
     /** Shown for a moment when a reading lands while the page is open. */
     arrived_one: 'Insights ready — {{count}} idea added',
     arrived_other: 'Insights ready — {{count}} ideas added',
