@@ -78,7 +78,7 @@ export function SheetStage({
           </tbody>
         </table>
         {/* The sheet goes on past what is drawn. */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-primary" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-b from-transparent to-primary" />
       </div>
       <div
         className="flex gap-1 overflow-x-auto border-t border-quaternary px-5"

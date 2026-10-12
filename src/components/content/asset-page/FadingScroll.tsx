@@ -62,7 +62,7 @@ export function FadingScroll({
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-primary to-transparent transition-opacity duration-200',
+          'pointer-events-none absolute inset-x-0 top-0 bg-linear-to-b from-primary to-transparent transition-opacity duration-200',
           edges.above ? 'opacity-100' : 'opacity-0',
         )}
         style={{ height: FADE }}
@@ -70,7 +70,7 @@ export function FadingScroll({
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary to-transparent transition-opacity duration-200',
+          'pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-primary to-transparent transition-opacity duration-200',
           edges.below ? 'opacity-100' : 'opacity-0',
         )}
         style={{ height: FADE }}

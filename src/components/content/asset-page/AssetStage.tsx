@@ -114,7 +114,7 @@ function NoteTile({ lines }: { lines: string[] }) {
           {line}
         </p>
       ))}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-secondary" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-b from-transparent to-secondary" />
     </div>
   )
 }
