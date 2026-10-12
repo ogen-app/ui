@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowsClockwiseIcon,
   CheckIcon,
+  CircleDashedIcon,
   CircleIcon,
   FileDashedIcon,
   NotePencilIcon,
@@ -14,7 +15,6 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib'
 import {
   hasMeetingNotes,
@@ -214,7 +214,7 @@ function Reading({
         // A re-read in flight (a brief edit, a retry): the reading below
         // stays until the new one replaces it.
         <p className="flex items-center gap-2 text-xs text-tertiary-foreground">
-          <Spinner tone="onSurface" className="w-4" />
+          <CircleDashedIcon className="size-4 animate-spin" aria-hidden />
           {t('assetInsights.state.refreshing', { lens: lensName })}
         </p>
       )}
@@ -412,7 +412,7 @@ function StepTracker({ step }: { step: 'extract' | 'analyse' }) {
             {done.includes(name) ? (
               <CheckIcon weight="bold" className="size-3.5" aria-hidden />
             ) : active.includes(name) ? (
-              <Spinner tone="onSurface" className="w-3.5" />
+              <CircleDashedIcon className="size-3.5 animate-spin" aria-hidden />
             ) : (
               <CircleIcon className="size-3.5" aria-hidden />
             )}

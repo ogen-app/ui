@@ -25,29 +25,40 @@ type Props = {
  */
 export function AssetStage({ asset, audioRef, onAudioTime }: Props) {
   const kind = assetKind(asset)
+  // A picture whose object will not load — gone from storage, or a bucket
+  // that will not serve it — falls back to the tile, never the browser's
+  // broken-image glyph. Keyed by URL, so a fresh one gets its own try.
+  const [failed, setFailed] = useState<string | null>(null)
+  const usable = (src: string | null | undefined): src is string =>
+    !!src && src !== failed
+  const onError = (src: string) => () => setFailed(src)
+
   if (kind === 'audio') {
     return (
       <AudioStage asset={asset} audioRef={audioRef} onAudioTime={onAudioTime} />
     )
   }
-  if (kind === 'pdf' && asset.file?.thumbnail_url) {
+  const cover = asset.file?.thumbnail_url
+  if (kind === 'pdf' && usable(cover)) {
     // Column-wide and uncaptioned: the cover is the picture, and the page
     // count is already in the kind line under it.
     return (
       <img
-        src={asset.file.thumbnail_url}
+        src={cover}
         alt=""
+        onError={onError(cover)}
         className="block w-full border-b border-quaternary bg-secondary"
       />
     )
   }
   if (kind === 'image') {
     const src = asset.file?.normalized_url ?? asset.file?.url
-    if (src) {
+    if (usable(src)) {
       return (
         <img
           src={src}
           alt={asset.alt_text}
+          onError={onError(src)}
           className="block max-h-[480px] w-full bg-secondary object-contain"
         />
       )
@@ -56,11 +67,12 @@ export function AssetStage({ asset, audioRef, onAudioTime }: Props) {
   if (kind === 'page') {
     const hero = asset.images?.[0]?.url
     const domain = asset.source_url ? pageUrlLabel(asset.source_url) : null
-    return hero ? (
+    return usable(hero) ? (
       <div className="relative">
         <img
           src={hero}
           alt=""
+          onError={onError(hero)}
           className="block aspect-[16/9] w-full bg-secondary object-cover"
         />
         {domain && (

@@ -1,6 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import { CaretDownIcon, CheckIcon } from '@phosphor-icons/react'
-import { Spinner } from '@/components/ui/spinner'
+import {
+  CaretDownIcon,
+  CheckIcon,
+  CircleDashedIcon,
+} from '@phosphor-icons/react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,7 +59,10 @@ export function LensPicker({ lenses, current, onChange }: Props) {
               <LensName lens={lens} withFit={false} />
               <span className="ml-auto pl-4">
                 {isLensWaiting(lens) ? (
-                  <Spinner tone="onSurface" className="w-4" />
+                  <CircleDashedIcon
+                    className="size-4 animate-spin text-tertiary-foreground"
+                    aria-hidden
+                  />
                 ) : (
                   <Fit lens={lens} />
                 )}
