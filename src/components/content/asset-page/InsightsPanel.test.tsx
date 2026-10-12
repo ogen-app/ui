@@ -153,6 +153,17 @@ describe('InsightsPanel', () => {
     expect(onRetry).toHaveBeenCalledOnce()
   })
 
+  it('draws a Markdown heading as a heading, not as hashes', async () => {
+    await renderPanel(
+      'ready',
+      lens({ summary: '## Small models win\n\nThe position.' }),
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Small models win' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/##/)).not.toBeInTheDocument()
+  })
+
   it('tracks the steps while the file is read', async () => {
     await renderPanel('reading', undefined)
     expect(screen.getByText('Extract text')).toBeInTheDocument()

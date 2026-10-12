@@ -157,6 +157,40 @@ export function isEmptyReading(
   )
 }
 
+/** A Markdown heading line: "## Title", up to three spaces in, closing #s dropped. */
+const HEADING = /^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$/
+
+/**
+ * A summary split into headings and the runs of text between them. The model
+ * writes light Markdown, and the assistant's parser (paragraphs, lists, bold)
+ * has no headings — so a "## Title" line is taken out here, and every run
+ * between headings goes to that parser as it is.
+ */
+export type SummaryPart =
+  | { kind: 'heading'; level: number; text: string }
+  | { kind: 'text'; text: string }
+
+export function summaryParts(summary: string): SummaryPart[] {
+  const parts: SummaryPart[] = []
+  let run: string[] = []
+  const flush = () => {
+    const text = run.join('\n').trim()
+    if (text) parts.push({ kind: 'text', text })
+    run = []
+  }
+  for (const line of summary.split('\n')) {
+    const m = HEADING.exec(line)
+    if (m && m[2]) {
+      flush()
+      parts.push({ kind: 'heading', level: m[1].length, text: m[2] })
+    } else {
+      run.push(line)
+    }
+  }
+  flush()
+  return parts
+}
+
 /** Whether a lens has meeting notes to show — recordings, mostly. */
 export function hasMeetingNotes(
   lens: Pick<

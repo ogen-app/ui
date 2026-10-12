@@ -161,10 +161,12 @@ function IdeaRow({
             </span>
           )}
         </span>
-        <span className="hidden shrink-0 items-center gap-1.5 sm:flex">
+        {/* At most two, each capped: a long heading path must never take
+            the title's width. The rest are in the opened row. */}
+        <span className="hidden max-w-[45%] min-w-0 shrink-0 flex-wrap items-center justify-end gap-1.5 sm:flex">
           {/* Labels only: these sit inside the row's button. The playable
               chips are in the opened row. */}
-          {sources.slice(0, 3).map((s) => (
+          {sources.slice(0, 2).map((s) => (
             <SourceChip key={s} label={s} interactive={false} />
           ))}
         </span>
