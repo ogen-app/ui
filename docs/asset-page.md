@@ -12,7 +12,8 @@ over `GET /api/content-bank/assets/:id/analyses` (CON-364).
 ## Left column
 
 A stage per kind (PDF cover edge to edge, recording player, page hero with its
-domain, image, note opening lines, spreadsheet grid, format tile), the kind
+domain, image, note opening lines, spreadsheet grid, a Word file's headings or a
+deck's slide titles, else a format tile), the kind
 line, the editable title, a status line, facts (added by, added, file or
 source, sheets, language), Download, campaigns with their fit and **Add to
 campaign**, tags. Sticky beside the right column on `lg+`; stacked and cropped
@@ -70,5 +71,9 @@ but counted); a line that will not split is shown whole.
 ![States](asset-page/4-states.png)
 ![Spreadsheet, Insights](asset-page/5-xlsx-insights.png)
 ![Spreadsheet, Source](asset-page/6-xlsx-source.png)
+![Web page](asset-page/7-web-page.png)
+![Deck](asset-page/8-deck.png)
+![Note, re-reading](asset-page/9-note.png)
+![Empty readings and the document outline](asset-page/10-more-states.png)
 
 Illustrative copy; the PRD is CON-366 in Linear.
