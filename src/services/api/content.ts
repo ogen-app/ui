@@ -7,6 +7,7 @@ import type {
   CreateAssetPayload,
   UpdateAssetPayload,
 } from '@/types/content'
+import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { ApiError } from './errors'
 import { apiJson, apiVoid } from './http'
 
@@ -32,6 +33,38 @@ export function listAssetChunks(
   return apiJson<AssetChunkPage>(
     `${BASE}/${id}/chunks?offset=${offset}&limit=${limit}`,
     'Unable to read this document',
+  )
+}
+
+/**
+ * Every analysis of an asset (CON-364): the workspace lens first, then one per
+ * live campaign the asset is attached to, each with the ideas it distilled.
+ * An asset nothing has analysed yet answers an empty list, not a 404.
+ */
+export async function listAssetAnalyses(id: string): Promise<AssetAnalysis[]> {
+  const body = await apiJson<{ analyses: AssetAnalysis[] | null }>(
+    `${BASE}/${id}/analyses`,
+    'Unable to read this analysis',
+  )
+  return body.analyses ?? []
+}
+
+/**
+ * Queues a failed or skipped lens again — the workspace lens without a
+ * campaign, that campaign's otherwise. A 409 means the lens is neither, which
+ * the caller answers by refetching rather than by telling anyone.
+ */
+export function retryAssetAnalysis(
+  id: string,
+  campaignId: string | null,
+): Promise<void> {
+  const query = campaignId
+    ? `?campaign_id=${encodeURIComponent(campaignId)}`
+    : ''
+  return apiVoid(
+    `${BASE}/${id}/analysis/retry${query}`,
+    'Unable to analyse this again',
+    { method: 'POST' },
   )
 }
 

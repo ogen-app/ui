@@ -70,7 +70,19 @@ export type Idea = {
    * and cleared by every other verdict — see `decideIdea`.
    */
   remindAt: string | null
+  /**
+   * Who wrote it: a person (`manual`) or an asset's analysis (CON-364), which
+   * distils ideas from a document and files them untriaged. Absent on ideas
+   * built on the client before the server answered.
+   */
+  origin?: IdeaOrigin
+  /** The analysis that distilled it, while that analysis still exists. */
+  assetAnalysisId?: string | null
+  /** The asset that analysis read, named for display. */
+  sourceAsset?: { id: string; title: string } | null
 }
+
+export type IdeaOrigin = 'manual' | 'asset_analysis'
 
 /** How long "not now" lasts. The options the postpone control offers. */
 export const POSTPONE_HORIZONS = ['week', 'month', 'quarter'] as const

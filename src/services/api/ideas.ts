@@ -94,6 +94,10 @@ export type IdeaBody = {
   decided_at: string | null
   decided_by: string | null
   remind_at: string | null
+  /** `''` for an idea a person wrote, `'asset_analysis'` for a distilled one (CON-364). */
+  origin?: '' | 'asset_analysis'
+  asset_analysis_id?: string | null
+  source_asset?: { id: string; title: string } | null
 }
 
 /** What a screen may change about an idea. The verdict is deliberately not in here. */
@@ -115,6 +119,9 @@ export function ideaFromWire(body: IdeaBody): Idea {
     decidedAt: body.decided_at,
     decidedBy: body.decided_by,
     remindAt: body.remind_at,
+    origin: body.origin === 'asset_analysis' ? 'asset_analysis' : 'manual',
+    assetAnalysisId: body.asset_analysis_id ?? null,
+    sourceAsset: body.source_asset ?? null,
   }
 }
 

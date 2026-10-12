@@ -2,7 +2,7 @@ import type { QueryClient, QueryFilters } from '@tanstack/react-query'
 import { postKey } from '@/hooks/usePost'
 import { postAssessmentKey } from '@/hooks/usePostAssessment'
 import { campaignKey } from '@/hooks/useCampaigns'
-import { ASSETS_KEY } from '@/hooks/useContent'
+import { ASSETS_KEY, assetKey } from '@/hooks/useContent'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
@@ -67,6 +67,12 @@ const ZERNIO_SURFACES: QueryFilters[] = [
   { queryKey: ZERNIO_ACCOUNTS_KEY },
   { queryKey: ZERNIO_HEALTH_KEY },
 ]
+
+/**
+ * Every Ideas list — the workspace's and each campaign's live under
+ * `['ideas', …]` (`ideasQueryKey`).
+ */
+const IDEA_LISTS: QueryFilters = { queryKey: ['ideas'] }
 
 /** Splits `entity:post:abc` and friends into the record they are about. */
 export function parseTopic(topic: string): EventSubject {
@@ -219,6 +225,14 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
       }
 
     case 'asset': {
+      // An analysis lens moved (CON-364): queued, running, or settled with a
+      // summary and ideas. The asset's own subtree holds its analyses and its
+      // `analysis_status`; the ideas it distilled are Ideas-inbox rows, so
+      // every ideas list is stale too. The same event also arrives on the
+      // campaign's topic for a campaign lens — this one is enough.
+      if (event.type === 'asset.analysis.updated') {
+        return [{ queryKey: assetKey(subject.id) }, IDEA_LISTS]
+      }
       // A document read in the background — a scraped page (CON-222), and the
       // PDF pipeline once it publishes these too. The event carries the status
       // and some counts, never the text, so the only thing to do with it is
@@ -287,6 +301,8 @@ export const RECONCILE_FILTERS: QueryFilters[] = [
   { queryKey: ASSETS_KEY },
   { queryKey: ['postAssessment'] },
   { queryKey: ['campaigns'] },
+  // Asset analyses distil ideas in the background (CON-364).
+  IDEA_LISTS,
   WORKSPACE_POST_LIST,
   ...ZERNIO_SURFACES,
 ]
