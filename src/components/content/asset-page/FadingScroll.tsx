@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { SurfaceFader } from '@/components/page-primitives/SurfaceFader'
 import { cn } from '@/lib'
 
 /** Depth of each edge's ramp, in px. */
 const FADE = 40
 
 /**
- * A capped block that scrolls in place, its edges dissolving into the surface
- * the way the app's panels do (`SurfaceFader`) — the asset page's reading
- * (Summary and Key points).
+ * A capped block that scrolls in place, its edges fading into the surface —
+ * the asset page's reading (Summary and Key points). A plain colour ramp, not
+ * `SurfaceFader`'s blur: this is body text someone is reading, and blurring
+ * the line about to scroll into view only makes it harder to read.
  *
  * Each edge fades only when there is something past it: the bottom while more
  * is below (so from the start, when the reading overflows), the top once it
@@ -59,22 +59,18 @@ export function FadingScroll({
       >
         {children}
       </div>
-      <SurfaceFader
-        edge="top"
-        solid="0px"
-        fade={FADE}
+      <div
+        aria-hidden
         className={cn(
-          'top-0 transition-opacity duration-200',
+          'pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-primary to-transparent transition-opacity duration-200',
           edges.above ? 'opacity-100' : 'opacity-0',
         )}
         style={{ height: FADE }}
       />
-      <SurfaceFader
-        edge="bottom"
-        solid="0px"
-        fade={FADE}
+      <div
+        aria-hidden
         className={cn(
-          'bottom-0 transition-opacity duration-200',
+          'pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary to-transparent transition-opacity duration-200',
           edges.below ? 'opacity-100' : 'opacity-0',
         )}
         style={{ height: FADE }}
