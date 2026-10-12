@@ -156,11 +156,12 @@ describe('InsightsPanel', () => {
   it('draws a Markdown heading as a heading, not as hashes', async () => {
     await renderPanel(
       'ready',
-      lens({ summary: '## Small models win\n\nThe position.' }),
+      lens({ summary: '## Small models **win**\n\nThe position.' }),
     )
     expect(
       screen.getByRole('heading', { name: 'Small models win' }),
     ).toBeInTheDocument()
+    expect(screen.getByText('win').tagName).toBe('STRONG')
     expect(screen.queryByText(/##/)).not.toBeInTheDocument()
   })
 

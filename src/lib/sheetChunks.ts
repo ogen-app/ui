@@ -305,18 +305,38 @@ export function citationStatus(
   const at = sheets.findIndex((s) => s.name === cited.sheet)
   if (at < 0) return 'more'
   const sheet = sheets[at]
-  if (sheet.rows.some((r) => inRange(r, cited))) return 'found'
+  // Found once the chunk holding the range is loaded — even when blank rows
+  // keep its rows unnumbered and nothing can be marked exactly.
+  if (sheet.rows.some((r) => nearRange(r, cited))) return 'found'
   if (sheet.lastRow !== null && cited.from > sheet.lastRow) return 'never'
   if (sheet.rows.some((r) => r.from > cited.to)) return 'never'
   return at < sheets.length - 1 ? 'never' : 'more'
 }
 
-/** Whether a row falls inside a cited range. */
+/**
+ * Whether a row is cited — and so marked. A numbered row is when its number
+ * is in the range. An unnumbered one (its chunk skipped blank rows) only when
+ * the range covers its whole chunk: a citation of "row 12" cannot say which
+ * of a chunk's unnumbered rows it means, and marking all of them would claim
+ * rows nobody cited.
+ */
 export function inRange(
   row: Pick<SheetRow, 'row' | 'from' | 'to'>,
   range: { from: number; to: number },
 ): boolean {
   return row.row !== null
     ? row.row >= range.from && row.row <= range.to
-    : row.from <= range.to && row.to >= range.from
+    : range.from <= row.from && range.to >= row.to
+}
+
+/**
+ * Whether a row's chunk overlaps a cited range — where the citation is, even
+ * when its rows cannot be marked. What the sheet view scrolls to when nothing
+ * is `inRange`.
+ */
+export function nearRange(
+  row: Pick<SheetRow, 'from' | 'to'>,
+  range: { from: number; to: number },
+): boolean {
+  return row.from <= range.to && row.to >= range.from
 }
