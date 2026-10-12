@@ -146,6 +146,13 @@ describe('InsightsPanel', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('offers to analyse a never-analysed asset now', async () => {
+    const onRetry = vi.fn()
+    await renderPanel('none', undefined, onRetry)
+    fireEvent.click(screen.getByRole('button', { name: /analyse now/i }))
+    expect(onRetry).toHaveBeenCalledOnce()
+  })
+
   it('tracks the steps while the file is read', async () => {
     await renderPanel('reading', undefined)
     expect(screen.getByText('Extract text')).toBeInTheDocument()

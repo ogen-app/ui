@@ -497,7 +497,8 @@ export const en = {
       loadFailedBody: 'Check your connection; this retries on its own.',
       none: 'Not analysed',
       noneNoteBody:
-        'Insights appear a little while after you stop editing this note.',
+        'Insights appear a little while after you stop editing this note — or analyse it now.',
+      analyseNow: 'Analyse now',
       emptyNote: 'Nothing to read yet',
       emptyNoteBody:
         'Write in this note and its summary and ideas follow once you pause.',
@@ -506,7 +507,7 @@ export const en = {
       emptySourceBody:
         'This file has no text the analysis could read — an image-only PDF or a blank sheet, say.',
       noneBody:
-        'This asset was added before insights existed. New uploads are analysed automatically.',
+        'This asset was added before insights existed. It is being picked up in the background — or analyse it now.',
     },
     failure: {
       entitlement_disabled: 'Asset insights aren’t included in your plan.',
