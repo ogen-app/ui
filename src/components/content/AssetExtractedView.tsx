@@ -5,23 +5,13 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { AssetIngestState } from '@/components/content/AssetIngestState'
 import { AssetStateFrame } from '@/components/content/AssetStateFrame'
-import { AssetTitle } from '@/components/content/AssetTitle'
 import { useAssetChunks } from '@/hooks/useContent'
 import { isTerminalStatus } from '@/lib/assetStatus'
-import { cn } from '@/lib'
 import { formatNumber } from '@/lib/intl'
 import type { Asset, AssetChunk } from '@/types/content'
 
 type Props = {
   asset: Asset
-  onTitleChange: (title: string) => void
-  onDirty: () => void
-  /**
-   * Hosted under the two-column page's Source tab (CON-366), which already
-   * shows the title in its left column and owns the surface around this: no
-   * title field and no page-width card of its own.
-   */
-  embedded?: boolean
 }
 
 /**
@@ -40,12 +30,7 @@ type Props = {
  * order, each under the label it is cited by — which is also the most honest
  * account of what the assistant can read here, in the pieces it reads it in.
  */
-export function AssetExtractedView({
-  asset,
-  onTitleChange,
-  onDirty,
-  embedded = false,
-}: Props) {
+export function AssetExtractedView({ asset }: Props) {
   const { t, i18n } = useTranslation()
   const settled = isTerminalStatus(asset.status) && asset.status !== 'failed'
   const chunks = useAssetChunks(asset.id, { enabled: settled })
@@ -55,22 +40,9 @@ export function AssetExtractedView({
   const total = pages[pages.length - 1]?.total ?? 0
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-8',
-        embedded ? 'w-full' : 'w-content bg-primary px-10 py-8',
-      )}
-    >
-      {!embedded && (
-        <AssetTitle
-          initialTitle={asset.title}
-          onChange={onTitleChange}
-          onDirty={onDirty}
-        />
-      )}
-
+    <div className="flex w-full flex-col gap-8">
       {!settled ? (
-        <AssetIngestState asset={asset} inset />
+        <AssetIngestState asset={asset} />
       ) : chunks.isPending ? (
         <div className="flex justify-center py-8">
           <Spinner tone="onSurface" className="w-24" />
@@ -82,7 +54,7 @@ export function AssetExtractedView({
       ) : loaded.length === 0 ? (
         // Ready with nothing in it — an image-only PDF, a blank sheet. Not a
         // failure, and worded so it doesn't read as one.
-        <AssetStateFrame inset>
+        <AssetStateFrame>
           <FileDashedIcon className="size-8 text-tertiary-foreground" />
           <p className="text-sm text-tertiary-foreground">
             {t('content.extracted.empty')}

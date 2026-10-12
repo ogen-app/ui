@@ -23,7 +23,6 @@ import { toast } from '@/stores/toastStore'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import type { UpdateAssetPayload } from '@/types/content'
 import { awaiting } from '@/lib/fetched'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { AssetPage } from '@/components/content/asset-page/AssetPage'
 
 type Props = {
@@ -36,7 +35,7 @@ type Props = {
   campaignId: string | null
   /**
    * `?lens=` — which reading the Insights tab opens on (CON-366), and how to
-   * change it. Only read with `asset-insights` on.
+   * change it.
    */
   lens?: string
   onLensChange?: (lens: string) => void
@@ -76,7 +75,6 @@ export function AssetDocument({
   lens,
   onLensChange = () => {},
 }: Props) {
-  const insights = useFeatureFlag('asset-insights')
   const { t } = useTranslation()
   const { data: campaign } = useCampaign(campaignId ?? '')
   const query = useAsset(assetId)
@@ -269,11 +267,10 @@ export function AssetDocument({
   const editable = screen === 'editor'
 
   /*
-   * Today's screen for this asset. On its own it is the page; with
-   * `asset-insights` on it is the two-column page's Source tab (`embedded`),
-   * where the title lives in the left column instead (CON-366).
+   * The asset's own screen, under the two-column page's Source tab (CON-366);
+   * the title lives in the left column, so none of these draws one.
    */
-  const renderSource = (embedded: boolean) =>
+  const source =
     readingFrom !== null ? (
       <ScrapeState
         sourceUrl={readingFrom}
@@ -286,35 +283,19 @@ export function AssetDocument({
         asset={asset}
         onChange={enqueueSave}
         onDirty={markDirty}
-        embedded={embedded}
       />
     ) : screen === 'extracted' ? (
-      <AssetExtractedView
-        asset={asset}
-        onTitleChange={handleTitleChange}
-        onDirty={markDirty}
-        embedded={embedded}
-      />
+      <AssetExtractedView asset={asset} />
     ) : screen === 'audio' ? (
-      <AssetAudioView
-        asset={asset}
-        onTitleChange={handleTitleChange}
-        onDirty={markDirty}
-        embedded={embedded}
-      />
+      <AssetAudioView asset={asset} />
     ) : screen !== 'editor' ? (
       <UnsupportedAsset />
     ) : (
-      <div className={embedded ? 'w-full' : 'w-content bg-primary px-10 py-8'}>
-        <AssetEditor
-          initialTitle={asset.title}
-          initialContent={asset.content}
-          onTitleChange={handleTitleChange}
-          onContentChange={handleContentChange}
-          onDirty={markDirty}
-          hideTitle={embedded}
-        />
-      </div>
+      <AssetEditor
+        initialContent={asset.content}
+        onContentChange={handleContentChange}
+        onDirty={markDirty}
+      />
     )
 
   return (
@@ -331,13 +312,11 @@ export function AssetDocument({
           <AssetDetailsHeader
             campaignId={campaignId}
             contextLabel={
-              insights
-                ? campaignId
-                  ? t('assetInsights.header.campaign', {
-                      campaign: campaignName ?? '',
-                    })
-                  : t('assetInsights.header.bank')
-                : undefined
+              campaignId
+                ? t('assetInsights.header.campaign', {
+                    campaign: campaignName ?? '',
+                  })
+                : t('assetInsights.header.bank')
             }
             saving={isDirty}
             sourceUrl={sourceUrl}
@@ -351,19 +330,15 @@ export function AssetDocument({
             onDelete={() => setDeleteOpen(true)}
           />
           <div className="flex flex-col items-center gap-3 relative z-0">
-            {insights ? (
-              <AssetPage
-                asset={asset}
-                campaignId={campaignId}
-                lens={lens}
-                onLensChange={onLensChange}
-                source={renderSource(true)}
-                onTitleChange={handleTitleChange}
-                onDirty={markDirty}
-              />
-            ) : (
-              renderSource(false)
-            )}
+            <AssetPage
+              asset={asset}
+              campaignId={campaignId}
+              lens={lens}
+              onLensChange={onLensChange}
+              source={source}
+              onTitleChange={handleTitleChange}
+              onDirty={markDirty}
+            />
             {/* Scroll past the end, as on a post: without it the last line
                 sits pinned against the bottom edge with nowhere to go. This is
                 the travel that lets the end of what you are writing come up to

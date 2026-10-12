@@ -10,24 +10,21 @@ import { cn } from '@/lib'
  * screen doesn't reshape itself around what happens to be missing. Shared
  * rather than copied because the two drift the moment the surface is restyled.
  *
- * `inset` is the same message placed *inside* a slab that is already there —
- * under a title, beside a player. The slab is the column's full width plus its
- * own padding, so nesting one in another pushes it past the column's edge.
+ * Always inside a surface that is already there — the asset page's Source tab
+ * (CON-366) — so it takes the width it is given and brings no slab of its own.
  */
 export function AssetStateFrame({
   children,
-  inset = false,
   className,
 }: {
   children: ReactNode
-  inset?: boolean
   className?: string
 }) {
   return (
     <div
       className={cn(
         'flex flex-col items-center gap-4 text-center',
-        inset ? 'w-full py-12' : 'w-content bg-primary px-10 py-16',
+        'w-full py-12',
         className,
       )}
     >

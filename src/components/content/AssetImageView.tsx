@@ -46,12 +46,6 @@ type Props = {
   onChange: (overrides: Partial<UpdateAssetPayload>) => void
   /** Marks the header's save indicator as in-flight, on the first keystroke. */
   onDirty: () => void
-  /**
-   * Hosted under the two-column page's Source tab (CON-366), which already
-   * shows the title in its left column and owns the surface around this: no
-   * title field and no page-width card of its own.
-   */
-  embedded?: boolean
 }
 
 /**
@@ -91,7 +85,7 @@ export function AssetImageView(props: Props) {
   return <ImageForm {...props} />
 }
 
-function ImageForm({ asset, onChange, onDirty, embedded = false }: Props) {
+function ImageForm({ asset, onChange, onDirty }: Props) {
   const { t } = useTranslation()
   const regenerate = useRegenerateAltText(asset.id)
   const reextract = useReextractImage(asset.id)
@@ -122,7 +116,6 @@ function ImageForm({ asset, onChange, onDirty, embedded = false }: Props) {
    * mounted value and quietly revert.
    */
   const [draft, setDraft] = useState({
-    title: asset.title,
     alt_text: asset.alt_text,
     content: asset.content,
     tag_ids: asset.tag_ids,
@@ -139,7 +132,6 @@ function ImageForm({ asset, onChange, onDirty, embedded = false }: Props) {
    */
   const touchedRef = useRef(new Set<keyof typeof draft>())
 
-  const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /*
@@ -163,14 +155,9 @@ function ImageForm({ asset, onChange, onDirty, embedded = false }: Props) {
       timerRef.current = setTimeout(() => {
         const touched = touchedRef.current
         onChange({
-          // The API has no way to say "no title", so an emptied one saves as a
-          // space — the same fallback the document editor uses, for the same
-          // 400. The description gets no such treatment: blank is a valid
-          // description, and the one relaxation the update handler makes for
-          // `IMG`.
-          ...(touched.has('title') && {
-            title: next.title.trim() === '' ? ' ' : next.title,
-          }),
+          // The title is the page's (its left column), and goes through the
+          // parent. Blank is a valid description — the one relaxation the
+          // update handler makes for `IMG`.
           ...(touched.has('content') && { content: next.content }),
           ...(touched.has('alt_text') && { alt_text: next.alt_text }),
           ...(touched.has('tag_ids') && { tag_ids: next.tag_ids }),
@@ -185,20 +172,6 @@ function ImageForm({ asset, onChange, onDirty, embedded = false }: Props) {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [])
-
-  const autosizeTitle = useCallback(() => {
-    const el = titleRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }, [])
-
-  useEffect(() => {
-    autosizeTitle()
-  }, [draft.title, autosizeTitle])
-
-  const handleTitle = (e: ChangeEvent<HTMLTextAreaElement>) =>
-    edit({ title: e.target.value.replace(/\n/g, '') })
 
   const handleAltText = (e: ChangeEvent<HTMLInputElement>) => {
     setAltByPerson(true)
@@ -232,23 +205,7 @@ function ImageForm({ asset, onChange, onDirty, embedded = false }: Props) {
   const altLength = [...draft.alt_text].length
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-8',
-        embedded ? 'w-full' : 'w-content bg-primary px-10 py-8',
-      )}
-    >
-      {!embedded && (
-        <textarea
-          ref={titleRef}
-          value={draft.title.trim() === '' ? '' : draft.title}
-          onChange={handleTitle}
-          placeholder={t('content.image.titlePlaceholder')}
-          rows={1}
-          className="w-full resize-none overflow-hidden border-0 bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-tertiary-foreground"
-        />
-      )}
-
+    <div className="flex w-full flex-col gap-8">
       {/* The picture is stored either way; what failed or stopped short is
           the reading of it. Named above the picture, with the way to try
           again, rather than instead of it — and laid out as the campaign
@@ -404,7 +361,7 @@ function Picture({ asset }: { asset: Asset }) {
     return (
       // The picture's own box, so a missing one takes the place a drawn one
       // would and the fields below sit where they will once it is.
-      <AssetStateFrame inset className="bg-secondary px-4">
+      <AssetStateFrame className="bg-secondary px-4">
         <ImageBrokenIcon className="size-8 text-tertiary-foreground" />
         <p className="text-sm text-tertiary-foreground">
           {undrawable

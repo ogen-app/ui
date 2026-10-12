@@ -1,5 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
-import type { ChangeEvent, KeyboardEvent } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useCreateBlockNote } from '@blocknote/react'
 import { BlockNoteView } from '@blocknote/mantine'
 import type { Block } from '@blocknote/core'
@@ -8,16 +7,9 @@ import '@/blocknote-theme.css'
 import { uploadImage } from '@/services/api/images'
 
 type AssetEditorProps = {
-  initialTitle: string
   initialContent: string
-  onTitleChange: (title: string) => void
   onContentChange: (content: string) => void
   onDirty?: () => void
-  /**
-   * Under the two-column page's Source tab (CON-366): the title is edited in
-   * the left column there, so the body is all this draws.
-   */
-  hideTitle?: boolean
 }
 
 const DEFAULT_CONTENT: Block[] = [
@@ -28,30 +20,25 @@ const DEFAULT_CONTENT: Block[] = [
   } as unknown as Block,
 ]
 
+/**
+ * A note's body, under the asset page's Source tab. The title is edited in
+ * the page's left column (CON-366), so the body is all this draws.
+ */
 export function AssetEditor({
-  initialTitle,
   initialContent,
-  onTitleChange,
   onContentChange,
   onDirty,
-  hideTitle = false,
 }: AssetEditorProps) {
-  const [title, setTitle] = useState(initialTitle)
-  const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // What each running debounce would send when it fires, so the unmount
+  // What the running debounce would send when it fires, so the unmount
   // cleanup can flush it instead of throwing the last edit away. The callback
-  // refs exist because that cleanup runs once, with the first render's props
+  // ref exists because that cleanup runs once, with the first render's props
   // in scope.
-  const pendingTitleRef = useRef<string | null>(null)
   const pendingContentRef = useRef<string | null>(null)
-  const onTitleChangeRef = useRef(onTitleChange)
   const onContentChangeRef = useRef(onContentChange)
   useEffect(() => {
-    onTitleChangeRef.current = onTitleChange
     onContentChangeRef.current = onContentChange
-  }, [onTitleChange, onContentChange])
-  const titleRef = useRef<HTMLTextAreaElement | null>(null)
+  }, [onContentChange])
   const readyRef = useRef(false)
   // The markdown the editor last held on our behalf: what we loaded into it,
   // or what we last sent up. Anything equal to this is not an edit.
@@ -74,67 +61,6 @@ export function AssetEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor])
 
-  const autosizeTitle = useCallback(() => {
-    const el = titleRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }, [])
-
-  useEffect(() => {
-    autosizeTitle()
-  }, [title, autosizeTitle])
-
-  const handleTitleChange = useCallback(
-    (e: ChangeEvent<HTMLTextAreaElement>) => {
-      const next = e.target.value.replace(/\n/g, '')
-      setTitle(next)
-      onDirty?.()
-      const value = next.trim() === '' ? ' ' : next
-      pendingTitleRef.current = value
-      if (titleTimerRef.current) clearTimeout(titleTimerRef.current)
-      titleTimerRef.current = setTimeout(() => {
-        titleTimerRef.current = null
-        pendingTitleRef.current = null
-        onTitleChange(value)
-      }, 500)
-    },
-    [onTitleChange, onDirty],
-  )
-
-  const displayTitle = title.trim() === '' ? '' : title
-
-  const focusFirstBlock = useCallback(() => {
-    const first = editor.document[0]
-    if (first) {
-      editor.setTextCursorPosition(first, 'start')
-    }
-    editor.focus()
-  }, [editor])
-
-  const handleTitleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        const first = editor.document[0]
-        const firstIsEmptyParagraph =
-          first?.type === 'paragraph' &&
-          Array.isArray(first.content) &&
-          first.content.length === 0
-        if (!firstIsEmptyParagraph && first) {
-          editor.insertBlocks([{ type: 'paragraph' }], first, 'before')
-        }
-        requestAnimationFrame(() => focusFirstBlock())
-        return
-      }
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        focusFirstBlock()
-      }
-    },
-    [editor, focusFirstBlock],
-  )
-
   const handleContentChange = useCallback(() => {
     if (!readyRef.current) return
     // Loading a document is not editing it. The editor fires a change once the
@@ -146,7 +72,7 @@ export function AssetEditor({
     lastMarkdownRef.current = markdown
     onDirty?.()
     // A document emptied on purpose still has to be saved, and the API has
-    // no way to say "no body" — same single space the title falls back to.
+    // no way to say "no body" — the single space a blank title falls back to.
     const value = markdown === '' ? ' ' : markdown
     pendingContentRef.current = value
     if (contentTimerRef.current) clearTimeout(contentTimerRef.current)
@@ -163,12 +89,7 @@ export function AssetEditor({
     // this triggers is a promise already in motion by the time the tree is
     // gone; unmounting cancels no promises.
     return () => {
-      if (titleTimerRef.current) clearTimeout(titleTimerRef.current)
       if (contentTimerRef.current) clearTimeout(contentTimerRef.current)
-      if (pendingTitleRef.current !== null) {
-        onTitleChangeRef.current(pendingTitleRef.current)
-        pendingTitleRef.current = null
-      }
       if (pendingContentRef.current !== null) {
         onContentChangeRef.current(pendingContentRef.current)
         pendingContentRef.current = null
@@ -177,23 +98,10 @@ export function AssetEditor({
   }, [])
 
   return (
-    <div className="flex flex-col">
-      {!hideTitle && (
-        <textarea
-          ref={titleRef}
-          value={displayTitle}
-          onChange={handleTitleChange}
-          onKeyDown={handleTitleKeyDown}
-          placeholder="Title"
-          rows={1}
-          className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground mb-4"
-        />
-      )}
-      <BlockNoteView
-        editor={editor}
-        onChange={handleContentChange}
-        theme="light"
-      />
-    </div>
+    <BlockNoteView
+      editor={editor}
+      onChange={handleContentChange}
+      theme="light"
+    />
   )
 }

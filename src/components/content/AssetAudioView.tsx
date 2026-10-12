@@ -1,10 +1,8 @@
-import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowsClockwiseIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { AssetIngestState } from '@/components/content/AssetIngestState'
-import { AssetTitle } from '@/components/content/AssetTitle'
 import { useAudioSeek } from '@/hooks/useAudioSeek'
 import {
   useAudioStatus,
@@ -18,14 +16,6 @@ import type { Asset, AudioStatus, TranscriptEntry } from '@/types/content'
 
 type Props = {
   asset: Asset
-  onTitleChange: (title: string) => void
-  onDirty: () => void
-  /**
-   * Hosted under the two-column page's Source tab (CON-366), which already
-   * shows the title in its left column and owns the surface around this: no
-   * title field and no page-width card of its own.
-   */
-  embedded?: boolean
 }
 
 /**
@@ -41,12 +31,7 @@ type Props = {
  * and a transcript whose timestamps don't do anything asks the reader to scrub
  * for the moment by hand. The line being played is marked as it goes by.
  */
-export function AssetAudioView({
-  asset,
-  onTitleChange,
-  onDirty,
-  embedded = false,
-}: Props) {
+export function AssetAudioView({ asset }: Props) {
   const { t } = useTranslation()
   const settled = isTerminalStatus(asset.status)
   const run = useAudioStatus(asset.id, { assetSettled: settled })
@@ -54,29 +39,13 @@ export function AssetAudioView({
     enabled: settled && asset.status !== 'failed',
   })
   const rerun = useRerunAudio(asset.id)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [ownNowMs, setNowMs] = useState<number | null>(null)
-  // On the two-column page the player is the stage's, in the other column;
-  // the lines below drive that one rather than drawing a second.
-  const shared = useAudioSeek()
-  const nowMs = shared ? shared.nowMs : ownNowMs
-  // A line plays from where it starts only when there is something to play:
-  // the page's player, or this screen's own <audio>.
-  const canSeek = shared !== null || Boolean(asset.file?.url)
+  // The player is the page's, on the stage in the other column; the lines
+  // below drive it rather than drawing a second. None means nothing to play
+  // (no file), and the lines stay inert.
+  const player = useAudioSeek()
+  const nowMs = player?.nowMs ?? null
 
-  const seek = (entry: TranscriptEntry) => {
-    if (shared) {
-      shared.seek(entry.start_ms / 1000)
-      return
-    }
-    const el = audioRef.current
-    if (!el) return
-    el.currentTime = entry.start_ms / 1000
-    void el.play().catch(() => {
-      // Autoplay refused, or a format this browser can't decode. The seek
-      // stands; the play button is right there.
-    })
-  }
+  const seek = (entry: TranscriptEntry) => player?.seek(entry.start_ms / 1000)
 
   const failedParts =
     run.data?.segments.filter((segment) => segment.status === 'failed')
@@ -112,46 +81,14 @@ export function AssetAudioView({
   )
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-8',
-        embedded ? 'w-full' : 'w-content bg-primary px-10 py-8',
-      )}
-    >
-      {!embedded && (
-        <AssetTitle
-          initialTitle={asset.title}
-          onChange={onTitleChange}
-          onDirty={onDirty}
-        />
-      )}
-
-      {shared ? null : asset.file?.url ? (
-        <audio
-          ref={audioRef}
-          src={asset.file.url}
-          controls
-          preload="metadata"
-          onTimeUpdate={(e) => setNowMs(e.currentTarget.currentTime * 1000)}
-          className="w-full"
-        >
-          {/* Only reached by a browser with no <audio> at all. */}
-          {t('content.audio.noPlayer')}
-        </audio>
-      ) : (
-        <p className="text-sm text-tertiary-foreground">
-          {t('content.audio.missing')}
-        </p>
-      )}
-
+    <div className="flex w-full flex-col gap-8">
       {!settled ? (
         <>
-          <AssetIngestState asset={asset} inset />
+          <AssetIngestState asset={asset} />
           <RunProgress run={run.data ?? null} />
         </>
       ) : asset.status === 'failed' ? (
         <AssetIngestState
-          inset
           asset={{
             ...asset,
             // The run's reason is the more specific of the two when the asset
@@ -201,7 +138,7 @@ export function AssetAudioView({
                     <button
                       type="button"
                       onClick={() => seek(entry)}
-                      disabled={!canSeek}
+                      disabled={!player}
                       aria-label={t('content.audio.playFrom', {
                         time: entry.label,
                       })}

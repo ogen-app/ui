@@ -346,7 +346,7 @@ export const en = {
   },
 
   /**
-   * The asset page's two-column layout (CON-366, `asset-insights`): the LLM's
+   * The asset page's two-column layout (CON-366): the LLM's
    * reading of an asset (CON-364) under Insights, the old screen under Source.
    */
   assetInsights: {
@@ -4330,7 +4330,6 @@ export const en = {
       loadFailed: "The transcript couldn't be loaded. Try reloading the page.",
       /** The file never reached storage — a deployment fault, not a bad file. */
       missing: 'This recording was not stored, so there is nothing to play.',
-      noPlayer: 'This browser cannot play audio.',
       retry_one: 'Retry the failed part',
       retry_other: 'Retry the {{count}} failed parts',
       /** Runs the whole transcription again and replaces the transcript. */
@@ -4350,7 +4349,6 @@ export const en = {
      * the other is read by the assistant looking for a picture.
      */
     image: {
-      titlePlaceholder: 'Title',
       altLabel: 'Alt text',
       altPlaceholder: 'A person at a workbench, holding a dental implant',
       altHelp:

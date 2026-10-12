@@ -22,19 +22,16 @@ import type { Asset } from '@/types/content'
  */
 export function AssetIngestState({
   asset,
-  inset = false,
   children,
 }: {
   asset: Pick<Asset, 'status' | 'failure_code' | 'failure_reason'>
-  /** Drawn inside a screen's slab rather than as the slab — see `AssetStateFrame`. */
-  inset?: boolean
   children?: ReactNode
 }) {
   const { t } = useTranslation()
 
   if (asset.status === 'failed') {
     return (
-      <AssetStateFrame inset={inset}>
+      <AssetStateFrame>
         <WarningIcon className="size-8 text-destructive" />
         <h2 className="font-display text-2xl/8 font-medium text-foreground">
           {t('content.ingest.failedTitle')}
@@ -48,7 +45,7 @@ export function AssetIngestState({
   }
 
   return (
-    <AssetStateFrame inset={inset}>
+    <AssetStateFrame>
       <Spinner tone="onSurface" className="w-32" />
       <h2 className="font-display text-2xl/8 font-medium text-foreground">
         {t('content.ingest.readingTitle')}
