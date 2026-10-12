@@ -74,7 +74,10 @@ export function insightState(
 ): InsightState {
   if (assetStatus === 'failed') return 'assetFailed'
   if (retrievability(assetStatus) === 'waiting') return 'reading'
-  if (!lens || isLensWaiting(lens)) return 'analysing'
+  if (!lens) return 'analysing'
+  // A lens being re-read (a brief edit, a retry) keeps showing the reading it
+  // has until the new one lands, rather than blanking to a skeleton.
+  if (isLensWaiting(lens)) return lens.summary ? 'ready' : 'analysing'
   switch (lens.status) {
     case 'ready':
       return 'ready'
@@ -97,6 +100,44 @@ export function analysisInFlight(
   lenses: AssetAnalysis[],
 ): boolean {
   return retrievability(assetStatus) === 'waiting' || lenses.some(isLensWaiting)
+}
+
+/**
+ * The id a stand-in lens carries: a campaign the asset belongs to that has no
+ * analysis row. The server writes the row the moment an asset is attached,
+ * so this is a membership older than analysis itself — listed in the picker
+ * so the campaign is not missing from it, and answered as "not analysed".
+ */
+const MISSING_LENS = 'missing:'
+
+export function missingLens(
+  assetId: string,
+  campaign: { id: string; name: string },
+): AssetAnalysis {
+  return {
+    id: MISSING_LENS + campaign.id,
+    asset_id: assetId,
+    campaign_id: campaign.id,
+    campaign_name: campaign.name,
+    status: 'skipped',
+    strategy: null,
+    summary: '',
+    language: '',
+    key_points: [],
+    topics: [],
+    entities: [],
+    relevance: null,
+    partial_source: false,
+    truncated: false,
+    failure_code: '',
+    failure_reason: '',
+    analyzed_at: null,
+    ideas: [],
+  }
+}
+
+export function isMissingLens(lens: Pick<AssetAnalysis, 'id'>): boolean {
+  return lens.id.startsWith(MISSING_LENS)
 }
 
 /** Whether a lens has meeting notes to show — recordings, mostly. */

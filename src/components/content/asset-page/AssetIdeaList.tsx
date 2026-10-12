@@ -89,9 +89,10 @@ export function AssetIdeaList({
       ) : (
         <>
           <ul className="flex flex-col gap-3">
-            {shown.map((idea) => (
+            {shown.map((idea, index) => (
               <IdeaRow
                 key={idea.id}
+                index={index}
                 idea={idea}
                 lens={lens}
                 expanded={open === idea.id}
@@ -119,11 +120,14 @@ export function AssetIdeaList({
 }
 
 function IdeaRow({
+  index,
   idea,
   lens,
   expanded,
   onToggle,
 }: {
+  /** Its place in the list — rows arrive one after another, not at once. */
+  index: number
   idea: Idea
   lens: AssetAnalysis
   expanded: boolean
@@ -134,8 +138,9 @@ function IdeaRow({
   const Caret = expanded ? CaretDownIcon : CaretRightIcon
   return (
     <li
+      style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
       className={cn(
-        'rounded-md border border-quaternary transition-colors',
+        'rounded-md border border-quaternary transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:fill-mode-both',
         expanded ? 'bg-secondary' : 'hover:bg-secondary',
       )}
     >

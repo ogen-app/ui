@@ -350,6 +350,29 @@ export const en = {
    * reading of an asset (CON-364) under Insights, the old screen under Source.
    */
   assetInsights: {
+    /** Beside the back caret: where it goes. */
+    header: {
+      bank: 'Content bank',
+      campaign: '{{campaign}} · Assets',
+    },
+    /** Shown for a moment when a reading lands while the page is open. */
+    arrived_one: 'Insights ready — {{count}} idea added',
+    arrived_other: 'Insights ready — {{count}} ideas added',
+    /** The loading tracker. Illustrative: analyse and distil are one step. */
+    steps: {
+      upload: 'Upload',
+      extract: 'Extract text',
+      analyse: 'Analyse',
+      ideas: 'Distil ideas',
+    },
+    /** A mention's kind, on hover. */
+    entityKind: {
+      person: 'Person',
+      org: 'Organisation',
+      product: 'Product',
+      place: 'Place',
+      other: 'Other',
+    },
     tabs: {
       insights: 'Insights',
       source: 'Source',
@@ -367,6 +390,8 @@ export const en = {
     meta: {
       status: {
         reading: 'Reading the file…',
+        transcribing: 'Transcribing · {{done}} of {{total}} segments',
+        fetching: 'Fetching the page…',
         unreadable: 'Couldn’t read this file',
         analysing: 'Analysing…',
         analysed: 'Analysed · {{when}}',
@@ -381,6 +406,14 @@ export const en = {
       download: 'Download',
       campaigns: 'Campaigns',
       noCampaigns: 'Not in a campaign yet.',
+      moreCampaigns: '+{{count}} more',
+      addToCampaign: 'Add to campaign',
+      /** Who added it, when that membership has since left the workspace. */
+      formerMember: 'Former member',
+      /** A scraped page's address, where a file would have its name. */
+      source: 'Source',
+      minutes_one: '{{count}} min',
+      minutes_other: '{{count}} min',
       tags: 'Tags',
     },
     player: {
@@ -438,6 +471,8 @@ export const en = {
       reading: 'Reading the file first',
       readingBody: 'Insights start once its text has been extracted.',
       analysing: 'Analysing for {{lens}}',
+      refreshing:
+        'Re-reading for {{lens}} — this reading stays until the new one is ready.',
       analysingBody:
         'This usually takes under a minute. It appears here without a refresh.',
       assetFailed: 'Nothing to analyse',

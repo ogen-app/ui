@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -7,9 +7,18 @@ import {
   useAssetAnalyses,
   useRetryAssetAnalysis,
 } from '@/hooks/useAssetAnalyses'
+import { useCampaigns } from '@/hooks/useCampaigns'
+import { useLensArrival } from '@/hooks/useLensArrival'
 import { useAssetChunks } from '@/hooks/useContent'
 import { SheetCiteContext, type SheetCite } from '@/hooks/useSheetCite'
-import { insightState, isAnalyzable, pickLens } from '@/lib/assetAnalysis'
+import {
+  insightState,
+  isAnalyzable,
+  isMissingLens,
+  lensKey,
+  missingLens,
+  pickLens,
+} from '@/lib/assetAnalysis'
 import { retrievability } from '@/lib/campaignSources'
 import {
   isSpreadsheet,
@@ -40,6 +49,27 @@ type Props = {
 }
 
 type Tab = 'insights' | 'source'
+
+/** Where the last-used tab is remembered, per browser. */
+const TAB_STORAGE_KEY = 'ogen.asset-page.tab'
+
+function readTab(): Tab {
+  try {
+    return localStorage.getItem(TAB_STORAGE_KEY) === 'source'
+      ? 'source'
+      : 'insights'
+  } catch {
+    return 'insights'
+  }
+}
+
+function rememberTab(tab: Tab) {
+  try {
+    localStorage.setItem(TAB_STORAGE_KEY, tab)
+  } catch {
+    // A private window or blocked storage: the default is fine.
+  }
+}
 
 /**
  * The asset page as two columns (CON-366, behind `asset-insights`): what the
@@ -78,10 +108,25 @@ export function AssetPage({
     enabled: analyzable,
   })
   const retry = useRetryAssetAnalysis(asset.id)
-  const [tab, setTab] = useState<Tab>('insights')
+  const [tab, setTabState] = useState<Tab>(readTab)
+  const setTab = useCallback((next: Tab) => {
+    setTabState(next)
+    rememberTab(next)
+  }, [])
 
   const lenses = useMemo(() => analyses.data ?? [], [analyses.data])
-  const current = pickLens(lenses, {
+  // Every campaign the asset is in gets an entry in the picker — those with
+  // no analysis row as stand-ins that say "not analysed" (`missingLens`).
+  const campaigns = useCampaigns()
+  const lensOptions = useMemo(() => {
+    if (!analyses.isSuccess) return lenses
+    const analysed = new Set(lenses.map((l) => l.campaign_id))
+    const missing = (campaigns.data ?? [])
+      .filter((c) => c.asset_ids.includes(asset.id) && !analysed.has(c.id))
+      .map((c) => missingLens(asset.id, c))
+    return [...lenses, ...missing]
+  }, [analyses.isSuccess, lenses, campaigns.data, asset.id])
+  const current = pickLens(lensOptions, {
     requested: lens,
     routeCampaignId: campaignId,
   })
@@ -89,9 +134,26 @@ export function AssetPage({
     asset.status !== 'failed' && retrievability(asset.status) !== 'waiting'
   const state: PanelState = analyses.isError
     ? 'loadFailed'
-    : settled && analyses.isSuccess && lenses.length === 0
+    : settled &&
+        analyses.isSuccess &&
+        (lenses.length === 0 || (current && isMissingLens(current)))
       ? 'none'
       : insightState(asset.status, current)
+  const busy = state === 'reading' || state === 'analysing'
+
+  // A `?lens=` that no longer names a lens — the asset was taken out of that
+  // campaign — is dropped from the address once everything has loaded, so
+  // the link does not keep promising a reading that is gone.
+  const staleLens =
+    !!lens &&
+    analyses.isSuccess &&
+    campaigns.isSuccess &&
+    !lensOptions.some((l) => lensKey(l) === lens)
+  useEffect(() => {
+    if (staleLens) onLensChange('')
+  }, [staleLens, onLensChange])
+
+  const arrived = useLensArrival(current)
 
   // One player for the page: the stage draws it, the right column drives it.
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -128,10 +190,13 @@ export function AssetPage({
   const { fetchNextPage } = chunks
   const loadMore = useCallback(() => void fetchNextPage(), [fetchNextPage])
 
-  const openSheet = useCallback((name: string) => {
-    setSelectedSheet(name)
-    setTab('source')
-  }, [])
+  const openSheet = useCallback(
+    (name: string) => {
+      setSelectedSheet(name)
+      setTab('source')
+    },
+    [setTab],
+  )
   const citer = useMemo<SheetCite | null>(
     () =>
       spreadsheet
@@ -219,14 +284,31 @@ export function AssetPage({
                   {tab === 'insights' && current && (
                     <div className="mb-2">
                       <LensPicker
-                        lenses={lenses}
+                        lenses={lensOptions}
                         current={current}
                         onChange={onLensChange}
                       />
                     </div>
                   )}
                 </div>
-                <TabsContent value="insights" className="mt-0 px-8 py-8">
+                <TabsContent
+                  value="insights"
+                  className="mt-0 px-8 py-8"
+                  aria-busy={busy}
+                >
+                  {/* Announced, and shown for a moment, when a reading lands
+                      while the page is open. */}
+                  <div aria-live="polite" className="empty:hidden">
+                    {arrived !== null && (
+                      <p className="mb-6 flex items-center gap-2 bg-accent/10 px-4 py-3 text-sm font-medium text-foreground motion-safe:animate-in motion-safe:fade-in">
+                        <span
+                          aria-hidden
+                          className="size-2 rounded-full bg-accent"
+                        />
+                        {t('assetInsights.arrived', { count: arrived })}
+                      </p>
+                    )}
+                  </div>
                   <InsightsPanel
                     state={state}
                     lens={current}

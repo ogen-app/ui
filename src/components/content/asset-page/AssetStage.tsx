@@ -55,23 +55,86 @@ export function AssetStage({ asset, audioRef, onAudioTime }: Props) {
   }
   if (kind === 'page') {
     const hero = asset.images?.[0]?.url
+    const domain = asset.source_url ? pageUrlLabel(asset.source_url) : null
     return hero ? (
-      <img
-        src={hero}
-        alt=""
-        className="block aspect-[16/9] w-full bg-secondary object-cover"
-      />
+      <div className="relative">
+        <img
+          src={hero}
+          alt=""
+          className="block aspect-[16/9] w-full bg-secondary object-cover"
+        />
+        {domain && (
+          // Where the picture is from, on the picture: a page's lead image
+          // says little until you know whose page it is.
+          <span className="absolute bottom-3 left-3 max-w-[80%] truncate rounded-full bg-primary-foreground/80 px-2.5 py-1 text-xs font-medium text-primary">
+            {domain}
+          </span>
+        )}
+      </div>
     ) : (
-      <Tile
-        asset={asset}
-        caption={asset.source_url ? pageUrlLabel(asset.source_url) : null}
-      />
+      <Tile asset={asset} caption={domain} />
     )
   }
-  return <Tile asset={asset} caption={fileExtension(asset)} />
+  if (kind === 'text') {
+    const lines = noteLines(asset.content)
+    if (lines.length > 0) return <NoteTile lines={lines} />
+  }
+  return (
+    <Tile
+      asset={asset}
+      caption={fileExtension(asset)}
+      name={asset.file?.original_name}
+    />
+  )
 }
 
-function Tile({ asset, caption }: { asset: Asset; caption: string | null }) {
+/**
+ * A note's first lines, small, on its tile — the opening of the text says
+ * more about a note than any mark could.
+ */
+function NoteTile({ lines }: { lines: string[] }) {
+  return (
+    <div className="relative flex aspect-[16/9] w-full flex-col gap-1.5 overflow-hidden bg-secondary px-8 py-6">
+      {lines.map((line, i) => (
+        <p
+          key={i}
+          className={cn(
+            'truncate text-xs text-secondary-foreground',
+            i === 0 && 'font-semibold text-foreground',
+          )}
+        >
+          {line}
+        </p>
+      ))}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-secondary" />
+    </div>
+  )
+}
+
+/** The note's first non-empty lines, with Markdown marks stripped. */
+function noteLines(content: string): string[] {
+  return content
+    .split('\n')
+    .map((l) =>
+      l
+        .replace(/^\s*(#{1,6}\s+|[-*+]\s+|>\s?|\d+\.\s+)/, '')
+        .replace(/[*_`]/g, '')
+        .trim(),
+    )
+    .filter(Boolean)
+    .slice(0, 7)
+}
+
+function Tile({
+  asset,
+  caption,
+  name,
+}: {
+  asset: Asset
+  caption: string | null
+  /** The file's own name, under the format. */
+  name?: string
+}) {
   const Icon = ASSET_KIND_ICON[assetKind(asset)]
   return (
     <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-2 bg-secondary text-tertiary-foreground">
@@ -81,6 +144,7 @@ function Tile({ asset, caption }: { asset: Asset; caption: string | null }) {
           {caption}
         </span>
       )}
+      {name && <span className="max-w-[80%] truncate text-xs">{name}</span>}
     </div>
   )
 }
@@ -125,7 +189,28 @@ function AudioStage({ asset, audioRef, onAudioTime }: Props) {
   }
 
   return (
-    <div className="flex w-full flex-col gap-8 bg-primary-foreground px-8 pt-10 pb-8 text-primary">
+    // Space plays and pauses, the arrows step five seconds — on the stage as a
+    // whole, so the keys work wherever focus sits inside it.
+    <div
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        const el = audioRef.current
+        const tag = (e.target as HTMLElement).tagName
+        // The scrubber has its own keys, and the play button its own space.
+        if (!el || tag === 'INPUT') return
+        if (e.key === ' ' && tag !== 'BUTTON') {
+          e.preventDefault()
+          toggle()
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault()
+          el.currentTime = Math.max(
+            0,
+            el.currentTime + (e.key === 'ArrowRight' ? 5 : -5),
+          )
+        }
+      }}
+      className="flex w-full flex-col gap-8 bg-primary-foreground px-8 pt-10 pb-8 text-primary outline-none"
+    >
       <div className="flex h-24 items-center gap-[3px]" aria-hidden>
         {bars.map((h, i) => (
           <span

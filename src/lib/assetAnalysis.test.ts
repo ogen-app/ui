@@ -5,7 +5,9 @@ import {
   formatClock,
   insightState,
   isAnalyzable,
+  isMissingLens,
   metaStatus,
+  missingLens,
   parseIdeaNote,
   pickLens,
   timeLabelSeconds,
@@ -72,9 +74,11 @@ describe('insightState', () => {
 
   it('reads the lens once the asset is settled', () => {
     expect(insightState('ready', undefined)).toBe('analysing')
-    expect(insightState('partial', lens({ status: 'running' }))).toBe(
-      'analysing',
-    )
+    expect(
+      insightState('partial', lens({ status: 'running', summary: '' })),
+    ).toBe('analysing')
+    // Re-reading keeps the reading it already has on screen.
+    expect(insightState('ready', lens({ status: 'running' }))).toBe('ready')
     expect(insightState('ready', lens())).toBe('ready')
     expect(insightState('ready', lens({ status: 'failed' }))).toBe('failed')
     expect(
@@ -89,6 +93,18 @@ describe('insightState', () => {
         lens({ status: 'skipped', failure_code: 'entitlement_disabled' }),
       ),
     ).toBe('notInPlan')
+  })
+})
+
+describe('missingLens', () => {
+  it('stands in for a campaign with no analysis row', () => {
+    const l = missingLens('a1', { id: 'c9', name: 'Old campaign' })
+    expect(isMissingLens(l)).toBe(true)
+    expect(isMissingLens(lens())).toBe(false)
+    expect(l).toMatchObject({
+      campaign_id: 'c9',
+      campaign_name: 'Old campaign',
+    })
   })
 })
 
