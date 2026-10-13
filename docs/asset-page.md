@@ -15,8 +15,10 @@ A stage per kind (PDF cover edge to edge, recording player, page hero with its
 domain, image, note opening lines, spreadsheet grid, a Word file's headings or a
 deck's slide titles, else a format tile), the kind
 line, the editable title, a status line, facts (added by, added, file or
-source, sheets, language), Download, campaigns with their fit and **Add to
-campaign**, tags. Sticky beside the right column on `lg+`; stacked and cropped
+source, sheets, language), Download (a quiet link), campaigns with their fit —
+the one whose reading is open marked — and **Add to campaign**, tags. A title
+that is still a file name (`q3_pipeline_review.xlsx`) shows as words until it
+is renamed (`readableTitle`); a dotted rule and a pencil say it is editable. Sticky beside the right column on `lg+`; stacked and cropped
 below it.
 
 ## Right column
@@ -27,12 +29,22 @@ image has Source only.
 - **Lens picker** (a dropdown): the workspace reading and one per campaign,
   with fit, a spinner while one is in flight, and `?lens=` in the address. A
   campaign the asset joined before analysis existed has no row; it is listed
-  and answers "not analysed".
-- **Insights**: relevance banner (campaign lens), summary (light Markdown),
-  key points, meeting notes for a recording (participants, commitments with
-  time chips, decisions, open questions), sheets read, topics and mentions,
-  then the ideas — five, then "Show N more", each opening in place. No
-  triage here; that is the Ideas inbox (and CON-365).
+  and answers "not analysed". With no campaign at all there is nothing to
+  pick, and the picker is a line of text instead.
+- **Insights** (ideas first, CON-369): relevance panel (campaign lens), the
+  summary at rest — its lead paragraph, four lines — with "Read the full
+  summary" growing the page in place (whole summary as light Markdown, key
+  points; no box scrolling inside the page), then **N post ideas** — five, then
+  "Show N more", each opening in place, its page references merged
+  (`pp. 55–57, pp. 57–59` → `pp. 55–59`) — then meeting notes for a recording
+  (participants, commitments with time chips, decisions, open questions), then
+  **What it covers**: topics as a line of text, mentions grouped by kind with
+  the kind written out, and the sheets read. No triage here; that is the Ideas
+  inbox (and CON-365).
+- **Type and colour**: section labels are sentence case; readable grey text is
+  `secondary-foreground` (gray-700, 5.2:1 — gray-600 fails AA at 3.3:1), the
+  tertiary grey is left to icons and markers. Highlights are tinted panels,
+  never a coloured side stripe.
 - **States**: reading / analysing (step tracker and skeleton), failed (Try
   again, optimistic), not in plan and monthly limit (See plans), no ideas,
   never analysed, analyses unreadable. A re-read keeps the old reading on
@@ -76,4 +88,9 @@ but counted); a line that will not split is shown whole.
 ![Note, re-reading](asset-page/9-note.png)
 ![Empty readings and the document outline](asset-page/10-more-states.png)
 
-Illustrative copy; the PRD is CON-366 in Linear.
+The CON-369 design pass (from a design critique):
+
+![Proposal: ideas first](asset-page/11-proposal-ideas-first.png)
+![Proposal: a campaign reading](asset-page/12-proposal-campaign-reading.png)
+
+Illustrative copy; the PRDs are CON-366 and CON-369 in Linear.
