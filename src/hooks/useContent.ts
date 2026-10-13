@@ -1,11 +1,13 @@
+import { useMemo } from 'react'
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
 import {
-  listAssets,
+  queryAssets,
   getAsset,
   getAudioStatus,
   getAudioTranscript,
@@ -31,6 +33,7 @@ import type {
   CreateAssetPayload,
   UpdateAssetPayload,
 } from '@/types/content'
+import type { AssetListPage, AssetQueryParams } from '@/types/assetList'
 import { invalidateEntitlements } from './useEntitlements'
 
 export const ASSETS_KEY = ['assets'] as const
@@ -40,30 +43,91 @@ export const assetKey = (id: string) => ['assets', id] as const
 const PROCESSING_POLL_MS = 3000
 
 /**
- * The asset list, which watches itself while anything in it is processing.
- *
- * Extraction happens after the upload returns, so a freshly added document
- * lands as `processing` and becomes readable some seconds later with nothing
- * on the client to notice. The tracker used to poll each upload it knew about;
- * this covers the same ground from the list itself, and also covers assets
- * that started processing somewhere else — another tab, another campaign, or
- * before this page was open.
+ * Every read of the Assets query (CON-374), whatever its filters. Under
+ * `ASSETS_KEY`, so anything that invalidates the assets reaches every list —
+ * and narrower than it, so a write that only changes what the *list* shows
+ * (an idea answered, a campaign joined) need not refetch an open document.
  */
-export function useAssets({ enabled = true }: { enabled?: boolean } = {}) {
-  return useQuery({
-    queryKey: ASSETS_KEY,
-    queryFn: listAssets,
-    // Off means "don't fetch for my sake", never "don't answer": a disabled
-    // query still reads whatever the cache holds, which is what lets the
-    // upload modal check for duplicates on a screen that has the list open
-    // without pulling it down on one that doesn't.
+export const ASSET_LIST_KEY = ['assets', 'list'] as const
+
+/** How many rows a page of the list brings in. */
+export const ASSET_PAGE_SIZE = 50
+
+/**
+ * The Assets query, a page at a time, watching itself while anything loaded is
+ * still being read.
+ *
+ * `params` is the whole query — filters, scope, sort, the facets to count —
+ * and the Query key, so two screens asking the same question share one cache
+ * entry. The rows of the previous question stay on screen while the next one
+ * loads (`keepPreviousData`), so narrowing the list never flashes it empty.
+ *
+ * Extraction happens after an upload returns, so a fresh document lands as
+ * `processing` with nothing on the client to notice it settle; the poll covers
+ * that, and covers documents that started processing somewhere else. Facets
+ * are asked for on the first page only — they describe the whole match, not a
+ * page of it.
+ */
+export function useAssetList(
+  params: AssetQueryParams,
+  {
+    enabled = true,
+    facets = [],
+  }: { enabled?: boolean; facets?: string[] } = {},
+) {
+  const query = useInfiniteQuery({
+    queryKey: [...ASSET_LIST_KEY, params, facets],
+    queryFn: ({ pageParam }) =>
+      queryAssets({
+        ...params,
+        limit: String(ASSET_PAGE_SIZE),
+        ...(pageParam
+          ? { cursor: pageParam }
+          : facets.length
+            ? { facets: facets.join(',') }
+            : {}),
+      }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.next_cursor ?? undefined,
+    placeholderData: keepPreviousData,
     enabled,
-    refetchInterval: (query) =>
-      query.state.data?.some(
-        (asset) => retrievability(asset.status) === 'waiting',
+    refetchInterval: (q) =>
+      q.state.data?.pages.some((page) =>
+        page.assets.some((asset) => retrievability(asset.status) === 'waiting'),
       )
         ? PROCESSING_POLL_MS
         : false,
+  })
+  const pages = query.data?.pages
+  const rows = useMemo(
+    () => pages?.flatMap((page) => page.assets) ?? [],
+    [pages],
+  )
+  const first = pages?.[0]
+  return {
+    query,
+    rows,
+    total: first?.total ?? 0,
+    totalUnfiltered: first?.total_unfiltered ?? 0,
+    facets: first?.facets ?? NO_FACETS,
+  }
+}
+
+const NO_FACETS: AssetListPage['facets'] = {}
+
+/**
+ * How many assets a query would match, without its rows — what a suggestion
+ * or an empty state says removing or adding something would leave.
+ */
+export function useAssetCount(
+  params: AssetQueryParams,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: [...ASSET_LIST_KEY, 'count', params],
+    queryFn: async () => (await queryAssets({ ...params, limit: '1' })).total,
+    enabled,
+    staleTime: 30_000,
   })
 }
 
@@ -171,7 +235,7 @@ export function useRerunAudio(id: string) {
       mode === 'retry' ? retryAudio(id) : reextractAudio(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: assetKey(id) })
-      qc.invalidateQueries({ queryKey: ASSETS_KEY, exact: true })
+      qc.invalidateQueries({ queryKey: ASSET_LIST_KEY })
     },
   })
 }
@@ -189,7 +253,7 @@ export function useRegenerateAltText(id: string) {
       qc.setQueryData<Asset>(assetKey(id), (asset) =>
         asset ? { ...asset, alt_text } : asset,
       )
-      qc.invalidateQueries({ queryKey: ASSETS_KEY, exact: true })
+      qc.invalidateQueries({ queryKey: ASSET_LIST_KEY })
     },
   })
 }
@@ -201,7 +265,7 @@ export function useReextractImage(id: string) {
     mutationFn: () => reextractImage(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: assetKey(id) })
-      qc.invalidateQueries({ queryKey: ASSETS_KEY, exact: true })
+      qc.invalidateQueries({ queryKey: ASSET_LIST_KEY })
     },
   })
 }
@@ -315,6 +379,55 @@ export function useDeleteAsset() {
       // A row in the bank, which is what `content_bank_assets` counts — the
       // server charges a written note, an uploaded file and a scraped page to
       // that one key alike (CON-295).
+      invalidateEntitlements(qc)
+    },
+  })
+}
+
+/** How many deletes are in flight at once — a selection can be every match. */
+const DELETE_CONCURRENCY = 6
+
+/**
+ * Deletes many documents, and answers with the ids that are really gone.
+ *
+ * One request per id — the API has no bulk delete — but one refetch for the
+ * lot: a selection can be "all 124 matching", and invalidating the list after
+ * each of those would re-read it 124 times. The requests run a few at a time
+ * rather than all at once, so a large selection doesn't queue every other
+ * request in the tab behind it.
+ *
+ * A failure is counted rather than thrown, so one refused document doesn't
+ * hide the forty that went — the caller says how many of each.
+ */
+export function useDeleteAssets() {
+  const qc = useQueryClient()
+  return useMutation({
+    meta: { errorToast: false },
+    mutationFn: async (ids: string[]) => {
+      const gone: string[] = []
+      const failed: unknown[] = []
+      let next = 0
+      const worker = async () => {
+        while (next < ids.length) {
+          const id = ids[next++]
+          try {
+            await deleteAsset(id)
+            gone.push(id)
+          } catch (error) {
+            failed.push(error)
+          }
+        }
+      }
+      await Promise.all(
+        Array.from(
+          { length: Math.min(DELETE_CONCURRENCY, ids.length) },
+          worker,
+        ),
+      )
+      return { gone, failed }
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ASSETS_KEY })
       invalidateEntitlements(qc)
     },
   })

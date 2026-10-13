@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { TFunction } from 'i18next'
-import type { Idea } from '@/lib/ideas'
 import {
   formatDuration,
-  ideaCountsByAsset,
   listDate,
-  listKind,
   listTitle,
   verdictSentence,
 } from './assetList'
@@ -98,15 +95,6 @@ describe('listTitle', () => {
   })
 })
 
-describe('listKind', () => {
-  it('tells spreadsheets, CSVs and other documents apart', () => {
-    expect(listKind({ type: 'DOC', file: file('q3.xlsx') })).toBe('spreadsheet')
-    expect(listKind({ type: 'DOC', file: file('export.csv') })).toBe('csv')
-    expect(listKind({ type: 'DOC', file: file('brand.docx') })).toBe('document')
-    expect(listKind({ type: 'MD' })).toBe('note')
-  })
-})
-
 describe('listDate', () => {
   const now = new Date('2026-10-13T12:00:00Z')
 
@@ -135,44 +123,6 @@ describe('formatDuration', () => {
       'content.list.minutes:18',
     )
     expect(formatDuration(t, 21_000)).toBe('0:21')
-  })
-})
-
-const idea = (over: Partial<Idea>): Idea => ({
-  id: Math.random().toString(36),
-  title: 'An idea',
-  note: '',
-  campaignId: null,
-  verdict: null,
-  createdAt: '2026-10-01T00:00:00Z',
-  createdBy: null,
-  decidedAt: null,
-  decidedBy: null,
-  remindAt: null,
-  origin: 'asset_analysis',
-  sourceAsset: { id: 'a1', title: 'A' },
-  ...over,
-})
-
-describe('ideaCountsByAsset', () => {
-  const now = new Date('2026-10-13T12:00:00Z')
-
-  it('counts each asset’s analysed ideas by verdict, a woken later as waiting', () => {
-    const counts = ideaCountsByAsset(
-      [
-        idea({}),
-        idea({ verdict: 'yes' }),
-        idea({ verdict: 'later', remindAt: '2026-10-20T00:00:00Z' }),
-        idea({ verdict: 'later', remindAt: '2026-10-01T00:00:00Z' }),
-        idea({ verdict: 'no', sourceAsset: { id: 'a2', title: 'B' } }),
-        idea({ origin: 'manual' }),
-        idea({ sourceAsset: null }),
-      ],
-      now,
-    )
-    expect(counts.get('a1')).toEqual({ waiting: 2, yes: 1, later: 1, no: 0 })
-    expect(counts.get('a2')).toEqual({ waiting: 0, yes: 0, later: 0, no: 1 })
-    expect(counts.has('a3')).toBe(false)
   })
 })
 

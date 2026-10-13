@@ -1,9 +1,15 @@
+import { useCallback } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { ContentPage } from '@/components/content/ContentPage'
+import { parseAssetListSearch, type AssetListSearch } from '@/lib/assetFilter'
 
 export const Route = createFileRoute('/_authenticated/assets/')({
   component: Assets,
+  // The list's filter and sort — the same keys the Assets query takes, so the
+  // address is the request and a link reopens the same list (CON-371). Per
+  // tab, never `/api/settings`.
+  validateSearch: parseAssetListSearch,
 })
 
 /**
@@ -31,13 +37,25 @@ export const Route = createFileRoute('/_authenticated/assets/')({
  * layout rather than anything anyone decided.
  */
 function Assets() {
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
+  // Replaced, not pushed: each token is not a page of history, and Back
+  // should leave the list rather than undo it one filter at a time.
+  const onSearchChange = useCallback(
+    (next: AssetListSearch) => void navigate({ search: next, replace: true }),
+    [navigate],
+  )
   // The same shell the campaign layout puts around its own Assets section: the
   // page owns its header and is one big drop target, so all it wants from
   // outside is a full-height column that doesn't scroll. The shell fades in
   // once, on arrival — the list below plays its own fade when the fetch lands.
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
-      <ContentPage campaign={null} />
+      <ContentPage
+        campaign={null}
+        search={search}
+        onSearchChange={onSearchChange}
+      />
     </PageContainer>
   )
 }

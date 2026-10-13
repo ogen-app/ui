@@ -1,33 +1,29 @@
-import { memo, useMemo } from 'react'
+import { memo, useCallback, useMemo, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
+import type { SortingState } from '@tanstack/react-table'
 import { Link, type LinkProps } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { TrashIcon } from '@phosphor-icons/react'
 import { VirtualTable } from '../VirtualTable'
 import type { ColumnConfig } from '../types'
-import type { Asset, Tag } from '@/types/content'
+import type { Tag } from '@/types/content'
+import type { AssetListItem } from '@/types/assetList'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { AssetKindMark } from '@/components/content/AssetKindMark'
 import { VerdictPill } from '@/components/content/VerdictPill'
-import { useFeatureFlag } from '@/config/featureFlags'
-import { useCampaigns } from '@/hooks/useCampaigns'
-import { useIdeaClock } from '@/hooks/useIdeaClock'
-import { useIdeas } from '@/hooks/useIdeas'
+import { useCampaignNames } from '@/hooks/useCampaignNames'
 import { cn } from '@/lib'
-import { extentLabel } from '@/lib/assetExtent'
+import { DEFAULT_SORT, type AssetSort } from '@/lib/assetFilter'
 import {
   formatDuration,
-  ideaCountsByAsset,
   listDate,
-  listKind,
   listTitle,
   type VerdictKey,
 } from '@/lib/assetList'
 import { statusToBadge } from '@/lib/assetStatus'
-import { assetCampaignIndex } from '@/lib/assetUsage'
-import type { IdeaCounts } from '@/lib/ideas'
+import { MatchSnippet } from '@/components/content/MatchSnippet'
 
 /*
  * The Assets list (CON-210, CON-370) — what each document *offers*, not its
@@ -47,6 +43,12 @@ import type { IdeaCounts } from '@/lib/ideas'
  * Titles wrap rather than truncate, so rows take the height of their content
  * (`measureRows`), and the title column gives up width to Campaign and Tags so
  * a campaign's name fits whole.
+ *
+ * Every row, figure and order here is the server's (CON-374): the table draws
+ * a page of the Assets query in the order it arrived, a header click asks for
+ * another order rather than re-sorting what is loaded, and reaching the end
+ * asks for the next page. While the query searches inside the documents, a
+ * row's second line is where it matched rather than its gist.
  */
 
 /** The shortest row: a 32px mark and two lines, with air. */
@@ -59,7 +61,7 @@ const ROW_HEIGHT = 60
  */
 const CELL = 'flex h-full items-center px-3 py-2.5'
 
-type AssetRow = Asset & Record<string, unknown>
+type AssetRow = AssetListItem & Record<string, unknown>
 
 /**
  * A tag on a row, in the row's own voice: data rather than a control, so the
@@ -87,13 +89,13 @@ function Nothing() {
 }
 
 /** What went wrong or is still happening; nothing at all when it is Ready. */
-function statusLabel(t: TFunction, row: Asset): string | null {
+function statusLabel(t: TFunction, row: AssetListItem): string | null {
   switch (row.status) {
     case 'ready':
       return null
     case 'partial': {
-      const kind = listKind(row)
-      return kind === 'page'
+      const kind = row.kind
+      return kind === 'web'
         ? t('content.list.status.partialPage')
         : kind === 'audio'
           ? t('content.list.status.partialAudio')
@@ -104,16 +106,27 @@ function statusLabel(t: TFunction, row: Asset): string | null {
   }
 }
 
-/** The facts line: where a page is from, how much there is, any status. */
-function Facts({ row }: { row: Asset }) {
-  const { t, i18n } = useTranslation()
+/**
+ * The facts line: where a page is from, how long a recording runs, how many
+ * pages a file has, and any status.
+ *
+ * The list row carries no `content` (CON-374), so a note or a page no longer
+ * states its words — counting them meant shipping every document whole to
+ * draw one figure.
+ */
+function Facts({ row }: { row: AssetListItem }) {
+  const { t } = useTranslation()
   const domain = row.type === 'URL' ? hostOf(row.source_url) : null
   const settling = row.status === 'pending' || row.status === 'processing'
-  const extent = settling ? null : extentLabel(t, row, i18n.language)
+  const pages = settling ? 0 : (row.file?.page_count ?? 0)
   const ms = row.file?.duration_ms ?? 0
   const status = statusLabel(t, row)
   const badge = statusToBadge(row.status)
-  const facts = [domain, ms > 0 ? formatDuration(t, ms) : null, extent]
+  const facts = [
+    domain,
+    ms > 0 ? formatDuration(t, ms) : null,
+    pages > 0 ? t('content.extent.pages', { count: pages }) : null,
+  ]
     .filter(Boolean)
     .join(' · ')
   return (
@@ -144,7 +157,7 @@ function hostOf(url: string | null | undefined): string | null {
 }
 
 /** Ingest or analysis still under way: the row says so in place. */
-function isReading(row: Asset): boolean {
+function isReading(row: AssetListItem): boolean {
   return (
     row.status === 'pending' ||
     row.status === 'processing' ||
@@ -153,8 +166,36 @@ function isReading(row: Asset): boolean {
   )
 }
 
+/** The table's sort as the server names it, and back. */
+const SORT_OF: Record<string, { asc: AssetSort; desc: AssetSort }> = {
+  title: { asc: 'title', desc: '-title' },
+  updated_at: { asc: 'updated_at', desc: '-updated_at' },
+  // Only most-undecided-first exists: "fewest undecided" is a list of every
+  // asset nobody has read yet, which is not a question anyone asks.
+  ideas: { asc: DEFAULT_SORT, desc: '-ideas_undecided' },
+}
+
+function sortingOf(sort: AssetSort): SortingState {
+  switch (sort) {
+    case 'title':
+      return [{ id: 'title', desc: false }]
+    case '-title':
+      return [{ id: 'title', desc: true }]
+    case 'updated_at':
+      return [{ id: 'updated_at', desc: false }]
+    case '-updated_at':
+      return [{ id: 'updated_at', desc: true }]
+    case '-ideas_undecided':
+      return [{ id: 'ideas', desc: true }]
+    case 'relevance':
+      // Best match first: no column is the order.
+      return []
+  }
+}
+
 type AssetsTableProps = {
-  assets: Asset[]
+  /** The rows loaded so far, in the order the server sorted them. */
+  assets: AssetListItem[]
   /**
    * The campaign whose page this is — rows open its copy of the asset page.
    * Null in the workspace bank, where a document is opened without one.
@@ -162,16 +203,21 @@ type AssetsTableProps = {
   campaignId: string | null
   /**
    * Asks for the row's document to be deleted — it does not delete it. The
-   * list answers with a confirmation naming the document; the whole asset
-   * goes up rather than its id because that dialog needs the title.
+   * list answers with a confirmation naming the document; the whole row goes
+   * up rather than its id because that dialog needs the title.
    */
-  onDelete: (asset: Asset) => void
-  /** Offered by the shared empty state as RESET FILTERS. */
-  onEmptyStateAction?: () => void
+  onDelete: (asset: AssetListItem) => void
+  /** The server's order (CON-374); a header click asks for another. */
+  sort: AssetSort
+  onSortChange: (sort: AssetSort) => void
+  /** The last rows are on screen: fetch the next page, if there is one. */
+  onEndReached?: () => void
+  /** What the table says when there are no rows. */
+  emptyState?: ReactNode
   /** Ids currently ticked. Omitted entirely turns the select column off. */
   selectedIds?: Set<string>
   onToggleRow?: (id: string) => void
-  /** Ticks every row on screen, or clears them if they all already are. */
+  /** Ticks every loaded row, or clears them if they all already are. */
   onToggleAll?: () => void
   /** Reaches the table's own root — it is the grid item its page sizes. */
   className?: string
@@ -181,7 +227,10 @@ function AssetsTableComponent({
   assets,
   campaignId,
   onDelete,
-  onEmptyStateAction,
+  sort,
+  onSortChange,
+  onEndReached,
+  emptyState,
   selectedIds,
   onToggleRow,
   onToggleAll,
@@ -189,28 +238,12 @@ function AssetsTableComponent({
 }: AssetsTableProps) {
   const { t, i18n } = useTranslation()
   const data = assets as AssetRow[]
-  const showGist = useFeatureFlag('asset-list-gist')
 
-  const campaigns = useCampaigns()
-  const held = useMemo(
-    () => assetCampaignIndex(campaigns.data ?? []),
-    [campaigns.data],
-  )
-
-  // The whole backlog, grouped by source asset here rather than asked for
-  // per row; the Ideas inbox reads the same cache.
-  const ideas = useIdeas(null)
-  // Moved on when a postponed idea comes due, so its "Not now" turns
-  // Undecided on a list left open — without re-rendering on an interval.
-  const now = useIdeaClock(ideas.ideas)
-  const ideaCounts = useMemo(
-    () => ideaCountsByAsset(ideas.ideas, now),
-    [ideas.ideas, now],
-  )
+  const { names: campaignNames, ready: campaignsReady } = useCampaignNames()
 
   const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
-  // Against the rows on screen, not the whole selection: while a filter is
-  // narrowing the list the header answers "is everything here ticked?".
+  // Against the loaded rows, not the whole selection: the header answers "is
+  // everything here ticked?", and "everything matching" is the bar's offer.
   const visibleSelected = useMemo(
     () =>
       selectedIds ? assets.filter((a) => selectedIds.has(a.id)).length : 0,
@@ -219,12 +252,26 @@ function AssetsTableComponent({
   const allVisibleSelected =
     assets.length > 0 && visibleSelected === assets.length
 
+  const sorting = useMemo(() => sortingOf(sort), [sort])
+  const handleSortingChange = useCallback(
+    (next: SortingState) => {
+      const first = next[0]
+      if (!first) {
+        onSortChange(DEFAULT_SORT)
+        return
+      }
+      const pair = SORT_OF[first.id]
+      if (pair) onSortChange(first.desc ? pair.desc : pair.asc)
+    },
+    [onSortChange],
+  )
+
   const columnConfigs = useMemo<ColumnConfig<AssetRow>[]>(() => {
     const untitled = t('content.list.untitled')
-    const titleOf = (row: Asset) => listTitle(row, untitled)
+    const titleOf = (row: AssetListItem) => listTitle(row, untitled)
     // Same row, two pages: the campaign's copy keeps the campaign in the URL
     // so its back caret and its delete know where they are.
-    const open = (row: Asset, verdict?: VerdictKey): LinkProps =>
+    const open = (row: AssetListItem, verdict?: VerdictKey): LinkProps =>
       campaignId
         ? {
             to: '/campaigns/$campaignId/assets/$assetId',
@@ -238,10 +285,13 @@ function AssetsTableComponent({
           }
     // On a campaign's own page every row is in that campaign, so the column
     // names the others.
-    const campaignsOf = (row: Asset) =>
-      (held.get(row.id) ?? []).filter((c) => c.id !== campaignId)
-    const countsOf = (row: Asset): IdeaCounts | undefined =>
-      ideaCounts.get(row.id)
+    const campaignsOf = (row: AssetListItem) =>
+      row.campaign_ids
+        .filter((id) => id !== campaignId)
+        .map((id) => ({ id, name: campaignNames.get(id) }))
+        .filter((c): c is { id: string; name: string } => !!c.name)
+    const hasIdeas = (row: AssetListItem) =>
+      Object.values(row.idea_counts).some((n) => n > 0)
 
     return [
       ...(selectable
@@ -287,11 +337,10 @@ function AssetsTableComponent({
         : []),
       {
         id: 'title',
-        accessorFn: (row) => titleOf(row).toLocaleLowerCase(),
         header: t('content.list.title'),
         isAutoSize: true,
         cell: (_value, row) => {
-          const gist = showGist ? row.gist?.trim() : ''
+          const gist = row.gist?.trim()
           return (
             <Link {...open(row)} className={cn(CELL, 'gap-3')}>
               <span className="flex size-8 shrink-0 items-center justify-center">
@@ -301,7 +350,9 @@ function AssetsTableComponent({
                 <span className="table-text break-words whitespace-normal hover:underline">
                   {titleOf(row)}
                 </span>
-                {isReading(row) ? (
+                {row.match ? (
+                  <MatchSnippet match={row.match} />
+                ) : isReading(row) ? (
                   <span className="text-xs text-secondary-foreground">
                     {t('content.list.reading')}
                   </span>
@@ -325,24 +376,20 @@ function AssetsTableComponent({
         size: 196,
         minSize: 160,
         sortDescFirst: true,
-        accessorFn: (row) => countsOf(row)?.waiting ?? -1,
-        cell: (_value, row) => {
-          const counts = countsOf(row)
-          return (
-            <div className={CELL}>
-              {/* Blank while the ideas or the reading are still coming —
-                  "none" is a claim, and it must not be made a beat early. */}
-              {ideas.isLoading || isReading(row) ? null : counts ? (
-                <VerdictPill
-                  counts={counts}
-                  link={(verdict) => open(row, verdict)}
-                />
-              ) : (
-                <Nothing />
-              )}
-            </div>
-          )
-        },
+        cell: (_value, row) => (
+          <div className={CELL}>
+            {/* Blank while the reading is still under way — "none" is a
+                claim, and it must not be made a beat early. */}
+            {isReading(row) ? null : hasIdeas(row) ? (
+              <VerdictPill
+                counts={row.idea_counts}
+                link={(verdict) => open(row, verdict)}
+              />
+            ) : (
+              <Nothing />
+            )}
+          </div>
+        ),
       },
       {
         id: 'updated_at',
@@ -371,15 +418,14 @@ function AssetsTableComponent({
           : t('content.list.campaign'),
         size: 230,
         minSize: 160,
-        accessorFn: (row) =>
-          campaignsOf(row)[0]?.name.toLocaleLowerCase() ?? '',
+        sortable: false,
         cell: (_value, row) => {
           const names = campaignsOf(row)
           return (
             <div className={CELL}>
               {/* Blank until the campaigns land, rather than a dash that
                   claims "in no campaign" for one frame. */}
-              {!campaigns.data ? null : names.length === 0 ? (
+              {!campaignsReady ? null : names.length === 0 ? (
                 <Nothing />
               ) : (
                 <span className="flex min-w-0 flex-col gap-0.5">
@@ -444,11 +490,8 @@ function AssetsTableComponent({
     t,
     i18n.language,
     campaignId,
-    held,
-    campaigns.data,
-    ideaCounts,
-    ideas.isLoading,
-    showGist,
+    campaignNames,
+    campaignsReady,
     onDelete,
     selectable,
     selectedIds,
@@ -476,14 +519,17 @@ function AssetsTableComponent({
       data={data}
       columnConfigs={columnConfigs}
       activeColumns={activeColumns}
-      initialSorting={[{ id: 'updated_at', desc: true }]}
+      sorting={sorting}
+      onSortingChange={handleSortingChange}
+      manualSorting
+      onEndReached={onEndReached}
+      emptyState={emptyState}
       estimatedRowHeight={ROW_HEIGHT}
       measureRows
       overscan={6}
       showFooter={false}
       fillHeight={false}
       className={className}
-      onEmptyStateAction={onEmptyStateAction}
     />
   )
 }

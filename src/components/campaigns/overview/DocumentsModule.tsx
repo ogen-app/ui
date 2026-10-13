@@ -1,8 +1,11 @@
+import { useQuery } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { StatusBadge } from '@/components/ui/status-badge.tsx'
 import { AssetKindTally } from '@/components/content/AssetKindTally'
-import { useAssets } from '@/hooks/useContent'
-import { campaignAssets, seedsWholeBank } from '@/lib/campaignSources'
+import { ASSET_LIST_KEY } from '@/hooks/useContent'
+import { tallyKindFacet } from '@/lib/assetKind'
+import { seedsWholeBank } from '@/lib/campaignSources'
+import { queryAssets } from '@/services/api/content'
 import type { Campaign } from '@/types/campaigns'
 import { CollapsedCard } from './OverviewCard.tsx'
 
@@ -33,14 +36,25 @@ import { CollapsedCard } from './OverviewCard.tsx'
  */
 export function DocumentsModule({ campaign }: { campaign: Campaign }) {
   // The badge is counted from the campaign alone, so it is right before the
-  // asset list arrives — and an id whose asset has since been deleted still
-  // counts in it, until the page below is opened. The breakdown needs the
-  // documents themselves, so it waits; the query is the one the Assets page
-  // and the workspace bank already share, so this is usually a cache read
-  // rather than a fetch this screen paid for.
+  // breakdown arrives — and an id whose asset has since been deleted still
+  // counts in it. The breakdown is the server's: the Assets query scoped to
+  // this campaign, asked for its kind and status counts and one row, so the
+  // card costs the same for four documents as for four hundred.
   const count = campaign.asset_ids.length
-  const { data: assets } = useAssets()
-  const held = assets ? campaignAssets(assets, campaign) : []
+  const breakdown = useQuery({
+    queryKey: [...ASSET_LIST_KEY, 'breakdown', campaign.id],
+    queryFn: () =>
+      queryAssets({
+        scope_campaign: campaign.id,
+        facets: 'kind,status',
+        limit: '1',
+      }),
+    enabled: count > 0 && !seedsWholeBank(campaign),
+  })
+  const facets = breakdown.data?.facets
+  const tally = facets?.kind ? tallyKindFacet(facets.kind) : []
+  const status = (value: string) =>
+    facets?.status?.find((f) => f.value === value)?.count ?? 0
 
   // A campaign nobody has opened since the whole-bank mode was retired still
   // generates from every document in the workspace — "brief alone" would be
@@ -80,10 +94,14 @@ export function DocumentsModule({ campaign }: { campaign: Campaign }) {
     >
       {/* A bar the height of the row rather than nothing, so the card does
           not grow under the pointer as the list lands. */}
-      {!assets ? (
+      {!breakdown.data ? (
         <Skeleton className="h-5 w-48" />
-      ) : held.length > 0 ? (
-        <AssetKindTally assets={held} />
+      ) : tally.length > 0 ? (
+        <AssetKindTally
+          tally={tally}
+          waiting={status('pending')}
+          unreadable={status('failed') + status('partial')}
+        />
       ) : (
         <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
           None of its documents still exist.

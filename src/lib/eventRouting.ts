@@ -2,7 +2,7 @@ import type { QueryClient, QueryFilters } from '@tanstack/react-query'
 import { postKey } from '@/hooks/usePost'
 import { postAssessmentKey } from '@/hooks/usePostAssessment'
 import { campaignKey } from '@/hooks/useCampaigns'
-import { ASSETS_KEY, assetKey } from '@/hooks/useContent'
+import { ASSETS_KEY, ASSET_LIST_KEY, assetKey } from '@/hooks/useContent'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
@@ -230,8 +230,14 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
       // `analysis_status`; the ideas it distilled are Ideas-inbox rows, so
       // every ideas list is stale too. The same event also arrives on the
       // campaign's topic for a campaign lens — this one is enough.
+      // The list rows carry the analysis's status, gist and idea counts
+      // (CON-374), so the lists are stale with it.
       if (event.type === 'asset.analysis.updated') {
-        return [{ queryKey: assetKey(subject.id) }, IDEA_LISTS]
+        return [
+          { queryKey: assetKey(subject.id) },
+          { queryKey: ASSET_LIST_KEY },
+          IDEA_LISTS,
+        ]
       }
       // A document read in the background — a scraped page (CON-222), and the
       // PDF pipeline once it publishes these too. The event carries the status

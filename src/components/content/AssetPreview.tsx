@@ -5,8 +5,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { assetPreviewUrl } from '@/lib/assetPreview'
-import type { Asset } from '@/types/content'
+import { assetPreviewUrl, type PreviewSource } from '@/lib/assetPreview'
 
 /**
  * What an image looks like, in the list's kind slot (CON-370) — and larger
@@ -25,7 +24,7 @@ export function AssetPreview({
   asset,
   fallback = null,
 }: {
-  asset: Asset
+  asset: PreviewSource
   fallback?: ReactNode
 }) {
   const url = assetPreviewUrl(asset)

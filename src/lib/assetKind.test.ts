@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assetKind, assetScreen, tallyAssetKinds } from './assetKind'
+import { assetKind, assetScreen, tallyKindFacet } from './assetKind'
 import type { AssetType } from '@/types/content'
 
 describe('assetKind', () => {
@@ -32,38 +32,44 @@ describe('assetKind', () => {
   })
 })
 
-describe('tallyAssetKinds', () => {
-  it('counts each kind', () => {
+describe('tallyKindFacet', () => {
+  it('folds the server kinds into the tally and sums them', () => {
     expect(
-      tallyAssetKinds([
-        { type: 'MD' },
-        { type: null },
-        { type: 'PDF' },
-        { type: 'IMG' },
-        { type: 'IMG' },
+      tallyKindFacet([
+        { value: 'note', count: 2 },
+        { value: 'pdf', count: 1 },
+        { value: 'spreadsheet', count: 1 },
+        { value: 'csv', count: 2 },
+        { value: 'image', count: 2 },
       ]),
     ).toEqual([
       { kind: 'text', count: 2 },
       { kind: 'pdf', count: 1 },
+      { kind: 'document', count: 3 },
       { kind: 'image', count: 2 },
     ])
   })
 
-  // Fixed order, whatever order the library arrived in — the row is meant to
+  // Fixed order, whatever order the facet arrived in — the row is meant to
   // be recognised at a glance rather than read.
   it('keeps the reading order regardless of the input order', () => {
     expect(
-      tallyAssetKinds([{ type: 'IMG' }, { type: 'URL' }, { type: 'MD' }]).map(
-        (entry) => entry.kind,
-      ),
+      tallyKindFacet([
+        { value: 'image', count: 1 },
+        { value: 'web', count: 1 },
+        { value: 'note', count: 1 },
+      ]).map((entry) => entry.kind),
     ).toEqual(['text', 'page', 'image'])
   })
 
   it('drops the kinds nothing falls into', () => {
-    expect(tallyAssetKinds([{ type: 'PDF' }])).toEqual([
-      { kind: 'pdf', count: 1 },
-    ])
-    expect(tallyAssetKinds([])).toEqual([])
+    expect(
+      tallyKindFacet([
+        { value: 'pdf', count: 1 },
+        { value: 'audio', count: 0 },
+      ]),
+    ).toEqual([{ kind: 'pdf', count: 1 }])
+    expect(tallyKindFacet([])).toEqual([])
   })
 })
 

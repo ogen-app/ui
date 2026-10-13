@@ -1,11 +1,16 @@
+import { useCallback } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { ContentPage } from '@/components/content/ContentPage'
 import { useCampaign } from '@/hooks/useCampaigns'
+import { parseAssetListSearch, type AssetListSearch } from '@/lib/assetFilter'
 
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/assets',
 )({
   component: CampaignAssets,
+  // The list's filter and sort, as on `/assets` — see `lib/assetFilter`.
+  // `campaign` never reaches the request here: the campaign is the scope.
+  validateSearch: parseAssetListSearch,
 })
 
 /**
@@ -23,8 +28,21 @@ export const Route = createFileRoute(
 function CampaignAssets() {
   const { campaignId } = Route.useParams()
   const { data: campaign } = useCampaign(campaignId)
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
+  const onSearchChange = useCallback(
+    (next: AssetListSearch) => void navigate({ search: next, replace: true }),
+    [navigate],
+  )
   // The layout above has already handled loading and failure for this
   // campaign; this only renders once it is here.
   if (!campaign) return null
-  return <ContentPage key={campaign.id} campaign={campaign} />
+  return (
+    <ContentPage
+      key={campaign.id}
+      campaign={campaign}
+      search={search}
+      onSearchChange={onSearchChange}
+    />
+  )
 }

@@ -13,9 +13,7 @@ import type { Asset, AssetFile } from '@/types/content'
  * Video is the missing fourth, for the reason images were the missing third
  * until the ingest path existed: nothing uploads one.
  */
-export function assetPreviewUrl(
-  asset: Pick<Asset, 'file' | 'images'>,
-): string | null {
+export function assetPreviewUrl(asset: PreviewSource): string | null {
   const file = asset.file
   if (file?.thumbnail_url) return file.thumbnail_url
   // An image has no thumbnail, because the job that would render one isn't
@@ -32,6 +30,18 @@ export function assetPreviewUrl(
   // The page's own order, which the scrape preserves — the first image in a
   // document is the one that stands for it far more often than any later one.
   return asset.images?.find((image) => image.url)?.url ?? null
+}
+
+/**
+ * What a preview reads off an asset — enough of it that a list row, which
+ * carries no images and only part of its file, is one too.
+ */
+export type PreviewSource = {
+  file?: Pick<
+    AssetFile,
+    'mime_type' | 'url' | 'normalized_url' | 'thumbnail_url'
+  > | null
+  images?: Asset['images']
 }
 
 /**

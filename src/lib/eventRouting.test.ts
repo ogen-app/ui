@@ -144,7 +144,7 @@ describe('invalidationsFor', () => {
       status: 'ready',
       ideas_count: 7,
     })
-    expect(keys(e)).toEqual([['assets', 'a1'], ['ideas']])
+    expect(keys(e)).toEqual([['assets', 'a1'], ['assets', 'list'], ['ideas']])
   })
 
   it('ignores an analysis event on the campaign topic', () => {

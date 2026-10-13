@@ -25,6 +25,18 @@ function asset(id: string, tags: Tag[]): Asset {
   }
 }
 
+/** What the list hands the dialog: each tag on the selection, and on how many. */
+function carried(assets: Asset[]) {
+  const counts = new Map<string, { tag: Tag; count: number | null }>()
+  for (const asset of assets)
+    for (const t of asset.tags) {
+      const seen = counts.get(t.id)
+      if (seen) seen.count = (seen.count ?? 0) + 1
+      else counts.set(t.id, { tag: t, count: 1 })
+    }
+  return [...counts.values()]
+}
+
 const BRAND = tag('t1', 'Brand')
 const RESEARCH = tag('t2', 'Research')
 
@@ -33,7 +45,8 @@ function open(assets: Asset[], onConfirm = vi.fn()) {
     onConfirm,
     ui: (
       <TagDocumentsDialog
-        assets={assets}
+        count={assets.length}
+        present={carried(assets)}
         isOpen
         onClose={() => {}}
         onConfirm={onConfirm}

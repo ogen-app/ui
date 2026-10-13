@@ -7,18 +7,17 @@ import {
 import { campaignKey } from '@/hooks/useCampaigns'
 import { queryClient } from '@/lib/queryClient'
 import type { Campaign } from '@/types/campaigns'
-import type { Asset } from '@/types/content'
 
 vi.mock('@/services/api/campaigns', () => ({
   addCampaignAssets: vi.fn(),
   removeCampaignAsset: vi.fn(),
   getCampaign: vi.fn(),
 }))
-vi.mock('@/services/api/content', () => ({ listAssets: vi.fn() }))
+vi.mock('@/services/api/content', () => ({ queryAssetIds: vi.fn() }))
 
 const { addCampaignAssets, getCampaign, removeCampaignAsset } =
   await import('@/services/api/campaigns')
-const { listAssets } = await import('@/services/api/content')
+const { queryAssetIds } = await import('@/services/api/content')
 
 /** Only the three fields any of this reads. */
 function campaign(useAssets: boolean, assetIds: string[]): Campaign {
@@ -29,13 +28,13 @@ function campaign(useAssets: boolean, assetIds: string[]): Campaign {
   } as unknown as Campaign
 }
 
-function bank(...ids: string[]): Asset[] {
-  return ids.map((id) => ({ id })) as unknown as Asset[]
+function bank(...ids: string[]): string[] {
+  return ids
 }
 
 beforeEach(() => {
   vi.mocked(getCampaign).mockResolvedValue(campaign(true, ['x']))
-  vi.mocked(listAssets).mockResolvedValue(bank())
+  vi.mocked(queryAssetIds).mockResolvedValue(bank())
   // Both endpoints answer with the campaign, which is what the cache takes.
   vi.mocked(addCampaignAssets).mockResolvedValue(campaign(true, ['written']))
   vi.mocked(removeCampaignAsset).mockResolvedValue(campaign(false, []))
@@ -54,7 +53,7 @@ describe('attaching documents', () => {
     // The point of CON-233: no read-modify-write, so nothing here restates a
     // set it read a moment ago and no queue is needed to stop two of these
     // losing each other.
-    expect(listAssets).not.toHaveBeenCalled()
+    expect(queryAssetIds).not.toHaveBeenCalled()
   })
 
   it('sends nothing at all for an empty list', async () => {
@@ -102,7 +101,7 @@ describe('a campaign left in the old whole-bank mode', () => {
   // to show it happened.
   beforeEach(() => {
     vi.mocked(getCampaign).mockResolvedValue(campaign(true, []))
-    vi.mocked(listAssets).mockResolvedValue(bank('old1', 'old2'))
+    vi.mocked(queryAssetIds).mockResolvedValue(bank('old1', 'old2'))
   })
 
   it('carries the bank along with the new document, in one call', async () => {
@@ -126,7 +125,7 @@ describe('a campaign left in the old whole-bank mode', () => {
   })
 
   it('still detaches when nothing is left to pin to', async () => {
-    vi.mocked(listAssets).mockResolvedValue(bank('old1'))
+    vi.mocked(queryAssetIds).mockResolvedValue(bank('old1'))
 
     await removeFromCampaign('c1', ['old1'])
 
@@ -149,7 +148,7 @@ describe('a campaign left in the old whole-bank mode', () => {
 
     expect(getCampaign).toHaveBeenCalledWith('c1')
     expect(addCampaignAssets).toHaveBeenCalledWith('c1', ['new1'])
-    expect(listAssets).not.toHaveBeenCalled()
+    expect(queryAssetIds).not.toHaveBeenCalled()
   })
 
   it('pins on sight of the page', async () => {
@@ -159,7 +158,7 @@ describe('a campaign left in the old whole-bank mode', () => {
   })
 
   it('leaves an empty bank alone', async () => {
-    vi.mocked(listAssets).mockResolvedValue(bank())
+    vi.mocked(queryAssetIds).mockResolvedValue(bank())
 
     await seedFromWholeBank('c1')
 
@@ -203,7 +202,7 @@ describe('an ordinary campaign', () => {
 
     await seedFromWholeBank('c1')
 
-    expect(listAssets).not.toHaveBeenCalled()
+    expect(queryAssetIds).not.toHaveBeenCalled()
     expect(addCampaignAssets).not.toHaveBeenCalled()
   })
 })

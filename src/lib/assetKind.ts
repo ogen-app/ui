@@ -56,21 +56,36 @@ export const ASSET_KINDS: AssetKind[] = [
 /** One kind, and how many of them there are. */
 export type AssetKindCount = { kind: AssetKind; count: number }
 
+/** The server's finer kinds (CON-374), folded into the tally's six. */
+const FOLD: Record<string, AssetKind> = {
+  note: 'text',
+  web: 'page',
+  pdf: 'pdf',
+  document: 'document',
+  spreadsheet: 'document',
+  csv: 'document',
+  presentation: 'document',
+  image: 'image',
+  audio: 'audio',
+}
+
 /**
- * A library as one line: how many of each kind of thing is in it.
+ * A library as one line: how many of each kind of thing is in it, from the
+ * Assets query's `kind` facet — so a campaign of four hundred documents is
+ * counted by the server rather than downloaded to be counted.
  *
  * Kinds nothing falls into are dropped rather than shown as zero. A zero is a
  * fact about the shape of our type column, not about the library — "0 images"
  * on a workspace that has never uploaded one is an absence nobody was
  * wondering about, and four of them would bury the counts that are real.
  */
-export function tallyAssetKinds(
-  assets: Pick<Asset, 'type'>[],
+export function tallyKindFacet(
+  facet: readonly { value: string; count: number }[],
 ): AssetKindCount[] {
   const counts = new Map<AssetKind, number>()
-  for (const asset of assets) {
-    const kind = assetKind(asset)
-    counts.set(kind, (counts.get(kind) ?? 0) + 1)
+  for (const { value, count } of facet) {
+    const kind = FOLD[value] ?? 'text'
+    if (count > 0) counts.set(kind, (counts.get(kind) ?? 0) + count)
   }
   return ASSET_KINDS.filter((kind) => counts.has(kind)).map((kind) => ({
     kind,

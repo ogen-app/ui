@@ -7,7 +7,9 @@ import { ASSET_KIND_ICON } from '@/components/content/assetKindIcons'
 import type { AssetKind } from '@/lib/assetKind'
 import { Dropzone } from './Dropzone'
 import { useUploadStore } from '@/stores/uploadStore'
-import { useAssets } from '@/hooks/useContent'
+import { useQuery } from '@tanstack/react-query'
+import { ASSET_LIST_KEY } from '@/hooks/useContent'
+import { findAssetsByChecksum } from '@/services/api/content'
 import { formatTitle } from '@/lib'
 import { sha256Hex } from '@/lib/fileChecksum'
 import { uploadErrorMessage } from '@/lib/uploadError'
@@ -18,7 +20,7 @@ import {
   type UploadKind,
   type UploadValidation,
 } from '@/lib/assetStatus'
-import type { Asset } from '@/types/content'
+import type { AssetListItem } from '@/types/assetList'
 
 /**
  * The largest image the modal hashes to look for a duplicate.
@@ -75,23 +77,31 @@ export function UploadModal({
   const [checksums, setChecksums] = useState<Map<File, string>>(new Map())
 
   /**
-   * Every image the workspace already holds, by checksum.
+   * The images the workspace already holds under these checksums.
    *
    * Workspace-wide rather than this campaign's, because that is the scope the
    * server dedupes in: a document another campaign uploaded is the row a
-   * duplicate here would resolve to. Only fetched while the modal is open —
-   * the list is normally already in cache behind it, and on a post screen it
-   * isn't.
+   * duplicate here would resolve to. Asked by checksum (CON-374) rather than
+   * by loading the bank and looking, so it costs one small request per batch
+   * of staged images, whatever the size of the workspace.
    */
-  const { data: assets } = useAssets({ enabled: isOpen })
+  const sums = useMemo(
+    () => [...new Set(checksums.values())].sort(),
+    [checksums],
+  )
+  const existing = useQuery({
+    queryKey: [...ASSET_LIST_KEY, 'checksum', sums],
+    queryFn: () => findAssetsByChecksum(sums),
+    enabled: isOpen && sums.length > 0,
+  })
   const byChecksum = useMemo(() => {
-    const map = new Map<string, Asset>()
-    for (const asset of assets ?? []) {
+    const map = new Map<string, AssetListItem>()
+    for (const asset of existing.data ?? []) {
       const sum = asset.file?.checksum_sha256
       if (sum) map.set(sum.toLowerCase(), asset)
     }
     return map
-  }, [assets])
+  }, [existing.data])
 
   const reset = () => {
     setStaged([])

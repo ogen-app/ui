@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@tanstack/react-router'
 import {
@@ -20,14 +20,30 @@ import {
 import { UploadModal } from '@/components/uploads/UploadModal'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
-import { useAssets, useCreateAsset, useDeleteAsset } from '@/hooks/useContent'
+import {
+  useAssetList,
+  useCreateAsset,
+  useDeleteAssets,
+} from '@/hooks/useContent'
+import {
+  effectiveSort,
+  facetsFor,
+  filterFromSearch,
+  isFilterActive,
+  searchFromFilter,
+  toRequestParams,
+  viewerTimeZone,
+  type AssetFilter,
+  type AssetListSearch,
+  type AssetSort,
+} from '@/lib/assetFilter'
 import { uploadLimitLines } from '@/lib/assetStatus'
 import {
   addToCampaign,
   removeFromCampaign,
   seedFromWholeBank,
 } from '@/lib/campaignMembership'
-import { campaignAssets, seedsWholeBank } from '@/lib/campaignSources'
+import { seedsWholeBank } from '@/lib/campaignSources'
 import { useUploadStore } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
 import type { Campaign } from '@/types/campaigns'
@@ -70,13 +86,57 @@ import { awaiting } from '@/lib/fetched'
  * workspace bank belongs to no campaign and cannot be moved into one. The bank
  * is where such documents are visible — which is the reason it is switched back
  * on — not a staging area they travel out of.
+ *
+ * **What is listed is the server's answer to the URL** (CON-371/374). The
+ * route hands over its search params, which are the filter; the filter is
+ * turned into the request; and the rows, the totals and every count in the
+ * filter bar come back from it. Nothing on this page narrows, counts or sorts
+ * a list itself. On a campaign's page the campaign is the request's scope
+ * (`scope_campaign`), so its totals are the campaign's and Campaign is not a
+ * field.
  */
-export function ContentPage({ campaign }: { campaign: Campaign | null }) {
+export function ContentPage({
+  campaign,
+  search,
+  onSearchChange,
+}: {
+  campaign: Campaign | null
+  /** The route's search params — the list's filter and sort. */
+  search: AssetListSearch
+  onSearchChange: (next: AssetListSearch) => void
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const assets = useAssets()
   const createAsset = useCreateAsset()
-  const deleteAsset = useDeleteAsset()
+  const deleteAssets = useDeleteAssets()
+
+  const filter = useMemo(() => filterFromSearch(search), [search])
+  const sort = effectiveSort(filter, search.sort)
+  const scope = campaign?.id ?? null
+  // The day, not the instant: a preset like "Last 7 days" resolves to a
+  // midnight, so the request — and the Query key — only change at midnight.
+  const today = new Date().toDateString()
+  const paramsFor = useCallback(
+    (next: AssetFilter) =>
+      toRequestParams(next, {
+        scopeCampaign: scope,
+        sort: effectiveSort(next, search.sort),
+        now: new Date(today),
+        timeZone: viewerTimeZone(),
+      }),
+    [scope, search.sort, today],
+  )
+  const params = useMemo(() => paramsFor(filter), [paramsFor, filter])
+  const list = useAssetList(params, { facets: facetsFor(scope) })
+
+  const setFilter = useCallback(
+    (next: AssetFilter) => onSearchChange(searchFromFilter(next, search.sort)),
+    [onSearchChange, search.sort],
+  )
+  const setSort = useCallback(
+    (next: AssetSort) => onSearchChange(searchFromFilter(filter, next)),
+    [onSearchChange, filter],
+  )
 
   const enqueueUploads = useUploadStore((s) => s.enqueue)
   const uploadItems = useUploadStore((s) => s.items)
@@ -117,15 +177,6 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
    * already arrives as a sentence under the upload's name (CON-295).
    */
   const bankGate = useUpgradeGate('content_bank_assets')
-
-  /** The campaign's documents, or — in the bank — every document there is. */
-  const shown = useMemo(
-    () =>
-      campaign
-        ? campaignAssets(assets.data ?? [], campaign)
-        : (assets.data ?? []),
-    [assets.data, campaign],
-  )
 
   // In transit, or refused on the way in. Anything the server has already
   // accepted is an asset by now, and shows in the list as a `processing` row
@@ -238,7 +289,9 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
    * (CON-210 phase 1), and a second copy of the same page would be worse.
    */
   const handleWebPage = (asset: Asset) => {
-    const alreadyHere = shown.some((a) => a.id === asset.id)
+    const alreadyHere = campaign
+      ? campaign.asset_ids.includes(asset.id)
+      : list.rows.some((a) => a.id === asset.id)
     const announce = () => {
       if (alreadyHere) {
         toast.info('Re-reading that page', {
@@ -267,36 +320,30 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
   /**
    * Deleting documents deletes them everywhere, and this is the only way in.
    *
-   * One entry point for both gestures — a row's bin and a whole ticked
-   * selection — because a row is a selection of one. The single-row path that
-   * used to sit beside this one skipped the confirmation as well as the
-   * detach, which is how the cheapest click on the screen became the only
+   * One entry point for every gesture — a row's bin, a ticked selection, and
+   * "all 124 matching" — because a row is a selection of one. The single-row
+   * path that used to sit beside this one skipped the confirmation as well as
+   * the detach, which is how the cheapest click on the screen became the only
    * unrecoverable one.
    *
-   * The requests fan out and any of them can fail, so the detach and the toast
-   * are built from what actually succeeded: `allSettled`, then the membership
-   * write for the ids that are really gone. It is handed the whole list rather
-   * than called per row because the answer for one document depends on the
-   * others — detaching the last one is what turns a campaign's generation off
-   * (see `lib/campaignMembership`).
+   * Any of the requests can fail, so the detach and the toasts are built from
+   * what actually went: the membership write for the ids that are really gone,
+   * handed the whole list rather than called per row because the answer for
+   * one document depends on the others — detaching the last one is what turns
+   * a campaign's generation off (see `lib/campaignMembership`).
    *
    * The detach only names the campaign whose page this is, because that is the
    * only membership list this page can see. Other campaigns keep the id, which
-   * is harmless — `campaignAssets` matches ids against documents that exist, so
-   * an id with nothing behind it simply doesn't appear — and it stops being a
-   * question at all once the backend scopes assets properly (CON-210 phase 2).
-   *
-   * Failures raise their own toasts through the mutation cache, so nothing is
-   * said about them here beyond leaving them out of the count.
+   * is harmless — an id with nothing behind it simply doesn't appear.
    */
   const handleDeleteMany = async (ids: string[]) => {
-    const results = await Promise.allSettled(
-      ids.map((id) => deleteAsset.mutateAsync(id)),
-    )
-    const gone = ids.filter((_, i) => results[i].status === 'fulfilled')
-    if (gone.length === 0) return
-    if (campaign) void removeFromCampaign(campaign.id, gone)
-    toast.success(t('content.delete.done', { count: gone.length }))
+    const { gone, failed } = await deleteAssets.mutateAsync(ids)
+    if (gone.length > 0) {
+      if (campaign) void removeFromCampaign(campaign.id, gone)
+      toast.success(t('content.delete.done', { count: gone.length }))
+    }
+    if (failed.length > 0)
+      toast.error(t('content.delete.failed', { count: failed.length }))
   }
 
   const scopeName = campaign
@@ -382,9 +429,11 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
             documents — with three buttons inviting the user to file the
             first. An empty list is a claim, and this is the only place that
             gets to make it. */}
-        {awaiting(assets) ? (
+        {awaiting(list.query) ? (
           <PageLoader />
-        ) : assets.isError ? (
+        ) : list.query.isError &&
+          !list.query.data &&
+          !isFilterActive(filter) ? (
           <PageError
             header={
               campaign
@@ -395,7 +444,13 @@ export function ContentPage({ campaign }: { campaign: Campaign | null }) {
         ) : (
           <ContentList
             campaignId={campaignId}
-            assets={shown}
+            list={list}
+            params={params}
+            filter={filter}
+            onFilterChange={setFilter}
+            sort={sort}
+            onSortChange={setSort}
+            paramsFor={paramsFor}
             uploads={uploads}
             onDeleteMany={handleDeleteMany}
             onWrite={write}

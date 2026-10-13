@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -51,7 +52,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   emptyStateMessage,
   emptyStateActionLabel,
   onEmptyStateAction,
+  emptyState,
   loading = false,
+  manualSorting = false,
+  onEndReached,
 }: VirtualTableProps<TData>) {
   // Controlled when the caller passes `sorting`, otherwise the table owns it.
   // Whoever owns it, the header below only ever calls `setSorting`.
@@ -240,7 +244,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
     onGlobalFilterChange: enableGlobalFilter ? setGlobalFilter : undefined,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: enableFiltering ? getFilteredRowModel() : undefined,
-    getSortedRowModel: getSortedRowModel(),
+    // A server-sorted table draws its rows in the order they came, and the
+    // header only reports the click.
+    manualSorting,
+    getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
     state: {
       sorting,
       ...(enableFiltering && { columnFilters }),
@@ -260,6 +267,15 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
 
   const virtualRows = rowVirtualizer.getVirtualItems()
   const totalSize = rowVirtualizer.getTotalSize()
+
+  // The last rendered row is within the overscan of the end: time for the next
+  // page. Asked again whenever the rows grow, so a page too short to scroll
+  // still pulls the one after it.
+  const lastRendered = virtualRows[virtualRows.length - 1]?.index ?? -1
+  useEffect(() => {
+    if (!onEndReached || rows.length === 0) return
+    if (lastRendered >= rows.length - 1 - overscan) onEndReached()
+  }, [onEndReached, lastRendered, rows.length, overscan])
 
   // Calculate dynamic column widths based on container size
   const {
@@ -495,11 +511,13 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
           {/* Empty state */}
           {!hasData && !loading && (
             <div className="flex flex-1 items-center justify-center w-full">
-              <TableEmptyState
-                message={emptyStateMessage}
-                actionLabel={emptyStateActionLabel}
-                onAction={onEmptyStateAction}
-              />
+              {emptyState ?? (
+                <TableEmptyState
+                  message={emptyStateMessage}
+                  actionLabel={emptyStateActionLabel}
+                  onAction={onEmptyStateAction}
+                />
+              )}
             </div>
           )}
 

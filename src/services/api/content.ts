@@ -8,13 +8,94 @@ import type {
   UpdateAssetPayload,
 } from '@/types/content'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
+import type {
+  AssetListItem,
+  AssetListPage,
+  AssetQueryParams,
+} from '@/types/assetList'
 import { ApiError } from './errors'
 import { apiJson, apiVoid } from './http'
 
 const BASE = '/api/content-bank/assets'
 
-export function listAssets(): Promise<Asset[]> {
-  return apiJson<Asset[]>(BASE, 'Unable to fetch assets')
+/** The list row as it arrives: `undecided` rather than the client's `waiting`. */
+type AssetListItemBody = Omit<AssetListItem, 'idea_counts'> & {
+  idea_counts?: { undecided: number; yes: number; later: number; no: number }
+}
+
+type AssetListPageBody = Omit<AssetListPage, 'assets'> & {
+  assets: AssetListItemBody[] | null
+}
+
+function parseListItem(body: AssetListItemBody): AssetListItem {
+  const counts = body.idea_counts
+  return {
+    ...body,
+    tags: body.tags ?? [],
+    campaign_ids: body.campaign_ids ?? [],
+    idea_counts: {
+      waiting: counts?.undecided ?? 0,
+      yes: counts?.yes ?? 0,
+      later: counts?.later ?? 0,
+      no: counts?.no ?? 0,
+    },
+  }
+}
+
+function listUrl(params: AssetQueryParams): string {
+  const query = new URLSearchParams(params).toString()
+  return query ? `${BASE}?${query}` : BASE
+}
+
+/**
+ * One page of the Assets query (CON-374): filters, counts and sort all
+ * applied on the server. `params` is the query string as the endpoint takes
+ * it — the same keys the Assets page keeps in its URL.
+ */
+export async function queryAssets(
+  params: AssetQueryParams,
+): Promise<AssetListPage> {
+  const body = await apiJson<AssetListPageBody>(
+    listUrl(params),
+    'Unable to fetch assets',
+  )
+  return {
+    ...body,
+    assets: (body.assets ?? []).map(parseListItem),
+    facets: body.facets ?? {},
+  }
+}
+
+/**
+ * Every asset id the same filters match, unpaginated, in sort order — for
+ * "select all N matching" and for pinning a whole-bank campaign.
+ */
+export async function queryAssetIds(
+  params: AssetQueryParams,
+): Promise<string[]> {
+  const rest = Object.fromEntries(
+    Object.entries(params).filter(
+      ([key]) => key !== 'cursor' && key !== 'limit' && key !== 'facets',
+    ),
+  )
+  const body = await apiJson<{ ids: string[] | null }>(
+    listUrl({ ...rest, ids_only: 'true' }),
+    'Unable to fetch assets',
+  )
+  return body.ids ?? []
+}
+
+/**
+ * The assets whose file has one of these SHA-256 sums — what an upload of the
+ * same image would resolve to, since the server dedupes images by checksum
+ * within a workspace.
+ */
+export async function findAssetsByChecksum(
+  sums: string[],
+): Promise<AssetListItem[]> {
+  if (sums.length === 0) return []
+  const page = await queryAssets({ checksum: sums.join(','), limit: '200' })
+  return page.assets
 }
 
 export function getAsset(id: string): Promise<Asset> {

@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
-import { tallyAssetKinds } from '@/lib/assetKind'
-import { retrievability } from '@/lib/campaignSources'
-import type { Asset } from '@/types/content'
+import type { AssetKindCount } from '@/lib/assetKind'
 import { ASSET_KIND_ICON, assetKindNoun } from './assetKindIcons'
 
 /**
@@ -31,14 +29,19 @@ import { ASSET_KIND_ICON, assetKindNoun } from './assetKindIcons'
  * is one click below it, where the names belong.
  */
 export function AssetKindTally({
-  assets,
+  tally,
+  waiting,
+  unreadable,
   className,
 }: {
-  assets: Asset[]
+  tally: AssetKindCount[]
+  /** Documents still being read. */
+  waiting: number
+  /** Documents that failed, or were only partly read. */
+  unreadable: number
   className?: string
 }) {
   const { t } = useTranslation()
-  const tally = tallyAssetKinds(assets)
   if (tally.length === 0) return null
 
   // The tick these rows replaced said whether the app could actually write
@@ -47,12 +50,6 @@ export function AssetKindTally({
   // So the two states that are not "ready" keep their own words under the
   // tiles — muted, because they are a temporary state and a failure, not a
   // fifth kind of thing.
-  const waiting = assets.filter(
-    (asset) => retrievability(asset.status) === 'waiting',
-  ).length
-  const unreadable = assets.filter(
-    (asset) => retrievability(asset.status) === 'never',
-  ).length
   const notes = [
     waiting > 0 ? t('content.kinds.waiting', { count: waiting }) : null,
     unreadable > 0

@@ -3,7 +3,7 @@ import {
   getCampaign,
   removeCampaignAsset,
 } from '@/services/api/campaigns'
-import { listAssets } from '@/services/api/content'
+import { queryAssetIds } from '@/services/api/content'
 import { campaignKey } from '@/hooks/useCampaigns'
 import { seedsWholeBank } from '@/lib/campaignSources'
 import { queryClient } from '@/lib/queryClient'
@@ -53,7 +53,7 @@ async function wholeBankIds(campaignId: string): Promise<string[] | null> {
   const cached = queryClient.getQueryData<Campaign>(campaignKey(campaignId))
   if (cached && !seedsWholeBank(cached)) return null
   if (!seedsWholeBank(await getCampaign(campaignId))) return null
-  return (await listAssets()).map((asset) => asset.id)
+  return queryAssetIds({})
 }
 
 /**
@@ -68,6 +68,9 @@ async function wholeBankIds(campaignId: string): Promise<string[] | null> {
 function land(campaign: Campaign): void {
   queryClient.setQueryData(campaignKey(campaign.id), campaign)
   queryClient.invalidateQueries({ queryKey: ['campaigns'] })
+  // The rows say which campaigns hold them, and a campaign's page is scoped
+  // to its set (CON-374), so every asset list is stale too.
+  queryClient.invalidateQueries({ queryKey: ['assets', 'list'] })
 }
 
 /**

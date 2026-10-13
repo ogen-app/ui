@@ -18,6 +18,7 @@ import {
   type IdeaVerdict,
 } from '@/lib/ideas'
 import { awaiting } from '@/lib/fetched'
+import { ASSET_LIST_KEY } from './useContent'
 
 /**
  * Ideas' data layer — the list, and the five things you can do to it.
@@ -87,6 +88,9 @@ export function useIdeaWriter(campaignId: string | null = null) {
         toast.error(t('ideas.saveFailed'))
       } finally {
         void qc.invalidateQueries({ queryKey: key })
+        // An asset row counts its ideas per verdict (CON-374), and the
+        // Assets list filters and sorts by them.
+        void qc.invalidateQueries({ queryKey: ASSET_LIST_KEY })
       }
     },
     [key, qc, t],

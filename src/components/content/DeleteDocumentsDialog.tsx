@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
-import type { Asset } from '@/types/content'
-
 type Props = {
-  /** What is about to be deleted — one row's document, or a whole selection. */
-  assets: Asset[]
+  /** How many documents are about to go — one row, a selection, or every match. */
+  count: number
+  /** The document's title, when it is one — the dialog names it. */
+  title: string | null
   /** The campaign whose page this is — null in the workspace bank. */
   campaignId: string | null
   isOpen: boolean
@@ -31,10 +31,12 @@ type Props = {
  * separating a misclick from the delete that was meant, and it costs a reader
  * nothing to check. A selection can't be named — the names would be a list —
  * so it says how many, which is what a reader checks against what they think
- * they ticked.
+ * they ticked — and "all 124 matching" reaches past the rows on screen, so
+ * the count is the only honest description of it.
  */
 export function DeleteDocumentsDialog({
-  assets,
+  count,
+  title: named,
   campaignId,
   isOpen,
   onClose,
@@ -43,8 +45,7 @@ export function DeleteDocumentsDialog({
 }: Props) {
   const { t } = useTranslation()
 
-  const count = assets.length
-  const title = count === 1 ? assets[0].title.trim() : ''
+  const title = count === 1 ? (named ?? '') : ''
 
   return (
     <ModalContainer
