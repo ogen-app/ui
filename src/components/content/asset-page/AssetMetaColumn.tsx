@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { DownloadSimpleIcon } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
+import { DownloadSimpleIcon, PencilSimpleIcon } from '@phosphor-icons/react'
 import { AssetTitle } from '@/components/content/AssetTitle'
 import {
   ASSET_KIND_ICON,
@@ -11,7 +10,7 @@ import {
 import { useAudioStatus } from '@/hooks/useContent'
 import { useWorkspaceMembers } from '@/hooks/useWorkspaces'
 import { cn } from '@/lib'
-import { metaStatus, type MetaStatus } from '@/lib/assetAnalysis'
+import { metaStatus, readableTitle, type MetaStatus } from '@/lib/assetAnalysis'
 import { extentLabel } from '@/lib/assetExtent'
 import { assetKind } from '@/lib/assetKind'
 import { formatBytes, isTerminalStatus } from '@/lib/assetStatus'
@@ -26,6 +25,8 @@ import { MetaCampaigns } from './MetaCampaigns'
 type Props = {
   asset: Asset
   lenses: AssetAnalysis[]
+  /** The campaign whose reading is open on the right; null for the workspace's. */
+  openCampaignId: string | null
   /** The picture at the top — `AssetStage`. */
   stage: ReactNode
   /**
@@ -61,6 +62,7 @@ const STATUS_DOT: Record<MetaStatus, string> = {
 export function AssetMetaColumn({
   asset,
   lenses,
+  openCampaignId,
   stage,
   sheets,
   onTitleChange,
@@ -95,17 +97,25 @@ export function AssetMetaColumn({
       </div>
       <div className="flex flex-col gap-6 px-8 pt-6 pb-8">
         <div className="flex flex-col gap-3">
-          <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-tertiary-foreground">
+          <p className="flex items-center gap-1.5 text-xs font-medium text-secondary-foreground">
             <KindIcon className="size-4 shrink-0" aria-hidden />
             <span className="truncate">{kindLine.join(' · ')}</span>
           </p>
-          <AssetTitle
-            initialTitle={asset.title}
-            onChange={onTitleChange}
-            onDirty={onDirty}
-            className="text-[28px] leading-tight"
-          />
-          <p className="flex items-center gap-2 text-xs text-tertiary-foreground">
+          {/* A file name reads as words until someone renames it; the dotted
+              rule and the pencil say the title is theirs to edit. */}
+          <div className="group relative border-b border-dotted border-transparent pr-6 hover:border-quaternary focus-within:border-accent">
+            <AssetTitle
+              initialTitle={readableTitle(asset.title)}
+              onChange={onTitleChange}
+              onDirty={onDirty}
+              className="text-[28px] leading-tight"
+            />
+            <PencilSimpleIcon
+              aria-hidden
+              className="pointer-events-none absolute top-2 right-0 size-4 text-tertiary-foreground opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+            />
+          </div>
+          <p className="flex items-center gap-2 text-xs text-secondary-foreground">
             <span
               aria-hidden
               className={cn(
@@ -139,7 +149,7 @@ export function AssetMetaColumn({
           </Fact>
           {asset.file?.original_name ? (
             <Fact label={t('assetInsights.meta.file')}>
-              <span className="break-all">{asset.file.original_name}</span>
+              <span className="break-words">{asset.file.original_name}</span>
             </Fact>
           ) : (
             asset.source_url && (
@@ -184,20 +194,26 @@ export function AssetMetaColumn({
         </dl>
 
         {asset.file?.url && (
-          <Button variant="outline" className="self-start uppercase" asChild>
-            <a href={asset.file.url} download={asset.file.original_name}>
-              <DownloadSimpleIcon />
-              <span>{t('assetInsights.meta.download')}</span>
-            </a>
-          </Button>
+          <a
+            href={asset.file.url}
+            download={asset.file.original_name}
+            className="flex items-center gap-1.5 self-start text-sm font-medium text-accent hover:underline"
+          >
+            <DownloadSimpleIcon className="size-4" aria-hidden />
+            {t('assetInsights.meta.download')}
+          </a>
         )}
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-1">
-          <MetaCampaigns assetId={asset.id} lenses={lenses} />
+          <MetaCampaigns
+            assetId={asset.id}
+            lenses={lenses}
+            openCampaignId={openCampaignId}
+          />
 
           {asset.tags.length > 0 && (
             <section className="flex flex-col gap-3 border-t border-quaternary pt-5">
-              <h2 className="text-xs font-medium uppercase tracking-wide text-tertiary-foreground">
+              <h2 className="text-sm font-semibold text-secondary-foreground">
                 {t('assetInsights.meta.tags')}
               </h2>
               <ul className="flex flex-wrap gap-2">
@@ -221,7 +237,7 @@ export function AssetMetaColumn({
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <>
-      <dt className="text-tertiary-foreground">{label}</dt>
+      <dt className="text-secondary-foreground">{label}</dt>
       <dd className="min-w-0 text-foreground">{children}</dd>
     </>
   )

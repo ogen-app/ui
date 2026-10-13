@@ -145,10 +145,10 @@ function Tile({
 }) {
   const Icon = ASSET_KIND_ICON[assetKind(asset)]
   return (
-    <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-2 bg-secondary text-tertiary-foreground">
+    <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-2 bg-secondary text-secondary-foreground">
       <Icon className="size-12" weight="light" aria-hidden />
       {caption && (
-        <span className="max-w-[80%] truncate text-xs font-medium uppercase tracking-wide">
+        <span className="max-w-[80%] truncate text-xs font-medium">
           {caption}
         </span>
       )}

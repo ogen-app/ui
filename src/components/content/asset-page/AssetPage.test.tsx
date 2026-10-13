@@ -161,6 +161,38 @@ describe('AssetPage', () => {
     expect(screen.getAllByText('Old campaign').length).toBeGreaterThan(0)
   })
 
+  it('offers no lens picker when only the workspace has read it', async () => {
+    api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
+    await renderPage(asset())
+    expect(
+      await screen.findByText('Read for your workspace'),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+  })
+
+  it('titles a file-named asset in words and marks the open campaign', async () => {
+    campaigns.current = [
+      { id: 'c1', name: 'Spring launch', asset_ids: ['a1'] },
+      { id: 'c2', name: 'Autumn push', asset_ids: ['a1'] },
+    ]
+    api.listAssetAnalyses.mockResolvedValue([
+      workspaceLens(),
+      workspaceLens({
+        id: 'an-2',
+        campaign_id: 'c1',
+        campaign_name: 'Spring launch',
+      }),
+    ])
+    await renderPage(asset({ title: 'q3_pipeline_review.pdf' }), 'c1')
+    expect(
+      await screen.findByDisplayValue('q3 pipeline review'),
+    ).toBeInTheDocument()
+    const open = screen
+      .getAllByRole('link')
+      .find((l) => l.getAttribute('aria-current') === 'true')
+    expect(open).toHaveTextContent('Spring launch')
+  })
+
   it('opens a spreadsheet idea’s rows in the sheet table', async () => {
     const page: AssetChunkPage = {
       offset: 0,
@@ -234,7 +266,10 @@ describe('AssetPage', () => {
       }),
     )
 
-    expect(await screen.findByText('Sheets read')).toBeInTheDocument()
+    expect(await screen.findByText('What it covers')).toBeInTheDocument()
+    expect(
+      screen.getAllByText('Sheets').some((el) => el.tagName === 'DT'),
+    ).toBe(true)
     fireEvent.click(screen.getByText('Bigger deals'))
     fireEvent.click(
       screen.getByRole('button', {

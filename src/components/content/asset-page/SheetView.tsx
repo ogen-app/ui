@@ -154,7 +154,9 @@ export function SheetView({
                     <span
                       className={cn(
                         'text-xs font-normal tabular-nums',
-                        active ? 'text-primary/60' : 'text-tertiary-foreground',
+                        active
+                          ? 'text-primary/60'
+                          : 'text-secondary-foreground',
                       )}
                     >
                       {formatNumber(s.rowCount, {}, i18n.language)}
@@ -169,13 +171,13 @@ export function SheetView({
             {nameOf(sheet)}
           </span>
         )}
-        <span className="text-xs text-tertiary-foreground">
+        <span className="text-xs text-secondary-foreground">
           {t('assetInsights.sheet.readOnly')}
         </span>
       </div>
 
       {range && (
-        <div className="flex items-center justify-between gap-4 border-l-3 border-warning bg-warning/10 px-4 py-2.5 text-sm">
+        <div className="flex items-center justify-between gap-4 rounded-md bg-warning/10 px-4 py-2.5 text-sm">
           <span className="text-secondary-foreground">
             <span className="font-medium text-foreground">
               {t('assetInsights.sheet.citedRange', {
@@ -197,7 +199,7 @@ export function SheetView({
       )}
 
       {sheet.rows.length === 0 ? (
-        <p className="text-sm text-tertiary-foreground">
+        <p className="text-sm text-secondary-foreground">
           {hasMore
             ? t('assetInsights.sheet.notLoaded')
             : t('assetInsights.sheet.empty')}
@@ -209,7 +211,7 @@ export function SheetView({
               <tr>
                 <th
                   scope="col"
-                  className="sticky left-0 z-10 w-12 bg-secondary px-3 py-2.5 text-center text-xs font-semibold text-tertiary-foreground"
+                  className="sticky left-0 z-10 w-12 bg-secondary px-3 py-2.5 text-center text-xs font-semibold text-secondary-foreground"
                 >
                   #
                 </th>
@@ -243,7 +245,7 @@ export function SheetView({
       )}
 
       <div className="flex items-center justify-between gap-4">
-        <p className="text-xs text-tertiary-foreground">
+        <p className="text-xs text-secondary-foreground">
           {sheet.rowCount !== null
             ? t('assetInsights.sheet.showing', {
                 shown: formatNumber(sheet.rows.length, {}, i18n.language),
@@ -290,8 +292,12 @@ function Row({
     >
       <td
         className={cn(
-          'sticky left-0 px-3 py-2 text-center text-xs tabular-nums text-tertiary-foreground',
-          hot ? 'border-l-3 border-warning bg-primary' : 'bg-primary',
+          'sticky left-0 px-3 py-2 text-center text-xs tabular-nums text-secondary-foreground',
+          // The row's tint, made opaque: the number column stays put while
+          // the cells scroll under it, so it cannot be see-through.
+          hot
+            ? 'bg-[color-mix(in_oklab,var(--warning)_10%,var(--primary))] font-medium text-foreground'
+            : 'bg-primary',
         )}
       >
         {row.row ?? ''}

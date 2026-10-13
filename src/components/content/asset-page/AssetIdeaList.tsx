@@ -5,12 +5,11 @@ import {
   CaretDownIcon,
   CaretRightIcon,
   CheckIcon,
-  CircleIcon,
   ClockIcon,
   LightbulbIcon,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib'
-import { parseIdeaNote } from '@/lib/assetAnalysis'
+import { mergePageRefs, parseIdeaNote, refLabel } from '@/lib/assetAnalysis'
 import type { Idea } from '@/lib/ideas'
 import { ideaFromWire } from '@/services/api/ideas'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
@@ -49,25 +48,39 @@ export function AssetIdeaList({
   const shown = showAll ? ideas : ideas.slice(0, FIRST_IDEAS)
   const hidden = ideas.length - shown.length
 
+  // The heading says what the ideas are and how many, in the page's
+  // second-largest type: they are what the page is for (CON-369).
+  const forCampaign = lens.campaign_id !== null && lens.campaign_name
   const heading =
-    lens.campaign_id !== null && lens.campaign_name
-      ? t('assetInsights.ideas.headingFor', { campaign: lens.campaign_name })
-      : t('assetInsights.ideas.heading')
+    ideas.length === 0
+      ? t('assetInsights.ideas.heading')
+      : forCampaign
+        ? t('assetInsights.ideas.countFor', {
+            count: ideas.length,
+            campaign: lens.campaign_name,
+          })
+        : t('assetInsights.ideas.count', { count: ideas.length })
 
   return (
-    <section className="flex flex-col gap-4 border-t border-quaternary pt-8">
-      <header className="flex items-center justify-between gap-4">
-        <h3 className="flex items-center gap-2 text-lg font-medium text-foreground">
-          <LightbulbIcon className="size-5 text-accent" aria-hidden />
-          <span>{heading}</span>
+    <section className="flex flex-col gap-4">
+      <header className="flex flex-col gap-1">
+        <div className="flex items-baseline justify-between gap-4">
+          <h3 className="text-[22px] leading-8 font-semibold text-foreground">
+            {heading}
+          </h3>
           {ideas.length > 0 && (
-            <span className="font-normal text-tertiary-foreground">
-              {ideas.length}
-            </span>
+            <InboxLink lens={lens} label={t('assetInsights.ideas.viewAll')} />
           )}
-        </h3>
+        </div>
         {ideas.length > 0 && (
-          <InboxLink lens={lens} label={t('assetInsights.ideas.viewAll')} />
+          <p className="text-sm text-secondary-foreground">
+            {forCampaign
+              ? t('assetInsights.ideas.waitingFor', {
+                  campaign: lens.campaign_name,
+                })
+              : t('assetInsights.ideas.waiting')}
+            {spreadsheet && ` ${t('assetInsights.sheet.footnote')}`}
+          </p>
         )}
       </header>
 
@@ -81,7 +94,7 @@ export function AssetIdeaList({
             <p className="text-sm font-medium text-foreground">
               {t('assetInsights.ideas.emptyTitle')}
             </p>
-            <p className="text-sm text-tertiary-foreground">
+            <p className="text-sm text-secondary-foreground">
               {t('assetInsights.ideas.emptyBody')}
             </p>
           </div>
@@ -109,10 +122,6 @@ export function AssetIdeaList({
               {t('assetInsights.ideas.showMore', { count: hidden })}
             </button>
           )}
-          <p className="text-xs text-tertiary-foreground">
-            {t('assetInsights.ideas.footnote')}
-            {spreadsheet && ` ${t('assetInsights.sheet.footnote')}`}
-          </p>
         </>
       )}
     </section>
@@ -134,7 +143,9 @@ function IdeaRow({
   onToggle: () => void
 }) {
   const { t } = useTranslation()
-  const { angle, rationale, sources } = parseIdeaNote(idea.note)
+  const { angle, rationale, sources: cited } = parseIdeaNote(idea.note)
+  // Pages sorted and merged ("pp. 55–59", not "pp. 57–59, pp. 55–57").
+  const sources = mergePageRefs(cited)
   const Caret = expanded ? CaretDownIcon : CaretRightIcon
   return (
     <li
@@ -156,21 +167,23 @@ function IdeaRow({
             {idea.title}
           </span>
           {angle && !expanded && (
-            <span className="truncate text-sm text-tertiary-foreground">
+            <span className="line-clamp-2 text-sm text-secondary-foreground">
               {angle}
             </span>
           )}
         </span>
-        {/* At most two, each capped: a long heading path must never take
-            the title's width. The rest are in the opened row. */}
-        <span className="hidden max-w-[45%] min-w-0 shrink-0 flex-wrap items-center justify-end gap-1.5 sm:flex">
-          {/* Labels only: these sit inside the row's button. The playable
-              chips are in the opened row. */}
-          {sources.slice(0, 2).map((s) => (
-            <SourceChip key={s} label={s} interactive={false} />
-          ))}
-        </span>
-        <Caret className="mt-0.5 size-4 shrink-0 text-tertiary-foreground" />
+        {/* Where it comes from, as plain text — not chips that look like
+            controls inside a control. The playable and citable chips are in
+            the opened row. */}
+        {sources.length > 0 && (
+          <span
+            title={cited.join(', ')}
+            className="hidden max-w-[40%] shrink-0 truncate pt-0.5 text-xs tabular-nums text-secondary-foreground sm:block"
+          >
+            {sources.slice(0, 2).map(refLabel).join(' · ')}
+          </span>
+        )}
+        <Caret className="mt-0.5 size-4 shrink-0 text-secondary-foreground" />
       </button>
       {expanded && (
         <div className="flex flex-col gap-3 px-4 pb-4 pl-11">
@@ -189,7 +202,7 @@ function IdeaRow({
               ))}
             </span>
           )}
-          <p className="border-t border-quaternary pt-3 text-xs text-tertiary-foreground">
+          <p className="border-t border-quaternary pt-3 text-xs text-secondary-foreground">
             {t(`assetInsights.ideas.where.${idea.verdict ?? 'inbox'}`)} ·{' '}
             <InboxLink lens={lens} label={t('assetInsights.ideas.open')} />
           </p>
@@ -220,11 +233,13 @@ function VerdictMark({ idea }: { idea: Idea }) {
         />
       )
     default:
+      // Untriaged is the normal state of a fresh idea, not something to
+      // tick: no mark, only the name for screen readers. The space stays so
+      // titles line up with the marked rows.
       return (
-        <CircleIcon
-          className={cn(className, 'text-tertiary-foreground')}
-          aria-label={label}
-        />
+        <span className={className}>
+          <span className="sr-only">{label}</span>
+        </span>
       )
   }
 }

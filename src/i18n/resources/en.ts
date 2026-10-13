@@ -376,19 +376,27 @@ export const en = {
       slides: 'Slides',
       untitled: 'Slide {{number}}',
     },
-    /** A mention's kind, on hover. */
-    entityKind: {
-      person: 'Person',
-      org: 'Organisation',
-      product: 'Product',
-      place: 'Place',
+    /** The reading at rest and in full (CON-369). */
+    summaryMore: 'Read the full summary',
+    summaryLess: 'Show less',
+    /** Topics, mentions and sheets, under the ideas. */
+    covers: 'What it covers',
+    /** A mention group's name, by the kind the analysis gave. */
+    mentionKind: {
+      org: 'Organisations',
+      product: 'Products',
+      person: 'People',
+      place: 'Places',
       other: 'Other',
     },
+    moreMentions_one: '+{{count}} more',
+    moreMentions_other: '+{{count}} more',
     tabs: {
       insights: 'Insights',
       source: 'Source',
     },
     lens: {
+      workspaceOnly: 'Read for your workspace',
       readingFor: 'Reading for',
       workspace: 'Workspace',
       /** A campaign lens whose campaign name did not arrive. */
@@ -438,7 +446,6 @@ export const en = {
     summary: 'Summary',
     keyPoints: 'Key points',
     topics: 'Topics',
-    mentions: 'Mentions',
     relevance: {
       title: 'Read for {{campaign}}',
     },
@@ -457,14 +464,19 @@ export const en = {
       openQuestions: 'Open questions',
     },
     ideas: {
+      /** The heading, with the count (CON-369). */
+      count_one: '{{count}} post idea',
+      count_other: '{{count}} post ideas',
+      countFor_one: '{{count}} post idea for {{campaign}}',
+      countFor_other: '{{count}} post ideas for {{campaign}}',
+      waiting: 'New ideas wait in your Ideas inbox for a yes, later or no.',
+      waitingFor:
+        'New ideas wait in the Ideas for {{campaign}} for a yes, later or no.',
       heading: 'Ideas',
-      headingFor: 'Ideas for {{campaign}}',
       viewAll: 'View all in Ideas',
       open: 'Open in Ideas',
       showMore_one: 'Show {{count}} more idea',
       showMore_other: 'Show {{count}} more ideas',
-      footnote:
-        'Ideas are drafted from this asset and land untriaged in your Ideas inbox.',
       emptyTitle: 'No ideas from this one',
       emptyBody:
         'The summary is here, but the source was too short or too far off the brief to draw posts from.',
@@ -536,7 +548,6 @@ export const en = {
       rows_other: '{{formatted}} rows',
       fact: 'Sheets',
       moreSheets: '+{{count}} more',
-      read: 'Sheets read',
       chip_one: '{{name}} · {{formatted}} row',
       chip_other: '{{name}} · {{formatted}} rows',
       footnote:

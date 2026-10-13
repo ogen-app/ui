@@ -36,7 +36,7 @@ export function MeetingNotes({ lens }: { lens: AssetAnalysis }) {
                   <span className="truncate text-sm font-medium text-foreground">
                     {p.name}
                   </span>
-                  <span className="truncate text-xs text-tertiary-foreground">
+                  <span className="truncate text-xs text-secondary-foreground">
                     {[
                       p.role,
                       p.confidence === 'inferred'
@@ -69,13 +69,13 @@ export function MeetingNotes({ lens }: { lens: AssetAnalysis }) {
                   className={
                     c.owner
                       ? 'truncate font-medium text-foreground'
-                      : 'truncate text-tertiary-foreground'
+                      : 'truncate text-secondary-foreground'
                   }
                 >
                   {c.owner || t('assetInsights.meeting.unattributed')}
                 </span>
                 <span className="text-foreground">{c.commitment}</span>
-                <span className="hidden text-tertiary-foreground sm:block">
+                <span className="hidden text-secondary-foreground sm:block">
                   {c.due || '—'}
                 </span>
                 <span className="justify-self-end">

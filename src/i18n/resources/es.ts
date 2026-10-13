@@ -276,18 +276,24 @@ export const es: Translation = {
       slides: 'Diapositivas',
       untitled: 'Diapositiva {{number}}',
     },
-    entityKind: {
-      person: 'Persona',
-      org: 'Organización',
-      product: 'Producto',
-      place: 'Lugar',
-      other: 'Otro',
+    summaryMore: 'Leer el resumen completo',
+    summaryLess: 'Mostrar menos',
+    covers: 'De qué trata',
+    mentionKind: {
+      org: 'Organizaciones',
+      product: 'Productos',
+      person: 'Personas',
+      place: 'Lugares',
+      other: 'Otros',
     },
+    moreMentions_one: '+{{count}} más',
+    moreMentions_other: '+{{count}} más',
     tabs: {
       insights: 'Análisis',
       source: 'Fuente',
     },
     lens: {
+      workspaceOnly: 'Leído para tu espacio de trabajo',
       readingFor: 'Leído para',
       workspace: 'Espacio de trabajo',
       campaign: 'Campaña',
@@ -331,7 +337,6 @@ export const es: Translation = {
     summary: 'Resumen',
     keyPoints: 'Puntos clave',
     topics: 'Temas',
-    mentions: 'Menciones',
     relevance: {
       title: 'Leído para {{campaign}}',
     },
@@ -349,14 +354,19 @@ export const es: Translation = {
       openQuestions: 'Preguntas abiertas',
     },
     ideas: {
+      count_one: '{{count}} idea de publicación',
+      count_other: '{{count}} ideas de publicación',
+      countFor_one: '{{count}} idea de publicación para {{campaign}}',
+      countFor_other: '{{count}} ideas de publicación para {{campaign}}',
+      waiting:
+        'Las ideas nuevas esperan en tu bandeja de Ideas un sí, más tarde o no.',
+      waitingFor:
+        'Las ideas nuevas esperan en las Ideas de {{campaign}} un sí, más tarde o no.',
       heading: 'Ideas',
-      headingFor: 'Ideas para {{campaign}}',
       viewAll: 'Ver todas en Ideas',
       open: 'Abrir en Ideas',
       showMore_one: 'Mostrar {{count}} idea más',
       showMore_other: 'Mostrar {{count}} ideas más',
-      footnote:
-        'Las ideas se extraen de este recurso y llegan sin clasificar a tu bandeja de Ideas.',
       emptyTitle: 'Este no dio ideas',
       emptyBody:
         'El resumen está aquí, pero la fuente era demasiado corta o se alejaba demasiado del brief para sacar publicaciones.',
@@ -426,7 +436,6 @@ export const es: Translation = {
       rows_other: '{{formatted}} filas',
       fact: 'Hojas',
       moreSheets: '+{{count}} más',
-      read: 'Hojas leídas',
       chip_one: '{{name}} · {{formatted}} fila',
       chip_other: '{{name}} · {{formatted}} filas',
       footnote:
