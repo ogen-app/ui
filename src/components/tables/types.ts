@@ -24,6 +24,8 @@ export type ColumnConfig<T> = {
   cell?: (value: unknown, row: T) => ReactNode
   sortable?: boolean
   sortUndefined?: 'first' | 'last' | false
+  /** The first click sorts descending — for a count, where most-first is the question. */
+  sortDescFirst?: boolean
   isSticky?: boolean
   stickyPosition?: 'left' | 'right' // NEW: specify which side for sticky
   /**
@@ -55,6 +57,13 @@ export type VirtualTableProps<TData extends Record<string, unknown>> = {
   enableFiltering?: boolean
   enableGlobalFilter?: boolean
   estimatedRowHeight?: number
+  /**
+   * Rows take the height of their content, `estimatedRowHeight` at least, and
+   * the virtualiser measures each one as it renders. For rows whose text wraps
+   * rather than truncates; every other table keeps the fixed height, which is
+   * cheaper and never reflows.
+   */
+  measureRows?: boolean
   overscan?: number
   showFooter?: boolean
   fillHeight?: boolean

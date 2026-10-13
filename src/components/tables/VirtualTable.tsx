@@ -44,6 +44,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   enableFiltering = true,
   enableGlobalFilter = true,
   estimatedRowHeight = 34,
+  measureRows = false,
   overscan = 5,
   showFooter = true,
   fillHeight = false,
@@ -140,7 +141,13 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             variant="tableHeader"
             size="sm"
             active={!!sortDirection}
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            onClick={() =>
+              column.toggleSorting(
+                sortDirection
+                  ? sortDirection === 'asc'
+                  : !!config.sortDescFirst,
+              )
+            }
             className={cn(
               'w-full justify-start gap-1 overflow-hidden',
               alignment === 'right'
@@ -150,11 +157,13 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
           >
             <span className="truncate">{config.header}</span>
             <div className="size-2.5 shrink-0 leading-0">
+              {/* The way the values run down the column: a newest-first list
+                  descends, so its caret points down. */}
               {sortDirection === 'asc' && (
-                <CaretDownIcon className={'size-2.5'} />
+                <CaretUpIcon className={'size-2.5'} />
               )}
               {sortDirection === 'desc' && (
-                <CaretUpIcon className={'size-2.5'} />
+                <CaretDownIcon className={'size-2.5'} />
               )}
             </div>
           </Button>
@@ -183,7 +192,11 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                 'border-b-2 border-background leading-7 relative',
                 cellClass,
               )}
-              style={{ height: `${estimatedRowHeight}px` }}
+              style={
+                measureRows
+                  ? { height: '100%', minHeight: `${estimatedRowHeight}px` }
+                  : { height: `${estimatedRowHeight}px` }
+              }
             >
               {config.cell(value, row.original)}
             </div>
@@ -216,7 +229,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
           }
         : undefined,
     }))
-  }, [activeColumns, getColumnConfig, estimatedRowHeight])
+  }, [activeColumns, getColumnConfig, estimatedRowHeight, measureRows])
 
   // Create TanStack Table instance
   const table = useReactTable({
@@ -504,8 +517,17 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                 return (
                   <div
                     key={row.id}
+                    // Measured rows report their own height; a fixed row's is
+                    // the estimate, and `contain-strict` may size it.
+                    ref={
+                      measureRows ? rowVirtualizer.measureElement : undefined
+                    }
+                    data-index={virtualRow.index}
                     className={cn(
-                      'group flex absolute top-0 left-0 bg-table-row hover:bg-table-row-hover contain-strict',
+                      'group flex absolute top-0 left-0 bg-table-row hover:bg-table-row-hover',
+                      measureRows
+                        ? 'contain-[layout_style_paint]'
+                        : 'contain-strict',
                     )}
                     style={{
                       // Was hard-coded `h-[34px]`, which silently disagreed
@@ -514,7 +536,9 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                       // for a taller row got correct offsets and a 34px box
                       // that its cells spilled out of. Reading the same number
                       // for both is what lets a two-line row exist.
-                      height: `${estimatedRowHeight}px`,
+                      ...(measureRows
+                        ? { minHeight: `${estimatedRowHeight}px` }
+                        : { height: `${estimatedRowHeight}px` }),
                       transform: `translateY(${virtualRow.start}px)`,
                       width: hasOverflow ? `${totalWidth}px` : '100%',
                     }}
