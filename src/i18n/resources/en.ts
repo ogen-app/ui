@@ -465,6 +465,13 @@ export const en = {
       openQuestions: 'Open questions',
     },
     ideas: {
+      /** The verdict piles above the asset page's ideas (CON-370). */
+      pile: {
+        waiting: 'Undecided',
+        yes: 'Yes',
+        later: 'Not now',
+        no: 'No',
+      },
       /** The heading, with the count (CON-369). */
       count_one: '{{count}} post idea',
       count_other: '{{count}} post ideas',
@@ -4297,6 +4304,59 @@ export const en = {
       waiting: 'Not read yet',
       nothing: 'Nothing extracted',
       noDescription: 'No description',
+    },
+
+    /**
+     * The Assets list's rows (CON-370): columns, the kind mark, statuses
+     * shown only when something is off, and the Ideas column's verdict pill.
+     */
+    list: {
+      title: 'Title',
+      ideas: 'Ideas',
+      updated: 'Updated',
+      campaign: 'Campaign',
+      /** The Campaign column on a campaign's own list: the other campaigns. */
+      alsoIn: 'Also in',
+      tags: 'Tags',
+      untitled: 'Untitled',
+      selectAll: 'Select all documents',
+      clearSelection: 'Clear selection',
+      selectRow: 'Select {{title}}',
+      deleteRow: 'Delete {{title}}',
+      /** Read out for a cell whose dash means "nothing here". */
+      none: 'None',
+      justNow: 'just now',
+      minutes_one: '{{count}} min',
+      minutes_other: '{{count}} min',
+      reading: 'Reading the document…',
+      status: {
+        pending: 'Processing',
+        processing: 'Processing',
+        failed: 'Failed',
+        partial: 'Partial — not all of it was read',
+        partialPage: 'Partial — page cut short',
+        partialAudio: 'Partial — some of it wasn’t transcribed',
+      },
+      verdict: {
+        waiting_one: '{{count}} undecided',
+        waiting_other: '{{count}} undecided',
+        yes_one: '{{count}} yes',
+        yes_other: '{{count}} yes',
+        later_one: '{{count}} not now',
+        later_other: '{{count}} not now',
+        no_one: '{{count}} no',
+        no_other: '{{count}} no',
+      },
+      kind: {
+        pdf: 'PDF',
+        document: 'Document',
+        spreadsheet: 'Spreadsheet',
+        csv: 'CSV',
+        page: 'Web page',
+        audio: 'Recording',
+        image: 'Image',
+        note: 'Note',
+      },
     },
 
     /**

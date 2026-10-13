@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import {
   Tooltip,
   TooltipContent,
@@ -8,14 +9,9 @@ import { assetPreviewUrl } from '@/lib/assetPreview'
 import type { Asset } from '@/types/content'
 
 /**
- * What a document looks like, in a table cell — and larger while the pointer
- * rests on it.
- *
- * Nothing when there is nothing to show. A kind glyph in this cell would be an
- * answer to a different question: the column says *here is the thing*, and a
- * PDF badge standing in for a page that was never rendered says only *this is
- * a PDF*, which the row already says beside its title. So a note leaves the
- * cell empty rather than filling it with a symbol.
+ * What an image looks like, in the list's kind slot (CON-370) — and larger
+ * while the pointer rests on it. `fallback` (the kind's mark) when there is
+ * nothing to show.
  *
  * The enlargement reuses the same URL as the thumbnail, so it is already in
  * the browser's cache and appears at once — no second fetch, no flash of an
@@ -25,18 +21,24 @@ import type { Asset } from '@/types/content'
  * Not focusable, and so hover-only: the preview repeats what the row already
  * says in words, and a tab stop per row would be a real cost for it.
  */
-export function AssetPreview({ asset }: { asset: Asset }) {
+export function AssetPreview({
+  asset,
+  fallback = null,
+}: {
+  asset: Asset
+  fallback?: ReactNode
+}) {
   const url = assetPreviewUrl(asset)
   // A stored thumbnail whose object has gone. Rare, and the honest answer is
   // the same as having none — never the browser's broken-image glyph.
   const [broken, setBroken] = useState(false)
 
-  if (!url || broken) return null
+  if (!url || broken) return fallback
 
   return (
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
-        <span className="size-10 shrink-0 overflow-hidden border border-quaternary bg-secondary">
+        <span className="size-8 shrink-0 overflow-hidden border border-quaternary bg-secondary">
           <img
             src={url}
             alt=""

@@ -50,8 +50,8 @@ export function useCampaignPosts(campaignId: string) {
  * the workspace calendar is drawn from.
  *
  * One request, not one per campaign: `GET /api/posts` returns the tenant's
- * posts hydrated, and the client already reads it for two other cross-campaign
- * questions (`useAssetUsage`, the auto-publish allowlist), under a key that
+ * posts hydrated, and the client already reads it for another cross-campaign
+ * question (the auto-publish allowlist), under a key that
  * every post write already invalidates and patches (`lib/postCache`). So the
  * grid stays in step with an edit made anywhere in the app for free, and a
  * campaign's own calendar and this one can be open in two tabs without either
@@ -62,8 +62,7 @@ export function useCampaignPosts(campaignId: string) {
  * **It does not ask for a range.** The endpoint takes no parameters, so this is
  * the whole workspace's posts however few weeks are on screen — hydrated
  * bodies, campaigns, platforms and assets included. That is the honest cost of
- * having the view at all today, and it is the same cost `useAssetUsage` already
- * pays and documents; a `?from=&to=` read is the fix, and it is filed as an
+ * having the view at all today; a `?from=&to=` read is the fix, and it is filed as an
  * open question rather than worked around here with N campaign-scoped requests,
  * which is the N+1 CON-152 removed from the Campaigns list.
  *
