@@ -3,6 +3,9 @@ import type { AssetAnalysis } from '@/types/assetAnalysis'
 import {
   analysisInFlight,
   formatClock,
+  groupMentions,
+  mergePageRefs,
+  readableTitle,
   insightState,
   isAnalyzable,
   isEmptyReading,
@@ -220,5 +223,59 @@ describe('metaStatus', () => {
     expect(metaStatus(asset, lens({ status: 'failed' }))).toBe('analysisFailed')
     expect(metaStatus(asset, lens({ status: 'skipped' }))).toBe('notAnalysed')
     expect(metaStatus(asset, undefined)).toBe('ready')
+  })
+})
+
+describe('mergePageRefs', () => {
+  it('sorts page references and merges the ones that overlap or touch', () => {
+    expect(mergePageRefs(['pp. 57–59', 'pp. 55–57'])).toEqual(['pp. 55–59'])
+    expect(mergePageRefs(['p. 9', 'p. 4', 'pp. 5-6'])).toEqual([
+      'pp. 4–6',
+      'p. 9',
+    ])
+    expect(mergePageRefs(['pp. 19–21', 'pp. 21–24'])).toEqual(['pp. 19–24'])
+  })
+
+  it('keeps anything that is not a page, after the pages', () => {
+    expect(mergePageRefs(['Slide 4', 'p. 2', '12:03–12:47'])).toEqual([
+      'p. 2',
+      'Slide 4',
+      '12:03–12:47',
+    ])
+  })
+})
+
+describe('groupMentions', () => {
+  it('groups by kind in a fixed order, without repeats', () => {
+    expect(
+      groupMentions([
+        { name: 'GPT-4', kind: 'product' },
+        { name: 'Databricks', kind: 'org' },
+        { name: 'MLflow', kind: 'product' },
+        { name: 'Databricks', kind: 'org' },
+        { name: 'Ada', kind: 'person' },
+      ]),
+    ).toEqual([
+      { kind: 'org', names: ['Databricks'] },
+      { kind: 'product', names: ['GPT-4', 'MLflow'] },
+      { kind: 'person', names: ['Ada'] },
+    ])
+  })
+})
+
+describe('readableTitle', () => {
+  it('turns a file-name title into words', () => {
+    expect(readableTitle('Databricks-Big-Book-Of-GenAI-FINAL')).toBe(
+      'Databricks Big Book Of GenAI FINAL',
+    )
+    expect(readableTitle('q3_pipeline_review.xlsx')).toBe('q3 pipeline review')
+  })
+
+  it('leaves a title a person wrote alone', () => {
+    expect(readableTitle('A Guide to Beekeeping')).toBe('A Guide to Beekeeping')
+    expect(readableTitle('Spring-launch notes')).toBe('Spring-launch notes')
+    expect(readableTitle('Roadmap')).toBe('Roadmap')
+    expect(readableTitle('GPT-4')).toBe('GPT-4')
+    expect(readableTitle('launch-plan.pdf')).toBe('launch plan')
   })
 })

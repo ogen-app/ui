@@ -1,6 +1,7 @@
-import type { AssetAnalysis } from '@/types/assetAnalysis'
+import type { AnalysisEntity, AssetAnalysis } from '@/types/assetAnalysis'
 import type { Asset, AssetStatus, AssetType } from '@/types/content'
 import { retrievability } from './campaignSources'
+import { shortSheetLabel } from './sheetChunks'
 
 /**
  * The rules behind the asset page's Insights tab (CON-366), over the analyses
@@ -305,4 +306,110 @@ export function metaStatus(
     default:
       return 'ready'
   }
+}
+
+/**
+ * A row's source references, tidied for reading (CON-369): page references
+ * ("p. 4", "pp. 57–59") are sorted by where they start and merged where they
+ * overlap or touch, so "pp. 57–59", "pp. 55–57" reads "pp. 55–59". Anything
+ * else — a slide, a time, a sheet range — keeps its place after the pages.
+ */
+export function mergePageRefs(labels: string[]): string[] {
+  const ranges: [number, number][] = []
+  const rest: string[] = []
+  for (const label of labels) {
+    const m = PAGE_REF.exec(label.trim())
+    if (!m) {
+      rest.push(label)
+      continue
+    }
+    const from = Number(m[1])
+    const to = m[2] ? Number(m[2]) : from
+    ranges.push(from <= to ? [from, to] : [to, from])
+  }
+  ranges.sort((a, b) => a[0] - b[0])
+  const merged: [number, number][] = []
+  for (const [from, to] of ranges) {
+    const last = merged[merged.length - 1]
+    if (last && from <= last[1] + 1) last[1] = Math.max(last[1], to)
+    else merged.push([from, to])
+  }
+  return [
+    ...merged.map(([from, to]) =>
+      from === to ? `p. ${from}` : `pp. ${from}–${to}`,
+    ),
+    ...rest,
+  ]
+}
+
+const PAGE_REF = /^pp?\.\s*(\d+)(?:\s*[–-]\s*(\d+))?$/
+
+/** The order mention groups are read in, and which kinds exist. */
+export const MENTION_KINDS = [
+  'org',
+  'product',
+  'person',
+  'place',
+  'other',
+] as const
+
+export type MentionGroup = {
+  kind: (typeof MENTION_KINDS)[number]
+  names: string[]
+}
+
+/**
+ * Mentions grouped by kind, kinds in a fixed order, names deduplicated in the
+ * order the analysis listed them — what "What it covers" prints as text
+ * (CON-369) instead of a cloud of pills with the kind in a tooltip.
+ */
+export function groupMentions(
+  entities: Pick<AnalysisEntity, 'name' | 'kind'>[],
+): MentionGroup[] {
+  const groups = new Map<MentionGroup['kind'], string[]>()
+  for (const entity of entities) {
+    const kind = (MENTION_KINDS as readonly string[]).includes(entity.kind)
+      ? entity.kind
+      : 'other'
+    const names = groups.get(kind) ?? []
+    if (!names.includes(entity.name)) names.push(entity.name)
+    groups.set(kind, names)
+  }
+  return MENTION_KINDS.filter((kind) => groups.has(kind)).map((kind) => ({
+    kind,
+    names: groups.get(kind) ?? [],
+  }))
+}
+
+/**
+ * A title fit to read (CON-369). An upload's title is its file name until
+ * someone renames it, and "Databricks-Big-Book-Of-GenAI-FINAL" set at the
+ * page's largest size reads as a system talking. A title with no spaces but
+ * hyphens or underscores between three or more words, or a file extension,
+ * is taken for a file name: the
+ * extension goes and the separators become spaces. Anything a person typed —
+ * any title with a space in it — is left exactly as it is.
+ */
+export function readableTitle(title: string): string {
+  const trimmed = title.trim()
+  if (/\s/.test(trimmed) || !/[-_]/.test(trimmed)) return title
+  const stem = trimmed.replace(/\.[a-z0-9]{1,5}$/i, '')
+  const words = stem.split(/[-_]+/).filter(Boolean)
+  // Two parts is as likely a name ("GPT-4", "e-commerce") as a file; a file
+  // name shows itself by an extension or by running to three parts or more.
+  const looksLikeFile = stem !== trimmed || words.length >= 3
+  return looksLikeFile && words.length > 1 ? words.join(' ') : title
+}
+
+/**
+ * What a source reference says in a row or a chip: a sheet range shortened
+ * ("Pipeline · rows 10–24"), a heading path down to its last heading
+ * ("Process overview › SDLC methodology" → "SDLC methodology"), anything else
+ * as it is. The full label is always the tooltip.
+ */
+export function refLabel(label: string): string {
+  const sheet = shortSheetLabel(label)
+  if (sheet) return sheet
+  const path = label.split(' › ')
+  return path[path.length - 1] || label
 }
